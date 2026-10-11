@@ -28,3 +28,7 @@ B HTTP/UI增量原提交3405076、集成1729a8e后，总控29项imports定向测
 核心集成90be27d已通过591项unit、174项真实DB及格式/lint/类型，root旧v1实例追加0006/0007成功。独立Astra审核心登记4项P2并派A修：扫描最终IO跨5秒仍成功（已内存复现）；只核存量导致可创建第1025目录/超过条目峰值；storage健康/解锁响应黑洞无客户端2秒截止（2150ms仍挂探针）；request DB初始化/preflight/写事务同样缺总deadline/abort（25mscontext在150ms仍挂且无关闭探针）。最后一项冻结独占request DB生命周期补充，文件IO仍必须settle，不能裸race整个服务。没有真实网络黑洞故障验收，待修复后取得。
 
 B73d35e2→aa8099e的独立复审关闭累计unknown与恢复父子同步；响应校验仍留一项P2：错误码与HTTP status失配被当确定拒绝。502/CSRF_REJECTED与500/INVALID_REQUEST必须归unknown，合法403/CSRF仍可确定拒绝。已派B修，49项现有定向测试通过不代替该回归。
+
+修复cd7688d→aa22f63复核时，原四个失败探针已闭合、6文件18定向unit通过，但发现2项仍需A修的P2：namespace准入没有计算旧held尝试尚未落地的目录/文件峰值，失锁后的晚到mkdir可越过1024上限；成功stopped receipt已发布后catch仍重复创建receipt临时文件，另一recover可能已释放预留。要求全held容量headroom与receipt读核幂等/发布后不再写。两项已派回；不得因原探针通过宣称整体闭合。
+
+同轮复审第三项P2：StorageLock.query(promise)在观察已求值的heldRows promise前assert，失效时遗落拒绝；实际heldRows/失效连接内存探针观察到unhandledRejection。已要求工厂式query，先assert再启动，完整修复前不关闭核心审查。

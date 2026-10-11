@@ -2,7 +2,7 @@
 
 P2-A已实现qf.operator、operator_session、audit_event及qf_meta.schema_migrations。P2-B1已追加product、category、tag、product_tag，已完成技术验收。真实字段、权限、锁序与CAS以[目录合同](STUDIO_P2B1.md)为准；运营metadata_revision与未来草稿content revision分离。Product使用包的稳定字符串ID，category/tag使用服务器UUID，不能把下方历史拟议UUID一概套到Product。
 
-以下保留D0/F1业务约束和后续完整商品关系；除上方七张业务表外尚未建立。当前Product只有运营身份/slug/title/主类目FK/metadata_revision/时间/归档字段，没有published指针或内容发布状态。草稿、资源、版本、Key和报告仍待后续追加迁移；B2-1将先追加唯一的quizpack_import原包接收表；实施合同见[STUDIO_P2B2](STUDIO_P2B2.md)，尚未创建或验收。完整草稿/blob/asset模型仍属后续批次。
+B2-1候选已追加quizpack_import，当前共八张业务表；真实DB与权限检查进行中，尚未完成阶段验收。以下保留D0/F1业务约束和后续完整商品关系，其余实体尚未建立。当前Product只有运营身份/slug/title/主类目FK/metadata_revision/时间/归档字段，没有published指针或内容发布状态。草稿、资源、版本、Key和报告仍待后续追加迁移；B2-1的quizpack_import只记录接收意图、原字节冻结与显式恢复；实施合同见[STUDIO_P2B2](STUDIO_P2B2.md)，received不代表ZIP/内容或资源验证通过。完整草稿/blob/asset模型仍属后续批次。
 
 | 概念                  | 关键字段（拟议）                                                                                                                         | 关系与约束                                                                                      |
 | --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |

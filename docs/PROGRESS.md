@@ -2,7 +2,9 @@
 
 ## 2026-10-12 托管推进
 
-B2-1已建立独立 `codex/quizpack-receipt` 工作树，基于B1最终文档提交 `e8da98b27ed1469a5e15f927cfdbf51445d553fe`；该head的[CI38169117712](https://github.com/aning0922/quiz-forge/actions/runs/38169117712) checks/database均已核实success。首批原包接收合同见STUDIO_P2B2.md，已完成独立前置审查并修订绝对期限与CLI文件guard两项P2；合同已冻结，尚无接收运行代码、迁移或验收。B1交付分支继续保留，不将下一阶段混入PR #9。合同eb8c8b9、共享准备5f2f8e5已提交推送，Draft PR #10堆叠于B1；两条Sol/high实现聊天已启动，18项定向安全测试及类型/lint通过，不等于接收功能验收。
+B2-1当前为集成验收中：A核心f9593a7→90be27d、B真实入口22a521e→368d7a7已接入。八表迁移在root旧v1实例真实升级，591项全仓单元、174项真实DB、格式/lint/类型与生产构建通过；53份构建trace无私有路径违规。独立审查关闭B客户端问题，A在该基线登记4项P2；修复aa22f63后605单测/207真实DB通过，但仍有3项复审残留，见REVIEW。首次浏览器测试先因旧auth清理夹具外键失败，已修；重跑13项通过后被重复状态文本的测试选择器阻断，修复789734e后20项后台生产E2E全部通过；图检两处小修正90e9887正在复验。尚未完成阶段，不等于正式导入/发布；received仍未验证。详细记录见P2B2_RECEIVE_REVIEW/ACCEPTANCE。
+
+B2-1已建立独立 `codex/quizpack-receipt` 工作树，基于B1最终文档提交 `e8da98b27ed1469a5e15f927cfdbf51445d553fe`；该head的[CI38169117712](https://github.com/aning0922/quiz-forge/actions/runs/38169117712) checks/database均已核实success。首批原包接收合同见STUDIO_P2B2.md，已完成独立前置审查并修订绝对期限与CLI文件guard两项P2；此为启动登记，最新集成状态以上段为准。B1交付分支继续保留，不将下一阶段混入PR #9。合同eb8c8b9、共享准备5f2f8e5已提交推送，Draft PR #10堆叠于B1；两条Sol/high实现聊天已启动，18项定向安全测试及类型/lint为初始准备证据，不等于接收功能验收。
 
 P2-B1已完成技术验收：最终代码 `44a0d38c781feb9ea65156dab094a2c9f8907257`，528单测、154真实DB、46驱动故障场景、198生产E2E/10既有跳过，格式/lint/类型/构建及46份trace路径审计通过；独立Astra全部问题闭合、无剩余P1/P2。代码[CI38168728761](https://github.com/aning0922/quiz-forge/actions/runs/38168728761)的checks/database均实际success。[Draft PR #9](https://github.com/aning0922/quiz-forge/pull/9)仍未合并；四宽及异常/生命周期图检已完成，所有测试实例已停止。详见P2B1_ACCEPTANCE/P2B1_REVIEW/P2B1_VISUAL_CHECK。下一优先为B2隔离原包接收，再复验资源归档与首稿；P2-C/P3/P4/P5仍按授权依赖推进。旧暂停聊天未恢复。
 
