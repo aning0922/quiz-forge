@@ -17,9 +17,29 @@ export async function controlFault(mode) {
   // Never unlink an unowned previous socket/record. EADDRINUSE blocks this run.
   let armed = mode !== "daemon-unavailable";
   let fired = false;
+  const counts = {
+    createRequests: 0,
+    startRequests: 0,
+    killRequests: 0,
+    lostReplies: 0,
+    lastLostStatus: null,
+    upgradeRequests: 0,
+  };
   const sockets = new Set();
   const requests = new Set();
   const server = http.createServer((req, res) => {
+    if (req.method === "POST" && /\/containers\/create(?:\?|$)/.test(req.url))
+      counts.createRequests++;
+    if (
+      req.method === "POST" &&
+      /\/containers\/[^/]+\/start(?:\?|$)/.test(req.url)
+    )
+      counts.startRequests++;
+    if (
+      req.method === "POST" &&
+      /\/containers\/[^/]+\/kill(?:\?|$)/.test(req.url)
+    )
+      counts.killRequests++;
     if (mode === "daemon-unavailable" && armed) {
       fired = true;
       req.socket.destroy();
@@ -48,6 +68,8 @@ export async function controlFault(mode) {
         reply.resume();
         reply.once("end", () => {
           fired = true;
+          counts.lostReplies++;
+          counts.lastLostStatus = reply.statusCode;
           res.destroy();
         });
       } else {
@@ -62,6 +84,7 @@ export async function controlFault(mode) {
     socket.once("close", () => sockets.delete(socket));
   });
   server.on("upgrade", (req, socket, head) => {
+    counts.upgradeRequests++;
     if (mode === "daemon-unavailable" && armed) {
       fired = true;
       socket.destroy();
@@ -114,6 +137,9 @@ export async function controlFault(mode) {
     },
     get fired() {
       return fired;
+    },
+    evidence() {
+      return Object.freeze({ ...counts });
     },
     async close() {
       for (const r of requests) r.destroy();
