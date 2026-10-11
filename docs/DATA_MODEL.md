@@ -1,8 +1,8 @@
-# 核心数据模型（P2-A实现与后续规划）
+# 核心数据模型（P2-A/B1实现与后续规划）
 
-P2-A已实现qf.operator、operator_session、audit_event三张业务表及qf_meta.schema_migrations，约束/角色/迁移以[冻结合同](STUDIO_P2A.md)和[P2-A验收](P2A_ACCEPTANCE.md)为准。下方Product等业务关系仍是后续规划，没有相关业务表。P1的文件包和技术证据另有版本化运行时合同。后续 P2 拟沿用包的稳定字符串 Product ID，内部记录使用 UUID；运营分类/标签与内容 revision 分开。该存储调整先记录在 [P2 预案](P2_DESIGN_PREFLIGHT.md)，实施前逐里程碑冻结迁移合同，不把下方历史拟议 UUID 一概套到 Product。
+P2-A已实现qf.operator、operator_session、audit_event及qf_meta.schema_migrations。P2-B1已追加product、category、tag、product_tag，已完成技术验收。真实字段、权限、锁序与CAS以[目录合同](STUDIO_P2B1.md)为准；运营metadata_revision与未来草稿content revision分离。Product使用包的稳定字符串ID，category/tag使用服务器UUID，不能把下方历史拟议UUID一概套到Product。
 
-以下保留D0/F1业务约束和拟议关系；除上方P2-A身份底座外，未建立这些表。ID 暂规划 UUID；版本内容使用版本化 JSON/规范化子表的组合，最终存储形状在数据库阶段评审。F1 只增加纯本地 `foundation.v1` 合同与归属/引用验证，不创建数据库、迁移、后台、ZIP 导入、评分或真实发布。
+以下保留D0/F1业务约束和后续完整商品关系；除上方七张业务表外尚未建立。当前Product只有运营身份/slug/title/主类目FK/metadata_revision/时间/归档字段，没有published指针或内容发布状态。草稿、资源、版本、Key和报告仍待后续追加迁移；B2接收首批提案见[STUDIO_P2B2_RECEIVE_PROPOSAL](STUDIO_P2B2_RECEIVE_PROPOSAL.md)。
 
 | 概念                  | 关键字段（拟议）                                                                                                                         | 关系与约束                                                                                      |
 | --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
@@ -30,7 +30,7 @@ P2-A已实现qf.operator、operator_session、audit_event三张业务表及qf_me
 
 `Product` 是一个测评的唯一稳定工作区身份，不另设 `QuizProject`。`QuizDefinition`/`QuizVersion`、`ProductVisualVersion`、`ReportTemplate` 和商品私有 `AssetPack` 均需带有可验证的 product 归属，且由 ProductVersion 一次性冻结。不同 Product 不共享可变题目；未来可复用题组必须有单独版本并在发布时复制/冻结。
 
-为目录运营预留而尚未建立的实体是 `Category`、`Tag`、`ProductCategory`、`ProductTag`、`Collection` 与 `CollectionProduct`。它们只组织 Product 的公开投影，不能替代 ThemeDefinition、决定评分引擎或跨越 ProductVersion 修改题目/报告。
+已实现category/tag及product_tag。Product以primary_category_id表达单一主类目，不另建ProductCategory多对多表；标签关联使用product/tag复合主键和每Product唯一slot(1..8)形成数据库硬上限。归档保留唯一身份和旧引用，新增分配要求active；不删除实体。Collection/CollectionProduct仍预留。目录组织不决定评分引擎或改写题目/报告。
 
 为草稿与资源导入预留的最小实体是 `ProductDraft(productId, revision, contentHash, state)`、`AssetBlob(contentHash, storageKey, mediaType, bytes)`、`AssetPackVersion`、`AssetPackItem`、`QuizPackImport`、`QuizPackImportFile` 与 `ValidationEvidence`。其字段/约束由 `ASSESSMENT_RESOURCES.md` 进一步说明；此处不表示已经有表或对象存储。
 

@@ -67,8 +67,12 @@ describe("real P2-A database", () => {
       .sql`SELECT tablename FROM pg_tables WHERE schemaname='qf' ORDER BY tablename`;
     expect(tables.map((r) => r.tablename)).toEqual([
       "audit_event",
+      "category",
       "operator",
       "operator_session",
+      "product",
+      "product_tag",
+      "tag",
     ]);
   });
   it("replays without changing migration evidence and rejects changed checksums", async () => {

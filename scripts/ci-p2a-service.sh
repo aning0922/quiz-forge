@@ -81,5 +81,12 @@ QUIZFORGE_P2A_CONFIG=$(node -e '
   process.stdout.write(receipt.runtimeConfigPath);
 ' "$ci_service_dir/bootstrap.json")
 export QUIZFORGE_P2A_CONFIG
+QF_DRIVER_TEST_INSTANCE=$(node -e '
+  const receipt = JSON.parse(require("node:fs").readFileSync(process.argv[1], "utf8"));
+  if (typeof receipt.instanceId !== "string" || !/^[a-f0-9]{32}$/.test(receipt.instanceId)) process.exit(1);
+  process.stdout.write(receipt.instanceId);
+' "$ci_service_dir/bootstrap.json")
+export QF_DRIVER_TEST_INSTANCE
 unset QUIZFORGE_P2A_CI_PASSWORD
 pnpm test:db
+pnpm test:driver
