@@ -59,7 +59,11 @@ export function sealCapabilityAfterChecks(
   const owned = fstatSync(fd);
   try {
     const bytes = Buffer.from(
-      JSON.stringify({ schema: "mac-media-capability.v1", componentId }) + "\n",
+      JSON.stringify(
+        { schema: "mac-media-capability.v1", componentId },
+        null,
+        2,
+      ) + "\n",
     );
     let offset = 0;
     while (offset < bytes.length) {
