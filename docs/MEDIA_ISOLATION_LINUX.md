@@ -58,3 +58,9 @@ FIFO专项初次运行在目录前置检查失败：本工程已有测试建立0
 ## 执行与恢复互斥修订
 
 Astra复验确认deadline/FIFO两项闭合后，复现第三项P2：create close即设localBarriers，start Promise尚在途时同进程恢复可能提前删除记录。修为执行/恢复共享互斥；执行在途时恢复保守unknown，恢复在途时新执行BUSY。每个有归属控制命令发出前撤销资格，只有该轮全部控制命令实际close且无settled:false才重新授予；settled:false保持阻断。新增真实Linux生命周期回归入口，在attach仍在途时调用恢复，须保持guard/record、不confirmed，原执行独立走最终停止核验。此回归尚待LinuxCI，不能以源码或本机测试称独立实测通过。
+
+## 第三轮启动失败与OCI分类
+
+真实 [CI38177881396](https://github.com/aning0922/quiz-forge/actions/runs/38177881396)，head `1de6c4c647ea664d955bf3da24f29c729ecf0878` 已失败：policy image/daemon控制均exit0/settled；平台能力及容器全部参数核验true；start attach退出1，容器退出255，停止confirmed。定位为启动阶段，仍未证明Node/sharp正常解码。
+
+增加State.Error和CLI stderr的固定OCI阶段分类（exec/fifo/seccomp/thread/identity等）与闭集syscall名；permission/EPERM采用大小写不敏感匹配。只返回固定分类/有限syscall/状态/数值，不输出或保存原文。没有修改seccomp。查阅 [runc初始化上游源码](https://github.com/opencontainers/runc/blob/main/libcontainer/standard_init_linux.go) 与 [Go amd64线程源码](https://github.com/golang/go/blob/go1.24.1/src/runtime/sys_linux_amd64.s) 仅用于定位候选，main源码不代表本轮runtime版本，也不能由源码推断某项权限在该run必要；下一轮须依据实际分类决定最小修订。

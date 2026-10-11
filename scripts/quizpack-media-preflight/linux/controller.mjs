@@ -1,3 +1,4 @@
+import { classifySystemError } from "./diagnostic.mjs";
 import { parseWorkerOutput } from "../shared/output.ts";
 import { precheckImage } from "../shared/precheck.ts";
 import { platform, arch } from "node:os";
@@ -113,6 +114,27 @@ async function inspect(record, deadline, onDiagnostic) {
     const value = json(r.stdout);
     const checks = containerChecks(value, record);
     onDiagnostic?.({ phase: "container-checks", checks });
+    const classified = classifySystemError(value.state?.Error);
+    onDiagnostic?.({
+      phase: "container-state",
+      running: value.state?.Running === true,
+      status: [
+        "created",
+        "exited",
+        "running",
+        "paused",
+        "dead",
+        "restarting",
+        "removing",
+      ].includes(value.state?.Status)
+        ? value.state.Status
+        : "unknown",
+      exitCode: Number.isSafeInteger(value.state?.ExitCode)
+        ? value.state.ExitCode
+        : null,
+      errorCategory: classified.category,
+      knownSyscall: classified.knownSyscall,
+    });
     return Object.values(checks).every((v) => v === true) ? value : null;
   } catch {
     return null;
@@ -229,6 +251,7 @@ export async function executeSynthetic({
         settled: create.settled,
         reason: create.reason ?? null,
         stderrCategory: create.stderrCategory,
+        knownSyscall: create.stderrSyscall,
       });
       await hooks.afterCreate?.(record, create);
       if (!create.settled) {
@@ -261,6 +284,7 @@ export async function executeSynthetic({
           settled: output.settled,
           reason: output.reason ?? null,
           stderrCategory: output.stderrCategory,
+          knownSyscall: output.stderrSyscall,
         });
         await hooks.afterStart?.(record, output);
         reason =

@@ -1,3 +1,4 @@
+import { classifySystemError } from "./diagnostic.mjs";
 import { spawn } from "node:child_process";
 import { createHash } from "node:crypto";
 import { constants } from "node:fs";
@@ -88,6 +89,7 @@ export function command(
     let outBytes = 0;
     let errBytes = 0;
     let stderrCategory = "empty";
+    let stderrSyscall = null;
     let settled = false;
     const stop = (why) => {
       reason ??= why;
@@ -130,6 +132,7 @@ export function command(
         stdoutBytes: outBytes,
         stderrBytes: errBytes,
         stderrCategory,
+        stderrSyscall,
         settled: closed,
       });
     };
@@ -167,22 +170,10 @@ export function command(
     });
     child.stderr.on("data", (chunk) => {
       const text = chunk.toString("utf8");
-      const category =
-        /uv_thread_create|pthread_create|ThreadPoolTaskRunner/.test(text)
-          ? "thread-create-failed"
-          : /EACCES|Permission denied/.test(text)
-            ? "permission-denied"
-            : /EPERM|Operation not permitted/.test(text)
-              ? "operation-not-permitted"
-              : /ERR_MODULE_NOT_FOUND|MODULE_NOT_FOUND|Cannot find module/.test(
-                    text,
-                  )
-                ? "module-unavailable"
-                : /Assertion|assertion|Aborted/.test(text)
-                  ? "runtime-abort"
-                  : "unclassified";
+      const classified = classifySystemError(text);
       if (stderrCategory === "empty" || stderrCategory === "unclassified")
-        stderrCategory = category;
+        stderrCategory = classified.category;
+      stderrSyscall ??= classified.knownSyscall;
       errBytes += chunk.length;
       if (errBytes > stderrLimit) stop("OUTPUT_INVALID");
     });
