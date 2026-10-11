@@ -24,11 +24,11 @@ test("unrevealed cover has no character identity, portrait request or report pay
   await expect(page.getByText("中性情境视觉 · 人物尚未揭晓")).toBeVisible();
   await expect(page.getByRole("img")).toHaveCount(0);
   expect(portraits).toEqual([]);
-  await page.getByRole("link", { name: "查看合成结果构图" }).click();
-  await expect(page).toHaveURL(`${root}/result`);
-  await expect(
-    page.getByRole("heading", { level: 1, name: "李白" }),
-  ).toBeVisible();
+  await page.getByRole("link", { name: "开始演示答题" }).click();
+  await expect(page).toHaveURL(`${root}/experience`);
+  await expect(page.getByRole("heading", { level: 1 })).toContainText(
+    "遇到一项",
+  );
 });
 
 test("synthetic result exposes all seven display slots without scoring or export controls", async ({
@@ -101,17 +101,17 @@ test.describe("directed visual evidence", () => {
         expect(links.filter((e) => e.width < 44 || e.height < 44)).toEqual([]);
         const name = `selected-${state}-${viewport.width}x${viewport.height}-chromium-${browser.version().split(".")[0]}`;
         await page.screenshot({
-          path: `docs/qa/d1a1/${name}-full.png`,
+          path: `test-results/d1a1-regression/${name}-full.png`,
           fullPage: true,
           animations: "disabled",
         });
         if (viewport.width === 390)
           await page.screenshot({
-            path: `docs/qa/d1a1/${name}-first.png`,
+            path: `test-results/d1a1-regression/${name}-first.png`,
             animations: "disabled",
           });
         await testInfo.attach(name, {
-          path: `docs/qa/d1a1/${name}-full.png`,
+          path: `test-results/d1a1-regression/${name}-full.png`,
           contentType: "image/png",
         });
       }
@@ -143,7 +143,7 @@ test.describe("directed visual evidence", () => {
           .evaluate((e) => getComputedStyle(e).animationName),
       ).toBe("none");
       await page.screenshot({
-        path: `docs/qa/d1a1/selected-${state}-390x844-chromium-${browser.version().split(".")[0]}-reduced.png`,
+        path: `test-results/d1a1-regression/selected-${state}-390x844-chromium-${browser.version().split(".")[0]}-reduced.png`,
         fullPage: true,
       });
     }
@@ -157,7 +157,7 @@ test.describe("directed visual evidence", () => {
           "人物概念图暂不可用",
         );
       await page.screenshot({
-        path: `docs/qa/d1a1/selected-${state}-390x844-chromium-${browser.version().split(".")[0]}-missing.png`,
+        path: `test-results/d1a1-regression/selected-${state}-390x844-chromium-${browser.version().split(".")[0]}-missing.png`,
         fullPage: true,
       });
     }
