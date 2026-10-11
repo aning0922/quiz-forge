@@ -2,7 +2,7 @@
 
 趣味测评商品研发、导入与运营平台。核心模式为 **Codex 精品商品研发 + QuizPack 标准化导入 + QuizForge 统一运行与运营**。面向移动端 H5，强调每个商品独立的视觉身份、确定性评分和一次正式完成后可反复查看的结果报告。后台 AI 为可选辅助，不是运行与发布依赖。
 
-**当前主线已包含历史人物完整合成体验与真实 PNG 海报导出（D1-C）。** F1「测评与资源版本底座」已完成技术验收，Draft PR #6 待合并。作者已授权按路线托管推进至首款端到端内测，P1 包工具已在独立堆叠分支完成技术验收，Draft PR #7 待合并，接续 P2 数据库与最小后台；其他旧开发聊天保持暂停。前台仍为研究/演示，没有正式评分、AccessKey、数据库、管理后台或商品发布。最新事实见 [进度](docs/PROGRESS.md)，授权和阶段门槛见 [托管开发](docs/MANAGED_DEVELOPMENT.md)、[P1 合同](docs/QUIZPACK_P1.md)。
+**当前 main 已包含历史人物完整合成体验与真实 PNG 海报导出（D1-C）。** F1、P1包工具和P2-A数据库/运营认证已在堆叠分支完成技术验收，Draft PR #6/#7/#8仍未合并。本分支新增隔离PostgreSQL18.4、事务迁移、最小权限和真实Studio登录/会话；只用于本机运营内测。作者已授权按路线托管推进至首款端到端内测，接续测评工作区与分类管理；其他旧开发聊天保持暂停。正式评分、AccessKey、消费者完成流程与商品发布仍待后续阶段。最新事实见[进度](docs/PROGRESS.md)、[P2-A验收](docs/P2A_ACCEPTANCE.md)，授权见[托管开发](docs/MANAGED_DEVELOPMENT.md)。
 
 ## 本地运行
 
@@ -21,7 +21,7 @@ corepack pnpm dev
 
 在项目目录内也可使用 `pnpm`，Corepack 会读取 `packageManager`。本机默认 pnpm 11.9.0 在目录外与 Node 20.20.1 不兼容；不要运行全局升级修复其他项目。若发行版无 Corepack，先安装符合团队约定的工具再执行。
 
-访问开发服务器打印的本地地址（默认 `http://127.0.0.1:3000`）。研究页面及生产构建不需要数据库配置。P2-A 只接受 `QUIZFORGE_P2A_CONFIG` 指向本工作区生成的私有 runtime.json；`.env.example` 仅说明路径入口，不包含连接串或凭证。数据库与认证仍在实施验收，不能作为生产环境使用。
+访问开发服务器打印的本地地址（默认 `http://127.0.0.1:3000`）。研究页面及生产构建不需要数据库配置。P2-A 只接受 `QUIZFORGE_P2A_CONFIG` 指向本工作区生成的私有 runtime.json；`.env.example` 仅说明路径入口，不包含连接串或凭证。该profile已经本机技术验收，不能作为生产环境使用。
 
 ## 验证
 
@@ -35,7 +35,7 @@ corepack pnpm test:e2e:install
 corepack pnpm test:e2e
 ```
 
-也可执行 `corepack pnpm check`（浏览器须先安装）。Playwright 启动生产构建，端口 3100 必须空闲。浏览器缓存存放项目内 `.cache/`，截图与 HTML 报告在被忽略的 `test-results/`、`playwright-report/`。`pnpm exec playwright show-report` 可查看报告。测试通过不代表 D1 的正式视觉设计验收。
+也可执行 `corepack pnpm check`（浏览器须先安装，完整认证E2E需要下面的专属test实例和配置）。Playwright 启动生产构建，端口 3100 必须空闲。浏览器缓存存放项目内 `.cache/`，截图与 HTML 报告在被忽略的 `test-results/`、`playwright-report/`。`pnpm exec playwright show-report` 可查看报告。测试通过不代表 D1 的正式视觉设计验收。
 
 `typecheck` 先运行 `next typegen`，因此干净检出不需要已有构建产物；`next-env.d.ts` 与路由类型由 Next 生成并忽略，不在 Git 中绑定 `.next` 文件。
 
@@ -52,7 +52,7 @@ corepack pnpm test:e2e
 | `/themes/animals`    | 动物人格匹配设计简报             |
 | 未知路由/主题        | 404 与返回入口                   |
 
-没有开通真实用户答题、管理后台或业务 API 路由。它们的建议结构记录在架构文档，避免 D0 空接口造成错误能力预期。
+P2-A新增 `/studio/login`、`/studio` 和 `/api/studio/auth/{preauth,login,session,logout}`，均读取真实本机运营身份。没有配置或数据库不可用时明确关闭；尚未开通正式消费者答题、测评工作区、导入或发布路由。
 
 ## 工程结构
 
@@ -68,7 +68,7 @@ src/
     product/                 # 测评工作区合同与草稿纯逻辑；真实发布待实现
     ai-generation/           # Schema 草稿与审核边界（仅说明）
     fulfillment/             # 渠道适配边界（仅说明）
-    studio/                  # 独立后台视图，P2-A 正在接入真实认证
+    studio/                  # 独立后台登录/会话视图，真实运营认证
   lib/                       # 通用工具及 server-only DB/认证/HTTP 边界
   config/                    # 工程元信息
 public/assets/themes/        # 研究素材与清单；商业批准仍按manifest
@@ -80,9 +80,9 @@ docs/                        # 产品、架构、数据、视觉、阶段证据
 
 ## 消费者访问与 CI
 
-规划允许公开浏览已发布商品介绍及明确授权的演示。正式答题必须持有对应商品有效 AccessKey；可暂存恢复、最多正式完成一次，完成后原链接直接读取锁定报告。普通买家不强制注册；未来可主动把多个 Key 关联到账号。公开分享采用独立只读凭证，不携带原 Key。消费者与管理后台分开布局，详细规划见 [架构](docs/ARCHITECTURE.md)，尚未实现相关路由或访问校验。
+规划允许公开浏览已发布商品介绍及明确授权的演示。正式答题必须持有对应商品有效 AccessKey；可暂存恢复、最多正式完成一次，完成后原链接直接读取锁定报告。普通买家不强制注册；未来可主动把多个 Key 关联到账号。公开分享采用独立只读凭证，不携带原 Key。消费者与管理后台分开布局，详细规划见 [架构](docs/ARCHITECTURE.md)。P2-A仅实现独立运营认证；消费者相关路由与访问校验尚未实现。
 
-`.github/workflows/ci.yml` 在 main 推送、PR 和手工触发时，从根目录冻结安装并运行格式/lint/类型/单测/构建。CI 使用 Node 24、项目固定 pnpm，需在 GitHub [Actions](https://github.com/aning0922/quiz-forge/actions) 查看实际结果。E2E 保留本地阶段验收，暂不增加 CI 浏览器依赖。
+`.github/workflows/ci.yml` 在 main 推送、PR 和手工触发时，从根目录冻结安装并运行格式/lint/类型/单测/构建。CI 使用 Node 24、项目固定 pnpm，需在 GitHub [Actions](https://github.com/aning0922/quiz-forge/actions) 查看实际结果。新增database job在本job随机私有凭证和固定镜像中运行真实迁移/DB测试并清理，CI事实见P2A_ACCEPTANCE。E2E保留本地阶段验收，暂不增加CI浏览器依赖。
 
 ## 维护文档
 
@@ -100,7 +100,7 @@ docs/                        # 产品、架构、数据、视觉、阶段证据
 
 ## 测评工作区与后续开发
 
-一款测评对应一个 Product；题目/规则/结果/页面/私有素材均归该测评，发布版本固定内容与资源引用。后台按测评进入工作区，类目和标签只组织目录；数据库与认证后台为后续阶段。详见 [架构](docs/ARCHITECTURE.md)、[数据模型](docs/DATA_MODEL.md)、[资源归属](docs/ASSESSMENT_RESOURCES.md)、[开发路线](docs/ROADMAP_30D.md)。
+一款测评对应一个 Product；题目/规则/结果/页面/私有素材均归该测评，发布版本固定内容与资源引用。后台按测评进入工作区，类目和标签只组织目录；本地数据库与运营认证已由P2-A完成；目录工作区、导入与草稿编辑接续P2-B。详见 [架构](docs/ARCHITECTURE.md)、[数据模型](docs/DATA_MODEL.md)、[资源归属](docs/ASSESSMENT_RESOURCES.md)、[开发路线](docs/ROADMAP_30D.md)。
 
 ## F1 本地合同校验
 
@@ -116,3 +116,14 @@ corepack pnpm --silent foundation:schema
 ## P1 本地包工具
 
 使用 `corepack pnpm --silent quizpack:schema` 导出合同，`quizpack:check <file|-> --product <id>` 验证，`quizpack:build <input.json> --product <id> --out <file.quizpack>` 构建。输入清单、提交回执、限额和拒绝边界见 [工具使用](docs/P1_TOOLCHAIN_IMPLEMENTATION.md)，实际检查见 [P1 验收](docs/P1_ACCEPTANCE.md)。成功只表示候选包技术合格，始终不授予导入或发布。
+
+## P2-A 本机运营内测
+
+先读[数据库运行说明](docs/P2A_DATABASE_IMPLEMENTATION.md)和[认证说明](docs/P2A_AUTH_IMPLEMENTATION.md)。仅使用已有的Homebrew PostgreSQL18.4二进制，新建不存在的项目专属实例；不使用现有数据库、brew services、DATABASE_URL或5432。所有命令从本worktree根执行。
+
+- `pnpm p2a:db init --port <空闲PG端口> --origin http://127.0.0.1:3100 --purpose test` 返回新instanceId及runtimeConfigPath；设置当前shell的QUIZFORGE_P2A_CONFIG为该绝对路径。完整E2E必须使用该3100 origin，不能复用正在运行的服务器。
+- `pnpm test:db` 必须真实连接test/ci实例，缺配置、不可连接或demo目标会失败；不会静默替代成内存测试。认证E2E会生成和清理自己的合成身份，只用于专属test实例。
+- 人工查看时可另建purpose=demo、origin为实际本机端口的实例。`pnpm p2a:operator create --instance <id> --label <合成标识> --role operator --credential-file <该实例目录下的新私有文件>` 仅把随机凭证写到0600文件，不打印原文；本机登录时使用它，不放到Git、日志或截图。
+- `pnpm p2a:db stop --instance <id>` 停止自己的实例并保留可恢复数据，`start/status/migrate` 仍需同一受管身份。启动结果无法确认时会明确要求清理，不能盲目重试或按未知PID停止进程。
+
+这里只提供运营登录与会话，尚无Product导入/审核/发布按钮。页面检查见[P2-A浏览器记录](docs/P2A_VISUAL_CHECK.md)，独立审查见[P2-A审查](docs/P2A_REVIEW.md)。

@@ -1,6 +1,6 @@
 # P2-A 验收记录
 
-日期：2026-10-12（Asia/Shanghai）。状态：实施中，尚未通过阶段验收。基线为 P1 最终 `e63df6439fc48f61f2011ddb3516b9b88d67988f`；本阶段集成分支 `codex/studio-foundation`。本页只记录实际证据，退出标准见 [冻结合同](STUDIO_P2A.md)。
+日期：2026-10-12（Asia/Shanghai）。状态：P2-A 技术验收通过。基线为 P1 最终 `e63df6439fc48f61f2011ddb3516b9b88d67988f`；集成分支 `codex/studio-foundation`，最终代码 `720b982ae486dbe7349dfa7034367cf8a6c76875`。[Draft PR #8](https://github.com/aning0922/quiz-forge/pull/8) 基于 P1 分支，依赖 #7/#6，未合并 main。退出标准见 [冻结合同](STUDIO_P2A.md)。
 
 ## 范围
 
@@ -10,17 +10,17 @@ Product 工作区、目录、资源和草稿持久化、隔离导入、送审、
 
 ## 当前证据
 
-| 项目               | 当前结果                                                                                         |
-| ------------------ | ------------------------------------------------------------------------------------------------ |
-| 公共接口与纯边界   | 初版 DB/runtime/token 与 HTTP/角色边界集成后，4 文件 26 项针对性单测通过；后续修正后重记最终数字 |
-| 真实 PostgreSQL    | 尚未在总控集成工作区初始化；开发线结果另记，不替代集成验收                                       |
-| 完整认证事务与路由 | 实施中                                                                                           |
-| 六项工程检查       | 最终提交尚未执行                                                                                 |
-| 真实浏览器与截图   | 尚未执行                                                                                         |
-| 独立审查           | 公共接口早审已启动，最终集成审查未完成                                                           |
-| Draft PR / CI      | 尚未创建 P2-A PR；新增数据库 job 尚未取得远端运行证据                                            |
+| 项目               | 当前结果                                                                                     |
+| ------------------ | -------------------------------------------------------------------------------------------- |
+| 普通检查           | 最终29文件、442项单测通过，包括13项启动故障和5项CI清理回归                                   |
+| 真实 PostgreSQL    | 总控新建专属PG18.4实例，2文件、57项通过（DB41、Auth16）                                      |
+| 完整认证事务与路由 | 四个auth API、/studio/login、/studio已接真实DB，operator/read-only登录退出实际通过           |
+| 六项工程检查       | 最终代码的format:check、lint、typecheck、test、build、test:e2e全部通过；另test:db通过        |
+| 真实浏览器与截图   | 189项Chromium E2E通过、10项既有跳过；四移动宽度及加载/失败/真实停库图检见P2A_VISUAL_CHECK.md |
+| 独立审查           | Astra high复核无剩余P1/P2；独立55项DB及最终57项定向单测通过，详见P2A_REVIEW.md               |
+| Draft PR / CI      | #8保持Draft；代码720b982的CI38163271691两个job均实际success；后续纯文档head的Checks另核      |
 
-## 必须完成的验证
+## 已执行的验证与失败修复
 
 数据库：新建专属 purpose=test 实例，验证 manifest/库 marker/版本/角色；迁移重放无变化，checksum 篡改拒绝，失败事务回滚。应用身份不能 DDL、写运营身份、改删审计或改会话身份/absolute 到期。缺配置、身份不匹配及 demo 配置不能作为测试库。
 
@@ -30,7 +30,13 @@ HTTP：错误或缺失 Host/Origin/CSRF、Fetch Metadata、实际 4 KiB/5 秒读
 
 浏览器：生产构建、独占 3100、真实登录退出；空输入、错误、不可用、只读/运营者和到期状态；320/375/390/430 CSS px 无横向溢出，正文至少 16px，目标至少 44px。认证项目关闭 trace/video/自动截图，仅保存空输入或非敏感会话状态图；由助手实际查看图片并记录视口、状态、浏览器和结论。助手图检不能替代作者最终视觉批准。
 
-最终工程检查：`pnpm format:check`、`pnpm lint`、`pnpm typecheck`、`pnpm test`、`pnpm build`、`pnpm test:db`、`pnpm test:e2e`。记录失败与修复后的真实结果，检查通过后独立审查、提交推送、面向 P1 分支的 Draft PR，核对准确 head 的普通与数据库 CI。
+最终工程检查：`pnpm format:check`、`pnpm lint`、`pnpm typecheck`、`pnpm test`、`pnpm build`、`pnpm test:db`、`pnpm test:e2e`均通过。总控日志在忽略的 `.cache/p2a-final-check.log` 和 `.cache/p2a-final-db.log`。最终E2E189通过/10既有跳过，耗时59.3秒；认证项目3项无跳过。独立审查的55项DB发生在最后两项DB接口/权限回归加入前，不冒称其已独立执行57项DB。
+
+初次Auth联调因Drizzle改变同一raw SQL客户端的时间解析形状而失败，已显式转换并真实复测；初次全量E2E为188通过/1个测试拦截器竞争失败/10既有跳过，修正后目标3项与最终全量均通过。HTTP绝对期限、FIFO读取、端口一致性、PG环境污染、CI凭证/context/清理回执和启动未知结果均已修复；PUBLIC列权限疑点经真实PG实验排除，仅保留回归并纠正注释。
+
+总控集成实例 `4719eca6e393bda8a14a1abbdc7d7658` 为purpose=test，端口55423；结束时受管stop/status均确认stopped，55423/3100已释放，私有manifest/config/PGDATA保留可恢复。开发线55421/55422实例也已分别停止。没有自动运行后台进程。
+
+[代码head CI38163271691](https://github.com/aning0922/quiz-forge/actions/runs/38163271691) 的checks与database均success；数据库job实际拉起固定digest的官方镜像、完成bootstrap/迁移/真实测试并清理，不以配置文件存在代替CI成功。
 
 ## 运行与交付限制
 
