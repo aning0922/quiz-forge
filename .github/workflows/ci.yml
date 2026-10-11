@@ -42,8 +42,8 @@ jobs:
         run: pnpm typecheck
       - name: Unit tests
         run: pnpm test
-      - name: Media preflight shared contracts and POSIX controls
-        run: node --import tsx --test scripts/quizpack-media-preflight/shared/*.test.ts
+      - name: Media preflight contracts and local controls
+        run: node --import tsx --test scripts/quizpack-media-preflight/shared/*.test.ts scripts/quizpack-media-preflight/linux/*.test.mjs
       - name: Production build
         run: pnpm build
 
