@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { FOUNDATION_JSON_MAX_BYTES } from "../../lib/foundation-json";
 import {
   createDraftEvidenceBinding,
   createProductDraft,
@@ -161,5 +162,49 @@ describe("F1 local product drafts", () => {
         content: undefined,
       }),
     ).toThrow();
+  });
+
+  it("keeps exact byte/depth content limits usable after adding envelope metadata", () => {
+    for (const content of [
+      "a".repeat(FOUNDATION_JSON_MAX_BYTES - 2),
+      JSON.parse("[".repeat(32) + "0" + "]".repeat(32)),
+    ]) {
+      const draft = createProductDraft({
+        productId: request.productId,
+        draftId: request.draftId,
+        content,
+      });
+      const evidence = createDraftEvidenceBinding(draft);
+      const noop = updateProductDraft(draft, request);
+      expect(noop.content).toEqual(content);
+      expect(matchesDraftEvidence(noop, evidence)).toBe(true);
+      expect(
+        updateProductDraft(draft, { ...request, content: null }).revision,
+      ).toBe(2);
+    }
+  });
+
+  it("rejects envelope accessors and proxies without executing them", () => {
+    let invoked = false;
+    const getter = {
+      productId: request.productId,
+      draftId: request.draftId,
+      get content() {
+        invoked = true;
+        return {};
+      },
+    };
+    expect(() => createProductDraft(getter)).toThrow();
+    const proxy = new Proxy(
+      { productId: request.productId, draftId: request.draftId, content: {} },
+      {
+        ownKeys() {
+          invoked = true;
+          return [];
+        },
+      },
+    );
+    expect(() => createProductDraft(proxy)).toThrow();
+    expect(invoked).toBe(false);
   });
 });
