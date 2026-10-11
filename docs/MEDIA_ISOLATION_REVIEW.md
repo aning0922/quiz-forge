@@ -61,3 +61,7 @@ Linux扩展15761ed→root36474f5的created-only崩溃恢复经独立实际源码
 head e2adf40的[普通CI38180296236](https://github.com/aning0922/quiz-forge/actions/runs/38180296236) checks/database均实际success，构建53trace/8614路径/0私有违规。Linux Node24.21.0的四sync上下文与两async对照都完整报告两只额外pipe；host同次control明确unsafe/count2，扫描器正确性测试及FD300注入通过，不证明host隔离，不归因某个loader/测试框架/启动方式。
 
 同head[平台CI38180296216](https://github.com/aning0922/quiz-forge/actions/runs/38180296216)仍failure：真实setup组件版本为Engine28.0.4/containerd v2.3.6/runc1.5.1/init0.19.0；start-attach settled/exit1，有限分类为FIFO reopen、EPERM、mount-namespace-description，未获得确定syscall；后续容器created/exit255，最终WORKER_FAILED/stoppedconfirmed。Linux流正在按精确版本源码定位最小修复，平台验收仍未通过。
+
+两条独立源码调查定位runc1.5.1默认pure-Go链：[seccomp后Reopen](https://github.com/opencontainers/runc/blob/v1.5.1/libcontainer/standard_init_linux.go#L219-L249)经pathrs-lite的[procfs安全核验](https://github.com/opencontainers/runc/blob/v1.5.1/vendor/github.com/cyphar/filepath-securejoin/pathrs-lite/internal/procfs/procfs_linux.go#L42-L67)调用[unix.Fstatfs](https://github.com/opencontainers/runc/blob/v1.5.1/vendor/github.com/cyphar/filepath-securejoin/pathrs-lite/internal/fd/fd_linux.go#L51-L55)。当前policy缺这一只读文件系统类型查询；mount API和openat2失败已有安全回退，未找到同时增加statfs/mount/open_tree的必要证据。root05eaf48只加fstatfs，已和Linux作者明确单文件交接，其余权限不变；下一真实CI验证前仍是最小候选，不声称唯一根因或能力已通过，CI也未提供runc构建tag。
+
+共享cc51623独立Astra复核无P1/P2，13项native/shared测试及6项async helper失败边界通过；后代持stdio在6005ms返回close-unconfirmed，未误认停止。root另以本批全新purpose=test实例完成214真实DB（137.95秒）与46驱动场景、生产构建53trace/0私有违规，生产E2E进行中；这些是既有应用回归，不关闭mac三项P2或Linux崩溃harness期限P2。
