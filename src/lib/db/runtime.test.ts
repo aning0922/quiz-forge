@@ -1,4 +1,6 @@
 import { randomBytes } from "node:crypto";
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
 import { chmod, mkdir, rm, symlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
@@ -26,6 +28,8 @@ describe("P2-A private runtime", () => {
     "http://127.0.0.1",
     "http://127.0.0.1:3100/",
     "http://127.0.0.1:0",
+    "http://127.0.0.1:80",
+    "http://127.0.0.1:1023",
     "http://127.0.0.1:65536",
     "http://127.0.0.1:03100",
   ])("rejects origin %s", (origin) => {
@@ -84,6 +88,15 @@ describe("P2-A private runtime", () => {
     await chmod(file, 0o644);
     await expect(readPrivateJson(file)).rejects.toThrow("STUDIO_UNAVAILABLE");
     await chmod(file, 0o600);
+    const oversized = path.join(dir, "oversized.json");
+    await writeFile(oversized, " ".repeat(16_385), { flag: "wx", mode: 0o600 });
+    await expect(readPrivateJson(oversized)).rejects.toThrow(
+      "STUDIO_UNAVAILABLE",
+    );
+    const fifo = path.join(dir, "pipe.json");
+    await promisify(execFile)("mkfifo", [fifo]);
+    await chmod(fifo, 0o600);
+    await expect(readPrivateJson(fifo)).rejects.toThrow("STUDIO_UNAVAILABLE");
     const link = path.join(dir, "link.json");
     await symlink(file, link);
     await expect(readPrivateJson(link)).rejects.toThrow();

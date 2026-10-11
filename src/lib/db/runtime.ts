@@ -13,9 +13,11 @@ export class StudioUnavailableError extends Error {
 }
 
 export function isLocalOrigin(value: string): boolean {
+  const port = Number(value.split(":").at(-1));
   return (
     /^http:\/\/127\.0\.0\.1:([1-9][0-9]{0,4})$/.test(value) &&
-    Number(value.split(":").at(-1)) <= 65535
+    port >= 1024 &&
+    port <= 65535
   );
 }
 const identifier = z.string().regex(/^qf_(app|owner|db)_[a-f0-9]{32}$/);
@@ -85,7 +87,10 @@ export async function readPrivateJson(
   }
   if ((await realpath(instanceDir)) !== instanceDir)
     throw new StudioUnavailableError();
-  const handle = await open(file, constants.O_RDONLY | constants.O_NOFOLLOW);
+  const handle = await open(
+    file,
+    constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK,
+  );
   try {
     const stat = await handle.stat();
     if (
@@ -95,7 +100,21 @@ export async function readPrivateJson(
       stat.size > 16_384
     )
       throw new StudioUnavailableError();
-    return JSON.parse(await handle.readFile("utf8")) as unknown;
+    // The actual read is bounded too, even if the file grows after fstat.
+    const bytes = Buffer.alloc(16_385);
+    let total = 0;
+    while (total < bytes.length) {
+      const { bytesRead } = await handle.read(
+        bytes,
+        total,
+        bytes.length - total,
+        total,
+      );
+      if (bytesRead === 0) break;
+      total += bytesRead;
+    }
+    if (total > 16_384) throw new StudioUnavailableError();
+    return JSON.parse(bytes.subarray(0, total).toString("utf8")) as unknown;
   } finally {
     await handle.close();
   }
