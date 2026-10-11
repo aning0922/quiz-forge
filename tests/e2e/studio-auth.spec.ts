@@ -184,3 +184,42 @@ test("real read-only role is shown and can logout", async ({ page }) => {
   await page.getByRole("button", { name: "退出登录" }).click();
   await expect(page.getByRole("heading", { name: "运营登录" })).toBeVisible();
 });
+
+test("empty-input loading capture and real rejected login capture", async ({
+  page,
+}, testInfo) => {
+  let release = () => {};
+  const paused = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  const endpoint = "**/api/studio/auth/preauth";
+  await page.route(endpoint, async (route) => {
+    await paused;
+    await route.continue();
+  });
+  try {
+    await page.goto("/studio/login");
+    await expect(page.getByRole("status")).toHaveText("正在准备登录验证…");
+    await expect(page.getByLabel("运营凭证")).toHaveValue("");
+    await expect(page.getByLabel("运营凭证")).toBeDisabled();
+    // This is controlled network delay for UI capture, not a network-failure claim.
+    await page.screenshot({
+      path: testInfo.outputPath("studio-login-loading.png"),
+      fullPage: true,
+    });
+  } finally {
+    release();
+    await page.unroute(endpoint);
+  }
+  await expect(page.getByLabel("运营凭证")).toBeEnabled();
+  await enterCredential(page, "invalid-synthetic-input");
+  await page.getByRole("button", { name: "登录 Studio" }).click();
+  await expect(page.getByRole("status")).toHaveText(
+    "登录未成功。请检查运营凭证，或重新准备登录验证。",
+  );
+  await expect(page.getByLabel("运营凭证")).toHaveValue("");
+  await page.screenshot({
+    path: testInfo.outputPath("studio-login-error.png"),
+    fullPage: true,
+  });
+});
