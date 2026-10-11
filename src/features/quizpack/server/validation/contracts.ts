@@ -212,6 +212,18 @@ export const candidateResultEvidenceSchema = z
       )
         invalid();
     }
+    if (result.outcome === "interrupted") {
+      if (
+        result.code === "MEDIA_STOP_UNCONFIRMED" &&
+        evidence.completion.mediaStopped !== "unknown"
+      )
+        invalid();
+      if (
+        result.code === "RELATED_IO_UNCONFIRMED" &&
+        evidence.completion.relatedIo !== "unconfirmed"
+      )
+        invalid();
+    }
     if (result.outcome === "accepted") {
       if (
         evidence.report.status !== "sealed" ||
