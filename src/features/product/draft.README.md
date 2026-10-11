@@ -21,4 +21,4 @@ const draft = createProductDraft({ productId, draftId, content });
 
 JSON 工具位于 `src/lib/foundation-json.ts`：最多 1 MiB UTF-8 和 32 层容器，拒绝重复解码对象键、原型污染键、非有限数值、非普通对象、访问器、稀疏数组与环。canonical 序列按对象键的 UTF-16 字典顺序排序，保留数组顺序；不对 Unicode 文本做等价归一化。`-0` 按 JSON 规范化为 `0`。
 
-CLI 已接入 A 的实际领域 validator。使用 `pnpm foundation:check <file> --product <id>` 或 `pnpm foundation:check - --product <id>`；输入按字节流有界读取，错误返回 JSON 并非零退出，不回显源文、堆栈或本机路径。合法结构与引用退出 0，仍固定 `publishable:false`，不验证 ZIP、文件字节、评分、注册表或真实人工审批。`pnpm foundation:schema` 输出结构 Schema，跨引用仍必须另过领域 validator。
+CLI 已接入 A 的实际领域 validator。使用 `pnpm --silent foundation:check <file> --product <id>` 或 `pnpm --silent foundation:check - --product <id>`；`--silent` 用于抑制 pnpm 横幅、工作目录及生命周期日志，确保 stdout 是纯 JSON。输入按字节流有界读取，错误返回 JSON 并非零退出，不回显源文、堆栈或本机路径。合法结构与引用退出 0，仍固定 `publishable:false`，不验证 ZIP、文件字节、评分、注册表或真实人工审批。`pnpm --silent foundation:schema` 输出结构 Schema，跨引用仍必须另过领域 validator。
