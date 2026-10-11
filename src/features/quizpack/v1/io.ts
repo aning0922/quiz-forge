@@ -3,11 +3,11 @@ import { open, lstat, realpath, link, unlink } from "node:fs/promises";
 import { dirname, resolve, relative, sep, isAbsolute } from "node:path";
 import { randomUUID, createHash } from "node:crypto";
 import {
-  canonicalFoundationJson,
   parseFoundationJson,
   FoundationJsonError,
   type FoundationJson,
 } from "../../../lib/foundation-json";
+import { canonicalP1Json, P1CanonicalError } from "./canonical";
 import {
   PackToolError,
   abortable,
@@ -18,10 +18,10 @@ import type { PackIssue } from "./api";
 
 export function canonicalPackJson(input: unknown): string {
   try {
-    return canonicalFoundationJson(input);
+    return canonicalP1Json(input);
   } catch (error) {
     throw new PackToolError(
-      error instanceof FoundationJsonError ? error.code : "JSON_INVALID_VALUE",
+      error instanceof P1CanonicalError ? error.code : "JSON_INVALID_VALUE",
     );
   }
 }

@@ -1,0 +1,126 @@
+import { describe, expect, it } from "vitest";
+import type { QuizPackValidationReport } from "../../v1/api";
+import {
+  P1_UNVERIFIED,
+  REPORT_SCHEMA_HASH,
+  sealP1Report,
+  serializeSealedReport,
+} from "./report";
+import {
+  assertPersistenceUnicode,
+  EvidenceError,
+  PERSISTENCE_UNICODE_POLICY_HASH,
+} from "./unicode";
+
+const hash = "a".repeat(64);
+export function syntheticReport(): QuizPackValidationReport {
+  return {
+    schemaVersion: "quizpack-validation.v1",
+    targetProductId: "synthetic-product",
+    validatorVersion: "1.0.0",
+    policyId: "quizpack-local-p1.v1",
+    archiveSha256: hash,
+    contentSha256: hash,
+    manifestSha256: hash,
+    compatibilityPolicyHash: hash,
+    effectiveLimitsHash: hash,
+    checks: {
+      container: "passed",
+      structure: "passed",
+      references: "passed",
+      integrity: "passed",
+      media: "passed",
+      compatibility: "passed",
+    },
+    candidateValid: true,
+    importable: false,
+    publishable: false,
+    issues: [],
+    issuesTruncated: false,
+    unverified: [...P1_UNVERIFIED],
+  };
+}
+describe("strict P1 report persistence evidence", () => {
+  it("copies and freezes report, storing its payload once", () => {
+    const value = syntheticReport();
+    const sealed = sealP1Report(value);
+    value.checks.media = "failed";
+    expect(sealed.value.checks.media).toBe("passed");
+    expect(Object.isFrozen(sealed.value.checks)).toBe(true);
+    expect(sealed).not.toHaveProperty("canonicalText");
+    expect(Buffer.byteLength(serializeSealedReport(sealed))).toBe(
+      sealed.canonicalBytes,
+    );
+    expect(REPORT_SCHEMA_HASH).toMatch(/^[a-f0-9]{64}$/);
+  });
+  it("rejects unknown or oversized issue codes, extra fields and altered unverified", () => {
+    for (const code of ["UNREVIEWED", "X".repeat(270000)]) {
+      const value = syntheticReport();
+      value.candidateValid = false;
+      value.issues = [
+        { code, path: [], message: "QuizPack operation rejected." },
+      ];
+      expect(() => sealP1Report(value)).toThrow(EvidenceError);
+    }
+    expect(() =>
+      sealP1Report({ ...syntheticReport(), published: true }),
+    ).toThrow(EvidenceError);
+    expect(() =>
+      sealP1Report({ ...syntheticReport(), unverified: [] }),
+    ).toThrow(EvidenceError);
+  });
+  it("rejects success with a failed check, invalid path/message or more than 100 issues", () => {
+    const value = syntheticReport();
+    value.checks.media = "failed";
+    expect(() => sealP1Report(value)).toThrow(EvidenceError);
+    value.candidateValid = false;
+    for (const issue of [
+      {
+        code: "MEDIA_DECODE_FAILED",
+        path: Array(9).fill("resources"),
+        message: "QuizPack operation rejected.",
+      },
+      { code: "MEDIA_DECODE_FAILED", path: [], message: "unreviewed text" },
+    ]) {
+      expect(() => sealP1Report({ ...value, issues: [issue] })).toThrow(
+        EvidenceError,
+      );
+    }
+    value.issues = Array.from({ length: 101 }, () => ({
+      code: "MEDIA_DECODE_FAILED",
+      path: [],
+      message: "QuizPack operation rejected.",
+    }));
+    expect(() => sealP1Report(value)).toThrow(EvidenceError);
+  });
+  it("detects altered report hash or byte binding", () => {
+    const sealed = sealP1Report(syntheticReport());
+    expect(() =>
+      serializeSealedReport({ ...sealed, sha256: "b".repeat(64) }),
+    ).toThrow(EvidenceError);
+    expect(() =>
+      serializeSealedReport({
+        ...sealed,
+        canonicalBytes: sealed.canonicalBytes + 1,
+      }),
+    ).toThrow(EvidenceError);
+  });
+});
+describe("persistence Unicode policy", () => {
+  it("preserves Chinese and paired surrogates including keys", () => {
+    expect(() =>
+      assertPersistenceUnicode({ "中😀": "合法\t\n\r😀" }),
+    ).not.toThrow();
+    expect(PERSISTENCE_UNICODE_POLICY_HASH).toMatch(/^[a-f0-9]{64}$/);
+  });
+  it("rejects NUL and unpaired high/low surrogates anywhere", () => {
+    for (const text of ["\0", "\ud800", "\udfff", "\ud800a", "a\udfff"]) {
+      expect(() => assertPersistenceUnicode({ nested: [text] })).toThrow(
+        EvidenceError,
+      );
+      expect(() => assertPersistenceUnicode({ [text]: "value" })).toThrow(
+        EvidenceError,
+      );
+    }
+  });
+});
