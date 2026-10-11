@@ -28,6 +28,7 @@ export interface QuizPackValidationReport {
   validatorVersion: string;
   policyId: string;
   compatibilityPolicyHash: string;
+  effectiveLimitsHash: string;
   checks: Record<
     | "container"
     | "structure"
@@ -68,6 +69,16 @@ export interface ImageFacts {
   height: number;
   frames: 1;
   mediaDecoded: true;
+}
+
+export interface ImageInspectionContext {
+  signal: AbortSignal;
+  limits: Readonly<
+    Pick<
+      import("./limits").PackLimits,
+      "resourceBytes" | "imageDimension" | "imagePixels" | "imageMs"
+    >
+  >;
 }
 
 export interface BuildInput {
