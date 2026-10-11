@@ -1,5 +1,6 @@
 import type { PackIssue } from "./api";
 import type { ContentReference, QuizPackContent } from "./content";
+import { P1_STATE_COMPONENT_CONTRACTS } from "./compatibility";
 import { PACK_LIMITS } from "./limits";
 import type { QuizPackManifest } from "./manifest";
 
@@ -34,8 +35,8 @@ export function validateContentReferences(
     );
   if (
     manifest.contentSchemaVersion !== content.schemaVersion ||
-    componentKey({ ...manifest.engine, propsSchemaVersion: "1.0.0" }) !==
-      componentKey({ ...content.engine, propsSchemaVersion: "1.0.0" }) ||
+    manifest.engine.id !== content.engine.id ||
+    manifest.engine.version !== content.engine.version ||
     content.rules.kind !== content.engine.id
   )
     add(
@@ -326,6 +327,16 @@ export function validateContentReferences(
   };
   Object.entries(content.layouts).forEach(([state, layout]) => {
     useComponent(layout.component, ["layouts", state, "component"]);
+    const allowed =
+      P1_STATE_COMPONENT_CONTRACTS[
+        state as keyof typeof P1_STATE_COMPONENT_CONTRACTS
+      ];
+    if (componentKey(layout.component) !== componentKey(allowed))
+      add(
+        "COMPONENT_STATE_MISMATCH",
+        ["layouts", state, "component"],
+        "Component contract must support its declared page state.",
+      );
     const seen = new Set<string>();
     layout.resourceRefs.forEach((ref, i) => {
       const resource = useResource(ref, ["layouts", state, "resourceRefs", i]);
@@ -346,6 +357,15 @@ export function validateContentReferences(
   });
   content.reportTemplates.forEach((report, i) => {
     useComponent(report.component, ["reportTemplates", i, "component"]);
+    if (
+      componentKey(report.component) !==
+      componentKey(P1_STATE_COMPONENT_CONTRACTS.report)
+    )
+      add(
+        "COMPONENT_STATE_MISMATCH",
+        ["reportTemplates", i, "component"],
+        "Baseline report requires the P1 report component contract.",
+      );
     if (!usedReports.has(report.id))
       add(
         "UNUSED_REPORT_TEMPLATE",

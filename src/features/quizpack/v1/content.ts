@@ -11,14 +11,15 @@ import {
   sha256Schema,
 } from "./manifest";
 
+// Regex constraints are also emitted in the generated JSON Schema; no transforms.
 const text = z
   .string()
   .min(1)
   .max(4000)
+  .regex(/\S/)
   .regex(/^[^<>\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]*$/)
-  .refine(
-    (value) => !/(?:https?:|ftp:|file:|data:|javascript:|\/\/)/i.test(value),
-    "Text must be plain local content.",
+  .regex(
+    /^(?![\s\S]*(?:[hH][tT][tT][pP][sS]?:|[fF][tT][pP]:|[fF][iI][lL][eE]:|[dD][aA][tT][aA]:|[jJ][aA][vV][aA][sS][cC][rR][iI][pP][tT]:|\/\/))[\s\S]*$/,
   );
 export const contentReferenceSchema = z.strictObject({
   id,

@@ -24,4 +24,20 @@ builder 从 content.product.productId/schemaVersion/engine 和所有 layouts/rep
 
 ## 验证与限制
 
-内容里程碑：53 项相关单测通过；pnpm format:check、pnpm lint、pnpm typecheck 通过。媒体部分继续在本分支完成；完整包 ZIP、IO、CLI 由 B 实现，六项集成检查与独立审查由总控串行执行，本分支不占用 3100。未实现 DB、导入、发布、评分或渲染。
+内容里程碑：53 项相关单测通过；pnpm format:check、pnpm lint、pnpm typecheck 通过。媒体已完成，最终内容/媒体/限额 102 项单测通过；完整仓库 287 项单测通过。完整包 ZIP、IO、CLI 由 B 实现，六项集成检查与独立审查由总控串行执行，本分支不占用 3100。未实现 DB、导入、发布、评分或渲染。
+
+## 媒体与状态能力收口
+
+`inspectImage(bytes,expected,context)` 接收共享 ImageInspectionContext 的 signal 与已下调有效限额，仍独立拒绝提高/非法限额。expected 可为包含额外资源声明字段的对象，但只读取 ImageDeclaration 字段；快照 bytes/声明/limits 后等待原生解码。父进程先验证 bytes/hash、扩展名/MIME/magic、声明尺寸/像素及动画标记；PNG acTL/fcTL/fdAT 与 WebP 动画 chunks/flags 显式拒绝，避免 decoder 只看默认帧。原始字节通过 stdin 送入固定本地 media-worker.mjs，不传包内路径或网络 URL，不继承 NODE_OPTIONS 等环境配置。
+
+worker 使用 sharp 0.35.5 的 failOn:warning、limitInputPixels、animated:true，先核对真实 metadata，再执行原尺寸 raw().toBuffer() 完整解码并核对实际像素输出。不用 metadata 或缩略图代替解码，不转码产物。父进程核对有界 stdout 协议、真实格式/宽高和声明一致。原生 stderr/异常/输入内容不输出为 issue。
+
+模块内串行原生 decoder；单媒体 deadline 从调用开始覆盖快照和排队。上游取消或 deadline 后 SIGKILL，并等 child close（exit 与 stdio 已闭合）后返回与释放队列。排队取消移除 waiter，不生成 worker；下一个任务可继续。spawn/协议/超大输出失败同样关闭管道并回收进程。未使用临时媒体文件。
+
+六状态能力现已固定 P1_STATE_COMPONENT_CONTRACTS：cover→folio-cover，question→folio-question，resume→folio-resume，result→cabinet-result，report/reportTemplate→folio-report，poster→folio-poster；全部 version/propsSchemaVersion 1.0.0。即使可信兼容 policy 接受某组件，用错状态仍由 references 拒绝。这是合同能力检查，真实组件注册和渲染仍属 P3 未验证项。
+
+已知限制：子进程不等于 OS 沙箱，没有 RSS 硬限额或系统级网络隔离；离线接口不提供任意文件路径、URL、源码或可执行包内容。远端上传开放前须补 OS/container 资源隔离。静态图片成功不声称不存在任意非执行元数据载荷。资源 license/approval 仍为 claims，不授 import/publish。归一化/范围/距离/平分与见证都只是声明；P3 必须实现并验证确定性算术、实际覆盖与见证可达性，不能把当前结构通过当作评分正确。
+
+最终 A 流验证：pnpm format:check、pnpm lint、pnpm typecheck、pnpm test 全部通过。未运行 build/生产 E2E，不占用 3100；阶段六项集成检查、Linux CI 和 Astra 独立审查由总控记录。工程成功不替代授权/人工内容视觉审核，candidate 不能导入或发布。
+
+文本安全约束使用无 transform 的可导出 regex：非空白、无 HTML 尖括号/控制符、无网络/文件/data/javascript 协议和协议相对 URL。JSON Schema 的 allOf 明确包含这些 pattern，相关拒绝/允许用例验证了导出规则与运行时一致；有效前后空格保留，不静默修正字节。JSON Schema 仍不代替跨实体 references、真实文件完整性和媒体解码。
