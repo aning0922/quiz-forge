@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { precheckImage } from "./precheck";
 import { parseWorkerOutput } from "./output";
-import { parseProbeOutput } from "./probe-protocol";
+import { parseProbeOutput, parseFdDiagnostic } from "./probe-protocol";
 import { MEDIA_LIMITS } from "./contracts";
 const png = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
 function declaration(bytes = png) {
@@ -211,4 +211,41 @@ test("network result distinguishes socket denial, operation denial and skipped l
     ),
     null,
   );
+});
+
+test("FD diagnostic rejects paths, contents, unknown types and excess output", () => {
+  const good = {
+    schema: "posix-fd-diagnostic.v1",
+    scanComplete: true,
+    extraCount: 1,
+    truncated: false,
+    descriptors: [
+      {
+        type: "regular",
+        readMode: true,
+        writeMode: false,
+        closeOnExec: false,
+        above255: true,
+      },
+    ],
+  };
+  assert.ok(parseFdDiagnostic(Buffer.from(JSON.stringify(good))));
+  assert.equal(
+    parseFdDiagnostic(
+      Buffer.from(JSON.stringify({ ...good, path: "synthetic" })),
+    ),
+    null,
+  );
+  assert.equal(
+    parseFdDiagnostic(
+      Buffer.from(
+        JSON.stringify({
+          ...good,
+          descriptors: [{ ...good.descriptors[0], type: "unknown" }],
+        }),
+      ),
+    ),
+    null,
+  );
+  assert.equal(parseFdDiagnostic(Buffer.alloc(2049)), null);
 });
