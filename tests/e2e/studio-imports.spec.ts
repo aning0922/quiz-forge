@@ -236,7 +236,23 @@ test("real intent and raw received state remains unvalidated", async ({
       .getByRole("region", { name: "原包状态", exact: true })
       .getByText("原包已隔离接收，尚未验证", { exact: true }),
   ).toBeVisible();
-  await page.getByRole("link", { name: "打开接收状态页", exact: true }).click();
+  const receivedCard = page
+    .getByRole("listitem")
+    .filter({ hasText: "原包已隔离接收，尚未验证" });
+  await expect(receivedCard).toHaveCount(1);
+  await expect(
+    receivedCard.getByText(String(syntheticFile.buffer.length), {
+      exact: true,
+    }),
+  ).toBeVisible();
+  await expect(receivedCard.getByText("已对账", { exact: true })).toBeVisible();
+  await expect(
+    receivedCard.getByText("not-run · 不可发布", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    receivedCard.getByText("声明 SHA-256", { exact: true }),
+  ).toHaveCount(0);
+  await receivedCard.getByRole("link", { name: /查看接收记录/ }).click();
   await expect(page).toHaveURL(
     /\/studio\/products\/e2e-imports\/imports\/[0-9a-f-]{36}$/,
   );
@@ -247,6 +263,16 @@ test("real intent and raw received state remains unvalidated", async ({
     page
       .getByRole("region", { name: "原包状态", exact: true })
       .getByText("not-run · 不可发布", { exact: true }),
+  ).toBeVisible();
+  const detailPanel = page.getByRole("region", {
+    name: "原包状态",
+    exact: true,
+  });
+  await expect(
+    detailPanel.getByText("声明 SHA-256", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    detailPanel.getByText("服务器确认 SHA-256", { exact: true }),
   ).toBeVisible();
   await expect(
     page.getByRole("button", { name: /验证原包|应用草稿|发布/ }),

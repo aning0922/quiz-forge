@@ -15,7 +15,7 @@ import {
 } from "../workspace/primitives";
 import { useImportRead } from "./use-read";
 import { CreateReceive } from "./create-receive";
-import { ImportFacts } from "./import-facts";
+import { ImportSummary } from "./import-facts";
 import { ReceiveControls } from "./receive-controls";
 import { checkImport, checkImportPage, checkSettings } from "./client";
 import { prepareArchiveInput } from "./prepare-archive";
@@ -140,6 +140,9 @@ export function ImportList({
         )}
       <section className={styles.panel}>
         <h2>接收记录</h2>
+        <p className={styles.note}>
+          接收记录只说明原包接收与存储状态；ZIP、内容、资源和授权尚未验证，不能发布。完整事实及失败说明请进入详情。
+        </p>
         <ReadFeedback {...imports} />
         <button
           className={`${styles.button} ${styles.secondary}`}
@@ -157,22 +160,25 @@ export function ImportList({
             <ul className={styles.cards}>
               {imports.value.items.map((value) => (
                 <li className={styles.card} key={value.id}>
-                  <ImportFacts value={value} />
+                  <ImportSummary value={value} />
                   <Link
                     className={`${styles.link} ${styles.secondary}`}
                     href={`/studio/products/${encodeURIComponent(productId)}/imports/${value.id}`}
+                    aria-label={`查看接收记录 ${value.id}`}
                   >
-                    查看接收记录 {value.id}
+                    查看接收详情
                   </Link>
                 </li>
               ))}
             </ul>
-            <Pagination
-              page={page}
-              hasNext={imports.value.hasNext}
-              busy={imports.loading}
-              onPage={setPage}
-            />
+            <div className={local.pagination}>
+              <Pagination
+                page={page}
+                hasNext={imports.value.hasNext}
+                busy={imports.loading}
+                onPage={setPage}
+              />
+            </div>
           </>
         )}
       </section>

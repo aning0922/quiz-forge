@@ -13,3 +13,23 @@
   margin-right: 8px;
   white-space: normal;
 }
+.summary .summaryStatus {
+  margin-top: 0;
+  font-weight: 600;
+}
+.summary .summaryFacts {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 12px;
+  margin-block: 12px;
+}
+.summaryIdentity {
+  grid-column: 1 / -1;
+}
+.summaryError {
+  color: #803324;
+}
+.pagination {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid #d7dfe7;
+}
