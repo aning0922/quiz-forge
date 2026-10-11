@@ -207,6 +207,16 @@ export function loadPolicy(
           ),
         }),
       ),
+      productionSharedSourceHashes: [
+        "contracts.ts",
+        "internal/shared/precheck.ts",
+        "internal/shared/output.ts",
+      ].map((name) => ({
+        name,
+        sha256: fileHash(
+          resolve(REPO_ROOT, "src/features/quizpack/server/media", name),
+        ),
+      })),
       manifestSourceSha256: fileHash(
         resolve(REPO_ROOT, "src/features/quizpack/v1/manifest.ts"),
       ),
