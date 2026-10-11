@@ -81,6 +81,31 @@ safeMain(
     inputs["native-probe"] = hash(
       await readFile(resolve(context, "native-probe")),
     );
+    const sharedSource = resolve(
+      "scripts/quizpack-media-preflight/shared/posix-probe.c",
+    );
+    inputs["posix-probe.c"] = hash(await readFile(sharedSource));
+    const sharedBuild = await command(
+      "/usr/bin/cc",
+      [
+        "-std=c11",
+        "-O2",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-static",
+        "-pthread",
+        sharedSource,
+        "-o",
+        resolve(context, "posix-probe"),
+      ],
+      { deadline: performance.now() + 30000 },
+    );
+    if (sharedBuild.code !== 0 || sharedBuild.reason || !sharedBuild.settled)
+      throw new Error("PROBE_BUILD");
+    inputs["posix-probe"] = hash(
+      await readFile(resolve(context, "posix-probe")),
+    );
     // Compiler output is a build input, tied to source and the actual image ID.
     const compiler = await command("/usr/bin/cc", ["--version"]);
     if (compiler.code !== 0) throw new Error("COMPILER_IDENTITY");

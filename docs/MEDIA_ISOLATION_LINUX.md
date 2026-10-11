@@ -53,7 +53,7 @@ FIFO专项初次运行在目录前置检查失败：本工程已有测试建立0
 
 ## native-identity 诊断小补丁
 
-第二轮真实 [CI38177356944](https://github.com/aning0922/quiz-forge/actions/runs/38177356944)，head `96000be4465ab3a464f68c962a519eeb513350be`，已经失败于native-identity；base pull/image build/image record已完成。尚不能推断是worker syscall、Docker参数规范化或policy预检，也没有放宽策略。此小补丁只增加白名单诊断：policy控制命令退出/settled、资源安全能力布尔、自己的容器各项匹配布尔、launcher有限错误码与已知stderr分类、checked结果/停止状态/数值退出码。没有原始stdout/stderr、异常、路径、环境值或完整inspect进入CI输出。扩展矩阵保留在本分支stash，等实际诊断证据后继续，不掩盖此启动阻断。
+第二轮真实 [CI38177356944](https://github.com/aning0922/quiz-forge/actions/runs/38177356944)，head `96000be4465ab3a464f68c962a519eeb513350be`，已经失败于native-identity；base pull/image build/image record已完成。尚不能推断是worker syscall、Docker参数规范化或policy预检，也没有放宽策略。此小补丁只增加白名单诊断：policy控制命令退出/settled、资源安全能力布尔、自己的容器各项匹配布尔、launcher有限错误码与已知stderr分类、checked结果/停止状态/数值退出码。没有原始stdout/stderr、异常、路径、环境值或完整inspect进入CI输出。扩展矩阵当时保存在本分支stash，现已恢复，等实际诊断证据后继续，不掩盖此启动阻断。
 
 ## 执行与恢复互斥修订
 
@@ -64,3 +64,13 @@ Astra复验确认deadline/FIFO两项闭合后，复现第三项P2：create close
 真实 [CI38177881396](https://github.com/aning0922/quiz-forge/actions/runs/38177881396)，head `1de6c4c647ea664d955bf3da24f29c729ecf0878` 已失败：policy image/daemon控制均exit0/settled；平台能力及容器全部参数核验true；start attach退出1，容器退出255，停止confirmed。定位为启动阶段，仍未证明Node/sharp正常解码。
 
 增加State.Error和CLI stderr的固定OCI阶段分类（exec/fifo/seccomp/thread/identity等）与闭集syscall名；permission/EPERM采用大小写不敏感匹配。只返回固定分类/有限syscall/状态/数值，不输出或保存原文。没有修改seccomp。查阅 [runc初始化上游源码](https://github.com/opencontainers/runc/blob/main/libcontainer/standard_init_linux.go) 与 [Go amd64线程源码](https://github.com/golang/go/blob/go1.24.1/src/runtime/sys_linux_amd64.s) 仅用于定位候选，main源码不代表本轮runtime版本，也不能由源码推断某项权限在该run必要；下一轮须依据实际分类决定最小修订。
+
+## 第三候选检查点（未实测）
+
+复用共享修订 `b9060aeefcd288fc633ff47db89e5c9b04403b84`，本机11项共享检查通过。镜像追加同SHA的静态POSIX探针，三组实际Linux调用计划复核process/FD/network；network预期明确为socket-denied，文件拒绝仍由Linux无host挂载的外部哨兵/对照证明，不能把共享files返回的ENOENT当沙箱EPERM。profile新增共享contracts/precheck/output源码摘要，不忽略父端政策变化。
+
+normal矩阵新增原图带合法PNG ancillary chunk的精确8MiB样本、完整坏IDAT像素拒绝、APNG标志启动前拒绝；实际Linux结果仍待CI。native追加实际PID1/非root/NoNewPrivs/Seccomp/CapEff检查，未获实测不声称这些参数已经生效。私有身份文件除了本身sync，还sync父目录；缓存祖先权限不被修改。
+
+父崩溃harness只杀自己启动的launcher子进程，在可信afterCreate hook已经观测真实create close、尚未发start的窗口暂停；父端实际观测该子进程close，fresh child验证guard跨重启BUSY。显式恢复要求本轮record摘要、ownerPid与已观测close证据相符，同时实际容器必须仍为created并精确身份匹配，才可移除该从未启动对象。此证据不能覆盖运行中父崩溃，后者仍未实现/未验收；不使用PID消失、猜测PID、布尔超时或删guard推断安全。
+
+候选normal外层入口同步固定context的signal/绝对期限，并在内部结果await之后再次检查取消/实际期限，避免最后一次Promise交接造成迟到decoded。此检查仍使用原5秒限额，不改变worker、权限或收尾预算。扩展源码会单独提交以便审阅；无Linux正常解码/完整矩阵通过声明。

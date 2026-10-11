@@ -2,8 +2,8 @@ FROM docker.io/library/node@sha256:450617c43da25e890a85e935526b3f6a8cfc537715540
 WORKDIR /worker
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev --ignore-scripts --no-audit --no-fund && node -e "if(require('sharp').versions.sharp!=='0.35.5') process.exit(1)"
-COPY media-worker.mjs fault-worker.mjs identity.mjs native-probe ./
-RUN chmod 0555 /worker/native-probe && chmod -R a+rX /worker && chmod -R a-w /worker
+COPY media-worker.mjs fault-worker.mjs identity.mjs native-probe posix-probe ./
+RUN chmod 0555 /worker/native-probe /worker/posix-probe && chmod -R a+rX /worker && chmod -R a-w /worker
 USER 10001:10001
 ENV NODE_ENV=production UV_THREADPOOL_SIZE=4 MALLOC_ARENA_MAX=2
 HEALTHCHECK NONE
