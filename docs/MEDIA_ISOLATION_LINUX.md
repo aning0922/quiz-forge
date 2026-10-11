@@ -82,3 +82,9 @@ normal矩阵新增原图带合法PNG ancillary chunk的精确8MiB样本、完整
 后继仅增加实际engine/containerd/runc/init固定版本记录，FIFO open/reopen/write/close/wait/errno及受限reference分类。syscall名改为显式SyscallError/系统调用格式才提取，仍是错误文本分类而非kernel trace。原文、路径、stderr、完整inspect不会输出。runc版本未拿到前不以main源码断言该run必需调用；具体FIFO操作和对应版本源码仍待下一轮实测后闭环。
 
 候选源码链已缩到 [runc v1.3.3 FIFO Reopen](https://raw.githubusercontent.com/opencontainers/runc/v1.3.3/libcontainer/standard_init_linux.go) → 该tag固定 [filepath-securejoin v0.5.1](https://raw.githubusercontent.com/opencontainers/runc/v1.3.3/go.mod) → [procfs handle校验](https://raw.githubusercontent.com/cyphar/filepath-securejoin/v0.5.1/pathrs-lite/internal/procfs/procfs_linux.go)，后者读取fstatfs/fstat并有mount API失败后的/proc只读回退。这是可定位候选，尚未绑定实际run的runc版本；不授予mount或先行修改seccomp。诊断增加这些只读检查的闭集syscall名，下一次实际版本/错误形式才能支持最小修订。
+
+## runc1.5.1最小读取修订
+
+总控真实 [CI38180296216](https://github.com/aning0922/quiz-forge/actions/runs/38180296216)，head `e2adf40`，实际Engine28.0.4/containerd v2.3.6/runc1.5.1/init0.19.0，reopen FIFO仍EPERM。固定 [runc1.5.1 standard init](https://raw.githubusercontent.com/opencontainers/runc/v1.5.1/libcontainer/standard_init_linux.go) 在安装seccomp后执行Reopen；[该版本go.mod](https://raw.githubusercontent.com/opencontainers/runc/v1.5.1/go.mod)固定filepath-securejoin v0.7.0；[该依赖procfs验证](https://raw.githubusercontent.com/cyphar/filepath-securejoin/v0.7.0/pathrs-lite/internal/procfs/procfs_linux.go)需要Fstatfs读取文件系统类型。当前deny-default遗漏这项读取，是本次必要源码证据支持的最小候选修订。
+
+只新增fstatfs读取，不授予mount/statfs/fsopen/open_tree/move_mount/unshare/setns，不更换默认策略或增加host挂载。native探针新增实际/proc fstatfs成功以及mount API/namespace持续EPERM；原全部文件/IPC/网络/fork/clone拒绝仍要求实跑。对应源文件内容摘要与runc版本将记录/绑定；最终原因闭环及正常图片通过仍须后继真实CI，不能把源码必要性当作该run已修复成功。

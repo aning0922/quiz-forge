@@ -4,6 +4,8 @@
 #include <netinet/in.h>
 #include <fcntl.h>
 #include <linux/sched.h>
+#include <linux/mount.h>
+#include <sys/vfs.h>
 #include <pthread.h>
 #include <signal.h>
 #include <stdint.h>
@@ -61,6 +63,14 @@ int main(int argc, char **argv) {
     snprintf(alias,sizeof(alias),"%s/%s/alias",argv[1],areas[i]);
     fd=open(alias,O_RDONLY); check(denied(fd)); if(fd>=0) close(fd);
   }
+  struct statfs fs;int procfd=open("/proc",O_RDONLY|O_DIRECTORY);check(procfd>=0);if(procfd>=0){check(fstatfs(procfd,&fs)==0 && fs.f_type==0x9fa0);close(procfd);}
+  check(syscall(SYS_mount,NULL,NULL,NULL,0,NULL)<0 && errno==EPERM);
+  check(syscall(SYS_umount2,"/proc",0)<0 && errno==EPERM);
+  check(syscall(SYS_unshare,CLONE_NEWNS)<0 && errno==EPERM);
+  check(syscall(SYS_setns,-1,CLONE_NEWNS)<0 && errno==EPERM);
+  check(syscall(SYS_fsopen,"proc",FSOPEN_CLOEXEC)<0 && errno==EPERM);
+  check(syscall(SYS_open_tree,AT_FDCWD,"/proc",OPEN_TREE_CLONE)<0 && errno==EPERM);
+  check(syscall(SYS_move_mount,-1,"",-1,"",0)<0 && errno==EPERM);
   int fd=open("/worker/media-worker.mjs",O_WRONLY); check(denied(fd)); if(fd>=0) close(fd);
   fd=open("/worker/new",O_WRONLY|O_CREAT,0600); check(denied(fd)); if(fd>=0) close(fd);
   fd=open("/var/run/docker.sock",O_RDONLY); check(denied(fd)); if(fd>=0) close(fd);
