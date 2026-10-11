@@ -10,7 +10,7 @@
 
 首交eb3c437→rootf6ea4c9：9项node:test、定向lint/类型/格式通过；CI0874ea6的[38176496353](https://github.com/aning0922/quiz-forge/actions/runs/38176496353)已成功，含真实POSIX编译与非沙箱对照。没有平台权限结论。
 
-独立Astra在此基线上登记2项P2：FD只扫3–255却报告全部无继承（真实注入自有FD300仍true）；socket创建被拒直接exit70，无法区分Linux前置能力拒绝与探针失败。另有非阻断BOM被TextDecoder剥离的问题。A修复b9060ae→rootddf9286：实际FD枚举上限65536/scanComplete，未完整即不安全true；网络返回socket/operation/prerequisite拒绝阶段；显式拒BOM。总控11项node:test通过，独立复验待记录。原生文件open对照不冒充全部数据read/write系统调用，平台专用矩阵仍须补齐。
+独立Astra在此基线上登记2项P2：FD只扫3–255却报告全部无继承（真实注入自有FD300仍true）；socket创建被拒直接exit70，无法区分Linux前置能力拒绝与探针失败。另有非阻断BOM被TextDecoder剥离的问题。A修复b9060ae→rootddf9286：实际FD枚举上限65536/scanComplete，未完整即不安全true；网络返回socket/operation/prerequisite拒绝阶段；显式拒BOM。总控及独立复验11项node:test通过，两项P2与BOM缺口均闭合。独立FD300实际注入得到scanComplete:true/安全false；受控C syscall替身验证socket拒绝、bind前置拒绝、listen直接拒绝与EIO故障分支，未进行真实网络或平台沙箱。Linux枚举分支此轮仅静态复核，不冒充实测。原生文件open对照不冒充全部数据read/write系统调用，平台专用矩阵仍须补齐。
 
 ## Linux候选
 
