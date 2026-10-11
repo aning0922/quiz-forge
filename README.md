@@ -2,7 +2,7 @@
 
 趣味测评商品研发、导入与运营平台。核心模式为 **Codex 精品商品研发 + QuizPack 标准化导入 + QuizForge 统一运行与运营**。面向移动端 H5，强调每个商品独立的视觉身份、确定性评分和一次正式完成后可反复查看的结果报告。后台 AI 为可选辅助，不是运行与发布依赖。
 
-**当前主线已包含历史人物完整合成体验与真实 PNG 海报导出（D1-C）。** 现由当前聊天接管 F1「测评与资源版本底座」，其他开发聊天暂停。前台仍为研究/演示，没有正式评分、AccessKey、数据库、管理后台或商品发布；F1 只实现局部运行时合同、归属/引用检查、草稿纯逻辑和合成参考包。最新事实见 [进度](docs/PROGRESS.md)，本轮范围见 [F1](docs/FOUNDATION_F1.md)。
+**当前主线已包含历史人物完整合成体验与真实 PNG 海报导出（D1-C）。** F1「测评与资源版本底座」已完成技术验收，Draft PR #6 待合并。作者已授权按路线托管推进至首款端到端内测，P1 包工具已在独立堆叠分支完成技术验收，Draft PR #7 待合并，接续 P2 数据库与最小后台；其他旧开发聊天保持暂停。前台仍为研究/演示，没有正式评分、AccessKey、数据库、管理后台或商品发布。最新事实见 [进度](docs/PROGRESS.md)，授权和阶段门槛见 [托管开发](docs/MANAGED_DEVELOPMENT.md)、[P1 合同](docs/QUIZPACK_P1.md)。
 
 ## 本地运行
 
@@ -62,7 +62,7 @@ src/
   components/                # 领域无关组件与 shadcn/ui 基础组件
   features/
     quiz/                    # 合成演示题目与进度解析；正式评分待实现
-    quizpack/                # F1 局部运行时契约；ZIP/构建/导入待实现
+    quizpack/                # F1 合同与 P1 受限 ZIP/构建/验证；正式导入待实现
     theme/                   # 主题配方与历史人物研究体验
     report/                  # 合成展示 DTO 与真实 PNG 导出；正式快照待实现
     product/                 # 测评工作区合同与草稿纯逻辑；真实发布待实现
@@ -90,6 +90,7 @@ docs/                        # 产品、架构、数据、视觉、阶段证据
 - [QuizPack 提案规格](docs/QUIZPACK_SPEC.md)、[三种报告模式](docs/REPORT_MODES.md)
 - [视觉系统](docs/VISUAL_SYSTEM.md)、[D1 视觉验收](docs/D1_VISUAL_ACCEPTANCE.md)
 - [阶段开发路线（计划）](docs/ROADMAP_30D.md)、[技术决策](docs/DECISIONS.md)
+- [托管范围与人工决策点](docs/MANAGED_DEVELOPMENT.md)、[P1 包工具合同](docs/QUIZPACK_P1.md)、[P1 依赖评估](docs/P1_DEPENDENCIES.md)
 - [阶段进度与限制](docs/PROGRESS.md)、[D0 验收证据](docs/D0_ACCEPTANCE.md)
 - [开源复用研究计划](docs/OPEN_SOURCE_REUSE_PLAN.md)、[D0.1 验收](docs/D0_1_ACCEPTANCE.md)
 
@@ -109,3 +110,7 @@ corepack pnpm --silent foundation:schema
 校验命令支持用 `-` 读取标准输入，JSON限1MiB和32层。成功只代表局部结构与归属/引用检查通过；输出始终包含 `publishable: false` 和 `unverified`。输入中的素材 approved/hash 为自报声明，不证明授权或文件字节。参考包仅合成数据；无真实图片、评分或发布能力。
 
 开发分工、模型和文件所有权见 [F1并行合同](docs/F1_COLLABORATION.md)。
+
+## P1 本地包工具
+
+使用 `corepack pnpm --silent quizpack:schema` 导出合同，`quizpack:check <file|-> --product <id>` 验证，`quizpack:build <input.json> --product <id> --out <file.quizpack>` 构建。输入清单、提交回执、限额和拒绝边界见 [工具使用](docs/P1_TOOLCHAIN_IMPLEMENTATION.md)，实际检查见 [P1 验收](docs/P1_ACCEPTANCE.md)。成功只表示候选包技术合格，始终不授予导入或发布。
