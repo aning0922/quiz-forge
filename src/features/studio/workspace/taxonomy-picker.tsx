@@ -53,7 +53,7 @@ export function TaxonomyPicker({
       <ul className={styles.cards}>
         {selected.map((item) => (
           <li key={item.id} className={styles.choice}>
-            <span>
+            <span className={styles.selectedLabel}>
               {item.name} · {item.slug}
               {item.archivedAt
                 ? purpose === "filter"
@@ -62,7 +62,7 @@ export function TaxonomyPicker({
                 : ""}
             </span>
             <button
-              className={`${styles.button} ${styles.secondary}`}
+              className={`${styles.button} ${styles.secondary} ${styles.removeButton}`}
               type="button"
               disabled={disabled}
               aria-label={`移除${label} ${item.slug}`}
