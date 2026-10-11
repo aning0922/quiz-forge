@@ -17,14 +17,31 @@ export type P2aDatabase = {
 };
 export function openSql(
   connection: P2aRuntimeConfig["database"],
+  max: 1 | 5 = 5,
 ): postgres.Sql {
-  return postgres({
+  // postgres3.4.9 reads PG<OPTION> for every omitted default. Pin its entire default table.
+  // sslnegotiation/max_pipeline exist in its runtime but are omitted by its shipped TS declarations.
+  const options: postgres.Options<Record<string, postgres.PostgresType>> & {
+    sslnegotiation: null;
+    max_pipeline: number;
+  } = {
     host: connection.host,
     port: connection.port,
     database: connection.name,
     username: connection.user,
     password: connection.password,
-    max: 5,
+    ssl: false,
+    sslnegotiation: null,
+    debug: false,
+    max,
+    max_pipeline: 100,
+    max_lifetime: 1800,
+    backoff: false,
+    keep_alive: 60,
+    prepare: true,
+    fetch_types: true,
+    publications: "alltables",
+    target_session_attrs: "read-write",
     connect_timeout: 3,
     idle_timeout: 10,
     onnotice: () => {},
@@ -32,7 +49,8 @@ export function openSql(
       application_name: "quizforge-p2a",
       search_path: "pg_catalog",
     },
-  });
+  };
+  return postgres(options);
 }
 
 export async function verifyDatabaseIdentity(
@@ -43,7 +61,8 @@ export async function verifyDatabaseIdentity(
   const [fact] =
     await sql`SELECT current_database() AS database, current_user AS role,
     current_setting('server_version_num')::int AS version,
-    inet_server_addr()::text AS address, inet_server_port() AS port,
+    host(inet_server_addr()) AS address, inet_server_port() AS port,
+    current_setting('listen_addresses') AS listen,
     shobj_description((SELECT oid FROM pg_database WHERE datname=current_database()), 'pg_database') AS marker`;
   if (
     !fact ||
@@ -52,6 +71,7 @@ export async function verifyDatabaseIdentity(
     fact.version !== config.server.version ||
     fact.address !== config.server.address ||
     fact.port !== config.server.port ||
+    (config.purpose !== "ci" && fact.listen !== "127.0.0.1") ||
     fact.marker !== `quizforge.p2a.v1:${config.instanceId}:${config.purpose}`
   )
     throw new StudioUnavailableError();
