@@ -49,3 +49,11 @@ received始终`not-run`/`publishable:false`，没有ZIP/P1/content/Product包内
 复审残留整改：namespace容量同时预留所有held且尚未落盘的目录及partial/archive/stopped/tmp峰值，不能凭锁失效、目录缺失或已发布receipt提前撤销预留；只有DB明确released后去除。每次upload最多发起一次receipt写入尝试，成功发布后不会再产生新temp；writeStopped已有完全匹配receipt时只读幂等返回，冲突拒绝。StorageLock.query改工厂，在assert之后才开始异步查询，避免旧连接的无人观察reject。
 
 本轮证据：19域单元、真实4文件33用例通过。新增late测试为真实PG+真实文件、窄受控mkdir/open延迟：1023目录时旧held晚到mkdir占第1024槽，后继拒绝claim/body；8184已扫描项加旧held缺文件与新attempt的总峰值超限时后继拒绝，原IO仍等实际settle。发布receipt后afterFreeze停顿、PG实际断锁、另一fresh恢复released后旧操作继续，没有新增temp写入。纯失效query工厂未调用且无unhandledRejection。配额修复后的完整test:db已通过16文件194用例，但发生在本轮三个残留修复前，完整复验须再执行。
+
+收尾证据：三个残留修复后完整test:db通过17文件198用例（135.99s），包含真实60秒；全仓test通过40文件554单元。额外旧0007实际函数/迁移事实拒启用、重放0008后启用、operator disable阻断完成、revision/fence上限写前拒绝，通过相关真实3文件20用例。取消调用保留source对象接收者。
+
+最后求值顺序整改：StorageLock在任何查询工厂之前固定剩余ms，Promise.resolve().then(work)立即接管其结果；acquire同样先left()再创建SET/try-lock工作，reserve/unlock亦由Promise链接管。工厂主动越过deadline或触发abort后reject均受观察；单独Node子进程验证两种情况，没有原始异常输出或PG连接。窄单元2文件9用例与真实storage网络/late两文件9用例通过；最终format:check、全仓lint/typecheck通过，A测试实例已停止。没有再重跑完整DB或新增业务方向。
+
+最终A流交接：专属purpose=test实例 `275408bf8a01e0ef239956596379b11d` 已用受管CLI正常stop，status再次确认stopped，独占55421端口可重新bind（布尔探针true）。私有实例/配置保留可恢复；没有遗留A测试子进程、TCP转发器或浏览器服务器。storage/runtime/CLI及相关测试文件修改完成，交回总控做集成注释/构建/生产E2E/CI/PR及独立复验，不继续B2-2/后续方向。
+
+最后窄修复的类型推断曾失败，已显式固定ReservedSql泛型与pinned句柄后再次typecheck成功；最后9单元（含独立Node）及9真实网络/late用例是在预算先算、Promise观察链调整后的实际结果。本文件将全仓198域/554单元、46driver与最终窄验证分别列明，未把较早的全仓结果冒称最后head已重跑全DB。总控按精确整合head统一复验。

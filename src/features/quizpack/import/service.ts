@@ -151,7 +151,7 @@ async function preflight(
 async function cancelSource(source: ReceiveSource): Promise<boolean> {
   let timer: ReturnType<typeof setTimeout> | undefined;
   const done = Promise.resolve()
-    .then(source.cancel)
+    .then(() => source.cancel())
     .then(
       () => true,
       () => false,
