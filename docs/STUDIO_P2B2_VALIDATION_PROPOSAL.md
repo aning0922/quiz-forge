@@ -1,6 +1,6 @@
 # B2-2：实际复验与 Product 私有资源归档提案
 
-日期：2026-10-12。状态：**仅提案，未冻结、未实现、未验收**。分析基线为 `codex/quizpack-receipt` 的 `5f2f8e5`；B2-1 两条实现流仍在进行。本文件不修改其冻结合同、不授权提前运行迁移或服务。B2-1 收口后，总控先核实际实现再冻结本批接口、迁移及检查条件。
+日期：2026-10-12。状态：**仅提案，未冻结、未实现、未验收**。分析基线为 `codex/quizpack-receipt` 的 `5f2f8e5`；B2-1 两条实现流仍在进行。本文件不修改其冻结合同、不授权提前运行迁移或服务。总控已技术决定采用选项 B，先设独立 launcher 可行性里程碑，B2-1 完成后才实施；这不是 B2-2 合同冻结。B2-2 的 A/B 实现流均未启动，收口后仍须先核实际实现再冻结接口、迁移及检查条件。
 
 依据：[P2-B 总预案](STUDIO_P2B_PREFLIGHT.md)、[B2-1 冻结合同](STUDIO_P2B2.md)、[P1 合同](QUIZPACK_P1.md)、[资源归属](ASSESSMENT_RESOURCES.md)、[P3 表现版本预案](PRESENTATION_P3_PREFLIGHT.md)。以下新增服务、表与状态均为建议名称，不是现有 API。
 
@@ -24,7 +24,7 @@
 3. 完整验证使用同一 archive 快照、冻结的可信 compatibility policy 和有效 limits。只有六项 checks 全 passed、`candidateValid=true` 且全部 hash 一致，预检候选才可进入归档。初版允许两次受限解压，第二次不能重置总期限，也不能换成另一 ZIP/JSON 解码器。
 4. 候选内部固定实际 manifest/content、资源字节与声明；再次核对资源清单、每项 hash/bytes 和报告绑定。任何差异失败关闭；不能凭报告 passed 从另一路径补取文件。
 
-外层建议沿用 B2-1 的 `{signal, deadlineMonotonicMs}`：Handler 起点 60 秒，包含鉴权、扫描、两次读取/解压、完整解码、归档及完成事务之前的检查。P1 自身 60 秒、单图 5 秒只可被外层进一步收紧，不延长；定时器之外在每个不可逆阶段前检查绝对剩余预算。IO 已发出而超时仍须如实等待 settle/记录未知，不声称 OS 硬实时。
+外层建议沿用 B2-1 的 `{signal, deadlineMonotonicMs}`：Handler 起点 60 秒，包含鉴权、扫描、两次读取/解压、完整解码、归档及完成事务之前的检查。P1 自身 60 秒、单图 5 秒只可被外层进一步收紧，不延长；定时器之外在每个不可逆阶段前检查绝对剩余预算。IO 已发出而超时仍须如实等待 settle/记录未知，不声称 OS 硬实时。稳定 policy limits/`effectiveLimitsHash` 与本次 request absolute deadline 分开：前者固定证据键，后者仅收紧本次执行预算，不把剩余时间混入政策 hash。可信 P1 桥接仍须另补，完整验证要绑定同一快照、冻结政策和 launcher 事实；现有入口不代表已完成此适配。
 
 ## 身份、版本和兼容边界
 
@@ -52,13 +52,13 @@
 
 ## 包身份、幂等和状态
 
-`validation_key` 由服务端 canonical 绑定计算：原 import/received hash 与 bytes、目标 Product、实际 validator bundle ID、P1 版本/policy/兼容 hash/limits hash、后台 synthetic/归档 policy version。客户端不选择 policy、validator 或证据。部署 bundle ID 要有固定代码来源（发布时固定构建标识或受审验证模块摘要），不能只拿 P1 的 `1.0.0` 代表此后任意代码；hash 也不是签名或审批。
+`validation_key` 由服务端 canonical 绑定计算：原 import/received hash 与 bytes、目标 Product、实际 validator bundle ID、P1 版本/policy/兼容 hash/limits hash、后台 synthetic/归档 policy version。客户端不选择 policy、validator 或证据。部署 bundle ID 要绑定受审 worker 代码、Node/sharp/libvips 等 native 依赖、launcher policy，以及固定容器镜像 digest/受支持平台组合，不能只拿 P1 的 `1.0.0` 代表此后任意代码；hash 也不是签名或审批。
 
-建议状态：`validating → validated → archiving → ready`；确定的技术/后台 policy 失败为 `rejected`；可恢复 IO/期限失败为 `retryable-failed`；提交未知保留实际已知阶段与 `storage_condition=unknown`，不臆造 failed。`received` 原记录不参与这组转换。
+建议状态：`validating → validated → archiving → ready`；确定的内容/后台 policy 失败为 `rejected`；运行 timeout、cancel、worker fail 与可恢复 IO 在实际停止已确认时为 `retryable-failed`，不能把内容永久判为 rejected；提交未知保留实际已知阶段与 `storage_condition=unknown`，不臆造 failed。`received` 原记录不参与这组转换。
 
 - 同证据键重复 POST：先当前鉴权，查已有结果；ready/rejected 返回原结果，进行中返回状态冲突/busy，retryable-failed 仅由显式 recover 推进。同一 POST 自动重发不能增加执行 attempt。
 - 完整技术成功后，在短事务取得规范包身份：对 `canonical_validation_id IS NULL AND validated_at IS NOT NULL` 建 `(product_id,pack_id,pack_version)` 部分唯一约束。同身份异 archive hash 拒绝；同 hash 链接已取得身份的 canonical validation（复合 Product FK），不覆盖原证据。规范行的身份/hash 永不释放，归档失败也不让另一份字节占位。
-- alias 只指向直接 canonical 行，不允许链/环；报告属于本次 validator/policy，不能复制旧报告冒充重验。相同 archive 的另一 import 可各自保留请求和技术记录，再复用同一 Product 资源事实。规范身份冲突和资源声明冲突均留下可读拒绝结果。
+- alias 必须同 Product、同包身份、同 archive hash/bytes，直接指向 `canonical_validation_id IS NULL` 的 canonical 行，不允许链/环；报告属于本次 validator/policy，不能复制旧报告冒充重验。相同 archive 的另一 import 可各自保留请求和技术记录，再复用同一 Product 资源事实。规范身份冲突和资源声明冲突均留下可读拒绝结果。
 - 拒绝包不取得规范身份。若技术成功后资源声明发生冲突，保留该已取得包身份及证据，本次归档拒绝；不得释放身份允许同版本改字节“修复”。
 - 建议每 Product 同时最多 20 条未完成 validation，独立于 B2-1 接收意图上限；幂等重放先查旧记录。全实例扫描/记录上限同时约束历史增长，到限提示维护，不悄悄 GC。
 
@@ -70,6 +70,8 @@
 
 P1 当前 unverified 仍包含数据库导入/发布；不回写历史 P1 报告去删除它。UI 分别显示“P1 技术检查”“后台私有资源已归档”，说明后者是新增服务证据。包内 approval=approved、commercialUse/redistribution=true 只保存为 claim，product_asset 平台状态仍 unverified。
 
+`product_asset.source_validation_id` 只记录首次资源来源；复用资源不能改写它，本次 validation 仍须保留独立 asset-set 证据，不能拿首次来源代替此次集合确认。
+
 `ready` 必须在一个完成事务内同时成立：当前身份/角色/能力与 Product active、received 绑定未变、当前 validation fence/lease 正确、技术候选固定、每个 blob 的物理事实已确认、全部 product_asset 精确一致、asset-set hash 一致、审计写入。没有一个资源可以因 INSERT conflict 被静默跳过。事务前完成文件核验；事务中不读文件/解码/hash。
 
 ## 私有存储、配额和扫描
@@ -78,9 +80,9 @@ P1 当前 unverified 仍包含数据库导入/发布；不回写历史 P1 报告
 
 只由主服务逐个资源写临时文件，hash/bytes 校验、sync/close 后同文件系统 no-clobber 冻结。已有同 hash 目标必须重读核 byte/hash/媒体事实，冲突不覆盖。不依赖 POSIX rename 覆盖目标，也不以 readonly TS 类型声称物理不可变；此处 immutable 指应用/DB 写入合同。
 
-配额仍为同实例受管文件 **512MiB 总逻辑字节**。接收原包、全部旧残留、已有 blob、待清理/unknown/orphan，以及 B2-1/B2-2 未覆盖的 held headroom 全部参与同一计量。B2-2 启用后，B2-1 新接收也必须调用升级后的统一计量；否则两功能各自合格仍会超总额。
+配额仍为同实例受管文件 **512MiB 总逻辑字节**。接收原包、所有旧 namespace 的残留/held/unknown、已有 blob、待清理/orphan，以及 B2-1/B2-2 未覆盖的 held headroom 全部参与同一计量，临时/最终双名同时存在时不得少计。B2-2 启用后，B2-1 新接收也必须调用升级后的统一计量；否则两功能各自合格仍会超总额。
 
-推荐每次实际执行先保守预留 `2 * 64MiB + 64KiB`，覆盖最坏实际资源总量的临时/最终双名及有限 receipt；原包存量额外计入，不能包含在这份新预留中抵扣。预检得到资源总量后可继续保留全额至结束，首批不做中途缩额优化。媒体解码的 RAM/RSS、DB JSON/WAL 不属于文件逻辑配额，不能由此宣称全实例磁盘/RAM 硬限额；ENOSPC 仍独立失败。
+推荐每次实际执行先保守预留 `2 * 64MiB + 64KiB`，覆盖最坏实际资源总量的临时/最终双名及有限 receipt；原包存量额外计入，不能包含在这份新预留中抵扣。预检得到资源总量后可继续保留全额至结束，首批不做中途缩额优化。容器镜像、媒体解码 RAM/RSS、DB JSON/WAL 不属于这份逻辑字节配额，512MiB 不能声称为镜像/RAM/DB WAL 或全实例磁盘硬限额；ENOSPC 仍独立失败。
 
 建议资源串行提升，单 validation 目录最多 16 文件（仅受控 attempt partial、stopped receipt/原子临时名），最多 1024 validation 目录；blob 平层最多 4096 文件。与原 imports 一起，全次扫描仍最多 8192 目录项/5秒，采用有界迭代，不递归未知目录；所有记录查询有 `limit+1`，原接收记录和 validation 各最多1024，超限拒绝新增 IO。receipt 实际读取仍单份2048、当前对象最多3份。任何阈值先到即保守维护；这些新增形状/上限需冻结，旧 scanner 的“拒绝未知目录”不能原封不动接入新 namespace。
 
@@ -94,7 +96,7 @@ P1 当前 unverified 仍包含数据库导入/发布；不回写历史 P1 报告
 
 validation lease 建议120秒、每请求总期限60秒；心跳只检测持锁连接健康，不无限续期。租约过期/锁空闲本身不证明旧任务停止。原 upload attempt 不动，复验有自己的 attempt/fence/停止记录；recover 增当前 validation fence、校验旧 attempt 的不可变 owner/fence，不追加 attempt。真正重新跑验证或归档时才追加新的执行 attempt，最多3次，不能靠 recover 无限重跑。
 
-停止 receipt 只有全部 archive reader、解压 iterator、媒体 child 的 `close`、write/sync/link/unlink/close 均 settle 且无晚到写后才可写。DB断连取消后，已发出的文件 IO 不能被逻辑 abort 倒推成未发生。无停止证明保留 reservation、路径与 RECOVERY_REQUIRED。
+停止 receipt 只有全部 archive reader、解压 iterator、媒体 worker 的实际停止核验与 stdio settled、write/sync/link/unlink/close 均 settle 且无晚到写后才可写。Docker CLI exit 或 host ESRCH 不证明实际 container 停止；必须使用服务端生成的有界身份核验实际 stop/wait，未知则保留预留，不盲重试。DB断连取消后，已发出的文件 IO 不能被逻辑 abort 倒推成未发生。无停止证明保留 reservation、路径与 RECOVERY_REQUIRED。
 
 | 故障点                                     | 处理与恢复                                                                                                                 |
 | ------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------- |
@@ -109,15 +111,17 @@ validation lease 建议120秒、每请求总期限60秒；心跳只检测持锁�
 
 恢复只处理本次 validation 的受管临时对象；永不删除 received 原包，首批也不删除最终 blob。已经 validated 的记录可在同一冻结 bundle/policy 下由原 archive 重建候选并核全部绑定后继续归档；这次有界读取不是偷偷修改技术报告。若可用代码不再支持旧 bundle/版本，则返回需新验证，不把新验证伪装成旧恢复。新版本不能因 alias 自动跳过实际 P1 复验。
 
-## 媒体子进程：必须显式决策的隔离边界
+## 媒体子进程：已选路线与 launcher 可行性闸门
 
 [media.ts](../src/features/quizpack/v1/media.ts) 当前调用普通 `spawn(process.execPath, ...)`，仅 stdin 输入 bytes、stdout 输出有界事实、精简 env，等待 child close；[worker](../src/features/quizpack/v1/media-worker.mjs) 只用 buffer loader/内存完整解码。没有归档路径、写句柄、数据库配置或归档 IPC API，是可复用的只读应用职责。
 
 但它与主进程同 UID，没有 OS 沙箱。0700/0600 对同 UID 不构成权限隔离，不传路径也不能阻止受损 native decoder 探索文件系统。因此 B2-1 “媒体子进程不能拥有归档目录写权限”若指 OS 强制禁写，**当前实现不满足，不能原样冻结为已解决**。
 
-**选项 A（待总控决定，未获批准）**：本批维持本机运营 synthetic 工具链，仅不传 path/handle、由父进程唯一写入，并等待 child close；明确没有 OS 恶意 native 隔离。需要总控在冻结 B2-2 时显式处理原条文的威胁模型，本文不能静默削弱已冻结条文。实现成本较小：接入现有字节 worker、取消/close 屏障、停止证据和真实子进程故障测试。验证必须包括无归档路径/写句柄/secret 传递、异常解码 kill 后实际 close、子进程尚未 close 时不能写 stopped receipt。主进程 ESRCH 不能单凭“child 没拿路径”冒称任意恶意后代已停止；没有 child 完成证据的崩溃窗口仍需保守维护，冻结时不能漏掉该可用性成本。
+**选项 A（未采纳、未实施，保留取舍记录）**：本批维持本机运营 synthetic 工具链，仅不传 path/handle、由父进程唯一写入，并等待 child close；明确没有 OS 恶意 native 隔离。需要总控在冻结 B2-2 时显式处理原条文的威胁模型，本文不能静默削弱已冻结条文。实现成本较小：接入现有字节 worker、取消/close 屏障、停止证据和真实子进程故障测试。验证必须包括无归档路径/写句柄/secret 传递、异常解码 kill 后实际 close、子进程尚未 close 时不能写 stopped receipt。主进程 ESRCH 不能单凭“child 没拿路径”冒称任意恶意后代已停止；没有 child 完成证据的崩溃窗口仍需保守维护，冻结时不能漏掉该可用性成本。
 
-**选项 B（待总控决定，未实施）**：只为该 worker 引入平台限定的真实 FS 沙箱/无归档可写挂载；未知平台 fail closed。运行代码/依赖只读，候选仅字节/只读输入，全部 runtime/admin/PGDATA/uploads 不可见或不可写，无继承写 FD/密钥、网络和归档 IPC。成本是新增平台 launcher、能力探测、打包/CI 路径与失败关闭行为，不扩为通用执行平台。验收须让实际同类 worker/native sharp 尝试创建、改写、链接、删除归档及运行凭据路径并被 OS 拒绝，同时验证正常三格式解码、取消/回收与未知平台拒绝。不能把 Node 参数、cwd、env 清空或 mock 测试当作 OS 隔离；具体平台机制另审，本文不研究外部产品或安装依赖。
+**选项 B（总控已技术选定，未冻结、未实施）**：只为该 worker 引入平台限定的真实 FS 沙箱/无归档可写挂载；未知平台 fail closed。运行代码/依赖只读，候选仅字节/只读输入，全部私有 runtime/admin/PGDATA/uploads 不挂载且不可读写，不挂载整个 repo 或 Docker socket；无继承写 FD/密钥、网络或委托 IPC。正常 Node/native 线程可用，额外进程必须拒绝。成本是新增平台 launcher、能力探测、打包/CI 路径与失败关闭行为，不扩为通用执行平台。验收须让实际同类 worker/native sharp 尝试创建、改写、链接、删除归档及运行凭据路径并被 OS 拒绝，同时验证正常三格式解码、取消/回收与未知平台拒绝。不能把 Node 参数、cwd、env 清空或 mock 测试当作 OS 隔离；具体平台机制另审，本文不研究外部产品或安装依赖。
+
+Astra 预审已完成并确认上述边界需进一步冻结，**不代表 launcher 或 B2-2 已通过验收**。先做独立、限时的 launcher 可行性里程碑：服务端生成有界执行身份并绑定受支持 OS/架构、native 依赖和 launcher policy，容器再固定镜像 digest；身份、实际 stop/wait、stdio settled 必须形成可核验事实。两平台均须用正常 PNG/JPEG/WebP、native 失败及拒读/拒写/拒网络/拒额外进程/禁止委托 IPC 探针取得真实证据。`--read-only`、`--network none`、seccomp 参数或 CLI 退出码都不是验收证明；未知能力或停止结果失败关闭，保留必要对象与计量，绝不回退裸 spawn。
 
 synthetic 字段本身不能缓解恶意图片风险；如需更窄首批入口，可增加服务端已审合成夹具 archive hash allowlist，完整 P1 复验仍执行。它显著限制运营可用性，也不是沙箱替代物，需总控明确采纳才进入合同。
 
@@ -145,7 +149,7 @@ DTO 含 ID/Product/import、状态/revision、只读版本/hash/检查摘要、�
 
 ## 拆分、验收和留后边界
 
-建议先后两次内部集成检查，同属 B2-2：A 先交表/DTO/绑定与 P1 候选适配器，真实 PG 保存成功/拒绝证据；随后完成私有 blob/product_asset、恢复与配额，B 接 HTTP/页面。第一检查点不能显示 ready，也不作为半完成业务对外开放。A 独占迁移/SQL/文件/验证服务；B 独占 Handler/运营 UI；总控管理共享 runtime/配额、P1 必要接口调整、构建 guard、Playwright 敏感 project 与3100，避免两流各造鉴权或存储。
+最小顺序为：B2-1 完成后先取得 launcher 两平台正常三格式/native 失败探针的实际证据 → 同字节可信 P1 桥接与持久化上限 → 私有归档/显式恢复/HTTP UI。launcher 未通过不启动后续两条实现流；通过后先由 A 交表/DTO/绑定与 P1 适配器、真实 PG 成功/拒绝证据，再完成 blob/product_asset、恢复与配额，B 接 HTTP/页面。第一检查点不能显示 ready，也不作为半完成业务对外开放。A 独占迁移/SQL/文件/验证服务；B 独占 Handler/运营 UI；总控管理共享 runtime/配额、P1 必要接口调整、构建 guard、Playwright 敏感 project 与3100，避免两流各造鉴权或存储。
 
 | 必验             | 证据                                                                                                                                                              |
 | ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -162,7 +166,7 @@ B2-3 才将 ready 候选应用为首个不可变 draft revision，原 new-draft 
 ## 供总控冻结的最少决定
 
 1. **接受独立 validation 表和三表增量**，保留 received 不变；先证据、后资源归档，不顺带建 draft。推荐接受。
-2. **媒体写权限的实际含义**：在选项 A（本机受控职责、明确无恶意 native 隔离）与 B（平台限定真实 FS 沙箱、未知平台 fail closed）间另作技术决定。两者都未获本提案批准；不接受把现状写成 OS 禁写，也不擅自削弱 B2-1 冻结条文。是否进一步限定已审 fixture hash 由总控按隔离取舍决定。
+2. **隔离路线已选 B，合同仍待冻结**：先独立 launcher 可行性里程碑，B2-1 完成后才实施；A 不作回退。严格不可读/IPC 禁止、两平台实际证据和停止权威未完成前，不能把现状写成 OS 隔离通过；fixture hash allowlist 仍是另项决定。
 3. **统一配额与执行限额**：推荐512MiB全局、128MiB+64KiB新处理峰值、60秒外层/120秒lease、最多3执行attempt、上述有界扫描；实际 B2-1 实现合入后核一次账目和文件guard复用。
 4. **包身份与证据版本**：推荐保留 packId 与 Product 独立字段、canonical 身份部分唯一、服务端 bundle/policy 绑定及 v1-only dispatcher；不为 future v2 放宽当前验证。
 
@@ -170,7 +174,7 @@ B2-3 才将 ready 候选应用为首个不可变 draft revision，原 new-draft 
 
 ## 追加：选项 B 的窄范围可行性调查
 
-2026-10-12 追加，**仍是调查证据，不改变上述提案/选项未冻结状态**。上一节“没有执行测试”描述初始提案编写；本次只另行执行下述授权合成沙箱探针，未运行项目测试、PG、HTTP、容器或迁移，未安装依赖、修改生产代码或读取私有配置。
+2026-10-12 追加，**仍是调查证据；总控已选 B，但不改变 B2-2 合同/launcher 未冻结、未实施状态**。上一节“没有执行测试”描述初始提案编写；本次只另行执行下述授权合成沙箱探针，未运行项目测试、PG、HTTP、容器或迁移，未安装依赖、修改生产代码或读取私有配置。
 
 **本机实测。** macOS 26.6.2（25G83）、arm64，Node v20.20.1、sharp 0.35.5，系统已有 `/usr/bin/sandbox-exec`；`command -v` 未找到 bwrap/unshare。系统随附 `man sandbox-exec` 和 `man sandbox_init` 均明确标记 DEPRECATED，建议正式 app 使用 App Sandbox；不能假定该 profile 接口获得长期兼容承诺。Apple 官方论坛也记录这一限制，见[官方开发者讨论](https://developer.apple.com/forums/thread/661939)。
 
@@ -190,8 +194,8 @@ B2-3 才将 ready 候选应用为首个不可变 draft revision，原 new-draft 
 
 **Linux CI 只有配置/官方材料证据，未实测。** 当前[workflow](../.github/workflows/ci.yml) 固定 `ubuntu-24.04` 标签并由 setup-node 指定 Node 24；标签不固定 kernel/image patch。[CI 服务脚本](../scripts/ci-p2a-service.sh) 已依赖 Docker，仅启动固定 digest 的 PostgreSQL18.4 容器；未为媒体启动沙箱。调查时 [GitHub 官方 runner inventory](https://github.com/actions/runner-images/blob/main/images/ubuntu/Ubuntu2404-Readme.md) 标示 image `20261004.327.1`、Ubuntu24.04.5、kernel6.17.0-1022-azure、Docker28.0.4；这是可变清单，不是本项目某次 CI 的实际机器记录。清单没有 bwrap 条目，不据此断言它绝不存在。
 
-- 现有 Docker 工具链使 Linux 只读镜像/最小只读依赖挂载、无归档挂载、`--network none`、drop capabilities/no-new-privileges 成为候选；[Docker run 官方说明](https://docs.docker.com/reference/cli/docker/container/run/) 支持这些隔离配置。但需要匹配 Node/sharp 的受审镜像与固定 digest，不能复用 PG 镜像就声称能解码。
+- 现有 Docker 工具链使 Linux 只读镜像/最小只读依赖挂载、无归档挂载、`--network none`、drop capabilities/no-new-privileges 成为候选；[Docker run 官方说明](https://docs.docker.com/reference/cli/docker/container/run/) 支持这些隔离配置；[Docker wait 官方说明](https://docs.docker.com/reference/cli/docker/container/wait/) 定义实际容器停止等待，launcher 还须按自己的有界身份核验停止并等待 stdio settled。但需要匹配 Node/sharp 的受审镜像与固定 digest，不能复用 PG 镜像就声称能解码。
 - 默认 Docker seccomp **不等于禁止所有子进程**，见[官方 seccomp 文档](https://docs.docker.com/engine/security/seccomp/)。自定义策略须保留 Node/libvips 必要线程并拒绝新增进程/不需要的网络调用，实际测 fork/vfork/clone 等路径；不能用 pids-limit=1 把线程一起禁掉后宣称生产可用。
 - bwrap 是另一个小 launcher 候选，但其[上游文档](https://github.com/containers/bubblewrap)说明具体安全边界由调用参数决定；不能只因命令存在就通过。[Ubuntu24.04 官方说明](https://documentation.ubuntu.com/release-notes/24.04/#unprivileged-user-namespace-restrictions)记载默认 user namespace 限制，必须在实际 runner 测试，不修改全局 sysctl 来绕过。本轮没有安装或启动它。
 
-因此不能承诺“mac + Linux CI 已经零新增成本打通”。最小下一步若总控选择 B，是一个独立、限时的 launcher/探针工程：mac 收窄 profile；Linux 在真实 CI 选已有 Docker 路径或经验证的 bwrap；两端以同一正常解码/拒写/拒网/拒子进程/凭据不可读矩阵退出。任一端缺机制或探针失败都 fail closed。调查到此停止，不拖延 B2-1，也不把 A 当默认回退。
+因此不能承诺“mac + Linux CI 已经零新增成本打通”。总控已选择 B；B2-1 完成后的最小下一步是独立、限时的 launcher/探针工程：mac 收窄 profile；Linux 在真实 CI 选已有 Docker 路径或经验证的 bwrap；两端以同一正常 PNG/JPEG/WebP/native 失败、拒读写/拒网/拒额外进程/凭据不可读/禁止委托 IPC 及实际停止/stdio settled 矩阵退出。任一端缺机制或探针失败都 fail closed。调查到此停止，不拖延 B2-1，也不把 A 当默认回退。
