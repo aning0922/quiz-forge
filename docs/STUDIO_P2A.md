@@ -6,7 +6,7 @@
 
 实现隔离 PostgreSQL 生命周期、可重复迁移、独立运营身份/会话/审计、登录退出及最小 Studio 两页。新增真实数据库集成检查，不用空表或假成功 UI 冒称后台。Product/目录/草稿/导入留 P2-B，结构预览/送审留 P2-C；本里程碑没有消费者授权、发布、Key、第三方身份或远端开放。
 
-唯一 profile 为 local-http-p2a；仅精确 http://127.0.0.1:<显式端口>，绑定 loopback。拒绝 localhost 别名、通配符、代理推导和非本地 profile。Next 构建与模块导入不连接 DB；缺失/错误配置时 Studio 明确不可用，研究页面照常构建。
+唯一 profile 为 local-http-p2a；仅精确 http://127.0.0.1:<显式端口>，绑定 loopback。HTTP 端口使用 canonical 十进制 1024..65535，避免特权端口及 URL 默认端口规范化歧义。拒绝 localhost 别名、通配符、代理推导和非本地 profile。Next 构建与模块导入不连接 DB；缺失/错误配置时 Studio 明确不可用，研究页面照常构建。
 
 ## 固定认证政策
 
