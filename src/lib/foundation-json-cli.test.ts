@@ -1,7 +1,7 @@
 import { spawn, spawnSync } from "node:child_process";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { basename, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { FOUNDATION_JSON_MAX_BYTES } from "./foundation-json";
@@ -27,6 +27,43 @@ const run = (
     },
   );
 
+// CI installs pnpm directly; use the test runner's actual entrypoint without requiring corepack.
+const pnpmEntrypoint = process.env.npm_execpath;
+const pnpmExecutable =
+  pnpmEntrypoint && /^pnpm(?:\.[cm]?js)?$/.test(basename(pnpmEntrypoint))
+    ? pnpmEntrypoint
+    : "pnpm";
+const runPnpm = (
+  script: "foundation:check" | "foundation:schema",
+  args: string[] = [],
+  input?: string,
+) => {
+  const commandArgs = ["--silent", script, ...args];
+  const nodeEntrypoint = /\.[cm]?js$/.test(pnpmExecutable);
+  return spawnSync(
+    nodeEntrypoint ? process.execPath : pnpmExecutable,
+    nodeEntrypoint ? [pnpmExecutable, ...commandArgs] : commandArgs,
+    {
+      cwd: root,
+      input,
+      encoding: "utf8",
+      timeout: 10_000,
+      maxBuffer: 2 * FOUNDATION_JSON_MAX_BYTES,
+    },
+  );
+};
+
+function strictPackageJson(result: ReturnType<typeof runPnpm>) {
+  expect(result.error).toBeUndefined();
+  expect(result.stderr).toBe("");
+  expect(result.stdout).not.toContain(root);
+  expect(result.stdout).not.toMatch(
+    /ELIFECYCLE|quiz-forge@|\/Users\/|[A-Z]:[\\/]/,
+  );
+  // Parsing the complete stdout rejects any banner or extra lifecycle log line.
+  return JSON.parse(result.stdout);
+}
+
 function rejected(result: ReturnType<typeof run>, code?: string) {
   expect(result.error).toBeUndefined();
   expect(result.status).toBe(1);
@@ -43,6 +80,39 @@ function rejected(result: ReturnType<typeof run>, code?: string) {
 }
 
 describe("real foundation CLI subprocesses", () => {
+  it("returns pure JSON through the documented pnpm --silent check entrypoint", () => {
+    const result = runPnpm("foundation:check", [
+      fixture,
+      "--product",
+      productId,
+    ]);
+    expect(result.status).toBe(0);
+    expect(strictPackageJson(result)).toMatchObject({
+      structurallyValid: true,
+      referenceValid: true,
+      publishable: false,
+      issues: [],
+    });
+  });
+
+  it("retains pure JSON and a nonzero exit through pnpm --silent on bad input", () => {
+    const result = runPnpm(
+      "foundation:check",
+      ["-", "--product", productId],
+      '{"SYNTHETIC_PRIVATE_SENTINEL":',
+    );
+    expect(strictPackageJson(result).publishable).toBe(false);
+    rejected(result, "JSON_SYNTAX");
+  });
+
+  it("returns pure JSON Schema through the documented pnpm --silent entrypoint", () => {
+    const result = runPnpm("foundation:schema");
+    expect(result.status).toBe(0);
+    const schema = strictPackageJson(result);
+    expect(schema.$schema).toBe("https://json-schema.org/draft/2020-12/schema");
+    expect(schema.properties.schemaVersion.const).toBe("foundation.v1");
+  });
+
   it("accepts file and stdin while retaining F1 limits on publishability", () => {
     for (const result of [
       run([fixture, "--product", productId]),
