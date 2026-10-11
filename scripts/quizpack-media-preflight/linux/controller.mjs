@@ -438,6 +438,8 @@ export async function executeSynthetic({
       "CAPABILITY_UNAVAILABLE",
       "DEPENDENCIES_CHANGED",
       "DEPENDENCIES_UNVERIFIED",
+      "RUNTIME_VERSION_UNAVAILABLE",
+      "RUNTIME_VERSION_CHANGED",
     ]);
     hooks.diagnostic?.({
       phase: "launcher-catch",

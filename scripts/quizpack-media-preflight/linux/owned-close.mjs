@@ -1,10 +1,17 @@
 // An owned ChildProcess handle, not ESRCH/exit, supplies the stdio close fact.
 // Each wait has one absolute monotonic budget; late close never changes its result.
-export function watchOwnedClose(child) {
+export function watchOwnedClose(
+  child,
+  timing = {
+    now: () => performance.now(),
+    setTimer: setTimeout,
+    clearTimer: clearTimeout,
+  },
+) {
   let closedAt = null;
   const waiters = new Set();
   child.once("close", () => {
-    closedAt = performance.now();
+    closedAt = timing.now();
     for (const notify of [...waiters]) notify();
   });
   return {
@@ -14,10 +21,17 @@ export function watchOwnedClose(child) {
         let timer;
         const finish = () => {
           if (done) return;
-          const now = performance.now();
-          if (closedAt === null && now < deadline) return;
+          const now = timing.now();
+          if (closedAt === null && now < deadline) {
+            timing.clearTimer(timer);
+            timer = timing.setTimer(
+              finish,
+              Math.max(1, Math.ceil(deadline - now)),
+            );
+            return;
+          }
           done = true;
-          clearTimeout(timer);
+          timing.clearTimer(timer);
           waiters.delete(finish);
           ok(
             Object.freeze({
@@ -31,7 +45,10 @@ export function watchOwnedClose(child) {
           );
         };
         waiters.add(finish);
-        timer = setTimeout(finish, Math.max(0, deadline - performance.now()));
+        timer = timing.setTimer(
+          finish,
+          Math.max(0, Math.ceil(deadline - timing.now())),
+        );
         finish();
       });
     },

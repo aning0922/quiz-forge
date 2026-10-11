@@ -92,3 +92,9 @@ normal矩阵新增原图带合法PNG ancillary chunk的精确8MiB样本、完整
 ## 父崩溃stdio预算修订
 
 Astra以真实父死/后代持stdio6.5秒复现无界await close的P2。harness改为SIGKILL前生成固定绝对5秒cleanupDeadline，通过真实ChildProcess close观察器在预算内等stdio；到期返回不可变unknown/ownerClosed:false，保留record/guard，跳过恢复。可以unref本轮句柄让harness结束，但不会把unref/destroy视作close或停止事实；超限stdout/stderr不再累计缓存。新增本机实际6.5秒后代持stdio回归，验证5秒时unknown、后来的close不改先前证明。真实Docker父崩溃矩阵仍待CI，不能用这个局部修复冒称全平台通过。
+
+## runtime门槛与早到timer真正接线
+
+`4f84f62`只新增runtime读取模块，接线脚本前置匹配失败，所以该提交标题不能当作每次版本门槛已生效；后继才在setup/loadPolicy实际复用并绑定engine/containerd/runc/init、同一绝对deadline/abort、runtime源码摘要，漂移关闭，恢复控制命令同样受跟踪。未重设5秒预算。
+
+Astra再次确定性复现c92的早到timer丢失到期事件。后继在now<absoluteDeadline时ceil并min1ms重排剩余预算，closedAt事实未出现到期仍unknown。新增5000.8预算/5000.2早到/永不close的确定性算法回归；该时间替身仅验证计时算法，不作为Linux/OS停止通过证据。
