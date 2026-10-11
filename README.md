@@ -2,7 +2,7 @@
 
 趣味测评商品研发、导入与运营平台。核心模式为 **Codex 精品商品研发 + QuizPack 标准化导入 + QuizForge 统一运行与运营**。面向移动端 H5，强调每个商品独立的视觉身份、确定性评分和一次正式完成后可反复查看的结果报告。后台 AI 为可选辅助，不是运行与发布依赖。
 
-**当前为 D0.1 工程收口，D0 有条件通过。** 可运行工程入口与主题研究页；已补充访问模型和 CI 基线，尚无真实测评、消费者目录、数据库业务、用户 Key、AI 生成、支付、后台认证或商品发布功能。全部方向示例明确标注为临时演示数据。D1 必须另行授权。
+**当前主线已包含历史人物完整合成体验与真实 PNG 海报导出（D1-C）。** 现由当前聊天接管 F1「测评与资源版本底座」，其他开发聊天暂停。前台仍为研究/演示，没有正式评分、AccessKey、数据库、管理后台或商品发布；F1 只实现局部运行时合同、归属/引用检查、草稿纯逻辑和合成参考包。最新事实见 [进度](docs/PROGRESS.md)，本轮范围见 [F1](docs/FOUNDATION_F1.md)。
 
 ## 本地运行
 
@@ -41,6 +41,8 @@ corepack pnpm test:e2e
 
 ## 路由
 
+历史人物完整合成演示位于 `/studies/visual-v2-c`，含封面、四厅十二题、本机恢复、固定合成报告和真实 PNG 导出；旧研究页面保留。下表为 D0 基础入口，不是完整路由列表。
+
 | 路由                 | D0 行为                          |
 | -------------------- | -------------------------------- |
 | `/`                  | 工程与三主题方向入口             |
@@ -59,16 +61,16 @@ src/
   app/                       # 路由、布局、全局样式
   components/                # 领域无关组件与 shadcn/ui 基础组件
   features/
-    quiz/                    # 内容、版本、评分边界（仅说明）
-    quizpack/                # 商品包构建/验证/导入边界（提案类型）
-    theme/                   # D0 主题简报与研究展示
-    report/                  # 不可变报告及海报边界（仅说明）
-    product/                 # 商品及发布边界（仅说明）
+    quiz/                    # 合成演示题目与进度解析；正式评分待实现
+    quizpack/                # F1 局部运行时契约；ZIP/构建/导入待实现
+    theme/                   # 主题配方与历史人物研究体验
+    report/                  # 合成展示 DTO 与真实 PNG 导出；正式快照待实现
+    product/                 # 测评工作区合同与草稿纯逻辑；真实发布待实现
     ai-generation/           # Schema 草稿与审核边界（仅说明）
     fulfillment/             # 渠道适配边界（仅说明）
   lib/                       # 通用工具；db 为预留说明
   config/                    # 工程元信息
-public/assets/themes/        # 待制作素材清单，非最终图片
+public/assets/themes/        # 研究素材与清单；商业批准仍按manifest
 tests/e2e/                   # 入口、路由、布局、动态偏好烟测
 docs/                        # 产品、架构、数据、视觉、阶段证据
 ```
@@ -87,8 +89,23 @@ docs/                        # 产品、架构、数据、视觉、阶段证据
 - [模块架构](docs/ARCHITECTURE.md)、[数据模型](docs/DATA_MODEL.md)
 - [QuizPack 提案规格](docs/QUIZPACK_SPEC.md)、[三种报告模式](docs/REPORT_MODES.md)
 - [视觉系统](docs/VISUAL_SYSTEM.md)、[D1 视觉验收](docs/D1_VISUAL_ACCEPTANCE.md)
-- [30 天路线图（计划）](docs/ROADMAP_30D.md)、[技术决策](docs/DECISIONS.md)
+- [阶段开发路线（计划）](docs/ROADMAP_30D.md)、[技术决策](docs/DECISIONS.md)
 - [阶段进度与限制](docs/PROGRESS.md)、[D0 验收证据](docs/D0_ACCEPTANCE.md)
 - [开源复用研究计划](docs/OPEN_SOURCE_REUSE_PLAN.md)、[D0.1 验收](docs/D0_1_ACCEPTANCE.md)
 
 尚未确认小红书经营类目与外部 H5 履约权限。平台保持独立，未来经合法授权再接入第三方销售及自动发货。
+
+## 测评工作区与后续开发
+
+一款测评对应一个 Product；题目/规则/结果/页面/私有素材均归该测评，发布版本固定内容与资源引用。后台按测评进入工作区，类目和标签只组织目录；数据库与认证后台为后续阶段。详见 [架构](docs/ARCHITECTURE.md)、[数据模型](docs/DATA_MODEL.md)、[资源归属](docs/ASSESSMENT_RESOURCES.md)、[开发路线](docs/ROADMAP_30D.md)。
+
+## F1 本地合同校验
+
+```sh
+corepack pnpm --silent foundation:check src/features/quizpack/fixtures/historical.foundation.json --product historical-synthetic
+corepack pnpm --silent foundation:schema
+```
+
+校验命令支持用 `-` 读取标准输入，JSON限1MiB和32层。成功只代表局部结构与归属/引用检查通过；输出始终包含 `publishable: false` 和 `unverified`。输入中的素材 approved/hash 为自报声明，不证明授权或文件字节。参考包仅合成数据；无真实图片、评分或发布能力。
+
+开发分工、模型和文件所有权见 [F1并行合同](docs/F1_COLLABORATION.md)。
