@@ -108,7 +108,7 @@ try {
     ],
     {
       cwd: root,
-      env: { NODE_ENV: "production" },
+      env: { NODE_ENV: "production", PATH: "/usr/bin:/bin" },
       stdio: "ignore",
       timeout: 10000,
     },
