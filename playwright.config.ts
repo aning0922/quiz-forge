@@ -11,7 +11,11 @@ export default defineConfig({
   projects: [
     {
       name: "mobile-chromium",
-      testIgnore: ["**/studio-auth.spec.ts", "**/studio-workspace.spec.ts"],
+      testIgnore: [
+        "**/studio-auth.spec.ts",
+        "**/studio-workspace.spec.ts",
+        "**/studio-imports.spec.ts",
+      ],
       use: {
         ...devices["Pixel 7"],
         viewport: { width: 390, height: 844 },
@@ -20,10 +24,28 @@ export default defineConfig({
     },
     {
       name: "desktop-chromium",
-      testIgnore: ["**/studio-auth.spec.ts", "**/studio-workspace.spec.ts"],
+      testIgnore: [
+        "**/studio-auth.spec.ts",
+        "**/studio-workspace.spec.ts",
+        "**/studio-imports.spec.ts",
+      ],
       use: {
         ...devices["Desktop Chrome"],
         viewport: { width: 1440, height: 1000 },
+      },
+    },
+    {
+      name: "studio-imports",
+      testMatch: "**/studio-imports.spec.ts",
+      dependencies: ["studio-workspace"],
+      fullyParallel: false,
+      workers: 1,
+      use: {
+        ...devices["Desktop Chrome"],
+        viewport: { width: 390, height: 844 },
+        trace: "off",
+        video: "off",
+        screenshot: "off",
       },
     },
     {

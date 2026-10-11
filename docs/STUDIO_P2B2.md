@@ -26,6 +26,8 @@ CLI在可能发出runtime修改之前，必须先在受管instance根创建固�
 
 CLI数据库连接失效会永久中止本操作，但已经发出的文件操作可能晚到；guard必须保留到全部写/sync/rename/close实际settle，之后只能按自身inode清除。不向后续操作宣称回滚；重新读取runtime确认实际值。既有guard的PID存活/复用/EPERM/未知时返回RECEIVE_BUSY，不删除、不等待无限期限。仅管理CLI可在有效strict guard的服务端PID被ESRCH证明结束后，取得storage锁、重核guard inode与内容、检查runtime有效性，清除旧guard并从头重新申请自己的guard；不重放旧目标。损坏/超限/链接guard返回RECEIVE_STORAGE_CONFLICT并保留维护，不因lease或锁空闲恢复。无需常驻进程管理器或新业务表。
 
+旧guard回收路径另需固定 `imports-config-recovery.guard`（同样O_EXCL/0600/strict有界身份），必须先独占它，再取得storage锁；从检查/删除死亡owner旧guard到重新申请自身新guard，以及所有相关IO settle之前持续持有。其他CLI和新导入写操作见该恢复guard即busy；普通CLI除最初检查外，取得自身guard后、任何runtime写前还须再次检查恢复guard不存在，避免检查与创建的竞态。恢复操作者只清除自己创建的恢复guard，按inode且全部IO settle后执行；该恢复guard残留时，本批保留维护，**不自动递归回收恢复guard**。不能让两个CLI仅依赖可失效的PG锁同时对同一路径执行晚到unlink。
+
 ## 固定限额与有界扫描
 
 以下固定值及超限保守维护策略已由总控冻结，实施者不能自行放宽。
@@ -155,7 +157,7 @@ interface ImportReceiveService {
 
 服务strict复核输入，不能只信Handler的TypeScript。共享DTO为browser-safe文件，service-contract及ReceiveSource单独server-only；内部path/ownerPID/nonce/lease/凭据不进入DTO。source.chunks只能在claim提交确认后迭代；HTTP层检查raw类型/编码，服务负责实际计量和hash。每次文件写入前先验证当前chunk将使累计字节不超过expectedArchiveBytes和32MiB；超出立即拒绝，不先写后在EOF检查，避免小expected值的预留不足以覆盖实际输入。
 
-Handler开始时即创建单调绝对deadline并组合request取消/60秒timer；A提供统一server-only上下文工厂与剩余预算检查，B负责finally清理timer。期限用同一performance.now时钟贯穿所有层，每次开始鉴权/取锁/扫描/读写/冻结/完成事务及其成功阶段前检查真实剩余时间，不能只等待signal.aborted。扫描子期限为min(总deadline,扫描开始+5000)，组合signal不重设deadline；有界DB语句也必须考虑剩余预算。期限后停止发起成功阶段，已经开始的不可取消IO仍须settle；提交回执未知仍是unknown。
+Handler开始时即创建单调绝对deadline并组合request取消/60秒timer；A提供统一server-only上下文工厂与剩余预算检查，B负责finally清理timer。期限用同一performance.now时钟贯穿所有层，每次开始鉴权/取锁/扫描/读写/冻结/完成事务及其成功阶段前检查真实剩余时间，不能只等待signal.aborted。扫描子期限为min(总deadline,扫描开始+5000)，组合signal不重设deadline；有界DB语句也必须考虑剩余预算。期限后停止发起成功阶段，已经开始的不可取消IO仍须settle；提交回执未知仍是unknown；已经确认提交成功的事实不能因返回前deadline到期而改报失败。
 
 ReceiveSource.cancel必须幂等，直接取消HTTP适配层已持有的reader，不依赖尚未开始的generator.return/finally。Handler的finally对未消费或失败body发起cancel，最多等待1秒，处理迟到reject，不无限await、不排空body。cancel正常resolve必须表示适配层在途read已settle且reader锁已安全释放；超时/reject不是停止证明。服务在abort时同样发起cancel，并在stopped receipt之前确认其自身在途迭代/read/write/sync/handle全部settle；无法确认时不写stopped、不假称清理完成，保留RECOVERY_REQUIRED与预留。仅Handler已返回错误不能证明attempt已停止。
 
@@ -265,4 +267,4 @@ B独占新增import handlers、`features/studio/imports/**`及状态页/上传�
 
 ## 总控确认记录
 
-总控已接受扫描1024目录/16文件/8192项、5秒子期限及receipt2048bytes/最多3份；接受20个未完成意图的上述定义，以及到扫描上限采用保守维护提示而非自动GC。总控已迁移至新阶段工作树并冻结。独立Astra前置审查登记两项P2：绝对期限与CLI晚到配置写；以上ReceiveContext和独占文件guard为对应修订，仍需实现及实际故障验收。普通技术细节不向用户重复追问，旧B1分支不启动或提交后续代码。
+总控已接受扫描1024目录/16文件/8192项、5秒子期限及receipt2048bytes/最多3份；接受20个未完成意图的上述定义，以及到扫描上限采用保守维护提示而非自动GC。总控已迁移至新阶段工作树并冻结。独立Astra前置审查登记两项P2：绝对期限与CLI晚到配置写；以上ReceiveContext和独占文件guard为对应修订，旧guard回收补充固定恢复互斥文件以覆盖晚到unlink，残留不递归自动回收；仍需实现及实际故障验收。普通技术细节不向用户重复追问，旧B1分支不启动或提交后续代码。

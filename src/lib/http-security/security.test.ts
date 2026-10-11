@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { performance } from "node:perf_hooks";
 import { emptyDto, loginDto, readStudioJson } from "./json";
 import { assertStudioSource, configuredHost } from "./source";
-import { errorResponse } from "./errors";
+import { errorResponse, StudioError } from "./errors";
 
 const config = {
   profile: "local-http-p2a" as const,
@@ -235,6 +235,49 @@ describe("actual bounded JSON and strict DTOs", () => {
     expect(response.headers.has("access-control-allow-origin")).toBe(false);
     expect(await response.json()).toEqual({
       code: "STUDIO_UNAVAILABLE",
+      requestId: "synthetic-request-id",
+    });
+  });
+});
+
+describe("bounded import conflict projection", () => {
+  it("exposes only the bounded revision on an import state conflict", async () => {
+    const error = Object.assign(new StudioError("IMPORT_STATE_CONFLICT", 7), {
+      path: "private-storage-path",
+      ownerNonce: "private-owner-nonce",
+      cause: new Error("private-driver-detail"),
+    });
+    const response = errorResponse(error, "synthetic-request-id");
+    expect(response.status).toBe(409);
+    expect(response.headers.get("cache-control")).toContain("no-store");
+    expect(await response.json()).toEqual({
+      code: "IMPORT_STATE_CONFLICT",
+      requestId: "synthetic-request-id",
+      currentRevision: 7,
+    });
+  });
+  it.each([0, -1, 1.5, 2147483648, Number.NaN])(
+    "does not expose an invalid import revision %s",
+    async (revision) => {
+      expect(
+        await errorResponse(
+          new StudioError("IMPORT_STATE_CONFLICT", revision),
+          "synthetic-request-id",
+        ).json(),
+      ).toEqual({
+        code: "IMPORT_STATE_CONFLICT",
+        requestId: "synthetic-request-id",
+      });
+    },
+  );
+  it("does not attach a revision to an unknown receive outcome", async () => {
+    const response = errorResponse(
+      new StudioError("WRITE_OUTCOME_UNKNOWN", 7),
+      "synthetic-request-id",
+    );
+    expect(response.status).toBe(503);
+    expect(await response.json()).toEqual({
+      code: "WRITE_OUTCOME_UNKNOWN",
       requestId: "synthetic-request-id",
     });
   });
