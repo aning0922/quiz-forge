@@ -36,3 +36,7 @@ create→inspect 参数/身份→start attach stdin→统一 kill（若仍 runni
 尚未完成：坏像素/动画和精确8MiB正常边界、host native对照、峰值测量及真实OOM证据、CLI丢失/create或stop应答丢失/daemon失联/身份不匹配/父崩溃/跨重启阻断/迟到控制 IO 的完整真实 Linux 矩阵。当前 smoke 结束摘要明确 accepted:false。某个断言失败会非零退出；unknown 会保留固定记录并导致后续关闭，不用清理掩盖错误。
 
 本机实际执行冻结安装、format:check、lint、typecheck、test（45文件/612项）、build（含trace guard）均通过；共享父端8项node:test通过，shell/node语法检查通过。候选在mac运行setup按预期关闭（失败码），不据此声称Linux能力。本批明确禁止占用3100，test:e2e未运行；未启动 Docker/DB/3100，没有真实 Linux/CI run URL。Linux平台仍关闭，B2-2业务接入仍未开始。总控收到首个入口 SHA 后接入独立 workflow 并回传真实 run 结果，再按失败证据修复候选及补齐矩阵；全部通过及独立审查之前不能验收该平台。
+
+## 首轮 CI 前追加的权限修订
+
+私有 Docker context 使用0600文件，COPY会保留模式；镜像构建必须显式 `a+rX` 后再 `a-w`，让非root能读取受审脚本/依赖，仍维持镜像只读政策。此修订尚无Linux实测，不把代码推断写成通过。首个入口提交为 `24752795f864a2443845861e1e3df9df20cc7d4c`，本小修订只改 Dockerfile 与本说明，其他生命周期扩展仍在独立后继提交。
