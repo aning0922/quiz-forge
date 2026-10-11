@@ -46,13 +46,15 @@
 | asset_blob          | `sha256 char64 PK`、实际 bytes、受限 MIME、width/height/frames、服务端 storage key、created_at。建议只插入物理已冻结且重新核验的完整 ready 行，没有空 bytes 或假 pending blob。归档中/孤儿由 validation 的计划、文件和预留承担；已存在 blob 必须核真实文件，不只查 DB。                                                                                                                                            |
 | product_asset       | 主键 `(product_id,resource_id,resource_version)`，blob hash FK，完整严格资源 declaration、declaration hash、purpose、`source_validation_id` 与同 Product 复合 FK、created_at；平台审核固定 `unverified`。只插入，声明相同幂等复用；同三元组不同声明或 blob 冲突，即使只改 license/evidence 也不可覆盖。                                                                                                            |
 
-冻结时建议数值限额：P1 原 content ≤1MiB、manifest ≤256KiB 不变；持久化 canonical content ≤2MiB、manifest ≤512KiB、单资源声明 ≤32KiB、单报告 ≤256KiB。超出后台持久化限额显式失败，不能截 JSON 后当完整内容；这些是建议新增后台上限，须经最大合法 P1 样本验证后冻结。失败尝试如保存 P1 report，按最多 3 份、累计 ≤768KiB 的严格证据数组保存，已写条目不可改；attempt 控制元数据与报告分字段限额，不沿用 B2-1 的 8KiB 控制数组容纳大报告。
+冻结时建议数值限额：P1 原 content ≤1MiB、manifest ≤256KiB 不变；持久化 canonical content ≤2MiB、manifest ≤512KiB、单资源声明 ≤64KiB、单报告 ≤256KiB，均按 UTF-8 canonical JSON 字节计。64KiB 的前提是显式后台持久化 policy 在写前拒绝 NUL/未配对 surrogate，并要求数据库与连接使用 UTF-8；该 policy 比当前 P1 Schema 窄，须绑定版本/hash 与稳定 validation_key，不能修补原内容、替换字符或截断后称原包通过。报告最多3份、净 payload 字节之和 ≤768KiB；数组包装与外层证据/attempt 控制元数据另有独立上限，数值仍待冻结，不沿用 B2-1 的 8KiB 控制数组容纳大报告。
+
+[持久化尺寸预检](QUIZPACK_PERSISTENCE_PREFLIGHT.md) 已记录纯 parser/canonical/引用证据及条件上界，不是完整 P1/DB 验收。当前 canonicalPackJson 沿用 F1 1MiB 硬限，raw 边界输入经科学数值规范化后可能超限；后续可信桥接须提供独立 P1 canonical 预算，不全局放宽 F1。任意 PackToolError 字符串使 report 无无条件尺寸上界，桥接必须约束异常来源为有限错误码并严格检查有界最终报告；parser 原始 issues 不作为最终 validator report 保存。超出后台限额或文本 policy 明确拒绝，不截 JSON、不改原包；真实 DB 容量、UTF-8 与确定失败/未知提交语义仍待验证。
 
 建议 SQL 约束/授权：身份/请求绑定无 UPDATE 权限；报告、候选和包身份 write-once 由触发器保护；blob/product_asset 应用角色 INSERT/SELECT、无 UPDATE/DELETE/TRUNCATE/DDL。validation 仅有限状态/租约/计量列可变。CHECK 检查有限状态、字节/长度/JSON 体积、hash 形状及冻结列空值组合；复杂内容 Schema 不冒充已由 SQL 完整验证。新增迁移，不改旧迁移；同步受管实例版本、集中权限、真实 DB fixture 清理范围。
 
 ## 包身份、幂等和状态
 
-`validation_key` 由服务端 canonical 绑定计算：原 import/received hash 与 bytes、目标 Product、实际 validator bundle ID、P1 版本/policy/兼容 hash/limits hash、后台 synthetic/归档 policy version。客户端不选择 policy、validator 或证据。部署 bundle ID 要绑定受审 worker 代码、Node/sharp/libvips 等 native 依赖、launcher policy，以及固定容器镜像 digest/受支持平台组合，不能只拿 P1 的 `1.0.0` 代表此后任意代码；hash 也不是签名或审批。
+`validation_key` 由服务端 canonical 绑定计算：原 import/received hash 与 bytes、目标 Product、实际 validator bundle ID、P1 版本/policy/兼容 hash/limits hash、后台 synthetic/归档/持久化 policy version/hash（含 UTF-8、NUL/surrogate 拒绝和序列化限额）。客户端不选择 policy、validator 或证据。部署 bundle ID 要绑定受审 worker 代码、Node/sharp/libvips 等 native 依赖、launcher policy，以及固定容器镜像 digest/受支持平台组合，不能只拿 P1 的 `1.0.0` 代表此后任意代码；hash 也不是签名或审批。
 
 建议状态：`validating → validated → archiving → ready`；确定的内容/后台 policy 失败为 `rejected`；运行 timeout、cancel、worker fail 与可恢复 IO 在实际停止已确认时为 `retryable-failed`，不能把内容永久判为 rejected；提交未知保留实际已知阶段与 `storage_condition=unknown`，不臆造 failed。`received` 原记录不参与这组转换。
 

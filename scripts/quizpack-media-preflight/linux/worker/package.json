@@ -1,0 +1,9 @@
+{
+  "name": "quizpack-media-preflight-worker",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "sharp": "0.35.5"
+  }
+}

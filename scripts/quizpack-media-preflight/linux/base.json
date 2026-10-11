@@ -1,0 +1,9 @@
+{
+  "source": "docker.io/library/node:20.20.1-bookworm-slim",
+  "indexDigest": "sha256:17281e8d1dc4d671976c6b89a12f47a44c2f390b63a989e2e327631041f544fd",
+  "base": "docker.io/library/node@sha256:450617c43da25e890a85e935526b3f6a8cfc5377155404a0074cb3116f48f06c",
+  "platform": "linux/amd64",
+  "queried": "2026-10-12",
+  "node": "20.20.1",
+  "sharp": "0.35.5"
+}
