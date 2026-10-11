@@ -18,7 +18,13 @@ const helper = path.resolve("tests/db/p2b2-e2e-fixture.ts");
 const execute = promisify(execFile);
 
 async function fixtureCommand(
-  mode: "prepare" | "cleanup" | "enable" | "disable" | "observe-intent",
+  mode:
+    | "prepare"
+    | "cleanup"
+    | "enable"
+    | "disable"
+    | "observe-intent"
+    | "seed-recovery",
   key?: string,
 ) {
   try {
@@ -220,6 +226,47 @@ test("real intent and raw received state remains unvalidated", async ({
   await mobileEvidence(page, testInfo, "received");
 });
 
+test("actual hash rejection is read before another explicit action", async ({
+  page,
+}, testInfo) => {
+  await signIn(page);
+  const expected = Buffer.from("synthetic original declaration bytes");
+  await page.getByLabel("原包文件", { exact: true }).setInputFiles({
+    name: "rejected.quizpack",
+    mimeType: "application/octet-stream",
+    buffer: expected,
+  });
+  await page
+    .getByRole("button", { name: "创建原包接收意图", exact: true })
+    .click();
+  await expect(
+    page.getByRole("button", { name: "上传所选原包", exact: true }),
+  ).toBeEnabled();
+  const endpoint = "**/api/studio/products/e2e-imports/imports/*/archive";
+  await page.route(endpoint, (route) =>
+    route.continue({ postData: Buffer.alloc(expected.length, 120) }),
+  );
+  await page.getByRole("button", { name: "上传所选原包", exact: true }).click();
+  await expect(
+    page.getByText("当前操作已暂停，必须读取最新状态后才能再次显式操作。", {
+      exact: true,
+    }),
+  ).toBeVisible();
+  await page.unroute(endpoint);
+  await page
+    .getByRole("button", { name: "读取最新接收状态", exact: true })
+    .click();
+  await expect(
+    page
+      .getByLabel("原包状态")
+      .getByText("原包已拒绝 · 不可修改声明重传", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "上传所选原包", exact: true }),
+  ).toHaveCount(0);
+  await mobileEvidence(page, testInfo, "rejected");
+});
+
 test("a separately observed committed intent survives a lost POST response", async ({
   page,
 }, testInfo) => {
@@ -282,6 +329,41 @@ test("a separately observed committed intent survives a lost POST response", asy
       .getByText("原包已隔离接收，尚未验证", { exact: true }),
   ).toBeVisible();
   expect(puts).toBe(1);
+});
+
+test("explicit recovery of a stopped claim enables choosing the original file on the same page", async ({
+  page,
+}, testInfo) => {
+  await fixtureCommand("seed-recovery");
+  await signIn(page);
+  const card = page
+    .getByRole("listitem")
+    .filter({ hasText: "接收中 · 尚未确认完成" });
+  await expect(card).toHaveCount(1);
+  await card.getByRole("link", { name: /查看接收记录/ }).click();
+  await expect(
+    page.getByRole("heading", { name: "原包接收状态", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByLabel("与原声明一致的文件", { exact: true }),
+  ).toHaveCount(0);
+  await page.getByRole("button", { name: "显式恢复接收", exact: true }).click();
+  await expect(
+    page.getByLabel("与原声明一致的文件", { exact: true }),
+  ).toBeEnabled();
+  await mobileEvidence(page, testInfo, "recovered-awaiting-upload");
+  await page.getByLabel("与原声明一致的文件", { exact: true }).setInputFiles({
+    name: "recovered.quizpack",
+    mimeType: "application/octet-stream",
+    buffer: Buffer.from("synthetic recover original bytes"),
+  });
+  await expect(
+    page.getByRole("button", { name: "上传所选原包", exact: true }),
+  ).toBeEnabled();
+  await page.getByRole("button", { name: "上传所选原包", exact: true }).click();
+  await expect(
+    page.getByText("原包已隔离接收，尚未验证", { exact: true }),
+  ).toBeVisible();
 });
 
 test("empty exact lookup retains unknown and explicit resubmit uses the same full input", async ({

@@ -31,3 +31,15 @@ CreateReceive 的拒绝现在累计保存 previousUnknown，仅已校验创建/�
 实际检查：专属 5 文件 49 单元测试通过，typecheck/lint 通过。已编写生产 E2E：关闭/只读/空状态、真实原字节 received、独立 PG 观察已提交后丢 POST 响应、空查询后原 key/input 重提、后续 CSRF 拒绝保持累计 unknown、无效成功响应与无效 exact read 不清除未知。敏感凭证仅 0600 私有 fixture，trace/video/自动截图关闭，主动截图仅已登录无敏感字段状态。**这些浏览器用例尚未运行**；A 的实际服务、CLI 和测试 reset 清理合同尚待交接，不能据此宣称 HTTP/DB/E2E 验收通过。
 
 补充：全仓 41 文件 586 单元测试通过。format:check 曾发现 E2E 两处链式调用在首轮格式化后仍需规范化，二次 prettier write 后全仓 format:check 通过；仅修正文档与测试格式，没有添加镜像测试。
+
+## 里程碑四：真实接入与 HTTP/DB 验证
+
+总控明确交接 A 核心 `f9593a7870938a4934388a578c5f8b783f9d2ee4`（本分支 cherry-pick `672b226`）。仅对本流 purpose=test/55422 运行管理 CLI migrate，实际应用 0006/0007；imports 启停也只使用管理 CLI。接入六个真实 HTTP 操作、两个页面组合以及 Product 详情导航。PUT/recover 的绝对起点在 Next route await params 之前保存，传给统一 context 工厂，预算不因页面参数/鉴权等待重置；新增过期入口测试证明不读 raw、不建 DB 即取消。
+
+真实 PostgreSQL HTTP 专属 15 测试通过：disabled200/no-store、当前身份/只读能力、201/200重放、异指纹冲突、exact key包含received、跨Product404、归档可读但拒接收、配置快照后关闭仍拒写、strict query、Host/Origin/CSRF及早拒raw取消、假Content-Length下实际计量、重复received不read、真实hash拒绝、独立owner连接观察实际已提交intent后WRITE_OUTCOME_UNKNOWN与原key重放。首轮1项失败来自测试helper的undefined默认参数仍使用登录身份，改为显式null后15项通过；没有放宽生产判断。
+
+生产 E2E 共8例已发现但**未运行**（由总控独占3100）：追加真实hash拒绝图检以及已停止claim的显式恢复/就地选文件。恢复夹具使用A窄内部afterCommit故障钩子，实际提交claim，独立DB确认receiving且read=0；正常helper退出后，由真实HTTP恢复自行证明记录PID已结束。无生产HTTP测试开关、无伪造receipt、无私有uploads访问。prepare→CLI enable→seed-recovery→CLI disable→cleanup在本流实例已实际通过，输出仅固定安全标志。
+
+Astra复审另指出HTTP502+CSRF_REJECTED等错配仍会错误解除未知。本流adapter现用有限code→HTTPstatus映射，错配写为WRITE_OUTCOME_UNKNOWN、错配读为STUDIO_UNAVAILABLE；502/CSRF、500/INVALID_REQUEST、合法403/CSRF均有回归。专属5文件53单元、typecheck、lint、全仓format:check通过；新增映射前全仓42文件592单元通过，映射新增3项已由专属单元实际验证。
+
+生产build通过，BUILD_TRACE_OK：53 traces、8614 paths、0 violations。Turbopack对A storage.ts动态.cache/p2a路径有两处宽匹配性能警告，未改A或共享构建配置，交总控评估。未运行本流浏览器/视觉截图、远端CI、test:driver或全仓test:db；专属HTTP真实证据不能替代阶段全矩阵。

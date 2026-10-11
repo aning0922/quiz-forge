@@ -111,6 +111,25 @@ beforeEach(() => {
 });
 
 describe("receipt HTTP dispatch unit boundary", () => {
+  it("includes route parameter wait in the absolute entry budget", async () => {
+    const implementation = service();
+    const read = vi.fn();
+    const cancel = vi.fn(async () => undefined);
+    const incoming = request("archive");
+    Object.defineProperty(incoming, "body", {
+      value: { getReader: () => ({ read, cancel, releaseLock: vi.fn() }) },
+    });
+    const response = await handleImportHttp(
+      incoming,
+      endpoint("archive"),
+      implementation,
+      performance.now() - 60001,
+    );
+    expect(await code(response)).toBe("RECEIVE_TIMEOUT");
+    expect(mocked.create).not.toHaveBeenCalled();
+    expect(read).not.toHaveBeenCalled();
+    expect(cancel).toHaveBeenCalledTimes(1);
+  });
   it("reads a real service snapshot as disabled 200, with no-store", async () => {
     const implementation = service();
     const response = await handleImportHttp(
