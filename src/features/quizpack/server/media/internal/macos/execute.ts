@@ -23,11 +23,8 @@ export type MacExecutionEnvironment = {
   identityHelper: string;
   acquireControl: (runId: string, profileId: string) => MacOwnedControl;
 };
-export class MacControlError extends Error {
-  constructor(readonly code: "BUSY" | "ISOLATION_UNAVAILABLE") {
-    super(code);
-  }
-}
+import { MacControlError } from "./control-errors";
+export { MacControlError };
 type Identity = Extract<z.infer<typeof identitySchema>, { present: true }>;
 function inspectOwned(
   env: MacExecutionEnvironment,
