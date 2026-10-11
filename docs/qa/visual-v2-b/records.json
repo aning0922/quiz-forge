@@ -1,0 +1,607 @@
+{
+  "capturedOn": "2026-10-11 Asia/Shanghai",
+  "records": [
+    {
+      "name": "landscape-reveal-390x844-first.png",
+      "direction": "landscape",
+      "state": "reveal",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "kind": "first",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "landscape-reveal-390x844-full.png",
+      "direction": "landscape",
+      "state": "reveal",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "kind": "full",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "landscape-report-390x844-first.png",
+      "direction": "landscape",
+      "state": "report",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "kind": "first",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "landscape-report-390x844-full.png",
+      "direction": "landscape",
+      "state": "report",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "kind": "full",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "landscape-poster-390x844-first.png",
+      "direction": "landscape",
+      "state": "poster",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "kind": "first",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "landscape-poster-390x844-full.png",
+      "direction": "landscape",
+      "state": "poster",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "kind": "full",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "landscape-report-art-atlas-390x844-component.png",
+      "direction": "landscape",
+      "state": "report-art-atlas",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "kind": "component",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "landscape-report-continuity-390x844-viewport.png",
+      "direction": "landscape",
+      "state": "report-continuity",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "kind": "viewport",
+      "scrollY": 443,
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "landscape-poster-collectible-390x844-component.png",
+      "direction": "landscape",
+      "state": "poster-collectible",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "kind": "component",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "landscape-reveal-320x740-first.png",
+      "direction": "landscape",
+      "state": "reveal",
+      "viewport": {
+        "width": 320,
+        "height": 740
+      },
+      "kind": "first",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "landscape-report-320x740-first.png",
+      "direction": "landscape",
+      "state": "report",
+      "viewport": {
+        "width": 320,
+        "height": 740
+      },
+      "kind": "first",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "landscape-poster-320x740-first.png",
+      "direction": "landscape",
+      "state": "poster",
+      "viewport": {
+        "width": 320,
+        "height": 740
+      },
+      "kind": "first",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "landscape-reveal-375x812-first.png",
+      "direction": "landscape",
+      "state": "reveal",
+      "viewport": {
+        "width": 375,
+        "height": 812
+      },
+      "kind": "first",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "landscape-report-375x812-first.png",
+      "direction": "landscape",
+      "state": "report",
+      "viewport": {
+        "width": 375,
+        "height": 812
+      },
+      "kind": "first",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "landscape-poster-375x812-first.png",
+      "direction": "landscape",
+      "state": "poster",
+      "viewport": {
+        "width": 375,
+        "height": 812
+      },
+      "kind": "first",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "landscape-reveal-430x932-first.png",
+      "direction": "landscape",
+      "state": "reveal",
+      "viewport": {
+        "width": 430,
+        "height": 932
+      },
+      "kind": "first",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "landscape-report-430x932-first.png",
+      "direction": "landscape",
+      "state": "report",
+      "viewport": {
+        "width": 430,
+        "height": 932
+      },
+      "kind": "first",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "landscape-poster-430x932-first.png",
+      "direction": "landscape",
+      "state": "poster",
+      "viewport": {
+        "width": 430,
+        "height": 932
+      },
+      "kind": "first",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "landscape-reveal-1440x1000-first.png",
+      "direction": "landscape",
+      "state": "reveal",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "kind": "first",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "landscape-report-1440x1000-first.png",
+      "direction": "landscape",
+      "state": "report",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "kind": "first",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "landscape-poster-1440x1000-first.png",
+      "direction": "landscape",
+      "state": "poster",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "kind": "first",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "landscape-report-long-320x740-full.png",
+      "direction": "landscape",
+      "state": "report-long",
+      "viewport": {
+        "width": 320,
+        "height": 740
+      },
+      "kind": "full",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "landscape-poster-long-320x740-full.png",
+      "direction": "landscape",
+      "state": "poster-long",
+      "viewport": {
+        "width": 320,
+        "height": 740
+      },
+      "kind": "full",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "landscape-reveal-reduced-motion-390x844-full.png",
+      "direction": "landscape",
+      "state": "reveal-reduced-motion",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "kind": "full",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "landscape-reveal-art-unavailable-390x844-full.png",
+      "direction": "landscape",
+      "state": "reveal-art-unavailable",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "kind": "full",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "celestial-reveal-390x844-first.png",
+      "direction": "celestial",
+      "state": "reveal",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "kind": "first",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "celestial-reveal-390x844-full.png",
+      "direction": "celestial",
+      "state": "reveal",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "kind": "full",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "celestial-report-390x844-first.png",
+      "direction": "celestial",
+      "state": "report",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "kind": "first",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "celestial-report-390x844-full.png",
+      "direction": "celestial",
+      "state": "report",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "kind": "full",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "celestial-poster-390x844-first.png",
+      "direction": "celestial",
+      "state": "poster",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "kind": "first",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "celestial-poster-390x844-full.png",
+      "direction": "celestial",
+      "state": "poster",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "kind": "full",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "celestial-report-art-atlas-390x844-component.png",
+      "direction": "celestial",
+      "state": "report-art-atlas",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "kind": "component",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "celestial-report-continuity-390x844-viewport.png",
+      "direction": "celestial",
+      "state": "report-continuity",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "kind": "viewport",
+      "scrollY": 460,
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "celestial-poster-collectible-390x844-component.png",
+      "direction": "celestial",
+      "state": "poster-collectible",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "kind": "component",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "celestial-reveal-320x740-first.png",
+      "direction": "celestial",
+      "state": "reveal",
+      "viewport": {
+        "width": 320,
+        "height": 740
+      },
+      "kind": "first",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "celestial-report-320x740-first.png",
+      "direction": "celestial",
+      "state": "report",
+      "viewport": {
+        "width": 320,
+        "height": 740
+      },
+      "kind": "first",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "celestial-poster-320x740-first.png",
+      "direction": "celestial",
+      "state": "poster",
+      "viewport": {
+        "width": 320,
+        "height": 740
+      },
+      "kind": "first",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "celestial-reveal-375x812-first.png",
+      "direction": "celestial",
+      "state": "reveal",
+      "viewport": {
+        "width": 375,
+        "height": 812
+      },
+      "kind": "first",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "celestial-report-375x812-first.png",
+      "direction": "celestial",
+      "state": "report",
+      "viewport": {
+        "width": 375,
+        "height": 812
+      },
+      "kind": "first",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "celestial-poster-375x812-first.png",
+      "direction": "celestial",
+      "state": "poster",
+      "viewport": {
+        "width": 375,
+        "height": 812
+      },
+      "kind": "first",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "celestial-reveal-430x932-first.png",
+      "direction": "celestial",
+      "state": "reveal",
+      "viewport": {
+        "width": 430,
+        "height": 932
+      },
+      "kind": "first",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "celestial-report-430x932-first.png",
+      "direction": "celestial",
+      "state": "report",
+      "viewport": {
+        "width": 430,
+        "height": 932
+      },
+      "kind": "first",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "celestial-poster-430x932-first.png",
+      "direction": "celestial",
+      "state": "poster",
+      "viewport": {
+        "width": 430,
+        "height": 932
+      },
+      "kind": "first",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "celestial-reveal-1440x1000-first.png",
+      "direction": "celestial",
+      "state": "reveal",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "kind": "first",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "celestial-report-1440x1000-first.png",
+      "direction": "celestial",
+      "state": "report",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "kind": "first",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "celestial-poster-1440x1000-first.png",
+      "direction": "celestial",
+      "state": "poster",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "kind": "first",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "celestial-report-long-320x740-full.png",
+      "direction": "celestial",
+      "state": "report-long",
+      "viewport": {
+        "width": 320,
+        "height": 740
+      },
+      "kind": "full",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "celestial-poster-long-320x740-full.png",
+      "direction": "celestial",
+      "state": "poster-long",
+      "viewport": {
+        "width": 320,
+        "height": 740
+      },
+      "kind": "full",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "celestial-reveal-reduced-motion-390x844-full.png",
+      "direction": "celestial",
+      "state": "reveal-reduced-motion",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "kind": "full",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "celestial-reveal-art-unavailable-390x844-full.png",
+      "direction": "celestial",
+      "state": "reveal-art-unavailable",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "kind": "full",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    }
+  ]
+}
