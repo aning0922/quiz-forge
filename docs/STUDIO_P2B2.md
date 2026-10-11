@@ -237,6 +237,8 @@ received之前或claim的提交未知都保留足额reservation：claim未知不
 
 建立意图不预留字节，PUT领取attempt前在storage锁下有界扫描并查询全部held预算，实际文件、孤儿及未知尝试都计入。总额为已知存量＋未覆盖的held headroom＋新attempt峰值；同一attempt文件与其预算避免少算，不确定归属宁可多计。扫描不全或未知owner仍可能写入时保留旧预算。
 
+数量容量同样预留所有旧held尚未落盘的目录、partial/archive/stopped及receipt临时名，再加本次attempt峰值；锁失效、当前目录缺失或receipt已出现都不代表旧预留已释放。恢复不新增attempt或归档文件，允许在保守字节配额超限时核实停止证据并减少预留，但仍须完整有界扫描、账目一致、权限及归属检查。每次attempt至多发起一次停止证明写入；已有匹配证明只读重放，发布后不能再创建临时文件。
+
 只有停止证据成立、文件清理/冻结情况确认、DB状态对账提交明确后才把对应disposition置released及释放余量。received原包继续作为存量占用，released不代表删除原包。数量/大小缓存不能覆盖实际文件事实；ENOSPC照常失败。
 
 B2-2处理现有received候选时，原包/旧partial/孤儿继续计存量，再计算新增解码/资源临时/归档峰值；不能只给当前请求128MiB而忽略所有现有候选。本批不清理成功原包、不做blob GC；到扫描上限需受控维护或后续合同，不能静默跳过老文件。
