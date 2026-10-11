@@ -2,11 +2,7 @@ import "server-only";
 import { randomUUID } from "node:crypto";
 import type { z } from "zod";
 import type { P2aDatabase } from "@/lib/db/client";
-import {
-  withStudioWrite,
-  isStudioConnectionFailure,
-  type StudioWriteCredentials,
-} from "@/lib/auth/write";
+import { withStudioWrite, type StudioWriteCredentials } from "@/lib/auth/write";
 import { activeActor, toActor } from "@/lib/auth/internal";
 import { requireCapability, type StudioActor } from "@/lib/auth/capabilities";
 import { digestToken } from "@/lib/security/p2a-tokens";
@@ -136,23 +132,15 @@ async function read<T>(
     return (await database.sql.begin(
       "isolation level repeatable read read only",
       async (tx) => {
-        try {
-          await tx`SET LOCAL statement_timeout = '5s'`;
-          await tx`SET LOCAL transaction_timeout = '10s'`;
-          const current = await activeActor(tx, digest);
-          if (!current) throw new StudioError("UNAUTHENTICATED");
-          requireCapability(toActor(current), "studio:read");
-          return await work(tx);
-        } catch (error) {
-          if (isStudioConnectionFailure(error))
-            await database.sql.end({ timeout: 0 }).catch(() => {});
-          throw error;
-        }
+        await tx`SET LOCAL statement_timeout = '5s'`;
+        await tx`SET LOCAL transaction_timeout = '10s'`;
+        const current = await activeActor(tx, digest);
+        if (!current) throw new StudioError("UNAUTHENTICATED");
+        requireCapability(toActor(current), "studio:read");
+        return work(tx);
       },
     )) as T;
   } catch (error) {
-    if (isStudioConnectionFailure(error))
-      await database.sql.end({ timeout: 0 }).catch(() => {});
     if (error instanceof StudioError) throw error;
     throw new StudioError("STUDIO_UNAVAILABLE");
   }

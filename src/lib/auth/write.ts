@@ -18,17 +18,34 @@ export type StudioWriteCredentials = Readonly<{
 }>;
 
 export function isStudioConnectionFailure(error: unknown): boolean {
-  const code =
-    error && typeof error === "object" && "code" in error ? error.code : null;
+  if (!error || typeof error !== "object") return false;
+  const fault = error as {
+    code?: unknown;
+    severity?: unknown;
+    quizforgeConnectionInvalidated?: unknown;
+  };
   return (
-    typeof code === "string" &&
-    (code.startsWith("CONNECTION_") ||
-      code.startsWith("08") ||
-      ["25P04", "57P01", "57P02", "57P03"].includes(code))
+    fault.quizforgeConnectionInvalidated === true ||
+    fault.severity === "FATAL" ||
+    fault.severity === "PANIC" ||
+    (typeof fault.code === "string" &&
+      (fault.code.startsWith("CONNECTION_") ||
+        fault.code.startsWith("08") ||
+        [
+          "ECONNRESET",
+          "EPIPE",
+          "ETIMEDOUT",
+          "ECONNREFUSED",
+          "ECONNABORTED",
+          "ENOTFOUND",
+          "EAI_AGAIN",
+          "ENETUNREACH",
+          "EHOSTUNREACH",
+        ].includes(fault.code)))
   );
 }
 
-/** One transaction; the driver propagates callback errors only after successful ROLLBACK. */
+/** Pinned driver marks invalidation; unmarked original callback errors follow confirmed ROLLBACK. */
 export async function withStudioWrite<T>(
   database: P2aDatabase,
   credentials: StudioWriteCredentials,
@@ -84,21 +101,16 @@ export async function withStudioWrite<T>(
         } catch (error) {
           callbackFailed = true;
           callbackFailure = error;
-          // Terminate this request-owned client before the driver attempts ROLLBACK on a dead socket.
-          // postgres3.4.9 otherwise can queue nextWrite with socket=null after fatal termination.
-          if (isStudioConnectionFailure(error))
-            await database.sql.end({ timeout: 0 }).catch(() => {});
           throw error;
         }
       },
     )) as T;
   } catch (error) {
-    if (isStudioConnectionFailure(error)) {
-      await database.sql.end({ timeout: 0 }).catch(() => {});
+    if (isStudioConnectionFailure(error))
       throw new StudioError("WRITE_OUTCOME_UNKNOWN");
-    }
-    // postgres.js only rethrows this exact callback failure after awaiting successful ROLLBACK.
-    // A rollback failure or onclose rejection is a different object; never classify it as busy.
+    // The pinned driver wraps all invalidation errors with a stable marker, even when
+    // scope skips ROLLBACK. Only an unmarked original callback error propagated after
+    // successful ROLLBACK can be classified below; identity alone is not proof.
     if (readyToCommit || !callbackFailed || error !== callbackFailure)
       throw new StudioError("WRITE_OUTCOME_UNKNOWN");
     if (error instanceof StudioError) throw error;

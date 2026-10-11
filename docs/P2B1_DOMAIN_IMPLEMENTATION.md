@@ -76,3 +76,15 @@ postgres3.4.9源码证据：types.js:220的inferType给普通string返回OID0；
 最小实际修复只改disableOperator三处绑定为`${moment.at}::text::timestamptz`：operator.disabled_at、session.revoked_at、audit.occurred_at。auth锁后取同一个数据库clock_timestamp的顺序、停用/撤销事务及审计政策不变，没有扩大异常日志。有限全局扫描management/create/auth/workspace时间绑定，createOperator与auth/workspace时间仍直接在SQL内以clock_timestamp/CTE moment计算，未发现其他同类返程字符串时间写入点。
 
 新增真实回归验证参数描述OID1184与text OID25，并在同一个reserved连接上8次prepared执行验证微秒差为0；实际CLI停用8个独立合成身份，三处时间完全相等、会话撤销时间有效，至少一个存储值保留submillisecond精度（旧serializer会全部毫秒对齐）。原P2-A管理与B1竞争路径定向3文件58项通过；typecheck、format、lint及普通32文件468项通过。诊断和修复不等同通过重复随机测试掩盖问题：固定OID/精度与真实存储回归提供了独立证据。驱动失效句柄补丁另行按总控授权集成，不混入本管理修复。
+
+## 稳定驱动标记接入与移除临时保护
+
+按总控固定授权，接入ec531518（A对应3ff7aff）与3559302（A对应dfc6996），冻结安装；没有自行编辑依赖补丁/package/lock。3559302在事务/reserve首次失效时生成fresh CONNECTION_CLOSED，quizforgeConnectionInvalidated=true为非枚举readonly标记，cause仅内部保留，原始错误不被修改。源码检查确认失效scope可跳过ROLLBACK，因此同一错误对象本身不能证明回滚。
+
+应用独立接入删除auth/write与workspace只读服务中的所有临时database.sql.end；关闭继续由调用方finally负责，失效句柄的封锁由固定驱动补丁负责。写包装器先识别稳定标记，另防御CONNECTION/08类、实际网络错误及任意SQLSTATE的FATAL/PANIC；不枚举FATAL SQLSTATE来证明回滚，不读取或输出cause。只有未失效的原始回调错误在成功ROLLBACK后传播，才映射business、WRITE_BUSY或确定内部失败STUDIO_UNAVAILABLE。提交、回滚回执或连接结果无法确认仍WRITE_OUTCOME_UNKNOWN，不重放。
+
+新增7项真实socket故障注入覆盖ECONNRESET/EPIPE/ETIMEDOUT，以及SETLOCAL/业务/finaltouch/ROLLBACK/COMMIT发送阶段；所有业务结果unknown，最多一次回调，旧句柄被稳定标记拒绝，新普通池查询可重连，原始/晚到Product无落库。正常已回滚SQL、内部、业务、busy分类与读取/backend/transaction期限回归继续通过。10项普通分类单测覆盖非枚举marker、非名单FATAL/PANIC和相同SQLSTATE的普通ERROR区分。
+
+最终当前分支：format:check、lint、typecheck、普通33文件478项、真实DB9文件133项、驱动ESM/CJS46项、build均通过，无未捕获异常。没有运行HTTP/E2E或占3100；总控统一集成验收。A构建仍有既有私有.cache/p2a动态路径警告，未修改Next配置或分发构建产物。测试实例随后受管stop/status确认stopped。
+
+诊断探针保留在忽略目录，未写入Git：p2b1-disable-race-probe.ts保留原故障等效事务（不会因管理源代码修正而自动改变）；p2b1-time-binding-prepared-probe.ts为只读OID/精度复现。实测隐式OID1184冷/4次warm均损失456µs，text OID25冷/4次warm均损失0µs；并不限于warm才丢失。历史原生driver未补丁探针也保留，不作为当前patched依赖的失败声明。
