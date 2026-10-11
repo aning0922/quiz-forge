@@ -6,3 +6,4 @@ umask 077
 [[ -f scripts/quizpack-media-preflight/linux/base.json && -f pnpm-lock.yaml ]] || exit 1
 node --import tsx scripts/quizpack-media-preflight/linux/setup.mjs
 node --import tsx scripts/quizpack-media-preflight/linux/harness.mjs
+node --import tsx scripts/quizpack-media-preflight/linux/lifecycle-harness.mjs

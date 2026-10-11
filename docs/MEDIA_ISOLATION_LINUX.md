@@ -40,3 +40,13 @@ create→inspect 参数/身份→start attach stdin→统一 kill（若仍 runni
 ## 首轮 CI 前追加的权限修订
 
 私有 Docker context 使用0600文件，COPY会保留模式；镜像构建必须显式 `a+rX` 后再 `a-w`，让非root能读取受审脚本/依赖，仍维持镜像只读政策。此修订尚无Linux实测，不把代码推断写成通过。首个入口提交为 `24752795f864a2443845861e1e3df9df20cc7d4c`，本小修订只改 Dockerfile 与本说明，其他生命周期扩展仍在独立后继提交。
+
+## 首轮远端失败与第二检查点
+
+总控的真实 [CI38176902587](https://github.com/aning0922/quiz-forge/actions/runs/38176902587)，head `1490d7b79c7b23faaa5a105eff5b1e7131661365` 已运行并失败，日志只有 `ISOLATION_UNAVAILABLE`，不能确认失败来自0600模式。权限小修订 `33840d22f6b6fecb1fd011f5c949ba097b410e12` 已推送。后继检查点增加 setup 固定白名单 stage，仍不输出原异常/stdio/环境/完整inspect。
+
+独立Astra首审指出 policy 预检多次更新5秒预算和FIFO读取前阻塞两项P2。已修为全部policy Docker调用传同一deadline/abort；停止恢复独立使用固定cleanupDeadline、不沿用已取消signal。`readPrivate` 先 O_NOFOLLOW|O_NONBLOCK 再fstat拒绝非普通文件，并有本轮合成FIFO实际有界拒绝测试。command以close确认stdio，实际close时再次检查绝对期限，timer延迟不能变迟到成功。后继本地格式/lint和command专项7项通过；不是Linux隔离验收。
+
+后继候选还新增：原生host合成对照、全FD枚举、共享严格输出拒绝、16MP实际own-cgroup峰值/限制采样及OOMKilled断言；真实Docker attach CLI SIGKILL、本地Unix代理转发同一daemon后丢create/kill应答、真实daemon通道失联、真实自有容器rename身份不匹配、同一对象显式核验。代理只在私有harness使用，不能生成假的inspect/wait成功，worker权限完全相同；普通入口固定真实daemon。unknown只允许在同进程实际create/start close已观测后恢复，本候选不推断旧父PID消失等于stdio settled。以上远端仍待运行。父崩溃/跨重启完整停止证据、精确8MiB正常样本和动画/坏像素全矩阵仍未完成，accepted:false保持。
+
+FIFO专项初次运行在目录前置检查失败：本工程已有测试建立0755 `.cache`。修为只允许当前用户拥有/无链接/其他用户不可写的缓存祖先，Linux专属私有根起仍0700，文件0600；不chmod既有缓存或共享目录。这可能解释首轮失败，但未经stage实测不能确定。修后重新运行FIFO和期限专项；实际结果随后继提交记录。

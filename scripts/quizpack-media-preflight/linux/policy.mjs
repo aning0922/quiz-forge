@@ -14,7 +14,17 @@ export const LIMITS = Object.freeze({
   nanoCpus: 1000000000,
   pids: 64,
 });
-export async function loadPolicy() {
+export async function loadPolicy({
+  deadline = performance.now() + 5000,
+  signal,
+} = {}) {
+  const options = {
+    deadline: deadline - 100,
+    settleDeadline: deadline,
+    signal,
+  };
+  if (performance.now() >= deadline || signal?.aborted)
+    throw new Error("PRECHECK_INTERRUPTED");
   if (platform() !== "linux" || arch() !== "x64")
     throw new Error("UNSUPPORTED_PLATFORM");
   if (
@@ -50,13 +60,10 @@ export async function loadPolicy() {
     if (hash(await readFile(resolve(DIR, path))) !== image.inputs[name])
       throw new Error("BUILD_INPUT_CHANGED");
   }
-  const inspect = await docker([
-    "image",
-    "inspect",
-    "--format",
-    "{{json .Id}}",
-    image.imageId,
-  ]);
+  const inspect = await docker(
+    ["image", "inspect", "--format", "{{json .Id}}", image.imageId],
+    options,
+  );
   if (
     inspect.code !== 0 ||
     inspect.reason ||
@@ -64,11 +71,14 @@ export async function loadPolicy() {
     json(inspect.stdout) !== image.imageId
   )
     throw new Error("MISSING_IMAGE");
-  const info = await docker([
-    "info",
-    "--format",
-    '{"id":{{json .ID}},"version":{{json .ServerVersion}},"os":{{json .OSType}},"arch":{{json .Architecture}},"security":{{json .SecurityOptions}},"memory":{{json .MemoryLimit}},"swap":{{json .SwapLimit}},"pids":{{json .PidsLimit}},"cpu":{{json .CPUCfsQuota}}}',
-  ]);
+  const info = await docker(
+    [
+      "info",
+      "--format",
+      '{"id":{{json .ID}},"version":{{json .ServerVersion}},"os":{{json .OSType}},"arch":{{json .Architecture}},"security":{{json .SecurityOptions}},"memory":{{json .MemoryLimit}},"swap":{{json .SwapLimit}},"pids":{{json .PidsLimit}},"cpu":{{json .CPUCfsQuota}}}',
+    ],
+    options,
+  );
   if (info.code !== 0 || info.reason || !info.settled)
     throw new Error("DAEMON_UNAVAILABLE");
   const daemon = json(info.stdout);
@@ -118,6 +128,8 @@ export async function loadPolicy() {
     dependencies,
     limits: LIMITS,
   };
+  if (performance.now() >= deadline || signal?.aborted)
+    throw new Error("PRECHECK_INTERRUPTED");
   return { image, binding, profileId: hash(JSON.stringify(binding)) };
 }
 export function createArgs(record, entrypoint, args) {

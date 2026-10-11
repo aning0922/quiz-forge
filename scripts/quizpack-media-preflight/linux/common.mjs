@@ -23,7 +23,7 @@ export async function privateDir(path) {
       !s.isDirectory() ||
       s.isSymbolicLink() ||
       s.uid !== process.getuid() ||
-      (s.mode & 0o077) !== 0
+      (next.startsWith(CACHE) ? (s.mode & 0o077) !== 0 : (s.mode & 0o022) !== 0)
     )
       throw new Error("PRIVATE_DIRECTORY");
   }
@@ -45,7 +45,10 @@ export async function writePrivate(path, bytes) {
   }
 }
 export async function readPrivate(path, limit = 16384) {
-  const f = await open(path, constants.O_RDONLY | constants.O_NOFOLLOW);
+  const f = await open(
+    path,
+    constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK,
+  );
   try {
     const s = await f.stat();
     if (
@@ -70,6 +73,7 @@ export function command(
   {
     deadline = performance.now() + 5000,
     input,
+    settleDeadline = deadline + 250,
     stdoutLimit = 16384,
     stderrLimit = 4096,
     signal,
@@ -100,7 +104,7 @@ export function command(
         child?.stderr?.destroy();
         finish(null, null, false);
       },
-      Math.max(0, deadline - performance.now()) + 250,
+      Math.max(0, settleDeadline - performance.now()),
     );
     const timer = setTimeout(
       () => stop("DEADLINE_EXCEEDED"),
@@ -109,6 +113,11 @@ export function command(
     const finish = (code, signalName, closed = true) => {
       if (settled) return;
       settled = true;
+      reason ??= signal?.aborted
+        ? "CANCELLED"
+        : performance.now() >= deadline
+          ? "DEADLINE_EXCEEDED"
+          : undefined;
       clearTimeout(timer);
       clearTimeout(hardTimer);
       signal?.removeEventListener("abort", cancel);
@@ -163,6 +172,17 @@ export function command(
     child.stdin.end(input);
   });
 }
+let harnessEndpoint = null;
+// Test-only switch, normal public API cannot set it. Only this fixed private
+// Unix socket is allowed; normal transport remains the frozen local daemon.
+export function setHarnessEndpoint(endpoint) {
+  if (
+    endpoint !== null &&
+    endpoint !== `unix://${resolve(CACHE, "fault-channel", "socket")}`
+  )
+    throw new Error("FAULT_ENDPOINT");
+  harnessEndpoint = endpoint;
+}
 export async function docker(args, opts = {}) {
   return command(
     "/usr/bin/docker",
@@ -170,7 +190,7 @@ export async function docker(args, opts = {}) {
       "--config",
       resolve(CACHE, "docker-config"),
       "--host",
-      "unix:///var/run/docker.sock",
+      harnessEndpoint ?? "unix:///var/run/docker.sock",
       ...args,
     ],
     opts,
@@ -179,11 +199,27 @@ export async function docker(args, opts = {}) {
 export function json(bytes) {
   return JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(bytes));
 }
-export function safeMain(fn) {
+const SAFE_STAGES = new Set([
+  "platform",
+  "paths",
+  "base-metadata",
+  "inputs",
+  "native-compile",
+  "base-pull",
+  "image-build",
+  "image-inspect",
+  "image-record",
+  "native-identity",
+  "dependencies-record",
+]);
+export function safeMain(fn, stageFn = () => null) {
   fn().catch(() => {
     process.stdout.write(
-      JSON.stringify({ outcome: "failed", code: "ISOLATION_UNAVAILABLE" }) +
-        "\n",
+      JSON.stringify({
+        outcome: "failed",
+        code: "ISOLATION_UNAVAILABLE",
+        stage: SAFE_STAGES.has(stageFn()) ? stageFn() : null,
+      }) + "\n",
     );
     process.exitCode = 1;
   });
