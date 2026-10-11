@@ -17,6 +17,17 @@ export type StudioWriteCredentials = Readonly<{
   requestId: string;
 }>;
 
+function connectionFailure(error: unknown): boolean {
+  const code =
+    error && typeof error === "object" && "code" in error ? error.code : null;
+  return (
+    typeof code === "string" &&
+    (code.startsWith("CONNECTION_") ||
+      code.startsWith("08") ||
+      ["25P04", "57P01", "57P02", "57P03"].includes(code))
+  );
+}
+
 /** One transaction; the driver propagates callback errors only after successful ROLLBACK. */
 export async function withStudioWrite<T>(
   database: P2aDatabase,
@@ -40,21 +51,26 @@ export async function withStudioWrite<T>(
   )
     throw new StudioError("INVALID_REQUEST");
   let readyToCommit = false;
+  let callbackFailed = false;
+  let callbackFailure: unknown;
   try {
-    return (await database.sql.begin(async (tx) => {
-      await tx`SET LOCAL lock_timeout = '2s'`;
-      await tx`SET LOCAL statement_timeout = '5s'`;
-      await tx`SET LOCAL transaction_timeout = '10s'`;
-      await acquireAuthWriteLock(tx);
-      const row = await activeActor(tx, digest);
-      if (!row) throw new StudioError("UNAUTHENTICATED");
-      const actor = toActor(row);
-      requireCapability(actor, capability);
-      const value = await work(tx, actor);
-      const current = await activeActor(tx, digest);
-      if (!current) throw new StudioError("UNAUTHENTICATED");
-      requireCapability(toActor(current), capability);
-      const touched = await tx`
+    return (await database.sql.begin(
+      "isolation level read committed",
+      async (tx) => {
+        try {
+          await tx`SET LOCAL lock_timeout = '2s'`;
+          await tx`SET LOCAL statement_timeout = '5s'`;
+          await tx`SET LOCAL transaction_timeout = '10s'`;
+          await acquireAuthWriteLock(tx);
+          const row = await activeActor(tx, digest);
+          if (!row) throw new StudioError("UNAUTHENTICATED");
+          const actor = toActor(row);
+          requireCapability(actor, capability);
+          const value = await work(tx, actor);
+          const current = await activeActor(tx, digest);
+          if (!current) throw new StudioError("UNAUTHENTICATED");
+          requireCapability(toActor(current), capability);
+          const touched = await tx`
         WITH moment AS MATERIALIZED (SELECT clock_timestamp() AS at)
         UPDATE qf.operator_session s SET last_seen_at = moment.at,
           idle_expires_at = LEAST(moment.at + interval '30 minutes', s.absolute_expires_at)
@@ -62,12 +78,29 @@ export async function withStudioWrite<T>(
           AND s.revoked_at IS NULL AND s.idle_expires_at > moment.at AND s.absolute_expires_at > moment.at
           AND o.id = s.operator_id AND o.status = 'active' AND o.role = ${current.role}
         RETURNING s.id`;
-      if (!touched.length) throw new StudioError("UNAUTHENTICATED");
-      readyToCommit = true;
-      return value;
-    })) as T;
+          if (!touched.length) throw new StudioError("UNAUTHENTICATED");
+          readyToCommit = true;
+          return value;
+        } catch (error) {
+          callbackFailed = true;
+          callbackFailure = error;
+          // Terminate this request-owned client before the driver attempts ROLLBACK on a dead socket.
+          // postgres3.4.9 otherwise can queue nextWrite with socket=null after fatal termination.
+          if (connectionFailure(error))
+            await database.sql.end({ timeout: 0 }).catch(() => {});
+          throw error;
+        }
+      },
+    )) as T;
   } catch (error) {
-    if (readyToCommit) throw new StudioError("WRITE_OUTCOME_UNKNOWN");
+    if (connectionFailure(error)) {
+      await database.sql.end({ timeout: 0 }).catch(() => {});
+      throw new StudioError("WRITE_OUTCOME_UNKNOWN");
+    }
+    // postgres.js only rethrows this exact callback failure after awaiting successful ROLLBACK.
+    // A rollback failure or onclose rejection is a different object; never classify it as busy.
+    if (readyToCommit || !callbackFailed || error !== callbackFailure)
+      throw new StudioError("WRITE_OUTCOME_UNKNOWN");
     if (error instanceof StudioError) throw error;
     const fault = error as { code?: string; constraint_name?: string };
     if (fault.code === "55P03" || fault.code === "57014")
@@ -82,7 +115,6 @@ export async function withStudioWrite<T>(
       )
         throw new StudioError("SLUG_CONFLICT");
     }
-    // Connection loss / transaction-timeout termination cannot prove rollback or commit.
-    throw new StudioError("WRITE_OUTCOME_UNKNOWN");
+    throw new StudioError("STUDIO_UNAVAILABLE");
   }
 }
