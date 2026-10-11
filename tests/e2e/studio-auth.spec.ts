@@ -209,7 +209,8 @@ test("empty-input loading capture and real rejected login capture", async ({
     });
   } finally {
     release();
-    await page.unroute(endpoint);
+    // Keep this page-scoped handler installed until the page fixture closes.
+    // After release every request continues immediately, without racing unroute.
   }
   await expect(page.getByLabel("运营凭证")).toBeEnabled();
   await enterCredential(page, "invalid-synthetic-input");
