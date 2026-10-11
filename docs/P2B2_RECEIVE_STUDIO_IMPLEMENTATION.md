@@ -55,3 +55,9 @@ Astra复审另指出HTTP502+CSRF_REJECTED等错配仍会错误解除未知。本
 单元覆盖：延迟配置后 archive 初始化与服务收到同一个 context；recover 初始化/服务 context 同一对象；settings 无预算；建库阶段超时且 db 尚未赋值时返回 RECEIVE_TIMEOUT/408、不进入服务、不read raw、会cancel输入。专属HTTP单元14项、imports共5文件55项通过，typecheck、专属ESLint/格式检查通过。
 
 仅受管重启本流purpose=test/55422并迁移0008；接入新初始化签名后专属真实HTTP/PG15项重新通过。HTTP测试的长服务由 Handler 自建请求client，没有复用 fixture.app；seed-recovery 在专属子进程只执行一次长服务，之前完成鉴权/意图，之后仅用独立 owner 连接观察，最后 close，没有并行共享。3100/E2E仍由总控运行。
+
+## 总控20/20生产E2E后的图检收尾
+
+总控反馈selector修复后实际auth/workspace/imports共20/20通过，并检查四宽关闭状态及320px received/rejected/unknown/recovered截图。图检发现本地文件准备成功时input key随pending变化会重建DOM，造成仍持原文件却显示未选择；现改为仅用户明确清空/重新选择时递增input key，初次SHA-256准备保留native FileList。现有真实接收E2E新增准备成功后的native value断言，以及明确清空后同一个合成文件可再选择的流程，没有删业务断言。
+
+无原文件提示改为当前页上方选择/核实后显式上传。mobileEvidence在每个视口截图前scrollTo(0,0)并等待两个rAF，避免旧滚动位置令固定skiplink投影到整页图中；仍保留320/375/390/430、横向溢出断言与主动安全截图。此增量typecheck、专属ESLint/格式及8例发现通过；新native input断言和更新截图尚待总控生产重跑。本流55422已停止、未启动3100。

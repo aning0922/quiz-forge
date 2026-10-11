@@ -159,6 +159,12 @@ async function mobileEvidence(
   // Explicit captures only after credential input is gone; no trace/video.
   for (const width of [320, 375, 390, 430]) {
     await page.setViewportSize({ width, height: 900 });
+    await page.evaluate(async () => {
+      window.scrollTo(0, 0);
+      await new Promise<void>((resolve) =>
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+      );
+    });
     expect(
       await page.evaluate(
         () => document.documentElement.scrollWidth <= window.innerWidth,
@@ -199,11 +205,25 @@ test("real intent and raw received state remains unvalidated", async ({
   await expect(
     page.getByText("原包接收已启用（只读配置快照）", { exact: true }),
   ).toBeVisible();
-  await page.getByLabel("原包文件", { exact: true }).setInputFiles({
+  const fileInput = page.getByLabel("原包文件", { exact: true });
+  const syntheticFile = {
     name: "synthetic.quizpack",
     mimeType: "application/octet-stream",
     buffer: Buffer.from("synthetic raw bytes, intentionally not a ZIP"),
-  });
+  };
+  await fileInput.setInputFiles(syntheticFile);
+  await expect(
+    page.getByRole("button", { name: "创建原包接收意图", exact: true }),
+  ).toBeEnabled();
+  await expect(fileInput).toHaveValue(/synthetic\.quizpack$/);
+  await page.getByRole("button", { name: "重新选择文件", exact: true }).click();
+  await expect(fileInput).toHaveValue("");
+  await expect(fileInput).toBeEnabled();
+  await fileInput.setInputFiles(syntheticFile);
+  await expect(
+    page.getByRole("button", { name: "创建原包接收意图", exact: true }),
+  ).toBeEnabled();
+  await expect(fileInput).toHaveValue(/synthetic\.quizpack$/);
   await page
     .getByRole("button", { name: "创建原包接收意图", exact: true })
     .click();
