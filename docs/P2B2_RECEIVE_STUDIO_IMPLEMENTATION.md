@@ -29,3 +29,5 @@
 CreateReceive 的拒绝现在累计保存 previousUnknown，仅已校验创建/重放或精确命中记录可清除。ExistingReceive 与子控件同步最新服务器状态，恢复到 awaiting-upload 后可就地重新选择原文件；所有上传仍需显式操作。
 
 实际检查：专属 5 文件 49 单元测试通过，typecheck/lint 通过。已编写生产 E2E：关闭/只读/空状态、真实原字节 received、独立 PG 观察已提交后丢 POST 响应、空查询后原 key/input 重提、后续 CSRF 拒绝保持累计 unknown、无效成功响应与无效 exact read 不清除未知。敏感凭证仅 0600 私有 fixture，trace/video/自动截图关闭，主动截图仅已登录无敏感字段状态。**这些浏览器用例尚未运行**；A 的实际服务、CLI 和测试 reset 清理合同尚待交接，不能据此宣称 HTTP/DB/E2E 验收通过。
+
+补充：全仓 41 文件 586 单元测试通过。format:check 曾发现 E2E 两处链式调用在首轮格式化后仍需规范化，二次 prettier write 后全仓 format:check 通过；仅修正文档与测试格式，没有添加镜像测试。
