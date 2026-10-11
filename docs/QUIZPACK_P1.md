@@ -1,6 +1,6 @@
 # P1：受限 QuizPack 工具链
 
-日期：2026-10-12。依据作者 P1–P5 托管授权与 Astra high 前置架构审查。状态：合同冻结，尚未实现。F1 的 foundation.v1 保持不变。
+日期：2026-10-12。依据作者 P1–P5 托管授权与 Astra high 前置架构审查。状态：实现及技术验收完成，证据见 P1_ACCEPTANCE.md；Draft PR #7 待合并。F1 的 foundation.v1 保持不变。
 
 ## 交付和范围
 
