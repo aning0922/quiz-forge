@@ -47,7 +47,9 @@ D1 改为 A/B/C 历史人物素材与体验、结果/海报完整精品验收，
 
 新增根 workflow，main push/PR/手工触发，Node 24 + pnpm 10.32.1，contents 只读，动作固定提交，冻结安装后格式/lint/类型/单测/构建；无部署、DB/模型凭据和 CI 浏览器依赖。已核实仓库 Actions enabled=true。
 
-本地检查成功不等于远端 CI 通过。首次推送前远端尚未执行本工作流；推送后的实际 run、结论和链接在最终交付及后续证据记录中确认。如权限/额度阻断，记录阻断，不改付费或安全设置掩盖失败。
+首次实际 CI：[run 38115272084](https://github.com/aning0922/quiz-forge/actions/runs/38115272084)，对应 `f1c7c28656ab29df3ea0582a4c1194f86a35e816`，status=completed、conclusion=success，checks 用时 47 秒，冻结安装、格式、lint、类型、单测及生产构建全部成功。无权限或额度阻断。
+
+首轮运行标注旧 pnpm/action-setup Node20 运行时和 ubuntu-latest 即将迁移提示。已核实官方 v6.1.0 使用 node24，固定其 commit；runner 固定 ubuntu-24.04，避免镜像标签迁移。这个后续 CI 调整会随推送再次验证，最新提交的对应 run 链接与结论在最终交付中提供。本段保留首次运行的真实历史证据，不把它冒充后续提交的运行。
 
 ## 阶段边界
 

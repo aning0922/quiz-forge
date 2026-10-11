@@ -43,3 +43,4 @@
 CI 配置按 [checkout](https://github.com/actions/checkout)、[setup-node](https://github.com/actions/setup-node)、[pnpm/action-setup](https://github.com/pnpm/action-setup) 官方说明设置。pnpm 版本来自 packageManager，setup-node 缓存使用根 pnpm-lock.yaml；CI 没有部署或调用业务服务。
 
 - ADR-028 accepted：实际 dev 验证发现 Next 16.4 自动追加 agent rules 到 AGENTS.md，设置 agentRules=false 并移除框架生成块，项目治理显式维护；以启动前后文件哈希验证不会再次改写。
+- ADR-029 accepted：首次 CI 已真实成功，处理其运行提示：pnpm/action-setup 固定官方 v6.1.0（node24）commit，runner 固定 Ubuntu 24.04，避免旧动作运行时和 ubuntu-latest 标签迁移。调整后再次核实对应 run，记录真实结果。
