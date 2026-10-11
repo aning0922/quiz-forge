@@ -117,9 +117,19 @@ describe("real pnpm QuizPack entrypoints", () => {
     expect(first.stderr).toBe("");
     expect(first.json).toMatchObject({
       ok: true,
+      committed: true,
+      output: {
+        committed: true,
+        postCommit: { status: "complete", warnings: [] },
+      },
       report: { candidateValid: true, importable: false, publishable: false },
     });
     const bytes = await readFile(utc);
+    expect(first.json.output).toMatchObject({
+      archiveSha256: (first.json.report as { archiveSha256: string })
+        .archiveSha256,
+      bytes: bytes.length,
+    });
     expect(bytes).toEqual(await readFile(other));
     expect(first.json).toEqual(second.json);
     const checked = await command("check", [utc, "--product", productId]);
@@ -137,6 +147,7 @@ describe("real pnpm QuizPack entrypoints", () => {
     expect(duplicate.code).toBe(1);
     expect(duplicate.json).toMatchObject({
       ok: false,
+      committed: false,
       issues: [{ code: "IO_OUTPUT_EXISTS" }],
     });
     expect(await readFile(utc)).toEqual(bytes);
