@@ -2,12 +2,12 @@
 
 P2-A已实现qf.operator、operator_session、audit_event及qf_meta.schema_migrations。P2-B1已追加product、category、tag、product_tag，已完成技术验收。真实字段、权限、锁序与CAS以[目录合同](STUDIO_P2B1.md)为准；运营metadata_revision与未来草稿content revision分离。Product使用包的稳定字符串ID，category/tag使用服务器UUID，不能把下方历史拟议UUID一概套到Product。
 
-B2-1候选已追加quizpack_import，当前共八张业务表；真实DB与权限检查进行中，尚未完成阶段验收。以下保留D0/F1业务约束和后续完整商品关系，其余实体尚未建立。当前Product只有运营身份/slug/title/主类目FK/metadata_revision/时间/归档字段，没有published指针或内容发布状态。草稿、资源、版本、Key和报告仍待后续追加迁移；B2-1的quizpack_import只记录接收意图、原字节冻结与显式恢复；实施合同见[STUDIO_P2B2](STUDIO_P2B2.md)，received不代表ZIP/内容或资源验证通过。完整草稿/blob/asset模型仍属后续批次。
+B2-1已追加quizpack_import，当前共八张业务表；214项真实DB测试、权限与独立审查已通过，代码技术验收见P2B2_RECEIVE_ACCEPTANCE。以下保留D0/F1业务约束和后续完整商品关系，其余实体尚未建立。当前Product只有运营身份/slug/title/主类目FK/metadata_revision/时间/归档字段，没有published指针或内容发布状态。草稿、资源、版本、Key和报告仍待后续追加迁移；B2-1的quizpack_import只记录接收意图、原字节冻结与显式恢复；实施合同见[STUDIO_P2B2](STUDIO_P2B2.md)，received不代表ZIP/内容或资源验证通过。完整草稿/blob/asset模型仍属后续批次。
 
 | 概念                  | 关键字段（拟议）                                                                                                                         | 关系与约束                                                                                      |
 | --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
 | QuizPack              | id、packId、packVersion、formatVersion、manifest、hash、compatibility、importStatus                                                      | ID/版本唯一；同版本不同哈希拒绝；validated 不等于人工批准                                       |
-| QuizPackImport        | id、productId、幂等key/指纹、声明bytes/hash、target、接收stateRevision/fence/attempts、实际bytes/hash及时间                              | B2-1已实现接收候选；received仅表示原字节冻结，不能代表验证、审核或草稿导入                      |
+| QuizPackImport        | id、productId、幂等key/指纹、声明bytes/hash、target、接收stateRevision/fence/attempts、实际bytes/hash及时间                              | B2-1已实现接收；received仅表示原字节冻结，不能代表验证、审核或草稿导入                          |
 | QuizPackValidation    | importId、稳定validationKey、validator/policy身份、独立状态、不可变候选与报告、asset-set hash                                            | B2-2提案；原接收事实不因复验失败而改写，运行故障与内容拒绝分开                                  |
 | QuizDefinition        | id、slug、title、engineType、status                                                                                                      | 1:N QuizVersion；slug 唯一；身份与内容版本分离                                                  |
 | QuizVersion           | id、definitionId、version、schemaVersion、engineVersion、status、contentHash                                                             | 同测评版本号唯一；发布后不可编辑；同一 Product 可绑定不同视觉版本；跨 Product 通过模板复制/冻结 |

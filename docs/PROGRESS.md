@@ -2,7 +2,9 @@
 
 ## 2026-10-12 托管推进
 
-B2-1当前为集成验收中：A核心f9593a7→90be27d、B真实入口22a521e→368d7a7已接入。八表迁移在root旧v1实例真实升级，591项全仓单元、174项真实DB、格式/lint/类型与生产构建通过；53份构建trace无私有路径违规。独立审查关闭B客户端问题，A在该基线登记4项P2；修复aa22f63后605单测/207真实DB通过，但仍有3项复审残留，见REVIEW。首次浏览器测试先因旧auth清理夹具外键失败，已修；重跑13项通过后被重复状态文本的测试选择器阻断，修复789734e后20项后台生产E2E全部通过；图检两处小修正90e9887正在复验。尚未完成阶段，不等于正式导入/发布；received仍未验证。详细记录见P2B2_RECEIVE_REVIEW/ACCEPTANCE。
+B2-1原包接收与恢复已完成代码技术验收：最终代码 `f070428b72570977db835946227b2c49d0666e42`，612单测、214真实DB、46驱动故障、206生产E2E/10既有跳过，格式/lint/类型/构建全部通过；53份trace路径检查无私有违规且动态扫描warning已消除。独立Astra登记问题全部闭合，五状态×四宽20图已逐张检查。代码[CI38174716526](https://github.com/aning0922/quiz-forge/actions/runs/38174716526)的checks/database均实际success；[Draft PR #10](https://github.com/aning0922/quiz-forge/pull/10)未合并，最终文档head CI以该PR实际checks及描述为准。A/B/root实例均停止，3100/55421–55424无监听。received仍只表示未验证原字节，没有资源归档、草稿或发布。详情见[P2B2_RECEIVE_ACCEPTANCE](P2B2_RECEIVE_ACCEPTANCE.md)、[REVIEW](P2B2_RECEIVE_REVIEW.md)、[VISUAL_CHECK](P2B2_RECEIVE_VISUAL_CHECK.md)。
+
+下一优先为独立媒体隔离可行性，随后B2-2同字节P1复验/证据与Product资源归档；总控已选择受限launcher路线，能力不满足时失败关闭。草案见[QUIZPACK_MEDIA_ISOLATION_PREFLIGHT](QUIZPACK_MEDIA_ISOLATION_PREFLIGHT.md)，尚未执行或验收。B2-3草稿应用、P3评分/表现、Key/报告与首款端到端仍按已授权路线继续；旧暂停聊天未恢复。
 
 B2-1已建立独立 `codex/quizpack-receipt` 工作树，基于B1最终文档提交 `e8da98b27ed1469a5e15f927cfdbf51445d553fe`；该head的[CI38169117712](https://github.com/aning0922/quiz-forge/actions/runs/38169117712) checks/database均已核实success。首批原包接收合同见STUDIO_P2B2.md，已完成独立前置审查并修订绝对期限与CLI文件guard两项P2；此为启动登记，最新集成状态以上段为准。B1交付分支继续保留，不将下一阶段混入PR #9。合同eb8c8b9、共享准备5f2f8e5已提交推送，Draft PR #10堆叠于B1；两条Sol/high实现聊天已启动，18项定向安全测试及类型/lint为初始准备证据，不等于接收功能验收。
 

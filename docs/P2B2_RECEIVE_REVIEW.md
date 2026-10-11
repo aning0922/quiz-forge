@@ -2,6 +2,8 @@
 
 日期：2026-10-12。审查使用独立 GPT-6 Astra/high 聊天；总控负责合同决定与集成，两条 GPT-6.1 Sol/high 聊天负责实施。本文只记录已发生的审查，不把合同通过当作代码验收。
 
+最终代码 `f070428b72570977db835946227b2c49d0666e42` 的独立增量复验已关闭全部登记问题，无剩余可复现 P1/P2。下文保留发现与整改过程，早期“待修”描述只对应当时提交；工程与浏览器结果另见验收记录。
+
 ## 实施前合同审查
 
 最终复核提交：`5f2f8e5da3e9a6cc32dc65949a213973fa9e0938`。结论：合同层面无剩余P1/P2，以下两项P2已修订闭合。
@@ -33,10 +35,16 @@ B73d35e2→aa8099e的独立复审关闭累计unknown与恢复父子同步；响�
 
 同轮复审第三项P2：StorageLock.query(promise)在观察已求值的heldRows promise前assert，失效时遗落拒绝；实际heldRows/失效连接内存探针观察到unhandledRejection。已要求工厂式query，先assert再启动，完整修复前不关闭核心审查。
 
-## 收口复验（尚有一项待修）
+## 收口复验过程
 
 `aec72c1` → root `2d17550`：独立 Astra 的 3 文件 14 单元及内存探针确认旧 held 未落盘 namespace 计量、停止证明只读重放及发布后无新写闭合。无新增文件的过额恢复静态复核通过，仍保留完整扫描、账目、当前权限、停止证明与 fence；真实故障证据由总控 212 项 DB 回归补足。
 
 factory 修复还有一个求值顺序窗口：`work()` 产生 Promise 后，`remainingReceiveMs()` 恰好抛错，拒绝未进入观察链。独立探针实际观察到 `unhandledRejection`，已要求预算先算、工厂结果立即进入被观察 Promise 链，同时修正 acquire 参数顺序。此项尚未关闭。
 
 B 最终窄审基线 `abc4c87`：HTTP 将同一 ReceiveContext 传给 DB factory 与服务；原生 input 保持、显式重选、累计 unknown、恢复提示及简化列表均未引入新的 P1/P2。5 文件 55 项独立纯单测通过；没有冒充浏览器或 A 内部实现验收。
+
+## 最终独立结论
+
+最终 A 增量 `8a3eda5` → root `f070428`：原探针在 factory 内触发 abort 或越过 deadline 后都返回 `RECEIVE_LOCK_LOST`、永久失效，且没有 unhandled rejection；reserve、SET、try-lock、query、unlock 的工作结果均进入被观察 Promise 链。3 文件 17 项独立单元全部通过。`source.cancel()` 保留接收者的修正、0007→0008 真实启用门槛、revision/fence 上限及身份禁用测试未见新增问题。
+
+B 增量的独立结论沿用上一节 55 项单测及具体范围；此后没有修改后台行为。构建路径标注未削弱运行时路径检查。A/B 的已登记问题全部闭合，本轮限定实现中无剩余可行动 P1/P2。独立审查没有执行 root 真实 DB、build 或生产浏览器，不能代替总控对应检查；自动断言和截图也不是作者视觉、内容或商业批准。

@@ -4,7 +4,7 @@
 
 B1的app路由只组合页面或调用HTTP适配层；features/studio负责可交互表单和受控DTO，features/product/workspace负责目录规则/应用服务/数据库访问，lib/auth的同事务鉴权在开始和提交前重验当前身份。错误提交不自动重发，界面保留冲突输入，目录自动刷新不能丢失未保存状态。运营metadata_revision独立于尚未实现的content revision。
 
-B2-1已在Draft PR #10接入每个Product的原包接收列表、状态详情、上传与显式恢复，正在集成验收。`app`只组合路由；`features/studio/imports`拥有浏览器状态与HTTP适配，`features/quizpack/import`拥有接收、配额、文件冻结和恢复服务。原字节存于受管实例私有目录，数据库保存不可变接收声明与实际字节事实。文件IO不占用鉴权事务，写入前后均检查当前权限；结果未知时先核实，不自动重复写。
+B2-1已在Draft PR #10接入每个Product的原包接收列表、状态详情、上传与显式恢复，已完成代码技术验收，见[接收验收](P2B2_RECEIVE_ACCEPTANCE.md)。`app`只组合路由；`features/studio/imports`拥有浏览器状态与HTTP适配，`features/quizpack/import`拥有接收、配额、文件冻结和恢复服务。原字节存于受管实例私有目录，数据库保存不可变接收声明与实际字节事实。文件IO不占用鉴权事务，写入前后均检查当前权限；结果未知时先核实，不自动重复写。
 
 后续顺序为受限媒体launcher可行性→同字节P1复验/资源归档→首稿，再编辑/结构预览/送审。[B2-2提案](STUDIO_P2B2_VALIDATION_PROPOSAL.md)选择独立隔离媒体进程，尚未实现或冻结业务接口；接收记录不兼任验证证据，资源物理blob与Product内声明分开。评分预案和[P3表现预案](PRESENTATION_P3_PREFLIGHT.md)均未实现；拟保留content.v1并以有限content.v2表达分厅、题签、场景和海报，不开放包内代码或任意props。
 
