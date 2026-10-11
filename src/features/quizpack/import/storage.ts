@@ -44,7 +44,11 @@ export const receiptSchema = z.strictObject({
   ownerNonce: attemptSchema.shape.ownerNonce,
 });
 export type FileFact = { file: string; size: number; inode: Stats };
-export type Scan = { bytes: number; files: Map<string, FileFact[]> };
+export type Scan = {
+  bytes: number;
+  entries: number;
+  files: Map<string, FileFact[]>;
+};
 const conflict = () => new StudioError("RECEIVE_STORAGE_CONFLICT");
 const missing = (e: unknown) => (e as NodeJS.ErrnoException)?.code === "ENOENT";
 export function instanceDirectory(config: P2aRuntimeConfig) {
@@ -57,8 +61,13 @@ export function importDirectory(config: P2aRuntimeConfig, id: string) {
   if (!importIdSchema.safeParse(id).success) throw conflict();
   return path.join(importsDirectory(config), id);
 }
-export async function privateDirectory(dir: string) {
+export async function privateDirectory(
+  dir: string,
+  check: () => void = () => {},
+) {
+  check();
   const s = await lstat(dir);
+  check();
   if (
     !s.isDirectory() ||
     s.isSymbolicLink() ||
@@ -67,6 +76,7 @@ export async function privateDirectory(dir: string) {
     (await realpath(dir)) !== dir
   )
     throw conflict();
+  check();
 }
 export function privateFile(s: Stats) {
   if (
@@ -79,21 +89,27 @@ export function privateFile(s: Stats) {
   )
     throw conflict();
 }
-export async function ensureStorage(config: P2aRuntimeConfig) {
+export async function ensureStorage(
+  config: P2aRuntimeConfig,
+  check: () => void = () => {},
+) {
   const instance = instanceDirectory(config);
-  await privateDirectory(path.dirname(instance));
-  await privateDirectory(instance);
+  await privateDirectory(path.dirname(instance), check);
+  await privateDirectory(instance, check);
   for (const dir of [
     path.join(instance, "uploads"),
     importsDirectory(config),
   ]) {
+    check();
     try {
       await mkdir(dir, { mode: 0o700 });
     } catch (e) {
       if ((e as NodeJS.ErrnoException).code !== "EEXIST") throw e;
     }
-    await privateDirectory(dir);
+    check();
+    await privateDirectory(dir, check);
   }
+  check();
 }
 export async function assertNoConfigGuard(config: P2aRuntimeConfig) {
   for (const name of [
@@ -117,8 +133,6 @@ export async function scanStorage(
   config: P2aRuntimeConfig,
   context: ReceiveContext,
 ): Promise<Scan> {
-  remainingReceiveMs(context);
-  await ensureStorage(config);
   const deadline = Math.min(
     context.deadlineMonotonicMs,
     performance.now() + SCAN_TIMEOUT_MS,
@@ -127,45 +141,57 @@ export async function scanStorage(
     directories = 0,
     bytes = 0;
   const files = new Map<string, FileFact[]>();
-  const check = () => {
+  const assertScanDeadline = () => {
     remainingReceiveMs(context);
-    if (performance.now() >= deadline || ++entries > MAX_SCAN_ENTRIES)
+    if (performance.now() >= deadline)
       throw new StudioError("RECEIVE_SCAN_LIMIT");
   };
+  const countEntry = () => {
+    assertScanDeadline();
+    if (++entries > MAX_SCAN_ENTRIES)
+      throw new StudioError("RECEIVE_SCAN_LIMIT");
+  };
+  assertScanDeadline();
+  await ensureStorage(config, assertScanDeadline);
+  assertScanDeadline();
   const uploads = await opendir(path.dirname(importsDirectory(config)), {
     bufferSize: 32,
   });
   for await (const entry of uploads) {
-    check();
+    countEntry();
     if (entry.name !== "imports") throw conflict();
-    await privateDirectory(importsDirectory(config));
+    await privateDirectory(importsDirectory(config), assertScanDeadline);
   }
+  assertScanDeadline();
   const root = await opendir(importsDirectory(config), { bufferSize: 32 });
   for await (const entry of root) {
-    check();
+    countEntry();
     if (++directories > MAX_IMPORT_DIRECTORIES)
       throw new StudioError("RECEIVE_SCAN_LIMIT");
     if (!importIdSchema.safeParse(entry.name).success) throw conflict();
     const dir = importDirectory(config, entry.name);
-    await privateDirectory(dir);
+    await privateDirectory(dir, assertScanDeadline);
+    assertScanDeadline();
     const children = await opendir(dir, { bufferSize: 32 });
     const facts: FileFact[] = [];
     for await (const child of children) {
-      check();
+      countEntry();
       if (facts.length >= MAX_FILES_PER_IMPORT)
         throw new StudioError("RECEIVE_SCAN_LIMIT");
       if (!filename.test(child.name)) throw conflict();
       const file = path.join(dir, child.name),
         inode = await lstat(file);
+      assertScanDeadline();
       privateFile(inode);
       bytes += inode.size;
       if (!Number.isSafeInteger(bytes)) throw conflict();
       facts.push({ file, size: inode.size, inode });
     }
+    assertScanDeadline();
     files.set(entry.name, facts);
   }
-  remainingReceiveMs(context);
-  return { bytes, files };
+  assertScanDeadline();
+  return { bytes, entries, files };
 }
 export async function openPrivate(file: string): Promise<FileHandle> {
   const handle = await open(
@@ -319,4 +345,15 @@ export async function hashArchive(
   } finally {
     await handle.close();
   }
+}
+
+export function currentReceiptLimits(scan: Scan, id: string) {
+  const receipts = (scan.files.get(id) ?? []).filter((f) =>
+    /^stopped-.*\.json$/.test(path.basename(f.file)),
+  );
+  if (receipts.length > 3 || receipts.reduce((n, f) => n + f.size, 0) > 6144)
+    throw new StudioError("RECEIVE_SCAN_LIMIT");
+  for (const receipt of receipts)
+    if (receipt.size > MAX_RECEIPT_BYTES)
+      throw new StudioError("RECEIVE_STORAGE_CONFLICT");
 }

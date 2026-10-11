@@ -13,3 +13,11 @@ runtime 文件严格分派 v1/v2；内部 v1 规范模型增加关闭开关，�
 补充真实PG8用例通过：v1显式升级保持凭据、CLI丢锁晚到rename和旧guard晚到unlink的互斥、损坏/链接/超限与残留恢复guard、原子替换失败、精确列权限和触发器、有限审计no-op。
 
 剩余证据：更多连接/限额/停止/身份边界与真实60秒期限。全套检查与阶段验收仍未完成。未创建 draft/blob/asset 或发布功能。
+
+独立审查后的增量修复：扫描子deadline从入口建立（含ensureStorage），在各IO settle、目录迭代结束及返回前复核；claim前预留新增目录和partial/archive/stopped/tmp名称容量（目录1024、目录文件16、总项8192）；storage所有reserve/SET/try-lock/check/unlock加客户端≤2秒墙钟截止，失效永久abort并end(0)，不替换驱动onclose。追加0008保护120秒lease不在同fence续期，旧迁移保持不变。
+
+request DB黑洞修复：client/createDatabase及getDatabase支持可选`DatabaseBudget {signal,deadlineMonotonicMs}`，在首个身份查询前持有client，同绝对期限/取消可关闭它。receive/recover服务合同明确DB必须属于本次独占操作；每段read/write DB await同deadline，读超时RECEIVE_TIMEOUT，开始潜在写入后的未确认回执WRITE_OUTCOME_UNKNOWN，所有迟到reject受观察。这里只race数据库等待，文件IO继续等待实际settle再释放storage。正常B1调用不传budget仍保留既有行为。测试长操作改为fresh createDatabase；受控TCP转发器只作故障注入，不记录协议字节。
+
+增量针对性检查：类型/相关lint通过；扫描/锁/request预算9单元通过；真实PG+文件+TCP黑洞3文件29用例通过（包括目录1024/+1、目录12+4/13+4、总项8192峰值/+1的真实接收前拒绝）。storage黑洞3例和首次验证/请求读取/潜在写入黑洞3例均实际运行。纯不settle探针与受控clock分别记录为单元级证据。
+
+此前全仓test:db实际15文件183用例通过（包含单独90秒timeout配置的真实60秒流期限）；该全仓结果发生在四项修复之前，修复后须再跑完整域回归。更多租约/权限溢出与完整检查仍在进行；build、生产E2E、CI、PR由总控整合执行，不在此宣称阶段退出。

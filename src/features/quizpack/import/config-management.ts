@@ -141,7 +141,7 @@ export async function configureImports(
     lock.assert();
     const [migration] = await managed.sql<
       { ready: boolean }[]
-    >`SELECT EXISTS(SELECT 1 FROM qf_meta.schema_migrations WHERE version='0007_quizpack_import') ready`;
+    >`SELECT EXISTS(SELECT 1 FROM qf_meta.schema_migrations WHERE version='0008_import_lease_renewal_guard') ready`;
     const [permission] = await managed.sql<
       { ready: boolean }[]
     >`SELECT has_table_privilege(${current.config.database.user},'qf.quizpack_import','SELECT,INSERT') AND has_column_privilege(${current.config.database.user},'qf.quizpack_import','status','UPDATE') AND NOT has_table_privilege(${current.config.database.user},'qf.quizpack_import','DELETE') ready`;
