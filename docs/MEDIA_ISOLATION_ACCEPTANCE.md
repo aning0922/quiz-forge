@@ -31,3 +31,5 @@ macOS没有native RSS硬上限。作者同政策16MP WebP合成样本约355MiB�
 root自有PG实例 `2ed89d08600b03487c9f844dbfb1fceb` 已受管停止，私有配置/PGDATA保留；3100/55421–55424无监听。mac控制根空，合成进程/Unix/TCP/Mach同伴结束；Linux每个自有容器经核停止后移除，控制目录空，镜像/私有证据留在本次临时CI runner。作者两条平台流均已结束本批开发。
 
 本批只交脚本层受控launcher可行性，不接Studio、业务表或P1正式入口。B2-2先做可信桥接与生产模块迁移，再做证据/资源归档及后台。迁移后必须在最终目标worktree、真实生产构建路径重新核能力；不能仅因本批通过便导入任意包。四卡内测草案的内容、素材及正式发布闸门保持独立，旧D1-D聊天继续暂停。
+
+后继核验记录：预检最终交付head `1f6f3880f1d5c920835f5cf235c2a93b28588c29` 的[普通CI38183785073](https://github.com/aning0922/quiz-forge/actions/runs/38183785073) checks/database及[媒体CI38183785046](https://github.com/aning0922/quiz-forge/actions/runs/38183785046/job/114601687474)均实际success；31+11矩阵再次通过，关键stop-loss与控制清理均通过。有限观测为OBSERVED：真实kernel6.17.0-1022-azure/x64、worker Node20.20.1/sharp0.35.5/libvips8.18.7；一项16MP PNG测量peak88,797,184 bytes，另一项16MP PNG解码536ms，不拼成同一次测量。本次本地image ID为 `sha256:0ed2a191644a75e6862036f4ca621c96753f735d14feb002734c073655396bea`、profile `7ebda72d1ace5f7f82ec8b7c6de16a6c5bab5c3af8fa792a1888e41470601ac3`；buildInputs与worker摘要保持上述值。旧第九轮身份记录仍真实有效，未被改写成新run。

@@ -116,3 +116,5 @@ B2-1最终文档head `5caef26` 的CI38175221128已核实checks/database均succes
 ## B2-2A 准备登记
 
 总控工作树codex/quizpack-validation-bridge基于预检最终1f6f388。STUDIO_P2B2_VALIDATION.md的A范围已按独立审查冻结：A-R独占生产媒体目录及原shared/macOS/Linux脚本迁移，A-V独占P1内部执行拆分及server/validation；总控负责build/CI/fixture/部署身份与串行真实验收。停止上下文由A-R提供，所有层共享首个收尾期限；未知停止或单图运行失败中断整包，不只转成issue继续解码。父交付head CI核清前只准备，不写运行实现；B2-2B SQL与DTO后冻。
+
+父1f6f388最终普通CI38183785073与平台CI38183785046现已全部success。总控正式放行两条Sol/high实现代理：`media_runtime_migration` 在codex/media-runtime-integration，`trusted_validation_bridge` 在codex/trusted-validation-engine，均从fce1246独立受管worktree开始。先交公共上下文/身份合同与纯候选证据；总控另让Sol小代理在专属忽略目录验证Next fixture定位，禁止改业务/根配置或占3100。隔离probe仅占自有3111，完成关闭，不当正式媒体验收。Astra继续非实施审查；Draft PR #12依赖#11，未合并。
