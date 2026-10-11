@@ -78,7 +78,7 @@ requireCapability(actor,capability)：两角色允许studio:read；仅operator�
 
 owner/migrator和app登录分离，app非owner/超级用户、无CREATEDB/CREATEROLE/BYPASSRLS/继承提权。撤销PUBLIC数据库CREATE/TEMP、schema CREATE；app只有CONNECT和qf USAGE。operator仅SELECT；session SELECT/INSERT，UPDATE仅last_seen_at/idle_expires_at/revoked_at/failed_attempts；audit SELECT/INSERT，禁止UPDATE/DELETE/TRUNCATE；qf_meta无app写权限。SQL使用显式schema名。
 
-新增test:db真实PG测试，配置缺失/连不上/marker或版本不匹配必须exit1，不静默skip或内存替代。普通test仍不需要DB。CI独立database job使用固定官方postgres:18.4 digest，动态loopback映射端口及健康检查，创建本次合成role/config/marker，冻结迁移和test:db。具体脚本/测试配置由DB流先交付，根package和CI由总控接入。
+新增test:db真实PG测试，配置缺失/连不上/marker或版本不匹配必须exit1，不静默skip或内存替代。普通test仍不需要DB。CI独立database job在受控步骤中随机生成bootstrap口令并先注册掩码，以0600私有文件传入固定官方postgres:18.4 digest容器；动态loopback映射端口、健康检查、实例label与退出trap清理，不能使用可预测或未经掩码的口令启动services。只创建本job合成role/config/marker，运行冻结迁移和test:db。具体脚本/测试配置由DB流先交付，根package和CI由总控接入。
 
 必验：迁移重放/checksum/失败回滚；app DDL、operator写、audit改删、session身份或absolute修改拒绝；两连接同时消费preauth；旧token/跨session CSRF拒绝；撤销/停用/两种到期；touch与revoke竞争；缺错Host/Origin/CSRF、4KiB真实字节、并发限流；read-only不能写；无配置页面/HTTP明确不可用，build不连DB。总控六项检查+独占3100真实登录退出E2E+320/375/390/430截图和助手实际图检。
 
