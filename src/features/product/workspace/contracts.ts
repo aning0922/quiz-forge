@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { DIRECTORY_TEXT_FORBIDDEN } from "./text-policy";
 import { packIdSchema } from "@/features/quizpack/v1/manifest";
 
 export const MAX_METADATA_REVISION = 2147483647;
@@ -24,7 +25,7 @@ const text = (max: number) =>
           (v) =>
             [...v].length >= 1 &&
             [...v].length <= max &&
-            !/[\p{Cc}\p{Cf}\p{Zl}\p{Zp}<>]/u.test(v),
+            !DIRECTORY_TEXT_FORBIDDEN.test(v),
         ),
     );
 export const titleSchema = text(120);
@@ -108,9 +109,7 @@ const qSchema = z
   .pipe(
     z
       .string()
-      .refine(
-        (v) => [...v].length <= 80 && !/[\p{Cc}\p{Cf}\p{Zl}\p{Zp}<>]/u.test(v),
-      ),
+      .refine((v) => [...v].length <= 80 && !DIRECTORY_TEXT_FORBIDDEN.test(v)),
   );
 const commonQuery = {
   page: z.number().int().min(1).max(1000).default(1),
