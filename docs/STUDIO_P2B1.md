@@ -1,6 +1,6 @@
 # P2-B1：目录工作区实施合同草案
 
-日期：2026-10-12。状态：**待总控最终冻结，未实施**。本文件只收敛 B1，不能据此自行启动代码开发；P2-A 实际技术门槛由总控收口后再安排实施。本文没有新增表、业务服务、测试通过或 UI 验收的声明。
+日期：2026-10-12。状态：**总控已冻结，开始B1实施，尚未验收**。P2-A代码720b982已通过442单测、57真实DB、189生产E2E及普通/数据库CI，最终交付文档38177fb；B1从其独立堆叠分支推进。本文没有新增表、业务服务、测试通过或UI验收的声明。
 
 分析基线：`codex/studio-foundation`，`720b982ae486dbe7349dfa7034367cf8a6c76875`。依据 [P2-B 预案](STUDIO_P2B_PREFLIGHT.md)、[P2-A 合同](STUDIO_P2A.md)以及现有 [auth service](../src/lib/auth/service.ts)、[auth lock](../src/lib/db/auth-lock.ts)、[DB client](../src/lib/db/client.ts)、[schema](../src/lib/db/schema.ts)、[migration runner](../src/lib/db/migrate.ts)。
 
@@ -62,7 +62,7 @@ audit_event 追加三个 nullable 列：`target_kind varchar(8)`、`target_id va
 
 现有 `readSession` 自己开事务、获得 auth lock、校验并 touch，然后返回 actor。该 actor 只能表示该次查询结果；随后调用 `requireCapability(oldActor, ...)` 不能保证业务写入时仍有权限。所有 B1 写服务必须使用同一个共享事务包装器，不各自复制认证 SQL。
 
-建议共享接口（待冻结，由 A 流集中交付）：
+固定共享接口（由 A 流集中交付）：
 
 ```ts
 type StudioWriteCredentials = Readonly<{
@@ -166,6 +166,8 @@ ProductDto 包含 id/slug/title/metadataRevision、createdAt/updatedAt/archivedA
 
 列表 query 固定：`page` 默认1、整数1..1000；`pageSize` 默认20、整数1..50；`status=active|archived|all` 默认active；`q` 可省略，规范后最多80 code points。Product 另支持单个 `categoryId`、单个 `tagId`、`unclassified=true|false`（默认false）；unclassified=true 与 categoryId 同时出现拒绝，分类/标签同时使用为 AND。未知合法 UUID 筛选返回空列表，不当不存在实体错误。
 
+taxonomy列表另允许单个canonical `slug` 精确筛选，供创建结果未知时以 `status=all` 核实唯一身份，不能用模糊q的第一页“没找到”推断未提交。q规范后为空等同省略；明确有值时最多80 code points。
+
 q 对 id/slug/title（目录为slug/name）作字面子串查询，参数化并转义 LIKE 的 `%/_/\\`，不能让用户输入变成通配语言或 SQL。分类与标签使用 EXISTS/精确 FK 查询，避免 JOIN 造成重复 Product。
 
 返回 `{items,page,pageSize,total,hasNext}`；稳定排序 `created_at DESC,id ASC`。每次 count 与 items 使用同一个短只读一致性快照；不同请求间不承诺快照分页，列表新增后可刷新。越过最后一页返回空 items 和实际 total，不伪造不存在错误。全部列表都有上限，分类/标签选择器用分页搜索，不一次下载全表。
@@ -202,7 +204,7 @@ B1 不新建幂等表。Product 稳定 ID 和 slug 唯一防止重复创建；ca
 
 ## 文件所有权与共享前置提交
 
-总控冻结本合同后再启动实现。A 首先交付共享鉴权/DTO/Schema 的独立提交，B 对该固定提交接入；不让两流各造鉴权或 SQL。
+总控已冻结本合同并按A/B分流。A 首先交付共享鉴权/DTO/Schema 的独立提交，B 对该固定提交接入；不让两流各造鉴权或 SQL。
 
 | 所有者      | 独占范围                                                                                                                                                                                                                                                                      |
 | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -210,9 +212,11 @@ B1 不新建幂等表。Product 稳定 ID 和 slug 唯一防止重复创建；ca
 | B：HTTP/UI  | 新 Product/category/tag handlers；`src/features/studio/workspace/**`、工作区/目录页面及局部样式；HTTP/E2E/截图检查。复用A的服务和DTO，不执行直接领域SQL，不改迁移或复制auth查询。                                                                                             |
 | 总控        | package/lock、CI/Vitest/Playwright等共享配置、根阶段文档、独占3100/集成实例、共享错误码与既有通用客户端的改动协调、集成和最终验收。                                                                                                                                           |
 
-`StudioErrorCode/errorResponse` 与通用 studioFetch 当前字段有限：新增领域错误与 currentRevision 的支持由总控指定单写者集中完成，不能让两流各自增加不兼容处理。B可独占新的 workspace HTTP适配层，不能绕过既有来源检查、JSON读取和秘密脱敏。
+共享文件单写者确定：A负责`src/lib/http-security/errors.ts`中的领域错误union、正整数currentRevision受控扩展和服务端errorResponse；B负责`src/features/studio/client.ts`的对应浏览器错误适配以及现有Studio shell/session-panel的真实导航更新。A的浏览器安全DTO/Schema固定放`src/features/product/workspace/contracts.ts`，必须先提交准确导出再交B。B另拥有`tests/db/p2b1-http*.test.ts`、`tests/db/p2b1-e2e-fixture.ts`、`tests/e2e/studio-workspace.spec.ts`；A拥有其余B1 DB测试和shared reset fixture。双方不得改对方文件或共享package/CI/测试配置。
 
-所有写事务回调只做有限 SQL，设置有界锁/语句等待并映射 WRITE_BUSY；最终具体 timeout 常量由总控在冻结时确认。不得持 auth lock 跨文件或网络操作。未来B2媒体/文件工作仍在业务事务外，不能把本包装器包住完整导入过程。
+所有写事务回调只做有限SQL。本机B1在取得auth锁前以SET LOCAL固定lock_timeout=2s、statement_timeout=5s、transaction_timeout=10s；不修改全局或P2-A既有认证政策。[PostgreSQL18官方说明](https://www.postgresql.org/docs/18/runtime-config-client.html)中事务期限会终止会话，不能一律解释成确定失败。已确认语句取消/锁超时及回滚映射WRITE_BUSY；回调返回后提交或连接结果无法确认时映射WRITE_OUTCOME_UNKNOWN。先回滚/关闭再响应，不自动重放业务回调。不得持auth锁跨文件或网络；未来B2媒体/文件工作仍在业务事务外。
+
+测试环境仍为每条开发线新建的本任务purpose=test实例：A预留55421，B55422，总控55423，各自先检查空闲，结束停止。3100仅总控。新增workspace E2E项目必须在studio-auth项目完成后运行，避免两个fixture同时重置同一数据库；由总控配置Playwright项目依赖，trace/video/自动截图均关闭。A升级shared reset时显式列出B1四表与原三表，不用无边界CASCADE。DB数据只有合成测试输入。
 
 ## 必须执行的验收
 
@@ -226,4 +230,4 @@ B1 不新建幂等表。Product 稳定 ID 和 slug 唯一防止重复创建；ca
 - 提交结果未知不自动重写；恢复读取实际revision/唯一身份。审计只记真实变化、正确目标revision、当前actor/session，无内容和秘密。
 - 真实生产构建的列表/创建/编辑/筛选/归档/恢复/冲突/只读/空状态，移动截图与助手图检；认证E2E继续关闭trace/HAR/video及敏感失败截图。
 
-阶段收口执行 format/lint/typecheck/test/build/test:e2e 以及真实 test:db；配置缺失或连不上必须失败，不能静默跳过。区分本地结果、远端CI和人工验收，交付精确SHA、实际证据和限制。文档编写时上述B1检查全部待执行，未授予本线代码开发或部署权限。
+阶段收口执行 format/lint/typecheck/test/build/test:e2e 以及真实 test:db；配置缺失或连不上必须失败，不能静默跳过。区分本地结果、远端CI和人工验收，交付精确SHA、实际证据和限制。B1工程实施已在用户P1–P5托管范围内，上述B1检查全部待执行；main合并、生产迁移/部署及发布仍未授权。
