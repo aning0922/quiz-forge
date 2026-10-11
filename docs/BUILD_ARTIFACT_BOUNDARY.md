@@ -1,0 +1,15 @@
+# 构建追踪清单与私有状态边界
+
+Next.js 16.4.0 会分析 import、require 与动态 fs 访问并生成 `.next/**/*.nft.json`，这些清单可能被部署打包器用于复制文件。项目曾观察到动态 fs 路径把本机 P2-A 私有 runtime/admin JSON 与 PGDATA 纳入清单；`next build` 成功本身不能证明部署输入安全。
+
+本仓库使用两层检查：`next.config.ts` 的 `outputFileTracingExcludes` 排除私有状态及测试产物；构建完成后执行 `pnpm exec tsx scripts/check-build-traces.ts` 审计实际生成的追踪清单。GitHub Actions普通检查job在生产构建后执行守卫；工作流配置不代表远端 CI 已通过。本地交付同样在构建后执行该命令。
+
+守卫从当前仓库根读取 `.next` 中的 NFT JSON，只处理清单结构、路径和必要的文件系统元数据，不读取被追踪依赖、数据库或私有配置内容。拒绝任何指向当前根目录 `.cache`、`.git`、`.env*`（含示例）、`test-results`、`playwright-report` 的清单路径。未来私有 uploads 也应放在 `.cache` 内并继承同一边界。路径归一化、真实符号链接与缺失叶子的现存祖先均参与检查；外部合法 pnpm/共享依赖仍可使用。发现阶段不进入私有目录别名，并限制别名循环。
+
+支持已固定版本的 NFT v1，以及 `entryHash`、平行 `fileHashes`、索引式 `symlinks` 和具名 `additionalRoots` 扩展，包括跨根符号链接目标。额外根的路径、文件列表和符号链接都被检查；未知字段或不合法结构直接失败，避免新增路径格式被静默忽略。没有 trace、损坏 JSON、无法读取/解析的文件系统路径同样失败。CLI 只输出固定状态码和 trace/path/violation 数量，不输出原始路径、清单内容或底层错误。
+
+此守卫是部署追踪清单的路径边界检查，**不是内容防泄漏扫描或证明**。排除规则不能发现已嵌入 JS、静态页面、源映射或其他产物的秘密，也不能替代环境变量、资源归属、发布审核与部署打包边界。测试与审计应在稳定、独占的构建目录上运行；不提供并发攻击者修改文件系统时的安全保证。当前根之外的合法依赖不因为位于共享目录而被拒绝；外部依赖内容仍需按依赖治理规则审核。
+
+官方依据：[Next.js output / Output File Tracing](https://nextjs.org/docs/app/api-reference/config/next-config-js/output)。官方说明路径相对清单目录；`fileHashes` 与 `files` 顺序一致，`symlinks` 标记文件索引及目标，`additionalRoots` 使用独立文件列表；includes/excludes 的 glob 从项目根解析，仅影响生成 server trace 的路由。
+
+2026-10-12本地证据：31项守卫边界单测通过。旧构建实际审计退出1，BUILD_TRACE_PRIVATE_PATH，31份trace/1304个违规路径；没有输出路径或私有内容。应用排除配置后重新运行生产构建并审计，实际BUILD_TRACE_OK，31份trace/5518次路径检查/0违规。此结果只覆盖当时B1领域已集成、UI尚未接入的构建；最终完整B1还需重建复核，不等于部署或完整内容泄漏扫描。
