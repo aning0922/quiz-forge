@@ -18,6 +18,14 @@
 
 首轮发现的错误版本锚点已修正：此前将 inkjs 与 Puck 的 tag commit 写为不对应的 SHA，会破坏来源、许可和安全复核。现在报告使用与 npm `gitHead` 和 GitHub tag ref 一致的 `edccead…` 与 `b4204f…`，并增列 tarball integrity。此前缺少的维护活动抽样也已增加，且明确说明它不是 SLA 或全量 issue/PR 审计。
 
+## 后续 Quizcraft 身份核验附录
+
+用户提供精确仓库后，我复核 `bensblueprints/quiz-builder-mvp` 的 `main` 仍指向固定 commit `2641887297205828f15a3bd87c1d4f0c69e250de`。其固定 checkout 的 `package.json` 标识为 `quizcraft@1.0.0`，LICENSE 为 MIT；因此原先的“身份未证实、待定”结论已失效，现行结论为**仅借鉴实现思路**。
+
+我实际运行了自编 `docs/oss-r/quizcraft-logic-audit.mjs`，只加载审阅过的 `server/logic.js` 纯函数并静态读取 Runner。输出确认缺答静默接受、`-1` 与 `99.5` rating 参与计分、平分取决于结果顺序、answer-map 不绑定题目 option，且 self-loop 返回自身。该夹具不启动 Express、SQLite、Electron、安装脚本或候选应用。随后复读报告对 HTTP 层的限定：未知题 ID 和基础类型/长度限制由服务端处理；报告没有把纯函数表面直接误称为已证实的 HTTP 绕过漏洞。
+
+该仓库是 React 18/Vite/CommonJS/Express/SQLite/Electron 应用，含 native `postinstall`，没有提供针对 QuizForge Next 16.4、React 19.3、TypeScript strict、PostgreSQL 或 QuizPack 边界的直接适配/实测。其 lockfile 改善自身快照复现，不足以抵消将应用栈、可变 SQL 模型和未版本化业务语义引入 QuizForge 的成本。公开 DTO 剥离分数/结果规则、服务端计算及其 smoke 覆盖维度可以作为设计参考；不应依赖、移植或运行其运行时/数据模型。
+
 ## 验证
 
 独立审查于约 2026-10-11 15:55（Asia/Shanghai）在本工作树实际执行以下命令，均成功：
@@ -33,7 +41,7 @@
 
 ## 剩余限制与后续门槛
 
-- Quizcraft 仍缺唯一官方身份链，必须保持待定，直到作者提供准确 owner/repo 或包链接。
+- Quizcraft 的身份与 MIT 许可已固定核验，但其短维护历史、未证实关联 npm 引擎库发行、运行时供应链及规则/会话完整性不足仍不允许采用；保持“仅借鉴、无依赖/移植”。
 - inkjs 的推荐只是未来候选，不等于作者对安装或采用的批准。实际引入前仍须完成独立 PR、锁定依赖树的许可/漏洞审计、Node 20/24 matrix、输入与执行配额、DoS/随机/外部函数限制、升级回放兼容及 MIT 随分发履行。
 - SurveyJS 与 Puck 均未进入生产范围；它们的动态 Next/RSC、消费者 bundle 与移动端行为尚未验证。
 - GitHub 安全公告、仓库策略和维护抽样是点时证据，不能推导供应链无风险或维护 SLA。

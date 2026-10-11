@@ -8,7 +8,7 @@ QuizForge 应继续拥有 QuizPack 的数据格式、版本固定、确定性结
 
 | 候选          | 身份与研究版本                                                                                                                                                                                                                                                                                                                      | 结论                         | 建议边界                                                                                                           |
 | ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| Quizcraft     | 未能核实唯一的官方 GitHub 仓库、npm 包或授权版本                                                                                                                                                                                                                                                                                    | **证据不足，待定**           | 不下载、不运行、不引用；作者若有确切 URL 再做审计。                                                                |
+| Quizcraft     | [`bensblueprints/quiz-builder-mvp`](https://github.com/bensblueprints/quiz-builder-mvp)（README 名称为 Quizcraft）；固定 commit [`2641887297205828f15a3bd87c1d4f0c69e250de`](https://github.com/bensblueprints/quiz-builder-mvp/tree/2641887297205828f15a3bd87c1d4f0c69e250de)，2026-07-28 +07:00                                   | **仅借鉴实现思路**           | 可借鉴公开 payload 剥离评分数据、服务端判定和小型 smoke 覆盖的方向；不依赖、不移植其运行时或数据模型。             |
 | SurveyJS Core | [`surveyjs/survey-library`](https://github.com/surveyjs/survey-library)；npm `survey-core@3.2.0`（2026-10-06，发布元数据 `gitHead` `c1b935e8dc0a8eaeac334dc2bdbb83bd0734bd09`）；仓库 release `v2.5.46` / annotated tag object `b788aa7e10c5121fc8f34fe74d835928e2d80816`，peeled commit `be5c48400ff39fc064c4494e4b67abb2a2acc59c` | **仅借鉴实现思路**           | 可研究声明式题目/条件/校验的建模与测试方法；不采用其运行时、JSON DSL 或默认 UI。                                   |
 | inkjs         | [`y-lohse/inkjs`](https://github.com/y-lohse/inkjs)，`inkjs@2.4.0` / release [`v2.4.0`](https://github.com/y-lohse/inkjs/releases/tag/v2.4.0)（2026-02-17），tag commit `edccead8700e9f21be9825d87d8645d8c82a9936`                                                                                                                  | **推荐直接依赖；待作者批准** | 仅供未来已审核、版本固定的互动剧情运行器；在 D24/25 前另做 import 限额、步数上限和状态兼容试验后才可加入生产依赖。 |
 | Puck          | 提示中的 [`measuredco/puck`](https://github.com/measuredco/puck) 实际重定向到 [`puckeditor/puck`](https://github.com/puckeditor/puck)；`@puckeditor/core@0.23.0` / release [`v0.23.0`](https://github.com/puckeditor/puck/releases/tag/v0.23.0)（2026-08-07），tag commit `b4204f09fde3f4b286294567fce53fafa7136858`                | **不采用（当前生产范围）**   | 可在后台编辑器专题重新评估；消费者运行时、QuizPack、题库和报告模板一律不加载 Puck。                                |
@@ -29,11 +29,37 @@ QuizForge 应继续拥有 QuizPack 的数据格式、版本固定、确定性结
 
 ## 候选逐项证据与判断
 
-### Quizcraft：身份未证实
+### Quizcraft：已确认的具体候选，仅借鉴实现思路
 
-现有研究计划只给出名称，并明确其有歧义。2026-10-11 使用 GitHub 的精确关键词检索（[`"Quizcraft" quiz scoring skip logic`](https://github.com/search?q=%22Quizcraft%22+quiz+scoring+skip+logic&type=repositories)）及 npm registry 名称检索；所得同名/近名结果没有同时提供官方归属、问卷评分/跳题实现、可追溯发行包和 LICENSE 的身份链。因此无法诚实填写 owner/repo、包名、版本/commit、维护状态、收费边界或安全结论。这个结果是“不能唯一确认”，不是声称网络上不存在名为 Quizcraft 的仓库。
+用户后续提供准确仓库后，已将审计对象固定为 [`bensblueprints/quiz-builder-mvp`](https://github.com/bensblueprints/quiz-builder-mvp)，其 README 自称 Quizcraft。研究 checkout 固定在 commit [`2641887297205828f15a3bd87c1d4f0c69e250de`](https://github.com/bensblueprints/quiz-builder-mvp/tree/2641887297205828f15a3bd87c1d4f0c69e250de)：该提交日期为 2026-07-28T04:39:41+07:00。GitHub 元数据在查询日显示仓库未归档、创建于 2026-07-11、最后推送于 2026-07-27、0 个 open issues；这只反映很短的活动历史，不能推断维护 SLA。`server/logic.js` 与 `test/smoke.js` 最后修改均为 [43f52ee](https://github.com/bensblueprints/quiz-builder-mvp/commit/43f52ee0fc07e29dcdb040846b19a4ca0f3d2a7f)（2026-07-12T00:26:15+07:00）；之后的最新提交是 README/发行说明。查询时无7月27日之后的推送记录，也没有可抽样的开放 issue 响应，故不能视为已有稳定维护或响应承诺。固定 `package.json` 的名称为 `quizcraft`、版本 `1.0.0`、入口为 `electron/main.js`；未证实与此仓库关联的 npm 库发行。它是 Node/Express、SQLite、React/Vite 和 Electron 应用，未提供可直接依赖的引擎库接口。
 
-结论是保持待定。禁止以搜索命中的同名项目替代目标候选，也不应在 D2 把不明来源作为实现依赖。若作者提供准确链接，下一轮应先固定 commit、读取 LICENSE/NOTICE、审查条件执行和保存语义，再决定是否做隔离试验。
+**许可与产品边界。** 固定版本的 [LICENSE](https://github.com/bensblueprints/quiz-builder-mvp/blob/2641887297205828f15a3bd87c1d4f0c69e250de/LICENSE) 为 MIT；若复制实质源码，须保留版权和许可文本。原始源码仅在忽略缓存中保留完整LICENSE用于审计，没有复制到交付代码或运行 `npm install`：该仓库的 [package.json](https://github.com/bensblueprints/quiz-builder-mvp/blob/2641887297205828f15a3bd87c1d4f0c69e250de/package.json#L8-L33) 是 CommonJS/Express + `better-sqlite3`、React 18、Vite/Electron 应用，且有 `postinstall` native setup，因此不符合 QuizForge 的 Next 16.4、React 19.3、TypeScript strict、PostgreSQL 模块化单体基线，也不能作为 QuizPack 运行时。它确有 lockfile v3：固定 checkout 的 [package-lock.json](https://github.com/bensblueprints/quiz-builder-mvp/blob/2641887297205828f15a3bd87c1d4f0c69e250de/package-lock.json) 锁定 `express@4.22.2`、`better-sqlite3@12.11.1`、`react@18.3.1`、`vite@6.4.3` 及 integrity；但根 `package.json` 仍声明 semver ranges，复现该快照必须使用 lockfile 与 `npm ci`。这改善其自身复现性，不改变与 QuizForge 架构/依赖基线的不适配结论。
+
+**源码审计：可借鉴的边界。** 它的公开题目 payload 在 [server/app.js:357–396](https://github.com/bensblueprints/quiz-builder-mvp/blob/2641887297205828f15a3bd87c1d4f0c69e250de/server/app.js#L357-L396) 刻意剥离 option points 和结果 criteria；服务端在 [409–446](https://github.com/bensblueprints/quiz-builder-mvp/blob/2641887297205828f15a3bd87c1d4f0c69e250de/server/app.js#L409-L446) 计算分数/结果再写响应。这是一个可借鉴的“展示 DTO 与受权威规则分离”模式。其 React Runner 同样通过普通 React 插值渲染内容而非 `dangerouslySetInnerHTML`（[Runner.jsx:6–9](https://github.com/bensblueprints/quiz-builder-mvp/blob/2641887297205828f15a3bd87c1d4f0c69e250de/client/src/components/Runner.jsx#L6-L9)）；这与 QuizForge 的内容安全目标一致，但不是需要移植的独特实现。
+
+**源码审计：为何不能用作正式引擎。**
+
+- 评分只累加已出现的 answers（[logic.js:43–59](https://github.com/bensblueprints/quiz-builder-mvp/blob/2641887297205828f15a3bd87c1d4f0c69e250de/server/logic.js#L43-L59)）。提交端会正确忽略未知题 ID，但对**已知**题 ID 接受任意有限 number 或短 string（[app.js:416–427](https://github.com/bensblueprints/quiz-builder-mvp/blob/2641887297205828f15a3bd87c1d4f0c69e250de/server/app.js#L416-L427)）；它没有按题型验证 option 属于该题、rating 的 1..max 范围、整数、必答题或已走路径。因此用户仍可为未展示的已知题提交值、为选择题提交任意 string，或提交超范围 rating，不能当作 QuizForge 的确定性权威。
+- `answer_map` 对所有提交值构成 Set 再计命中（[logic.js:62–80](https://github.com/bensblueprints/quiz-builder-mvp/blob/2641887297205828f15a3bd87c1d4f0c69e250de/server/logic.js#L62-L80)），而不是验证每项 answer 对应题目的可选项；已知题的伪造 string 或未走路径的答案仍可影响 bucket。结果查询目前有 `ORDER BY id`（[app.js:24–30](https://github.com/bensblueprints/quiz-builder-mvp/blob/2641887297205828f15a3bd87c1d4f0c69e250de/server/app.js#L24-L30)），所以同一数据库快照可重复，但同分和重叠 score range 依赖行 ID/数组顺序，未在不可变商品版本中声明语义化优先级；编辑、删除或重建结果时该含义可变化。
+- 跳题的单次判定虽在服务器进行（[app.js:399–407](https://github.com/bensblueprints/quiz-builder-mvp/blob/2641887297205828f15a3bd87c1d4f0c69e250de/server/app.js#L399-L407)），规则保存却只确认 question ref 存在；未知 next ref 会转为 `null` 结束，且未限制 operator、目标、回边或循环（[app.js:217–225](https://github.com/bensblueprints/quiz-builder-mvp/blob/2641887297205828f15a3bd87c1d4f0c69e250de/server/app.js#L217-L225)）。规则查询也没有 `ORDER BY`（[app.js:27–29](https://github.com/bensblueprints/quiz-builder-mvp/blob/2641887297205828f15a3bd87c1d4f0c69e250de/server/app.js#L27-L29)），多条匹配规则的先后未声明。submit 更不验证已走过的路径或 session revision，故不能防止跳关、循环或绕过 next API。
+- SQLite 表仅存可变 quiz/questions/rules/results 和 responses（[db.js:29–77](https://github.com/bensblueprints/quiz-builder-mvp/blob/2641887297205828f15a3bd87c1d4f0c69e250de/server/db.js#L29-L77)）；没有发布版本固定、AccessKey、一次提交唯一约束、服务端恢复 revision 或不可变报告。QuizForge 不能沿用这个数据模型。
+
+**测试与维护证据。** 仓库的单个 `test/smoke.js` 会启动真实 Express 服务，在 temp SQLite 上覆盖登录、公开 payload 不含 points/criteria、一个跳题、两个整数 score 示例、email、CSV formula guard、rate limit 和持久化（[smoke.js:48–251](https://github.com/bensblueprints/quiz-builder-mvp/blob/2641887297205828f15a3bd87c1d4f0c69e250de/test/smoke.js#L48-L251)）。它没有断言缺答拒绝、错误 option、越界/小数 rating、循环/不可达规则、重叠范围、显式平分、路径伪造、并发/重复提交、版本迁移或 PostgreSQL 行为；其“tie”断言仅接受 Apple 或 Banana 任一结果（[smoke.js:199–202](https://github.com/bensblueprints/quiz-builder-mvp/blob/2641887297205828f15a3bd87c1d4f0c69e250de/test/smoke.js#L199-L202)），并未测试确定性 tie policy。为避免运行来源应用，自编 [`quizcraft-logic-audit.mjs`](oss-r/quizcraft-logic-audit.mjs) 直接指向已固定且已静态审阅的 `logic.js`，实际输出确认 `missingAnswer: accepted`、`invalidRatings: [-1, 99.5, "not-a-number"]`、结果顺序影响平分、answer-map 不绑定题目 option、self-loop 返回 `1`；它也静态确认 Runner 只检查 next ID 是否存在、没有本地循环上限。README 所称 server-side（[README](https://github.com/bensblueprints/quiz-builder-mvp/blob/2641887297205828f15a3bd87c1d4f0c69e250de/README.md)）由上述代码的“服务端计算”部分证实，但其业务完整性和正式会话安全未获证实。
+
+**已有输入边界与安全披露限度。** 它并非完全无边界：Express JSON body 限为 512 KB（[app.js:14–21](https://github.com/bensblueprints/quiz-builder-mvp/blob/2641887297205828f15a3bd87c1d4f0c69e250de/server/app.js#L14-L21)），question option label、image URL、response string 和 email 有长度限制（[app.js:176–188](https://github.com/bensblueprints/quiz-builder-mvp/blob/2641887297205828f15a3bd87c1d4f0c69e250de/server/app.js#L176-L188)、[app.js:421–432](https://github.com/bensblueprints/quiz-builder-mvp/blob/2641887297205828f15a3bd87c1d4f0c69e250de/server/app.js#L421-L432)）。但它没有 QuizPack 所需的 question/rule/result 数量、图深度/边数、资源来源/大小、重复 ID、可达性和循环步数验证。查询日 GitHub REST `security-advisories` 对该仓库返回 0 条，固定 commit 根目录没有 `SECURITY.md`。这不能说明不存在漏洞，也没有替代 `better-sqlite3`/Express 等传递依赖的锁定版本扫描；该仓库短暂的维护历史和 0 open issues 同样不是安全保证。
+
+**适配成本（评估，未实施）。** CommonJS 纯函数在 Node 中可调用，本轮已复现，不能把应用栈不同写成代码绝对不能互操作；但约75行逻辑节省的成本小于补齐其业务边界的成本。
+
+| 边界                             | 必要工作与成本判断                                                                                                                                                                                              |
+| -------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| TypeScript strict / 规则模型     | 无 TS 源或版本化运行时 Schema；需重写题型联合、引用/值域/完整性/路径验证、有限条件 AST 与显式平分，逻辑和测试成本中高，不能只加声明文件。                                                                       |
+| Next App Router / SSR / React 19 | Express API 要重组为 QuizForge 的领域接口与路由组合；Runner 在 render 中读 `window.location`，直接服务端预渲染会失败，需拆客户端交互与安全展示 DTO；React18/Vite依赖升级及React19实测未做。整体应用移植成本高。 |
+| PostgreSQL / Drizzle             | `better-sqlite3` 与 SQLite SQL不能充当 PostgreSQL 实现；需重新设计版本/引用/FK、Session revision、Key唯一完成事务和不可变报告；这属既定D5及服务阶段，模型迁移成本高，本轮不创建/运行迁移。                      |
+| QuizPack 纯数据                  | 现有 JSON fields 可借鉴有限条件形状，但 SQL行ID、任意资源URL、可变结构不能成为发布契约；需稳定ID、受控素材引用、数量/图/资源验证和固定版本。采用其数据模型会增加兼容与退出负担。                                |
+
+默认启动密码退回固定示例值、会话 Cookie 未设 secure 且没有过期清理（[server/index.js](https://github.com/bensblueprints/quiz-builder-mvp/blob/2641887297205828f15a3bd87c1d4f0c69e250de/server/index.js#L7-L16)、[app.js](https://github.com/bensblueprints/quiz-builder-mvp/blob/2641887297205828f15a3bd87c1d4f0c69e250de/server/app.js#L32-L42)），Runner 的图片 URL 与 `postMessage('*')` 也需运营/资源边界审计。现有参数化 SQL、React 文本渲染、CSV公式前缀保护和公开提交限流值得承认；本轮没有启动来源应用、重跑其HTTP smoke或宣称依赖树无漏洞。
+
+**采用决定与退出。** 结论为**仅借鉴实现思路**：在 QuizForge 自行实现受版本固定的规则 DTO、有限条件 AST、可达性/无环或有界循环验证、题型和值域检查、显式平分优先级、服务端会话路径和事务提交。无需复制 Quizcraft 代码或引入依赖，因此无当前许可履行动作；若以后逐段复制 MIT 源，必须记录来源行、范围并随分发带上 MIT 许可证。退出方案是持续只存 QuizForge 自身 QuizPack/报告 DTO，不让 Quizcraft JSON、SQLite IDs 或 Express API 成为持久契约。
 
 ### SurveyJS Core：成熟，但其表达式运行时与产品边界不匹配
 
@@ -67,39 +93,40 @@ QuizForge 应继续拥有 QuizPack 的数据格式、版本固定、确定性结
 
 ## 兼容性、安全与试验结果
 
-| 主题                  | 结论                                                                                                                               | 证据/限制                                                                                                                |
-| --------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| Next App Router / RSC | inkjs 是无 UI ESM/CJS runtime；SurveyJS Core 是无框架模型；Puck 提供 RSC export。                                                  | 没有把任何包接入 Next，因此没有以“可 import”冒充 RSC/SSR 实测。Puck 的实际 Studio 路由仍需专门试验。                     |
-| React 19.3            | SurveyJS Core/inkjs 不以 React 为前提；Puck peer range 含 React 19。                                                               | Puck peer range 是兼容声明，不是本项目 E2E 证据。                                                                        |
-| TS strict             | 三者都发布类型声明。                                                                                                               | 尚未把候选类型纳入本仓库 `tsc`；后续依赖 PR 必须新增最小编译夹具。                                                       |
-| Node 20 / 24          | Puck 明示 `>=20`；另外两者未声明 engines 且有 ESM/CJS。                                                                            | “未声明 engines”不能等同完整支持；必须在锁定版本的 CI matrix 执行。                                                      |
-| 确定性                | SurveyJS 需要禁用函数/异步/外部 choices；inkjs 需控制随机与 external。                                                             | 三者均不能替代 QuizForge 评分权威或提交事务。                                                                            |
-| 不可信输入            | 不能直接信任任何候选的 JSON/状态/配置。                                                                                            | 导入前先实施 QuizPack 字节数、文件数、类型、ID、深度、节点/边、表达式/props 白名单验证。                                 |
-| GitHub 安全公告与披露 | 2026-10-11 GitHub REST `security-advisories` 对三仓库均返回 0 条；inkjs、SurveyJS 的仓库根 `SECURITY.md` 返回 404，Puck 返回 200。 | 这不是 npm/transitive dependency/CVE 的完整审计；采用 PR 仍须在锁定版本上跑依赖漏洞和 license 扫描，并阅读 Puck policy。 |
-| 移动端与 bundle       | Puck 最重，SurveyJS 也带大模型/UI相关资源，inkjs 运行时相对小。                                                                    | 本次无浏览器 UI，未宣称移动端体验通过；真正采用需 Lighthouse/真实设备与 route bundle 预算。                              |
+| 主题                  | 结论                                                                                                                                              | 证据/限制                                                                                                                |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| Next App Router / RSC | inkjs 是无 UI ESM/CJS runtime；SurveyJS Core 是无框架模型；Puck 提供 RSC export。                                                                 | 没有把任何包接入 Next，因此没有以“可 import”冒充 RSC/SSR 实测。Puck 的实际 Studio 路由仍需专门试验。                     |
+| React 19.3            | SurveyJS Core/inkjs 不以 React 为前提；Puck peer range 含 React 19。                                                                              | Puck peer range 是兼容声明，不是本项目 E2E 证据。                                                                        |
+| TS strict             | 三者都发布类型声明。                                                                                                                              | 尚未把候选类型纳入本仓库 `tsc`；后续依赖 PR 必须新增最小编译夹具。                                                       |
+| Node 20 / 24          | Puck 明示 `>=20`；另外两者未声明 engines 且有 ESM/CJS。                                                                                           | “未声明 engines”不能等同完整支持；必须在锁定版本的 CI matrix 执行。                                                      |
+| Quizcraft / 当前基线  | Quizcraft 是 React 18/Vite/CommonJS/Express/SQLite/Electron 应用，而不是 TypeScript library。                                                     | 没有针对本基线的适配或实测；直接采用需重写应用边界/模型与验证，不安装、不移植。                                          |
+| 确定性                | SurveyJS 需要禁用函数/异步/外部 choices；inkjs 需控制随机与 external。                                                                            | 四候选均不能替代 QuizForge 评分权威或提交事务。                                                                          |
+| 不可信输入            | 不能直接信任任何候选的 JSON/状态/配置。                                                                                                           | 导入前先实施 QuizPack 字节数、文件数、类型、ID、深度、节点/边、表达式/props 白名单验证。                                 |
+| GitHub 安全公告与披露 | 2026-10-11 GitHub REST `security-advisories` 对四候选仓库均返回 0 条；Quizcraft、inkjs、SurveyJS 的仓库根 `SECURITY.md` 未提供，Puck 提供该策略。 | 这不是 npm/transitive dependency/CVE 的完整审计；采用 PR 仍须在锁定版本上跑依赖漏洞和 license 扫描，并阅读 Puck policy。 |
+| 移动端与 bundle       | Puck 最重，SurveyJS 也带大模型/UI相关资源，inkjs 运行时相对小。                                                                                   | 本次无浏览器 UI，未宣称移动端体验通过；真正采用需 Lighthouse/真实设备与 route bundle 预算。                              |
 
 除上述 inkjs 合成状态 round-trip 外，没有执行 SurveyJS 或 Puck 的动态夹具；这是证据范围限制，不是授权限制。D2 设计冻结后应建一次性隔离 fixture，测试范围包括：固定答案的分数/平分、无答案/未知 ID、条件可达性、状态 round-trip、最大步数中断、升级前后旧状态回放、未知组件/props 拒绝，以及 consumer build 中不含 Studio editor。
 
 ## 对 D2–D30 的影响与待决策
 
-| 时间段                 | 可以据此推进                                                                     | 必须先决定/验证                                                                   |
-| ---------------------- | -------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
-| D2 QuizPack 与基础引擎 | 用自有有限 AST、规则白名单、结构/引用/资源限额验证器；借鉴 SurveyJS 的测试维度。 | 固化 QuizPack schema 与错误语义；不引入 SurveyJS JSON 或其表达式语言。            |
-| D24/25 剧情商品        | 预留 `StoryRuntime` 适配接口和故事哈希/状态 DTO，届时再实现剧情商品。            | 作者确认是否引入 `inkjs@2.4.0`；完成隔离回放、配额、DoS、升级兼容和许可随附设计。 |
-| D11–D20 后台/编辑      | 继续受控 registry、草稿/审核/发布快照设计。                                      | Puck 不在本路线自动发生；只有独立 Studio 授权后再做 authenticated/codesplit POC。 |
-| D21–D30 发布与维护     | 给所有外部依赖保留 SBOM、固定版本、升级回归与退出演练。                          | 建立依赖漏洞告警、许可清单和旧报告/旧剧情只读兼容策略。                           |
+| 时间段                 | 可以据此推进                                                                                                 | 必须先决定/验证                                                                                   |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------- |
+| D2 QuizPack 与基础引擎 | 用自有有限 AST、规则白名单、结构/引用/资源限额验证器；借鉴 SurveyJS 和 Quizcraft 的测试维度与展示 DTO 分离。 | 固化 QuizPack schema 与错误语义；不引入 SurveyJS JSON/表达式语言或 Quizcraft runtime/data model。 |
+| D24/25 剧情商品        | 预留 `StoryRuntime` 适配接口和故事哈希/状态 DTO，届时再实现剧情商品。                                        | 作者确认是否引入 `inkjs@2.4.0`；完成隔离回放、配额、DoS、升级兼容和许可随附设计。                 |
+| D11–D20 后台/编辑      | 继续受控 registry、草稿/审核/发布快照设计。                                                                  | Puck 不在本路线自动发生；只有独立 Studio 授权后再做 authenticated/codesplit POC。                 |
+| D21–D30 发布与维护     | 给所有外部依赖保留 SBOM、固定版本、升级回归与退出演练。                                                      | 建立依赖漏洞告警、许可清单和旧报告/旧剧情只读兼容策略。                                           |
 
 需要作者批准的技术决策：
 
 1. 是否在 D2+ 允许一个单独 PR 试用并可能引入 `inkjs@2.4.0`，前提为上述安全配额和状态回放验收通过。
 2. 是否将 QuizForge 的条件规则明确限定为自有有限 AST（推荐），从而永久不接受 SurveyJS expression string。
 3. 是否把 Puck 延后到后台授权、审核和发布模型完成后再立项；当前建议保持“不采用”。
-4. 若仍希望评估“Quizcraft”，请提供其确切官方 owner/repo 或包链接；在此之前不能作许可/安全/采用结论。
+4. Quizcraft 已完成指定仓库审计；建议确认“只借鉴、无依赖/移植”的结论，并在 D2 将其发现转为自有规则与会话验收用例。
 
 ## 审查清单与已知限制
 
 - 本报告未修改架构、QuizPack schema、生产代码、依赖或锁文件；不越过 D1-B/OSS-R 边界。
-- 许可证结论只限四个候选的核心发布包，未替代未来完整 transitive-dependency、专利、商标、素材或漏洞审计。
+- 许可证结论只限指定的核心源码或包版本，未替代未来完整 transitive-dependency、专利、商标、素材或漏洞审计。
 - GitHub 的“最近推送”与 release 只能作为维护迹象；没有承诺 SLA，也没有审计所有 issue/PR 或 CVE 数据库。
 - 本轮没有在 iOS Safari、Android Chrome 或正式 Next consumer route 中运行候选 UI，故没有这些通过声明。
 - 若未来复制而非链接 MIT 源码，必须在变更 PR 中逐文件记录来源、范围、版权和许可文本；本轮没有复制源码。
