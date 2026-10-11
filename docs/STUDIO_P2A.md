@@ -70,7 +70,7 @@ requireCapability(actor,capability)：两角色允许studio:read；仅operator�
 
 端点地址与数据库内部server地址/端口分开验证：本机二者相同；CI Docker loopback映射端口可能不同于容器内5432。CI bootstrap只连显式本次service，记录其已确认server事实和唯一marker；不能把允许内部容器地址变成任意远端DB许可。迁移应用事务内带version/checksum，并持连接级串行锁，重复无变化，checksum改变拒绝。
 
-脚本接口：p2a:db init --port <port>；start/status/migrate/stop --instance <id>；p2a:operator create --instance <id> --label <synthetic-label> --role <operator|read-only> --credential-file <new-private-file>；disable --instance <id> --id <uuid>。不接受用户指定credential，原文仅写新建0600文件，stdout不输出。写DB失败清理本次秘密文件；其他文件/目录不得覆盖。CI另有显式service bootstrap入口，不成为日常连接任意DB后门。
+脚本接口：p2a:db init --port <port> --origin <loopback-url> --purpose <test|demo>；start/status/migrate/stop --instance <id>；p2a:operator create --instance <id> --label <synthetic-label> --role <operator|read-only> --credential-file <new-private-file>；disable --instance <id> --id <uuid>。不接受用户指定credential，原文仅写新建0600文件，stdout不输出。写DB失败清理本次秘密文件；其他文件/目录不得覆盖。CI另有显式service bootstrap入口，不成为日常连接任意DB后门。
 
 ## SQL权限与测试
 
@@ -89,3 +89,11 @@ DB流：src/lib/db/**、src/lib/security/p2a-tokens.ts及测试、migrations/p2a
 Auth流：src/lib/auth/**、src/lib/http-security/**、src/features/studio/**、src/app/(studio)/**、src/app/api/studio/**、tests/db/p2a-auth*.test.ts、tests/e2e/studio-auth.spec.ts、docs/P2A_AUTH_IMPLEMENTATION.md。收到DB公共接口提交后接入；最终必须真实DB，开发double不计验收。
 
 总控：package/lock、CI、环境/测试配置、阶段文档、集成实例/3100和最终验收。DB基础迁移只有DB流单写者；Auth需列/权限变更先反馈。两实现流不得修改彼此文件或共享配置，不恢复旧暂停任务。检查后各自提交push，由总控集成、Astra独立审查、Draft PR及CI；主线合并/生产迁移/部署仍不自动执行。
+
+## 集成交接补充
+
+runtime/manifest固定purpose=test/demo/ci；test:db只接受test/ci，拒绝demo，不能把人工演示库当测试清理目标。init必须显式origin与purpose，端口分别为数据库port和origin的HTTP port。CI purpose=ci仅由本job bootstrap生成。
+
+CLI通过node --conditions=react-server --import tsx运行，生产server-only标记保留。总控提供vitest.config.ts和vitest.db.config.ts的Node测试专用server-only别名、tests/support/server-only.ts；DB/Auth不得自行改共享配置。test:db逐文件串行，但并发场景在测试内用真实独立连接；缺配置必须失败，不能因没有匹配测试而当验收成功。
+
+DB流本机专属测试端口55421，Auth流如需独立测试实例使用55422；总控集成用55423，使用前各自验证空闲，冲突则报告并选新显式端口，不停止未知进程。HTTP3100仅总控最终E2E占用。目录/配置/DB只能属于本任务新建实例，测试后停止自己启动的集群并保留可恢复manifest。
