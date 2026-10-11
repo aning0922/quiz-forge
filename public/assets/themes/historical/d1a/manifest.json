@@ -1,0 +1,95 @@
+{
+  "schemaVersion": "historical-study-assets.v1",
+  "packId": "historical-d1a-study-v1",
+  "releaseStatus": "not-released",
+  "visualApproval": "pending",
+  "commercialApproval": "pending",
+  "createdAt": "2026-10-11",
+  "assets": [
+    {
+      "id": "li-bai-concept",
+      "path": "/assets/themes/historical/d1a/li-bai-concept.webp",
+      "dimensions": [800, 1200],
+      "format": "webp",
+      "bytes": 162676,
+      "sha256": "7ec0f98099b26da047b561ed7b0b1f47cb7e323304956c727244a31a2d4bdb82",
+      "transparentBackground": true,
+      "status": "review",
+      "source": "built-in imagegen; original prompt; no external reference image",
+      "modelVersion": "unknown; not exposed by tool",
+      "promptEvidence": "docs/D1A_ASSETS.md#li-bai-concept--prompt-v1",
+      "licenseEvidence": null,
+      "approvedBy": null,
+      "approvedAt": null,
+      "focalPoint": {
+        "x": 0.48,
+        "y": 0.13
+      }
+    },
+    {
+      "id": "jade-landscape",
+      "path": "/assets/themes/historical/d1a/jade-landscape.webp",
+      "dimensions": [900, 1350],
+      "format": "webp",
+      "bytes": 182880,
+      "sha256": "8c5081d514f239ee4114b6b72d757e2f1292352c9980e350860f606920c9a353",
+      "transparentBackground": false,
+      "status": "review",
+      "source": "built-in imagegen; original prompt; no external reference image",
+      "modelVersion": "unknown; not exposed by tool",
+      "promptEvidence": "docs/D1A_ASSETS.md#jade-landscape--prompt-v1",
+      "licenseEvidence": null,
+      "approvedBy": null,
+      "approvedAt": null,
+      "focalPoint": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    },
+    {
+      "id": "historical-serif-500",
+      "path": "/assets/fonts/historical-serif-500.ttf",
+      "format": "ttf",
+      "bytes": 136468,
+      "sha256": "abba078b93139f222890e209763d52ae52100c14b203948a5ab3c7217111df73",
+      "status": "license-documented; visual-review",
+      "source": "Google Fonts Noto Serif SC v36 / fonts.googleapis.com text subset",
+      "sourceRepository": "https://github.com/google/fonts/tree/main/ofl/notoserifsc",
+      "licenseEvidence": "/assets/fonts/OFL-NotoSerifSC.txt",
+      "license": "SIL OFL 1.1",
+      "characterCoverage": "/assets/fonts/historical-serif-characters.txt",
+      "subsetCharacters": 397,
+      "approvedBy": null,
+      "approvedAt": null
+    },
+    {
+      "id": "historical-serif-600",
+      "path": "/assets/fonts/historical-serif-600.ttf",
+      "format": "ttf",
+      "bytes": 136472,
+      "sha256": "df5726a295a6e082b17c10244d484277b58e8dd4d38ef21b6cf42bf3fe553db2",
+      "status": "license-documented; visual-review",
+      "source": "Google Fonts Noto Serif SC v36 / fonts.googleapis.com text subset",
+      "sourceRepository": "https://github.com/google/fonts/tree/main/ofl/notoserifsc",
+      "licenseEvidence": "/assets/fonts/OFL-NotoSerifSC.txt",
+      "license": "SIL OFL 1.1",
+      "characterCoverage": "/assets/fonts/historical-serif-characters.txt",
+      "subsetCharacters": 397,
+      "approvedBy": null,
+      "approvedAt": null
+    }
+  ],
+  "originalDecorations": {
+    "status": "review",
+    "source": "src/features/theme/historical/ornaments.tsx and historical.module.css",
+    "items": ["seal", "scroll-rule", "cloud-line", "collection-frame"]
+  },
+  "pending": [
+    "author art-direction choice",
+    "commercial evidence and human approval for AI assets",
+    "standalone reading texture",
+    "poster production assets and export",
+    "body font portability",
+    "complete result archetype roster"
+  ]
+}
