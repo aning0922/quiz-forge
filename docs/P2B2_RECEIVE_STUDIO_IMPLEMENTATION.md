@@ -21,3 +21,11 @@
 实际检查：专属 HTTP/查询/reader/准备单元 4 文件 29 测试通过，全仓 40 文件 566 测试通过；format:check、lint、typecheck 通过。初次页面类型检查发现 exactOptionalPropertyTypes 下的可选 props、RequestInit.body 和索引类型，已修复后通过。
 
 已核实 55422 空闲并用管理 CLI 创建专属 purpose=test 实例，配置仅留本 worktree 私有目录。尚无 A 实际服务对象，因此未安装 API route 运行入口、未执行真实 HTTP/DB 接收或浏览器，也未启动 3100。此提交可独立验证适配边界；待服务交接后接真实路由、专属 HTTP/DB 与生产 E2E。
+
+## 里程碑三：响应边界与累计未知整改
+
+总控及独立 Astra 提出两项 P2：成功响应未经形状/归属/声明校验会错误清除 unknown；未知后原 key 重提遇到确定拒绝会抹去更早的 unknown。已在独占 imports 下新增 checked client adapter，复用 A 的字段 Schema/常量，严格校验 ImportDto、固定 not-run/publishable、settings、有限 Page 以及 safe error envelope。无效成功 JSON、null/{}、204、错 Product/import ID、错 bytes/hash 和未知错误码均保持 WRITE_OUTCOME_UNKNOWN；无效读响应返回 STUDIO_UNAVAILABLE，不清除未知状态。精确查询要求 page1/size1、0/1 条、total 与 hasNext 一致，并匹配原完整声明中的 bytes/hash 与固定 target（DTO 不包含 target，合同固定 new-draft）。
+
+CreateReceive 的拒绝现在累计保存 previousUnknown，仅已校验创建/重放或精确命中记录可清除。ExistingReceive 与子控件同步最新服务器状态，恢复到 awaiting-upload 后可就地重新选择原文件；所有上传仍需显式操作。
+
+实际检查：专属 5 文件 49 单元测试通过，typecheck/lint 通过。已编写生产 E2E：关闭/只读/空状态、真实原字节 received、独立 PG 观察已提交后丢 POST 响应、空查询后原 key/input 重提、后续 CSRF 拒绝保持累计 unknown、无效成功响应与无效 exact read 不清除未知。敏感凭证仅 0600 私有 fixture，trace/video/自动截图关闭，主动截图仅已登录无敏感字段状态。**这些浏览器用例尚未运行**；A 的实际服务、CLI 和测试 reset 清理合同尚待交接，不能据此宣称 HTTP/DB/E2E 验收通过。

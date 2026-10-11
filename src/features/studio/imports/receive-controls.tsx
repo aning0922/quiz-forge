@@ -6,7 +6,7 @@ import type {
   ImportSettingsDto,
 } from "@/features/quizpack/import/contracts";
 import type { StudioSessionDto } from "../contracts";
-import { studioFetch } from "../client";
+import { checkedImportFetch, checkImport } from "./client";
 import { importMessage, isUnknownWrite } from "./messages";
 import { ImportFacts } from "./import-facts";
 import styles from "../workspace/workspace.module.css";
@@ -45,7 +45,19 @@ export function ReceiveControls({
     setBusy(true);
     setMessage("");
     try {
-      adopt(await studioFetch<ImportDto>(endpoint, {}));
+      adopt(
+        await checkedImportFetch<ImportDto>(endpoint, {}, (next) =>
+          checkImport(next, {
+            productId,
+            importId: value.id,
+            input: {
+              expectedArchiveBytes: value.expectedArchiveBytes,
+              expectedArchiveSha256: value.expectedArchiveSha256,
+              target: { kind: "new-draft" },
+            },
+          }),
+        ),
+      );
       setMustRead(false);
       setUnknown(false);
       setMessage("已读取服务器当前状态。新的接收与恢复仍需显式操作。");
@@ -61,7 +73,7 @@ export function ReceiveControls({
     setBusy(true);
     setMessage("");
     try {
-      const result = await studioFetch<ImportDto>(
+      const result = await checkedImportFetch<ImportDto>(
         `${endpoint}/${action}`,
         {
           method: action === "archive" ? "PUT" : "POST",
@@ -77,6 +89,16 @@ export function ReceiveControls({
               ? file!
               : JSON.stringify({ expectedStateRevision: value.stateRevision }),
         },
+        (next) =>
+          checkImport(next, {
+            productId,
+            importId: value.id,
+            input: {
+              expectedArchiveBytes: value.expectedArchiveBytes,
+              expectedArchiveSha256: value.expectedArchiveSha256,
+              target: { kind: "new-draft" },
+            },
+          }),
         true,
       );
       adopt(result);

@@ -17,6 +17,7 @@ import { useImportRead } from "./use-read";
 import { CreateReceive } from "./create-receive";
 import { ImportFacts } from "./import-facts";
 import { ReceiveControls } from "./receive-controls";
+import { checkImport, checkImportPage, checkSettings } from "./client";
 import { prepareArchive } from "./prepare-archive";
 import styles from "../workspace/workspace.module.css";
 import local from "./imports.module.css";
@@ -93,10 +94,12 @@ export function ImportList({
   const product = useImportRead<ProductDto>(endpoint);
   const settings = useImportRead<ImportSettingsDto>(
     `${endpoint}/imports/settings`,
+    checkSettings,
   );
   const [page, setPage] = useState(1);
   const imports = useImportRead<Page<ImportDto>>(
     `${endpoint}/imports?page=${page}&pageSize=20`,
+    (value) => checkImportPage(value, { productId, page, pageSize: 20 }),
   );
   const readOnly = session.operator.role !== "operator";
   return (
@@ -188,6 +191,7 @@ function ExistingReceive({
   product: ProductDto;
   session: StudioSessionDto;
 }) {
+  const [current, setCurrent] = useState(value);
   const [file, setFile] = useState<Blob>();
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
@@ -195,7 +199,8 @@ function ExistingReceive({
     session.operator.role === "operator" &&
     settings.enabled &&
     !product.archivedAt &&
-    (value.status === "awaiting-upload" || value.status === "retryable-failed");
+    (current.status === "awaiting-upload" ||
+      current.status === "retryable-failed");
   async function select(selected?: File) {
     if (!selected || busy) return;
     setBusy(true);
@@ -204,8 +209,8 @@ function ExistingReceive({
     try {
       const prepared = await prepareArchive(selected, settings.maxArchiveBytes);
       if (
-        prepared.input.expectedArchiveBytes !== value.expectedArchiveBytes ||
-        prepared.input.expectedArchiveSha256 !== value.expectedArchiveSha256
+        prepared.input.expectedArchiveBytes !== current.expectedArchiveBytes ||
+        prepared.input.expectedArchiveSha256 !== current.expectedArchiveSha256
       ) {
         setMessage(
           "此文件与原意图字节数或 SHA-256 不符，不能上传或修改原声明。",
@@ -243,12 +248,13 @@ function ExistingReceive({
         </section>
       )}
       <ReceiveControls
-        initial={value}
+        initial={current}
         productId={product.id}
         session={session}
         settings={settings}
         archived={!!product.archivedAt}
         file={file}
+        onUpdate={setCurrent}
       />
     </>
   );
@@ -266,9 +272,11 @@ export function ImportDetail({
   const product = useImportRead<ProductDto>(endpoint);
   const settings = useImportRead<ImportSettingsDto>(
     `${endpoint}/imports/settings`,
+    checkSettings,
   );
   const record = useImportRead<ImportDto>(
     `${endpoint}/imports/${encodeURIComponent(importId)}`,
+    (value) => checkImport(value, { productId, importId }),
   );
   return (
     <div className={styles.workspace}>

@@ -1,0 +1,134 @@
+import { constants } from "node:fs";
+import { open, unlink } from "node:fs/promises";
+import path from "node:path";
+import { randomUUID } from "node:crypto";
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
+import {
+  openTestDatabase,
+  resetTestDatabase,
+  authenticateTestOperator,
+} from "./p2a-fixture";
+import { createProduct } from "@/features/product/workspace/service";
+import { issueToken } from "@/lib/security/p2a-tokens";
+import { acquireAuthWriteLock } from "@/lib/db/auth-lock";
+import { readPrivateJson } from "@/lib/db/runtime";
+import { idempotencyKeySchema } from "@/features/quizpack/import/contracts";
+
+// Only fixed safe flags leave this process. No credentials/SQL exceptions are printed.
+async function run() {
+  const mode = process.argv[2];
+  const runId = process.argv[3];
+  if (!runId || !/^[a-f0-9-]{36}$/.test(runId)) throw new Error();
+  const fixture = await openTestDatabase();
+  const file = path.join(
+    process.cwd(),
+    ".cache",
+    "p2a",
+    fixture.config.instanceId,
+    "imports-e2e-fixture.json",
+  );
+  let created = false;
+  try {
+    if (mode !== "prepare") {
+      const stored = await readPrivateJson(file);
+      if (
+        !stored ||
+        typeof stored !== "object" ||
+        !("runId" in stored) ||
+        stored.runId !== runId
+      )
+        throw new Error();
+    }
+    if (mode === "observe-intent") {
+      const key = idempotencyKeySchema.parse(process.argv[4]);
+      // An independent owner connection must observe the committed real row.
+      const rows = await fixture.admin.sql<
+        { id: string }[]
+      >`SELECT id FROM qf.quizpack_import WHERE product_id='e2e-imports' AND idempotency_key=${key}`;
+      if (rows.length !== 1) throw new Error();
+      return;
+    }
+    if (mode === "enable" || mode === "disable") {
+      await promisify(execFile)(
+        process.execPath,
+        [
+          "--conditions=react-server",
+          "--import",
+          "tsx",
+          "scripts/p2a-db.ts",
+          "imports",
+          "--instance",
+          fixture.config.instanceId,
+          "--enabled",
+          mode === "enable" ? "true" : "false",
+        ],
+        {
+          cwd: process.cwd(),
+          env: process.env,
+          timeout: 30000,
+          maxBuffer: 4096,
+        },
+      );
+      return;
+    }
+    if (mode === "cleanup") {
+      // The A-owned reset must account for imports and safely clean known test files.
+      await resetTestDatabase(fixture);
+      await unlink(file);
+      return;
+    }
+    if (mode !== "prepare") throw new Error();
+    const operator = issueToken("credential");
+    const readOnly = issueToken("credential");
+    const handle = await open(
+      file,
+      constants.O_WRONLY |
+        constants.O_CREAT |
+        constants.O_EXCL |
+        constants.O_NOFOLLOW,
+      0o600,
+    );
+    created = true;
+    try {
+      await handle.writeFile(
+        JSON.stringify({
+          version: 1,
+          runId,
+          operator: operator.raw,
+          readOnly: readOnly.raw,
+        }),
+      );
+    } finally {
+      await handle.close();
+    }
+    await resetTestDatabase(fixture);
+    const author = await authenticateTestOperator(fixture);
+    await createProduct(fixture.app, author.credentials, {
+      id: "e2e-imports",
+      slug: "e2e-imports",
+      title: "合成原包接收工作区",
+      primaryCategoryId: null,
+      tagIds: [],
+    });
+    await fixture.admin.sql.begin(async (tx) => {
+      await acquireAuthWriteLock(tx);
+      await tx`INSERT INTO qf.operator (id,label,credential_digest,role,status) VALUES
+        (${randomUUID()}, 'imports-e2e-operator', ${operator.digest}, 'operator', 'active'),
+        (${randomUUID()}, 'imports-e2e-read-only', ${readOnly.digest}, 'read-only', 'active')`;
+    });
+  } catch {
+    if (created) await unlink(file).catch(() => undefined);
+    throw new Error();
+  } finally {
+    await fixture.close();
+  }
+}
+run()
+  .then(() => {
+    process.stdout.write("IMPORTS_E2E_FIXTURE_READY\n");
+  })
+  .catch(() => {
+    process.stderr.write("IMPORTS_E2E_FIXTURE_FAILED\n");
+    process.exitCode = 1;
+  });
