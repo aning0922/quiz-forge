@@ -1,7 +1,17 @@
 import { createHash } from "node:crypto";
+import { performance } from "node:perf_hooks";
+import { fileURLToPath } from "node:url";
 import type { ChildProcess } from "node:child_process";
 import sharp from "sharp";
-import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from "vitest";
 import type { ImageDeclaration, ImageInspectionContext } from "./api";
 import {
   createSyntheticFixture,
@@ -13,7 +23,9 @@ const tracking = vi.hoisted(() => ({
   children: [] as ChildProcess[],
   active: 0,
   peak: 0,
-  mode: "normal" as "normal" | "spawn-error" | "malformed" | "oversized",
+  mode: "normal" as
+    "normal" | "spawn-error" | "malformed" | "oversized" | "success",
+  beforeClose: undefined as (() => void) | undefined,
 }));
 vi.mock("node:child_process", async (importOriginal) => {
   const actual = await importOriginal<typeof import("node:child_process")>();
@@ -33,7 +45,9 @@ vi.mock("node:child_process", async (importOriginal) => {
                   "-e",
                   tracking.mode === "malformed"
                     ? "process.stdin.resume();process.stdin.on('end',()=>process.stdout.write('UNTRUSTED-DIAGNOSTIC'));"
-                    : "process.stdin.resume();process.stdin.on('end',()=>process.stdout.write('x'.repeat(4096)));",
+                    : tracking.mode === "success"
+                      ? "process.stdin.resume();process.stdin.on('end',()=>process.stdout.write(JSON.stringify({ok:true,mediaType:'image/png',width:8,height:7,frames:1,mediaDecoded:true})));"
+                      : "process.stdin.resume();process.stdin.on('end',()=>process.stdout.write('x'.repeat(4096)));",
                 ],
                 { stdio: ["pipe", "pipe", "ignore"] },
               );
@@ -42,6 +56,7 @@ vi.mock("node:child_process", async (importOriginal) => {
       tracking.peak = Math.max(tracking.peak, tracking.active);
       child.once("close", () => {
         tracking.active--;
+        tracking.beforeClose?.();
       });
       return child;
     },
@@ -58,7 +73,9 @@ beforeEach(() => {
   tracking.active = 0;
   tracking.peak = 0;
   tracking.mode = "normal";
+  tracking.beforeClose = undefined;
 });
+afterEach(() => vi.restoreAllMocks());
 const context = (
   overrides: Partial<ImageInspectionContext["limits"]> = {},
   signal = new AbortController().signal,
@@ -425,6 +442,155 @@ describe("worker protocol failures", () => {
         code(await inspectImage(bytes, declaration(bytes), context())),
       ).toBe("passed");
       expect(tracking.active).toBe(0);
+    },
+  );
+});
+
+describe("monotonic deadline checks independent of timer dispatch", () => {
+  it("refuses to spawn after synchronous checks have consumed the deadline", async () => {
+    vi.spyOn(performance, "now").mockReturnValueOnce(0).mockReturnValue(5000);
+    const bytes = fixture.assets[0]!.bytes;
+    expect(code(await inspectImage(bytes, declaration(bytes), context()))).toBe(
+      "MEDIA_TIMEOUT",
+    );
+    expect(tracking.children).toHaveLength(0);
+  });
+  it("refuses to spawn after acquire yields even when timer has not fired", async () => {
+    let tick = 0;
+    vi.spyOn(performance, "now").mockImplementation(() => tick);
+    const bytes = fixture.assets[0]!.bytes;
+    const pending = inspectImage(bytes, declaration(bytes), context());
+    tick = 5000;
+    expect(code(await pending)).toBe("MEDIA_TIMEOUT");
+    expect(tracking.children).toHaveLength(0);
+  });
+  it("checks again immediately before spawn", async () => {
+    vi.spyOn(performance, "now")
+      .mockReturnValueOnce(0)
+      .mockReturnValueOnce(0)
+      .mockReturnValueOnce(0)
+      .mockReturnValue(5000);
+    const bytes = fixture.assets[0]!.bytes;
+    expect(code(await inspectImage(bytes, declaration(bytes), context()))).toBe(
+      "MEDIA_TIMEOUT",
+    );
+    expect(tracking.children).toHaveLength(0);
+  });
+  it("rejects a successful worker closing after deadline without waiting for the timer", async () => {
+    let tick = 0;
+    vi.spyOn(performance, "now").mockImplementation(() => tick);
+    tracking.mode = "success";
+    tracking.beforeClose = () => {
+      tick = 5000;
+    };
+    const bytes = fixture.assets[0]!.bytes;
+    expect(code(await inspectImage(bytes, declaration(bytes), context()))).toBe(
+      "MEDIA_TIMEOUT",
+    );
+    noLiveChildren();
+    tick = 0;
+    tracking.beforeClose = undefined;
+    expect(code(await inspectImage(bytes, declaration(bytes), context()))).toBe(
+      "passed",
+    );
+    noLiveChildren();
+  });
+  it("does not accept deadline expiry during successful protocol validation", async () => {
+    let checksAfterClose = 0;
+    let closed = false;
+    vi.spyOn(performance, "now").mockImplementation(() =>
+      closed && ++checksAfterClose >= 2 ? 5000 : 0,
+    );
+    tracking.mode = "success";
+    tracking.beforeClose = () => {
+      closed = true;
+    };
+    const bytes = fixture.assets[0]!.bytes;
+    expect(code(await inspectImage(bytes, declaration(bytes), context()))).toBe(
+      "MEDIA_TIMEOUT",
+    );
+    noLiveChildren();
+  });
+  it("prioritizes external cancellation when a close is also past deadline", async () => {
+    let tick = 0;
+    vi.spyOn(performance, "now").mockImplementation(() => tick);
+    tracking.mode = "success";
+    const controller = new AbortController();
+    tracking.beforeClose = () => {
+      tick = 5000;
+      controller.abort();
+    };
+    const bytes = fixture.assets[0]!.bytes;
+    expect(
+      code(
+        await inspectImage(
+          bytes,
+          declaration(bytes),
+          context({}, controller.signal),
+        ),
+      ),
+    ).toBe("MEDIA_CANCELLED");
+    noLiveChildren();
+  });
+  it("rejects a queued job on grant after its deadline without spawning", async () => {
+    let tick = 0;
+    vi.spyOn(performance, "now").mockImplementation(() => tick);
+    tracking.mode = "success";
+    const bytes = fixture.assets[0]!.bytes;
+    const first = inspectImage(bytes, declaration(bytes), context());
+    const queued = inspectImage(
+      bytes,
+      declaration(bytes),
+      context({ imageMs: 1000 }),
+    );
+    tick = 1000;
+    expect(code(await first)).toBe("passed");
+    expect(code(await queued)).toBe("MEDIA_TIMEOUT");
+    expect(tracking.children).toHaveLength(1);
+    noLiveChildren();
+  });
+});
+
+describe("native buffer loader allowlist", () => {
+  it.each(["tiff", "svg"])(
+    "blocks %s decoding in the real worker before its metadata whitelist",
+    async (format) => {
+      const bytes =
+        format === "tiff"
+          ? await sharp(fixture.assets[0]!.bytes).tiff().toBuffer()
+          : Buffer.from(
+              '<svg width="8" height="7" xmlns="http://www.w3.org/2000/svg"><rect width="8" height="7" fill="red"/></svg>',
+            );
+      expect((await sharp(bytes).metadata()).format).toBe(format);
+      const actual =
+        await vi.importActual<typeof import("node:child_process")>(
+          "node:child_process",
+        );
+      const child = actual.spawn(
+        process.execPath,
+        [
+          fileURLToPath(new URL("./media-worker.mjs", import.meta.url)),
+          String(PACK_LIMITS.resourceBytes),
+          String(PACK_LIMITS.imageDimension),
+          String(PACK_LIMITS.imagePixels),
+        ],
+        { stdio: ["pipe", "pipe", "ignore"], env: { NODE_ENV: "production" } },
+      );
+      const output: Buffer[] = [];
+      child.stdout.on("data", (chunk) => output.push(chunk));
+      const closed = new Promise<void>((resolve, reject) => {
+        child.once("error", reject);
+        child.once("close", (code) =>
+          code === 0 ? resolve() : reject(new Error("Worker failed")),
+        );
+      });
+      child.stdin.end(bytes);
+      await closed;
+      expect(JSON.parse(Buffer.concat(output).toString("utf8"))).toEqual({
+        ok: false,
+        code: "MEDIA_DECODE_FAILED",
+      });
+      expect(child.exitCode).toBe(0);
     },
   );
 });

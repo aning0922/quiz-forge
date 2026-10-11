@@ -1,5 +1,6 @@
 import { spawn } from "node:child_process";
 import { createHash } from "node:crypto";
+import { performance } from "node:perf_hooks";
 import { fileURLToPath } from "node:url";
 import { z } from "zod";
 import type {
@@ -131,10 +132,17 @@ export async function inspectImage(
   expected: ImageDeclaration,
   context: ImageInspectionContext,
 ): Promise<Result<ImageFacts>> {
-  const start = Date.now();
+  const start = performance.now();
   const effective = resolvePackLimits(context.limits);
   if (!effective.ok) return effective;
   const limits = effective.value;
+  const deadline = start + limits.imageMs;
+  const interruption = (): string | undefined =>
+    context.signal.aborted
+      ? "MEDIA_CANCELLED"
+      : performance.now() >= deadline
+        ? "MEDIA_TIMEOUT"
+        : undefined;
   if (context.signal.aborted) return failure("MEDIA_CANCELLED");
   const parsed = declarationSchema.safeParse(expected);
   if (!parsed.success || !(input instanceof Uint8Array))
@@ -173,14 +181,21 @@ export async function inspectImage(
   };
   context.signal.addEventListener("abort", abort, { once: true });
   if (context.signal.aborted) abort();
-  const remaining = limits.imageMs - (Date.now() - start);
+  const remaining = deadline - performance.now();
   const timer = setTimeout(() => local.abort(), Math.max(0, remaining));
   if (remaining <= 0) local.abort();
   let release: (() => void) | undefined;
   try {
     release = await acquireDecoder(local.signal);
+    const grantedInterruption = interruption();
+    if (grantedInterruption) return failure(grantedInterruption);
     if (!release || local.signal.aborted) return failure(reason);
     return await new Promise<Result<ImageFacts>>((resolve) => {
+      const beforeSpawn = interruption();
+      if (beforeSpawn) {
+        resolve(failure(beforeSpawn));
+        return;
+      }
       const child = spawn(
         process.execPath,
         [
@@ -223,6 +238,11 @@ export async function inspectImage(
       // 'close' follows process exit and stdio closure: never return on kill alone.
       child.once("close", (code, signal) => {
         local.signal.removeEventListener("abort", cancel);
+        const closedInterruption = interruption();
+        if (closedInterruption) {
+          resolve(failure(closedInterruption));
+          return;
+        }
         if (forcedFailure) {
           resolve(failure(forcedFailure));
           return;
@@ -270,6 +290,11 @@ export async function inspectImage(
             facts.height !== declaration.height
           ) {
             resolve(failure("MEDIA_DECLARATION_MISMATCH"));
+            return;
+          }
+          const beforeSuccess = interruption();
+          if (beforeSuccess) {
+            resolve(failure(beforeSuccess));
             return;
           }
           resolve({
