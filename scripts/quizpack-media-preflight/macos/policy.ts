@@ -29,6 +29,7 @@ export const FAULT_WORKER = fileURLToPath(
 );
 export const POSIX_PROBE = resolve(MAC_ROOT, "tools/posix-probe");
 export const MAC_PROBE = resolve(MAC_ROOT, "tools/mac-probe");
+export const MAC_IDENTITY_HELPER = resolve(MAC_ROOT, "tools/identity-helper");
 export const SANDBOX = "/usr/bin/sandbox-exec";
 export type Policy = {
   profile: string;
@@ -126,8 +127,8 @@ export function loadPolicy(
       throw new PolicyError("UNSUPPORTED_PLATFORM");
     if (sharp.versions.sharp !== "0.35.5" || sharp.versions.vips !== "8.18.7")
       throw new PolicyError("UNSUPPORTED_PLATFORM");
-    const helperDirectory = lstatSync(dirname(MAC_PROBE));
-    const helper = lstatSync(MAC_PROBE);
+    const helperDirectory = lstatSync(dirname(MAC_IDENTITY_HELPER));
+    const helper = lstatSync(MAC_IDENTITY_HELPER);
     if (
       helperDirectory.isSymbolicLink() ||
       !helperDirectory.isDirectory() ||
@@ -198,7 +199,7 @@ export function loadPolicy(
       nodeSha256: fileHash(node),
       sandboxSha256: fileHash(SANDBOX),
       workerSha256: fileHash(WORKER),
-      controlHelperSha256: fileHash(MAC_PROBE),
+      controlHelperSha256: fileHash(MAC_IDENTITY_HELPER),
       sharedSourceHashes: ["contracts.ts", "precheck.ts", "output.ts"].map(
         (name) => ({
           name,
@@ -211,6 +212,8 @@ export function loadPolicy(
         "contracts.ts",
         "internal/shared/precheck.ts",
         "internal/shared/output.ts",
+        "internal/macos/identity-helper.c",
+        "internal/macos/identity-query.h",
       ].map((name) => ({
         name,
         sha256: fileHash(
