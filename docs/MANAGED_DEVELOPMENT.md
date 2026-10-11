@@ -88,3 +88,5 @@ P3表现预案见PRESENTATION_P3_PREFLIGHT.md：计划保留v1包兼容，以有
 - B「QuizForge B2-1 · 导入操作后台」：01a12c8e-9a41-79a3-9db2-74cf2f219011，GPT-6.1 Sol/high，独占HTTP/reader adapter/后台与E2E，自己的测试端口55422。
 - 两流固定基线5f2f8e5；总控持有package/lock/shared errors/playwright及3100，集成测试端口55423。新root的独立test实例从旧v1配置生成，供实际升级兼容回归；配置内容私有。
 - [Draft PR #10](https://github.com/aning0922/quiz-forge/pull/10)已创建并堆叠于B1，当前仅合同与共享错误/浏览器项目准备，不代表接收功能完成。18项定向HTTP安全测试、类型、定向lint/格式通过；阶段六项与DB/driver/E2E均待集成后执行。
+
+公共交接已完成：A原1bfe008→root7546736，B适配原a44c54f→rootb17b391；B已获总控指定A提交并接入。root22项相关单测与旧v1实例57项真实DB/认证通过，Astra窄审无P1/P2；b17b391的CI38170812606两项job成功。B HTTP/UI原3405076→root1729a8e，29项imports定向通过；客户端响应验证P2已派回B修复。原包service/CLI/表与完整阶段验收仍未完成。
