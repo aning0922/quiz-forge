@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { createInflateRaw } from "node:zlib";
 import { createRequire } from "node:module";
+import { performance } from "node:perf_hooks";
 const crc32 = createRequire(import.meta.url)("buffer-crc32") as {
   unsigned(bytes: Buffer): number;
 };
@@ -17,6 +18,7 @@ export const packIssue = (code: string): PackIssue => ({
   path: [],
   message: "QuizPack operation rejected.",
 });
+const deadlines = new WeakMap<AbortSignal, number>();
 export function throwIfAborted(signal: AbortSignal): void {
   if (signal.aborted)
     throw new PackToolError(
@@ -24,26 +26,42 @@ export function throwIfAborted(signal: AbortSignal): void {
         ? signal.reason.code
         : "OPERATION_CANCELLED",
     );
+  if (performance.now() >= (deadlines.get(signal) ?? Infinity))
+    throw new PackToolError("OPERATION_TIMEOUT");
 }
 export async function withPackDeadline<T>(
   context: ValidationContext,
   work: (signal: AbortSignal, limits: Readonly<PackLimits>) => Promise<T>,
 ): Promise<T> {
+  const started = performance.now();
   const resolved = resolvePackLimits(context.limits);
   if (!resolved.ok) throw new PackToolError("INVALID_LIMITS");
   const limits = resolved.value;
   const controller = new AbortController();
+  const deadline = Math.min(
+    started + limits.operationMs,
+    context.signal ? (deadlines.get(context.signal) ?? Infinity) : Infinity,
+  );
+  deadlines.set(controller.signal, deadline);
   const cancel = () =>
-    controller.abort(new PackToolError("OPERATION_CANCELLED"));
+    controller.abort(
+      context.signal?.reason instanceof PackToolError
+        ? context.signal.reason
+        : new PackToolError("OPERATION_CANCELLED"),
+    );
   context.signal?.addEventListener("abort", cancel, { once: true });
   if (context.signal?.aborted) cancel();
   const timer = setTimeout(
     () => controller.abort(new PackToolError("OPERATION_TIMEOUT")),
-    limits.operationMs,
+    Math.max(0, deadline - performance.now()),
   );
   try {
     throwIfAborted(controller.signal);
-    return await work(controller.signal, limits);
+    const result = await work(controller.signal, limits);
+    // A timer cannot run while synchronous copying, CRC or hashing holds the
+    // event loop. Monotonic checks therefore govern success independently.
+    throwIfAborted(controller.signal);
+    return result;
   } finally {
     clearTimeout(timer);
     context.signal?.removeEventListener("abort", cancel);
@@ -80,11 +98,20 @@ export async function readBoundedBytes(
   const iterator = source[Symbol.asyncIterator]();
   const chunks: Buffer[] = [];
   let size = 0;
+  let block: Buffer | undefined;
+  let used = 0;
+  let reads = 0;
   let finished = false;
   try {
     while (true) {
       throwIfAborted(signal);
       const item = await abortable(Promise.resolve(iterator.next()), signal);
+      // A perpetually ready iterator must not starve deadline/cancel timers.
+      if (++reads % 256 === 0)
+        await abortable(
+          new Promise<void>((resolve) => setImmediate(resolve)),
+          signal,
+        );
       if (item.done) {
         finished = true;
         break;
@@ -93,16 +120,43 @@ export async function readBoundedBytes(
         throw new PackToolError("INPUT_INVALID_BYTES");
       size += item.value.byteLength;
       if (size > max) throw new PackToolError("INPUT_SIZE_LIMIT");
-      chunks.push(Buffer.from(item.value));
+      // Bound chunk bookkeeping as well as payload bytes (one-byte or empty
+      // attacker chunks must not create millions of Buffer objects).
+      let offset = 0;
+      while (offset < item.value.length) {
+        throwIfAborted(signal);
+        block ??= Buffer.allocUnsafe(Math.min(max, 65536));
+        const count = Math.min(block.length - used, item.value.length - offset);
+        block.set(item.value.subarray(offset, offset + count), used);
+        offset += count;
+        used += count;
+        if (used === block.length) {
+          chunks.push(block);
+          block = undefined;
+          used = 0;
+          if (chunks.length % 16 === 0)
+            await abortable(
+              new Promise<void>((resolve) => setImmediate(resolve)),
+              signal,
+            );
+        }
+      }
     }
-    return Buffer.concat(chunks, size);
+    if (block && used) chunks.push(block.subarray(0, used));
+    const bytes = Buffer.concat(chunks, size);
+    throwIfAborted(signal);
+    return bytes;
   } finally {
     if (!finished) {
       // Node streams are actively closed. An arbitrary iterator may have a pending
       // next() forever, so invoke return without letting it hold cancellation open.
       if ("destroy" in source && typeof source.destroy === "function")
         source.destroy();
-      void Promise.resolve(iterator.return?.()).catch(() => {});
+      try {
+        void Promise.resolve(iterator.return?.()).catch(() => {});
+      } catch {
+        /* Cleanup must preserve the original failure. */
+      }
     }
   }
 }
@@ -112,6 +166,7 @@ export interface RestrictedZip {
 }
 interface Entry {
   name: string;
+  version: number;
   offset: number;
   start: number;
   compressed: number;
@@ -126,7 +181,8 @@ export function isPackPath(path: string): boolean {
   return (
     path === "manifest.json" ||
     path === "content.json" ||
-    /^assets\/[a-z0-9][a-z0-9_-]*\.(png|jpg|webp)$/.test(path)
+    (path.length <= 96 &&
+      /^assets\/[a-z][a-z0-9]*(?:-[a-z0-9]+)*\.(png|jpg|webp)$/.test(path))
   );
 }
 function maximum(name: string, limits: PackLimits): number {
@@ -219,6 +275,7 @@ function scan(bytes: Buffer, limits: PackLimits): Entry[] {
     if (total > limits.totalUncompressedBytes) fail("ZIP_TOTAL_SIZE_LIMIT");
     entries.push({
       name,
+      version,
       offset: bytes.readUInt32LE(cursor + 42),
       start: 0,
       compressed,
@@ -256,6 +313,7 @@ function scan(bytes: Buffer, limits: PackLimits): Entry[] {
     if (!bytes.subarray(offset + 30, start).equals(Buffer.from(entry.name)))
       fail();
     if (
+      bytes.readUInt16LE(offset + 4) !== entry.version ||
       bytes.readUInt16LE(offset + 6) !== entry.flags ||
       bytes.readUInt16LE(offset + 8) !== entry.method ||
       bytes.readUInt16LE(offset + 10) !== entry.time ||
@@ -280,7 +338,9 @@ export async function readRestrictedZip(
   try {
     return await withPackDeadline(context, async (signal, limits) => {
       const bytes = await readBoundedBytes(source, limits.archiveBytes, signal);
+      throwIfAborted(signal);
       const entries = scan(bytes, limits);
+      throwIfAborted(signal);
       const files = new Map<string, Buffer>();
       let total = 0;
       for (const entry of entries) {
@@ -317,6 +377,9 @@ export async function readRestrictedZip(
             if (inflater.bytesWritten !== compressed.length)
               throw new PackToolError("ZIP_DEFLATE_TRAILING_BYTES");
             data = Buffer.concat(chunks, actual);
+          } catch (error) {
+            throwIfAborted(signal);
+            throw error;
           } finally {
             signal.removeEventListener("abort", stop);
             inflater.destroy();
@@ -327,13 +390,20 @@ export async function readRestrictedZip(
           throw new PackToolError("ZIP_SIZE_MISMATCH");
         if (crc32.unsigned(data) !== entry.crc)
           throw new PackToolError("ZIP_CRC_MISMATCH");
+        throwIfAborted(signal);
         files.set(entry.name, data);
+        await abortable(
+          new Promise<void>((resolve) => setImmediate(resolve)),
+          signal,
+        );
       }
+      throwIfAborted(signal);
+      const archiveSha256 = createHash("sha256").update(bytes).digest("hex");
       throwIfAborted(signal);
       return {
         ok: true,
         value: {
-          archiveSha256: createHash("sha256").update(bytes).digest("hex"),
+          archiveSha256,
           files,
         },
       };
