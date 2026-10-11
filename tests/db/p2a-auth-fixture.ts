@@ -2,7 +2,7 @@ import { constants } from "node:fs";
 import { open, unlink } from "node:fs/promises";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
-import { openTestDatabase } from "./p2a-fixture";
+import { openTestDatabase, resetTestDatabase } from "./p2a-fixture";
 import { issueToken } from "@/lib/security/p2a-tokens";
 import { acquireAuthWriteLock } from "@/lib/db/auth-lock";
 import { readPrivateJson } from "@/lib/db/runtime";
@@ -34,10 +34,7 @@ async function run() {
         stored.runId !== runId
       )
         throw new Error();
-      await fixture.admin.sql.begin(async (tx) => {
-        await acquireAuthWriteLock(tx);
-        await tx`TRUNCATE qf.audit_event, qf.operator_session, qf.operator`;
-      });
+      await resetTestDatabase(fixture);
       await unlink(file).catch((error) => {
         if (!(
           error &&
@@ -72,9 +69,9 @@ async function run() {
     } finally {
       await handle.close();
     }
+    await resetTestDatabase(fixture);
     await fixture.admin.sql.begin(async (tx) => {
       await acquireAuthWriteLock(tx);
-      await tx`TRUNCATE qf.audit_event, qf.operator_session, qf.operator`;
       await tx`INSERT INTO qf.operator (id,label,credential_digest,role,status) VALUES
         (${randomUUID()}, 'e2e-operator', ${operator.digest}, 'operator', 'active'),
         (${randomUUID()}, 'e2e-read-only', ${readOnly.digest}, 'read-only', 'active')`;
