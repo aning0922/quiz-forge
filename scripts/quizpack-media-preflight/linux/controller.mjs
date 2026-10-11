@@ -143,6 +143,9 @@ async function inspect(record, deadline, onDiagnostic) {
         : null,
       errorCategory: classified.category,
       knownSyscall: classified.knownSyscall,
+      errno: classified.errno,
+      fifoOperation: classified.fifoOperation,
+      reference: classified.reference,
     });
     return Object.values(checks).every((v) => v === true) ? value : null;
   } catch {
@@ -267,6 +270,7 @@ export async function executeSynthetic({
         reason: create.reason ?? null,
         stderrCategory: create.stderrCategory,
         knownSyscall: create.stderrSyscall,
+        ...create.stderrDetails,
       });
       await hooks.afterCreate?.(record, create);
       if (!create.settled) {
@@ -300,6 +304,7 @@ export async function executeSynthetic({
           reason: output.reason ?? null,
           stderrCategory: output.stderrCategory,
           knownSyscall: output.stderrSyscall,
+          ...output.stderrDetails,
         });
         await hooks.afterStart?.(record, output);
         reason =

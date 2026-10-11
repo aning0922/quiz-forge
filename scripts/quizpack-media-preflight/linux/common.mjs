@@ -99,6 +99,7 @@ export function command(
     let errBytes = 0;
     let stderrCategory = "empty";
     let stderrSyscall = null;
+    let stderrDetails = { errno: null, fifoOperation: null, reference: null };
     let settled = false;
     const stop = (why) => {
       reason ??= why;
@@ -142,6 +143,7 @@ export function command(
         stderrBytes: errBytes,
         stderrCategory,
         stderrSyscall,
+        stderrDetails,
         settled: closed,
       });
     };
@@ -183,6 +185,8 @@ export function command(
       if (stderrCategory === "empty" || stderrCategory === "unclassified")
         stderrCategory = classified.category;
       stderrSyscall ??= classified.knownSyscall;
+      for (const key of ["errno", "fifoOperation", "reference"])
+        stderrDetails[key] ??= classified[key];
       errBytes += chunk.length;
       if (errBytes > stderrLimit) stop("OUTPUT_INVALID");
     });
@@ -230,6 +234,7 @@ const SAFE_STAGES = new Set([
   "image-record",
   "native-identity",
   "dependencies-record",
+  "runtime-version",
 ]);
 export function safeMain(fn, stageFn = () => null) {
   fn().catch(() => {

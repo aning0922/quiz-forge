@@ -74,3 +74,11 @@ normal矩阵新增原图带合法PNG ancillary chunk的精确8MiB样本、完整
 父崩溃harness只杀自己启动的launcher子进程，在可信afterCreate hook已经观测真实create close、尚未发start的窗口暂停；父端实际观测该子进程close，fresh child验证guard跨重启BUSY。显式恢复要求本轮record摘要、ownerPid与已观测close证据相符，同时实际容器必须仍为created并精确身份匹配，才可移除该从未启动对象。此证据不能覆盖运行中父崩溃，后者仍未实现/未验收；不使用PID消失、猜测PID、布尔超时或删guard推断安全。
 
 候选normal外层入口同步固定context的signal/绝对期限，并在内部结果await之后再次检查取消/实际期限，避免最后一次Promise交接造成迟到decoded。此检查仍使用原5秒限额，不改变worker、权限或收尾预算。扩展源码会单独提交以便审阅；无Linux正常解码/完整矩阵通过声明。
+
+## 第四轮FIFO定位（仍关闭）
+
+总控真实 CI38179010996，head `4f3959b` 已失败；capabilities和containerChecks全部true，create成功，start attach退出1，状态created/退出255，CLI分类oci-fifo-failed。旧knownSyscall=mount仅为文本词命中，可能来自描述或路径，**不能作为mount系统调用证据或许可依据**。未增加mount/namespace/网络/IPC/额外进程权限。
+
+后继仅增加实际engine/containerd/runc/init固定版本记录，FIFO open/reopen/write/close/wait/errno及受限reference分类。syscall名改为显式SyscallError/系统调用格式才提取，仍是错误文本分类而非kernel trace。原文、路径、stderr、完整inspect不会输出。runc版本未拿到前不以main源码断言该run必需调用；具体FIFO操作和对应版本源码仍待下一轮实测后闭环。
+
+候选源码链已缩到 [runc v1.3.3 FIFO Reopen](https://raw.githubusercontent.com/opencontainers/runc/v1.3.3/libcontainer/standard_init_linux.go) → 该tag固定 [filepath-securejoin v0.5.1](https://raw.githubusercontent.com/opencontainers/runc/v1.3.3/go.mod) → [procfs handle校验](https://raw.githubusercontent.com/cyphar/filepath-securejoin/v0.5.1/pathrs-lite/internal/procfs/procfs_linux.go)，后者读取fstatfs/fstat并有mount API失败后的/proc只读回退。这是可定位候选，尚未绑定实际run的runc版本；不授予mount或先行修改seccomp。诊断增加这些只读检查的闭集syscall名，下一次实际版本/错误形式才能支持最小修订。
