@@ -1,7 +1,7 @@
 import { constants } from "node:fs";
 import { open, unlink } from "node:fs/promises";
 import path from "node:path";
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import {
@@ -14,6 +14,12 @@ import { issueToken } from "@/lib/security/p2a-tokens";
 import { acquireAuthWriteLock } from "@/lib/db/auth-lock";
 import { readPrivateJson } from "@/lib/db/runtime";
 import { idempotencyKeySchema } from "@/features/quizpack/import/contracts";
+import {
+  createImportReceiveService,
+  importReceiveService,
+} from "@/features/quizpack/import/service";
+import { createReceiveContext } from "@/features/quizpack/import/context";
+import { StudioError } from "@/lib/http-security/errors";
 
 // Only fixed safe flags leave this process. No credentials/SQL exceptions are printed.
 async function run() {
@@ -70,6 +76,67 @@ async function run() {
           maxBuffer: 4096,
         },
       );
+      return;
+    }
+    if (mode === "seed-recovery") {
+      const author = await authenticateTestOperator(fixture);
+      const bytes = Buffer.from("synthetic recover original bytes");
+      const intent = await importReceiveService.createIntent(
+        fixture.app,
+        author.credentials,
+        "e2e-imports",
+        randomUUID(),
+        {
+          expectedArchiveBytes: bytes.length,
+          expectedArchiveSha256: createHash("sha256")
+            .update(bytes)
+            .digest("hex"),
+          target: { kind: "new-draft" },
+        },
+      );
+      const { context, dispose } = createReceiveContext(
+        new AbortController().signal,
+      );
+      let reads = 0;
+      const real = createImportReceiveService({
+        afterCommit: async (kind) => {
+          if (kind === "claim") throw new StudioError("WRITE_OUTCOME_UNKNOWN");
+        },
+      });
+      try {
+        await real.receiveArchive(
+          fixture.app,
+          author.credentials,
+          "e2e-imports",
+          intent.import.id,
+          {
+            chunks: {
+              async *[Symbol.asyncIterator]() {
+                reads += 1;
+                yield bytes;
+              },
+            },
+            cancel: async () => undefined,
+          },
+          context,
+        );
+        throw new Error();
+      } catch (error) {
+        if (
+          !(error instanceof StudioError) ||
+          error.code !== "WRITE_OUTCOME_UNKNOWN"
+        )
+          throw new Error();
+      } finally {
+        dispose();
+      }
+      const rows = await fixture.admin.sql<
+        { status: string }[]
+      >`SELECT status FROM qf.quizpack_import WHERE id=${intent.import.id}`;
+      if (reads !== 0 || rows.length !== 1 || rows[0]?.status !== "receiving")
+        throw new Error();
+      // No stream/file work began; on normal helper exit its recorded PID is dead.
+      // Browser recovery must prove that fact itself, never trust this safe flag.
       return;
     }
     if (mode === "cleanup") {

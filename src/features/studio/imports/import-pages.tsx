@@ -18,7 +18,7 @@ import { CreateReceive } from "./create-receive";
 import { ImportFacts } from "./import-facts";
 import { ReceiveControls } from "./receive-controls";
 import { checkImport, checkImportPage, checkSettings } from "./client";
-import { prepareArchive } from "./prepare-archive";
+import { prepareArchiveInput } from "./prepare-archive";
 import styles from "../workspace/workspace.module.css";
 import local from "./imports.module.css";
 
@@ -207,10 +207,13 @@ function ExistingReceive({
     setFile(undefined);
     setMessage("");
     try {
-      const prepared = await prepareArchive(selected, settings.maxArchiveBytes);
+      const prepared = await prepareArchiveInput(
+        selected,
+        settings.maxArchiveBytes,
+      );
       if (
-        prepared.input.expectedArchiveBytes !== current.expectedArchiveBytes ||
-        prepared.input.expectedArchiveSha256 !== current.expectedArchiveSha256
+        prepared.expectedArchiveBytes !== current.expectedArchiveBytes ||
+        prepared.expectedArchiveSha256 !== current.expectedArchiveSha256
       ) {
         setMessage(
           "此文件与原意图字节数或 SHA-256 不符，不能上传或修改原声明。",

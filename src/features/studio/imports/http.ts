@@ -51,8 +51,8 @@ export async function handleImportHttp(
   request: Request,
   endpoint: ImportEndpoint,
   service: ImportReceiveService,
+  startedAt = performance.now(),
 ): Promise<Response> {
-  const startedAt = performance.now();
   const budget =
     endpoint.action === "archive" || endpoint.action === "recover"
       ? createReceiveContext(request.signal, startedAt)

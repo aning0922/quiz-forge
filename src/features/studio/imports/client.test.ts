@@ -45,6 +45,27 @@ function serve(value: unknown, status = 200) {
 
 describe("checked import response boundary", () => {
   it.each([
+    [502, "CSRF_REJECTED"],
+    [500, "INVALID_REQUEST"],
+  ] as const)(
+    "status %s mismatched with %s stays unknown",
+    async (status, code) => {
+      serve({ code, requestId: id }, status);
+      await expect(
+        checkedImportFetch("/imports", { method: "POST" }, check, true),
+      ).rejects.toMatchObject({ code: "WRITE_OUTCOME_UNKNOWN" });
+      await expect(
+        checkedImportFetch("/imports/id", {}, check),
+      ).rejects.toMatchObject({ code: "STUDIO_UNAVAILABLE" });
+    },
+  );
+  it("accepts a documented 403 CSRF refusal as definite for this request", async () => {
+    serve({ code: "CSRF_REJECTED", requestId: id }, 403);
+    await expect(
+      checkedImportFetch("/imports", { method: "POST" }, check, true),
+    ).rejects.toMatchObject({ code: "CSRF_REJECTED" });
+  });
+  it.each([
     {},
     null,
     [],

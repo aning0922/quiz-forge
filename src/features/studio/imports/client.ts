@@ -117,35 +117,35 @@ export function checkImportPage(
 }
 // Only documented rejections may unblock an explicit new request. Unknown strings
 // and malformed success/error envelopes remain uncertain for every write.
-const knownWriteErrors = new Set([
-  "INVALID_REQUEST",
-  "PAYLOAD_TOO_LARGE",
-  "UNAUTHENTICATED",
-  "ORIGIN_REJECTED",
-  "CSRF_REJECTED",
-  "CAPABILITY_DENIED",
-  "PRODUCT_NOT_FOUND",
-  "PRODUCT_ARCHIVED",
-  "IMPORT_NOT_FOUND",
-  "IMPORTS_DISABLED",
-  "IDEMPOTENCY_CONFLICT",
-  "IMPORT_STATE_CONFLICT",
-  "IMPORT_INTENT_LIMIT",
-  "RECEIVE_BUSY",
-  "RECEIVE_QUOTA_EXCEEDED",
-  "RECEIVE_ATTEMPT_LIMIT",
-  "RECEIVE_RECOVERY_REQUIRED",
-  "RECEIVE_STORAGE_CONFLICT",
-  "RECEIVE_SCAN_LIMIT",
-  "RECEIVE_TIMEOUT",
-  "RECEIVE_LENGTH_MISMATCH",
-  "RECEIVE_HASH_MISMATCH",
-  "RECEIVE_LOCK_LOST",
-  "REVISION_LIMIT",
-  "WRITE_BUSY",
-  "WRITE_OUTCOME_UNKNOWN",
-  "STUDIO_UNAVAILABLE",
-]);
+const knownErrorStatuses: Record<string, number> = {
+  INVALID_REQUEST: 400,
+  PAYLOAD_TOO_LARGE: 413,
+  UNAUTHENTICATED: 401,
+  ORIGIN_REJECTED: 403,
+  CSRF_REJECTED: 403,
+  CAPABILITY_DENIED: 403,
+  PRODUCT_NOT_FOUND: 404,
+  PRODUCT_ARCHIVED: 409,
+  IMPORT_NOT_FOUND: 404,
+  IMPORTS_DISABLED: 409,
+  IDEMPOTENCY_CONFLICT: 409,
+  IMPORT_STATE_CONFLICT: 409,
+  IMPORT_INTENT_LIMIT: 409,
+  RECEIVE_BUSY: 409,
+  RECEIVE_QUOTA_EXCEEDED: 409,
+  RECEIVE_ATTEMPT_LIMIT: 409,
+  RECEIVE_RECOVERY_REQUIRED: 409,
+  RECEIVE_STORAGE_CONFLICT: 409,
+  RECEIVE_SCAN_LIMIT: 409,
+  RECEIVE_TIMEOUT: 408,
+  RECEIVE_LENGTH_MISMATCH: 422,
+  RECEIVE_HASH_MISMATCH: 422,
+  RECEIVE_LOCK_LOST: 503,
+  REVISION_LIMIT: 409,
+  WRITE_BUSY: 409,
+  WRITE_OUTCOME_UNKNOWN: 503,
+  STUDIO_UNAVAILABLE: 503,
+};
 const errorEnvelopeSchema = z.strictObject({
   code: z.string(),
   requestId: importIdSchema,
@@ -181,7 +181,8 @@ export async function checkedImportFetch<T>(
     const envelope = errorEnvelopeSchema.safeParse(value);
     if (
       !envelope.success ||
-      !knownWriteErrors.has(envelope.data.code) ||
+      !Object.hasOwn(knownErrorStatuses, envelope.data.code) ||
+      knownErrorStatuses[envelope.data.code] !== response.status ||
       (envelope.data.currentRevision !== undefined &&
         envelope.data.code !== "IMPORT_STATE_CONFLICT")
     )
