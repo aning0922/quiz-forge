@@ -98,13 +98,24 @@ export async function migrateDatabase(
       // PG18 table REVOKE also clears column grants; explicitly restate the application column boundary.
       await tx`REVOKE ALL(id,label,credential_digest,role,status,created_at,disabled_at) ON qf.operator FROM ${app}`;
       await tx`REVOKE ALL(id,token_digest,kind,operator_id,created_at,last_seen_at,idle_expires_at,absolute_expires_at,revoked_at,failed_attempts) ON qf.operator_session FROM ${app}`;
-      await tx`REVOKE ALL(id,occurred_at,action,outcome,reason_code,actor_id,session_id,request_id) ON qf.audit_event FROM ${app}`;
+      await tx`REVOKE ALL(id,occurred_at,action,outcome,reason_code,actor_id,session_id,request_id,target_kind,target_id,target_revision) ON qf.audit_event FROM ${app}`;
       await tx`GRANT CONNECT ON DATABASE ${tx(config.database.name)} TO ${app}`;
       await tx`GRANT USAGE ON SCHEMA qf TO ${app}`;
       await tx`GRANT SELECT ON qf.operator TO ${app}`;
       await tx`GRANT SELECT,INSERT ON qf.operator_session TO ${app}`;
       await tx`GRANT UPDATE(last_seen_at,idle_expires_at,revoked_at,failed_attempts) ON qf.operator_session TO ${app}`;
       await tx`GRANT SELECT,INSERT ON qf.audit_event TO ${app}`;
+      await tx`REVOKE ALL(id,slug,title,primary_category_id,metadata_revision,created_at,updated_at,archived_at) ON qf.product FROM ${app}`;
+      for (const name of ["category", "tag"]) {
+        const table = tx(`qf.${name}`);
+        await tx`REVOKE ALL(id,slug,name,revision,created_at,updated_at,archived_at) ON ${table} FROM ${app}`;
+        await tx`GRANT SELECT,INSERT ON ${table} TO ${app}`;
+        await tx`GRANT UPDATE(name,revision,updated_at,archived_at) ON ${table} TO ${app}`;
+      }
+      await tx`REVOKE ALL(product_id,tag_id,slot) ON qf.product_tag FROM ${app}`;
+      await tx`GRANT SELECT,INSERT ON qf.product TO ${app}`;
+      await tx`GRANT UPDATE(slug,title,primary_category_id,metadata_revision,updated_at,archived_at) ON qf.product TO ${app}`;
+      await tx`GRANT SELECT,INSERT,DELETE ON qf.product_tag TO ${app}`;
       // Enums require USAGE, never CREATE; metadata remains inaccessible.
       for (const name of [
         "operator_role",

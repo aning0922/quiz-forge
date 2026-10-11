@@ -1,0 +1,12 @@
+ALTER TYPE qf.audit_action ADD VALUE 'product_created';
+ALTER TYPE qf.audit_action ADD VALUE 'product_updated';
+ALTER TYPE qf.audit_action ADD VALUE 'product_archived';
+ALTER TYPE qf.audit_action ADD VALUE 'product_restored';
+ALTER TYPE qf.audit_action ADD VALUE 'category_created';
+ALTER TYPE qf.audit_action ADD VALUE 'category_updated';
+ALTER TYPE qf.audit_action ADD VALUE 'category_archived';
+ALTER TYPE qf.audit_action ADD VALUE 'category_restored';
+ALTER TYPE qf.audit_action ADD VALUE 'tag_created';
+ALTER TYPE qf.audit_action ADD VALUE 'tag_updated';
+ALTER TYPE qf.audit_action ADD VALUE 'tag_archived';
+ALTER TYPE qf.audit_action ADD VALUE 'tag_restored';
