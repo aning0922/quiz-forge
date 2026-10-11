@@ -1,8 +1,16 @@
 # 阶段进度
 
-日期：2026-10-11（Asia/Shanghai）。当前阶段为作者明确授权的 **Visual V2-A**。main 已包含 PR #1/#2/#3，启动 fetch 后基线为 `4399664d9d2ab6e8e0eeebe900c3dbd8fc2c39f8`。D1-C 及后续仍未授权。以下旧阶段的 SHA、CI 和停止记录是历史证据，不代表当前 main 状态。
+日期：2026-10-11（Asia/Shanghai）。当前阶段为作者明确授权的 **Visual V2-A.1**，在原分支基线 `eb028a59c70e8b735362335bf16d9941f88a5654` 继续。main 已包含 PR #1/#2/#3，V2最初从 `4399664d9d2ab6e8e0eeebe900c3dbd8fc2c39f8` 创建。D1-C 及后续仍未授权。以下旧阶段的 SHA、CI 和停止记录是历史证据，不代表当前 main 状态。
 
-## Visual V2-A 消费者体验探索（当前）
+## Visual V2-A.1 性情图谱与题签（当前）
+
+- 继续使用原worktree和 `codex/visual-v2-exploration`，更新既有Draft PR #4；不初始化新仓库或合并main。
+- A细线横条、B编号属性刻度面板共用五项固定synthetic值88/82/64/46/38。支持4–7项、0–100与小数边界；数据校验/排序不计算评分。摘要与可选题签之后立即进入图谱，匹配依据独立成章，海报引用两项小标签。
+- 性情题签独立区分已核实古诗与明确标注原创拟古。李白《行路难·其一》末两句附可追溯来源；同一原型配置两组候选，但未实现分数/答案驱动选诗。角色摘要、印记、英文题名和海报标签等移入视觉DTO。
+- 31项单测、生产构建、完整E2E 106通过/10旧跳过；54张新生产截图及实际视觉复核，旧V2与D1历史证据保留。最终格式/lint/类型与PR head CI按交付核验，不用旧CI冒称。
+- [交付/限制/文案接口审计](VISUAL_V2_A1_ACCEPTANCE.md)、[未来评分与题签契约](VISUAL_V2_A1_CONTRACT.md)、[新截图索引](qa/visual-v2-a1/README.md)。本轮结束等待人工视觉与架构审查，不执行正式评分、持久化、动态选诗、海报导出或D1-C。
+
+## Visual V2-A 消费者体验探索（历史交付）
 
 - 独立 worktree：`/Users/aipuli/.codex/worktrees/visual-v2-exploration/quiz-forge`；分支 `codex/visual-v2-exploration`；origin 保持正式私有仓库。
 - GPT-6 Astra 负责独立设计审查与方向规格；完成 A「入画寻己」与 B「风骨藏馆」两套 React/CSS 高保真原型。研究入口 `/studies/visual-v2`；各有 cover/question/reveal/report/poster 五路由，另含恢复、确认、加载、异常与缺图状态。

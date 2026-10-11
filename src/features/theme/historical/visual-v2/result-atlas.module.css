@@ -1,0 +1,578 @@
+.atlas {
+  --atlas-fill: #356551;
+  --atlas-track: #d9dece;
+  --atlas-text: #263c35;
+  --atlas-muted: #506356;
+  padding: 32px 0 36px;
+  color: var(--atlas-text);
+  scroll-margin-top: 70px;
+}
+.heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+.kicker {
+  font-size: 11px;
+  letter-spacing: 1.8px;
+  color: var(--atlas-muted);
+  margin-bottom: 8px;
+}
+.heading h2 {
+  font-size: 28px;
+  line-height: 1.5;
+}
+.count {
+  font:
+    34px Georgia,
+    serif;
+  color: var(--atlas-muted);
+  text-align: center;
+  border-left: 1px solid var(--rule);
+  padding-left: 18px;
+}
+.count small {
+  display: block;
+  font:
+    11px Arial,
+    "PingFang SC",
+    sans-serif;
+  margin-top: 6px;
+}
+.disclosure {
+  font-size: 16px;
+  line-height: 1.7;
+  margin-bottom: 12px;
+}
+.disclosure b {
+  display: block;
+  font-size: 11px;
+  letter-spacing: 1px;
+  font-weight: 500;
+  color: var(--atlas-muted);
+  margin-bottom: 5px;
+}
+.readingKey {
+  font-size: 16px;
+  color: var(--atlas-muted);
+  line-height: 1.7;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--rule);
+}
+.rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+}
+.row {
+  padding: 25px 0;
+  border-bottom: 1px solid var(--rule);
+  min-width: 0;
+}
+.rowHeading {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 16px;
+}
+.rowHeading h3 {
+  font-size: 21px;
+  line-height: 1.5;
+}
+.ordinal {
+  display: none;
+}
+.score {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  white-space: nowrap;
+}
+.score strong {
+  font:
+    32px Georgia,
+    serif;
+  font-variant-numeric: tabular-nums;
+  color: var(--atlas-fill);
+}
+.score > span {
+  font-size: 11px;
+  color: var(--atlas-muted);
+}
+.gauge {
+  height: 6px;
+  position: relative;
+  background: var(--atlas-track);
+  border-radius: 0;
+}
+.fill {
+  display: block;
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: var(--dimension-score);
+  background: var(--atlas-fill);
+}
+.ink .fill::after {
+  content: "";
+  position: absolute;
+  right: -1px;
+  top: -3px;
+  width: 2px;
+  height: 12px;
+  background: var(--atlas-fill);
+}
+.ticks {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.ink .ticks {
+  background: linear-gradient(
+    to right,
+    transparent calc(50% - 0.5px),
+    #839480 calc(50% - 0.5px),
+    #839480 calc(50% + 0.5px),
+    transparent calc(50% + 0.5px)
+  );
+}
+.poles {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 9px;
+  color: var(--atlas-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.poles > span {
+  display: flex;
+  gap: 6px;
+  max-width: 50%;
+}
+.poles > span:last-child {
+  text-align: right;
+}
+.poles i {
+  font:
+    11px Georgia,
+    serif;
+  padding-top: 3px;
+}
+.interpretation {
+  font-size: 16px;
+  line-height: 1.8;
+  margin-top: 13px;
+  color: var(--atlas-text);
+}
+.scaleNotes {
+  margin-top: 8px;
+  font-size: 16px;
+}
+.scaleNotes summary {
+  min-height: 48px;
+  padding: 12px 0;
+  cursor: pointer;
+}
+.scaleNotes dl {
+  margin: 0;
+}
+.scaleNotes dt {
+  font-weight: 600;
+  margin-top: 16px;
+}
+.scaleNotes dd {
+  margin: 6px 0 16px;
+  font-size: 16px;
+  line-height: 1.8;
+  color: var(--atlas-muted);
+}
+.archive {
+  --atlas-fill: #e7c88d;
+  --atlas-track: #2b5144;
+  --atlas-text: #f1e8d4;
+  --atlas-muted: #bfcebb;
+}
+.archive .rows {
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-top: 22px;
+}
+.archive .row {
+  border: 1px solid #72846b;
+  padding: 22px;
+  background: #193a32;
+}
+.archive .rowHeading {
+  grid-template-columns: 28px minmax(0, 1fr) auto;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+.archive .ordinal {
+  display: grid;
+  place-items: center;
+  align-self: start;
+  height: 30px;
+  font:
+    12px Georgia,
+    serif;
+  color: #e7c88d;
+  border: 1px solid #8b926d;
+}
+.archive .rowHeading h3 {
+  font-size: 20px;
+}
+.archive .score {
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+.archive .score strong {
+  font:
+    30px Georgia,
+    serif;
+}
+.archive .gauge {
+  height: 13px;
+  outline: 1px solid #829172;
+  outline-offset: 3px;
+}
+.archive .ticks {
+  background: repeating-linear-gradient(
+    to right,
+    transparent 0,
+    transparent calc(10% - 2px),
+    #193a32 calc(10% - 2px),
+    #193a32 10%
+  );
+}
+.archive .poles {
+  margin-top: 13px;
+  font-size: 12px;
+}
+.archive .interpretation {
+  margin-top: 16px;
+}
+.archive .scaleNotes {
+  border-top: 1px solid #72846b;
+  margin-top: 20px;
+}
+.unavailable {
+  padding: 30px 0;
+  font-size: 16px;
+}
+.unavailable h2 {
+  font-size: 25px;
+  margin-bottom: 12px;
+}
+.inscription {
+  margin: 8px 0 0;
+  padding: 18px 20px 4px;
+}
+.versePaper {
+  border-left: 2px solid #9a4734;
+  background: linear-gradient(115deg, #e7e9dc, #f6f1e7);
+}
+.verseLabel {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  color: var(--muted);
+  font-size: 12px;
+  letter-spacing: 1px;
+}
+.verseLabel small {
+  font-size: 11px;
+  letter-spacing: 0;
+}
+.inscription blockquote {
+  margin: 13px 0 4px;
+  font-family: var(--display);
+  font-size: 23px;
+  line-height: 1.8;
+  letter-spacing: 2px;
+}
+.verseDetails {
+  font-size: 14px;
+}
+.verseDetails summary {
+  min-height: 44px;
+  padding: 10px 0;
+  cursor: pointer;
+  font-size: 13px;
+}
+.verseDetails summary > span {
+  color: var(--muted);
+  margin-left: 8px;
+  font-size: 11px;
+}
+.verseDetails p {
+  font-size: 16px;
+  line-height: 1.8;
+  margin: 10px 0;
+}
+.verseDetails a {
+  font-size: 16px;
+  display: block;
+  min-height: 44px;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  padding: 8px 0;
+}
+.verseStudyNote {
+  color: var(--muted);
+}
+.verseArchive {
+  border: 1px solid #809071;
+  padding: 16px 22px 4px;
+  background: #1c3d34;
+  position: relative;
+}
+.verseArchive .verseLabel {
+  flex-direction: column;
+  position: absolute;
+  right: 20px;
+  top: 20px;
+  writing-mode: vertical-rl;
+  gap: 12px;
+  font-size: 11px;
+}
+.verseArchive blockquote {
+  border-bottom: 1px solid #718463;
+  padding: 0 32px 12px 0;
+  margin-top: 0;
+  color: #eed4a4;
+}
+.verseArchive .verseLabel small {
+  font-size: 10px;
+}
+.matchNotes {
+  list-style: none;
+  margin: 22px 0 0;
+  padding: 0;
+}
+.matchNotes > li {
+  border-top: 1px solid var(--rule);
+  padding: 22px 0;
+}
+.matchNotes h3 {
+  font-size: 22px;
+  margin-bottom: 12px;
+}
+.matchNotes p {
+  font-size: 16px;
+  line-height: 1.85;
+}
+.matchValues {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.matchValues span {
+  font-size: 13px;
+  padding: 4px 10px;
+  border: 1px solid var(--rule);
+}
+.posterAttribution {
+  font-size: 9px !important;
+  font-family: Arial, "PingFang SC", sans-serif !important;
+  color: inherit;
+  margin-top: 5px;
+}
+.posterTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 10px;
+}
+.posterTags span {
+  font-size: 12px;
+  border: 1px solid #839276;
+  padding: 3px 8px;
+  line-height: 1.4;
+}
+.posterTags b {
+  font:
+    14px Georgia,
+    serif;
+  margin-left: 8px;
+}
+.posterTags small {
+  font-size: 8px;
+  margin-left: 2px;
+}
+.posterTags[data-direction="collection"] {
+  justify-content: center;
+}
+.study {
+  width: min(900px, calc(100% - 48px));
+  margin: 30px auto 60px;
+}
+.study h1 {
+  font-size: 30px;
+  margin: 14px 0;
+}
+.study > p {
+  font-size: 16px;
+  line-height: 1.8;
+  margin-block: 12px;
+}
+.study nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-block: 20px;
+}
+.study nav a {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 8px 14px;
+  border: 1px solid var(--rule);
+  font-size: 14px;
+}
+.study nav a[aria-current="page"] {
+  background: var(--accent);
+  color: var(--paper);
+}
+.studyBack {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  font-size: 16px;
+}
+@media (max-width: 760px) {
+  .atlas {
+    padding-top: 26px;
+  }
+  .heading h2 {
+    font-size: 26px;
+  }
+  .row {
+    padding-block: 22px;
+  }
+  .archive .rows {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  .archive .row {
+    padding: 20px 18px;
+  }
+  .rowHeading h3,
+  .archive .rowHeading h3 {
+    font-size: 20px;
+  }
+  .archive .rowHeading {
+    grid-template-columns: 24px minmax(0, 1fr) auto;
+    gap: 8px;
+  }
+  .archive .ordinal {
+    height: 26px;
+    font-size: 10px;
+  }
+  .inscription blockquote {
+    font-size: 21px;
+    letter-spacing: 1px;
+  }
+  .verseArchive {
+    padding: 16px 18px 4px;
+  }
+  .verseArchive .verseLabel {
+    right: 12px;
+    top: 17px;
+  }
+  .verseArchive blockquote {
+    padding-right: 30px;
+  }
+  .posterTags {
+    gap: 8px;
+    margin-top: 8px;
+  }
+  .posterTags span {
+    font-size: 10px;
+    padding: 2px 6px;
+  }
+  .posterTags b {
+    font-size: 12px;
+    margin-left: 5px;
+  }
+  .posterTags small {
+    font-size: 7px;
+  }
+  .posterAttribution {
+    font-size: 8px !important;
+  }
+}
+@media (max-width: 350px) {
+  .study {
+    width: calc(100% - 40px);
+  }
+  .score strong {
+    font-size: 30px;
+  }
+  .archive .score strong {
+    font-size: 27px;
+  }
+  .archive .row {
+    padding: 18px 14px;
+  }
+  .archive .rowHeading {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .archive .ordinal {
+    display: none;
+  }
+  .inscription {
+    padding-inline: 16px;
+  }
+  .inscription blockquote {
+    font-size: 20px;
+    letter-spacing: 0;
+  }
+  .verseArchive .verseLabel {
+    right: 8px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .atlas *,
+  .inscription * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+@media (max-width: 760px) {
+  .atlas {
+    padding-top: 22px;
+  }
+  .heading {
+    margin-bottom: 12px;
+  }
+  .kicker {
+    display: none;
+  }
+  .count {
+    font-size: 25px;
+  }
+  .count small {
+    margin-top: 3px;
+  }
+  .disclosure {
+    margin-bottom: 8px;
+  }
+  .readingKey {
+    padding-bottom: 12px;
+  }
+  .inscription {
+    padding-top: 12px;
+  }
+  .inscription blockquote {
+    line-height: 1.65;
+    margin-top: 10px;
+  }
+}

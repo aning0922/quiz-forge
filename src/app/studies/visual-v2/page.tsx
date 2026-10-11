@@ -36,7 +36,7 @@ export default function VisualStudyIndex() {
     <main id="main" className={styles.research}>
       <header>
         <Link href="/studies/historical">← 历史研究留档</Link>
-        <span>VISUAL V2-A / 设计研究</span>
+        <span>VISUAL V2-A.1 / 设计研究</span>
       </header>
       <p className={styles.eyebrow}>千载同心 · 消费者体验重设计</p>
       <h1>
@@ -97,6 +97,38 @@ export default function VisualStudyIndex() {
           </section>
         ))}
       </div>
+      <section className={styles.researchDecision}>
+        <h2>性情图谱与题签 · 专项研究</h2>
+        <p>
+          两套报告共用五项固定模拟分数，新增有出处的古诗题签。下列边界与候选入口只用于研究，不运行评分或动态选诗。
+        </p>
+        <nav className={styles.studyLinks} aria-label="V2-A.1专项研究">
+          <Link href="/studies/visual-v2/atlas?direction=journey&sample=five">
+            A · 4–7项图谱
+          </Link>
+          <Link href="/studies/visual-v2/atlas?direction=collection&sample=five">
+            B · 4–7项图谱
+          </Link>
+          <Link href="/studies/visual-v2/journey/report?inscription=original">
+            A · 原创拟古题签
+          </Link>
+          <Link href="/studies/visual-v2/collection/report?inscription=original">
+            B · 原创拟古题签
+          </Link>
+          <Link href="/studies/visual-v2/journey/poster?inscription=original">
+            A · 原创题句海报
+          </Link>
+          <Link href="/studies/visual-v2/collection/poster?inscription=original">
+            B · 原创题句海报
+          </Link>
+          <Link href="/studies/visual-v2/journey/report?inscription=none">
+            A · 不显示题签
+          </Link>
+          <Link href="/studies/visual-v2/collection/report?inscription=none">
+            B · 不显示题签
+          </Link>
+        </nav>
+      </section>
       <section className={styles.researchDecision}>
         <h2>本轮推荐：A 作为主体验候选</h2>
         <p>

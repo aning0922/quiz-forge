@@ -98,8 +98,13 @@ for (const direction of ["journey", "collection"]) {
     ).toBeVisible();
     await expect(page.getByText("固定合成示例 · 非答题结论")).toBeVisible();
     await page.getByRole("link", { name: "读这份人物志" }).click();
-    await page.getByRole("link", { name: "性情侧写", exact: true }).click();
-    await page.getByText("为什么用这个人物意象？", { exact: true }).click();
+    await page.getByRole("link", { name: "匹配依据", exact: true }).click();
+    await expect(
+      page.getByRole("heading", {
+        name: "为什么用这个人物意象？",
+        exact: true,
+      }),
+    ).toBeVisible();
     await expect(
       page.getByText("这份合成示例", { exact: false }),
     ).toBeVisible();

@@ -10,10 +10,12 @@ export function StudyShell({
   direction,
   view,
   children,
+  backHref,
 }: {
   direction: Direction;
   view: string;
   children: React.ReactNode;
+  backHref?: string;
 }) {
   return (
     <main
@@ -41,7 +43,10 @@ export function StudyShell({
           <Link
             prefetch={false}
             className={styles.back}
-            href={studyPath(direction, view === "poster" ? "report" : "cover")}
+            href={
+              backHref ??
+              studyPath(direction, view === "poster" ? "report" : "cover")
+            }
           >
             <ArrowLeft size={16} aria-hidden="true" />
             {view === "poster" ? "返回报告" : "回到封面"}

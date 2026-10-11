@@ -2226,3 +2226,148 @@
     font-size: 42px;
   }
 }
+
+/* V2-A.1: a compact result summary leads directly into the optional verse and atlas. */
+@font-face {
+  font-family: "V2 Result Serif";
+  src: url("/assets/fonts/visual-v2-a1/serif-600.ttf") format("truetype");
+  font-weight: 600;
+  font-display: swap;
+}
+.shell[data-view="report"],
+.shell[data-view="poster"],
+.shell[data-view="reveal"],
+.shell[data-view="atlas"] {
+  --display: "V2 Result Serif", "Songti SC", "STSong", serif;
+}
+.reportHero,
+.collection .reportHero {
+  min-height: 310px;
+}
+.reportHero h1 {
+  font-size: 40px;
+  white-space: pre-line;
+  margin: 14px 0;
+}
+.reportPortrait {
+  height: 285px;
+  width: 255px;
+}
+.collection .reportHero::before {
+  width: 250px;
+  height: 250px;
+  top: 35px;
+}
+.report .overview,
+.collection .report .overview {
+  padding: 22px 0;
+  margin: 0;
+  background: none;
+  color: var(--ink);
+  border-bottom: 0;
+}
+.report .overview h2 {
+  font-size: 23px;
+  margin: 0;
+  line-height: 1.7;
+}
+.posterPlate .plateBottom {
+  padding-top: 22px;
+}
+@media (max-width: 760px) {
+  .reportHero,
+  .collection .reportHero {
+    min-height: 210px;
+    padding-top: 20px;
+  }
+  .reportHero h1 {
+    font-size: 27px;
+    line-height: 1.45;
+    margin: 10px 0;
+  }
+  .reportPortrait {
+    height: 178px;
+    width: 110px;
+    right: 0;
+  }
+  .reportIdentity {
+    font-size: 18px;
+  }
+  .reportIdentity span {
+    display: inline;
+    margin-left: 10px;
+    font-size: 11px;
+  }
+  .reportHero .synthetic {
+    font-size: 10px;
+  }
+  .collection .reportHero::before {
+    width: 135px;
+    height: 135px;
+    right: -5px;
+    top: 60px;
+  }
+  .report .overview,
+  .collection .report .overview {
+    padding: 17px 0;
+  }
+  .report .overview h2 {
+    font-size: 19px;
+    line-height: 1.75;
+  }
+}
+@media (max-width: 350px) {
+  .reportHero h1 {
+    font-size: 26px;
+  }
+  .reportPortrait {
+    width: 91px;
+    height: 164px;
+  }
+  .reportIdentity span {
+    display: block;
+    margin: 3px 0 0;
+  }
+  .report .overview h2 {
+    font-size: 18px;
+  }
+}
+
+.studyLinks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin-top: 20px;
+}
+.studyLinks a {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 8px 12px;
+  border: 1px solid #849282;
+  font-size: 14px;
+}
+@media (max-width: 760px) {
+  .reportHero,
+  .collection .reportHero {
+    min-height: 184px;
+    padding-top: 14px;
+  }
+  .reportHero h1 {
+    font-size: 25px;
+    line-height: 1.45;
+  }
+  .reportPortrait {
+    height: 158px;
+    width: 100px;
+  }
+  .report .overview,
+  .collection .report .overview {
+    padding: 12px 0;
+  }
+}
+@media (max-width: 350px) {
+  .journey .posterPlate {
+    height: auto;
+  }
+}

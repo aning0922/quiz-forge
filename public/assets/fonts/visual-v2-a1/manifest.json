@@ -1,0 +1,12 @@
+{
+  "source": "Google Fonts Noto Serif SC v36 CSS2 text subset, 2026-10-11",
+  "sourceRepository": "https://github.com/google/fonts/tree/main/ofl/notoserifsc",
+  "license": "SIL OFL 1.1",
+  "licenseEvidence": "/assets/fonts/OFL-NotoSerifSC.txt",
+  "bytes": 209316,
+  "sha256": "38d550a9b40784add56b5f0e45f6fb7b04b295374e24952908f2fdc8d7b158a9",
+  "subsetCharacters": 596,
+  "coverage": "/assets/fonts/visual-v2-a1/characters.txt",
+  "status": "license-documented; visual-review",
+  "approvedBy": null
+}
