@@ -27,7 +27,8 @@ export type EvidenceFailureCode =
   | "EVIDENCE_SCHEMA_INVALID"
   | "EVIDENCE_METADATA_SIZE_LIMIT"
   | "EVIDENCE_REPORT_PAYLOAD_LIMIT"
-  | "EVIDENCE_ENVELOPE_SIZE_LIMIT";
+  | "EVIDENCE_ENVELOPE_SIZE_LIMIT"
+  | "INVALID_CANDIDATE";
 
 /** Reject invalid UTF-16 without replacement, truncation, or input mutation. */
 export function assertUnicodeString(value: string): void {
