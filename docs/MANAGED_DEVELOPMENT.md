@@ -62,3 +62,12 @@ P1技术交付证据：代码3a1ad7a，385单测/186 E2E（10既有跳过），�
 ## P2-A 技术检查点
 
 最终代码720b982，442单测、57真实DB、189生产E2E/10既有跳过通过；独立审查无剩余P1/P2，移动UI图检和真实停库503已验证。代码CI38163271691的checks/database均success，PR #8保持Draft。总控及两开发线数据库已停止、3100释放。详细证据见P2A_ACCEPTANCE.md/P2A_REVIEW.md/P2A_VISUAL_CHECK.md。P2-B1计划先落地目录工作区，P2-B导入与P3评分预案已备齐；旧暂停聊天不恢复。
+
+最终P2-A文档交付38177fb的CI38163814070已另行核实success，#8保持OPEN/Draft，未合并main。
+
+## P2-B1 工作登记
+
+- 总控：codex/catalog-workspace，基于P2-A最终38177fb，合同a2df7b8；STUDIO_P2B1.md已冻结，B1尚未验收。
+- 「QuizForge P2-B1 · 目录数据与事务」：01a12c3b-f2ca-70d1-940d-4c6856a9b134，GPT-6.1 Sol/high；四表/迁移/服务、当前会话的同事务写鉴权、DTO和受控错误。先提交公共里程碑供B接入。
+- 「QuizForge P2-B1 · 测评工作区后台」：01a12c3b-f538-7042-80d4-fc2f977f5508，GPT-6.1 Sol/high；真实工作区/目录HTTP及UI、归档恢复和浏览器用例。
+- Astra high继续架构决策和独立审查，总控持有共享配置与3100。新workspace浏览器项目依赖studio-auth完成，避免两个fixture并发清理数据库；所有后台认证产物限制继续生效。
