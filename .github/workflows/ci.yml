@@ -44,8 +44,6 @@ jobs:
         run: pnpm test
       - name: Production build
         run: pnpm build
-      - name: Check deployment trace paths
-        run: pnpm exec tsx scripts/check-build-traces.ts
 
   database:
     runs-on: ubuntu-24.04
