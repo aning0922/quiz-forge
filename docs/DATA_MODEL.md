@@ -1,6 +1,6 @@
-# 核心数据模型（D0 规划）
+# 核心数据模型（D0 规划，F1 契约基础）
 
-以下是业务约束和拟议关系，没有已建表或迁移。ID 暂规划 UUID；版本内容使用版本化 JSON/规范化子表的组合，最终存储形状在数据库阶段评审。
+以下是业务约束和拟议关系，没有已建表或迁移。ID 暂规划 UUID；版本内容使用版本化 JSON/规范化子表的组合，最终存储形状在数据库阶段评审。F1 只增加纯本地 `foundation.v1` 合同与归属/引用验证，不创建数据库、迁移、后台、ZIP 导入、评分或真实发布。
 
 | 概念                  | 关键字段（拟议）                                                                                                                         | 关系与约束                                                          |
 | --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
@@ -26,6 +26,12 @@
 | QuizReport            | id、accessKeyId、sessionId、answersSnapshot、scores、matchedProfile、ending、versions、mode、baselineSnapshot、finalSnapshot、sealStatus | Key/session 唯一；提交保存结论与完整基线；最终快照仅封存一次        |
 | AIReportJob           | id、reportId、idempotencyKey、providerRequestId、status、attempts、deadline、outputHash                                                  | reportId 唯一；最多接受一次成功增强；未知远端成功不盲重试           |
 
+`Product` 是一个测评的唯一稳定工作区身份，不另设 `QuizProject`。`QuizDefinition`/`QuizVersion`、`ProductVisualVersion`、`ReportTemplate` 和商品私有 `AssetPack` 均需带有可验证的 product 归属，且由 ProductVersion 一次性冻结。不同 Product 不共享可变题目；未来可复用题组必须有单独版本并在发布时复制/冻结。
+
+为目录运营预留而尚未建立的实体是 `Category`、`Tag`、`ProductCategory`、`ProductTag`、`Collection` 与 `CollectionProduct`。它们只组织 Product 的公开投影，不能替代 ThemeDefinition、决定评分引擎或跨越 ProductVersion 修改题目/报告。
+
+为草稿与资源导入预留的最小实体是 `ProductDraft(productId, revision, contentHash, state)`、`AssetBlob(contentHash, storageKey, mediaType, bytes)`、`AssetPackVersion`、`AssetPackItem`、`QuizPackImport`、`QuizPackImportFile` 与 `ValidationEvidence`。其字段/约束由 `ASSESSMENT_RESOURCES.md` 进一步说明；此处不表示已经有表或对象存储。
+
 `pinnedProductVersionId` 表示首次激活固定的 ProductVersion，其中绑定 QuizPack、QuizVersion、ProductVisualVersion、AssetPack、ReportTemplate 和专属组件版本。未激活 Key 默认首次激活绑定当前批准版本；之后 Product 升级/回滚均不改变进行中会话与已完成报告。
 
 ## 生命周期
@@ -37,6 +43,8 @@
 - active → completed：仅完整提交事务可消耗；同事务保存答案、评分、原型/结局、报告版本与完整非 AI 基线；AI 模式同时持久化唯一增强任务。网络超时重试返回原报告。
 - completed：原链接读取报告；不会返回新问卷、清空答案或重算。已完成结果不能随 Product 更新而变化。
 - revoked/expired：禁止新答题和正式提交。已完成报告的到期/撤销可见性需业务确认，默认需求是继续可读；不要静默用 Key 过期破坏已购结果。
+
+草稿生命周期建议为 `editing → validating → review → sealed/published`；编辑携带 expected revision，服务端只在匹配时更新并递增 revision。内容 hash 绑定验证证据和资源清单，编辑后 hash 改变即需重新验证。发布把草稿的依赖复制/固定为新的 ProductVersion，草稿不再原地变成已发布内容；下一轮编辑创建新草稿。
 
 ## 发布完整性
 
@@ -53,6 +61,10 @@ QuizPack 结构/兼容/安全与规则夹具通过；测评版本、题/选项�
 唯一约束是一次完成的最终防线，事务隔离/行锁处理重复提交。服务端再次验证答案；不信任客户端得分。暂存 revision 防止多端互相覆盖，冲突需提示或明确接管。发布版本被会话/报告引用时不硬删除。
 
 保存报告时快照答案、评分、原型/结局、结果文案与展示参数，并固定素材内容哈希、商品包和组件版本。素材版本需长期可寻址，避免仅存活动 CDN URL 导致旧报告丢图。未来报告 Schema 升级做向后兼容读取，不重跑评分。
+
+资源对象与数据库记录不是同一事务。上传先写受限 staging object，再创建/更新导入记录；验证与归档成功后才允许 AssetBlob/AssetPackVersion 被发布引用。若数据库事务或对象移动失败，服务必须保留可审计状态并安排删除/重试补偿，不能把孤儿对象当作已批准素材，亦不能让缺失对象进入 ProductVersion。
+
+正式数据库阶段先建立最小纵向闭环所需的 Product/Draft/Version、Asset、AccessKey/Session/Report 与必要运营身份表，再扩展导入、分享、AI、支付和统计。每个迁移必须可重复运行并在隔离 PostgreSQL 上验证 upgrade/rollback 兼容；生产迁移和真实连接不属于 F1。
 
 运营身份、生成任务、交付幂等记录与审计日志是后续辅助表；D0 不扩大为完整 ERP。正式上线前明确答案与报告保存时间、删除规则和备份恢复。Key 原文、答案、报告默认私密，分享使用单独授权；不将访问链接绘制到公开海报。
 
