@@ -50,3 +50,7 @@ create→inspect 参数/身份→start attach stdin→统一 kill（若仍 runni
 后继候选还新增：原生host合成对照、全FD枚举、共享严格输出拒绝、16MP实际own-cgroup峰值/限制采样及OOMKilled断言；真实Docker attach CLI SIGKILL、本地Unix代理转发同一daemon后丢create/kill应答、真实daemon通道失联、真实自有容器rename身份不匹配、同一对象显式核验。代理只在私有harness使用，不能生成假的inspect/wait成功，worker权限完全相同；普通入口固定真实daemon。unknown只允许在同进程实际create/start close已观测后恢复，本候选不推断旧父PID消失等于stdio settled。以上远端仍待运行。父崩溃/跨重启完整停止证据、精确8MiB正常样本和动画/坏像素全矩阵仍未完成，accepted:false保持。
 
 FIFO专项初次运行在目录前置检查失败：本工程已有测试建立0755 `.cache`。修为只允许当前用户拥有/无链接/其他用户不可写的缓存祖先，Linux专属私有根起仍0700，文件0600；不chmod既有缓存或共享目录。这可能解释首轮失败，但未经stage实测不能确定。修后重新运行FIFO和期限专项；实际结果随后继提交记录。
+
+## native-identity 诊断小补丁
+
+第二轮真实 [CI38177356944](https://github.com/aning0922/quiz-forge/actions/runs/38177356944)，head `96000be4465ab3a464f68c962a519eeb513350be`，已经失败于native-identity；base pull/image build/image record已完成。尚不能推断是worker syscall、Docker参数规范化或policy预检，也没有放宽策略。此小补丁只增加白名单诊断：policy控制命令退出/settled、资源安全能力布尔、自己的容器各项匹配布尔、launcher有限错误码与已知stderr分类、checked结果/停止状态/数值退出码。没有原始stdout/stderr、异常、路径、环境值或完整inspect进入CI输出。扩展矩阵保留在本分支stash，等实际诊断证据后继续，不掩盖此启动阻断。

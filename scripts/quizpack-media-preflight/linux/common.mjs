@@ -87,6 +87,7 @@ export function command(
     let out = [];
     let outBytes = 0;
     let errBytes = 0;
+    let stderrCategory = "empty";
     let settled = false;
     const stop = (why) => {
       reason ??= why;
@@ -128,6 +129,7 @@ export function command(
         stdout: Buffer.concat(out),
         stdoutBytes: outBytes,
         stderrBytes: errBytes,
+        stderrCategory,
         settled: closed,
       });
     };
@@ -164,6 +166,23 @@ export function command(
       else out.push(chunk);
     });
     child.stderr.on("data", (chunk) => {
+      const text = chunk.toString("utf8");
+      const category =
+        /uv_thread_create|pthread_create|ThreadPoolTaskRunner/.test(text)
+          ? "thread-create-failed"
+          : /EACCES|Permission denied/.test(text)
+            ? "permission-denied"
+            : /EPERM|Operation not permitted/.test(text)
+              ? "operation-not-permitted"
+              : /ERR_MODULE_NOT_FOUND|MODULE_NOT_FOUND|Cannot find module/.test(
+                    text,
+                  )
+                ? "module-unavailable"
+                : /Assertion|assertion|Aborted/.test(text)
+                  ? "runtime-abort"
+                  : "unclassified";
+      if (stderrCategory === "empty" || stderrCategory === "unclassified")
+        stderrCategory = category;
       errBytes += chunk.length;
       if (errBytes > stderrLimit) stop("OUTPUT_INVALID");
     });

@@ -13,7 +13,13 @@ import {
   docker,
   json,
 } from "./common.mjs";
-import { LIMITS, INSPECT, matches, createArgs, loadPolicy } from "./policy.mjs";
+import {
+  LIMITS,
+  INSPECT,
+  containerChecks,
+  createArgs,
+  loadPolicy,
+} from "./policy.mjs";
 
 const CONTROL = resolve(CACHE, "control");
 const RECORD = resolve(CONTROL, "record.json");
@@ -63,15 +69,23 @@ export function fixedScenario(scenario, syntheticRoot) {
     };
   throw new Error("SCENARIO_INVALID");
 }
-async function inspect(record, deadline) {
+async function inspect(record, deadline, onDiagnostic) {
   const r = await docker(["inspect", "--format", INSPECT, record.name], {
     deadline: deadline - 100,
     settleDeadline: deadline,
   });
+  onDiagnostic?.({
+    phase: "container-inspect-command",
+    exitCode: r.code,
+    settled: r.settled,
+    reason: r.reason ?? null,
+  });
   if (r.code !== 0 || r.reason || !r.settled) return null;
   try {
     const value = json(r.stdout);
-    return matches(value, record) ? value : null;
+    const checks = containerChecks(value, record);
+    onDiagnostic?.({ phase: "container-checks", checks });
+    return Object.values(checks).every((v) => v === true) ? value : null;
   } catch {
     return null;
   }
@@ -141,7 +155,11 @@ export async function executeSynthetic({
     } catch {
       return fail(runId, null, "BUSY", "not-started");
     }
-    const policy = await loadPolicy({ deadline, signal });
+    const policy = await loadPolicy({
+      deadline,
+      signal,
+      onDiagnostic: hooks.diagnostic,
+    });
     profileId = policy.profileId;
     if (scenario !== "identity" && !policy.binding.dependencies)
       throw new Error("DEPENDENCIES_UNVERIFIED");
@@ -173,12 +191,19 @@ export async function executeSynthetic({
           onSpawn: hooks.createSpawn,
         },
       );
+      hooks.diagnostic?.({
+        phase: "create",
+        exitCode: create.code,
+        settled: create.settled,
+        reason: create.reason ?? null,
+        stderrCategory: create.stderrCategory,
+      });
       await hooks.afterCreate?.(record, create);
       if (create.settled) localBarriers.add(runId);
       if (!create.settled) {
         return fail(runId, profileId, "STOP_UNCONFIRMED", "unknown");
       }
-      container = await inspect(record, deadline);
+      container = await inspect(record, deadline, hooks.diagnostic);
       if (!container)
         return fail(runId, profileId, "STOP_UNCONFIRMED", "unknown");
       // A lost create response may be recovered only by exact inspected identity.
@@ -198,6 +223,13 @@ export async function executeSynthetic({
             onSpawn: hooks.startSpawn,
           },
         );
+        hooks.diagnostic?.({
+          phase: "start-attach",
+          exitCode: output.code,
+          settled: output.settled,
+          reason: output.reason ?? null,
+          stderrCategory: output.stderrCategory,
+        });
         if (!output.settled) localBarriers.delete(runId);
         await hooks.afterStart?.(record, output);
         reason =
@@ -209,7 +241,7 @@ export async function executeSynthetic({
     const cleanupDeadline =
       Math.min(performance.now(), deadline) + LIMITS.cleanupMs;
     // One stop path for decode, failure, cancellation. Inspect/wait are authoritative.
-    container = await inspect(record, cleanupDeadline);
+    container = await inspect(record, cleanupDeadline, hooks.diagnostic);
     if (!container)
       return fail(runId, profileId, "STOP_UNCONFIRMED", "unknown");
     if (container.state.Running || container.state.Status === "created") {
@@ -231,7 +263,7 @@ export async function executeSynthetic({
             deadline: cleanupDeadline - 100,
             settleDeadline: cleanupDeadline,
           });
-    const final = await inspect(record, cleanupDeadline);
+    const final = await inspect(record, cleanupDeadline, hooks.diagnostic);
     const stopped =
       final &&
       !final.state.Running &&
@@ -317,7 +349,25 @@ export async function executeSynthetic({
       stdout: output.stdout,
       evidence,
     };
-  } catch {
+  } catch (e) {
+    const known = new Set([
+      "UNSUPPORTED_PLATFORM",
+      "ENDPOINT_OVERRIDE",
+      "PRECHECK_INTERRUPTED",
+      "IMAGE_IDENTITY",
+      "WORKER_CHANGED",
+      "BUILD_INPUT_CHANGED",
+      "MISSING_IMAGE",
+      "DAEMON_UNAVAILABLE",
+      "CAPABILITY_UNAVAILABLE",
+      "DEPENDENCIES_CHANGED",
+      "DEPENDENCIES_UNVERIFIED",
+    ]);
+    hooks.diagnostic?.({
+      phase: "launcher-catch",
+      failure: known.has(e?.message) ? e.message : "INTERNAL_OR_IO_FAILURE",
+      issued,
+    });
     if (issued) return fail(runId, profileId, "STOP_UNCONFIRMED", "unknown");
     return fail(
       runId,
