@@ -1,11 +1,12 @@
 import { deflateRawSync } from "node:zlib";
 import { Readable } from "node:stream";
+import { performance } from "node:perf_hooks";
 import { createRequire } from "node:module";
 const crc32 = createRequire(import.meta.url)("buffer-crc32") as {
   unsigned(bytes: Buffer): number;
 };
 import { describe, expect, it } from "vitest";
-import { readRestrictedZip } from "./zip";
+import { readRestrictedZip, withPackDeadline, throwIfAborted } from "./zip";
 
 /** Independent byte-level fixture: deliberately does not use the production builder. */
 export function rawZip(
@@ -275,5 +276,131 @@ describe("restricted ZIP", () => {
       ],
     });
     expect(await code(good(), { entries: 67 })).toBe("INVALID_LIMITS");
+  });
+  it("rejects noncanonical resource IDs and overlong names", async () => {
+    for (const name of [
+      "assets/0portrait.png",
+      "assets/a_b.png",
+      `assets/${"a".repeat(90)}.png`,
+    ])
+      expect(await code(rawZip([{ name, bytes: Buffer.from("x") }]))).toBe(
+        "ZIP_INVALID_PATH",
+      );
+  });
+  it("enforces resource count and individual byte boundaries", async () => {
+    const bytes = rawZip([
+      { name: "assets/one.png", bytes: Buffer.from("xy") },
+      { name: "assets/two.png", bytes: Buffer.from("ab") },
+    ]);
+    expect(
+      await code(bytes, {
+        resources: 2,
+        resourceBytes: 2,
+        totalUncompressedBytes: 4,
+      }),
+    ).toBe("OK");
+    expect(await code(bytes, { resources: 1 })).toBe("ZIP_RESOURCE_LIMIT");
+    expect(await code(bytes, { resourceBytes: 1 })).toBe("ZIP_FILE_SIZE_LIMIT");
+  });
+  it("rejects local extra/version mismatch and EOCD unsupported fields", async () => {
+    const extra = good();
+    extra.writeUInt16LE(1, 28);
+    expect(await code(extra)).toBe("ZIP_UNSUPPORTED_PROFILE");
+    const version = good();
+    version.writeUInt16LE(10, 4);
+    expect(await code(version)).toBe("ZIP_INVALID_STRUCTURE");
+    for (const offset of [4, 6, 20]) {
+      const bytes = good();
+      bytes.writeUInt16LE(1, bytes.length - 22 + offset);
+      expect(await code(bytes)).toBe("ZIP_UNSUPPORTED_PROFILE");
+    }
+    const zip64 = good();
+    zip64.writeUInt32LE(0xffffffff, zip64.length - 6);
+    expect(await code(zip64)).toBe("ZIP_UNSUPPORTED_PROFILE");
+    const commented = good();
+    commented.writeUInt16LE(1, commented.length - 2);
+    expect(await code(Buffer.concat([commented, Buffer.from("x")]))).toBe(
+      "ZIP_UNSUPPORTED_PROFILE",
+    );
+  });
+  it("rejects high-bit local aliases and broken/truncated compressed streams", async () => {
+    const alias = good();
+    alias[30] = alias[30]! | 0x80;
+    expect(await code(alias)).toBe("ZIP_INVALID_STRUCTURE");
+    const broken = rawZip([
+      { name: "content.json", bytes: Buffer.from("synthetic"), method: 8 },
+    ]);
+    broken.fill(0xff, 42, centralOffset(broken));
+    expect(await code(broken)).toBe("ZIP_READ_FAILED");
+  });
+  it("bounds tiny/empty chunk bookkeeping and yields to deadline timers", async () => {
+    const bytes = good();
+    const tiny = async function* () {
+      for (const byte of bytes) {
+        yield Buffer.alloc(0);
+        yield Buffer.from([byte]);
+      }
+    };
+    expect(
+      (await readRestrictedZip(tiny(), { targetProductId: "synthetic" })).ok,
+    ).toBe(true);
+    let closed = false;
+    const endless = async function* () {
+      try {
+        while (true) yield Buffer.alloc(0);
+      } finally {
+        closed = true;
+      }
+    };
+    const result = await readRestrictedZip(endless(), {
+      targetProductId: "synthetic",
+      limits: { operationMs: 5 },
+    });
+    expect(result.ok ? "OK" : result.issues[0]?.code).toBe("OPERATION_TIMEOUT");
+    await Promise.resolve();
+    expect(closed).toBe(true);
+  });
+  it("rejects an immediately supplied 28 MiB STORE archive under a 1ms deadline", async () => {
+    const bytes = rawZip(
+      ["a", "b", "c", "d"].map((name) => ({
+        name: `assets/${name}.png`,
+        bytes: Buffer.alloc(7 * 1024 * 1024, 17),
+      })),
+    );
+    expect(bytes.length).toBeLessThan(32 * 1024 * 1024);
+    expect(await code(bytes, { operationMs: 1 })).toBe("OPERATION_TIMEOUT");
+  });
+  it("monotonic deadline rejects synchronous work even before a timer can run", async () => {
+    await expect(
+      withPackDeadline(
+        { targetProductId: "synthetic", limits: { operationMs: 1 } },
+        async (signal) => {
+          const until = performance.now() + 5;
+          while (performance.now() < until) {}
+          throwIfAborted(signal);
+          return "unsafe-success";
+        },
+      ),
+    ).rejects.toMatchObject({ code: "OPERATION_TIMEOUT" });
+  });
+  it("nested operations inherit the original deadline without resetting it", async () => {
+    await expect(
+      withPackDeadline(
+        { targetProductId: "synthetic", limits: { operationMs: 10 } },
+        async (signal) => {
+          const until = performance.now() + 6;
+          while (performance.now() < until) {}
+          return withPackDeadline(
+            { targetProductId: "synthetic", signal },
+            async (inner) => {
+              const until = performance.now() + 6;
+              while (performance.now() < until) {}
+              throwIfAborted(inner);
+              return "unsafe-success";
+            },
+          );
+        },
+      ),
+    ).rejects.toMatchObject({ code: "OPERATION_TIMEOUT" });
   });
 });
