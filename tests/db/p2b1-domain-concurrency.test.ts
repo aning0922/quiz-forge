@@ -485,3 +485,57 @@ describe("B1 uncertain outcomes", () => {
     await isolated.close();
   });
 });
+
+describe("B1 read snapshot transport protection", () => {
+  it.each(["backend", "deadline"] as const)(
+    "read %s termination closes request client without driver uncaught exception",
+    async (mode) => {
+      const isolated = await safe(() => createDatabase(fixture.config));
+      const sql = new Proxy(isolated.sql, {
+        get(target, property, receiver) {
+          if (property !== "begin")
+            return Reflect.get(target, property, receiver);
+          return (
+            options: string,
+            callback: (
+              tx: Parameters<Parameters<typeof target.begin>[1]>[0],
+            ) => Promise<unknown>,
+          ) =>
+            target.begin(options, async (tx) => {
+              const faultTx = new Proxy(tx, {
+                apply(targetTx, thisArg, args) {
+                  const chunks = args[0] as string[] | undefined;
+                  if (
+                    chunks?.[0]?.includes(
+                      "SELECT count(*)::int total FROM qf.product p",
+                    )
+                  ) {
+                    if (mode === "backend")
+                      return tx`SELECT pg_terminate_backend(pg_backend_pid())`;
+                    return (async () => {
+                      await tx`SET LOCAL statement_timeout='0'`;
+                      return tx`SELECT pg_sleep(11)`;
+                    })();
+                  }
+                  return Reflect.apply(targetTx, thisArg, args);
+                },
+              });
+              return callback(faultTx);
+            });
+        },
+      });
+      try {
+        await expect(
+          service.listProducts({ ...isolated, sql }, auth.session.raw, {
+            page: 1,
+            pageSize: 20,
+            status: "active",
+            unclassified: false,
+          }),
+        ).rejects.toMatchObject({ code: "STUDIO_UNAVAILABLE" });
+      } finally {
+        await isolated.close();
+      }
+    },
+  );
+});
