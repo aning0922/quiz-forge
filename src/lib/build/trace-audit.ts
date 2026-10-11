@@ -1,4 +1,11 @@
-import { readFile, readdir, realpath, stat } from "node:fs/promises";
+import {
+  lstat,
+  readFile,
+  readdir,
+  readlink,
+  realpath,
+  stat,
+} from "node:fs/promises";
 import path from "node:path";
 
 export type TraceAuditCode =
@@ -149,7 +156,11 @@ function missing(error: unknown): boolean {
 
 // A missing leaf still needs its existing ancestors resolved: an alias to a
 // private directory must not escape the guard merely because its leaf vanished.
-async function resolveExisting(candidate: string): Promise<string> {
+async function resolveExisting(
+  candidate: string,
+  linkDepth = 0,
+): Promise<string> {
+  if (linkDepth > 40) throw new AuditFailure("BUILD_TRACE_PATH_UNRESOLVED");
   let ancestor = candidate;
   const suffix: string[] = [];
   for (;;) {
@@ -158,6 +169,25 @@ async function resolveExisting(candidate: string): Promise<string> {
     } catch (error) {
       if (!missing(error))
         throw new AuditFailure("BUILD_TRACE_PATH_UNRESOLVED");
+      // realpath(ENOENT) does not distinguish a missing leaf from an existing
+      // dangling link. Preserve the link's target before peeling off ancestors.
+      try {
+        if ((await lstat(ancestor)).isSymbolicLink()) {
+          const target = await readlink(ancestor);
+          const targetPath = path.isAbsolute(target)
+            ? target
+            : `${path.dirname(ancestor)}/${target}`;
+          return path.resolve(
+            await resolveExisting(targetPath, linkDepth + 1),
+            ...suffix,
+          );
+        }
+      } catch (linkError) {
+        if (!missing(linkError)) {
+          if (linkError instanceof AuditFailure) throw linkError;
+          throw new AuditFailure("BUILD_TRACE_PATH_UNRESOLVED");
+        }
+      }
       const parent = path.dirname(ancestor);
       if (parent === ancestor)
         throw new AuditFailure("BUILD_TRACE_PATH_UNRESOLVED");
@@ -170,7 +200,7 @@ async function resolveExisting(candidate: string): Promise<string> {
 async function discover(
   directory: string,
   ensurePublic: (candidate: string) => Promise<void>,
-  visited = new Set<string>(),
+  ancestors = new Set<string>(),
 ): Promise<string[]> {
   const found: string[] = [];
   try {
@@ -178,8 +208,11 @@ async function discover(
     // private storage. Dependency aliases are permitted and cycles are bounded.
     await ensurePublic(directory);
     const canonical = await realpath(directory);
-    if (visited.has(canonical)) return found;
-    visited.add(canonical);
+    // The same physical directory can contain traces with different logical
+    // relative bases through sibling aliases. Only ancestor cycles are invalid.
+    if (ancestors.has(canonical))
+      throw new AuditFailure("BUILD_TRACE_DISCOVERY_FAILED");
+    const descendantAncestors = new Set(ancestors).add(canonical);
     if (!(await stat(directory)).isDirectory())
       throw new AuditFailure("BUILD_TRACE_DISCOVERY_FAILED");
     for (const entry of await readdir(directory, { withFileTypes: true })) {
@@ -188,14 +221,19 @@ async function discover(
         await ensurePublic(file);
         const info = await stat(file);
         if (info.isDirectory())
-          found.push(...(await discover(file, ensurePublic, visited)));
+          found.push(
+            ...(await discover(file, ensurePublic, descendantAncestors)),
+          );
         else if (entry.name.endsWith(".nft.json")) {
           if (!info.isFile())
             throw new AuditFailure("BUILD_TRACE_DISCOVERY_FAILED");
-          found.push(await realpath(file));
+          // NFT references use the directory of this logical trace location.
+          found.push(file);
         }
       } else if (entry.isDirectory())
-        found.push(...(await discover(file, ensurePublic, visited)));
+        found.push(
+          ...(await discover(file, ensurePublic, descendantAncestors)),
+        );
       else if (entry.name.endsWith(".nft.json")) {
         if (!entry.isFile())
           throw new AuditFailure("BUILD_TRACE_DISCOVERY_FAILED");

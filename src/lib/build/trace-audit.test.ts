@@ -115,6 +115,112 @@ describe("production build trace boundary", () => {
     });
   });
 
+  it.each([false, true])(
+    "rejects dangling private links without NFT metadata, indirect=%s",
+    async (indirect) => {
+      await fixture(async (root) => {
+        await mkdir(path.join(root, "resources"));
+        const alias = path.join(root, "resources", "alias");
+        await symlink(path.join(root, ".cache", "missing.json"), alias);
+        if (indirect)
+          await symlink("alias", path.join(root, "resources", "outer"));
+        await trace(root, {
+          version: 1,
+          files: [indirect ? "../../resources/outer" : "../../resources/alias"],
+        });
+        expect((await auditBuildTraces(root)).code).toBe(
+          "BUILD_TRACE_PRIVATE_PATH",
+        );
+      });
+    },
+  );
+
+  it("rejects a dangling private directory ancestor", async () => {
+    await fixture(async (root) => {
+      await mkdir(path.join(root, "resources"));
+      await symlink(
+        path.join(root, ".cache", "missing-directory"),
+        path.join(root, "resources", "alias"),
+      );
+      await trace(root, {
+        version: 1,
+        files: ["../../resources/alias/child.json"],
+      });
+      expect((await auditBuildTraces(root)).code).toBe(
+        "BUILD_TRACE_PRIVATE_PATH",
+      );
+    });
+  });
+
+  it("allows ordinary missing leaves and dangling shared dependency links", async () => {
+    await fixture(async (root, owned) => {
+      await mkdir(path.join(root, "node_modules"));
+      await symlink(
+        path.join(owned, "shared", ".pnpm", "missing-dependency.js"),
+        path.join(root, "node_modules", "dependency"),
+      );
+      await trace(root, {
+        version: 1,
+        files: ["../../src/missing.js", "../../node_modules/dependency"],
+      });
+      expect((await auditBuildTraces(root)).code).toBe("BUILD_TRACE_OK");
+    });
+  });
+
+  it("retains the logical base of an aliased trace file", async () => {
+    await fixture(async (root) => {
+      const source = path.join(root, "safe-data", "trace.nft.json");
+      await mkdir(path.dirname(source));
+      await writeFile(
+        source,
+        JSON.stringify({
+          version: 1,
+          files: ["../../.cache/synthetic.json"],
+        }),
+      );
+      await symlink(
+        source,
+        path.join(root, ".next", "server", "page.nft.json"),
+      );
+      expect((await auditBuildTraces(root)).code).toBe(
+        "BUILD_TRACE_PRIVATE_PATH",
+      );
+    });
+  });
+
+  it("audits each logical directory alias instead of deduplicating its target", async () => {
+    await fixture(async (root, owned) => {
+      const shared = path.join(owned, "shared-traces");
+      await mkdir(shared);
+      await writeFile(
+        path.join(shared, "page.nft.json"),
+        JSON.stringify({
+          version: 1,
+          files: ["../../../.cache/synthetic.json"],
+        }),
+      );
+      await mkdir(path.join(root, ".next", "nested"));
+      // The shallow alias has a safe lexical base; the deeper alias reaches
+      // this fixture's private root. Both point to exactly the same directory.
+      await symlink(shared, path.join(root, ".next", "a-shallow"));
+      await symlink(shared, path.join(root, ".next", "nested", "b-deep"));
+      expect(await auditBuildTraces(root)).toMatchObject({
+        code: "BUILD_TRACE_PRIVATE_PATH",
+        traceCount: 2,
+      });
+    });
+  });
+
+  it("rejects directory alias cycles instead of silently omitting their traces", async () => {
+    await fixture(async (root) => {
+      await trace(root, { version: 1, files: [] });
+      await symlink("..", path.join(root, ".next", "server", "cycle"));
+      expect((await auditBuildTraces(root)).code).toBe(
+        "BUILD_TRACE_DISCOVERY_FAILED",
+      );
+    });
+  });
+
   it("rejects private targets declared by NFT metadata even without a live link", async () => {
     await fixture(async (root) => {
       await trace(root, {
