@@ -39,6 +39,8 @@ reader 支持 STORE/DEFLATE；builder 只输出 STORE。单卷、非 ZIP64、无
 
 构建核心接受显式资源 bytes 映射，不扫描任意目录。根据实际输入计算文件大小/hash；canonical JSON 保留数组顺序；固定路径排序、STORE、mode 0100644、DOS 本地字段 1980-01-01 00:00:00，forceDosTimestamp:true，空 comment。跨 TZ 必须 bytes/hash 相同。构建后通过独立 validator 才能写出；写出临时文件原子提交、默认不覆盖既有目标、失败清理。
 
+写出的原子提交点是目标 hard link 成功。提交前失败不留下目标并清理临时文件；提交后发生晚到取消、超过期限或临时文件清理失败，必须通过 commit receipt 返回明确的已提交结果及相应状态/警告，不能普通失败诱导重试，也不能盲删可能被其他进程替换的目标。处理期限始终限制接收/验证/构建及提交前工作；本地不可取消的文件系统提交若已发生，结果必须如实报告。验证证据只证明先前完成的技术检查，不把晚到提交结果变成新的批准。
+
 命令使用 pnpm --silent quizpack:check/build/schema，stdout 仅 JSON；产物写显式目标，错误不泄漏绝对路径、原文、堆栈或恶意输入。CLI 只按显式清单读取本地资源，拒绝来源链接与目录越界。具体参数由 B 写入使用文档并加入真实 pnpm 子进程测试。
 
 报告绑定完整 archive SHA、原始 manifest/content SHA、目标 Product、validatorVersion、policyId、可信兼容 policy hash。逐项 checks: container/structure/references/integrity/media/compatibility = passed/failed/not-run；issues 有稳定 code/path/message。未知失败不伪报通过。unverified 明列评分/可达性、授权、人工内容/视觉审阅、运行器渲染、DB/导入/发布未实现。
