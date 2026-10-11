@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   taxonomyCreateSchema,
   taxonomyRenameSchema,
@@ -12,7 +12,7 @@ import {
 import type { StudioSessionDto } from "../contracts";
 import { studioFetch, studioMessage } from "../client";
 import { useWorkspaceRead } from "./use-request";
-import { useWorkspaceMutation } from "./use-mutation";
+import { useWorkspaceMutation, type MutationState } from "./use-mutation";
 import { taxonomyPath } from "./taxonomy-picker";
 import { WorkspaceNav, ReadOnlyNotice, Pagination } from "./primitives";
 import { FilterBar } from "./filter-bar";
@@ -42,14 +42,27 @@ function summary(item: TaxonomyDto) {
   );
 }
 
+type RowProtection = "dirty" | "submitting" | "reconcile" | null;
+function rowProtection(
+  name: string,
+  savedName: string,
+  phase: MutationState["phase"],
+): RowProtection {
+  if (phase === "submitting") return "submitting";
+  if (phase === "unknown" || phase === "conflict") return "reconcile";
+  return name !== savedName ? "dirty" : null;
+}
+
 function TaxonomyRow({
   initial,
   kind,
   session,
+  onProtectionChange,
 }: {
   initial: TaxonomyDto;
   kind: TaxonomyKind;
   session: StudioSessionDto;
+  onProtectionChange: (id: string, protection: RowProtection) => void;
 }) {
   const [item, setItem] = useState(initial);
   const [name, setName] = useState(initial.name);
@@ -61,7 +74,16 @@ function TaxonomyRow({
   const mutation = useWorkspaceMutation<TaxonomyMutation>(session.csrfToken);
   const endpoint = `${taxonomyPath(kind)}/${item.id}`;
   const label = kind === "category" ? "类目" : "标签";
+  const protection = rowProtection(name, item.name, mutation.state.phase);
+  useEffect(() => {
+    onProtectionChange(item.id, protection);
+  }, [item.id, protection, onProtectionChange]);
+  useEffect(
+    () => () => onProtectionChange(item.id, null),
+    [item.id, onProtectionChange],
+  );
   async function rename() {
+    if (mutation.blocked) return;
     const parsed = taxonomyRenameSchema.safeParse({
       expectedRevision: item.revision,
       name,
@@ -74,6 +96,7 @@ function TaxonomyRow({
     }
     setValidation("");
     setLatest(undefined);
+    onProtectionChange(item.id, "submitting");
     const result = await mutation.submit(
       endpoint,
       "PATCH",
@@ -81,6 +104,7 @@ function TaxonomyRow({
       "服务器已确认名称保存请求。",
     );
     if (result) {
+      onProtectionChange(item.id, null);
       setItem(result.item);
       setName(result.item.name);
       setValidation(
@@ -91,6 +115,8 @@ function TaxonomyRow({
     }
   }
   async function lifecycle(action: "archive" | "restore") {
+    if (mutation.blocked) return;
+    onProtectionChange(item.id, "submitting");
     setLatest(undefined);
     setValidation("");
     const result = await mutation.submit(
@@ -102,6 +128,10 @@ function TaxonomyRow({
         : "服务器已确认恢复请求。",
     );
     if (result) {
+      onProtectionChange(
+        item.id,
+        rowProtection(name, result.item.name, "idle"),
+      );
       setItem(result.item);
       setConfirm(false);
       setValidation(
@@ -140,6 +170,10 @@ function TaxonomyRow({
   }
   function reconcile(keep: boolean) {
     if (!latest) return;
+    onProtectionChange(
+      item.id,
+      rowProtection(keep ? name : latest.name, latest.name, "idle"),
+    );
     setItem(latest);
     if (!keep) setName(latest.name);
     setLatest(undefined);
@@ -170,7 +204,17 @@ function TaxonomyRow({
                   required
                   value={name}
                   disabled={mutation.state.phase === "submitting"}
-                  onChange={(event) => setName(event.target.value)}
+                  onChange={(event) => {
+                    onProtectionChange(
+                      item.id,
+                      rowProtection(
+                        event.target.value,
+                        item.name,
+                        mutation.state.phase,
+                      ),
+                    );
+                    setName(event.target.value);
+                  }}
                 />
               </div>
               <button
@@ -258,10 +302,12 @@ function TaxonomyCreateForm({
   kind,
   session,
   onCreated,
+  onProtectionChange,
 }: {
   kind: TaxonomyKind;
   session: StudioSessionDto;
   onCreated: () => void;
+  onProtectionChange: (protectedState: boolean) => void;
 }) {
   const [slug, setSlug] = useState("");
   const [name, setName] = useState("");
@@ -274,8 +320,13 @@ function TaxonomyCreateForm({
     error?: string;
   }>();
   const mutation = useWorkspaceMutation<TaxonomyDto>(session.csrfToken);
+  useEffect(() => {
+    onProtectionChange(mutation.blocked);
+  }, [mutation.blocked, onProtectionChange]);
+  useEffect(() => () => onProtectionChange(false), [onProtectionChange]);
   const label = kind === "category" ? "类目" : "标签";
   async function create() {
+    if (mutation.blocked) return;
     const parsed = taxonomyCreateSchema.safeParse({ slug, name });
     if (!parsed.success) {
       setValidation("请检查名称（1–40 字符）和稳定 slug（最多 80 字符）。");
@@ -284,6 +335,7 @@ function TaxonomyCreateForm({
     setValidation("");
     setChecked(undefined);
     setSubmittedSlug(parsed.data.slug);
+    onProtectionChange(true);
     const result = await mutation.submit(
       taxonomyPath(kind),
       "POST",
@@ -291,6 +343,7 @@ function TaxonomyCreateForm({
       "服务器已确认创建目录。",
     );
     if (result) {
+      onProtectionChange(false);
       setSlug("");
       setName("");
       onCreated();
@@ -437,10 +490,41 @@ function TaxonomyCreateForm({
 function TaxonomyList({
   kind,
   session,
+  onProtectionChange,
 }: {
   kind: TaxonomyKind;
   session: StudioSessionDto;
+  onProtectionChange: (protectedState: boolean) => void;
 }) {
+  const protectedRows = useRef(new Map<string, Exclude<RowProtection, null>>());
+  const creationProtected = useRef(false);
+  const [guards, setGuards] = useState({ rows: false, submitting: false });
+  const [refreshNotice, setRefreshNotice] = useState("");
+  const [confirmDiscard, setConfirmDiscard] = useState(false);
+  const updateRowProtection = useCallback(
+    (id: string, protection: RowProtection) => {
+      if (protection) protectedRows.current.set(id, protection);
+      else protectedRows.current.delete(id);
+      const rows = protectedRows.current.size > 0;
+      const submitting = [...protectedRows.current.values()].includes(
+        "submitting",
+      );
+      setGuards((previous) =>
+        previous.rows === rows && previous.submitting === submitting
+          ? previous
+          : { rows, submitting },
+      );
+      onProtectionChange(rows || creationProtected.current);
+    },
+    [onProtectionChange],
+  );
+  const updateCreationProtection = useCallback(
+    (protectedState: boolean) => {
+      creationProtected.current = protectedState;
+      onProtectionChange(protectedRows.current.size > 0 || protectedState);
+    },
+    [onProtectionChange],
+  );
   const [page, setPage] = useState(1);
   const [filter, setFilter] = useState({ q: "", status: "active" });
   const params = new URLSearchParams({
@@ -452,6 +536,33 @@ function TaxonomyList({
     `${taxonomyPath(kind)}?${params}`,
   );
   const label = kind === "category" ? "类目" : "标签";
+  function replaceList(change: () => void) {
+    if (protectedRows.current.size) {
+      setRefreshNotice(
+        "当前列表有未保存或待核实内容，已保留列表。请先处理这些内容，或明确放弃后刷新。",
+      );
+      return;
+    }
+    setRefreshNotice("");
+    setConfirmDiscard(false);
+    change();
+  }
+  function created() {
+    if (protectedRows.current.size) {
+      setRefreshNotice(
+        "新目录已提交。当前列表有未保存或待核实内容，暂不刷新；处理完毕后可刷新查看新目录。",
+      );
+    } else replaceList(read.refresh);
+  }
+  function discardAndRefresh() {
+    if ([...protectedRows.current.values()].includes("submitting")) return;
+    protectedRows.current.clear();
+    setGuards({ rows: false, submitting: false });
+    onProtectionChange(creationProtected.current);
+    setConfirmDiscard(false);
+    setRefreshNotice("");
+    read.refresh();
+  }
   return (
     <>
       <section className={styles.panel}>
@@ -459,10 +570,56 @@ function TaxonomyList({
         <FilterBar
           busy={read.loading}
           onFilter={(q, status) => {
-            setFilter({ q, status });
-            setPage(1);
+            replaceList(() => {
+              setFilter({ q, status });
+              setPage(1);
+            });
           }}
         />
+        {refreshNotice && (
+          <p className={styles.status} role="status">
+            {refreshNotice}
+          </p>
+        )}
+        {guards.rows && (
+          <section className={styles.compare} aria-label="目录输入保护">
+            <p>
+              未保存输入和待核实状态已保留。列表筛选、翻页和目录类型切换暂不替换当前行。
+            </p>
+            <button
+              className={`${styles.button} ${styles.secondary}`}
+              type="button"
+              disabled={guards.submitting}
+              onClick={() => setConfirmDiscard(true)}
+            >
+              放弃当前行草稿并刷新目录
+            </button>
+            {confirmDiscard && (
+              <>
+                <p>
+                  确认将丢弃当前列表的未保存输入和待核实状态，并重新读取服务器？结果未知的请求不会重发；刷新也不能证明原请求确定成功。
+                </p>
+                <div className={styles.actions}>
+                  <button
+                    className={styles.button}
+                    type="button"
+                    disabled={guards.submitting}
+                    onClick={discardAndRefresh}
+                  >
+                    确认放弃并刷新目录
+                  </button>
+                  <button
+                    className={`${styles.button} ${styles.secondary}`}
+                    type="button"
+                    onClick={() => setConfirmDiscard(false)}
+                  >
+                    继续保留输入
+                  </button>
+                </div>
+              </>
+            )}
+          </section>
+        )}
         {read.loading && (
           <p className={styles.status} role="status">
             正在加载目录…
@@ -474,7 +631,7 @@ function TaxonomyList({
             <button
               className={styles.button}
               type="button"
-              onClick={read.refresh}
+              onClick={() => replaceList(read.refresh)}
             >
               重新读取目录
             </button>
@@ -495,7 +652,12 @@ function TaxonomyList({
             <ul className={styles.cards}>
               {read.value.items.map((item) => (
                 <li key={item.id}>
-                  <TaxonomyRow initial={item} kind={kind} session={session} />
+                  <TaxonomyRow
+                    initial={item}
+                    kind={kind}
+                    session={session}
+                    onProtectionChange={updateRowProtection}
+                  />
                 </li>
               ))}
             </ul>
@@ -503,12 +665,12 @@ function TaxonomyList({
               page={page}
               hasNext={read.value.hasNext}
               busy={read.loading}
-              onPage={setPage}
+              onPage={(next) => replaceList(() => setPage(next))}
             />
             <button
               className={`${styles.button} ${styles.secondary}`}
               type="button"
-              onClick={read.refresh}
+              onClick={() => replaceList(read.refresh)}
             >
               刷新目录
             </button>
@@ -519,7 +681,8 @@ function TaxonomyList({
         <TaxonomyCreateForm
           kind={kind}
           session={session}
-          onCreated={read.refresh}
+          onCreated={created}
+          onProtectionChange={updateCreationProtection}
         />
       )}
     </>
@@ -528,6 +691,7 @@ function TaxonomyList({
 
 export function TaxonomyWorkspace({ session }: { session: StudioSessionDto }) {
   const [kind, setKind] = useState<TaxonomyKind>("category");
+  const [protectedState, setProtectedState] = useState(false);
   return (
     <div className={styles.workspace}>
       <WorkspaceNav />
@@ -543,6 +707,7 @@ export function TaxonomyWorkspace({ session }: { session: StudioSessionDto }) {
             className={styles.button}
             type="button"
             aria-pressed={kind === "category"}
+            disabled={protectedState && kind !== "category"}
             onClick={() => setKind("category")}
           >
             管理类目
@@ -551,13 +716,19 @@ export function TaxonomyWorkspace({ session }: { session: StudioSessionDto }) {
             className={styles.button}
             type="button"
             aria-pressed={kind === "tag"}
+            disabled={protectedState && kind !== "tag"}
             onClick={() => setKind("tag")}
           >
             管理标签
           </button>
         </div>
       </section>
-      <TaxonomyList key={kind} kind={kind} session={session} />
+      <TaxonomyList
+        key={kind}
+        kind={kind}
+        session={session}
+        onProtectionChange={setProtectedState}
+      />
     </div>
   );
 }

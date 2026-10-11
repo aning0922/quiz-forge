@@ -35,7 +35,7 @@ export function ProductFields({
             onChange({ ...value, title: event.target.value })
           }
         />
-        <p className={styles.note}>1–120 个 Unicode 字符，作为纯文本显示。</p>
+        <p className={styles.note}>1–120 个字符，作为纯文本显示。</p>
       </div>
       <div className={styles.field}>
         <label htmlFor="product-slug">工作区 slug</label>

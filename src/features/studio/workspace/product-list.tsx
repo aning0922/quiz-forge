@@ -131,6 +131,7 @@ function ProductCreateForm({ session }: { session: StudioSessionDto }) {
         slug。本阶段尚未接入草稿与导入。
       </p>
       <form
+        aria-label="新建工作区"
         className={styles.form}
         onSubmit={(event) => {
           event.preventDefault();

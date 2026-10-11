@@ -156,6 +156,15 @@
   height: 20px;
   flex-shrink: 0;
 }
+.selectedLabel {
+  flex: 1 1 0;
+  overflow-wrap: anywhere;
+}
+.removeButton {
+  flex: 0 0 auto;
+  white-space: nowrap;
+  overflow-wrap: normal;
+}
 .facts {
   display: grid;
   gap: 12px;

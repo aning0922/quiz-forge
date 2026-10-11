@@ -139,6 +139,7 @@ function ProductEditor({
       {!canWrite && <ReadOnlyNotice />}
       {canWrite && !product.archivedAt ? (
         <form
+          aria-label="工作区元数据"
           className={styles.form}
           onSubmit={(event) => {
             event.preventDefault();
