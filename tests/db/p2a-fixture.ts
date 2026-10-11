@@ -58,6 +58,14 @@ export async function resetTestDatabase(database: TestDatabase): Promise<void> {
       >`SELECT * FROM qf.quizpack_import ORDER BY id LIMIT 1025`;
       if (rows.length > 1024) throw new Error("TEST_UPLOAD_CLEANUP_LIMIT");
       const known = new Map(rows.map((row) => [row.id, row]));
+      for (const row of rows) {
+        for (const a of row.attempts)
+          if (
+            a.disposition === "held" &&
+            !(await stopped(verified.config, row.id, a))
+          )
+            throw new Error("TEST_UPLOAD_WRITER_UNPROVEN");
+      }
       for (const [id, files] of scan.files) {
         const row = known.get(id);
         if (!row) throw new Error("TEST_UPLOAD_OWNER_UNKNOWN");

@@ -42,6 +42,7 @@ export interface ImportReceiveService {
     productId: string,
     query: ImportListQuery,
   ): Promise<Page<ImportDto>>;
+  /** db belongs exclusively to this operation; its pool is permanently destroyed on deadline/abort. */
   receiveArchive(
     db: P2aDatabase,
     credentials: StudioWriteCredentials,
@@ -50,6 +51,7 @@ export interface ImportReceiveService {
     source: ReceiveSource,
     context: ReceiveContext,
   ): Promise<ImportDto>;
+  /** Same dedicated DB and handler-start absolute budget requirement as receiveArchive. */
   recoverReceive(
     db: P2aDatabase,
     credentials: StudioWriteCredentials,

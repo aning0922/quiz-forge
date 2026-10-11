@@ -1,4 +1,5 @@
 import "server-only";
+import { receiveDatabaseAwait } from "./database-budget";
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { constants } from "node:fs";
 import { mkdir, open, link, type FileHandle } from "node:fs/promises";
@@ -35,6 +36,7 @@ import {
 import { StorageLock } from "./storage-lock";
 import {
   assertNoConfigGuard,
+  currentReceiptLimits,
   hashArchive,
   importDirectory,
   instanceDirectory,
@@ -56,7 +58,7 @@ import {
   read,
   type ImportRow,
 } from "./repository";
-import { measuredQuota, requireQuota } from "./quota";
+import { measuredQuota, requireQuota, requireReceiveCapacity } from "./quota";
 import type {
   ImportReceiveService,
   ReceiveContext,
@@ -312,6 +314,15 @@ export function createImportReceiveService(
       source: ReceiveSource,
       context: ReceiveContext,
     ) {
+      const write: typeof withStudioWrite = (
+        database,
+        credentials,
+        capability,
+        work,
+      ) =>
+        receiveDatabaseAwait(database, context, "write", () =>
+          withStudioWrite(database, credentials, capability, work),
+        );
       let lock: StorageLock | undefined,
         claimed: ImportRow | undefined,
         handle: FileHandle | undefined,
@@ -319,30 +330,32 @@ export function createImportReceiveService(
       let inputSettled = true,
         eof = false,
         frozen = false,
-        handlesSettled = true;
+        handlesSettled = true,
+        fileStarted = false;
       let p = productId,
         id = importId;
       try {
         p = parse(productIdSchema, productId);
         id = parse(importIdSchema, importId);
         remainingReceiveMs(context);
-        await preflight(db, c, p, id, context);
+        await receiveDatabaseAwait(db, context, "read", () =>
+          preflight(db, c, p, id, context),
+        );
         lock = await StorageLock.acquire(db.config, context);
         const config = await writeConfig(db, lock);
         const scan = await scanStorage(config, context);
+        currentReceiptLimits(scan, id);
         lock.assert();
-        const rows = await heldRows(lock.connection);
+        const rows = await lock.query(heldRows(lock.connection));
         remainingReceiveMs(context);
-        const existing = await read(
-          db,
-          c.sessionToken,
-          async (tx) => importRow(tx, p, id),
-          c,
+        const existing = await receiveDatabaseAwait(db, context, "read", () =>
+          read(db, c.sessionToken, async (tx) => importRow(tx, p, id), c),
         );
         if (existing.status === "received") {
           return dto(existing);
         }
         recoveryRequired(existing);
+        requireReceiveCapacity(scan, id);
         if (existing.status === "rejected")
           throw new StudioError(
             "IMPORT_STATE_CONFLICT",
@@ -352,40 +365,32 @@ export function createImportReceiveService(
           measuredQuota(scan, rows),
           attemptReservation(existing.expected_archive_bytes),
         );
-        claimed = await withStudioWrite(
-          db,
-          c,
-          "import:create",
-          async (tx, actor) => {
-            await boundedTx(tx, context, lock!);
-            await activeProduct(tx, p);
-            const row = await importRow(tx, p, id, true);
-            recoveryRequired(row);
-            canIncrement(row, true);
-            if (!["awaiting-upload", "retryable-failed"].includes(row.status))
-              throw new StudioError(
-                "IMPORT_STATE_CONFLICT",
-                row.state_revision,
-              );
-            if (row.attempts.length >= MAX_ATTEMPTS)
-              throw new StudioError("RECEIVE_ATTEMPT_LIMIT");
-            const attempt: Attempt = {
-              attemptId: randomUUID(),
-              fence: row.fence + 1,
-              ownerPid: process.pid,
-              ownerNonce: randomBytes(32).toString("base64url"),
-              reservationBytes: attemptReservation(row.expected_archive_bytes),
-              disposition: "held",
-            };
-            const [next] = await tx<
-              ImportRow[]
-            >`UPDATE qf.quizpack_import SET status='receiving',state_revision=state_revision+1,updated_at=clock_timestamp(),storage_condition='unknown',last_error_code=NULL,fence=fence+1,lease_until=clock_timestamp()+interval '120 seconds',current_attempt_id=${attempt.attemptId},attempts=${JSON.stringify([...row.attempts, attempt])}::text::jsonb,reserved_bytes=${attempt.reservationBytes} WHERE id=${id} RETURNING *`;
-            await audit(tx, actor, c, next!, "receive_started");
-            lock!.assert();
-            remainingReceiveMs(context);
-            return next!;
-          },
-        );
+        claimed = await write(db, c, "import:create", async (tx, actor) => {
+          await boundedTx(tx, context, lock!);
+          await activeProduct(tx, p);
+          const row = await importRow(tx, p, id, true);
+          recoveryRequired(row);
+          canIncrement(row, true);
+          if (!["awaiting-upload", "retryable-failed"].includes(row.status))
+            throw new StudioError("IMPORT_STATE_CONFLICT", row.state_revision);
+          if (row.attempts.length >= MAX_ATTEMPTS)
+            throw new StudioError("RECEIVE_ATTEMPT_LIMIT");
+          const attempt: Attempt = {
+            attemptId: randomUUID(),
+            fence: row.fence + 1,
+            ownerPid: process.pid,
+            ownerNonce: randomBytes(32).toString("base64url"),
+            reservationBytes: attemptReservation(row.expected_archive_bytes),
+            disposition: "held",
+          };
+          const [next] = await tx<
+            ImportRow[]
+          >`UPDATE qf.quizpack_import SET status='receiving',state_revision=state_revision+1,updated_at=clock_timestamp(),storage_condition='unknown',last_error_code=NULL,fence=fence+1,lease_until=clock_timestamp()+interval '120 seconds',current_attempt_id=${attempt.attemptId},attempts=${JSON.stringify([...row.attempts, attempt])}::text::jsonb,reserved_bytes=${attempt.reservationBytes} WHERE id=${id} RETURNING *`;
+          await audit(tx, actor, c, next!, "receive_started");
+          lock!.assert();
+          remainingReceiveMs(context);
+          return next!;
+        });
         await hooks.afterCommit?.("claim", claimed);
         await hooks.afterClaim?.(claimed);
         lock.assert();
@@ -410,6 +415,7 @@ export function createImportReceiveService(
             constants.O_NOFOLLOW,
           0o600,
         );
+        fileStarted = true;
         const inode = await handle.stat();
         const hash = createHash("sha256");
         let bytes = 0;
@@ -486,7 +492,7 @@ export function createImportReceiveService(
         await hooks.afterFreeze?.(claimed);
         await lock.check();
         remainingReceiveMs(context);
-        const result = await withStudioWrite(
+        const result = await write(
           db,
           c,
           "import:create",
@@ -533,13 +539,7 @@ export function createImportReceiveService(
           !(error instanceof StudioError) ||
           (error.code !== "WRITE_OUTCOME_UNKNOWN" &&
             error.code !== "RECEIVE_LOCK_LOST");
-        if (
-          claimed &&
-          safe &&
-          known &&
-          lock &&
-          !lock.controller.signal.aborted
-        ) {
+        if (claimed && safe && (known || fileStarted) && lock) {
           const attempt = claimed.attempts.at(-1)!;
           try {
             await writeStopped(db.config, id, attempt);
@@ -552,28 +552,25 @@ export function createImportReceiveService(
               : "RECEIVE_STORAGE_CONFLICT";
             // Failure bookkeeping gets fresh auth too. Timeout cleanup retains the reservation until explicit recovery.
             if (
+              known &&
+              !lock.controller.signal.aborted &&
               !frozen &&
               performance.now() < context.deadlineMonotonicMs &&
               !context.signal.aborted
             )
-              await withStudioWrite(
-                db,
-                c,
-                "import:create",
-                async (tx, actor) => {
-                  await boundedTx(tx, context, lock!);
-                  await activeProduct(tx, p);
-                  const row = await importRow(tx, p, id, true);
-                  if (row.fence !== claimed!.fence)
-                    throw new StudioError("RECEIVE_RECOVERY_REQUIRED");
-                  canIncrement(row);
-                  const [next] = await tx<
-                    ImportRow[]
-                  >`UPDATE qf.quizpack_import SET status=${code === "RECEIVE_LENGTH_MISMATCH" || code === "RECEIVE_HASH_MISMATCH" ? "rejected" : "retryable-failed"},state_revision=state_revision+1,updated_at=clock_timestamp(),storage_condition='cleanup-required',last_error_code=${code},lease_until=NULL WHERE id=${id} RETURNING *`;
-                  await audit(tx, actor, c, next!, "receive_failed");
-                  return next!;
-                },
-              );
+              await write(db, c, "import:create", async (tx, actor) => {
+                await boundedTx(tx, context, lock!);
+                await activeProduct(tx, p);
+                const row = await importRow(tx, p, id, true);
+                if (row.fence !== claimed!.fence)
+                  throw new StudioError("RECEIVE_RECOVERY_REQUIRED");
+                canIncrement(row);
+                const [next] = await tx<
+                  ImportRow[]
+                >`UPDATE qf.quizpack_import SET status=${code === "RECEIVE_LENGTH_MISMATCH" || code === "RECEIVE_HASH_MISMATCH" ? "rejected" : "retryable-failed"},state_revision=state_revision+1,updated_at=clock_timestamp(),storage_condition='cleanup-required',last_error_code=${code},lease_until=NULL WHERE id=${id} RETURNING *`;
+                await audit(tx, actor, c, next!, "receive_failed");
+                return next!;
+              });
           } catch (e) {
             if (e instanceof StudioError && e.code === "WRITE_OUTCOME_UNKNOWN")
               throw e;
@@ -594,23 +591,32 @@ export function createImportReceiveService(
       input: RecoverReceive,
       context,
     ) {
+      const write: typeof withStudioWrite = (
+        database,
+        credentials,
+        capability,
+        work,
+      ) =>
+        receiveDatabaseAwait(database, context, "write", () =>
+          withStudioWrite(database, credentials, capability, work),
+        );
       const p = parse(productIdSchema, productId),
         id = parse(importIdSchema, importId),
         value = parse(recoverReceiveSchema, input);
       remainingReceiveMs(context);
-      const original = (await preflight(db, c, p, id, context))!;
+      const original = (await receiveDatabaseAwait(db, context, "read", () =>
+        preflight(db, c, p, id, context),
+      ))!;
       revisionMatches(original, value.expectedStateRevision);
       const lock = await StorageLock.acquire(db.config, context);
       try {
         const config = await writeConfig(db, lock);
         const scan = await scanStorage(config, context);
-        const rows = await heldRows(lock.connection);
+        currentReceiptLimits(scan, id);
+        const rows = await lock.query(heldRows(lock.connection));
         requireQuota(measuredQuota(scan, rows));
-        const row = await read(
-          db,
-          c.sessionToken,
-          async (tx) => importRow(tx, p, id),
-          c,
+        const row = await receiveDatabaseAwait(db, context, "read", () =>
+          read(db, c.sessionToken, async (tx) => importRow(tx, p, id), c),
         );
         revisionMatches(row, value.expectedStateRevision);
         if (
@@ -629,24 +635,19 @@ export function createImportReceiveService(
           if (!proofs.get(a.attemptId))
             throw new StudioError("RECEIVE_RECOVERY_REQUIRED");
         }
-        const claimed = await withStudioWrite(
-          db,
-          c,
-          "import:create",
-          async (tx) => {
-            await boundedTx(tx, context, lock);
-            await activeProduct(tx, p);
-            const latest = await importRow(tx, p, id, true);
-            revisionMatches(latest, value.expectedStateRevision);
-            canIncrement(latest, true);
-            const [next] = await tx<
-              ImportRow[]
-            >`UPDATE qf.quizpack_import SET state_revision=state_revision+1,updated_at=clock_timestamp(),fence=fence+1,lease_until=clock_timestamp()+interval '120 seconds' WHERE id=${id} RETURNING *`;
-            lock.assert();
-            remainingReceiveMs(context);
-            return next!;
-          },
-        );
+        const claimed = await write(db, c, "import:create", async (tx) => {
+          await boundedTx(tx, context, lock);
+          await activeProduct(tx, p);
+          const latest = await importRow(tx, p, id, true);
+          revisionMatches(latest, value.expectedStateRevision);
+          canIncrement(latest, true);
+          const [next] = await tx<
+            ImportRow[]
+          >`UPDATE qf.quizpack_import SET state_revision=state_revision+1,updated_at=clock_timestamp(),fence=fence+1,lease_until=clock_timestamp()+interval '120 seconds' WHERE id=${id} RETURNING *`;
+          lock.assert();
+          remainingReceiveMs(context);
+          return next!;
+        });
         let archiveFact: { bytes: number; hash: string } | undefined;
         const files = scan.files.get(id) ?? [];
         const archive = files.find(
@@ -687,7 +688,7 @@ export function createImportReceiveService(
         }
         await lock.check();
         remainingReceiveMs(context);
-        const result = await withStudioWrite(
+        const result = await write(
           db,
           c,
           "import:create",

@@ -1,5 +1,6 @@
 import "server-only";
 import postgres from "postgres";
+import { StudioError } from "@/lib/http-security/errors";
 import { drizzle, type PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import * as schema from "./schema";
 import {
@@ -10,6 +11,11 @@ import {
   type P2aRuntimeConfig,
 } from "./runtime";
 
+/** Optional absolute operation budget; no feature dependency in the DB runtime. */
+export type DatabaseBudget = {
+  signal: AbortSignal;
+  deadlineMonotonicMs: number;
+};
 export type P2aDatabase = {
   sql: postgres.Sql;
   db: PostgresJsDatabase<typeof schema>;
@@ -89,26 +95,66 @@ export async function verifyDatabaseIdentity(
 
 export async function createDatabase(
   config: P2aRuntimeConfig,
+  budget?: DatabaseBudget,
 ): Promise<P2aDatabase> {
   let sql: postgres.Sql | undefined;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  let expire: (() => void) | undefined;
+  let expired = false;
+  const dispose = () => {
+    clearTimeout(timer);
+    if (expire && budget) budget.signal.removeEventListener("abort", expire);
+  };
   try {
     config = normalizeRuntimeConfig(runtimeConfigFile(config));
+    if (
+      budget &&
+      (budget.signal.aborted ||
+        !Number.isFinite(budget.deadlineMonotonicMs) ||
+        budget.deadlineMonotonicMs <= performance.now())
+    )
+      throw new StudioError("RECEIVE_TIMEOUT");
     sql = openSql(config.database);
-    await verifyDatabaseIdentity(sql, config);
     const client = sql;
+    const verification = verifyDatabaseIdentity(client, config);
+    if (budget) {
+      const expiration = new Promise<never>((_, reject) => {
+        expire = () => {
+          expired = true;
+          void client.end({ timeout: 0 }).catch(() => {});
+          reject(new StudioError("RECEIVE_TIMEOUT"));
+        };
+        budget.signal.addEventListener("abort", expire, { once: true });
+        timer = setTimeout(
+          expire,
+          Math.max(0, budget.deadlineMonotonicMs - performance.now()),
+        );
+        timer.unref?.();
+        if (budget.signal.aborted) expire();
+      });
+      await Promise.race([verification, expiration]);
+    } else await verification;
     return {
       sql,
       db: drizzle(sql, { schema }),
       config,
-      close: () => client.end({ timeout: 3 }),
+      close: () => {
+        dispose();
+        return client.end({ timeout: expired ? 0 : 3 });
+      },
     };
-  } catch {
-    await sql?.end({ timeout: 1 }).catch(() => {});
+  } catch (error) {
+    dispose();
+    await sql?.end({ timeout: budget ? 0 : 1 }).catch(() => {});
+    if (expired || error instanceof StudioError)
+      throw new StudioError("RECEIVE_TIMEOUT");
     throw new StudioUnavailableError();
   }
 }
 
 // Caller owns this connection and must close it in finally; no global connection at import/build time.
-export async function getDatabase(): Promise<P2aDatabase> {
-  return createDatabase(await loadRuntimeConfig());
+export async function getDatabase(
+  budget?: DatabaseBudget,
+): Promise<P2aDatabase> {
+  return createDatabase(await loadRuntimeConfig(), budget);
 }
