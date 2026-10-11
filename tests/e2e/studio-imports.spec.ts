@@ -213,12 +213,20 @@ test("real intent and raw received state remains unvalidated", async ({
   await page.getByRole("button", { name: "上传所选原包", exact: true }).click();
   await expect(
     page
-      .getByLabel("原包状态")
+      .getByRole("region", { name: "原包状态", exact: true })
       .getByText("原包已隔离接收，尚未验证", { exact: true }),
   ).toBeVisible();
   await page.getByRole("link", { name: "打开接收状态页", exact: true }).click();
+  await expect(page).toHaveURL(
+    /\/studio\/products\/e2e-imports\/imports\/[0-9a-f-]{36}$/,
+  );
   await expect(
-    page.getByText("not-run · 不可发布", { exact: true }),
+    page.getByRole("heading", { name: "原包接收状态", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page
+      .getByRole("region", { name: "原包状态", exact: true })
+      .getByText("not-run · 不可发布", { exact: true }),
   ).toBeVisible();
   await expect(
     page.getByRole("button", { name: /验证原包|应用草稿|发布/ }),
@@ -248,9 +256,11 @@ test("actual hash rejection is read before another explicit action", async ({
   );
   await page.getByRole("button", { name: "上传所选原包", exact: true }).click();
   await expect(
-    page.getByText("当前操作已暂停，必须读取最新状态后才能再次显式操作。", {
-      exact: true,
-    }),
+    page
+      .getByRole("region", { name: "原包状态", exact: true })
+      .getByText("当前操作已暂停，必须读取最新状态后才能再次显式操作。", {
+        exact: true,
+      }),
   ).toBeVisible();
   await page.unroute(endpoint);
   await page
@@ -258,7 +268,7 @@ test("actual hash rejection is read before another explicit action", async ({
     .click();
   await expect(
     page
-      .getByLabel("原包状态")
+      .getByRole("region", { name: "原包状态", exact: true })
       .getByText("原包已拒绝 · 不可修改声明重传", { exact: true }),
   ).toBeVisible();
   await expect(
@@ -325,7 +335,7 @@ test("a separately observed committed intent survives a lost POST response", asy
   await page.getByRole("button", { name: "上传所选原包", exact: true }).click();
   await expect(
     page
-      .getByLabel("原包状态")
+      .getByRole("region", { name: "原包状态", exact: true })
       .getByText("原包已隔离接收，尚未验证", { exact: true }),
   ).toBeVisible();
   expect(puts).toBe(1);
@@ -362,7 +372,9 @@ test("explicit recovery of a stopped claim enables choosing the original file on
   ).toBeEnabled();
   await page.getByRole("button", { name: "上传所选原包", exact: true }).click();
   await expect(
-    page.getByText("原包已隔离接收，尚未验证", { exact: true }),
+    page
+      .getByRole("region", { name: "原包状态", exact: true })
+      .getByText("原包已隔离接收，尚未验证", { exact: true }),
   ).toBeVisible();
 });
 

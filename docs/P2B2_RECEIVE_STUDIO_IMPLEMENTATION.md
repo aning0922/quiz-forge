@@ -43,3 +43,7 @@ CreateReceive 的拒绝现在累计保存 previousUnknown，仅已校验创建/�
 Astra复审另指出HTTP502+CSRF_REJECTED等错配仍会错误解除未知。本流adapter现用有限code→HTTPstatus映射，错配写为WRITE_OUTCOME_UNKNOWN、错配读为STUDIO_UNAVAILABLE；502/CSRF、500/INVALID_REQUEST、合法403/CSRF均有回归。专属5文件53单元、typecheck、lint、全仓format:check通过；新增映射前全仓42文件592单元通过，映射新增3项已由专属单元实际验证。
 
 生产build通过，BUILD_TRACE_OK：53 traces、8614 paths、0 violations。Turbopack对A storage.ts动态.cache/p2a路径有两处宽匹配性能警告，未改A或共享构建配置，交总控评估。未运行本流浏览器/视觉截图、远端CI、test:driver或全仓test:db；专属HTTP真实证据不能替代阶段全矩阵。
+
+## 总控生产浏览器反馈：状态选择器收口
+
+总控在真实生产E2E中已通过auth3、workspace9及imports关闭/只读/空状态1例；创建/上传用例实际到达received，但全页not-run文案同时匹配接收面板和列表，strict selector失败。按反馈将not-run、received、rejected及接收暂停提示限定到具名“原包状态”region，保留全部断言；打开状态页后增加URL与页面标题等待，避免在列表过渡态断言/截图。其他意图unknown与精确查询提示为单次操作独有文案，静态检查未发现同类列表复用。仅做本流静态格式/lint与8例发现检查；实际浏览器重跑和图检仍由总控独占3100，本流没有启动服务器。
