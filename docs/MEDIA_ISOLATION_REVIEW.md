@@ -1,6 +1,6 @@
 # 媒体隔离可行性独立审查记录
 
-2026-10-12。状态：实施与实测中，尚未验收平台能力。总控集成，普通实现为两条GPT-6.1 Sol/high流，独立审查为GPT-6 Astra/high。不要把共享测试、候选smoke或文档CI当作操作系统隔离通过。
+2026-10-12。状态：macOS精确组合已完成总控实测和独立审查；Linux实际smoke通过，最后一项生命周期故障注入待修复复验，整体尚未验收。总控集成，普通实现为两条GPT-6.1 Sol/high流，独立审查为GPT-6 Astra/high。不要把共享测试、候选smoke或文档CI当作操作系统隔离通过。
 
 ## 合同预审
 
@@ -71,3 +71,17 @@ head e2adf40的[普通CI38180296236](https://github.com/aning0922/quiz-forge/act
 head baefaeb的[普通CI38180880074](https://github.com/aning0922/quiz-forge/actions/runs/38180880074) checks/database均实际success；[平台CI38180880080](https://github.com/aning0922/quiz-forge/actions/runs/38180880080)成功跨过原生身份启动，31/31 smoke实际通过，含真实三格式解码、8MiB/16MP/8192边界、权限/FD/网络/进程/OOM/资源限额/取消和结束证明。生命周期10/11通过，唯一lose-stop-response未真正命中fired；原断言本来要求failed且confirmed，不能误称停止语义错。平台整体仍failure/accepted:false。
 
 root随后集成7b0ca0d追加fstatfs允许与mount/namespace持续拒绝的原生断言，未将它冒称已在第七轮执行。崩溃harness的c92ab83→508fba0初修仍有早到timer丢失重排问题：Astra用实际helper确定性复现原deadline后仍pending，P2保持开放。7d14f8d→008eec7按同一绝对期限ceil/min1重排并补确定性早到/永不close用例，正在复审；同时runtime四组件每次实际读取、同预算核对setup记录并进入policy摘要，runtime源码纳入launcher摘要。c86b70d→af3d4ad把丢停止应答场景改为完整5秒运行预算，并要求实际running及唯一start/kill/丢失204应答，保留fired断言，待真实CI。mac作者修订66项矩阵仅为开发流证据，最终提交与root独立复核仍待完成。
+
+## 第八轮与 macOS 独立收口
+
+head `3dc3201` 的[普通CI38182025989](https://github.com/aning0922/quiz-forge/actions/runs/38182025989) checks/database均实际success；[平台CI38182025991](https://github.com/aning0922/quiz-forge/actions/runs/38182025991)仍failure。31/31 smoke通过，已包含新增fstatfs允许、mount/namespace拒绝及实际四运行时组件逐次核验；Engine28.0.4/containerd v2.3.6/runc1.5.1/init0.19.0，实际本地image ID为 `sha256:cec1bc54ee9de13d4d1347252989129b6b56eb3a4466359a43d46b683e872473`。此ID只代表该run的本地构建镜像，不是远端发布digest。
+
+生命周期仍10/11。lose-stop-response为failed/DEADLINE_EXCEEDED/stoppedconfirmed，但runningObserved=false，create=1/start=0/kill=0/lost=0/upgrade=1，没有真正注入丢停止应答，不能计通过。独立Sol以合成Unix HTTP同伴复现普通响应转发未flushHeaders造成的启动死锁：旧实现已见wait但客户端未见响应头、未发start；只补flushHeaders后客户端见头并发出一次start，最终收到body。依据Docker28.0.4的[start调用顺序](https://github.com/docker/cli/blob/v28.0.4/cli/command/container/start.go#L131-L138)、[ContainerWait必须先收头](https://github.com/moby/moby/blob/v28.0.4/client/container_wait.go#L23-L29)、[daemon即时flush头](https://github.com/moby/moby/blob/v28.0.4/api/server/router/container/container_routes.go#L337-L348)及[Node响应头语义](https://nodejs.org/docs/latest-v24.x/api/http.html#responseflushheaders)，只修测试代理的普通HTTP分支；不增加期限、不删除fired、不改变生产launcher停止权威。真实Docker故障注入复验仍待下一准确head。
+
+独立Astra已关闭Linux崩溃harness期限P2：实际owned-close源码的早到timer、永不close及后代持stdio有限返回测试通过；008eec7的四组件运行时核验亦以八种实际源码替身场景复核，同一绝对期限/取消传递、版本缺失或变化、控制命令未settled均失败关闭。无剩余已登记Linux控制P1/P2，不代替上述真实生命周期验收。
+
+mac修订5873c0f→root2f360f1、格式4deeb5a→c6ea094和最终报告3b96249→b79b241已集成。独立Astra以实际源码确认三项P2全部关闭：issued最后持久化后到期/取消零spawn；身份查询只有双重ESRCH才判不存在，权限/短结果错误保持阻断；最终检查、残留读取、摘要构造和写入全在原子seal前，seal后输出错误保留capabilityCommitted语义。另核普通入口不能使用harness临时能力、同一允许exec身份的新增进程被拒绝。两项真实Writable错误测试通过。
+
+总控在目标工作树完整矩阵66/66三次通过，分别为首次封存、普通入口读取封存、最终报告修订后重新封存；每次residualControlEntries=0。精确组合为macOS26.6.2/build25G83/arm64、Node20.20.1、sharp0.35.5/libvips8.18.7；root profile `7475c2890e06902a0f5c5ca36c7c1f1b28173a851069ba25efe09ef063ae6a69`、component `b00b6251991ae94dd9ba35b7567ae4ab2937e56b85cbaf515abc59f82c0d5b73`。root与作者component差异已核实仅来自pnpm生成semver包装器中的实际位置字节，保留完整字节绑定，迁移工作树必须重验。mac无native RSS硬限、SBPL维护风险仍保留；这些技术结论不授予内容、素材商用、B2-2或发布批准。
+
+代理最小修复来源为Linux流 `eed9cff844724b0abc4d84f8fa97876aaea68176`，总控集成同一行及其文档，并由独立Sol补三项真实自有Unix socket回归：headers-only wait后才能start、创建/停止丢应答、101媒体类型与双向合并头字节。三项全通过；只在内存移除flushHeaders的负对照准确使第一项失败、另两项仍通过，子进程与临时物全部结束。总控31/31共享/Linux/mac纯控制、格式/lint/类型通过；这不是新的Docker证据，准确head CI接续核验。
