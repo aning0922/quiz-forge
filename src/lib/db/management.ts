@@ -31,7 +31,8 @@ import { migrateDatabase } from "./migrate";
 import {
   isLocalOrigin,
   readPrivateJson,
-  runtimeConfigSchema,
+  normalizeRuntimeConfig,
+  runtimeConfigFile,
   type P2aRuntimeConfig,
 } from "./runtime";
 
@@ -125,9 +126,7 @@ export async function loadManagedInstance(instanceId: string): Promise<{
     const manifest = manifestSchema.parse(
       await readPrivateJson(paths.manifest),
     );
-    const config = runtimeConfigSchema.parse(
-      await readPrivateJson(paths.runtime),
-    );
+    const config = normalizeRuntimeConfig(await readPrivateJson(paths.runtime));
     const admin = adminSchema.parse(await readPrivateJson(paths.admin));
     if (
       manifest.instanceId !== instanceId ||
@@ -308,8 +307,9 @@ export async function initLocalInstance(
     } finally {
       await cluster.end({ timeout: 3 });
     }
-    const config = runtimeConfigSchema.parse({
-      version: 1,
+    const config = normalizeRuntimeConfig({
+      version: 2,
+      imports: { enabled: false },
       profile: "local-http-p2a",
       purpose: options.purpose,
       origin: options.origin,
@@ -345,7 +345,7 @@ export async function initLocalInstance(
       runtimeConfigPath: paths.runtime,
       adminConfigPath: paths.admin,
     };
-    await writePrivateJson(paths.runtime, config);
+    await writePrivateJson(paths.runtime, runtimeConfigFile(config));
     await writePrivateJson(paths.admin, admin);
     await writePrivateJson(paths.manifest, manifest);
     const db = await openManagedDatabase(instanceId);
@@ -609,8 +609,9 @@ export async function initCiInstance(input: {
     const ownerPassword = randomBytes(32).toString("base64url"),
       appPassword = randomBytes(32).toString("base64url");
     await provision(service, instanceId, "ci", ownerPassword, appPassword);
-    const config = runtimeConfigSchema.parse({
-      version: 1,
+    const config = normalizeRuntimeConfig({
+      version: 2,
+      imports: { enabled: false },
       profile: "local-http-p2a",
       purpose: "ci",
       origin: "http://127.0.0.1:3100",
@@ -646,7 +647,7 @@ export async function initCiInstance(input: {
       runtimeConfigPath: paths.runtime,
       adminConfigPath: paths.admin,
     };
-    await writePrivateJson(paths.runtime, config);
+    await writePrivateJson(paths.runtime, runtimeConfigFile(config));
     await writePrivateJson(paths.admin, admin);
     await writePrivateJson(paths.manifest, manifest);
     const managed = await openManagedDatabase(instanceId);
