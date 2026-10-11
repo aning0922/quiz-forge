@@ -45,6 +45,8 @@ touch必须在条件更新中包含未撤销、idle/absolute仍有效和operator
 
 限流用数据库事务 advisory lock 串行检查计数/插入，不能无锁 count→insert。依据audit/session计数，不存IP；429 Retry-After:60，达到限制不无限追加audit。
 
+P2-A 本机低并发场景统一使用同一认证事务 advisory lock，顺序为“auth 全局锁→session/operator 行与计数→写入”。preauth/login/touch/logout/revoke 和管理 CLI 停用均先取得该锁，锁后重新检查身份、会话与到期。DB 公共 acquireAuthWriteLock 使用 pg_advisory_xact_lock(72461,1)。管理停用与撤销该身份现有会话在同一事务，不能漏掉并发新登录；app 不为锁 operator 行而获得 UPDATE 权限。真实两连接验证停用/登录/续期及撤销/续期竞争。
+
 requireCapability(actor,capability)：两角色允许studio:read；仅operator允许workspace:write/draft:write/import:create/review:submit/review:return（未来能力名，不创建业务按钮）。没有publish/key能力。actor只能来自服务端有效会话，浏览器角色/ID不得授权。
 
 ## HTTP与页面合同
