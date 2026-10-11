@@ -213,6 +213,8 @@ export function loadPolicy(
         "internal/shared/precheck.ts",
         "internal/shared/output.ts",
         "internal/macos/execute.ts",
+        "internal/macos/control.ts",
+        "internal/macos/control-errors.ts",
         "internal/macos/identity-protocol.ts",
         "operation-context.ts",
         "internal/macos/identity-helper.c",

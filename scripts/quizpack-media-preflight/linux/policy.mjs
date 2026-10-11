@@ -166,6 +166,8 @@ export async function loadPolicy({
     "contracts.ts",
     "internal/shared/precheck.ts",
     "internal/shared/output.ts",
+    "internal/linux/command.ts",
+    "internal/linux/diagnostic.ts",
   ]) {
     launcherInputs[`production/${file}`] = hash(
       await readFile(resolve("src/features/quizpack/server/media", file)),
