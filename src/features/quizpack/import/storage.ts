@@ -52,7 +52,12 @@ export type Scan = {
 const conflict = () => new StudioError("RECEIVE_STORAGE_CONFLICT");
 const missing = (e: unknown) => (e as NodeJS.ErrnoException)?.code === "ENOENT";
 export function instanceDirectory(config: P2aRuntimeConfig) {
-  return path.join(process.cwd(), ".cache", "p2a", config.instanceId);
+  return path.join(
+    /* turbopackIgnore: true */ process.cwd(),
+    ".cache",
+    "p2a",
+    config.instanceId,
+  );
 }
 export function importsDirectory(config: P2aRuntimeConfig) {
   return path.join(instanceDirectory(config), "uploads", "imports");
@@ -117,7 +122,9 @@ export async function assertNoConfigGuard(config: P2aRuntimeConfig) {
     "imports-config-recovery.guard",
   ]) {
     try {
-      await lstat(path.join(instanceDirectory(config), name));
+      await lstat(
+        path.join(/* turbopackIgnore: true */ instanceDirectory(config), name),
+      );
       throw new StudioError("RECEIVE_BUSY");
     } catch (e) {
       if (!missing(e)) throw e;

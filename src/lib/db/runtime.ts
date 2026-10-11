@@ -93,7 +93,7 @@ export async function readPrivateJson(
   root = process.cwd(),
 ): Promise<unknown> {
   if (!path.isAbsolute(file)) throw new StudioUnavailableError();
-  const base = path.join(root, ".cache", "p2a");
+  const base = path.join(/* turbopackIgnore: true */ root, ".cache", "p2a");
   const relative = path.relative(base, file);
   if (
     relative.startsWith("..") ||
