@@ -43,20 +43,22 @@ pnpm p2a:db status --instance <同一instanceId>
 
 测试使用随机专属 schema/table 和合成标签。owner 创建并授予 app 最小 USAGE/SELECT/INSERT，app 控制连接只能终止同角色的测试后端，无超级用户、无 pg_signal_backend 授权。每次验证数据库身份，结束时删除本场景 schema。不 truncate 业务 fixture，不与 `test:db` 共用清理逻辑。父进程不转发原始错误/查询/参数，仅输出固定场景及成功/失败标签。配置、凭据、DSN 不进入输出或 Git。
 
-ESM/CJS 各 15 场景，共 30 个通过：
+初次交付为 ESM/CJS 各 15 场景、共 30 个。失效标记补充后各 23 场景，共 46 个通过（原 30 个全部保留）：
 
-| 场景                             | 验收证据                                                                                                                    |
-| -------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| terminate-query/commit/rollback  | 真实 `pg_terminate_backend` 成功并观察后端消失；旧回调在替代事务已打开时恢复；旧查询拒绝、无晚到自动提交/回滚、无旧行重放   |
-| terminate-savepoint              | 断连后新建 savepoint 及查询拒绝                                                                                             |
-| terminate-nested-commit/rollback | 已打开嵌套 savepoint 回调断连后返回/抛错，保留的 savepoint Promise 也必须拒绝                                               |
-| queued                           | 在途、pipeline 和私有队列四个 Promise 全部拒绝；相关标签均未写入                                                            |
-| reserve                          | 在途/pipeline/队列拒绝；旧查询拒绝；旧 release 无法释放替代 reservation，普通池查询保持排队直至新 reservation release       |
-| client-end                       | 主动强制 client.end；事务失败，延迟旧查询拒绝，无晚到写入                                                                   |
-| timeout-active/idle              | 服务器真实 `transaction_timeout=150ms`，禁用 statement_timeout；活动和闲置回调均收到 SQLSTATE `25P04`，后端消失、原事务回滚 |
-| cursor                           | cursor 回调暂停期间后端终止；在替代事务打开后恢复，替代事务仍可查询和提交                                                   |
-| socket-write                     | 真实 TCP socket 在 buffered execute 与 setImmediate 写入之间销毁，Promise 拒绝且无 buffered 写入；后续池查询可重连          |
-| graceful-end/compatibility       | 无超时参数的 graceful end 有限时间完成且健康事务提交；普通事务、多层 savepoint、savepoint 回滚、reserve/release 正常        |
+| 场景                                                | 验收证据                                                                                                                                                                                                   |
+| --------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| terminate-query/commit/rollback                     | 真实 `pg_terminate_backend` 成功并观察后端消失；旧回调在替代事务已打开时恢复；旧查询拒绝、无晚到自动提交/回滚、无旧行重放                                                                                  |
+| terminate-savepoint                                 | 断连后新建 savepoint 及查询拒绝                                                                                                                                                                            |
+| terminate-nested-commit/rollback                    | 已打开嵌套 savepoint 回调断连后返回/抛错，保留的 savepoint Promise 也必须拒绝                                                                                                                              |
+| queued                                              | 在途、pipeline 和私有队列四个 Promise 全部拒绝；相关标签均未写入                                                                                                                                           |
+| reserve                                             | 在途/pipeline/队列拒绝；旧查询拒绝；旧 release 无法释放替代 reservation，普通池查询保持排队直至新 reservation release                                                                                      |
+| client-end                                          | 主动强制 client.end；事务失败，延迟旧查询拒绝，无晚到写入                                                                                                                                                  |
+| timeout-active/idle                                 | 服务器真实 `transaction_timeout=150ms`，禁用 statement_timeout；活动和闲置回调均收到带失效标记的 `CONNECTION_CLOSED`，其原始 cause 必须为 FATAL / SQLSTATE `25P04`，后端消失、原事务回滚                   |
+| cursor                                              | cursor 回调暂停期间后端终止；在替代事务打开后恢复，替代事务仍可查询和提交                                                                                                                                  |
+| socket-write                                        | 真实 TCP socket 在 buffered execute 与 setImmediate 写入之间销毁，Promise 拒绝且无 buffered 写入；后续池查询可重连                                                                                         |
+| destroy-transaction/reserve                         | 真实 socket 已销毁但 close 事件尚未触发时，首次查询检测即产生稳定失效包装；旧查询与事务 Promise 使用同一实例，无晚到回滚                                                                                   |
+| inject-reset/no-code/frozen/primitive/fatal/reserve | 向真实 socket error 路径注入 ECONNRESET、无 code Error、frozen Error、primitive、未知 FATAL code 和 reserve 故障，再实际销毁 socket；在途/pipeline/队列/后续查询使用相同包装与原始 cause，原错误属性不改变 |
+| graceful-end/compatibility                          | 无超时参数的 graceful end 有限时间完成且健康事务提交；普通事务、多层 savepoint、savepoint 回滚、reserve/release 正常                                                                                       |
 
 每个可重连场景还验证新普通查询成功提交。替代事务保持开放时，旧回调恢复前后驱动 debug 构建计数不增加，证明旧查询/自动 COMMIT/ROLLBACK 没有进入发送构建路径；再回滚替代事务并验证旧行/晚到行/替代行均无落库。整个回调只执行一次，不重试原事务。
 
@@ -65,9 +67,9 @@ ESM/CJS 各 15 场景，共 30 个通过：
 ## 实际检查与退出条件
 
 - `pnpm install --frozen-lockfile`：通过；强制重新安装固定锁文件验证受追踪补丁可重新应用。
-- `pnpm test:driver`：30/30 通过；无配置运行按预期失败，无静默 skip。
+- `pnpm test:driver`：46/46 通过；无配置运行按预期失败，无静默 skip。
 - `pnpm format:check`、`pnpm lint`、`pnpm typecheck`、`pnpm test`、`pnpm build`：通过；单测 30 文件、452 测试。
-- ESM/CJS 补丁增删内容一致；`git diff --check` 通过。
+- ESM/CJS 补丁增删内容一致；普通文件 `git diff --check` 通过。pnpm 生成的补丁 context 空行带一个协议空格，默认 diff 检查将这些空行报告为 trailing whitespace；对补丁仅关闭 blank-at-eol 后检查通过，实际补丁源文件无尾部空白，保留官方生成格式。
 - 独立 Astra 静态审查指出的 graceful end、cursor 身份及 savepoint 关闭后错误报告成功问题已修复并加入回归。
 - `pnpm test:db` / `pnpm test:e2e`：专项分支不运行，按总控指令在集成后执行；不以本地专项结果冒称全局 DB/Auth/domain/E2E、CI、视觉、商业或发布通过。
 - 55424 专属实例交付前停止并通过 status 确认 stopped；不占用 3100。
@@ -82,6 +84,31 @@ JavaScript 回调本身不会被强制取消。它仍能执行非数据库副作
 
 总控接入后移除临时故障规避，重新运行 DB/Auth/domain 与全套工程验收，再安排独立整体验收。本分支提交/推送后停止，不创建 PR 或推进其他业务工作。
 
-## 总控集成检查点
+## 首次总控集成检查点（标记补充前）
 
 原提交ec531518集成为9bc1370，冻结安装已确认应用补丁。总控在自己的隔离purpose=test实例上实际执行全部30项ESM/CJS故障测试通过；这轮直接驱动测试不使用业务临时end规避。普通CI的build入口自动审计部署trace，数据库CI在test:db后串行运行test:driver，实例ID仅从本次CI启动回执解析。bash语法检查和5项既有清理回归通过；尚无此集成head的远端CI结果。临时业务规避移除、管理时间绑定精度修复、完整DB/UI/E2E与独立复审仍在进行。
+
+## 失效错误标记补充（基于 ec531518）
+
+总控独立复审指出：只按错误 identity 判断“与 callback 原错误相同，所以已成功 ROLLBACK”不成立。断连时旧实现可能重新抛出原始 callback/socket 错误，而 ROLLBACK 实际没有发出；ECONNRESET、无 code Error 或未知 FATAL SQLSTATE 也无法靠错误码穷举可靠分类。本补充仅改补丁、锁哈希、独立测试及本文档，不改 package 脚本、CI 或业务文件。
+
+`begin` / `reserve` 首次 invalidate 时创建一个新的 `Errors.connection('CONNECTION_CLOSED', options)`，增加以下本地扩展：
+
+```ts
+// 属性均由 Object.defineProperties 设置为 non-enumerable / readonly / non-configurable。
+error.quizforgeConnectionInvalidated === true;
+error.code === "CONNECTION_CLOSED";
+error.cause === originalError;
+```
+
+每个失效作用域后续复用同一 Error 实例；包装不修改原始错误，支持 frozen Error 与 primitive。原始 SQLSTATE 保留在 `cause.code`，不保留到顶层 code；顶层固定分类为 CONNECTION_CLOSED。没有从原错误复制 query/parameters；驱动随后附加到包装上的 query/parameters/args/types 即使 debug 打开也非枚举，cause 与 marker 同样不会进入 JSON 枚举输出。cause 仍可能包含诊断数据，业务日志继续使用安全固定分类，不能直接记录完整 cause。
+
+socket error/FATAL/延迟写入失败使 invalidate 返回该包装，现有在途/已发送查询也使用它；私有排队查询与旧句柄查询使用相同实例。`execute` 对已销毁 socket 的首次检测同样走这一错误路径，即使 close 事件尚未派发也可识别。显式池 destroy 调用 `terminate(true)`，使尚无在途查询的 reservation 同步失效；正常 ReadyForQuery 后的 terminate 不强制失效，避免把已成功 COMMIT 的 graceful end 报成失败。cursor 同查询/同 socket 的首次关闭检测也使用包装，遇到替代查询/socket 时不触发替代作用域的 invalidate。
+
+业务整合应先识别 marker / connection code，再判断普通 callback 原错误的 identity。正常 callback 抛错且 ROLLBACK 成功的路径仍抛出同一个原错误，不附加失效 marker；兼容测试验证这一点。标记代表作用域已失效，不代表“已确定未提交”，也不改变 COMMIT 确认丢失时的未知结果边界。
+
+新增 16 个 ESM/CJS 子进程验收：两类 destroy-before-close 场景以及六类原始错误注入。注入只用于覆盖真实 socket 的 error 分支，随后真实销毁连接；它不代替原有 pg_terminate_backend 和服务器 transaction_timeout 故障。事务 callback 故意重新抛出与 cause 完全相同的原错误，外层必须收到不同的稳定包装；查询队列和晚到查询必须收到同一包装，驱动构建计数证明恢复 callback 后没有 ROLLBACK/COMMIT 发送。错误对象前后 own property descriptors 完全一致；服务端 FATAL 25P04 在真实超时场景中通过 cause 精确验证。
+
+`quizforgeConnectionInvalidated` 是 QuizForge 自行维护的驱动扩展，上游类型声明不提供该属性。消费者应从 unknown 做属性检查，不能依赖 Error 文案、具体 SQLSTATE 列表或完整 cause DTO；未来升级驱动时必须审查这个合同、两入口一致性及首次检测路径。其他运行时和 COPY/stream 的限制沿用上文。
+
+补充交付验证：46/46 专项、冻结安装、格式、lint、类型、452 单测和构建通过；独立 Astra 复核确认 marker、首次检测和 graceful end 的整改均已落实。55424 同一专属实例停止，status 确认 stopped；本补充未运行全局 DB/Auth/domain/E2E 或声明 CI 通过。

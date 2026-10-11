@@ -17,6 +17,14 @@ const scenarios = [
   "socket-write",
   "graceful-end",
   "compatibility",
+  "destroy-transaction",
+  "destroy-reserve",
+  "inject-reset",
+  "inject-no-code",
+  "inject-frozen",
+  "inject-fatal",
+  "inject-primitive",
+  "inject-reserve",
 ] as const;
 
 async function main() {
