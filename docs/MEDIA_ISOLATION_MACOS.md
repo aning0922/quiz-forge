@@ -13,3 +13,5 @@
 共享复审补丁：FD探针改为mac libproc当前进程描述符列表 / Linux自身 `/proc/self/fd` 有界枚举（最多65536项）；完整性无法证明或fstat异常时scanComplete=false且安全断言false，不只检查3..255。实际FD300注入自有只读合成文件后明确返回false；无额外FD对照返回true。网络协议每操作返回socket-denied/operation-denied/prerequisite-denied/allowed/failed，前置socket拒绝不虚构connect/bind/listen已执行；listen先bind，bind拒绝时明示未执行listen。语法合法不代表政策通过。worker/probe UTF-8 BOM均明确拒绝。mac共享11项测试/定向lint/tsc/格式检查通过；Linux socket创建拒绝的真实证据由Linux流补齐，不把mac结果当Linux通过。
 
 共享Linux实际失败待查：总控报告CI run38177356922/head96000be的共享无额外FD对照返回false，不能当通过。新增闭集 `fd-diagnostic`：最多12项，只含数量/类型/访问模式/CLOEXEC/是否高于255及完整/截断标记，无路径、正文、环境或errno。基线断言不变；真实出现额外FD时仅打印严格解析的有限摘要后仍失败。mac本机FD300诊断为一份高位只读regular、普通基线无额外；本机12项共享测试通过。Linux来源尚未实测定位，不据此接受任何未知FD。
+
+Linux第三轮CI38177881397仍拒绝FD基线：总控的有限摘要为两只非CLOEXEC管道，一读一写，均低于256；不假定来源。新增纯mjs `shared/fd-host-control.mjs` 可分别用 `node`、`node --import tsx`、`node --test`、`node --import tsx --test` 执行。它只打印Node版本/平台、loader/test-context/IPC存在布尔及上述FD元数据，使用明确pipe×3、最小env和同一C探针；只作诊断，存在额外FD不会变成验收成功。四个macOS Node20.20.1实际对照均extraCount=0；Linux待总控实际CI，不据此断言是tsx或node:test造成。
