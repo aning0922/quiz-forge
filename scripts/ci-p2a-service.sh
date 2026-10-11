@@ -15,13 +15,17 @@ cleanup() {
   local original_status=$?
   trap - EXIT INT TERM
   if [[ -f "$ci_service_dir/container-id" ]]; then
-    ci_service_container=$(cat "$ci_service_dir/container-id")
-    if [[ "$ci_service_container" =~ ^[a-f0-9]{64}$ ]] &&
+    if ci_service_container=$(cat "$ci_service_dir/container-id") &&
+       [[ "$ci_service_container" =~ ^[a-f0-9]{64}$ ]] &&
        [[ "$(docker inspect --format '{{ index .Config.Labels "quizforge.p2a.ci" }}' "$ci_service_container" 2>/dev/null)" == "$ci_service_id" ]]; then
       if ! docker rm --force --volumes "$ci_service_container" >/dev/null 2>&1; then
         printf '%s\n' 'P2A_CI_CLEANUP_FAILED' >&2
         original_status=1
       fi
+    else
+      # Unknown identity is not permission to delete, nor proof of successful cleanup.
+      printf '%s\n' 'P2A_CI_CLEANUP_IDENTITY_UNVERIFIED' >&2
+      original_status=1
     fi
   fi
   rm -f "$ci_service_dir/password" "$ci_service_dir/bootstrap.json" "$ci_service_dir/container-id"
