@@ -43,3 +43,15 @@ head1de6c4c的[容器CI38177881396](https://github.com/aning0922/quiz-forge/acti
 head4f3959b的[容器CI38179010996](https://github.com/aning0922/quiz-forge/actions/runs/38179010996)仍failure，有限分类明确为OCI exec FIFO启动阶段；镜像/能力/配置检查仍全部true，停止confirmed。日志的knownSyscall=mount仅表示有限词表命中，可能来自路径/描述，不能当实际系统调用证据或据此允许mount。Linux流继续核对运行时源码并修复。
 
 同head[普通CI38179011025](https://github.com/aning0922/quiz-forge/actions/runs/38179011025)的database实际success；checks失败于新FD四对照的首个plain Node24.21.0，只有FD_CONTROL_FAILED，未获得管道元数据。root补固定paths/build/probe/parse阶段、数值exitcode与四对照失败汇总，并为可信探针编译器给定固定/usr/bin:/bin搜索路径；未改变解码worker权限或忽略额外FD，也未将编译环境假设当原根因。本机四对照均无额外FD、19共享/控制测试通过，612应用单测、类型、lint与格式通过。第五轮准确head证据另记，尚未验收平台。
+
+## 第五轮、共享对照修订与平台候选预审
+
+head3ee9326的[普通CI38179321373](https://github.com/aning0922/quiz-forge/actions/runs/38179321373) database实际success、checks失败：四个Node24.21.0上下文全部成功执行诊断，均完整发现两只非CLOEXEC pipe，原零FD host断言仍失败。不能据此归因tsx、node:test或spawnSync；[容器CI38179321422](https://github.com/aning0922/quiz-forge/actions/runs/38179321422)仍failure，未验收Linux。
+
+独立Astra裁决共享host对照应验证扫描器正确性，未知无沙箱host不能天然假定零FD。root cc51623据此新增闭集fd-control，同次扫描同时返回完整性/数量/安全结论及精确FD300只读regular命中；host有任何额外FD仍明确unsafe，注入对照不依赖诊断顺序/未截断列表。实际平台fd模式及零额外FD断言完全保留。新增async对照与sync使用同一C探针/参数；有界输出、5秒操作加1秒收尾、真实close才成功。独立Sol实测启动失败的null stdio后补空句柄和有效正PID保护；初次null对照曾exit137，整改后三种真实失败均有限返回，不掩盖首次失败。Mac本机13共享测试、22项集成控制（新增Linux诊断2项另通过）、类型/lint/格式及async两对照通过，Linux新对照待下一准确head。
+
+源码调查仅支持待核假设：[Node24.21.0 sync实现](https://github.com/nodejs/node/blob/v24.21.0/src/spawn_sync.cc)仍使用uv_spawn，[libuv pipe](https://github.com/nodejs/node/blob/v24.21.0/deps/uv/src/unix/pipe.c)使用O_CLOEXEC；[Linux/mac process路径](https://github.com/nodejs/node/blob/v24.21.0/deps/uv/src/unix/process.c)对既存non-CLOEXEC FD继承有平台差异。不能把可能的host继承当已确定根因，也不能将新host测试通过计为隔离通过。
+
+mac完整候选c54dd80→root3d7237b已集成。作者61项实测不等于验收；Astra只读预审登记3项P2：issued持久化后未重查deadline即spawn、身份查询错误被当成不存在并清除harness阻断、最后API检查前就写能力记录。另须补同初始允许可执行身份的spawn实际拒绝证据。均已派回，待修复与最终复核，不启用业务入口。
+
+Linux扩展15761ed→root36474f5的created-only崩溃恢复经独立实际源码六项内存对照通过，未见旧互斥回归；新P2是kill父进程后无界await close，独立有限后代持stdio复现实测6546ms，超5秒清理预算，已派回修复。991d893→root67f8a89只补有限FIFO/errno/明确syscall文本与setup组件版本，2项分类测试通过、无新增P1/P2；runtimeVersions目前不是每次运行的runc/containerd/init核验，正式支持组合仍须补实际绑定。
