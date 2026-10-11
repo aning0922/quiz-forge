@@ -18,6 +18,7 @@ export function configuredHost(config: LocalStudioProfile): string {
     parsed.protocol !== "http:" ||
     parsed.hostname !== "127.0.0.1" ||
     !parsed.port ||
+    Number(parsed.port) < 1024 ||
     parsed.origin !== config.origin ||
     parsed.username ||
     parsed.password
