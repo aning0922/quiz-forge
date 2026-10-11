@@ -61,3 +61,11 @@ Astra复审另指出HTTP502+CSRF_REJECTED等错配仍会错误解除未知。本
 总控反馈selector修复后实际auth/workspace/imports共20/20通过，并检查四宽关闭状态及320px received/rejected/unknown/recovered截图。图检发现本地文件准备成功时input key随pending变化会重建DOM，造成仍持原文件却显示未选择；现改为仅用户明确清空/重新选择时递增input key，初次SHA-256准备保留native FileList。现有真实接收E2E新增准备成功后的native value断言，以及明确清空后同一个合成文件可再选择的流程，没有删业务断言。
 
 无原文件提示改为当前页上方选择/核实后显式上传。mobileEvidence在每个视口截图前scrollTo(0,0)并等待两个rAF，避免旧滚动位置令固定skiplink投影到整页图中；仍保留320/375/390/430、横向溢出断言与主动安全截图。此增量typecheck、专属ESLint/格式及8例发现通过；新native input断言和更新截图尚待总控生产重跑。本流55422已停止、未启动3100。
+
+## 320px列表长度的图检整改
+
+总控90e9887生产20/20再次通过，并确认native文件名、当前页恢复指导与skiplink截图伪影已修复。真实320px长页发现列表逐卡复用完整事实导致双hash与免责声明重复；本流现以显式ImportSummary组件展示状态、完整接收ID、声明bytes、storageCondition、not-run/不可发布，失败记录仍有按真实lastErrorCode投影的简短原因。完整双hash、冻结事实、修订及完整失败说明继续保留在原包状态面板/详情，不修改A服务或DTO。
+
+列表区边界说明只展示一次。摘要详情链接可见文字收短为“查看接收详情”，可访问名称仍含完整ID，既有按ID/接收记录导航保持有效；分页与末卡之间有24px间距、16px内边距及分隔线。沿既有16px正文、48px链接/按钮目标，摘要事实使用有界两列及ID整行，并继承换行/最小宽度规则。
+
+更新现有真实接收E2E：确认摘要的bytes、已对账、not-run/不可发布且不重复hash，通过摘要链接进入详情，再确认完整双SHA仍显示。typecheck、专属ESLint/格式与8例发现通过，没有新增镜像单元或启动3100；此摘要增量的四宽真实浏览器/分页图检待总控重跑，不能以静态检查声称视觉通过。55422仍停止。
