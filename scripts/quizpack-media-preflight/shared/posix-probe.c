@@ -28,6 +28,20 @@ static int denied(int r) { return r == -1 && (errno == EPERM || errno == EACCES)
 static int open_denied(const char *p, int flags) { int r = open(p, flags, 0600); int d = denied(r); if (r >= 0) close(r); return d; }
 static void *thread_run(void *arg) { return arg; }
 static const char *operation(int r) { return r == 0 ? "allowed" : denied(r) ? "operation-denied" : "failed"; }
+struct fd_diagnostic { const char *type; int read_mode, write_mode, cloexec, above255; };
+static struct fd_diagnostic fd_samples[12];
+static int fd_count = 0;
+static int describe_fd(int fd, const struct stat *st) {
+  int mode = fcntl(fd, F_GETFL), flags = fcntl(fd, F_GETFD);
+  if (mode < 0 || flags < 0) return 0;
+  if (fd_count < 12) {
+    struct fd_diagnostic *d = &fd_samples[fd_count];
+    d->type = S_ISREG(st->st_mode) ? "regular" : S_ISSOCK(st->st_mode) ? "socket" : S_ISFIFO(st->st_mode) ? "pipe" : S_ISCHR(st->st_mode) ? "character" : S_ISBLK(st->st_mode) ? "block" : S_ISDIR(st->st_mode) ? "directory" : "other";
+    d->read_mode = (mode & O_ACCMODE) != O_WRONLY; d->write_mode = (mode & O_ACCMODE) != O_RDONLY;
+    d->cloexec = (flags & FD_CLOEXEC) != 0; d->above255 = fd > 255;
+  }
+  fd_count++; return 1;
+}
 static int scan_fds(int *clean) {
   *clean = 1;
 #ifdef __APPLE__
@@ -41,6 +55,7 @@ static int scan_fds(int *clean) {
     if (list[i].proc_fd < 3) continue;
     struct stat st; if (fstat(list[i].proc_fd, &st) < 0) { free(list); return 0; }
     /* Any extra descriptor is conservatively treated as a possible IPC/file capability. */
+    if (!describe_fd(list[i].proc_fd, &st)) { free(list); return 0; }
     *clean = 0;
   }
   free(list); return 1;
@@ -54,6 +69,7 @@ static int scan_fds(int *clean) {
     if (errno || !end || *end || fd < 0 || fd > INT_MAX || ++count > 65536) { complete = 0; break; }
     if (fd < 3 || fd == own) continue;
     struct stat st; if (fstat((int)fd, &st) < 0) { complete = 0; break; }
+    if (!describe_fd((int)fd, &st)) { complete = 0; break; }
     *clean = 0;
   }
   if (closedir(d)) complete = 0;
@@ -107,6 +123,14 @@ int main(int argc, char **argv) {
   } else if (!strcmp(argv[1], "fd") && argc == 2) {
     int clean = 0; int complete = scan_fds(&clean);
     printf("{\"schema\":\"posix-probe.v1\",\"mode\":\"fd\",\"scanComplete\":%s,\"noInheritedFileOrSocket\":%s}", complete?"true":"false", complete && clean?"true":"false");
+  } else if (!strcmp(argv[1], "fd-diagnostic") && argc == 2) {
+    int clean = 0; int complete = scan_fds(&clean);
+    printf("{\"schema\":\"posix-fd-diagnostic.v1\",\"scanComplete\":%s,\"extraCount\":%d,\"truncated\":%s,\"descriptors\":[", complete?"true":"false", fd_count, fd_count>12?"true":"false");
+    for (int i = 0; i < fd_count && i < 12; i++) {
+      struct fd_diagnostic *d = &fd_samples[i];
+      printf("%s{\"type\":\"%s\",\"readMode\":%s,\"writeMode\":%s,\"closeOnExec\":%s,\"above255\":%s}",i?",":"",d->type,d->read_mode?"true":"false",d->write_mode?"true":"false",d->cloexec?"true":"false",d->above255?"true":"false");
+    }
+    fputs("]}",stdout);
   } else return 64;
   return fflush(stdout) == 0 ? 0 : 70;
 }

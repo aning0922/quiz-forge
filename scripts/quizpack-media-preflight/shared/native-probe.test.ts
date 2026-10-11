@@ -4,7 +4,7 @@ import { openSync, closeSync, constants } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { mkdir, mkdtemp, chmod, writeFile, rm } from "node:fs/promises";
 import { resolve } from "node:path";
-import { parseProbeOutput } from "./probe-protocol";
+import { parseProbeOutput, parseFdDiagnostic } from "./probe-protocol";
 
 test("real POSIX probe compiles and baseline thread/process/FD protocol is truthful", async () => {
   const base = resolve(".cache/quizpack-media-preflight/shared");
@@ -47,7 +47,21 @@ test("real POSIX probe compiles and baseline thread/process/FD protocol is truth
       forkDenied: false,
       spawnDenied: false,
     });
-    assert.deepEqual(run("fd"), {
+    const noExtraFD = run("fd");
+    if (noExtraFD.mode === "fd" && !noExtraFD.noInheritedFileOrSocket) {
+      const diagnostic = spawnSync(binary, ["fd-diagnostic"], {
+        env: { NODE_ENV: "production" },
+        timeout: 5000,
+        maxBuffer: 2048,
+      });
+      assert.equal(diagnostic.status, 0, "fixed FD diagnostic failed");
+      const safe = parseFdDiagnostic(diagnostic.stdout);
+      assert.ok(safe);
+      process.stdout.write(
+        `${JSON.stringify({ syntheticFdDiagnostic: safe })}\n`,
+      );
+    }
+    assert.deepEqual(noExtraFD, {
       schema: "posix-probe.v1",
       mode: "fd",
       scanComplete: true,
@@ -72,6 +86,21 @@ test("real POSIX probe compiles and baseline thread/process/FD protocol is truth
         maxBuffer: 2048,
       });
       assert.equal(injected.status, 0, "synthetic FD300 probe failed");
+      const diagnostic = spawnSync(binary, ["fd-diagnostic"], {
+        stdio,
+        env: { NODE_ENV: "production" },
+        timeout: 5000,
+        maxBuffer: 2048,
+      });
+      assert.equal(diagnostic.status, 0, "FD300 diagnostic failed");
+      const safe = parseFdDiagnostic(diagnostic.stdout);
+      assert.ok(safe);
+      assert.equal(safe.scanComplete, true);
+      assert.equal(safe.extraCount, 1);
+      assert.equal(safe.descriptors[0]?.type, "regular");
+      assert.equal(safe.descriptors[0]?.readMode, true);
+      assert.equal(safe.descriptors[0]?.writeMode, false);
+      assert.equal(safe.descriptors[0]?.above255, true);
       assert.deepEqual(parseProbeOutput(injected.stdout), {
         schema: "posix-probe.v1",
         mode: "fd",
