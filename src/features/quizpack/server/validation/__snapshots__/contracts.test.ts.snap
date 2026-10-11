@@ -1,0 +1,17 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`complete candidate evidence contract > bounds three attempts of 64 maximum decoded media facts 1`] = `
+{
+  "envelopeBytes": 64640,
+  "metadataBytes": 61625,
+  "outcome": "decoded",
+}
+`;
+
+exports[`complete candidate evidence contract > bounds three attempts of 64 maximum failed media facts 1`] = `
+{
+  "envelopeBytes": 51338,
+  "metadataBytes": 48323,
+  "outcome": "failed",
+}
+`;
