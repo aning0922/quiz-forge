@@ -538,16 +538,17 @@ export async function disableOperator(instanceId: string, id: string) {
   try {
     return await db.sql.begin(async (tx) => {
       await acquireAuthWriteLock(tx);
-      // Preserve PG microseconds as text; Date conversion could round below a just-created session.
+      // Preserve PG microseconds through both SELECT and Bind. Force OID25 before timestamptz
+      // so postgres.js cannot use its OID1184 Date serializer and truncate to milliseconds.
       const [moment] = await tx<
         { at: string }[]
       >`SELECT clock_timestamp()::text AS at`;
       if (!moment) fail("DISABLE_FAILED_OUTCOME_REQUIRES_RECHECK");
       const changed =
-        await tx`UPDATE qf.operator SET status='disabled',disabled_at=${moment.at}::timestamptz WHERE id=${id} AND status='active' RETURNING id`;
+        await tx`UPDATE qf.operator SET status='disabled',disabled_at=${moment.at}::text::timestamptz WHERE id=${id} AND status='active' RETURNING id`;
       if (!changed.length) return { id, changed: false };
-      await tx`UPDATE qf.operator_session SET revoked_at=${moment.at}::timestamptz WHERE operator_id=${id} AND revoked_at IS NULL`;
-      await tx`INSERT INTO qf.audit_event(id,occurred_at,action,outcome,reason_code,actor_id,request_id) VALUES(${randomUUID()},${moment.at}::timestamptz,'operator_disabled','success','MANUAL',${id},${randomUUID()})`;
+      await tx`UPDATE qf.operator_session SET revoked_at=${moment.at}::text::timestamptz WHERE operator_id=${id} AND revoked_at IS NULL`;
+      await tx`INSERT INTO qf.audit_event(id,occurred_at,action,outcome,reason_code,actor_id,request_id) VALUES(${randomUUID()},${moment.at}::text::timestamptz,'operator_disabled','success','MANUAL',${id},${randomUUID()})`;
       return { id, changed: true };
     });
   } catch {

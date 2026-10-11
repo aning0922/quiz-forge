@@ -66,3 +66,13 @@ title/name/q在NFC/trim前通过Node20兼容UTF-16配对检查；孤立高/低su
 本轮format:check、lint、typecheck、普通32文件468项、真实DB7文件124项与build最终全量通过；新增Unicode定向13项通过。构建仍有既有私有.cache/p2a动态路径追踪警告，由总控处理；本轮未动driver workaround、management、共享配置、package/lock或HTTP/UI。
 
 本轮定向执行时，既有P2-A管理停用竞争再次失败（DISABLE_FAILED_OUTCOME_REQUIRES_RECHECK），后续全量124项通过不构成修复证据。该间歇故障按总控新增授权在本任务55421做最小脱敏诊断，另记录结果；不以偶发消失关闭问题，也不为此阻塞独立文本提交。
+
+## 管理停用竞争的精度原因与独立修复
+
+总控授权在本任务隔离55421诊断并修正management时间绑定。未改业务代码前，忽略目录等效探针两轮分别第86/52次复现session-update阶段SQLSTATE23514、constraint_name=session_times；app与管理连接当前/default隔离均read committed。第二次原始moment是string，按text保留微秒时晚于session.created_at，但隐式timestamptz绑定损失976µs后早于session.created_at。没有输出时间原文、凭据、参数或原始异常。
+
+postgres3.4.9源码证据：types.js:220的inferType给普通string返回OID0；connection.js:626的ParameterDescription将占位符定为OID1184；connection.js:959的Bind选择types.js:31日期serializer，new Date(x).toISOString()截为毫秒。读取clock_timestamp()::text本身不足以保精度。合成常量只读探针证明隐式绑定损失456µs，显式text OID25损失0µs。
+
+最小实际修复只改disableOperator三处绑定为`${moment.at}::text::timestamptz`：operator.disabled_at、session.revoked_at、audit.occurred_at。auth锁后取同一个数据库clock_timestamp的顺序、停用/撤销事务及审计政策不变，没有扩大异常日志。有限全局扫描management/create/auth/workspace时间绑定，createOperator与auth/workspace时间仍直接在SQL内以clock_timestamp/CTE moment计算，未发现其他同类返程字符串时间写入点。
+
+新增真实回归验证参数描述OID1184与text OID25，并在同一个reserved连接上8次prepared执行验证微秒差为0；实际CLI停用8个独立合成身份，三处时间完全相等、会话撤销时间有效，至少一个存储值保留submillisecond精度（旧serializer会全部毫秒对齐）。原P2-A管理与B1竞争路径定向3文件58项通过；typecheck、format、lint及普通32文件468项通过。诊断和修复不等同通过重复随机测试掩盖问题：固定OID/精度与真实存储回归提供了独立证据。驱动失效句柄补丁另行按总控授权集成，不混入本管理修复。
