@@ -9,13 +9,13 @@ import {
   type MediaStopState,
 } from "./contracts";
 
-type ImageState = { deadline: number; timer: NodeJS.Timeout };
+type ImageState = { deadline: number; timer: NodeJS.Timeout | null };
 type State = {
   context: MediaOperationContext;
   controller: AbortController;
   externalSignal: AbortSignal;
   abort: () => void;
-  timer: NodeJS.Timeout;
+  timer: NodeJS.Timeout | null;
   stop: MediaStopState | null;
   image: ImageState | null;
   disposed: boolean;
@@ -38,8 +38,8 @@ function stopAt(state: State, reason: MediaStopReason, trigger: number) {
       stopStartedMonotonicMs: trigger,
       cleanupDeadlineMonotonicMs: trigger + MEDIA_LIMITS.cleanupMs,
     });
-    clearTimeout(state.timer);
-    if (state.image) clearTimeout(state.image.timer);
+    if (state.timer) clearTimeout(state.timer);
+    if (state.image?.timer) clearTimeout(state.image.timer);
     // Publish the stop state before synchronous AbortSignal listeners run.
     state.controller.abort();
   }
@@ -60,6 +60,26 @@ function observe(state: State, now = performance.now()): void {
   else if (state.externalSignal.aborted) stopAt(state, "CANCELLED", now);
 }
 
+// Native timers can arrive early after fractional delay truncation. Each rearm
+// retains the same absolute deadline; it never grants another execution budget.
+const timerDelay = (deadline: number) =>
+  Math.min(2_147_483_647, Math.max(1, Math.ceil(deadline - performance.now())));
+function armBusinessDeadline(state: State) {
+  state.timer = setTimeout(() => {
+    observe(state);
+    if (!state.stop && !state.disposed) armBusinessDeadline(state);
+  }, timerDelay(state.context.deadlineMonotonicMs));
+  state.timer.unref?.();
+}
+function armImageDeadline(state: State, image: ImageState) {
+  image.timer = setTimeout(() => {
+    observe(state);
+    if (!state.stop && !state.disposed && state.image === image)
+      armImageDeadline(state, image);
+  }, timerDelay(image.deadline));
+  image.timer.unref?.();
+}
+
 export function createMediaOperationContext(input: {
   signal: AbortSignal;
   deadlineMonotonicMs: number;
@@ -76,17 +96,12 @@ export function createMediaOperationContext(input: {
     deadlineMonotonicMs: input.deadlineMonotonicMs,
   }) as MediaOperationContext;
   const abort = () => observe(state);
-  const timer = setTimeout(
-    abort,
-    Math.max(0, input.deadlineMonotonicMs - performance.now()),
-  );
-  timer.unref?.();
   const state: State = {
     context,
     controller,
     externalSignal: input.signal,
     abort,
-    timer,
+    timer: null,
     stop: null,
     image: null,
     disposed: false,
@@ -94,6 +109,7 @@ export function createMediaOperationContext(input: {
   states.set(context, state);
   input.signal.addEventListener("abort", abort, { once: true });
   observe(state);
+  if (!state.stop) armBusinessDeadline(state);
   return context;
 }
 
@@ -146,8 +162,8 @@ export function disposeMediaOperationContext(
   observe(state);
   stopAt(state, "STOP_REQUESTED", performance.now());
   state.disposed = true;
-  clearTimeout(state.timer);
-  if (state.image) clearTimeout(state.image.timer);
+  if (state.timer) clearTimeout(state.timer);
+  if (state.image?.timer) clearTimeout(state.image.timer);
   state.externalSignal.removeEventListener("abort", state.abort);
 }
 
@@ -164,15 +180,9 @@ export function beginMediaImage(context: MediaOperationContext): {
     context.deadlineMonotonicMs,
     performance.now() + MEDIA_LIMITS.executionMs,
   );
-  const image: ImageState = {
-    deadline,
-    timer: setTimeout(
-      () => observe(state),
-      Math.max(0, deadline - performance.now()),
-    ),
-  };
-  image.timer.unref?.();
+  const image: ImageState = { deadline, timer: null };
   state.image = image;
+  armImageDeadline(state, image);
   return {
     deadlineMonotonicMs: deadline,
     // In-flight cleanup still has the authoritative state after public disposal.
@@ -180,7 +190,7 @@ export function beginMediaImage(context: MediaOperationContext): {
     finish() {
       observe(state);
       if (state.image !== image) return;
-      clearTimeout(image.timer);
+      if (image.timer) clearTimeout(image.timer);
       state.image = null;
     },
   };
