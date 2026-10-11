@@ -1,12 +1,13 @@
 import { randomBytes, randomUUID } from "node:crypto";
 import { mkdir, rmdir, rm, symlink, writeFile, open } from "node:fs/promises";
 import path from "node:path";
-import { afterEach, expect, it } from "vitest";
+import { afterEach, expect, it, vi } from "vitest";
 import { normalizeRuntimeConfig } from "@/lib/db/runtime";
 import { createReceiveContext } from "./context";
 import { measuredQuota, requireQuota } from "./quota";
 import {
   ensureStorage,
+  currentReceiptLimits,
   importDirectory,
   importsDirectory,
   ownerExited,
@@ -87,7 +88,9 @@ it("uses actual logical bytes and held headroom, double names and conservative o
     await handle.close();
   }
   expect(() =>
-    requireQuota(measuredQuota({ bytes: 536870913, files: new Map() }, [])),
+    requireQuota(
+      measuredQuota({ bytes: 536870913, entries: 0, files: new Map() }, []),
+    ),
   ).toThrow("RECEIVE_QUOTA_EXCEEDED");
 });
 it("rejects each unknown directory, links and file +1 without partial scan success", async () => {
@@ -164,3 +167,60 @@ it("ESRCH alone proves stop; successful probe, PID reuse, EPERM and invalid PID 
     expect(ownerExited(1, probe(code))).toBe(false);
   expect(ownerExited(0, probe("ESRCH"))).toBe(false);
 });
+
+it("total entries 8192/+1, current receipt count and scan subdeadline fail closed", async () => {
+  const config = await fixture();
+  for (let i = 0; i < 481; i++) {
+    const dir = path.join(importsDirectory(config), randomUUID());
+    await mkdir(dir, { mode: 0o700 });
+    for (let j = 0; j < 16; j++)
+      await writeFile(path.join(dir, `attempt-${randomUUID()}.partial`), "", {
+        mode: 0o600,
+      });
+  }
+  const lastId = randomUUID(),
+    last = importDirectory(config, lastId);
+  await mkdir(last, { mode: 0o700 });
+  for (let j = 0; j < 13; j++)
+    await writeFile(path.join(last, `attempt-${randomUUID()}.partial`), "", {
+      mode: 0o600,
+    });
+  expect((await scan(config)).files.size).toBe(482);
+  await writeFile(path.join(last, `attempt-${randomUUID()}.partial`), "", {
+    mode: 0o600,
+  });
+  await expect(scan(config)).rejects.toThrow("RECEIVE_SCAN_LIMIT");
+  const counts = {
+    bytes: 0,
+    files: new Map([
+      [
+        lastId,
+        Array.from({ length: 4 }, () => ({
+          file: `stopped-${randomUUID()}.json`,
+          size: 1,
+        })),
+      ],
+    ]),
+  };
+  expect(() =>
+    currentReceiptLimits(
+      counts as Parameters<typeof currentReceiptLimits>[0],
+      lastId,
+    ),
+  ).toThrow("RECEIVE_SCAN_LIMIT");
+  let now = 0;
+  const clock = vi.spyOn(performance, "now").mockImplementation(() => {
+    now += 2500;
+    return now;
+  });
+  try {
+    await expect(
+      scanStorage(config, {
+        signal: new AbortController().signal,
+        deadlineMonotonicMs: 100000,
+      }),
+    ).rejects.toThrow("RECEIVE_SCAN_LIMIT");
+  } finally {
+    clock.mockRestore();
+  }
+}, 20000);

@@ -1,3 +1,4 @@
+import { createDatabase } from "../../src/lib/db/client";
 import { createHash, randomUUID } from "node:crypto";
 import { lstat, mkdir, readFile } from "node:fs/promises";
 import path from "node:path";
@@ -77,10 +78,11 @@ async function receive(
   const { context, dispose } = createReceiveContext(
     new AbortController().signal,
   );
+  const requestDb = await createDatabase(db.config, context);
   try {
     return await safeTestOperation(() =>
       service.receiveArchive(
-        db.app,
+        requestDb,
         actor.credentials,
         productId,
         id,
@@ -90,6 +92,7 @@ async function receive(
     );
   } finally {
     dispose();
+    await requestDb.close();
   }
 }
 async function recover(id: string, service = importReceiveService) {
@@ -102,10 +105,11 @@ async function recover(id: string, service = importReceiveService) {
   const { context, dispose } = createReceiveContext(
     new AbortController().signal,
   );
+  const requestDb = await createDatabase(db.config, context);
   try {
     return await safeTestOperation(() =>
       service.recoverReceive(
-        db.app,
+        requestDb,
         actor.credentials,
         productId,
         id,
@@ -115,6 +119,7 @@ async function recover(id: string, service = importReceiveService) {
     );
   } finally {
     dispose();
+    await requestDb.close();
   }
 }
 beforeAll(async () => {
