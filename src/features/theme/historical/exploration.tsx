@@ -13,6 +13,17 @@ export function HistoricalExploration() {
         </Link>
         <span>D1-A / 历史人物视觉研发</span>
       </header>
+      <aside className={styles.selectedDecision}>
+        <div>
+          <span>D1-A.1 / 作者已定向</span>
+          <p>
+            东方人物志为主，青金用于揭晓与收藏。以下原型作为研究留档，含李白示例的封面不用于消费者页面。
+          </p>
+        </div>
+        <Link href="/studies/historical/selected/cover">
+          查看统一视觉预览 <ArrowRight size={17} aria-hidden="true" />
+        </Link>
+      </aside>
       <div className={styles.explorationIntro}>
         <p className={styles.kicker}>FIRST COLLECTION · 千载同心</p>
         <h1>
@@ -28,7 +39,7 @@ export function HistoricalExploration() {
             <br />
             从一卷人物志，到一张值得收藏的角色卡。
           </p>
-          <span className={styles.reviewBadge}>视觉探索 · 待作者审阅</span>
+          <span className={styles.reviewBadge}>D1-A 原始研究 · 留档</span>
         </div>
       </div>
       <section className={styles.directions} aria-label="两个视觉方向">
@@ -96,8 +107,7 @@ export function HistoricalExploration() {
         <span>D1-A 边界</span>
         <p>
           当前是静态高保真视觉研究，人物档案为合成文案。没有答题、评分、保存或海报导出。AI
-          概念立绘与背景均待审核，视觉方向未冻结。下一步由作者选择方向、反馈构图和人物质感，再明确授权
-          D1-B。
+          概念立绘与背景均待审核。作者已确认folio主方向与cabinet揭晓语言；本页保留原始比较，后续以统一预览为准，D1-B另需明确授权。
         </p>
       </aside>
       <footer className={styles.explorationFooter}>

@@ -44,3 +44,12 @@ CI 配置按 [checkout](https://github.com/actions/checkout)、[setup-node](http
 
 - ADR-028 accepted：实际 dev 验证发现 Next 16.4 自动追加 agent rules 到 AGENTS.md，设置 agentRules=false 并移除框架生成块，项目治理显式维护；以启动前后文件哈希验证不会再次改写。
 - ADR-029 accepted：首次 CI 已真实成功，处理其运行提示：pnpm/action-setup 固定官方 v6.1.0（node24）commit，runner 固定 Ubuntu 24.04，避免旧动作运行时和 ubuntu-latest 标签迁移。调整后再次核实对应 run，记录真实结果。
+
+## D1-A.1 定向决策（2026-10-11）
+
+- ADR-030 accepted（作者明确决定）：首款历史人物以folio为主，cabinet仅吸收为深青金框揭晓/人物卡/海报角色。同一Token、字体、人物与山水材质贯穿长卷，不维护两套消费者流程；旧原型与截图保留研究身份。
+- ADR-031 accepted：正式未揭晓阶段不能提前暴露匹配人物。当前统一封面只用无人物山水且不接收report/identity；SSR/请求检查无具体人物。可信服务完成及授权结果路由仍planned，本轮静态synthetic页面不授予完成权威。
+- ADR-032 proposed：只读结果展示DTO包含身份/称号、维度、依据、优势/短板、相似人物、文化介绍与收藏海报字段。它不是运行时Schema、评分引擎或正式报告存储。
+- ADR-033 accepted：概念肖像只解析固定项目资源ID；未知不回退李白，缺相似资料不补造。正式人物/肖像绑定、资源审批及未知阻断待后续Schema/发布阶段。
+
+详细决策、揭晓边界与D1-B/C验收计划见 `D1A1_VISUAL_DECISION.md`；本轮不授权答题/恢复或发布。

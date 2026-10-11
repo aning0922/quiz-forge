@@ -62,17 +62,17 @@ test.describe("D1-A visual research", () => {
           expect(font).toContain("Historical Serif");
           const name = `historical-${direction}-${state}-${viewport.width}x${viewport.height}-chromium-${browser.version().split(".")[0]}`;
           await page.screenshot({
-            path: `docs/qa/d1a/${name}-full.png`,
+            path: `test-results/d1a-regression/${name}-full.png`,
             fullPage: true,
             animations: "disabled",
           });
           if (viewport.width === 390)
             await page.screenshot({
-              path: `docs/qa/d1a/${name}-first.png`,
+              path: `test-results/d1a-regression/${name}-first.png`,
               animations: "disabled",
             });
           await testInfo.attach(name, {
-            path: `docs/qa/d1a/${name}-full.png`,
+            path: `test-results/d1a-regression/${name}-full.png`,
             contentType: "image/png",
           });
         }
@@ -85,14 +85,14 @@ test.describe("D1-A visual research", () => {
       await page.goto("/studies/historical");
       await page.evaluate(() => document.fonts.ready);
       await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
-      await expect(page.getByText("视觉探索 · 待作者审阅")).toBeVisible();
+      await expect(page.getByText("D1-A 原始研究 · 留档")).toBeVisible();
       expect(
         await page.evaluate(
           () => document.documentElement.scrollWidth <= innerWidth,
         ),
       ).toBe(true);
       await page.screenshot({
-        path: `docs/qa/d1a/historical-comparison-${viewport.width}x${viewport.height}-chromium-${browser.version().split(".")[0]}-full.png`,
+        path: `test-results/d1a-regression/historical-comparison-${viewport.width}x${viewport.height}-chromium-${browser.version().split(".")[0]}-full.png`,
         fullPage: true,
         animations: "disabled",
       });
@@ -141,7 +141,7 @@ test.describe("D1-A visual research", () => {
         true,
       );
       await page.screenshot({
-        path: `docs/qa/d1a/historical-${direction}-cover-390x844-chromium-${browser.version().split(".")[0]}-reduced.png`,
+        path: `test-results/d1a-regression/historical-${direction}-cover-390x844-chromium-${browser.version().split(".")[0]}-reduced.png`,
         fullPage: true,
       });
     }
@@ -173,7 +173,7 @@ test.describe("D1-A visual research", () => {
         ),
       ).toBe(true);
       await page.screenshot({
-        path: `docs/qa/d1a/historical-${direction}-cover-390x844-chromium-${browser.version().split(".")[0]}-missing.png`,
+        path: `test-results/d1a-regression/historical-${direction}-cover-390x844-chromium-${browser.version().split(".")[0]}-missing.png`,
         fullPage: true,
       });
     }

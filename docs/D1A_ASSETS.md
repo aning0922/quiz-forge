@@ -41,3 +41,7 @@ Use case: stylized-concept. Asset type: vertical background painting for a refin
 ```
 
 请求参数：`transparent_background=false`。生成有细密画纸纤维，阅读区不直接复用整幅山水。
+
+## D1-A.1 延续
+
+作者已定folio主方向＋cabinet揭晓语言，未改变素材的商用/人物批准字段。封面复用无人物山水；新增定向标题子集385字见 `public/assets/fonts/d1a1/`，与旧397字研究子集分开。统一角色规范、缺图/未知ID及未揭晓素材隔离见 `D1A1_VISUAL_DECISION.md`。
