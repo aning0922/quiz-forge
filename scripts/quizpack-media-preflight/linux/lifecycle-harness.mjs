@@ -1,3 +1,4 @@
+import { watchOwnedClose } from "./owned-close.mjs";
 import { spawn } from "node:child_process";
 import { lstat } from "node:fs/promises";
 import { resolve } from "node:path";
@@ -174,13 +175,10 @@ safeMain(async () => {
   );
   let ownerClosed = false;
   let stdout = Buffer.alloc(0);
+  let stdoutBytes = 0;
+  let exceeded = false;
   let stderr = 0;
-  const closed = new Promise((ok) =>
-    child.once("close", () => {
-      ownerClosed = true;
-      ok();
-    }),
-  );
+  const closeObserver = watchOwnedClose(child);
   const ready = await new Promise((ok) => {
     const timer = setTimeout(() => ok(null), 2500);
     child.on("error", () => {
@@ -188,12 +186,15 @@ safeMain(async () => {
       ok(null);
     });
     child.stdout.on("data", (b) => {
-      stdout = Buffer.concat([stdout, b]);
-      if (stdout.length > 2048) {
+      stdoutBytes += b.length;
+      if (exceeded || stdoutBytes > 2048) {
+        exceeded = true;
+        child.kill("SIGKILL");
         clearTimeout(timer);
         ok(null);
         return;
       }
+      stdout = Buffer.concat([stdout, b]);
       try {
         const v = json(stdout);
         if (
@@ -210,15 +211,40 @@ safeMain(async () => {
     });
     child.stderr.on("data", (b) => {
       stderr += b.length;
-      if (stderr > 4096) {
+      if (exceeded || stderr > 4096) {
+        exceeded = true;
         child.kill("SIGKILL");
         clearTimeout(timer);
         ok(null);
       }
     });
   });
+  const cleanupDeadline = performance.now() + 5000;
   child.kill("SIGKILL");
-  await closed;
+  const closed = await closeObserver.waitUntil(cleanupDeadline);
+  ownerClosed = closed.closed;
+  if (!ownerClosed) {
+    closeObserver.releaseHandles();
+    record("crashed-parent-close-budget", false, {
+      outcome: "failed",
+      code: "STOP_UNCONFIRMED",
+      stopped: "unknown",
+      ownerClosed: false,
+      recordRetained: true,
+    });
+    await writePrivate(
+      resolve(root, "summary.json"),
+      JSON.stringify({
+        schema: "qf-linux-lifecycle.v1",
+        sourceCommit: process.env.GITHUB_SHA ?? "local",
+        cases,
+        accepted: false,
+        residual: "fixed-control-record-and-guard-retained",
+      }),
+    );
+    process.exitCode = 1;
+    return;
+  }
   if (!ready) throw new Error("CRASH_WINDOW_UNAVAILABLE");
   const persisted = await readPrivate(resolve(CACHE, "control", "record.json"));
   const own = json(persisted);
