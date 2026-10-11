@@ -365,13 +365,11 @@ test("a later CSRF refusal cannot erase an earlier unknown intent", async ({
         },
       });
   });
-  await page
-    .getByLabel("原包文件", { exact: true })
-    .setInputFiles({
-      name: "uncertain.quizpack",
-      mimeType: "application/octet-stream",
-      buffer: Buffer.from("synthetic cumulative unknown bytes"),
-    });
+  await page.getByLabel("原包文件", { exact: true }).setInputFiles({
+    name: "uncertain.quizpack",
+    mimeType: "application/octet-stream",
+    buffer: Buffer.from("synthetic cumulative unknown bytes"),
+  });
   await page
     .getByRole("button", { name: "创建原包接收意图", exact: true })
     .click();
@@ -429,13 +427,11 @@ test("malformed successful POST and malformed exact read preserve the original p
       throw new Error("IMPORTS_E2E_COMMITTED_RESPONSE_PROOF_FAILED");
     }
   });
-  await page
-    .getByLabel("原包文件", { exact: true })
-    .setInputFiles({
-      name: "malformed.quizpack",
-      mimeType: "application/octet-stream",
-      buffer: Buffer.from("synthetic malformed response bytes"),
-    });
+  await page.getByLabel("原包文件", { exact: true }).setInputFiles({
+    name: "malformed.quizpack",
+    mimeType: "application/octet-stream",
+    buffer: Buffer.from("synthetic malformed response bytes"),
+  });
   await page
     .getByRole("button", { name: "创建原包接收意图", exact: true })
     .click();
