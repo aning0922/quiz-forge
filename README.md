@@ -61,16 +61,16 @@ src/
   app/                       # 路由、布局、全局样式
   components/                # 领域无关组件与 shadcn/ui 基础组件
   features/
-    quiz/                    # 内容、版本、评分边界（仅说明）
-    quizpack/                # 商品包构建/验证/导入边界（提案类型）
-    theme/                   # D0 主题简报与研究展示
-    report/                  # 不可变报告及海报边界（仅说明）
-    product/                 # 商品及发布边界（仅说明）
+    quiz/                    # 合成演示题目与进度解析；正式评分待实现
+    quizpack/                # F1 局部运行时契约；ZIP/构建/导入待实现
+    theme/                   # 主题配方与历史人物研究体验
+    report/                  # 合成展示 DTO 与真实 PNG 导出；正式快照待实现
+    product/                 # 测评工作区合同与草稿纯逻辑；真实发布待实现
     ai-generation/           # Schema 草稿与审核边界（仅说明）
     fulfillment/             # 渠道适配边界（仅说明）
   lib/                       # 通用工具；db 为预留说明
   config/                    # 工程元信息
-public/assets/themes/        # 待制作素材清单，非最终图片
+public/assets/themes/        # 研究素材与清单；商业批准仍按manifest
 tests/e2e/                   # 入口、路由、布局、动态偏好烟测
 docs/                        # 产品、架构、数据、视觉、阶段证据
 ```
@@ -89,7 +89,7 @@ docs/                        # 产品、架构、数据、视觉、阶段证据
 - [模块架构](docs/ARCHITECTURE.md)、[数据模型](docs/DATA_MODEL.md)
 - [QuizPack 提案规格](docs/QUIZPACK_SPEC.md)、[三种报告模式](docs/REPORT_MODES.md)
 - [视觉系统](docs/VISUAL_SYSTEM.md)、[D1 视觉验收](docs/D1_VISUAL_ACCEPTANCE.md)
-- [30 天路线图（计划）](docs/ROADMAP_30D.md)、[技术决策](docs/DECISIONS.md)
+- [阶段开发路线（计划）](docs/ROADMAP_30D.md)、[技术决策](docs/DECISIONS.md)
 - [阶段进度与限制](docs/PROGRESS.md)、[D0 验收证据](docs/D0_ACCEPTANCE.md)
 - [开源复用研究计划](docs/OPEN_SOURCE_REUSE_PLAN.md)、[D0.1 验收](docs/D0_1_ACCEPTANCE.md)
 

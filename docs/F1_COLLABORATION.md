@@ -22,10 +22,19 @@ A 提供 `src/features/quizpack/foundation.ts`：
 - `getFoundationJsonSchema()`：返回 JSON Schema Draft 2020-12（结构层），交叉引用和归属需另调用validator。
 - fixture：`src/features/quizpack/fixtures/historical.foundation.json`；不使用真实素材、Key或用户数据；声明见证不执行评分。
 
-B 的草稿函数接收有界普通JSON内容，稳定productId/draftId；内容hash是canonical JSON SHA-256，不含revision/时间。create/update返回新对象，冲突/篡改hash/错误身份拒绝，更新使旧revision/hash审核证据失效。它是本地纯逻辑，调用方必须另过A的领域validator，不是数据库/权限/发布服务。
+B 的草稿函数接收有界普通JSON内容，稳定productId/draftId；内容hash是canonical JSON SHA-256，不含revision/时间。create/update返回新对象，冲突/篡改hash/错误身份拒绝，更新使旧revision/hash审核证据失效。它是本地纯逻辑，调用方必须以草稿封装productId作为targetProductId通过A的领域validator后才能创建/更新领域草稿（组合测试必须拒绝外层Product A搭配内容Product B），通用B函数单独成功不构成领域有效性，不是数据库/权限/发布服务。
 
 CLI：`pnpm foundation:check <file> --product <id>`（stdin使用`-`），`pnpm foundation:schema`输出结构Schema。输入限1MiB、JSON深度32；拒绝重复JSON对象键，非JSON值/原型污染键/非法参数；错误非零、JSON响应，无堆栈/源文/绝对本机路径。合法结构引用退出0也只表示局部校验，输出始终publishable=false和未验证项。脚本用固定tsx依赖；package/锁文件由总控修改。
 
 ## 阶段检查
 
 各开发聊天只运行单测、lint/typecheck等不占端口检查；最终由总控运行format/lint/typecheck/test/build/E2E（独占3100），审查聊天在非实施上下文复核。Schema、资源claim、fixture和本地草稿逻辑不能授予发布权威。真正ZIP、文件字节、规则可达性、组件注册、授权真实性与数据库事务均为未验证项。
+
+## 已建立的独立聊天
+
+- A「QuizForge F1 · 契约与资源归属」：GPT-6.1 Sol/high；聊天 `01a12b96-7351-73f0-9d8b-8cf655a7a0f2`。
+- B「QuizForge F1 · 草稿版本与校验工具」：GPT-6.1 Sol/high；聊天 `01a12b96-76b6-7d71-970d-cf9178122c1a`。
+- 「QuizForge F1 · 架构决策与独立审查」：GPT-6 Astra/high；聊天 `01a12b96-7cf0-72d0-8e20-e9c0a57b09a0`。
+- 文档基线 `4eedd0d` 已先于实现提交；固定依赖基线为 `3165e42`。总控不修改原主工作区或已暂停 D1-D worktree。
+
+F1补充边界：foundationBundle只承载内容；draft另封装身份/revision/hash。跨product资源一律拒绝，不信任包内共享/批准声明；共享资源能力留后续受信注册表。F1仅editing草稿，不提供审核/发布状态迁移。

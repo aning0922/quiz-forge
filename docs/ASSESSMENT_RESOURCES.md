@@ -24,7 +24,7 @@ Product
    └─ Component registration/version snapshot
 ```
 
-题目、选项、规则、结果、商品私有图片和字体都必须有相同的 `productId`。引用必须同时通过：引用方 Product 与被引用资源/定义的 Product 相同，或资源明确为已批准的共享资源。任何未声明共享关系的跨 Product 引用一律拒绝。
+题目、选项、规则、结果、商品私有图片和字体都必须有相同的 `productId`。引用必须同时通过：引用方 Product 与被引用资源/定义的 Product 相同。F1 的跨 Product 引用一律拒绝，不信任输入自报 shared/approved；未来共享资源必须由平台受信注册表和权限单独确认后才能引用。
 
 主题、类目和商品不混用：Theme 是视觉语言；Category 是稳定目录层级；Tag 是多选筛选属性；Collection 是可排序的运营专题；Product 才是测评工作区与版本根。Category/Tag/Collection 的编辑只影响目录投影，不能改写 ProductVersion、题库、会话或历史报告。
 
@@ -61,7 +61,7 @@ F1 validator 至少拒绝：未知顶级字段、空/重复 stable ID、跨 Prod
 
 ## 后续最小服务端与 DTO 边界
 
-F1 后第一条纵向闭环按以下顺序扩展，而非先做全量后台：
+以下仅列跨阶段能力关系；实施前置是 P1 包工具，阶段顺序以 ROADMAP_30D 为准，正式发布闭环在 P5 验收：
 
 1. PostgreSQL/Drizzle 迁移：Product、ProductDraft、版本化内容、Asset、运营身份。
 2. Studio：一个管理员、商品草稿编辑、revision conflict、资源 staging 与预览。

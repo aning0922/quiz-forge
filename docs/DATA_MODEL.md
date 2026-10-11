@@ -2,29 +2,29 @@
 
 以下是业务约束和拟议关系，没有已建表或迁移。ID 暂规划 UUID；版本内容使用版本化 JSON/规范化子表的组合，最终存储形状在数据库阶段评审。F1 只增加纯本地 `foundation.v1` 合同与归属/引用验证，不创建数据库、迁移、后台、ZIP 导入、评分或真实发布。
 
-| 概念                  | 关键字段（拟议）                                                                                                                         | 关系与约束                                                          |
-| --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
-| QuizPack              | id、packId、packVersion、formatVersion、manifest、hash、compatibility、importStatus                                                      | ID/版本唯一；同版本不同哈希拒绝；validated 不等于人工批准           |
-| QuizPackImport        | id、packId、hash、validationReport、status、reviewer、createdAt                                                                          | 原包/验证证据绑定；staged/validated/imported/rejected；失败无半发布 |
-| QuizDefinition        | id、slug、title、engineType、status                                                                                                      | 1:N QuizVersion；slug 唯一；身份与内容版本分离                      |
-| QuizVersion           | id、definitionId、version、schemaVersion、engineVersion、status、contentHash                                                             | 同测评版本号唯一；发布后不可编辑；可由不同商品视觉复用              |
-| Question              | id、versionId、stableId、prompt、order、nodeId?                                                                                          | 版本内 ID/顺序唯一；剧情节点关联；不跨版本引用                      |
-| Option                | id、questionId、stableId、label、order                                                                                                   | 选项归属校验；不能接受客户端分数                                    |
-| ScoringRule           | id、versionId、kind、schemaVersion、config                                                                                               | 三引擎数据合同；有限值、有效引用、无执行代码                        |
-| ResultProfile         | id、versionId、stableId、title、traits、content                                                                                          | 原型/结局属于本逻辑版本；视觉资源映射由视觉版本提供                 |
-| ThemeDefinition       | id、slug、version、tokens、componentRecipes、motionRules、status                                                                         | Theme System；不可变已审核设计语言，可多商品共用                    |
-| AssetPack             | id、version、manifest、hash、approvalStatus                                                                                              | 商品独立或共享；路径/尺寸/类型/授权/审核；缺必需素材阻断发布        |
-| ProductVisualVersion  | id、productId、version、themeVersionId、assetPackRefs、layoutRefs、interactionRefs、profileAssetMap                                      | 逻辑与素材解耦；一逻辑可对应多个视觉版本                            |
-| PageLayout            | id、visualVersionId、state、registryId、componentVersion、propsSchemaVersion、config                                                     | cover/question/resume/result/report/poster；只引用审核注册组件      |
-| ComponentRegistration | registryId、componentVersion、propsSchemaVersion、capabilities、runtimeRange                                                             | 由主工程受控发布管理，包不能新增可执行组件；旧引用需保留            |
-| ReportTemplate        | id、version、mode、baselineTemplate、compositionRules、resultRecipe、reportRecipe、posterRecipe                                          | DETERMINISTIC/COMPOSED/AI_ENHANCED；完整非 AI 基线必需              |
-| Product               | id、slug、title、currentPublishedVersionId、status                                                                                       | 商品稳定身份；draft/published/paused；发布指针变更不改旧会话        |
-| ProductVersion        | id、productId、version、quizPackId、quizVersionId、visualVersionId、reportTemplateVersionId、componentRefs、status                       | 固定完整发布组合；不可变；升级/回滚只影响新激活                     |
-| FulfillmentAdapter    | id、type、configRef、enabled、authorizationRef                                                                                           | 程序注册渠道，密钥外置，无授权不可启用                              |
-| AccessKey             | id、tokenDigest、productId、pinnedProductVersionId、status、expiresAt?、completedAt?                                                     | 摘要唯一；一 Key 最多正式完成一次及一个报告                         |
-| QuizSession           | id、accessKeyId、productVersionId、quizVersionId、answers、branchState、revision、status                                                 | accessKeyId 唯一；暂存/恢复，完成后答案锁定                         |
-| QuizReport            | id、accessKeyId、sessionId、answersSnapshot、scores、matchedProfile、ending、versions、mode、baselineSnapshot、finalSnapshot、sealStatus | Key/session 唯一；提交保存结论与完整基线；最终快照仅封存一次        |
-| AIReportJob           | id、reportId、idempotencyKey、providerRequestId、status、attempts、deadline、outputHash                                                  | reportId 唯一；最多接受一次成功增强；未知远端成功不盲重试           |
+| 概念                  | 关键字段（拟议）                                                                                                                         | 关系与约束                                                                                      |
+| --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| QuizPack              | id、packId、packVersion、formatVersion、manifest、hash、compatibility、importStatus                                                      | ID/版本唯一；同版本不同哈希拒绝；validated 不等于人工批准                                       |
+| QuizPackImport        | id、packId、hash、validationReport、status、reviewer、createdAt                                                                          | 原包/验证证据绑定；staged/validated/imported/rejected；失败无半发布                             |
+| QuizDefinition        | id、slug、title、engineType、status                                                                                                      | 1:N QuizVersion；slug 唯一；身份与内容版本分离                                                  |
+| QuizVersion           | id、definitionId、version、schemaVersion、engineVersion、status、contentHash                                                             | 同测评版本号唯一；发布后不可编辑；同一 Product 可绑定不同视觉版本；跨 Product 通过模板复制/冻结 |
+| Question              | id、versionId、stableId、prompt、order、nodeId?                                                                                          | 版本内 ID/顺序唯一；剧情节点关联；不跨版本引用                                                  |
+| Option                | id、questionId、stableId、label、order                                                                                                   | 选项归属校验；不能接受客户端分数                                                                |
+| ScoringRule           | id、versionId、kind、schemaVersion、config                                                                                               | 三引擎数据合同；有限值、有效引用、无执行代码                                                    |
+| ResultProfile         | id、versionId、stableId、title、traits、content                                                                                          | 原型/结局属于本逻辑版本；视觉资源映射由视觉版本提供                                             |
+| ThemeDefinition       | id、slug、version、tokens、componentRecipes、motionRules、status                                                                         | Theme System；不可变已审核设计语言，可多商品共用                                                |
+| AssetPack             | id、version、manifest、hash、approvalStatus                                                                                              | 商品独立或共享；路径/尺寸/类型/授权/审核；缺必需素材阻断发布                                    |
+| ProductVisualVersion  | id、productId、version、themeVersionId、assetPackRefs、layoutRefs、interactionRefs、profileAssetMap                                      | 逻辑与素材解耦；一逻辑可对应多个视觉版本                                                        |
+| PageLayout            | id、visualVersionId、state、registryId、componentVersion、propsSchemaVersion、config                                                     | cover/question/resume/result/report/poster；只引用审核注册组件                                  |
+| ComponentRegistration | registryId、componentVersion、propsSchemaVersion、capabilities、runtimeRange                                                             | 由主工程受控发布管理，包不能新增可执行组件；旧引用需保留                                        |
+| ReportTemplate        | id、version、mode、baselineTemplate、compositionRules、resultRecipe、reportRecipe、posterRecipe                                          | DETERMINISTIC/COMPOSED/AI_ENHANCED；完整非 AI 基线必需                                          |
+| Product               | id、slug、title、currentPublishedVersionId、status                                                                                       | 商品稳定身份；draft/published/paused；发布指针变更不改旧会话                                    |
+| ProductVersion        | id、productId、version、quizPackId、quizVersionId、visualVersionId、reportTemplateVersionId、componentRefs、status                       | 固定完整发布组合；不可变；升级/回滚只影响新激活                                                 |
+| FulfillmentAdapter    | id、type、configRef、enabled、authorizationRef                                                                                           | 程序注册渠道，密钥外置，无授权不可启用                                                          |
+| AccessKey             | id、tokenDigest、productId、pinnedProductVersionId、status、expiresAt?、completedAt?                                                     | 摘要唯一；一 Key 最多正式完成一次及一个报告                                                     |
+| QuizSession           | id、accessKeyId、productVersionId、quizVersionId、answers、branchState、revision、status                                                 | accessKeyId 唯一；暂存/恢复，完成后答案锁定                                                     |
+| QuizReport            | id、accessKeyId、sessionId、answersSnapshot、scores、matchedProfile、ending、versions、mode、baselineSnapshot、finalSnapshot、sealStatus | Key/session 唯一；提交保存结论与完整基线；最终快照仅封存一次                                    |
+| AIReportJob           | id、reportId、idempotencyKey、providerRequestId、status、attempts、deadline、outputHash                                                  | reportId 唯一；最多接受一次成功增强；未知远端成功不盲重试                                       |
 
 `Product` 是一个测评的唯一稳定工作区身份，不另设 `QuizProject`。`QuizDefinition`/`QuizVersion`、`ProductVisualVersion`、`ReportTemplate` 和商品私有 `AssetPack` 均需带有可验证的 product 归属，且由 ProductVersion 一次性冻结。不同 Product 不共享可变题目；未来可复用题组必须有单独版本并在发布时复制/冻结。
 
@@ -44,7 +44,7 @@
 - completed：原链接读取报告；不会返回新问卷、清空答案或重算。已完成结果不能随 Product 更新而变化。
 - revoked/expired：禁止新答题和正式提交。已完成报告的到期/撤销可见性需业务确认，默认需求是继续可读；不要静默用 Key 过期破坏已购结果。
 
-草稿生命周期建议为 `editing → validating → review → sealed/published`；编辑携带 expected revision，服务端只在匹配时更新并递增 revision。内容 hash 绑定验证证据和资源清单，编辑后 hash 改变即需重新验证。发布把草稿的依赖复制/固定为新的 ProductVersion，草稿不再原地变成已发布内容；下一轮编辑创建新草稿。
+未来草稿生命周期为 `editing → validating → review → sealed`，另创建 published ProductVersion；F1 仅有 editing 草稿纯逻辑，不实现这些服务端状态迁移；编辑携带 expected revision，服务端只在匹配时更新并递增 revision。内容 hash 绑定验证证据和资源清单，编辑后 hash 改变即需重新验证。发布把草稿的依赖复制/固定为新的 ProductVersion，草稿不再原地变成已发布内容；下一轮编辑创建新草稿。
 
 ## 发布完整性
 
