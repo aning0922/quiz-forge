@@ -1,0 +1,684 @@
+{
+  "schemaVersion": "foundation.v1",
+  "kind": "synthetic",
+  "product": {
+    "productId": "historical-synthetic",
+    "slug": "historical-synthetic",
+    "title": "历史人物 · foundation 合成参考包",
+    "categoryId": "entertainment",
+    "tags": ["synthetic", "historical"]
+  },
+  "contentVersion": "1.0.0",
+  "dimensions": [
+    {
+      "id": "initiative",
+      "productId": "historical-synthetic",
+      "version": "1.0.0",
+      "label": "合成主动轴"
+    },
+    {
+      "id": "reflection",
+      "productId": "historical-synthetic",
+      "version": "1.0.0",
+      "label": "合成思考轴"
+    }
+  ],
+  "questions": [
+    {
+      "id": "scenario-one",
+      "productId": "historical-synthetic",
+      "version": "1.0.0",
+      "prompt": "合成情境一：请选择演示行动。",
+      "options": [
+        {
+          "id": "scenario-one-a",
+          "productId": "historical-synthetic",
+          "version": "1.0.0",
+          "label": "合成选项 A",
+          "effects": [
+            {
+              "dimensionRef": {
+                "id": "initiative",
+                "productId": "historical-synthetic",
+                "version": "1.0.0"
+              },
+              "value": -50
+            },
+            {
+              "dimensionRef": {
+                "id": "reflection",
+                "productId": "historical-synthetic",
+                "version": "1.0.0"
+              },
+              "value": 50
+            }
+          ]
+        },
+        {
+          "id": "scenario-one-b",
+          "productId": "historical-synthetic",
+          "version": "1.0.0",
+          "label": "合成选项 B",
+          "effects": [
+            {
+              "dimensionRef": {
+                "id": "initiative",
+                "productId": "historical-synthetic",
+                "version": "1.0.0"
+              },
+              "value": 0
+            },
+            {
+              "dimensionRef": {
+                "id": "reflection",
+                "productId": "historical-synthetic",
+                "version": "1.0.0"
+              },
+              "value": 0
+            }
+          ]
+        },
+        {
+          "id": "scenario-one-c",
+          "productId": "historical-synthetic",
+          "version": "1.0.0",
+          "label": "合成选项 C",
+          "effects": [
+            {
+              "dimensionRef": {
+                "id": "initiative",
+                "productId": "historical-synthetic",
+                "version": "1.0.0"
+              },
+              "value": 50
+            },
+            {
+              "dimensionRef": {
+                "id": "reflection",
+                "productId": "historical-synthetic",
+                "version": "1.0.0"
+              },
+              "value": -50
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "scenario-two",
+      "productId": "historical-synthetic",
+      "version": "1.0.0",
+      "prompt": "合成情境二：请选择演示倾向。",
+      "options": [
+        {
+          "id": "scenario-two-a",
+          "productId": "historical-synthetic",
+          "version": "1.0.0",
+          "label": "合成选项 A",
+          "effects": [
+            {
+              "dimensionRef": {
+                "id": "initiative",
+                "productId": "historical-synthetic",
+                "version": "1.0.0"
+              },
+              "value": -50
+            },
+            {
+              "dimensionRef": {
+                "id": "reflection",
+                "productId": "historical-synthetic",
+                "version": "1.0.0"
+              },
+              "value": 50
+            }
+          ]
+        },
+        {
+          "id": "scenario-two-b",
+          "productId": "historical-synthetic",
+          "version": "1.0.0",
+          "label": "合成选项 B",
+          "effects": [
+            {
+              "dimensionRef": {
+                "id": "initiative",
+                "productId": "historical-synthetic",
+                "version": "1.0.0"
+              },
+              "value": 0
+            },
+            {
+              "dimensionRef": {
+                "id": "reflection",
+                "productId": "historical-synthetic",
+                "version": "1.0.0"
+              },
+              "value": 0
+            }
+          ]
+        },
+        {
+          "id": "scenario-two-c",
+          "productId": "historical-synthetic",
+          "version": "1.0.0",
+          "label": "合成选项 C",
+          "effects": [
+            {
+              "dimensionRef": {
+                "id": "initiative",
+                "productId": "historical-synthetic",
+                "version": "1.0.0"
+              },
+              "value": 50
+            },
+            {
+              "dimensionRef": {
+                "id": "reflection",
+                "productId": "historical-synthetic",
+                "version": "1.0.0"
+              },
+              "value": -50
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "rules": {
+    "kind": "archetype",
+    "declarationOnly": true,
+    "tieBreak": "result-order",
+    "resultOrder": [
+      {
+        "id": "synthetic-a",
+        "productId": "historical-synthetic",
+        "version": "1.0.0"
+      },
+      {
+        "id": "synthetic-b",
+        "productId": "historical-synthetic",
+        "version": "1.0.0"
+      },
+      {
+        "id": "synthetic-c",
+        "productId": "historical-synthetic",
+        "version": "1.0.0"
+      }
+    ],
+    "profiles": [
+      {
+        "resultRef": {
+          "id": "synthetic-a",
+          "productId": "historical-synthetic",
+          "version": "1.0.0"
+        },
+        "targets": [
+          {
+            "dimensionRef": {
+              "id": "initiative",
+              "productId": "historical-synthetic",
+              "version": "1.0.0"
+            },
+            "value": -50
+          },
+          {
+            "dimensionRef": {
+              "id": "reflection",
+              "productId": "historical-synthetic",
+              "version": "1.0.0"
+            },
+            "value": 50
+          }
+        ]
+      },
+      {
+        "resultRef": {
+          "id": "synthetic-b",
+          "productId": "historical-synthetic",
+          "version": "1.0.0"
+        },
+        "targets": [
+          {
+            "dimensionRef": {
+              "id": "initiative",
+              "productId": "historical-synthetic",
+              "version": "1.0.0"
+            },
+            "value": 0
+          },
+          {
+            "dimensionRef": {
+              "id": "reflection",
+              "productId": "historical-synthetic",
+              "version": "1.0.0"
+            },
+            "value": 0
+          }
+        ]
+      },
+      {
+        "resultRef": {
+          "id": "synthetic-c",
+          "productId": "historical-synthetic",
+          "version": "1.0.0"
+        },
+        "targets": [
+          {
+            "dimensionRef": {
+              "id": "initiative",
+              "productId": "historical-synthetic",
+              "version": "1.0.0"
+            },
+            "value": 50
+          },
+          {
+            "dimensionRef": {
+              "id": "reflection",
+              "productId": "historical-synthetic",
+              "version": "1.0.0"
+            },
+            "value": -50
+          }
+        ]
+      }
+    ]
+  },
+  "results": [
+    {
+      "id": "synthetic-a",
+      "productId": "historical-synthetic",
+      "version": "1.0.0",
+      "kind": "synthetic",
+      "label": "合成人物 A",
+      "portraitRef": {
+        "id": "synthetic-a-portrait",
+        "productId": "historical-synthetic",
+        "version": "1.0.0"
+      },
+      "reportTemplateRef": {
+        "id": "baseline-report",
+        "productId": "historical-synthetic",
+        "version": "1.0.0"
+      },
+      "baseline": {
+        "title": "合成人物 A · 演示基线",
+        "summary": "这是历史人物方向的独立合成展示 DTO，不对应真实人物或正式测评结论。",
+        "strengths": ["用于检验完整基线槽位与固定引用。"],
+        "tensions": ["所有倾向均为合成文案，未经评分或内容审核。"],
+        "reflection": "可在预览中检查信息组织；不据此判断真实个体。",
+        "disclaimer": "synthetic 合成参考包，仅用于结构与引用验证；不是正式题库、诊断或商业批准。"
+      },
+      "witness": {
+        "status": "declared-not-executed",
+        "answers": [
+          {
+            "questionRef": {
+              "id": "scenario-one",
+              "productId": "historical-synthetic",
+              "version": "1.0.0"
+            },
+            "optionRef": {
+              "id": "scenario-one-a",
+              "productId": "historical-synthetic",
+              "version": "1.0.0"
+            }
+          },
+          {
+            "questionRef": {
+              "id": "scenario-two",
+              "productId": "historical-synthetic",
+              "version": "1.0.0"
+            },
+            "optionRef": {
+              "id": "scenario-two-a",
+              "productId": "historical-synthetic",
+              "version": "1.0.0"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "synthetic-b",
+      "productId": "historical-synthetic",
+      "version": "1.0.0",
+      "kind": "synthetic",
+      "label": "合成人物 B",
+      "portraitRef": {
+        "id": "synthetic-b-portrait",
+        "productId": "historical-synthetic",
+        "version": "1.0.0"
+      },
+      "reportTemplateRef": {
+        "id": "baseline-report",
+        "productId": "historical-synthetic",
+        "version": "1.0.0"
+      },
+      "baseline": {
+        "title": "合成人物 B · 演示基线",
+        "summary": "这是历史人物方向的独立合成展示 DTO，不对应真实人物或正式测评结论。",
+        "strengths": ["用于检验完整基线槽位与固定引用。"],
+        "tensions": ["所有倾向均为合成文案，未经评分或内容审核。"],
+        "reflection": "可在预览中检查信息组织；不据此判断真实个体。",
+        "disclaimer": "synthetic 合成参考包，仅用于结构与引用验证；不是正式题库、诊断或商业批准。"
+      },
+      "witness": {
+        "status": "declared-not-executed",
+        "answers": [
+          {
+            "questionRef": {
+              "id": "scenario-one",
+              "productId": "historical-synthetic",
+              "version": "1.0.0"
+            },
+            "optionRef": {
+              "id": "scenario-one-b",
+              "productId": "historical-synthetic",
+              "version": "1.0.0"
+            }
+          },
+          {
+            "questionRef": {
+              "id": "scenario-two",
+              "productId": "historical-synthetic",
+              "version": "1.0.0"
+            },
+            "optionRef": {
+              "id": "scenario-two-b",
+              "productId": "historical-synthetic",
+              "version": "1.0.0"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "synthetic-c",
+      "productId": "historical-synthetic",
+      "version": "1.0.0",
+      "kind": "synthetic",
+      "label": "合成人物 C",
+      "portraitRef": {
+        "id": "synthetic-c-portrait",
+        "productId": "historical-synthetic",
+        "version": "1.0.0"
+      },
+      "reportTemplateRef": {
+        "id": "baseline-report",
+        "productId": "historical-synthetic",
+        "version": "1.0.0"
+      },
+      "baseline": {
+        "title": "合成人物 C · 演示基线",
+        "summary": "这是历史人物方向的独立合成展示 DTO，不对应真实人物或正式测评结论。",
+        "strengths": ["用于检验完整基线槽位与固定引用。"],
+        "tensions": ["所有倾向均为合成文案，未经评分或内容审核。"],
+        "reflection": "可在预览中检查信息组织；不据此判断真实个体。",
+        "disclaimer": "synthetic 合成参考包，仅用于结构与引用验证；不是正式题库、诊断或商业批准。"
+      },
+      "witness": {
+        "status": "declared-not-executed",
+        "answers": [
+          {
+            "questionRef": {
+              "id": "scenario-one",
+              "productId": "historical-synthetic",
+              "version": "1.0.0"
+            },
+            "optionRef": {
+              "id": "scenario-one-c",
+              "productId": "historical-synthetic",
+              "version": "1.0.0"
+            }
+          },
+          {
+            "questionRef": {
+              "id": "scenario-two",
+              "productId": "historical-synthetic",
+              "version": "1.0.0"
+            },
+            "optionRef": {
+              "id": "scenario-two-c",
+              "productId": "historical-synthetic",
+              "version": "1.0.0"
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "reportTemplates": [
+    {
+      "id": "baseline-report",
+      "productId": "historical-synthetic",
+      "version": "1.0.0",
+      "mode": "DETERMINISTIC",
+      "componentRef": {
+        "id": "synthetic-report-component",
+        "productId": "historical-synthetic",
+        "version": "1.0.0"
+      }
+    }
+  ],
+  "components": [
+    {
+      "id": "synthetic-cover-component",
+      "productId": "historical-synthetic",
+      "version": "1.0.0",
+      "registryId": "foundation-cover",
+      "propsSchemaVersion": "1.0.0"
+    },
+    {
+      "id": "synthetic-question-component",
+      "productId": "historical-synthetic",
+      "version": "1.0.0",
+      "registryId": "foundation-question",
+      "propsSchemaVersion": "1.0.0"
+    },
+    {
+      "id": "synthetic-resume-component",
+      "productId": "historical-synthetic",
+      "version": "1.0.0",
+      "registryId": "foundation-resume",
+      "propsSchemaVersion": "1.0.0"
+    },
+    {
+      "id": "synthetic-result-component",
+      "productId": "historical-synthetic",
+      "version": "1.0.0",
+      "registryId": "foundation-result",
+      "propsSchemaVersion": "1.0.0"
+    },
+    {
+      "id": "synthetic-report-component",
+      "productId": "historical-synthetic",
+      "version": "1.0.0",
+      "registryId": "foundation-report",
+      "propsSchemaVersion": "1.0.0"
+    },
+    {
+      "id": "synthetic-poster-component",
+      "productId": "historical-synthetic",
+      "version": "1.0.0",
+      "registryId": "foundation-poster",
+      "propsSchemaVersion": "1.0.0"
+    }
+  ],
+  "layouts": {
+    "cover": {
+      "componentRef": {
+        "id": "synthetic-cover-component",
+        "productId": "historical-synthetic",
+        "version": "1.0.0"
+      },
+      "resourceRefs": [
+        {
+          "id": "neutral-cover",
+          "productId": "historical-synthetic",
+          "version": "1.0.0"
+        }
+      ]
+    },
+    "question": {
+      "componentRef": {
+        "id": "synthetic-question-component",
+        "productId": "historical-synthetic",
+        "version": "1.0.0"
+      },
+      "resourceRefs": [
+        {
+          "id": "neutral-cover",
+          "productId": "historical-synthetic",
+          "version": "1.0.0"
+        }
+      ]
+    },
+    "resume": {
+      "componentRef": {
+        "id": "synthetic-resume-component",
+        "productId": "historical-synthetic",
+        "version": "1.0.0"
+      },
+      "resourceRefs": [
+        {
+          "id": "neutral-cover",
+          "productId": "historical-synthetic",
+          "version": "1.0.0"
+        }
+      ]
+    },
+    "result": {
+      "componentRef": {
+        "id": "synthetic-result-component",
+        "productId": "historical-synthetic",
+        "version": "1.0.0"
+      },
+      "resourceRefs": [
+        {
+          "id": "neutral-cover",
+          "productId": "historical-synthetic",
+          "version": "1.0.0"
+        }
+      ]
+    },
+    "report": {
+      "componentRef": {
+        "id": "synthetic-report-component",
+        "productId": "historical-synthetic",
+        "version": "1.0.0"
+      },
+      "resourceRefs": [
+        {
+          "id": "neutral-cover",
+          "productId": "historical-synthetic",
+          "version": "1.0.0"
+        }
+      ]
+    },
+    "poster": {
+      "componentRef": {
+        "id": "synthetic-poster-component",
+        "productId": "historical-synthetic",
+        "version": "1.0.0"
+      },
+      "resourceRefs": [
+        {
+          "id": "neutral-cover",
+          "productId": "historical-synthetic",
+          "version": "1.0.0"
+        }
+      ]
+    }
+  },
+  "resources": [
+    {
+      "id": "neutral-cover",
+      "version": "1.0.0",
+      "owner": {
+        "kind": "product",
+        "productId": "historical-synthetic"
+      },
+      "purpose": "cover",
+      "path": "assets/neutral-cover.png",
+      "mediaType": "image/png",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "bytes": 1,
+      "source": {
+        "kind": "synthetic",
+        "declaration": "仅合成资源清单占位；未生成、未附带任何文件字节。"
+      },
+      "licenseClaim": {
+        "status": "pending",
+        "commercialUse": "unverified",
+        "evidence": "占位声明；没有来源或商用授权核验证据。"
+      }
+    },
+    {
+      "id": "synthetic-a-portrait",
+      "version": "1.0.0",
+      "owner": {
+        "kind": "product",
+        "productId": "historical-synthetic"
+      },
+      "purpose": "portrait",
+      "path": "assets/synthetic-a-portrait.png",
+      "mediaType": "image/png",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "bytes": 1,
+      "source": {
+        "kind": "synthetic",
+        "declaration": "仅合成资源清单占位；未生成、未附带任何文件字节。"
+      },
+      "licenseClaim": {
+        "status": "pending",
+        "commercialUse": "unverified",
+        "evidence": "占位声明；没有来源或商用授权核验证据。"
+      }
+    },
+    {
+      "id": "synthetic-b-portrait",
+      "version": "1.0.0",
+      "owner": {
+        "kind": "product",
+        "productId": "historical-synthetic"
+      },
+      "purpose": "portrait",
+      "path": "assets/synthetic-b-portrait.png",
+      "mediaType": "image/png",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "bytes": 1,
+      "source": {
+        "kind": "synthetic",
+        "declaration": "仅合成资源清单占位；未生成、未附带任何文件字节。"
+      },
+      "licenseClaim": {
+        "status": "pending",
+        "commercialUse": "unverified",
+        "evidence": "占位声明；没有来源或商用授权核验证据。"
+      }
+    },
+    {
+      "id": "synthetic-c-portrait",
+      "version": "1.0.0",
+      "owner": {
+        "kind": "product",
+        "productId": "historical-synthetic"
+      },
+      "purpose": "portrait",
+      "path": "assets/synthetic-c-portrait.png",
+      "mediaType": "image/png",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "bytes": 1,
+      "source": {
+        "kind": "synthetic",
+        "declaration": "仅合成资源清单占位；未生成、未附带任何文件字节。"
+      },
+      "licenseClaim": {
+        "status": "pending",
+        "commercialUse": "unverified",
+        "evidence": "占位声明；没有来源或商用授权核验证据。"
+      }
+    }
+  ]
+}
