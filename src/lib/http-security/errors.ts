@@ -10,6 +10,18 @@ export type StudioErrorCode =
   | "CAPABILITY_DENIED"
   | "ALREADY_AUTHENTICATED"
   | "RATE_LIMITED"
+  | "PRODUCT_NOT_FOUND"
+  | "TAXONOMY_NOT_FOUND"
+  | "PRODUCT_ID_CONFLICT"
+  | "SLUG_CONFLICT"
+  | "METADATA_REVISION_CONFLICT"
+  | "TAXONOMY_REVISION_CONFLICT"
+  | "PRODUCT_ARCHIVED"
+  | "TAXONOMY_ARCHIVED"
+  | "TAG_LIMIT_EXCEEDED"
+  | "REVISION_LIMIT"
+  | "WRITE_BUSY"
+  | "WRITE_OUTCOME_UNKNOWN"
   | "STUDIO_UNAVAILABLE";
 
 const statuses: Record<StudioErrorCode, number> = {
@@ -22,11 +34,26 @@ const statuses: Record<StudioErrorCode, number> = {
   CAPABILITY_DENIED: 403,
   ALREADY_AUTHENTICATED: 409,
   RATE_LIMITED: 429,
+  PRODUCT_NOT_FOUND: 404,
+  TAXONOMY_NOT_FOUND: 404,
+  PRODUCT_ID_CONFLICT: 409,
+  SLUG_CONFLICT: 409,
+  METADATA_REVISION_CONFLICT: 409,
+  TAXONOMY_REVISION_CONFLICT: 409,
+  PRODUCT_ARCHIVED: 409,
+  TAXONOMY_ARCHIVED: 409,
+  TAG_LIMIT_EXCEEDED: 400,
+  REVISION_LIMIT: 409,
+  WRITE_BUSY: 409,
+  WRITE_OUTCOME_UNKNOWN: 503,
   STUDIO_UNAVAILABLE: 503,
 };
 
 export class StudioError extends Error {
-  constructor(readonly code: StudioErrorCode) {
+  constructor(
+    readonly code: StudioErrorCode,
+    readonly currentRevision?: number,
+  ) {
     super(code);
     this.name = "StudioError";
   }
@@ -42,7 +69,18 @@ export const privateHeaders = {
 export function errorResponse(error: unknown, requestId: string): Response {
   const code = error instanceof StudioError ? error.code : "STUDIO_UNAVAILABLE";
   return Response.json(
-    { code, requestId },
+    {
+      code,
+      requestId,
+      ...(error instanceof StudioError &&
+      (code === "METADATA_REVISION_CONFLICT" ||
+        code === "TAXONOMY_REVISION_CONFLICT") &&
+      Number.isInteger(error.currentRevision) &&
+      error.currentRevision! > 0 &&
+      error.currentRevision! <= 2147483647
+        ? { currentRevision: error.currentRevision }
+        : {}),
+    },
     {
       status: statuses[code],
       headers: {
