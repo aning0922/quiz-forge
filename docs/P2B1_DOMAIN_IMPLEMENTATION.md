@@ -52,3 +52,7 @@ Product创建先插入无关联根，再按固定UUID序锁目录；替换先锁
 B1 read事务也有10s事务期限，多个有限SQL累加仍可能触发服务器终止。现将`isStudioConnectionFailure`作为server-only内部辅助，由读取与写入共用；read回调与外层在致命终止时同样先终止请求客户端，再返回STUDIO_UNAVAILABLE，避免原生begin/scope在死socket排队。对读取count阶段注入真实自身backend终止与真实10s服务器事务期限，两个新增测试均无未捕获异常通过。服务签名/HTTP合同不变，原P2-A认证服务没有改动。
 
 最终重验：format:check、lint、typecheck、test（32文件461项）、test:db（6文件111项）、build全部通过；锁/未知结果定向15项通过。原生驱动忽略目录复现保留250ms观察窗口，实际输出固定CONNECTION_CLOSED与DRIVER_UNCAUGHT_NEXTWRITE（connection.js:255），exit1；主动client.end发生在观察之后。这不是包装器验收结果，包装器读写终止回归均通过。测试实例2c6167bc134d2a50f5ecee093960a3a6随后受管stop/status确认stopped，端口55421已释放；私有manifest/配置/PGDATA保留可恢复。无HTTP3100进程。
+
+## 总控/Astra接管的驱动限制
+
+独立源码审查指出：`end({timeout:0})`仅为临时规避，现有B1终止回归通过不能证明所有断连竞态中的旧事务/回调均失效，也不能证明旧回调不会写入替代连接。此保护不构成驱动彻底修复或连接生命周期安全保证。总控将独立评估受追踪的postgres3.4.9补丁；A不扩大workaround、不修改依赖/package/lock。上文真实测试结果仅覆盖列明的故障路径，不外推到其他断连时序。原生最小复现仍保存在本worktree忽略目录`.cache/p2b1-driver-repro.ts`，固定脱敏诊断与exit1。私有目录构建追踪排除由总控接管Next配置。
