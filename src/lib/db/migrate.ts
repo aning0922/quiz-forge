@@ -95,7 +95,7 @@ export async function migrateDatabase(
       await tx`REVOKE ALL ON ALL TABLES IN SCHEMA qf FROM ${app}`;
       await tx`REVOKE ALL ON ALL TABLES IN SCHEMA qf FROM PUBLIC`;
       await tx`REVOKE ALL ON ALL TABLES IN SCHEMA qf_meta FROM ${app}`;
-      // Table-level REVOKE does not remove column grants. Restore the complete column allowlist.
+      // PG18 table REVOKE also clears column grants; explicitly restate the application column boundary.
       await tx`REVOKE ALL(id,label,credential_digest,role,status,created_at,disabled_at) ON qf.operator FROM ${app}`;
       await tx`REVOKE ALL(id,token_digest,kind,operator_id,created_at,last_seen_at,idle_expires_at,absolute_expires_at,revoked_at,failed_attempts) ON qf.operator_session FROM ${app}`;
       await tx`REVOKE ALL(id,occurred_at,action,outcome,reason_code,actor_id,session_id,request_id) ON qf.audit_event FROM ${app}`;

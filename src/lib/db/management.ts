@@ -1,13 +1,11 @@
 import "server-only";
 import { randomBytes, randomUUID } from "node:crypto";
-import { spawn } from "node:child_process";
 import { constants } from "node:fs";
 import {
   chmod,
   lstat,
   mkdir,
   open,
-  readFile,
   realpath,
   unlink,
   writeFile,
@@ -18,6 +16,16 @@ import postgres from "postgres";
 import { z } from "zod";
 import { issueToken } from "../security/p2a-tokens";
 import { acquireAuthWriteLock } from "./auth-lock";
+import { runPg, type PgCommandRunner } from "./pg-command";
+import {
+  assertLocalPgdata,
+  readPostmaster,
+  startPostgres,
+  stopStartedPostgres,
+  PgStartError,
+  type LocalPgIdentity,
+  type StartedPostgres,
+} from "./pg-start";
 import { openSql, verifyDatabaseIdentity } from "./client";
 import { migrateDatabase } from "./migrate";
 import {
@@ -27,7 +35,6 @@ import {
   type P2aRuntimeConfig,
 } from "./runtime";
 
-const PG_BIN = "/opt/homebrew/bin";
 const idSchema = z.string().regex(/^[a-f0-9]{32}$/);
 const connectionSchema = z.strictObject({
   host: z.literal("127.0.0.1"),
@@ -162,32 +169,6 @@ export async function openManagedDatabase(instanceId: string) {
   }
   return { ...managed, sql, close: () => sql.end({ timeout: 3 }) };
 }
-async function runPg(program: string, args: string[]): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const child = spawn(path.join(PG_BIN, program), args, {
-      stdio: ["ignore", "pipe", "pipe"],
-      env: {
-        ...process.env,
-        PGPASSWORD: undefined,
-        PGHOST: undefined,
-        PGPORT: undefined,
-        PGDATABASE: undefined,
-        PGUSER: undefined,
-      },
-    });
-    let output = "";
-    child.stdout.on("data", (data: Buffer) => {
-      output += data.toString();
-    });
-    child.stderr.resume();
-    child.on("error", () => reject(new ManagementError("PG_COMMAND_FAILED")));
-    child.on("exit", (code) =>
-      code === 0
-        ? resolve(output)
-        : reject(new ManagementError("PG_COMMAND_FAILED")),
-    );
-  });
-}
 async function checkPort(port: number) {
   if (!Number.isInteger(port) || port < 1024 || port > 65535 || port === 5432)
     fail("PORT_INVALID");
@@ -201,49 +182,21 @@ async function checkPort(port: number) {
     );
   });
 }
-async function assertPgdata(manifest: P2aManifest) {
+function localIdentity(manifest: P2aManifest): LocalPgIdentity {
   if (manifest.mode !== "local" || !manifest.pgdata || !manifest.socket)
     fail("LOCAL_INSTANCE_REQUIRED");
-  for (const dir of [manifest.pgdata, manifest.socket]) {
-    const stat = await lstat(dir);
-    if (
-      !stat.isDirectory() ||
-      stat.isSymbolicLink() ||
-      (stat.mode & 0o777) !== 0o700 ||
-      (await realpath(dir)) !== dir
-    )
-      fail("PGDATA_IDENTITY_INVALID");
-  }
-  if (
-    (
-      await readFile(path.join(manifest.pgdata, "PG_VERSION"), "utf8")
-    ).trim() !== "18"
-  )
-    fail("PGDATA_VERSION_INVALID");
-  // The fixed config is part of the managed instance, never an existing cluster.
-  const config = await readFile(
-    path.join(manifest.pgdata, "postgresql.conf"),
-    "utf8",
-  );
-  if (
-    !config.includes(
-      `\n# quizforge.p2a:${manifest.instanceId}\nlisten_addresses = '127.0.0.1'\nport = ${manifest.port}\n`,
-    )
-  )
-    fail("PGDATA_IDENTITY_INVALID");
+  return {
+    instanceId: manifest.instanceId,
+    pgdata: manifest.pgdata,
+    socket: manifest.socket,
+    port: manifest.port,
+  };
+}
+async function assertPgdata(manifest: P2aManifest) {
+  await assertLocalPgdata(localIdentity(manifest));
 }
 async function verifyRunningPgdata(manifest: P2aManifest) {
-  await assertPgdata(manifest);
-  const lines = (
-    await readFile(path.join(manifest.pgdata!, "postmaster.pid"), "utf8")
-  ).split("\n");
-  if (
-    lines[1] !== manifest.pgdata ||
-    lines[3] !== String(manifest.port) ||
-    path.resolve(manifest.pgdata!, lines[4] ?? "") !== manifest.socket ||
-    lines[5] !== "127.0.0.1"
-  )
-    fail("PGDATA_IDENTITY_INVALID");
+  await readPostmaster(localIdentity(manifest));
 }
 
 async function provision(
@@ -273,19 +226,22 @@ async function provision(
   await sql`GRANT CONNECT ON DATABASE ${sql(database)} TO ${sql(app)}`;
 }
 
-export async function initLocalInstance(options: {
-  port: number;
-  origin: string;
-  purpose: "test" | "demo";
-}) {
+export async function initLocalInstance(
+  options: {
+    port: number;
+    origin: string;
+    purpose: "test" | "demo";
+  },
+  commands: PgCommandRunner = runPg,
+) {
   if (
     !isLocalOrigin(options.origin) ||
     !["test", "demo"].includes(options.purpose)
   )
     fail("INIT_ARGUMENTS_INVALID");
   if (
-    !(await runPg("postgres", ["--version"])).includes(" 18.4 ") ||
-    !(await runPg("initdb", ["--version"])).includes(" 18.4 ")
+    !(await commands("postgres", ["--version"])).includes(" 18.4 ") ||
+    !(await commands("initdb", ["--version"])).includes(" 18.4 ")
   )
     fail("PG_VERSION_INVALID");
   await checkPort(options.port);
@@ -295,10 +251,10 @@ export async function initLocalInstance(options: {
     appPassword = randomBytes(32).toString("base64url");
   const clusterRole = `qf_cluster_${instanceId}`;
   const passwordFile = path.join(paths.directory, "init-password");
-  let started = false;
+  let started: StartedPostgres | undefined;
   try {
     await writeFile(passwordFile, password + "\n", { flag: "wx", mode: 0o600 });
-    await runPg("initdb", [
+    await commands("initdb", [
       "-D",
       paths.pgdata,
       "-U",
@@ -325,8 +281,15 @@ export async function initLocalInstance(options: {
     await chmod(path.join(paths.pgdata, "pg_hba.conf"), 0o600);
     const log = path.join(paths.directory, "server.log");
     await writeFile(log, "", { flag: "wx", mode: 0o600 });
-    await runPg("pg_ctl", ["-D", paths.pgdata, "-l", log, "-w", "start"]);
-    started = true;
+    started = await startPostgres(
+      {
+        instanceId,
+        pgdata: paths.pgdata,
+        socket: paths.socket,
+        port: options.port,
+      },
+      commands,
+    );
     const cluster = openSql({
       host: "127.0.0.1",
       port: options.port,
@@ -392,15 +355,13 @@ export async function initLocalInstance(options: {
       await db.close();
     }
     return manifest;
-  } catch {
+  } catch (error) {
     // Never delete the new instance; preserve partial state for inspection. Only stop our just-started PGDATA.
-    let cleanupFailed = false;
-    if (started)
-      try {
-        await runPg("pg_ctl", ["-D", paths.pgdata, "-w", "-m", "fast", "stop"]);
-      } catch {
-        cleanupFailed = true;
-      }
+    let cleanupFailed =
+      error instanceof PgStartError &&
+      error.code === "START_FAILED_CLEANUP_REQUIRED";
+    if (started && !(await stopStartedPostgres(started, commands)))
+      cleanupFailed = true;
     try {
       await unlink(passwordFile);
     } catch (error) {
@@ -418,10 +379,12 @@ export async function initLocalInstance(options: {
 export async function manageLocalInstance(
   command: "start" | "stop" | "status" | "migrate",
   instanceId: string,
+  commands: PgCommandRunner = runPg,
 ) {
   const managed = await loadManagedInstance(instanceId);
   await assertPgdata(managed.manifest);
   if (command === "start") {
+    // Existing postmaster/occupied port are refusals before any start attempt or compensating stop.
     try {
       await lstat(path.join(managed.manifest.pgdata!, "postmaster.pid"));
       fail("INSTANCE_ALREADY_RUNNING");
@@ -429,14 +392,24 @@ export async function manageLocalInstance(
       if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
     }
     await checkPort(managed.manifest.port);
-    await runPg("pg_ctl", [
-      "-D",
-      managed.manifest.pgdata!,
-      "-l",
-      path.join(instancePaths(instanceId).directory, "server.log"),
-      "-w",
-      "start",
-    ]);
+    let started: StartedPostgres;
+    try {
+      started = await startPostgres(localIdentity(managed.manifest), commands);
+    } catch (error) {
+      if (error instanceof PgStartError) fail(error.code);
+      throw error;
+    }
+    try {
+      const db = await openManagedDatabase(instanceId);
+      await db.close();
+      return { instanceId, status: "running" };
+    } catch {
+      fail(
+        (await stopStartedPostgres(started, commands))
+          ? "START_FAILED_INSTANCE_STOPPED"
+          : "START_FAILED_CLEANUP_REQUIRED",
+      );
+    }
   }
   if (command === "status") {
     try {
@@ -459,7 +432,7 @@ export async function manageLocalInstance(
     await db.close();
   }
   if (command === "stop")
-    await runPg("pg_ctl", [
+    await commands("pg_ctl", [
       "-D",
       managed.manifest.pgdata!,
       "-w",
