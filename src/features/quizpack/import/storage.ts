@@ -246,8 +246,26 @@ export async function writeStopped(
 ) {
   const dir = importDirectory(config, id);
   await privateDirectory(dir);
-  const destination = path.join(dir, `stopped-${attempt.attemptId}.json`),
-    temp = `${destination}.tmp-${randomUUID()}`;
+  const destination = path.join(dir, `stopped-${attempt.attemptId}.json`);
+  // A published proof is immutable. Repeated calls may only read it, never create another temp.
+  try {
+    const existing = receiptSchema.safeParse(
+      await readBoundedJson(destination),
+    );
+    if (
+      !existing.success ||
+      existing.data.importId !== id ||
+      existing.data.attemptId !== attempt.attemptId ||
+      existing.data.fence !== attempt.fence ||
+      existing.data.ownerPid !== attempt.ownerPid ||
+      existing.data.ownerNonce !== attempt.ownerNonce
+    )
+      throw conflict();
+    return;
+  } catch (error) {
+    if (!missing(error)) throw conflict();
+  }
+  const temp = `${destination}.tmp-${randomUUID()}`;
   const handle = await open(
     temp,
     constants.O_WRONLY |

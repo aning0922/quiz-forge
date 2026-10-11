@@ -25,3 +25,27 @@ request DB黑洞修复：client/createDatabase及getDatabase支持可选`Databas
 修复后完整检查：format:check、全仓lint/typecheck及test通过（40文件552单元）；完整test:db16文件192用例通过，包含新的独占request DB与真实60秒期限。test:driver最初因缺专用QF_DRIVER_TEST_INSTANCE入口明确拒绝，随后指定A专属test实例重跑，结果待本轮结尾记录。
 
 后续账目边界修复：recover不创建任何归档/临时字节，仍有界扫描并验证全部held账目、停止证据及CAS；不因保守held headroom暂时超新接收准入额阻断停止后清理/对账。receive仍严格执行512MiB与新attempt峰值限制。真实“原存量+新峰值恰好512MiB→冻结DBunknown→显式恢复释放held”通过，避免合法接收后的恢复死锁。新尝试身份不变、同fence不续lease、released不可回held的真实触发器用例通过。包含此修复的两文件16域用例通过；最终整仓域复验待结尾记录。
+
+配额修复提交 `d67e6a22fb490a894405d10a6cb3a803bfccb289` 已推送。此处理已获得总控明确确认：不新增文件/attempt的恢复可安全减少占用，但新receive仍严格准入，不放宽扫描或文件限制，也不删除archive。
+
+证据层级与限制：
+
+| 边界           | A流证据                                                                                                                                                 |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 幂等与创建未知 | 同Product同key重放/异指纹冲突、20/+1；afterCommit故障注入后独立PG连接确认创建真实提交，exact key读取恢复原意图                                          |
+| 接收未知       | claim提交后注入应答丢失，未迭代body且足额held；完成提交后注入丢失，独立连接确认received且文件不变                                                       |
+| 停止证明       | 完整receipt及真实受控子进程活PID/终止后ESRCH；错误nonce/fence/2049bytes为真实文件；EPERM/PID复用/未知errno为明确纯适配器测试                            |
+| 流与期限       | 32MiB与额外1byte真实流/文件，写前拒绝；cancel挂起且next不settle时无receipt、不释放；真实60秒流期限单独90秒test timeout                                  |
+| 锁与网络       | PG实际terminate旧backend/旧reserved不可用；本地受控TCP转发器黑洞对storage握手/check/unlock与request DB首次verify/read/潜在write实际运行；不记录协议字节 |
+| 文件失败       | write/sync/link/unlink的窄beforeIo错误注入，结合真实私有文件、inode与PG账目；不声称真实耗尽磁盘                                                         |
+| 名称与配额     | 实际opendir/lstat计量、稀疏孤儿逻辑文件；1024目录、目录文件12+4/13+4、全次8192新增峰值/+1真实接收前拒绝且attempt未claim；边界clock为明确受控单元        |
+| CLI晚到IO      | 真PG锁断连，受控rename/unlink迟到；普通guard与恢复guard持续互斥，后继CLI被拒，旧目标不重放；残留恢复guard不递归清理                                     |
+| SQL保护        | 精确8表、列UPDATE权限、FK/唯一/有限审计；请求不变量/尝试身份/terminal事实/同fence续lease/released回held拒绝；不修改旧迁移                               |
+
+received始终`not-run`/`publishable:false`，没有ZIP/P1/content/Product包内归属/synthetic/图片/授权验证，也没有draft/blob/asset/发布。未获停止证明的活PID、EPERM或损坏guard需受控维护；只凭lease/锁空闲不能恢复。OS文件操作不构成硬实时保证，必须实际settle。A没有启动浏览器服务器、执行build或生产E2E，没有创建独立PR或宣称远端CI；这些由总控集成验收。
+
+最新驱动回归：指定A专属`QF_DRIVER_TEST_INSTANCE`后，ESM/CJS共46场景全部DRIVER_PASS。配额修复后format:check、全仓lint/typecheck再次通过。最终test:db正在复验，结束后记录实例停止状态。
+
+复审残留整改：namespace容量同时预留所有held且尚未落盘的目录及partial/archive/stopped/tmp峰值，不能凭锁失效、目录缺失或已发布receipt提前撤销预留；只有DB明确released后去除。每次upload最多发起一次receipt写入尝试，成功发布后不会再产生新temp；writeStopped已有完全匹配receipt时只读幂等返回，冲突拒绝。StorageLock.query改工厂，在assert之后才开始异步查询，避免旧连接的无人观察reject。
+
+本轮证据：19域单元、真实4文件33用例通过。新增late测试为真实PG+真实文件、窄受控mkdir/open延迟：1023目录时旧held晚到mkdir占第1024槽，后继拒绝claim/body；8184已扫描项加旧held缺文件与新attempt的总峰值超限时后继拒绝，原IO仍等实际settle。发布receipt后afterFreeze停顿、PG实际断锁、另一fresh恢复released后旧操作继续，没有新增temp写入。纯失效query工厂未调用且无unhandledRejection。配额修复后的完整test:db已通过16文件194用例，但发生在本轮三个残留修复前，完整复验须再执行。

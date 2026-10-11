@@ -111,11 +111,11 @@ export class StorageLock {
     }, 1000);
     this.timer.unref?.();
   }
-  async query<T>(promise: PromiseLike<T>): Promise<T> {
+  async query<T>(work: () => PromiseLike<T>): Promise<T> {
     this.assert();
     try {
       return await queryDeadline(
-        promise,
+        work(),
         this.client,
         this.invalidate,
         Math.min(2000, this.context ? remainingReceiveMs(this.context) : 2000),
@@ -128,9 +128,10 @@ export class StorageLock {
   async check() {
     this.assert();
     const [row] = await this.query(
-      this.connection<
-        { locked: boolean }[]
-      >`SELECT EXISTS(SELECT 1 FROM pg_locks WHERE pid=pg_backend_pid() AND locktype='advisory' AND classid=72461 AND objid=2 AND objsubid=2 AND granted) locked`,
+      () =>
+        this.connection<
+          { locked: boolean }[]
+        >`SELECT EXISTS(SELECT 1 FROM pg_locks WHERE pid=pg_backend_pid() AND locktype='advisory' AND classid=72461 AND objid=2 AND objsubid=2 AND granted) locked`,
     );
     if (!row?.locked) {
       this.invalidate();
