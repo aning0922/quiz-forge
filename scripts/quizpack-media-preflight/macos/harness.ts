@@ -40,6 +40,7 @@ import {
   loadPolicy,
   MAC_ROOT,
   MAC_PROBE,
+  MAC_IDENTITY_HELPER,
   POSIX_PROBE,
   REPO_ROOT,
   SANDBOX,
@@ -133,7 +134,10 @@ function compile(source: string, target: string) {
     },
   );
   writeFileSync(
-    join(runRoot, `${target === POSIX_PROBE ? "posix" : "mac"}-compile.stderr`),
+    join(
+      runRoot,
+      `${target === POSIX_PROBE ? "posix" : target === MAC_PROBE ? "mac" : "identity"}-compile.stderr`,
+    ),
     r.stderr ?? Buffer.alloc(0),
     { flag: "wx", mode: 0o600 },
   );
@@ -217,6 +221,13 @@ async function main() {
   compile(
     resolve(REPO_ROOT, "scripts/quizpack-media-preflight/macos/mac-probe.c"),
     MAC_PROBE,
+  );
+  compile(
+    resolve(
+      REPO_ROOT,
+      "src/features/quizpack/server/media/internal/macos/identity-helper.c",
+    ),
+    MAC_IDENTITY_HELPER,
   );
   const policy = loadPolicy();
   privateWrite(join(runRoot, "worker.sb"), policy.profile);
@@ -861,12 +872,12 @@ async function main() {
         before.ownerPid === process.pid && before.workerStart && before.pid,
       );
       const held = join(runRoot, "mac-probe-held");
-      renameSync(MAC_PROBE, held);
+      renameSync(MAC_IDENTITY_HELPER, held);
       let r: Awaited<ReturnType<typeof runHarnessCase>>;
       try {
         r = await pending;
       } finally {
-        renameSync(held, MAC_PROBE);
+        renameSync(held, MAC_IDENTITY_HELPER);
       }
       requireTrue(r.stopped === "unknown" && r.code === "STOP_UNCONFIRMED");
       const blocked = await runHarnessImage(
@@ -1039,7 +1050,7 @@ async function main() {
     "missing control helper does not launch or fall back",
     async () => {
       const held = join(runRoot, "helper-missing");
-      renameSync(MAC_PROBE, held);
+      renameSync(MAC_IDENTITY_HELPER, held);
       try {
         const r = await runHarnessImage(
           small,
@@ -1052,7 +1063,7 @@ async function main() {
             r.stopped === "not-started",
         );
       } finally {
-        renameSync(held, MAC_PROBE);
+        renameSync(held, MAC_IDENTITY_HELPER);
       }
     },
   );
@@ -1161,9 +1172,9 @@ async function main() {
       candidateComponentId,
     );
     requireTrue(r.outcome === "decoded" && r.stopped === "confirmed");
-    const originalSize = lstatSync(MAC_PROBE).size;
+    const originalSize = lstatSync(MAC_IDENTITY_HELPER).size;
     try {
-      appendFileSync(MAC_PROBE, Buffer.from([0]));
+      appendFileSync(MAC_IDENTITY_HELPER, Buffer.from([0]));
       const changed = await runHarnessCandidateImage(
         small,
         declaration(small, 2, 2),
@@ -1176,10 +1187,10 @@ async function main() {
           changed.stopped === "not-started",
       );
     } finally {
-      truncateSync(MAC_PROBE, originalSize);
+      truncateSync(MAC_IDENTITY_HELPER, originalSize);
     }
     try {
-      chmodSync(MAC_PROBE, 0o600);
+      chmodSync(MAC_IDENTITY_HELPER, 0o600);
       const changed = await runHarnessCandidateImage(
         small,
         declaration(small, 2, 2),
@@ -1192,7 +1203,7 @@ async function main() {
           changed.stopped === "not-started",
       );
     } finally {
-      chmodSync(MAC_PROBE, 0o700);
+      chmodSync(MAC_IDENTITY_HELPER, 0o700);
     }
     const altered = {
       ...actual,

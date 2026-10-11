@@ -21,6 +21,7 @@ import {
   FAULT_WORKER,
   POSIX_PROBE,
   MAC_PROBE,
+  MAC_IDENTITY_HELPER,
   REPO_ROOT,
   MAC_ROOT,
   type Policy,
@@ -31,7 +32,7 @@ import { join } from "node:path";
 type Identity = Extract<z.infer<typeof identitySchema>, { present: true }>;
 function inspectOwned(pid: number, executable: string): Identity | null {
   const r = spawnSync(
-    MAC_PROBE,
+    MAC_IDENTITY_HELPER,
     ["identity", String(pid), String(process.pid), executable],
     {
       env: { NODE_ENV: "production" },
