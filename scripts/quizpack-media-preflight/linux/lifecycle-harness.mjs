@@ -89,11 +89,16 @@ safeMain(async () => {
     const channel = await controlFault(mode);
     setHarnessEndpoint(channel.endpoint);
     let result;
+    let runningObserved = false;
     try {
       result = await executeSynthetic({
         scenario: "hang",
-        deadlineMonotonicMs: performance.now() + 1800,
+        deadlineMonotonicMs: performance.now() + 5000,
         hooks: {
+          diagnostic(event) {
+            if (event.phase === "container-state" && event.running === true)
+              runningObserved = true;
+          },
           afterCreate() {
             if (mode === "daemon-unavailable") channel.arm();
           },
@@ -104,6 +109,7 @@ safeMain(async () => {
       await channel.close();
     }
     const fired = channel.fired;
+    const faultEvidence = channel.evidence();
     if (mode === "daemon-unavailable") {
       const raw = await readPrivate(resolve(CACHE, "control", "record.json"));
       const busy = await executeSynthetic();
@@ -124,8 +130,16 @@ safeMain(async () => {
     } else
       record(
         mode,
-        fired && result.outcome === "failed" && result.stopped === "confirmed",
-        result,
+        fired &&
+          result.outcome === "failed" &&
+          result.stopped === "confirmed" &&
+          (mode !== "lose-stop-response" ||
+            (runningObserved &&
+              faultEvidence.startRequests === 1 &&
+              faultEvidence.killRequests === 1 &&
+              faultEvidence.lostReplies === 1 &&
+              faultEvidence.lastLostStatus === 204)),
+        { ...result, runningObserved, faultEvidence },
       );
   }
   // Actual named object rename causes inspect mismatch; no fake inspect response.
