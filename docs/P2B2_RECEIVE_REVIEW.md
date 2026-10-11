@@ -24,3 +24,7 @@ B HTTP/UI增量原提交3405076、集成1729a8e后，总控29项imports定向测
 接收服务、迁移、管理guard与实际故障验收仍在实施，未宣称B2-1技术验收通过。
 
 独立Astra在1729a8e另发现P2：首次创建unknown→exact-key查询0→原key重提收到CSRF_REJECTED时，catch覆盖unknown=false，错误允许丢弃首次key/input。已派B保留累计unknown，只有匹配原请求的有效结果才能清除；要求完整序列回归。独立29项现有测试通过，内存hook/响应桩可复现；不是浏览器验收，修复尚待复核。
+
+核心集成90be27d已通过591项unit、174项真实DB及格式/lint/类型，root旧v1实例追加0006/0007成功。独立Astra审核心登记4项P2并派A修：扫描最终IO跨5秒仍成功（已内存复现）；只核存量导致可创建第1025目录/超过条目峰值；storage健康/解锁响应黑洞无客户端2秒截止（2150ms仍挂探针）；request DB初始化/preflight/写事务同样缺总deadline/abort（25mscontext在150ms仍挂且无关闭探针）。最后一项冻结独占request DB生命周期补充，文件IO仍必须settle，不能裸race整个服务。没有真实网络黑洞故障验收，待修复后取得。
+
+B73d35e2→aa8099e的独立复审关闭累计unknown与恢复父子同步；响应校验仍留一项P2：错误码与HTTP status失配被当确定拒绝。502/CSRF_REJECTED与500/INVALID_REQUEST必须归unknown，合法403/CSRF仍可确定拒绝。已派B修，49项现有定向测试通过不代替该回归。
