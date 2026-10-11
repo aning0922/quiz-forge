@@ -93,6 +93,44 @@ describe("real P2-A database", () => {
       migrateDatabase(database.admin.sql, database.config, []),
     ).rejects.toMatchObject({ code: "MIGRATION_HISTORY_MISMATCH" });
   });
+  it("keeps Drizzle Date fields distinct from raw SQL timestamp strings", async () => {
+    const id = await operator();
+    const rows = await database.app.db.select().from(operators);
+    const [raw] = await database.app
+      .sql`SELECT created_at FROM qf.operator WHERE id=${id}`;
+    expect(rows[0]?.createdAt).toBeInstanceOf(Date);
+    expect(typeof raw?.created_at).toBe("string");
+    expect(Date.parse(String(raw?.created_at))).toBe(
+      rows[0]?.createdAt.getTime(),
+    );
+  });
+  it("replay removes PUBLIC column grants with the existing table REVOKE", async () => {
+    const sql = database.admin.sql;
+    const statements = [
+      "UPDATE qf.operator SET role='operator' WHERE false",
+      "UPDATE qf.operator_session SET absolute_expires_at=now() WHERE false",
+      "UPDATE qf.audit_event SET outcome='rejected' WHERE false",
+    ];
+    try {
+      await sql`GRANT UPDATE(role) ON qf.operator TO PUBLIC`;
+      await sql`GRANT UPDATE(absolute_expires_at) ON qf.operator_session TO PUBLIC`;
+      await sql`GRANT UPDATE(outcome) ON qf.audit_event TO PUBLIC`;
+      for (const statement of statements)
+        await database.app.sql.unsafe(statement);
+      await migrateDatabase(sql, database.config);
+      for (const statement of statements)
+        await expect(database.app.sql.unsafe(statement)).rejects.toMatchObject(
+          denied,
+        );
+      await preauth();
+      await database.app
+        .sql`UPDATE qf.operator_session SET last_seen_at=now(),idle_expires_at=absolute_expires_at,revoked_at=now(),failed_attempts=1`;
+    } finally {
+      await sql`REVOKE UPDATE(role) ON qf.operator FROM PUBLIC`;
+      await sql`REVOKE UPDATE(absolute_expires_at) ON qf.operator_session FROM PUBLIC`;
+      await sql`REVOKE UPDATE(outcome) ON qf.audit_event FROM PUBLIC`;
+    }
+  });
   it("rolls back both failed DDL and migration history", async () => {
     const definitions = await readMigrations();
     definitions.push({

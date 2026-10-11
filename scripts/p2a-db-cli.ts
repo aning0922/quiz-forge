@@ -1,5 +1,6 @@
 import { ManagementError } from "../src/lib/db/management";
 import { MigrationError } from "../src/lib/db/migrate";
+import { PgStartError } from "../src/lib/db/pg-start";
 
 export function parseArguments(
   args: string[],
@@ -25,7 +26,9 @@ export function parseArguments(
 }
 export function printSafeError(error: unknown) {
   const code =
-    (error instanceof ManagementError || error instanceof MigrationError) &&
+    (error instanceof ManagementError ||
+      error instanceof MigrationError ||
+      error instanceof PgStartError) &&
     /^[A-Z_]+$/.test(error.code)
       ? error.code
       : "P2A_OPERATION_FAILED";

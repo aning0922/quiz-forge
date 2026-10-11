@@ -14,6 +14,8 @@ postgres3.4.9对未显式固定的driver默认选项读取PG环境变量，早�
 
 `getDatabase(): Promise<P2aDatabase>` 加载私有配置并验证实际数据库；`createDatabase(config)` 允许已加载的严格配置。返回 `{sql:postgres.Sql,db:PostgresJsDatabase<typeof schema>,config,close:()=>Promise<void>}`。调用者在 `finally` 中 `await close()`；事务用 `sql.begin(async tx=>...)` 或 `db.transaction(...)`。没有模块导入/构建时连接或全局缓存。数据库不可用及身份不匹配都关闭连接并抛统一错误。raw SQL须显式schema。
 
+**时间返回形状不可混用**：drizzle(sql)会修改同一个postgres.js client的时间解析器。`db.select().from(operators)` 等Drizzle schema查询的timestamptz按Schema映射为Date；该P2aDatabase的 `app.sql` raw SQL相同字段实际返回string。原始postgres client（例如未经Drizzle的管理连接）还可能返回Date。应用服务必须用显式SQL `::text` 固定形状，并验证/解析成需要的时间类型；给tagged SQL加泛型不能改变真实返回值。真实数据库回归同时验证Drizzle Date、app.sql string及二者时间一致。
+
 `src/lib/security/p2a-tokens.ts` 导出合同规定的 `issueToken(kind)`、`parseToken(raw,kind)`、`digestToken(raw,kind)`、`csrfForToken(raw,kind)`、`verifyCsrf(raw,kind,csrf)`。TokenKind为credential/preauth/session；CSRF仅preauth/session。32随机bytes/canonical base64url、摘要域和CSRF域按合同冻结；数据库及日志不能保存raw。
 
 `openSql(connection)` 与 `verifyDatabaseIdentity(sql,config,role?)` 为管理/数据库测试的底层接口；应用服务应使用 `getDatabase/createDatabase`，不能绕过身份验证。管理配置不由Next加载。
@@ -49,3 +51,13 @@ PGDATA与socket均在新实例目录。为适应macOS Unix socket路径上限，
 最终本流检查：format:check、lint、typecheck通过；普通单测24文件/409项通过，真实PostgreSQL18.4数据库测试39项通过（包含锁等待后实际clock停用回归）。test:db缺配置与目标已停止均实际exit1；demo实际exit1且其合成operator/audit各1条保持，未被测试清理。CLI已实际验证init/migrate重放/start/status/stop、operator create及两次disable（第二次changed:false）。所有本流启动的三个实例均已停止并保留0700私有manifest/config/PGDATA，测试端口55421已释放。
 
 可恢复test实例为 `ea22f3cd3f343b56490e27e30bb87de5`，配置位于本工作树 `.cache/p2a/<id>/runtime.json` / `admin.json`；demo实例 `886c7d5a7cb2cd1f46811f67f8e20c87` 不可用于test:db。认证UI/E2E、build和完整阶段六项检查由总控集成串行执行。本机没有Docker CI service测试证据，CI入口仅完成拒绝边界与共享连接选项测试；官方固定镜像的远端bootstrap/GITHUB_ENV/job实际通过须由总控记录。没有创建PR、合main、部署或生产迁移。
+
+## 最终审查修复：启动未知结果
+
+初版仅在pg_ctl成功返回后记录started，遗漏“命令超时/拒绝但PG已启动”。init与管理start现在复用同一补偿实现：先核验本工作树私有PGDATA/version/marker，拒绝既有postmaster，取得新0600排他start.lock；每次启动通过 `-c cluster_name=<随机operation-tag>` 标记本次进程。失败后核对postmaster.pid的PGDATA/端口/socket/listen/PID/启动时间以及postmaster.opts中的本次唯一tag，确认才用匹配PGDATA的pg_ctl停止，并核验PID文件消失。确认与本次启动无关的进程不会停止；PID/事实/本次tag缺失或停止失败统一CLEANUP_REQUIRED，不能把瞬时无PID解释为没有延迟启动。未实际spawn且无PID的已知失败可明确NOT_STARTED。后续DB身份/初始化失败也仅补偿已记录相同PID/启动时间/tag的本次进程。
+
+排他guard不覆盖或删除既有文件，释放前核对本次文件inode；并行/旧guard要求检查，不能通过隐式reset解决。生命周期函数的可选PgCommandRunner仅用于内部受控故障回归，CLI仍固定本机Homebrew路径，没有自定义二进制或任意执行入口。真实PG手工探针在实际pg_ctl start成功后注入失败，验证manage start和init均调用stop且PID消失；已运行实例拒绝时零启动/停止命令。受控用例另覆盖没有确认事实的超时、未spawn、foreign/old/replacement postmaster、缺失/错误operation tag及stop失败，不需等待真实长超时。
+
+PUBLIC列授权疑点经真实PostgreSQL18.4实验未复现：分别向三表PUBLIC授予role/absolute_expires_at/outcome列UPDATE，app先可执行，再重放原迁移后全部拒绝，原合法四列UPDATE仍可用。PG18表级REVOKE同时撤销相关列权限；修正原错误注释，保留回归，未增加PUBLIC重复撤销SQL，也未修改已冻结迁移文件/checksum。
+
+本次修复验证：format:check/lint/typecheck通过；25文件/422项普通单测通过（含13项受控启动失败回归），真实PostgreSQL18.4测试41项通过。缺QUIZFORGE_P2A_CONFIG实际exit1。真实启动成功后注入失败的探针分别证明管理start返回START_FAILED_INSTANCE_STOPPED、init返回已确认停止的INIT_FAILED_INSTANCE_PRESERVED，二者start/stop各一次；既有运行实例拒绝时零命令。加入operation tag后再次重复探针亦通过，健康start/数据库验证/stop也通过。测试实例最终已停止，55421无监听；两个本次真实init故障探针的新私有目录保留供检查，均确认postmaster.pid消失，未盲删目录。完整集成/Auth/CI由总控继续核验，本流没有修改CI或冻结迁移SQL。
