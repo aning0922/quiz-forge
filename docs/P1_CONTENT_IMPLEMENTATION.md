@@ -24,7 +24,7 @@ builder 从 content.product.productId/schemaVersion/engine 和所有 layouts/rep
 
 ## 验证与限制
 
-内容里程碑：53 项相关单测通过；pnpm format:check、pnpm lint、pnpm typecheck 通过。媒体已完成，最终内容/媒体/限额 102 项单测通过；完整仓库 287 项单测通过。完整包 ZIP、IO、CLI 由 B 实现，六项集成检查与独立审查由总控串行执行，本分支不占用 3100。未实现 DB、导入、发布、评分或渲染。
+内容里程碑：53 项相关单测通过；pnpm format:check、pnpm lint、pnpm typecheck 通过。媒体已完成，内容/媒体里程碑当时内容/媒体/限额 102 项单测通过；完整仓库 287 项单测通过（补丁结果见下文）。完整包 ZIP、IO、CLI 由 B 实现，六项集成检查与独立审查由总控串行执行，本分支不占用 3100。未实现 DB、导入、发布、评分或渲染。
 
 ## 媒体与状态能力收口
 
@@ -41,3 +41,11 @@ worker 使用 sharp 0.35.5 的 failOn:warning、limitInputPixels、animated:true
 最终 A 流验证：pnpm format:check、pnpm lint、pnpm typecheck、pnpm test 全部通过。未运行 build/生产 E2E，不占用 3100；阶段六项集成检查、Linux CI 和 Astra 独立审查由总控记录。工程成功不替代授权/人工内容视觉审核，candidate 不能导入或发布。
 
 文本安全约束使用无 transform 的可导出 regex：非空白、无 HTML 尖括号/控制符、无网络/文件/data/javascript 协议和协议相对 URL。JSON Schema 的 allOf 明确包含这些 pattern，相关拒绝/允许用例验证了导出规则与运行时一致；有效前后空格保留，不静默修正字节。JSON Schema 仍不代替跨实体 references、真实文件完整性和媒体解码。
+
+## 媒体 deadline 防御补丁
+
+2026-10-12，继 78dc915 后的小型增量。deadline 使用 node:perf_hooks 的 performance.now() 单调时钟，避免系统墙钟调整。timer 只负责触发取消和 kill；排队获准、真正 spawn 前、child close 和解析成功返回前均显式比较绝对 deadline（到期即拒绝）。无需 spawn 已到期时直接 MEDIA_TIMEOUT；已启动任务仍等待 child close 后返回。外部 signal 已取消时优先 MEDIA_CANCELLED。父进程事件循环阻塞期间无法立即执行 kill 的系统限制仍存在，恢复后不会把晚到成功证据当作按时成功。
+
+核对 [sharp 官方 block/unblock API](https://sharp.pixelplumbing.com/api-utility/#unblock) 与固定 0.35.5 的类型及原生 loader 表后，worker 在接收数据前阻止 VipsForeignLoad，仅开放 VipsForeignLoadPngBuffer、VipsForeignLoadJpegBuffer、VipsForeignLoadWebpBuffer。此为 libvips 操作级加载器白名单，叠加父 magic/MIME/扩展名和 worker metadata 白名单；不等同 OS 文件/网络/内存隔离。原尺寸完整解码、failOn:warning 和 kill/reap 保持。
+
+新增 7 项可控单调时钟/protocol 测试，不靠 1ms 真机 deadline 复现 timer 延迟：同步处理过期、acquire yield 后过期、spawn 前过期、晚到 close、成功解析期间过期、取消优先、排队 grant 过期。另 2 项真实 worker 测试绕过父 magic，确认正常可解析的 TIFF/SVG 由库级 loader 限制先行拒绝；已有 PNG/JPEG/WebP、损坏像素、动画和回收测试继续执行。相关单测共 111 项（内容/媒体/共享限额）；完整仓库单测共 296 项。补丁 format:check/lint/typecheck/test 均通过，不改共享合同、B 流或依赖。
