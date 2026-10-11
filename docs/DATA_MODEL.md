@@ -30,6 +30,8 @@
 
 ## 生命周期
 
+消费者访问不要求账号。公开 Product 介绍必须从 published 版本投影安全字段；完整题库、评分规则和报告为受保护内容。演示独立授权，不等价于正式会话。
+
 - Draft → Review → Published：Schema 校验、评分夹具、完整素材与作者审核通过后发布；发布版本不再修改，返修创建新版本。
 - issued → active：首次激活固定完整发布组合，创建唯一会话；重进恢复同一会话。
 - active → completed：仅完整提交事务可消耗；同事务保存答案、评分、原型/结局、报告版本与完整非 AI 基线；AI 模式同时持久化唯一增强任务。网络超时重试返回原报告。
@@ -63,3 +65,17 @@ DETERMINISTIC 和 COMPOSED 在提交时立即封存 finalSnapshot。AI_ENHANCED 
 ## 编辑、升级与回滚
 
 后台题库/结果/素材编辑产生新的草稿包和商品版本，重新验证/人工审核后发布。对外 .quizpack 包必须能导出一致的数据与资产引用；原导入包作为审计证据保留。回滚切换当前发布指针，旧版本、资源、注册组件和报告 Schema 保持可读，不重新评分历史报告。
+
+## 消费者访问所需数据补充（仅规划）
+
+| 概念/扩展           | 最少拟议字段                                                          | 边界                                                                  |
+| ------------------- | --------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| Product 公共投影    | slug、发布版本、介绍、批准封面、娱乐说明、demoRefs                    | 仅 published；不包含题库、规则、Key、私密结果                         |
+| ProductDemo         | id、productVersionId、approvedScope、fixtureRefs、status              | 作者明确批准的演示，与正式会话/报告隔离                               |
+| AccessGrant         | id、accessKeyId、sessionId?、reportId?、tokenDigest、scope、expiresAt | Key 交换后的匿名会话授权；play/read-report 权限区分，不能获得后台权限 |
+| ReportShareGrant    | id、reportId、tokenDigest、allowedFields、revokedAt?                  | 用户主动创建、独立只读；分享摘要不含 Key/原访问链接/私密答案          |
+| UserKeyLink（未来） | accountId、accessKeyId、linkedAt、proofRef                            | 每 Key 最多一个账号归属，多个 Key 可关联同账号；需持有证明和主动确认  |
+
+AccessKey 的 productId/固定 ProductVersion 参与每次正式授权校验；完整提交仍由唯一约束和事务完成。普通消费者不需要 Account 行，账号关联后也不能增加次数或重算报告。管理身份与消费者 AccessGrant 独立。
+
+completed Key 的原链接交换为只读报告授权；active Key 可恢复同一会话。答题到期与报告可读留存分别处理，不因正常答题到期破坏既有结果。shareToken 不具备 play、submit 或账号关联权限。资源 ID 不是访问凭证，所有读取/修改均验证对应 grant，后续以越权和并发测试核实。本轮未创建上述表或路由。

@@ -1,10 +1,9 @@
-import path from "node:path";
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
-  // Keep the containing Python repository outside this standalone app's build root.
-  turbopack: { root: path.resolve(process.cwd()) },
+  // Project governance is maintained explicitly, not rewritten on dev startup.
+  agentRules: false,
 };
 
 export default nextConfig;

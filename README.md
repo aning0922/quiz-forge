@@ -2,17 +2,22 @@
 
 趣味测评商品研发、导入与运营平台。核心模式为 **Codex 精品商品研发 + QuizPack 标准化导入 + QuizForge 统一运行与运营**。面向移动端 H5，强调每个商品独立的视觉身份、确定性评分和一次正式完成后可反复查看的结果报告。后台 AI 为可选辅助，不是运行与发布依赖。
 
-**当前为 D0 工程初始化。** 可运行工程入口与主题研究页；尚无真实测评、数据库业务、AI 内容生成、用户 Key、支付、后台认证或商品发布功能。全部方向示例明确标注为临时演示数据。D1 必须另行授权。
+**当前为 D0.1 工程收口，D0 有条件通过。** 可运行工程入口与主题研究页；已补充访问模型和 CI 基线，尚无真实测评、消费者目录、数据库业务、用户 Key、AI 生成、支付、后台认证或商品发布功能。全部方向示例明确标注为临时演示数据。D1 必须另行授权。
 
 ## 本地运行
 
 需要 Node.js `20.19+`（20.x）或 `22.13+`，推荐团队后续统一受支持的 LTS；Corepack 与 Git。项目锁定 pnpm `10.32.1`，避免本机全局 pnpm 与 Node 不兼容。
 
 ```sh
+git clone https://github.com/aning0922/quiz-forge.git
 cd quiz-forge
+git rev-parse --show-toplevel
+git remote -v
 corepack pnpm install --frozen-lockfile
 corepack pnpm dev
 ```
+
+已检出仓库时直接从其根目录执行安装/开发命令，不再进入另一个 `quiz-forge/` 子目录。正式 `origin` 为本仓库，默认分支 main；不要对旧项目副本提交。
 
 在项目目录内也可使用 `pnpm`，Corepack 会读取 `packageManager`。本机默认 pnpm 11.9.0 在目录外与 Node 20.20.1 不兼容；不要运行全局升级修复其他项目。若发行版无 Corepack，先安装符合团队约定的工具再执行。
 
@@ -68,7 +73,13 @@ tests/e2e/                   # 入口、路由、布局、动态偏好烟测
 docs/                        # 产品、架构、数据、视觉、阶段证据
 ```
 
-目前位于现有私有父仓库的 `quiz-forge/` 子目录；没有嵌套 Git，无代码或运行路径依赖父项目，可以整体复制后独立安装。应用构建根显式指向本目录。
+正式仓库为 [aning0922/quiz-forge](https://github.com/aning0922/quiz-forge)，所有文件位于独立仓库根。Next 根据本仓库锁文件确定应用根，无旧目录的构建覆盖设置，也不依赖其他项目路径。
+
+## 消费者访问与 CI
+
+规划允许公开浏览已发布商品介绍及明确授权的演示。正式答题必须持有对应商品有效 AccessKey；可暂存恢复、最多正式完成一次，完成后原链接直接读取锁定报告。普通买家不强制注册；未来可主动把多个 Key 关联到账号。公开分享采用独立只读凭证，不携带原 Key。消费者与管理后台分开布局，详细规划见 [架构](docs/ARCHITECTURE.md)，尚未实现相关路由或访问校验。
+
+`.github/workflows/ci.yml` 在 main 推送、PR 和手工触发时，从根目录冻结安装并运行格式/lint/类型/单测/构建。CI 使用 Node 24、项目固定 pnpm，需在 GitHub [Actions](https://github.com/aning0922/quiz-forge/actions) 查看实际结果。E2E 保留本地阶段验收，暂不增加 CI 浏览器依赖。
 
 ## 维护文档
 
@@ -78,5 +89,6 @@ docs/                        # 产品、架构、数据、视觉、阶段证据
 - [视觉系统](docs/VISUAL_SYSTEM.md)、[D1 视觉验收](docs/D1_VISUAL_ACCEPTANCE.md)
 - [30 天路线图（计划）](docs/ROADMAP_30D.md)、[技术决策](docs/DECISIONS.md)
 - [阶段进度与限制](docs/PROGRESS.md)、[D0 验收证据](docs/D0_ACCEPTANCE.md)
+- [开源复用研究计划](docs/OPEN_SOURCE_REUSE_PLAN.md)、[D0.1 验收](docs/D0_1_ACCEPTANCE.md)
 
 尚未确认小红书经营类目与外部 H5 履约权限。平台保持独立，未来经合法授权再接入第三方销售及自动发货。
