@@ -1,35 +1,48 @@
 # P2-B1 验收记录
 
-2026-10-12（Asia/Shanghai）。状态：实施中，尚未技术验收。总控分支codex/catalog-workspace，基于P2-A最终38177fb；后者CI38163814070的两个job均已实际success。范围及固定接口见[实施合同](STUDIO_P2B1.md)。
+2026-10-12（Asia/Shanghai）。**已完成技术验收。** 总控分支codex/catalog-workspace，基于P2-A最终38177fb；最终代码为 `44a0d38c781feb9ea65156dab094a2c9f8907257`。[Draft PR #9](https://github.com/aning0922/quiz-forge/pull/9)堆叠于codex/studio-foundation，未合并main。范围见[实施合同](STUDIO_P2B1.md)，独立审查见[P2B1_REVIEW](P2B1_REVIEW.md)。
 
-## 当前证据
+## 实际交付
 
-公共实现7fd4fa3集成为6af3ab0，已包含Product/category/tag/product_tag四表、两次追加迁移、有限审计目标、严格DTO/查询、共享写事务鉴权和显式七表test reset。service-contract.ts只声明后续CRUD签名，不能冒充可运行的服务。
+- qf.product/category/tag/product_tag四表，稳定Product ID、单一主类目、8-slot标签硬约束、metadata revision、可恢复归档、唯一身份及有限审计。追加0002–0005，未改已应用0001 checksum。
+- 11个真实领域服务与12个路由文件/16个HTTP业务方法。写入同事务重验当前身份、权限、有效期和CAS；auth→Product→目录固定锁序，旧归档关联可保留/移除，新分配要求active。
+- `/studio/products`、详情和`/studio/taxonomy`，支持创建编辑、字面搜索、分页、筛选、归档恢复及只读。冲突保留输入；未知提交按固定ID或精确slug核实，不自动重发。新建目录不能自动丢弃其他行草稿或待核实状态。
+- Unicode/UTF-16与SQL文本一致性、管理停用时间的微秒精度修复。固定postgres3.4.9补丁封锁断连后的旧事务/reserve/savepoint/cursor工作；稳定失效标记与cause用于准确区分未知结果，临时主动关闭客户端的规避已移除。
+- `pnpm build`自动审计实际NFT追踪路径，排除本地私有状态、配置及测试产物。数据库CI增加真实驱动故障回归；依赖版本和补丁哈希固定，维护边界见[P2B1_DRIVER_PATCH](P2B1_DRIVER_PATCH.md)。
 
-后续实际领域实现081d16d集成为ea5a6f0，只读保护5120697集成为c1d012d，现已有真实11个服务、CAS/no-op、分类标签关联、字面查询、归档恢复和追加0004。总控升级自身实例并运行6文件111项真实DB测试通过（38.98秒）；A另已执行461项普通测试、格式/lint/类型/构建。HTTP/UI尚待集成，领域结果不代表完整B1验收。
+## 最终总控验证
 
-总控初次公共里程碑检查：format/lint/typecheck、30文件452单测、生产构建均通过；新隔离PG18.4实例上3文件61项真实DB通过。没有完成本阶段业务API、UI、E2E或独立最终审查；这些数字不代表B1完成。
+以下结果均针对最终集成代码44a0d38执行，不将各实现分支数字相加。
 
-总控实例为purpose=test，标识b014361dd7f84f82cd6591a335f9ce83，专属55423；配置在本工作树私有忽略目录。其他开发线使用自己新建的55421/55422实例，不共享配置。3100只由总控使用。
+| 检查              | 实际结果                                                                           |
+| ----------------- | ---------------------------------------------------------------------------------- |
+| pnpm format:check | 通过                                                                               |
+| pnpm lint         | 通过，零warning                                                                    |
+| pnpm typecheck    | 通过                                                                               |
+| pnpm test         | 35文件、528项通过                                                                  |
+| pnpm build        | 通过；自动trace守卫46份清单、0私有路径违规                                         |
+| pnpm test:db      | 10文件、154项真实PostgreSQL18.4测试通过，54.05秒                                   |
+| pnpm test:driver  | 46项ESM/CJS故障与兼容场景通过；缺配置不得skip                                      |
+| pnpm test:e2e     | 198项生产Chromium测试通过、10项既有跳过，约1.1分钟                                 |
+| 独立Astra审查     | 全部登记项闭合，无剩余P1/P2；最终定向69纯测试及29项无DB事务探针通过                |
+| 实际浏览器图检    | 320/375/390/430四宽及冲突、未知结果、归档、加载、读取失败状态，见P2B1_VISUAL_CHECK |
 
-## 尚在处理的具体问题
+代码head的[CI 38168728761](https://github.com/aning0922/quiz-forge/actions/runs/38168728761)已核实completed/success，checks与database两个job均成功。后续纯文档交付head的CI单独在PR核实，不用本代码CI冒充不同head的结果。
 
-- 初次Unicode差异已追加0004修复，但复审发现0003旧约束仍在：根再次实际探针确认X+U2065在Schema接受、DB23514拒绝。探针全部回滚，追加0005正在修复旧字符策略；不更改已应用checksum。
-- 已确认回滚的普通内部SQL错误现映射STUDIO_UNAVAILABLE；提交/连接未知保守处理。此分类已有真实回归，仍依赖下述驱动修复最终复审。
-- 写事务已显式READ COMMITTED，列表用独立短只读REPEATABLE READ；当前角色、撤销和到期回归通过。
-- postgres3.4.9实际服务器断连可触发socket=null未捕获异常，并存在旧事务句柄继续写入复用连接的风险。A的end(timeout:0)仅临时保护；独立专项正在实现受追踪补丁及子进程故障回归，不能以现有111项通过宣称驱动问题关闭。
-- Next构建追踪曾纳入私有.cache/p2a配置及PGDATA。已实施排除配置、31项边界测试和构建后守卫；根实际重建审计31份trace/0违规。最终UI集成及完整构建仍须再核，见BUILD_ARTIFACT_BOUNDARY.md。
+根检查日志位于忽略目录`.cache/p2b1-final-db.log`、`p2b1-final-driver.log`、`p2b1-final-e2e.log`。认证截图均为空凭证或登录后的非秘密界面；trace/HAR/video/自动失败截图关闭。完整E2E生产服务器独占3100、不复用未知服务；workspace项目依赖studio-auth，fixture不并发清库。
 
-以上是根与Astra独立检查的当前发现，尚未闭合，不声明业务安全验收通过。
+## 失败与修复的证据
 
-## 最终必须核验
+初次目录文本策略存在SQL与DTO差异，追加0004/0005修复，并拒绝会被UTF-8静默替换的孤立surrogate。管理停用竞争曾两次出现session_times/23514，已捕获并定位OID1184日期serializer截断微秒，改为先绑定OID25后由PG转换；固定精度及真实管理回归验证原因。
 
-四表的权限、8-slot硬上限、稳定ID/slug和Unicode文本规则；从P2-A升级/重放/checksum/失败回滚；成功审计与实际revision绑定，no-op无虚假审计。旧认证能力必须保持。
+原生postgres3.4.9真实事务超时曾触发nextWrite空socket未捕获异常；固定补丁与原始包对照、真实断连/替代连接及错误标记回归已覆盖。原有相同error对象推断回滚的漏洞在独立探针中复现，最终接入以稳定失效标记优先分类，不盲重试。
 
-真实两个连接的CAS、归档/分配顺序、旧归档引用保留与移除、归档恢复、revision上限；auth锁等待后及提交前的过期/撤销/停用/当前角色重验；确定回滚、提交未知和网络响应丢失分开呈现。
+首轮后台E2E为5通过/1失败/5未执行；CAS用例可能命中导航前列表的同名表单。改为实际URL、详情标记和form限定后，提交前及409后输入断言均保留并通过。目录自动刷新丢其他行草稿是真实产品问题，已另加保护与真实E2E。窄屏移除按钮折字和构建trace链接边界问题均已修复、复审和验证，详细链路见P2B1_REVIEW。
 
-真实HTTP覆盖来源/CSRF/只读、strict body/query/path、分页和字面搜索、精确slug恢复核实。生产UI覆盖空状态、创建、编辑、筛选、归档恢复、冲突保留输入、未知提交和只读；四移动宽度截图由助手实际检查。
+## 边界与下一步
 
-最终运行format:check、lint、typecheck、test、build、test:db、test:e2e。workspace E2E依赖studio-auth，两个fixture不并发清库；所有后台项目关闭trace/HAR/video/自动失败截图。工程检查不代替作者视觉、内容或素材批准。
+这是精确loopback、单运营空间的本机内测后台，不是生产连接、远端安全部署或消费者正式服务。没有导入、草稿/资源持久化、评分、AccessKey、发布或支付。目录revision不代表内容版本；代码/自动检查不授予内容效度、人物素材、字体或商业发布批准。
 
-交付将记录精确SHA、Draft PR、独立审查、代码及最终文档head的真实CI状态，随后停止测试进程并按已授权路线继续B2。当前无B1 PR，没有main合并、生产迁移、部署或发布。
+总控purpose=test实例b014361dd7f84f82cd6591a335f9ce83已stop/status确认停止；A、B与driver各自55421/55422/55424实例均已停止。私有配置/数据保留可恢复，不进Git，3100由测试框架退出释放。
+
+按已获P1–P5托管授权接续B2：意图与受限原包接收→服务端复验/资源归档→首个草稿及CAS→B3有限编辑恢复→P2-C结构预览送审。接收提案与拟冻结合同只描述下一阶段，不属于本次已实现功能；无需重新申请普通工程启动授权。main合并、生产迁移/部署、真实内容/素材与发布仍保留必要人工闸门。

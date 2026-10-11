@@ -1,6 +1,6 @@
 # 架构
 
-2026-10-12：F1、P1和P2-A已在堆叠分支完成技术验收，main仍为下文D1-C基线。P1提供本地内容/资源合同、受限ZIP、真实图片验证、构建与CLI；P2-A提供隔离数据库、迁移、运营认证。P2-B1现已接入Product目录、单一主类目、8标签、CAS、归档恢复及真实HTTP/Studio，正在最终验收，见[B1合同](STUDIO_P2B1.md)、[验收](P2B1_ACCEPTANCE.md)。所有新增能力仍在Draft PR #6–#9，没有自动进入main或生产环境。
+2026-10-12：F1、P1和P2-A已在堆叠分支完成技术验收，main仍为下文D1-C基线。P1提供本地内容/资源合同、受限ZIP、真实图片验证、构建与CLI；P2-A提供隔离数据库、迁移、运营认证。P2-B1现已接入Product目录、单一主类目、8标签、CAS、归档恢复及真实HTTP/Studio，技术验收已完成，见[B1合同](STUDIO_P2B1.md)、[验收](P2B1_ACCEPTANCE.md)。所有新增能力仍在Draft PR #6–#9，没有自动进入main或生产环境。
 
 B1的app路由只组合页面或调用HTTP适配层；features/studio负责可交互表单和受控DTO，features/product/workspace负责目录规则/应用服务/数据库访问，lib/auth的同事务鉴权在开始和提交前重验当前身份。错误提交不自动重发，界面保留冲突输入，目录自动刷新不能丢失未保存状态。运营metadata_revision独立于尚未实现的content revision。
 
