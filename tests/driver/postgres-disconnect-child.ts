@@ -18,16 +18,44 @@ function gate() {
   const promise = new Promise<void>((r) => (resolve = r));
   return { promise, resolve };
 }
-async function rejected(work: PromiseLike<unknown>) {
+type InvalidatedError = Error & {
+  code: "CONNECTION_CLOSED";
+  readonly quizforgeConnectionInvalidated: true;
+  cause: unknown;
+};
+function invalidated(error: unknown): asserts error is InvalidatedError {
+  check(error instanceof Error);
+  const candidate = error as Partial<InvalidatedError>;
+  check(candidate.code === "CONNECTION_CLOSED");
+  check(candidate.quizforgeConnectionInvalidated === true);
+  for (const property of ["cause", "quizforgeConnectionInvalidated"]) {
+    const descriptor = Object.getOwnPropertyDescriptor(error, property);
+    check(
+      descriptor &&
+        !descriptor.enumerable &&
+        !descriptor.writable &&
+        !descriptor.configurable,
+    );
+  }
+  for (const property of ["query", "parameters", "args", "types"])
+    check(!Object.prototype.propertyIsEnumerable.call(error, property));
+}
+async function rejected(work: PromiseLike<unknown>): Promise<InvalidatedError> {
   try {
     await work;
   } catch (error) {
-    const code = (error as { code?: unknown })?.code;
-    check(
-      typeof code === "string" &&
-        /^(CONNECTION_(CLOSED|DESTROYED|ENDED)|57P01|25P04)$/.test(code),
-    );
-    return code;
+    invalidated(error);
+    return error;
+  }
+  throw new Error("DRIVER_EXPECTED_REJECTION");
+}
+
+async function rejectedPoolQuery(work: PromiseLike<unknown>) {
+  try {
+    await work;
+  } catch (error) {
+    check((error as { code?: string }).code === "CONNECTION_CLOSED");
+    return;
   }
   throw new Error("DRIVER_EXPECTED_REJECTION");
 }
@@ -62,7 +90,11 @@ async function main() {
     };
     await template.end({ timeout: 0 });
     let capturedSocket: net.Socket | undefined;
-    if (scenario === "socket-write") {
+    if (
+      scenario === "socket-write" ||
+      scenario?.startsWith("inject-") ||
+      scenario?.startsWith("destroy-")
+    ) {
       Object.assign(options, {
         socket: async () => {
           const socket = net.createConnection({
@@ -115,7 +147,7 @@ async function main() {
       callbackDone = gate();
     let pid = 0;
     let stale: esmPostgres.TransactionSql | undefined;
-    let nestedRejection: Promise<string> | undefined;
+    let nestedRejection: Promise<InvalidatedError> | undefined;
     if (scenario?.startsWith("terminate-")) {
       const failed = rejected(
         client.begin(async (tx) => {
@@ -207,8 +239,13 @@ async function main() {
       await ready.promise;
       await sleep(50);
       await terminate(pid);
-      await failed;
+      const closed = await failed;
       await callbackDone.promise;
+      for (const outcome of outcomes) {
+        check(outcome.status === "rejected");
+        invalidated(outcome.reason);
+        check(outcome.reason === closed);
+      }
       check(
         outcomes.length === 4 && outcomes.every((x) => x.status === "rejected"),
       );
@@ -225,7 +262,14 @@ async function main() {
       ]);
       await sleep(50);
       await terminate(pid);
-      check((await work).every((x) => x.status === "rejected"));
+      const outcomes = await work;
+      let closed: unknown;
+      for (const outcome of outcomes) {
+        check(outcome.status === "rejected");
+        invalidated(outcome.reason);
+        closed ??= outcome.reason;
+        check(outcome.reason === closed);
+      }
       await client`SELECT 1`;
       const replacement = await client.reserve();
       reserved.release(); // Must not release a replacement reservation.
@@ -238,7 +282,7 @@ async function main() {
       await replacement`SELECT 1`;
       replacement.release();
       await pooled;
-      await rejected(insert(reserved, "late"));
+      check((await rejected(insert(reserved, "late"))) === closed);
       check(
         (await count("pipelined")) === 0 &&
           (await count("queued")) === 0 &&
@@ -276,7 +320,9 @@ async function main() {
               try {
                 await tx`SELECT pg_sleep(3)`;
               } catch (error) {
-                observedTimeout = (error as { code?: string }).code === "25P04";
+                invalidated(error);
+                observedTimeout =
+                  (error.cause as { code?: string }).code === "25P04";
                 throw error;
               }
             } else {
@@ -289,8 +335,14 @@ async function main() {
         }),
       );
       await ready.promise;
-      const timeoutCode = await failed;
-      check(timeoutCode === "25P04");
+      const timeoutError = await failed;
+      const timeoutCause = timeoutError.cause as {
+        code?: string;
+        severity?: string;
+      };
+      check(
+        timeoutCause?.code === "25P04" && timeoutCause.severity === "FATAL",
+      );
       await callbackDone.promise;
       await sleep(100);
       const [backend] =
@@ -298,9 +350,166 @@ async function main() {
       check(backend?.alive === false);
       if (scenario === "timeout-active") check(observedTimeout);
       check((await count("original")) === 0 && (await count("late")) === 0);
+    } else if (scenario?.startsWith("destroy-")) {
+      let txHandle: esmPostgres.TransactionSql | undefined;
+      const reserved =
+        scenario === "destroy-reserve" ? await client.reserve() : undefined;
+      const failed = reserved
+        ? undefined
+        : rejected(
+            client.begin(async (tx) => {
+              txHandle = tx;
+              await tx`SELECT 1`;
+              ready.resolve();
+              await resume.promise;
+              callbackDone.resolve();
+            }),
+          );
+      if (reserved) await reserved`SELECT 1`;
+      else await ready.promise;
+      check(capturedSocket);
+      let closedEvent = false;
+      capturedSocket.once("close", () => {
+        closedEvent = true;
+      });
+      capturedSocket.destroy();
+      const detected = await rejected(
+        insert(reserved ?? txHandle!, "destroyed-first"),
+      );
+      check(!closedEvent); // Exercise execute() before close-event invalidation.
+      check((detected.cause as { code?: string }).code === "CONNECTION_CLOSED");
+      const buildsBeforeResume = queryBuilds;
+      if (failed) {
+        check((await failed) === detected);
+        resume.resolve();
+        await callbackDone.promise;
+      }
+      await sleep(100);
+      check(queryBuilds === buildsBeforeResume);
+      check(
+        (await rejected(insert(reserved ?? txHandle!, "destroyed-late"))) ===
+          detected,
+      );
+      reserved?.release();
+      check(
+        (await count("destroyed-first")) === 0 &&
+          (await count("destroyed-late")) === 0,
+      );
+    } else if (scenario?.startsWith("inject-")) {
+      const raw: unknown =
+        scenario === "inject-reset"
+          ? Object.assign(new Error("SYNTHETIC_RESET"), { code: "ECONNRESET" })
+          : scenario === "inject-fatal"
+            ? Object.assign(new Error("SYNTHETIC_FATAL"), {
+                code: "ZZ999",
+                severity: "FATAL",
+              })
+            : scenario === "inject-frozen"
+              ? Object.freeze(new Error("SYNTHETIC_FROZEN"))
+              : scenario === "inject-primitive"
+                ? "SYNTHETIC_PRIMITIVE"
+                : new Error("SYNTHETIC_NO_CODE");
+      const originalProperties =
+        typeof raw === "object" && raw !== null ? Reflect.ownKeys(raw) : [];
+      const originalDescriptors =
+        typeof raw === "object" && raw !== null
+          ? Object.getOwnPropertyDescriptors(raw)
+          : null;
+      let outcomes: PromiseSettledResult<unknown>[] = [];
+      const body = async (
+        tx: esmPostgres.TransactionSql | esmPostgres.ReservedSql,
+      ) => {
+        const [backend] = await tx`SELECT pg_backend_pid() AS pid`;
+        pid = backend!.pid as number;
+        const work = Promise.allSettled([
+          tx`SELECT pg_sleep(3)`.execute(),
+          insert(tx, "injected-pipeline").execute(),
+          insert(tx, "injected-queued").execute(),
+        ]);
+        ready.resolve();
+        outcomes = await work;
+        await resume.promise;
+        try {
+          throw raw;
+        } finally {
+          callbackDone.resolve();
+        }
+      };
+      const reserved =
+        scenario === "inject-reserve" ? await client.reserve() : undefined;
+      const failed = reserved
+        ? body(reserved).then(
+            () => {
+              throw new Error("DRIVER_EXPECTED_REJECTION");
+            },
+            (error) => {
+              check(error === raw);
+            },
+          )
+        : rejected(
+            client.begin((tx) => {
+              stale = tx;
+              return body(tx);
+            }),
+          );
+      await ready.promise;
+      await sleep(50);
+      check(capturedSocket);
+      // Deliberate fault injection into the real socket error path, followed by
+      // real socket destruction. No fake Connection or global error handler.
+      capturedSocket.emit("error", raw);
+      capturedSocket.destroy();
+      // In-flight and queued rejections may settle after the outer begin race.
+      for (let i = 0; outcomes.length === 0 && i < 100; i++) await sleep(10);
+      const closed = reserved
+        ? ((outcomes[0] as PromiseRejectedResult).reason as unknown)
+        : await failed;
+      invalidated(closed);
+      check(closed !== raw && closed.cause === raw);
+      // JSON can contain the stable connection code, never nested original data.
+      check(!JSON.stringify(closed).includes("SYNTHETIC_"));
+      for (const outcome of outcomes) {
+        check(outcome.status === "rejected");
+        invalidated(outcome.reason);
+        check(outcome.reason === closed);
+      }
+      check(outcomes.length === 3);
+      const replacement = await client.reserve();
+      const buildsBeforeResume = queryBuilds;
+      resume.resolve();
+      await callbackDone.promise;
+      await failed;
+      await sleep(100);
+      check(queryBuilds === buildsBeforeResume);
+      const late = await rejected(insert(reserved ?? stale!, "injected-late"));
+      check(late === closed);
+      reserved?.release();
+      await replacement`SELECT 1`;
+      replacement.release();
+      for (const label of [
+        "injected-pipeline",
+        "injected-queued",
+        "injected-late",
+      ])
+        check((await count(label)) === 0);
+      if (typeof raw === "object" && raw !== null) {
+        check(Reflect.ownKeys(raw).length === originalProperties.length);
+        const after = Object.getOwnPropertyDescriptors(raw);
+        for (const property of originalProperties) {
+          const key = property as keyof typeof after;
+          const before = originalDescriptors![key]!;
+          const current = after[key]!;
+          check(
+            current.value === before.value &&
+              current.writable === before.writable &&
+              current.configurable === before.configurable &&
+              current.enumerable === before.enumerable,
+          );
+        }
+      }
     } else if (scenario === "socket-write") {
       // The real TCP socket closes between buffered execute() and setImmediate.
-      const pending = rejected(insert(client, "buffered").execute());
+      const pending = rejectedPoolQuery(insert(client, "buffered").execute());
       await Promise.resolve();
       check(capturedSocket);
       capturedSocket.destroy();
@@ -344,6 +553,21 @@ async function main() {
       });
       check((await count("cursor-replacement")) === 1);
     } else if (scenario === "compatibility") {
+      const original = new Error("SYNTHETIC_NORMAL_ROLLBACK");
+      const normalError = await client
+        .begin(async (tx) => {
+          await insert(tx, "normal-rollback");
+          throw original;
+        })
+        .then(
+          () => {
+            throw new Error("DRIVER_EXPECTED_REJECTION");
+          },
+          (error) => error as unknown,
+        );
+      check(normalError === original);
+      check(!("quizforgeConnectionInvalidated" in original));
+      check((await count("normal-rollback")) === 0);
       let escaped: esmPostgres.TransactionSql | undefined;
       await client.begin(async (tx) => {
         escaped = tx;

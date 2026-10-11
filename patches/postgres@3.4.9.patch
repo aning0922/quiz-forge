@@ -1,17 +1,19 @@
 diff --git a/cjs/src/connection.js b/cjs/src/connection.js
-index 07f6716702ac888215c86ad6e0071aaf55ae519c..1ac12cf3a5784f5b0f3321873d191581bada53f3 100644
+index 07f6716702ac888215c86ad6e0071aaf55ae519c..f672b23e21e32e7005522affd4351fd0c3e2fe3e 100644
 --- a/cjs/src/connection.js
 +++ b/cjs/src/connection.js
-@@ -157,6 +157,9 @@ function Connection(options, queues = {}, { onopen = noop, onend = noop, onclose
-     if (terminated)
-       return queryError(q, Errors.connection('CONNECTION_DESTROYED', options))
+@@ -155,7 +155,10 @@ function Connection(options, queues = {}, { onopen = noop, onend = noop, onclose
  
-+    if (!socket || socket.destroyed || !socket.writable)
-+      return queryError(q, Errors.connection('CONNECTION_CLOSED', options))
+   function execute(q) {
+     if (terminated)
+-      return queryError(q, Errors.connection('CONNECTION_DESTROYED', options))
++      return queryError(q, error(Errors.connection('CONNECTION_DESTROYED', options)))
 +
++    if (!socket || socket.destroyed || !socket.writable)
++      return queryError(q, error(Errors.connection('CONNECTION_CLOSED', options)))
+ 
      if (stream)
        return queryError(q, Errors.generic('COPY_IN_PROGRESS', 'You cannot execute queries during copy'))
- 
 @@ -252,10 +255,14 @@ function Connection(options, queues = {}, { onopen = noop, onend = noop, onclose
    }
  
@@ -29,15 +31,47 @@ index 07f6716702ac888215c86ad6e0071aaf55ae519c..1ac12cf3a5784f5b0f3321873d191581
    }
  
    function connectTimedOut() {
-@@ -382,6 +389,7 @@ function Connection(options, queues = {}, { onopen = noop, onend = noop, onclose
-     if (connection.queue === queues.connecting && options.host[retries + 1])
-       return
+@@ -380,11 +387,13 @@ function Connection(options, queues = {}, { onopen = noop, onend = noop, onclose
  
-+    connection.onclose && connection.onclose(err)
+   function error(err) {
+     if (connection.queue === queues.connecting && options.host[retries + 1])
+-      return
++      return err
+ 
++    connection.onclose && (err = connection.onclose(err) || err)
      errored(err)
      while (sent.length)
        queryError(sent.shift(), err)
-@@ -425,6 +433,7 @@ function Connection(options, queues = {}, { onopen = noop, onend = noop, onclose
++    return err
+   }
+ 
+   function errored(err) {
+@@ -401,11 +410,11 @@ function Connection(options, queues = {}, { onopen = noop, onend = noop, onclose
+       err = new Error(err)
+ 
+     'query' in err || 'parameters' in err || Object.defineProperties(err, {
+-      stack: { value: err.stack + query.origin.replace(/.*\n/, '\n'), enumerable: options.debug },
+-      query: { value: query.string, enumerable: options.debug },
+-      parameters: { value: query.parameters, enumerable: options.debug },
+-      args: { value: query.args, enumerable: options.debug },
+-      types: { value: query.statement && query.statement.types, enumerable: options.debug }
++      stack: { value: err.stack + query.origin.replace(/.*\n/, '\n'), enumerable: options.debug && !err.quizforgeConnectionInvalidated },
++      query: { value: query.string, enumerable: options.debug && !err.quizforgeConnectionInvalidated },
++      parameters: { value: query.parameters, enumerable: options.debug && !err.quizforgeConnectionInvalidated },
++      args: { value: query.args, enumerable: options.debug && !err.quizforgeConnectionInvalidated },
++      types: { value: query.statement && query.statement.types, enumerable: options.debug && !err.quizforgeConnectionInvalidated }
+     })
+     query.reject(err)
+   }
+@@ -419,12 +428,13 @@ function Connection(options, queues = {}, { onopen = noop, onend = noop, onclose
+     )
+   }
+ 
+-  function terminate() {
++  function terminate(force = false) {
+     terminated = true
+-    if (stream || query || initial || sent.length)
++    if (stream || query || initial || sent.length || force)
        error(Errors.connection('CONNECTION_DESTROYED', options))
  
      clearImmediate(nextWriteTimer)
@@ -45,7 +79,7 @@ index 07f6716702ac888215c86ad6e0071aaf55ae519c..1ac12cf3a5784f5b0f3321873d191581
      if (socket) {
        socket.removeListener('data', data)
        socket.removeListener('connect', connected)
-@@ -438,6 +447,7 @@ function Connection(options, queues = {}, { onopen = noop, onend = noop, onclose
+@@ -438,6 +448,7 @@ function Connection(options, queues = {}, { onopen = noop, onend = noop, onclose
      remaining = 0
      incomings = null
      clearImmediate(nextWriteTimer)
@@ -53,7 +87,7 @@ index 07f6716702ac888215c86ad6e0071aaf55ae519c..1ac12cf3a5784f5b0f3321873d191581
      socket.removeListener('data', data)
      socket.removeListener('connect', connected)
      idleTimer.cancel()
-@@ -810,11 +820,15 @@ function Connection(options, queues = {}, { onopen = noop, onend = noop, onclose
+@@ -810,11 +821,15 @@ function Connection(options, queues = {}, { onopen = noop, onend = noop, onclose
    }
  
    function ErrorResponse(x) {
@@ -71,7 +105,7 @@ index 07f6716702ac888215c86ad6e0071aaf55ae519c..1ac12cf3a5784f5b0f3321873d191581
      }
    }
  
-@@ -837,15 +851,19 @@ function Connection(options, queues = {}, { onopen = noop, onend = noop, onclose
+@@ -837,15 +852,21 @@ function Connection(options, queues = {}, { onopen = noop, onend = noop, onclose
    }
  
    async function PortalSuspended() {
@@ -80,8 +114,10 @@ index 07f6716702ac888215c86ad6e0071aaf55ae519c..1ac12cf3a5784f5b0f3321873d191581
      try {
 -      const x = await Promise.resolve(query.cursorFn(result))
 +      const x = await Promise.resolve(q.cursorFn(result))
-+      if (query !== q || socket !== currentSocket || !socket || socket.destroyed || !socket.writable)
++      if (query !== q || socket !== currentSocket)
 +        return queryError(q, Errors.connection('CONNECTION_CLOSED', options))
++      if (!socket || socket.destroyed || !socket.writable)
++        return queryError(q, error(Errors.connection('CONNECTION_CLOSED', options)))
        rows = 0
        x === CLOSE
 -        ? write(Close(query.portal))
@@ -97,25 +133,40 @@ index 07f6716702ac888215c86ad6e0071aaf55ae519c..1ac12cf3a5784f5b0f3321873d191581
    }
  
 diff --git a/cjs/src/index.js b/cjs/src/index.js
-index f09c61c7e998f411560b95c9a8e1ed6a97972c11..665214e19ec00ac3a83e32380216cfed6ec12dc9 100644
+index f09c61c7e998f411560b95c9a8e1ed6a97972c11..5061488d422f700d683541726f98e239d06259e8 100644
 --- a/cjs/src/index.js
 +++ b/cjs/src/index.js
-@@ -210,6 +210,14 @@ function Postgres(a, b) {
+@@ -200,6 +200,13 @@ function Postgres(a, b) {
+     return await sql`select pg_notify(${ channel }, ${ '' + payload })`
+   }
+ 
++  function connectionInvalidated(cause) {
++    return Object.defineProperties(Errors.connection('CONNECTION_CLOSED', options), {
++      cause: { value: cause },
++      quizforgeConnectionInvalidated: { value: true }
++    })
++  }
++
+   async function reserve() {
+     const queue = Queue()
+     const c = open.length
+@@ -210,6 +217,15 @@ function Postgres(a, b) {
          closed.length && connect(closed.shift(), query)
        })
  
 +    let closedError
 +    const invalidate = e => {
-+      closedError || (closedError = e)
++      closedError || (closedError = connectionInvalidated(e))
 +      while (queue.length)
 +        queue.shift().reject(closedError)
++      return closedError
 +    }
 +    c.onclose = invalidate
 +
      move(c, reserved)
      c.reserved = () => queue.length
        ? c.execute(queue.shift())
-@@ -218,6 +226,10 @@ function Postgres(a, b) {
+@@ -218,6 +234,10 @@ function Postgres(a, b) {
  
      const sql = Sql(handler)
      sql.release = () => {
@@ -126,7 +177,7 @@ index f09c61c7e998f411560b95c9a8e1ed6a97972c11..665214e19ec00ac3a83e32380216cfed
        c.reserved = null
        onopen(c)
      }
-@@ -225,27 +237,41 @@ function Postgres(a, b) {
+@@ -225,27 +245,42 @@ function Postgres(a, b) {
      return sql
  
      function handler(q) {
@@ -168,14 +219,15 @@ index f09c61c7e998f411560b95c9a8e1ed6a97972c11..665214e19ec00ac3a83e32380216cfed
 +    }
 +
 +    function invalidate(e) {
-+      closedError || (closedError = e)
++      closedError || (closedError = connectionInvalidated(e))
 +      while (queries.length)
 +        queries.shift().reject(closedError)
 +      rejectClose && rejectClose(closedError)
++      return closedError
      }
  
      async function scope(c, fn, name) {
-@@ -262,9 +288,13 @@ function Postgres(a, b) {
+@@ -262,9 +297,13 @@ function Postgres(a, b) {
            Promise.resolve(Array.isArray(x) ? Promise.all(x) : x).then(resolve, reject)
          })
  
@@ -189,7 +241,7 @@ index f09c61c7e998f411560b95c9a8e1ed6a97972c11..665214e19ec00ac3a83e32380216cfed
          await (name
            ? sql`rollback to ${ sql(name) }`
            : sql`rollback`
-@@ -290,6 +320,8 @@ function Postgres(a, b) {
+@@ -290,6 +329,8 @@ function Postgres(a, b) {
  
        function handler(q) {
          q.catch(e => uncaughtError || (uncaughtError = e))
@@ -198,7 +250,7 @@ index f09c61c7e998f411560b95c9a8e1ed6a97972c11..665214e19ec00ac3a83e32380216cfed
          c.queue === full
            ? queries.push(q)
            : c.execute(q) || move(c, full)
-@@ -298,6 +330,7 @@ function Postgres(a, b) {
+@@ -298,6 +339,7 @@ function Postgres(a, b) {
  
      function onexecute(c) {
        connection = c
@@ -206,20 +258,31 @@ index f09c61c7e998f411560b95c9a8e1ed6a97972c11..665214e19ec00ac3a83e32380216cfed
        move(c, reserved)
        c.reserved = () => queries.length
          ? c.execute(queries.shift())
+@@ -382,7 +424,7 @@ function Postgres(a, b) {
+   }
+ 
+   async function destroy(resolve) {
+-    await Promise.all(connections.map(c => c.terminate()))
++    await Promise.all(connections.map(c => c.terminate(true)))
+     while (queries.length)
+       queries.shift().reject(Errors.connection('CONNECTION_DESTROYED', options))
+     resolve()
 diff --git a/src/connection.js b/src/connection.js
-index 1b1cccde43b4570d5d071d6ffaab2669b3c2065a..de498b1fe240226167487a800ae305d8ac3a5fb4 100644
+index 1b1cccde43b4570d5d071d6ffaab2669b3c2065a..1790488d16d83356a2ea691f15b80a34080a5dce 100644
 --- a/src/connection.js
 +++ b/src/connection.js
-@@ -157,6 +157,9 @@ function Connection(options, queues = {}, { onopen = noop, onend = noop, onclose
-     if (terminated)
-       return queryError(q, Errors.connection('CONNECTION_DESTROYED', options))
+@@ -155,7 +155,10 @@ function Connection(options, queues = {}, { onopen = noop, onend = noop, onclose
  
-+    if (!socket || socket.destroyed || !socket.writable)
-+      return queryError(q, Errors.connection('CONNECTION_CLOSED', options))
+   function execute(q) {
+     if (terminated)
+-      return queryError(q, Errors.connection('CONNECTION_DESTROYED', options))
++      return queryError(q, error(Errors.connection('CONNECTION_DESTROYED', options)))
 +
++    if (!socket || socket.destroyed || !socket.writable)
++      return queryError(q, error(Errors.connection('CONNECTION_CLOSED', options)))
+ 
      if (stream)
        return queryError(q, Errors.generic('COPY_IN_PROGRESS', 'You cannot execute queries during copy'))
- 
 @@ -252,10 +255,14 @@ function Connection(options, queues = {}, { onopen = noop, onend = noop, onclose
    }
  
@@ -237,15 +300,47 @@ index 1b1cccde43b4570d5d071d6ffaab2669b3c2065a..de498b1fe240226167487a800ae305d8
    }
  
    function connectTimedOut() {
-@@ -382,6 +389,7 @@ function Connection(options, queues = {}, { onopen = noop, onend = noop, onclose
-     if (connection.queue === queues.connecting && options.host[retries + 1])
-       return
+@@ -380,11 +387,13 @@ function Connection(options, queues = {}, { onopen = noop, onend = noop, onclose
  
-+    connection.onclose && connection.onclose(err)
+   function error(err) {
+     if (connection.queue === queues.connecting && options.host[retries + 1])
+-      return
++      return err
+ 
++    connection.onclose && (err = connection.onclose(err) || err)
      errored(err)
      while (sent.length)
        queryError(sent.shift(), err)
-@@ -425,6 +433,7 @@ function Connection(options, queues = {}, { onopen = noop, onend = noop, onclose
++    return err
+   }
+ 
+   function errored(err) {
+@@ -401,11 +410,11 @@ function Connection(options, queues = {}, { onopen = noop, onend = noop, onclose
+       err = new Error(err)
+ 
+     'query' in err || 'parameters' in err || Object.defineProperties(err, {
+-      stack: { value: err.stack + query.origin.replace(/.*\n/, '\n'), enumerable: options.debug },
+-      query: { value: query.string, enumerable: options.debug },
+-      parameters: { value: query.parameters, enumerable: options.debug },
+-      args: { value: query.args, enumerable: options.debug },
+-      types: { value: query.statement && query.statement.types, enumerable: options.debug }
++      stack: { value: err.stack + query.origin.replace(/.*\n/, '\n'), enumerable: options.debug && !err.quizforgeConnectionInvalidated },
++      query: { value: query.string, enumerable: options.debug && !err.quizforgeConnectionInvalidated },
++      parameters: { value: query.parameters, enumerable: options.debug && !err.quizforgeConnectionInvalidated },
++      args: { value: query.args, enumerable: options.debug && !err.quizforgeConnectionInvalidated },
++      types: { value: query.statement && query.statement.types, enumerable: options.debug && !err.quizforgeConnectionInvalidated }
+     })
+     query.reject(err)
+   }
+@@ -419,12 +428,13 @@ function Connection(options, queues = {}, { onopen = noop, onend = noop, onclose
+     )
+   }
+ 
+-  function terminate() {
++  function terminate(force = false) {
+     terminated = true
+-    if (stream || query || initial || sent.length)
++    if (stream || query || initial || sent.length || force)
        error(Errors.connection('CONNECTION_DESTROYED', options))
  
      clearImmediate(nextWriteTimer)
@@ -253,7 +348,7 @@ index 1b1cccde43b4570d5d071d6ffaab2669b3c2065a..de498b1fe240226167487a800ae305d8
      if (socket) {
        socket.removeListener('data', data)
        socket.removeListener('connect', connected)
-@@ -438,6 +447,7 @@ function Connection(options, queues = {}, { onopen = noop, onend = noop, onclose
+@@ -438,6 +448,7 @@ function Connection(options, queues = {}, { onopen = noop, onend = noop, onclose
      remaining = 0
      incomings = null
      clearImmediate(nextWriteTimer)
@@ -261,7 +356,7 @@ index 1b1cccde43b4570d5d071d6ffaab2669b3c2065a..de498b1fe240226167487a800ae305d8
      socket.removeListener('data', data)
      socket.removeListener('connect', connected)
      idleTimer.cancel()
-@@ -810,11 +820,15 @@ function Connection(options, queues = {}, { onopen = noop, onend = noop, onclose
+@@ -810,11 +821,15 @@ function Connection(options, queues = {}, { onopen = noop, onend = noop, onclose
    }
  
    function ErrorResponse(x) {
@@ -279,7 +374,7 @@ index 1b1cccde43b4570d5d071d6ffaab2669b3c2065a..de498b1fe240226167487a800ae305d8
      }
    }
  
-@@ -837,15 +851,19 @@ function Connection(options, queues = {}, { onopen = noop, onend = noop, onclose
+@@ -837,15 +852,21 @@ function Connection(options, queues = {}, { onopen = noop, onend = noop, onclose
    }
  
    async function PortalSuspended() {
@@ -288,8 +383,10 @@ index 1b1cccde43b4570d5d071d6ffaab2669b3c2065a..de498b1fe240226167487a800ae305d8
      try {
 -      const x = await Promise.resolve(query.cursorFn(result))
 +      const x = await Promise.resolve(q.cursorFn(result))
-+      if (query !== q || socket !== currentSocket || !socket || socket.destroyed || !socket.writable)
++      if (query !== q || socket !== currentSocket)
 +        return queryError(q, Errors.connection('CONNECTION_CLOSED', options))
++      if (!socket || socket.destroyed || !socket.writable)
++        return queryError(q, error(Errors.connection('CONNECTION_CLOSED', options)))
        rows = 0
        x === CLOSE
 -        ? write(Close(query.portal))
@@ -305,25 +402,40 @@ index 1b1cccde43b4570d5d071d6ffaab2669b3c2065a..de498b1fe240226167487a800ae305d8
    }
  
 diff --git a/src/index.js b/src/index.js
-index c7fba3dace20173f4cb13f3f138bb6d213b43683..4b4823ae5f9f0f3716093ec15dc08f62c9aecc49 100644
+index c7fba3dace20173f4cb13f3f138bb6d213b43683..8ea8a31a75bb1917b76564e55cec5d245ebb41d3 100644
 --- a/src/index.js
 +++ b/src/index.js
-@@ -210,6 +210,14 @@ function Postgres(a, b) {
+@@ -200,6 +200,13 @@ function Postgres(a, b) {
+     return await sql`select pg_notify(${ channel }, ${ '' + payload })`
+   }
+ 
++  function connectionInvalidated(cause) {
++    return Object.defineProperties(Errors.connection('CONNECTION_CLOSED', options), {
++      cause: { value: cause },
++      quizforgeConnectionInvalidated: { value: true }
++    })
++  }
++
+   async function reserve() {
+     const queue = Queue()
+     const c = open.length
+@@ -210,6 +217,15 @@ function Postgres(a, b) {
          closed.length && connect(closed.shift(), query)
        })
  
 +    let closedError
 +    const invalidate = e => {
-+      closedError || (closedError = e)
++      closedError || (closedError = connectionInvalidated(e))
 +      while (queue.length)
 +        queue.shift().reject(closedError)
++      return closedError
 +    }
 +    c.onclose = invalidate
 +
      move(c, reserved)
      c.reserved = () => queue.length
        ? c.execute(queue.shift())
-@@ -218,6 +226,10 @@ function Postgres(a, b) {
+@@ -218,6 +234,10 @@ function Postgres(a, b) {
  
      const sql = Sql(handler)
      sql.release = () => {
@@ -334,7 +446,7 @@ index c7fba3dace20173f4cb13f3f138bb6d213b43683..4b4823ae5f9f0f3716093ec15dc08f62
        c.reserved = null
        onopen(c)
      }
-@@ -225,27 +237,41 @@ function Postgres(a, b) {
+@@ -225,27 +245,42 @@ function Postgres(a, b) {
      return sql
  
      function handler(q) {
@@ -376,14 +488,15 @@ index c7fba3dace20173f4cb13f3f138bb6d213b43683..4b4823ae5f9f0f3716093ec15dc08f62
 +    }
 +
 +    function invalidate(e) {
-+      closedError || (closedError = e)
++      closedError || (closedError = connectionInvalidated(e))
 +      while (queries.length)
 +        queries.shift().reject(closedError)
 +      rejectClose && rejectClose(closedError)
++      return closedError
      }
  
      async function scope(c, fn, name) {
-@@ -262,9 +288,13 @@ function Postgres(a, b) {
+@@ -262,9 +297,13 @@ function Postgres(a, b) {
            Promise.resolve(Array.isArray(x) ? Promise.all(x) : x).then(resolve, reject)
          })
  
@@ -397,7 +510,7 @@ index c7fba3dace20173f4cb13f3f138bb6d213b43683..4b4823ae5f9f0f3716093ec15dc08f62
          await (name
            ? sql`rollback to ${ sql(name) }`
            : sql`rollback`
-@@ -290,6 +320,8 @@ function Postgres(a, b) {
+@@ -290,6 +329,8 @@ function Postgres(a, b) {
  
        function handler(q) {
          q.catch(e => uncaughtError || (uncaughtError = e))
@@ -406,7 +519,7 @@ index c7fba3dace20173f4cb13f3f138bb6d213b43683..4b4823ae5f9f0f3716093ec15dc08f62
          c.queue === full
            ? queries.push(q)
            : c.execute(q) || move(c, full)
-@@ -298,6 +330,7 @@ function Postgres(a, b) {
+@@ -298,6 +339,7 @@ function Postgres(a, b) {
  
      function onexecute(c) {
        connection = c
@@ -414,3 +527,12 @@ index c7fba3dace20173f4cb13f3f138bb6d213b43683..4b4823ae5f9f0f3716093ec15dc08f62
        move(c, reserved)
        c.reserved = () => queries.length
          ? c.execute(queries.shift())
+@@ -382,7 +424,7 @@ function Postgres(a, b) {
+   }
+ 
+   async function destroy(resolve) {
+-    await Promise.all(connections.map(c => c.terminate()))
++    await Promise.all(connections.map(c => c.terminate(true)))
+     while (queries.length)
+       queries.shift().reject(Errors.connection('CONNECTION_DESTROYED', options))
+     resolve()
