@@ -14,7 +14,7 @@
 - 工作分支：`codex/assessment-resource-foundation`，基于上述 main 的独立 worktree。
 - 先更新架构、数据模型、资源归属、产品愿景、QuizPack 边界和阶段路线；不再以旧 README 的 D0.1 描述当前状态。
 - 已实现运行时合同、归属/引用校验、草稿纯逻辑和合成参考包；实现来源与实际验收见 `FOUNDATION_F1.md`。
-- 本地格式/lint/类型、185单测、生产构建与186 Chromium E2E（10既有跳过）已通过。独立审查已关闭全部发现、无剩余P1/P2；当前收口Draft PR/远端CI，不把本地成功冒称远端通过。最终记录绑定具体提交/run。
+- 本地格式/lint/类型、185单测、生产构建与186 Chromium E2E（10既有跳过）已通过。独立审查关闭全部发现、无剩余P1/P2。[Draft PR #6](https://github.com/aning0922/quiz-forge/pull/6)保持OPEN/Draft；`a5ff475`的[CI 38152935286](https://github.com/aning0922/quiz-forge/actions/runs/38152935286)实际completed/success。后续交付记录提交的Checks单独核验，以PR最新head为准。
 
 ## 会话暂停检查点
 
@@ -31,6 +31,6 @@
 
 ## 下一阶段条件
 
-F1 必须完成运行时边界/失败测试、六项工程回归、独立审查、提交推送及 Draft PR/CI 核验后停止供作者审查。包工具阶段开始前确认 F1 数据合同和仍未验证的 ZIP/规则/审批边界；不以结构合法、文件自报 approved 或合成结果可见授予发布资格。
+F1 已完成运行时边界/失败测试、六项工程回归、独立审查、提交推送及 Draft PR/CI 核验，现停止供作者审查。包工具阶段开始前确认 F1 数据合同和仍未验证的 ZIP/规则/审批边界；不以结构合法、文件自报 approved 或合成结果可见授予发布资格。
 
 完整旧阶段过程保留在 [历史进度](history/PROGRESS_BEFORE_FOUNDATION.md)，旧文中的「当前」「待合并」只指当时检查点。
