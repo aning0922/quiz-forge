@@ -1,0 +1,49 @@
+{
+  "measuredOn": "2026-10-11 Asia/Shanghai",
+  "base": "http://127.0.0.1:3102",
+  "caveat": "390 CSS px diagnostics at DPR 2 and 3. These records describe selected local source files, not the DPR 1 initial-transfer budget.",
+  "records": [
+    {
+      "route": "/question",
+      "deviceScaleFactor": 2,
+      "currentSrc": "http://127.0.0.1:3102/assets/themes/historical/visual-v2-c/room-1-960.webp",
+      "path": "/assets/themes/historical/visual-v2-c/room-1-960.webp",
+      "bytes": 77708
+    },
+    {
+      "route": "/reveal",
+      "deviceScaleFactor": 2,
+      "currentSrc": "http://127.0.0.1:3102/assets/themes/historical/visual-v2-c/figure-960.webp",
+      "path": "/assets/themes/historical/visual-v2-c/figure-960.webp",
+      "bytes": 199972
+    },
+    {
+      "route": "/report",
+      "deviceScaleFactor": 2,
+      "currentSrc": "http://127.0.0.1:3102/assets/themes/historical/visual-v2-c/figure-160.webp",
+      "path": "/assets/themes/historical/visual-v2-c/figure-160.webp",
+      "bytes": 10010
+    },
+    {
+      "route": "/question",
+      "deviceScaleFactor": 3,
+      "currentSrc": "http://127.0.0.1:3102/assets/themes/historical/visual-v2-c/room-1-960.webp",
+      "path": "/assets/themes/historical/visual-v2-c/room-1-960.webp",
+      "bytes": 77708
+    },
+    {
+      "route": "/reveal",
+      "deviceScaleFactor": 3,
+      "currentSrc": "http://127.0.0.1:3102/assets/themes/historical/visual-v2-c/figure-960.webp",
+      "path": "/assets/themes/historical/visual-v2-c/figure-960.webp",
+      "bytes": 199972
+    },
+    {
+      "route": "/report",
+      "deviceScaleFactor": 3,
+      "currentSrc": "http://127.0.0.1:3102/assets/themes/historical/visual-v2-c/figure-480.webp",
+      "path": "/assets/themes/historical/visual-v2-c/figure-480.webp",
+      "bytes": 67850
+    }
+  ]
+}

@@ -21,8 +21,27 @@ import {
 } from "./rooms";
 import styles from "./questions.module.css";
 
-function GalleryScene({ roomIndex }: { roomIndex: number }) {
-  const room = galleryRooms[roomIndex]!;
+export interface CabinetPresentation {
+  readonly storageNamespace: string;
+  readonly coverHref: string;
+  readonly revealHref: string;
+  readonly rooms: readonly {
+    readonly name: string;
+    readonly chapter: string;
+    readonly line: string;
+    readonly alt: string;
+  }[];
+  readonly responsiveArt?: boolean;
+}
+
+function GalleryScene({
+  roomIndex,
+  presentation,
+}: {
+  roomIndex: number;
+  presentation?: CabinetPresentation | undefined;
+}) {
+  const room = (presentation?.rooms ?? galleryRooms)[roomIndex]!;
   const [state, setState] = useState<"loading" | "ready" | "missing">(
     "loading",
   );
@@ -34,17 +53,29 @@ function GalleryScene({ roomIndex }: { roomIndex: number }) {
       aria-label={room.name}
     >
       {state !== "missing" && (
-        <Image
-          src={`/assets/themes/historical/visual-v2-questions/room-${roomIndex + 1}.webp`}
-          alt={room.alt}
-          width={1672}
-          height={941}
-          unoptimized
-          loading="eager"
-          fetchPriority="high"
-          onLoad={() => setState("ready")}
-          onError={() => setState("missing")}
-        />
+        <picture>
+          {presentation?.responsiveArt && (
+            <source
+              srcSet={`/assets/themes/historical/visual-v2-c/room-${roomIndex + 1}-480.webp 480w, /assets/themes/historical/visual-v2-c/room-${roomIndex + 1}-960.webp 960w`}
+              sizes="(min-width: 900px) 540px, 100vw"
+            />
+          )}
+          <Image
+            src={
+              presentation?.responsiveArt
+                ? `/assets/themes/historical/visual-v2-c/room-${roomIndex + 1}-480.webp`
+                : `/assets/themes/historical/visual-v2-questions/room-${roomIndex + 1}.webp`
+            }
+            alt={room.alt}
+            width={1672}
+            height={941}
+            unoptimized
+            loading="eager"
+            fetchPriority="high"
+            onLoad={() => setState("ready")}
+            onError={() => setState("missing")}
+          />
+        </picture>
       )}
       {state !== "ready" && (
         <p className={styles.sceneStatus} role="status">
@@ -100,9 +131,16 @@ function Notice({ flow }: { flow: ReturnType<typeof useVisualStudy> }) {
   );
 }
 
-export function CabinetQuestions() {
+export function CabinetQuestions({
+  presentation,
+}: {
+  presentation?: CabinetPresentation;
+}) {
   const router = useRouter();
-  const flow = useVisualStudy(galleryStorageNamespace);
+  const flow = useVisualStudy(
+    presentation?.storageNamespace ?? galleryStorageNamespace,
+  );
+  const rooms = presentation?.rooms ?? galleryRooms;
   const roomIndex = Math.floor(flow.index / 3);
   const selected = flow.answers[flow.question.id];
   return (
@@ -110,14 +148,17 @@ export function CabinetQuestions() {
       id="main"
       className={styles.shell}
       data-cabinet-questions
+      data-converged={presentation ? "true" : undefined}
       data-room={roomIndex}
       data-phase={flow.phase}
     >
       <header className={styles.header}>
         <Link
-          href="/studies/visual-v2-questions/research"
+          href={
+            presentation?.coverHref ?? "/studies/visual-v2-questions/research"
+          }
           prefetch={false}
-          aria-label="返回藏馆研究入口"
+          aria-label={presentation ? "返回藏馆封面" : "返回藏馆研究入口"}
         >
           <ArrowLeft size={17} aria-hidden="true" />
         </Link>
@@ -131,9 +172,13 @@ export function CabinetQuestions() {
       </header>
       <div className={styles.layout}>
         <div className={styles.world}>
-          <GalleryScene key={roomIndex} roomIndex={roomIndex} />
+          <GalleryScene
+            key={roomIndex}
+            roomIndex={roomIndex}
+            presentation={presentation}
+          />
           <div className={styles.desktopRooms} aria-hidden="true">
-            {galleryRooms.map((room, index) => (
+            {rooms.map((room, index) => (
               <div key={room.name} data-current={roomIndex === index}>
                 <span>{String(index + 1).padStart(2, "0")}</span>
                 <p>
@@ -145,13 +190,21 @@ export function CabinetQuestions() {
           </div>
         </div>
         <div className={styles.content}>
-          {flow.phase !== "loading" && (
-            <section className={styles.journal} aria-label="藏馆行记">
+          {(flow.phase !== "loading" || presentation) && (
+            <section
+              className={styles.journal}
+              aria-label="藏馆行记"
+              aria-busy={flow.phase === "loading"}
+            >
               <div className={styles.journalHeading}>
                 <span>十二枚行记</span>
-                <p>
-                  已点亮 <b>{flow.count}</b> / 12
-                </p>
+                {flow.phase === "loading" ? (
+                  <p>正在读取行记</p>
+                ) : (
+                  <p>
+                    已点亮 <b>{flow.count}</b> / 12
+                  </p>
+                )}
               </div>
               <div
                 className={styles.marks}
@@ -159,7 +212,9 @@ export function CabinetQuestions() {
                 aria-label="已回答题数"
                 aria-valuemin={0}
                 aria-valuemax={12}
-                aria-valuenow={flow.count}
+                aria-valuenow={
+                  flow.phase === "loading" ? undefined : flow.count
+                }
               >
                 {historicalDemoQuestions.map((question, index) => (
                   <span
@@ -177,7 +232,7 @@ export function CabinetQuestions() {
           )}
           <Notice flow={flow} />
           {flow.phase === "loading" ? (
-            <section className={styles.state} role="status">
+            <section className={styles.state} role="status" data-loading-state>
               <p className={styles.eyebrow}>一程探寻 · 十二问</p>
               <h1>正在开启藏馆</h1>
               <p>读取这台设备上的进度…</p>
@@ -229,7 +284,10 @@ export function CabinetQuestions() {
                 disabled={flow.locked || flow.count !== 12}
                 onClick={() => {
                   if (!flow.locked && flow.count === 12)
-                    router.push("/studies/visual-v2-b/celestial/reveal");
+                    router.push(
+                      presentation?.revealHref ??
+                        "/studies/visual-v2-b/celestial/reveal",
+                    );
                 }}
               >
                 查看合成揭晓
@@ -358,7 +416,7 @@ export function CabinetQuestions() {
                 {flow.index % 3 === 2 && flow.index < 11 ? (
                   <>
                     <span>下一厅</span>
-                    {galleryRooms[roomIndex + 1]!.name}
+                    {rooms[roomIndex + 1]!.name}
                     <ChevronRight size={13} aria-hidden="true" />
                   </>
                 ) : (
