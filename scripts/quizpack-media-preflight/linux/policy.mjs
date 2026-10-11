@@ -162,6 +162,15 @@ export async function loadPolicy({
       await readFile(resolve(DIR, "../shared", file)),
     );
   }
+  for (const file of [
+    "contracts.ts",
+    "internal/shared/precheck.ts",
+    "internal/shared/output.ts",
+  ]) {
+    launcherInputs[`production/${file}`] = hash(
+      await readFile(resolve("src/features/quizpack/server/media", file)),
+    );
+  }
   const binding = {
     schema: "qf-linux-policy.v1",
     kernel: release(),
