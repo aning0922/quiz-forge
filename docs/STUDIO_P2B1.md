@@ -85,6 +85,9 @@ withStudioWrite<T>(
 
 1. HTTP 层复用 `assertStudioSource`，先检查配置、Host/Origin、实际 JSON 限额；包装器自身也验证 session token 格式及 session CSRF，防止绕过 HTTP 调用服务。
 2. 包装器拥有唯一 `database.sql.begin`；首个锁复用现有 `acquireAuthWriteLock(tx)`，即同一个 `(72461,1)` advisory transaction lock。不得新增一把不相容的 auth 锁。
+
+   写事务显式固定READ COMMITTED，不能继承角色或连接的REPEATABLE READ默认值；后者可能在等待advisory lock前已有旧快照。列表的只读一致性快照独立使用REPEATABLE READ或单条SQL，不能复用为写事务。
+
 3. 等待 auth 锁结束后，用当前数据库时间重查 authenticated session、revoked_at、idle/absolute、operator active 及当前 role，再执行 capability 检查。read-only 返回 CAPABILITY_DENIED；无效/撤销/停用/到期返回 UNAUTHENTICATED。
 4. 业务回调按下文锁定 Product 和目录行，执行有限数据库工作及审计。不在锁中读取文件、解码、请求网络、渲染页面或等待用户。
 5. 回调完成、提交前再次核对会话当前有效时间/当前角色/所需能力，再进行条件 touch；若已过期或更新未命中，抛错使整个业务事务及审计回滚。touch 不延长 absolute，不在长等待之前提前续 idle。
@@ -101,6 +104,8 @@ A 流集中复用/提取现有 `activeActor/toActor` 等内部逻辑，保留 Dr
 单独重命名/归档/恢复 taxonomy 时为 auth lock→相应 taxonomy 行，不遍历或反向锁 Product。禁止先锁 taxonomy 再锁 Product。创建 Product 时先在同一事务插入不带目录关联的新行，随后锁并校验分类/标签后完成关联；任何失败回滚，不暴露半个 Product。
 
 元数据保存：锁 Product→比较 expectedMetadataRevision→锁旧/新目录并集→检查新引用 active→规范化字段/标签集合比较→一次更新 Product 与关系。标签重复 ID 拒绝；数组排列变化不算修改。变化时 revision+1 与 updated_at；相同内容保持 revision/updated_at、无变更审计。
+
+这里的新引用明确为requested−existing标签集合，以及换入不同且非空的主类目；已有归档引用只检查存在并锁定，原样保留不是新增分配。
 
 必须先比较 expected revision，再判断 no-op；旧 revision 即使提交恰好相同的值也返回冲突。taxonomy 重命名用相同 expectedRevision/no-op 规则。最大 revision 上只允许 no-op，实际变更返回 REVISION_LIMIT。
 
@@ -176,16 +181,16 @@ q 对 id/slug/title（目录为slug/name）作字面子串查询，参数化并�
 
 复用 P2-A 的 INVALID_REQUEST(400)、PAYLOAD_TOO_LARGE(413)、UNAUTHENTICATED(401)、ORIGIN_REJECTED/CSRF_REJECTED/CAPABILITY_DENIED(403)、STUDIO_UNAVAILABLE(503)。集中扩展稳定码，不返回 postgres 原始异常。
 
-| 新码                                                    | HTTP / 含义                                         |
-| ------------------------------------------------------- | --------------------------------------------------- |
-| PRODUCT_NOT_FOUND / TAXONOMY_NOT_FOUND                  | 404，仅已认证后定位实体不存在                       |
-| PRODUCT_ID_CONFLICT / SLUG_CONFLICT                     | 409，映射明确唯一约束；归档身份也不可复用           |
-| METADATA_REVISION_CONFLICT / TAXONOMY_REVISION_CONFLICT | 409，保持用户未保存输入，重新读取后显式重提         |
-| PRODUCT_ARCHIVED / TAXONOMY_ARCHIVED                    | 409，先恢复或选择有效新增引用                       |
-| TAG_LIMIT_EXCEEDED                                      | 400，最多8个；与普通 DTO 失败一样不得产生部分写入   |
-| REVISION_LIMIT                                          | 409，不进行溢出更新                                 |
-| WRITE_BUSY                                              | 409，已确认锁等待超时且事务回滚；稍后显式重试       |
-| WRITE_OUTCOME_UNKNOWN                                   | 503，提交结果无法确认，先读取服务器事实，不自动重发 |
+| 新码                                                    | HTTP / 含义                                             |
+| ------------------------------------------------------- | ------------------------------------------------------- |
+| PRODUCT_NOT_FOUND / TAXONOMY_NOT_FOUND                  | 404，仅已认证后定位实体不存在                           |
+| PRODUCT_ID_CONFLICT / SLUG_CONFLICT                     | 409，映射明确唯一约束；归档身份也不可复用               |
+| METADATA_REVISION_CONFLICT / TAXONOMY_REVISION_CONFLICT | 409，保持用户未保存输入，重新读取后显式重提             |
+| PRODUCT_ARCHIVED / TAXONOMY_ARCHIVED                    | 409，先恢复或选择有效新增引用                           |
+| TAG_LIMIT_EXCEEDED                                      | 400，最多8个；与普通 DTO 失败一样不得产生部分写入       |
+| REVISION_LIMIT                                          | 409，不进行溢出更新                                     |
+| WRITE_BUSY                                              | 409，已确认锁等待超时或语句取消且事务回滚；稍后显式重试 |
+| WRITE_OUTCOME_UNKNOWN                                   | 503，提交结果无法确认，先读取服务器事实，不自动重发     |
 
 错误 body 最少 `{code,requestId}`。CAS 冲突可额外带已授权的 `currentRevision`，只能由受控 DTO 输出；不回传输入正文或整行 DB 对象。B 流需保留此受控信息，不能将通用 raw exception 交给浏览器。
 
