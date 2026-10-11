@@ -14,6 +14,7 @@
         "close",
         "close_range",
         "fstat",
+        "fstatfs",
         "newfstatat",
         "stat",
         "lstat",
