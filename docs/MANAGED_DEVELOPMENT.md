@@ -67,7 +67,7 @@ P1技术交付证据：代码3a1ad7a，385单测/186 E2E（10既有跳过），�
 
 ## P2-B1 工作登记
 
-- 总控：codex/catalog-workspace，基于P2-A最终38177fb，合同a2df7b8；STUDIO_P2B1.md已冻结，B1尚未验收。
+- 总控：codex/catalog-workspace，基于P2-A最终38177fb，合同a2df7b8；STUDIO_P2B1.md已冻结；该条为启动登记，最终技术验收以下方退出检查点为准。
 - 「QuizForge P2-B1 · 目录数据与事务」：01a12c3b-f2ca-70d1-940d-4c6856a9b134，GPT-6.1 Sol/high；四表/迁移/服务、当前会话的同事务写鉴权、DTO和受控错误。先提交公共里程碑供B接入。
 - 「QuizForge P2-B1 · 测评工作区后台」：01a12c3b-f538-7042-80d4-fc2f977f5508，GPT-6.1 Sol/high；真实工作区/目录HTTP及UI、归档恢复和浏览器用例。
 - Astra high继续架构决策和独立审查，总控持有共享配置与3100。新workspace浏览器项目依赖studio-auth完成，避免两个fixture并发清理数据库；所有后台认证产物限制继续生效。
@@ -79,3 +79,20 @@ P3表现预案见PRESENTATION_P3_PREFLIGHT.md：计划保留v1包兼容，以有
 ## P2-B1 技术退出检查点
 
 最终代码44a0d38完成528单测、154真实DB、46驱动故障、198生产E2E/10既有跳过，独立审查闭合。代码CI38168728761两个job实际success，Draft PR #9保持未合并。A/B/driver及root测试实例全部停止，端口3100、55421–55424已核实无监听。接续B2-1原包接收；首款展示候选03fdc240已在内容独立分支完成，未改作者已选定的核心草案，也未升级为素材或内容批准。
+
+## P2-B2-1 工作登记
+
+总控新分支codex/quizpack-receipt基于B1最终文档e8da98b，普通与数据库CI38169117712已实际success。首批只接收原包：quizpack_import、关闭默认上传、显式管理CLI、私有目录/锁/配额、幂等意图与恢复及后台状态；received不代表验证或内容批准。STUDIO_P2B2.md已冻结；独立Astra前置审查的绝对期限与CLI晚到配置写两项P2已写入合同修订。A负责数据库/runtime/接收服务，B负责HTTP/后台；先交共享DTO再集成实现，尚未验收。
+
+- A「QuizForge B2-1 · 原包接收与恢复」：01a12c8e-96f2-76f3-bc0b-c6aacc19f677，GPT-6.1 Sol/high，独占DB/runtime/私有接收服务及真实故障测试，自己的测试端口55421。
+- B「QuizForge B2-1 · 导入操作后台」：01a12c8e-9a41-79a3-9db2-74cf2f219011，GPT-6.1 Sol/high，独占HTTP/reader adapter/后台与E2E，自己的测试端口55422。
+- 两流固定基线5f2f8e5；总控持有package/lock/shared errors/playwright及3100，集成测试端口55423。新root的独立test实例从旧v1配置生成，供实际升级兼容回归；配置内容私有。
+- [Draft PR #10](https://github.com/aning0922/quiz-forge/pull/10)已创建并堆叠于B1，当前仅合同与共享错误/浏览器项目准备，不代表接收功能完成。18项定向HTTP安全测试、类型、定向lint/格式通过；阶段六项与DB/driver/E2E均待集成后执行。
+
+公共交接已完成：A原1bfe008→root7546736，B适配原a44c54f→rootb17b391；B已获总控指定A提交并接入。root22项相关单测与旧v1实例57项真实DB/认证通过，Astra窄审无P1/P2；b17b391的CI38170812606两项job成功。B HTTP/UI原3405076→root1729a8e，29项imports定向通过；客户端响应验证P2已派回B修复。原包service/CLI/表与完整阶段验收仍未完成。
+
+## P2-B2-1 技术退出检查点
+
+最终代码 `f070428b72570977db835946227b2c49d0666e42` 已通过格式/lint/类型、612单元、214真实DB、46驱动场景、生产构建与206 E2E/10既有跳过。独立Astra全部登记问题关闭，20张最终移动截图逐图检查完成；代码CI38174716526两个job实际success。Draft PR #10依赖B1且未合并；最终文档head CI单独核验并记录到PR描述。详细交付见P2B2_RECEIVE_ACCEPTANCE/REVIEW/VISUAL_CHECK。
+
+A与B实现聊天已完成本批任务且各自测试实例停止；总控实例也已停止，3100/55421–55424无监听。后续不在已交付分支继续堆积业务实现。下一批先冻结媒体隔离可行性合同并以独立macOS/Linux流验证正常解码、权限边界和实际停止；两平台未通过前不接B2-2业务表或后台验证按钮。普通技术取舍由总控与Astra审查处理，不重复要求作者批准已有托管范围；必要内容/商业/部署决定仍按上文人工闸门。

@@ -1,3 +1,14 @@
+import { rmdir } from "node:fs/promises";
+import path from "node:path";
+import { StorageLock } from "../../src/features/quizpack/import/storage-lock";
+import {
+  scanStorage,
+  stopped,
+  removeOwned,
+  importDirectory,
+} from "../../src/features/quizpack/import/storage";
+import { createReceiveContext } from "../../src/features/quizpack/import/context";
+import type { ImportRow } from "../../src/features/quizpack/import/repository";
 import { createDatabase } from "../../src/lib/db/client";
 import { loadRuntimeConfig } from "../../src/lib/db/runtime";
 import { openManagedDatabase } from "../../src/lib/db/management";
@@ -36,8 +47,64 @@ export async function resetTestDatabase(database: TestDatabase): Promise<void> {
   try {
     if (verified.config.instanceId !== database.config.instanceId)
       throw new Error("P2A_TEST_DATABASE_IDENTITY_MISMATCH");
-    await verified.admin
-      .sql`TRUNCATE qf.product_tag,qf.product,qf.category,qf.tag,qf.operator_session,qf.audit_event,qf.operator`;
+    const lock = await StorageLock.acquire(verified.config);
+    const { context, dispose } = createReceiveContext(
+      new AbortController().signal,
+    );
+    try {
+      const scan = await scanStorage(verified.config, context);
+      const rows = await verified.admin.sql<
+        ImportRow[]
+      >`SELECT * FROM qf.quizpack_import ORDER BY id LIMIT 1025`;
+      if (rows.length > 1024) throw new Error("TEST_UPLOAD_CLEANUP_LIMIT");
+      const known = new Map(rows.map((row) => [row.id, row]));
+      for (const row of rows) {
+        for (const a of row.attempts)
+          if (
+            a.disposition === "held" &&
+            !(await stopped(verified.config, row.id, a))
+          )
+            throw new Error("TEST_UPLOAD_WRITER_UNPROVEN");
+      }
+      for (const [id, files] of scan.files) {
+        const row = known.get(id);
+        if (!row) throw new Error("TEST_UPLOAD_OWNER_UNKNOWN");
+        const proofs = new Map<string, boolean>();
+        for (const a of row.attempts)
+          proofs.set(a.attemptId, await stopped(verified.config, id, a));
+        if (
+          row.attempts.some(
+            (a) => a.disposition === "held" && !proofs.get(a.attemptId),
+          )
+        )
+          throw new Error("TEST_UPLOAD_WRITER_UNPROVEN");
+        for (const file of files) {
+          const name = path.basename(file.file);
+          if (
+            name !== "archive.quizpack" &&
+            !row.attempts.some(
+              (a) =>
+                proofs.get(a.attemptId) &&
+                (name === `attempt-${a.attemptId}.partial` ||
+                  name === `stopped-${a.attemptId}.json` ||
+                  name.startsWith(`stopped-${a.attemptId}.json.tmp-`)),
+            )
+          )
+            throw new Error("TEST_UPLOAD_FILE_UNPROVEN");
+        }
+      }
+      // Verify all ownership/stopping before deleting a single file or truncating any business row.
+      for (const [id, files] of scan.files) {
+        for (const file of files) await removeOwned(file.file, file.inode);
+        await rmdir(importDirectory(verified.config, id));
+      }
+      await lock.check();
+      await verified.admin
+        .sql`TRUNCATE qf.quizpack_import,qf.product_tag,qf.product,qf.category,qf.tag,qf.operator_session,qf.audit_event,qf.operator`;
+    } finally {
+      dispose();
+      await lock.close();
+    }
   } finally {
     await verified.close();
   }

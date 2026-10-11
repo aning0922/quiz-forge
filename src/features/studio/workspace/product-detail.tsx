@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import {
   productReplaceMetadataSchema,
   type ProductDto,
@@ -120,8 +121,14 @@ function ProductEditor({
     <section className={styles.panel}>
       <h1>{product.title}</h1>
       <p className={styles.note}>
-        本阶段尚未接入草稿与导入。运营元数据不会自动改写包内版本声明。
+        原包接收仅隔离原字节，尚未验证或生成草稿。运营元数据不会自动改写包内版本声明。
       </p>
+      <Link
+        className={`${styles.link} ${styles.secondary}`}
+        href={`/studio/products/${encodeURIComponent(product.id)}/imports`}
+      >
+        原包接收与历史
+      </Link>
       <dl className={styles.facts}>
         <div>
           <dt>稳定 ID（不可改）</dt>

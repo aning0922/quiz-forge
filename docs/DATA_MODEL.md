@@ -2,12 +2,13 @@
 
 P2-A已实现qf.operator、operator_session、audit_event及qf_meta.schema_migrations。P2-B1已追加product、category、tag、product_tag，已完成技术验收。真实字段、权限、锁序与CAS以[目录合同](STUDIO_P2B1.md)为准；运营metadata_revision与未来草稿content revision分离。Product使用包的稳定字符串ID，category/tag使用服务器UUID，不能把下方历史拟议UUID一概套到Product。
 
-以下保留D0/F1业务约束和后续完整商品关系；除上方七张业务表外尚未建立。当前Product只有运营身份/slug/title/主类目FK/metadata_revision/时间/归档字段，没有published指针或内容发布状态。草稿、资源、版本、Key和报告仍待后续追加迁移；B2接收首批提案见[STUDIO_P2B2_RECEIVE_PROPOSAL](STUDIO_P2B2_RECEIVE_PROPOSAL.md)。
+B2-1已追加quizpack_import，当前共八张业务表；214项真实DB测试、权限与独立审查已通过，代码技术验收见P2B2_RECEIVE_ACCEPTANCE。以下保留D0/F1业务约束和后续完整商品关系，其余实体尚未建立。当前Product只有运营身份/slug/title/主类目FK/metadata_revision/时间/归档字段，没有published指针或内容发布状态。草稿、资源、版本、Key和报告仍待后续追加迁移；B2-1的quizpack_import只记录接收意图、原字节冻结与显式恢复；实施合同见[STUDIO_P2B2](STUDIO_P2B2.md)，received不代表ZIP/内容或资源验证通过。完整草稿/blob/asset模型仍属后续批次。
 
 | 概念                  | 关键字段（拟议）                                                                                                                         | 关系与约束                                                                                      |
 | --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
 | QuizPack              | id、packId、packVersion、formatVersion、manifest、hash、compatibility、importStatus                                                      | ID/版本唯一；同版本不同哈希拒绝；validated 不等于人工批准                                       |
-| QuizPackImport        | id、packId、hash、validationReport、status、reviewer、createdAt                                                                          | 原包/验证证据绑定；staged/validated/imported/rejected；失败无半发布                             |
+| QuizPackImport        | id、productId、幂等key/指纹、声明bytes/hash、target、接收stateRevision/fence/attempts、实际bytes/hash及时间                              | B2-1已实现接收；received仅表示原字节冻结，不能代表验证、审核或草稿导入                          |
+| QuizPackValidation    | importId、稳定validationKey、validator/policy身份、独立状态、不可变候选与报告、asset-set hash                                            | B2-2提案；原接收事实不因复验失败而改写，运行故障与内容拒绝分开                                  |
 | QuizDefinition        | id、slug、title、engineType、status                                                                                                      | 1:N QuizVersion；slug 唯一；身份与内容版本分离                                                  |
 | QuizVersion           | id、definitionId、version、schemaVersion、engineVersion、status、contentHash                                                             | 同测评版本号唯一；发布后不可编辑；同一 Product 可绑定不同视觉版本；跨 Product 通过模板复制/冻结 |
 | Question              | id、versionId、stableId、prompt、order、nodeId?                                                                                          | 版本内 ID/顺序唯一；剧情节点关联；不跨版本引用                                                  |
@@ -64,7 +65,7 @@ QuizPack 结构/兼容/安全与规则夹具通过；测评版本、题/选项�
 
 保存报告时快照答案、评分、原型/结局、结果文案与展示参数，并固定素材内容哈希、商品包和组件版本。素材版本需长期可寻址，避免仅存活动 CDN URL 导致旧报告丢图。未来报告 Schema 升级做向后兼容读取，不重跑评分。
 
-资源对象与数据库记录不是同一事务。上传先写受限 staging object，再创建/更新导入记录；验证与归档成功后才允许 AssetBlob/AssetPackVersion 被发布引用。若数据库事务或对象移动失败，服务必须保留可审计状态并安排删除/重试补偿，不能把孤儿对象当作已批准素材，亦不能让缺失对象进入 ProductVersion。
+资源对象与数据库记录不是同一事务。B2-1先在数据库确认幂等意图和带fence的接收尝试，再于事务外接收并冻结私有原字节，最后以新事务确认当前身份与状态；received仅表示未验证原包。下一批验证与归档成功后才允许 AssetBlob/AssetPackVersion 被发布引用。若数据库事务或对象移动失败，服务必须保留可审计状态并安排删除/重试补偿，不能把孤儿对象当作已批准素材，亦不能让缺失对象进入 ProductVersion。
 
 正式数据库阶段先建立最小纵向闭环所需的 Product/Draft/Version、Asset、AccessKey/Session/Report 与必要运营身份表，再扩展导入、分享、AI、支付和统计。每个迁移必须可重复运行并在隔离 PostgreSQL 上验证 upgrade/rollback 兼容；生产迁移和真实连接不属于 F1。
 
