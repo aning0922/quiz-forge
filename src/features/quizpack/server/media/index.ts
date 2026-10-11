@@ -39,6 +39,9 @@ export async function runIsolatedImage(
       binding.outcome === "unavailable"
         ? binding.code
         : "ISOLATION_UNAVAILABLE",
-    stopped: "not-started",
+    stopped:
+      binding.outcome === "unavailable" && binding.code === "STOP_UNCONFIRMED"
+        ? "unknown"
+        : "not-started",
   };
 }

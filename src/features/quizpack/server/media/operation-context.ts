@@ -31,21 +31,39 @@ function getState(context: MediaOperationContext): State {
   if (!state || state.disposed) throw new MediaOperationContextError();
   return state;
 }
-function stopAt(state: State, reason: MediaStopReason, trigger: number) {
+function stopAt(
+  state: State,
+  reason: MediaStopReason,
+  trigger: number,
+  cleanupDeadlineMonotonicMs?: number,
+) {
+  const cleanupDeadline = Math.min(
+    trigger + MEDIA_LIMITS.cleanupMs,
+    cleanupDeadlineMonotonicMs ?? Infinity,
+  );
   if (!state.stop) {
     state.stop = Object.freeze({
       reason,
       stopStartedMonotonicMs: trigger,
-      cleanupDeadlineMonotonicMs: trigger + MEDIA_LIMITS.cleanupMs,
+      cleanupDeadlineMonotonicMs: cleanupDeadline,
     });
     if (state.timer) clearTimeout(state.timer);
     if (state.image?.timer) clearTimeout(state.image.timer);
     // Publish the stop state before synchronous AbortSignal listeners run.
     state.controller.abort();
+  } else if (cleanupDeadline < state.stop.cleanupDeadlineMonotonicMs) {
+    state.stop = Object.freeze({
+      ...state.stop,
+      cleanupDeadlineMonotonicMs: cleanupDeadline,
+    });
   }
 }
 /** Use the scheduled deadline, even if the event loop observes it much later. */
-function observe(state: State, now = performance.now()): void {
+function observe(
+  state: State,
+  now = performance.now(),
+  cleanupDeadlineMonotonicMs?: number,
+): void {
   const business = state.context.deadlineMonotonicMs;
   const image = state.image?.deadline ?? Infinity;
   const earliest = Math.min(business, image);
@@ -56,8 +74,10 @@ function observe(state: State, now = performance.now()): void {
         ? "BUSINESS_DEADLINE_EXCEEDED"
         : "IMAGE_DEADLINE_EXCEEDED",
       earliest,
+      cleanupDeadlineMonotonicMs,
     );
-  else if (state.externalSignal.aborted) stopAt(state, "CANCELLED", now);
+  else if (state.externalSignal.aborted)
+    stopAt(state, "CANCELLED", now, cleanupDeadlineMonotonicMs);
 }
 
 // Native timers can arrive early after fractional delay truncation. Each rearm
@@ -142,14 +162,9 @@ export function requestMediaOperationStop(
       !Number.isFinite(cleanupDeadlineMonotonicMs))
   )
     throw new MediaOperationContextError();
-  observe(state);
-  stopAt(state, reason, performance.now());
-  const stop = state.stop!;
-  if (
-    cleanupDeadlineMonotonicMs !== undefined &&
-    cleanupDeadlineMonotonicMs < stop.cleanupDeadlineMonotonicMs
-  )
-    state.stop = Object.freeze({ ...stop, cleanupDeadlineMonotonicMs });
+  const now = performance.now();
+  observe(state, now, cleanupDeadlineMonotonicMs);
+  stopAt(state, reason, now, cleanupDeadlineMonotonicMs);
   return state.stop!;
 }
 

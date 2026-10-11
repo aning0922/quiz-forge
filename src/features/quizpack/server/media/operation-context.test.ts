@@ -157,6 +157,31 @@ describe("trusted media operation context", () => {
     ).toBe(5000);
     expect(Object.isFrozen(first)).toBe(true);
   });
+  it.each([false, true])(
+    "publishes the final tighter stop before synchronous abort listeners (expired=%s)",
+    (expired) => {
+      const context = create(1100);
+      const image = beginMediaImage(context)!;
+      const observed: unknown[] = [];
+      context.signal.addEventListener("abort", () =>
+        observed.push(image.readState()),
+      );
+      now = expired ? 2000 : 200;
+      const stop = requestMediaOperationStop(
+        context,
+        "STORAGE_LOCK_LOST",
+        1200,
+      );
+      expect(observed).toEqual([
+        expect.objectContaining({ phase: "stopping", stop }),
+      ]);
+      expect(stop).toEqual({
+        reason: expired ? "BUSINESS_DEADLINE_EXCEEDED" : "STORAGE_LOCK_LOST",
+        stopStartedMonotonicMs: expired ? 1100 : 200,
+        cleanupDeadlineMonotonicMs: 1200,
+      });
+    },
+  );
   it("single image is serial and each successful scope keeps the original business budget", () => {
     const context = create(7100);
     const first = beginMediaImage(context)!;

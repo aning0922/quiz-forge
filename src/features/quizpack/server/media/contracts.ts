@@ -118,7 +118,12 @@ export type MediaEvidenceParseResult<T> =
   | Readonly<{ ok: false; code: "INVALID_MEDIA_EVIDENCE" }>;
 
 /** An invalid context is interrupted, even when no OS launch was issued. */
-export function mediaStopFailureCode(stop: MediaStopState): LaunchFailureCode {
+export function mediaStopFailureCode(
+  stop: MediaStopState,
+): Extract<
+  LaunchFailureCode,
+  "CANCELLED" | "DEADLINE_EXCEEDED" | "STOP_UNCONFIRMED" | "WORKER_FAILED"
+> {
   if (stop.reason === "CANCELLED") return "CANCELLED";
   if (
     stop.reason === "BUSINESS_DEADLINE_EXCEEDED" ||
