@@ -211,3 +211,40 @@ it("failed atomic replacement leaves valid prior config and exposes only fixed u
   ).toBe(false);
   expect(await present("imports-config.guard")).toBe(false);
 });
+it("real test DB at migration 0007 refuses enabling until required 0008 is explicitly applied", async () => {
+  const { readMigrations, migrateDatabase } =
+    await import("../../src/lib/db/migrate");
+  const definitions = await readMigrations(),
+    old = definitions.find((m) => m.version === "0007_quizpack_import")!;
+  const start = old.source.indexOf(
+      "CREATE FUNCTION qf.protect_import_update()",
+    ),
+    end = old.source.indexOf(
+      "REVOKE ALL ON FUNCTION qf.protect_import_update()",
+      start,
+    );
+  const previousFunction = old.source
+    .slice(start, end)
+    .replace("CREATE FUNCTION", "CREATE OR REPLACE FUNCTION");
+  await safeTestOperation(() =>
+    db.admin.sql.begin(async (tx) => {
+      await tx.unsafe(previousFunction);
+      await tx`DELETE FROM qf_meta.schema_migrations WHERE version='0008_import_lease_renewal_guard'`;
+    }),
+  );
+  try {
+    await expect(configureImports(db.config.instanceId, true)).rejects.toThrow(
+      "STUDIO_UNAVAILABLE",
+    );
+    expect(
+      (await loadManagedInstance(db.config.instanceId)).config.imports.enabled,
+    ).toBe(false);
+  } finally {
+    expect(await migrateDatabase(db.admin.sql, db.config)).toEqual([
+      "0008_import_lease_renewal_guard",
+    ]);
+  }
+  expect((await configureImports(db.config.instanceId, true)).enabled).toBe(
+    true,
+  );
+});

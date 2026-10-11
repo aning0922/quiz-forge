@@ -54,12 +54,13 @@ export class StorageLock {
     const client = openSql(config.database, 1);
     let connection: postgres.ReservedSql | undefined;
     try {
-      connection = await queryDeadline(
-        client.reserve(),
+      const pinned = await queryDeadline<postgres.ReservedSql>(
+        Promise.resolve().then(() => client.reserve()),
         client,
         () => {},
         budget,
       );
+      connection = pinned;
       const left = () => {
         const ms = Math.min(
           budget - (performance.now() - started),
@@ -68,22 +69,27 @@ export class StorageLock {
         if (ms <= 0) throw new StudioError("WRITE_OUTCOME_UNKNOWN");
         return ms;
       };
+      const setupBudget = left();
       await queryDeadline(
-        connection`SET statement_timeout='2s'`,
+        Promise.resolve().then(() => pinned`SET statement_timeout='2s'`),
         client,
         () => {},
-        left(),
+        setupBudget,
       );
+      const lockingBudget = left();
       const [row] = await queryDeadline(
-        connection<
-          { locked: boolean }[]
-        >`SELECT pg_try_advisory_lock(72461,2) locked`,
+        Promise.resolve().then(
+          () =>
+            pinned<
+              { locked: boolean }[]
+            >`SELECT pg_try_advisory_lock(72461,2) locked`,
+        ),
         client,
         () => {},
-        left(),
+        lockingBudget,
       );
       if (!row?.locked) throw new StudioError("RECEIVE_BUSY");
-      const lock = new StorageLock(client, connection, context);
+      const lock = new StorageLock(client, pinned, context);
       await lock.check();
       lock.schedule();
       return lock;
@@ -114,11 +120,16 @@ export class StorageLock {
   async query<T>(work: () => PromiseLike<T>): Promise<T> {
     this.assert();
     try {
+      const milliseconds = Math.min(
+        2000,
+        this.context ? remainingReceiveMs(this.context) : 2000,
+      );
+      // Fix the budget before invoking work, then immediately observe its result.
       return await queryDeadline(
-        work(),
+        Promise.resolve().then(work),
         this.client,
         this.invalidate,
-        Math.min(2000, this.context ? remainingReceiveMs(this.context) : 2000),
+        milliseconds,
       );
     } catch {
       this.invalidate();
@@ -147,7 +158,9 @@ export class StorageLock {
     try {
       if (this.valid)
         await queryDeadline(
-          this.connection`SELECT pg_advisory_unlock(72461,2)`,
+          Promise.resolve().then(
+            () => this.connection`SELECT pg_advisory_unlock(72461,2)`,
+          ),
           this.client,
           this.invalidate,
           2000,

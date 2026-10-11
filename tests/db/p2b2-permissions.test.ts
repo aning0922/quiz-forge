@@ -275,3 +275,58 @@ it("attempt identity and same-fence lease cannot mutate, and released dispositio
     ),
   ).toBe("23514");
 });
+it("revision/fence ceilings reject before consuming source or creating an attempt", async () => {
+  const { createDatabase } = await import("../../src/lib/db/client"),
+    { createReceiveContext } =
+      await import("../../src/features/quizpack/import/context");
+  await safeTestOperation(
+    () =>
+      db.admin
+        .sql`UPDATE qf.quizpack_import SET state_revision=state_revision+1,updated_at=clock_timestamp(),fence=2147483647 WHERE id=${id}`,
+  );
+  let consumed = false;
+  const test = async (importId: string) => {
+    const c = createReceiveContext(new AbortController().signal),
+      request = await createDatabase(db.config, c.context);
+    try {
+      await expect(
+        importReceiveService.receiveArchive(
+          request,
+          actor.credentials,
+          "permission-test",
+          importId,
+          {
+            chunks: {
+              async *[Symbol.asyncIterator]() {
+                consumed = true;
+                yield new Uint8Array([1]);
+              },
+            },
+            cancel: async () => {},
+          },
+          c.context,
+        ),
+      ).rejects.toThrow("REVISION_LIMIT");
+    } finally {
+      c.dispose();
+      await request.close();
+    }
+  };
+  await test(id);
+  expect(consumed).toBe(false);
+  const maxId = randomUUID();
+  await safeTestOperation(
+    () =>
+      db.admin
+        .sql`INSERT INTO qf.quizpack_import(id,product_id,created_by,idempotency_key,request_fingerprint,expected_archive_sha256,expected_archive_bytes,target_kind,created_at,status,state_revision,updated_at) SELECT ${maxId},product_id,created_by,${randomUUID()},request_fingerprint,expected_archive_sha256,expected_archive_bytes,target_kind,created_at,'awaiting-upload',2147483647,updated_at FROM qf.quizpack_import WHERE id=${id}`,
+  );
+  await test(maxId);
+  expect(consumed).toBe(false);
+  const [fact] = await safeTestOperation(
+    () =>
+      db.admin.sql<
+        { count: number }[]
+      >`SELECT jsonb_array_length(attempts)::int count FROM qf.quizpack_import WHERE id=${maxId}`,
+  );
+  expect(fact?.count).toBe(0);
+});

@@ -316,8 +316,8 @@ it("no-clobber refuses an existing archive without overwriting; matching fact ca
   await unlink(different);
   await recover(wrong.id);
 });
-it("read-only change and Product archive during file stage block completion without auth lock waiting", async () => {
-  for (const kind of ["role", "product"] as const) {
+it("read-only change, operator disable and Product archive in file stage block completion without auth lock waiting", async () => {
+  for (const kind of ["role", "product", "operator"] as const) {
     const created = await create();
     const service = createImportReceiveService({
       afterFreeze: async () => {
@@ -327,7 +327,11 @@ it("read-only change and Product archive during file stage block completion with
               db.admin
                 .sql`UPDATE qf.operator SET role='read-only' WHERE id=${actor.id}`,
           );
-        else
+        else if (kind === "operator") {
+          const { disableOperator } =
+            await import("../../src/lib/db/management");
+          await disableOperator(db.config.instanceId, actor.id);
+        } else
           await workspaceService.archiveProduct(
             db.app,
             actor.credentials,
@@ -337,7 +341,11 @@ it("read-only change and Product archive during file stage block completion with
       },
     });
     await expect(receive(created.id, source(), service)).rejects.toThrow(
-      kind === "role" ? "CAPABILITY_DENIED" : "PRODUCT_ARCHIVED",
+      kind === "role"
+        ? "CAPABILITY_DENIED"
+        : kind === "operator"
+          ? "UNAUTHENTICATED"
+          : "PRODUCT_ARCHIVED",
     );
     expect((await row(created.id)).status).toBe("receiving");
     if (kind === "role")
@@ -346,6 +354,7 @@ it("read-only change and Product archive during file stage block completion with
           db.admin
             .sql`UPDATE qf.operator SET role='operator' WHERE id=${actor.id}`,
       );
+    else if (kind === "operator") actor = await authenticateTestOperator(db);
     else
       await workspaceService.restoreProduct(
         db.app,
