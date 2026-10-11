@@ -32,3 +32,9 @@
 ## Git / PR / CI
 
 实现 commit `b3b330e9c7f6dbb831219c6ac6efdb69ba3af6f6`，已推送 `codex/d1b-historical-flow`；[Draft PR #3](https://github.com/aning0922/quiz-forge/pull/3) 面向 main 且保持 OPEN/Draft。GitHub [实现 CI 38124435700](https://github.com/aning0922/quiz-forge/actions/runs/38124435700) 已真实 completed/success，与实现 head 一致；现有 CI 不运行 E2E。此验收/进度检查点的后续 commit 会触发独立 CI，最终最新状态在 PR checks 及总控交付中核验，不把实现 CI 推广到未跑的提交。未合并 main、部署或推进 D1-C。
+
+## PR #3 窄屏整改附录
+
+整改范围只限答题页面的窄屏排版：320px 正常字号导航保持单行文字，整控件上下排；320–430px 的长题和24px测试导航文字保持可读、无横向溢出并保留至少44px操作高度。可用宽度不足时完整按钮会分行，不缩字或裁切。未选择提示改用普通引导色，与保存失败状态区分。实际截图和索引见 `docs/qa/d1b-fixes/`，不会覆盖既有 D1-B 或历史证据。
+
+本轮总控最终六项检查均通过：8项单测、52项E2E通过/10项既有矩阵跳过（新增四宽大字体导航用例在两个项目各跑一次）。旧50项结果是整改前基线，不替代新布局用例。截图已由最终构建重抓，导航和选项同时放大24px；箭头禁止压缩，操作区不足时整按钮换行。选择、返回、恢复、冲突与确认的业务状态代码未改变。

@@ -2,6 +2,14 @@
 
 日期：2026-10-11（Asia/Shanghai）。D1-A.1 已审查并通过 PR #1 合并至 main；当前明确授权 D1-B + OSS-R 首轮托管，D1-C 及后续仍未授权。此处记录可恢复检查点，不表示会话结束后仍有后台代理运行。
 
+## PR 独立审查整改（当前授权）
+
+作者已完成 PR #3/#2 外部 GitHub 审查，本轮仅在既有分支收口：D1-B 修320px前后按钮换行、较大字体/长内容布局与初始引导色；OSS-R 补指定 `bensblueprints/quiz-builder-mvp`（Quizcraft）的固定版本、评分/跳题/服务端/测试/兼容/安全与采用建议。其余研究结论、古风方向、12题与本地恢复/冲突逻辑保持。本轮不建立新治理、worktree或分支，不进入 D1-C，不集成候选、不合并 main。
+
+启动核验：两个 worktree 干净，A head `aabbf0a9b74781c5ec3a7ddee6ff9301b6efadde`、B head `2d8fcd790e19785d4406d6badf172f089a0065b6` 与远端一致；PR #3/#2 均 OPEN/Draft，既有 CI 38124545250/38123252843 实际 success。main 仍为 `de6b2e9`。实施分别拥有 A 的必要CSS/布局测试/新增 `qa/d1b-fixes` 与验收附录，B 的研究报告/自编证据；独立审查负责原审查记录，总控统一更新本进度。3100串行调度，六项检查、实际截图/研究复现、独立复核后提交推送并更新原 PR；最新CI以整改后head实际记录为准。
+
+整改交付：D1-B 采用完整控件换行、单行标签和不压缩箭头，中性未选引导与异常反馈分级；最终格式/lint/类型/8 单测/构建通过，生产 E2E 52 通过、10 既有跳过，新增 7 张最终状态截图（原证据保留）。OSS-R 固定 Quizcraft commit `2641887297205828f15a3bd87c1d4f0c69e250de`、MIT 及源码边界，实际运行纯逻辑审计夹具；建议仅借鉴，不依赖/移植，其余三候选结论保持。研究分支六项检查通过（6 单测、34 E2E 通过/10 跳过），后续文档与夹具格式/lint/复现再次通过。两份原独立审查记录已更新，无未修复阻断发现；下一步仅是推送原分支、更新 Draft PR 和核验新 head CI，然后等待外部合并授权。最终 commit/CI 链接由 PR 与本轮交付报告提供，不以旧运行冒称覆盖新提交。
+
 ## 首轮托管队列与启动证据
 
 正式私有仓库与 origin 已核实，主工作区干净并保留原 `codex/d1a-historical-visual`。fetch 后批准基线为 `de6b2e9301b858d395c394fa0f88c72cb6610b06`；[PR #1](https://github.com/aning0922/quiz-forge/pull/1) 实际 MERGED，[合并 CI](https://github.com/aning0922/quiz-forge/actions/runs/38122039960) 实际 completed/success，未修改 main。Node 20.20.1、pnpm 10.32.1、Git 2.50.1 可用；CI 固定 Node 24。两个分支均从该基线创建。
@@ -43,7 +51,7 @@ AI概念素材商用/作者审批、跨设备正文与完整字体方案、十�
 
 研究分支 `codex/oss-r-evaluation`，commit `2d8fcd790e19785d4406d6badf172f089a0065b6`，[Draft PR #2](https://github.com/aning0922/quiz-forge/pull/2)，[CI 38123252843](https://github.com/aning0922/quiz-forge/actions/runs/38123252843) 实际 completed/success，与该 head 一致。六项本地基线检查通过：6 单测，34 E2E 通过、10 按既有矩阵策略跳过。初次缺 Chromium 已安装后重跑；远端 CI 执行冻结安装/格式/lint/类型/单测/构建，不运行 E2E。
 
-交付 `OPEN_SOURCE_REUSE_EVALUATION.md`、`OPEN_SOURCE_REUSE_REVIEW.md` 与自编 `docs/oss-r/` 夹具。独立审查修正发行 commit 锚点并补维护证据；总控复现 inkjs 选择/状态恢复相等并复核格式/lint。SurveyJS 仅借鉴；inkjs 为未来 D24/25 候选、推荐直接依赖但待作者批准；Puck 当前不采用；Quizcraft 唯一官方身份不足，保持待定。没有改生产代码/依赖/锁文件，完整 Next/RSC/TS strict 接入、恶意输入配额和跨版本回放仍未验证。
+交付 `OPEN_SOURCE_REUSE_EVALUATION.md`、`OPEN_SOURCE_REUSE_REVIEW.md` 与自编 `docs/oss-r/` 夹具。独立审查修正发行 commit 锚点并补维护证据；总控复现 inkjs 选择/状态恢复相等并复核格式/lint。SurveyJS 仅借鉴；inkjs 为未来 D24/25 候选、推荐直接依赖但待作者批准；Puck 当前不采用；Quizcraft 在首轮曾因身份不足待定；本次整改已核验作者指定仓库，现建议仅借鉴，详见本页当前整改记录。没有改生产代码/依赖/锁文件，完整 Next/RSC/TS strict 接入、恶意输入配额和跨版本回放仍未验证。
 
 ## 当前退出条件
 

@@ -421,7 +421,7 @@ export function HistoricalExperience() {
                 选择一项后才能前往下一题。
               </p>
             )}
-            <div className={styles.questionActions}>
+            <div className={styles.questionActions} data-question-navigation>
               <button
                 className={styles.secondaryButton}
                 onClick={() => setIndex((value) => Math.max(0, value - 1))}

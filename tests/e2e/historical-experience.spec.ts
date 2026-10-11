@@ -161,6 +161,17 @@ test("mobile long options, keyboard focus and reduced motion remain usable", asy
       () => document.documentElement.scrollWidth <= innerWidth,
     ),
   ).toBe(true);
+  for (const button of [
+    page.getByRole("button", { name: "上一题" }),
+    page.getByRole("button", { name: "核对答卷" }),
+  ]) {
+    await expect(button).toHaveCSS("white-space", "nowrap");
+    expect(
+      await button.evaluate(
+        (element) => element.getBoundingClientRect().height,
+      ),
+    ).toBeGreaterThanOrEqual(44);
+  }
   await page.getByRole("radio").first().focus();
   await expect(page.getByRole("radio").first()).toBeFocused();
   await page.keyboard.press("Space");
@@ -190,6 +201,60 @@ test("mobile long options, keyboard focus and reduced motion remain usable", asy
         .evaluate((element) => getComputedStyle(element).transitionDuration),
     ),
   ).toBeLessThanOrEqual(0.001);
+});
+
+test("large navigation labels wrap by whole control without overflow", async ({
+  page,
+}) => {
+  for (const viewport of [
+    { width: 320, height: 740 },
+    { width: 375, height: 812 },
+    { width: 390, height: 844 },
+    { width: 430, height: 932 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await page.goto(route);
+    await page.evaluate(() =>
+      localStorage.removeItem("quizforge.d1b.historical-demo.v1"),
+    );
+    await page.reload();
+    await page.addStyleTag({
+      content:
+        "[data-question-navigation] button { font-size: 24px !important; }",
+    });
+    for (let i = 0; i < 11; i++) {
+      await page.getByRole("radio").first().click();
+      await page.getByRole("button", { name: "下一题" }).click();
+    }
+    const navigation = page.locator("[data-question-navigation]");
+    const buttons = navigation.getByRole("button");
+    await expect(buttons).toHaveCount(2);
+    for (const button of [buttons.nth(0), buttons.nth(1)]) {
+      await expect(button).toHaveCSS("font-size", "24px");
+      expect(
+        await button
+          .locator("svg")
+          .evaluate((el) => el.getBoundingClientRect().width),
+      ).toBeGreaterThanOrEqual(18);
+      expect(
+        await button.evaluate((element) => {
+          const rect = element.getBoundingClientRect();
+          const parent = element.parentElement!.getBoundingClientRect();
+          return (
+            rect.height >= 44 &&
+            rect.left >= parent.left &&
+            rect.right <= parent.right &&
+            element.scrollWidth <= element.clientWidth
+          );
+        }),
+      ).toBe(true);
+    }
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBe(true);
+  }
 });
 
 test("captures D1-B review states without changing historical evidence", async ({
