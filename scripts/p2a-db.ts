@@ -1,3 +1,4 @@
+import { configureImports } from "../src/features/quizpack/import/config-management";
 import {
   initLocalInstance,
   manageLocalInstance,
@@ -26,6 +27,15 @@ async function main() {
         adminConfigPath: manifest.adminConfigPath,
         status: "running",
       }) + "\n",
+    );
+  } else if (command === "imports") {
+    const options = parseArguments(args, ["instance", "enabled"]);
+    if (!["true", "false"].includes(options.enabled!))
+      throw new ManagementError("CLI_ARGUMENTS_INVALID");
+    process.stdout.write(
+      JSON.stringify(
+        await configureImports(options.instance!, options.enabled === "true"),
+      ) + "\n",
     );
   } else if (
     command === "start" ||
