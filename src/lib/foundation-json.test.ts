@@ -62,6 +62,17 @@ describe("bounded ordinary foundation JSON", () => {
       }),
     ).toThrow();
     expect(invoked).toBe(false);
+    const proxy = new Proxy(
+      {},
+      {
+        ownKeys() {
+          invoked = true;
+          return [];
+        },
+      },
+    );
+    expect(() => canonicalFoundationJson(proxy)).toThrow();
+    expect(invoked).toBe(false);
     expect(() => canonicalFoundationJson(new Array(2))).toThrow();
     expect(() =>
       canonicalFoundationJson(Object.assign([1], { extra: true })),
@@ -75,6 +86,9 @@ describe("bounded ordinary foundation JSON", () => {
     const cyclic: unknown[] = [];
     cyclic.push(cyclic);
     expect(() => canonicalFoundationJson(cyclic)).toThrow();
+    const shared = { title: "Synthetic" };
+    const cloned = cloneFoundationJson([shared, shared]) as (typeof shared)[];
+    expect(cloned[0]).not.toBe(cloned[1]);
   });
 
   it.each([

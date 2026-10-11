@@ -1,3 +1,4 @@
+import { types } from "node:util";
 import {
   cloneFoundationJson,
   hashFoundationJson,
@@ -38,13 +39,29 @@ function record(
   input: unknown,
   allowed: readonly string[],
 ): Record<string, FoundationJson> {
-  // Clone first to reject accessors/exotic objects and avoid holding any caller aliases.
-  const copy = cloneFoundationJson(input);
-  if (copy === null || typeof copy !== "object" || Array.isArray(copy))
+  // Envelope metadata must not consume the content's own byte/depth budget.
+  if (
+    input === null ||
+    typeof input !== "object" ||
+    Array.isArray(input) ||
+    types.isProxy(input)
+  )
     reject("DRAFT_INVALID_INPUT");
-  const object = copy as Record<string, FoundationJson>;
-  if (Object.keys(object).some((key) => !allowed.includes(key)))
+  const prototype = Object.getPrototypeOf(input);
+  if (prototype !== Object.prototype && prototype !== null)
     reject("DRAFT_INVALID_INPUT");
+  if (Object.getOwnPropertySymbols(input).length) reject("DRAFT_INVALID_INPUT");
+  const descriptors = Object.getOwnPropertyDescriptors(input);
+  const object: Record<string, FoundationJson> = {};
+  for (const [key, descriptor] of Object.entries(descriptors)) {
+    if (
+      !allowed.includes(key) ||
+      !("value" in descriptor) ||
+      !descriptor.enumerable
+    )
+      reject("DRAFT_INVALID_INPUT");
+    object[key] = cloneFoundationJson(descriptor.value);
+  }
   return object;
 }
 
