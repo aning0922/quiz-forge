@@ -1,0 +1,63 @@
+{
+  "createdOn": "2026-10-11",
+  "provenance": "Original AI-generated concept artwork commissioned for this prototype. No external image incorporated. This is provenance, not a commercial license certification.",
+  "prompts": "docs/VISUAL_V2_B_PROMPTS.json",
+  "assets": [
+    {
+      "id": "historical.li-bai.v2b.landscape",
+      "path": "/assets/themes/historical/visual-v2-b/li-bai-landscape.webp",
+      "width": 1024,
+      "height": 1536,
+      "bytes": 426314,
+      "sha256": "c6bf09a55952f34e7ed3659197feb489b8b35f74ee3b296af79a4a582411a219",
+      "sourceFile": "/Users/aipuli/.codex/generated_images/01a12a42-1b3e-75d0-a83f-e2cdd63b671c/exec-d825856f-1518-439d-afdf-d786c32c60b9.png",
+      "sourceSha256": "9d5d0e3c2e6e4e164e25eaec9c8af0c358d24f16cc7675b39fb0ea3c4850dff2",
+      "method": "built-in image_gen; no reference image; WebP encoding only, no crop or retouch",
+      "status": "pending",
+      "commercialApproval": "not-approved",
+      "historicalAccuracy": "artistic concept, not historical portrait or costume reconstruction"
+    },
+    {
+      "id": "historical.li-bai.v2b.celestial",
+      "path": "/assets/themes/historical/visual-v2-b/li-bai-celestial.webp",
+      "width": 1024,
+      "height": 1536,
+      "bytes": 526480,
+      "sha256": "3c5696a0aefa78dcec1a309922c7991a201cc347abe9e0295ab4787ce8f437d8",
+      "sourceFile": "/Users/aipuli/.codex/generated_images/01a12a42-1b3e-75d0-a83f-e2cdd63b671c/exec-31918bd8-e45d-4c82-a8e3-4e5073ec5f27.png",
+      "sourceSha256": "67f01a2148f967575ca9ec206572c5ea73abca170542acd6974881b57016e9c7",
+      "method": "built-in image_gen; no reference image; WebP encoding only, no crop or retouch",
+      "status": "pending",
+      "commercialApproval": "not-approved",
+      "historicalAccuracy": "artistic concept, not historical portrait or costume reconstruction"
+    },
+    {
+      "id": "historical.chapter.v2b.landscape",
+      "path": "/assets/themes/historical/visual-v2-b/chapter-landscape.webp",
+      "width": 2172,
+      "height": 724,
+      "bytes": 102144,
+      "sha256": "e9cb305703b61b73a826cd4f4873acef4f68625d01b40645b27d1034d2564cc3",
+      "sourceFile": "/Users/aipuli/.codex/generated_images/01a12a42-1b3e-75d0-a83f-e2cdd63b671c/exec-a8a3f7ce-baac-4185-8784-f5d9fce6a3e8.png",
+      "sourceSha256": "cfd30fa2a3f04570b73726094244cb52bd6a66a94a22a8a45e07dc681e54100b",
+      "method": "built-in image_gen; original no-person chapter transition, no reference images; WebP encoding only",
+      "promptFile": "docs/VISUAL_V2_B_TRANSITION_PROMPTS.json",
+      "status": "pending",
+      "commercialApproval": "not-approved"
+    },
+    {
+      "id": "historical.chapter.v2b.celestial",
+      "path": "/assets/themes/historical/visual-v2-b/chapter-celestial.webp",
+      "width": 2172,
+      "height": 724,
+      "bytes": 77734,
+      "sha256": "a107d82809a158c4ef737477b7119ea8031c7ad6650834fed81ffe69df2bfa4f",
+      "sourceFile": "/Users/aipuli/.codex/generated_images/01a12a42-1b3e-75d0-a83f-e2cdd63b671c/exec-9f2f5199-84ef-48c9-9661-99025d253255.png",
+      "sourceSha256": "b6ce2b6cc23d124edfb6643a363c08a1f4c696d826a7ea8fe9912ae2d584b3a8",
+      "method": "built-in image_gen; original no-person chapter transition, no reference images; WebP encoding only",
+      "promptFile": "docs/VISUAL_V2_B_TRANSITION_PROMPTS.json",
+      "status": "pending",
+      "commercialApproval": "not-approved"
+    }
+  ]
+}

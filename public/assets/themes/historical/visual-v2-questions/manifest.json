@@ -1,0 +1,63 @@
+{
+  "generatedOn": "2026-10-11",
+  "provenance": "Original AI-generated neutral museum environments for research only.",
+  "promptFile": "docs/VISUAL_V2_QUESTIONS_PROMPTS.json",
+  "assets": [
+    {
+      "id": "neutral-cabinet-room-1",
+      "path": "/assets/themes/historical/visual-v2-questions/room-1.webp",
+      "width": 1672,
+      "height": 941,
+      "bytes": 321752,
+      "sha256": "ed47a6c4d46a8d8ddf5d9fb232ee9119ffdb4d50cd3f215546a55e841fe42ba7",
+      "sourceFile": "exec-dbc8b19b-ffed-47f5-a41a-370ba43817e0.png",
+      "sourceSha256": "8138fe21077102b23e828f80230b39f0306b7e183eb52ff15f6fcfa35820e1ae",
+      "method": "built-in image_gen; no reference image; WebP encoding only",
+      "status": "pending",
+      "commercialApproval": "not-approved",
+      "identity": "No result person, portrait, name or score association."
+    },
+    {
+      "id": "neutral-cabinet-room-2",
+      "path": "/assets/themes/historical/visual-v2-questions/room-2.webp",
+      "width": 1672,
+      "height": 941,
+      "bytes": 268732,
+      "sha256": "b798235e52dfc7ec1e34b426a6157022943ca7552baf662e17f25daffbaf17b5",
+      "sourceFile": "exec-5e89e70b-bb6a-41cf-a728-c68c7fc21145.png",
+      "sourceSha256": "0c3ee06aafe2625dcfcc683e96a07e17349ff2f96bacd2ad5140120792442372",
+      "method": "built-in image_gen; no reference image; WebP encoding only",
+      "status": "pending",
+      "commercialApproval": "not-approved",
+      "identity": "No result person, portrait, name or score association."
+    },
+    {
+      "id": "neutral-cabinet-room-3",
+      "path": "/assets/themes/historical/visual-v2-questions/room-3.webp",
+      "width": 1672,
+      "height": 941,
+      "bytes": 303492,
+      "sha256": "d8e8d555e3b0990b43b4a069dea9223b1aa43d507e5140f5da087cad11d043cc",
+      "sourceFile": "exec-536c64bf-1e70-404f-98ca-58a5eb572749.png",
+      "sourceSha256": "c7e69665ead5a3e8f56f8698e4d7672b20bde2cad4e09368ebd630f99c1adbee",
+      "method": "built-in image_gen; no reference image; WebP encoding only",
+      "status": "pending",
+      "commercialApproval": "not-approved",
+      "identity": "No result person, portrait, name or score association."
+    },
+    {
+      "id": "neutral-cabinet-room-4",
+      "path": "/assets/themes/historical/visual-v2-questions/room-4.webp",
+      "width": 1672,
+      "height": 941,
+      "bytes": 225358,
+      "sha256": "8773d02d9a94f5e93946b001f326edd7896c159d06b63f04ed2533dae7820bd2",
+      "sourceFile": "exec-76287ce7-abc3-4f69-bbd9-78aa408c407d.png",
+      "sourceSha256": "458242edfbf7ce4186953f317584ff431ae5cef041faf1543e428e7a2e7e1dae",
+      "method": "built-in image_gen; no reference image; WebP encoding only",
+      "status": "pending",
+      "commercialApproval": "not-approved",
+      "identity": "No result person, portrait, name or score association."
+    }
+  ]
+}

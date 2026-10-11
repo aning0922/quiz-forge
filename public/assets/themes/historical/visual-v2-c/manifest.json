@@ -1,0 +1,142 @@
+{
+  "createdOn": "2026-10-11",
+  "provenance": "Responsive derivatives of original AI concept art. Source manifests retain generation prompts and provenance; commercial approval remains pending.",
+  "sourceManifests": [
+    "/assets/themes/historical/visual-v2-b/manifest.json",
+    "/assets/themes/historical/visual-v2-questions/manifest.json"
+  ],
+  "assets": [
+    {
+      "path": "/assets/themes/historical/visual-v2-c/room-1-480.webp",
+      "width": 480,
+      "height": 270,
+      "bytes": 24344,
+      "sha256": "048ce6f58b6d613e8e0182c576fc097f8fb9e12fb11e68bee20bce2f52913606",
+      "source": "/assets/themes/historical/visual-v2-questions/room-1.webp",
+      "sourceSha256": "ed47a6c4d46a8d8ddf5d9fb232ee9119ffdb4d50cd3f215546a55e841fe42ba7",
+      "transformation": "Proportional downsample and WebP encoding only. No crop, retouch or new art.",
+      "status": "pending",
+      "commercialApproval": "not-approved"
+    },
+    {
+      "path": "/assets/themes/historical/visual-v2-c/room-1-960.webp",
+      "width": 960,
+      "height": 540,
+      "bytes": 77708,
+      "sha256": "13e2c809e905cbe7028ba40ab719c38d594710817217f03aeafc1981bcab68b9",
+      "source": "/assets/themes/historical/visual-v2-questions/room-1.webp",
+      "sourceSha256": "ed47a6c4d46a8d8ddf5d9fb232ee9119ffdb4d50cd3f215546a55e841fe42ba7",
+      "transformation": "Proportional downsample and WebP encoding only. No crop, retouch or new art.",
+      "status": "pending",
+      "commercialApproval": "not-approved"
+    },
+    {
+      "path": "/assets/themes/historical/visual-v2-c/room-2-480.webp",
+      "width": 480,
+      "height": 270,
+      "bytes": 23270,
+      "sha256": "b3e5b9860931a14c98bff782ea631849c936facf2cd86833b99207b87910b429",
+      "source": "/assets/themes/historical/visual-v2-questions/room-2.webp",
+      "sourceSha256": "b798235e52dfc7ec1e34b426a6157022943ca7552baf662e17f25daffbaf17b5",
+      "transformation": "Proportional downsample and WebP encoding only. No crop, retouch or new art.",
+      "status": "pending",
+      "commercialApproval": "not-approved"
+    },
+    {
+      "path": "/assets/themes/historical/visual-v2-c/room-2-960.webp",
+      "width": 960,
+      "height": 540,
+      "bytes": 67964,
+      "sha256": "6b6818705f7715a072140bf4ced23222a0ddf72ebd5a44e338a4c9f50f518c51",
+      "source": "/assets/themes/historical/visual-v2-questions/room-2.webp",
+      "sourceSha256": "b798235e52dfc7ec1e34b426a6157022943ca7552baf662e17f25daffbaf17b5",
+      "transformation": "Proportional downsample and WebP encoding only. No crop, retouch or new art.",
+      "status": "pending",
+      "commercialApproval": "not-approved"
+    },
+    {
+      "path": "/assets/themes/historical/visual-v2-c/room-3-480.webp",
+      "width": 480,
+      "height": 270,
+      "bytes": 21976,
+      "sha256": "2511c350b073b2be4cbedff10de9786e65cb503355fe79909a6a460a0a634749",
+      "source": "/assets/themes/historical/visual-v2-questions/room-3.webp",
+      "sourceSha256": "d8e8d555e3b0990b43b4a069dea9223b1aa43d507e5140f5da087cad11d043cc",
+      "transformation": "Proportional downsample and WebP encoding only. No crop, retouch or new art.",
+      "status": "pending",
+      "commercialApproval": "not-approved"
+    },
+    {
+      "path": "/assets/themes/historical/visual-v2-c/room-3-960.webp",
+      "width": 960,
+      "height": 540,
+      "bytes": 72324,
+      "sha256": "c53fec85dde3e1fc69b0626b6bac6cfad0905124f19e49900dabf26caf710c4a",
+      "source": "/assets/themes/historical/visual-v2-questions/room-3.webp",
+      "sourceSha256": "d8e8d555e3b0990b43b4a069dea9223b1aa43d507e5140f5da087cad11d043cc",
+      "transformation": "Proportional downsample and WebP encoding only. No crop, retouch or new art.",
+      "status": "pending",
+      "commercialApproval": "not-approved"
+    },
+    {
+      "path": "/assets/themes/historical/visual-v2-c/room-4-480.webp",
+      "width": 480,
+      "height": 270,
+      "bytes": 18138,
+      "sha256": "ac136b103c4492ac91ecf23d5cc75ff671e7f8ffb6464461b2da33b5413f43e8",
+      "source": "/assets/themes/historical/visual-v2-questions/room-4.webp",
+      "sourceSha256": "8773d02d9a94f5e93946b001f326edd7896c159d06b63f04ed2533dae7820bd2",
+      "transformation": "Proportional downsample and WebP encoding only. No crop, retouch or new art.",
+      "status": "pending",
+      "commercialApproval": "not-approved"
+    },
+    {
+      "path": "/assets/themes/historical/visual-v2-c/room-4-960.webp",
+      "width": 960,
+      "height": 540,
+      "bytes": 55542,
+      "sha256": "92abaa882858a5fa3963e9242bbfdad1b573e83cc9fb4bfcc41b8b698cf27990",
+      "source": "/assets/themes/historical/visual-v2-questions/room-4.webp",
+      "sourceSha256": "8773d02d9a94f5e93946b001f326edd7896c159d06b63f04ed2533dae7820bd2",
+      "transformation": "Proportional downsample and WebP encoding only. No crop, retouch or new art.",
+      "status": "pending",
+      "commercialApproval": "not-approved"
+    },
+    {
+      "path": "/assets/themes/historical/visual-v2-c/figure-160.webp",
+      "width": 160,
+      "height": 240,
+      "bytes": 10010,
+      "sha256": "8e4665e56354dbb53cc06f764860b6f05d3ee9b9460835cc8ad2437e8960abad",
+      "source": "/assets/themes/historical/visual-v2-b/li-bai-celestial.webp",
+      "sourceSha256": "3c5696a0aefa78dcec1a309922c7991a201cc347abe9e0295ab4787ce8f437d8",
+      "transformation": "Proportional downsample and WebP encoding only. No crop, retouch or new art.",
+      "status": "pending",
+      "commercialApproval": "not-approved"
+    },
+    {
+      "path": "/assets/themes/historical/visual-v2-c/figure-480.webp",
+      "width": 480,
+      "height": 720,
+      "bytes": 67850,
+      "sha256": "8bf408371b64e0e08b095d157ef2e30bf2a163cf79e615c28d46b42bbf9e1397",
+      "source": "/assets/themes/historical/visual-v2-b/li-bai-celestial.webp",
+      "sourceSha256": "3c5696a0aefa78dcec1a309922c7991a201cc347abe9e0295ab4787ce8f437d8",
+      "transformation": "Proportional downsample and WebP encoding only. No crop, retouch or new art.",
+      "status": "pending",
+      "commercialApproval": "not-approved"
+    },
+    {
+      "path": "/assets/themes/historical/visual-v2-c/figure-960.webp",
+      "width": 960,
+      "height": 1440,
+      "bytes": 199972,
+      "sha256": "6303c635cf12b0814c6847e9c3bb7cd874aa8be95593d8a28ac1817c5a03ce92",
+      "source": "/assets/themes/historical/visual-v2-b/li-bai-celestial.webp",
+      "sourceSha256": "3c5696a0aefa78dcec1a309922c7991a201cc347abe9e0295ab4787ce8f437d8",
+      "transformation": "Proportional downsample and WebP encoding only. No crop, retouch or new art.",
+      "status": "pending",
+      "commercialApproval": "not-approved"
+    }
+  ]
+}

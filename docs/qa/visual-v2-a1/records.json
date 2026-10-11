@@ -1,0 +1,653 @@
+{
+  "capturedOn": "2026-10-11 Asia/Shanghai",
+  "records": [
+    {
+      "name": "journey-report-320x740-full.png",
+      "direction": "journey",
+      "state": "report",
+      "viewport": {
+        "width": 320,
+        "height": 740
+      },
+      "kind": "full",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "journey-poster-320x740-full.png",
+      "direction": "journey",
+      "state": "poster",
+      "viewport": {
+        "width": 320,
+        "height": 740
+      },
+      "kind": "full",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "journey-atlas-five-320x740-component.png",
+      "direction": "journey",
+      "state": "atlas-five",
+      "viewport": {
+        "width": 320,
+        "height": 740
+      },
+      "kind": "component",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "journey-report-375x812-full.png",
+      "direction": "journey",
+      "state": "report",
+      "viewport": {
+        "width": 375,
+        "height": 812
+      },
+      "kind": "full",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "journey-poster-375x812-full.png",
+      "direction": "journey",
+      "state": "poster",
+      "viewport": {
+        "width": 375,
+        "height": 812
+      },
+      "kind": "full",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "journey-atlas-five-375x812-component.png",
+      "direction": "journey",
+      "state": "atlas-five",
+      "viewport": {
+        "width": 375,
+        "height": 812
+      },
+      "kind": "component",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "journey-report-390x844-full.png",
+      "direction": "journey",
+      "state": "report",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "kind": "full",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "journey-report-390x844-first.png",
+      "direction": "journey",
+      "state": "report",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "kind": "first",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "journey-poster-390x844-full.png",
+      "direction": "journey",
+      "state": "poster",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "kind": "full",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "journey-poster-390x844-first.png",
+      "direction": "journey",
+      "state": "poster",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "kind": "first",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "journey-atlas-five-390x844-component.png",
+      "direction": "journey",
+      "state": "atlas-five",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "kind": "component",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "journey-report-430x932-full.png",
+      "direction": "journey",
+      "state": "report",
+      "viewport": {
+        "width": 430,
+        "height": 932
+      },
+      "kind": "full",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "journey-poster-430x932-full.png",
+      "direction": "journey",
+      "state": "poster",
+      "viewport": {
+        "width": 430,
+        "height": 932
+      },
+      "kind": "full",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "journey-atlas-five-430x932-component.png",
+      "direction": "journey",
+      "state": "atlas-five",
+      "viewport": {
+        "width": 430,
+        "height": 932
+      },
+      "kind": "component",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "journey-report-1440x1000-full.png",
+      "direction": "journey",
+      "state": "report",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "kind": "full",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "journey-poster-1440x1000-full.png",
+      "direction": "journey",
+      "state": "poster",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "kind": "full",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "journey-atlas-five-1440x1000-component.png",
+      "direction": "journey",
+      "state": "atlas-five",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "kind": "component",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "journey-atlas-four-390x844-component.png",
+      "direction": "journey",
+      "state": "atlas-four",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "kind": "component",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "journey-atlas-seven-390x844-component.png",
+      "direction": "journey",
+      "state": "atlas-seven",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "kind": "component",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "journey-atlas-long-390x844-component.png",
+      "direction": "journey",
+      "state": "atlas-long",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "kind": "component",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "journey-long-24px-320x740-full.png",
+      "direction": "journey",
+      "state": "long-24px",
+      "viewport": {
+        "width": 320,
+        "height": 740
+      },
+      "kind": "full",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "journey-verse-source-390x844-component.png",
+      "direction": "journey",
+      "state": "verse-source",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "kind": "component",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "journey-original-report-390x844-full.png",
+      "direction": "journey",
+      "state": "original-report",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "kind": "full",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "journey-original-report-390x844-first.png",
+      "direction": "journey",
+      "state": "original-report",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "kind": "first",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "journey-original-poster-390x844-full.png",
+      "direction": "journey",
+      "state": "original-poster",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "kind": "full",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "journey-no-verse-390x844-first.png",
+      "direction": "journey",
+      "state": "no-verse",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "kind": "first",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "journey-reduced-motion-390x844-full.png",
+      "direction": "journey",
+      "state": "reduced-motion",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "kind": "full",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "collection-report-320x740-full.png",
+      "direction": "collection",
+      "state": "report",
+      "viewport": {
+        "width": 320,
+        "height": 740
+      },
+      "kind": "full",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "collection-poster-320x740-full.png",
+      "direction": "collection",
+      "state": "poster",
+      "viewport": {
+        "width": 320,
+        "height": 740
+      },
+      "kind": "full",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "collection-atlas-five-320x740-component.png",
+      "direction": "collection",
+      "state": "atlas-five",
+      "viewport": {
+        "width": 320,
+        "height": 740
+      },
+      "kind": "component",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "collection-report-375x812-full.png",
+      "direction": "collection",
+      "state": "report",
+      "viewport": {
+        "width": 375,
+        "height": 812
+      },
+      "kind": "full",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "collection-poster-375x812-full.png",
+      "direction": "collection",
+      "state": "poster",
+      "viewport": {
+        "width": 375,
+        "height": 812
+      },
+      "kind": "full",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "collection-atlas-five-375x812-component.png",
+      "direction": "collection",
+      "state": "atlas-five",
+      "viewport": {
+        "width": 375,
+        "height": 812
+      },
+      "kind": "component",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "collection-report-390x844-full.png",
+      "direction": "collection",
+      "state": "report",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "kind": "full",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "collection-report-390x844-first.png",
+      "direction": "collection",
+      "state": "report",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "kind": "first",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "collection-poster-390x844-full.png",
+      "direction": "collection",
+      "state": "poster",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "kind": "full",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "collection-poster-390x844-first.png",
+      "direction": "collection",
+      "state": "poster",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "kind": "first",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "collection-atlas-five-390x844-component.png",
+      "direction": "collection",
+      "state": "atlas-five",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "kind": "component",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "collection-report-430x932-full.png",
+      "direction": "collection",
+      "state": "report",
+      "viewport": {
+        "width": 430,
+        "height": 932
+      },
+      "kind": "full",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "collection-poster-430x932-full.png",
+      "direction": "collection",
+      "state": "poster",
+      "viewport": {
+        "width": 430,
+        "height": 932
+      },
+      "kind": "full",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "collection-atlas-five-430x932-component.png",
+      "direction": "collection",
+      "state": "atlas-five",
+      "viewport": {
+        "width": 430,
+        "height": 932
+      },
+      "kind": "component",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "collection-report-1440x1000-full.png",
+      "direction": "collection",
+      "state": "report",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "kind": "full",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "collection-poster-1440x1000-full.png",
+      "direction": "collection",
+      "state": "poster",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "kind": "full",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "collection-atlas-five-1440x1000-component.png",
+      "direction": "collection",
+      "state": "atlas-five",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "kind": "component",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "collection-atlas-four-390x844-component.png",
+      "direction": "collection",
+      "state": "atlas-four",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "kind": "component",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "collection-atlas-seven-390x844-component.png",
+      "direction": "collection",
+      "state": "atlas-seven",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "kind": "component",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "collection-atlas-long-390x844-component.png",
+      "direction": "collection",
+      "state": "atlas-long",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "kind": "component",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "collection-long-24px-320x740-full.png",
+      "direction": "collection",
+      "state": "long-24px",
+      "viewport": {
+        "width": 320,
+        "height": 740
+      },
+      "kind": "full",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "collection-verse-source-390x844-component.png",
+      "direction": "collection",
+      "state": "verse-source",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "kind": "component",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "collection-original-report-390x844-full.png",
+      "direction": "collection",
+      "state": "original-report",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "kind": "full",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "collection-original-report-390x844-first.png",
+      "direction": "collection",
+      "state": "original-report",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "kind": "first",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "collection-original-poster-390x844-full.png",
+      "direction": "collection",
+      "state": "original-poster",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "kind": "full",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "collection-no-verse-390x844-first.png",
+      "direction": "collection",
+      "state": "no-verse",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "kind": "first",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "collection-reduced-motion-390x844-full.png",
+      "direction": "collection",
+      "state": "reduced-motion",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "kind": "full",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    }
+  ]
+}

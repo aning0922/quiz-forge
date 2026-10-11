@@ -1,0 +1,18 @@
+{
+  "source": "Google Fonts Noto Serif SC CSS2 text subset",
+  "fetchedOn": "2026-10-11 Asia/Shanghai",
+  "sourceRepository": "https://github.com/google/fonts/tree/main/ofl/notoserifsc",
+  "license": "SIL OFL 1.1",
+  "licenseEvidence": "/assets/fonts/OFL-NotoSerifSC.txt",
+  "format": "woff2",
+  "weight": 600,
+  "bytes": 138168,
+  "sha256": "b7d6cae5d6117c66a3f9dfc124b64abaa25967b28f54cf2c27befb9042321827",
+  "subsetCharacters": 800,
+  "coverage": "/assets/fonts/visual-v2-c/characters.txt",
+  "sourceCSS": "/assets/fonts/visual-v2-c/source.css",
+  "status": "license-documented; visual-review",
+  "sourceSha256": "2519998a716ff463799cbca67083dfb9404e1079a38ee8170e883757eb7fb0ba",
+  "conversion": "fonttools 4.61.1 + brotli 1.2.0; TTF subset to WOFF2; every declared codepoint verified in cmap",
+  "requestCharacters": 800
+}

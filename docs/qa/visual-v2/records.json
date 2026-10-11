@@ -1,0 +1,930 @@
+{
+  "capturedOn": "2026-10-11 Asia/Shanghai",
+  "browser": "156.0.8078.4",
+  "records": [
+    {
+      "name": "journey-cover-320x740-full.png",
+      "direction": "journey",
+      "state": "cover",
+      "viewport": {
+        "width": 320,
+        "height": 740
+      },
+      "browser": "Chromium 156.0.8078.4",
+      "mode": "full",
+      "overflow": false
+    },
+    {
+      "name": "journey-question-320x740-full.png",
+      "direction": "journey",
+      "state": "question",
+      "viewport": {
+        "width": 320,
+        "height": 740
+      },
+      "browser": "Chromium 156.0.8078.4",
+      "mode": "full",
+      "overflow": false
+    },
+    {
+      "name": "journey-reveal-320x740-full.png",
+      "direction": "journey",
+      "state": "reveal",
+      "viewport": {
+        "width": 320,
+        "height": 740
+      },
+      "browser": "Chromium 156.0.8078.4",
+      "mode": "full",
+      "overflow": false
+    },
+    {
+      "name": "journey-report-320x740-full.png",
+      "direction": "journey",
+      "state": "report",
+      "viewport": {
+        "width": 320,
+        "height": 740
+      },
+      "browser": "Chromium 156.0.8078.4",
+      "mode": "full",
+      "overflow": false
+    },
+    {
+      "name": "journey-poster-320x740-full.png",
+      "direction": "journey",
+      "state": "poster",
+      "viewport": {
+        "width": 320,
+        "height": 740
+      },
+      "browser": "Chromium 156.0.8078.4",
+      "mode": "full",
+      "overflow": false
+    },
+    {
+      "name": "journey-cover-375x812-full.png",
+      "direction": "journey",
+      "state": "cover",
+      "viewport": {
+        "width": 375,
+        "height": 812
+      },
+      "browser": "Chromium 156.0.8078.4",
+      "mode": "full",
+      "overflow": false
+    },
+    {
+      "name": "journey-question-375x812-full.png",
+      "direction": "journey",
+      "state": "question",
+      "viewport": {
+        "width": 375,
+        "height": 812
+      },
+      "browser": "Chromium 156.0.8078.4",
+      "mode": "full",
+      "overflow": false
+    },
+    {
+      "name": "journey-reveal-375x812-full.png",
+      "direction": "journey",
+      "state": "reveal",
+      "viewport": {
+        "width": 375,
+        "height": 812
+      },
+      "browser": "Chromium 156.0.8078.4",
+      "mode": "full",
+      "overflow": false
+    },
+    {
+      "name": "journey-report-375x812-full.png",
+      "direction": "journey",
+      "state": "report",
+      "viewport": {
+        "width": 375,
+        "height": 812
+      },
+      "browser": "Chromium 156.0.8078.4",
+      "mode": "full",
+      "overflow": false
+    },
+    {
+      "name": "journey-poster-375x812-full.png",
+      "direction": "journey",
+      "state": "poster",
+      "viewport": {
+        "width": 375,
+        "height": 812
+      },
+      "browser": "Chromium 156.0.8078.4",
+      "mode": "full",
+      "overflow": false
+    },
+    {
+      "name": "journey-cover-390x844-full.png",
+      "direction": "journey",
+      "state": "cover",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "browser": "Chromium 156.0.8078.4",
+      "mode": "full",
+      "overflow": false
+    },
+    {
+      "name": "journey-cover-390x844-first.png",
+      "direction": "journey",
+      "state": "cover",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "browser": "Chromium 156.0.8078.4",
+      "mode": "first",
+      "overflow": false
+    },
+    {
+      "name": "journey-question-390x844-full.png",
+      "direction": "journey",
+      "state": "question",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "browser": "Chromium 156.0.8078.4",
+      "mode": "full",
+      "overflow": false
+    },
+    {
+      "name": "journey-question-390x844-first.png",
+      "direction": "journey",
+      "state": "question",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "browser": "Chromium 156.0.8078.4",
+      "mode": "first",
+      "overflow": false
+    },
+    {
+      "name": "journey-reveal-390x844-full.png",
+      "direction": "journey",
+      "state": "reveal",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "browser": "Chromium 156.0.8078.4",
+      "mode": "full",
+      "overflow": false
+    },
+    {
+      "name": "journey-reveal-390x844-first.png",
+      "direction": "journey",
+      "state": "reveal",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "browser": "Chromium 156.0.8078.4",
+      "mode": "first",
+      "overflow": false
+    },
+    {
+      "name": "journey-report-390x844-full.png",
+      "direction": "journey",
+      "state": "report",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "browser": "Chromium 156.0.8078.4",
+      "mode": "full",
+      "overflow": false
+    },
+    {
+      "name": "journey-report-390x844-first.png",
+      "direction": "journey",
+      "state": "report",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "browser": "Chromium 156.0.8078.4",
+      "mode": "first",
+      "overflow": false
+    },
+    {
+      "name": "journey-poster-390x844-full.png",
+      "direction": "journey",
+      "state": "poster",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "browser": "Chromium 156.0.8078.4",
+      "mode": "full",
+      "overflow": false
+    },
+    {
+      "name": "journey-poster-390x844-first.png",
+      "direction": "journey",
+      "state": "poster",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "browser": "Chromium 156.0.8078.4",
+      "mode": "first",
+      "overflow": false
+    },
+    {
+      "name": "journey-cover-430x932-full.png",
+      "direction": "journey",
+      "state": "cover",
+      "viewport": {
+        "width": 430,
+        "height": 932
+      },
+      "browser": "Chromium 156.0.8078.4",
+      "mode": "full",
+      "overflow": false
+    },
+    {
+      "name": "journey-question-430x932-full.png",
+      "direction": "journey",
+      "state": "question",
+      "viewport": {
+        "width": 430,
+        "height": 932
+      },
+      "browser": "Chromium 156.0.8078.4",
+      "mode": "full",
+      "overflow": false
+    },
+    {
+      "name": "journey-reveal-430x932-full.png",
+      "direction": "journey",
+      "state": "reveal",
+      "viewport": {
+        "width": 430,
+        "height": 932
+      },
+      "browser": "Chromium 156.0.8078.4",
+      "mode": "full",
+      "overflow": false
+    },
+    {
+      "name": "journey-report-430x932-full.png",
+      "direction": "journey",
+      "state": "report",
+      "viewport": {
+        "width": 430,
+        "height": 932
+      },
+      "browser": "Chromium 156.0.8078.4",
+      "mode": "full",
+      "overflow": false
+    },
+    {
+      "name": "journey-poster-430x932-full.png",
+      "direction": "journey",
+      "state": "poster",
+      "viewport": {
+        "width": 430,
+        "height": 932
+      },
+      "browser": "Chromium 156.0.8078.4",
+      "mode": "full",
+      "overflow": false
+    },
+    {
+      "name": "journey-cover-1440x1000-full.png",
+      "direction": "journey",
+      "state": "cover",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "browser": "Chromium 156.0.8078.4",
+      "mode": "full",
+      "overflow": false
+    },
+    {
+      "name": "journey-question-1440x1000-full.png",
+      "direction": "journey",
+      "state": "question",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "browser": "Chromium 156.0.8078.4",
+      "mode": "full",
+      "overflow": false
+    },
+    {
+      "name": "journey-reveal-1440x1000-full.png",
+      "direction": "journey",
+      "state": "reveal",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "browser": "Chromium 156.0.8078.4",
+      "mode": "full",
+      "overflow": false
+    },
+    {
+      "name": "journey-report-1440x1000-full.png",
+      "direction": "journey",
+      "state": "report",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "browser": "Chromium 156.0.8078.4",
+      "mode": "full",
+      "overflow": false
+    },
+    {
+      "name": "journey-poster-1440x1000-full.png",
+      "direction": "journey",
+      "state": "poster",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "browser": "Chromium 156.0.8078.4",
+      "mode": "full",
+      "overflow": false
+    },
+    {
+      "name": "journey-resume-390x844-full.png",
+      "direction": "journey",
+      "state": "resume",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "browser": "Chromium 156.0.8078.4",
+      "mode": "full",
+      "overflow": false
+    },
+    {
+      "name": "journey-long-question-390x844-full.png",
+      "direction": "journey",
+      "state": "long-question",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "browser": "Chromium 156.0.8078.4",
+      "mode": "full",
+      "overflow": false
+    },
+    {
+      "name": "journey-confirm-390x844-full.png",
+      "direction": "journey",
+      "state": "confirm",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "browser": "Chromium 156.0.8078.4",
+      "mode": "full",
+      "overflow": false
+    },
+    {
+      "name": "journey-conflict-390x844-full.png",
+      "direction": "journey",
+      "state": "conflict",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "browser": "Chromium 156.0.8078.4",
+      "mode": "full",
+      "overflow": false
+    },
+    {
+      "name": "journey-save-failed-390x844-full.png",
+      "direction": "journey",
+      "state": "save-failed",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "browser": "Chromium 156.0.8078.4",
+      "mode": "full",
+      "overflow": false
+    },
+    {
+      "name": "journey-reduced-motion-390x844-full.png",
+      "direction": "journey",
+      "state": "reduced-motion",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "browser": "Chromium 156.0.8078.4",
+      "mode": "full",
+      "overflow": false
+    },
+    {
+      "name": "journey-missing-portrait-390x844-full.png",
+      "direction": "journey",
+      "state": "missing-portrait",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "browser": "Chromium 156.0.8078.4",
+      "mode": "full",
+      "overflow": false
+    },
+    {
+      "name": "journey-loading-ssr-390x844-full.png",
+      "direction": "journey",
+      "state": "loading-ssr",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "browser": "Chromium 156.0.8078.4",
+      "mode": "full",
+      "overflow": false
+    },
+    {
+      "name": "collection-cover-320x740-full.png",
+      "direction": "collection",
+      "state": "cover",
+      "viewport": {
+        "width": 320,
+        "height": 740
+      },
+      "browser": "Chromium 156.0.8078.4",
+      "mode": "full",
+      "overflow": false
+    },
+    {
+      "name": "collection-question-320x740-full.png",
+      "direction": "collection",
+      "state": "question",
+      "viewport": {
+        "width": 320,
+        "height": 740
+      },
+      "browser": "Chromium 156.0.8078.4",
+      "mode": "full",
+      "overflow": false
+    },
+    {
+      "name": "collection-reveal-320x740-full.png",
+      "direction": "collection",
+      "state": "reveal",
+      "viewport": {
+        "width": 320,
+        "height": 740
+      },
+      "browser": "Chromium 156.0.8078.4",
+      "mode": "full",
+      "overflow": false
+    },
+    {
+      "name": "collection-report-320x740-full.png",
+      "direction": "collection",
+      "state": "report",
+      "viewport": {
+        "width": 320,
+        "height": 740
+      },
+      "browser": "Chromium 156.0.8078.4",
+      "mode": "full",
+      "overflow": false
+    },
+    {
+      "name": "collection-poster-320x740-full.png",
+      "direction": "collection",
+      "state": "poster",
+      "viewport": {
+        "width": 320,
+        "height": 740
+      },
+      "browser": "Chromium 156.0.8078.4",
+      "mode": "full",
+      "overflow": false
+    },
+    {
+      "name": "collection-cover-375x812-full.png",
+      "direction": "collection",
+      "state": "cover",
+      "viewport": {
+        "width": 375,
+        "height": 812
+      },
+      "browser": "Chromium 156.0.8078.4",
+      "mode": "full",
+      "overflow": false
+    },
+    {
+      "name": "collection-question-375x812-full.png",
+      "direction": "collection",
+      "state": "question",
+      "viewport": {
+        "width": 375,
+        "height": 812
+      },
+      "browser": "Chromium 156.0.8078.4",
+      "mode": "full",
+      "overflow": false
+    },
+    {
+      "name": "collection-reveal-375x812-full.png",
+      "direction": "collection",
+      "state": "reveal",
+      "viewport": {
+        "width": 375,
+        "height": 812
+      },
+      "browser": "Chromium 156.0.8078.4",
+      "mode": "full",
+      "overflow": false
+    },
+    {
+      "name": "collection-report-375x812-full.png",
+      "direction": "collection",
+      "state": "report",
+      "viewport": {
+        "width": 375,
+        "height": 812
+      },
+      "browser": "Chromium 156.0.8078.4",
+      "mode": "full",
+      "overflow": false
+    },
+    {
+      "name": "collection-poster-375x812-full.png",
+      "direction": "collection",
+      "state": "poster",
+      "viewport": {
+        "width": 375,
+        "height": 812
+      },
+      "browser": "Chromium 156.0.8078.4",
+      "mode": "full",
+      "overflow": false
+    },
+    {
+      "name": "collection-cover-390x844-full.png",
+      "direction": "collection",
+      "state": "cover",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "browser": "Chromium 156.0.8078.4",
+      "mode": "full",
+      "overflow": false
+    },
+    {
+      "name": "collection-cover-390x844-first.png",
+      "direction": "collection",
+      "state": "cover",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "browser": "Chromium 156.0.8078.4",
+      "mode": "first",
+      "overflow": false
+    },
+    {
+      "name": "collection-question-390x844-full.png",
+      "direction": "collection",
+      "state": "question",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "browser": "Chromium 156.0.8078.4",
+      "mode": "full",
+      "overflow": false
+    },
+    {
+      "name": "collection-question-390x844-first.png",
+      "direction": "collection",
+      "state": "question",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "browser": "Chromium 156.0.8078.4",
+      "mode": "first",
+      "overflow": false
+    },
+    {
+      "name": "collection-reveal-390x844-full.png",
+      "direction": "collection",
+      "state": "reveal",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "browser": "Chromium 156.0.8078.4",
+      "mode": "full",
+      "overflow": false
+    },
+    {
+      "name": "collection-reveal-390x844-first.png",
+      "direction": "collection",
+      "state": "reveal",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "browser": "Chromium 156.0.8078.4",
+      "mode": "first",
+      "overflow": false
+    },
+    {
+      "name": "collection-report-390x844-full.png",
+      "direction": "collection",
+      "state": "report",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "browser": "Chromium 156.0.8078.4",
+      "mode": "full",
+      "overflow": false
+    },
+    {
+      "name": "collection-report-390x844-first.png",
+      "direction": "collection",
+      "state": "report",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "browser": "Chromium 156.0.8078.4",
+      "mode": "first",
+      "overflow": false
+    },
+    {
+      "name": "collection-poster-390x844-full.png",
+      "direction": "collection",
+      "state": "poster",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "browser": "Chromium 156.0.8078.4",
+      "mode": "full",
+      "overflow": false
+    },
+    {
+      "name": "collection-poster-390x844-first.png",
+      "direction": "collection",
+      "state": "poster",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "browser": "Chromium 156.0.8078.4",
+      "mode": "first",
+      "overflow": false
+    },
+    {
+      "name": "collection-cover-430x932-full.png",
+      "direction": "collection",
+      "state": "cover",
+      "viewport": {
+        "width": 430,
+        "height": 932
+      },
+      "browser": "Chromium 156.0.8078.4",
+      "mode": "full",
+      "overflow": false
+    },
+    {
+      "name": "collection-question-430x932-full.png",
+      "direction": "collection",
+      "state": "question",
+      "viewport": {
+        "width": 430,
+        "height": 932
+      },
+      "browser": "Chromium 156.0.8078.4",
+      "mode": "full",
+      "overflow": false
+    },
+    {
+      "name": "collection-reveal-430x932-full.png",
+      "direction": "collection",
+      "state": "reveal",
+      "viewport": {
+        "width": 430,
+        "height": 932
+      },
+      "browser": "Chromium 156.0.8078.4",
+      "mode": "full",
+      "overflow": false
+    },
+    {
+      "name": "collection-report-430x932-full.png",
+      "direction": "collection",
+      "state": "report",
+      "viewport": {
+        "width": 430,
+        "height": 932
+      },
+      "browser": "Chromium 156.0.8078.4",
+      "mode": "full",
+      "overflow": false
+    },
+    {
+      "name": "collection-poster-430x932-full.png",
+      "direction": "collection",
+      "state": "poster",
+      "viewport": {
+        "width": 430,
+        "height": 932
+      },
+      "browser": "Chromium 156.0.8078.4",
+      "mode": "full",
+      "overflow": false
+    },
+    {
+      "name": "collection-cover-1440x1000-full.png",
+      "direction": "collection",
+      "state": "cover",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "browser": "Chromium 156.0.8078.4",
+      "mode": "full",
+      "overflow": false
+    },
+    {
+      "name": "collection-question-1440x1000-full.png",
+      "direction": "collection",
+      "state": "question",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "browser": "Chromium 156.0.8078.4",
+      "mode": "full",
+      "overflow": false
+    },
+    {
+      "name": "collection-reveal-1440x1000-full.png",
+      "direction": "collection",
+      "state": "reveal",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "browser": "Chromium 156.0.8078.4",
+      "mode": "full",
+      "overflow": false
+    },
+    {
+      "name": "collection-report-1440x1000-full.png",
+      "direction": "collection",
+      "state": "report",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "browser": "Chromium 156.0.8078.4",
+      "mode": "full",
+      "overflow": false
+    },
+    {
+      "name": "collection-poster-1440x1000-full.png",
+      "direction": "collection",
+      "state": "poster",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "browser": "Chromium 156.0.8078.4",
+      "mode": "full",
+      "overflow": false
+    },
+    {
+      "name": "collection-resume-390x844-full.png",
+      "direction": "collection",
+      "state": "resume",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "browser": "Chromium 156.0.8078.4",
+      "mode": "full",
+      "overflow": false
+    },
+    {
+      "name": "collection-long-question-390x844-full.png",
+      "direction": "collection",
+      "state": "long-question",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "browser": "Chromium 156.0.8078.4",
+      "mode": "full",
+      "overflow": false
+    },
+    {
+      "name": "collection-confirm-390x844-full.png",
+      "direction": "collection",
+      "state": "confirm",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "browser": "Chromium 156.0.8078.4",
+      "mode": "full",
+      "overflow": false
+    },
+    {
+      "name": "collection-conflict-390x844-full.png",
+      "direction": "collection",
+      "state": "conflict",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "browser": "Chromium 156.0.8078.4",
+      "mode": "full",
+      "overflow": false
+    },
+    {
+      "name": "collection-save-failed-390x844-full.png",
+      "direction": "collection",
+      "state": "save-failed",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "browser": "Chromium 156.0.8078.4",
+      "mode": "full",
+      "overflow": false
+    },
+    {
+      "name": "collection-reduced-motion-390x844-full.png",
+      "direction": "collection",
+      "state": "reduced-motion",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "browser": "Chromium 156.0.8078.4",
+      "mode": "full",
+      "overflow": false
+    },
+    {
+      "name": "collection-missing-portrait-390x844-full.png",
+      "direction": "collection",
+      "state": "missing-portrait",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "browser": "Chromium 156.0.8078.4",
+      "mode": "full",
+      "overflow": false
+    },
+    {
+      "name": "collection-loading-ssr-390x844-full.png",
+      "direction": "collection",
+      "state": "loading-ssr",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "browser": "Chromium 156.0.8078.4",
+      "mode": "full",
+      "overflow": false
+    },
+    {
+      "name": "comparison-index-1440x1000-full.png",
+      "direction": "comparison",
+      "state": "index",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "browser": "Chromium 156.0.8078.4",
+      "mode": "full",
+      "overflow": false
+    }
+  ]
+}

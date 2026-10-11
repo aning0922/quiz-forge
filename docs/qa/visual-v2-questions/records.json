@@ -1,0 +1,304 @@
+{
+  "capturedOn": "2026-10-11 Asia/Shanghai",
+  "records": [
+    {
+      "name": "q1-390x844-first.png",
+      "state": "q1",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "kind": "first",
+      "room": "0",
+      "scene": "ready",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "q1-390x844-full.png",
+      "state": "q1",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "kind": "full",
+      "room": "0",
+      "scene": "ready",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "q1-selected-390x844-full.png",
+      "state": "q1-selected",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "kind": "full",
+      "room": "0",
+      "scene": "ready",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "q3-390x844-full.png",
+      "state": "q3",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "kind": "full",
+      "room": "0",
+      "scene": "ready",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "q4-390x844-first.png",
+      "state": "q4",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "kind": "first",
+      "room": "1",
+      "scene": "ready",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "q4-390x844-full.png",
+      "state": "q4",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "kind": "full",
+      "room": "1",
+      "scene": "ready",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "q6-390x844-full.png",
+      "state": "q6",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "kind": "full",
+      "room": "1",
+      "scene": "ready",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "q7-390x844-first.png",
+      "state": "q7",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "kind": "first",
+      "room": "2",
+      "scene": "ready",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "q7-390x844-full.png",
+      "state": "q7",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "kind": "full",
+      "room": "2",
+      "scene": "ready",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "q9-390x844-full.png",
+      "state": "q9",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "kind": "full",
+      "room": "2",
+      "scene": "ready",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "q10-390x844-first.png",
+      "state": "q10",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "kind": "first",
+      "room": "3",
+      "scene": "ready",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "q10-390x844-full.png",
+      "state": "q10",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "kind": "full",
+      "room": "3",
+      "scene": "ready",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "q12-390x844-full.png",
+      "state": "q12",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "kind": "full",
+      "room": "3",
+      "scene": "ready",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "q1-375x812-first.png",
+      "state": "q1",
+      "viewport": {
+        "width": 375,
+        "height": 812
+      },
+      "kind": "first",
+      "room": "0",
+      "scene": "ready",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "q4-375x812-first.png",
+      "state": "q4",
+      "viewport": {
+        "width": 375,
+        "height": 812
+      },
+      "kind": "first",
+      "room": "1",
+      "scene": "ready",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "q7-375x812-first.png",
+      "state": "q7",
+      "viewport": {
+        "width": 375,
+        "height": 812
+      },
+      "kind": "first",
+      "room": "2",
+      "scene": "ready",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "q10-375x812-first.png",
+      "state": "q10",
+      "viewport": {
+        "width": 375,
+        "height": 812
+      },
+      "kind": "first",
+      "room": "3",
+      "scene": "ready",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "q6-430x932-first.png",
+      "state": "q6",
+      "viewport": {
+        "width": 430,
+        "height": 932
+      },
+      "kind": "first",
+      "room": "1",
+      "scene": "ready",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "q12-430x932-first.png",
+      "state": "q12",
+      "viewport": {
+        "width": 430,
+        "height": 932
+      },
+      "kind": "first",
+      "room": "3",
+      "scene": "ready",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "q7-1440x1000-first.png",
+      "state": "q7",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "kind": "first",
+      "room": "2",
+      "scene": "ready",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "q12-long-24px-320x740-full.png",
+      "state": "q12-long-24px",
+      "viewport": {
+        "width": 320,
+        "height": 740
+      },
+      "kind": "full",
+      "room": "3",
+      "scene": "ready",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "q1-reduced-motion-390x844-full.png",
+      "state": "q1-reduced-motion",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "kind": "full",
+      "room": "0",
+      "scene": "ready",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "q1-scene-missing-390x844-full.png",
+      "state": "q1-scene-missing",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "kind": "full",
+      "room": "0",
+      "scene": "missing",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    }
+  ]
+}
