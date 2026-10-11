@@ -1,6 +1,6 @@
 # macOS 媒体隔离候选与实测
 
-2026-10-12。基于 `6066c3b`，独立 `codex/media-isolation-macos` 工作树。只拥有 `scripts/quizpack-media-preflight/shared/`、`macos/` 和本文。**mac候选66项本流合成实测通过，待总控与Astra独立复核；不是B2-2接入或生产隔离批准。** 未修改P1/HTTP/Studio/DB，未启动数据库/3100、部署或合并main。Linux实际CI及整体退出结论由总控记录，不能用本机结果替代。
+2026-10-12。基于 `6066c3b`，独立 `codex/media-isolation-macos` 工作树。只拥有 `scripts/quizpack-media-preflight/shared/`、`macos/` 和本文。**总控已在目标工作树三次66项实测通过，Astra关闭全部三项P2；最终技术验收见[验收记录](MEDIA_ISOLATION_ACCEPTANCE.md)。不是B2-2接入或生产隔离批准。** 下文作者工作树数字及早期待验说明保留其历史范围。 未修改P1/HTTP/Studio/DB，未启动数据库/3100、部署或合并main。Linux实际CI及整体退出结论由总控记录，不能用本机结果替代。
 
 ## 共享交接
 

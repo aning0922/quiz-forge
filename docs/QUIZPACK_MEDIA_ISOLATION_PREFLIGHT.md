@@ -1,6 +1,6 @@
 # QuizPack 媒体隔离：独立 launcher 可行性合同
 
-日期：2026-10-12。审阅基线：`codex/quizpack-receipt` / `f070428`。状态：**实验范围、共享接口和所有权已冻结；平台策略尚待实测，未实施验收通过**。B2-1最终文档head `5caef260e0f17e3db02df911e3a4f1014012e081` 的CI38175221128已核实checks/database均success，总控接续本独立里程碑。仅允许本合同的有限可行性实验；B2-2业务接入须本里程碑通过后才开始，普通工程推进仍在既有托管授权内。
+日期：2026-10-12。审阅基线：`codex/quizpack-receipt` / `f070428`。状态：**本合同已实施并技术验收，准确证据见[验收记录](MEDIA_ISOLATION_ACCEPTANCE.md)**。下文实验期说明保留为冻结合同与历史过程，不覆盖验收记录的最终事实。B2-1最终文档head `5caef260e0f17e3db02df911e3a4f1014012e081` 的CI38175221128已核实checks/database均success，总控接续本独立里程碑。仅允许本合同的有限可行性实验；B2-2业务接入须本里程碑通过后才开始，普通工程推进仍在既有托管授权内。
 
 依据：[B2-2 提案与已选 Option B](STUDIO_P2B2_VALIDATION_PROPOSAL.md)、[B2-1 合同](STUDIO_P2B2.md)、[P1 媒体检查](../src/features/quizpack/v1/media.ts)及[可信 worker](../src/features/quizpack/v1/media-worker.mjs)。Option A 不作为回退。本里程碑只回答：在明确的平台组合上，可信媒体 worker 能否在真实权限边界内解码，并被可靠停止。
 

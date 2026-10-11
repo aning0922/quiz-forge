@@ -1,6 +1,6 @@
 # Linux 媒体隔离候选与真实 CI 入口
 
-2026-10-12。实施基线 `6066c3b`，独立分支 `codex/media-isolation-linux`。本交付只属于 [隔离预检合同](QUIZPACK_MEDIA_ISOLATION_PREFLIGHT.md)，没有改 P1 调用链、HTTP、业务表、Studio、DB、3100、部署或 main。**初始候选，未获 Linux 实测验收。** 总控可先接入独立 Ubuntu 24.04 workflow，后续追加完整生命周期矩阵。入口返回 candidate-smoke-passed 也不是合同全部通过。
+2026-10-12。实施基线 `6066c3b`，独立分支 `codex/media-isolation-linux`。本交付只属于 [隔离预检合同](QUIZPACK_MEDIA_ISOLATION_PREFLIGHT.md)，没有改 P1 调用链、HTTP、业务表、Studio、DB、3100、部署或 main。**准确代码736d923的真实CI38183239317已通过31项smoke和11项生命周期，Astra确认最终出口关闭，见[验收记录](MEDIA_ISOLATION_ACCEPTANCE.md)。** 下文初始候选/待验说明保留历史范围。 总控可先接入独立 Ubuntu 24.04 workflow，后续追加完整生命周期矩阵。入口返回 candidate-smoke-passed 也不是合同全部通过。
 
 从仓库根执行：
 

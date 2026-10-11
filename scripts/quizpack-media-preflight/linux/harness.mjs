@@ -409,6 +409,52 @@ safeMain(async () => {
     accepted: false,
   };
   await writePrivate(resolve(root, "summary.json"), JSON.stringify(report));
+  const boundedVersion = (value) =>
+    typeof value === "string" &&
+    value.trim() === value &&
+    /^\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(value)
+      ? value
+      : null;
+  const observedVersions = cases.find((c) => c.id === "image-native-identity")
+    ?.passed
+    ? versions
+    : null;
+  const memoryCase = cases.find(
+    (c) => c.id === "native-memory-and-enforced-cgroup",
+  );
+  const decodeCase = cases.find((c) => c.id === "decode-png-4000x4000");
+  const peakBytes = memoryCase?.result?.measured?.peakBytes;
+  const elapsedMs = decodeCase?.result?.elapsedMs;
+  const observations = {
+    kernel:
+      typeof report.kernel === "string" &&
+      report.kernel.trim() === report.kernel &&
+      /^\d{1,3}\.\d{1,3}\.\d{1,3}(?:-[A-Za-z0-9][A-Za-z0-9.+_-]{0,63})?$/.test(
+        report.kernel,
+      )
+        ? report.kernel
+        : null,
+    arch: report.arch === "x64" ? report.arch : null,
+    node: boundedVersion(observedVersions?.node),
+    sharp: boundedVersion(observedVersions?.sharp),
+    vips: boundedVersion(observedVersions?.vips),
+    // These observations are from distinct 16MP probes, not one timed sample.
+    native16MpPeakBytes:
+      memoryCase?.passed &&
+      memoryCase.result.measured?.measured === true &&
+      Number.isSafeInteger(peakBytes) &&
+      peakBytes >= 1 &&
+      peakBytes <= 536870912
+        ? peakBytes
+        : null,
+    decode16MpElapsedMs:
+      decodeCase?.passed &&
+      Number.isSafeInteger(elapsedMs) &&
+      elapsedMs >= 0 &&
+      elapsedMs <= 60000
+        ? elapsedMs
+        : null,
+  };
   process.stdout.write(
     JSON.stringify({
       outcome: cases.every((c) => c.passed)
@@ -417,6 +463,10 @@ safeMain(async () => {
       passed: cases.filter((c) => c.passed).length,
       total: cases.length,
       profileId: policy.profileId,
+      ...observations,
+      observationCode: Object.values(observations).every((v) => v !== null)
+        ? "OBSERVED"
+        : "OBSERVATION_METADATA_INVALID",
       accepted: false,
     }) + "\n",
   );

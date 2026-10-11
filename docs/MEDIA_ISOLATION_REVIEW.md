@@ -1,6 +1,6 @@
 # 媒体隔离可行性独立审查记录
 
-2026-10-12。状态：macOS精确组合已完成总控实测和独立审查；Linux实际smoke通过，最后一项生命周期故障注入待修复复验，整体尚未验收。总控集成，普通实现为两条GPT-6.1 Sol/high流，独立审查为GPT-6 Astra/high。不要把共享测试、候选smoke或文档CI当作操作系统隔离通过。
+2026-10-12。状态：macOS精确组合总控66项矩阵通过，Linux第九轮31项smoke及11项生命周期实际通过，全部独立登记P1/P2关闭，准确代码head的普通及平台CI成功。本里程碑技术验收见[MEDIA_ISOLATION_ACCEPTANCE](MEDIA_ISOLATION_ACCEPTANCE.md)。总控集成，普通实现为GPT-6.1 Sol/high，独立审查为GPT-6 Astra/high。以下保留失败和整改过程，早期“尚未验收”仅指当时检查点。
 
 ## 合同预审
 
@@ -85,3 +85,9 @@ mac修订5873c0f→root2f360f1、格式4deeb5a→c6ea094和最终报告3b96249�
 总控在目标工作树完整矩阵66/66三次通过，分别为首次封存、普通入口读取封存、最终报告修订后重新封存；每次residualControlEntries=0。精确组合为macOS26.6.2/build25G83/arm64、Node20.20.1、sharp0.35.5/libvips8.18.7；root profile `7475c2890e06902a0f5c5ca36c7c1f1b28173a851069ba25efe09ef063ae6a69`、component `b00b6251991ae94dd9ba35b7567ae4ab2937e56b85cbaf515abc59f82c0d5b73`。root与作者component差异已核实仅来自pnpm生成semver包装器中的实际位置字节，保留完整字节绑定，迁移工作树必须重验。mac无native RSS硬限、SBPL维护风险仍保留；这些技术结论不授予内容、素材商用、B2-2或发布批准。
 
 代理最小修复来源为Linux流 `eed9cff844724b0abc4d84f8fa97876aaea68176`，总控集成同一行及其文档，并由独立Sol补三项真实自有Unix socket回归：headers-only wait后才能start、创建/停止丢应答、101媒体类型与双向合并头字节。三项全通过；只在内存移除flushHeaders的负对照准确使第一项失败、另两项仍通过，子进程与临时物全部结束。总控31/31共享/Linux/mac纯控制、格式/lint/类型通过；这不是新的Docker证据，准确head CI接续核验。
+
+## 第九轮退出证据
+
+准确head `736d92354d2765a15ca6109c2611dfc7dde9b83e` 的[普通CI38183239291](https://github.com/aning0922/quiz-forge/actions/runs/38183239291) checks/database均实际success，[媒体CI38183239317](https://github.com/aning0922/quiz-forge/actions/runs/38183239317/job/114600066143)实际success，31项smoke和11项生命周期全部通过。关键stop-loss实见running，create/start/kill/lost各1，丢失实际204应答，随后DEADLINE_EXCEEDED/stoppedconfirmed；daemon不可达和身份不符仍unknown，显式同实体恢复才confirmed，两项控制清理检查通过。Astra窄审确认代理修复无新增P1/P2，并基于总控交接的真实日志关闭最后Linux出口，未冒称再次亲自执行。两平台技术结论及当前能力限制见[验收](MEDIA_ISOLATION_ACCEPTANCE.md)。
+
+交付收口另将harness已经实际采集的kernel/arch/worker版本和两项不同16MP探针的峰值/耗时摘要输出为有限字段，便于CI保留精确组合。值经过长度/语法/数值校验，异常为null与固定OBSERVATION_METADATA_INVALID，不输出daemonID、路径、runId或原对象；不改私有报告、权限、执行或矩阵判定。独立Sol提取实际输出代码43组边界通过，定向lint/format/语法检查通过；这是报告可留存性修订，真实新增字段以后继CI为准，不倒填第九轮未输出的数值。
