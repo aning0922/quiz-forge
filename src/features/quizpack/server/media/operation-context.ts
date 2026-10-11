@@ -187,6 +187,8 @@ export function beginMediaImage(context: MediaOperationContext): {
   deadlineMonotonicMs: number;
   finish: () => void;
   readState: () => MediaOperationState;
+  requestStop: (reason: MediaStopReason) => MediaStopState;
+  signal: AbortSignal;
 } | null {
   const state = getState(context);
   observe(state);
@@ -201,7 +203,13 @@ export function beginMediaImage(context: MediaOperationContext): {
   return {
     deadlineMonotonicMs: deadline,
     // In-flight cleanup still has the authoritative state after public disposal.
+    signal: context.signal,
     readState: () => snapshot(state),
+    requestStop(reason) {
+      observe(state);
+      stopAt(state, reason, performance.now());
+      return state.stop!;
+    },
     finish() {
       observe(state);
       if (state.image !== image) return;

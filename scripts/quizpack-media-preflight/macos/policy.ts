@@ -212,6 +212,9 @@ export function loadPolicy(
         "contracts.ts",
         "internal/shared/precheck.ts",
         "internal/shared/output.ts",
+        "internal/macos/execute.ts",
+        "internal/macos/identity-protocol.ts",
+        "operation-context.ts",
         "internal/macos/identity-helper.c",
         "internal/macos/identity-query.h",
       ].map((name) => ({
