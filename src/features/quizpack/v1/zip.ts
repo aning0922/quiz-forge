@@ -330,84 +330,112 @@ function scan(bytes: Buffer, limits: PackLimits): Entry[] {
   if (cursor !== central) fail();
   return entries;
 }
-/** Entire archive layout is verified before any decompression. No disk extraction. */
+export interface RestrictedZipExecution {
+  signal: AbortSignal;
+  limits: Readonly<PackLimits>;
+  checkpoint: () => void;
+  /** Register close before starting native inflate, including failed operations. */
+  trackIo?: (settled: Promise<void>) => void;
+}
+
+/** Same restricted ZIP core. Trusted execution borrows its existing operation scope. */
+export async function readRestrictedZipCore(
+  source: AsyncIterable<Uint8Array>,
+  execution: RestrictedZipExecution,
+): Promise<RestrictedZip> {
+  const { signal, limits, checkpoint } = execution;
+  checkpoint();
+  const bytes = await readBoundedBytes(source, limits.archiveBytes, signal);
+  checkpoint();
+  const entries = scan(bytes, limits);
+  checkpoint();
+  const files = new Map<string, Buffer>();
+  let total = 0;
+  for (const entry of entries) {
+    checkpoint();
+    const compressed = bytes.subarray(
+      entry.start,
+      entry.start + entry.compressed,
+    );
+    let data: Buffer;
+    if (entry.method === 0) data = Buffer.from(compressed);
+    else {
+      const inflater = createInflateRaw({ chunkSize: 16384 });
+      // A synchronous absolute-deadline checkpoint may abort before the async
+      // iterator installs its error handler. The iterator still sees errors.
+      inflater.on("error", () => {});
+      const closed = new Promise<void>((resolve) =>
+        inflater.once("close", resolve),
+      );
+      execution.trackIo?.(closed);
+      const stop = () =>
+        inflater.destroy(new PackToolError("OPERATION_CANCELLED"));
+      signal.addEventListener("abort", stop, { once: true });
+      const chunks: Buffer[] = [];
+      let actual = 0;
+      try {
+        checkpoint();
+        inflater.end(compressed);
+        for await (const chunk of inflater) {
+          checkpoint();
+          actual += chunk.length;
+          if (
+            actual > entry.size ||
+            actual > maximum(entry.name, limits) ||
+            total + actual > limits.totalUncompressedBytes
+          )
+            throw new PackToolError("ZIP_ACTUAL_SIZE_LIMIT");
+          if (actual > entry.compressed * limits.compressionRatio)
+            throw new PackToolError("ZIP_COMPRESSION_RATIO_LIMIT");
+          chunks.push(Buffer.from(chunk));
+        }
+        checkpoint();
+        if (inflater.bytesWritten !== compressed.length)
+          throw new PackToolError("ZIP_DEFLATE_TRAILING_BYTES");
+        data = Buffer.concat(chunks, actual);
+      } catch (error) {
+        checkpoint();
+        throw error;
+      } finally {
+        signal.removeEventListener("abort", stop);
+        inflater.destroy();
+        // Offline callers await actual close. Trusted callers aggregate this
+        // registered promise under the operation's single cleanup deadline.
+        if (!execution.trackIo) await closed;
+      }
+    }
+    total += data.length;
+    if (data.length !== entry.size)
+      throw new PackToolError("ZIP_SIZE_MISMATCH");
+    if (crc32.unsigned(data) !== entry.crc)
+      throw new PackToolError("ZIP_CRC_MISMATCH");
+    checkpoint();
+    files.set(entry.name, data);
+    await abortable(
+      new Promise<void>((resolve) => setImmediate(resolve)),
+      signal,
+    );
+  }
+  checkpoint();
+  const archiveSha256 = createHash("sha256").update(bytes).digest("hex");
+  checkpoint();
+  return { archiveSha256, files };
+}
+
+/** Offline compatibility wrapper: no alternate parser or decoder implementation. */
 export async function readRestrictedZip(
   source: AsyncIterable<Uint8Array>,
   context: ValidationContext,
 ): Promise<Result<RestrictedZip>> {
   try {
-    return await withPackDeadline(context, async (signal, limits) => {
-      const bytes = await readBoundedBytes(source, limits.archiveBytes, signal);
-      throwIfAborted(signal);
-      const entries = scan(bytes, limits);
-      throwIfAborted(signal);
-      const files = new Map<string, Buffer>();
-      let total = 0;
-      for (const entry of entries) {
-        throwIfAborted(signal);
-        const compressed = bytes.subarray(
-          entry.start,
-          entry.start + entry.compressed,
-        );
-        let data: Buffer;
-        if (entry.method === 0) data = Buffer.from(compressed);
-        else {
-          const inflater = createInflateRaw({ chunkSize: 16384 });
-          const stop = () =>
-            inflater.destroy(new PackToolError("OPERATION_CANCELLED"));
-          signal.addEventListener("abort", stop, { once: true });
-          const chunks: Buffer[] = [];
-          let actual = 0;
-          try {
-            inflater.end(compressed);
-            for await (const chunk of inflater) {
-              throwIfAborted(signal);
-              actual += chunk.length;
-              if (
-                actual > entry.size ||
-                actual > maximum(entry.name, limits) ||
-                total + actual > limits.totalUncompressedBytes
-              )
-                throw new PackToolError("ZIP_ACTUAL_SIZE_LIMIT");
-              if (actual > entry.compressed * limits.compressionRatio)
-                throw new PackToolError("ZIP_COMPRESSION_RATIO_LIMIT");
-              chunks.push(Buffer.from(chunk));
-            }
-            throwIfAborted(signal);
-            if (inflater.bytesWritten !== compressed.length)
-              throw new PackToolError("ZIP_DEFLATE_TRAILING_BYTES");
-            data = Buffer.concat(chunks, actual);
-          } catch (error) {
-            throwIfAborted(signal);
-            throw error;
-          } finally {
-            signal.removeEventListener("abort", stop);
-            inflater.destroy();
-          }
-        }
-        total += data.length;
-        if (data.length !== entry.size)
-          throw new PackToolError("ZIP_SIZE_MISMATCH");
-        if (crc32.unsigned(data) !== entry.crc)
-          throw new PackToolError("ZIP_CRC_MISMATCH");
-        throwIfAborted(signal);
-        files.set(entry.name, data);
-        await abortable(
-          new Promise<void>((resolve) => setImmediate(resolve)),
-          signal,
-        );
-      }
-      throwIfAborted(signal);
-      const archiveSha256 = createHash("sha256").update(bytes).digest("hex");
-      throwIfAborted(signal);
-      return {
-        ok: true,
-        value: {
-          archiveSha256,
-          files,
-        },
-      };
-    });
+    const value = await withPackDeadline(context, (signal, limits) =>
+      readRestrictedZipCore(source, {
+        signal,
+        limits,
+        checkpoint: () => throwIfAborted(signal),
+      }),
+    );
+    return { ok: true, value };
   } catch (error) {
     return {
       ok: false,
