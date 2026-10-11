@@ -46,3 +46,9 @@ Product创建先插入无关联根，再按固定UUID序锁目录；替换先锁
 未执行test:e2e、HTTP/UI截图或3100服务：按分工由B与总控集成串行验收。本分支不建PR，无main合并、生产迁移、部署、消费者Key/评分/导入/发布。无本分支远端CI通过声明。A领域完成不替代B1整体验收或独立审查。
 
 前期失败记录：一项既有管理停用竞争测试单次失败，后续全量74/102/109项均未复现；Unicode0004未应用版首次含U+0000导致迁移失败且回滚，随后修正成功；原生driver故障注入确曾产生nextWrite未捕获异常，实际包装器修正后后端终止/事务期限与最终全量回归通过。测试配置、HTTP/UI文件和旧暂停成果均未修改。
+
+## 只读快照的相同驱动保护（最终补充）
+
+B1 read事务也有10s事务期限，多个有限SQL累加仍可能触发服务器终止。现将`isStudioConnectionFailure`作为server-only内部辅助，由读取与写入共用；read回调与外层在致命终止时同样先终止请求客户端，再返回STUDIO_UNAVAILABLE，避免原生begin/scope在死socket排队。对读取count阶段注入真实自身backend终止与真实10s服务器事务期限，两个新增测试均无未捕获异常通过。服务签名/HTTP合同不变，原P2-A认证服务没有改动。
+
+最终重验：format:check、lint、typecheck、test（32文件461项）、test:db（6文件111项）、build全部通过；锁/未知结果定向15项通过。原生驱动忽略目录复现保留250ms观察窗口，实际输出固定CONNECTION_CLOSED与DRIVER_UNCAUGHT_NEXTWRITE（connection.js:255），exit1；主动client.end发生在观察之后。这不是包装器验收结果，包装器读写终止回归均通过。测试实例2c6167bc134d2a50f5ecee093960a3a6随后受管stop/status确认stopped，端口55421已释放；私有manifest/配置/PGDATA保留可恢复。无HTTP3100进程。

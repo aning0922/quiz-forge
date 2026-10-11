@@ -17,7 +17,7 @@ export type StudioWriteCredentials = Readonly<{
   requestId: string;
 }>;
 
-function connectionFailure(error: unknown): boolean {
+export function isStudioConnectionFailure(error: unknown): boolean {
   const code =
     error && typeof error === "object" && "code" in error ? error.code : null;
   return (
@@ -86,14 +86,14 @@ export async function withStudioWrite<T>(
           callbackFailure = error;
           // Terminate this request-owned client before the driver attempts ROLLBACK on a dead socket.
           // postgres3.4.9 otherwise can queue nextWrite with socket=null after fatal termination.
-          if (connectionFailure(error))
+          if (isStudioConnectionFailure(error))
             await database.sql.end({ timeout: 0 }).catch(() => {});
           throw error;
         }
       },
     )) as T;
   } catch (error) {
-    if (connectionFailure(error)) {
+    if (isStudioConnectionFailure(error)) {
       await database.sql.end({ timeout: 0 }).catch(() => {});
       throw new StudioError("WRITE_OUTCOME_UNKNOWN");
     }
