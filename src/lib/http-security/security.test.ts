@@ -33,10 +33,19 @@ describe("Studio source boundary", () => {
       "http://127.0.0.1:3100/path",
       "http://u:p@127.0.0.1:3100",
       "http://127.0.0.1:80",
+      "http://127.0.0.1:81",
+      "http://127.0.0.1:1023",
+      "http://127.0.0.1:65536",
+      "http://127.0.0.1:01024",
     ]) {
       expect(() => configuredHost({ ...config, origin })).toThrow(
         "STUDIO_UNAVAILABLE",
       );
+    }
+    for (const port of [1024, 65535]) {
+      expect(
+        configuredHost({ ...config, origin: `http://127.0.0.1:${port}` }),
+      ).toBe(`127.0.0.1:${port}`);
     }
   });
   it("rejects absent, null, alias and foreign origins, without trusting proxy headers", () => {
