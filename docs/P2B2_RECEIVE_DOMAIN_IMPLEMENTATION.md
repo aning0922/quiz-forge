@@ -21,3 +21,7 @@ request DB黑洞修复：client/createDatabase及getDatabase支持可选`Databas
 增量针对性检查：类型/相关lint通过；扫描/锁/request预算9单元通过；真实PG+文件+TCP黑洞3文件29用例通过（包括目录1024/+1、目录12+4/13+4、总项8192峰值/+1的真实接收前拒绝）。storage黑洞3例和首次验证/请求读取/潜在写入黑洞3例均实际运行。纯不settle探针与受控clock分别记录为单元级证据。
 
 此前全仓test:db实际15文件183用例通过（包含单独90秒timeout配置的真实60秒流期限）；该全仓结果发生在四项修复之前，修复后须再跑完整域回归。更多租约/权限溢出与完整检查仍在进行；build、生产E2E、CI、PR由总控整合执行，不在此宣称阶段退出。
+
+修复后完整检查：format:check、全仓lint/typecheck及test通过（40文件552单元）；完整test:db16文件192用例通过，包含新的独占request DB与真实60秒期限。test:driver最初因缺专用QF_DRIVER_TEST_INSTANCE入口明确拒绝，随后指定A专属test实例重跑，结果待本轮结尾记录。
+
+后续账目边界修复：recover不创建任何归档/临时字节，仍有界扫描并验证全部held账目、停止证据及CAS；不因保守held headroom暂时超新接收准入额阻断停止后清理/对账。receive仍严格执行512MiB与新attempt峰值限制。真实“原存量+新峰值恰好512MiB→冻结DBunknown→显式恢复释放held”通过，避免合法接收后的恢复死锁。新尝试身份不变、同fence不续lease、released不可回held的真实触发器用例通过。包含此修复的两文件16域用例通过；最终整仓域复验待结尾记录。

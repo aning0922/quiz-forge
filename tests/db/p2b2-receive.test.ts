@@ -397,7 +397,7 @@ describe("B2-1 actual PostgreSQL and private bytes", () => {
     await expect(receive(created.import.id, source().source)).rejects.toThrow(
       "RECEIVE_ATTEMPT_LIMIT",
     );
-    expect((await row(created.import.id)).attempts).toHaveLength(3);
+    expect((await row(created.import.id)).attempts.length).toBe(3);
   });
   it("rejects cross-product access and read-only write identity", async () => {
     const created = await create();
