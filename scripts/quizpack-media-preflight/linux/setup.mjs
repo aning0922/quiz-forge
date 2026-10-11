@@ -143,7 +143,25 @@ safeMain(
     stage = "image-record";
     await writePrivate(resolve(CACHE, "image.json"), JSON.stringify(identity));
     stage = "native-identity";
-    const checked = await executeSynthetic({ scenario: "identity" });
+    const checked = await executeSynthetic({
+      scenario: "identity",
+      hooks: {
+        diagnostic(event) {
+          process.stdout.write(
+            JSON.stringify({ diagnostic: "native-identity", ...event }) + "\n",
+          );
+        },
+      },
+    });
+    process.stdout.write(
+      JSON.stringify({
+        diagnostic: "native-identity-result",
+        outcome: checked.outcome,
+        code: checked.code ?? null,
+        stopped: checked.stopped,
+        exitCode: checked.evidence?.exitCode ?? null,
+      }) + "\n",
+    );
     if (checked.outcome !== "probe" || checked.stopped !== "confirmed")
       throw new Error("NATIVE_IDENTITY_UNCONFIRMED");
     const dependencies = json(checked.stdout);

@@ -17,6 +17,7 @@ export const LIMITS = Object.freeze({
 export async function loadPolicy({
   deadline = performance.now() + 5000,
   signal,
+  onDiagnostic,
 } = {}) {
   const options = {
     deadline: deadline - 100,
@@ -64,6 +65,12 @@ export async function loadPolicy({
     ["image", "inspect", "--format", "{{json .Id}}", image.imageId],
     options,
   );
+  onDiagnostic?.({
+    phase: "policy-image-inspect",
+    exitCode: inspect.code,
+    settled: inspect.settled,
+    reason: inspect.reason ?? null,
+  });
   if (
     inspect.code !== 0 ||
     inspect.reason ||
@@ -79,19 +86,29 @@ export async function loadPolicy({
     ],
     options,
   );
+  onDiagnostic?.({
+    phase: "policy-daemon-info",
+    exitCode: info.code,
+    settled: info.settled,
+    reason: info.reason ?? null,
+  });
   if (info.code !== 0 || info.reason || !info.settled)
     throw new Error("DAEMON_UNAVAILABLE");
   const daemon = json(info.stdout);
-  if (
-    daemon.os !== "linux" ||
-    !["x86_64", "amd64"].includes(daemon.arch) ||
-    !daemon.id ||
-    !daemon.security.some((v) => v.startsWith("name=seccomp")) ||
-    !daemon.memory ||
-    !daemon.swap ||
-    !daemon.pids ||
-    !daemon.cpu
-  )
+  const capabilities = {
+    os: daemon.os === "linux",
+    arch: ["x86_64", "amd64"].includes(daemon.arch),
+    identity: typeof daemon.id === "string" && daemon.id.length > 0,
+    seccomp:
+      Array.isArray(daemon.security) &&
+      daemon.security.some((v) => v.startsWith("name=seccomp")),
+    memory: daemon.memory === true,
+    swap: daemon.swap === true,
+    pids: daemon.pids === true,
+    cpu: daemon.cpu === true,
+  };
+  onDiagnostic?.({ phase: "policy-capabilities", checks: capabilities });
+  if (!Object.values(capabilities).every((v) => v === true))
     throw new Error("CAPABILITY_UNAVAILABLE");
   let dependencies = null;
   try {
@@ -173,57 +190,101 @@ export function createArgs(record, entrypoint, args) {
 }
 export const INSPECT =
   '{ "id":{{json .Id}},"name":{{json .Name}},"image":{{json .Image}},"labels":{{json .Config.Labels}},"user":{{json .Config.User}},"entrypoint":{{json .Config.Entrypoint}},"cmd":{{json .Config.Cmd}},"env":{{json .Config.Env}},"health":{{json .Config.Healthcheck}},"mounts":{{json .Mounts}},"host":{{json .HostConfig}},"state":{{json .State}} }';
-export function matches(container, record) {
-  const h = container.host;
-  return (
-    /^[a-f0-9]{64}$/.test(container.id) &&
-    container.name === `/${record.name}` &&
-    container.image === record.imageId &&
-    container.labels["qf.run"] === record.runId &&
-    container.labels["qf.nonce"] === record.nonce &&
-    container.labels["qf.profile"] === record.profileId &&
-    container.user === "10001:10001" &&
-    JSON.stringify([...container.env].sort()) ===
-      JSON.stringify(
-        [
-          "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
-          "NODE_VERSION=20.20.1",
-          "YARN_VERSION=1.22.22",
-          "NODE_ENV=production",
-          "UV_THREADPOOL_SIZE=4",
-          "MALLOC_ARENA_MAX=2",
-        ].sort(),
-      ) &&
-    JSON.stringify(container.entrypoint) ===
-      JSON.stringify([record.entrypoint]) &&
-    JSON.stringify(container.cmd) === JSON.stringify(record.args) &&
-    container.mounts.length === 0 &&
-    !h.Privileged &&
-    h.ReadonlyRootfs &&
-    JSON.stringify(h.CapDrop) === '["ALL"]' &&
-    !h.CapAdd?.length &&
-    h.SecurityOpt.includes("no-new-privileges=true") &&
-    h.SecurityOpt.some(
-      (v) =>
-        v.startsWith("seccomp=") &&
-        hash(JSON.stringify(JSON.parse(v.slice(8)))) === record.seccompSha256,
-    ) &&
-    h.NetworkMode === "none" &&
-    h.IpcMode === "none" &&
-    h.PidMode === "" &&
-    h.CgroupnsMode === "private" &&
-    h.Memory === LIMITS.memory &&
-    h.MemorySwap === LIMITS.memory &&
-    h.NanoCpus === LIMITS.nanoCpus &&
-    h.PidsLimit === LIMITS.pids &&
-    h.RestartPolicy.Name === "no" &&
-    h.LogConfig.Type === "none" &&
-    !h.AutoRemove &&
-    !h.Binds?.length &&
-    !h.Devices?.length &&
-    !h.VolumesFrom?.length &&
-    !(h.PortBindings && Object.keys(h.PortBindings).length) &&
-    !(h.Tmpfs && Object.keys(h.Tmpfs).length) &&
-    container.health?.Test?.[0] === "NONE"
-  );
+export function containerChecks(c, record) {
+  const keys = [
+    "id",
+    "name",
+    "image",
+    "labels",
+    "user",
+    "environment",
+    "entrypoint",
+    "args",
+    "mounts",
+    "privileged",
+    "readOnly",
+    "capabilities",
+    "noNewPrivileges",
+    "seccomp",
+    "network",
+    "ipc",
+    "pid",
+    "cgroup",
+    "memory",
+    "swap",
+    "cpu",
+    "pids",
+    "restart",
+    "logging",
+    "autoRemove",
+    "binds",
+    "devices",
+    "volumes",
+    "ports",
+    "tmpfs",
+    "health",
+  ];
+  const checks = Object.fromEntries(keys.map((k) => [k, false]));
+  try {
+    const h = c.host;
+    Object.assign(checks, {
+      id: /^[a-f0-9]{64}$/.test(c.id),
+      name: c.name === `/${record.name}`,
+      image: c.image === record.imageId,
+      labels:
+        c.labels["qf.run"] === record.runId &&
+        c.labels["qf.nonce"] === record.nonce &&
+        c.labels["qf.profile"] === record.profileId,
+      user: c.user === "10001:10001",
+      environment:
+        JSON.stringify([...c.env].sort()) ===
+        JSON.stringify(
+          [
+            "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+            "NODE_VERSION=20.20.1",
+            "YARN_VERSION=1.22.22",
+            "NODE_ENV=production",
+            "UV_THREADPOOL_SIZE=4",
+            "MALLOC_ARENA_MAX=2",
+          ].sort(),
+        ),
+      entrypoint:
+        JSON.stringify(c.entrypoint) === JSON.stringify([record.entrypoint]),
+      args: JSON.stringify(c.cmd) === JSON.stringify(record.args),
+      mounts: c.mounts.length === 0,
+      privileged: !h.Privileged,
+      readOnly: h.ReadonlyRootfs,
+      capabilities:
+        JSON.stringify(h.CapDrop) === '["ALL"]' && !h.CapAdd?.length,
+      noNewPrivileges: h.SecurityOpt.includes("no-new-privileges=true"),
+      seccomp: h.SecurityOpt.some(
+        (v) =>
+          v.startsWith("seccomp=") &&
+          hash(JSON.stringify(JSON.parse(v.slice(8)))) === record.seccompSha256,
+      ),
+      network: h.NetworkMode === "none",
+      ipc: h.IpcMode === "none",
+      pid: h.PidMode === "",
+      cgroup: h.CgroupnsMode === "private",
+      memory: h.Memory === LIMITS.memory,
+      swap: h.MemorySwap === LIMITS.memory,
+      cpu: h.NanoCpus === LIMITS.nanoCpus,
+      pids: h.PidsLimit === LIMITS.pids,
+      restart: h.RestartPolicy.Name === "no",
+      logging: h.LogConfig.Type === "none",
+      autoRemove: !h.AutoRemove,
+      binds: !h.Binds?.length,
+      devices: !h.Devices?.length,
+      volumes: !h.VolumesFrom?.length,
+      ports: !(h.PortBindings && Object.keys(h.PortBindings).length),
+      tmpfs: !(h.Tmpfs && Object.keys(h.Tmpfs).length),
+      health: c.health?.Test?.[0] === "NONE",
+    });
+  } catch {
+    /* malformed own inspect: conservative false fields, never raw values */
+  }
+  return checks;
+}
+export function matches(c, record) {
+  return Object.values(containerChecks(c, record)).every((v) => v === true);
 }
