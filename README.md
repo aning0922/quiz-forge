@@ -2,7 +2,7 @@
 
 趣味测评商品研发、导入与运营平台。核心模式为 **Codex 精品商品研发 + QuizPack 标准化导入 + QuizForge 统一运行与运营**。面向移动端 H5，强调每个商品独立的视觉身份、确定性评分和一次正式完成后可反复查看的结果报告。后台 AI 为可选辅助，不是运行与发布依赖。
 
-**当前 main 已包含历史人物完整合成体验与真实 PNG 海报导出（D1-C）。** F1、P1包工具和P2-A数据库/运营认证已在堆叠分支完成技术验收，Draft PR #6/#7/#8仍未合并。本分支新增隔离PostgreSQL18.4、事务迁移、最小权限和真实Studio登录/会话；只用于本机运营内测。作者已授权按路线托管推进至首款端到端内测，接续测评工作区与分类管理；其他旧开发聊天保持暂停。正式评分、AccessKey、消费者完成流程与商品发布仍待后续阶段。最新事实见[进度](docs/PROGRESS.md)、[P2-A验收](docs/P2A_ACCEPTANCE.md)，授权见[托管开发](docs/MANAGED_DEVELOPMENT.md)。
+**当前 main 已包含历史人物完整合成体验与真实 PNG 海报导出（D1-C）。** F1、P1包工具和P2-A数据库/运营认证已在堆叠分支完成技术验收，Draft PR #6/#7/#8仍未合并。本分支P2-B1进一步实现真实测评目录工作区与分类标签管理，Draft PR #9正在最终集成验收；只用于本机运营内测。作者已授权按路线托管推进至首款端到端内测，其他旧开发聊天保持暂停。导入、评分、AccessKey、消费者完成流程与发布仍待后续阶段。最新事实见[进度](docs/PROGRESS.md)、[B1验收](docs/P2B1_ACCEPTANCE.md)，授权见[托管开发](docs/MANAGED_DEVELOPMENT.md)。
 
 ## 本地运行
 
@@ -52,7 +52,7 @@ corepack pnpm test:e2e
 | `/themes/animals`    | 动物人格匹配设计简报             |
 | 未知路由/主题        | 404 与返回入口                   |
 
-P2-A新增 `/studio/login`、`/studio` 和 `/api/studio/auth/{preauth,login,session,logout}`，均读取真实本机运营身份。没有配置或数据库不可用时明确关闭；尚未开通正式消费者答题、测评工作区、导入或发布路由。
+P2-A新增 `/studio/login`、`/studio` 和 `/api/studio/auth/{preauth,login,session,logout}`，读取真实本机运营身份。P2-B1新增 `/studio/products`、`/studio/products/[productId]`、`/studio/taxonomy` 及对应业务API，支持创建/编辑、筛选、分类标签、归档恢复和冲突核实。没有配置或数据库不可用时明确关闭；正式消费者答题、导入、草稿和发布路由尚未实现。
 
 ## 工程结构
 
@@ -65,10 +65,10 @@ src/
     quizpack/                # F1 合同与 P1 受限 ZIP/构建/验证；正式导入待实现
     theme/                   # 主题配方与历史人物研究体验
     report/                  # 合成展示 DTO 与真实 PNG 导出；正式快照待实现
-    product/                 # 测评工作区合同与草稿纯逻辑；真实发布待实现
+    product/                 # 目录工作区真实CRUD/CAS与F1草稿纯逻辑；发布待实现
     ai-generation/           # Schema 草稿与审核边界（仅说明）
     fulfillment/             # 渠道适配边界（仅说明）
-    studio/                  # 独立后台登录/会话视图，真实运营认证
+    studio/                  # 独立后台认证、测评工作区与分类标签HTTP/UI
   lib/                       # 通用工具及 server-only DB/认证/HTTP 边界
   config/                    # 工程元信息
 public/assets/themes/        # 研究素材与清单；商业批准仍按manifest
@@ -82,7 +82,7 @@ docs/                        # 产品、架构、数据、视觉、阶段证据
 
 规划允许公开浏览已发布商品介绍及明确授权的演示。正式答题必须持有对应商品有效 AccessKey；可暂存恢复、最多正式完成一次，完成后原链接直接读取锁定报告。普通买家不强制注册；未来可主动把多个 Key 关联到账号。公开分享采用独立只读凭证，不携带原 Key。消费者与管理后台分开布局，详细规划见 [架构](docs/ARCHITECTURE.md)。P2-A仅实现独立运营认证；消费者相关路由与访问校验尚未实现。
 
-`.github/workflows/ci.yml` 在 main 推送、PR 和手工触发时，从根目录冻结安装并运行格式/lint/类型/单测/构建。CI 使用 Node 24、项目固定 pnpm，需在 GitHub [Actions](https://github.com/aning0922/quiz-forge/actions) 查看实际结果。新增database job在本job随机私有凭证和固定镜像中运行真实迁移/DB测试并清理，CI事实见P2A_ACCEPTANCE。E2E保留本地阶段验收，暂不增加CI浏览器依赖。
+`.github/workflows/ci.yml` 在 main 推送、PR 和手工触发时，从根目录冻结安装并运行格式/lint/类型/单测/构建。`pnpm build` 自动审计实际部署trace，拒绝私有状态路径。CI 使用 Node 24、项目固定 pnpm，需在 GitHub [Actions](https://github.com/aning0922/quiz-forge/actions) 核对精确head。database job以随机私有凭证和固定镜像运行真实迁移/DB及驱动故障测试后清理；E2E保留本地阶段验收。驱动补丁维护边界见[P2B1_DRIVER_PATCH](docs/P2B1_DRIVER_PATCH.md)。
 
 ## 维护文档
 
@@ -93,6 +93,7 @@ docs/                        # 产品、架构、数据、视觉、阶段证据
 - [阶段开发路线（计划）](docs/ROADMAP_30D.md)、[技术决策](docs/DECISIONS.md)
 - [托管范围与人工决策点](docs/MANAGED_DEVELOPMENT.md)、[P1 包工具合同](docs/QUIZPACK_P1.md)、[P1 依赖评估](docs/P1_DEPENDENCIES.md)
 - [P2-A 数据库与认证合同](docs/STUDIO_P2A.md)、[P2-A 验收记录](docs/P2A_ACCEPTANCE.md)、[P2-B 工作区与导入预案](docs/STUDIO_P2B_PREFLIGHT.md)
+- [B1目录合同](docs/STUDIO_P2B1.md)、[B1验收](docs/P2B1_ACCEPTANCE.md)、[B1独立审查](docs/P2B1_REVIEW.md)、[B1浏览器图检](docs/P2B1_VISUAL_CHECK.md)
 - [阶段进度与限制](docs/PROGRESS.md)、[D0 验收证据](docs/D0_ACCEPTANCE.md)
 - [开源复用研究计划](docs/OPEN_SOURCE_REUSE_PLAN.md)、[D0.1 验收](docs/D0_1_ACCEPTANCE.md)
 
@@ -100,7 +101,7 @@ docs/                        # 产品、架构、数据、视觉、阶段证据
 
 ## 测评工作区与后续开发
 
-一款测评对应一个 Product；题目/规则/结果/页面/私有素材均归该测评，发布版本固定内容与资源引用。后台按测评进入工作区，类目和标签只组织目录；本地数据库与运营认证已由P2-A完成；目录工作区、导入与草稿编辑接续P2-B。详见 [架构](docs/ARCHITECTURE.md)、[数据模型](docs/DATA_MODEL.md)、[资源归属](docs/ASSESSMENT_RESOURCES.md)、[开发路线](docs/ROADMAP_30D.md)。
+一款测评对应一个 Product；题目/规则/结果/页面/私有素材均归该测评，发布版本固定内容与资源引用。后台按测评进入工作区，类目和标签只组织目录；P2-B1目录持久化与界面已接入，接续原包隔离接收→服务端复验/私有资源归档→首个草稿→编辑恢复。详见 [架构](docs/ARCHITECTURE.md)、[数据模型](docs/DATA_MODEL.md)、[资源归属](docs/ASSESSMENT_RESOURCES.md)、[开发路线](docs/ROADMAP_30D.md)。
 
 ## F1 本地合同校验
 
@@ -126,4 +127,4 @@ corepack pnpm --silent foundation:schema
 - 人工查看时可另建purpose=demo、origin为实际本机端口的实例。`pnpm p2a:operator create --instance <id> --label <合成标识> --role operator --credential-file <该实例目录下的新私有文件>` 仅把随机凭证写到0600文件，不打印原文；本机登录时使用它，不放到Git、日志或截图。
 - `pnpm p2a:db stop --instance <id>` 停止自己的实例并保留可恢复数据，`start/status/migrate` 仍需同一受管身份。启动结果无法确认时会明确要求清理，不能盲目重试或按未知PID停止进程。
 
-这里只提供运营登录与会话，尚无Product导入/审核/发布按钮。页面检查见[P2-A浏览器记录](docs/P2A_VISUAL_CHECK.md)，独立审查见[P2-A审查](docs/P2A_REVIEW.md)。
+本分支还提供B1目录工作区与类目/标签管理，尚无导入/审核/发布按钮。`QF_DRIVER_TEST_INSTANCE=<同一test实例id> pnpm test:driver` 显式运行真实断连回归；缺配置失败，不连接其他实例。页面检查见[B1浏览器记录](docs/P2B1_VISUAL_CHECK.md)，独立审查见[B1审查](docs/P2B1_REVIEW.md)。

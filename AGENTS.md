@@ -33,7 +33,7 @@
 - QuizPack 导入先限压缩大小/解压大小/文件数，拒绝路径穿越、符号链接、重复路径、未知/可执行类型和缺授权资源；未通过不能导入正式内容。详细提案见 `docs/QUIZPACK_SPEC.md`。
 - 领域模块不反向依赖 `app`；共享纯函数放 `lib`。跨模块只通过显式接口或应用服务，不任意互查数据库。
 - 禁止在通用组件中按商品 ID 硬编码行为；五个页面状态可以有不同配方，不能退化为单一布局换色。
-- PostgreSQL18.4 + Drizzle已在P2-A建立隔离本机实例、迁移和operator/session/audit三表，真实认证和最小Studio已验收；不是生产环境。Product/草稿/资源等业务持久化与评分引擎仍待后续阶段。
+- PostgreSQL18.4 + Drizzle已在P2-A建立隔离实例与operator/session/audit，B1追加product/category/tag/product_tag及真实目录界面，最终验收见P2B1_ACCEPTANCE；不是生产环境。草稿/资源/发布持久化与评分仍待后续阶段。固定postgres补丁及失效错误合同见P2B1_DRIVER_PATCH，升级前必须复验；build自动阻断私有路径追踪。
 - AI 只生成符合版本化结构 Schema 的草稿。拒绝任意代码、eval、动态执行和从 AI 输出导入模块；正式评分由受测的确定性引擎完成。
 - Key 正式完成依赖数据库事务与唯一约束，前端状态不能授予完成权威。QuizReport 为不可变快照，发布内容不可原地修改。
 - 报告支持 DETERMINISTIC / COMPOSED / AI_ENHANCED，最终结论始终由确定性引擎产生。AI 仅增强已验证摘要的文案，不改分数/原型/结局，不编造经历，不做诊断/命运断言；失败回退完整基线报告。
