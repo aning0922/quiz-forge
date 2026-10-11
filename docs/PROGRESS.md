@@ -2,7 +2,7 @@
 
 ## 2026-10-12 托管推进
 
-B2-1已建立独立 `codex/quizpack-receipt` 工作树，基于B1最终文档提交 `e8da98b27ed1469a5e15f927cfdbf51445d553fe`；该head的[CI38169117712](https://github.com/aning0922/quiz-forge/actions/runs/38169117712) checks/database均已核实success。首批原包接收合同见STUDIO_P2B2.md，已完成独立前置审查并修订绝对期限与CLI文件guard两项P2；合同已冻结，尚无接收运行代码、迁移或验收。B1交付分支继续保留，不将下一阶段混入PR #9。
+B2-1已建立独立 `codex/quizpack-receipt` 工作树，基于B1最终文档提交 `e8da98b27ed1469a5e15f927cfdbf51445d553fe`；该head的[CI38169117712](https://github.com/aning0922/quiz-forge/actions/runs/38169117712) checks/database均已核实success。首批原包接收合同见STUDIO_P2B2.md，已完成独立前置审查并修订绝对期限与CLI文件guard两项P2；合同已冻结，尚无接收运行代码、迁移或验收。B1交付分支继续保留，不将下一阶段混入PR #9。合同eb8c8b9、共享准备5f2f8e5已提交推送，Draft PR #10堆叠于B1；两条Sol/high实现聊天已启动，18项定向安全测试及类型/lint通过，不等于接收功能验收。
 
 P2-B1已完成技术验收：最终代码 `44a0d38c781feb9ea65156dab094a2c9f8907257`，528单测、154真实DB、46驱动故障场景、198生产E2E/10既有跳过，格式/lint/类型/构建及46份trace路径审计通过；独立Astra全部问题闭合、无剩余P1/P2。代码[CI38168728761](https://github.com/aning0922/quiz-forge/actions/runs/38168728761)的checks/database均实际success。[Draft PR #9](https://github.com/aning0922/quiz-forge/pull/9)仍未合并；四宽及异常/生命周期图检已完成，所有测试实例已停止。详见P2B1_ACCEPTANCE/P2B1_REVIEW/P2B1_VISUAL_CHECK。下一优先为B2隔离原包接收，再复验资源归档与首稿；P2-C/P3/P4/P5仍按授权依赖推进。旧暂停聊天未恢复。
 

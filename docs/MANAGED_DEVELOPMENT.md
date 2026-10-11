@@ -82,4 +82,9 @@ P3表现预案见PRESENTATION_P3_PREFLIGHT.md：计划保留v1包兼容，以有
 
 ## P2-B2-1 工作登记
 
-总控新分支codex/quizpack-receipt基于B1最终文档e8da98b，普通与数据库CI38169117712已实际success。首批只接收原包：quizpack_import、关闭默认上传、显式管理CLI、私有目录/锁/配额、幂等意图与恢复及后台状态；received不代表验证或内容批准。STUDIO_P2B2.md已冻结；独立Astra前置审查的绝对期限与CLI晚到配置写两项P2已写入合同修订。A负责数据库/runtime/接收服务，B负责HTTP/后台；先交共享DTO再集成实现，尚未分派或验收。
+总控新分支codex/quizpack-receipt基于B1最终文档e8da98b，普通与数据库CI38169117712已实际success。首批只接收原包：quizpack_import、关闭默认上传、显式管理CLI、私有目录/锁/配额、幂等意图与恢复及后台状态；received不代表验证或内容批准。STUDIO_P2B2.md已冻结；独立Astra前置审查的绝对期限与CLI晚到配置写两项P2已写入合同修订。A负责数据库/runtime/接收服务，B负责HTTP/后台；先交共享DTO再集成实现，尚未验收。
+
+- A「QuizForge B2-1 · 原包接收与恢复」：01a12c8e-96f2-76f3-bc0b-c6aacc19f677，GPT-6.1 Sol/high，独占DB/runtime/私有接收服务及真实故障测试，自己的测试端口55421。
+- B「QuizForge B2-1 · 导入操作后台」：01a12c8e-9a41-79a3-9db2-74cf2f219011，GPT-6.1 Sol/high，独占HTTP/reader adapter/后台与E2E，自己的测试端口55422。
+- 两流固定基线5f2f8e5；总控持有package/lock/shared errors/playwright及3100，集成测试端口55423。新root的独立test实例从旧v1配置生成，供实际升级兼容回归；配置内容私有。
+- [Draft PR #10](https://github.com/aning0922/quiz-forge/pull/10)已创建并堆叠于B1，当前仅合同与共享错误/浏览器项目准备，不代表接收功能完成。18项定向HTTP安全测试、类型、定向lint/格式通过；阶段六项与DB/driver/E2E均待集成后执行。
