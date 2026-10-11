@@ -32,7 +32,7 @@
 
 ## 第三轮真实 Linux 证据与审查整改
 
-独立Astra已复验并关闭f29d5b6的总deadline/abort与FIFO两项P2：实际源码的四种预算/中止对照及七项控制进程/FIFO测试通过。新增P2为早期create留下的localBarrier会在start仍未close时允许显式恢复释放控制记录；28fee369→root3508c4e引入执行/恢复互斥和全部控制命令的pending/unsettled状态，七项本地控制测试通过，独立复审尚在进行。
+独立Astra已复验并关闭f29d5b6的总deadline/abort与FIFO两项P2：实际源码的四种预算/中止对照及七项控制进程/FIFO测试通过。新增P2为早期create留下的localBarrier会在start仍未close时允许显式恢复释放控制记录；28fee369→root3508c4e引入执行/恢复互斥和全部控制命令的pending/unsettled状态，七项本地控制测试通过。独立Astra使用实际controller、隔离Docker/文件桩完成八项时序复验，原pending-start复现及create/start/inspect/rm未settled、双恢复/新执行互斥、跨模块重启均保持阻断；该P2已关闭。这些是纯控制证据，不是容器实测或平台验收。
 
 head1de6c4c的[容器CI38177881396](https://github.com/aning0922/quiz-forge/actions/runs/38177881396)仍failure。有限诊断已证实镜像/daemon能力预检与全部容器配置核对为true，create成功且已close；start-attach实际exit1并已close，容器exit255。清理确认停止，结果WORKER_FAILED；原生身份阶段未通过。不能据此猜测放宽seccomp，f119b69→root7c69834只追加有限OCI阶段与已知syscall分类，等待下一轮真实证据。
 
