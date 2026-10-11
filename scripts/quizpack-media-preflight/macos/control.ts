@@ -37,11 +37,8 @@ export const CONTROL_ROOT = join(MAC_ROOT, "control");
 const active = join(CONTROL_ROOT, "active.json"),
   next = join(CONTROL_ROOT, "active.next"),
   guard = join(CONTROL_ROOT, "guard");
-export class ControlError extends Error {
-  constructor(readonly code: "BUSY" | "ISOLATION_UNAVAILABLE") {
-    super(code);
-  }
-}
+import { MacControlError as ControlError } from "../../../src/features/quizpack/server/media/internal/macos/execute";
+export { ControlError };
 function privateObject(path: string, directory: boolean) {
   const s = lstatSync(path);
   if (

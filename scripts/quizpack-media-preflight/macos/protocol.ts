@@ -32,22 +32,6 @@ const macSchema = z.union([
   z.strictObject({ schema: z.literal("mac-shm.v1"), created: z.literal(true) }),
   z.strictObject({ schema: z.literal("mac-shm.v1"), removed: z.literal(true) }),
 ]);
-export const identitySchema = z.union([
-  z.strictObject({
-    schema: z.literal("mac-identity.v1"),
-    present: z.literal(false),
-  }),
-  z.strictObject({
-    schema: z.literal("mac-identity.v1"),
-    present: z.literal(true),
-    owned: z.boolean(),
-    startSec: z.number().int().nonnegative(),
-    startUsec: z.number().int().nonnegative(),
-    executable: z.enum(["worker", "sandbox", "other", "unknown"]),
-    residentBytes: z.number().int().nonnegative(),
-    peakFootprintBytes: z.number().int().nonnegative(),
-  }),
-]);
 function json(bytes: Uint8Array): unknown {
   if (bytes.byteLength > 2048) throw new Error("OUTPUT_INVALID");
   const text = new TextDecoder("utf-8", {
@@ -68,13 +52,7 @@ export function parseMacOutput(
     return null;
   }
 }
-export function parseNativeIdentity(
-  bytes: Uint8Array,
-): z.infer<typeof identitySchema> | null {
-  try {
-    const p = identitySchema.safeParse(json(bytes));
-    return p.success ? p.data : null;
-  } catch {
-    return null;
-  }
-}
+export {
+  identitySchema,
+  parseNativeIdentity,
+} from "../../../src/features/quizpack/server/media/internal/macos/identity-protocol";
