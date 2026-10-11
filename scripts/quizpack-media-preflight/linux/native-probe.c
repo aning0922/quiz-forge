@@ -45,6 +45,8 @@ static int host_control(const char *root) {
 int main(int argc, char **argv) {
   if(argc==3 && strcmp(argv[2],"control")==0 && strlen(argv[1])<=2048 && argv[1][0]=='/')return host_control(argv[1]);
   if(argc!=2 || strlen(argv[1])>2048 || argv[1][0]!='/') return 9;
+  check(getpid()==1 && getppid()==0);check(getuid()==10001 && geteuid()==10001 && getgid()==10001 && getegid()==10001);
+  char status[8192];int statusfd=open("/proc/self/status",O_RDONLY);check(statusfd>=0);if(statusfd>=0){ssize_t n=read(statusfd,status,sizeof(status)-1);check(n>0 && n<(ssize_t)sizeof(status)-1);if(n>0){status[n]=0;check(strstr(status,"NoNewPrivs:\t1")!=NULL);check(strstr(status,"Seccomp:\t2")!=NULL);check(strstr(status,"CapEff:\t0000000000000000")!=NULL);}close(statusfd);}
   char path[2300], target[2300], alias[2400];
   const char *areas[]={"runtime","admin","PGDATA","uploads"};
   for(int i=0;i<4;i++) {

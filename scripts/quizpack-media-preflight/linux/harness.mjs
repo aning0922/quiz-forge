@@ -1,3 +1,6 @@
+import { parseProbeOutput } from "../shared/probe-protocol.ts";
+import { createRequire } from "node:module";
+const crc32 = createRequire(import.meta.url)("buffer-crc32");
 import { measureOwnCgroup } from "./resources.mjs";
 import { precheckImage } from "../shared/precheck.ts";
 import sharp from "sharp";
@@ -114,6 +117,104 @@ safeMain(async () => {
         inputBytes: bytes.length,
       },
     );
+  }
+  const small = await sharp({
+    create: {
+      width: 2,
+      height: 2,
+      channels: 3,
+      background: { r: 9, g: 14, b: 37 },
+    },
+  })
+    .png()
+    .toBuffer();
+  const declaration = (bytes) => ({
+    path: "assets/boundary.png",
+    mediaType: "image/png",
+    width: 2,
+    height: 2,
+    bytes: bytes.length,
+    sha256: hash(bytes),
+  });
+  const pad = Buffer.alloc(8388608 - small.length);
+  pad.writeUInt32BE(pad.length - 12, 0);
+  pad.write("npAD", 4, "ascii");
+  pad.writeUInt32BE(
+    crc32.unsigned(pad.subarray(4, pad.length - 4)),
+    pad.length - 4,
+  );
+  const exact = Buffer.concat([
+    small.subarray(0, small.length - 12),
+    pad,
+    small.subarray(small.length - 12),
+  ]);
+  const exactResult = await runIsolatedImage(exact, declaration(exact), {
+    signal: new AbortController().signal,
+    deadlineMonotonicMs: performance.now() + 5000,
+  });
+  record("decode-exact-8MiB", exactResult.outcome === "decoded", exactResult);
+  const corrupt = Buffer.from(small);
+  let offset = 8;
+  while (offset + 12 <= corrupt.length) {
+    const n = corrupt.readUInt32BE(offset);
+    if (corrupt.toString("ascii", offset + 4, offset + 8) === "IDAT") {
+      corrupt.fill(255, offset + 8, offset + 8 + n);
+      corrupt.writeUInt32BE(
+        crc32.unsigned(corrupt.subarray(offset + 4, offset + 8 + n)),
+        offset + 8 + n,
+      );
+      break;
+    }
+    offset += 12 + n;
+  }
+  const bad = await runIsolatedImage(corrupt, declaration(corrupt), {
+    signal: new AbortController().signal,
+    deadlineMonotonicMs: performance.now() + 5000,
+  });
+  record(
+    "decode-corrupt-pixels",
+    bad.code === "DECODE_REJECTED" && bad.stopped === "confirmed",
+    bad,
+  );
+  const animChunk = Buffer.alloc(20);
+  animChunk.writeUInt32BE(8);
+  animChunk.write("acTL", 4, "ascii");
+  animChunk.writeUInt32BE(2, 8);
+  animChunk.writeUInt32BE(crc32.unsigned(animChunk.subarray(4, 16)), 16);
+  const animated = Buffer.concat([
+    small.subarray(0, 33),
+    animChunk,
+    small.subarray(33),
+  ]);
+  const animatedResult = await runIsolatedImage(
+    animated,
+    declaration(animated),
+    {
+      signal: new AbortController().signal,
+      deadlineMonotonicMs: performance.now() + 5000,
+    },
+  );
+  record(
+    "png-animation-precheck",
+    animatedResult.code === "DECODE_REJECTED" &&
+      animatedResult.stopped === "not-started",
+    animatedResult,
+  );
+  for (const scenario of ["posix-process", "posix-fd", "posix-network"]) {
+    const result = await executeSynthetic({ scenario });
+    const parsed = result.stdout ? parseProbeOutput(result.stdout) : null;
+    const passed =
+      result.outcome === "probe" &&
+      (parsed?.mode === "process"
+        ? parsed.threadAllowed && parsed.forkDenied && parsed.spawnDenied
+        : parsed?.mode === "fd"
+          ? parsed.scanComplete && parsed.noInheritedFileOrSocket
+          : parsed?.mode === "network"
+            ? [parsed.connect, parsed.bind, parsed.listen, parsed.unix].every(
+                (v) => v === "socket-denied",
+              )
+            : false);
+    record(scenario, passed, { ...result, stdout: undefined, parsed });
   }
   const large = await sharp({
     create: {

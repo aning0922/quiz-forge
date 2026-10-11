@@ -3,7 +3,7 @@ import { spawn } from "node:child_process";
 import { createHash } from "node:crypto";
 import { constants } from "node:fs";
 import { open, mkdir, lstat } from "node:fs/promises";
-import { resolve, sep } from "node:path";
+import { resolve, sep, dirname } from "node:path";
 export const ROOT = resolve(".");
 export const DIR = resolve("scripts/quizpack-media-preflight/linux");
 export const CACHE = resolve(".cache/quizpack-media-preflight/linux");
@@ -43,6 +43,15 @@ export async function writePrivate(path, bytes) {
     await f.sync();
   } finally {
     await f.close();
+  }
+  const parent = await open(
+    dirname(path),
+    constants.O_RDONLY | constants.O_DIRECTORY | constants.O_NOFOLLOW,
+  );
+  try {
+    await parent.sync();
+  } finally {
+    await parent.close();
   }
 }
 export async function readPrivate(path, limit = 16384) {

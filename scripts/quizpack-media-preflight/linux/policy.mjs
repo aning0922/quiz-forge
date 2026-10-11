@@ -47,6 +47,11 @@ export async function loadPolicy({
     !/^sha256:[a-f0-9]{64}$/.test(image.imageId)
   )
     throw new Error("IMAGE_IDENTITY");
+  if (
+    hash(await readFile(resolve(DIR, "../shared/posix-probe.c"))) !==
+    image.inputs["posix-probe.c"]
+  )
+    throw new Error("SHARED_PROBE_CHANGED");
   const sourceHash = hash(
     await readFile(resolve("src/features/quizpack/v1/media-worker.mjs")),
   );
@@ -131,6 +136,11 @@ export async function loadPolicy({
   const launcherInputs = {};
   for (const file of ["common.mjs", "controller.mjs", "policy.mjs"]) {
     launcherInputs[file] = hash(await readFile(resolve(DIR, file)));
+  }
+  for (const file of ["contracts.ts", "precheck.ts", "output.ts"]) {
+    launcherInputs[`shared/${file}`] = hash(
+      await readFile(resolve(DIR, "../shared", file)),
+    );
   }
   const binding = {
     schema: "qf-linux-policy.v1",

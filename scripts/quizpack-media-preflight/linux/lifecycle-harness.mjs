@@ -1,3 +1,4 @@
+import { spawn } from "node:child_process";
 import { lstat } from "node:fs/promises";
 import { resolve } from "node:path";
 import { randomUUID } from "node:crypto";
@@ -11,6 +12,8 @@ import {
   docker,
   readPrivate,
   json,
+  hash,
+  command,
   safeMain,
 } from "./common.mjs";
 import { INSPECT, matches } from "./policy.mjs";
@@ -156,6 +159,94 @@ safeMain(async () => {
     "identity-restored-explicit-stop",
     recovered.stopped === "confirmed",
     recovered,
+  );
+  const child = spawn(
+    process.execPath,
+    [
+      "--import",
+      "tsx",
+      "scripts/quizpack-media-preflight/linux/crash-child.mjs",
+    ],
+    {
+      stdio: ["ignore", "pipe", "pipe"],
+      env: { PATH: "/usr/bin:/bin", LANG: "C.UTF-8" },
+    },
+  );
+  let ownerClosed = false;
+  let stdout = Buffer.alloc(0);
+  let stderr = 0;
+  const closed = new Promise((ok) =>
+    child.once("close", () => {
+      ownerClosed = true;
+      ok();
+    }),
+  );
+  const ready = await new Promise((ok) => {
+    const timer = setTimeout(() => ok(null), 2500);
+    child.on("error", () => {
+      clearTimeout(timer);
+      ok(null);
+    });
+    child.stdout.on("data", (b) => {
+      stdout = Buffer.concat([stdout, b]);
+      if (stdout.length > 2048) {
+        clearTimeout(timer);
+        ok(null);
+        return;
+      }
+      try {
+        const v = json(stdout);
+        if (
+          v.schema === "qf-own-create-closed.v1" &&
+          v.ownerPid === child.pid &&
+          v.createClosed === true
+        ) {
+          clearTimeout(timer);
+          ok(v);
+        }
+      } catch {
+        /* bounded partial protocol */
+      }
+    });
+    child.stderr.on("data", (b) => {
+      stderr += b.length;
+      if (stderr > 4096) {
+        child.kill("SIGKILL");
+        clearTimeout(timer);
+        ok(null);
+      }
+    });
+  });
+  child.kill("SIGKILL");
+  await closed;
+  if (!ready) throw new Error("CRASH_WINDOW_UNAVAILABLE");
+  const persisted = await readPrivate(resolve(CACHE, "control", "record.json"));
+  const own = json(persisted);
+  const fresh = await command(process.execPath, [
+    "--import",
+    "tsx",
+    "scripts/quizpack-media-preflight/linux/restart-child.mjs",
+  ]);
+  const freshResult = json(fresh.stdout);
+  record(
+    "crashed-parent-restart-blocked",
+    ownerClosed &&
+      own.runId === ready.runId &&
+      own.ownerPid === child.pid &&
+      fresh.code === 0 &&
+      freshResult.code === "BUSY",
+    { outcome: "failed", stopped: "unknown", code: freshResult.code },
+  );
+  const crashRecovered = await verifyOwnStopped({
+    ownerClosed,
+    createClosed: ready.createClosed,
+    ownerPid: ready.ownerPid,
+    recordSha256: hash(persisted),
+  });
+  record(
+    "crashed-before-start-own-stop",
+    crashRecovered.stopped === "confirmed",
+    crashRecovered,
   );
   // New process must honor persisted unknown guard even if old owner's memory is gone.
   // Parent crash proof is added separately; it never silently clears this guard.

@@ -33,6 +33,7 @@ async function ownedDocker(record, args, options) {
   const state = controlStates.get(record.runId) ?? {
     pending: 0,
     unsettled: false,
+    originKnown: false,
   };
   controlStates.set(record.runId, state);
   state.pending++;
@@ -41,7 +42,8 @@ async function ownedDocker(record, args, options) {
     const result = await docker(args, options);
     state.pending--;
     state.unsettled ||= !result.settled;
-    if (!state.pending && !state.unsettled) localBarriers.add(record.runId);
+    if (!state.pending && !state.unsettled && state.originKnown)
+      localBarriers.add(record.runId);
     return result;
   } catch (e) {
     state.pending--;
@@ -76,6 +78,13 @@ const FAULTS = new Set([
 ]);
 export function fixedScenario(scenario, syntheticRoot) {
   if (scenario === "normal") return NORMAL;
+  if (["posix-process", "posix-fd"].includes(scenario))
+    return { entrypoint: "/worker/posix-probe", args: [scenario.slice(6)] };
+  if (scenario === "posix-network")
+    return {
+      entrypoint: "/worker/posix-probe",
+      args: ["network", "1", "/qf-synthetic.sock"],
+    };
   if (scenario === "identity")
     return {
       entrypoint: "/usr/local/bin/node",
@@ -220,6 +229,7 @@ export async function executeSynthetic({
     record = {
       schema: "qf-linux-run.v1",
       runId,
+      ownerPid: process.pid,
       nonce: randomBytes(32).toString("hex"),
       name: `qf-media-${runId}`,
       imageId: policy.image.imageId,
@@ -235,6 +245,11 @@ export async function executeSynthetic({
       reason = interrupt();
     } else {
       issued = true;
+      controlStates.set(runId, {
+        pending: 0,
+        unsettled: false,
+        originKnown: true,
+      });
       const create = await ownedDocker(
         record,
         createArgs(record, spec.entrypoint, spec.args),
@@ -447,7 +462,7 @@ export async function executeSynthetic({
   }
 }
 // Explicit harness recovery after unknown. No new execution, no stale-PID inference.
-export async function verifyOwnStopped() {
+export async function verifyOwnStopped(beforeStartCrash) {
   if (recoveryActive) return { stopped: "unknown" };
   recoveryActive = true;
   const deadline = performance.now() + LIMITS.cleanupMs;
@@ -470,7 +485,13 @@ export async function verifyOwnStopped() {
       controlStates.get(record.runId)?.unsettled
     )
       return { stopped: "unknown" };
-    if (!localBarriers.has(record.runId)) return { stopped: "unknown" };
+    const ownCrash =
+      beforeStartCrash?.ownerClosed === true &&
+      beforeStartCrash?.createClosed === true &&
+      beforeStartCrash.ownerPid === record.ownerPid &&
+      beforeStartCrash.recordSha256 === hash(persisted);
+    if (!localBarriers.has(record.runId) && !ownCrash)
+      return { stopped: "unknown" };
     const policy = await loadPolicy({
       deadline,
       controlCommand: (args, options) => ownedDocker(record, args, options),
@@ -480,12 +501,20 @@ export async function verifyOwnStopped() {
       record.daemonId !== policy.binding.daemon.id
     )
       return { stopped: "unknown" };
-    // Same-process probe recovery requires the actual create/start close barrier.
-    // A fresh process cannot guess closure from owner ESRCH or stale PID.
-    if (!localBarriers.has(record.runId)) return { stopped: "unknown" };
+    // Same-process actual close or a fixed created-only crash-window receipt.
+    if (!localBarriers.has(record.runId) && !ownCrash)
+      return { stopped: "unknown" };
     record.recordHash = hash(persisted);
     let c = await inspect(record, deadline);
-    if (!c) return { stopped: "unknown" };
+    if (!c || (ownCrash && c.state.Status !== "created"))
+      return { stopped: "unknown" };
+    if (ownCrash) {
+      const state = controlStates.get(record.runId);
+      if (!state || state.pending || state.unsettled)
+        return { stopped: "unknown" };
+      state.originKnown = true;
+      localBarriers.add(record.runId);
+    }
     if (c.state.Running) {
       const killed = await ownedDocker(
         record,
@@ -533,24 +562,31 @@ export async function runIsolatedImage(bytes, expected, context) {
   const start = performance.now();
   const checked = precheckImage(bytes, expected);
   if (!checked.ok) return fail(runId, null, checked.code, "not-started");
-  if (
-    !context ||
-    !(context.signal instanceof AbortSignal) ||
-    !Number.isFinite(context.deadlineMonotonicMs)
-  )
+  let signal, callerDeadline;
+  try {
+    signal = context?.signal;
+    callerDeadline = context?.deadlineMonotonicMs;
+  } catch {
     return fail(runId, null, "INVALID_INPUT", "not-started");
-  if (context.signal.aborted)
-    return fail(runId, null, "CANCELLED", "not-started");
+  }
+  if (!(signal instanceof AbortSignal) || !Number.isFinite(callerDeadline))
+    return fail(runId, null, "INVALID_INPUT", "not-started");
+  const deadline = Math.min(callerDeadline, start + LIMITS.executionMs);
+  if (signal.aborted) return fail(runId, null, "CANCELLED", "not-started");
   if (platform() !== "linux" || arch() !== "x64")
     return fail(runId, null, "UNSUPPORTED_PLATFORM", "not-started");
   const result = await executeSynthetic({
     bytes: checked.bytes,
     expected: checked.expected,
-    signal: context.signal,
-    deadlineMonotonicMs: Math.min(context.deadlineMonotonicMs, start + 5000),
+    signal,
+    deadlineMonotonicMs: deadline,
     preallocatedRunId: runId,
   });
-  if (result.outcome === "decoded")
+  if (result.outcome === "decoded") {
+    if (signal.aborted)
+      return fail(runId, result.profileId, "CANCELLED", "confirmed");
+    if (performance.now() >= deadline)
+      return fail(runId, result.profileId, "DEADLINE_EXCEEDED", "confirmed");
     return {
       outcome: "decoded",
       runId,
@@ -558,5 +594,6 @@ export async function runIsolatedImage(bytes, expected, context) {
       facts: result.facts,
       stopped: "confirmed",
     };
+  }
   return fail(runId, result.profileId, result.code, result.stopped);
 }
