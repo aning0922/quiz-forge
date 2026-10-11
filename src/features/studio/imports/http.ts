@@ -171,7 +171,7 @@ export async function handleImportHttp(
       }
     }
     checkBudget();
-    db = await createDatabase(config);
+    db = await createDatabase(config, budget?.context);
     checkBudget();
     const result = await execute(db);
     // An acknowledged committed result stays authoritative even after deadline.
