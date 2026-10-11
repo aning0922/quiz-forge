@@ -1,6 +1,9 @@
 import "server-only";
 import { createHash } from "node:crypto";
+import { types } from "node:util";
 import { canonicalP1Json } from "../../v1/canonical";
+import { parsePackJson } from "../../v1/io";
+import { PACK_LIMITS } from "../../v1/limits";
 import { quizPackContentSchema, type QuizPackContent } from "../../v1/content";
 import {
   quizPackManifestSchema,
@@ -69,8 +72,6 @@ export class PrivateArchiveCandidate {
 /** Internal issuance follows fully bounded accepted evidence; not a JSON import API. */
 export function issuePrivateCandidate(
   accepted: Extract<CandidateResultEvidence, { outcome: "accepted" }>,
-  manifestInput: QuizPackManifest,
-  contentInput: QuizPackContent,
   files: ReadonlyMap<string, Uint8Array>,
 ): PrivateArchiveCandidate {
   const sealed = sealCandidateResultEvidence(accepted);
@@ -82,23 +83,39 @@ export function issuePrivateCandidate(
     accepted.evidence.report.status !== "sealed"
   )
     throw new EvidenceError("INVALID_CANDIDATE");
-  const canonicalManifestText = canonicalP1Json(manifestInput, "manifest");
-  const canonicalContentText = canonicalP1Json(contentInput, "content");
-  const manifest = quizPackManifestSchema.parse(
-    JSON.parse(canonicalManifestText),
-  );
-  const content = quizPackContentSchema.parse(JSON.parse(canonicalContentText));
-  assertPersistenceUnicode(manifest);
-  assertPersistenceUnicode(content);
-  const manifestBytes = files.get("manifest.json");
-  const contentBytes = files.get("content.json");
+  if (!(files instanceof Map) || types.isProxy(files))
+    throw new EvidenceError("INVALID_CANDIDATE");
+  const manifestSource = files.get("manifest.json");
+  const contentSource = files.get("content.json");
+  if (
+    !manifestSource ||
+    !contentSource ||
+    manifestSource.byteLength > PACK_LIMITS.manifestBytes ||
+    contentSource.byteLength > PACK_LIMITS.contentBytes
+  )
+    throw new EvidenceError("INVALID_CANDIDATE");
+  const manifestBytes = Buffer.from(manifestSource);
+  const contentBytes = Buffer.from(contentSource);
   if (
     !manifestBytes ||
     !contentBytes ||
     hash(manifestBytes) !== accepted.evidence.report.value.manifestSha256 ||
-    hash(contentBytes) !== accepted.evidence.report.value.contentSha256 ||
-    accepted.evidence.media.length !== content.resources.length
+    hash(contentBytes) !== accepted.evidence.report.value.contentSha256
   )
+    throw new EvidenceError("INVALID_CANDIDATE");
+  // Sole source of declarations: the same bounded raw bytes already tied to
+  // the sealed P1 report. No independently supplied parsed objects are trusted.
+  const manifest = quizPackManifestSchema.parse(
+    parsePackJson(manifestBytes, PACK_LIMITS.jsonDepth),
+  );
+  const content = quizPackContentSchema.parse(
+    parsePackJson(contentBytes, PACK_LIMITS.jsonDepth),
+  );
+  const canonicalManifestText = canonicalP1Json(manifest, "manifest");
+  const canonicalContentText = canonicalP1Json(content, "content");
+  assertPersistenceUnicode(manifest);
+  assertPersistenceUnicode(content);
+  if (accepted.evidence.media.length !== content.resources.length)
     throw new EvidenceError("INVALID_CANDIDATE");
   for (const [index, declaration] of content.resources.entries()) {
     const fact = accepted.evidence.media.find(

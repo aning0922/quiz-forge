@@ -208,6 +208,19 @@ describe("complete candidate evidence contract", () => {
       }),
     ).toThrow(EvidenceError);
   });
+  it.each(["MEDIA_STOP_UNCONFIRMED", "RELATED_IO_UNCONFIRMED"])(
+    "rejects %s with falsely completed evidence",
+    (code) => {
+      const value = accepted();
+      expect(() =>
+        sealCandidateResultEvidence({
+          outcome: "interrupted",
+          code,
+          evidence: value.evidence,
+        }),
+      ).toThrow(EvidenceError);
+    },
+  );
   it.each(["decoded", "failed"] as const)(
     "bounds three attempts of 64 maximum %s media facts",
     (outcome) => {
