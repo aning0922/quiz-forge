@@ -34,3 +34,15 @@ Product创建先插入无关联根，再按固定UUID序锁目录；替换先锁
 原生postgres3.4.9在服务器transaction_timeout终止会话后可能尝试向空socket排队回滚，触发connection.js:255的未捕获TypeError。忽略目录`.cache/p2b1-driver-repro.ts`保留脱敏原生驱动复现：begin内statement_timeout=0/transaction_timeout=10s/pg_sleep(11)，没有主动client.end并发触发，固定诊断且exit1。实际包装器在致命连接/事务终止时先终止请求专属sql客户端，避免驱动继续向死socket排队；调用方finally仍须关闭（幂等），不能跨请求共享该P2aDatabase。真实自身backend终止及事务期限定向测试已无未捕获异常通过，未修改依赖/package/lock。独立审查仍需复核此处理。
 
 本地检查：format:check、lint、typecheck、普通32文件461项通过；新增领域/权限/竞争与既有认证/管理测试使用真实PG18.4。精确最终DB与build结果在收口记录补齐。没有HTTP/UI/E2E验收声明，没有远端CI声明。
+
+## A流收口证据与交接限制
+
+公共里程碑提交 `7fd4fa3d35ed5583e3d4185d9879454e653f14c4`；实际CRUD与修正提交 `081d16d7b5f4ac3feb856337c010a4dfce7d3d0c`，均已推送正式origin。B可从后者接入实际service.ts，不必实现自己的鉴权/SQL。冻结服务签名的编译时satisfies检查通过。
+
+最终本地执行：format:check、lint、typecheck、普通test（32文件461项）、真实test:db（6文件109项）、build全部通过。DB覆盖旧57项及新52项：两独立连接CAS、auth锁后当前角色/停用、继承RR默认的防护、业务先提交后管理停用、auth/Product/category锁等待后到期、提交前复核回滚、taxonomy归档/新增分配两种提交次序、旧归档引用保留/移除、权限/no-op/audit/分页/字面LIKE、slot硬约束、唯一身份及未知结果。故障注入包含真实commit后丢回执、实际rollback后丢回执、普通SQL/内部/业务失败、自身backend终止和服务器transaction_timeout；所有业务回调无自动重放，最终无未捕获异常。失效会话与只读角色均在实际写事务拒绝。
+
+构建有既有Turbopack动态路径警告。检查本地nft追踪（只计路径，不读取内容）发现私有`.cache/p2a`确被列入：跨nft文件重复计数32,280项，其中配置/manifest18项、PGDATA32,256项。未提交/分发构建产物，无部署；这是总控共享构建配置需处理的打包风险，A没有修改Next配置或package/lock。build成功不等于私有目录已经排除。总控应在集成打包前确认排除规则及实际追踪清单。
+
+未执行test:e2e、HTTP/UI截图或3100服务：按分工由B与总控集成串行验收。本分支不建PR，无main合并、生产迁移、部署、消费者Key/评分/导入/发布。无本分支远端CI通过声明。A领域完成不替代B1整体验收或独立审查。
+
+前期失败记录：一项既有管理停用竞争测试单次失败，后续全量74/102/109项均未复现；Unicode0004未应用版首次含U+0000导致迁移失败且回滚，随后修正成功；原生driver故障注入确曾产生nextWrite未捕获异常，实际包装器修正后后端终止/事务期限与最终全量回归通过。测试配置、HTTP/UI文件和旧暂停成果均未修改。
