@@ -58,7 +58,7 @@ requireCapability(actor,capability)：两角色允许studio:read；仅operator�
 | /studio/login                 | masked登录输入、真实错误/等待/不可用状态，不显示secret或假成功                                                                        |
 | /studio                       | 真实合成运营身份、角色、到期信息、退出、本地环境说明；无未实现工作区/导入/发布按钮                                                    |
 
-所有Studio页面/API固定Host等于配置host；写入Origin必须精确匹配，缺失/null拒绝。不信X-Forwarded-*。认证API的Sec-Fetch-Site如存在只接受same-origin；页面正常导航可无Origin。全部no-store、不开放CORS。JSON错误稳定code/requestId，不含原始错误/SQL/路径/DSN。格式400、未认证401、Origin/CSRF403、已登录preauth409、超量413、限流429、配置/DB不可用503。
+所有Studio页面/API固定Host等于配置host；写入Origin必须精确匹配，缺失/null拒绝。不信X-Forwarded-*。认证API的Sec-Fetch-Site如存在只接受same-origin；页面正常导航可无Origin。全部no-store、不开放CORS。JSON错误稳定code/requestId，不含原始错误/SQL/路径/DSN。API格式400、未认证401、Origin/CSRF403、已登录preauth409、超量413、限流429、配置/DB不可用503。RSC页面在缺配置时可呈现明确的不可用说明，不能展示已登录身份或声称服务就绪；不为返回页面状态码引入绕过业务授权的代理。
 
 认证服务 server-only；Route Handlers只做HTTP边界并调用服务，页面layout检查不代替数据源授权。cookie写删只在Handler，不在RSC渲染期间。客户端DTO不能引用包含raw token或DB config的内部类型。
 

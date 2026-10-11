@@ -2,6 +2,8 @@
 
 ## 2026-10-12 托管推进
 
+P1最终交付e63df64的CI 38159199724已核实success；PR #7保持Draft。当前P2总控分支codex/studio-foundation基于该提交。P2-A数据库/运营认证合同已先行冻结于STUDIO_P2A.md，即将分流实施；此记录不代表数据库/页面已完成。
+
 P1 包工具已完成技术验收：代码提交 `3a1ad7a`，总控六项检查全部通过，385 单测、186 Chromium E2E/10 既有跳过；独立审查 200 项 P1 专项通过、五项发现全部闭合。代码 head 的 [CI 38158768248](https://github.com/aning0922/quiz-forge/actions/runs/38158768248) 已实际 success。[Draft PR #7](https://github.com/aning0922/quiz-forge/pull/7) 以 F1 分支为基线，依赖 #6，均未合并 main。详见 [P1 验收](P1_ACCEPTANCE.md)。下一步为已授权 P2-A 隔离数据库与运营认证；尚未启动数据库、创建表或上线后台。
 
 作者已授权按路线连续推进P1–P5至首款端到端内测，必要人工决策点暂停。F1 PR #6仍OPEN/Draft，最终提交`efe29e6`的CI 38153151107已核实success；main仍`b3e30bc`。当前P1独立worktree/分支`codex/quizpack-toolchain`基于F1已验证提交，采用堆叠依赖，不修改旧暂停成果。详细范围与任务状态见 `MANAGED_DEVELOPMENT.md`；下文F1停止记录是历史交付检查点。
