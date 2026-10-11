@@ -106,3 +106,7 @@ Astra再次确定性复现c92的早到timer丢失到期事件。后继在now<abs
 该故障harness原用1800ms缩短整个启动/输入/执行预算，可能在worker进入running前已到期，created收尾无kill。候选改用冻结原5秒预算，让hang固定worker有完整启动机会；记录真实create/start/kill请求、实际丢失reply计数/HTTP成功状态与running观察。stop-loss通过门槛进一步要求一次真实start、一次真实kill204应答丢失、running曾被自身inspect确认，原失败/confirmed仍保留。若不能命中继续失败，不据源码推断注入已经成功。
 
 stop-loss固定running观察布尔、create/start/kill/lost-reply/upgrade计数及HTTP整数状态同步输出到该case的CI摘要，数值校验限定65535，不仅留在私有runner summary。仍不输出整个result、Docker对象、路径或原始stdio；后继失败可以从CI有限字段定位未命中原因。
+
+## 第八轮stop-loss运输屏障修订
+
+总控真实 CI38182025991，head `3dc3201`，31/31 smoke仍通过，stop-loss的固定计数证明create1、upgrade1、start0、kill0、lost0、running:false。独立Sol对实际proxy源码作合成Unix运输复现：daemon wait已发HTTP200 headers但body待退出，原proxy仅writeHead会缓存无body响应，Docker start等待wait握手而不发start；只加flushHeaders后真实握手和start到达，101原分支已正常。修订只在普通非lose response的writeHead后显式flushHeaders；不改变101分支、不弱化fired、5秒期限或控制权威。后继真实CI必须同时看到running/start/kill204 reply丢失及新停止证明，才关闭这项故障注入。

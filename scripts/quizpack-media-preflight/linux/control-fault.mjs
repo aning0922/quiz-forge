@@ -74,6 +74,7 @@ export async function controlFault(mode) {
         });
       } else {
         res.writeHead(reply.statusCode, reply.headers);
+        res.flushHeaders();
         reply.pipe(res);
       }
     });
