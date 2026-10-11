@@ -74,6 +74,40 @@ describe("trusted media operation context", () => {
       stop: { stopStartedMonotonicMs: 1100, cleanupDeadlineMonotonicMs: 6100 },
     });
   });
+  it("an early fractional business timer re-arms without API polling", () => {
+    const context = create(1100.5);
+    now = 1100.25;
+    vi.advanceTimersByTime(1001);
+    expect(context.signal.aborted).toBe(false);
+    now = 1100.5;
+    vi.advanceTimersByTime(1);
+    expect(context.signal.aborted).toBe(true);
+    expect(readMediaOperationState(context)).toMatchObject({
+      phase: "stopping",
+      stop: {
+        stopStartedMonotonicMs: 1100.5,
+        cleanupDeadlineMonotonicMs: 6100.5,
+      },
+    });
+  });
+  it("an early image timer re-arms without API polling", () => {
+    now = 100.5;
+    const context = create();
+    const image = beginMediaImage(context)!;
+    now = 5100.25;
+    vi.advanceTimersByTime(5000);
+    expect(context.signal.aborted).toBe(false);
+    now = 5100.5;
+    vi.advanceTimersByTime(1);
+    expect(context.signal.aborted).toBe(true);
+    expect(image.readState()).toMatchObject({
+      phase: "stopping",
+      stop: {
+        stopStartedMonotonicMs: 5100.5,
+        cleanupDeadlineMonotonicMs: 10100.5,
+      },
+    });
+  });
   it("abort observed after an elapsed image deadline selects the earlier trigger", () => {
     const external = new AbortController();
     const context = create(60_100, external.signal);
