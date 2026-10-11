@@ -80,7 +80,7 @@ try {
         !st.isDirectory() ||
         st.isSymbolicLink() ||
         st.uid !== process.getuid?.() ||
-        (st.mode & 0o777) !== 0o700
+        (p === base ? (st.mode & 0o777) !== 0o700 : (st.mode & 0o022) !== 0)
       )
         throw new Error("FD_CONTROL_FAILED");
     } catch (error) {
