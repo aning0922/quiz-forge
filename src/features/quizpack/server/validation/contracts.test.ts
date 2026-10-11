@@ -150,7 +150,7 @@ describe("complete candidate evidence contract", () => {
         runtimeFailure: "STOP_UNCONFIRMED",
         completion: {
           mediaStopped: "unknown",
-          relatedIo: "settled",
+          relatedIo: "unconfirmed",
           maintenanceRequired: true,
         },
       },
@@ -278,7 +278,7 @@ describe("complete candidate evidence contract", () => {
                       runtimeFailure: "STOP_UNCONFIRMED",
                       completion: {
                         mediaStopped: "unknown",
-                        relatedIo: "settled",
+                        relatedIo: "unconfirmed",
                         maintenanceRequired: true,
                       },
                     },

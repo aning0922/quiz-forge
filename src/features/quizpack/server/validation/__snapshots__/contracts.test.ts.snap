@@ -10,8 +10,8 @@ exports[`complete candidate evidence contract > bounds three attempts of 64 maxi
 
 exports[`complete candidate evidence contract > bounds three attempts of 64 maximum failed media facts 1`] = `
 {
-  "envelopeBytes": 51338,
-  "metadataBytes": 48323,
+  "envelopeBytes": 51350,
+  "metadataBytes": 48335,
   "outcome": "failed",
 }
 `;

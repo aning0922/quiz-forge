@@ -165,6 +165,11 @@ export const candidateResultEvidenceSchema = z
           ? "confirmed"
           : "not-started";
     if (evidence.completion.mediaStopped !== mediaStopped) invalid();
+    if (
+      mediaStopped === "unknown" &&
+      evidence.completion.relatedIo !== "unconfirmed"
+    )
+      invalid();
     const needsMaintenance =
       mediaStopped === "unknown" ||
       evidence.completion.relatedIo === "unconfirmed";

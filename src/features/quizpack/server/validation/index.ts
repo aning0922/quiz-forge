@@ -1,4 +1,5 @@
 import "server-only";
+export { validateArchiveCandidate } from "./engine";
 
 export {
   candidateResultEvidenceSchema,
