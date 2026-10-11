@@ -10,6 +10,7 @@ import {
   scanStorage,
   type Scan,
 } from "./storage";
+import type { ImportRow } from "./repository";
 import { requireReceiveCapacity } from "./quota";
 vi.mock("node:fs/promises", async (importOriginal) => {
   const real = await importOriginal<typeof import("node:fs/promises")>();
@@ -126,4 +127,52 @@ it("reserves all new namespace names before claim, exactly at each capacity and 
   expect(() => requireReceiveCapacity({ ...empty, entries: 8188 }, id)).toThrow(
     "RECEIVE_SCAN_LIMIT",
   );
+});
+
+it("old held missing namespace reserves directory/file headroom until explicit release", () => {
+  const old = randomUUID(),
+    next = randomUUID(),
+    attempt = randomUUID();
+  const row = {
+    id: old,
+    reserved_bytes: "65538",
+    attempts: [
+      { attemptId: attempt, disposition: "held", reservationBytes: 65538 },
+    ],
+  } as ImportRow;
+  const scan: Scan = {
+    bytes: 0,
+    entries: 1024,
+    files: new Map(Array.from({ length: 1023 }, () => [randomUUID(), []])),
+  };
+  expect(() => requireReceiveCapacity(scan, next, [row])).toThrow(
+    "RECEIVE_SCAN_LIMIT",
+  );
+  requireReceiveCapacity(scan, next, [
+    {
+      ...row,
+      reserved_bytes: "0",
+      attempts: [{ ...row.attempts[0]!, disposition: "released" }],
+    },
+  ]);
+  const partial = { file: `attempt-${attempt}.partial`, size: 0 };
+  const existing: Scan = {
+    bytes: 0,
+    entries: 8184,
+    files: new Map([[old, [partial]]]),
+  } as Scan;
+  // Old partial exists, but its missing archive/receipt/tmp still reserves three new names.
+  requireReceiveCapacity(existing, next, [row]);
+  expect(() =>
+    requireReceiveCapacity({ ...existing, entries: 8185 }, next, [row]),
+  ).toThrow("RECEIVE_SCAN_LIMIT");
+  const noFiles: Scan = {
+    ...existing,
+    entries: 8183,
+    files: new Map([[old, []]]),
+  };
+  requireReceiveCapacity(noFiles, next, [row]);
+  expect(() =>
+    requireReceiveCapacity({ ...noFiles, entries: 8184 }, next, [row]),
+  ).toThrow("RECEIVE_SCAN_LIMIT");
 });

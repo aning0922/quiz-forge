@@ -40,18 +40,61 @@ export function requireQuota(bytes: number, added = 0) {
 }
 
 /** Reserve shape for every new name before claim; do not create an unscannable namespace. */
-export function requireReceiveCapacity(scan: Scan, id: string) {
-  const current = scan.files.get(id),
-    addedDirectory = current ? 0 : 1;
-  const addedFiles =
+export function requireReceiveCapacity(
+  scan: Scan,
+  id: string,
+  rows: ImportRow[] = [],
+) {
+  const planned = new Map(
+    [...scan.files].map(([key, files]) => [key, files.length]),
+  );
+  let entries = scan.entries;
+  const reserve = (key: string, added: number) => {
+    if (!planned.has(key)) {
+      planned.set(key, 0);
+      entries++;
+    }
+    planned.set(key, planned.get(key)! + added);
+    if (
+      planned.size > MAX_IMPORT_DIRECTORIES ||
+      planned.get(key)! > MAX_FILES_PER_IMPORT ||
+      entries + added > MAX_SCAN_ENTRIES
+    )
+      throw new StudioError("RECEIVE_SCAN_LIMIT");
+    entries += added;
+  };
+  // A lost owner can still finish previously-issued mkdir/write/link. Held reservations survive
+  // absent files, lock loss and stopped proof until the reconciliation transaction confirms release.
+  for (const row of rows) {
+    const held = row.attempts.filter((a) => a.disposition === "held");
+    if (
+      held.reduce((n, a) => n + a.reservationBytes, 0) !==
+      Number(row.reserved_bytes)
+    )
+      throw new StudioError("RECEIVE_STORAGE_CONFLICT");
+    if (!held.length) continue;
+    const names = (scan.files.get(row.id) ?? []).map((f) =>
+      path.basename(f.file),
+    );
+    let added = names.includes("archive.quizpack") ? 0 : 1;
+    for (const a of held) {
+      if (!names.includes(`attempt-${a.attemptId}.partial`)) added++;
+      if (!names.includes(`stopped-${a.attemptId}.json`)) added++;
+      if (
+        !names.some((name) =>
+          name.startsWith(`stopped-${a.attemptId}.json.tmp-`),
+        )
+      )
+        added++;
+    }
+    reserve(row.id, added);
+  }
+  const current = scan.files.get(id);
+  reserve(
+    id,
     3 +
-    (current?.some((f) => path.basename(f.file) === "archive.quizpack")
-      ? 0
-      : 1);
-  if (
-    scan.files.size + addedDirectory > MAX_IMPORT_DIRECTORIES ||
-    (current?.length ?? 0) + addedFiles > MAX_FILES_PER_IMPORT ||
-    scan.entries + addedDirectory + addedFiles > MAX_SCAN_ENTRIES
-  )
-    throw new StudioError("RECEIVE_SCAN_LIMIT");
+      (current?.some((f) => path.basename(f.file) === "archive.quizpack")
+        ? 0
+        : 1),
+  );
 }

@@ -331,7 +331,8 @@ export function createImportReceiveService(
         eof = false,
         frozen = false,
         handlesSettled = true,
-        fileStarted = false;
+        attemptIoStarted = false,
+        receiptAttempted = false;
       let p = productId,
         id = importId;
       try {
@@ -346,7 +347,7 @@ export function createImportReceiveService(
         const scan = await scanStorage(config, context);
         currentReceiptLimits(scan, id);
         lock.assert();
-        const rows = await lock.query(heldRows(lock.connection));
+        const rows = await lock.query(() => heldRows(lock!.connection));
         remainingReceiveMs(context);
         const existing = await receiveDatabaseAwait(db, context, "read", () =>
           read(db, c.sessionToken, async (tx) => importRow(tx, p, id), c),
@@ -355,7 +356,7 @@ export function createImportReceiveService(
           return dto(existing);
         }
         recoveryRequired(existing);
-        requireReceiveCapacity(scan, id);
+        requireReceiveCapacity(scan, id, rows);
         if (existing.status === "rejected")
           throw new StudioError(
             "IMPORT_STATE_CONFLICT",
@@ -397,6 +398,7 @@ export function createImportReceiveService(
         remainingReceiveMs(context);
         const attempt = claimed.attempts.at(-1)!;
         const dir = importDirectory(config, id);
+        attemptIoStarted = true;
         try {
           await mkdir(dir, { mode: 0o700 });
         } catch (e) {
@@ -415,7 +417,7 @@ export function createImportReceiveService(
             constants.O_NOFOLLOW,
           0o600,
         );
-        fileStarted = true;
+        attemptIoStarted = true;
         const inode = await handle.stat();
         const hash = createHash("sha256");
         let bytes = 0;
@@ -488,6 +490,7 @@ export function createImportReceiveService(
         frozen = true;
         await hooks.beforeIo?.("unlink");
         await removeOwned(partial, inode);
+        receiptAttempted = true;
         await writeStopped(config, id, attempt);
         await hooks.afterFreeze?.(claimed);
         await lock.check();
@@ -539,10 +542,13 @@ export function createImportReceiveService(
           !(error instanceof StudioError) ||
           (error.code !== "WRITE_OUTCOME_UNKNOWN" &&
             error.code !== "RECEIVE_LOCK_LOST");
-        if (claimed && safe && (known || fileStarted) && lock) {
+        if (claimed && safe && (known || attemptIoStarted) && lock) {
           const attempt = claimed.attempts.at(-1)!;
           try {
-            await writeStopped(db.config, id, attempt);
+            if (!receiptAttempted) {
+              receiptAttempted = true;
+              await writeStopped(db.config, id, attempt);
+            }
             const code: ReceiveErrorCode = [
               "RECEIVE_TIMEOUT",
               "RECEIVE_LENGTH_MISMATCH",
@@ -613,7 +619,7 @@ export function createImportReceiveService(
         const config = await writeConfig(db, lock);
         const scan = await scanStorage(config, context);
         currentReceiptLimits(scan, id);
-        const rows = await lock.query(heldRows(lock.connection));
+        const rows = await lock.query(() => heldRows(lock!.connection));
         // Recovery creates no archive/temporary bytes. Validate the bounded held ledger,
         // then permit stopped cleanup/reconciliation even when conservative headroom exceeds admission quota.
         measuredQuota(scan, rows);

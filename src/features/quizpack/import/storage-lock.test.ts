@@ -36,3 +36,26 @@ it("close bounds a withheld unlock and invalidates its reserved handle", async (
   expect(client.end).toHaveBeenCalled();
   expect(connection.release).toHaveBeenCalledOnce();
 });
+
+it("invalid query rejects before invoking its factory, with no late unhandled rejection", async () => {
+  vi.useFakeTimers();
+  const { lock } = fake();
+  const closed = lock.close();
+  await vi.advanceTimersByTimeAsync(2001);
+  await closed;
+  vi.useRealTimers();
+  const factory = vi.fn(() => Promise.reject(new Error("LATE_REJECTION")));
+  let unhandled = false;
+  const observe = () => {
+    unhandled = true;
+  };
+  process.on("unhandledRejection", observe);
+  try {
+    await expect(lock.query(factory)).rejects.toThrow("RECEIVE_LOCK_LOST");
+    await new Promise<void>((r) => setImmediate(r));
+    expect(factory).not.toHaveBeenCalled();
+    expect(unhandled).toBe(false);
+  } finally {
+    process.removeListener("unhandledRejection", observe);
+  }
+}, 5000);
