@@ -1,0 +1,135 @@
+.shell {
+  min-height: 100dvh;
+  background: #f1f4f7;
+  color: #1e293b;
+  font-size: 16px;
+  line-height: 1.6;
+  padding: 0 20px 48px;
+}
+.header {
+  max-width: 960px;
+  margin: auto;
+  padding-block: 24px;
+  border-bottom: 1px solid #ced7e0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.brand {
+  font-weight: 700;
+  font-size: 20px;
+}
+.environment {
+  color: #42536a;
+}
+.main {
+  width: min(100%, 640px);
+  margin: 40px auto 0;
+}
+.panel {
+  background: white;
+  border: 1px solid #ced7e0;
+  border-radius: 16px;
+  padding: 28px;
+}
+.panel h1 {
+  font-size: 28px;
+  line-height: 1.4;
+  margin-bottom: 12px;
+}
+.panel p + p {
+  margin-top: 16px;
+}
+.intro {
+  color: #42536a;
+}
+.form {
+  margin-top: 28px;
+  display: grid;
+  gap: 12px;
+}
+.form label {
+  font-weight: 600;
+}
+.input {
+  width: 100%;
+  min-width: 0;
+  min-height: 48px;
+  border: 1px solid #8293a5;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font: inherit;
+}
+.button,
+.link {
+  display: inline-flex;
+  min-height: 48px;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 16px;
+  border: 1px solid #234d73;
+  border-radius: 8px;
+  font: inherit;
+  font-weight: 600;
+  background: #234d73;
+  color: white;
+  cursor: pointer;
+}
+.button:disabled {
+  cursor: wait;
+  background: #546b80;
+  border-color: #546b80;
+}
+.button:focus-visible,
+.link:focus-visible,
+.input:focus-visible {
+  outline: 3px solid #267bc1;
+  outline-offset: 3px;
+}
+.status {
+  margin-block: 16px;
+  padding: 12px 14px;
+  background: #eff4f8;
+  border-radius: 8px;
+  overflow-wrap: anywhere;
+}
+.error {
+  background: #fff1ee;
+  color: #803324;
+}
+.note {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid #d7dfe7;
+  color: #42536a;
+}
+.facts {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 18px;
+  margin-block: 28px;
+}
+.facts div {
+  min-width: 0;
+}
+.facts dt {
+  color: #42536a;
+}
+.facts dd {
+  margin: 4px 0 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 375px) {
+  .shell {
+    padding-inline: 16px;
+  }
+  .panel {
+    padding: 20px;
+  }
+  .main {
+    margin-top: 28px;
+  }
+}

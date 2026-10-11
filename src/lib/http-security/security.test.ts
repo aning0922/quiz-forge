@@ -1,0 +1,162 @@
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { emptyDto, loginDto, readStudioJson } from "./json";
+import { assertStudioSource, configuredHost } from "./source";
+import { errorResponse } from "./errors";
+
+const config = {
+  profile: "local-http-p2a" as const,
+  origin: "http://127.0.0.1:3100",
+};
+const source = () =>
+  new Headers({ host: "127.0.0.1:3100", origin: config.origin });
+const jsonRequest = (body: string) =>
+  new Request(config.origin, {
+    method: "POST",
+    headers: { "content-type": "application/json", "content-length": "1" },
+    body,
+  });
+
+afterEach(() => vi.useRealTimers());
+
+describe("Studio source boundary", () => {
+  it("requires an exact loopback profile and explicit nondefault port", () => {
+    expect(configuredHost(config)).toBe("127.0.0.1:3100");
+    for (const origin of [
+      "http://localhost:3100",
+      "https://127.0.0.1:3100",
+      "http://127.0.0.1",
+      "http://127.0.0.1:3100/",
+      "http://127.0.0.1:3100/path",
+      "http://u:p@127.0.0.1:3100",
+      "http://127.0.0.1:80",
+    ]) {
+      expect(() => configuredHost({ ...config, origin })).toThrow(
+        "STUDIO_UNAVAILABLE",
+      );
+    }
+  });
+  it("rejects absent, null, alias and foreign origins, without trusting proxy headers", () => {
+    for (const origin of [
+      null,
+      "null",
+      "http://localhost:3100",
+      "http://127.0.0.1:3101",
+    ]) {
+      const headers = source();
+      if (origin === null) headers.delete("origin");
+      else headers.set("origin", origin);
+      headers.set("x-forwarded-host", "127.0.0.1:3100");
+      expect(() =>
+        assertStudioSource(headers, config, { write: true, api: true }),
+      ).toThrow("ORIGIN_REJECTED");
+    }
+    const headers = source();
+    headers.set("host", "localhost:3100");
+    expect(() =>
+      assertStudioSource(headers, config, { write: false, api: false }),
+    ).toThrow("ORIGIN_REJECTED");
+  });
+  it("accepts normal page navigation but requires same-origin fetch metadata for APIs when present", () => {
+    const headers = source();
+    headers.delete("origin");
+    headers.set("sec-fetch-site", "none");
+    expect(() =>
+      assertStudioSource(headers, config, { write: false, api: false }),
+    ).not.toThrow();
+    for (const site of ["none", "cross-site", "same-site"]) {
+      headers.set("sec-fetch-site", site);
+      expect(() =>
+        assertStudioSource(headers, config, { write: false, api: true }),
+      ).toThrow("ORIGIN_REJECTED");
+    }
+    headers.set("sec-fetch-site", "same-origin");
+    expect(() =>
+      assertStudioSource(headers, config, { write: false, api: true }),
+    ).not.toThrow();
+  });
+});
+
+describe("actual bounded JSON and strict DTOs", () => {
+  it("counts actual bytes, including multibyte UTF-8, independent of Content-Length", async () => {
+    await expect(
+      readStudioJson(jsonRequest('"' + "a".repeat(4094) + '"')),
+    ).resolves.toHaveLength(4094);
+    await expect(
+      readStudioJson(jsonRequest('"' + "a".repeat(4095) + '"')),
+    ).rejects.toThrow("PAYLOAD_TOO_LARGE");
+    await expect(
+      readStudioJson(jsonRequest('"' + "中".repeat(1365) + '"')),
+    ).rejects.toThrow("PAYLOAD_TOO_LARGE");
+  });
+  it("rejects malformed JSON, unsupported types, encodings and invalid UTF-8", async () => {
+    await expect(readStudioJson(jsonRequest("{"))).rejects.toThrow(
+      "INVALID_REQUEST",
+    );
+    const wrong = jsonRequest("{}");
+    wrong.headers.set("content-type", "text/plain");
+    await expect(readStudioJson(wrong)).rejects.toThrow("INVALID_REQUEST");
+    const compressed = jsonRequest("{}");
+    compressed.headers.set("content-encoding", "gzip");
+    await expect(readStudioJson(compressed)).rejects.toThrow("INVALID_REQUEST");
+    const bytes = new Request(config.origin, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: new Uint8Array([0xff]),
+    });
+    await expect(readStudioJson(bytes)).rejects.toThrow("INVALID_REQUEST");
+  });
+  it("cancels a stalled body at the server deadline even after complete-looking JSON", async () => {
+    vi.useFakeTimers();
+    let cancelled = false;
+    const body = new ReadableStream({
+      start(controller) {
+        controller.enqueue(new TextEncoder().encode("{}"));
+      },
+      cancel() {
+        cancelled = true;
+      },
+    });
+    const request = new Request(config.origin, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body,
+      duplex: "half",
+    } as RequestInit);
+    const result = expect(readStudioJson(request)).rejects.toThrow(
+      "INVALID_REQUEST",
+    );
+    await vi.advanceTimersByTimeAsync(5000);
+    await result;
+    expect(cancelled).toBe(true);
+  });
+  it("rejects all unknown fields and non-object DTOs", () => {
+    expect(() => emptyDto({})).not.toThrow();
+    for (const value of [null, [], "", { role: "operator" }])
+      expect(() => emptyDto(value)).toThrow("INVALID_REQUEST");
+    expect(loginDto({ credential: "synthetic-input" })).toEqual({
+      credential: "synthetic-input",
+    });
+    for (const value of [
+      { credential: "x", role: "operator" },
+      { credential: "x", id: "id" },
+      { credential: "x", expiresAt: "later" },
+      { credential: "" },
+      { credential: 3 },
+      [],
+    ])
+      expect(() => loginDto(value)).toThrow("INVALID_REQUEST");
+  });
+  it("never serializes raw exceptions and always prevents caching", async () => {
+    const response = errorResponse(
+      new Error("private-connection-detail"),
+      "synthetic-request-id",
+    );
+    expect(response.status).toBe(503);
+    expect(response.headers.get("cache-control")).toContain("no-store");
+    expect(response.headers.has("access-control-allow-origin")).toBe(false);
+    expect(await response.json()).toEqual({
+      code: "STUDIO_UNAVAILABLE",
+      requestId: "synthetic-request-id",
+    });
+  });
+});
