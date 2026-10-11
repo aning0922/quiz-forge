@@ -62,3 +62,37 @@ export function checkCompatibility(
   });
   return issues;
 }
+
+/** P1 finite state capability contracts; renderer availability remains unverified. */
+export const P1_STATE_COMPONENT_CONTRACTS = Object.freeze({
+  cover: Object.freeze({
+    id: "folio-cover",
+    version: "1.0.0",
+    propsSchemaVersion: "1.0.0",
+  }),
+  question: Object.freeze({
+    id: "folio-question",
+    version: "1.0.0",
+    propsSchemaVersion: "1.0.0",
+  }),
+  resume: Object.freeze({
+    id: "folio-resume",
+    version: "1.0.0",
+    propsSchemaVersion: "1.0.0",
+  }),
+  result: Object.freeze({
+    id: "cabinet-result",
+    version: "1.0.0",
+    propsSchemaVersion: "1.0.0",
+  }),
+  report: Object.freeze({
+    id: "folio-report",
+    version: "1.0.0",
+    propsSchemaVersion: "1.0.0",
+  }),
+  poster: Object.freeze({
+    id: "folio-poster",
+    version: "1.0.0",
+    propsSchemaVersion: "1.0.0",
+  }),
+});

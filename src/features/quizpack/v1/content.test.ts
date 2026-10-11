@@ -335,3 +335,141 @@ describe("exact Product, version, namespace and closed declarations", () => {
     },
   );
 });
+
+describe("finite P1 component state capabilities", () => {
+  it.each([
+    "cover",
+    "question",
+    "resume",
+    "result",
+    "report",
+    "poster",
+  ] as const)("rejects known but wrong component in %s", (state) => {
+    const value = copy();
+    const other = state === "result" ? "cover" : "result";
+    value.content.layouts[state].component =
+      value.content.layouts[other].component;
+    expect(codes(value)).toContain("COMPONENT_STATE_MISMATCH");
+    expect(
+      checkCompatibility(value.manifest, DEFAULT_COMPATIBILITY_POLICY),
+    ).toEqual([]);
+  });
+  it("rejects a report template using a known cover component", () => {
+    const value = copy();
+    value.content.reportTemplates[0]!.component =
+      value.content.layouts.cover.component;
+    expect(codes(value)).toContain("COMPONENT_STATE_MISMATCH");
+  });
+  it("rejects wrong state version even if manifest/policy both allow it", () => {
+    const value = copy();
+    value.content.layouts.cover.component = {
+      ...value.content.layouts.cover.component,
+      propsSchemaVersion: "2.0.0",
+    };
+    value.manifest.components[0] = value.content.layouts.cover.component;
+    expect(codes(value)).toContain("COMPONENT_STATE_MISMATCH");
+    const policy = {
+      ...DEFAULT_COMPATIBILITY_POLICY,
+      components: value.manifest.components,
+    };
+    expect(checkCompatibility(value.manifest, policy)).toEqual([]);
+  });
+});
+
+describe("structural production bounds", () => {
+  it.each([
+    ["questions", 100],
+    ["dimensions", 16],
+    ["results", 32],
+    ["resources", 64],
+  ] as const)(
+    "accepts exact %s structure bound and rejects one more",
+    (key, limit) => {
+      const value = copy();
+      const item = value.content[key][0]!;
+      Object.assign(value.content, {
+        [key]: Array.from({ length: limit }, () => structuredClone(item)),
+      });
+      expect(parseQuizPackContent(value.content).ok).toBe(true);
+      Object.assign(value.content, {
+        [key]: Array.from({ length: limit + 1 }, () => structuredClone(item)),
+      });
+      expect(parseQuizPackContent(value.content).ok).toBe(false);
+    },
+  );
+  it("bounds options and contribution integers at both ends", () => {
+    const value = copy();
+    const option = value.content.questions[0]!.options[0]!;
+    value.content.questions[0]!.options = Array.from({ length: 8 }, () =>
+      structuredClone(option),
+    );
+    value.content.questions[0]!.options[0]!.contributions[0]!.value = -100;
+    value.content.questions[0]!.options[1]!.contributions[0]!.value = 100;
+    expect(parseQuizPackContent(value.content).ok).toBe(true);
+    value.content.questions[0]!.options[0]!.contributions[0]!.value = -101;
+    expect(parseQuizPackContent(value.content).ok).toBe(false);
+    value.content.questions[0]!.options[0]!.contributions[0]!.value = 101;
+    expect(parseQuizPackContent(value.content).ok).toBe(false);
+    value.content.questions[0]!.options[0]!.contributions[0]!.value = 0;
+    value.content.questions[0]!.options.push(structuredClone(option));
+    expect(parseQuizPackContent(value.content).ok).toBe(false);
+  });
+  it("requires positive image dimensions, bounded resource bytes and lowercase SHA", () => {
+    const value = copy();
+    value.content.resources[0]!.width = 0;
+    expect(parseQuizPackContent(value.content).ok).toBe(false);
+    value.content.resources[0]!.width = 8193;
+    expect(parseQuizPackContent(value.content).ok).toBe(false);
+    value.content.resources[0]!.width = 8;
+    value.content.resources[0]!.bytes = 8 * 1024 * 1024 + 1;
+    expect(parseQuizPackContent(value.content).ok).toBe(false);
+    value.content.resources[0]!.bytes = 100;
+    value.content.resources[0]!.sha256 = "A".repeat(64);
+    expect(parseQuizPackContent(value.content).ok).toBe(false);
+  });
+});
+
+it("rejects whitespace-only baseline and evidence while preserving valid text", () => {
+  const value = copy();
+  value.content.reportTemplates[0]!.baseline.summary = "  \n ";
+  expect(parseQuizPackContent(value.content).ok).toBe(false);
+  const source = copy();
+  source.content.resources[0]!.source.evidence = " ";
+  expect(parseQuizPackContent(source.content).ok).toBe(false);
+  const padded = copy();
+  padded.content.product.title = "  Synthetic title  ";
+  const parsed = parseQuizPackContent(padded.content);
+  expect(parsed.ok && parsed.value.product.title).toBe("  Synthetic title  ");
+});
+
+it("emits nonblank, local plain-text constraints in JSON Schema", () => {
+  const productSchema = getQuizPackContentJsonSchema().properties?.product as {
+    properties: {
+      title: {
+        minLength: number;
+        maxLength: number;
+        allOf: { pattern: string }[];
+      };
+    };
+  };
+  const title = productSchema.properties.title;
+  expect(title.allOf).toHaveLength(3);
+  for (const text of [
+    "",
+    "  \n ",
+    "<html>",
+    "HTTPS://remote.invalid",
+    "JaVaScRiPt:code",
+    "text\u0000",
+    "  Valid text  ",
+    "普通合成内容",
+  ]) {
+    const schemaAccepts =
+      text.length >= title.minLength &&
+      text.length <= title.maxLength &&
+      title.allOf.every((rule) => new RegExp(rule.pattern).test(text));
+    const value = copy();
+    value.content.product.title = text;
+    expect(schemaAccepts).toBe(parseQuizPackContent(value.content).ok);
+  }
+});
