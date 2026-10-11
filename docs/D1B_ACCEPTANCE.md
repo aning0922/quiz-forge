@@ -28,3 +28,7 @@
 非实施上下文的独立审查见 [D1B_REVIEW](D1B_REVIEW.md)。总控另核验最终全套检查与关键异常截图。已修复单选组/方向键语义、首题返回焦点、清空 storage 事件与连续修改冲突锁、确认期间冲突不能删除外部书签、损坏值修改后的重置入口和只在明确丢弃时删除、无效数组/小数输入、保存状态提示、边界对比/44px异常入口与截图生成竞态。透明选项边界由2.06:1提升到4.64:1。初轮缺浏览器/旧预览占3100的失败经过安装及PID/cwd核实后处理，未计为通过。
 
 后续只等待作者体验/审美和素材审批、PR合并决定。D1-C、正式服务/评分、候选依赖集成和部署必须另获授权。完整三主题十五状态仍未完成；本轮不声称实现 D1-C 结果生成或海报导出。
+
+## Git / PR / CI
+
+实现 commit `b3b330e9c7f6dbb831219c6ac6efdb69ba3af6f6`，已推送 `codex/d1b-historical-flow`；[Draft PR #3](https://github.com/aning0922/quiz-forge/pull/3) 面向 main 且保持 OPEN/Draft。GitHub [实现 CI 38124435700](https://github.com/aning0922/quiz-forge/actions/runs/38124435700) 已真实 completed/success，与实现 head 一致；现有 CI 不运行 E2E。此验收/进度检查点的后续 commit 会触发独立 CI，最终最新状态在 PR checks 及总控交付中核验，不把实现 CI 推广到未跑的提交。未合并 main、部署或推进 D1-C。
