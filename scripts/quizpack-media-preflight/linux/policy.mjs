@@ -1,3 +1,4 @@
+import { readRuntimeVersions } from "./runtime.mjs";
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { release, arch, platform } from "node:os";
@@ -116,6 +117,20 @@ export async function loadPolicy({
   onDiagnostic?.({ phase: "policy-capabilities", checks: capabilities });
   if (!Object.values(capabilities).every((v) => v === true))
     throw new Error("CAPABILITY_UNAVAILABLE");
+  const runtimeVersions = await readRuntimeVersions({
+    deadline,
+    signal,
+    controlCommand,
+  });
+  const expectedVersions = image.runtimeVersions;
+  if (
+    !expectedVersions ||
+    ["engine", "containerd", "runc", "init"].some(
+      (k) => runtimeVersions[k] !== expectedVersions[k],
+    )
+  )
+    throw new Error("RUNTIME_VERSION_CHANGED");
+  onDiagnostic?.({ phase: "policy-runtime-versions", matched: true });
   let dependencies = null;
   try {
     dependencies = json(await readPrivate(resolve(CACHE, "dependencies.json")));
@@ -134,7 +149,12 @@ export async function loadPolicy({
     JSON.stringify(json(await readFile(resolve(DIR, "seccomp.json")))),
   );
   const launcherInputs = {};
-  for (const file of ["common.mjs", "controller.mjs", "policy.mjs"]) {
+  for (const file of [
+    "common.mjs",
+    "controller.mjs",
+    "policy.mjs",
+    "runtime.mjs",
+  ]) {
     launcherInputs[file] = hash(await readFile(resolve(DIR, file)));
   }
   for (const file of ["contracts.ts", "precheck.ts", "output.ts"]) {
@@ -153,6 +173,7 @@ export async function loadPolicy({
     seccompSha256,
     launcherPolicySha256: hash(JSON.stringify(launcherInputs)),
     daemon,
+    runtimeVersions,
     dependencies,
     limits: LIMITS,
   };

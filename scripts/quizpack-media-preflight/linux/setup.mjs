@@ -1,3 +1,4 @@
+import { readRuntimeVersions } from "./runtime.mjs";
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { randomUUID } from "node:crypto";
@@ -33,36 +34,9 @@ safeMain(
     await privateDir(CACHE);
     await privateDir(resolve(CACHE, "docker-config"));
     stage = "runtime-version";
-    const versionCommand = await docker(
-      ["version", "--format", "{{json .Server.Components}}"],
-      { deadline: performance.now() + 5000 },
-    );
-    if (
-      versionCommand.code !== 0 ||
-      versionCommand.reason ||
-      !versionCommand.settled
-    )
-      throw new Error("RUNTIME_VERSION");
-    const components = json(versionCommand.stdout);
-    const names = {
-      Engine: "engine",
-      containerd: "containerd",
-      runc: "runc",
-      "docker-init": "init",
-    };
-    const runtimeVersions = {};
-    if (!Array.isArray(components)) throw new Error("RUNTIME_VERSION");
-    for (const c of components) {
-      if (Object.hasOwn(names, c.Name)) {
-        if (
-          typeof c.Version !== "string" ||
-          !/^[A-Za-z0-9._+-]{1,80}$/.test(c.Version)
-        )
-          throw new Error("RUNTIME_VERSION");
-        runtimeVersions[names[c.Name]] = c.Version;
-      }
-    }
-    if (!runtimeVersions.runc) throw new Error("RUNTIME_VERSION");
+    const runtimeVersions = await readRuntimeVersions({
+      deadline: performance.now() + 5000,
+    });
     process.stdout.write(
       JSON.stringify({
         diagnostic: "runtime-versions",

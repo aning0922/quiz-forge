@@ -26,3 +26,41 @@ test("dead parent with a 6.5s descendant stdio holder stays unknown at the 5s bu
   assert.equal(later.closed, true);
   assert.equal(result.closed, false);
 });
+
+test("an early timer callback is rearmed to the same absolute budget", async () => {
+  let now = 0;
+  let id = 0;
+  const timers = new Map();
+  const timing = {
+    now: () => now,
+    setTimer(fn, delay) {
+      const key = ++id;
+      timers.set(key, { fn, delay });
+      return key;
+    },
+    clearTimer(key) {
+      timers.delete(key);
+    },
+  };
+  const child = { once() {}, unref() {} };
+  const observer = watchOwnedClose(child, timing);
+  let result;
+  const promise = observer.waitUntil(5000.8).then((v) => {
+    result = v;
+  });
+  now = 5000.2;
+  const current = [...timers.values()][0];
+  timers.clear();
+  current.fn();
+  assert.equal(timers.size, 1);
+  assert.equal([...timers.values()][0].delay, 1);
+  assert.equal(result, undefined);
+  now = 5001.2;
+  const rearmed = [...timers.values()][0];
+  timers.clear();
+  rearmed.fn();
+  await promise;
+  assert.equal(result.closed, false);
+  assert.equal(result.stopped, "unknown");
+  assert.equal(timers.size, 0);
+});
