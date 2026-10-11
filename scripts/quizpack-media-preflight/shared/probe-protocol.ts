@@ -99,3 +99,35 @@ export function parseFdDiagnostic(bytes: Uint8Array) {
     return null;
   }
 }
+
+// Host scanner control only. Actual sandbox acceptance continues to use the
+// existing fd mode and requires zero extra capabilities.
+const fdControlSchema = z
+  .strictObject({
+    schema: z.literal("posix-fd-control.v1"),
+    scanComplete: z.boolean(),
+    noInheritedFileOrSocket: z.boolean(),
+    extraCount: z.number().int().nonnegative().max(65536),
+    fd300Matched: z.boolean(),
+  })
+  .refine(
+    (value) =>
+      value.noInheritedFileOrSocket ===
+        (value.scanComplete && value.extraCount === 0) &&
+      (!value.fd300Matched || value.extraCount > 0),
+  );
+export function parseFdControl(bytes: Uint8Array) {
+  try {
+    if (bytes.byteLength > 2048) return null;
+    const text = new TextDecoder("utf-8", {
+      fatal: true,
+      ignoreBOM: true,
+    }).decode(bytes);
+    const value: unknown = JSON.parse(text);
+    if (JSON.stringify(value) !== text) return null;
+    const parsed = fdControlSchema.safeParse(value);
+    return parsed.success ? parsed.data : null;
+  } catch {
+    return null;
+  }
+}

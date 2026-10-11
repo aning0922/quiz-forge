@@ -49,9 +49,11 @@ jobs:
           node --import tsx scripts/quizpack-media-preflight/shared/fd-host-control.mjs || failed=1
           node --test scripts/quizpack-media-preflight/shared/fd-host-control.mjs || failed=1
           node --import tsx --test scripts/quizpack-media-preflight/shared/fd-host-control.mjs || failed=1
+          node scripts/quizpack-media-preflight/shared/fd-host-control.mjs --async-probe || failed=1
+          node --import tsx scripts/quizpack-media-preflight/shared/fd-host-control.mjs --async-probe || failed=1
           exit "$failed"
       - name: Media preflight contracts and local controls
-        run: node --import tsx --test scripts/quizpack-media-preflight/shared/*.test.ts scripts/quizpack-media-preflight/linux/*.test.mjs
+        run: node --import tsx --test scripts/quizpack-media-preflight/shared/*.test.ts scripts/quizpack-media-preflight/linux/*.test.mjs scripts/quizpack-media-preflight/macos/policy.test.ts
       - name: Production build
         run: pnpm build
 

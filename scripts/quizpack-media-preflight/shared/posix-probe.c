@@ -31,9 +31,12 @@ static const char *operation(int r) { return r == 0 ? "allowed" : denied(r) ? "o
 struct fd_diagnostic { const char *type; int read_mode, write_mode, cloexec, above255; };
 static struct fd_diagnostic fd_samples[12];
 static int fd_count = 0;
+static int fd300_matched = 0;
 static int describe_fd(int fd, const struct stat *st) {
   int mode = fcntl(fd, F_GETFL), flags = fcntl(fd, F_GETFD);
   if (mode < 0 || flags < 0) return 0;
+  if (fd == 300 && S_ISREG(st->st_mode) && (mode & O_ACCMODE) == O_RDONLY)
+    fd300_matched = 1;
   if (fd_count < 12) {
     struct fd_diagnostic *d = &fd_samples[fd_count];
     d->type = S_ISREG(st->st_mode) ? "regular" : S_ISSOCK(st->st_mode) ? "socket" : S_ISFIFO(st->st_mode) ? "pipe" : S_ISCHR(st->st_mode) ? "character" : S_ISBLK(st->st_mode) ? "block" : S_ISDIR(st->st_mode) ? "directory" : "other";
@@ -123,6 +126,9 @@ int main(int argc, char **argv) {
   } else if (!strcmp(argv[1], "fd") && argc == 2) {
     int clean = 0; int complete = scan_fds(&clean);
     printf("{\"schema\":\"posix-probe.v1\",\"mode\":\"fd\",\"scanComplete\":%s,\"noInheritedFileOrSocket\":%s}", complete?"true":"false", complete && clean?"true":"false");
+  } else if (!strcmp(argv[1], "fd-control") && argc == 2) {
+    int clean = 0; int complete = scan_fds(&clean);
+    printf("{\"schema\":\"posix-fd-control.v1\",\"scanComplete\":%s,\"noInheritedFileOrSocket\":%s,\"extraCount\":%d,\"fd300Matched\":%s}", complete?"true":"false", complete && clean?"true":"false", fd_count, fd300_matched?"true":"false");
   } else if (!strcmp(argv[1], "fd-diagnostic") && argc == 2) {
     int clean = 0; int complete = scan_fds(&clean);
     printf("{\"schema\":\"posix-fd-diagnostic.v1\",\"scanComplete\":%s,\"extraCount\":%d,\"truncated\":%s,\"descriptors\":[", complete?"true":"false", fd_count, fd_count>12?"true":"false");
