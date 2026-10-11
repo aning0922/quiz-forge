@@ -8,7 +8,7 @@ import type {
   Page,
 } from "@/features/quizpack/import/contracts";
 import type { StudioSessionDto } from "../contracts";
-import { studioFetch } from "../client";
+import { checkedImportFetch, checkImport, checkImportPage } from "./client";
 import { importMessage, isUnknownWrite } from "./messages";
 import { prepareArchive, type PendingArchive } from "./prepare-archive";
 import { exactIntentQuery } from "./query";
@@ -55,7 +55,7 @@ export function CreateReceive({
     setQueriedEmpty(false);
     try {
       setValue(
-        await studioFetch<ImportDto>(
+        await checkedImportFetch<ImportDto>(
           endpoint,
           {
             method: "POST",
@@ -66,14 +66,16 @@ export function CreateReceive({
             },
             body: JSON.stringify(pending.input),
           },
+          (value) => checkImport(value, { productId, input: pending.input }),
           true,
+          [200, 201],
         ),
       );
       setUnknown(false);
       onChanged();
     } catch (error) {
       setMessage(importMessage(error));
-      setUnknown(isUnknownWrite(error));
+      setUnknown((previous) => previous || isUnknownWrite(error));
     } finally {
       setBusy(false);
     }
@@ -84,9 +86,17 @@ export function CreateReceive({
     setMessage("");
     setQueriedEmpty(false);
     try {
-      const result = await studioFetch<Page<ImportDto>>(
+      const result = await checkedImportFetch<Page<ImportDto>>(
         `${endpoint}?${exactIntentQuery(pending.idempotencyKey)}`,
         {},
+        (value) =>
+          checkImportPage(value, {
+            productId,
+            input: pending.input,
+            page: 1,
+            pageSize: 1,
+            exact: true,
+          }),
       );
       if (result.items[0]) {
         setValue(result.items[0]);
@@ -116,6 +126,7 @@ export function CreateReceive({
           原包文件
           <input
             className={`${styles.input} ${local.file}`}
+            key={pending ? "prepared" : "select"}
             type="file"
             disabled={busy || !!pending}
             onChange={(event) => void select(event.target.files?.[0])}

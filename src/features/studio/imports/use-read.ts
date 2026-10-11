@@ -1,9 +1,14 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { studioFetch } from "../client";
+import { checkedImportFetch } from "./client";
 import { importMessage } from "./messages";
 
-export function useImportRead<T>(path: string) {
+export function useImportRead<T>(path: string, check?: (value: unknown) => T) {
+  const decoder = useRef(check);
+  useEffect(() => {
+    decoder.current = check;
+  });
   const [result, setResult] = useState<{
     path: string;
     value?: T;
@@ -12,7 +17,14 @@ export function useImportRead<T>(path: string) {
   const [revision, setRevision] = useState(0);
   useEffect(() => {
     const controller = new AbortController();
-    studioFetch<T>(path, { signal: controller.signal }).then(
+    const read = decoder.current
+      ? checkedImportFetch<T>(
+          path,
+          { signal: controller.signal },
+          decoder.current,
+        )
+      : studioFetch<T>(path, { signal: controller.signal });
+    read.then(
       (value) => {
         if (!controller.signal.aborted) setResult({ path, value });
       },
