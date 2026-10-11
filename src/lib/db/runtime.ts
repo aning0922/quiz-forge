@@ -1,0 +1,118 @@
+import "server-only";
+import { constants } from "node:fs";
+import { lstat, open, realpath } from "node:fs/promises";
+import path from "node:path";
+import { z } from "zod";
+
+export class StudioUnavailableError extends Error {
+  readonly code = "STUDIO_UNAVAILABLE";
+  constructor() {
+    super("STUDIO_UNAVAILABLE");
+    this.name = "StudioUnavailableError";
+  }
+}
+
+export function isLocalOrigin(value: string): boolean {
+  return (
+    /^http:\/\/127\.0\.0\.1:([1-9][0-9]{0,4})$/.test(value) &&
+    Number(value.split(":").at(-1)) <= 65535
+  );
+}
+const identifier = z.string().regex(/^qf_(app|owner|db)_[a-f0-9]{32}$/);
+export const runtimeConfigSchema = z
+  .strictObject({
+    version: z.literal(1),
+    profile: z.literal("local-http-p2a"),
+    purpose: z.enum(["test", "demo", "ci"]),
+    origin: z.string().refine(isLocalOrigin),
+    instanceId: z.string().regex(/^[a-f0-9]{32}$/),
+    database: z.strictObject({
+      host: z.literal("127.0.0.1"),
+      port: z
+        .number()
+        .int()
+        .min(1024)
+        .max(65535)
+        .refine((p) => p !== 5432),
+      name: identifier,
+      user: identifier,
+      password: z.string().regex(/^[A-Za-z0-9_-]{43}$/),
+    }),
+    server: z.strictObject({
+      version: z.literal(180004),
+      address: z.string().refine((s) => /^(?:\d{1,3}\.){3}\d{1,3}$/.test(s)),
+      port: z.number().int().min(1).max(65535),
+    }),
+  })
+  .superRefine((c, ctx) => {
+    if (
+      c.database.name !== `qf_db_${c.instanceId}` ||
+      c.database.user !== `qf_app_${c.instanceId}`
+    )
+      ctx.addIssue({ code: "custom", message: "Invalid identity" });
+    if (
+      c.purpose !== "ci" &&
+      (c.server.address !== "127.0.0.1" || c.server.port !== c.database.port)
+    )
+      ctx.addIssue({ code: "custom", message: "Invalid local server" });
+  });
+export type P2aRuntimeConfig = z.infer<typeof runtimeConfigSchema>;
+
+// Every ancestor below this worktree's private instance root must be a real 0700 directory.
+export async function readPrivateJson(
+  file: string,
+  root = process.cwd(),
+): Promise<unknown> {
+  if (!path.isAbsolute(file)) throw new StudioUnavailableError();
+  const base = path.join(root, ".cache", "p2a");
+  const relative = path.relative(base, file);
+  if (
+    relative.startsWith("..") ||
+    path.isAbsolute(relative) ||
+    relative.split(path.sep).length !== 2
+  )
+    throw new StudioUnavailableError();
+  const instanceDir = path.dirname(file);
+  for (const dir of [base, instanceDir]) {
+    const stat = await lstat(dir);
+    if (
+      !stat.isDirectory() ||
+      stat.isSymbolicLink() ||
+      (stat.mode & 0o777) !== 0o700 ||
+      stat.uid !== process.getuid?.()
+    )
+      throw new StudioUnavailableError();
+  }
+  if ((await realpath(instanceDir)) !== instanceDir)
+    throw new StudioUnavailableError();
+  const handle = await open(file, constants.O_RDONLY | constants.O_NOFOLLOW);
+  try {
+    const stat = await handle.stat();
+    if (
+      !stat.isFile() ||
+      (stat.mode & 0o777) !== 0o600 ||
+      stat.uid !== process.getuid?.() ||
+      stat.size > 16_384
+    )
+      throw new StudioUnavailableError();
+    return JSON.parse(await handle.readFile("utf8")) as unknown;
+  } finally {
+    await handle.close();
+  }
+}
+
+export async function loadRuntimeConfig(): Promise<P2aRuntimeConfig> {
+  try {
+    const file = process.env.QUIZFORGE_P2A_CONFIG;
+    if (!file) throw new StudioUnavailableError();
+    const config = runtimeConfigSchema.parse(await readPrivateJson(file));
+    if (
+      path.basename(path.dirname(file)) !== config.instanceId ||
+      path.basename(file) !== "runtime.json"
+    )
+      throw new StudioUnavailableError();
+    return config;
+  } catch {
+    throw new StudioUnavailableError();
+  }
+}
