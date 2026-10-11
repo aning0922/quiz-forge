@@ -67,7 +67,7 @@ P1技术交付证据：代码3a1ad7a，385单测/186 E2E（10既有跳过），�
 
 ## P2-B1 工作登记
 
-- 总控：codex/catalog-workspace，基于P2-A最终38177fb，合同a2df7b8；STUDIO_P2B1.md已冻结，B1尚未验收。
+- 总控：codex/catalog-workspace，基于P2-A最终38177fb，合同a2df7b8；STUDIO_P2B1.md已冻结；该条为启动登记，最终技术验收以下方退出检查点为准。
 - 「QuizForge P2-B1 · 目录数据与事务」：01a12c3b-f2ca-70d1-940d-4c6856a9b134，GPT-6.1 Sol/high；四表/迁移/服务、当前会话的同事务写鉴权、DTO和受控错误。先提交公共里程碑供B接入。
 - 「QuizForge P2-B1 · 测评工作区后台」：01a12c3b-f538-7042-80d4-fc2f977f5508，GPT-6.1 Sol/high；真实工作区/目录HTTP及UI、归档恢复和浏览器用例。
 - Astra high继续架构决策和独立审查，总控持有共享配置与3100。新workspace浏览器项目依赖studio-auth完成，避免两个fixture并发清理数据库；所有后台认证产物限制继续生效。
@@ -79,3 +79,7 @@ P3表现预案见PRESENTATION_P3_PREFLIGHT.md：计划保留v1包兼容，以有
 ## P2-B1 技术退出检查点
 
 最终代码44a0d38完成528单测、154真实DB、46驱动故障、198生产E2E/10既有跳过，独立审查闭合。代码CI38168728761两个job实际success，Draft PR #9保持未合并。A/B/driver及root测试实例全部停止，端口3100、55421–55424已核实无监听。接续B2-1原包接收；首款展示候选03fdc240已在内容独立分支完成，未改作者已选定的核心草案，也未升级为素材或内容批准。
+
+## P2-B2-1 工作登记
+
+总控新分支codex/quizpack-receipt基于B1最终文档e8da98b，普通与数据库CI38169117712已实际success。首批只接收原包：quizpack_import、关闭默认上传、显式管理CLI、私有目录/锁/配额、幂等意图与恢复及后台状态；received不代表验证或内容批准。STUDIO_P2B2.md已冻结；独立Astra前置审查的绝对期限与CLI晚到配置写两项P2已写入合同修订。A负责数据库/runtime/接收服务，B负责HTTP/后台；先交共享DTO再集成实现，尚未分派或验收。

@@ -2,7 +2,7 @@
 
 P2-A已实现qf.operator、operator_session、audit_event及qf_meta.schema_migrations。P2-B1已追加product、category、tag、product_tag，已完成技术验收。真实字段、权限、锁序与CAS以[目录合同](STUDIO_P2B1.md)为准；运营metadata_revision与未来草稿content revision分离。Product使用包的稳定字符串ID，category/tag使用服务器UUID，不能把下方历史拟议UUID一概套到Product。
 
-以下保留D0/F1业务约束和后续完整商品关系；除上方七张业务表外尚未建立。当前Product只有运营身份/slug/title/主类目FK/metadata_revision/时间/归档字段，没有published指针或内容发布状态。草稿、资源、版本、Key和报告仍待后续追加迁移；B2接收首批提案见[STUDIO_P2B2_RECEIVE_PROPOSAL](STUDIO_P2B2_RECEIVE_PROPOSAL.md)。
+以下保留D0/F1业务约束和后续完整商品关系；除上方七张业务表外尚未建立。当前Product只有运营身份/slug/title/主类目FK/metadata_revision/时间/归档字段，没有published指针或内容发布状态。草稿、资源、版本、Key和报告仍待后续追加迁移；B2-1将先追加唯一的quizpack_import原包接收表；实施合同见[STUDIO_P2B2](STUDIO_P2B2.md)，尚未创建或验收。完整草稿/blob/asset模型仍属后续批次。
 
 | 概念                  | 关键字段（拟议）                                                                                                                         | 关系与约束                                                                                      |
 | --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
@@ -64,7 +64,7 @@ QuizPack 结构/兼容/安全与规则夹具通过；测评版本、题/选项�
 
 保存报告时快照答案、评分、原型/结局、结果文案与展示参数，并固定素材内容哈希、商品包和组件版本。素材版本需长期可寻址，避免仅存活动 CDN URL 导致旧报告丢图。未来报告 Schema 升级做向后兼容读取，不重跑评分。
 
-资源对象与数据库记录不是同一事务。上传先写受限 staging object，再创建/更新导入记录；验证与归档成功后才允许 AssetBlob/AssetPackVersion 被发布引用。若数据库事务或对象移动失败，服务必须保留可审计状态并安排删除/重试补偿，不能把孤儿对象当作已批准素材，亦不能让缺失对象进入 ProductVersion。
+资源对象与数据库记录不是同一事务。B2-1先在数据库确认幂等意图和带fence的接收尝试，再于事务外接收并冻结私有原字节，最后以新事务确认当前身份与状态；received仅表示未验证原包。下一批验证与归档成功后才允许 AssetBlob/AssetPackVersion 被发布引用。若数据库事务或对象移动失败，服务必须保留可审计状态并安排删除/重试补偿，不能把孤儿对象当作已批准素材，亦不能让缺失对象进入 ProductVersion。
 
 正式数据库阶段先建立最小纵向闭环所需的 Product/Draft/Version、Asset、AccessKey/Session/Report 与必要运营身份表，再扩展导入、分享、AI、支付和统计。每个迁移必须可重复运行并在隔离 PostgreSQL 上验证 upgrade/rollback 兼容；生产迁移和真实连接不属于 F1。
 
