@@ -1,6 +1,13 @@
 # 阶段进度
 
-日期：2026-10-11（Asia/Shanghai）。当前阶段为作者明确授权的 **Visual V2-B**，在原 `codex/visual-v2-exploration` 分支、V2-A.1 提交 `f33594b0b6cea4f0fb99013cfd33b9a55cd02393` 上继续。main 已包含 PR #1/#2/#3，V2最初从 `4399664d9d2ab6e8e0eeebe900c3dbd8fc2c39f8` 创建。D1-C 及后续仍未授权。以下旧阶段的 SHA、CI 和停止记录是历史证据，不代表当前 main 状态。
+日期：2026-10-11（Asia/Shanghai）。当前阶段为作者明确授权的 **Visual V2「藏馆探寻」答题视觉研究**，在原 `codex/visual-v2-exploration` 分支的 `226d2b7` 基线上继续；Visual V2-B 已保留为同一 Draft PR 内的结果视觉研究。main 已包含 PR #1/#2/#3，V2最初从 `4399664d9d2ab6e8e0eeebe900c3dbd8fc2c39f8` 创建。D1-C 及后续仍未授权。以下旧阶段的 SHA、CI 和停止记录是历史证据，不代表当前 main 状态。
+
+## Visual V2 藏馆探寻答题视觉（已完成，待人工审查）
+
+- 作者针对“答题寡淡、色彩单一、久看没兴趣”的反馈，明确选择藏馆探寻方向。新增独立 `/studies/visual-v2-questions` 和 `/research`，不替换 V2-A/A.1/B 或正式消费者流程。
+- 四张实际内置、无人物/结果关联的 pending AI 环境图按 question.id 的三题段落轮换：青玉、暖金、雨蓝、靛夜。题面保持2×2问笺，320px统一单列；十二行记按真实 answers 点亮，不按count连续填充。场景200ms淡入、选择140ms色变，reduced-motion 无动画。
+- 复用原12题、`useVisualStudy` 与全部本地恢复/异常语义；独立 `cabinet-exploration` 本地 key。确认后进入固定 celestial 合成揭晓，不预加载身份，答案不参与人物或分数计算。
+- 最终 `format:check`、`lint`、`typecheck`、31项单测和 `build` 通过；专项生产 E2E 10/10通过，全套生产 E2E 154通过、10个既有intentional skipped（共164，无失败）。保存失败不再误示“本机已暂存”，答题脚本正文身份隔离断言通过。sticky dock 已改自然文档流，320单列且24px压测直接覆盖选项正文；Chromium 156.0.8078.4 的23张浏览器截图和1张四厅首屏派生对照图均无横向溢出，所查状态无视觉阻断。本轮只实现四厅/每三题推进，不可称为12个独立情境、消除疲劳或提升转化；pending素材、作者体验、提交 SHA、Draft PR/CI 状态仍待交付核验。详见 [藏馆探寻工作记录](VISUAL_V2_QUESTIONS.md)。
 
 ## Visual V2-B 结果主视觉与美术表现强化（实施中）
 
