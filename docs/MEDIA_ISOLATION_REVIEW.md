@@ -64,4 +64,10 @@ head e2adf40的[普通CI38180296236](https://github.com/aning0922/quiz-forge/act
 
 两条独立源码调查定位runc1.5.1默认pure-Go链：[seccomp后Reopen](https://github.com/opencontainers/runc/blob/v1.5.1/libcontainer/standard_init_linux.go#L219-L249)经pathrs-lite的[procfs安全核验](https://github.com/opencontainers/runc/blob/v1.5.1/vendor/github.com/cyphar/filepath-securejoin/pathrs-lite/internal/procfs/procfs_linux.go#L42-L67)调用[unix.Fstatfs](https://github.com/opencontainers/runc/blob/v1.5.1/vendor/github.com/cyphar/filepath-securejoin/pathrs-lite/internal/fd/fd_linux.go#L51-L55)。当前policy缺这一只读文件系统类型查询；mount API和openat2失败已有安全回退，未找到同时增加statfs/mount/open_tree的必要证据。root05eaf48只加fstatfs，已和Linux作者明确单文件交接，其余权限不变；下一真实CI验证前仍是最小候选，不声称唯一根因或能力已通过，CI也未提供runc构建tag。
 
-共享cc51623独立Astra复核无P1/P2，13项native/shared测试及6项async helper失败边界通过；后代持stdio在6005ms返回close-unconfirmed，未误认停止。root另以本批全新purpose=test实例完成214真实DB（137.95秒）与46驱动场景、生产构建53trace/0私有违规，生产E2E进行中；这些是既有应用回归，不关闭mac三项P2或Linux崩溃harness期限P2。
+共享cc51623独立Astra复核无P1/P2，13项native/shared测试及6项async helper失败边界通过；后代持stdio在6005ms返回close-unconfirmed，未误认停止。root另以本批全新purpose=test实例完成214真实DB（137.95秒）与46驱动场景、生产构建53trace/8614路径/0私有违规，生产E2E206通过/10既有跳过（1.3分钟）。实例2ed89d08600b03487c9f844dbfb1fceb已受管stop/status确认stopped，3100/55423无监听；私有配置/PGDATA保留可恢复。这些是既有应用回归，不关闭mac三项P2或Linux崩溃harness期限P2。
+
+## 第七轮与进一步生命周期整改
+
+head baefaeb的[普通CI38180880074](https://github.com/aning0922/quiz-forge/actions/runs/38180880074) checks/database均实际success；[平台CI38180880080](https://github.com/aning0922/quiz-forge/actions/runs/38180880080)成功跨过原生身份启动，31/31 smoke实际通过，含真实三格式解码、8MiB/16MP/8192边界、权限/FD/网络/进程/OOM/资源限额/取消和结束证明。生命周期10/11通过，唯一lose-stop-response未真正命中fired；原断言本来要求failed且confirmed，不能误称停止语义错。平台整体仍failure/accepted:false。
+
+root随后集成7b0ca0d追加fstatfs允许与mount/namespace持续拒绝的原生断言，未将它冒称已在第七轮执行。崩溃harness的c92ab83→508fba0初修仍有早到timer丢失重排问题：Astra用实际helper确定性复现原deadline后仍pending，P2保持开放。7d14f8d→008eec7按同一绝对期限ceil/min1重排并补确定性早到/永不close用例，正在复审；同时runtime四组件每次实际读取、同预算核对setup记录并进入policy摘要，runtime源码纳入launcher摘要。c86b70d→af3d4ad把丢停止应答场景改为完整5秒运行预算，并要求实际running及唯一start/kill/丢失204应答，保留fired断言，待真实CI。mac作者修订66项矩阵仅为开发流证据，最终提交与root独立复核仍待完成。
