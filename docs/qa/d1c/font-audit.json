@@ -1,0 +1,15 @@
+{
+  "auditedOn": "2026-10-11 Asia/Shanghai",
+  "font": "public/assets/fonts/visual-v2-c/serif-600.woff2",
+  "sha256": "b7d6cae5d6117c66a3f9dfc124b64abaa25967b28f54cf2c27befb9042321827",
+  "tools": {
+    "fonttools": "4.61.1",
+    "brotli": "1.2.0"
+  },
+  "declaredCharacters": 800,
+  "actualCmap": 800,
+  "declaredMissingFromCmap": [],
+  "sixExportsDrawnCharacters": 125,
+  "drawnMissingFromCmap": [],
+  "limit": "Coverage applies to the controlled character subset and recorded exports only; unsupported characters fail export."
+}

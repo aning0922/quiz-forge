@@ -5,7 +5,7 @@ export const metadata = { title: "Visual V2-C · 统一候选研究" };
 export default function ResearchPage() {
   return (
     <main id="main" className={styles.research} data-v2c="research">
-      <p>VISUAL V2-C / 研究演示 · 待作者确认</p>
+      <p>D1-C / 合成体验 · 阶段验收待完成</p>
       <h1>藏馆探寻，风骨映月。</h1>
       <p>
         一条从封面、四厅十二问、确认到人物揭晓、完整人物志与收藏海报的统一候选。固定李白、88
@@ -51,8 +51,9 @@ export default function ResearchPage() {
       <p>
         复用已生成的四厅与 celestial
         人物概念，只制作分辨率衍生版本，不新增角色设定。美术商用审批仍为
-        pending。字体为本地 Noto Serif SC
-        子集，正文使用系统字体。海报为视觉预览，未开发导出。
+        pending。字体为本地 Noto Serif SC 子集，正文使用系统字体。海报现支持受控
+        Canvas 生成 1080×1920
+        PNG、预览、下载及能力探测的文件分享；不代表已保存至相册。
       </p>
       <p>
         旧十二题控制器与题库不变，新候选使用独立本机草稿。没有正式评分、身份匹配、数据库、Key、订单、支付或

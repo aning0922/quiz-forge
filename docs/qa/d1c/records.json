@@ -1,0 +1,643 @@
+{
+  "capturedOn": "2026-10-11 Asia/Shanghai",
+  "records": [
+    {
+      "name": "cover-390x844-first-chromium-156.png",
+      "state": "cover",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "kind": "first",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "cover-390x844-full-chromium-156.png",
+      "state": "cover",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "kind": "full",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "question-1-390x844-first-chromium-156.png",
+      "state": "question-1",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "kind": "first",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "question-1-390x844-full-chromium-156.png",
+      "state": "question-1",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "kind": "full",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "question-4-390x844-full-chromium-156.png",
+      "state": "question-4",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "kind": "full",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "question-7-390x844-full-chromium-156.png",
+      "state": "question-7",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "kind": "full",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "question-10-390x844-full-chromium-156.png",
+      "state": "question-10",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "kind": "full",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "question-1-selected-390x844-full-chromium-156.png",
+      "state": "question-1-selected",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "kind": "full",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "question-12-390x844-full-chromium-156.png",
+      "state": "question-12",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "kind": "full",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "confirm-390x844-first-chromium-156.png",
+      "state": "confirm",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "kind": "first",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "confirm-390x844-full-chromium-156.png",
+      "state": "confirm",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "kind": "full",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "resume-390x844-full-chromium-156.png",
+      "state": "resume",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "kind": "full",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "reveal-390x844-first-chromium-156.png",
+      "state": "reveal",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "kind": "first",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "reveal-390x844-full-chromium-156.png",
+      "state": "reveal",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "kind": "full",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "report-390x844-first-chromium-156.png",
+      "state": "report",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "kind": "first",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "report-390x844-full-chromium-156.png",
+      "state": "report",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "kind": "full",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "poster-390x844-first-chromium-156.png",
+      "state": "poster",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "kind": "first",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "poster-390x844-full-chromium-156.png",
+      "state": "poster",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "kind": "full",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "report-atlas-390x844-component-chromium-156.png",
+      "state": "report-atlas",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "kind": "component",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "report-inscription-expanded-390x844-full-chromium-156.png",
+      "state": "report-inscription-expanded",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "kind": "full",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "report-culture-expanded-390x844-full-chromium-156.png",
+      "state": "report-culture-expanded",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "kind": "full",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "poster-art-390x844-component-chromium-156.png",
+      "state": "poster-art",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "kind": "component",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "cover-320x740-first-chromium-156.png",
+      "state": "cover",
+      "viewport": {
+        "width": 320,
+        "height": 740
+      },
+      "kind": "first",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "question-320x740-first-chromium-156.png",
+      "state": "question",
+      "viewport": {
+        "width": 320,
+        "height": 740
+      },
+      "kind": "first",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "reveal-320x740-first-chromium-156.png",
+      "state": "reveal",
+      "viewport": {
+        "width": 320,
+        "height": 740
+      },
+      "kind": "first",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "report-320x740-full-chromium-156.png",
+      "state": "report",
+      "viewport": {
+        "width": 320,
+        "height": 740
+      },
+      "kind": "full",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "poster-320x740-first-chromium-156.png",
+      "state": "poster",
+      "viewport": {
+        "width": 320,
+        "height": 740
+      },
+      "kind": "first",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "cover-375x812-first-chromium-156.png",
+      "state": "cover",
+      "viewport": {
+        "width": 375,
+        "height": 812
+      },
+      "kind": "first",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "question-375x812-first-chromium-156.png",
+      "state": "question",
+      "viewport": {
+        "width": 375,
+        "height": 812
+      },
+      "kind": "first",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "reveal-375x812-first-chromium-156.png",
+      "state": "reveal",
+      "viewport": {
+        "width": 375,
+        "height": 812
+      },
+      "kind": "first",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "report-375x812-full-chromium-156.png",
+      "state": "report",
+      "viewport": {
+        "width": 375,
+        "height": 812
+      },
+      "kind": "full",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "poster-375x812-first-chromium-156.png",
+      "state": "poster",
+      "viewport": {
+        "width": 375,
+        "height": 812
+      },
+      "kind": "first",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "cover-430x932-first-chromium-156.png",
+      "state": "cover",
+      "viewport": {
+        "width": 430,
+        "height": 932
+      },
+      "kind": "first",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "question-430x932-first-chromium-156.png",
+      "state": "question",
+      "viewport": {
+        "width": 430,
+        "height": 932
+      },
+      "kind": "first",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "reveal-430x932-first-chromium-156.png",
+      "state": "reveal",
+      "viewport": {
+        "width": 430,
+        "height": 932
+      },
+      "kind": "first",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "report-430x932-full-chromium-156.png",
+      "state": "report",
+      "viewport": {
+        "width": 430,
+        "height": 932
+      },
+      "kind": "full",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "poster-430x932-first-chromium-156.png",
+      "state": "poster",
+      "viewport": {
+        "width": 430,
+        "height": 932
+      },
+      "kind": "first",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "cover-1440x1000-first-chromium-156.png",
+      "state": "cover",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "kind": "first",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "question-1440x1000-first-chromium-156.png",
+      "state": "question",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "kind": "first",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "reveal-1440x1000-first-chromium-156.png",
+      "state": "reveal",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "kind": "first",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "report-1440x1000-full-chromium-156.png",
+      "state": "report",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "kind": "full",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "poster-1440x1000-first-chromium-156.png",
+      "state": "poster",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "kind": "first",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "question-12-long-24px-320x740-full-chromium-156.png",
+      "state": "question-12-long-24px",
+      "viewport": {
+        "width": 320,
+        "height": 740
+      },
+      "kind": "full",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "report-long-24px-320x740-full-chromium-156.png",
+      "state": "report-long-24px",
+      "viewport": {
+        "width": 320,
+        "height": 740
+      },
+      "kind": "full",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "poster-long-24px-320x740-full-chromium-156.png",
+      "state": "poster-long-24px",
+      "viewport": {
+        "width": 320,
+        "height": 740
+      },
+      "kind": "full",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "reveal-reduced-motion-390x844-full-chromium-156.png",
+      "state": "reveal-reduced-motion",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "kind": "full",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "cover-image-missing-390x844-full-chromium-156.png",
+      "state": "cover-image-missing",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "kind": "full",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "legacy-questions-q1-390x844-first-chromium-156.png",
+      "state": "legacy-questions-q1",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "kind": "first",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "poster-generated-390x844-full-chromium-156.png",
+      "state": "poster-generated",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "kind": "full",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "poster-generated-320x740-full-chromium-156.png",
+      "state": "poster-generated",
+      "viewport": {
+        "width": 320,
+        "height": 740
+      },
+      "kind": "full",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "poster-generated-375x812-full-chromium-156.png",
+      "state": "poster-generated",
+      "viewport": {
+        "width": 375,
+        "height": 812
+      },
+      "kind": "full",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "poster-generated-430x932-full-chromium-156.png",
+      "state": "poster-generated",
+      "viewport": {
+        "width": 430,
+        "height": 932
+      },
+      "kind": "full",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "poster-generated-1440x1000-full-chromium-156.png",
+      "state": "poster-generated",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "kind": "full",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "poster-long-generated-390x844-full-chromium-156.png",
+      "state": "poster-long-generated",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "kind": "full",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "poster-art-failed-390x844-full-chromium-156.png",
+      "state": "poster-art-failed",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "kind": "full",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "poster-font-failed-390x844-full-chromium-156.png",
+      "state": "poster-font-failed",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "kind": "full",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "question-save-failed-390x844-full-chromium-156.png",
+      "state": "question-save-failed",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "kind": "full",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    },
+    {
+      "name": "question-conflict-390x844-full-chromium-156.png",
+      "state": "question-conflict",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "kind": "full",
+      "browser": "156.0.8078.4",
+      "overflow": false
+    }
+  ]
+}

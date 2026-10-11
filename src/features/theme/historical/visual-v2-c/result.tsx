@@ -1,18 +1,21 @@
 import Link from "next/link";
 import { ArrowRight, ArrowLeft, ArrowUpRight } from "lucide-react";
-import { historicalReportFixture as report } from "@/features/report/historical-fixture";
-import { historicalVisualCopyFixture as copy } from "@/features/report/historical-visual-copy";
-import { historicalAtlasFixture as atlas } from "@/features/report/historical-atlas-fixture";
-import { getStudyInscription } from "@/features/report/historical-inscriptions";
+import { historicalDisplayFixture } from "@/features/report/historical-display-fixture";
+import { createHistoricalPosterView } from "@/features/report/historical-poster-view";
 import { referencedDimensions } from "@/features/report/result-atlas";
 import { inscriptionAttribution } from "@/features/report/temperament-inscription";
+import { HistoricalPosterExport } from "@/features/theme/historical/d1c-poster/export-panel";
 import { artRecipes } from "../visual-v2-b/art-direction";
 import { CandidateImage } from "./image";
 import styles from "./candidate.module.css";
 
 /** This entry imports fixtures only after the user's explicit synthetic reveal. */
 export function CandidateResult({ poster = false }: { poster?: boolean }) {
-  const inscription = getStudyInscription("classical")!;
+  const { report, copy, atlas, inscription } = historicalDisplayFixture;
+  if (!inscription) throw new Error("合成题签缺失，无法展示揭晓。");
+  const posterView = poster
+    ? createHistoricalPosterView(historicalDisplayFixture)
+    : null;
   const tags = referencedDimensions(
     atlas,
     copy.posterDimensions.map((item) => item.dimensionId),
@@ -49,11 +52,9 @@ export function CandidateResult({ poster = false }: { poster?: boolean }) {
             <h1>{report.identity.name}</h1>
             <h2>{report.identity.title}</h2>
             <blockquote>
-              {(poster ? [inscription.posterLine] : inscription.lines).map(
-                (line) => (
-                  <span key={line}>{line}</span>
-                ),
-              )}
+              {inscription.lines.map((line) => (
+                <span key={line}>{line}</span>
+              ))}
             </blockquote>
             <p className={styles.attribution}>
               {inscriptionAttribution(inscription)}
@@ -73,14 +74,15 @@ export function CandidateResult({ poster = false }: { poster?: boolean }) {
               SYNTHETIC · 固定合成示例 · 非答题结论
             </p>
             {poster && (
-              <p className={styles.posterBrand}>{report.poster.attribution}</p>
+              <p className={styles.posterBrand}>{posterView!.brand}</p>
             )}
           </div>
         </article>
         <section className={styles.resultActions}>
           {poster ? (
             <>
-              <p>收藏海报视觉预览 · 尚未提供导出</p>
+              <p>收藏海报作品预览 · 可生成一张带合成演示标记的 PNG。</p>
+              <HistoricalPosterExport view={posterView!} />
               <Link
                 className={styles.primary}
                 href="/studies/visual-v2-c/report"

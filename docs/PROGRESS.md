@@ -1,5 +1,13 @@
 # 阶段进度
 
+## D1-C 当前授权与启动检查点
+
+2026-10-11（Asia/Shanghai）：作者正式批准「藏馆探寻 + 风骨映月」视觉并授权 D1-C 合成演示：封面→十二题/四厅→本机恢复→确认→揭晓→完整报告→1080×1920 PNG。PR #4 已真实 MERGED，main `ddb092e9e5ffc3cc5547960fdcea9af6a79a804e`，[main CI](https://github.com/aning0922/quiz-forge/actions/runs/38145121228) completed/success；独立仓库/origin正确，原工作区干净，历史分支与资料保留。视觉批准不等于素材商用或内容审读通过。
+
+当前实施检查点：A完成统一展示源、报告章节focus、未知肖像fail-closed及PNG面板组合；B初稿经总控接管收口为真实Canvas PNG、字体覆盖/布局/资源/失败与分享生命周期，未增加生产依赖。最终六项检查39单测、186 Chromium通过/10既有跳过，额外8 WebKit通过；58矩阵截图、2引擎全页预览、6 PNG与20性能样本均已取得，实际预算违规0。独立工程/视觉审查和阶段验收见D1C文档；提交、Draft PR与新headCI在本轮最终交付中核验，不能以main基线CI替代。
+
+A：体验/报告收口，拥有V2-C组合及路由、必要局部交互/样式与自身E2E；B：受控Canvas PNG导出器、导出控件、纯布局/字体/失败测试及自身E2E。先共用 `HistoricalDisplayBundle` / `HistoricalPosterView` 只读展示适配（不冻结QuizPack），由总控统一维护数据契约、阶段文档、整合和3100独占回归。检查包含五视口、完整报告、真实PNG/异常、来源/预算与非实施上下文审查。D1-D/E、D2、正式引擎/服务/集成/部署和main合并仍未授权。
+
 日期：2026-10-11（Asia/Shanghai）。当前阶段为作者明确授权的 **Visual V2-C 首款商品视觉收敛**，基线 `e1446148d240afd74a40d23eb41f2553152ab46b`，继续原 `codex/visual-v2-exploration` 与 Draft PR #4。主体验候选为藏馆探寻 + 风骨映月，山河入怀作为独立可选主题保留。下方旧阶段的状态、SHA和检查均为历史证据，不覆盖本轮。正式 D1-C/D2、商业素材批准、合并和部署仍未授权。
 
 ## Visual V2-C 首款商品统一候选（已完成，待作者确认）

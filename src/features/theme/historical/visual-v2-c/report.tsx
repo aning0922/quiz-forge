@@ -1,13 +1,11 @@
+"use client";
+
 import Link from "next/link";
 import { ArrowUpRight, BookOpen, Sparkles } from "lucide-react";
-import { historicalAtlasFixture } from "@/features/report/historical-atlas-fixture";
-import { historicalReportFixture } from "@/features/report/historical-fixture";
-import { getStudyInscription } from "@/features/report/historical-inscriptions";
+import { historicalDisplayFixture } from "@/features/report/historical-display-fixture";
+import { resolveHistoricalPosterArtwork } from "@/features/report/historical-poster-view";
 import type { HistoricalReportView } from "@/features/report/historical-view";
-import {
-  historicalVisualCopyFixture,
-  type HistoricalVisualCopy,
-} from "@/features/report/historical-visual-copy";
+import type { HistoricalVisualCopy } from "@/features/report/historical-visual-copy";
 import {
   referencedDimensions,
   type ResultAtlasView,
@@ -33,6 +31,10 @@ export interface VisualV2CReportProps {
 
 function reportPath(view: "reveal" | "poster", query = "") {
   return `/studies/visual-v2-c/${view}${query}`;
+}
+
+function focusSection(id: string) {
+  requestAnimationFrame(() => document.getElementById(id)?.focus());
 }
 
 function Dimensions({
@@ -96,6 +98,12 @@ export function VisualV2CReport({
   inscription,
   query = "",
 }: VisualV2CReportProps) {
+  let portraitAvailable = true;
+  try {
+    resolveHistoricalPosterArtwork(report.identity.portraitAssetId);
+  } catch {
+    portraitAvailable = false;
+  }
   return (
     <main className={styles.page} id="main" data-v2c="report">
       <header className={styles.header}>
@@ -114,13 +122,19 @@ export function VisualV2CReport({
             <span aria-hidden="true">{copy.seal}</span>
           </div>
           <div className={styles.heroSummary}>
-            <CandidateImage
-              asset="figure"
-              eager
-              alt={`${report.identity.name}艺术化概念形象的脸部与肩部裁取`}
-              className={styles.figure}
-              sizes="80px"
-            />
+            {portraitAvailable ? (
+              <CandidateImage
+                asset="figure"
+                eager
+                alt={`${report.identity.name}艺术化概念形象的脸部与肩部裁取`}
+                className={styles.figure}
+                sizes="80px"
+              />
+            ) : (
+              <p className={styles.figureMissing} role="status">
+                人物画作未登记
+              </p>
+            )}
             <p className={styles.title}>{report.identity.title}</p>
             <p>{copy.oneLineResult}</p>
           </div>
@@ -128,18 +142,26 @@ export function VisualV2CReport({
         </header>
 
         <nav className={styles.nav} aria-label="报告章节">
-          <a href="#atlas">性情图谱</a>
-          <a href="#matching">匹配依据</a>
-          <a href="#practice">优势与留意</a>
-          <a href="#culture">人物文化</a>
+          <a href="#atlas" onClick={() => focusSection("atlas")}>
+            性情图谱
+          </a>
+          <a href="#matching" onClick={() => focusSection("matching")}>
+            匹配依据
+          </a>
+          <a href="#practice" onClick={() => focusSection("practice")}>
+            优势与留意
+          </a>
+          <a href="#culture" onClick={() => focusSection("culture")}>
+            人物文化
+          </a>
         </nav>
 
-        <section className={styles.atlasSection} id="atlas">
+        <section className={styles.atlasSection} id="atlas" tabIndex={-1}>
           <CompactInscription inscription={inscription} />
           <ResultAtlas atlas={atlas} direction="collection" />
         </section>
 
-        <section className={styles.section} id="matching">
+        <section className={styles.section} id="matching" tabIndex={-1}>
           <div className={styles.sectionHeading}>
             <p className={styles.eyebrow}>02 / 匹配依据</p>
             <h2>{words.matchingTitle}</h2>
@@ -159,7 +181,7 @@ export function VisualV2CReport({
           </ol>
         </section>
 
-        <section className={styles.section} id="practice">
+        <section className={styles.section} id="practice" tabIndex={-1}>
           <div className={styles.sectionHeading}>
             <p className={styles.eyebrow}>03 / 优势与留意</p>
             <h2>{words.practiceTitle}</h2>
@@ -187,7 +209,7 @@ export function VisualV2CReport({
           <p className={styles.note}>{words.note}</p>
         </section>
 
-        <section className={styles.section} id="culture">
+        <section className={styles.section} id="culture" tabIndex={-1}>
           <div className={styles.sectionHeading}>
             <p className={styles.eyebrow}>04 / 人物文化</p>
             <h2>{words.cultureTitle}</h2>
@@ -231,10 +253,10 @@ export function VisualV2CReport({
 export function ConvergedReport() {
   return (
     <VisualV2CReport
-      report={historicalReportFixture}
-      copy={historicalVisualCopyFixture}
-      atlas={historicalAtlasFixture}
-      inscription={getStudyInscription("classical")}
+      report={historicalDisplayFixture.report}
+      copy={historicalDisplayFixture.copy}
+      atlas={historicalDisplayFixture.atlas}
+      inscription={historicalDisplayFixture.inscription}
     />
   );
 }
