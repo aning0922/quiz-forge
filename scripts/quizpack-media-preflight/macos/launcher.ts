@@ -25,6 +25,7 @@ import {
   MAC_ROOT,
   type Policy,
   policySupported,
+  policyComponentId,
 } from "./policy";
 import { join } from "node:path";
 type Identity = Extract<z.infer<typeof identitySchema>, { present: true }>;
@@ -149,6 +150,21 @@ async function runOwned(
     // Persist issued state BEFORE the platform operation. Crash in any later gap blocks restart.
     try {
       control.update("issued");
+      // Persistence is synchronous and can consume the remaining absolute budget.
+      const persistedInterruption = interruption();
+      if (persistedInterruption) {
+        try {
+          control.finish();
+          resolve({
+            ...basic,
+            code: persistedInterruption,
+            stopped: "not-started",
+          });
+        } catch {
+          resolve({ ...basic, code: "STOP_UNCONFIRMED", stopped: "unknown" });
+        }
+        return;
+      }
       child = spawn(
         SANDBOX,
         ["-p", policy.profile, execution.executable, ...execution.args],
@@ -310,7 +326,7 @@ async function runImage(
   bytes: Uint8Array,
   expected: ImageDeclaration,
   context: LaunchContext,
-  requireCapability: boolean,
+  capability: "sealed" | "harness" | { candidateComponentId: string },
 ): Promise<LaunchResult> {
   const start = performance.now(),
     runId = randomUUID();
@@ -331,7 +347,11 @@ async function runImage(
       error instanceof PolicyError ? error.code : "ISOLATION_UNAVAILABLE",
     );
   }
-  if (requireCapability && !policySupported(policy))
+  if (
+    (capability === "sealed" && !policySupported(policy)) ||
+    (typeof capability === "object" &&
+      policyComponentId(policy) !== capability.candidateComponentId)
+  )
     return failed(runId, policy.profileId, "ISOLATION_UNAVAILABLE");
   // Execution identity includes the trusted control helper; no helper means closed.
   const result = await runOwned(
@@ -377,7 +397,7 @@ export function runIsolatedImage(
   expected: ImageDeclaration,
   context: LaunchContext,
 ): Promise<LaunchResult> {
-  return runImage(bytes, expected, context, true);
+  return runImage(bytes, expected, context, "sealed");
 }
 /** Closed offline capability matrix only: fixed original P1 worker and identical policy. */
 export function runHarnessImage(
@@ -385,7 +405,17 @@ export function runHarnessImage(
   expected: ImageDeclaration,
   context: LaunchContext,
 ): Promise<LaunchResult> {
-  return runImage(bytes, expected, context, false);
+  return runImage(bytes, expected, context, "harness");
+}
+
+/** Private pre-seal gate, ignored by the ordinary entry; uses identical launch path. */
+export function runHarnessCandidateImage(
+  bytes: Uint8Array,
+  expected: ImageDeclaration,
+  context: LaunchContext,
+  candidateComponentId: string,
+): Promise<LaunchResult> {
+  return runImage(bytes, expected, context, { candidateComponentId });
 }
 
 export type HarnessCase =
@@ -412,7 +442,16 @@ export type HarnessCase =
       zone: "runtime" | "admin" | "PGDATA" | "uploads";
       alias: "direct" | "dots" | "symlink" | "hardlink";
     }
-  | { kind: "process" | "fd" | "vfork" | "fd-data" | "listen" }
+  | {
+      kind:
+        | "process"
+        | "fd"
+        | "vfork"
+        | "fd-data"
+        | "listen"
+        | "identity-peer"
+        | "spawn-self";
+    }
   | { kind: "network"; port: number }
   | { kind: "ipc"; nonce: string; peerPid: number };
 /** Private closed harness: every filesystem argument derives from the fixed synthetic fixture root.
@@ -428,7 +467,14 @@ export async function runHarnessCase(
   const kind =
     spec.kind === "fault"
       ? "fault"
-      : ["vfork", "fd-data", "listen", "ipc"].includes(spec.kind)
+      : [
+            "vfork",
+            "fd-data",
+            "listen",
+            "ipc",
+            "identity-peer",
+            "spawn-self",
+          ].includes(spec.kind)
         ? "mac"
         : "posix";
   const policy = loadPolicy(kind);
@@ -474,6 +520,8 @@ export async function runHarnessCase(
       `/qf-${spec.nonce}`,
       String(spec.peerPid),
     ];
-  } else args = [spec.kind];
+  } else if (spec.kind === "identity-peer")
+    args = ["identity", String(process.pid), String(process.pid), policy.node];
+  else args = [spec.kind];
   return runOwned(runId, { executable, args, bytes, policy }, ctx, start);
 }

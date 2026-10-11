@@ -6,6 +6,8 @@
 #include <mach/mach.h>
 #include <servers/bootstrap.h>
 #include <signal.h>
+#include <spawn.h>
+extern char **environ;
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -16,16 +18,35 @@
 #include <unistd.h>
 static const char *denial(int r) { return r >= 0 ? "allowed" : (errno == EPERM || errno == EACCES) ? "denied" : errno == EBADF ? "closed" : "failed"; }
 static long pid_arg(const char *s) { char *end=NULL;long p=strtol(s,&end,10);return end && !*end && p>0 && p<=2147483647L ? p : -1; }
+/* Only ESRCH proves absence; denied/short/invalid queries remain unavailable. */
+static int query_bsd(pid_t pid, int flavor, struct proc_bsdinfo *b) {
+  errno = 0; int n = proc_pidinfo(pid,flavor,0,b,sizeof *b);
+  if (n == (int)sizeof *b) return 1;
+  if (n == 0 && errno == ESRCH) { errno=0; if(kill(pid,0)<0 && errno==ESRCH)return 0; }
+  return -1;
+}
 int main(int argc,char **argv) {
   if(argc<2)return 64;
   if(!strcmp(argv[1],"identity") && argc==5) {
     long pid=pid_arg(argv[2]), owner=pid_arg(argv[3]);if(pid<0 || owner<0)return 64;
-    struct proc_bsdinfo b;int n=proc_pidinfo((int)pid,PROC_PIDTBSDINFO,0,&b,sizeof b);
-    if(n!=(int)sizeof b) {fputs("{\"schema\":\"mac-identity.v1\",\"present\":false}",stdout);return 0;}
+    struct proc_bsdinfo b;int q=query_bsd((pid_t)pid,PROC_PIDTBSDINFO,&b);
+    if(q<0)return 70;
+    if(q==0) {fputs("{\"schema\":\"mac-identity.v1\",\"present\":false}",stdout);return 0;}
     char path[PROC_PIDPATHINFO_MAXSIZE];int len=proc_pidpath((int)pid,path,sizeof path);
     const char *exec=len<=0?"unknown":!strcmp(path,argv[4])?"worker":!strcmp(path,"/usr/bin/sandbox-exec")?"sandbox":"other";
     struct rusage_info_v4 usage={0};int usage_ok=proc_pid_rusage((int)pid,RUSAGE_INFO_V4,(rusage_info_t *)&usage)==0;
     printf("{\"schema\":\"mac-identity.v1\",\"present\":true,\"owned\":%s,\"startSec\":%llu,\"startUsec\":%llu,\"executable\":\"%s\",\"residentBytes\":%llu,\"peakFootprintBytes\":%llu}",b.pbi_ppid==(unsigned int)owner?"true":"false",b.pbi_start_tvsec,b.pbi_start_tvusec,exec,usage_ok?usage.ri_resident_size:0,usage_ok?usage.ri_lifetime_max_phys_footprint:0);
+  } else if(!strcmp(argv[1],"identity-query-failure") && argc==2) {
+    struct proc_bsdinfo b;int q=query_bsd(getpid(),0x7fffffff,&b);
+    /* Actual invalid-flavor kernel error: do not output an absence object. */
+    return q<0?70:71;
+  } else if(!strcmp(argv[1],"noop") && argc==2) {
+    return 0;
+  } else if(!strcmp(argv[1],"spawn-self") && argc==2) {
+    if(argv[0][0]!='/')return 64;
+    pid_t child;char *args[]={argv[0],"noop",NULL};int r=posix_spawn(&child,argv[0],NULL,NULL,args,environ);
+    if(r==0){int status;if(waitpid(child,&status,0)!=child)return 70;}
+    printf("{\"schema\":\"mac-probe.v1\",\"mode\":\"spawn-self\",\"denied\":%s}",r==EPERM||r==EACCES?"true":"false");
   } else if(!strcmp(argv[1],"server") && argc==3) {
     mach_port_t receive=MACH_PORT_NULL; if(mach_port_allocate(mach_task_self(),MACH_PORT_RIGHT_RECEIVE,&receive)!=KERN_SUCCESS)return 70;
     if(mach_port_insert_right(mach_task_self(),receive,receive,MACH_MSG_TYPE_MAKE_SEND)!=KERN_SUCCESS)return 70;
