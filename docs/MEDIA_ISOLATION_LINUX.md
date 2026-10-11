@@ -104,3 +104,5 @@ Astra再次确定性复现c92的早到timer丢失到期事件。后继在now<abs
 真实 [CI38180880080](https://github.com/aning0922/quiz-forge/actions/runs/38180880080)，head `baefaeb`，只增加fstatfs后身份stage及31/31 smoke实际通过；包括原尺寸PNG/JPEG/WebP、8MiB/16MP、POSIX/本平台native、资源/OOM/取消等。仍accepted:false。lifecycle 10项通过，lose-stop-response失败；其实际DEADLINE_EXCEEDED/stoppedconfirmed符合停止语义，失败是fired=false，不能删除fired断言或改controller权威来凑通过。
 
 该故障harness原用1800ms缩短整个启动/输入/执行预算，可能在worker进入running前已到期，created收尾无kill。候选改用冻结原5秒预算，让hang固定worker有完整启动机会；记录真实create/start/kill请求、实际丢失reply计数/HTTP成功状态与running观察。stop-loss通过门槛进一步要求一次真实start、一次真实kill204应答丢失、running曾被自身inspect确认，原失败/confirmed仍保留。若不能命中继续失败，不据源码推断注入已经成功。
+
+stop-loss固定running观察布尔、create/start/kill/lost-reply/upgrade计数及HTTP整数状态同步输出到该case的CI摘要，数值校验限定65535，不仅留在私有runner summary。仍不输出整个result、Docker对象、路径或原始stdio；后继失败可以从CI有限字段定位未命中原因。

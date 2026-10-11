@@ -32,6 +32,31 @@ safeMain(async () => {
         outcome: result?.outcome,
         stopped: result?.stopped,
         code: result?.code,
+        ...(typeof result?.runningObserved === "boolean"
+          ? { runningObserved: result.runningObserved }
+          : {}),
+        ...(result?.faultEvidence
+          ? {
+              faultEvidence: Object.fromEntries(
+                [
+                  "createRequests",
+                  "startRequests",
+                  "killRequests",
+                  "lostReplies",
+                  "lastLostStatus",
+                  "upgradeRequests",
+                ]
+                  .filter(
+                    (k) =>
+                      result.faultEvidence[k] === null ||
+                      (Number.isSafeInteger(result.faultEvidence[k]) &&
+                        result.faultEvidence[k] >= 0 &&
+                        result.faultEvidence[k] <= 65535),
+                  )
+                  .map((k) => [k, result.faultEvidence[k]]),
+              ),
+            }
+          : {}),
       }) + "\n",
     );
   };
