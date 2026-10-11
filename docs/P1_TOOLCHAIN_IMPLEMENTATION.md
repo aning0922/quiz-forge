@@ -6,13 +6,13 @@
 
 IO 只接受显式文件；检查父目录与来源链接、目录越界、普通文件、O_NOFOLLOW 最终打开与字节预算。输出同目录临时 inode，经 fsync 后 hard link 原子提交，默认拒绝覆盖并清理临时文件。JSON 使用共享纯函数的严格普通 JSON/canonical/重复键检测，未改变 F1 语义；再实施下调深度。
 
-限制：本地文件系统不作为恶意并发写者的 OS 安全隔离；来源目录需要由本地调用者控制。任意 AsyncIterable 的永久阻塞 next 无法被工具强制终止；工具取消后调用 return，Node 输入流主动 destroy，操作期限不会等待阻塞 return。媒体子进程与整包编排将在 A 流到达后接入。此里程碑不提供 import/publish 或正式商品批准。
+限制：本地文件系统不作为恶意并发写者的 OS 安全隔离；来源目录需要由本地调用者控制。任意 AsyncIterable 的永久阻塞 next 无法被工具强制终止；工具取消后调用 return，Node 输入流主动 destroy，操作期限不会等待阻塞 return。媒体子进程与整包编排已接入；当前仍仅提供本地技术验证。此里程碑不提供 import/publish 或正式商品批准。
 
-已接入 A 内容合同 2d0f9d4 与总控 package 入口 c198702。A 媒体及文本/状态映射提交 78dc915 已接入；B 完成 build/validate、三项 CLI 及实际往返检查。ZIP 采用 Node zlib 独立扫描/解压而不使用 yauzl；总控可移除未使用的 yauzl 与类型依赖。
+已接入 A 内容合同 2d0f9d4 与总控 package 入口 c198702。A 媒体及文本/状态映射提交 78dc915，以及媒体单调时钟/原生 loader 修复 8931621 已接入；B 完成 build/validate、三项 CLI 及实际往返检查。ZIP 采用 Node zlib 独立扫描/解压而不使用 yauzl；总控可移除未使用的 yauzl 与类型依赖。
 
 ## 本地命令
 
-从仓库根执行，stdout 只有一个 JSON 文档，失败 exit code 1。输出证据为本地技术检查，不是导入或发布授权。
+从仓库根执行，stdout 只有一个 JSON 文档；未提交拒绝 exit code 1，已提交结果（包括提交后警告）exit code 0。输出证据为本地技术检查，不是导入或发布授权。
 
 ```sh
 pnpm --silent quizpack:schema
@@ -52,3 +52,17 @@ validate 在首次 await 前快照兼容 policy 和有效下调 limits，并把�
 - 本工作树 pnpm format:check、pnpm lint、pnpm typecheck、pnpm test、pnpm build 实际通过。最终 19 个测试文件 / 364 项单元测试通过。E2E/远端 CI 由总控串行验收，此流未执行、不声称已通过。
 
 已知限制维持：本地工具、可信来源目录；受控媒体子进程不是 OS/RSS 硬隔离；资源来源/许可/审核只是声明；见证不执行、不证明可达，组件兼容不代表存在或渲染正确。未实现 DB、导入、人工审核、Key 或发布。所有报告 importable/publishable 始终 false；没有改动 UI、F1、package/lock 或其他项目。最终入口由总控提交接入，未使用依赖由总控统一移除。
+
+## 原子输出提交点增量
+
+hard link 成功是唯一提交点。writeArchiveNoClobber 返回 ArchiveCommitReceipt，而不是 void。回执为 schemaVersion quizpack-output-commit.v1、committed:true、archiveSha256、bytes、postCommit:{status:complete|warning,warnings:PackIssue[]}；hash/bytes 绑定提交前已独立快照的实际输出字节。回执证明这次 link 曾成功，不声称目标路径随后仍由本进程控制，不授予删除/替换目标的权利，也不宣称目录项已具备断电持久性。
+
+CLI build 成功 JSON 现在显式为 {ok:true,committed:true,report,output:receipt}。验证报告在提交前已经完成，candidateValid 不因提交后取消而被改写，importable/publishable 仍为 false。共享 scripts/quizpack-build-operation.ts 保留回执和该报告，在外层 withPackDeadline 最终检查抛出晚到事件时返回已提交结果。提交后永远不回滚或 unlink target，避免误删被其他进程替换的文件。
+
+提交后取消标记 OUTPUT_COMMITTED_CANCELLED，超期标记 OUTPUT_COMMITTED_TIMEOUT，临时文件清理失败标记 OUTPUT_TEMP_CLEANUP_FAILED；其他异常标记 OUTPUT_COMMITTED_INTERRUPTED。postCommit.status 为 warning，warning 固定消息/空字段路径且不包含系统原文或绝对文件名。重复取消/期限检查按 code 去重。清理失败可能留下一个临时 inode，明确告警，不能伪称已清理；调用者不能把 committed outcome 当普通失败盲目重试。
+
+提交前仍拒绝覆盖。取消/IO/link 失败清理临时文件并抛出 ArchiveOutputError；若清理也失败，warnings 保留到 CLI 的单个失败 JSON，committed:false，原有目标不被修改。link 调用本身不与取消竞速返回，因为必须等待其本地结果以准确区分是否已提交。
+
+验收使用真实磁盘与仅在 Vitest 里注入的 link/unlink 边界，覆盖 link 后取消、cleanup 阻塞定时器的真实单调超期、cleanup 失败、目标被替换仍不误删、precommit 拒绝与清理告警，以及 CLI 共用编排的已验证报告/回执保留。没有增加可由包内容、CLI 参数或环境变量配置的故障钩子。真实 pnpm CLI 同时核验 committed success / precommit refusal 两种 JSON 形状。
+
+本增量基于 A 8931621 媒体实现执行 pnpm format:check、pnpm lint、pnpm typecheck、pnpm test，全部通过；20 个测试文件 / 385 项测试通过。提交点专属 12 项新测试与既有真实 CLI/IO 回归通过。此次未运行 build/E2E 或远端 CI，不把前一里程碑的构建成功冒称增量重跑。

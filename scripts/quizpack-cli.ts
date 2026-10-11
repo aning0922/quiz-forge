@@ -1,4 +1,5 @@
 import { PackToolError, packIssue } from "../src/features/quizpack/v1/zip";
+import { ArchiveOutputError } from "../src/features/quizpack/v1/io";
 import { packIdSchema } from "../src/features/quizpack/v1/manifest";
 export function productArgument(value: string | undefined): string {
   if (!value || !packIdSchema.safeParse(value).success)
@@ -11,6 +12,7 @@ export function outputJson(value: unknown): void {
 export function failCli(error: unknown): void {
   outputJson({
     ok: false,
+    committed: false,
     candidateValid: false,
     importable: false,
     publishable: false,
@@ -19,6 +21,7 @@ export function failCli(error: unknown): void {
       packIssue(
         error instanceof PackToolError ? error.code : "CLI_OPERATION_FAILED",
       ),
+      ...(error instanceof ArchiveOutputError ? error.warnings : []),
     ],
   });
   process.exitCode = 1;
