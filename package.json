@@ -24,7 +24,11 @@
     "foundation:schema": "tsx scripts/foundation-schema.ts",
     "quizpack:check": "tsx scripts/quizpack-check.ts",
     "quizpack:build": "tsx scripts/quizpack-build.ts",
-    "quizpack:schema": "tsx scripts/quizpack-schema.ts"
+    "quizpack:schema": "tsx scripts/quizpack-schema.ts",
+    "test:db": "vitest run --config vitest.db.config.ts",
+    "p2a:db": "node --conditions=react-server --import tsx scripts/p2a-db.ts",
+    "p2a:operator": "node --conditions=react-server --import tsx scripts/p2a-operator.ts",
+    "p2a:db:ci": "node --conditions=react-server --import tsx scripts/p2a-db-ci.ts"
   },
   "dependencies": {
     "@radix-ui/react-slot": "1.4.0",
@@ -38,6 +42,7 @@
     "postgres": "3.4.9",
     "react": "19.3.0",
     "react-dom": "19.3.0",
+    "server-only": "0.0.1",
     "sharp": "0.35.5",
     "tailwind-merge": "3.7.0",
     "yazl": "3.3.1",
