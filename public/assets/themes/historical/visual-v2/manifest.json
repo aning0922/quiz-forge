@@ -1,0 +1,68 @@
+{
+  "schemaVersion": "visual-study-assets.v1",
+  "packId": "historical-visual-v2-exploration",
+  "status": "research-only",
+  "commercialApproval": "pending",
+  "assets": [
+    {
+      "id": "historical.visual-v2.river-journey",
+      "path": "/assets/themes/historical/visual-v2/river-journey.webp",
+      "dimensions": [1024, 1536],
+      "format": "webp",
+      "bytes": 380576,
+      "sha256": "9b0f7f04bfb705938f38fce76da7c48d27e86070c4cf62d0147fa56cad714b34",
+      "source": "Built-in imagegen; original prompt; no external reference image; 2026-10-11 Asia/Shanghai",
+      "modelVersion": "not exposed by tool",
+      "promptEvidence": "docs/VISUAL_V2_A.md#新图完整提示词",
+      "licenseEvidence": null,
+      "approvedBy": null,
+      "approvedAt": null,
+      "status": "pending"
+    },
+    {
+      "id": "historical.visual-v2.serif-600",
+      "path": "/assets/fonts/visual-v2/serif-600.ttf",
+      "bytes": 235184,
+      "sha256": "b4cf3f087a9f31ed7366c074f5bf8c04c07b1f349470384e33797062043f925d",
+      "source": "Google Fonts Noto Serif SC v36 CSS2 text subset; 2026-10-11",
+      "sourceRepository": "https://github.com/google/fonts/tree/main/ofl/notoserifsc",
+      "license": "SIL OFL 1.1",
+      "licenseEvidence": "/assets/fonts/OFL-NotoSerifSC.txt",
+      "characterCoverage": "/assets/fonts/visual-v2/characters.txt",
+      "subsetCharacters": 667,
+      "status": "license-documented; visual-review",
+      "approvedBy": null
+    }
+  ],
+  "reusedAssets": [
+    {
+      "id": "historical.li-bai.concept",
+      "sourceManifest": "/assets/themes/historical/d1a/manifest.json",
+      "status": "pending; no new commercial approval"
+    },
+    {
+      "id": "jade-landscape",
+      "sourceManifest": "/assets/themes/historical/d1a/manifest.json",
+      "status": "pending; no new commercial approval"
+    }
+  ],
+  "originalDecorations": {
+    "source": "src/features/theme/historical/visual-v2/visual-v2.module.css",
+    "items": [
+      "card back layout",
+      "card frame",
+      "seal",
+      "chapter marks",
+      "paper layouts"
+    ],
+    "status": "author-review"
+  },
+  "pending": [
+    "AI commercial-use evidence",
+    "author art approval",
+    "portrait history and costume review",
+    "complete character roster",
+    "poster export and platform saving",
+    "real-device validation"
+  ]
+}

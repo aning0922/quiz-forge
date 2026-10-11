@@ -1,8 +1,17 @@
 # 阶段进度
 
-日期：2026-10-11（Asia/Shanghai）。D1-A.1 已审查并通过 PR #1 合并至 main；当前明确授权 D1-B + OSS-R 首轮托管，D1-C 及后续仍未授权。此处记录可恢复检查点，不表示会话结束后仍有后台代理运行。
+日期：2026-10-11（Asia/Shanghai）。当前阶段为作者明确授权的 **Visual V2-A**。main 已包含 PR #1/#2/#3，启动 fetch 后基线为 `4399664d9d2ab6e8e0eeebe900c3dbd8fc2c39f8`。D1-C 及后续仍未授权。以下旧阶段的 SHA、CI 和停止记录是历史证据，不代表当前 main 状态。
 
-## PR 独立审查整改（当前授权）
+## Visual V2-A 消费者体验探索（当前）
+
+- 独立 worktree：`/Users/aipuli/.codex/worktrees/visual-v2-exploration/quiz-forge`；分支 `codex/visual-v2-exploration`；origin 保持正式私有仓库。
+- GPT-6 Astra 负责独立设计审查与方向规格；完成 A「入画寻己」与 B「风骨藏馆」两套 React/CSS 高保真原型。研究入口 `/studies/visual-v2`；各有 cover/question/reveal/report/poster 五路由，另含恢复、确认、加载、异常与缺图状态。
+- 既有 D1-B 题目及校验器复用；实验 controller 与两方向本地 key 独立。既有源代码、题库、研究图和验证用例保留。结果只在显式合成研究路由注入固定 DTO，回答不会被用作人物推断。
+- 视觉问题、真实参考及观察限制、方案比较、素材授权状态、实际检查与作者待定项见 [Visual V2-A 交付记录](VISUAL_V2_A.md)。截图与复跑脚本见 [V2 视觉证据](qa/visual-v2/README.md)。
+- 已运行类型、8项单测、生产构建、84项E2E通过/10项旧矩阵有意跳过。格式/lint均通过；77张最终生产截图已实际复核。远端 head CI 以PR与最终交付核验为准，不把本地结果当远端通过。
+- 下一步只允许作者选择方向、审美/素材与 PR 阶段审查。本轮不冻结商业设计、不开发海报导出、不推进 D1-C。
+
+## PR 独立审查整改（历史授权与记录）
 
 作者已完成 PR #3/#2 外部 GitHub 审查，本轮仅在既有分支收口：D1-B 修320px前后按钮换行、较大字体/长内容布局与初始引导色；OSS-R 补指定 `bensblueprints/quiz-builder-mvp`（Quizcraft）的固定版本、评分/跳题/服务端/测试/兼容/安全与采用建议。其余研究结论、古风方向、12题与本地恢复/冲突逻辑保持。本轮不建立新治理、worktree或分支，不进入 D1-C，不集成候选、不合并 main。
 
