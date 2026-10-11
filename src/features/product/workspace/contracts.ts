@@ -1,5 +1,8 @@
 import { z } from "zod";
-import { DIRECTORY_TEXT_FORBIDDEN } from "./text-policy";
+import {
+  DIRECTORY_TEXT_FORBIDDEN,
+  isWellFormedDirectoryText,
+} from "./text-policy";
 import { packIdSchema } from "@/features/quizpack/v1/manifest";
 
 export const MAX_METADATA_REVISION = 2147483647;
@@ -17,6 +20,7 @@ export const revisionSchema = z
 const text = (max: number) =>
   z
     .string()
+    .refine(isWellFormedDirectoryText)
     .transform((v) => v.normalize("NFC").trim())
     .pipe(
       z
@@ -105,6 +109,7 @@ export type ProductMutation = { product: ProductDto; changed: boolean };
 export type TaxonomyMutation = { item: TaxonomyDto; changed: boolean };
 const qSchema = z
   .string()
+  .refine(isWellFormedDirectoryText)
   .transform((v) => v.normalize("NFC").trim())
   .pipe(
     z

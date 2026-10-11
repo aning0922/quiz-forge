@@ -5,3 +5,16 @@
 export const DIRECTORY_TEXT_FORBIDDEN =
   /[\u{0}-\u{1f}\u{3c}\u{3e}\u{7f}-\u{9f}\u{ad}\u{600}-\u{605}\u{61c}\u{6dd}\u{70f}\u{890}-\u{891}\u{8e2}\u{180e}\u{200b}-\u{200f}\u{2028}-\u{202e}\u{2060}-\u{2064}\u{2066}-\u{206f}\u{feff}\u{fff9}-\u{fffb}\u{110bd}\u{110cd}\u{13430}-\u{1343f}\u{1bca0}-\u{1bca3}\u{1d173}-\u{1d17a}\u{e0001}\u{e0020}-\u{e007f}]/u;
 export const DIRECTORY_TEXT_UNICODE_VERSION = "17.0";
+
+/** Node20/browser-compatible UTF-16 validity check; reject instead of silently repairing. */
+export function isWellFormedDirectoryText(value: string): boolean {
+  for (let index = 0; index < value.length; index++) {
+    const unit = value.charCodeAt(index);
+    if (unit >= 0xd800 && unit <= 0xdbff) {
+      const next = value.charCodeAt(index + 1);
+      if (!(next >= 0xdc00 && next <= 0xdfff)) return false;
+      index++;
+    } else if (unit >= 0xdc00 && unit <= 0xdfff) return false;
+  }
+  return true;
+}

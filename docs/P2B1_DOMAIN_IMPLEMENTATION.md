@@ -56,3 +56,13 @@ B1 read事务也有10s事务期限，多个有限SQL累加仍可能触发服务�
 ## 总控/Astra接管的驱动限制
 
 独立源码审查指出：`end({timeout:0})`仅为临时规避，现有B1终止回归通过不能证明所有断连竞态中的旧事务/回调均失效，也不能证明旧回调不会写入替代连接。此保护不构成驱动彻底修复或连接生命周期安全保证。总控将独立评估受追踪的postgres3.4.9补丁；A不扩大workaround、不修改依赖/package/lock。上文真实测试结果仅覆盖列明的故障路径，不外推到其他断连时序。原生最小复现仍保存在本worktree忽略目录`.cache/p2b1-driver-repro.ts`，固定脱敏诊断与exit1。私有目录构建追踪排除由总控接管Next配置。
+
+## 独立复审文本边界修正：0005与UTF-16输入
+
+追加0005移除product_title_check/category_name_check/tag_name_check三个legacy文本CHECK，使0004冻结Unicode/空白策略成为唯一字符规则；varchar(120/40)、NOT NULL、0004对空文本与纯空白的拒绝及其他身份/时间/revision/FK/审计不变量保留。没有重写0003/0004。升级成功只应用0005，重放不改version/checksum。对所有非代理Unicode标量的`X+字符`比较，旧规则额外拒绝仅U2065；另141个差异为0004已补齐的拒绝。DB三列均验证U2065、中文、U20000/U1F600/U1D11E/U13440允许，邻界格式/控制字符及空白拒绝，非BMP长度40/120上限与null拒绝保留。
+
+title/name/q在NFC/trim前通过Node20兼容UTF-16配对检查；孤立高/低surrogate返回INVALID_REQUEST，不用toWellFormed替换。冻结Cc/Cf等范围不变，SQL不追加surrogate规则。单测覆盖孤高/孤低及合法配对/字面U+FFFD；真实服务验证非法输入不能创建/替换/重命名或执行q查询，不改变字段/revision/updated_at/audit；合法emoji保存后同内容为no-op。
+
+本轮format:check、lint、typecheck、普通32文件468项、真实DB7文件124项与build最终全量通过；新增Unicode定向13项通过。构建仍有既有私有.cache/p2a动态路径追踪警告，由总控处理；本轮未动driver workaround、management、共享配置、package/lock或HTTP/UI。
+
+本轮定向执行时，既有P2-A管理停用竞争再次失败（DISABLE_FAILED_OUTCOME_REQUIRES_RECHECK），后续全量124项通过不构成修复证据。该间歇故障按总控新增授权在本任务55421做最小脱敏诊断，另记录结果；不以偶发消失关闭问题，也不为此阻塞独立文本提交。
