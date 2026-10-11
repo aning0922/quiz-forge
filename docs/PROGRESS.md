@@ -2,7 +2,9 @@
 
 ## 2026-10-12 托管推进
 
-P1最终交付e63df64的CI 38159199724已核实success；PR #7保持Draft。当前P2总控分支codex/studio-foundation基于该提交。P2-A数据库/运营认证合同已先行冻结于STUDIO_P2A.md，即将分流实施；此记录不代表数据库/页面已完成。
+P1最终交付e63df64的CI 38159199724已核实success；PR #7保持Draft。当前P2总控分支codex/studio-foundation基于该提交。P2-A数据库/运营认证合同已先行冻结于STUDIO_P2A.md，两条Sol/high开发线并行实施，Astra/high独立审查。公共DB/runtime/token与HTTP/角色边界已集成；真实生命周期、认证服务及最终验证尚未收口，不代表阶段验收通过。具体证据见P2A_ACCEPTANCE.md，后续工作区/资源导入细分见STUDIO_P2B_PREFLIGHT.md。
+
+作者已于2026-10-12明确选择首款四卡内测草案：李白、苏轼、陶渊明、白居易。内容文档在独立codex/first-product-content分支e8ba810提交；十二题、四十八选项、四报告和待执行见证已备齐，数学结构经过独立复审，尚未执行P3引擎或取得内容/权重/视觉/素材商用与发布验收。
 
 P1 包工具已完成技术验收：代码提交 `3a1ad7a`，总控六项检查全部通过，385 单测、186 Chromium E2E/10 既有跳过；独立审查 200 项 P1 专项通过、五项发现全部闭合。代码 head 的 [CI 38158768248](https://github.com/aning0922/quiz-forge/actions/runs/38158768248) 已实际 success。[Draft PR #7](https://github.com/aning0922/quiz-forge/pull/7) 以 F1 分支为基线，依赖 #6，均未合并 main。详见 [P1 验收](P1_ACCEPTANCE.md)。下一步为已授权 P2-A 隔离数据库与运营认证；尚未启动数据库、创建表或上线后台。
 

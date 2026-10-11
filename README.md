@@ -68,7 +68,8 @@ src/
     product/                 # 测评工作区合同与草稿纯逻辑；真实发布待实现
     ai-generation/           # Schema 草稿与审核边界（仅说明）
     fulfillment/             # 渠道适配边界（仅说明）
-  lib/                       # 通用工具；db 为预留说明
+    studio/                  # 独立后台视图，P2-A 正在接入真实认证
+  lib/                       # 通用工具及 server-only DB/认证/HTTP 边界
   config/                    # 工程元信息
 public/assets/themes/        # 研究素材与清单；商业批准仍按manifest
 tests/e2e/                   # 入口、路由、布局、动态偏好烟测
@@ -91,6 +92,7 @@ docs/                        # 产品、架构、数据、视觉、阶段证据
 - [视觉系统](docs/VISUAL_SYSTEM.md)、[D1 视觉验收](docs/D1_VISUAL_ACCEPTANCE.md)
 - [阶段开发路线（计划）](docs/ROADMAP_30D.md)、[技术决策](docs/DECISIONS.md)
 - [托管范围与人工决策点](docs/MANAGED_DEVELOPMENT.md)、[P1 包工具合同](docs/QUIZPACK_P1.md)、[P1 依赖评估](docs/P1_DEPENDENCIES.md)
+- [P2-A 数据库与认证合同](docs/STUDIO_P2A.md)、[P2-A 验收记录](docs/P2A_ACCEPTANCE.md)、[P2-B 工作区与导入预案](docs/STUDIO_P2B_PREFLIGHT.md)
 - [阶段进度与限制](docs/PROGRESS.md)、[D0 验收证据](docs/D0_ACCEPTANCE.md)
 - [开源复用研究计划](docs/OPEN_SOURCE_REUSE_PLAN.md)、[D0.1 验收](docs/D0_1_ACCEPTANCE.md)
 
