@@ -5,7 +5,7 @@ export function StudioShell({ children }: { children: React.ReactNode }) {
     <div className={styles.shell}>
       <header className={styles.header}>
         <span className={styles.brand}>QuizForge Studio</span>
-        <span className={styles.environment}>本机运营内测 · P2-A</span>
+        <span className={styles.environment}>本机运营内测 · 目录工作区</span>
       </header>
       <main id="main" className={styles.main}>
         {children}
