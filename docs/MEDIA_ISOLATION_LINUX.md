@@ -54,3 +54,7 @@ FIFO专项初次运行在目录前置检查失败：本工程已有测试建立0
 ## native-identity 诊断小补丁
 
 第二轮真实 [CI38177356944](https://github.com/aning0922/quiz-forge/actions/runs/38177356944)，head `96000be4465ab3a464f68c962a519eeb513350be`，已经失败于native-identity；base pull/image build/image record已完成。尚不能推断是worker syscall、Docker参数规范化或policy预检，也没有放宽策略。此小补丁只增加白名单诊断：policy控制命令退出/settled、资源安全能力布尔、自己的容器各项匹配布尔、launcher有限错误码与已知stderr分类、checked结果/停止状态/数值退出码。没有原始stdout/stderr、异常、路径、环境值或完整inspect进入CI输出。扩展矩阵保留在本分支stash，等实际诊断证据后继续，不掩盖此启动阻断。
+
+## 执行与恢复互斥修订
+
+Astra复验确认deadline/FIFO两项闭合后，复现第三项P2：create close即设localBarriers，start Promise尚在途时同进程恢复可能提前删除记录。修为执行/恢复共享互斥；执行在途时恢复保守unknown，恢复在途时新执行BUSY。每个有归属控制命令发出前撤销资格，只有该轮全部控制命令实际close且无settled:false才重新授予；settled:false保持阻断。新增真实Linux生命周期回归入口，在attach仍在途时调用恢复，须保持guard/record、不confirmed，原执行独立走最终停止核验。此回归尚待LinuxCI，不能以源码或本机测试称独立实测通过。

@@ -31,6 +31,35 @@ safeMain(async () => {
       }) + "\n",
     );
   };
+  let recovery;
+  let guardPreserved = false;
+  let recoveryResult;
+  const inFlight = await executeSynthetic({
+    scenario: "hang",
+    deadlineMonotonicMs: performance.now() + 1800,
+    hooks: {
+      startSpawn() {
+        recovery = verifyOwnStopped().then(async (r) => {
+          const raw = await readPrivate(
+            resolve(CACHE, "control", "record.json"),
+          );
+          const guard = await readPrivate(resolve(CACHE, "control", "guard"));
+          guardPreserved = raw.length > 0 && guard.length > 0;
+          recoveryResult = r;
+        });
+      },
+      async afterStart() {
+        await recovery;
+      },
+    },
+  });
+  record(
+    "start-inflight-recovery-refused",
+    guardPreserved &&
+      recoveryResult?.stopped === "unknown" &&
+      inFlight.stopped === "confirmed",
+    { ...inFlight, recoveryResult, guardPreserved },
+  );
   // Real attach CLI SIGKILL; worker is independent and still must be kill/wait/inspected.
   let cliKilled = false;
   const lost = await executeSynthetic({
