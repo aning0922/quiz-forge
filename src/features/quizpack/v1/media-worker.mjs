@@ -7,6 +7,15 @@ const reject = (code) => {
 };
 sharp.cache(false);
 sharp.concurrency(1);
+// Restrict native loading as well as checking magic/metadata in the parent/worker.
+sharp.block({ operation: ["VipsForeignLoad"] });
+sharp.unblock({
+  operation: [
+    "VipsForeignLoadPngBuffer",
+    "VipsForeignLoadJpegBuffer",
+    "VipsForeignLoadWebpBuffer",
+  ],
+});
 const chunks = [];
 let total = 0;
 try {
