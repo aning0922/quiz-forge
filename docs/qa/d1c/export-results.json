@@ -1,0 +1,641 @@
+{
+  "measuredOn": "2026-10-11 Asia/Shanghai",
+  "results": [
+    {
+      "engine": "chromium",
+      "browser": "156.0.8078.4",
+      "sample": "default",
+      "route": "/studies/visual-v2-c/poster",
+      "name": "historical-default-1080x1920-chromium.png",
+      "bytes": 3100371,
+      "sha256": "86eb6556bd07935884e8994da1cede690d3511700975a7a9f01a2c92c16268f6",
+      "generationMs": 307,
+      "bitmap": {
+        "width": 1080,
+        "height": 1920,
+        "sampleAlpha": [255, 255, 255, 255]
+      },
+      "draw": [
+        {
+          "text": "风骨映月 · 人物收藏",
+          "font": "600 26px \"QuizForge Poster Serif\"",
+          "x": 540,
+          "y": 1220,
+          "width": 229.7879638671875,
+          "actualTop": 1220.9049987792969,
+          "actualBottom": 1245.1630001068115
+        },
+        {
+          "text": "李白",
+          "font": "600 104px \"QuizForge Poster Serif\"",
+          "x": 540,
+          "y": 1269,
+          "width": 208,
+          "actualTop": 1272.3236236572266,
+          "actualBottom": 1369.2516250610352
+        },
+        {
+          "text": "盛唐 · 诗人 · 浪漫自由的行路者",
+          "font": "600 38px \"QuizForge Poster Serif\"",
+          "x": 540,
+          "y": 1394,
+          "width": 519.68798828125,
+          "actualTop": 1395.1754989624023,
+          "actualBottom": 1430.6675071716309
+        },
+        {
+          "text": "长风破浪会有时，",
+          "font": "600 44px \"QuizForge Poster Serif\"",
+          "x": 540,
+          "y": 1460,
+          "width": 352,
+          "actualTop": 1461.318748474121,
+          "actualBottom": 1508.0027503967285
+        },
+        {
+          "text": "直挂云帆济沧海。",
+          "font": "600 44px \"QuizForge Poster Serif\"",
+          "x": 540,
+          "y": 1522,
+          "width": 352,
+          "actualTop": 1523.186752319336,
+          "actualBottom": 1564.5027542114258
+        },
+        {
+          "text": "李白《行路难·其一》",
+          "font": "600 26px \"QuizForge Poster Serif\"",
+          "x": 540,
+          "y": 1596,
+          "width": 242.63198852539062,
+          "actualTop": 1596.7490005493164,
+          "actualBottom": 1621.2410011291504
+        },
+        {
+          "text": "探索 88/100 · 表达 82/100",
+          "font": "600 30px \"QuizForge Poster Serif\"",
+          "x": 540,
+          "y": 1645,
+          "width": 350.0399169921875,
+          "actualTop": 1645.9362506866455,
+          "actualBottom": 1676.716251373291
+        },
+        {
+          "text": "千载同心 / QUIZFORGE",
+          "font": "600 26px \"QuizForge Poster Serif\"",
+          "x": 540,
+          "y": 1699,
+          "width": 285.45391845703125,
+          "actualTop": 1700.0610008239746,
+          "actualBottom": 1727.7250022888184
+        },
+        {
+          "text": "合成演示 · 非答题结论 · 娱乐性格测评 · 非心理诊断",
+          "font": "600 24px \"QuizForge Poster Serif\"",
+          "x": 540,
+          "y": 1748,
+          "width": 540.3359375,
+          "actualTop": 1748.5089988708496,
+          "actualBottom": 1771.261001586914
+        }
+      ],
+      "pageErrors": [],
+      "caveat": "Local production build, DPR1; engine tests are not actual phone save/share confirmation."
+    },
+    {
+      "engine": "chromium",
+      "browser": "156.0.8078.4",
+      "sample": "long",
+      "route": "/studies/visual-v2-c/poster/checks?sample=long",
+      "name": "historical-long-1080x1920-chromium.png",
+      "bytes": 3132770,
+      "sha256": "f2caec13a05558be741d583e6a36b0bdbc350ac943b2beeff2cb9feee296b33e",
+      "generationMs": 239,
+      "bitmap": {
+        "width": 1080,
+        "height": 1920,
+        "sampleAlpha": [255, 255, 255, 255]
+      },
+      "draw": [
+        {
+          "text": "风骨映月 · 人物收藏",
+          "font": "600 22px \"QuizForge Poster Serif\"",
+          "x": 540,
+          "y": 1220,
+          "width": 194.43597412109375,
+          "actualTop": 1220.769374847412,
+          "actualBottom": 1241.2953777313232
+        },
+        {
+          "text": "心有远方也自有方向的",
+          "font": "600 88px \"QuizForge Poster Serif\"",
+          "x": 540,
+          "y": 1263,
+          "width": 880,
+          "actualTop": 1265.6374969482422,
+          "actualBottom": 1348.2695083618164
+        },
+        {
+          "text": "浪漫自由行路者",
+          "font": "600 88px \"QuizForge Poster Serif\"",
+          "x": 540,
+          "y": 1360,
+          "width": 616,
+          "actualTop": 1362.7255020141602,
+          "actualBottom": 1444.9175109863281
+        },
+        {
+          "text": "盛唐 · 诗人 · 愿意寻找新的可能也珍视自己选择道路空间的浪漫",
+          "font": "600 32px \"QuizForge Poster Serif\"",
+          "x": 540,
+          "y": 1467,
+          "width": 885.6319580078125,
+          "actualTop": 1467.7642498016357,
+          "actualBottom": 1497.9402523040771
+        },
+        {
+          "text": "自由行路者",
+          "font": "600 32px \"QuizForge Poster Serif\"",
+          "x": 540,
+          "y": 1512,
+          "width": 160,
+          "actualTop": 1513.08424949646,
+          "actualBottom": 1542.8762512207031
+        },
+        {
+          "text": "借得松风开远意且将星月作行囊",
+          "font": "600 37px \"QuizForge Poster Serif\"",
+          "x": 540,
+          "y": 1569,
+          "width": 518,
+          "actualTop": 1569.8904991149902,
+          "actualBottom": 1605.0035018920898
+        },
+        {
+          "text": "心有远方也自有方向将心事写成远方",
+          "font": "600 37px \"QuizForge Poster Serif\"",
+          "x": 540,
+          "y": 1621,
+          "width": 592,
+          "actualTop": 1622.1124992370605,
+          "actualBottom": 1656.8555068969727
+        },
+        {
+          "text": "原创拟古 · QuizForge",
+          "font": "600 22px \"QuizForge Poster Serif\"",
+          "x": 540,
+          "y": 1685,
+          "width": 218.4379119873047,
+          "actualTop": 1685.703374862671,
+          "actualBottom": 1710.0573749542236
+        },
+        {
+          "text": "探索 88/100 · 表达 82/100",
+          "font": "600 26px \"QuizForge Poster Serif\"",
+          "x": 540,
+          "y": 1728,
+          "width": 303.36785888671875,
+          "actualTop": 1728.8010005950928,
+          "actualBottom": 1755.4770030975342
+        },
+        {
+          "text": "千载同心 / QUIZFORGE",
+          "font": "600 22px \"QuizForge Poster Serif\"",
+          "x": 540,
+          "y": 1777,
+          "width": 241.5378875732422,
+          "actualTop": 1777.9013748168945,
+          "actualBottom": 1801.3093757629395
+        },
+        {
+          "text": "合成演示 · 非答题结论 · 娱乐性格测评 · 非心理诊断",
+          "font": "600 20px \"QuizForge Poster Serif\"",
+          "x": 540,
+          "y": 1820,
+          "width": 450.27996826171875,
+          "actualTop": 1820.4137496948242,
+          "actualBottom": 1839.3737525939941
+        }
+      ],
+      "pageErrors": [],
+      "caveat": "Local production build, DPR1; engine tests are not actual phone save/share confirmation."
+    },
+    {
+      "engine": "chromium",
+      "browser": "156.0.8078.4",
+      "sample": "original",
+      "route": "/studies/visual-v2-c/poster/checks?sample=original",
+      "name": "historical-original-1080x1920-chromium.png",
+      "bytes": 3102700,
+      "sha256": "af301b182d2e276b414a123206cfe7d1f0d920546c42c0b98891f1609ee1c45f",
+      "generationMs": 240,
+      "bitmap": {
+        "width": 1080,
+        "height": 1920,
+        "sampleAlpha": [255, 255, 255, 255]
+      },
+      "draw": [
+        {
+          "text": "风骨映月 · 人物收藏",
+          "font": "600 26px \"QuizForge Poster Serif\"",
+          "x": 540,
+          "y": 1220,
+          "width": 229.7879638671875,
+          "actualTop": 1220.9049987792969,
+          "actualBottom": 1245.1630001068115
+        },
+        {
+          "text": "李白",
+          "font": "600 104px \"QuizForge Poster Serif\"",
+          "x": 540,
+          "y": 1269,
+          "width": 208,
+          "actualTop": 1272.3236236572266,
+          "actualBottom": 1369.2516250610352
+        },
+        {
+          "text": "盛唐 · 诗人 · 浪漫自由的行路者",
+          "font": "600 38px \"QuizForge Poster Serif\"",
+          "x": 540,
+          "y": 1394,
+          "width": 519.68798828125,
+          "actualTop": 1395.1754989624023,
+          "actualBottom": 1430.6675071716309
+        },
+        {
+          "text": "借得松风开远意，",
+          "font": "600 44px \"QuizForge Poster Serif\"",
+          "x": 540,
+          "y": 1460,
+          "width": 352,
+          "actualTop": 1461.0547485351562,
+          "actualBottom": 1508.0027503967285
+        },
+        {
+          "text": "且将星月作行囊。",
+          "font": "600 44px \"QuizForge Poster Serif\"",
+          "x": 540,
+          "y": 1522,
+          "width": 352,
+          "actualTop": 1523.5387496948242,
+          "actualBottom": 1564.8107528686523
+        },
+        {
+          "text": "原创拟古 · QuizForge · AI草拟",
+          "font": "600 26px \"QuizForge Poster Serif\"",
+          "x": 540,
+          "y": 1596,
+          "width": 361.7378845214844,
+          "actualTop": 1596.8269996643066,
+          "actualBottom": 1625.6090030670166
+        },
+        {
+          "text": "探索 88/100 · 表达 82/100",
+          "font": "600 30px \"QuizForge Poster Serif\"",
+          "x": 540,
+          "y": 1645,
+          "width": 350.0399169921875,
+          "actualTop": 1645.9362506866455,
+          "actualBottom": 1676.716251373291
+        },
+        {
+          "text": "千载同心 / QUIZFORGE",
+          "font": "600 26px \"QuizForge Poster Serif\"",
+          "x": 540,
+          "y": 1699,
+          "width": 285.45391845703125,
+          "actualTop": 1700.0610008239746,
+          "actualBottom": 1727.7250022888184
+        },
+        {
+          "text": "合成演示 · 非答题结论 · 娱乐性格测评 · 非心理诊断",
+          "font": "600 24px \"QuizForge Poster Serif\"",
+          "x": 540,
+          "y": 1748,
+          "width": 540.3359375,
+          "actualTop": 1748.5089988708496,
+          "actualBottom": 1771.261001586914
+        }
+      ],
+      "pageErrors": [],
+      "caveat": "Local production build, DPR1; engine tests are not actual phone save/share confirmation."
+    },
+    {
+      "engine": "webkit",
+      "browser": "27.2",
+      "sample": "default",
+      "route": "/studies/visual-v2-c/poster",
+      "name": "historical-default-1080x1920-webkit.png",
+      "bytes": 2880462,
+      "sha256": "e440879b904800e6484cb517038354138e9091cd536b658298c1efd78a60ff2c",
+      "generationMs": 246,
+      "bitmap": {
+        "width": 1080,
+        "height": 1920,
+        "sampleAlpha": [255, 255, 255, 255]
+      },
+      "draw": [
+        {
+          "text": "风骨映月 · 人物收藏",
+          "font": "600 26px QuizForge Poster Serif",
+          "x": 540,
+          "y": 1220,
+          "width": 229.7880096435547,
+          "actualTop": 1218.8566493988037,
+          "actualBottom": 1243.1066493988037
+        },
+        {
+          "text": "李白",
+          "font": "600 104px QuizForge Poster Serif",
+          "x": 540,
+          "y": 1269,
+          "width": 208,
+          "actualTop": 1264.1140975952148,
+          "actualBottom": 1361.0359725952148
+        },
+        {
+          "text": "盛唐 · 诗人 · 浪漫自由的行路者",
+          "font": "600 38px QuizForge Poster Serif",
+          "x": 540,
+          "y": 1394,
+          "width": 519.68798828125,
+          "actualTop": 1392.1871223449707,
+          "actualBottom": 1427.6558723449707
+        },
+        {
+          "text": "长风破浪会有时，",
+          "font": "600 44px QuizForge Poster Serif",
+          "x": 540,
+          "y": 1460,
+          "width": 352,
+          "actualTop": 1457.8523597717285,
+          "actualBottom": 1504.5242347717285
+        },
+        {
+          "text": "直挂云帆济沧海。",
+          "font": "600 44px QuizForge Poster Serif",
+          "x": 540,
+          "y": 1522,
+          "width": 352,
+          "actualTop": 1519.7117347717285,
+          "actualBottom": 1561.0242347717285
+        },
+        {
+          "text": "李白《行路难·其一》",
+          "font": "600 26px QuizForge Poster Serif",
+          "x": 540,
+          "y": 1596,
+          "width": 242.6320037841797,
+          "actualTop": 1594.7003993988037,
+          "actualBottom": 1619.1847743988037
+        },
+        {
+          "text": "探索 88/100 · 表达 82/100",
+          "font": "600 30px QuizForge Poster Serif",
+          "x": 540,
+          "y": 1645,
+          "width": 350.03997802734375,
+          "actualTop": 1643.5605564117432,
+          "actualBottom": 1674.3261814117432
+        },
+        {
+          "text": "千载同心 / QUIZFORGE",
+          "font": "600 26px QuizForge Poster Serif",
+          "x": 540,
+          "y": 1699,
+          "width": 285.4540100097656,
+          "actualTop": 1698.0128993988037,
+          "actualBottom": 1725.6691493988037
+        },
+        {
+          "text": "合成演示 · 非答题结论 · 娱乐性格测评 · 非心理诊断",
+          "font": "600 24px QuizForge Poster Serif",
+          "x": 540,
+          "y": 1748,
+          "width": 540.3359375,
+          "actualTop": 1746.614070892334,
+          "actualBottom": 1769.348445892334
+        }
+      ],
+      "pageErrors": [],
+      "caveat": "Local production build, DPR1; engine tests are not actual phone save/share confirmation."
+    },
+    {
+      "engine": "webkit",
+      "browser": "27.2",
+      "sample": "long",
+      "route": "/studies/visual-v2-c/poster/checks?sample=long",
+      "name": "historical-long-1080x1920-webkit.png",
+      "bytes": 2917158,
+      "sha256": "10cd2770d52f67abcf020c380a583b78ee3ef44235951985cc348101a8aecfc0",
+      "generationMs": 216,
+      "bitmap": {
+        "width": 1080,
+        "height": 1920,
+        "sampleAlpha": [255, 255, 255, 255]
+      },
+      "draw": [
+        {
+          "text": "风骨映月 · 人物收藏",
+          "font": "600 22px QuizForge Poster Serif",
+          "x": 540,
+          "y": 1220,
+          "width": 194.43600463867188,
+          "actualTop": 1219.0433673858643,
+          "actualBottom": 1239.5433673858643
+        },
+        {
+          "text": "心有远方也自有方向的",
+          "font": "600 88px QuizForge Poster Serif",
+          "x": 540,
+          "y": 1263,
+          "width": 880,
+          "actualTop": 1258.689094543457,
+          "actualBottom": 1341.314094543457
+        },
+        {
+          "text": "浪漫自由行路者",
+          "font": "600 88px QuizForge Poster Serif",
+          "x": 540,
+          "y": 1360,
+          "width": 616,
+          "actualTop": 1355.782844543457,
+          "actualBottom": 1437.954719543457
+        },
+        {
+          "text": "盛唐 · 诗人 · 愿意寻找新的可能也珍视自己选择道路空间的浪漫",
+          "font": "600 32px QuizForge Poster Serif",
+          "x": 540,
+          "y": 1467,
+          "width": 885.6319580078125,
+          "actualTop": 1465.2406368255615,
+          "actualBottom": 1495.4125118255615
+        },
+        {
+          "text": "自由行路者",
+          "font": "600 32px QuizForge Poster Serif",
+          "x": 540,
+          "y": 1512,
+          "width": 160,
+          "actualTop": 1510.5687618255615,
+          "actualBottom": 1540.3500118255615
+        },
+        {
+          "text": "借得松风开远意且将星月作行囊",
+          "font": "600 37px QuizForge Poster Serif",
+          "x": 540,
+          "y": 1569,
+          "width": 518,
+          "actualTop": 1566.9642696380615,
+          "actualBottom": 1602.0736465454102
+        },
+        {
+          "text": "心有远方也自有方向将心事写成远方",
+          "font": "600 37px QuizForge Poster Serif",
+          "x": 540,
+          "y": 1621,
+          "width": 592,
+          "actualTop": 1619.1986446380615,
+          "actualBottom": 1653.9173965454102
+        },
+        {
+          "text": "原创拟古 · QuizForge",
+          "font": "600 22px QuizForge Poster Serif",
+          "x": 540,
+          "y": 1685,
+          "width": 218.43801879882812,
+          "actualTop": 1683.9808673858643,
+          "actualBottom": 1708.3089923858643
+        },
+        {
+          "text": "探索 88/100 · 表达 82/100",
+          "font": "600 26px QuizForge Poster Serif",
+          "x": 540,
+          "y": 1728,
+          "width": 303.3680419921875,
+          "actualTop": 1726.7628993988037,
+          "actualBottom": 1753.4191493988037
+        },
+        {
+          "text": "千载同心 / QUIZFORGE",
+          "font": "600 22px QuizForge Poster Serif",
+          "x": 540,
+          "y": 1777,
+          "width": 241.5380096435547,
+          "actualTop": 1776.1683673858643,
+          "actualBottom": 1799.5589923858643
+        },
+        {
+          "text": "合成演示 · 非答题结论 · 娱乐性格测评 · 非心理诊断",
+          "font": "600 20px QuizForge Poster Serif",
+          "x": 540,
+          "y": 1820,
+          "width": 450.2799987792969,
+          "actualTop": 1818.8476638793945,
+          "actualBottom": 1837.7851638793945
+        }
+      ],
+      "pageErrors": [],
+      "caveat": "Local production build, DPR1; engine tests are not actual phone save/share confirmation."
+    },
+    {
+      "engine": "webkit",
+      "browser": "27.2",
+      "sample": "original",
+      "route": "/studies/visual-v2-c/poster/checks?sample=original",
+      "name": "historical-original-1080x1920-webkit.png",
+      "bytes": 2883024,
+      "sha256": "cb06531dbfaad6f9344c87618563bf99e62c20c2b4c9568cf724fdcd06ac7e22",
+      "generationMs": 312,
+      "bitmap": {
+        "width": 1080,
+        "height": 1920,
+        "sampleAlpha": [255, 255, 255, 255]
+      },
+      "draw": [
+        {
+          "text": "风骨映月 · 人物收藏",
+          "font": "600 26px QuizForge Poster Serif",
+          "x": 540,
+          "y": 1220,
+          "width": 229.7880096435547,
+          "actualTop": 1218.8566493988037,
+          "actualBottom": 1243.1066493988037
+        },
+        {
+          "text": "李白",
+          "font": "600 104px QuizForge Poster Serif",
+          "x": 540,
+          "y": 1269,
+          "width": 208,
+          "actualTop": 1264.1140975952148,
+          "actualBottom": 1361.0359725952148
+        },
+        {
+          "text": "盛唐 · 诗人 · 浪漫自由的行路者",
+          "font": "600 38px QuizForge Poster Serif",
+          "x": 540,
+          "y": 1394,
+          "width": 519.68798828125,
+          "actualTop": 1392.1871223449707,
+          "actualBottom": 1427.6558723449707
+        },
+        {
+          "text": "借得松风开远意，",
+          "font": "600 44px QuizForge Poster Serif",
+          "x": 540,
+          "y": 1460,
+          "width": 352,
+          "actualTop": 1457.5867347717285,
+          "actualBottom": 1504.5242347717285
+        },
+        {
+          "text": "且将星月作行囊。",
+          "font": "600 44px QuizForge Poster Serif",
+          "x": 540,
+          "y": 1522,
+          "width": 352,
+          "actualTop": 1520.0711097717285,
+          "actualBottom": 1561.3211097717285
+        },
+        {
+          "text": "原创拟古 · QuizForge · AI草拟",
+          "font": "600 26px QuizForge Poster Serif",
+          "x": 540,
+          "y": 1596,
+          "width": 361.7380065917969,
+          "actualTop": 1594.7785243988037,
+          "actualBottom": 1623.5441493988037
+        },
+        {
+          "text": "探索 88/100 · 表达 82/100",
+          "font": "600 30px QuizForge Poster Serif",
+          "x": 540,
+          "y": 1645,
+          "width": 350.03997802734375,
+          "actualTop": 1643.5605564117432,
+          "actualBottom": 1674.3261814117432
+        },
+        {
+          "text": "千载同心 / QUIZFORGE",
+          "font": "600 26px QuizForge Poster Serif",
+          "x": 540,
+          "y": 1699,
+          "width": 285.4540100097656,
+          "actualTop": 1698.0128993988037,
+          "actualBottom": 1725.6691493988037
+        },
+        {
+          "text": "合成演示 · 非答题结论 · 娱乐性格测评 · 非心理诊断",
+          "font": "600 24px QuizForge Poster Serif",
+          "x": 540,
+          "y": 1748,
+          "width": 540.3359375,
+          "actualTop": 1746.614070892334,
+          "actualBottom": 1769.348445892334
+        }
+      ],
+      "pageErrors": [],
+      "caveat": "Local production build, DPR1; engine tests are not actual phone save/share confirmation."
+    }
+  ]
+}

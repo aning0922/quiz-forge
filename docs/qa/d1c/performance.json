@@ -1,0 +1,3270 @@
+{
+  "measuredOn": "2026-10-11 Asia/Shanghai",
+  "base": "http://127.0.0.1:3100",
+  "caveat": "Local production-server sampling. Transfer and timing values are reproducible here but are not mobile-network or real-user measurements.",
+  "budget": {
+    "imageTransferBytes": 204800,
+    "fontTransferBytes": 225280,
+    "fontRequests": 1,
+    "initialTransferBytes": 665600,
+    "lcpMs": 2500,
+    "cls": 0.1,
+    "scrollP95FrameGapMs": 35
+  },
+  "violations": [],
+  "summaries": [
+    {
+      "route": "/studies/visual-v2-c/",
+      "coldSamples": 3,
+      "median": {
+        "lcpMs": 28,
+        "cls": 0,
+        "scrollP95FrameGapMs": 0
+      },
+      "max": {
+        "lcpMs": 32,
+        "cls": 0,
+        "scrollP95FrameGapMs": 0
+      }
+    },
+    {
+      "route": "/studies/visual-v2-c/question",
+      "coldSamples": 3,
+      "median": {
+        "lcpMs": 28,
+        "cls": 0.0022341637098007333,
+        "scrollP95FrameGapMs": 17.30000001192093
+      },
+      "max": {
+        "lcpMs": 28,
+        "cls": 0.0022341637098007333,
+        "scrollP95FrameGapMs": 17.5
+      }
+    },
+    {
+      "route": "/studies/visual-v2-c/reveal",
+      "coldSamples": 3,
+      "median": {
+        "lcpMs": 32,
+        "cls": 0,
+        "scrollP95FrameGapMs": 17.299999952316284
+      },
+      "max": {
+        "lcpMs": 32,
+        "cls": 0,
+        "scrollP95FrameGapMs": 17.30000001192093
+      }
+    },
+    {
+      "route": "/studies/visual-v2-c/report",
+      "coldSamples": 3,
+      "median": {
+        "lcpMs": 36,
+        "cls": 0.000008034237948211129,
+        "scrollP95FrameGapMs": 17.19999998807907
+      },
+      "max": {
+        "lcpMs": 44,
+        "cls": 0.000008034237948211129,
+        "scrollP95FrameGapMs": 17.5
+      }
+    },
+    {
+      "route": "/studies/visual-v2-c/poster",
+      "coldSamples": 3,
+      "median": {
+        "lcpMs": 28,
+        "cls": 0,
+        "scrollP95FrameGapMs": 17.19999998807907
+      },
+      "max": {
+        "lcpMs": 32,
+        "cls": 0,
+        "scrollP95FrameGapMs": 17.30000001192093
+      }
+    }
+  ],
+  "results": [
+    {
+      "route": "/studies/visual-v2-c/",
+      "mode": "cold",
+      "sample": 1,
+      "emulation": null,
+      "status": 200,
+      "browser": "156.0.8078.4",
+      "cacheMode": "fresh browser context per route",
+      "metrics": {
+        "navigation": {
+          "responseStart": 3.199999988079071,
+          "domContentLoadedEventEnd": 26.69999998807907,
+          "loadEventEnd": 45.299999952316284,
+          "transferSize": 4124,
+          "encodedBodySize": 3824,
+          "decodedBodySize": 12504
+        },
+        "vitals": {
+          "lcp": 32,
+          "cls": 0,
+          "lcpEntries": [
+            {
+              "startTime": 32,
+              "size": 128700,
+              "url": "http://127.0.0.1:3100/assets/themes/historical/visual-v2-c/room-1-480.webp"
+            }
+          ],
+          "layoutShifts": []
+        },
+        "fonts": {
+          "status": "loaded",
+          "count": 1
+        },
+        "scroll": {
+          "scrollHeight": 844,
+          "scrollRange": 0,
+          "frameCount": 1,
+          "maxFrameGap": 0,
+          "p95FrameGap": 0
+        },
+        "resources": [
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/3k67h9enjakfb.css",
+            "initiatorType": "link",
+            "transferSize": 5200,
+            "encodedBodySize": 4900,
+            "decodedBodySize": 18740,
+            "duration": 4.5
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/0fjzzp--ef5en.css",
+            "initiatorType": "link",
+            "transferSize": 4923,
+            "encodedBodySize": 4623,
+            "decodedBodySize": 19691,
+            "duration": 4.600000023841858
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/3xs88bg4r73nj.js",
+            "initiatorType": "link",
+            "transferSize": 2331,
+            "encodedBodySize": 2031,
+            "decodedBodySize": 5580,
+            "duration": 5.100000023841858
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/2a9rgqyt3vpo7.js",
+            "initiatorType": "script",
+            "transferSize": 8004,
+            "encodedBodySize": 7704,
+            "decodedBodySize": 28879,
+            "duration": 5.800000011920929
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/turbopack-3-ry682tkyiqk.js",
+            "initiatorType": "script",
+            "transferSize": 4240,
+            "encodedBodySize": 3940,
+            "decodedBodySize": 10030,
+            "duration": 6.599999964237213
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/2fplmmsd9-wmm.js",
+            "initiatorType": "script",
+            "transferSize": 1336,
+            "encodedBodySize": 1036,
+            "decodedBodySize": 2085,
+            "duration": 6.800000011920929
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/324cjl3rsl37y.js",
+            "initiatorType": "script",
+            "transferSize": 3814,
+            "encodedBodySize": 3514,
+            "decodedBodySize": 13815,
+            "duration": 6.699999988079071
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/2atqcoatgwrfx.js",
+            "initiatorType": "script",
+            "transferSize": 9582,
+            "encodedBodySize": 9282,
+            "decodedBodySize": 24963,
+            "duration": 7.899999976158142
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/3yhoiqffrwwql.js",
+            "initiatorType": "script",
+            "transferSize": 46571,
+            "encodedBodySize": 46271,
+            "decodedBodySize": 168184,
+            "duration": 10
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/20lvgkz2-qm08.js",
+            "initiatorType": "script",
+            "transferSize": 72201,
+            "encodedBodySize": 71901,
+            "decodedBodySize": 229590,
+            "duration": 11.099999964237213
+          },
+          {
+            "name": "http://127.0.0.1:3100/assets/themes/historical/visual-v2-c/room-1-480.webp",
+            "initiatorType": "img",
+            "transferSize": 24644,
+            "encodedBodySize": 24344,
+            "decodedBodySize": 24344,
+            "duration": 4.600000023841858
+          },
+          {
+            "name": "http://127.0.0.1:3100/assets/fonts/visual-v2-c/serif-600.woff2",
+            "initiatorType": "css",
+            "transferSize": 138468,
+            "encodedBodySize": 138168,
+            "decodedBodySize": 138168,
+            "duration": 16.19999998807907
+          }
+        ]
+      }
+    },
+    {
+      "route": "/studies/visual-v2-c/question",
+      "mode": "cold",
+      "sample": 1,
+      "emulation": null,
+      "status": 200,
+      "browser": "156.0.8078.4",
+      "cacheMode": "fresh browser context per route",
+      "metrics": {
+        "navigation": {
+          "responseStart": 2.099999964237213,
+          "domContentLoadedEventEnd": 21.899999976158142,
+          "loadEventEnd": 40.19999998807907,
+          "transferSize": 4358,
+          "encodedBodySize": 4058,
+          "decodedBodySize": 13340
+        },
+        "vitals": {
+          "lcp": 28,
+          "cls": 0.0022341637098007333,
+          "lcpEntries": [
+            {
+              "startTime": 28,
+              "size": 85800,
+              "url": "http://127.0.0.1:3100/assets/themes/historical/visual-v2-c/room-1-480.webp"
+            }
+          ],
+          "layoutShifts": [
+            {
+              "value": 0.0022341637098007333,
+              "startTime": 58.89999997615814,
+              "sources": [
+                {
+                  "node": {
+                    "tag": "H1",
+                    "id": "v2-question",
+                    "className": null,
+                    "dataV2c": null
+                  },
+                  "previousRect": {
+                    "x": 22,
+                    "y": 405.078125,
+                    "width": 346,
+                    "height": 48
+                  },
+                  "currentRect": {
+                    "x": 22,
+                    "y": 381.78125,
+                    "width": 346,
+                    "height": 77.5
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "fonts": {
+          "status": "loaded",
+          "count": 2
+        },
+        "scroll": {
+          "scrollHeight": 955,
+          "scrollRange": 111,
+          "frameCount": 25,
+          "maxFrameGap": 17,
+          "p95FrameGap": 16.700000047683716
+        },
+        "resources": [
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/3k67h9enjakfb.css",
+            "initiatorType": "link",
+            "transferSize": 5200,
+            "encodedBodySize": 4900,
+            "decodedBodySize": 18740,
+            "duration": 4
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/0fjzzp--ef5en.css",
+            "initiatorType": "link",
+            "transferSize": 4923,
+            "encodedBodySize": 4623,
+            "decodedBodySize": 19691,
+            "duration": 4.100000023841858
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/1betsdyzyylbd.css",
+            "initiatorType": "link",
+            "transferSize": 3328,
+            "encodedBodySize": 3028,
+            "decodedBodySize": 10779,
+            "duration": 4.800000011920929
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/3xs88bg4r73nj.js",
+            "initiatorType": "link",
+            "transferSize": 2331,
+            "encodedBodySize": 2031,
+            "decodedBodySize": 5580,
+            "duration": 4.800000011920929
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/2a9rgqyt3vpo7.js",
+            "initiatorType": "script",
+            "transferSize": 8004,
+            "encodedBodySize": 7704,
+            "decodedBodySize": 28879,
+            "duration": 6.099999964237213
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/3yhoiqffrwwql.js",
+            "initiatorType": "script",
+            "transferSize": 46571,
+            "encodedBodySize": 46271,
+            "decodedBodySize": 168184,
+            "duration": 10.099999964237213
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/20lvgkz2-qm08.js",
+            "initiatorType": "script",
+            "transferSize": 72201,
+            "encodedBodySize": 71901,
+            "decodedBodySize": 229590,
+            "duration": 11.899999976158142
+          },
+          {
+            "name": "http://127.0.0.1:3100/assets/themes/historical/visual-v2-c/room-1-480.webp",
+            "initiatorType": "img",
+            "transferSize": 24644,
+            "encodedBodySize": 24344,
+            "decodedBodySize": 24344,
+            "duration": 3.800000011920929
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/turbopack-3-ry682tkyiqk.js",
+            "initiatorType": "script",
+            "transferSize": 4240,
+            "encodedBodySize": 3940,
+            "decodedBodySize": 10030,
+            "duration": 6.5
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/2doyg5f_y4_vl.js",
+            "initiatorType": "script",
+            "transferSize": 3612,
+            "encodedBodySize": 3312,
+            "decodedBodySize": 7819,
+            "duration": 7.5
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/324cjl3rsl37y.js",
+            "initiatorType": "script",
+            "transferSize": 3814,
+            "encodedBodySize": 3514,
+            "decodedBodySize": 13815,
+            "duration": 7.5
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/0_vxjjev2aqrn.js",
+            "initiatorType": "script",
+            "transferSize": 9004,
+            "encodedBodySize": 8704,
+            "decodedBodySize": 19549,
+            "duration": 8.600000023841858
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/2atqcoatgwrfx.js",
+            "initiatorType": "script",
+            "transferSize": 9582,
+            "encodedBodySize": 9282,
+            "decodedBodySize": 24963,
+            "duration": 8.800000011920929
+          },
+          {
+            "name": "http://127.0.0.1:3100/assets/fonts/visual-v2-c/serif-600.woff2",
+            "initiatorType": "css",
+            "transferSize": 138468,
+            "encodedBodySize": 138168,
+            "decodedBodySize": 138168,
+            "duration": 12.300000011920929
+          }
+        ]
+      }
+    },
+    {
+      "route": "/studies/visual-v2-c/reveal",
+      "mode": "cold",
+      "sample": 1,
+      "emulation": null,
+      "status": 200,
+      "browser": "156.0.8078.4",
+      "cacheMode": "fresh browser context per route",
+      "metrics": {
+        "navigation": {
+          "responseStart": 2.199999988079071,
+          "domContentLoadedEventEnd": 22.400000035762787,
+          "loadEventEnd": 40.30000001192093,
+          "transferSize": 4798,
+          "encodedBodySize": 4498,
+          "decodedBodySize": 15294
+        },
+        "vitals": {
+          "lcp": 28,
+          "cls": 0,
+          "lcpEntries": [
+            {
+              "startTime": 28,
+              "size": 228150,
+              "url": "http://127.0.0.1:3100/assets/themes/historical/visual-v2-c/figure-480.webp"
+            }
+          ],
+          "layoutShifts": []
+        },
+        "fonts": {
+          "status": "loaded",
+          "count": 1
+        },
+        "scroll": {
+          "scrollHeight": 1035,
+          "scrollRange": 191,
+          "frameCount": 25,
+          "maxFrameGap": 17.5,
+          "p95FrameGap": 17.299999952316284
+        },
+        "resources": [
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/3k67h9enjakfb.css",
+            "initiatorType": "link",
+            "transferSize": 5200,
+            "encodedBodySize": 4900,
+            "decodedBodySize": 18740,
+            "duration": 4.5
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/0fjzzp--ef5en.css",
+            "initiatorType": "link",
+            "transferSize": 4923,
+            "encodedBodySize": 4623,
+            "decodedBodySize": 19691,
+            "duration": 5
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/3xs88bg4r73nj.js",
+            "initiatorType": "link",
+            "transferSize": 2331,
+            "encodedBodySize": 2031,
+            "decodedBodySize": 5580,
+            "duration": 5.400000035762787
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/2a9rgqyt3vpo7.js",
+            "initiatorType": "script",
+            "transferSize": 8004,
+            "encodedBodySize": 7704,
+            "decodedBodySize": 28879,
+            "duration": 6.100000023841858
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/3yhoiqffrwwql.js",
+            "initiatorType": "script",
+            "transferSize": 46571,
+            "encodedBodySize": 46271,
+            "decodedBodySize": 168184,
+            "duration": 9.600000023841858
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/20lvgkz2-qm08.js",
+            "initiatorType": "script",
+            "transferSize": 72201,
+            "encodedBodySize": 71901,
+            "decodedBodySize": 229590,
+            "duration": 11.300000011920929
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/turbopack-3-ry682tkyiqk.js",
+            "initiatorType": "script",
+            "transferSize": 4240,
+            "encodedBodySize": 3940,
+            "decodedBodySize": 10030,
+            "duration": 6.399999976158142
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/324cjl3rsl37y.js",
+            "initiatorType": "script",
+            "transferSize": 3814,
+            "encodedBodySize": 3514,
+            "decodedBodySize": 13815,
+            "duration": 6.699999988079071
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/2vw396o6n7wrb.js",
+            "initiatorType": "script",
+            "transferSize": 4938,
+            "encodedBodySize": 4638,
+            "decodedBodySize": 10150,
+            "duration": 6.699999988079071
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/2atqcoatgwrfx.js",
+            "initiatorType": "script",
+            "transferSize": 9582,
+            "encodedBodySize": 9282,
+            "decodedBodySize": 24963,
+            "duration": 7.800000011920929
+          },
+          {
+            "name": "http://127.0.0.1:3100/assets/themes/historical/visual-v2-c/figure-480.webp",
+            "initiatorType": "img",
+            "transferSize": 68150,
+            "encodedBodySize": 67850,
+            "decodedBodySize": 67850,
+            "duration": 4.5
+          },
+          {
+            "name": "http://127.0.0.1:3100/assets/fonts/visual-v2-c/serif-600.woff2",
+            "initiatorType": "css",
+            "transferSize": 138468,
+            "encodedBodySize": 138168,
+            "decodedBodySize": 138168,
+            "duration": 12.699999988079071
+          }
+        ]
+      }
+    },
+    {
+      "route": "/studies/visual-v2-c/report",
+      "mode": "cold",
+      "sample": 1,
+      "emulation": null,
+      "status": 200,
+      "browser": "156.0.8078.4",
+      "cacheMode": "fresh browser context per route",
+      "metrics": {
+        "navigation": {
+          "responseStart": 2.600000023841858,
+          "domContentLoadedEventEnd": 11,
+          "loadEventEnd": 74.69999998807907,
+          "transferSize": 7071,
+          "encodedBodySize": 6771,
+          "decodedBodySize": 22093
+        },
+        "vitals": {
+          "lcp": 44,
+          "cls": 0,
+          "lcpEntries": [
+            {
+              "startTime": 44,
+              "size": 5586,
+              "url": null
+            }
+          ],
+          "layoutShifts": []
+        },
+        "fonts": {
+          "status": "loaded",
+          "count": 3
+        },
+        "scroll": {
+          "scrollHeight": 3814,
+          "scrollRange": 2970,
+          "frameCount": 25,
+          "maxFrameGap": 17.80000001192093,
+          "p95FrameGap": 17.19999998807907
+        },
+        "resources": [
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/3k67h9enjakfb.css",
+            "initiatorType": "link",
+            "transferSize": 5200,
+            "encodedBodySize": 4900,
+            "decodedBodySize": 18740,
+            "duration": 3.799999952316284
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/0fjzzp--ef5en.css",
+            "initiatorType": "link",
+            "transferSize": 4923,
+            "encodedBodySize": 4623,
+            "decodedBodySize": 19691,
+            "duration": 3.900000035762787
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/3vzj4xe2jspzd.css",
+            "initiatorType": "link",
+            "transferSize": 9579,
+            "encodedBodySize": 9279,
+            "decodedBodySize": 45399,
+            "duration": 5.699999988079071
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/3xs88bg4r73nj.js",
+            "initiatorType": "link",
+            "transferSize": 2331,
+            "encodedBodySize": 2031,
+            "decodedBodySize": 5580,
+            "duration": 4.399999976158142
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/2a9rgqyt3vpo7.js",
+            "initiatorType": "script",
+            "transferSize": 8004,
+            "encodedBodySize": 7704,
+            "decodedBodySize": 28879,
+            "duration": 5.300000011920929
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/turbopack-3-ry682tkyiqk.js",
+            "initiatorType": "script",
+            "transferSize": 4240,
+            "encodedBodySize": 3940,
+            "decodedBodySize": 10030,
+            "duration": 6
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/3yhoiqffrwwql.js",
+            "initiatorType": "script",
+            "transferSize": 46571,
+            "encodedBodySize": 46271,
+            "decodedBodySize": 168184,
+            "duration": 9.099999964237213
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/20lvgkz2-qm08.js",
+            "initiatorType": "script",
+            "transferSize": 72201,
+            "encodedBodySize": 71901,
+            "decodedBodySize": 229590,
+            "duration": 11.399999976158142
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/324cjl3rsl37y.js",
+            "initiatorType": "script",
+            "transferSize": 3814,
+            "encodedBodySize": 3514,
+            "decodedBodySize": 13815,
+            "duration": 6.800000011920929
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/2doyg5f_y4_vl.js",
+            "initiatorType": "script",
+            "transferSize": 3612,
+            "encodedBodySize": 3312,
+            "decodedBodySize": 7819,
+            "duration": 7.600000023841858
+          },
+          {
+            "name": "http://127.0.0.1:3100/assets/themes/historical/visual-v2-c/figure-160.webp",
+            "initiatorType": "img",
+            "transferSize": 10310,
+            "encodedBodySize": 10010,
+            "decodedBodySize": 10010,
+            "duration": 3.699999988079071
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/11y74r3-swi3_.js",
+            "initiatorType": "script",
+            "transferSize": 9096,
+            "encodedBodySize": 8796,
+            "decodedBodySize": 22720,
+            "duration": 8.100000023841858
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/2atqcoatgwrfx.js",
+            "initiatorType": "script",
+            "transferSize": 9582,
+            "encodedBodySize": 9282,
+            "decodedBodySize": 24963,
+            "duration": 7.800000011920929
+          },
+          {
+            "name": "http://127.0.0.1:3100/assets/fonts/visual-v2-c/serif-600.woff2",
+            "initiatorType": "css",
+            "transferSize": 138468,
+            "encodedBodySize": 138168,
+            "decodedBodySize": 138168,
+            "duration": 1.399999976158142
+          }
+        ]
+      }
+    },
+    {
+      "route": "/studies/visual-v2-c/poster",
+      "mode": "cold",
+      "sample": 1,
+      "emulation": null,
+      "status": 200,
+      "browser": "156.0.8078.4",
+      "cacheMode": "fresh browser context per route",
+      "metrics": {
+        "navigation": {
+          "responseStart": 2.399999976158142,
+          "domContentLoadedEventEnd": 25.5,
+          "loadEventEnd": 42.59999996423721,
+          "transferSize": 5318,
+          "encodedBodySize": 5018,
+          "decodedBodySize": 16462
+        },
+        "vitals": {
+          "lcp": 28,
+          "cls": 0,
+          "lcpEntries": [
+            {
+              "startTime": 28,
+              "size": 190104,
+              "url": "http://127.0.0.1:3100/assets/themes/historical/visual-v2-c/figure-480.webp"
+            }
+          ],
+          "layoutShifts": []
+        },
+        "fonts": {
+          "status": "loaded",
+          "count": 1
+        },
+        "scroll": {
+          "scrollHeight": 1337,
+          "scrollRange": 493,
+          "frameCount": 25,
+          "maxFrameGap": 17.399999976158142,
+          "p95FrameGap": 17.19999998807907
+        },
+        "resources": [
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/3k67h9enjakfb.css",
+            "initiatorType": "link",
+            "transferSize": 5200,
+            "encodedBodySize": 4900,
+            "decodedBodySize": 18740,
+            "duration": 5
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/0fjzzp--ef5en.css",
+            "initiatorType": "link",
+            "transferSize": 4923,
+            "encodedBodySize": 4623,
+            "decodedBodySize": 19691,
+            "duration": 5.300000011920929
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/3xs88bg4r73nj.js",
+            "initiatorType": "link",
+            "transferSize": 2331,
+            "encodedBodySize": 2031,
+            "decodedBodySize": 5580,
+            "duration": 5.5
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/2a9rgqyt3vpo7.js",
+            "initiatorType": "script",
+            "transferSize": 8004,
+            "encodedBodySize": 7704,
+            "decodedBodySize": 28879,
+            "duration": 5.800000011920929
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/3yhoiqffrwwql.js",
+            "initiatorType": "script",
+            "transferSize": 46571,
+            "encodedBodySize": 46271,
+            "decodedBodySize": 168184,
+            "duration": 9.600000023841858
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/20lvgkz2-qm08.js",
+            "initiatorType": "script",
+            "transferSize": 72201,
+            "encodedBodySize": 71901,
+            "decodedBodySize": 229590,
+            "duration": 11.100000023841858
+          },
+          {
+            "name": "http://127.0.0.1:3100/assets/themes/historical/visual-v2-c/figure-480.webp",
+            "initiatorType": "img",
+            "transferSize": 68150,
+            "encodedBodySize": 67850,
+            "decodedBodySize": 67850,
+            "duration": 4.699999988079071
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/turbopack-3-ry682tkyiqk.js",
+            "initiatorType": "script",
+            "transferSize": 4240,
+            "encodedBodySize": 3940,
+            "decodedBodySize": 10030,
+            "duration": 6.399999976158142
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/2vw396o6n7wrb.js",
+            "initiatorType": "script",
+            "transferSize": 4938,
+            "encodedBodySize": 4638,
+            "decodedBodySize": 10150,
+            "duration": 7.100000023841858
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/324cjl3rsl37y.js",
+            "initiatorType": "script",
+            "transferSize": 3814,
+            "encodedBodySize": 3514,
+            "decodedBodySize": 13815,
+            "duration": 7.100000023841858
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/2atqcoatgwrfx.js",
+            "initiatorType": "script",
+            "transferSize": 9582,
+            "encodedBodySize": 9282,
+            "decodedBodySize": 24963,
+            "duration": 7.5
+          },
+          {
+            "name": "http://127.0.0.1:3100/assets/fonts/visual-v2-c/serif-600.woff2",
+            "initiatorType": "css",
+            "transferSize": 138468,
+            "encodedBodySize": 138168,
+            "decodedBodySize": 138168,
+            "duration": 14.799999952316284
+          }
+        ]
+      }
+    },
+    {
+      "route": "/studies/visual-v2-c/",
+      "mode": "cold",
+      "sample": 2,
+      "emulation": null,
+      "status": 200,
+      "browser": "156.0.8078.4",
+      "cacheMode": "fresh browser context per route",
+      "metrics": {
+        "navigation": {
+          "responseStart": 2.299999952316284,
+          "domContentLoadedEventEnd": 22.599999964237213,
+          "loadEventEnd": 40.19999998807907,
+          "transferSize": 4124,
+          "encodedBodySize": 3824,
+          "decodedBodySize": 12504
+        },
+        "vitals": {
+          "lcp": 28,
+          "cls": 0,
+          "lcpEntries": [
+            {
+              "startTime": 28,
+              "size": 128700,
+              "url": "http://127.0.0.1:3100/assets/themes/historical/visual-v2-c/room-1-480.webp"
+            }
+          ],
+          "layoutShifts": []
+        },
+        "fonts": {
+          "status": "loaded",
+          "count": 1
+        },
+        "scroll": {
+          "scrollHeight": 844,
+          "scrollRange": 0,
+          "frameCount": 1,
+          "maxFrameGap": 0,
+          "p95FrameGap": 0
+        },
+        "resources": [
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/3k67h9enjakfb.css",
+            "initiatorType": "link",
+            "transferSize": 5200,
+            "encodedBodySize": 4900,
+            "decodedBodySize": 18740,
+            "duration": 4.699999988079071
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/0fjzzp--ef5en.css",
+            "initiatorType": "link",
+            "transferSize": 4923,
+            "encodedBodySize": 4623,
+            "decodedBodySize": 19691,
+            "duration": 5.100000023841858
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/3xs88bg4r73nj.js",
+            "initiatorType": "link",
+            "transferSize": 2331,
+            "encodedBodySize": 2031,
+            "decodedBodySize": 5580,
+            "duration": 7
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/2a9rgqyt3vpo7.js",
+            "initiatorType": "script",
+            "transferSize": 8004,
+            "encodedBodySize": 7704,
+            "decodedBodySize": 28879,
+            "duration": 7.699999988079071
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/324cjl3rsl37y.js",
+            "initiatorType": "script",
+            "transferSize": 3814,
+            "encodedBodySize": 3514,
+            "decodedBodySize": 13815,
+            "duration": 7.5
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/turbopack-3-ry682tkyiqk.js",
+            "initiatorType": "script",
+            "transferSize": 4240,
+            "encodedBodySize": 3940,
+            "decodedBodySize": 10030,
+            "duration": 7.699999988079071
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/3yhoiqffrwwql.js",
+            "initiatorType": "script",
+            "transferSize": 46571,
+            "encodedBodySize": 46271,
+            "decodedBodySize": 168184,
+            "duration": 10.5
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/20lvgkz2-qm08.js",
+            "initiatorType": "script",
+            "transferSize": 72201,
+            "encodedBodySize": 71901,
+            "decodedBodySize": 229590,
+            "duration": 12.800000011920929
+          },
+          {
+            "name": "http://127.0.0.1:3100/assets/themes/historical/visual-v2-c/room-1-480.webp",
+            "initiatorType": "img",
+            "transferSize": 24644,
+            "encodedBodySize": 24344,
+            "decodedBodySize": 24344,
+            "duration": 3.900000035762787
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/2fplmmsd9-wmm.js",
+            "initiatorType": "script",
+            "transferSize": 1336,
+            "encodedBodySize": 1036,
+            "decodedBodySize": 2085,
+            "duration": 9.700000047683716
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/2atqcoatgwrfx.js",
+            "initiatorType": "script",
+            "transferSize": 9582,
+            "encodedBodySize": 9282,
+            "decodedBodySize": 24963,
+            "duration": 10.100000023841858
+          },
+          {
+            "name": "http://127.0.0.1:3100/assets/fonts/visual-v2-c/serif-600.woff2",
+            "initiatorType": "css",
+            "transferSize": 138468,
+            "encodedBodySize": 138168,
+            "decodedBodySize": 138168,
+            "duration": 12.099999964237213
+          }
+        ]
+      }
+    },
+    {
+      "route": "/studies/visual-v2-c/question",
+      "mode": "cold",
+      "sample": 2,
+      "emulation": null,
+      "status": 200,
+      "browser": "156.0.8078.4",
+      "cacheMode": "fresh browser context per route",
+      "metrics": {
+        "navigation": {
+          "responseStart": 2.599999964237213,
+          "domContentLoadedEventEnd": 22.19999998807907,
+          "loadEventEnd": 39.39999997615814,
+          "transferSize": 4358,
+          "encodedBodySize": 4058,
+          "decodedBodySize": 13340
+        },
+        "vitals": {
+          "lcp": 28,
+          "cls": 0.0022341637098007333,
+          "lcpEntries": [
+            {
+              "startTime": 28,
+              "size": 85800,
+              "url": "http://127.0.0.1:3100/assets/themes/historical/visual-v2-c/room-1-480.webp"
+            }
+          ],
+          "layoutShifts": [
+            {
+              "value": 0.0022341637098007333,
+              "startTime": 58.39999997615814,
+              "sources": [
+                {
+                  "node": {
+                    "tag": "H1",
+                    "id": "v2-question",
+                    "className": null,
+                    "dataV2c": null
+                  },
+                  "previousRect": {
+                    "x": 22,
+                    "y": 405.078125,
+                    "width": 346,
+                    "height": 48
+                  },
+                  "currentRect": {
+                    "x": 22,
+                    "y": 381.78125,
+                    "width": 346,
+                    "height": 77.5
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "fonts": {
+          "status": "loaded",
+          "count": 2
+        },
+        "scroll": {
+          "scrollHeight": 955,
+          "scrollRange": 111,
+          "frameCount": 25,
+          "maxFrameGap": 17.80000001192093,
+          "p95FrameGap": 17.5
+        },
+        "resources": [
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/3k67h9enjakfb.css",
+            "initiatorType": "link",
+            "transferSize": 5200,
+            "encodedBodySize": 4900,
+            "decodedBodySize": 18740,
+            "duration": 4.300000011920929
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/0fjzzp--ef5en.css",
+            "initiatorType": "link",
+            "transferSize": 4923,
+            "encodedBodySize": 4623,
+            "decodedBodySize": 19691,
+            "duration": 4.899999976158142
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/1betsdyzyylbd.css",
+            "initiatorType": "link",
+            "transferSize": 3328,
+            "encodedBodySize": 3028,
+            "decodedBodySize": 10779,
+            "duration": 4.799999952316284
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/3xs88bg4r73nj.js",
+            "initiatorType": "link",
+            "transferSize": 2331,
+            "encodedBodySize": 2031,
+            "decodedBodySize": 5580,
+            "duration": 5.299999952316284
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/2a9rgqyt3vpo7.js",
+            "initiatorType": "script",
+            "transferSize": 8004,
+            "encodedBodySize": 7704,
+            "decodedBodySize": 28879,
+            "duration": 5.899999976158142
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/20lvgkz2-qm08.js",
+            "initiatorType": "script",
+            "transferSize": 72201,
+            "encodedBodySize": 71901,
+            "decodedBodySize": 229590,
+            "duration": 11
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/turbopack-3-ry682tkyiqk.js",
+            "initiatorType": "script",
+            "transferSize": 4240,
+            "encodedBodySize": 3940,
+            "decodedBodySize": 10030,
+            "duration": 6.400000035762787
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/324cjl3rsl37y.js",
+            "initiatorType": "script",
+            "transferSize": 3814,
+            "encodedBodySize": 3514,
+            "decodedBodySize": 13815,
+            "duration": 6.600000023841858
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/2doyg5f_y4_vl.js",
+            "initiatorType": "script",
+            "transferSize": 3612,
+            "encodedBodySize": 3312,
+            "decodedBodySize": 7819,
+            "duration": 6.800000011920929
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/0_vxjjev2aqrn.js",
+            "initiatorType": "script",
+            "transferSize": 9004,
+            "encodedBodySize": 8704,
+            "decodedBodySize": 19549,
+            "duration": 7.400000035762787
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/2atqcoatgwrfx.js",
+            "initiatorType": "script",
+            "transferSize": 9582,
+            "encodedBodySize": 9282,
+            "decodedBodySize": 24963,
+            "duration": 8.100000023841858
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/3yhoiqffrwwql.js",
+            "initiatorType": "script",
+            "transferSize": 46571,
+            "encodedBodySize": 46271,
+            "decodedBodySize": 168184,
+            "duration": 9.5
+          },
+          {
+            "name": "http://127.0.0.1:3100/assets/themes/historical/visual-v2-c/room-1-480.webp",
+            "initiatorType": "img",
+            "transferSize": 24644,
+            "encodedBodySize": 24344,
+            "decodedBodySize": 24344,
+            "duration": 4.300000011920929
+          },
+          {
+            "name": "http://127.0.0.1:3100/assets/fonts/visual-v2-c/serif-600.woff2",
+            "initiatorType": "css",
+            "transferSize": 138468,
+            "encodedBodySize": 138168,
+            "decodedBodySize": 138168,
+            "duration": 12.300000011920929
+          }
+        ]
+      }
+    },
+    {
+      "route": "/studies/visual-v2-c/reveal",
+      "mode": "cold",
+      "sample": 2,
+      "emulation": null,
+      "status": 200,
+      "browser": "156.0.8078.4",
+      "cacheMode": "fresh browser context per route",
+      "metrics": {
+        "navigation": {
+          "responseStart": 2.399999976158142,
+          "domContentLoadedEventEnd": 25.5,
+          "loadEventEnd": 45.10000002384186,
+          "transferSize": 4798,
+          "encodedBodySize": 4498,
+          "decodedBodySize": 15294
+        },
+        "vitals": {
+          "lcp": 32,
+          "cls": 0,
+          "lcpEntries": [
+            {
+              "startTime": 32,
+              "size": 228150,
+              "url": "http://127.0.0.1:3100/assets/themes/historical/visual-v2-c/figure-480.webp"
+            }
+          ],
+          "layoutShifts": []
+        },
+        "fonts": {
+          "status": "loaded",
+          "count": 1
+        },
+        "scroll": {
+          "scrollHeight": 1035,
+          "scrollRange": 191,
+          "frameCount": 25,
+          "maxFrameGap": 17.400000035762787,
+          "p95FrameGap": 17.30000001192093
+        },
+        "resources": [
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/3k67h9enjakfb.css",
+            "initiatorType": "link",
+            "transferSize": 5200,
+            "encodedBodySize": 4900,
+            "decodedBodySize": 18740,
+            "duration": 4
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/0fjzzp--ef5en.css",
+            "initiatorType": "link",
+            "transferSize": 4923,
+            "encodedBodySize": 4623,
+            "decodedBodySize": 19691,
+            "duration": 4.399999976158142
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/3xs88bg4r73nj.js",
+            "initiatorType": "link",
+            "transferSize": 2331,
+            "encodedBodySize": 2031,
+            "decodedBodySize": 5580,
+            "duration": 4.5
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/2a9rgqyt3vpo7.js",
+            "initiatorType": "script",
+            "transferSize": 8004,
+            "encodedBodySize": 7704,
+            "decodedBodySize": 28879,
+            "duration": 5.100000023841858
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/20lvgkz2-qm08.js",
+            "initiatorType": "script",
+            "transferSize": 72201,
+            "encodedBodySize": 71901,
+            "decodedBodySize": 229590,
+            "duration": 10.5
+          },
+          {
+            "name": "http://127.0.0.1:3100/assets/themes/historical/visual-v2-c/figure-480.webp",
+            "initiatorType": "img",
+            "transferSize": 68150,
+            "encodedBodySize": 67850,
+            "decodedBodySize": 67850,
+            "duration": 4
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/324cjl3rsl37y.js",
+            "initiatorType": "script",
+            "transferSize": 3814,
+            "encodedBodySize": 3514,
+            "decodedBodySize": 13815,
+            "duration": 6.600000023841858
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/turbopack-3-ry682tkyiqk.js",
+            "initiatorType": "script",
+            "transferSize": 4240,
+            "encodedBodySize": 3940,
+            "decodedBodySize": 10030,
+            "duration": 6.600000023841858
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/2vw396o6n7wrb.js",
+            "initiatorType": "script",
+            "transferSize": 4938,
+            "encodedBodySize": 4638,
+            "decodedBodySize": 10150,
+            "duration": 6.800000011920929
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/2atqcoatgwrfx.js",
+            "initiatorType": "script",
+            "transferSize": 9582,
+            "encodedBodySize": 9282,
+            "decodedBodySize": 24963,
+            "duration": 7.5
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/3yhoiqffrwwql.js",
+            "initiatorType": "script",
+            "transferSize": 46571,
+            "encodedBodySize": 46271,
+            "decodedBodySize": 168184,
+            "duration": 8.899999976158142
+          },
+          {
+            "name": "http://127.0.0.1:3100/assets/fonts/visual-v2-c/serif-600.woff2",
+            "initiatorType": "css",
+            "transferSize": 138468,
+            "encodedBodySize": 138168,
+            "decodedBodySize": 138168,
+            "duration": 14.5
+          }
+        ]
+      }
+    },
+    {
+      "route": "/studies/visual-v2-c/report",
+      "mode": "cold",
+      "sample": 2,
+      "emulation": null,
+      "status": 200,
+      "browser": "156.0.8078.4",
+      "cacheMode": "fresh browser context per route",
+      "metrics": {
+        "navigation": {
+          "responseStart": 2.400000035762787,
+          "domContentLoadedEventEnd": 31.200000047683716,
+          "loadEventEnd": 48.5,
+          "transferSize": 7071,
+          "encodedBodySize": 6771,
+          "decodedBodySize": 22093
+        },
+        "vitals": {
+          "lcp": 36,
+          "cls": 0.000008034237948211129,
+          "lcpEntries": [
+            {
+              "startTime": 36,
+              "size": 5488,
+              "url": null
+            }
+          ],
+          "layoutShifts": [
+            {
+              "value": 0.000008034237948211129,
+              "startTime": 50,
+              "sources": [
+                {
+                  "node": {
+                    "tag": "SPAN",
+                    "id": null,
+                    "className": null,
+                    "dataV2c": null
+                  },
+                  "previousRect": {
+                    "x": 126,
+                    "y": 152.59375,
+                    "width": 24,
+                    "height": 28.796875
+                  },
+                  "currentRect": {
+                    "x": 126,
+                    "y": 155.59375,
+                    "width": 24,
+                    "height": 28.796875
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "fonts": {
+          "status": "loaded",
+          "count": 3
+        },
+        "scroll": {
+          "scrollHeight": 3814,
+          "scrollRange": 2970,
+          "frameCount": 25,
+          "maxFrameGap": 17.30000001192093,
+          "p95FrameGap": 17.19999998807907
+        },
+        "resources": [
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/3k67h9enjakfb.css",
+            "initiatorType": "link",
+            "transferSize": 5200,
+            "encodedBodySize": 4900,
+            "decodedBodySize": 18740,
+            "duration": 4.899999976158142
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/0fjzzp--ef5en.css",
+            "initiatorType": "link",
+            "transferSize": 4923,
+            "encodedBodySize": 4623,
+            "decodedBodySize": 19691,
+            "duration": 5.400000035762787
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/3vzj4xe2jspzd.css",
+            "initiatorType": "link",
+            "transferSize": 9579,
+            "encodedBodySize": 9279,
+            "decodedBodySize": 45399,
+            "duration": 6.199999988079071
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/3xs88bg4r73nj.js",
+            "initiatorType": "link",
+            "transferSize": 2331,
+            "encodedBodySize": 2031,
+            "decodedBodySize": 5580,
+            "duration": 6.300000011920929
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/2a9rgqyt3vpo7.js",
+            "initiatorType": "script",
+            "transferSize": 8004,
+            "encodedBodySize": 7704,
+            "decodedBodySize": 28879,
+            "duration": 6.700000047683716
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/3yhoiqffrwwql.js",
+            "initiatorType": "script",
+            "transferSize": 46571,
+            "encodedBodySize": 46271,
+            "decodedBodySize": 168184,
+            "duration": 10.400000035762787
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/20lvgkz2-qm08.js",
+            "initiatorType": "script",
+            "transferSize": 72201,
+            "encodedBodySize": 71901,
+            "decodedBodySize": 229590,
+            "duration": 11.900000035762787
+          },
+          {
+            "name": "http://127.0.0.1:3100/assets/themes/historical/visual-v2-c/figure-160.webp",
+            "initiatorType": "img",
+            "transferSize": 10310,
+            "encodedBodySize": 10010,
+            "decodedBodySize": 10010,
+            "duration": 5.199999988079071
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/turbopack-3-ry682tkyiqk.js",
+            "initiatorType": "script",
+            "transferSize": 4240,
+            "encodedBodySize": 3940,
+            "decodedBodySize": 10030,
+            "duration": 7.100000023841858
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/324cjl3rsl37y.js",
+            "initiatorType": "script",
+            "transferSize": 3814,
+            "encodedBodySize": 3514,
+            "decodedBodySize": 13815,
+            "duration": 7.699999988079071
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/2doyg5f_y4_vl.js",
+            "initiatorType": "script",
+            "transferSize": 3612,
+            "encodedBodySize": 3312,
+            "decodedBodySize": 7819,
+            "duration": 7.899999976158142
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/11y74r3-swi3_.js",
+            "initiatorType": "script",
+            "transferSize": 9096,
+            "encodedBodySize": 8796,
+            "decodedBodySize": 22720,
+            "duration": 8.5
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/2atqcoatgwrfx.js",
+            "initiatorType": "script",
+            "transferSize": 9582,
+            "encodedBodySize": 9282,
+            "decodedBodySize": 24963,
+            "duration": 8.699999988079071
+          },
+          {
+            "name": "http://127.0.0.1:3100/assets/fonts/visual-v2-c/serif-600.woff2",
+            "initiatorType": "css",
+            "transferSize": 138468,
+            "encodedBodySize": 138168,
+            "decodedBodySize": 138168,
+            "duration": 19.100000023841858
+          }
+        ]
+      }
+    },
+    {
+      "route": "/studies/visual-v2-c/poster",
+      "mode": "cold",
+      "sample": 2,
+      "emulation": null,
+      "status": 200,
+      "browser": "156.0.8078.4",
+      "cacheMode": "fresh browser context per route",
+      "metrics": {
+        "navigation": {
+          "responseStart": 2.100000023841858,
+          "domContentLoadedEventEnd": 24.600000023841858,
+          "loadEventEnd": 42.5,
+          "transferSize": 5318,
+          "encodedBodySize": 5018,
+          "decodedBodySize": 16462
+        },
+        "vitals": {
+          "lcp": 28,
+          "cls": 0,
+          "lcpEntries": [
+            {
+              "startTime": 28,
+              "size": 190104,
+              "url": "http://127.0.0.1:3100/assets/themes/historical/visual-v2-c/figure-480.webp"
+            }
+          ],
+          "layoutShifts": []
+        },
+        "fonts": {
+          "status": "loaded",
+          "count": 1
+        },
+        "scroll": {
+          "scrollHeight": 1337,
+          "scrollRange": 493,
+          "frameCount": 25,
+          "maxFrameGap": 17.80000001192093,
+          "p95FrameGap": 17.30000001192093
+        },
+        "resources": [
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/3k67h9enjakfb.css",
+            "initiatorType": "link",
+            "transferSize": 5200,
+            "encodedBodySize": 4900,
+            "decodedBodySize": 18740,
+            "duration": 4.300000011920929
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/0fjzzp--ef5en.css",
+            "initiatorType": "link",
+            "transferSize": 4923,
+            "encodedBodySize": 4623,
+            "decodedBodySize": 19691,
+            "duration": 4.399999976158142
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/3xs88bg4r73nj.js",
+            "initiatorType": "link",
+            "transferSize": 2331,
+            "encodedBodySize": 2031,
+            "decodedBodySize": 5580,
+            "duration": 4.5
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/2a9rgqyt3vpo7.js",
+            "initiatorType": "script",
+            "transferSize": 8004,
+            "encodedBodySize": 7704,
+            "decodedBodySize": 28879,
+            "duration": 4.900000035762787
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/turbopack-3-ry682tkyiqk.js",
+            "initiatorType": "script",
+            "transferSize": 4240,
+            "encodedBodySize": 3940,
+            "decodedBodySize": 10030,
+            "duration": 6.5
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/324cjl3rsl37y.js",
+            "initiatorType": "script",
+            "transferSize": 3814,
+            "encodedBodySize": 3514,
+            "decodedBodySize": 13815,
+            "duration": 6.700000047683716
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/3yhoiqffrwwql.js",
+            "initiatorType": "script",
+            "transferSize": 46571,
+            "encodedBodySize": 46271,
+            "decodedBodySize": 168184,
+            "duration": 9.200000047683716
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/20lvgkz2-qm08.js",
+            "initiatorType": "script",
+            "transferSize": 72201,
+            "encodedBodySize": 71901,
+            "decodedBodySize": 229590,
+            "duration": 10.5
+          },
+          {
+            "name": "http://127.0.0.1:3100/assets/themes/historical/visual-v2-c/figure-480.webp",
+            "initiatorType": "img",
+            "transferSize": 68150,
+            "encodedBodySize": 67850,
+            "decodedBodySize": 67850,
+            "duration": 3.800000011920929
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/2vw396o6n7wrb.js",
+            "initiatorType": "script",
+            "transferSize": 4938,
+            "encodedBodySize": 4638,
+            "decodedBodySize": 10150,
+            "duration": 6.899999976158142
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/2atqcoatgwrfx.js",
+            "initiatorType": "script",
+            "transferSize": 9582,
+            "encodedBodySize": 9282,
+            "decodedBodySize": 24963,
+            "duration": 7.199999988079071
+          },
+          {
+            "name": "http://127.0.0.1:3100/assets/fonts/visual-v2-c/serif-600.woff2",
+            "initiatorType": "css",
+            "transferSize": 138468,
+            "encodedBodySize": 138168,
+            "decodedBodySize": 138168,
+            "duration": 14.899999976158142
+          }
+        ]
+      }
+    },
+    {
+      "route": "/studies/visual-v2-c/",
+      "mode": "cold",
+      "sample": 3,
+      "emulation": null,
+      "status": 200,
+      "browser": "156.0.8078.4",
+      "cacheMode": "fresh browser context per route",
+      "metrics": {
+        "navigation": {
+          "responseStart": 2.300000011920929,
+          "domContentLoadedEventEnd": 22.69999998807907,
+          "loadEventEnd": 40.19999998807907,
+          "transferSize": 4124,
+          "encodedBodySize": 3824,
+          "decodedBodySize": 12504
+        },
+        "vitals": {
+          "lcp": 28,
+          "cls": 0,
+          "lcpEntries": [
+            {
+              "startTime": 28,
+              "size": 128700,
+              "url": "http://127.0.0.1:3100/assets/themes/historical/visual-v2-c/room-1-480.webp"
+            }
+          ],
+          "layoutShifts": []
+        },
+        "fonts": {
+          "status": "loaded",
+          "count": 1
+        },
+        "scroll": {
+          "scrollHeight": 844,
+          "scrollRange": 0,
+          "frameCount": 1,
+          "maxFrameGap": 0,
+          "p95FrameGap": 0
+        },
+        "resources": [
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/3k67h9enjakfb.css",
+            "initiatorType": "link",
+            "transferSize": 5200,
+            "encodedBodySize": 4900,
+            "decodedBodySize": 18740,
+            "duration": 4.800000011920929
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/0fjzzp--ef5en.css",
+            "initiatorType": "link",
+            "transferSize": 4923,
+            "encodedBodySize": 4623,
+            "decodedBodySize": 19691,
+            "duration": 5.099999964237213
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/3xs88bg4r73nj.js",
+            "initiatorType": "link",
+            "transferSize": 2331,
+            "encodedBodySize": 2031,
+            "decodedBodySize": 5580,
+            "duration": 5.5
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/2a9rgqyt3vpo7.js",
+            "initiatorType": "script",
+            "transferSize": 8004,
+            "encodedBodySize": 7704,
+            "decodedBodySize": 28879,
+            "duration": 6.199999988079071
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/turbopack-3-ry682tkyiqk.js",
+            "initiatorType": "script",
+            "transferSize": 4240,
+            "encodedBodySize": 3940,
+            "decodedBodySize": 10030,
+            "duration": 6.399999976158142
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/324cjl3rsl37y.js",
+            "initiatorType": "script",
+            "transferSize": 3814,
+            "encodedBodySize": 3514,
+            "decodedBodySize": 13815,
+            "duration": 7.099999964237213
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/3yhoiqffrwwql.js",
+            "initiatorType": "script",
+            "transferSize": 46571,
+            "encodedBodySize": 46271,
+            "decodedBodySize": 168184,
+            "duration": 10
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/20lvgkz2-qm08.js",
+            "initiatorType": "script",
+            "transferSize": 72201,
+            "encodedBodySize": 71901,
+            "decodedBodySize": 229590,
+            "duration": 11.399999976158142
+          },
+          {
+            "name": "http://127.0.0.1:3100/assets/themes/historical/visual-v2-c/room-1-480.webp",
+            "initiatorType": "img",
+            "transferSize": 24644,
+            "encodedBodySize": 24344,
+            "decodedBodySize": 24344,
+            "duration": 4.199999988079071
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/2atqcoatgwrfx.js",
+            "initiatorType": "script",
+            "transferSize": 9582,
+            "encodedBodySize": 9282,
+            "decodedBodySize": 24963,
+            "duration": 7.900000035762787
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/2fplmmsd9-wmm.js",
+            "initiatorType": "script",
+            "transferSize": 1336,
+            "encodedBodySize": 1036,
+            "decodedBodySize": 2085,
+            "duration": 9.100000023841858
+          },
+          {
+            "name": "http://127.0.0.1:3100/assets/fonts/visual-v2-c/serif-600.woff2",
+            "initiatorType": "css",
+            "transferSize": 138468,
+            "encodedBodySize": 138168,
+            "decodedBodySize": 138168,
+            "duration": 12.100000023841858
+          }
+        ]
+      }
+    },
+    {
+      "route": "/studies/visual-v2-c/question",
+      "mode": "cold",
+      "sample": 3,
+      "emulation": null,
+      "status": 200,
+      "browser": "156.0.8078.4",
+      "cacheMode": "fresh browser context per route",
+      "metrics": {
+        "navigation": {
+          "responseStart": 2.699999988079071,
+          "domContentLoadedEventEnd": 23.899999976158142,
+          "loadEventEnd": 43.19999998807907,
+          "transferSize": 4358,
+          "encodedBodySize": 4058,
+          "decodedBodySize": 13340
+        },
+        "vitals": {
+          "lcp": 28,
+          "cls": 0.0022341637098007333,
+          "lcpEntries": [
+            {
+              "startTime": 28,
+              "size": 85800,
+              "url": "http://127.0.0.1:3100/assets/themes/historical/visual-v2-c/room-1-480.webp"
+            }
+          ],
+          "layoutShifts": [
+            {
+              "value": 0.0022341637098007333,
+              "startTime": 59.69999998807907,
+              "sources": [
+                {
+                  "node": {
+                    "tag": "H1",
+                    "id": "v2-question",
+                    "className": null,
+                    "dataV2c": null
+                  },
+                  "previousRect": {
+                    "x": 22,
+                    "y": 405.078125,
+                    "width": 346,
+                    "height": 48
+                  },
+                  "currentRect": {
+                    "x": 22,
+                    "y": 381.78125,
+                    "width": 346,
+                    "height": 77.5
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "fonts": {
+          "status": "loaded",
+          "count": 2
+        },
+        "scroll": {
+          "scrollHeight": 955,
+          "scrollRange": 111,
+          "frameCount": 25,
+          "maxFrameGap": 17.80000001192093,
+          "p95FrameGap": 17.30000001192093
+        },
+        "resources": [
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/3k67h9enjakfb.css",
+            "initiatorType": "link",
+            "transferSize": 5200,
+            "encodedBodySize": 4900,
+            "decodedBodySize": 18740,
+            "duration": 4.800000011920929
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/0fjzzp--ef5en.css",
+            "initiatorType": "link",
+            "transferSize": 4923,
+            "encodedBodySize": 4623,
+            "decodedBodySize": 19691,
+            "duration": 4.800000011920929
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/1betsdyzyylbd.css",
+            "initiatorType": "link",
+            "transferSize": 3328,
+            "encodedBodySize": 3028,
+            "decodedBodySize": 10779,
+            "duration": 4.800000011920929
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/3xs88bg4r73nj.js",
+            "initiatorType": "link",
+            "transferSize": 2331,
+            "encodedBodySize": 2031,
+            "decodedBodySize": 5580,
+            "duration": 5.099999964237213
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/2a9rgqyt3vpo7.js",
+            "initiatorType": "script",
+            "transferSize": 8004,
+            "encodedBodySize": 7704,
+            "decodedBodySize": 28879,
+            "duration": 5.600000023841858
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/3yhoiqffrwwql.js",
+            "initiatorType": "script",
+            "transferSize": 46571,
+            "encodedBodySize": 46271,
+            "decodedBodySize": 168184,
+            "duration": 12.300000011920929
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/20lvgkz2-qm08.js",
+            "initiatorType": "script",
+            "transferSize": 72201,
+            "encodedBodySize": 71901,
+            "decodedBodySize": 229590,
+            "duration": 13.800000011920929
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/turbopack-3-ry682tkyiqk.js",
+            "initiatorType": "script",
+            "transferSize": 4240,
+            "encodedBodySize": 3940,
+            "decodedBodySize": 10030,
+            "duration": 7.399999976158142
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/324cjl3rsl37y.js",
+            "initiatorType": "script",
+            "transferSize": 3814,
+            "encodedBodySize": 3514,
+            "decodedBodySize": 13815,
+            "duration": 7.699999988079071
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/2doyg5f_y4_vl.js",
+            "initiatorType": "script",
+            "transferSize": 3612,
+            "encodedBodySize": 3312,
+            "decodedBodySize": 7819,
+            "duration": 7.800000011920929
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/0_vxjjev2aqrn.js",
+            "initiatorType": "script",
+            "transferSize": 9004,
+            "encodedBodySize": 8704,
+            "decodedBodySize": 19549,
+            "duration": 8.899999976158142
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/2atqcoatgwrfx.js",
+            "initiatorType": "script",
+            "transferSize": 9582,
+            "encodedBodySize": 9282,
+            "decodedBodySize": 24963,
+            "duration": 10
+          },
+          {
+            "name": "http://127.0.0.1:3100/assets/themes/historical/visual-v2-c/room-1-480.webp",
+            "initiatorType": "img",
+            "transferSize": 24644,
+            "encodedBodySize": 24344,
+            "decodedBodySize": 24344,
+            "duration": 3.899999976158142
+          },
+          {
+            "name": "http://127.0.0.1:3100/assets/fonts/visual-v2-c/serif-600.woff2",
+            "initiatorType": "css",
+            "transferSize": 138468,
+            "encodedBodySize": 138168,
+            "decodedBodySize": 138168,
+            "duration": 13.800000011920929
+          }
+        ]
+      }
+    },
+    {
+      "route": "/studies/visual-v2-c/reveal",
+      "mode": "cold",
+      "sample": 3,
+      "emulation": null,
+      "status": 200,
+      "browser": "156.0.8078.4",
+      "cacheMode": "fresh browser context per route",
+      "metrics": {
+        "navigation": {
+          "responseStart": 2.5,
+          "domContentLoadedEventEnd": 26.600000023841858,
+          "loadEventEnd": 44.19999998807907,
+          "transferSize": 4798,
+          "encodedBodySize": 4498,
+          "decodedBodySize": 15294
+        },
+        "vitals": {
+          "lcp": 32,
+          "cls": 0,
+          "lcpEntries": [
+            {
+              "startTime": 32,
+              "size": 228150,
+              "url": "http://127.0.0.1:3100/assets/themes/historical/visual-v2-c/figure-480.webp"
+            }
+          ],
+          "layoutShifts": []
+        },
+        "fonts": {
+          "status": "loaded",
+          "count": 1
+        },
+        "scroll": {
+          "scrollHeight": 1035,
+          "scrollRange": 191,
+          "frameCount": 25,
+          "maxFrameGap": 17.19999998807907,
+          "p95FrameGap": 17
+        },
+        "resources": [
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/3k67h9enjakfb.css",
+            "initiatorType": "link",
+            "transferSize": 5200,
+            "encodedBodySize": 4900,
+            "decodedBodySize": 18740,
+            "duration": 5.5
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/0fjzzp--ef5en.css",
+            "initiatorType": "link",
+            "transferSize": 4923,
+            "encodedBodySize": 4623,
+            "decodedBodySize": 19691,
+            "duration": 5.900000035762787
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/3xs88bg4r73nj.js",
+            "initiatorType": "link",
+            "transferSize": 2331,
+            "encodedBodySize": 2031,
+            "decodedBodySize": 5580,
+            "duration": 6.900000035762787
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/2a9rgqyt3vpo7.js",
+            "initiatorType": "script",
+            "transferSize": 8004,
+            "encodedBodySize": 7704,
+            "decodedBodySize": 28879,
+            "duration": 8.300000011920929
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/turbopack-3-ry682tkyiqk.js",
+            "initiatorType": "script",
+            "transferSize": 4240,
+            "encodedBodySize": 3940,
+            "decodedBodySize": 10030,
+            "duration": 9.399999976158142
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/324cjl3rsl37y.js",
+            "initiatorType": "script",
+            "transferSize": 3814,
+            "encodedBodySize": 3514,
+            "decodedBodySize": 13815,
+            "duration": 9.600000023841858
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/3yhoiqffrwwql.js",
+            "initiatorType": "script",
+            "transferSize": 46571,
+            "encodedBodySize": 46271,
+            "decodedBodySize": 168184,
+            "duration": 13.300000011920929
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/20lvgkz2-qm08.js",
+            "initiatorType": "script",
+            "transferSize": 72201,
+            "encodedBodySize": 71901,
+            "decodedBodySize": 229590,
+            "duration": 16.100000023841858
+          },
+          {
+            "name": "http://127.0.0.1:3100/assets/themes/historical/visual-v2-c/figure-480.webp",
+            "initiatorType": "img",
+            "transferSize": 68150,
+            "encodedBodySize": 67850,
+            "decodedBodySize": 67850,
+            "duration": 5.399999976158142
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/2vw396o6n7wrb.js",
+            "initiatorType": "script",
+            "transferSize": 4938,
+            "encodedBodySize": 4638,
+            "decodedBodySize": 10150,
+            "duration": 10.299999952316284
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/2atqcoatgwrfx.js",
+            "initiatorType": "script",
+            "transferSize": 9582,
+            "encodedBodySize": 9282,
+            "decodedBodySize": 24963,
+            "duration": 11
+          },
+          {
+            "name": "http://127.0.0.1:3100/assets/fonts/visual-v2-c/serif-600.woff2",
+            "initiatorType": "css",
+            "transferSize": 138468,
+            "encodedBodySize": 138168,
+            "decodedBodySize": 138168,
+            "duration": 15.5
+          }
+        ]
+      }
+    },
+    {
+      "route": "/studies/visual-v2-c/report",
+      "mode": "cold",
+      "sample": 3,
+      "emulation": null,
+      "status": 200,
+      "browser": "156.0.8078.4",
+      "cacheMode": "fresh browser context per route",
+      "metrics": {
+        "navigation": {
+          "responseStart": 3.300000011920929,
+          "domContentLoadedEventEnd": 32.5,
+          "loadEventEnd": 49.80000001192093,
+          "transferSize": 7071,
+          "encodedBodySize": 6771,
+          "decodedBodySize": 22093
+        },
+        "vitals": {
+          "lcp": 36,
+          "cls": 0.000008034237948211129,
+          "lcpEntries": [
+            {
+              "startTime": 36,
+              "size": 5488,
+              "url": null
+            }
+          ],
+          "layoutShifts": [
+            {
+              "value": 0.000008034237948211129,
+              "startTime": 51.30000001192093,
+              "sources": [
+                {
+                  "node": {
+                    "tag": "SPAN",
+                    "id": null,
+                    "className": null,
+                    "dataV2c": null
+                  },
+                  "previousRect": {
+                    "x": 126,
+                    "y": 152.59375,
+                    "width": 24,
+                    "height": 28.796875
+                  },
+                  "currentRect": {
+                    "x": 126,
+                    "y": 155.59375,
+                    "width": 24,
+                    "height": 28.796875
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "fonts": {
+          "status": "loaded",
+          "count": 3
+        },
+        "scroll": {
+          "scrollHeight": 3814,
+          "scrollRange": 2970,
+          "frameCount": 25,
+          "maxFrameGap": 17.700000047683716,
+          "p95FrameGap": 17.5
+        },
+        "resources": [
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/3k67h9enjakfb.css",
+            "initiatorType": "link",
+            "transferSize": 5200,
+            "encodedBodySize": 4900,
+            "decodedBodySize": 18740,
+            "duration": 4.100000023841858
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/0fjzzp--ef5en.css",
+            "initiatorType": "link",
+            "transferSize": 4923,
+            "encodedBodySize": 4623,
+            "decodedBodySize": 19691,
+            "duration": 4.199999988079071
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/3vzj4xe2jspzd.css",
+            "initiatorType": "link",
+            "transferSize": 9579,
+            "encodedBodySize": 9279,
+            "decodedBodySize": 45399,
+            "duration": 5
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/3xs88bg4r73nj.js",
+            "initiatorType": "link",
+            "transferSize": 2331,
+            "encodedBodySize": 2031,
+            "decodedBodySize": 5580,
+            "duration": 4.5
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/2a9rgqyt3vpo7.js",
+            "initiatorType": "script",
+            "transferSize": 8004,
+            "encodedBodySize": 7704,
+            "decodedBodySize": 28879,
+            "duration": 5.699999988079071
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/turbopack-3-ry682tkyiqk.js",
+            "initiatorType": "script",
+            "transferSize": 4240,
+            "encodedBodySize": 3940,
+            "decodedBodySize": 10030,
+            "duration": 6.400000035762787
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/324cjl3rsl37y.js",
+            "initiatorType": "script",
+            "transferSize": 3814,
+            "encodedBodySize": 3514,
+            "decodedBodySize": 13815,
+            "duration": 6.800000011920929
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/2doyg5f_y4_vl.js",
+            "initiatorType": "script",
+            "transferSize": 3612,
+            "encodedBodySize": 3312,
+            "decodedBodySize": 7819,
+            "duration": 7.5
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/11y74r3-swi3_.js",
+            "initiatorType": "script",
+            "transferSize": 9096,
+            "encodedBodySize": 8796,
+            "decodedBodySize": 22720,
+            "duration": 7.900000035762787
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/2atqcoatgwrfx.js",
+            "initiatorType": "script",
+            "transferSize": 9582,
+            "encodedBodySize": 9282,
+            "decodedBodySize": 24963,
+            "duration": 8.400000035762787
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/3yhoiqffrwwql.js",
+            "initiatorType": "script",
+            "transferSize": 46571,
+            "encodedBodySize": 46271,
+            "decodedBodySize": 168184,
+            "duration": 9.699999988079071
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/20lvgkz2-qm08.js",
+            "initiatorType": "script",
+            "transferSize": 72201,
+            "encodedBodySize": 71901,
+            "decodedBodySize": 229590,
+            "duration": 10.5
+          },
+          {
+            "name": "http://127.0.0.1:3100/assets/themes/historical/visual-v2-c/figure-160.webp",
+            "initiatorType": "img",
+            "transferSize": 10310,
+            "encodedBodySize": 10010,
+            "decodedBodySize": 10010,
+            "duration": 4.099999964237213
+          },
+          {
+            "name": "http://127.0.0.1:3100/assets/fonts/visual-v2-c/serif-600.woff2",
+            "initiatorType": "css",
+            "transferSize": 138468,
+            "encodedBodySize": 138168,
+            "decodedBodySize": 138168,
+            "duration": 19.80000001192093
+          }
+        ]
+      }
+    },
+    {
+      "route": "/studies/visual-v2-c/poster",
+      "mode": "cold",
+      "sample": 3,
+      "emulation": null,
+      "status": 200,
+      "browser": "156.0.8078.4",
+      "cacheMode": "fresh browser context per route",
+      "metrics": {
+        "navigation": {
+          "responseStart": 2.599999964237213,
+          "domContentLoadedEventEnd": 27.19999998807907,
+          "loadEventEnd": 44.39999997615814,
+          "transferSize": 5318,
+          "encodedBodySize": 5018,
+          "decodedBodySize": 16462
+        },
+        "vitals": {
+          "lcp": 32,
+          "cls": 0,
+          "lcpEntries": [
+            {
+              "startTime": 32,
+              "size": 190104,
+              "url": "http://127.0.0.1:3100/assets/themes/historical/visual-v2-c/figure-480.webp"
+            }
+          ],
+          "layoutShifts": []
+        },
+        "fonts": {
+          "status": "loaded",
+          "count": 1
+        },
+        "scroll": {
+          "scrollHeight": 1337,
+          "scrollRange": 493,
+          "frameCount": 25,
+          "maxFrameGap": 17.5,
+          "p95FrameGap": 17.099999964237213
+        },
+        "resources": [
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/3k67h9enjakfb.css",
+            "initiatorType": "link",
+            "transferSize": 5200,
+            "encodedBodySize": 4900,
+            "decodedBodySize": 18740,
+            "duration": 5.199999988079071
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/0fjzzp--ef5en.css",
+            "initiatorType": "link",
+            "transferSize": 4923,
+            "encodedBodySize": 4623,
+            "decodedBodySize": 19691,
+            "duration": 5.799999952316284
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/3xs88bg4r73nj.js",
+            "initiatorType": "link",
+            "transferSize": 2331,
+            "encodedBodySize": 2031,
+            "decodedBodySize": 5580,
+            "duration": 6.299999952316284
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/2a9rgqyt3vpo7.js",
+            "initiatorType": "script",
+            "transferSize": 8004,
+            "encodedBodySize": 7704,
+            "decodedBodySize": 28879,
+            "duration": 6.900000035762787
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/turbopack-3-ry682tkyiqk.js",
+            "initiatorType": "script",
+            "transferSize": 4240,
+            "encodedBodySize": 3940,
+            "decodedBodySize": 10030,
+            "duration": 8.100000023841858
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/324cjl3rsl37y.js",
+            "initiatorType": "script",
+            "transferSize": 3814,
+            "encodedBodySize": 3514,
+            "decodedBodySize": 13815,
+            "duration": 8.199999988079071
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/3yhoiqffrwwql.js",
+            "initiatorType": "script",
+            "transferSize": 46571,
+            "encodedBodySize": 46271,
+            "decodedBodySize": 168184,
+            "duration": 11.199999988079071
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/20lvgkz2-qm08.js",
+            "initiatorType": "script",
+            "transferSize": 72201,
+            "encodedBodySize": 71901,
+            "decodedBodySize": 229590,
+            "duration": 13
+          },
+          {
+            "name": "http://127.0.0.1:3100/assets/themes/historical/visual-v2-c/figure-480.webp",
+            "initiatorType": "img",
+            "transferSize": 68150,
+            "encodedBodySize": 67850,
+            "decodedBodySize": 67850,
+            "duration": 5.300000011920929
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/2vw396o6n7wrb.js",
+            "initiatorType": "script",
+            "transferSize": 4938,
+            "encodedBodySize": 4638,
+            "decodedBodySize": 10150,
+            "duration": 8.699999988079071
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/2atqcoatgwrfx.js",
+            "initiatorType": "script",
+            "transferSize": 9582,
+            "encodedBodySize": 9282,
+            "decodedBodySize": 24963,
+            "duration": 9.5
+          },
+          {
+            "name": "http://127.0.0.1:3100/assets/fonts/visual-v2-c/serif-600.woff2",
+            "initiatorType": "css",
+            "transferSize": 138468,
+            "encodedBodySize": 138168,
+            "decodedBodySize": 138168,
+            "duration": 16.5
+          }
+        ]
+      }
+    },
+    {
+      "route": "/studies/visual-v2-c/",
+      "mode": "slow-4g-diagnostic",
+      "sample": 1,
+      "emulation": {
+        "latency": 150,
+        "downloadThroughput": 209715,
+        "uploadThroughput": 98304,
+        "cpuRate": 4
+      },
+      "status": 200,
+      "browser": "156.0.8078.4",
+      "cacheMode": "fresh browser context per route",
+      "metrics": {
+        "navigation": {
+          "responseStart": 2.300000011920929,
+          "domContentLoadedEventEnd": 518.2000000476837,
+          "loadEventEnd": 1910.6000000238419,
+          "transferSize": 4124,
+          "encodedBodySize": 3824,
+          "decodedBodySize": 12504
+        },
+        "vitals": {
+          "lcp": 804,
+          "cls": 0,
+          "lcpEntries": [
+            {
+              "startTime": 520,
+              "size": 25704,
+              "url": null
+            },
+            {
+              "startTime": 804,
+              "size": 128700,
+              "url": "http://127.0.0.1:3100/assets/themes/historical/visual-v2-c/room-1-480.webp"
+            }
+          ],
+          "layoutShifts": []
+        },
+        "fonts": {
+          "status": "loaded",
+          "count": 1
+        },
+        "scroll": {
+          "scrollHeight": 844,
+          "scrollRange": 0,
+          "frameCount": 1,
+          "maxFrameGap": 0,
+          "p95FrameGap": 0
+        },
+        "resources": [
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/3k67h9enjakfb.css",
+            "initiatorType": "link",
+            "transferSize": 5200,
+            "encodedBodySize": 4900,
+            "decodedBodySize": 18740,
+            "duration": 290.60000002384186
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/0fjzzp--ef5en.css",
+            "initiatorType": "link",
+            "transferSize": 4923,
+            "encodedBodySize": 4623,
+            "decodedBodySize": 19691,
+            "duration": 296.39999997615814
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/3xs88bg4r73nj.js",
+            "initiatorType": "link",
+            "transferSize": 2331,
+            "encodedBodySize": 2031,
+            "decodedBodySize": 5580,
+            "duration": 224.39999997615814
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/2a9rgqyt3vpo7.js",
+            "initiatorType": "script",
+            "transferSize": 8004,
+            "encodedBodySize": 7704,
+            "decodedBodySize": 28879,
+            "duration": 346.19999998807907
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/3yhoiqffrwwql.js",
+            "initiatorType": "script",
+            "transferSize": 46571,
+            "encodedBodySize": 46271,
+            "decodedBodySize": 168184,
+            "duration": 1183.199999988079
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/20lvgkz2-qm08.js",
+            "initiatorType": "script",
+            "transferSize": 72201,
+            "encodedBodySize": 71901,
+            "decodedBodySize": 229590,
+            "duration": 1326.8999999761581
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/turbopack-3-ry682tkyiqk.js",
+            "initiatorType": "script",
+            "transferSize": 4240,
+            "encodedBodySize": 3940,
+            "decodedBodySize": 10030,
+            "duration": 545.6999999880791
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/324cjl3rsl37y.js",
+            "initiatorType": "script",
+            "transferSize": 3814,
+            "encodedBodySize": 3514,
+            "decodedBodySize": 13815,
+            "duration": 559.5
+          },
+          {
+            "name": "http://127.0.0.1:3100/assets/themes/historical/visual-v2-c/room-1-480.webp",
+            "initiatorType": "img",
+            "transferSize": 24644,
+            "encodedBodySize": 24344,
+            "decodedBodySize": 24344,
+            "duration": 625.1999999880791
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/2fplmmsd9-wmm.js",
+            "initiatorType": "script",
+            "transferSize": 1336,
+            "encodedBodySize": 1036,
+            "decodedBodySize": 2085,
+            "duration": 724.3000000119209
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/2atqcoatgwrfx.js",
+            "initiatorType": "script",
+            "transferSize": 9582,
+            "encodedBodySize": 9282,
+            "decodedBodySize": 24963,
+            "duration": 918.3999999761581
+          },
+          {
+            "name": "http://127.0.0.1:3100/assets/fonts/visual-v2-c/serif-600.woff2",
+            "initiatorType": "css",
+            "transferSize": 138468,
+            "encodedBodySize": 138168,
+            "decodedBodySize": 138168,
+            "duration": 1431.9000000357628
+          }
+        ]
+      }
+    },
+    {
+      "route": "/studies/visual-v2-c/question",
+      "mode": "slow-4g-diagnostic",
+      "sample": 1,
+      "emulation": {
+        "latency": 150,
+        "downloadThroughput": 209715,
+        "uploadThroughput": 98304,
+        "cpuRate": 4
+      },
+      "status": 200,
+      "browser": "156.0.8078.4",
+      "cacheMode": "fresh browser context per route",
+      "metrics": {
+        "navigation": {
+          "responseStart": 2.099999964237213,
+          "domContentLoadedEventEnd": 525.0999999642372,
+          "loadEventEnd": 1997.0999999642372,
+          "transferSize": 4358,
+          "encodedBodySize": 4058,
+          "decodedBodySize": 13340
+        },
+        "vitals": {
+          "lcp": 616,
+          "cls": 0.002814465972086638,
+          "lcpEntries": [
+            {
+              "startTime": 528,
+              "size": 9480,
+              "url": null
+            },
+            {
+              "startTime": 616,
+              "size": 85800,
+              "url": "http://127.0.0.1:3100/assets/themes/historical/visual-v2-c/room-1-480.webp"
+            }
+          ],
+          "layoutShifts": [
+            {
+              "value": 0.002814465972086638,
+              "startTime": 1736.5999999642372,
+              "sources": [
+                {
+                  "node": {
+                    "id": null,
+                    "className": null,
+                    "dataV2c": null
+                  },
+                  "previousRect": {
+                    "x": 22,
+                    "y": 406.078125,
+                    "width": 346,
+                    "height": 72.75
+                  },
+                  "currentRect": {
+                    "x": 22,
+                    "y": 383.78125,
+                    "width": 346,
+                    "height": 72.75
+                  }
+                },
+                {
+                  "node": {
+                    "tag": "H1",
+                    "id": "v2-question",
+                    "className": null,
+                    "dataV2c": null
+                  },
+                  "previousRect": {
+                    "x": 22,
+                    "y": 405.078125,
+                    "width": 346,
+                    "height": 48
+                  },
+                  "currentRect": {
+                    "x": 22,
+                    "y": 381.78125,
+                    "width": 346,
+                    "height": 77.5
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "fonts": {
+          "status": "loaded",
+          "count": 2
+        },
+        "scroll": {
+          "scrollHeight": 955,
+          "scrollRange": 111,
+          "frameCount": 25,
+          "maxFrameGap": 17.700000047683716,
+          "p95FrameGap": 17.400000035762787
+        },
+        "resources": [
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/3k67h9enjakfb.css",
+            "initiatorType": "link",
+            "transferSize": 5200,
+            "encodedBodySize": 4900,
+            "decodedBodySize": 18740,
+            "duration": 292.5
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/0fjzzp--ef5en.css",
+            "initiatorType": "link",
+            "transferSize": 4923,
+            "encodedBodySize": 4623,
+            "decodedBodySize": 19691,
+            "duration": 298.69999998807907
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/3xs88bg4r73nj.js",
+            "initiatorType": "link",
+            "transferSize": 2331,
+            "encodedBodySize": 2031,
+            "decodedBodySize": 5580,
+            "duration": 235
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/1betsdyzyylbd.css",
+            "initiatorType": "link",
+            "transferSize": 3328,
+            "encodedBodySize": 3028,
+            "decodedBodySize": 10779,
+            "duration": 270.39999997615814
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/2a9rgqyt3vpo7.js",
+            "initiatorType": "script",
+            "transferSize": 8004,
+            "encodedBodySize": 7704,
+            "decodedBodySize": 28879,
+            "duration": 342.0999999642372
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/3yhoiqffrwwql.js",
+            "initiatorType": "script",
+            "transferSize": 46571,
+            "encodedBodySize": 46271,
+            "decodedBodySize": 168184,
+            "duration": 1222.3999999761581
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/20lvgkz2-qm08.js",
+            "initiatorType": "script",
+            "transferSize": 72201,
+            "encodedBodySize": 71901,
+            "decodedBodySize": 229590,
+            "duration": 1437.199999988079
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/turbopack-3-ry682tkyiqk.js",
+            "initiatorType": "script",
+            "transferSize": 4240,
+            "encodedBodySize": 3940,
+            "decodedBodySize": 10030,
+            "duration": 520.3000000119209
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/324cjl3rsl37y.js",
+            "initiatorType": "script",
+            "transferSize": 3814,
+            "encodedBodySize": 3514,
+            "decodedBodySize": 13815,
+            "duration": 534.3999999761581
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/2doyg5f_y4_vl.js",
+            "initiatorType": "script",
+            "transferSize": 3612,
+            "encodedBodySize": 3312,
+            "decodedBodySize": 7819,
+            "duration": 577.5
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/0_vxjjev2aqrn.js",
+            "initiatorType": "script",
+            "transferSize": 9004,
+            "encodedBodySize": 8704,
+            "decodedBodySize": 19549,
+            "duration": 913.3000000119209
+          },
+          {
+            "name": "http://127.0.0.1:3100/assets/themes/historical/visual-v2-c/room-1-480.webp",
+            "initiatorType": "img",
+            "transferSize": 24644,
+            "encodedBodySize": 24344,
+            "decodedBodySize": 24344,
+            "duration": 441.2999999523163
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/2atqcoatgwrfx.js",
+            "initiatorType": "script",
+            "transferSize": 9582,
+            "encodedBodySize": 9282,
+            "decodedBodySize": 24963,
+            "duration": 934.1999999880791
+          },
+          {
+            "name": "http://127.0.0.1:3100/assets/fonts/visual-v2-c/serif-600.woff2",
+            "initiatorType": "css",
+            "transferSize": 138468,
+            "encodedBodySize": 138168,
+            "decodedBodySize": 138168,
+            "duration": 1517.3999999761581
+          }
+        ]
+      }
+    },
+    {
+      "route": "/studies/visual-v2-c/reveal",
+      "mode": "slow-4g-diagnostic",
+      "sample": 1,
+      "emulation": {
+        "latency": 150,
+        "downloadThroughput": 209715,
+        "uploadThroughput": 98304,
+        "cpuRate": 4
+      },
+      "status": 200,
+      "browser": "156.0.8078.4",
+      "cacheMode": "fresh browser context per route",
+      "metrics": {
+        "navigation": {
+          "responseStart": 2.200000047683716,
+          "domContentLoadedEventEnd": 526.3000000119209,
+          "loadEventEnd": 2139.5,
+          "transferSize": 4798,
+          "encodedBodySize": 4498,
+          "decodedBodySize": 15294
+        },
+        "vitals": {
+          "lcp": 1628,
+          "cls": 0,
+          "lcpEntries": [
+            {
+              "startTime": 528,
+              "size": 13195,
+              "url": null
+            },
+            {
+              "startTime": 1628,
+              "size": 228150,
+              "url": "http://127.0.0.1:3100/assets/themes/historical/visual-v2-c/figure-480.webp"
+            }
+          ],
+          "layoutShifts": []
+        },
+        "fonts": {
+          "status": "loaded",
+          "count": 1
+        },
+        "scroll": {
+          "scrollHeight": 1035,
+          "scrollRange": 191,
+          "frameCount": 25,
+          "maxFrameGap": 17.600000023841858,
+          "p95FrameGap": 17.19999998807907
+        },
+        "resources": [
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/3k67h9enjakfb.css",
+            "initiatorType": "link",
+            "transferSize": 5200,
+            "encodedBodySize": 4900,
+            "decodedBodySize": 18740,
+            "duration": 288.5999999642372
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/0fjzzp--ef5en.css",
+            "initiatorType": "link",
+            "transferSize": 4923,
+            "encodedBodySize": 4623,
+            "decodedBodySize": 19691,
+            "duration": 295.2999999523163
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/3xs88bg4r73nj.js",
+            "initiatorType": "link",
+            "transferSize": 2331,
+            "encodedBodySize": 2031,
+            "decodedBodySize": 5580,
+            "duration": 223.19999998807907
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/2a9rgqyt3vpo7.js",
+            "initiatorType": "script",
+            "transferSize": 8004,
+            "encodedBodySize": 7704,
+            "decodedBodySize": 28879,
+            "duration": 345.39999997615814
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/turbopack-3-ry682tkyiqk.js",
+            "initiatorType": "script",
+            "transferSize": 4240,
+            "encodedBodySize": 3940,
+            "decodedBodySize": 10030,
+            "duration": 544.3999999761581
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/324cjl3rsl37y.js",
+            "initiatorType": "script",
+            "transferSize": 3814,
+            "encodedBodySize": 3514,
+            "decodedBodySize": 13815,
+            "duration": 558.7999999523163
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/2vw396o6n7wrb.js",
+            "initiatorType": "script",
+            "transferSize": 4938,
+            "encodedBodySize": 4638,
+            "decodedBodySize": 10150,
+            "duration": 638
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/2atqcoatgwrfx.js",
+            "initiatorType": "script",
+            "transferSize": 9582,
+            "encodedBodySize": 9282,
+            "decodedBodySize": 24963,
+            "duration": 959.7999999523163
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/3yhoiqffrwwql.js",
+            "initiatorType": "script",
+            "transferSize": 46571,
+            "encodedBodySize": 46271,
+            "decodedBodySize": 168184,
+            "duration": 1324.199999988079
+          },
+          {
+            "name": "http://127.0.0.1:3100/assets/themes/historical/visual-v2-c/figure-480.webp",
+            "initiatorType": "img",
+            "transferSize": 68150,
+            "encodedBodySize": 67850,
+            "decodedBodySize": 67850,
+            "duration": 1445.3999999761581
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/20lvgkz2-qm08.js",
+            "initiatorType": "script",
+            "transferSize": 72201,
+            "encodedBodySize": 71901,
+            "decodedBodySize": 229590,
+            "duration": 1503.3999999761581
+          },
+          {
+            "name": "http://127.0.0.1:3100/assets/fonts/visual-v2-c/serif-600.woff2",
+            "initiatorType": "css",
+            "transferSize": 138468,
+            "encodedBodySize": 138168,
+            "decodedBodySize": 138168,
+            "duration": 1659.800000011921
+          }
+        ]
+      }
+    },
+    {
+      "route": "/studies/visual-v2-c/report",
+      "mode": "slow-4g-diagnostic",
+      "sample": 1,
+      "emulation": {
+        "latency": 150,
+        "downloadThroughput": 209715,
+        "uploadThroughput": 98304,
+        "cpuRate": 4
+      },
+      "status": 200,
+      "browser": "156.0.8078.4",
+      "cacheMode": "fresh browser context per route",
+      "metrics": {
+        "navigation": {
+          "responseStart": 2.099999964237213,
+          "domContentLoadedEventEnd": 635.5999999642372,
+          "loadEventEnd": 1947.0999999642372,
+          "transferSize": 7071,
+          "encodedBodySize": 6771,
+          "decodedBodySize": 22093
+        },
+        "vitals": {
+          "lcp": 640,
+          "cls": 0.000008034237948211129,
+          "lcpEntries": [
+            {
+              "startTime": 640,
+              "size": 5488,
+              "url": null
+            }
+          ],
+          "layoutShifts": [
+            {
+              "value": 0.000008034237948211129,
+              "startTime": 1954.7999999523163,
+              "sources": [
+                {
+                  "node": {
+                    "tag": "SPAN",
+                    "id": null,
+                    "className": null,
+                    "dataV2c": null
+                  },
+                  "previousRect": {
+                    "x": 126,
+                    "y": 152.59375,
+                    "width": 24,
+                    "height": 28.796875
+                  },
+                  "currentRect": {
+                    "x": 126,
+                    "y": 155.59375,
+                    "width": 24,
+                    "height": 28.796875
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "fonts": {
+          "status": "loaded",
+          "count": 3
+        },
+        "scroll": {
+          "scrollHeight": 3814,
+          "scrollRange": 2970,
+          "frameCount": 25,
+          "maxFrameGap": 17.80000001192093,
+          "p95FrameGap": 17.599999964237213
+        },
+        "resources": [
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/3k67h9enjakfb.css",
+            "initiatorType": "link",
+            "transferSize": 5200,
+            "encodedBodySize": 4900,
+            "decodedBodySize": 18740,
+            "duration": 275.39999997615814
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/0fjzzp--ef5en.css",
+            "initiatorType": "link",
+            "transferSize": 4923,
+            "encodedBodySize": 4623,
+            "decodedBodySize": 19691,
+            "duration": 281.9000000357628
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/3vzj4xe2jspzd.css",
+            "initiatorType": "link",
+            "transferSize": 9579,
+            "encodedBodySize": 9279,
+            "decodedBodySize": 45399,
+            "duration": 368.5
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/3xs88bg4r73nj.js",
+            "initiatorType": "link",
+            "transferSize": 2331,
+            "encodedBodySize": 2031,
+            "decodedBodySize": 5580,
+            "duration": 218.5999999642372
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/2a9rgqyt3vpo7.js",
+            "initiatorType": "script",
+            "transferSize": 8004,
+            "encodedBodySize": 7704,
+            "decodedBodySize": 28879,
+            "duration": 352.80000001192093
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/turbopack-3-ry682tkyiqk.js",
+            "initiatorType": "script",
+            "transferSize": 4240,
+            "encodedBodySize": 3940,
+            "decodedBodySize": 10030,
+            "duration": 496.30000001192093
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/3yhoiqffrwwql.js",
+            "initiatorType": "script",
+            "transferSize": 46571,
+            "encodedBodySize": 46271,
+            "decodedBodySize": 168184,
+            "duration": 1210.5
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/20lvgkz2-qm08.js",
+            "initiatorType": "script",
+            "transferSize": 72201,
+            "encodedBodySize": 71901,
+            "decodedBodySize": 229590,
+            "duration": 1332.6000000238419
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/324cjl3rsl37y.js",
+            "initiatorType": "script",
+            "transferSize": 3814,
+            "encodedBodySize": 3514,
+            "decodedBodySize": 13815,
+            "duration": 589.3999999761581
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/2doyg5f_y4_vl.js",
+            "initiatorType": "script",
+            "transferSize": 3612,
+            "encodedBodySize": 3312,
+            "decodedBodySize": 7819,
+            "duration": 602.6999999880791
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/11y74r3-swi3_.js",
+            "initiatorType": "script",
+            "transferSize": 9096,
+            "encodedBodySize": 8796,
+            "decodedBodySize": 22720,
+            "duration": 716.8999999761581
+          },
+          {
+            "name": "http://127.0.0.1:3100/assets/themes/historical/visual-v2-c/figure-160.webp",
+            "initiatorType": "img",
+            "transferSize": 10310,
+            "encodedBodySize": 10010,
+            "decodedBodySize": 10010,
+            "duration": 359.4000000357628
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/2atqcoatgwrfx.js",
+            "initiatorType": "script",
+            "transferSize": 9582,
+            "encodedBodySize": 9282,
+            "decodedBodySize": 24963,
+            "duration": 932.2000000476837
+          },
+          {
+            "name": "http://127.0.0.1:3100/assets/fonts/visual-v2-c/serif-600.woff2",
+            "initiatorType": "css",
+            "transferSize": 138468,
+            "encodedBodySize": 138168,
+            "decodedBodySize": 138168,
+            "duration": 1396.800000011921
+          }
+        ]
+      }
+    },
+    {
+      "route": "/studies/visual-v2-c/poster",
+      "mode": "slow-4g-diagnostic",
+      "sample": 1,
+      "emulation": {
+        "latency": 150,
+        "downloadThroughput": 209715,
+        "uploadThroughput": 98304,
+        "cpuRate": 4
+      },
+      "status": 200,
+      "browser": "156.0.8078.4",
+      "cacheMode": "fresh browser context per route",
+      "metrics": {
+        "navigation": {
+          "responseStart": 2.699999988079071,
+          "domContentLoadedEventEnd": 535.1000000238419,
+          "loadEventEnd": 2139.699999988079,
+          "transferSize": 5318,
+          "encodedBodySize": 5018,
+          "decodedBodySize": 16462
+        },
+        "vitals": {
+          "lcp": 1628,
+          "cls": 0,
+          "lcpEntries": [
+            {
+              "startTime": 536,
+              "size": 14043,
+              "url": null
+            },
+            {
+              "startTime": 1628,
+              "size": 190104,
+              "url": "http://127.0.0.1:3100/assets/themes/historical/visual-v2-c/figure-480.webp"
+            }
+          ],
+          "layoutShifts": []
+        },
+        "fonts": {
+          "status": "loaded",
+          "count": 1
+        },
+        "scroll": {
+          "scrollHeight": 1337,
+          "scrollRange": 493,
+          "frameCount": 25,
+          "maxFrameGap": 18,
+          "p95FrameGap": 17.399999976158142
+        },
+        "resources": [
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/3k67h9enjakfb.css",
+            "initiatorType": "link",
+            "transferSize": 5200,
+            "encodedBodySize": 4900,
+            "decodedBodySize": 18740,
+            "duration": 290.80000001192093
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/0fjzzp--ef5en.css",
+            "initiatorType": "link",
+            "transferSize": 4923,
+            "encodedBodySize": 4623,
+            "decodedBodySize": 19691,
+            "duration": 297.5999999642372
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/3xs88bg4r73nj.js",
+            "initiatorType": "link",
+            "transferSize": 2331,
+            "encodedBodySize": 2031,
+            "decodedBodySize": 5580,
+            "duration": 227.19999998807907
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/2a9rgqyt3vpo7.js",
+            "initiatorType": "script",
+            "transferSize": 8004,
+            "encodedBodySize": 7704,
+            "decodedBodySize": 28879,
+            "duration": 347.69999998807907
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/20lvgkz2-qm08.js",
+            "initiatorType": "script",
+            "transferSize": 72201,
+            "encodedBodySize": 71901,
+            "decodedBodySize": 229590,
+            "duration": 1514.300000011921
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/turbopack-3-ry682tkyiqk.js",
+            "initiatorType": "script",
+            "transferSize": 4240,
+            "encodedBodySize": 3940,
+            "decodedBodySize": 10030,
+            "duration": 534.3999999761581
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/324cjl3rsl37y.js",
+            "initiatorType": "script",
+            "transferSize": 3814,
+            "encodedBodySize": 3514,
+            "decodedBodySize": 13815,
+            "duration": 562.6999999880791
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/2vw396o6n7wrb.js",
+            "initiatorType": "script",
+            "transferSize": 4938,
+            "encodedBodySize": 4638,
+            "decodedBodySize": 10150,
+            "duration": 634.3000000119209
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/2atqcoatgwrfx.js",
+            "initiatorType": "script",
+            "transferSize": 9582,
+            "encodedBodySize": 9282,
+            "decodedBodySize": 24963,
+            "duration": 963.1999999880791
+          },
+          {
+            "name": "http://127.0.0.1:3100/_next/static/chunks/3yhoiqffrwwql.js",
+            "initiatorType": "script",
+            "transferSize": 46571,
+            "encodedBodySize": 46271,
+            "decodedBodySize": 168184,
+            "duration": 1327.300000011921
+          },
+          {
+            "name": "http://127.0.0.1:3100/assets/themes/historical/visual-v2-c/figure-480.webp",
+            "initiatorType": "img",
+            "transferSize": 68150,
+            "encodedBodySize": 67850,
+            "decodedBodySize": 67850,
+            "duration": 1449.0999999642372
+          },
+          {
+            "name": "http://127.0.0.1:3100/assets/fonts/visual-v2-c/serif-600.woff2",
+            "initiatorType": "css",
+            "transferSize": 138468,
+            "encodedBodySize": 138168,
+            "decodedBodySize": 138168,
+            "duration": 1660.1000000238419
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -144,6 +144,19 @@
   object-fit: cover;
   object-position: 50% 22%;
 }
+.figureMissing {
+  grid-row: 1 / 4;
+  display: grid;
+  place-items: center;
+  width: 72px;
+  min-height: 90px;
+  margin: 0;
+  border: 1px dashed var(--gold-dark);
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.55;
+  text-align: center;
+}
 
 .title {
   color: var(--gold);
@@ -188,6 +201,11 @@
 .section {
   padding: 38px 0;
   border-bottom: 1px solid var(--line);
+}
+.atlasSection:focus-visible,
+.section:focus-visible {
+  outline: 3px solid var(--gold);
+  outline-offset: 5px;
 }
 
 .sectionHeading h2 {
