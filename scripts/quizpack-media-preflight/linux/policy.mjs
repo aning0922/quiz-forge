@@ -18,6 +18,7 @@ export async function loadPolicy({
   deadline = performance.now() + 5000,
   signal,
   onDiagnostic,
+  controlCommand = docker,
 } = {}) {
   const options = {
     deadline: deadline - 100,
@@ -61,7 +62,7 @@ export async function loadPolicy({
     if (hash(await readFile(resolve(DIR, path))) !== image.inputs[name])
       throw new Error("BUILD_INPUT_CHANGED");
   }
-  const inspect = await docker(
+  const inspect = await controlCommand(
     ["image", "inspect", "--format", "{{json .Id}}", image.imageId],
     options,
   );
@@ -78,7 +79,7 @@ export async function loadPolicy({
     json(inspect.stdout) !== image.imageId
   )
     throw new Error("MISSING_IMAGE");
-  const info = await docker(
+  const info = await controlCommand(
     [
       "info",
       "--format",
