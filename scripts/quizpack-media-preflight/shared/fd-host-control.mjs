@@ -60,6 +60,8 @@ function parse(bytes) {
   return v;
 }
 let own;
+let stage = "paths";
+let commandExitCode = null;
 try {
   if (resolve(process.cwd()) !== resolve(root))
     throw new Error("FD_CONTROL_FAILED");
@@ -91,6 +93,7 @@ try {
   own = mkdtempSync(`${base}/control-`);
   chmodSync(own, 0o700);
   const binary = resolve(own, "probe");
+  stage = "build";
   const build = spawnSync(
     "/usr/bin/cc",
     [
@@ -110,8 +113,10 @@ try {
       timeout: 10000,
     },
   );
+  commandExitCode = build.status;
   if (build.status !== 0) throw new Error("FD_CONTROL_FAILED");
   chmodSync(binary, 0o700);
+  stage = "probe";
   const run = spawnSync(binary, ["fd-diagnostic"], {
     cwd: root,
     env: { NODE_ENV: "production" },
@@ -119,7 +124,9 @@ try {
     timeout: 5000,
     maxBuffer: 2048,
   });
+  commandExitCode = run.status;
   if (run.status !== 0) throw new Error("FD_CONTROL_FAILED");
+  stage = "parse";
   const metadata = parse(run.stdout);
   process.stdout.write(
     `${JSON.stringify({ schema: "fd-host-control.v1", context, metadata })}\n`,
@@ -128,7 +135,7 @@ try {
   if (!metadata.scanComplete) process.exitCode = 1;
 } catch {
   process.stdout.write(
-    `${JSON.stringify({ schema: "fd-host-control.v1", context, code: "FD_CONTROL_FAILED" })}\n`,
+    `${JSON.stringify({ schema: "fd-host-control.v1", context, code: "FD_CONTROL_FAILED", stage, commandExitCode })}\n`,
   );
   process.exitCode = 1;
 } finally {

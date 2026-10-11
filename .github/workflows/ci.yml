@@ -44,10 +44,12 @@ jobs:
         run: pnpm test
       - name: Finite host FD diagnostics
         run: |
-          node scripts/quizpack-media-preflight/shared/fd-host-control.mjs
-          node --import tsx scripts/quizpack-media-preflight/shared/fd-host-control.mjs
-          node --test scripts/quizpack-media-preflight/shared/fd-host-control.mjs
-          node --import tsx --test scripts/quizpack-media-preflight/shared/fd-host-control.mjs
+          failed=0
+          node scripts/quizpack-media-preflight/shared/fd-host-control.mjs || failed=1
+          node --import tsx scripts/quizpack-media-preflight/shared/fd-host-control.mjs || failed=1
+          node --test scripts/quizpack-media-preflight/shared/fd-host-control.mjs || failed=1
+          node --import tsx --test scripts/quizpack-media-preflight/shared/fd-host-control.mjs || failed=1
+          exit "$failed"
       - name: Media preflight contracts and local controls
         run: node --import tsx --test scripts/quizpack-media-preflight/shared/*.test.ts scripts/quizpack-media-preflight/linux/*.test.mjs
       - name: Production build
