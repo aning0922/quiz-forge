@@ -182,6 +182,31 @@ export function disposeMediaOperationContext(
   state.externalSignal.removeEventListener("abort", state.abort);
 }
 
+/** Internal metadata scope uses the same identity/stop authority without starting a new image budget. */
+export function createMediaControlScope(context: MediaOperationContext): {
+  deadlineMonotonicMs: number;
+  signal: AbortSignal;
+  readState: () => MediaOperationState;
+  requestStop: (reason: MediaStopReason) => MediaStopState;
+  finish: () => void;
+} {
+  const state = getState(context);
+  observe(state);
+  return {
+    deadlineMonotonicMs: context.deadlineMonotonicMs,
+    signal: context.signal,
+    readState: () => snapshot(state),
+    requestStop(reason) {
+      observe(state);
+      stopAt(state, reason, performance.now());
+      return state.stop!;
+    },
+    finish() {
+      /* No independent budget or stop reset exists for metadata. */
+    },
+  };
+}
+
 /** Internal single-image scope. Ordinary callers cannot choose execution limits. */
 export function beginMediaImage(context: MediaOperationContext): {
   deadlineMonotonicMs: number;
