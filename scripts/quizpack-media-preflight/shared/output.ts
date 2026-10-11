@@ -32,7 +32,10 @@ export function parseWorkerOutput(
   try {
     if (bytes.byteLength > MEDIA_LIMITS.stdoutBytes)
       return { ok: false, code: "OUTPUT_INVALID" };
-    const text = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+    const text = new TextDecoder("utf-8", {
+      fatal: true,
+      ignoreBOM: true,
+    }).decode(bytes);
     const value: unknown = JSON.parse(text);
     // Canonical worker output disallows duplicate keys, whitespace, trailing data and alternate encodings.
     if (JSON.stringify(value) !== text)

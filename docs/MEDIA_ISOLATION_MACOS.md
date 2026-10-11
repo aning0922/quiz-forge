@@ -9,3 +9,5 @@
 共享复现：`node --import tsx --test scripts/quizpack-media-preflight/shared/*.test.ts`。原生编译：`cc -std=c11 -Wall -Wextra -Werror -pthread scripts/quizpack-media-preflight/shared/posix-probe.c -o <本次私有缓存>/posix-probe`。实际平台 macOS26.6.2(25G83)/arm64/Node20.20.1/pnpm10.32.1，冻结安装完成；平台权限和停止矩阵尚待实测，不宣称通过。
 
 共享检查实际结果：9项node:test（包括真实C编译/线程/fork/spawn/FD非沙箱对照）通过；定向ESLint与tsc通过。首次C编译发现严格POSIX宏隐藏INADDR_LOOPBACK，改用固定127.0.0.1整数后通过；一次unused变量lint及Next环境类型问题已修正。原生对照只操作自有合成文件，测试结束已删除本次目录。未运行build/E2E/DB/远端CI，共享提交不代表平台矩阵通过。
+
+共享复审补丁：FD探针改为mac libproc当前进程描述符列表 / Linux自身 `/proc/self/fd` 有界枚举（最多65536项）；完整性无法证明或fstat异常时scanComplete=false且安全断言false，不只检查3..255。实际FD300注入自有只读合成文件后明确返回false；无额外FD对照返回true。网络协议每操作返回socket-denied/operation-denied/prerequisite-denied/allowed/failed，前置socket拒绝不虚构connect/bind/listen已执行；listen先bind，bind拒绝时明示未执行listen。语法合法不代表政策通过。worker/probe UTF-8 BOM均明确拒绝。mac共享11项测试/定向lint/tsc/格式检查通过；Linux socket创建拒绝的真实证据由Linux流补齐，不把mac结果当Linux通过。

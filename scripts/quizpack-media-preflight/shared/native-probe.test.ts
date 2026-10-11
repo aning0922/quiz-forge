@@ -1,5 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { openSync, closeSync, constants } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { mkdir, mkdtemp, chmod, writeFile, rm } from "node:fs/promises";
 import { resolve } from "node:path";
@@ -49,8 +50,37 @@ test("real POSIX probe compiles and baseline thread/process/FD protocol is truth
     assert.deepEqual(run("fd"), {
       schema: "posix-probe.v1",
       mode: "fd",
+      scanComplete: true,
       noInheritedFileOrSocket: true,
     });
+    const highPath = `${own}/high-fd`;
+    await writeFile(highPath, "synthetic", { mode: 0o600, flag: "wx" });
+    const high = openSync(highPath, constants.O_RDONLY | constants.O_NOFOLLOW);
+    try {
+      const stdio: ("pipe" | "ignore" | number)[] = Array.from(
+        { length: 301 },
+        () => "ignore",
+      );
+      stdio[0] = "pipe";
+      stdio[1] = "pipe";
+      stdio[2] = "pipe";
+      stdio[300] = high;
+      const injected = spawnSync(binary, ["fd"], {
+        stdio,
+        env: { NODE_ENV: "production" },
+        timeout: 5000,
+        maxBuffer: 2048,
+      });
+      assert.equal(injected.status, 0, "synthetic FD300 probe failed");
+      assert.deepEqual(parseProbeOutput(injected.stdout), {
+        schema: "posix-probe.v1",
+        mode: "fd",
+        scanComplete: true,
+        noInheritedFileOrSocket: false,
+      });
+    } finally {
+      closeSync(high);
+    }
     const files = `${own}/files`;
     await mkdir(files, { mode: 0o700 });
     await writeFile(`${files}/sentinel`, "synthetic", {
