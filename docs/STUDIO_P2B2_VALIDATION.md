@@ -1,11 +1,11 @@
-# B2-2：可信复验与私有资源归档候选合同
+# B2-2：可信复验与私有资源归档合同
 
-日期：2026-10-12。状态：**总控候选合同，媒体最终 CI 通过及本合同审阅前不实施**。
-编写基线：`codex/media-isolation-preflight` 的 `736d92354d2765a15ca6109c2611dfc7dde9b83e`。
-本文件记录总控原则接受的技术决定，不宣称代码、迁移、业务接口或验收已经存在。
+日期：2026-10-12。状态：**B2-2A合同已由总控按独立Astra审查修订并冻结；B2-2B只冻结不变量，精确迁移/DTO尚未冻结**。
+实施基线：媒体预检交付 `1f6f3880f1d5c920835f5cf235c2a93b28588c29`，准确代码736d923的普通与平台CI均success；父交付记录head的最终CI核清后才开始代码实施。
+本文件记录工程决定，不宣称代码、迁移、业务接口或验收已经存在。
 
 依据：[原验证归档提案](STUDIO_P2B2_VALIDATION_PROPOSAL.md)、[持久化尺寸证据](QUIZPACK_PERSISTENCE_PREFLIGHT.md)、[B2-1 合同](STUDIO_P2B2.md)、[媒体隔离预检](QUIZPACK_MEDIA_ISOLATION_PREFLIGHT.md)。
-原提案保留推导和历史取舍；本合同审阅通过后，其明确决定优先于原提案的建议值。未明确的 B2-2B 迁移及 DTO 不据此自动实施。
+原提案保留推导和历史取舍；本合同明确决定优先于原提案建议值。未明确的 B2-2B 迁移及 DTO 不据此自动实施。
 
 ## 1. 范围与两个代码里程碑
 
@@ -33,6 +33,10 @@ B2-3 才应用首稿；P2-C 才有私有像素读取、结构预览及送审；P
 - lease 120,000ms，不无限续期；每 validation key 最多 3 个执行 attempt。已确认提交的结果不因随后超时而改成失败。
 - 稳定 limits/hash 与请求剩余时间分离；外层期限只收紧执行，不改变政策 hash。
 
+A-R提供统一上下文工厂 `createMediaOperationContext`。它绑定外部signal、业务绝对期限及单次停止状态；首次取消/超时/明确停止请求固定共用cleanup deadline，后续请求只能收紧，不能重启5秒。A-V及B原样传递同一个上下文，不能每图/每层重建。上下文的有效身份与只收紧的状态由受信任实现检查，不凭可改的结构字段声称已执行；精确类型由A-R第一公共接口交付，先于平台核心实现交接。
+
+单图执行超时、取消、运行失败或STOP_UNCONFIRMED使整个候选结果interrupted并立即停止后续inspector调用。已确认停止的内容/格式拒绝可以成为rejected；P1 issue不能吞掉未知停止或将可恢复运行失败固化为内容结论。B可在整个candidate调用前一次持久化media-stop-unconfirmed，只有聚合结果证明全部媒体与相关IO停止后才解除，无需每图新增DB回调。
+
 B2-1 的主进程 ESRCH 不能直接充当 B2-2 媒体停止证明。调用 launcher 前，必须先持久化当前 attempt 的 `media-stop-unconfirmed` 事实。
 只有实际返回 `stopped: confirmed | not-started` 且本次相关输入/输出、文件任务均 settled，才能解除相应未确认事实。
 崩溃留下该事实时，普通 recover 保守返回需维护；不能因主进程退出、lease 过期或控制目录后来变空释放占用。
@@ -43,7 +47,7 @@ A 必须提供足够的 run/profile/stop 事实；B 负责把它们与 attempt �
 
 | 实现流        | 独占文件/职责                                                                                                                                                                                                        |
 | ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| A-R：运行模块 | 新 `src/features/quizpack/server/media/**`；原 scripts 平台 launcher、policy、control 的拆分及离线适配；对应平台/依赖边界测试。发布固定媒体入口与 runtime binding 类型。                                             |
+| A-R：运行模块 | 新 `src/features/quizpack/server/media/**`；原 `scripts/quizpack-media-preflight/{shared,macos,linux}/**` 的运行核心、公共类型、测试迁移与离线适配；发布固定媒体入口、统一上下文与runtime binding类型。              |
 | A-V：可信验证 | `src/features/quizpack/v1/**` 的必要内部执行拆分及独立 canonical 预算；新 `src/features/quizpack/server/validation/**` 的快照、dispatcher、候选、Unicode/报告 Schema；对应测试。调用 A-R 公共入口，不改其 internal。 |
 | 总控          | package/锁文件、Next/build/CI 接线、部署身份清单、共享文档和集成顺序；目标 worktree 封存及生产启动串行验收。两流提交建议，不并发改共享文件。                                                                         |
 
@@ -51,14 +55,17 @@ A 必须提供足够的 run/profile/stop 事实；B 负责把它们与 attempt �
 
 ```ts
 // server/media/index.ts：A-R；P1 declaration/facts 复用既有类型。
+createMediaOperationContext(input: {
+  signal: AbortSignal; deadlineMonotonicMs: number;
+}): MediaOperationContext;
 runIsolatedImage(bytes: Uint8Array, declaration: ImageDeclaration,
-  context: LaunchContext): Promise<LaunchResult>;
-// LaunchContext = { signal, deadlineMonotonicMs }。
+  context: MediaOperationContext): Promise<LaunchResult>;
+// MediaOperationContext必须来自该工厂，共用单次停止/收尾期限。
 // LaunchResult 保留预检已审的 decoded/failed、runId、profileId 和 stopped 联合。
 
 // server/validation/index.ts：A-V；只有可信服务可调用。
 validateArchiveCandidate(archive: Uint8Array, targetProductId: string,
-  context: LaunchContext): Promise<CandidateResult>;
+  context: MediaOperationContext): Promise<CandidateResult>;
 // CandidateResult：accepted/rejected/interrupted 严格联合，含有界证据。
 // accepted 持有同快照 manifest/content、资源集合及 hash，不能序列化进 DTO。
 // interrupted 明确 stopped/需维护事实；无候选可归档，不冒充内容永久拒绝。
@@ -176,4 +183,4 @@ A 两流先各自定向检查，再总控集成检查及独立审查；新核心
 B 冻结前交付：精确 SQL/触发器/权限、browser-safe DTO/错误码、服务签名、HTTP CAS/replay/recover/retry、目录 UI 状态及真实验收矩阵。
 B 必验包括真实 PG 三提交点、事务回滚/未知提交、当前降权/归档、同/异资源冲突，以及真实文件/连接故障、统一配额、late IO/停止证明和生产浏览器；另须完成最终应用构建与真实业务路由的实际部署 identity 重绑、重新封存及成功/失败关闭验收，不复用 A 的 fixture 身份。
 UI 分开显示 received 与验证/归档状态；ready 只称“私有资源已归档”，审批 unverified，没有草稿成功、评分通过或发布按钮。
-当前仅文档候选：媒体最终 CI、本合同审阅及各里程碑真实检查未完成前，不记录为实施/验收通过。
+独立Astra已确认分批范围与fixture/真实业务路径分离，并提出共用收尾上下文、原shared目录归属两项开工前补齐，现已纳入第2/3节。A-R第一公共接口须具备上述停止字段/分类再交A-V。各里程碑真实检查未完成前，不记录为功能实现或验收通过。

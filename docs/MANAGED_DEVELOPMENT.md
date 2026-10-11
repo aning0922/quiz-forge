@@ -112,3 +112,7 @@ B2-1最终文档head `5caef26` 的CI38175221128已核实checks/database均succes
 代码736d923的普通CI38183239291（checks/database）及真实媒体CI38183239317均success。总控macOS66项矩阵三次通过；Linux31项smoke与11项生命周期全部通过，停止应答丢失实际命中且停止确认；独立登记P1/P2全部关闭。612单测、214真实DB、46驱动、206生产E2E/10既有跳过及其余工程检查通过；测试实例停止、控制目录无活跃记录、3100/55421–55424无监听。详见MEDIA_ISOLATION_ACCEPTANCE/REVIEW，PR #11未合并。
 
 后续先将已验证核心迁入生产模块、建立同字节P1可信桥接（B2-2A），再冻结并实现三表/统一归档/后台（B2-2B）。两条实现流保持Sol/high，Astra做非实施审查；新里程碑使用独立工作树，不继续修改已交付的B2-1或旧D1成果。STUDIO_P2B2_VALIDATION.md当前为合同候选，尚未实施；架构方向和常规开发已在托管授权内，不重复请求阶段启动批准。
+
+## B2-2A 准备登记
+
+总控工作树codex/quizpack-validation-bridge基于预检最终1f6f388。STUDIO_P2B2_VALIDATION.md的A范围已按独立审查冻结：A-R独占生产媒体目录及原shared/macOS/Linux脚本迁移，A-V独占P1内部执行拆分及server/validation；总控负责build/CI/fixture/部署身份与串行真实验收。停止上下文由A-R提供，所有层共享首个收尾期限；未知停止或单图运行失败中断整包，不只转成issue继续解码。父交付head CI核清前只准备，不写运行实现；B2-2B SQL与DTO后冻。

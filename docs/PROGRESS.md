@@ -2,6 +2,8 @@
 
 ## 2026-10-12 托管推进
 
+B2-2A已建立独立 `codex/quizpack-validation-bridge` 工作树，基于媒体预检最终交付 `1f6f388`；合同按独立Astra意见补齐统一收尾上下文与完整文件所有权，并将A的隔离Next构建fixture与B真实业务路径分别验收。当前仅准备与合同冻结；父交付head最终CI核清后，运行模块迁移和P1可信桥接两条Sol/high流才开始代码。无DB/HTTP/UI，三表/归档后台留B2-2B。
+
 媒体隔离可行性已技术验收：准确代码 `736d92354d2765a15ca6109c2611dfc7dde9b83e` 的[普通CI38183239291](https://github.com/aning0922/quiz-forge/actions/runs/38183239291) checks/database及[平台CI38183239317](https://github.com/aning0922/quiz-forge/actions/runs/38183239317)均实际success。macOS总控66项矩阵三次通过，Linux31项smoke/11项生命周期通过，独立登记问题全部关闭；本地612单测/214真实DB/46驱动/206生产E2E通过（10既有跳过），构建53trace/8614路径无私有违规。自有实例与服务已停止。见[验收](MEDIA_ISOLATION_ACCEPTANCE.md)及[审查过程](MEDIA_ISOLATION_REVIEW.md)。[Draft PR #11](https://github.com/aning0922/quiz-forge/pull/11)保持未合并，最终记录head CI另核；该阶段仅脚本层平台能力，尚未接入业务。
 
 下一优先为B2-2A可信P1桥接与生产运行模块迁移，再进入B2-2B三表/统一资源归档/后台操作。新合同[STUDIO_P2B2_VALIDATION](STUDIO_P2B2_VALIDATION.md)正在总控收口，候选状态不代表已开工。实际业务的同字节、版本/归属、事务/计量与生产运行路径仍须独立验证。
