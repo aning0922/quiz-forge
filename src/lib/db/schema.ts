@@ -4,6 +4,9 @@ import {
   char,
   check,
   index,
+  integer,
+  primaryKey,
+  unique,
   pgSchema,
   smallint,
   timestamp,
@@ -29,6 +32,18 @@ export const auditAction = qf.enum("audit_action", [
   "login_failed",
   "logout",
   "session_revoked",
+  "product_created",
+  "product_updated",
+  "product_archived",
+  "product_restored",
+  "category_created",
+  "category_updated",
+  "category_archived",
+  "category_restored",
+  "tag_created",
+  "tag_updated",
+  "tag_archived",
+  "tag_restored",
 ]);
 export const auditOutcome = qf.enum("audit_outcome", ["success", "rejected"]);
 export const auditReason = qf.enum("audit_reason", [
@@ -116,6 +131,9 @@ export const auditEvents = qf.table(
     }),
     sessionId: uuid("session_id"),
     requestId: uuid("request_id").notNull(),
+    targetKind: varchar("target_kind", { length: 8 }),
+    targetId: varchar("target_id", { length: 80 }),
+    targetRevision: integer("target_revision"),
   },
   (t) => [index("audit_action_time").on(t.action, t.occurredAt)],
 );
@@ -123,3 +141,75 @@ export const auditEvents = qf.table(
 export type Operator = typeof operators.$inferSelect;
 export type OperatorSession = typeof operatorSessions.$inferSelect;
 export type AuditEvent = typeof auditEvents.$inferSelect;
+
+// SQL migration owns the full CHECK constraints, including Unicode text and audit targets.
+const taxonomyColumns = () => ({
+  id: uuid("id").primaryKey(),
+  slug: varchar("slug", { length: 80 }).notNull().unique(),
+  name: varchar("name", { length: 40 }).notNull(),
+  revision: integer("revision").notNull().default(1),
+  createdAt: time("created_at")
+    .notNull()
+    .default(sql`clock_timestamp()`),
+  updatedAt: time("updated_at").notNull(),
+  archivedAt: time("archived_at"),
+});
+export const categories = qf.table("category", taxonomyColumns(), (t) => [
+  index("category_archived_created").on(t.archivedAt, t.createdAt.desc(), t.id),
+]);
+export const tags = qf.table("tag", taxonomyColumns(), (t) => [
+  index("tag_archived_created").on(t.archivedAt, t.createdAt.desc(), t.id),
+]);
+export const products = qf.table(
+  "product",
+  {
+    id: varchar("id", { length: 80 }).primaryKey(),
+    slug: varchar("slug", { length: 80 }).notNull().unique(),
+    title: varchar("title", { length: 120 }).notNull(),
+    primaryCategoryId: uuid("primary_category_id").references(
+      () => categories.id,
+      { onUpdate: "restrict", onDelete: "restrict" },
+    ),
+    metadataRevision: integer("metadata_revision").notNull().default(1),
+    createdAt: time("created_at")
+      .notNull()
+      .default(sql`clock_timestamp()`),
+    updatedAt: time("updated_at").notNull(),
+    archivedAt: time("archived_at"),
+  },
+  (t) => [
+    index("product_archived_created").on(
+      t.archivedAt,
+      t.createdAt.desc(),
+      t.id,
+    ),
+    index("product_category").on(t.primaryCategoryId),
+  ],
+);
+export const productTags = qf.table(
+  "product_tag",
+  {
+    productId: varchar("product_id", { length: 80 })
+      .notNull()
+      .references(() => products.id, {
+        onUpdate: "restrict",
+        onDelete: "restrict",
+      }),
+    tagId: uuid("tag_id")
+      .notNull()
+      .references(() => tags.id, {
+        onUpdate: "restrict",
+        onDelete: "restrict",
+      }),
+    slot: smallint("slot").notNull(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.productId, t.tagId] }),
+    unique("product_tag_product_id_slot_key").on(t.productId, t.slot),
+    check("product_tag_slot_check", sql`${t.slot} BETWEEN 1 AND 8`),
+    index("product_tag_reverse").on(t.tagId, t.productId),
+  ],
+);
+export type Product = typeof products.$inferSelect;
+export type Category = typeof categories.$inferSelect;
+export type Tag = typeof tags.$inferSelect;
