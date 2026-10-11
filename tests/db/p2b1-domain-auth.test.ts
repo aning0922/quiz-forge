@@ -80,7 +80,7 @@ describe("B1 shared write authority", () => {
           await tx`SELECT 1/0`;
         },
       ),
-    ).rejects.toMatchObject({ code: "WRITE_OUTCOME_UNKNOWN" });
+    ).rejects.toMatchObject({ code: "STUDIO_UNAVAILABLE" });
     expect(await safe(() => fixture.app.sql`SELECT 1`)).toHaveLength(1);
   });
   it("revalidates expiry at commit and rolls back domain writes", async () => {
@@ -105,5 +105,75 @@ describe("B1 shared write authority", () => {
     expect(
       await safe(() => fixture.app.sql`SELECT id FROM qf.product`),
     ).toHaveLength(0);
+  });
+});
+
+describe("B1 rollback evidence", () => {
+  it("ordinary internal callback failure is definite after actual rollback", async () => {
+    const auth = await authenticateTestOperator(fixture);
+    await expect(
+      withStudioWrite(
+        fixture.app,
+        auth.credentials,
+        "workspace:write",
+        async (tx) => {
+          await tx`WITH m AS(SELECT clock_timestamp() at) INSERT INTO qf.product(id,slug,title,created_at,updated_at) SELECT 'synthetic','synthetic','Synthetic',at,at FROM m`;
+          throw new Error("TEST_INTERNAL_FAILURE");
+        },
+      ),
+    ).rejects.toMatchObject({ code: "STUDIO_UNAVAILABLE" });
+    expect(
+      await safe(() => fixture.app.sql`SELECT id FROM qf.product`),
+    ).toHaveLength(0);
+  });
+  it("business failure retains only its stable code after actual rollback", async () => {
+    const { StudioError } = await import("@/lib/http-security/errors");
+    const auth = await authenticateTestOperator(fixture);
+    await expect(
+      withStudioWrite(
+        fixture.app,
+        auth.credentials,
+        "workspace:write",
+        async (tx) => {
+          await tx`WITH m AS(SELECT clock_timestamp() at) INSERT INTO qf.product(id,slug,title,created_at,updated_at) SELECT 'synthetic','synthetic','Synthetic',at,at FROM m`;
+          throw new StudioError("TAXONOMY_ARCHIVED");
+        },
+      ),
+    ).rejects.toMatchObject({ code: "TAXONOMY_ARCHIVED" });
+    expect(
+      await safe(() => fixture.app.sql`SELECT id FROM qf.product`),
+    ).toHaveLength(0);
+  });
+  it("rollback receipt loss overrides a definite callback error and does not replay", async () => {
+    const auth = await authenticateTestOperator(fixture);
+    let attempts = 0;
+    const sql = new Proxy(fixture.app.sql, {
+      get(target, property, receiver) {
+        if (property !== "begin")
+          return Reflect.get(target, property, receiver);
+        return async (
+          options: string,
+          callback: Parameters<typeof target.begin>[1],
+        ) => {
+          try {
+            return await target.begin(options, callback!);
+          } catch {
+            throw new Error("TEST_ROLLBACK_RECEIPT_LOST");
+          }
+        };
+      },
+    });
+    await expect(
+      withStudioWrite(
+        { ...fixture.app, sql },
+        auth.credentials,
+        "workspace:write",
+        async (tx) => {
+          attempts++;
+          await tx`SELECT 1/0`;
+        },
+      ),
+    ).rejects.toMatchObject({ code: "WRITE_OUTCOME_UNKNOWN" });
+    expect(attempts).toBe(1);
   });
 });
