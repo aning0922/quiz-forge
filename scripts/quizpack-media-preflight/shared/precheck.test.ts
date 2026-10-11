@@ -164,7 +164,7 @@ test("worker protocol refuses extra/duplicate keys, multiple JSON, invalid UTF8,
 });
 test("probe protocol has a fixed mode-dependent field set and no diagnostics", () => {
   const good =
-    '{"schema":"posix-probe.v1","mode":"fd","noInheritedFileOrSocket":true}';
+    '{"schema":"posix-probe.v1","mode":"fd","scanComplete":true,"noInheritedFileOrSocket":true}';
   assert.ok(parseProbeOutput(Buffer.from(good)));
   for (const s of [
     good + "\n",
@@ -174,4 +174,41 @@ test("probe protocol has a fixed mode-dependent field set and no diagnostics", (
     good.replace('"noInheritedFileOrSocket":true', '"path":"synthetic"'),
   ])
     assert.equal(parseProbeOutput(Buffer.from(s)), null);
+});
+
+test("BOM is rejected by both canonical protocols", () => {
+  const bom = Buffer.from([0xef, 0xbb, 0xbf]);
+  const facts = Buffer.from(
+    '{"ok":true,"mediaType":"image/png","width":2,"height":2,"frames":1,"mediaDecoded":true}',
+  );
+  assert.equal(
+    parseWorkerOutput(Buffer.concat([bom, facts]), declaration()).ok,
+    false,
+  );
+  const probe = Buffer.from(
+    '{"schema":"posix-probe.v1","mode":"fd","scanComplete":true,"noInheritedFileOrSocket":true}',
+  );
+  assert.equal(parseProbeOutput(Buffer.concat([bom, probe])), null);
+});
+
+test("network result distinguishes socket denial, operation denial and skipped listen", () => {
+  const value = {
+    schema: "posix-probe.v1",
+    mode: "network",
+    connect: "socket-denied",
+    bind: "operation-denied",
+    listen: "prerequisite-denied",
+    unix: "socket-denied",
+  };
+  assert.deepEqual(parseProbeOutput(Buffer.from(JSON.stringify(value))), value);
+  assert.equal(
+    parseProbeOutput(Buffer.from(JSON.stringify({ ...value, connect: true }))),
+    null,
+  );
+  assert.equal(
+    parseProbeOutput(
+      Buffer.from(JSON.stringify({ ...value, listen: "inferred-denied" })),
+    ),
+    null,
+  );
 });
