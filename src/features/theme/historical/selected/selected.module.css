@@ -202,6 +202,261 @@
   font-size: 16px;
   line-height: 1.9;
 }
+.experienceLoading {
+  width: min(680px, calc(100% - 48px));
+  min-height: 48vh;
+  margin: auto;
+  display: grid;
+  place-items: center;
+  color: var(--h-muted);
+  font-size: 16px;
+}
+.experience {
+  width: min(720px, 100%);
+  margin: 0 auto;
+  padding: 4px 24px 48px;
+}
+.demoDisclosure,
+.demoAlert {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin: 10px 0 18px;
+  padding: 12px 14px;
+  border-left: 3px solid var(--h-gold);
+  background: #e8dfce;
+  color: var(--h-muted);
+  font-size: 13px;
+  line-height: 1.7;
+}
+.demoDisclosure svg {
+  color: var(--h-accent);
+  flex: 0 0 auto;
+  margin-top: 2px;
+}
+.demoAlert {
+  display: block;
+  border-color: var(--h-accent);
+}
+.alertActions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+.alertActions button,
+.localTools button,
+.textButton {
+  min-height: 44px;
+  border: 0;
+  background: transparent;
+  color: var(--h-jade);
+  font: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.resumeSheet,
+.confirmSheet,
+.questionSheet {
+  border: 1px solid #88704477;
+  background: linear-gradient(
+    110deg,
+    #fbf7ee 0%,
+    var(--h-surface) 60%,
+    #eee4d0 100%
+  );
+  box-shadow: 0 10px 30px #553c1510;
+  padding: clamp(24px, 7vw, 44px);
+}
+.resumeSheet h1,
+.confirmSheet h1,
+.questionSheet h1 {
+  margin: 10px 0 18px;
+  font: 500 clamp(28px, 7.3vw, 38px)/1.55 var(--h-display);
+  outline: none;
+}
+.resumeSheet > p:not(.kicker),
+.confirmSheet > p:not(.kicker) {
+  color: var(--h-muted);
+  font-size: 16px;
+  line-height: 1.9;
+}
+.resumeSheet .primaryButton,
+.confirmSheet .primaryButton {
+  margin-top: 24px;
+}
+.resumeSheet .textButton,
+.confirmSheet .textButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+.questionMeta {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--h-muted);
+  font-size: 13px;
+}
+.progressTrack {
+  height: 5px;
+  overflow: hidden;
+  margin: 13px 0 28px;
+  background: #8870442b;
+}
+.progressTrack i {
+  display: block;
+  height: 100%;
+  background: var(--h-accent);
+  transition: width 180ms ease-out;
+}
+.options {
+  border: 0;
+  padding: 0;
+  margin: 26px 0 0;
+  display: grid;
+  gap: 12px;
+}
+.options legend {
+  color: var(--h-muted);
+  font-size: 13px;
+  line-height: 1.7;
+  margin-bottom: 12px;
+}
+.options button {
+  width: 100%;
+  min-height: 64px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 14px;
+  border: 1px solid var(--h-gold);
+  background: #fffdf7;
+  color: var(--h-ink);
+  font:
+    16px/1.65 system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "PingFang SC",
+    "Microsoft YaHei",
+    sans-serif;
+  text-align: left;
+  cursor: pointer;
+}
+.options button span {
+  width: 36px;
+  min-height: 36px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  border: 1px solid #88704499;
+  color: var(--h-jade);
+  font-size: 12px;
+}
+.options button strong {
+  font-weight: 400;
+}
+.options .optionSelected {
+  border: 2px solid var(--h-accent);
+  padding: 11px 13px;
+  background: #fbf2df;
+}
+.options .optionSelected span {
+  border-color: var(--h-accent);
+  background: var(--h-accent);
+  color: var(--h-surface);
+}
+.options button:focus-visible,
+.primaryButton:focus-visible,
+.secondaryButton:focus-visible,
+.textButton:focus-visible,
+.localTools button:focus-visible,
+.alertActions button:focus-visible {
+  outline: 3px solid var(--h-accent);
+  outline-offset: 3px;
+}
+.answerHint {
+  color: #a83d2c;
+  font-size: 14px;
+  line-height: 1.7;
+  margin-top: 13px;
+}
+.questionActions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 28px;
+}
+.primaryButton,
+.secondaryButton {
+  min-height: 52px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 10px 15px;
+  border: 1px solid var(--h-accent);
+  font:
+    16px/1.4 system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "PingFang SC",
+    "Microsoft YaHei",
+    sans-serif;
+  cursor: pointer;
+}
+.primaryButton {
+  background: var(--h-accent);
+  color: var(--h-surface);
+}
+.secondaryButton {
+  background: transparent;
+  color: var(--h-jade);
+  border-color: var(--h-gold);
+}
+.primaryButton:disabled,
+.secondaryButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+}
+.localTools {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 22px;
+  color: var(--h-muted);
+  font-size: 12px;
+  line-height: 1.7;
+}
+.localTools details {
+  width: 100%;
+  margin-top: 8px;
+}
+.localTools summary {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  color: var(--h-jade);
+}
+.localTools summary:focus-visible {
+  outline: 3px solid var(--h-accent);
+  outline-offset: 3px;
+}
+.localTools details div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 5px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .progressTrack i {
+    transition: none;
+  }
+}
 .resultDisclosure {
   margin: 8px auto 0;
   padding: 8px 24px 14px;

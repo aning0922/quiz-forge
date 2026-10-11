@@ -50,12 +50,12 @@ export function SelectedHistoricalCover() {
           <p className={styles.invitation}>先遇见自己，再与千年风骨相逢。</p>
           <Link
             className={styles.primaryLink}
-            href="/studies/historical/selected/result"
+            href="/studies/historical/selected/experience"
           >
-            查看合成结果构图 <ArrowRight size={18} aria-hidden="true" />
+            开始演示答题 <ArrowRight size={18} aria-hidden="true" />
           </Link>
           <p className={styles.note}>
-            研究入口，不代表答题或完成测评。
+            仅本机浏览器演示，不代表正式答题或完成测评。
             <br />
             娱乐性格测评，不作为心理诊断。
           </p>
@@ -70,7 +70,7 @@ export function SelectedHistoricalCover() {
               从宣纸与山水开始，沿着清晰、安静的阅读节奏，寻找属于你的表达。具体人物会在结果揭晓时出现；封面不预设你的答案。
             </p>
             <p className={styles.note}>
-              本轮只验证视觉与展示槽位。答题、书签暂存及真实人物匹配尚未开放。
+              本轮使用合成题目体验答题、书签暂存与恢复。仅在此浏览器保存，不生成匹配结果，也不支持跨设备恢复。
             </p>
           </section>
         </div>
