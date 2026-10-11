@@ -53,7 +53,7 @@ reader 支持 STORE/DEFLATE；builder 只输出 STORE。单卷、非 ZIP64、无
 | B：ZIP/构建/CLI | zip.ts、build.ts、validate.ts、io.ts、scripts/quizpack-* 及这些测试；docs/P1_TOOLCHAIN_IMPLEMENTATION.md                                    |
 | 总控            | api.ts、limits.ts、package.json/锁文件、共享阶段文档、集成与 CI                                                                             |
 
-A exports：parseQuizPackManifest(input:unknown):Result<QuizPackManifest>；parseQuizPackContent(input:unknown):Result<QuizPackContent>；validateContentReferences(manifest,content,targetProductId):PackIssue[]；checkCompatibility(manifest,policy):PackIssue[]；DEFAULT_COMPATIBILITY_POLICY；inspectImage(bytes,expected,signal):Promise<Result<ImageFacts>>；getQuizPackManifestJsonSchema()/getQuizPackContentJsonSchema()。types 在各自文件导出，通用类型从 api.ts。A 先交接 manifest/content 字段和 fixture 的独立 commit，B 接入后完成编排，不修改 A 文件。
+A exports：parseQuizPackManifest(input:unknown):Result<QuizPackManifest>；parseQuizPackContent(input:unknown):Result<QuizPackContent>；validateContentReferences(manifest,content,targetProductId):PackIssue[]；checkCompatibility(manifest,policy):PackIssue[]；DEFAULT_COMPATIBILITY_POLICY；inspectImage(bytes,expected,context:ImageInspectionContext):Promise<Result<ImageFacts>>；getQuizPackManifestJsonSchema()/getQuizPackContentJsonSchema()。types 在各自文件导出，通用类型从 api.ts。A 先交接 manifest/content 字段和 fixture 的独立 commit，B 接入后完成编排，不修改 A 文件。
 
 B exports：validateQuizPack(source:AsyncIterable<Uint8Array>,context:ValidationContext):Promise<QuizPackValidationReport>；buildQuizPack(input:BuildInput,context:ValidationContext):Promise<Result<BuildOutput>>。build input 内容为 unknown、身份参数和显式资源集合；不信任调用方提供的 hash。API/limits 修改需总控解决后通知另一流，不在各分支重复调整。
 
@@ -62,3 +62,10 @@ B exports：validateQuizPack(source:AsyncIterable<Uint8Array>,context:Validation
 独立构造/修补恶意 ZIP，不能只用合法 builder：精确上限/+1、压缩比/虚报大小/实际流量、取消超时清理；路径链接加密方法 ZIP64/descriptor/extra/重叠/头不一致/截断/CRC/尾随；manifest 缺多重复/hash；伪装媒体、可读头损坏像素、超像素、多帧、尺寸不符、字体；未知字段/重复 JSON 键/跨 Product 与版本/基线缺失/未知兼容；两个 Product 两引擎成功且始终禁止 import/publish；遍历顺序及跨 TZ 确定性；真实 pnpm 三入口成功与失败。
 
 集成后执行六项检查和 Astra high 独立审查，记录精确 SHA、实际 CI 和已知限制，建立独立 Draft PR。P1 技术门槛通过可继续已授权 P2，保留主线合并与人工决定。本阶段不改 UI，既有消费者页面回归由 E2E 确认。
+
+## 前置审查补充（同阶段合同）
+
+- 总控 resolvePackLimits 统一拒绝 NaN/Infinity/非正整数/未知字段/高于生产值的覆盖；A inspectImage 接收 ImageInspectionContext，包含 signal 和 resourceBytes/imageDimension/imagePixels/imageMs。B 整包 deadline，A 媒体 deadline 与 kill/reap，任一取消即结束；解码前使用有效限额。
+- A validateContentReferences 核验 manifest Product/schema/engine 与实际 content 完全一致；组件 ID/version/propsSchemaVersion 三元组集合等于所有内容实际引用集合；文件清单与资源声明闭合；B 补齐实际条目三方一致性。每项留拒绝测试。
+- builder 从已解析 content 提取身份、版本、合同，从实际字节计算 manifest；content 中冲突的 hash/bytes/尺寸必须拒绝，不能悄悄修正。A 首次提交提供准确字段映射。
+- B 异步开始前固定 policy、有效 limits、content 和 asset bytes 的独立快照，证据和实际使用为同一份数据。报告增加 effectiveLimitsHash，与 compatibilityPolicyHash 同样绑定真实执行政策。
