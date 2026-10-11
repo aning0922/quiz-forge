@@ -2,6 +2,7 @@ import "server-only";
 import { createHash } from "node:crypto";
 import { z } from "zod";
 import { canonicalP1Json } from "../../v1/canonical";
+import { PACK_LIMITS } from "../../v1/limits";
 import { packIdSchema, sha256Schema } from "../../v1/manifest";
 import { assertPersistenceUnicode, EvidenceError } from "./unicode";
 
@@ -196,7 +197,17 @@ export const strictP1ReportSchema = z
                   .string()
                   .max(20)
                   .regex(/^[a-zA-Z][a-zA-Z0-9]*$/),
-                z.number().int().min(0).max(100),
+                // Rejected raw arrays can exceed valid content's item limits.
+                z
+                  .number()
+                  .int()
+                  .min(0)
+                  .max(
+                    Math.max(
+                      PACK_LIMITS.contentBytes,
+                      PACK_LIMITS.manifestBytes,
+                    ),
+                  ),
               ]),
             )
             .max(8),
