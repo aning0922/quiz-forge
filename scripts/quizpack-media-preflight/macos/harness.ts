@@ -54,6 +54,7 @@ import {
   runHarnessCandidateImage,
   type HarnessCase,
 } from "./launcher";
+import { emitFinalReport } from "./report";
 import { sealCapabilityAfterChecks, readCapabilityBytes } from "./capability";
 import { parseMacOutput, parseNativeIdentity } from "./protocol";
 function macValue(bytes: Uint8Array) {
@@ -1209,6 +1210,17 @@ async function main() {
     mac: loadPolicy("mac").profileId,
     fault: loadPolicy("fault").profileId,
   };
+  const finalResidual = readdirSync(CONTROL_ROOT);
+  requireTrue(finalResidual.length === 0);
+  const allChecksPassed = results.every((r) => r.passed);
+  const finalLog = JSON.stringify({
+    matrix: "mac-media-matrix.v1",
+    passed: allChecksPassed,
+    assertions: results.length,
+    failed: results.filter((r) => !r.passed).map((r) => r.name),
+    profileId: policy.profileId,
+    residualControlEntries: finalResidual.length,
+  });
   privateWrite(
     join(runRoot, "summary.json"),
     JSON.stringify({
@@ -1217,26 +1229,17 @@ async function main() {
       componentId: policyComponentId(policy),
       profiles,
       results,
-      residualControlEntries: readdirSync(CONTROL_ROOT),
-      passed: results.every((r) => r.passed),
+      residualControlEntries: finalResidual,
+      passed: allChecksPassed,
     }),
   );
-  if (
-    results.every((r) => r.passed) &&
-    process.argv.includes("--record-capability")
-  )
-    sealCapabilityAfterChecks(true, candidateComponentId);
-  console.log(
-    JSON.stringify({
-      matrix: "mac-media-matrix.v1",
-      passed: results.every((r) => r.passed),
-      assertions: results.length,
-      failed: results.filter((r) => !r.passed).map((r) => r.name),
-      profileId: policy.profileId,
-      residualControlEntries: readdirSync(CONTROL_ROOT).length,
-    }),
-  );
-  if (results.some((r) => !r.passed)) process.exitCode = 1;
+  let capabilityCommitted = false;
+  if (allChecksPassed && process.argv.includes("--record-capability"))
+    capabilityCommitted = sealCapabilityAfterChecks(true, candidateComponentId);
+  // No directory reads, assertions or summary construction after the commit point.
+  // Reporting failure preserves the committed outcome and its prewritten private evidence.
+  await emitFinalReport(process.stdout, finalLog, capabilityCommitted);
+  if (!allChecksPassed) process.exitCode = 1;
 }
 main().catch(() => {
   if (existsSync(runRoot) && !existsSync(join(runRoot, "summary.json"))) {

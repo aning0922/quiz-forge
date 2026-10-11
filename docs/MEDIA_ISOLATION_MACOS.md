@@ -92,3 +92,9 @@ node --import tsx scripts/quizpack-media-preflight/macos/harness.ts
 - 最后检查使用本次runs中的私有provisional能力与同一门控/启动路径，普通入口完全忽略它。最终检查、控制/素材回收、身份收集及有界证据落盘全部通过后，才写独占.next、fsync并原子rename封存；rename为提交点，不在其后执行可失败验证。失败不改既有能力（旧组件仍按自身匹配关系判断），无本次授权；真实旧封存bytes在失败final-check对照中保持不变。没有业务入口或客户端能力参数。此原子操作不声明rename后的断电目录项持久性。
 
 本流66项实际通过与工程检查仍不是整体平台验收。Root/Astra接续精确commit复审及独立完整矩阵，Linux亦需其真实CI；未开启B2-2。
+
+## 封存格式、提交后报告与迁移字节收口
+
+封存writer使用JSON.stringify(value,null,2)加真实换行，与项目Prettier一致；实际原子写入后格式检查通过。最终control残留读取/零残留断言、摘要构造与证据写入全部在seal前完成。seal后只输出已构造的报告；若报告流IO失败，保留capabilityCommitted:true语义，不输出HARNESS_FAILED或声称本次能力未获得。两项真实Writable失败边界验证已补。
+
+component虽不直接包含渲染路径，依赖树仍绑定完整实际文件字节。Root独立迁移核验定位到唯一不同文件是sharp/node_modules/.bin/semver：pnpm生成CLI包装包含位置相关字节，Root组件b00b6251991ae94dd9ba35b7567ae4ab2937e56b85cbaf515abc59f82c0d5b73与本流1358f10…不同属于真实字节差异。不能排除该文件或放宽匹配来跨worktree复用；目标工作树须完整重验后封存其自身组件。本流同源两次独立重编译C helper的SHA均等于原产物ba24e49f…6c90，未把差异猜成native随机变化。Root独立66/66及第二轮封存稳定性由Root记录，不冒称整体平台验收。
