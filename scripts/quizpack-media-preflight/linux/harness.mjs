@@ -1,3 +1,5 @@
+import { measureOwnCgroup } from "./resources.mjs";
+import { precheckImage } from "../shared/precheck.ts";
 import sharp from "sharp";
 import { lstat, symlink, readFile } from "node:fs/promises";
 import { resolve } from "node:path";
@@ -9,6 +11,7 @@ import {
   privateDir,
   writePrivate,
   json,
+  command,
   safeMain,
 } from "./common.mjs";
 import { executeSynthetic, runIsolatedImage } from "./controller.mjs";
@@ -112,6 +115,56 @@ safeMain(async () => {
       },
     );
   }
+  const large = await sharp({
+    create: {
+      width: 4000,
+      height: 4000,
+      channels: 4,
+      background: { r: 71, g: 43, b: 199, alpha: 0.7 },
+    },
+  })
+    .png()
+    .toBuffer();
+  const checkedLarge = precheckImage(large, {
+    path: "assets/boundary.png",
+    mediaType: "image/png",
+    width: 4000,
+    height: 4000,
+    bytes: large.length,
+    sha256: hash(large),
+  });
+  let measured;
+  let measurement;
+  let owned;
+  const largeDeadline = performance.now() + 5000;
+  if (!checkedLarge.ok) throw new Error("SYNTHETIC_LARGE");
+  const largeResult = await executeSynthetic({
+    bytes: checkedLarge.bytes,
+    expected: checkedLarge.expected,
+    deadlineMonotonicMs: largeDeadline,
+    hooks: {
+      afterCreate(r) {
+        owned = r;
+      },
+      startSpawn() {
+        measurement = measureOwnCgroup(owned, largeDeadline);
+      },
+      async afterStart() {
+        measured = await measurement;
+      },
+    },
+  });
+  record(
+    "native-memory-and-enforced-cgroup",
+    largeResult.outcome === "decoded" &&
+      measured?.measured &&
+      measured.peakBytes <= 536870912 &&
+      measured.limits.memory === 536870912 &&
+      measured.limits.swap === 0 &&
+      measured.limits.cpu === "100000 100000" &&
+      measured.limits.pids === 64,
+    { ...largeResult, measured },
+  );
   // Four host-only synth roots. Parent proves exact files/aliases exist and checks
   // inode/content after every native attempt; no private application data involved.
   const sentinels = resolve(root, "host");
@@ -126,6 +179,27 @@ safeMain(async () => {
     const s = await lstat(f);
     before.push({ path: f, ino: s.ino, hash: hash(await readFile(f)) });
   }
+  const nativePath = policy.image.nativeProbePath;
+  if (
+    !nativePath?.startsWith(CACHE + "/") ||
+    hash(await readFile(nativePath)) !== policy.image.inputs["native-probe"]
+  )
+    throw new Error("NATIVE_BUILD_IDENTITY");
+  const control = await command(nativePath, [sentinels, "control"]);
+  let controlData;
+  try {
+    controlData = json(control.stdout);
+  } catch {
+    controlData = null;
+  }
+  record(
+    "native-host-control",
+    control.code === 0 &&
+      !control.reason &&
+      control.settled &&
+      controlData?.ok === true,
+    { outcome: "probe", controlData },
+  );
   const native = await executeSynthetic({
     scenario: "native",
     syntheticRoot: sentinels,
@@ -176,7 +250,8 @@ safeMain(async () => {
       `fault-${scenario}`,
       result.stopped === "confirmed" &&
         result.outcome !== "decoded" &&
-        (!expectedCode || result.code === expectedCode),
+        (!expectedCode || result.code === expectedCode) &&
+        (scenario !== "oom" || result.evidence?.oomKilled === true),
       { ...result, stdout: undefined },
     );
   }
@@ -229,11 +304,7 @@ safeMain(async () => {
     binding: policy.binding,
     versions,
     cases,
-    limitations: [
-      "extended-lifecycle-injection-matrix-pending",
-      "memory-peak-measurement-pending",
-      "native-host-control-comparison-pending",
-    ],
+    limitations: ["extended-lifecycle-injection-matrix-pending"],
     accepted: false,
   };
   await writePrivate(resolve(root, "summary.json"), JSON.stringify(report));

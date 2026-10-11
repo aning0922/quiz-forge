@@ -18,6 +18,7 @@ import { LIMITS, INSPECT, matches, createArgs, loadPolicy } from "./policy.mjs";
 const CONTROL = resolve(CACHE, "control");
 const RECORD = resolve(CONTROL, "record.json");
 const GUARD = resolve(CONTROL, "guard");
+const localBarriers = new Set();
 const fail = (runId, profileId, code, stopped) => ({
   outcome: "failed",
   runId,
@@ -64,7 +65,8 @@ export function fixedScenario(scenario, syntheticRoot) {
 }
 async function inspect(record, deadline) {
   const r = await docker(["inspect", "--format", INSPECT, record.name], {
-    deadline,
+    deadline: deadline - 100,
+    settleDeadline: deadline,
   });
   if (r.code !== 0 || r.reason || !r.settled) return null;
   try {
@@ -76,7 +78,10 @@ async function inspect(record, deadline) {
 }
 async function removeConfirmed(record, container, deadline) {
   // Exact ID after identity verification. No force, volumes, broad filters, or --rm.
-  const r = await docker(["rm", container.id], { deadline });
+  const r = await docker(["rm", container.id], {
+    deadline: deadline - 100,
+    settleDeadline: deadline,
+  });
   if (r.code !== 0 || r.reason || !r.settled) return false;
   if (r.stdout.toString("utf8").trim() !== container.id) return false;
   // Fixed private identities must still be our bytes before local deletion.
@@ -84,6 +89,7 @@ async function removeConfirmed(record, container, deadline) {
   if ((await readPrivate(GUARD, 128)).toString() !== record.runId) return false;
   await unlink(RECORD);
   await unlink(GUARD);
+  localBarriers.delete(record.runId);
   return true;
 }
 // Internal closed synthetic harness. Normal entry below always runs shared precheck.
@@ -135,7 +141,7 @@ export async function executeSynthetic({
     } catch {
       return fail(runId, null, "BUSY", "not-started");
     }
-    const policy = await loadPolicy();
+    const policy = await loadPolicy({ deadline, signal });
     profileId = policy.profileId;
     if (scenario !== "identity" && !policy.binding.dependencies)
       throw new Error("DEPENDENCIES_UNVERIFIED");
@@ -160,9 +166,15 @@ export async function executeSynthetic({
       issued = true;
       const create = await docker(
         createArgs(record, spec.entrypoint, spec.args),
-        { deadline, signal, onSpawn: hooks.createSpawn },
+        {
+          deadline,
+          settleDeadline: deadline + LIMITS.cleanupMs,
+          signal,
+          onSpawn: hooks.createSpawn,
+        },
       );
       await hooks.afterCreate?.(record, create);
+      if (create.settled) localBarriers.add(runId);
       if (!create.settled) {
         return fail(runId, profileId, "STOP_UNCONFIRMED", "unknown");
       }
@@ -178,6 +190,7 @@ export async function executeSynthetic({
           ["start", "--attach", "--interactive", container.id],
           {
             deadline,
+            settleDeadline: deadline + LIMITS.cleanupMs,
             signal,
             input: snapshot,
             stdoutLimit: LIMITS.stdout,
@@ -185,6 +198,7 @@ export async function executeSynthetic({
             onSpawn: hooks.startSpawn,
           },
         );
+        if (!output.settled) localBarriers.delete(runId);
         await hooks.afterStart?.(record, output);
         reason =
           output.reason ??
@@ -192,21 +206,31 @@ export async function executeSynthetic({
           (output.code !== 0 ? "WORKER_FAILED" : null);
       }
     }
-    const cleanupDeadline = performance.now() + LIMITS.cleanupMs;
+    const cleanupDeadline =
+      Math.min(performance.now(), deadline) + LIMITS.cleanupMs;
     // One stop path for decode, failure, cancellation. Inspect/wait are authoritative.
     container = await inspect(record, cleanupDeadline);
     if (!container)
       return fail(runId, profileId, "STOP_UNCONFIRMED", "unknown");
     if (container.state.Running || container.state.Status === "created") {
-      if (container.state.Running)
-        await docker(["kill", "--signal=SIGKILL", container.id], {
-          deadline: cleanupDeadline,
-        });
+      if (container.state.Running) {
+        const killed = await docker(
+          ["kill", "--signal=SIGKILL", container.id],
+          { deadline: cleanupDeadline - 100, settleDeadline: cleanupDeadline },
+        );
+        if (!killed.settled) {
+          localBarriers.delete(runId);
+          return fail(runId, profileId, "STOP_UNCONFIRMED", "unknown");
+        }
+      }
     }
     const waited =
       container.state.Status === "created"
         ? null
-        : await docker(["wait", container.id], { deadline: cleanupDeadline });
+        : await docker(["wait", container.id], {
+            deadline: cleanupDeadline - 100,
+            settleDeadline: cleanupDeadline,
+          });
     const final = await inspect(record, cleanupDeadline);
     const stopped =
       final &&
@@ -295,7 +319,12 @@ export async function executeSynthetic({
     };
   } catch {
     if (issued) return fail(runId, profileId, "STOP_UNCONFIRMED", "unknown");
-    return fail(runId, profileId, "ISOLATION_UNAVAILABLE", "not-started");
+    return fail(
+      runId,
+      profileId,
+      interrupt() ?? "ISOLATION_UNAVAILABLE",
+      "not-started",
+    );
   } finally {
     // Before issuance only. Unknown started executions retain both fixed objects.
     if (guardOwned && !issued) {
@@ -326,19 +355,33 @@ export async function verifyOwnStopped() {
       (await readPrivate(GUARD, 128)).toString() !== record.runId
     )
       return { stopped: "unknown" };
-    const policy = await loadPolicy();
+    const policy = await loadPolicy({ deadline });
     if (
       record.profileId !== policy.profileId ||
       record.daemonId !== policy.binding.daemon.id
     )
       return { stopped: "unknown" };
+    // Same-process probe recovery requires the actual create/start close barrier.
+    // A fresh process cannot guess closure from owner ESRCH or stale PID.
+    if (!localBarriers.has(record.runId)) return { stopped: "unknown" };
     record.recordHash = hash(persisted);
     let c = await inspect(record, deadline);
     if (!c) return { stopped: "unknown" };
-    if (c.state.Running)
-      await docker(["kill", "--signal=SIGKILL", c.id], { deadline });
+    if (c.state.Running) {
+      const killed = await docker(["kill", "--signal=SIGKILL", c.id], {
+        deadline: deadline - 100,
+        settleDeadline: deadline,
+      });
+      if (!killed.settled) {
+        localBarriers.delete(record.runId);
+        return { stopped: "unknown" };
+      }
+    }
     if (c.state.Status !== "created") {
-      const w = await docker(["wait", c.id], { deadline });
+      const w = await docker(["wait", c.id], {
+        deadline: deadline - 100,
+        settleDeadline: deadline,
+      });
       if (w.code !== 0 || w.reason || !w.settled) return { stopped: "unknown" };
     }
     c = await inspect(record, deadline);
