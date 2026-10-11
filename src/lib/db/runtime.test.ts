@@ -9,6 +9,8 @@ import {
   loadRuntimeConfig,
   readPrivateJson,
   runtimeConfigSchema,
+  normalizeRuntimeConfig,
+  runtimeConfigFile,
 } from "./runtime";
 
 const directories: string[] = [];
@@ -53,6 +55,18 @@ describe("P2-A private runtime", () => {
       server: { version: 180004, address: "127.0.0.1", port: 55421 },
     };
     expect(runtimeConfigSchema.safeParse(config).success).toBe(true);
+    const v1 = normalizeRuntimeConfig(config);
+    expect(v1.imports.enabled).toBe(false);
+    expect(runtimeConfigFile(v1)).toEqual(config);
+    const v2 = { ...config, version: 2, imports: { enabled: true } };
+    expect(runtimeConfigFile(normalizeRuntimeConfig(v2))).toEqual(v2);
+    expect(
+      runtimeConfigSchema.safeParse({ ...config, imports: { enabled: true } })
+        .success,
+    ).toBe(false);
+    expect(runtimeConfigSchema.safeParse({ ...v2, imports: {} }).success).toBe(
+      false,
+    );
     expect(
       runtimeConfigSchema.safeParse({ ...config, extra: true }).success,
     ).toBe(false);

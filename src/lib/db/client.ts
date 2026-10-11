@@ -4,7 +4,8 @@ import { drizzle, type PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import * as schema from "./schema";
 import {
   loadRuntimeConfig,
-  runtimeConfigSchema,
+  normalizeRuntimeConfig,
+  runtimeConfigFile,
   StudioUnavailableError,
   type P2aRuntimeConfig,
 } from "./runtime";
@@ -91,7 +92,7 @@ export async function createDatabase(
 ): Promise<P2aDatabase> {
   let sql: postgres.Sql | undefined;
   try {
-    config = runtimeConfigSchema.parse(config);
+    config = normalizeRuntimeConfig(runtimeConfigFile(config));
     sql = openSql(config.database);
     await verifyDatabaseIdentity(sql, config);
     const client = sql;
