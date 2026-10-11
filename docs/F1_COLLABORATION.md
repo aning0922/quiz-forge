@@ -22,9 +22,9 @@ A 提供 `src/features/quizpack/foundation.ts`：
 - `getFoundationJsonSchema()`：返回 JSON Schema Draft 2020-12（结构层），交叉引用和归属需另调用validator。
 - fixture：`src/features/quizpack/fixtures/historical.foundation.json`；不使用真实素材、Key或用户数据；声明见证不执行评分。
 
-B 的草稿函数接收有界普通JSON内容，稳定productId/draftId；内容hash是canonical JSON SHA-256，不含revision/时间。create/update返回新对象，冲突/篡改hash/错误身份拒绝，更新使旧revision/hash审核证据失效。它是本地纯逻辑，调用方必须以草稿封装productId作为targetProductId通过A的领域validator后才能创建/更新领域草稿（组合测试必须拒绝外层Product A搭配内容Product B），通用B函数单独成功不构成领域有效性，不是数据库/权限/发布服务。
+B 的草稿函数接收有界普通JSON内容，稳定productId/draftId；内容hash是canonical JSON SHA-256，不含revision/时间。create/update返回新对象，冲突/篡改hash/错误身份拒绝，实际内容变化使旧revision/hash审核证据失效；省略内容或canonical内容相同为no-op，返回独立副本并保留revision/hash/证据。它是本地纯逻辑，调用方必须以草稿封装productId作为targetProductId通过A的领域validator后才能创建/更新领域草稿（组合测试必须拒绝外层Product A搭配内容Product B），通用B函数单独成功不构成领域有效性，不是数据库/权限/发布服务。
 
-CLI：`pnpm foundation:check <file> --product <id>`（stdin使用`-`），`pnpm foundation:schema`输出结构Schema。输入限1MiB、JSON深度32；拒绝重复JSON对象键，非JSON值/原型污染键/非法参数；错误非零、JSON响应，无堆栈/源文/绝对本机路径。合法结构引用退出0也只表示局部校验，输出始终publishable=false和未验证项。脚本用固定tsx依赖；package/锁文件由总控修改。
+CLI：`pnpm --silent foundation:check <file> --product <id>`（stdin使用`-`），`pnpm --silent foundation:schema`输出结构Schema。输入限1MiB、JSON深度32；拒绝重复JSON对象键，非JSON值/原型污染键/非法参数；错误非零、JSON响应，无堆栈/源文/绝对本机路径。合法结构引用退出0也只表示局部校验，输出始终publishable=false和未验证项。脚本用固定tsx依赖；package/锁文件由总控修改。
 
 ## 阶段检查
 
@@ -38,3 +38,9 @@ CLI：`pnpm foundation:check <file> --product <id>`（stdin使用`-`），`pnpm 
 - 文档基线 `4eedd0d` 已先于实现提交；固定依赖基线为 `3165e42`。总控不修改原主工作区或已暂停 D1-D worktree。
 
 F1补充边界：foundationBundle只承载内容；draft另封装身份/revision/hash。跨product资源一律拒绝，不信任包内共享/批准声明；共享资源能力留后续受信注册表。F1仅editing草稿，不提供审核/发布状态迁移。
+
+## 托管边界与检查点
+
+用户追加希望托管开发。总控在已授权F1内负责分派、等待、审查整改、集成、验证与交付，常规步骤不重复要求确认；范围扩展另等用户选择。没有创建会话结束后定时续跑或宣称后台自动开发。阶段完成停在Draft PR/作者验收，不自动合并或进入包工具/数据库。旧开发聊天的暂停持续有效。
+
+A/B实现已分别提交推送并由总控按所有权集成；CLI审查问题已派回B修复。总控不把各聊天单测通过替代集成检查。最终记录见 `FOUNDATION_F1.md` 与 `F1_REVIEW.md`。

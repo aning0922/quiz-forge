@@ -98,3 +98,14 @@ docs/                        # 产品、架构、数据、视觉、阶段证据
 ## 测评工作区与后续开发
 
 一款测评对应一个 Product；题目/规则/结果/页面/私有素材均归该测评，发布版本固定内容与资源引用。后台按测评进入工作区，类目和标签只组织目录；数据库与认证后台为后续阶段。详见 [架构](docs/ARCHITECTURE.md)、[数据模型](docs/DATA_MODEL.md)、[资源归属](docs/ASSESSMENT_RESOURCES.md)、[开发路线](docs/ROADMAP_30D.md)。
+
+## F1 本地合同校验
+
+```sh
+corepack pnpm --silent foundation:check src/features/quizpack/fixtures/historical.foundation.json --product historical-synthetic
+corepack pnpm --silent foundation:schema
+```
+
+校验命令支持用 `-` 读取标准输入，JSON限1MiB和32层。成功只代表局部结构与归属/引用检查通过；输出始终包含 `publishable: false` 和 `unverified`。输入中的素材 approved/hash 为自报声明，不证明授权或文件字节。参考包仅合成数据；无真实图片、评分或发布能力。
+
+开发分工、模型和文件所有权见 [F1并行合同](docs/F1_COLLABORATION.md)。

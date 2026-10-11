@@ -62,3 +62,6 @@ CI 配置按 [checkout](https://github.com/actions/checkout)、[setup-node](http
 - ADR-037 accepted：先交付一款测评端到端，最小认证后台前移到包安全/数据库之后；三主题十五状态目标保留，AI/剧情/渠道后置。用户只授权文档与 F1，后续按阶段验收。
 - ADR-038 accepted：F1 使用固定 zod 4.6.5 定义运行时结构并生成 JSON Schema；交叉引用另行验证。foundation.v1 不冻结完整 QuizPack；valid 不授予发布，导入文件自报的审核/哈希不是可信证据。
 - ADR-039 accepted：本轮从 main b3e30bc 隔离实施，其他开发聊天暂停；保留 D1-D 未提交成果，原主工作区和所有旧研究验收不覆盖。
+
+- ADR-040 accepted：F1草稿省略content或canonical相同为no-op，返回无别名副本但不递增revision；实际变化才使旧证据失效。JSON CLI机器接口统一`pnpm --silent`，真实脚本管理器入口需子进程测试。
+- 依赖核验：Zod 4.6.5 与 tsx 4.23.15 的已安装package均声明MIT；tsx要求Node≥18，本机20.20.1满足。锁文件固定版本，tsx预编译运行已验证，未批准额外依赖安装脚本。

@@ -43,7 +43,7 @@ F1 validator 至少拒绝：未知顶级字段、空/重复 stable ID、跨 Prod
 
 ## 草稿、hash 与发布
 
-草稿保存需要调用者提供 `expectedRevision`。纯逻辑更新要求 revision 相同、JSON 边界合法且满足调用处的 `foundation.v1` 验证；通用草稿函数不授予领域合法性，输出 `revision + 1` 和重新计算的 canonical content hash；不匹配返回显式 conflict，绝不做最后写入者覆盖。hash 是内容身份和验证证据的绑定键，不是安全签名，也不替代用户权限、数据库事务或 revision。
+草稿保存需要调用者提供 `expectedRevision`。纯逻辑更新要求 revision 相同、JSON 边界合法且满足调用处的 `foundation.v1` 验证；通用草稿函数不授予领域合法性，实际内容变化时输出 `revision + 1` 和重新计算的 canonical content hash；省略内容或canonical内容相同则返回独立副本且revision/hash/证据不变；不匹配返回显式 conflict，绝不做最后写入者覆盖。hash 是内容身份和验证证据的绑定键，不是安全签名，也不替代用户权限、数据库事务或 revision。
 
 未来真实发布服务必须在同一发布决定中复核：草稿 revision、content hash、验证证据、资源 hash/审批、组件兼容性和人工审核状态。它创建新的不可变 ProductVersion，而不是把 ProductDraft 更新成 published。任何后续编辑都克隆到新 draft；回滚只修改新 Key 的发布指针。
 
