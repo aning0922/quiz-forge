@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { performance } from "node:perf_hooks";
 import { emptyDto, loginDto, readStudioJson } from "./json";
 import { assertStudioSource, configuredHost } from "./source";
 import { errorResponse } from "./errors";
@@ -16,7 +17,10 @@ const jsonRequest = (body: string) =>
     body,
   });
 
-afterEach(() => vi.useRealTimers());
+afterEach(() => {
+  vi.useRealTimers();
+  vi.restoreAllMocks();
+});
 
 describe("Studio source boundary", () => {
   it("requires an exact loopback profile and explicit nondefault port", () => {
@@ -128,6 +132,72 @@ describe("actual bounded JSON and strict DTOs", () => {
     await vi.advanceTimersByTimeAsync(5000);
     await result;
     expect(cancelled).toBe(true);
+  });
+  it("rejects a read that resolves at the monotonic deadline before its timer callback", async () => {
+    let now = 0;
+    vi.spyOn(performance, "now").mockImplementation(() => now);
+    const body = new ReadableStream({
+      pull(controller) {
+        now = 5000;
+        controller.enqueue(new TextEncoder().encode("{}"));
+        controller.close();
+      },
+    });
+    const request = new Request(config.origin, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body,
+      duplex: "half",
+    } as RequestInit);
+    await expect(readStudioJson(request)).rejects.toThrow("INVALID_REQUEST");
+  });
+  it("checks the monotonic deadline after decoding and parsing before success", async () => {
+    let now = 0;
+    vi.spyOn(performance, "now").mockImplementation(() => now);
+    const originalParse = JSON.parse;
+    vi.spyOn(JSON, "parse").mockImplementation((...args) => {
+      const value: unknown = originalParse(...args);
+      now = 5000;
+      return value;
+    });
+    await expect(readStudioJson(jsonRequest("{}"))).rejects.toThrow(
+      "INVALID_REQUEST",
+    );
+  });
+  it("yields through continuous empty-chunk microtasks and cancels without awaiting the stream", async () => {
+    let now = 0;
+    let reads = 0;
+    let cancelled = false;
+    vi.spyOn(performance, "now").mockImplementation(() => now);
+    const body = new ReadableStream({
+      pull(controller) {
+        reads += 1;
+        controller.enqueue(new Uint8Array());
+      },
+      cancel() {
+        cancelled = true;
+        return new Promise<void>(() => {});
+      },
+    });
+    const request = new Request(config.origin, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body,
+      duplex: "half",
+    } as RequestInit);
+    const result = expect(readStudioJson(request)).rejects.toThrow(
+      "INVALID_REQUEST",
+    );
+    // A timer must get CPU time despite an endless sequence of resolved reads.
+    const marker = setTimeout(() => {
+      now = 5000;
+    }, 0);
+    await result;
+    clearTimeout(marker);
+    expect(cancelled).toBe(true);
+    expect(reads).toBeGreaterThan(0);
+    expect(reads).toBeLessThan(10000);
+    expect(body.locked).toBe(false);
   });
   it("rejects all unknown fields and non-object DTOs", () => {
     expect(() => emptyDto({})).not.toThrow();
