@@ -47,3 +47,11 @@ Astra复审另指出HTTP502+CSRF_REJECTED等错配仍会错误解除未知。本
 ## 总控生产浏览器反馈：状态选择器收口
 
 总控在真实生产E2E中已通过auth3、workspace9及imports关闭/只读/空状态1例；创建/上传用例实际到达received，但全页not-run文案同时匹配接收面板和列表，strict selector失败。按反馈将not-run、received、rejected及接收暂停提示限定到具名“原包状态”region，保留全部断言；打开状态页后增加URL与页面标题等待，避免在列表过渡态断言/截图。其他意图unknown与精确查询提示为单次操作独有文案，静态检查未发现同类列表复用。仅做本流静态格式/lint与8例发现检查；实际浏览器重跑和图检仍由总控独占3100，本流没有启动服务器。
+
+## 请求数据库初始化预算接入
+
+总控明确交接 A `cd7688d4e6e5bc6758c77788c4f6b6c9010438a1`（本分支 cherry-pick `4438278`）。HTTP 建库现调用 `createDatabase(config, budget?.context)`，archive/recover 的初始化身份查询与后续服务使用同一入口绝对期限/取消信号，其他操作传 undefined。每次 Handler 建独立 client 并在 finally 关闭，不修改 A 或 lib/db/client；没有对 receive/recover 外层做 race，文件操作仍由服务负责 settle 与停止证明。
+
+单元覆盖：延迟配置后 archive 初始化与服务收到同一个 context；recover 初始化/服务 context 同一对象；settings 无预算；建库阶段超时且 db 尚未赋值时返回 RECEIVE_TIMEOUT/408、不进入服务、不read raw、会cancel输入。专属HTTP单元14项、imports共5文件55项通过，typecheck、专属ESLint/格式检查通过。
+
+仅受管重启本流purpose=test/55422并迁移0008；接入新初始化签名后专属真实HTTP/PG15项重新通过。HTTP测试的长服务由 Handler 自建请求client，没有复用 fixture.app；seed-recovery 在专属子进程只执行一次长服务，之前完成鉴权/意图，之后仅用独立 owner 连接观察，最后 close，没有并行共享。3100/E2E仍由总控运行。

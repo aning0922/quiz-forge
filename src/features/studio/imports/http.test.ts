@@ -145,6 +145,7 @@ describe("receipt HTTP dispatch unit boundary", () => {
       receiveTimeoutMs: 60000,
     });
     expect(implementation.readImportSettings).toHaveBeenCalledTimes(1);
+    expect(mocked.create.mock.calls[0]?.[1]).toBeUndefined();
   });
   it("returns 201 only for a fresh intent and 200 for an exact replay", async () => {
     const implementation = service();
@@ -275,6 +276,7 @@ describe("receipt HTTP dispatch unit boundary", () => {
         expect(context.deadlineMonotonicMs - performance.now()).toBeLessThan(
           59995,
         );
+        expect(mocked.create.mock.calls[0]?.[1]).toBe(context);
         await source.cancel();
         return dto;
       },
@@ -284,6 +286,48 @@ describe("receipt HTTP dispatch unit boundary", () => {
         .status,
     ).toBe(200);
     expect(cancel).toHaveBeenCalledTimes(1);
+  });
+  it("passes the same absolute budget to recover database initialization and service", async () => {
+    const implementation = service();
+    implementation.recoverReceive.mockImplementation(
+      async (_db, _credentials, _product, _id, _input, context) => {
+        expect(mocked.create.mock.calls[0]?.[1]).toBe(context);
+        expect(context.signal.aborted).toBe(false);
+        return dto;
+      },
+    );
+    const response = await handleImportHttp(
+      request("recover", {}, JSON.stringify({ expectedStateRevision: 1 })),
+      endpoint("recover"),
+      implementation,
+    );
+    expect(response.status).toBe(200);
+    expect(implementation.recoverReceive).toHaveBeenCalledTimes(1);
+  });
+  it("cancels raw input when budgeted database initialization expires before assignment", async () => {
+    mocked.create.mockRejectedValueOnce(new StudioError("RECEIVE_TIMEOUT"));
+    const implementation = service();
+    const incoming = request("archive");
+    const read = vi.fn();
+    const cancel = vi.fn(async () => undefined);
+    Object.defineProperty(incoming, "body", {
+      value: { getReader: () => ({ read, cancel, releaseLock: vi.fn() }) },
+    });
+    const response = await handleImportHttp(
+      incoming,
+      endpoint("archive"),
+      implementation,
+    );
+    expect(response.status).toBe(408);
+    expect(await code(response)).toBe("RECEIVE_TIMEOUT");
+    expect(mocked.create.mock.calls[0]?.[1]).toMatchObject({
+      signal: expect.any(AbortSignal),
+      deadlineMonotonicMs: expect.any(Number),
+    });
+    expect(read).not.toHaveBeenCalled();
+    expect(cancel).toHaveBeenCalledTimes(1);
+    expect(implementation.receiveArchive).not.toHaveBeenCalled();
+    expect(mocked.close).not.toHaveBeenCalled();
   });
   it("uses safe unknown projection and never starts input if claim is unknown", async () => {
     const implementation = service();
