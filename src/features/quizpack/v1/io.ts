@@ -139,6 +139,7 @@ export async function writeArchiveNoClobber(
   const parent = dirname(target);
   const temporary = resolve(parent, `.quizpack-${randomUUID()}.tmp`);
   let created = false;
+  let committed = false;
   try {
     throwIfAborted(signal);
     await rejectLinks(parent);
@@ -152,7 +153,10 @@ export async function writeArchiveNoClobber(
     }
     throwIfAborted(signal);
     await link(temporary, target);
+    committed = true;
+    throwIfAborted(signal);
   } catch (error) {
+    if (committed) await unlink(target).catch(() => {});
     if (error instanceof PackToolError) throw error;
     throw new PackToolError(
       typeof error === "object" &&
