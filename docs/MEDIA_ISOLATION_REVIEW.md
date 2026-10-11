@@ -21,3 +21,11 @@
 ## macOS候选
 
 早期严格读取政策使Node启动前SIGABRT；扩大Mach lookup未解决，不把宽读取诊断当合格策略。开发流已报告收窄到必要系统/依赖读取和元数据，但尚未交完整launcher/停止矩阵供总控验收。正式结论以后续实际源码、平台探针和独立复审为准。
+
+## 第二轮真实 Linux 证据
+
+整改f29d5b6→root96000be后，本机11共享+7控制/真实FIFO共18测试通过，lint/格式通过。独立Astra正在复验Linux总deadline/abort、FIFO及新增生命周期代码，未计为已关闭。
+
+[容器CI38177356944](https://github.com/aning0922/quiz-forge/actions/runs/38177356944)在head96000be仍failure；固定stage为native-identity，前面的镜像构建/记录已走过，尚不能确定是政策预检、配置匹配还是worker启动。已派Linux流补有限code/布尔诊断，不输出原始异常、环境或完整inspect，不猜测放宽策略。
+
+同head[普通CI38177356922](https://github.com/aning0922/quiz-forge/actions/runs/38177356922)的shared POSIX基线失败：真实Linux的FD枚举为scanComplete:true、noInheritedFileOrSocket:false，不能以Mac对照通过代替。已派shared所有者查明额外FD来源/枚举差异，仅记录FD编号/类型/权限等有限元数据；未核清前不忽略该FD或改断言为通过。上节独立修复结论只覆盖其明确注明的Mac实测及Linux静态范围。
