@@ -1,6 +1,6 @@
 # macOS 媒体隔离候选与实测
 
-2026-10-12。基于 `6066c3b`，独立 `codex/media-isolation-macos` 工作树。只拥有 `scripts/quizpack-media-preflight/shared/`、`macos/` 和本文。**mac候选61项本流合成实测通过，待总控与Astra独立复核；不是B2-2接入或生产隔离批准。** 未修改P1/HTTP/Studio/DB，未启动数据库/3100、部署或合并main。Linux实际CI及整体退出结论由总控记录，不能用本机结果替代。
+2026-10-12。基于 `6066c3b`，独立 `codex/media-isolation-macos` 工作树。只拥有 `scripts/quizpack-media-preflight/shared/`、`macos/` 和本文。**mac候选66项本流合成实测通过，待总控与Astra独立复核；不是B2-2接入或生产隔离批准。** 未修改P1/HTTP/Studio/DB，未启动数据库/3100、部署或合并main。Linux实际CI及整体退出结论由总控记录，不能用本机结果替代。
 
 ## 共享交接
 
@@ -8,7 +8,7 @@
 - `b9060ae`：完整有界FD枚举、FD300实际对照、网络前置阶段、UTF-8 BOM拒绝；本机11项测试通过。
 - `68c3700`：未知FD的有限元数据诊断；本机12项测试通过，不放宽任何安全断言。
 - `e21afd9`：plain Node / tsx / node:test / 两者组合四对照。macOS Node20.20.1均extraCount=0；Linux第三轮CI38177881397曾发现两只非CLOEXEC管道（一读一写）；总控后续第五轮head3ee9326四个Node24.21.0对照均见同一有限形状，不能归因tsx或node:test，仍由总控窄查。root后续诊断修订344513a/固定编译PATH归总控，本流不重复修改。
-- 总控的安全祖先权限修复 `4f3959b` 已按指令接入为本分支 `db95013`；不重复修改根workflow或Linux代码。
+- 总控的安全祖先权限修复 `4f3959b` 已按指令接入为本分支 `db95013`；Root后续共享收口cc51623已按明确指令只同步shared目录为 `348e547`（不带root workflow）；不重复修改根workflow或Linux代码。
 
 父端复用P1实际ImageDeclaration/ImageFacts和path/MIME/hash Schema，不另建图片解码器。严格解析声明，同步取得独立bytes与声明快照；实际bytes/hash、magic/扩展名、PNG/WebP动画标志、8MiB/8192/16MP限额均在首次await/平台启动前核实。SharedArrayBuffer、未知字段和异常getter拒绝。正常执行唯一固定原P1 `src/features/quizpack/v1/media-worker.mjs`，完整原尺寸像素解码。stdout严格UTF-8/单份原worker JSON/字段/尺寸/frames与声明；BOM、重复字段、额外JSON和尾随内容拒绝。
 
@@ -48,23 +48,23 @@ harness实际临时移走本次私有helper使停止核验失联：约5817ms返�
 
 ## 稳定政策与失败关闭
 
-本工作树实测worker profileId：`b419191e292ec846acea99877da5ec78235660eeb50941eb7b1a25a47c22b221`。
+本工作树实测worker profileId：`0e961b4c055fe141d7c6b302d34048cc287be6a8faad4204844f19b8fdf011ec`。
 
-封存componentId：`c376f502f63147514ec27cfeacfd930f4a8b6a8c2bcbcd92cf9f9431bec7cf21`。普通 `runIsolatedImage` 必须匹配 `supported-policy.json`，否则ISOLATION_UNAVAILABLE/not-started。真实helper缺失、权限错误、同版本binary附加字节均拒绝且不启动worker；另有精确OS product/build纯边界测试及合成Node版本覆盖（不冒充第二个真实Node平台）。
+封存componentId：`1358f10d89890d7608838a4b52797d9bcaa03404a7ceb4ab727058a63a5acad9`。普通 `runIsolatedImage` 必须匹配 `supported-policy.json`，否则ISOLATION_UNAVAILABLE/not-started。真实helper缺失、权限错误、同版本binary附加字节均拒绝且不启动worker；另有精确OS product/build纯边界测试及合成Node版本覆盖（不冒充第二个真实Node平台）。
 
 component绑定OS/arch/Node版本及实际Node、sandbox-exec、worker、launcher/control/policy/protocol/共享预检代码、P1 manifest/limits、zod及sharp/native/直接依赖树摘要、限额。固定代码与依赖角色映射可随受管工作树整体迁移；实际literal读取范围始终另绑定完整profileId，不因保持component稳定而漏掉权限变化。runId、scratch/fixture路径、剩余期限不进入稳定摘要。程序不能由包或普通调用方选择映射。
 
-闭集harness原生/故障政策的最小执行身份差异分别绑定ID：posix=`b04daefd443f319d77b3631bd4b22ebe9b183de8b954f6d3b177401b748286ee`，mac=`6889bc46af84f5f40a5039f31680f6234267afb358bc3c3f4cdaf6899a9bd1ad`，fault=`ffda834e43762cbebe85d63fa57ff4b8da97643c80f53ef1fcfa1e3239178ca8`。其余权限同一模板；不使用更严格探针替代更宽正常政策。harness图片试验入口仅固定原P1worker/同一政策，允许在本批取得封存能力前做矩阵；普通入口始终要求封存身份。--record-capability只供受信任本地setup与完整矩阵，不存在业务请求触发setup。
+闭集harness原生/故障政策的最小执行身份差异分别绑定ID：posix=`4867a27488724f667214349e860d8cd70889be8d2cd4d59b1ce7fbc106935838`，mac=`fb57f997aa55aefb07dc6035a01ad05cb17e4a5e14d77403be886323c4cbf68a`，fault=`4db4e73653408b04575f150747b1282bb9e3f832ed11e9cea9c3cccece0def99`。其余权限同一模板；不使用更严格探针替代更宽正常政策。harness图片试验入口仅固定原P1worker/同一政策，允许在本批取得封存能力前做矩阵；普通入口始终要求封存身份。--record-capability只供受信任本地setup与完整矩阵，不存在业务请求触发setup。
 
 ## 实际矩阵与资源
 
-61项当前harness断言全通过；14项node:test（12 shared、2 mac policy/protocol）通过。逐项结果、固定profile、身份与原始有界合成测量在私有runs/<runId>/，不提交Git。完整涵盖：三格式正常及16MP、8192边长、实际合法8MiB PNG、+1 bytes/dimension/pixel-height、坏像素完整解码失败；四私有合成区域×四路径写法/别名共16组文件拒绝与哨兵不变；原生线程允许、fork/vfork及posix_spawn `/usr/bin/true`拒绝；真实TCP/Unix监听同伴、connect/bind拒绝、bind失败后listen not-run另有直接listen拒绝；合成Mach服务/共享内存/peer信号对照；全部FD与宿主FD300、最小环境；输出/坏JSON/BOM/非零/native crash/先成功后挂起/背压；取消/绝对超时/定时器晚调度/BUSY；FIFO/损坏/超量/链接/partial/guard阻断；unknown、父端崩溃、缺helper/版本变化。
+66项当前harness断言全通过；15项node:test（13 shared、2 mac policy/protocol）通过。逐项结果、固定profile、身份与原始有界合成测量在私有runs/<runId>/，不提交Git。完整涵盖：三格式正常及16MP、8192边长、实际合法8MiB PNG、+1 bytes/dimension/pixel-height、坏像素完整解码失败；四私有合成区域×四路径写法/别名共16组文件拒绝与哨兵不变；原生线程允许、fork/vfork拒绝；另有mac原生posix_spawn目标为自身已获exec literal许可的同一MAC_PROBE，非沙箱对照成功、受限创建EPERM/EACCES，排除仅由exec allowlist拒绝造成的误证；真实TCP/Unix监听同伴、connect/bind拒绝、bind失败后listen not-run另有直接listen拒绝；合成Mach服务/共享内存/peer信号对照；全部FD与宿主FD300、最小环境；输出/坏JSON/BOM/非零/native crash/先成功后挂起/背压；取消/绝对超时/定时器晚调度/BUSY；FIFO/损坏/超量/链接/partial/guard阻断；unknown、父端崩溃、缺helper/版本变化。
 
 | 16MP格式 | launcher端到端实测     | 两个新worker的内核峰值RSS bytes |
 | -------- | ---------------------- | ------------------------------- |
-| PNG      | 269ms，224440输入bytes | 131710976 / 131104768           |
-| JPEG     | 247ms，94016输入bytes  | 130482176 / 131121152           |
-| WebP     | 301ms，28520输入bytes  | 372588544 / 371621888           |
+| PNG      | 282ms，224440输入bytes | 131940352 / 130613248           |
+| JPEG     | 298ms，94016输入bytes  | 131055616 / 131317760           |
+| WebP     | 416ms，28520输入bytes  | 371671040 / 371277824           |
 
 峰值由受信任 `/usr/bin/time -l` 对同政策、同PID exec的真实完整解码采集；每次新进程，两次连续运行，未清理系统缓存，不能假称冷文件缓存或常驻热池。**mac没有native RSS硬上限**；特别是WebP约355MiB，不能只报告小PNG峰值或把JS heap当native上限。这些合成颜色样本不是所有合法图的峰值保证。固定字节/像素/期限/并发仍适用。
 
@@ -83,4 +83,12 @@ node --import tsx scripts/quizpack-media-preflight/macos/harness.ts
 
 首次完整setup会编译两个固定C工具，正常请求不会编译或安装。任何已有未核清control/fixture对象阻断harness，不绕过guard。工作树迁移/编译器或依赖变化应重新运行完整矩阵并由总控审核封存摘要。
 
-本流实际执行并通过pnpm format:check、pnpm lint、pnpm typecheck、pnpm test（45文件/612项）及pnpm build（含BUILD_TRACE_OK，53条trace/0违例）。E2E/3100、DB和远端CI不在本流授权；总控统一集成与串行验收。已知待独立复核：SBPL长期维护、所有硬权限/停止论证、同初始可执行身份的spawn对照（当前C posix_spawn目标是/usr/bin/true，不能把exec allowlist拒绝独自当成完整进程创建证明）、业务接入时的同快照/总体预算/证据键、真实应用父端FD上下文。未声明完成B2-2、导入、归档、发布或Linux实测。Root要求先交当前候选供独立审查，不在本流继续扩大平台研究。
+本流实际执行并通过pnpm format:check、pnpm lint、pnpm typecheck、pnpm test（45文件/612项）及pnpm build（含BUILD_TRACE_OK，53条trace/0违例）。E2E/3100、DB和远端CI不在本流授权；总控统一集成与串行验收。已知待独立复核：SBPL长期维护、所有硬权限/停止论证、业务接入时的同快照/总体预算/证据键、真实应用父端FD上下文。未声明完成B2-2、导入、归档、发布或Linux实测。Root要求先交当前候选供独立审查，不在本流继续扩大平台研究。
+
+## 独立预审三项P2整改（同批）
+
+- issued状态多次同步fsync后、平台spawn前重新核绝对deadline与abort；真实本次active.next持久化延迟700ms和同步abort两种失败边界均确认platformSpawns=0、not-started、控制根为空，不仅改变返回标签。
+- libproc查询只有明确ESRCH并由kill(pid,0)同样ESRCH核不存在才输出present:false。短结果/权限/其他系统错误退出70，无absence JSON。实际非法flavor内核错误与现存合成parent的受限查询都不能被解释为消失；父端崩溃harness遇此错误保留记录/失败，不删未知实体。
+- 最后检查使用本次runs中的私有provisional能力与同一门控/启动路径，普通入口完全忽略它。最终检查、控制/素材回收、身份收集及有界证据落盘全部通过后，才写独占.next、fsync并原子rename封存；rename为提交点，不在其后执行可失败验证。失败不改既有能力（旧组件仍按自身匹配关系判断），无本次授权；真实旧封存bytes在失败final-check对照中保持不变。没有业务入口或客户端能力参数。此原子操作不声明rename后的断电目录项持久性。
+
+本流66项实际通过与工程检查仍不是整体平台验收。Root/Astra接续精确commit复审及独立完整矩阵，Linux亦需其真实CI；未开启B2-2。

@@ -11,7 +11,7 @@ const macSchema = z.union([
   }),
   z.strictObject({
     schema: z.literal("mac-probe.v1"),
-    mode: z.literal("vfork"),
+    mode: z.enum(["vfork", "spawn-self"]),
     denied: z.boolean(),
   }),
   z.strictObject({

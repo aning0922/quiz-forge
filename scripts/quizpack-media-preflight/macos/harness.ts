@@ -44,7 +44,6 @@ import {
   REPO_ROOT,
   SANDBOX,
   WORKER,
-  CAPABILITY_FILE,
   policyComponentId,
   policySupported,
 } from "./policy";
@@ -52,8 +51,10 @@ import {
   runHarnessCase,
   runIsolatedImage,
   runHarnessImage,
+  runHarnessCandidateImage,
   type HarnessCase,
 } from "./launcher";
+import { sealCapabilityAfterChecks, readCapabilityBytes } from "./capability";
 import { parseMacOutput, parseNativeIdentity } from "./protocol";
 function macValue(bytes: Uint8Array) {
   const p = parseMacOutput(bytes);
@@ -374,6 +375,72 @@ async function main() {
       requireTrue(vb.denied === false);
     },
   );
+  await check("same initial executable posix_spawn is denied", async () => {
+    const b = macValue(baseline(MAC_PROBE, ["spawn-self"]));
+    requireTrue(b.denied === false);
+    const r = macValue((await probe({ kind: "spawn-self" })).output);
+    requireTrue(r.denied === true);
+    return {
+      sameExecutableAllowedByExecLiteral: true,
+      processCreationDenied: true,
+    };
+  });
+  await check("kernel identity query errors cannot become absent", async () => {
+    const r = spawnSync(MAC_PROBE, ["identity-query-failure"], {
+      cwd: REPO_ROOT,
+      env: { NODE_ENV: "production" },
+      stdio: ["pipe", "pipe", "pipe"],
+      timeout: 1000,
+      maxBuffer: 2048,
+    });
+    requireTrue(r.status === 70 && r.stdout.length === 0);
+    const peer = await runHarnessCase({ kind: "identity-peer" }, context());
+    requireTrue(peer.stopped === "confirmed");
+    if (peer.exitCode === 0) {
+      const v = parseNativeIdentity(peer.output);
+      requireTrue(v?.present === true);
+    } else requireTrue(peer.exitCode === 70 && peer.output.length === 0);
+    return {
+      invalidFlavorUnavailable: true,
+      existingParentNeverReportedAbsent: true,
+    };
+  });
+  for (const mode of ["deadline", "abort"] as const) {
+    await check(`issued fsync ${mode} cannot launch after interruption`, () => {
+      const r = spawnSync(
+        process.execPath,
+        [
+          "--import",
+          "tsx",
+          resolve(
+            REPO_ROOT,
+            "scripts/quizpack-media-preflight/macos/deadline-host.ts",
+          ),
+          mode,
+        ],
+        {
+          cwd: REPO_ROOT,
+          env: { NODE_ENV: "production" },
+          stdio: ["pipe", "pipe", "pipe"],
+          timeout: 5000,
+          maxBuffer: 2048,
+        },
+      );
+      requireTrue(r.status === 0);
+      const v = JSON.parse(r.stdout.toString());
+      requireTrue(
+        v.schema === "mac-issued-deadline.v1" &&
+          v.issuedPersistenceObserved === true &&
+          v.platformSpawns === 0 &&
+          v.outcome === "failed" &&
+          v.code ===
+            (mode === "deadline" ? "DEADLINE_EXCEEDED" : "CANCELLED") &&
+          v.stopped === "not-started" &&
+          v.controlEmpty === true,
+      );
+      return { platformSpawns: 0, stopped: v.stopped };
+    });
+  }
   await check(
     "full native FD scan and actual read/write on absent FD3",
     async () => {
@@ -1055,38 +1122,52 @@ async function main() {
   requireTrue(readdirSync(CONTROL_ROOT).length === 0);
   rmSync(FIXTURE, { recursive: true });
 
-  if (
-    results.every((r) => r.passed) &&
-    process.argv.includes("--record-capability")
-  ) {
-    const st = lstatSync(CAPABILITY_FILE);
+  const candidateComponentId = policyComponentId(policy);
+  privateWrite(
+    join(runRoot, "provisional-capability.json"),
+    JSON.stringify({
+      schema: "mac-media-capability.v1",
+      componentId: candidateComponentId,
+    }),
+  );
+  await check("failed final capability check preserves prior seal", () => {
+    const previous = readCapabilityBytes();
     requireTrue(
-      st.isFile() && !st.isSymbolicLink() && st.uid === process.getuid?.(),
+      sealCapabilityAfterChecks(false, candidateComponentId) === false,
     );
-    writeFileSync(
-      CAPABILITY_FILE,
-      JSON.stringify({
-        schema: "mac-media-capability.v1",
-        componentId: policyComponentId(policy),
-      }) + "\n",
-    );
-  }
+    requireTrue(readCapabilityBytes().equals(previous));
+    return { ordinaryCapabilityUntouched: true };
+  });
   await check("public API requires frozen component identity", async () => {
     const actual = loadPolicy();
-    requireTrue(policySupported(actual));
-    const r = await runIsolatedImage(
+    const priorSupported = policySupported(actual);
+    const ordinary = await runIsolatedImage(
       small,
       declaration(small, 2, 2),
       context(),
+    );
+    requireTrue(
+      priorSupported
+        ? ordinary.outcome === "decoded"
+        : ordinary.outcome === "failed" &&
+            ordinary.code === "ISOLATION_UNAVAILABLE" &&
+            ordinary.stopped === "not-started",
+    );
+    const r = await runHarnessCandidateImage(
+      small,
+      declaration(small, 2, 2),
+      context(),
+      candidateComponentId,
     );
     requireTrue(r.outcome === "decoded" && r.stopped === "confirmed");
     const originalSize = lstatSync(MAC_PROBE).size;
     try {
       appendFileSync(MAC_PROBE, Buffer.from([0]));
-      const changed = await runIsolatedImage(
+      const changed = await runHarnessCandidateImage(
         small,
         declaration(small, 2, 2),
         context(),
+        candidateComponentId,
       );
       requireTrue(
         changed.outcome === "failed" &&
@@ -1098,10 +1179,11 @@ async function main() {
     }
     try {
       chmodSync(MAC_PROBE, 0o600);
-      const changed = await runIsolatedImage(
+      const changed = await runHarnessCandidateImage(
         small,
         declaration(small, 2, 2),
         context(),
+        candidateComponentId,
       );
       requireTrue(
         changed.outcome === "failed" &&
@@ -1115,7 +1197,7 @@ async function main() {
       ...actual,
       identity: { ...actual.identity, nodeSha256: "0".repeat(64) },
     };
-    requireTrue(!policySupported(altered));
+    requireTrue(policyComponentId(altered) !== candidateComponentId);
     return {
       componentId: policyComponentId(actual),
       profileId: actual.profileId,
@@ -1139,6 +1221,11 @@ async function main() {
       passed: results.every((r) => r.passed),
     }),
   );
+  if (
+    results.every((r) => r.passed) &&
+    process.argv.includes("--record-capability")
+  )
+    sealCapabilityAfterChecks(true, candidateComponentId);
   console.log(
     JSON.stringify({
       matrix: "mac-media-matrix.v1",
