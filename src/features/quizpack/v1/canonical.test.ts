@@ -30,6 +30,17 @@ describe("independent P1 canonical budgets", () => {
     const value = { z: [1e3, -0, true, null], a: "中\n" };
     expect(canonicalP1Json(value)).toBe(canonicalFoundationJson(value));
   });
+  it("rejects JavaScript unknown and inherited budget names before lookup", () => {
+    const call = canonicalP1Json as (input: unknown, budget: string) => string;
+    for (const budget of [
+      "constructor",
+      "__proto__",
+      "toString",
+      "depth",
+      "unknown",
+    ])
+      expect(() => call(null, budget)).toThrow(P1CanonicalError);
+  });
   it("does not execute hostile objects and rejects holes, cycles and special keys", () => {
     let reads = 0;
     const getter = {

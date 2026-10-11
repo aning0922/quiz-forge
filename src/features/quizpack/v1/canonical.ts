@@ -19,8 +19,9 @@ export function canonicalP1Json(
   input: unknown,
   budget: "content" | "manifest" = "content",
 ): string {
+  if (budget !== "content" && budget !== "manifest")
+    throw new P1CanonicalError("JSON_INVALID_VALUE");
   const maximum = P1_CANONICAL_LIMITS[budget];
-  if (maximum === undefined) throw new P1CanonicalError("JSON_INVALID_VALUE");
   const ancestors = new Set<object>();
   let bytes = 0;
   const fail = (code: string): never => {
