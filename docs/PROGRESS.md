@@ -2,11 +2,11 @@
 
 ## 2026-10-12 托管推进
 
-已核实B2-1最终文档提交 `5caef26` 的[CI38175221128](https://github.com/aning0922/quiz-forge/actions/runs/38175221128) checks/database均实际success，PR #10描述已同步。接续独立 `codex/media-isolation-preflight` 工作树；本批仅平台隔离可行性，合同已冻结实验接口/范围，尚未实现或验收。不会提前接B2-2业务表、后台验证按钮或修改P1既有入口。
+已核实B2-1最终文档提交 `5caef26` 的[CI38175221128](https://github.com/aning0922/quiz-forge/actions/runs/38175221128) checks/database均实际success，PR #10描述已同步。接续独立 `codex/media-isolation-preflight` 工作树与[Draft PR #11](https://github.com/aning0922/quiz-forge/pull/11)；本批仅平台隔离可行性，共享合同与Linux候选已集成，macOS候选实施中。第三轮真实Linux CI仍失败于原生worker启动，普通Linux共享对照另发现两只继承管道；正在有限诊断与整改，两个平台均未验收。详情见[MEDIA_ISOLATION_REVIEW](MEDIA_ISOLATION_REVIEW.md)。不会提前接B2-2业务表、后台验证按钮或修改P1既有入口。
 
 B2-1原包接收与恢复已完成代码技术验收：最终代码 `f070428b72570977db835946227b2c49d0666e42`，612单测、214真实DB、46驱动故障、206生产E2E/10既有跳过，格式/lint/类型/构建全部通过；53份trace路径检查无私有违规且动态扫描warning已消除。独立Astra登记问题全部闭合，五状态×四宽20图已逐张检查。代码[CI38174716526](https://github.com/aning0922/quiz-forge/actions/runs/38174716526)的checks/database均实际success；[Draft PR #10](https://github.com/aning0922/quiz-forge/pull/10)未合并，最终文档head CI以该PR实际checks及描述为准。A/B/root实例均停止，3100/55421–55424无监听。received仍只表示未验证原字节，没有资源归档、草稿或发布。详情见[P2B2_RECEIVE_ACCEPTANCE](P2B2_RECEIVE_ACCEPTANCE.md)、[REVIEW](P2B2_RECEIVE_REVIEW.md)、[VISUAL_CHECK](P2B2_RECEIVE_VISUAL_CHECK.md)。
 
-下一优先为独立媒体隔离可行性，随后B2-2同字节P1复验/证据与Product资源归档；总控已选择受限launcher路线，能力不满足时失败关闭。草案见[QUIZPACK_MEDIA_ISOLATION_PREFLIGHT](QUIZPACK_MEDIA_ISOLATION_PREFLIGHT.md)，尚未执行或验收。B2-3草稿应用、P3评分/表现、Key/报告与首款端到端仍按已授权路线继续；旧暂停聊天未恢复。
+当前优先为独立媒体隔离可行性，随后B2-2同字节P1复验/证据与Product资源归档；总控已选择受限launcher路线，能力不满足时失败关闭。合同见[QUIZPACK_MEDIA_ISOLATION_PREFLIGHT](QUIZPACK_MEDIA_ISOLATION_PREFLIGHT.md)，执行中、尚未验收。B2-3草稿应用、P3评分/表现、Key/报告与首款端到端仍按已授权路线继续；旧暂停聊天未恢复。
 
 B2-1已建立独立 `codex/quizpack-receipt` 工作树，基于B1最终文档提交 `e8da98b27ed1469a5e15f927cfdbf51445d553fe`；该head的[CI38169117712](https://github.com/aning0922/quiz-forge/actions/runs/38169117712) checks/database均已核实success。首批原包接收合同见STUDIO_P2B2.md，已完成独立前置审查并修订绝对期限与CLI文件guard两项P2；此为启动登记，最新集成状态以上段为准。B1交付分支继续保留，不将下一阶段混入PR #9。合同eb8c8b9、共享准备5f2f8e5已提交推送，Draft PR #10堆叠于B1；两条Sol/high实现聊天已启动，18项定向安全测试及类型/lint为初始准备证据，不等于接收功能验收。
 

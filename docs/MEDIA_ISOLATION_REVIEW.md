@@ -29,3 +29,11 @@
 [容器CI38177356944](https://github.com/aning0922/quiz-forge/actions/runs/38177356944)在head96000be仍failure；固定stage为native-identity，前面的镜像构建/记录已走过，尚不能确定是政策预检、配置匹配还是worker启动。已派Linux流补有限code/布尔诊断，不输出原始异常、环境或完整inspect，不猜测放宽策略。
 
 同head[普通CI38177356922](https://github.com/aning0922/quiz-forge/actions/runs/38177356922)的shared POSIX基线失败：真实Linux的FD枚举为scanComplete:true、noInheritedFileOrSocket:false，不能以Mac对照通过代替。已派shared所有者查明额外FD来源/枚举差异，仅记录FD编号/类型/权限等有限元数据；未核清前不忽略该FD或改断言为通过。上节独立修复结论只覆盖其明确注明的Mac实测及Linux静态范围。
+
+## 第三轮真实 Linux 证据与审查整改
+
+独立Astra已复验并关闭f29d5b6的总deadline/abort与FIFO两项P2：实际源码的四种预算/中止对照及七项控制进程/FIFO测试通过。新增P2为早期create留下的localBarrier会在start仍未close时允许显式恢复释放控制记录；28fee369→root3508c4e引入执行/恢复互斥和全部控制命令的pending/unsettled状态，七项本地控制测试通过，独立复审尚在进行。
+
+head1de6c4c的[容器CI38177881396](https://github.com/aning0922/quiz-forge/actions/runs/38177881396)仍failure。有限诊断已证实镜像/daemon能力预检与全部容器配置核对为true，create成功且已close；start-attach实际exit1并已close，容器exit255。清理确认停止，结果WORKER_FAILED；原生身份阶段未通过。不能据此猜测放宽seccomp，f119b69→root7c69834只追加有限OCI阶段与已知syscall分类，等待下一轮真实证据。
+
+同head[普通CI38177881397](https://github.com/aning0922/quiz-forge/actions/runs/38177881397)的FD基线仍失败：完整扫描找到两只非CLOEXEC管道，一读一写，未记录路径、内容或环境。共享所有者正在补plain Node、tsx和node:test等有限对照定位来源，原断言保留。Mac作者报告扩展矩阵60/60通过，但完整提交、总控重跑和独立审查尚未完成，不计为macOS验收。
