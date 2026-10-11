@@ -117,6 +117,19 @@ A 没有业务调用方，模块可能被 tree-shake；允许临时、隔离的�
 fixture 必须调用同一生产源码并绑定真正执行的 artifact；仅启动 Next、运行源码 tsx 或执行未被 Next 使用的旁路副本均不足。其结果只证明编译/运行兼容性，不宣称当前应用已存在该业务路径。
 B 接入真实业务路由后，必须对最终应用构建重新确认 locator、执行代码闭包、依赖/权限、部署 identity 及普通 sealed 路径；重新 record/封存并通过真实路由验收。A 的 fixture identity、能力文件和通过结论不能作为 B 的部署授权。
 
+### 构建接线决定与实测依据
+
+独立合成fixture已实际运行Next16.4.0/Node20.20.1构建与127.0.0.1:3111启动：可信root模块执行成功，compiler.defineServer常量仅内嵌server代码，错误runtime env/global及请求参数不能改根；根tsconfig与next-env状态不变，服务已close/端口释放。74个产物694,633bytes的后置清单生成及启动前后hash相同。此证明只覆盖构建定位办法，不是实际媒体或B业务验收。用法依据[Next官方编译器文档](https://nextjs.org/docs/architecture/nextjs-compiler#define-replacing-variables-during-build)。
+
+- 固定server编译宏为`__QUIZFORGE_MEDIA_CHECKOUT_ROOT__`和`__QUIZFORGE_MEDIA_DEPLOYMENT_ROOT__`（actual `.next`目录）。普通入口无宏即关闭，不从runtime env/cwd推断回退；总控构建时提供核实realpath。
+- 总控拥有`src/lib/build/media-deployment.ts`与闭集CLI，固定manifest为checkout下`.cache/quizpack-media-runtime/deployment.json`；私有leaf0700/file0600，无链接、实际字节和最终IO期限检查。它是构建证据，不是capability seal。
+- strict `quizpack-media-deployment.v1`包含两根、sourceFiles（role/path/bytes/sha256）、artifactFiles（path/bytes/sha256）、两固定dependencyRoots、sourceBundleHash、deploymentId。源代码只扫描P1/媒体/validation固定生产目录、必要基础文件；固定zod/buffer-crc32的实际安装运行文件另经受管node_modules入口解析并绑定，不能只以lock声明代替字节。
+- `.next/server`实际JS/JSON及固定加载清单构成artifact清单，不包含manifest本身或任意私有cache。最多16,384目录项、4,096文件、单文件16MiB、总128MiB；相对路径512 UTF-8 bytes、manifest2MiB。对新增/删除/改变文件及解析映射一并复核；超限失败关闭，不截清单。
+- A-R消费`verifyMediaDeployment(roots, {deadlineMonotonicMs, signal, checkpoint})`的有限结果，所有roots来自编译宏，同一个operation预算继续生效。只读核验不写seal、不删除控制状态；运行时文件IO须实际settled，定时器不冒称硬实时终止。
+- `runtimeBundleHash`绑定整个后台验证执行闭包，由domain hash组合sourceBundleHash、deploymentId、平台componentId和limitsHash。A-V的validatorBundleSha256引用此完整身份，不以媒体子目录hash代替P1/dispatcher/canonical/report/Unicode执行代码；actual compiled代码由deploymentId绑定。Node/sharp/native/helper真实字节仍由A-R componentId补齐。
+
+平台固定根为`.cache/quizpack-media-runtime/{darwin-arm64,linux-x64}/`，capability/control/tools由A-R单写；普通worker仍是受审`src/features/quizpack/v1/media-worker.mjs`。离线故障计划与候选封存工具不成为生产入口参数。固定布局具体实现尚在进行，不能将本段方案写成已验收。
+
 ## 6. 同字节 P1 桥接及严格持久化证据
 
 P1 当前 validate 直接调用裸 inspectImage。A-V 必须抽出同一 validator 的可信内部执行入口，后台固定注入隔离 inspector；不能先裸验证再补沙箱检查。
