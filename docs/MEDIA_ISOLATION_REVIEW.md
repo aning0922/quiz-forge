@@ -55,3 +55,9 @@ head3ee9326的[普通CI38179321373](https://github.com/aning0922/quiz-forge/acti
 mac完整候选c54dd80→root3d7237b已集成。作者61项实测不等于验收；Astra只读预审登记3项P2：issued持久化后未重查deadline即spawn、身份查询错误被当成不存在并清除harness阻断、最后API检查前就写能力记录。另须补同初始允许可执行身份的spawn实际拒绝证据。均已派回，待修复与最终复核，不启用业务入口。
 
 Linux扩展15761ed→root36474f5的created-only崩溃恢复经独立实际源码六项内存对照通过，未见旧互斥回归；新P2是kill父进程后无界await close，独立有限后代持stdio复现实测6546ms，超5秒清理预算，已派回修复。991d893→root67f8a89只补有限FIFO/errno/明确syscall文本与setup组件版本，2项分类测试通过、无新增P1/P2；runtimeVersions目前不是每次运行的runc/containerd/init核验，正式支持组合仍须补实际绑定。
+
+## 第六轮准确 head 证据
+
+head e2adf40的[普通CI38180296236](https://github.com/aning0922/quiz-forge/actions/runs/38180296236) checks/database均实际success，构建53trace/8614路径/0私有违规。Linux Node24.21.0的四sync上下文与两async对照都完整报告两只额外pipe；host同次control明确unsafe/count2，扫描器正确性测试及FD300注入通过，不证明host隔离，不归因某个loader/测试框架/启动方式。
+
+同head[平台CI38180296216](https://github.com/aning0922/quiz-forge/actions/runs/38180296216)仍failure：真实setup组件版本为Engine28.0.4/containerd v2.3.6/runc1.5.1/init0.19.0；start-attach settled/exit1，有限分类为FIFO reopen、EPERM、mount-namespace-description，未获得确定syscall；后续容器created/exit255，最终WORKER_FAILED/stoppedconfirmed。Linux流正在按精确版本源码定位最小修复，平台验收仍未通过。

@@ -2,7 +2,7 @@
 
 ## 2026-10-12 托管推进
 
-已核实B2-1最终文档提交 `5caef26` 的[CI38175221128](https://github.com/aning0922/quiz-forge/actions/runs/38175221128) checks/database均实际success，PR #10描述已同步。接续独立 `codex/media-isolation-preflight` 工作树与[Draft PR #11](https://github.com/aning0922/quiz-forge/pull/11)；本批仅平台隔离可行性，共享合同与Linux候选已集成，macOS候选实施中。第三轮真实Linux CI仍失败于原生worker启动，普通Linux共享对照另发现两只继承管道；正在有限诊断与整改，两个平台均未验收。详情见[MEDIA_ISOLATION_REVIEW](MEDIA_ISOLATION_REVIEW.md)。不会提前接B2-2业务表、后台验证按钮或修改P1既有入口。
+已核实B2-1最终文档提交 `5caef26` 的[CI38175221128](https://github.com/aning0922/quiz-forge/actions/runs/38175221128) checks/database均实际success，PR #10描述已同步。接续独立 `codex/media-isolation-preflight` 工作树与[Draft PR #11](https://github.com/aning0922/quiz-forge/pull/11)；本批仅平台隔离可行性，共享合同及macOS/Linux候选均已集成。第六轮head `e2adf40` 的[普通CI38180296236](https://github.com/aning0922/quiz-forge/actions/runs/38180296236) checks/database均实际success；[平台CI38180296216](https://github.com/aning0922/quiz-forge/actions/runs/38180296216)仍失败于runc1.5.1 reopen exec FIFO，停止确认。共享host对照准确报告额外FD、没有白名单；mac三项预审P2和Linux崩溃harness期限P2整改中，两个平台均未验收。详情见[MEDIA_ISOLATION_REVIEW](MEDIA_ISOLATION_REVIEW.md)。不会提前接B2-2业务表、后台验证按钮或修改P1既有入口。
 
 B2-1原包接收与恢复已完成代码技术验收：最终代码 `f070428b72570977db835946227b2c49d0666e42`，612单测、214真实DB、46驱动故障、206生产E2E/10既有跳过，格式/lint/类型/构建全部通过；53份trace路径检查无私有违规且动态扫描warning已消除。独立Astra登记问题全部闭合，五状态×四宽20图已逐张检查。代码[CI38174716526](https://github.com/aning0922/quiz-forge/actions/runs/38174716526)的checks/database均实际success；[Draft PR #10](https://github.com/aning0922/quiz-forge/pull/10)未合并，最终文档head CI以该PR实际checks及描述为准。A/B/root实例均停止，3100/55421–55424无监听。received仍只表示未验证原字节，没有资源归档、草稿或发布。详情见[P2B2_RECEIVE_ACCEPTANCE](P2B2_RECEIVE_ACCEPTANCE.md)、[REVIEW](P2B2_RECEIVE_REVIEW.md)、[VISUAL_CHECK](P2B2_RECEIVE_VISUAL_CHECK.md)。
 
