@@ -88,3 +88,7 @@ normal矩阵新增原图带合法PNG ancillary chunk的精确8MiB样本、完整
 总控真实 [CI38180296216](https://github.com/aning0922/quiz-forge/actions/runs/38180296216)，head `e2adf40`，实际Engine28.0.4/containerd v2.3.6/runc1.5.1/init0.19.0，reopen FIFO仍EPERM。固定 [runc1.5.1 standard init](https://raw.githubusercontent.com/opencontainers/runc/v1.5.1/libcontainer/standard_init_linux.go) 在安装seccomp后执行Reopen；[该版本go.mod](https://raw.githubusercontent.com/opencontainers/runc/v1.5.1/go.mod)固定filepath-securejoin v0.7.0；[该依赖procfs验证](https://raw.githubusercontent.com/cyphar/filepath-securejoin/v0.7.0/pathrs-lite/internal/procfs/procfs_linux.go)需要Fstatfs读取文件系统类型。当前deny-default遗漏这项读取，是本次必要源码证据支持的最小候选修订。
 
 只新增fstatfs读取，不授予mount/statfs/fsopen/open_tree/move_mount/unshare/setns，不更换默认策略或增加host挂载。native探针新增实际/proc fstatfs成功以及mount API/namespace持续EPERM；原全部文件/IPC/网络/fork/clone拒绝仍要求实跑。对应源文件内容摘要与runc版本将记录/绑定；最终原因闭环及正常图片通过仍须后继真实CI，不能把源码必要性当作该run已修复成功。
+
+## 父崩溃stdio预算修订
+
+Astra以真实父死/后代持stdio6.5秒复现无界await close的P2。harness改为SIGKILL前生成固定绝对5秒cleanupDeadline，通过真实ChildProcess close观察器在预算内等stdio；到期返回不可变unknown/ownerClosed:false，保留record/guard，跳过恢复。可以unref本轮句柄让harness结束，但不会把unref/destroy视作close或停止事实；超限stdout/stderr不再累计缓存。新增本机实际6.5秒后代持stdio回归，验证5秒时unknown、后来的close不改先前证明。真实Docker父崩溃矩阵仍待CI，不能用这个局部修复冒称全平台通过。
