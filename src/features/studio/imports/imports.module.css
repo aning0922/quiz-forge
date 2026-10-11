@@ -1,0 +1,15 @@
+.stack {
+  display: grid;
+  gap: 16px;
+  margin-top: 16px;
+  min-width: 0;
+}
+.file {
+  overflow: hidden;
+}
+.file::file-selector-button {
+  min-height: 44px;
+  font: inherit;
+  margin-right: 8px;
+  white-space: normal;
+}
