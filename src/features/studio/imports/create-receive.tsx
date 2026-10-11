@@ -28,6 +28,7 @@ export function CreateReceive({
   onChanged: () => void;
 }) {
   const [pending, setPending] = useState<PendingArchive>();
+  const [fileInputRevision, setFileInputRevision] = useState(0);
   const [value, setValue] = useState<ImportDto>();
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
@@ -126,7 +127,7 @@ export function CreateReceive({
           原包文件
           <input
             className={`${styles.input} ${local.file}`}
-            key={pending ? "prepared" : "select"}
+            key={fileInputRevision}
             type="file"
             disabled={busy || !!pending}
             onChange={(event) => void select(event.target.files?.[0])}
@@ -189,6 +190,7 @@ export function CreateReceive({
               disabled={busy}
               onClick={() => {
                 setPending(undefined);
+                setFileInputRevision((revision) => revision + 1);
                 setMessage("");
               }}
             >

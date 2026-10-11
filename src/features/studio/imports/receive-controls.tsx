@@ -178,7 +178,7 @@ export function ReceiveControls({
       )}
       {mayUpload && !file && (
         <p className={styles.note}>
-          此页未持有原文件。回到原包列表选择文件并以原声明核实后，才能上传。
+          此页未持有原文件。请在当前页上方选择文件并核实与原声明一致后，再显式上传。
         </p>
       )}
     </section>
