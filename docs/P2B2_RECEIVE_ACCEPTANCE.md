@@ -32,12 +32,12 @@
 
 收到原包不代表ZIP/content/Product归属/synthetic/图片/授权已验证，也没有生成草稿、批准内容或发布。B2-2再接P1实际验证与资源归档，B2-3再应用首稿。
 
-## 实际结果
+## 实际结果（收口中）
 
-核心90be27d：591项全仓单元/174项真实DB、format/lint/typecheck通过；root旧v1实例追加0006/0007成功。入口368d7a7：生产构建通过，53份trace/0私有路径违规，有一项Turbopack私有动态路径宽匹配性能警告；trace无违规不等于全构建内容机密性证明。
+基线 `2d17550` 加总控私有路径标注 `fb6ca5b`：格式、lint、类型、609 项全仓单元通过；18 文件、212 项真实 PostgreSQL 测试通过（139.74 秒，包含真实 60 秒流期限）；ESM/CJS 共 46 项驱动故障场景通过。日志分别保存在本工作树忽略的 `.cache/p2b2-final-{format,lint,type,unit,db,driver}.log`，不上传私有运行配置。
 
-首次studio-imports生产E2E依赖auth/workspace。第一次auth fixture只TRUNCATE旧三表，被新FK阻断，root修复e84af9d复用统一八表/受控文件清理。第二次13项通过后，真实创建/接收测试因全页同文案匹配两处而strict失败；B正在收窄selector，未删业务断言。当前仅disabled/read-only/empty状态四宽截图已实际检查，无溢出/裁切；其余状态待继续运行和图检。
+生产构建通过：53 份 NFT、8,614 次路径检查、0 私有路径违规。三处私有运行路径采用 Next 16.4 的 `turbopackIgnore` 精确标注后，先前动态路径宽匹配警告消失；普通依赖追踪、excludes 和构建守卫继续启用。这是路径审计，不是全部产物内容无秘密的证明。
 
-独立B客户端/入口问题在368d7a7代码层闭合；独立A核心4项P2见P2B2_RECEIVE_REVIEW，整改未到。后续仍须完整DB/driver/build/E2E及准确最终head的CI，不能用这些中间结果宣布完成。
+后台曾在 `789734e` 与 `90e9887` 连同 auth/workspace 依赖各取得 20/20 生产 E2E 通过。首次运行暴露旧 auth fixture 清理范围未覆盖新 FK，已改为统一八表及受控文件清理；随后重复状态文本导致 strict selector 失败，已限定到状态区域，业务断言保留。图检后的 native file input 保持、原文件重新选择、恢复提示及截图滚动定位已修正。最新简化列表及整站 E2E/四宽图检待最终代码统一执行。
 
-后续中间检查点：aa22f63原四项整改在root通过605项unit、207项真实DB（17文件、135.16秒，含真实60秒流期限）及格式/lint/类型；Astra直接失败探针通过，但新增3项残留见REVIEW，仍不整体闭合。此前789734e的production imports项目连同auth/workspace依赖为20/20通过；五状态×四宽共20图已取得，首次图检发现native file input被重建及恢复提示过时，B7bced156→90e9887修复后正在重拍。90e9887生产构建53trace/0私有违规，存在3项动态路径宽匹配性能warning，最终待统一复验。
+A 核心原四项 P2 的失败探针已闭合。后续旧 held namespace、停止证明发布后重复写也经独立复验闭合；factory 启动后再计算期限仍有一个 P2，A 正修复。B 客户端累计 unknown、DTO/HTTP 状态校验和恢复状态同步已关闭；最终窄审 `abc4c87` 的 55 项单元通过，没有新增 P1/P2。最终代码、完整浏览器、准确 head CI 和实例停止证据尚待记录，不能以本节中间结果宣布阶段完成。

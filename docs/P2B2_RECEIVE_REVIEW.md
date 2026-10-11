@@ -32,3 +32,11 @@ B73d35e2→aa8099e的独立复审关闭累计unknown与恢复父子同步；响�
 修复cd7688d→aa22f63复核时，原四个失败探针已闭合、6文件18定向unit通过，但发现2项仍需A修的P2：namespace准入没有计算旧held尝试尚未落地的目录/文件峰值，失锁后的晚到mkdir可越过1024上限；成功stopped receipt已发布后catch仍重复创建receipt临时文件，另一recover可能已释放预留。要求全held容量headroom与receipt读核幂等/发布后不再写。两项已派回；不得因原探针通过宣称整体闭合。
 
 同轮复审第三项P2：StorageLock.query(promise)在观察已求值的heldRows promise前assert，失效时遗落拒绝；实际heldRows/失效连接内存探针观察到unhandledRejection。已要求工厂式query，先assert再启动，完整修复前不关闭核心审查。
+
+## 收口复验（尚有一项待修）
+
+`aec72c1` → root `2d17550`：独立 Astra 的 3 文件 14 单元及内存探针确认旧 held 未落盘 namespace 计量、停止证明只读重放及发布后无新写闭合。无新增文件的过额恢复静态复核通过，仍保留完整扫描、账目、当前权限、停止证明与 fence；真实故障证据由总控 212 项 DB 回归补足。
+
+factory 修复还有一个求值顺序窗口：`work()` 产生 Promise 后，`remainingReceiveMs()` 恰好抛错，拒绝未进入观察链。独立探针实际观察到 `unhandledRejection`，已要求预算先算、工厂结果立即进入被观察 Promise 链，同时修正 acquire 参数顺序。此项尚未关闭。
+
+B 最终窄审基线 `abc4c87`：HTTP 将同一 ReceiveContext 传给 DB factory 与服务；原生 input 保持、显式重选、累计 unknown、恢复提示及简化列表均未引入新的 P1/P2。5 文件 55 项独立纯单测通过；没有冒充浏览器或 A 内部实现验收。
