@@ -37,3 +37,9 @@
 head1de6c4c的[容器CI38177881396](https://github.com/aning0922/quiz-forge/actions/runs/38177881396)仍failure。有限诊断已证实镜像/daemon能力预检与全部容器配置核对为true，create成功且已close；start-attach实际exit1并已close，容器exit255。清理确认停止，结果WORKER_FAILED；原生身份阶段未通过。不能据此猜测放宽seccomp，f119b69→root7c69834只追加有限OCI阶段与已知syscall分类，等待下一轮真实证据。
 
 同head[普通CI38177881397](https://github.com/aning0922/quiz-forge/actions/runs/38177881397)的FD基线仍失败：完整扫描找到两只非CLOEXEC管道，一读一写，未记录路径、内容或环境。共享所有者正在补plain Node、tsx和node:test等有限对照定位来源，原断言保留。Mac作者报告扩展矩阵60/60通过，但完整提交、总控重跑和独立审查尚未完成，不计为macOS验收。
+
+## 第四轮真实 Linux 证据
+
+head4f3959b的[容器CI38179010996](https://github.com/aning0922/quiz-forge/actions/runs/38179010996)仍failure，有限分类明确为OCI exec FIFO启动阶段；镜像/能力/配置检查仍全部true，停止confirmed。日志的knownSyscall=mount仅表示有限词表命中，可能来自路径/描述，不能当实际系统调用证据或据此允许mount。Linux流继续核对运行时源码并修复。
+
+同head[普通CI38179011025](https://github.com/aning0922/quiz-forge/actions/runs/38179011025)的database实际success；checks失败于新FD四对照的首个plain Node24.21.0，只有FD_CONTROL_FAILED，未获得管道元数据。root补固定paths/build/probe/parse阶段、数值exitcode与四对照失败汇总，并为可信探针编译器给定固定/usr/bin:/bin搜索路径；未改变解码worker权限或忽略额外FD，也未将编译环境假设当原根因。本机四对照均无额外FD、19共享/控制测试通过，612应用单测、类型、lint与格式通过。第五轮准确head证据另记，尚未验收平台。
