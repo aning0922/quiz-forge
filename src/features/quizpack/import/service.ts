@@ -614,7 +614,9 @@ export function createImportReceiveService(
         const scan = await scanStorage(config, context);
         currentReceiptLimits(scan, id);
         const rows = await lock.query(heldRows(lock.connection));
-        requireQuota(measuredQuota(scan, rows));
+        // Recovery creates no archive/temporary bytes. Validate the bounded held ledger,
+        // then permit stopped cleanup/reconciliation even when conservative headroom exceeds admission quota.
+        measuredQuota(scan, rows);
         const row = await receiveDatabaseAwait(db, context, "read", () =>
           read(db, c.sessionToken, async (tx) => importRow(tx, p, id), c),
         );

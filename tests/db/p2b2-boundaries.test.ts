@@ -453,7 +453,7 @@ it("1024 directory capacity rejects new namespace before claim or body, while ex
       "RECEIVE_SCAN_LIMIT",
     );
     expect(consumed).toBe(0);
-    expect((await row(created.id)).attempts).toHaveLength(0);
+    expect((await row(created.id)).attempts.length).toBe(0);
     await rmdir(owned.pop()!);
     expect((await receive(created.id, input)).status).toBe("received");
     expect(consumed).toBe(1);
@@ -486,7 +486,7 @@ it("current directory reserves four names at 12/+1 existing files before touchin
       "RECEIVE_SCAN_LIMIT",
     );
     expect(consumed).toBe(0);
-    expect((await row(created.id)).attempts).toHaveLength(0);
+    expect((await row(created.id)).attempts.length).toBe(0);
     await unlink(owned.pop()!);
     expect((await receive(created.id, input)).status).toBe("received");
     expect(consumed).toBe(1);
@@ -533,7 +533,7 @@ it("global 8192 entries budget includes attempt's new names; +1 admission does n
       "RECEIVE_SCAN_LIMIT",
     );
     expect(consumed).toBe(0);
-    expect((await row(created.id)).attempts).toHaveLength(0);
+    expect((await row(created.id)).attempts.length).toBe(0);
     await unlink(ownedFiles.pop()!);
     expect((await receive(created.id, input)).status).toBe("received");
     expect(consumed).toBe(1);
@@ -542,3 +542,42 @@ it("global 8192 entries budget includes attempt's new names; +1 admission does n
     for (const dir of ownedDirs) await rmdir(dir);
   }
 }, 30000);
+it("explicit stopped recovery reduces held headroom at exact receive admission quota, without a quota deadlock", async () => {
+  const { attemptReservation } =
+    await import("../../src/features/quizpack/import/limits");
+  const bytes = Buffer.alloc(1048576, 9),
+    created = await create({
+      ...expected,
+      expectedArchiveBytes: bytes.length,
+      expectedArchiveSha256: createHash("sha256").update(bytes).digest("hex"),
+    });
+  const orphan = randomUUID(),
+    dir = importDirectory(db.config, orphan);
+  await mkdir(dir, { mode: 0o700 });
+  const file = path.join(dir, "archive.quizpack"),
+    handle = await open(file, "wx", 0o600);
+  try {
+    await handle.truncate(536870912 - attemptReservation(bytes.length));
+  } finally {
+    await handle.close();
+  }
+  const { StudioError } = await import("../../src/lib/http-security/errors");
+  const service = createImportReceiveService({
+    afterFreeze: async () => {
+      throw new StudioError("WRITE_OUTCOME_UNKNOWN");
+    },
+  });
+  try {
+    await expect(receive(created.id, source(bytes), service)).rejects.toThrow(
+      "WRITE_OUTCOME_UNKNOWN",
+    );
+    expect(Number((await row(created.id)).reserved_bytes)).toBe(
+      attemptReservation(bytes.length),
+    );
+    expect((await recover(created.id)).status).toBe("received");
+    expect(Number((await row(created.id)).reserved_bytes)).toBe(0);
+  } finally {
+    await unlink(file);
+    await rmdir(dir);
+  }
+});

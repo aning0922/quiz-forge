@@ -195,3 +195,83 @@ it("keeps import audits finite and no-op replay does not append audit", async ()
   );
   expect(valid?.valid).toBe(true);
 });
+it("attempt identity and same-fence lease cannot mutate, and released disposition cannot return to held", async () => {
+  const { createDatabase } = await import("../../src/lib/db/client"),
+    { createImportReceiveService, importReceiveService } =
+      await import("../../src/features/quizpack/import/service"),
+    { createReceiveContext } =
+      await import("../../src/features/quizpack/import/context");
+  const c = createReceiveContext(new AbortController().signal),
+    request = await createDatabase(db.config, c.context);
+  const service = createImportReceiveService({
+    beforeIo: async (op) => {
+      if (op === "write") throw new Error("TEST_IO_FAILED");
+    },
+  });
+  try {
+    await expect(
+      service.receiveArchive(
+        request,
+        actor.credentials,
+        "permission-test",
+        id,
+        {
+          chunks: {
+            async *[Symbol.asyncIterator]() {
+              yield new Uint8Array([1]);
+            },
+          },
+          cancel: async () => {},
+        },
+        c.context,
+      ),
+    ).rejects.toThrow("RECEIVE_STORAGE_CONFLICT");
+  } finally {
+    c.dispose();
+    await request.close();
+  }
+  expect(
+    await fixedCode(
+      () =>
+        db.app
+          .sql`UPDATE qf.quizpack_import SET state_revision=state_revision+1,updated_at=clock_timestamp(),lease_until=clock_timestamp()+interval '120 seconds' WHERE id=${id}`,
+    ),
+  ).toBe("23514");
+  for (const key of ["fence", "ownerPid", "ownerNonce", "reservationBytes"]) {
+    expect(
+      await fixedCode(
+        () =>
+          db.app
+            .sql`UPDATE qf.quizpack_import SET state_revision=state_revision+1,updated_at=clock_timestamp(),attempts=jsonb_set(attempts,${`{0,${key}}`}::text[], '0'::jsonb) WHERE id=${id}`,
+      ),
+    ).toBe("23514");
+  }
+  const snapshot = await importReceiveService.readImport(
+      db.app,
+      actor.session.raw,
+      "permission-test",
+      id,
+    ),
+    next = createReceiveContext(new AbortController().signal),
+    fresh = await createDatabase(db.config, next.context);
+  try {
+    await importReceiveService.recoverReceive(
+      fresh,
+      actor.credentials,
+      "permission-test",
+      id,
+      { expectedStateRevision: snapshot.stateRevision },
+      next.context,
+    );
+  } finally {
+    next.dispose();
+    await fresh.close();
+  }
+  expect(
+    await fixedCode(
+      () =>
+        db.app
+          .sql`UPDATE qf.quizpack_import SET state_revision=state_revision+1,updated_at=clock_timestamp(),attempts=jsonb_set(attempts,'{0,disposition}', '"held"'::jsonb),reserved_bytes=65538 WHERE id=${id}`,
+    ),
+  ).toBe("23514");
+});
