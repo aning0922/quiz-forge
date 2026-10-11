@@ -72,6 +72,7 @@ describe("real P2-A database", () => {
       "operator_session",
       "product",
       "product_tag",
+      "quizpack_import",
       "tag",
     ]);
   });

@@ -1,3 +1,4 @@
+import { StudioError } from "../src/lib/http-security/errors";
 import { ManagementError } from "../src/lib/db/management";
 import { MigrationError } from "../src/lib/db/migrate";
 import { PgStartError } from "../src/lib/db/pg-start";
@@ -26,7 +27,8 @@ export function parseArguments(
 }
 export function printSafeError(error: unknown) {
   const code =
-    (error instanceof ManagementError ||
+    (error instanceof StudioError ||
+      error instanceof ManagementError ||
       error instanceof MigrationError ||
       error instanceof PgStartError) &&
     /^[A-Z_]+$/.test(error.code)
