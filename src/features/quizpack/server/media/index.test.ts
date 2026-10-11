@@ -4,6 +4,9 @@ import {
   disposeMediaOperationContext,
   runIsolatedImage,
   readMediaRuntimeBinding,
+  requestMediaOperationStop,
+  MEDIA_STOP_REASONS,
+  parseLaunchResult,
 } from "./index";
 import type { ImageDeclaration, MediaOperationContext } from "./index";
 const declaration: ImageDeclaration = {
@@ -37,6 +40,35 @@ describe("public media entry before platform migration", () => {
       disposeMediaOperationContext(context);
     }
   });
+  it.each(MEDIA_STOP_REASONS)(
+    "retains consistent public stop evidence for %s",
+    async (reason) => {
+      const context = createMediaOperationContext({
+        signal: new AbortController().signal,
+        deadlineMonotonicMs: performance.now() + 60_000,
+      });
+      try {
+        requestMediaOperationStop(context, reason);
+        const result = await runIsolatedImage(
+          new Uint8Array([1]),
+          declaration,
+          context,
+        );
+        expect(result.outcome).toBe("failed");
+        expect(parseLaunchResult(Buffer.from(JSON.stringify(result)))).toEqual({
+          ok: true,
+          value: result,
+        });
+        if (reason === "STOP_UNCONFIRMED")
+          expect(result).toMatchObject({
+            code: "STOP_UNCONFIRMED",
+            stopped: "unknown",
+          });
+      } finally {
+        disposeMediaOperationContext(context);
+      }
+    },
+  );
   it("rejects forged contexts without starting anything", async () => {
     expect(
       await runIsolatedImage(

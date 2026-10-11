@@ -16,10 +16,7 @@ export async function readMediaRuntimeBinding(
     if (state.phase === "stopping")
       return {
         outcome: "unavailable",
-        code: mediaStopFailureCode(state.stop) as Extract<
-          MediaRuntimeBindingResult,
-          { outcome: "unavailable" }
-        >["code"],
+        code: mediaStopFailureCode(state.stop),
       };
     return { outcome: "unavailable", code: "ISOLATION_UNAVAILABLE" };
   } catch {
