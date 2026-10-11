@@ -1,5 +1,4 @@
 import type { Metadata, Viewport } from "next";
-import { SiteHeader } from "@/components/site-header";
 import { site } from "@/config/site";
 import "./globals.css";
 
@@ -19,12 +18,7 @@ export default function RootLayout({
         <a href="#main" className="skip-link">
           跳转到主要内容
         </a>
-        <SiteHeader />
         {children}
-        <footer className="site-footer">
-          <span>QuizForge / 2026</span>
-          <span>D0 工程预览 · 临时演示数据 · 非已发布商品</span>
-        </footer>
       </body>
     </html>
   );

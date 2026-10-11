@@ -4,7 +4,7 @@
   "themeId": "historical",
   "status": "planning-only",
   "style": "新中式古风",
-  "notes": "D0 待制作需求，不是发布 manifest；所有资源待生成/委托和商用审核。",
+  "notes": "D0待制作规格保留作历史计划，不是发布manifest。D1-A已生成的独立概念资源见researchManifest；AI资源review，商用及作者审批pending，未映射为正式资源包。",
   "assets": [
     {
       "id": "historical-representative-character",
@@ -102,5 +102,6 @@
       "approvedBy": null,
       "contentHash": null
     }
-  ]
+  ],
+  "researchManifest": "/assets/themes/historical/d1a/manifest.json"
 }

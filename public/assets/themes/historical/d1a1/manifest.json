@@ -1,0 +1,51 @@
+{
+  "schemaVersion": "historical-directed-study.v1",
+  "packId": "historical-directed-d1a1-study",
+  "status": "not-released",
+  "directionDecision": "author-selected folio with collection reveal",
+  "decisionEvidence": "docs/D1A1_VISUAL_DECISION.md",
+  "commercialApproval": "pending",
+  "sharedImageManifest": "/assets/themes/historical/d1a/manifest.json",
+  "roles": {
+    "unrevealed": "jade-landscape; no character",
+    "reveal": "historical.li-bai.concept; synthetic example only",
+    "report": "stable paper reading surface",
+    "poster": "field preview only; export pending"
+  },
+  "fonts": [
+    {
+      "id": "directed-serif-500",
+      "path": "/assets/fonts/d1a1/historical-directed-500.ttf",
+      "bytes": 134064,
+      "sha256": "2dacc1d58d29a22516974e1b2de39832e8e2eaab2e681fe6c88590bb1a567f9c",
+      "source": "Google Fonts Noto Serif SC v36 CSS2 text subset, 2026-10-11",
+      "license": "SIL OFL 1.1",
+      "licenseEvidence": "/assets/fonts/OFL-NotoSerifSC.txt",
+      "coverage": "/assets/fonts/d1a1/characters.txt",
+      "subsetCharacters": 385,
+      "status": "license-documented; visual-review",
+      "approvedBy": null
+    },
+    {
+      "id": "directed-serif-600",
+      "path": "/assets/fonts/d1a1/historical-directed-600.ttf",
+      "bytes": 134056,
+      "sha256": "fb987552bb45d1b7efb4f1793ea8973ad392d0188276b04ffd642d6a6ea93120",
+      "source": "Google Fonts Noto Serif SC v36 CSS2 text subset, 2026-10-11",
+      "license": "SIL OFL 1.1",
+      "licenseEvidence": "/assets/fonts/OFL-NotoSerifSC.txt",
+      "coverage": "/assets/fonts/d1a1/characters.txt",
+      "subsetCharacters": 385,
+      "status": "license-documented; visual-review",
+      "approvedBy": null
+    }
+  ],
+  "pending": [
+    "AI commercial evidence and artwork approval",
+    "complete character roster",
+    "history/costume editorial review",
+    "full font and device validation",
+    "trusted report/reveal service",
+    "poster export"
+  ]
+}
