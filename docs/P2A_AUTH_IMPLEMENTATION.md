@@ -38,6 +38,8 @@ Auth 写事务统一调用 `acquireAuthWriteLock`，锁先于计数、状态/行
 
 ## 总控待验收与限制
 
+总控首轮全量 E2E 报告 188 passed / 10 既有 skips，两项真实运营角色流程通过并产出八张四宽度正常状态图；加载/错误用例因释放 paused 后立即 unroute 与待续 handler 竞争而失败。本流采用最小修正：路由保留至 page fixture 关闭，release 后后续请求立即 continue，不捕获或吞掉 handler 错误。该修正 format/lint/typecheck 通过；三项 Auth E2E 与图检待总控重跑，本聊天未运行浏览器验证。
+
 3100 与生产 E2E 由总控独占，本聊天没有启动 3100、运行 E2E 或拍摄浏览器截图。`studio-auth.spec.ts` 为单独 studio-auth 项目准备 operator/read-only 真实登录退出，320/375/390/430 空输入和已登录非敏感截图，另有真实非法合成输入的错误页（输入清空后才截图）和受控 preauth 延迟的空输入加载态截图。受控延迟只验证 UI 状态，不声称真实网络故障；真实 DB 不可用页面由总控停库后验收。trace/video/自动失败截图关闭，无 HAR。通过独立 react-server helper 生成私有合成凭证，Playwright 不导入 server-only 模块；输入避开可在失败 call log 打印 secret 的 locator.fill。总控应串行执行 DB suite 和 E2E，检查真实截图与移动约束，程序通过不代替视觉或作者批准。
 
 尚未执行本阶段独立审查或远端 CI，不创建 PR、不合并 main、不部署。没有 Product/导入/审核/发布/Key 功能；普通消费者身份与本地运营身份隔离。P2-A 整体验收仍由总控六项检查、实际浏览器图检、独立审查和 CI 决定。
