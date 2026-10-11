@@ -2,7 +2,7 @@
 
 ## 2026-10-12 托管推进
 
-P2-A最终交付文档head `38177fb54a205ae05509c7f2ed23a9770a6095e7` 的CI38163814070已实际success。当前进入P2-B1：总控独立分支codex/catalog-workspace，合同a2df7b8冻结，两条新Sol/high聊天分别实施目录领域/事务与HTTP/Studio；公共四表/DTO/事务鉴权已集成，初次452单测/61真实DB和构建通过；CRUD及HTTP/UI仍在实施，Unicode约束与错误分类两项已派修，尚未验收。范围与证据见STUDIO_P2B1.md/P2B1_ACCEPTANCE.md。原P2-A工作树和PR #8保持可审阅，旧暂停聊天未恢复。
+P2-A最终交付文档head `38177fb54a205ae05509c7f2ed23a9770a6095e7` 的CI38163814070已实际success。当前P2-B1总控分支codex/catalog-workspace，合同a2df7b8冻结。真实四表/DTO/事务鉴权与目录CRUD已集成，总控111项真实DB通过；HTTP/Studio正在接入。复审仍有旧Unicode约束、驱动断连和私有目录构建追踪三项待闭合，尚未验收。范围与证据见STUDIO_P2B1.md/P2B1_ACCEPTANCE.md。原P2-A工作树和PR #8保持可审阅，旧暂停聊天未恢复。
 
 P2-A 已完成技术验收：集成代码 `720b982ae486dbe7349dfa7034367cf8a6c76875`，442单测、57真实PostgreSQL测试、189生产Chromium E2E通过/10既有跳过，格式/lint/类型/构建通过。独立Astra审查无剩余P1/P2，移动页面及真实停库状态已图检。[Draft PR #8](https://github.com/aning0922/quiz-forge/pull/8) 保持堆叠于P1，代码head的[CI38163271691](https://github.com/aning0922/quiz-forge/actions/runs/38163271691) 普通与数据库job均success。数据库/浏览器进程已停止，实例保留可恢复；详见P2A_ACCEPTANCE.md。接续P2-B1目录工作区，P2-B导入和P3评分分别已有预案，尚未实施。
 
