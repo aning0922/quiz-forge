@@ -129,7 +129,17 @@ export async function migrateDatabase(
         "validation_evidence_valid(text,text[],text,text)",
         "product_asset_declaration_valid(text,text,text,text,text,text)",
         "validation_shape_valid(qf.quizpack_validation)",
+        "validation_file_stop_protocol()",
+        "validation_file_stop_proof_valid(jsonb,uuid,jsonb)",
+        "validation_file_stop_controls_valid(text,uuid,text,text)",
       ]) {
+        // Owner can stage the enum-only migration; application capability checks still fail closed.
+        if (signature.startsWith("validation_file_stop_")) {
+          const [available] = await tx<
+            { present: boolean }[]
+          >`SELECT to_regprocedure(${`qf.${signature}`}) IS NOT NULL AS present`;
+          if (!available?.present) continue;
+        }
         await tx.unsafe(
           `GRANT EXECUTE ON FUNCTION qf.${signature} TO "${config.database.user}"`,
         );

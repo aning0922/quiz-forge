@@ -7,6 +7,8 @@ import {
 } from "./p2a-fixture";
 import {
   domainFixture,
+  acknowledgeDomainStop,
+  domainSettledAttempt,
   hash,
   resetDomainDatabase,
 } from "./p2b2b-domain-fixture";
@@ -102,12 +104,13 @@ describe("B2-2B SQL failure boundaries and current auth", () => {
   });
   it("same archive becomes direct alias; alias target cannot become a chain", async () => {
     const accepted = await evidence((await claim()).row);
-    const archiving = await beginArchiving(
+    let archiving = await beginArchiving(
       db.app,
       f.auth.credentials,
       f.scope,
       authority(accepted),
     );
+    archiving = await acknowledgeDomainStop(db, f, archiving);
     const canonical = await completeValidation(
       db.app,
       f.auth.credentials,
@@ -138,11 +141,16 @@ describe("B2-2B SQL failure boundaries and current auth", () => {
     );
     expect(alias.identity_kind).toBe("alias");
     expect(alias.canonical_validation_id).toBe(canonical.id);
-    const archivingAlias = await beginArchiving(
+    let archivingAlias = await beginArchiving(
       db.app,
       f.auth.credentials,
       next.scope,
       authority(alias),
+    );
+    archivingAlias = await acknowledgeDomainStop(
+      db,
+      { ...f, scope: next.scope },
+      archivingAlias,
     );
     const readyAlias = await completeValidation(
       db.app,
@@ -227,12 +235,13 @@ describe("B2-2B SQL failure boundaries and current auth", () => {
   });
   it("frozen resource declaration and fake blob dimensions cannot complete", async () => {
     const accepted = await evidence((await claim()).row);
-    const archiving = await beginArchiving(
+    let archiving = await beginArchiving(
       db.app,
       f.auth.credentials,
       f.scope,
       authority(accepted),
     );
+    archiving = await acknowledgeDomainStop(db, f, archiving);
     await expect(
       completeValidation(db.app, f.auth.credentials, f.scope, {
         authority: authority(archiving),
@@ -252,12 +261,13 @@ describe("B2-2B SQL failure boundaries and current auth", () => {
   });
   it("same resource version with changed license is a recorded rejection", async () => {
     const accepted = await evidence((await claim()).row);
-    const archiving = await beginArchiving(
+    let archiving = await beginArchiving(
       db.app,
       f.auth.credentials,
       f.scope,
       authority(accepted),
     );
+    archiving = await acknowledgeDomainStop(db, f, archiving);
     await completeValidation(db.app, f.auth.credentials, f.scope, {
       authority: authority(archiving),
       blobs: f.blobs,
@@ -425,16 +435,18 @@ describe("B2-2B SQL failure boundaries and current auth", () => {
     await expect(evidence(row)).rejects.toThrow("UNAUTHENTICATED");
   });
   it("archive retry starts not-started and keeps accepted evidence byte-for-byte", async () => {
-    const row = await evidence((await claim()).row);
+    const row = await acknowledgeDomainStop(
+      db,
+      f,
+      await evidence((await claim()).row),
+    );
     const recovered = await recoverValidationClaim(
       db.app,
       f.auth.credentials,
       f.scope,
       {
         authority: authority(row),
-        settledAttempts: [
-          { attemptId: row.current_attempt_id, mediaStop: "confirmed" },
-        ],
+        settledAttempts: [domainSettledAttempt(row)],
         accountedBytes: 0,
         storageCondition: "clean",
         errorCode: null,
