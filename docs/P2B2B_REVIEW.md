@@ -38,3 +38,7 @@ Astra在01a12e28-f467-7cf0-aeba-3d1b62294c2a确认receipt-before-complete可采�
 - root949a98a25d2720546a5d4005a748d3c6从0001–0008实际升级0009/0010；独立4文件26真实PG通过（.cache/b2b-domain-db.log）。升级前启用被明确拒且runtime逐字节不变；升级后启用/停用均成功，重跑migrate applied=[]；实例已停止。旧schema探针首次误读stderr为stdout而失败，修正探针后通过，没有修改业务来掩盖结果。
 - root814fec3集成时全74文件939单元通过（.cache/b2b-unit-integration.log）；随后S文件/receipt增量12ed2bb的37项及U18ea20b的46项分别通过。它们不是本批最终完整回归。
 - 原receipt微任务P2在7f82205/59c7947经独立Astra关闭，排队后UNKNOWN或新pending均零work；V restore e0a2fe0经30探针与相关既有测试复验未见新P1/P2。12ed2bb新增三门/实际receipt及U公共流程仍在独立审查。
+
+### 后台请求证明复验
+
+U b2486a4首批独立46纯测试通过，但旧not-started对象只绑定tuple，能在exact row清除后误删同tuple新发送的unknown。a37144b→rootd87d993用每次发送的incarnation token绑定证明，新发送与权威row接管撤销旧资格；独立重跑原四步得到oldProofRejected/newUnknownRetained且pendingCount=1，原P2关闭。root修后47纯测试通过；实际页面/路由/浏览器验收尚未交付，不计为UI阶段完成。
