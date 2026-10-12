@@ -329,3 +329,31 @@ it("UNKNOWN after candidate exposure leaves no usable publication handle or rele
     maintenanceRequired: true,
   });
 });
+
+it("a fresh operation cannot acknowledge an old cleanup candidate even with the identical attempt", async () => {
+  const { config, op, readOp, id, attempt } = await fixture();
+  op.stop("CANCELLED");
+  await op.settle();
+  expect(await writeValidationStopped(op, config, id, attempt)).toBe(true);
+  readOp.attachLock({
+    controller: new AbortController(),
+    assert: () => {},
+    close: async () => true,
+  } as unknown as StorageLock);
+  readOp.enterClaimBoundary();
+  readOp.confirmClaim();
+  readOp.closeNonDbGate();
+  await readOp.settle();
+  await expect(
+    writeValidationStopped(readOp, config, id, attempt),
+  ).rejects.toMatchObject({ code: "VALIDATION_STORAGE_CONFLICT" });
+  expect(() => validationFileStopPublication(readOp, id, attempt)).toThrow();
+  expect(
+    await readValidationStopped(
+      new ArchiveOperation({} as P2aDatabase, readOp.context),
+      config,
+      id,
+      attempt,
+    ),
+  ).toBeNull();
+});

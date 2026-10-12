@@ -54,6 +54,7 @@ export class ArchiveOperation {
   private platformRelatedIoUnknown = false;
   private candidateClosed = false;
   private lock: StorageLock | undefined;
+  private lockClosing: Promise<void> | undefined;
   private removeLockListener: (() => void) | undefined;
   constructor(
     readonly db: P2aDatabase,
@@ -81,18 +82,23 @@ export class ArchiveOperation {
     this.removeLockListener?.();
     this.removeLockListener = undefined;
   }
-  async closeStorageLock() {
+  closeStorageLock(): Promise<void> {
+    if (this.lockClosing) return this.lockClosing;
+    // Revoke every continuation before close can synchronously broadcast cancellation.
+    this.stop("STOP_REQUESTED");
     this.detachLock();
     const lock = this.lock;
     this.lock = undefined;
-    if (lock)
-      await this.boundedTask(
-        Promise.resolve()
-          .then(() => lock.close())
-          .then((closed) => {
-            if (!closed) this.relatedIoUnknown = true;
-          }),
-      );
+    this.lockClosing = lock
+      ? this.boundedTask(
+          Promise.resolve()
+            .then(() => lock.close())
+            .then((closed) => {
+              if (!closed) this.relatedIoUnknown = true;
+            }),
+        )
+      : Promise.resolve();
+    return this.lockClosing;
   }
   checkpoint() {
     const state = readMediaOperationState(this.context);
@@ -395,6 +401,7 @@ export class ArchiveOperation {
   private finalizationQualified(excludedTask?: Promise<unknown>) {
     return (
       (excludedTask ? this.finalizationEntered : !this.finalizationEntered) &&
+      Boolean(this.lock) &&
       this.nonDbClosed &&
       this.receiptState === "done" &&
       this.ackState === "confirmed" &&
