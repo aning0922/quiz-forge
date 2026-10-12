@@ -9,6 +9,9 @@ import {
   writeFile,
 } from "node:fs/promises";
 import { realpathSync } from "node:fs";
+import fs from "node:fs";
+import { syncBuiltinESMExports } from "node:module";
+import { performance } from "node:perf_hooks";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
@@ -217,6 +220,62 @@ test("matrix source closure binds bytes and rejects unknown special/link entries
       /INTERRUPTED/,
     );
   } finally {
+    await rm(checkoutRoot, { recursive: true, force: true });
+  }
+});
+
+test("final control and matrix-code stat reads remain inside their original deadline", async () => {
+  const checkoutRoot = await mkdtemp(
+    join(realpathSync(tmpdir()), "quizpack-final-io-synthetic-"),
+  );
+  const roots = { checkoutRoot, deploymentRoot: join(checkoutRoot, ".next") };
+  const control = join(
+      checkoutRoot,
+      ".cache/quizpack-media-runtime/darwin-arm64/control",
+    ),
+    base = join(checkoutRoot, "scripts/quizpack-media-preflight");
+  const original = fs.lstatSync;
+  try {
+    await mkdir(control, { recursive: true, mode: 0o700 });
+    await mkdir(base, { recursive: true });
+    await writeFile(join(base, "driver.ts"), "export const synthetic = 1;");
+    for (const [path, finalCall, invoke] of [
+      [
+        control,
+        3,
+        (checkpoint: () => void) =>
+          assertControlEmpty(roots, "darwin-arm64", checkpoint),
+      ],
+      [base, 2, (checkpoint: () => void) => matrixCodeHash(roots, checkpoint)],
+    ] as const) {
+      let calls = 0,
+        delayed = false;
+      const deadline = performance.now() + 100;
+      Reflect.set(fs, "lstatSync", ((...args: Parameters<typeof original>) => {
+        const result = Reflect.apply(original, fs, args);
+        if (String(args[0]) === path && ++calls === finalCall) {
+          delayed = true;
+          while (performance.now() <= deadline + 20) {
+            /* Final real IO crosses the original budget. */
+          }
+        }
+        return result;
+      }) as typeof original);
+      syncBuiltinESMExports();
+      await assert.rejects(
+        invoke(() => {
+          if (performance.now() >= deadline)
+            throw new ProvisionError("INTERRUPTED");
+        }),
+        /INTERRUPTED/,
+      );
+      assert.equal(delayed, true);
+      Reflect.set(fs, "lstatSync", original);
+      syncBuiltinESMExports();
+    }
+  } finally {
+    Reflect.set(fs, "lstatSync", original);
+    syncBuiltinESMExports();
     await rm(checkoutRoot, { recursive: true, force: true });
   }
 });
