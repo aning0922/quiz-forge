@@ -65,6 +65,10 @@ import {
 import { emitFinalReport } from "./report";
 import { sealCapabilityAfterChecks, readCapabilityBytes } from "./capability";
 import { parseMacOutput, parseNativeIdentity } from "./protocol";
+import {
+  checkDelayedOwnedTimer,
+  checkRejectedTargetSeal,
+} from "./matrix-checks";
 function macValue(bytes: Uint8Array) {
   const p = parseMacOutput(bytes);
   requireTrue(p);
@@ -688,17 +692,7 @@ async function main() {
   );
   await check(
     "event-loop timer delayed cannot produce late success",
-    async () => {
-      const p = runHarnessImage(small, declaration(small, 2, 2), context(500));
-      const until = performance.now() + 800;
-      while (performance.now() < until) {}
-      const r = await p;
-      requireTrue(
-        r.outcome === "failed" &&
-          r.code === "DEADLINE_EXCEEDED" &&
-          r.stopped === "confirmed",
-      );
-    },
+    checkDelayedOwnedTimer,
   );
   await check("sandbox-exec execs fixed worker in same owned PID", async () => {
     const r = await runHarnessCase(
@@ -1169,14 +1163,18 @@ async function main() {
       componentId: candidateComponentId,
     }),
   );
-  await check("failed final capability check preserves prior seal", () => {
-    const previous = readCapabilityBytes();
-    requireTrue(
-      sealCapabilityAfterChecks(false, candidateComponentId) === false,
-    );
-    requireTrue(readCapabilityBytes().equals(previous));
-    return { ordinaryCapabilityUntouched: true };
-  });
+  await check(
+    "failed final capability check preserves prior seal",
+    async () => {
+      if (RUNTIME_TARGET) return checkRejectedTargetSeal();
+      const previous = readCapabilityBytes();
+      requireTrue(
+        sealCapabilityAfterChecks(false, candidateComponentId) === false,
+      );
+      requireTrue(readCapabilityBytes().equals(previous));
+      return { ordinaryCapabilityUntouched: true };
+    },
+  );
   await check("public API requires frozen component identity", async () => {
     const actual = loadPolicy();
     let priorSupported = policySupported(actual);
