@@ -382,3 +382,14 @@ it("queued finalization rechecks related IO immediately before work and consumes
   });
   expect(work).not.toHaveBeenCalled();
 });
+
+it("an ordinary write queued before file closure cannot start after the gate closes", async () => {
+  const { op } = fixture(),
+    work = vi.fn(async () => "unexpected SQL");
+  const task = op.databaseAwait("write", work);
+  op.closeNonDbGate();
+  await expect(task).rejects.toMatchObject({
+    code: "VALIDATION_RECOVERY_REQUIRED",
+  });
+  expect(work).not.toHaveBeenCalled();
+});

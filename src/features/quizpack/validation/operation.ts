@@ -306,7 +306,16 @@ export class ArchiveOperation {
   ): Promise<T> {
     if (kind === "write" && (this.nonDbClosed || this.finalizationEntered))
       throw new StudioError("VALIDATION_RECOVERY_REQUIRED");
-    return this.awaitDatabase(kind, work);
+    return this.awaitDatabase(
+      kind,
+      work,
+      kind === "write"
+        ? () => {
+            if (this.nonDbClosed || this.finalizationEntered)
+              throw new StudioError("VALIDATION_RECOVERY_REQUIRED");
+          }
+        : undefined,
+    );
   }
   private async awaitDatabase<T>(
     kind: "read" | "write",
