@@ -128,3 +128,7 @@ B2-1最终文档head `5caef26` 的CI38175221128已核实checks/database均succes
 ## B2-2B 精确预研登记
 
 三表、统一存储/计量、claim/evidence/complete、恢复与有限重试、DTO/后台和验收分工已整理为[精确候选](STUDIO_P2B2B_STORAGE_PROPOSAL.md)。总控选择包身份canonical/alias/conflict分列、报告原始canonical text冗余以便SQL核真实字节，以及最多三attempt；validate claim同时记录media未知和完整预留，避免额外intent提交窗口。A-R平台身份查询的preclaim IO由平台guard独立保护，尚未打开原包。A-V后续需交prepare identity/restore candidate/SQL evidence projection三个明确接口。当前仍未冻结或实施B，不绕过A的Mac剩余平台验收。
+
+## B2-2A 技术退出检查点
+
+运行代码bdd5c51、集成head4793537：873单元/43离线工具、214真实DB/46驱动、206生产E2E及10既有跳过通过；格式/lint/类型/构建、独立登记问题闭合。Mac目标66项连续三轮、Linux31+11及两平台sealed真实Next入口全部通过。4793537普通CI38194638007与媒体CI38194638047实际success，PR #12仍Draft。原失败合成轮保留失败，已核实退出的控制/哨兵现场完整隔离归档；当前control空，自有服务/DB已停。完整边界与证据见P2B2A_ACCEPTANCE。接续B2-2B精确合同冻结和独立工作树实现，不在已交付A分支堆积业务表，不沿用fixture seal。
