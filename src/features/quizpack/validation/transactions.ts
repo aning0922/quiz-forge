@@ -13,6 +13,7 @@ import {
   MAX_PENDING_VALIDATIONS,
   MAX_REVISION,
   MAX_VALIDATIONS,
+  MAX_METADATA_BYTES,
   VALIDATION_RESERVATION_BYTES,
 } from "./limits";
 import { ARCHIVE_POLICY_VERSION, archivePolicySha256 } from "./policy";
@@ -22,12 +23,14 @@ import {
   serializeValidationAttempts,
   validationKey,
   validationRow,
+  validationFileStopProofSchema,
   type ValidationAttempt,
   type ValidationRow,
   type ValidationBinding,
 } from "./repository";
 import type {
   AppendEvidenceInput,
+  AcknowledgeValidationFileStopInput,
   ClaimValidationInput,
   CompleteValidationInput,
   ReconcileValidationInput,
@@ -48,7 +51,8 @@ async function audit(
     | "interrupted"
     | "completed"
     | "recovered"
-    | "retried",
+    | "retried"
+    | "file_stop_acknowledged",
 ) {
   await tx`INSERT INTO qf.audit_event(id,occurred_at,action,outcome,actor_id,session_id,request_id,target_kind,target_id,target_revision) VALUES(${randomUUID()},clock_timestamp(),${`validation_${action}`},'success',${actor.id},${actor.sessionId},${credentials.requestId},'validation',${row.id},${row.state_revision})`;
 }
@@ -58,6 +62,20 @@ function increment(row: ValidationRow, fence = false) {
     (fence && row.fence >= MAX_REVISION)
   )
     throw new StudioError("REVISION_LIMIT");
+}
+function requireCurrentPolicy(row: ValidationRow) {
+  if (
+    row.archive_policy_version !== ARCHIVE_POLICY_VERSION ||
+    row.archive_policy_sha256 !== archivePolicySha256
+  )
+    throw new StudioError("VALIDATION_REVALIDATION_REQUIRED");
+}
+function requireAcknowledgedAttempts(row: ValidationRow) {
+  requireCurrentPolicy(row);
+  const attempts = parseValidationAttempts(row.attempts_text);
+  if (attempts.some((a) => !a.fileStopProof || a.mediaStop === "unconfirmed"))
+    throw new StudioError("VALIDATION_RECOVERY_REQUIRED");
+  return attempts;
 }
 async function scopeRows(tx: Tx, scope: ValidationScope, active = true) {
   const product = await productRow(tx, scope.productId, true);
@@ -146,6 +164,7 @@ function nextAttempt(
     reservationBytes: VALIDATION_RESERVATION_BYTES,
     disposition: "held",
     mediaStop: kind === "validate" ? "unconfirmed" : "not-started",
+    fileStopProof: null,
   };
 }
 async function countCapacity(tx: Tx, productId: string) {
@@ -216,6 +235,13 @@ export async function appendValidationEvidence(
     "import:create",
     async (tx, actor) => {
       const current = await authorityRow(tx, scope, input.authority);
+      requireCurrentPolicy(current);
+      if (
+        input.projection.metadataText !== null &&
+        Buffer.byteLength(input.projection.metadataText, "utf8") >
+          MAX_METADATA_BYTES
+      )
+        throw new StudioError("EVIDENCE_INVALID");
       if (current.status !== "validating" || current.validated_at !== null)
         throw new StudioError(
           "VALIDATION_STATE_CONFLICT",
@@ -304,6 +330,77 @@ export async function appendValidationEvidence(
     },
   );
 }
+export async function acknowledgeValidationFileStop(
+  db: P2aDatabase,
+  credentials: StudioWriteCredentials,
+  scope: ValidationScope,
+  input: AcknowledgeValidationFileStopInput,
+): Promise<ValidationRow> {
+  return withStudioWrite(
+    db,
+    credentials,
+    "import:create",
+    async (tx, actor) => {
+      await scopeRows(tx, scope);
+      const current = await validationRow(
+        tx,
+        scope.productId,
+        scope.importId,
+        input.authority.validationId,
+        true,
+      );
+      requireCurrentPolicy(current);
+      const parsed = validationFileStopProofSchema.safeParse(input.proof);
+      const attempts = parseValidationAttempts(current.attempts_text);
+      const attempt = attempts.find(
+        (a) => a.attemptId === current.current_attempt_id,
+      );
+      if (
+        !parsed.success ||
+        !attempt ||
+        current.fence !== input.authority.fence ||
+        current.current_attempt_id !== input.authority.attemptId
+      )
+        throw new StudioError(
+          "VALIDATION_STATE_CONFLICT",
+          current.state_revision,
+        );
+      const proof = parsed.data;
+      if (
+        proof.validationId !== current.id ||
+        proof.attemptId !== attempt.attemptId ||
+        proof.fence !== attempt.fence ||
+        proof.ownerPid !== attempt.ownerPid ||
+        proof.ownerNonce !== attempt.ownerNonce ||
+        (attempt.mediaStop !== "unconfirmed" &&
+          attempt.mediaStop !== proof.mediaStopped) ||
+        (attempt.kind === "archive" && proof.mediaStopped !== "not-started")
+      )
+        throw new StudioError("VALIDATION_STORAGE_CONFLICT");
+      if (attempt.fileStopProof) {
+        if (canonicalP1Json(attempt.fileStopProof) !== canonicalP1Json(proof))
+          throw new StudioError("VALIDATION_STORAGE_CONFLICT");
+        return current;
+      }
+      await authorityRow(tx, scope, input.authority);
+      if (attempt.disposition !== "held" || attempt.fileStopProof !== null)
+        throw new StudioError("VALIDATION_RECOVERY_REQUIRED");
+      const controls = serializeValidationAttempts(
+        attempts.map((a) =>
+          a.attemptId === attempt.attemptId
+            ? { ...a, mediaStop: proof.mediaStopped, fileStopProof: proof }
+            : a,
+        ),
+      );
+      const [row] = await tx<
+        ValidationRow[]
+      >`UPDATE qf.quizpack_validation SET attempts_text=${controls},state_revision=state_revision+1,updated_at=clock_timestamp() WHERE id=${current.id} RETURNING *`;
+      if (!row) throw new StudioError("STUDIO_UNAVAILABLE");
+      await audit(tx, actor, credentials, row, "file_stop_acknowledged");
+      return row;
+    },
+  );
+}
 export async function beginArchiving(
   db: P2aDatabase,
   credentials: StudioWriteCredentials,
@@ -316,6 +413,7 @@ export async function beginArchiving(
     "import:create",
     async (tx, actor) => {
       const current = await authorityRow(tx, scope, authority);
+      requireCurrentPolicy(current);
       if (current.status !== "validated")
         throw new StudioError(
           "VALIDATION_STATE_CONFLICT",
@@ -342,6 +440,7 @@ export async function completeValidation(
     "import:create",
     async (tx, actor) => {
       const current = await authorityRow(tx, scope, input.authority);
+      requireAcknowledgedAttempts(current);
       if (
         current.status !== "archiving" ||
         current.canonical_content_text === null
@@ -506,6 +605,11 @@ async function reconcile(
       );
       // Exact durable completion replay has no state change or audit, even after a lost response.
       if (current.status === "ready") return current;
+      requireCurrentPolicy(current);
+      if (!recover) {
+        await authorityRow(tx, scope, input.authority);
+        requireAcknowledgedAttempts(current);
+      }
       if (
         current.state_revision !== input.authority.expectedStateRevision ||
         current.fence !== input.authority.fence ||
@@ -530,6 +634,13 @@ async function reconcile(
           (p) => p.attemptId === a.attemptId,
         );
         if (!proof) return a;
+        if (
+          !a.fileStopProof ||
+          canonicalP1Json(a.fileStopProof) !==
+            canonicalP1Json(proof.fileStopProof) ||
+          a.fileStopProof.mediaStopped !== proof.mediaStop
+        )
+          throw new StudioError("VALIDATION_RECOVERY_REQUIRED");
         if (a.mediaStop !== "unconfirmed" && a.mediaStop !== proof.mediaStop)
           throw new StudioError("VALIDATION_STORAGE_CONFLICT");
         return {
@@ -595,6 +706,7 @@ export async function retryValidationClaim(
         validationId,
         true,
       );
+      requireCurrentPolicy(current);
       if (current.state_revision !== input.expectedStateRevision)
         throw new StudioError(
           "VALIDATION_STATE_CONFLICT",
@@ -638,6 +750,7 @@ export async function retryValidationClaim(
   );
 }
 export const validationTransactions: ValidationTransactions = {
+  acknowledgeValidationFileStop,
   claimValidation,
   appendValidationEvidence,
   beginArchiving,

@@ -8,7 +8,7 @@ B2-1已在Draft PR #10接入每个Product的原包接收列表、状态详情、
 
 媒体隔离可行性与B2-2A同字节P1可信桥接已技术验收，分别在Draft PR #11/#12；生产媒体模块使用受限launcher，实际Next构建与平台身份绑定，失去停止证明时保留未知状态。能力与限制见MEDIA_ISOLATION_ACCEPTANCE和P2B2A_ACCEPTANCE。
 
-当前B2-2B正在按[冻结合同](STUDIO_P2B2B.md)实现三表、统一私有归档与后台；尚未完成业务验收。`features/quizpack/server/validation`提供可信候选、同ctx身份准备与不再解码的恢复；`features/quizpack/validation`拥有验证记录/事务/归档应用服务；`features/studio`和app只使用安全DTO及领域接口。prepare→start使浏览器发送前保存固定验证标识，响应未知只查原key，已有key查证不依赖当前平台。原包接收事实不可被验证失败改写；资源物理blob与Product内不可变声明分开，统一storage锁和512MiB账本覆盖imports/validation/blobs。完整资源引用与ready在同一数据库事务确认，文件写入仍在事务外。后续顺序为B2-3首稿→有限编辑→结构预览/送审。评分预案和[P3表现预案](PRESENTATION_P3_PREFLIGHT.md)均未实现；拟保留content.v1并以有限content.v2表达分厅、题签、场景和海报，不开放包内代码或任意props。
+当前B2-2B已按[冻结合同](STUDIO_P2B2B.md)集成三表与真实事务、可信适配及统一私有存储内核，应用服务和后台页面仍在实施；尚未完成业务验收。`features/quizpack/server/validation`提供可信候选、同ctx身份准备与不再解码的恢复；`features/quizpack/validation`拥有验证记录/事务/归档应用服务；`features/studio`和app只使用安全DTO及领域接口。prepare→start使浏览器发送前保存固定验证标识，响应未知只查原key，已有key查证不依赖当前平台。原包接收事实不可被验证失败改写；资源物理blob与Product内不可变声明分开，统一storage锁和512MiB账本覆盖imports/validation/blobs。完整资源引用与ready在同一数据库事务确认，文件写入仍在事务外。后续顺序为B2-3首稿→有限编辑→结构预览/送审。评分预案和[P3表现预案](PRESENTATION_P3_PREFLIGHT.md)均未实现；拟保留content.v1并以有限content.v2表达分厅、题签、场景和海报，不开放包内代码或任意props。
 
 ## D1-C 与 F1 历史基线
 

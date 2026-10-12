@@ -160,15 +160,17 @@ JSON semantic 比较仅用于结构/关系；权威原文 hash 使用text实际�
 
 ### 3.2 attempt控制文本（最多3项，8KiB）
 
-严格数组，每项字段恰为：attemptId UUID、ordinal 1..3、fence int、ownerPid int、ownerNonce base64url43、kind validate|archive、reservationBytes=134283264、disposition held|released、mediaStop not-started|unconfirmed|confirmed。
+新v2严格数组，每项字段恰为：attemptId UUID、ordinal 1..3、fence int、ownerPid int、ownerNonce base64url43、kind validate|archive、reservationBytes=134283264、disposition held|released、mediaStop not-started|unconfirmed|confirmed、fileStopProof null|严格对象。旧v1九字段数组只用于历史查询/精确重放，不自动补proof；兼容规则见第8节。
 新claim/retry追加恰一项；ordinal连续，attemptId唯一，fence严格递增且≤row.fence；current_attempt_id指最后一项，sum(held.reservationBytes)=reserved_bytes。
 owner/fence/nonce/kind/reservation永不改；released不能回held。新validate attempt在claim中初始即unconfirmed，不存在先写not-started再补媒体意图的窗口或独立media-intent事务。
 claim到candidate之间崩溃同样保守需维护；unconfirmed表示尚不能证明媒体停止/未启动，不等同于已经启动decoder。新archive retry在claim中固定not-started，此attempt终身不得调用candidate验证/decoder，也不得改成unconfirmed。
 validate的unconfirmed只能由可核实的实际完成/停止证明解除：确有启动且已停止为confirmed；严格证明没有启动为not-started，后者只允许第4.2节的原进程收尾或已冻结A完成证据路径，不能凭status/空control/ESRCH回退。not-started/confirmed一旦形成即不再回unconfirmed，若需新媒体执行必须新attempt。
-mediaStop只描述媒体，不证明后续归档文件IO已结束；即使evidence已令其confirmed，disposition仍held，直到整个attempt的IO停止/完成提交权威成立才可release。SQL检查kind对应初态、终态单向和released不可逆；SQL本身不能验证文件receipt或native停止，服务必须从受管证明读取而非HTTP参数构造。
+mediaStop只描述媒体，不证明后续归档文件IO已结束；即使evidence已令其confirmed，disposition仍held，直到整个attempt的IO停止/完成提交权威成立才可release。SQL检查kind对应初态、终态单向和released不可逆；SQL本身不能验证文件或native停止，服务必须从同请求已settled发布产生的私有资格取得ACK，不能从HTTP参数或文件存在构造。held→released要求上一次已提交行中已有匹配fileStopProof，同次新增proof并release/ready拒绝。
 recover增加row.fence且不追加attempt；旧attempt.fence/owner仍用于receipt比较，不能建row.fence=currentAttempt.fence的全局CHECK。
 retry只能在所有旧attempt已released、无媒体未知和storage=clean时追加；3次耗尽后仍可recover核实完成/清理，不能再执行。
-8KiB attempts + evidence_metadata_text UTF8字节总和≤65536；没有evidence时仅检查attempts。A已封报告按其真实attempt ordinal映射，不能每次都写attempt1。
+attempts_text实际UTF8≤8192，且与evidence_metadata_text实际字节之和≤65536。v2从首次evidence起额外限制metadata≤57344，为三attempt最终proof和controls预留完整8192空间；不是只给本次实际controls留余量。没有evidence时只计controls。A报告/envelope算法不变，不截断证据。A已封报告按真实attempt ordinal映射。
+
+fileStopProof固定字段：schemaVersion=quizpack-validation-file-stop-proof.v1、protocol=candidate-receipt-db-ack.v1、validationId、attemptId、fence、ownerPid、ownerNonce、receiptSha256、scope=files-and-media、mediaStopped=confirmed|not-started、relatedIo=settled；canonical UTF8≤1024，原身份及mediaStopped必须与所属attempt/行匹配。绑定所属行不可变archive policy，不重复存路径、时间、完整receipt或报告。新claim/retry明确null；仅当前held attempt在独立ACK中null→对象一次，旧proof不可删除或替换，不进入HTTP输入/公开DTO。
 
 ### 3.3 evidence字节与append验证
 
@@ -206,7 +208,7 @@ JOIN qf.asset_blob b ON b.sha256=p.blob_sha256;
 canonical alias检查同样用触发器：target identity_kind=canonical、Product/包身份/archive完全相同；目标状态可以validated/archiving/ready/rejected(资源冲突)，不能改其身份。
 纯技术失败不占包身份；技术成功但包身份冲突的行identity_kind=conflict/status=rejected，无alias；资源声明冲突保留已取得canonical/alias身份及原证据。
 
-## 4. 三个关键提交边界与运行状态
+## 4. 提交边界与运行状态
 
 validation_key规范：SHA256(canonicalP1Json({schemaVersion:'quizpack-validation-key.v1', productId, importId, archiveSha256, archiveBytes, identitySha256, archivePolicyVersion, archivePolicySha256}))。
 archive policy包含synthetic/归档/SQL投影及预算版本；A的persistencePolicyHash只代表当前A策略，不能假称已包括B新增归档规则。
@@ -234,63 +236,51 @@ claim提交未知不进入candidate；preclaim平台查询本身已知正常sett
 | 验证IO    | 私有原包一次快照hash/bytes对received；A在同budget执行。同步候选内存不交浏览器。失去storage或业务期限即停止新增工作。                                                                                                                                             |
 | evidence  | 当前鉴权/lease/fence及received绑定；append有界证据；accepted冻结全部候选+asset-set、取得canonical或alias；技术/包身份拒绝写rejected。未知提交停止后续归档。                                                                                                      |
 | archiving | 短事务validated→archiving，不延长同fence lease；事务外按冻结计划逐资源临时写/sync/close/no-clobber冻结。已有blob重读核真实字节及声明事实。                                                                                                                       |
-| complete  | 所有文件IO/close证明齐全且物理事实已核；同事务插入blob和全部新product_asset、更新ready、release reservations、审计。deferred constraints在COMMIT验证全量集合；INSERT conflict必须读并精确比较，不能DO NOTHING后默认为成功。                                      |
+| ACK       | 候选receipt自身全部IO已settled且永久封门，原ctx仍active；独立短事务持久化当前attempt.fileStopProof及审计，不release。提交未知停止原请求。                                                                                                                        |
+| complete  | ACK提交成功已确认、所有文件IO/close证明齐全且物理事实已核；同事务插入blob和全部新product_asset、更新ready、release reservations、审计。deferred constraints在COMMIT验证全量集合；INSERT conflict必须读并精确比较，不能DO NOTHING后默认为成功。                   |
 
 complete不做文件IO；SQL无法证明磁盘字节，只证明表关系，服务事务外核文件才是物理权威。失效请求DB不得重新连接；所有read/write await套同一操作deadline和driver失效语义。
 60秒业务+共用5秒收尾、120秒lease沿冻结合同；收尾不新开业务事务，只等待关闭/合格receipt。已确认COMMIT保留成功，未知COMMIT保留文件及预留。
 正常每次状态/控制UPDATE都revision+1；一次操作可有多次revision增长，客户端不预测+1。ready/rejected重复POST只读重放，无新audit成功事件。
-三项关键确认边界仍是claim/evidence/complete；取消收尾、失败记录、恢复和archiving状态控制写不取得新的候选或资源权威。本文取消独立media-intent写；validated→archiving为单独短状态事务；先确认evidence，再确认archiving状态事务，才开始文件提升。任一未知提交都停止后继IO，不延长lease或操作预算。
+业务内容边界为claim/evidence/complete，另有明确的独立ACK控制提交，负责将先已成立的文件/媒体停止事实持久化；不能把它隐藏进complete或收尾。取消收尾、恢复和archiving写不取得新的候选或资源权威。本文取消独立media-intent写；validated→archiving为单独短状态事务；先确认evidence，再确认archiving状态事务，才开始文件提升。任一未知提交都停止后继IO，不延长lease或操作预算。
 
 ### 4.2 原子claim后的停止与UNKNOWN语义
 
-此调整没有新增安全反例：预留与潜在媒体义务在首次可能启动之前已经原子存在，消除了“claim成功但媒体标记尚未落库”的窗口；代价是尚未启动便崩溃也占用预留并需维护。
+claim将完整预留与潜在媒体义务原子写入，确认COMMIT之前零原包/candidate IO。claim明确未提交不产生本次attempt；提交未知永不进candidate，保留原key/文件/预留，不按空GET推定回滚。
 
-| 已知事实                                      | 允许行为                                                                                                                       | 禁止推断/计量处理                                                                                                           |
-| --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------- |
-| preclaim身份CLI停止未知                       | 零claim；保留平台guard并返回维护错误                                                                                           | 无业务attempt可release；不能创建伪validation失败证据或绕过平台guard。                                                       |
-| claim明确回滚/拒绝                            | 不进入archive/candidate；返回确定错误                                                                                          | 本次无持久业务预留/attempt；不修改任何既有attempt的占用。                                                                   |
-| claim提交结果未知                             | 永不进入archive/candidate；终止失效请求client，返回WRITE_OUTCOME_UNKNOWN                                                       | 不根据本地未调用candidate就声称DB回滚或reservation已释放；不写猜测receipt，不新建key/attempt重试。                          |
-| claim已提交，进入candidate前进程崩溃          | 读取既有unconfirmed/held行，普通recover返回维护所需状态                                                                        | owner ESRCH、lease过期、phase仍validating和平台control为空均不足以证明未启动。原始预留及未落地名称headroom持续计入。        |
-| claim已提交，原进程确定在candidate前拒绝/取消 | 先永久封住该attempt的candidate启动门，再停止并等待全部已发出的archive reader/其他相关IO；齐全后才写not-started/settled receipt | 单纯Promise取消、设置aborted或同步catch不算settled；尚未关闭的reader/迟到callback不能在receipt之后再启动candidate或文件写。 |
-| candidate已进入，结果为未启动或已确认停止     | 仅按A严格完成证据和该attempt全部相关IO核停止；符合条件的终态可写receipt                                                        | 不再允许以原服务的“尚未看到spawn”猜测未启动。A任一STOP_UNCONFIRMED/relatedIo未确认保持unconfirmed/held。                    |
-| evidence/complete结果未知                     | 不提升后续文件、不启动新任务；如原执行已确实停止可保留真实receipt，fresh recover查权威行                                       | receipt只证明停止，不证明事务回滚/未提交；同一key、文件、blob和reservation保留到权威对账提交确认。                          |
+validate claim后的崩溃即使未见spawn、owner ESRCH、lease过期或平台control为空，也不能解除unconfirmed/held。已确认claim后的早拒消耗本attempt，不删除或回退ordinal。原进程只能在同步永久关闭所有启动门、实际相关任务settled后发布候选receipt；它自身不是停止权威，之后还必须在原业务期限/有效DB内确认ACK。
 
-已知pre-candidate拒绝的最小实现约束：持有该attempt的同进程ownerNonce/fence，并在私有执行状态中记录candidate调用尚未发出；在没有任何await的步骤内先切为不可重新启动的stopping状态，再取消/等待已发出任务。任何可能启动candidate的异步continuation都必须重新核此门及operation/lock状态。
-只允许在所有相关任务真实settled、仍无媒体调用且不会再启动业务IO时写not-started receipt。它必须匹配已经确认claim的validation/attempt/owner/fence；不额外增加表、可由请求提交的“未启动”布尔值或通用恢复token。
-若此时业务预算/鉴权/请求DB失效，仅在原共用5秒收尾内写合格receipt并保留held，不开新的业务连接试图release。随后fresh-auth recover在storage锁下核receipt、CAS/fence和实际文件，提交release/状态对账；确认该提交前计量不变。
-若停止/receipt任一步未知，仍unconfirmed/held；若receipt已落盘但DB写结果未知，重查并幂等使用同一receipt，不删除证明重造。解除媒体未知不等于自动放弃本次全部文件预留。
-claim结果未知时，fresh查询得到行则按其当前权威状态处理；得到空结果不单独证明原事务已结束。只有原事务终态可证且权威核实未提交才可按原key重新开始，否则保持未知/维护，不盲目新claim。
-pre-candidate失败不是P1内容判定：没有调用A便不追加伪造report/envelope，通常回retryable-failed/cleanup-required并保留固定服务错误；已知停止且对账成功后才clean/released。原archive和received事实永不改变。
-已确认claim后的早拒仍消耗这一个attempt；不能删除attempt、回退ordinal或退还执行次数。只有原claim明确未提交时，数据库本来没有该attempt可计数。
+candidate已经进入时，只接收A严格completion；任何media/relatedIo UNKNOWN或未追踪迟到任务均拒绝ACK资格。evidence提交未知停止归档，不补猜测报告。取消、超时或DB失效以后，仅可在原5秒cleanup内尝试写非权威候选文件，不新开ACK/失败事务；没有已提交ACK便继续held，fresh recover不能从文件、PID或空记录补造证明。
 
-### 4.3 正常停止证明先于complete（独立审查补充）
+原claim/ACK/complete提交未知时，fresh查询核精确权威行；空结果不证明旧事务已结束。原请求DB永久失效，不换连接重试。收到匹配已提交ACK只证明文件/媒体阶段，不能推断DB请求已settled。
 
-采用正常receipt-before-complete。receipt只证明本attempt的**文件与媒体阶段已永久结束**，不证明后继数据库事务结束或提交成功，也不直接释放预留。禁止complete之后为清理或补证而新增任何文件写入。失败/取消路径仍只在首个5秒收尾内写合格receipt，不启动新业务事务。
+### 4.3 候选receipt、独立ACK与一次完成（修订冻结）
 
-正常路径采用三个内部单次门，不新增HTTP token：
+永久非DB封门 → 候选receipt自身全部settled → 一次独立ACK → ACK确认后一次finalization。文件存在本身没有release权威；普通DB write不能绕过门，任何最终提交后零非DB IO。
 
-1. 同步关闭所有非DB执行入口，包括archive reader、candidate/decoder、binding/平台CLI、blob写入、提升与清理，再等待已发出的实际任务settled及严格A completion；任何共享UNKNOWN均拒绝正常证明。关门不调用stop、不续deadline。
-2. 只允许本attempt的一次receipt发布作为明确文件例外；资格复核、单次消费和work调用必须在同一同步临界区，所有write/sync/link/unlink/close结束后永久关闭此入口。失败也不在complete后补写。正常receipt必须在原业务deadline内完成，并再次确认context active、storage lock及停止事实；取消或超时只能转原cleanup，不能再开启complete。
-3. 在可能启动事务的边界前同步消费finalizationOnce，只允许一次原请求DB上的complete；fresh auth/Product/import/revision/fence/lease仍须事务内重核。确认、明确失败或提交未知之后均零文件/媒体IO，不另开“记录失败”事务。已有DB操作与连接关闭继续纳入主请求pending及收尾。
+1. 同步关闭archive reader、candidate/decoder、binding/平台CLI、blob写入、提升、清理等全部非DB入口，等待所有实际任务settled及严格A completion。不得存在能迟到报告媒体UNKNOWN或继续文件IO的未追踪任务；关门不stop、不续deadline。
+2. 唯一文件例外为本attempt的一次候选receipt发布。调用资格、单次消费和排队实际work前均重核，只排除该receipt自己的pending。全部write/sync/link/unlink/close结束，receipt门永久关闭；仍active、锁有效且无UNKNOWN才生成不可序列化、仅原请求/原attempt有效的ACK资格。SHA来自已完成发布的精确canonical文本，不为ACK重读文件。
+3. ACK仅原请求原DB原绝对业务deadline，单次消费并在实际DB work前重核资格，排除仅自身DB pending。fresh auth→Product→import→validation锁序，复核received、revision、当前attempt/owner/fence、live lease及固定v2policy。只可fileStopProof null→对象、匹配mediaStop必要单向变化、revision+1/更新时间和同事务validation_file_stop_acknowledged审计；status/fence/lease/候选/报告/占用/accounted/disposition均不变。完全相同的已提交ACK只读匹配，无重复写或审计。不得在cleanup发ACK。
+4. 仅ACK提交成功已确认后，在实际启动边界消费一次finalization门，使用ACK返回的新revision，允许恰一个completeValidation或interruptValidation：前者完成accepted归档，后者收束已知拒绝/中断且原ctx仍active的结果。两者互斥且都须fresh auth/fence/lease；不能把ACK与release放在同次UPDATE/同一服务事务。ACK失败、超时、取消或提交未知后均不调用finalization，不换连接、不另开失败记录事务。任何finalization结果之后零非DB IO，不能补证或删除文件。interrupt只使用封门前冻结的计量与已知receipt开销，不在事务回调补扫描/清理；accounting不明不得伪造clean。A当前interrupted返回通常已stop，不能复活ctx以取得ACK；只有实际仍active且合格的路径可终结。
 
-文件门与请求完成分开：receipt写明scope='files-and-media'、relatedIo='settled'；ArchiveOperation.completion()仍须把后继complete/query/sql.end视为pending，不能因receipt存在改成整个请求已settled。fresh recover先锁精确validation行并重核immutable attempt；若原complete已ready则只读返回，否则推进fence对账。旧complete在同一事务锁行并核fence，不能在recover之后迟到补写；GET空仍不证明回滚。
+ACK只持久化其发出前已成立的files-and-media停止事实。ACK/query/COMMIT/sql.end仍属于原请求pending；DB取消/未知不会使文件重新运行，但禁止原请求继续complete。ArchiveOperation.completion()不能因ACK存在改成整个请求settled。fixture销毁还须观察原请求/DB实际结束，预核全部成功后才删自身合成文件。
 
-测试fixture销毁也必须另外观察原请求与DB收尾结束，不能单靠正常receipt清理活动请求；全量停止证明预核成功后才删除自身合成文件。该例外不改变正常业务永不删除原包/final blob的范围。
+### 4.4 候选文件与权威proof
+
+候选receipt固定schemaVersion=quizpack-validation-stop-candidate.v2，其余严格字段为validationId/attemptId/fence/ownerPid/ownerNonce/scope=files-and-media/mediaStopped=confirmed|not-started/relatedIo=settled，canonical UTF8≤2048。路径沿固定stopped-<attemptId>.json及单个受控临时名，但旧quizpack-validation-stopped.v1文件不获得新权威。
+
+fileStopProof将候选精确文本SHA及原attempt身份持久化在attempts_text；其协议和字节界见第3.2节。发布期间文件可提前可读，reader必须把它当candidate，不能仅据nlink或文件内容返回“已停止”。无ACK、旧协议、文件缺失/损坏/不匹配均保持held/维护。
 
 ## 5. recover 与 retry 精确分工
 
-- POST create：若同key已存在直接返回权威状态（200/replayed=true），不隐式执行retry。仅真正插入首次行返回201。
-- recover：fresh auth+CAS；获取storage，核数据库权威结果和旧attempt receipt/停止事实，row fence+1但不追加attempt；只对账/清理自身temporary/证明/恢复元数据，不解码、不创建新的blob、不补齐product_asset集合。
-- complete提交应答未知但实际已ready：recover返回原ready，不增revision/fence、不重复审计。未ready且只有部分blob：核完后回validated（已有候选）或retryable-failed（无候选）；以后显式retry继续业务。
-- 因此已发出但未提交的complete不能由recover偷偷再次提交资源集合；新archive retry消耗一个attempt。第3次失败耗尽仍可对账/清理，但不能发起第4次业务执行。
-- retry：fresh auth+CAS；全部旧attempt停止已证明、released且storage clean；validated/archiving已有候选选择kind=archive/mediaStop=not-started，retryable-failed无候选选择kind=validate/mediaStop=unconfirmed；在claim中原子写入，先确认提交再IO。
-- rejected/ready不retry。validated而旧bundle不再可用返回VALIDATION_REVALIDATION_REQUIRED；UI可显式发起当前policy的新记录，不覆盖旧记录。
-- mediaStop=unconfirmed且无可信stopped receipt时，owner ESRCH也不解除；平台维护必须另有受审真实停止依据，不在本批增加“强制清理”按钮或HTTP PID参数。
-- receipt只在reader、decoder actual stop/stdio、所有write/sync/link/unlink/close settled且不会再启动写之后写；receipt写入本身失败保留占用。过期lease不是停止证明。
-
-receipt v1：{schemaVersion:'quizpack-validation-stopped.v1',validationId,attemptId,fence,ownerPid,ownerNonce,scope:'files-and-media',mediaStopped:'confirmed'|'not-started',relatedIo:'settled'}；≤2048，fence匹配旧attempt不可变值。
-archive重试必须在claim之前完成本次实际prepare身份/平台CLI，并证明所有相关IO settled、ctx仍active、身份与冻结identity完全一致。不可用、未知或变更均零archive claim，平台guard独立保留。claim后restore仅消费同请求/同context的私有prepared句柄，禁止readBinding、平台CLI、decoder或生成新P1报告。浏览器prepare DTO不是此句柄。
-因此archive attempt的not-started及“receipt或owner ESRCH”仅用于无后续平台执行的主进程归档IO停止核实；若实现做不到该严格顺序，则不能使用ESRCH回退。not-started本身不证明reader/writer/close settled或允许释放。kind=validate初态永远unconfirmed；只有第4.2节的真实证明可形成not-started，不允许recover把无记录/owner退出推断为这一状态。
+- POST create命中既有key只返回权威状态，不隐式retry。仅新插入返回201；ready/rejected重复POST只读重放。
+- recover持storage锁，先读精确行/不可变attempt，同时核已提交fileStopProof与候选文件canonical SHA、协议、validation/attempt/fence/owner/mediaStop；所有自身read/close结束后fresh auth事务重核revision/fence/proof。不能为旧attempt补发ACK。
+- 已ready只读返回，无重复complete/audit。ACK和文件均匹配才可按实际文件对账、row fence+1且不追加attempt；对账提交确认后release相应预留，不补资源集合。无ACK、空查询、文件/身份不符继续held，不能以owner ESRCH替代任一种attempt的ACK。
+- 原ACK/complete与recover都锁同一validation并核fence：complete先提交则recover见ready；recover先接管则迟到ACK/complete失败。对账未知仍保留占用，空GET不当回滚。
+- 未ready且只存在部分blob，经合格对账后回validated（有候选）或retryable-failed（无候选）；继续归档必须显式retry并消耗attempt。第三次耗尽只允许合格对账，不发起第四次。
+- retry需fresh auth+CAS，所有旧attempt released、无媒体未知且storage clean。已冻结候选则kind=archive/mediaStop=not-started，否则validate/unconfirmed；新proof=null，原子claim确认后才IO。ready/rejected不retry，旧v1不retry。
+- archive retry必须在claim前完成本次实际prepare/platform CLI且all settled、同ctx active、身份与冻结一致；失败零claim。claim后restore仅消费同请求私有prepared，零binding/CLI/decoder/新报告；浏览器DTO不是私有句柄。
+- 合格ACK只能来自原发布请求，取消/超时cleanup候选不保证普通recover可解除占用。这是明确的可用性限制；本批不加force cleanup或HTTP PID/证明参数。正式原包/final blob仍不删除。
 
 ## 6. namespace / 字节和名称预留
 
@@ -441,37 +431,39 @@ StartValidationResult为strict闭集：record且created=true对应201，record�
 
 ## 8. 迁移、权限、审计和并行所有权
 
-新增0009_validation_audit_actions（仅新增enum值，独立提交迁移事务），0010_validation_assets（函数/三表/触发器/index/audit_target）；基线现有迁移为0001..0008，不改旧迁移。
+已应用0009_validation_audit_actions与0010_validation_assets保持原字节。新增0011_validation_ack_audit_action仅独立提交新enum值，0012_validation_file_stop_ack实施ACK函数/保护trigger/约束与审计target条件、明确schema协议marker；不增加表或扩大app/PUBLIC权限。应用schema guard必须识别0012协议能力及准确函数/约束/启用trigger/权限，只有旧名同签名不算通过；管理启用guard最低迁移同步0012。
+
+迁移前停旧writer，0012替换函数后显式验证适用既有数据，不把CREATE OR REPLACE等同CHECK重验。policy升quizpack-private-archive.v2，descriptor固定candidate-receipt-db-ack.v1及56KiB metadata准入；新version/hash生成新key，A身份/候选六字段hash不变。旧v1只读查询/精确重放，禁止新ACK/complete/retry，不改旧key/policy或生成proof；旧held继续计量维护，历史ready保留原义，不能冒称通过新ACK。迁移策略与兼容回归一起验收。
 扩展audit_action：validation_started、validation_evidenced、validation_rejected、validation_interrupted、validation_completed、validation_recovered、validation_retried；target_kind='validation'、target_id UUID、target_revision当前revision。一次真实状态变化一次事件，幂等读重放不增事件。
 不增加权限role/ACL。app SELECT/INSERT三表；validation仅授可变控制列、证据append列和首次候选列的UPDATE，触发器限制write-once；immutable输入/身份列无UPDATE。
 blob/product_asset无UPDATE/DELETE/TRUNCATE/DDL；全部无PUBLIC grants。app仅EXECUTE所需CHECK helpers，trigger functions不可直接调用；默认invoker，避免自建绕过auth的SECURITY DEFINER写入口。
 迁移runner集中重述column grants；Drizzle schema、client权限审计、管理CLI期望迁移、真实DBfixture清理和旧v1/v2受管实例升级一并更新。不能通过旧schema检查后再迟到缺表异常。
 schema验证保证SQL关联和不可变，不能证明P1执行或文件真实性；信任边界仍是受测服务+固定app权限+当前会话写事务。
 
-| 流              | 独占范围与交接                                                                                                                                                                                                        |
-| --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Sol-V 可信适配  | `server/validation/**`及必要的P1纯函数抽取/定向测试；prepare、restore、SQL evidence serializer。不得改DB、HTTP、存储或根配置。先交三个类型/函数的可编译里程碑，再完成失败边界。                                       |
-| Sol-D 数据/事务 | `quizpack/validation/{contracts,limits,service-contract,repository,transactions}*`、0009/0010迁移patch和相关DB/权限适配patch、真实PG约束测试；先交DTO/service签名/内部持久化接口。迁移由总控审阅集成，测试端口55421。 |
-| Sol-S 存储/服务 | `quizpack/validation`其余server模块、统一scanner/quota、旧receive接线、文件提升/receipt/recover及PG/FS故障测试；按总控指定D/V提交接入，不复制其算法。测试端口55422。                                                  |
-| Sol-U HTTP/UI   | V完成公共接口后分配空闲实现槽；Studio路由/页面/reader adapter、严格响应与pending交互、HTTP/浏览器测试。不写SQL或调用media internal。                                                                                  |
-| 总控            | 共享错误、package/lock、CI/playwright、阶段文档及集成；审核合并迁移/DB补丁，最终实际target build/seal，3100和55423串行验收。Astra独立审查。                                                                           |
+| 流              | 独占范围与交接                                                                                                                                                                                                                           |
+| --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Sol-V 可信适配  | `server/validation/**`及必要的P1纯函数抽取/定向测试；prepare、restore、SQL evidence serializer。不得改DB、HTTP、存储或根配置。先交三个类型/函数的可编译里程碑，再完成失败边界。                                                          |
+| Sol-D 数据/事务 | `quizpack/validation/{contracts,limits,service-contract,repository,transactions}*`、0009/0010历史与0011/0012新增迁移patch和相关DB/权限适配patch、真实PG约束测试；先交DTO/service签名/内部持久化接口。迁移由总控审阅集成，测试端口55421。 |
+| Sol-S 存储/服务 | `quizpack/validation`其余server模块、统一scanner/quota、旧receive接线、文件提升/receipt/recover及PG/FS故障测试；按总控指定D/V提交接入，不复制其算法。测试端口55422。                                                                     |
+| Sol-U HTTP/UI   | V完成公共接口后分配空闲实现槽；Studio路由/页面/reader adapter、严格响应与pending交互、HTTP/浏览器测试。不写SQL或调用media internal。                                                                                                     |
+| 总控            | 共享错误、package/lock、CI/playwright、阶段文档及集成；审核合并迁移/DB补丁，最终实际target build/seal，3100和55423串行验收。Astra独立审查。                                                                                              |
 
 所有实现均Sol/high，架构与审查Astra/high；每流独立受管worktree，不并写同文件。公共合同/类型的变更先报总控，不能各自猜接口。实现流先检查当前root/origin/分支和状态；不修改已交付A、旧D1或主检出。最终部署身份改变，必须重新封存B真实Next，不能继承A fixture能力。
 
 ## 9. 具体验收矩阵
 
-| 类别                 | 必须实际证明                                                                                                                                                                                                                    | 所有者                     |
-| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------- |
-| pure strict/bytes    | Unicode拒绝、raw/canonical分限额、64KiB声明、三报告payload/metadata/envelope各+1、report冗余投影不一致、稳定key/asset-set排序、有限DTO                                                                                          | A领域；A-V接口配合         |
-| 真实PG关系           | 跨Product import/source/alias失败；alias链/环、同身份异hash；同资源声明改license也冲突；缺一项/重复集合/额外source资源/伪blob尺寸不能ready；完整集合与审计同提交                                                                | Sol-D/S                    |
-| 真实PG权限/状态      | INSERT ready被拒；validate claim媒体未知/预留/attempt同提交，archive claim固定not-started；immutable事实修改、旧attempt改写/released复活/同fence续租被拒；recover不增attempt；第4attempt失败；row fence可高于old attempt        | Sol-D/S                    |
-| 三提交未知           | claim明确回滚零IO零本次预留；实际提交但断响应零candidate且预留仍held；空查询不当回滚证明；evidence未知不提升；complete已提交断响应返回原ready，未提交保留文件且需显式retry；无重复资源/审计                                     | Sol-D/S故障钩子+真实PG连接 |
-| claim到candidate窗口 | claim后立即杀原合成owner，ESRCH/control空仍保留媒体未知；已知pre-candidate拒绝但reader.close迟到时不得写receipt；迟到continuation不能在stopping后启动candidate；合格not-started receipt经fresh recover才release且总配额只扣一次 | Sol-D/S真实进程/FS/PG故障  |
-| 身份竞争             | preflight后降权/退出、Product归档在evidence/complete前均阻止业务写；不因旧actor通过；auth锁不跨延迟文件IO                                                                                                                       | Sol-D/S真实PG并发          |
-| 实际文件             | no-clobber/已有同异字节/symlink/非普通对象；write/sync/link/unlink/close失败；原包不删；partial serial16文件上限；late IO不伪造receipt                                                                                          | Sol-D/S独立私有fixture     |
-| 配额/名称            | 原包+blob+孤儿+旧held跨receive/validation共同512MiB；相同UUID跨namespace不抵扣；1024/4096/8192及最后扫描IO超5s；未落地held64blob槽；超额recover仍能安全对账                                                                     | Sol-D/S                    |
-| 实际媒体停止         | 普通三格式/坏图拒绝；runtime异常不永久rejected；取消/超时共用5秒；media未知+主进程ESRCH不释放；archive retry确认不调用decoder                                                                                                   | A平台实证+Sol-D/S集成      |
-| HTTP/浏览器          | start真201/replay200、详情列表真实分页；read-only/开关关闭/归档/陈旧CAS；响应未知先读；recover与retry按钮分离、无假发布/草稿；移动截图                                                                                          | Sol-U，生产3100总控串行    |
-| 部署                 | B真实业务路由实际Next构建artifact/runtime identity匹配、重新record/sealed、私有trace0违规；不能继承A隔离fixture能力                                                                                                             | 总控                       |
+| 类别                 | 必须实际证明                                                                                                                                                                                                                                     | 所有者                     |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------- |
+| pure strict/bytes    | Unicode拒绝、raw/canonical分限额、64KiB声明、三报告payload/metadata/envelope各+1、report冗余投影不一致、稳定key/asset-set排序、有限DTO                                                                                                           | A领域；A-V接口配合         |
+| 真实PG关系           | 跨Product import/source/alias失败；alias链/环、同身份异hash；同资源声明改license也冲突；缺一项/重复集合/额外source资源/伪blob尺寸不能ready；完整集合与审计同提交                                                                                 | Sol-D/S                    |
+| 真实PG权限/状态      | INSERT ready被拒；validate claim媒体未知/预留/attempt同提交，archive claim固定not-started；immutable事实修改、旧attempt改写/released复活/同fence续租被拒；recover不增attempt；第4attempt失败；row fence可高于old attempt                         | Sol-D/S                    |
+| 提交未知             | claim明确回滚零IO零本次预留；实际提交但断响应零candidate且预留仍held；空查询不当回滚证明；evidence未知不提升；ACK未知不complete、不补ACK，匹配已提交proof才能对账；complete已提交断响应返回原ready，未提交保留文件且需显式retry；无重复资源/审计 | Sol-D/S故障钩子+真实PG连接 |
+| claim到candidate窗口 | claim后立即杀原合成owner，ESRCH/control空仍保留媒体未知；已知pre-candidate拒绝但reader.close迟到时不得写receipt；迟到continuation不能在stopping后启动candidate；只有候选+已提交ACK经fresh recover才release且总配额只扣一次                       | Sol-D/S真实进程/FS/PG故障  |
+| 身份竞争             | preflight后降权/退出、Product归档在evidence/complete前均阻止业务写；不因旧actor通过；auth锁不跨延迟文件IO                                                                                                                                        | Sol-D/S真实PG并发          |
+| 实际文件             | no-clobber/已有同异字节/symlink/非普通对象；write/sync/link/unlink/close失败；原包不删；partial serial16文件上限；late IO/目录close迟到/共享UNKNOWN不产生ACK；单个candidate文件不release                                                         | Sol-D/S独立私有fixture     |
+| 配额/名称            | 原包+blob+孤儿+旧held跨receive/validation共同512MiB；相同UUID跨namespace不抵扣；1024/4096/8192及最后扫描IO超5s；未落地held64blob槽；超额recover仍能安全对账                                                                                      | Sol-D/S                    |
+| 实际媒体停止         | 普通三格式/坏图拒绝；runtime异常不永久rejected；取消/超时共用5秒；media未知+主进程ESRCH不释放；archive retry确认不调用decoder                                                                                                                    | A平台实证+Sol-D/S集成      |
+| HTTP/浏览器          | start真201/replay200、详情列表真实分页；read-only/开关关闭/归档/陈旧CAS；响应未知先读；recover与retry按钮分离、无假发布/草稿；移动截图                                                                                                           | Sol-U，生产3100总控串行    |
+| 部署                 | B真实业务路由实际Next构建artifact/runtime identity匹配、重新record/sealed、私有trace0违规；不能继承A隔离fixture能力                                                                                                                              | 总控                       |
 
 技术退出条件：本节矩阵、六项工程检查、真实PG/驱动/媒体证明、浏览器实际移动截图和独立审查通过后，提交推送并保留Draft PR。它只说明本阶段技术通过，不是内容、视觉、素材商用或正式发布批准。随后依路线进入B2-3草稿和后续内测，不在阶段中间重复请求已有工程范围的许可。

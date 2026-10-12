@@ -4,7 +4,12 @@ import {
   safeTestOperation as safe,
   type TestDatabase,
 } from "./p2a-fixture";
-import { domainFixture, resetDomainDatabase } from "./p2b2b-domain-fixture";
+import {
+  domainFixture,
+  resetDomainDatabase,
+  acknowledgeDomainStop,
+  domainSettledAttempt,
+} from "./p2b2b-domain-fixture";
 import {
   claimValidation,
   appendValidationEvidence,
@@ -91,12 +96,13 @@ describe("B2-2B actual PostgreSQL transactions and immutable boundaries", () => 
   it("commits complete refs+ready+release+audit; recover replays ready without audit", async () => {
     const accepted = await evidence((await claim()).row);
     expect(accepted.identity_kind).toBe("canonical");
-    const archiving = await beginArchiving(
+    let archiving = await beginArchiving(
       db.app,
       f.auth.credentials,
       f.scope,
       authority(accepted),
     );
+    archiving = await acknowledgeDomainStop(db, f, archiving);
     const ready = await completeValidation(
       db.app,
       f.auth.credentials,
@@ -130,11 +136,10 @@ describe("B2-2B actual PostgreSQL transactions and immutable boundaries", () => 
   it("recover increments fence without attempt; retry consumes exactly three and fourth fails", async () => {
     let row = (await claim()).row;
     for (let n = 1; n <= 3; n++) {
+      row = await acknowledgeDomainStop(db, f, row, "not-started");
       row = await recoverValidationClaim(db.app, f.auth.credentials, f.scope, {
         authority: authority(row),
-        settledAttempts: [
-          { attemptId: row.current_attempt_id, mediaStop: "not-started" },
-        ],
+        settledAttempts: [domainSettledAttempt(row)],
         accountedBytes: 0,
         storageCondition: "clean",
         errorCode: "VALIDATION_CANCELLED",
@@ -163,7 +168,12 @@ describe("B2-2B actual PostgreSQL transactions and immutable boundaries", () => 
     ).rejects.toThrow("VALIDATION_ATTEMPT_LIMIT");
   });
   it("same-fence lease clear is allowed, renewal and released resurrection are rejected", async () => {
-    const row = (await claim()).row;
+    const row = await acknowledgeDomainStop(
+      db,
+      f,
+      (await claim()).row,
+      "not-started",
+    );
     await rejected(
       () =>
         db.admin
@@ -221,7 +231,11 @@ describe("B2-2B actual PostgreSQL transactions and immutable boundaries", () => 
     );
   });
   it("deferred ready check rejects missing refs and source refs cannot commit partial", async () => {
-    const row = await evidence((await claim()).row);
+    const row = await acknowledgeDomainStop(
+      db,
+      f,
+      await evidence((await claim()).row),
+    );
     const controls = serializeValidationAttempts(
       parseValidationAttempts(row.attempts_text).map((a) => ({
         ...a,

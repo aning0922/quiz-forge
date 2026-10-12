@@ -62,9 +62,9 @@ export function createArchiveStorage(hooks: ArchiveStorageTestHooks = {}) {
     op: ArchiveOperation,
     kind: Parameters<NonNullable<ArchiveStorageTestHooks["beforeIo"]>>[0],
   ) => {
-    op.checkpoint();
+    op.nonDbCheckpoint();
     await hooks.beforeIo?.(kind);
-    op.checkpoint();
+    op.nonDbCheckpoint();
   };
   async function readExact(
     op: ArchiveOperation,
@@ -75,18 +75,18 @@ export function createArchiveStorage(hooks: ArchiveStorageTestHooks = {}) {
     let handle: FileHandle | undefined;
     let result: Buffer;
     try {
-      op.checkpoint();
+      op.nonDbCheckpoint();
       const original = await lstat(file);
-      op.checkpoint();
+      op.nonDbCheckpoint();
       privateFile(original);
       if (original.size !== bytes || original.nlink !== 1) throw conflict();
       handle = await open(
         file,
         constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK,
       );
-      op.checkpoint();
+      op.nonDbCheckpoint();
       const opened = await handle.stat();
-      op.checkpoint();
+      op.nonDbCheckpoint();
       privateFile(opened);
       if (!sameFile(original, opened)) throw conflict();
       result = Buffer.alloc(bytes + 1);
@@ -99,15 +99,15 @@ export function createArchiveStorage(hooks: ArchiveStorageTestHooks = {}) {
           result.length - count,
           count,
         );
-        op.checkpoint();
+        op.nonDbCheckpoint();
         if (!read.bytesRead) break;
         count += read.bytesRead;
       }
       const after = await handle.stat();
-      op.checkpoint();
+      op.nonDbCheckpoint();
       privateFile(after);
       const current = await lstat(file);
-      op.checkpoint();
+      op.nonDbCheckpoint();
       privateFile(current);
       if (
         count !== bytes ||
@@ -127,22 +127,22 @@ export function createArchiveStorage(hooks: ArchiveStorageTestHooks = {}) {
         }
       }
     }
-    op.checkpoint();
+    op.nonDbCheckpoint();
     return result;
   }
   async function syncDirectory(op: ArchiveOperation, dir: string) {
     let handle: FileHandle | undefined;
     try {
-      op.checkpoint();
+      op.nonDbCheckpoint();
       const original = await lstat(dir);
-      op.checkpoint();
+      op.nonDbCheckpoint();
       handle = await open(
         dir,
         constants.O_RDONLY | constants.O_DIRECTORY | constants.O_NOFOLLOW,
       );
-      op.checkpoint();
+      op.nonDbCheckpoint();
       const actual = await handle.stat();
-      op.checkpoint();
+      op.nonDbCheckpoint();
       if (
         !actual.isDirectory() ||
         actual.uid !== process.getuid?.() ||
@@ -153,11 +153,11 @@ export function createArchiveStorage(hooks: ArchiveStorageTestHooks = {}) {
         throw conflict();
       await checked(op, "sync");
       await handle.sync();
-      op.checkpoint();
+      op.nonDbCheckpoint();
     } finally {
       if (handle) await closeOwned(op, handle);
     }
-    op.checkpoint();
+    op.nonDbCheckpoint();
   }
   const finite = (error: unknown): never => {
     if (error instanceof StudioError) {
@@ -187,7 +187,7 @@ export function createArchiveStorage(hooks: ArchiveStorageTestHooks = {}) {
       return op.fileTask(async () => {
         try {
           await privateDirectory(importDirectory(config, importId), () =>
-            op.checkpoint(),
+            op.nonDbCheckpoint(),
           );
           return await readExact(
             op,
@@ -243,18 +243,20 @@ export function createArchiveStorage(hooks: ArchiveStorageTestHooks = {}) {
         try {
           const dir = validationDirectory(config, validationId),
             destination = blobPath(config, expected.sha256);
-          op.checkpoint();
+          op.nonDbCheckpoint();
           await privateDirectory(validationDirectory(config), () =>
-            op.checkpoint(),
+            op.nonDbCheckpoint(),
           );
           try {
             await mkdir(dir, { mode: 0o700 });
           } catch (error) {
             if (!exists(error)) throw error;
           }
-          op.checkpoint();
-          await privateDirectory(dir, () => op.checkpoint());
-          await privateDirectory(blobsDirectory(config), () => op.checkpoint());
+          op.nonDbCheckpoint();
+          await privateDirectory(dir, () => op.nonDbCheckpoint());
+          await privateDirectory(blobsDirectory(config), () =>
+            op.nonDbCheckpoint(),
+          );
           try {
             await readExact(op, destination, expected.bytes, expected.sha256);
             return fact;
@@ -265,7 +267,7 @@ export function createArchiveStorage(hooks: ArchiveStorageTestHooks = {}) {
             dir,
             `attempt-${attempt.attemptId}.partial`,
           );
-          op.checkpoint();
+          op.nonDbCheckpoint();
           handle = await open(
             partial,
             constants.O_WRONLY |
@@ -275,9 +277,9 @@ export function createArchiveStorage(hooks: ArchiveStorageTestHooks = {}) {
               constants.O_NONBLOCK,
             0o600,
           );
-          op.checkpoint();
+          op.nonDbCheckpoint();
           const owned = await handle.stat();
-          op.checkpoint();
+          op.nonDbCheckpoint();
           privateFile(owned);
           if (owned.nlink !== 1) throw conflict();
           let offset = 0;
@@ -289,15 +291,15 @@ export function createArchiveStorage(hooks: ArchiveStorageTestHooks = {}) {
               bytes.length - offset,
               offset,
             );
-            op.checkpoint();
+            op.nonDbCheckpoint();
             if (written.bytesWritten < 1) throw conflict();
             offset += written.bytesWritten;
           }
           await checked(op, "sync");
           await handle.sync();
-          op.checkpoint();
+          op.nonDbCheckpoint();
           const final = await handle.stat();
-          op.checkpoint();
+          op.nonDbCheckpoint();
           privateFile(final);
           if (
             final.ino !== owned.ino ||
@@ -312,23 +314,23 @@ export function createArchiveStorage(hooks: ArchiveStorageTestHooks = {}) {
             await closeOwned(op, handle);
             handle = undefined;
           }
-          op.checkpoint();
+          op.nonDbCheckpoint();
           await checked(op, "link");
           try {
             await link(partial, destination);
           } catch (error) {
             if (!exists(error)) throw error;
           }
-          op.checkpoint();
+          op.nonDbCheckpoint();
           await syncDirectory(op, blobsDirectory(config));
           const current = await lstat(partial);
-          op.checkpoint();
+          op.nonDbCheckpoint();
           privateFile(current);
           if (current.ino !== owned.ino || current.dev !== owned.dev)
             throw conflict();
           await checked(op, "unlink");
           await unlink(partial);
-          op.checkpoint();
+          op.nonDbCheckpoint();
           await syncDirectory(op, dir);
           await readExact(op, destination, expected.bytes, expected.sha256);
           return fact;

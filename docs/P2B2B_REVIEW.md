@@ -30,3 +30,49 @@ S操作内核3366443/76852da已集成68c2dd7/c1ffcc3，root11项纯测试通过�
 ### 归档完成前停止证明的合同补充
 
 Astra在01a12e28-f467-7cf0-aeba-3d1b62294c2a确认receipt-before-complete可采用，并要求文件/媒体门、唯一receipt例外、一次DB finalization三个内部门；原业务期限不可借cleanup延长。主合同4.3已明确receipt只证明files-and-media，后继DB与连接关闭仍须观察，fixture不能凭此单独销毁活动请求。正常complete之后零文件/媒体IO；失败/取消receipt不新开事务。此为实施细化，不是新功能验收。
+
+### 数据层与当前集成实证
+
+- SQL独立审查发现按每个attempt无条件要求input snapshotted/identity bound会拒绝A合法interrupted evidence。86b5e4d→rootfa96d7d改为分支核绑定，unavailable仅有限interrupted，旧中断可与后续accepted共存；原Astra三个严格A合成实例与四条PG回归对应，原审查已窄复验关闭。
+- client7c673f2、policy c838bbd、license9c8c299经独立Astra窄审未见P1/P2；只说明列举三表形状/有效app权限，不宣称全库ACL或迁移定义指纹。owner管理连接仍可升级旧库。
+- root949a98a25d2720546a5d4005a748d3c6从0001–0008实际升级0009/0010；独立4文件26真实PG通过（.cache/b2b-domain-db.log）。升级前启用被明确拒且runtime逐字节不变；升级后启用/停用均成功，重跑migrate applied=[]；实例已停止。旧schema探针首次误读stderr为stdout而失败，修正探针后通过，没有修改业务来掩盖结果。
+- root814fec3集成时全74文件939单元通过（.cache/b2b-unit-integration.log）；随后S文件/receipt增量12ed2bb的37项及U18ea20b的46项分别通过。它们不是本批最终完整回归。
+- 原receipt微任务P2在7f82205/59c7947经独立Astra关闭，排队后UNKNOWN或新pending均零work；V restore e0a2fe0经30探针与相关既有测试复验未见新P1/P2。12ed2bb新增三门/实际receipt及U公共流程仍在独立审查。
+
+### 后台请求证明复验
+
+U b2486a4首批独立46纯测试通过，但旧not-started对象只绑定tuple，能在exact row清除后误删同tuple新发送的unknown。a37144b→rootd87d993用每次发送的incarnation token绑定证明，新发送与权威row接管撤销旧资格；独立重跑原四步得到oldProofRejected/newUnknownRetained且pendingCount=1，原P2关闭。root修后47纯测试通过；实际页面/路由/浏览器验收尚未交付，不计为UI阶段完成。
+
+### 文件证明发布与数据库完成门
+
+独立Astra在01a12e3a-09c3-70f0-b1da-999055f4920c复现两个P2。其一，最终receipt文件已可读不代表publisher后续unlink/fsync/close结束：延迟目录close时读端已接受nlink=1文件，而writer仍pending，超时后仍可读；只禁止nlink=2不足以关闭问题。当前文件只能作为非权威candidate，不能单独授予recover release；持久化确认合同正在修订。
+
+其二，封门后普通databaseAwait(write)可绕过finalizeDatabaseOnce，且排队finalize在实际work前不复核共享UNKNOWN。12f8b1a→root7c16a46禁止封门后普通新write，并在finalize实际work前排除仅自身pending任务复核资格；单次门不恢复。root定向operation20项通过，独立复验及ack整合仍待完成。
+
+后台73e2ef3/130c29c已集成为c7e1deb/6502b94；root与operation合跑5文件77项通过，类型通过。独立UI预审指出通用IDENTITY_CHANGED或storage错误不能描述为“未开始/未发送”，以及刷新列表期间可能临时回显旧summary，U正在整改。实际routes、factory、浏览器验收尚未完成。
+
+### ACK修订决策
+
+Astra在01a12e46-6d82-72d2-b4cf-a4d05b5dbc0c确认采用非权威candidate receipt+独立DB ACK：全部publisher IO settled后才有原请求私有资格，ACK失败/未知禁止原complete；recover必须同时核已提交proof和文件。主合同3.2/4.2–5及迁移节已改写，不再保留单文件release或ESRCH替代ACK。policy v2增加56KiB metadata准入以预留8KiB最终controls。先0011提交审计enum、再0012保护协议，旧0010不改。该决策已冻结供实现，尚无代码/DB验收结论。
+
+Astra在01a12e4a-87a8-7a00-9cfb-d99b05b3f5df进一步确认0011枚举/0012协议分开提交，以及ACK后共享一次complete|interrupt终结门均无架构阻断；interrupt不得新增IO或猜clean，A已stop的interrupted不复活。U两P2由5dd987e→root4abc51c整改，59纯测试通过，独立闭合待核。
+
+Astra在01a12e4f-4e79-7ae3-b0a4-32a36614b5d4独立复验4abc51c：actual flow/client/messages的generic identity变化与POST成功后removeExact失败均保留mayHaveBeenSent并只说待核实；strict not-started对照仍需显式放弃。actual panel/use-read模拟调度经过刷新失败、翻页、迟到旧详情/列表和低revision显式读取，维持最高rev4 ready且无旧recover；loading/error禁写。45既有纯测试及11时序探针通过，两P2闭合，无新P1/P2；不替代真实浏览器。
+
+D f73f415→rootd71f1ad已集成ACK公共/事务首接口，尚等0011/0012及domain fixture适配。该中间head类型检查有3个旧SettledAttempt夹具缺fileStopProof，已交D适配，未记作检查通过。S e515e34→root189853e补齐已排队ordinary write实际work前封门重检，21项定向operation通过；ACK整体独立复验另行执行。
+
+### ACK数据迁移及独立总控回归
+
+6811e43→root11f6ed0完成0011/0012、旧v1只读兼容及fixture适配，root类型与12文件131定向测试通过。自有949a98a25d2720546a5d4005a748d3c6实际0010→0011/0012升级，启用/停用正常、重复migrate applied=[]，6文件34PG全部通过（.cache/b2b-ack-domain-db.log），实例已停止。该次包含独立合成无文件的10→仅11拒app→12及旧9字段保留/拒ACK/complete/retry，不把合成SQL proof当FS停止证明。
+
+Astra公共审查01a12e52-b3b0-71f1-9558-f75561d7306b发现retry遗漏旧policy保护，6811e43加requireCurrentPolicy；独立Astra子代理已窄复验关闭，21其他公共探针/7既有测试为前轮证据。本轮SQL/helper摘要6/6及当前policy hash一致，但新增P2：client触发器早检没有核tgqual/tgattr，WHEN(false)可同名同函数却不执行。D正在补无条件/无列过滤/无参数检查与PG回归；未给本批无问题结论。
+
+S 44f2d6d→root984e9b8集成candidate.v2、原请求私有publication资格、单次ACK→互斥finalize、StorageLock实际pending观察。root operation/receipt/storage共50项及storage-lock9项通过；独立真实FS/门/旧调用兼容审查进行中。factory与helper仍未交付，不作完整服务验收。
+
+11f6ed0时全量81文件1040单元通过（.cache/b2b-ack-unit.log）。trigger P2由e96a77d→rootaba7690修复，无条件/无列过滤/零参数及非constraint/partition/transition限制补齐；原Astra子代理窄复验关闭，无新P1/P2。root在自有0012库独立13项client PG全过（.cache/b2b-ack-client-db.log），随后stop确认；类型/lint通过。该补丁未改0012。
+
+### S ACK来源与关闭包装层复验
+
+Astra在01a12e57-e418-7ae2-a34e-4a89eaf1d5be重跑原真实FS探针：最终dir close迟到/超时、nlink2后UNKNOWN均无ACK资格，未持久proof的reader返回null；普通write绕过/排队UNKNOWN均零work。原两P2关闭。真实patched driver+内存transport的150个pending/保留queue以及握手前reserve在end后2–3ms全settled，未发现新增可证旧StorageLock drain deadline问题；仍不替代真实网络回归。
+
+新增两P2继续交S：旧CANCELLED cleanup candidate能被新operation的existing/EEXIST路径采纳并登记publication资格；必须拒绝从既有文件补原publisher资格。closeStorageLock清空lock却未同步撤销业务资格、重复调用不等原关闭，ACK后关闭仍可finalize；须同一cached close task、同步封门、有效锁重检。48原定向与额外门/FS/driver探针通过不代表这两项已关闭，factory尚未交付。

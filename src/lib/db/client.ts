@@ -3,6 +3,7 @@ import postgres from "postgres";
 import { StudioError } from "@/lib/http-security/errors";
 import { drizzle, type PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import * as schema from "./schema";
+import { validationAckFunctionHashes } from "./validation-ack-schema";
 import {
   loadRuntimeConfig,
   normalizeRuntimeConfig,
@@ -214,6 +215,10 @@ const validationHelpers: Readonly<Record<string, boolean>> = {
   "qf.protect_product_asset()": false,
   "qf.validation_ready_assets()": false,
   "qf.product_asset_ready_source()": false,
+  "qf.validation_file_stop_protocol()": true,
+  "qf.validation_file_stop_proof_valid(jsonb,uuid,jsonb)": true,
+  "qf.validation_file_stop_controls_valid(text,uuid,text,text)": true,
+  "qf.protect_validation_file_stop_ack()": false,
 };
 /** App-only fail-closed B schema/privilege check. Owner remains able to migrate old instances. */
 async function verifyValidationSchema(sql: postgres.Sql): Promise<void> {
@@ -296,11 +301,13 @@ async function verifyValidationSchema(sql: postgres.Sql): Promise<void> {
       can_execute: boolean;
       security_definer: boolean;
       fixed_path: boolean;
+      body_sha256: string | null;
     }[]
   >`
     SELECT s.signature,p.oid IS NOT NULL AS present,
       CASE WHEN p.oid IS NULL THEN false ELSE has_function_privilege(current_user,p.oid,'EXECUTE') END AS can_execute,
       coalesce(p.prosecdef,true) AS security_definer,
+      CASE WHEN p.oid IS NULL THEN NULL ELSE encode(sha256(convert_to(p.prosrc,'UTF8')),'hex') END AS body_sha256,
       coalesce(p.proconfig=ARRAY['search_path=pg_catalog'],false) AS fixed_path
     FROM unnest(${sql.array(Object.keys(validationHelpers))}::text[]) AS s(signature)
     LEFT JOIN pg_proc p ON p.oid=to_regprocedure(s.signature)`;
@@ -311,8 +318,30 @@ async function verifyValidationSchema(sql: postgres.Sql): Promise<void> {
         !f.present ||
         f.can_execute !== validationHelpers[f.signature] ||
         f.security_definer ||
-        !f.fixed_path,
+        !f.fixed_path ||
+        (validationAckFunctionHashes[f.signature] !== undefined &&
+          validationAckFunctionHashes[f.signature] !== f.body_sha256),
     )
+  )
+    throw new StudioUnavailableError();
+  const [protocol] = await sql<
+    { version: string; audit: boolean; controls: boolean; triggers: boolean }[]
+  >`
+    SELECT qf.validation_file_stop_protocol() AS version,
+      EXISTS(SELECT 1 FROM pg_enum WHERE enumtypid='qf.audit_action'::regtype AND enumlabel='validation_file_stop_acknowledged') AS audit,
+      EXISTS(SELECT 1 FROM pg_constraint WHERE conrelid='qf.quizpack_validation'::regclass AND conname='validation_file_stop_controls' AND contype='c' AND convalidated
+        AND pg_get_constraintdef(oid)='CHECK (qf.validation_file_stop_controls_valid((archive_policy_version)::text, id, attempts_text, evidence_metadata_text))') AS controls,
+      (SELECT count(*)=2 FROM pg_trigger WHERE tgrelid='qf.quizpack_validation'::regclass AND NOT tgisinternal AND tgenabled='O' AND tgtype=23
+        AND tgqual IS NULL AND tgattr=''::int2vector AND tgnargs=0 AND octet_length(tgargs)=0
+        AND tgconstraint=0 AND tgconstrrelid=0 AND NOT tgdeferrable AND NOT tginitdeferred AND tgparentid=0
+        AND tgoldtable IS NULL AND tgnewtable IS NULL
+        AND ((tgname='protect_validation' AND tgfoid='qf.protect_validation()'::regprocedure)
+          OR (tgname='protect_validation_file_stop_ack' AND tgfoid='qf.protect_validation_file_stop_ack()'::regprocedure))) AS triggers`;
+  if (
+    protocol?.version !== "candidate-receipt-db-ack.v1" ||
+    !protocol.audit ||
+    !protocol.controls ||
+    !protocol.triggers
   )
     throw new StudioUnavailableError();
 }

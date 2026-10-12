@@ -18,6 +18,8 @@ import {
 import {
   validationKey,
   serializeValidationAttempts,
+  parseValidationAttempts,
+  type ValidationFileStopProof,
   type ValidationRow,
 } from "@/features/quizpack/validation/repository";
 import type {
@@ -29,8 +31,63 @@ import {
   safeTestOperation as safe,
   type TestDatabase,
 } from "./p2a-fixture";
+import { acknowledgeValidationFileStop } from "@/features/quizpack/validation/transactions";
 export const hash = (text: string | Uint8Array) =>
   createHash("sha256").update(text).digest("hex");
+/** Synthetic DB structure only: this does not certify filesystem or service stopping. */
+export function syntheticFileStopProof(
+  row: ValidationRow,
+  mediaStopped: "confirmed" | "not-started",
+): ValidationFileStopProof {
+  const attempt = parseValidationAttempts(row.attempts_text).find(
+    (a) => a.attemptId === row.current_attempt_id,
+  )!;
+  return {
+    schemaVersion: "quizpack-validation-file-stop-proof.v1",
+    protocol: "candidate-receipt-db-ack.v1",
+    validationId: row.id,
+    attemptId: attempt.attemptId,
+    fence: attempt.fence,
+    ownerPid: attempt.ownerPid,
+    ownerNonce: attempt.ownerNonce,
+    receiptSha256: hash("Synthetic DB proof; no filesystem authority"),
+    scope: "files-and-media",
+    mediaStopped,
+    relatedIo: "settled",
+  };
+}
+export async function acknowledgeDomainStop(
+  db: TestDatabase,
+  fixture: Awaited<ReturnType<typeof domainFixture>>,
+  row: ValidationRow,
+  mediaStopped: "confirmed" | "not-started" = "confirmed",
+) {
+  return acknowledgeValidationFileStop(
+    db.app,
+    fixture.auth.credentials,
+    fixture.scope,
+    {
+      authority: {
+        validationId: row.id,
+        expectedStateRevision: row.state_revision,
+        fence: row.fence,
+        attemptId: row.current_attempt_id,
+      },
+      proof: syntheticFileStopProof(row, mediaStopped),
+    },
+  );
+}
+export function domainSettledAttempt(row: ValidationRow) {
+  const attempt = parseValidationAttempts(row.attempts_text).find(
+    (a) => a.attemptId === row.current_attempt_id,
+  )!;
+  if (!attempt.fileStopProof) throw new Error("TEST_DURABLE_ACK_REQUIRED");
+  return {
+    attemptId: attempt.attemptId,
+    mediaStop: attempt.fileStopProof.mediaStopped,
+    fileStopProof: attempt.fileStopProof,
+  };
+}
 /** This fixture supplies synthetic DB evidence only; it never asserts executed P1 or actual archive files. */
 export async function domainFixture(db: TestDatabase, prefix = false) {
   const auth = await authenticateTestOperator(db);
@@ -197,7 +254,11 @@ export async function domainFixture(db: TestDatabase, prefix = false) {
       db.admin
         .sql`INSERT INTO qf.quizpack_import(id,product_id,created_by,idempotency_key,request_fingerprint,expected_archive_sha256,expected_archive_bytes,target_kind,created_at,status,state_revision,updated_at,storage_condition,fence,attempts,actual_archive_sha256,actual_archive_bytes,archive_storage_key,received_at) VALUES(${importId},${productId},${auth.id},${randomUUID()},${hash("Synthetic request")},${archiveSha256},${archiveBytes},'new-draft',clock_timestamp(),'received',1,clock_timestamp(),'clean',0,'[]',${archiveSha256},${archiveBytes},${`imports/${importId}/archive.quizpack`},clock_timestamp())`,
   );
-  const projection = (row: ValidationRow): EvidenceProjection => {
+  const projection = (
+    row: ValidationRow,
+    resultValue = result,
+  ): EvidenceProjection => {
+    const result = resultValue;
     const controls = JSON.parse(row.attempts_text) as Parameters<
       typeof serializeValidationAttempts
     >[0];
@@ -244,6 +305,7 @@ export async function domainFixture(db: TestDatabase, prefix = false) {
     binding,
     candidate,
     result,
+    files,
     projection,
     owner: { ownerPid: process.pid, ownerNonce: "a".repeat(43) },
     blobs: facts.resources.map((r) => ({

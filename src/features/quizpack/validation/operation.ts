@@ -23,6 +23,13 @@ export function createValidationContext(
   });
   return { context, dispose: () => disposeMediaOperationContext(context) };
 }
+export type FileStopAckQualification = Readonly<{
+  readonly kind: "file-stop-ack";
+}>;
+const ackQualifications = new WeakMap<
+  FileStopAckQualification,
+  ArchiveOperation
+>();
 const invalidDatabases = new WeakSet<P2aDatabase>();
 /** Owns only this request's business gate, DB budget and main-process IO. Platform proof comes from A. */
 export class ArchiveOperation {
@@ -32,13 +39,22 @@ export class ArchiveOperation {
   private platformUnknown = false;
   private platformStopped: "not-started" | "confirmed" = "not-started";
   private businessClosed = false;
+  private nonDbClosed = false;
+  private receiptState: "available" | "running" | "done" | "failed" =
+    "available";
+  private ackState: "available" | "running" | "confirmed" | "failed" =
+    "available";
+  private qualification: FileStopAckQualification | undefined;
+  private finalizationEntered = false;
   private claimEntered = false;
   private claimConfirmed = false;
   private candidateEntered = false;
+  private activePlatformTasks = 0;
   private candidateProof = false;
   private platformRelatedIoUnknown = false;
   private candidateClosed = false;
   private lock: StorageLock | undefined;
+  private lockClosing: Promise<void> | undefined;
   private removeLockListener: (() => void) | undefined;
   constructor(
     readonly db: P2aDatabase,
@@ -65,6 +81,24 @@ export class ArchiveOperation {
   detachLock() {
     this.removeLockListener?.();
     this.removeLockListener = undefined;
+  }
+  closeStorageLock(): Promise<void> {
+    if (this.lockClosing) return this.lockClosing;
+    // Revoke every continuation before close can synchronously broadcast cancellation.
+    this.stop("STOP_REQUESTED");
+    this.detachLock();
+    const lock = this.lock;
+    this.lock = undefined;
+    this.lockClosing = lock
+      ? this.boundedTask(
+          Promise.resolve()
+            .then(() => lock.close())
+            .then((closed) => {
+              if (!closed) this.relatedIoUnknown = true;
+            }),
+        )
+      : Promise.resolve();
+    return this.lockClosing;
   }
   checkpoint() {
     const state = readMediaOperationState(this.context);
@@ -96,12 +130,37 @@ export class ArchiveOperation {
   stop(reason: MediaStopReason = "RUNTIME_FAILED") {
     // Close every continuation's business/candidate gate before synchronous abort broadcast.
     this.businessClosed = true;
+    this.nonDbClosed = true;
     this.candidateClosed = true;
     requestMediaOperationStop(this.context, reason);
     if (reason === "STOP_UNCONFIRMED") this.platformUnknown = true;
   }
-  enterClaimBoundary() {
+  nonDbCheckpoint() {
     this.checkpoint();
+    if (this.nonDbClosed) throw new StudioError("VALIDATION_RECOVERY_REQUIRED");
+  }
+  closeNonDbGate() {
+    this.nonDbClosed = true;
+    this.candidateClosed = true;
+    if (
+      this.activePlatformTasks ||
+      (this.candidateEntered && !this.candidateProof)
+    ) {
+      this.stop("STOP_REQUESTED");
+      throw new StudioError("VALIDATION_RECOVERY_REQUIRED");
+    }
+  }
+  async platformTask<T>(work: () => Promise<T>): Promise<T> {
+    this.nonDbCheckpoint();
+    this.activePlatformTasks++;
+    try {
+      return await this.fileTask(work);
+    } finally {
+      this.activePlatformTasks--;
+    }
+  }
+  enterClaimBoundary() {
+    this.nonDbCheckpoint();
     this.claimEntered = true;
   }
   confirmClaim() {
@@ -110,12 +169,12 @@ export class ArchiveOperation {
     this.claimConfirmed = true;
   }
   claimedIoCheckpoint() {
-    this.checkpoint();
+    this.nonDbCheckpoint();
     if (!this.claimConfirmed)
       throw new StudioError("VALIDATION_RECOVERY_REQUIRED");
   }
   enterCandidateBoundary() {
-    this.checkpoint();
+    this.nonDbCheckpoint();
     if (!this.claimConfirmed || this.candidateClosed || this.candidateEntered)
       throw new StudioError("VALIDATION_RECOVERY_REQUIRED");
     this.candidateEntered = true;
@@ -221,9 +280,9 @@ export class ArchiveOperation {
     }
   }
   async fileTask<T>(work: () => Promise<T>): Promise<T> {
-    this.checkpoint();
+    this.nonDbCheckpoint();
     const task = Promise.resolve().then(() => {
-      this.checkpoint();
+      this.nonDbCheckpoint();
       return work();
     });
     return this.boundedTask(task);
@@ -238,22 +297,141 @@ export class ArchiveOperation {
     if (performance.now() >= deadline)
       throw new StudioError("VALIDATION_RECOVERY_REQUIRED");
   }
-  async stoppedReceiptTask<T>(work: () => Promise<T>): Promise<T> {
+  async stoppedReceiptTask<T>(
+    work: (check: () => void) => Promise<T>,
+  ): Promise<T> {
     if (!this.canIssueStoppedReceipt())
       throw new StudioError("VALIDATION_RECOVERY_REQUIRED");
     this.cleanupCheckpoint();
+    this.receiptState = "running";
     const task: Promise<T> = Promise.resolve().then(() => {
       // Recheck at execution, excluding only this exact queued receipt task.
       if (!this.receiptQualified(task))
         throw new StudioError("VALIDATION_RECOVERY_REQUIRED");
-      this.cleanupCheckpoint();
-      return work();
+      const check = () => {
+        if (!this.receiptQualified(task))
+          throw new StudioError("VALIDATION_RECOVERY_REQUIRED");
+        this.cleanupCheckpoint();
+      };
+      check();
+      return work(check);
     });
-    return this.boundedTask(task);
+    try {
+      const result = await this.boundedTask(task);
+      this.receiptState = "done";
+      return result;
+    } catch (error) {
+      this.receiptState = "failed";
+      throw error;
+    }
+  }
+  /** Private authority exists only after this publisher's final close; it cannot survive serialization. */
+  fileStopAckQualification(): FileStopAckQualification {
+    this.checkpoint();
+    if (this.qualification || !this.ackQualified())
+      throw new StudioError("VALIDATION_RECOVERY_REQUIRED");
+    const qualification = Object.freeze({
+      kind: "file-stop-ack" as const,
+      toJSON() {
+        throw new StudioError("VALIDATION_RECOVERY_REQUIRED");
+      },
+    });
+    ackQualifications.set(qualification, this);
+    this.qualification = qualification;
+    return qualification;
+  }
+  async acknowledgeDatabaseOnce<T>(
+    qualification: FileStopAckQualification,
+    work: () => PromiseLike<T>,
+  ): Promise<T> {
+    this.checkpoint();
+    if (
+      ackQualifications.get(qualification) !== this ||
+      this.qualification !== qualification ||
+      !this.ackQualified()
+    )
+      throw new StudioError("VALIDATION_RECOVERY_REQUIRED");
+    this.ackState = "running";
+    try {
+      const result = await this.awaitDatabase("write", work, (task) => {
+        if (!this.ackQualified(task))
+          throw new StudioError("VALIDATION_RECOVERY_REQUIRED");
+      });
+      this.checkpoint();
+      if (!this.ackQualifiedForConfirmation())
+        throw new StudioError("VALIDATION_RECOVERY_REQUIRED");
+      this.ackState = "confirmed";
+      return result;
+    } catch (error) {
+      this.ackState = "failed";
+      throw error;
+    }
+  }
+  private ackQualified(excludedTask?: Promise<unknown>) {
+    return (
+      (excludedTask
+        ? this.ackState === "running"
+        : this.ackState === "available") &&
+      this.ackQualifiedForConfirmation(excludedTask)
+    );
+  }
+  private ackQualifiedForConfirmation(excludedTask?: Promise<unknown>) {
+    return (
+      Boolean(this.lock) &&
+      this.claimConfirmed &&
+      this.nonDbClosed &&
+      this.receiptState === "done" &&
+      !this.finalizationEntered &&
+      !this.completionFor(excludedTask).maintenanceRequired
+    );
+  }
+  hasEnteredAcknowledgement() {
+    return this.ackState !== "available";
+  }
+  async finalizeDatabaseOnce<T>(work: () => PromiseLike<T>): Promise<T> {
+    this.checkpoint();
+    if (!this.finalizationQualified())
+      throw new StudioError("VALIDATION_RECOVERY_REQUIRED");
+    this.finalizationEntered = true;
+    return this.awaitDatabase("write", work, (task) => {
+      if (!this.finalizationQualified(task))
+        throw new StudioError("VALIDATION_RECOVERY_REQUIRED");
+    });
+  }
+  private finalizationQualified(excludedTask?: Promise<unknown>) {
+    return (
+      (excludedTask ? this.finalizationEntered : !this.finalizationEntered) &&
+      Boolean(this.lock) &&
+      this.nonDbClosed &&
+      this.receiptState === "done" &&
+      this.ackState === "confirmed" &&
+      !this.completionFor(excludedTask).maintenanceRequired
+    );
+  }
+  hasEnteredFinalization() {
+    return this.finalizationEntered;
   }
   async databaseAwait<T>(
     kind: "read" | "write",
     work: () => PromiseLike<T>,
+  ): Promise<T> {
+    if (kind === "write" && (this.nonDbClosed || this.finalizationEntered))
+      throw new StudioError("VALIDATION_RECOVERY_REQUIRED");
+    return this.awaitDatabase(
+      kind,
+      work,
+      kind === "write"
+        ? () => {
+            if (this.nonDbClosed || this.finalizationEntered)
+              throw new StudioError("VALIDATION_RECOVERY_REQUIRED");
+          }
+        : undefined,
+    );
+  }
+  private async awaitDatabase<T>(
+    kind: "read" | "write",
+    work: () => PromiseLike<T>,
+    beforeWork?: (task: Promise<unknown>) => void,
   ): Promise<T> {
     this.checkpoint();
     if (invalidDatabases.has(this.db))
@@ -282,9 +460,10 @@ export class ArchiveOperation {
       );
     };
     this.context.signal.addEventListener("abort", abort, { once: true });
-    const task = this.track(
+    const task: Promise<T> = this.track(
       Promise.resolve().then(() => {
         this.checkpoint();
+        beforeWork?.(task);
         return work();
       }),
     );
@@ -340,8 +519,12 @@ export class ArchiveOperation {
   private receiptQualified(excludedTask?: Promise<unknown>): boolean {
     return (
       this.claimConfirmed &&
-      this.businessClosed &&
+      this.nonDbClosed &&
       this.candidateClosed &&
+      !this.finalizationEntered &&
+      (excludedTask
+        ? this.receiptState === "running"
+        : this.receiptState === "available") &&
       !this.completionFor(excludedTask).maintenanceRequired
     );
   }

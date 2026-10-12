@@ -7,6 +7,8 @@ import {
 } from "./p2a-fixture";
 import {
   domainFixture,
+  acknowledgeDomainStop,
+  domainSettledAttempt,
   hash,
   resetDomainDatabase,
 } from "./p2b2b-domain-fixture";
@@ -102,12 +104,13 @@ describe("B2-2B SQL failure boundaries and current auth", () => {
   });
   it("same archive becomes direct alias; alias target cannot become a chain", async () => {
     const accepted = await evidence((await claim()).row);
-    const archiving = await beginArchiving(
+    let archiving = await beginArchiving(
       db.app,
       f.auth.credentials,
       f.scope,
       authority(accepted),
     );
+    archiving = await acknowledgeDomainStop(db, f, archiving);
     const canonical = await completeValidation(
       db.app,
       f.auth.credentials,
@@ -138,11 +141,16 @@ describe("B2-2B SQL failure boundaries and current auth", () => {
     );
     expect(alias.identity_kind).toBe("alias");
     expect(alias.canonical_validation_id).toBe(canonical.id);
-    const archivingAlias = await beginArchiving(
+    let archivingAlias = await beginArchiving(
       db.app,
       f.auth.credentials,
       next.scope,
       authority(alias),
+    );
+    archivingAlias = await acknowledgeDomainStop(
+      db,
+      { ...f, scope: next.scope },
+      archivingAlias,
     );
     const readyAlias = await completeValidation(
       db.app,
@@ -227,12 +235,13 @@ describe("B2-2B SQL failure boundaries and current auth", () => {
   });
   it("frozen resource declaration and fake blob dimensions cannot complete", async () => {
     const accepted = await evidence((await claim()).row);
-    const archiving = await beginArchiving(
+    let archiving = await beginArchiving(
       db.app,
       f.auth.credentials,
       f.scope,
       authority(accepted),
     );
+    archiving = await acknowledgeDomainStop(db, f, archiving);
     await expect(
       completeValidation(db.app, f.auth.credentials, f.scope, {
         authority: authority(archiving),
@@ -249,6 +258,139 @@ describe("B2-2B SQL failure boundaries and current auth", () => {
         >`SELECT count(*)::int n FROM qf.product_asset`,
     );
     expect(facts!.n).toBe(0);
+  });
+  it("same resource version with changed license is a recorded rejection", async () => {
+    const accepted = await evidence((await claim()).row);
+    let archiving = await beginArchiving(
+      db.app,
+      f.auth.credentials,
+      f.scope,
+      authority(accepted),
+    );
+    archiving = await acknowledgeDomainStop(db, f, archiving);
+    await completeValidation(db.app, f.auth.credentials, f.scope, {
+      authority: authority(archiving),
+      blobs: f.blobs,
+      accountedBytes: 0,
+    });
+    const content = JSON.parse(
+      f.candidate.facts.canonicalContentText,
+    ) as typeof f.candidate.facts.content;
+    const manifest = JSON.parse(
+      f.candidate.facts.canonicalManifestText,
+    ) as typeof f.candidate.facts.manifest;
+    // Independent synthetic DB fixture; no claim of executed P1 or physically received archive.
+    const changedContent = {
+      ...content,
+      resources: content.resources.map((r, i) =>
+        i === 0
+          ? {
+              ...r,
+              license: {
+                ...r.license,
+                evidence: "Different synthetic license evidence",
+              },
+            }
+          : r,
+      ),
+    };
+    const contentText = canonicalP1Json(changedContent);
+    const changedManifest = {
+      ...manifest,
+      packVersion: "1.0.1",
+      files: manifest.files.map((f) =>
+        f.path === "content.json"
+          ? {
+              ...f,
+              bytes: Buffer.byteLength(contentText),
+              sha256: hash(contentText),
+            }
+          : f,
+      ),
+    };
+    const manifestText = canonicalP1Json(changedManifest);
+    const archiveSha256 = hash(
+      "Different synthetic archive for license conflict",
+    );
+    const next = await anotherImport(archiveSha256);
+    const row = (
+      await claimValidation(db.app, f.auth.credentials, next.scope, {
+        expectedImportStateRevision: 1,
+        expectedValidationKey: next.binding.validationKey,
+        binding: next.binding,
+        owner: f.owner,
+      })
+    ).row;
+    const { sealCandidateResultEvidence } =
+      await import("@/features/quizpack/server/validation/contracts");
+    const { sealP1Report } =
+      await import("@/features/quizpack/server/validation/report");
+    const oldReport = f.result.evidence.report;
+    if (oldReport.status !== "sealed") throw new Error("TEST_EVIDENCE_INVALID");
+    const result = sealCandidateResultEvidence({
+      outcome: "accepted",
+      evidence: {
+        ...f.result.evidence,
+        input: {
+          status: "snapshotted",
+          archiveSha256,
+          archiveBytes: 100,
+          targetProductId: f.scope.productId,
+        },
+        report: sealP1Report({
+          ...oldReport.value,
+          archiveSha256,
+          manifestSha256: hash(manifestText),
+          contentSha256: hash(contentText),
+        }),
+      },
+    });
+    if (result.outcome !== "accepted") throw new Error("TEST_EVIDENCE_INVALID");
+    const files = new Map(f.files);
+    files.set("manifest.json", Buffer.from(manifestText));
+    files.set("content.json", Buffer.from(contentText));
+    const { issuePrivateCandidate } =
+      await import("@/features/quizpack/server/validation/private-candidate");
+    const facts = issuePrivateCandidate(result, files).facts;
+    const assetSetText = canonicalP1Json({
+      schemaVersion: "quizpack-candidate-asset-set.v1",
+      productId: f.scope.productId,
+      resources: facts.resources.map((r) => ({
+        resourceId: r.declaration.id,
+        resourceVersion: r.declaration.version,
+        productId: r.declaration.productId,
+        blobSha256: r.blobSha256,
+        declarationSha256: r.declarationSha256,
+      })),
+    });
+    const rejected = await appendValidationEvidence(
+      db.app,
+      f.auth.credentials,
+      next.scope,
+      {
+        authority: authority(row),
+        projection: f.projection(row, result),
+        mediaStop: "confirmed",
+        candidate: {
+          facts: { ...facts, assetSetText },
+          manifestSha256: hash(manifestText),
+          contentSha256: hash(contentText),
+        },
+        outcome: "accepted",
+        errorCode: null,
+      },
+    );
+    expect(rejected.status).toBe("rejected");
+    expect(rejected.last_error_code).toBe("RESOURCE_DECLARATION_CONFLICT");
+    expect(rejected.identity_kind).toBe("canonical");
+    expect(rejected.validated_at).not.toBe(null);
+    const [refs] = await safe(
+      () =>
+        db.admin.sql<
+          { n: number }[]
+        >`SELECT count(*)::int n FROM qf.product_asset`,
+    );
+    expect(refs!.n).toBe(4);
   });
   it("unproved media remains held across recovery and disables retry", async () => {
     const row = (await claim()).row;
@@ -293,16 +435,18 @@ describe("B2-2B SQL failure boundaries and current auth", () => {
     await expect(evidence(row)).rejects.toThrow("UNAUTHENTICATED");
   });
   it("archive retry starts not-started and keeps accepted evidence byte-for-byte", async () => {
-    const row = await evidence((await claim()).row);
+    const row = await acknowledgeDomainStop(
+      db,
+      f,
+      await evidence((await claim()).row),
+    );
     const recovered = await recoverValidationClaim(
       db.app,
       f.auth.credentials,
       f.scope,
       {
         authority: authority(row),
-        settledAttempts: [
-          { attemptId: row.current_attempt_id, mediaStop: "confirmed" },
-        ],
+        settledAttempts: [domainSettledAttempt(row)],
         accountedBytes: 0,
         storageCondition: "clean",
         errorCode: null,
