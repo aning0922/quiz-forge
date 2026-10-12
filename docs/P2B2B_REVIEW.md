@@ -56,3 +56,7 @@ U b2486a4首批独立46纯测试通过，但旧not-started对象只绑定tuple�
 Astra在01a12e46-6d82-72d2-b4cf-a4d05b5dbc0c确认采用非权威candidate receipt+独立DB ACK：全部publisher IO settled后才有原请求私有资格，ACK失败/未知禁止原complete；recover必须同时核已提交proof和文件。主合同3.2/4.2–5及迁移节已改写，不再保留单文件release或ESRCH替代ACK。policy v2增加56KiB metadata准入以预留8KiB最终controls。先0011提交审计enum、再0012保护协议，旧0010不改。该决策已冻结供实现，尚无代码/DB验收结论。
 
 Astra在01a12e4a-87a8-7a00-9cfb-d99b05b3f5df进一步确认0011枚举/0012协议分开提交，以及ACK后共享一次complete|interrupt终结门均无架构阻断；interrupt不得新增IO或猜clean，A已stop的interrupted不复活。U两P2由5dd987e→root4abc51c整改，59纯测试通过，独立闭合待核。
+
+Astra在01a12e4f-4e79-7ae3-b0a4-32a36614b5d4独立复验4abc51c：actual flow/client/messages的generic identity变化与POST成功后removeExact失败均保留mayHaveBeenSent并只说待核实；strict not-started对照仍需显式放弃。actual panel/use-read模拟调度经过刷新失败、翻页、迟到旧详情/列表和低revision显式读取，维持最高rev4 ready且无旧recover；loading/error禁写。45既有纯测试及11时序探针通过，两P2闭合，无新P1/P2；不替代真实浏览器。
+
+D f73f415→rootd71f1ad已集成ACK公共/事务首接口，尚等0011/0012及domain fixture适配。该中间head类型检查有3个旧SettledAttempt夹具缺fileStopProof，已交D适配，未记作检查通过。S e515e34→root189853e补齐已排队ordinary write实际work前封门重检，21项定向operation通过；ACK整体独立复验另行执行。
