@@ -141,6 +141,8 @@ export function loadMacPolicy(
     const node = realpathSync(process.execPath),
       root = location.checkoutRoot;
     const sharpRoot = realpathSync(join(root, "node_modules/sharp"));
+    // Resolve only these fixed installed siblings at runtime; tracing must
+    // not infer a checkout-wide dependency from the resolved sharp root.
     const dependencies = [
       sharpRoot,
       ...[
@@ -149,7 +151,14 @@ export function loadMacPolicy(
         "semver",
         "@img/sharp-darwin-arm64",
         "@img/sharp-libvips-darwin-arm64",
-      ].map((name) => realpathSync(join(dirname(sharpRoot), name))),
+      ].map((name) =>
+        realpathSync(
+          /* turbopackIgnore: true */ join(
+            /* turbopackIgnore: true */ dirname(sharpRoot),
+            name,
+          ),
+        ),
+      ),
     ].sort();
     const worker = join(root, "src/features/quizpack/v1/media-worker.mjs");
     const plan = offlinePlan ?? {
