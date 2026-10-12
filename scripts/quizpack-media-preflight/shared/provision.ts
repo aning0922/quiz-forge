@@ -190,6 +190,8 @@ function atomicPrivateWrite(
       !sameFile(previous, existingPrivateFile(path, maximum))
     )
       throw new ProvisionError("IO_UNSAFE");
+    // The final path/inode reads can consume the remaining absolute budget.
+    checkpoint();
     renameSync(temporary, path);
     committed = true;
     temporary = null;
