@@ -13,6 +13,7 @@ import { randomUUID } from "node:crypto";
 import { resolve } from "node:path";
 import {
   CACHE,
+  CORE_DIR,
   hash,
   privateDir,
   writePrivate,
@@ -75,7 +76,7 @@ export function fixedScenario(scenario, syntheticRoot) {
 }
 const core = createLinuxExecutionCore({
   controlRoot: resolve(CACHE, "control"),
-  seccompPath: resolve("scripts/quizpack-media-preflight/linux/seccomp.json"),
+  seccompPath: resolve(CORE_DIR, "seccomp.json"),
   hash,
   privateDir,
   writePrivate,
