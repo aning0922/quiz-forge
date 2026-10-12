@@ -263,6 +263,20 @@ claim结果未知时，fresh查询得到行则按其当前权威状态处理；�
 pre-candidate失败不是P1内容判定：没有调用A便不追加伪造report/envelope，通常回retryable-failed/cleanup-required并保留固定服务错误；已知停止且对账成功后才clean/released。原archive和received事实永不改变。
 已确认claim后的早拒仍消耗这一个attempt；不能删除attempt、回退ordinal或退还执行次数。只有原claim明确未提交时，数据库本来没有该attempt可计数。
 
+### 4.3 正常停止证明先于complete（独立审查补充）
+
+采用正常receipt-before-complete。receipt只证明本attempt的**文件与媒体阶段已永久结束**，不证明后继数据库事务结束或提交成功，也不直接释放预留。禁止complete之后为清理或补证而新增任何文件写入。失败/取消路径仍只在首个5秒收尾内写合格receipt，不启动新业务事务。
+
+正常路径采用三个内部单次门，不新增HTTP token：
+
+1. 同步关闭所有非DB执行入口，包括archive reader、candidate/decoder、binding/平台CLI、blob写入、提升与清理，再等待已发出的实际任务settled及严格A completion；任何共享UNKNOWN均拒绝正常证明。关门不调用stop、不续deadline。
+2. 只允许本attempt的一次receipt发布作为明确文件例外；资格复核、单次消费和work调用必须在同一同步临界区，所有write/sync/link/unlink/close结束后永久关闭此入口。失败也不在complete后补写。正常receipt必须在原业务deadline内完成，并再次确认context active、storage lock及停止事实；取消或超时只能转原cleanup，不能再开启complete。
+3. 在可能启动事务的边界前同步消费finalizationOnce，只允许一次原请求DB上的complete；fresh auth/Product/import/revision/fence/lease仍须事务内重核。确认、明确失败或提交未知之后均零文件/媒体IO，不另开“记录失败”事务。已有DB操作与连接关闭继续纳入主请求pending及收尾。
+
+文件门与请求完成分开：receipt写明scope='files-and-media'、relatedIo='settled'；ArchiveOperation.completion()仍须把后继complete/query/sql.end视为pending，不能因receipt存在改成整个请求已settled。fresh recover先锁精确validation行并重核immutable attempt；若原complete已ready则只读返回，否则推进fence对账。旧complete在同一事务锁行并核fence，不能在recover之后迟到补写；GET空仍不证明回滚。
+
+测试fixture销毁也必须另外观察原请求与DB收尾结束，不能单靠正常receipt清理活动请求；全量停止证明预核成功后才删除自身合成文件。该例外不改变正常业务永不删除原包/final blob的范围。
+
 ## 5. recover 与 retry 精确分工
 
 - POST create：若同key已存在直接返回权威状态（200/replayed=true），不隐式执行retry。仅真正插入首次行返回201。
@@ -274,7 +288,7 @@ pre-candidate失败不是P1内容判定：没有调用A便不追加伪造report/
 - mediaStop=unconfirmed且无可信stopped receipt时，owner ESRCH也不解除；平台维护必须另有受审真实停止依据，不在本批增加“强制清理”按钮或HTTP PID参数。
 - receipt只在reader、decoder actual stop/stdio、所有write/sync/link/unlink/close settled且不会再启动写之后写；receipt写入本身失败保留占用。过期lease不是停止证明。
 
-receipt v1：{schemaVersion:'quizpack-validation-stopped.v1',validationId,attemptId,fence,ownerPid,ownerNonce,mediaStopped:'confirmed'|'not-started',relatedIo:'settled'}；≤2048，fence匹配旧attempt不可变值。
+receipt v1：{schemaVersion:'quizpack-validation-stopped.v1',validationId,attemptId,fence,ownerPid,ownerNonce,scope:'files-and-media',mediaStopped:'confirmed'|'not-started',relatedIo:'settled'}；≤2048，fence匹配旧attempt不可变值。
 archive重试必须在claim之前完成本次实际prepare身份/平台CLI，并证明所有相关IO settled、ctx仍active、身份与冻结identity完全一致。不可用、未知或变更均零archive claim，平台guard独立保留。claim后restore仅消费同请求/同context的私有prepared句柄，禁止readBinding、平台CLI、decoder或生成新P1报告。浏览器prepare DTO不是此句柄。
 因此archive attempt的not-started及“receipt或owner ESRCH”仅用于无后续平台执行的主进程归档IO停止核实；若实现做不到该严格顺序，则不能使用ESRCH回退。not-started本身不证明reader/writer/close settled或允许释放。kind=validate初态永远unconfirmed；只有第4.2节的真实证明可形成not-started，不允许recover把无记录/owner退出推断为这一状态。
 
