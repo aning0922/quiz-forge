@@ -59,6 +59,7 @@ export const auditAction = qf.enum("audit_action", [
   "validation_completed",
   "validation_recovered",
   "validation_retried",
+  "validation_file_stop_acknowledged",
 ]);
 export const auditOutcome = qf.enum("audit_outcome", ["success", "rejected"]);
 export const auditReason = qf.enum("audit_reason", [

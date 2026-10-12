@@ -6,6 +6,8 @@ import {
 } from "./p2a-fixture";
 import {
   domainFixture,
+  acknowledgeDomainStop,
+  domainSettledAttempt,
   hash,
   resetDomainDatabase,
 } from "./p2b2b-domain-fixture";
@@ -189,15 +191,19 @@ describe("SQL preserves strict unavailable interruption facts without fabricatin
         errorCode: "MEDIA_UNAVAILABLE",
       },
     );
+    const acknowledged = await acknowledgeDomainStop(
+      db,
+      f,
+      failed,
+      "not-started",
+    );
     const recovered = await recoverValidationClaim(
       db.app,
       f.auth.credentials,
       f.scope,
       {
-        authority: authority(failed),
-        settledAttempts: [
-          { attemptId: failed.current_attempt_id, mediaStop: "not-started" },
-        ],
+        authority: authority(acknowledged),
+        settledAttempts: [domainSettledAttempt(acknowledged)],
         accountedBytes: 0,
         storageCondition: "clean",
         errorCode: null,
