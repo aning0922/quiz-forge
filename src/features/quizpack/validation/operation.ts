@@ -111,7 +111,7 @@ export class ArchiveOperation {
   }
   enterCandidateBoundary() {
     this.checkpoint();
-    if (this.candidateClosed || this.candidateEntered)
+    if (!this.claimConfirmed || this.candidateClosed || this.candidateEntered)
       throw new StudioError("VALIDATION_RECOVERY_REQUIRED");
     this.candidateEntered = true;
   }
@@ -307,6 +307,7 @@ export class ArchiveOperation {
     const mediaUnknown =
       this.platformUnknown || (this.candidateEntered && !this.candidateProof);
     const ioUnknown =
+      mediaUnknown ||
       this.relatedIoUnknown ||
       this.platformRelatedIoUnknown ||
       this.pending.size > 0;

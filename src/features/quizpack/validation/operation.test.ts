@@ -173,3 +173,39 @@ it("a confirmed DB result is retained without an invented replacement connection
   expect(end).not.toHaveBeenCalled();
   expect(op.completion().relatedIo).toBe("settled");
 });
+
+it("candidate cannot enter until claim COMMIT has been confirmed", () => {
+  const { op } = fixture();
+  expect(() => op.enterCandidateBoundary()).toThrow(
+    "VALIDATION_RECOVERY_REQUIRED",
+  );
+  op.enterClaimBoundary();
+  expect(() => op.enterCandidateBoundary()).toThrow(
+    "VALIDATION_RECOVERY_REQUIRED",
+  );
+  op.confirmClaim();
+  expect(() => op.enterCandidateBoundary()).not.toThrow();
+});
+it("a synchronous abort listener upgrading shared UNKNOWN vetoes every receipt", async () => {
+  const { op, context } = fixture();
+  op.enterClaimBoundary();
+  op.confirmClaim();
+  context.signal.addEventListener(
+    "abort",
+    () => requestMediaOperationStop(context, "STOP_UNCONFIRMED"),
+    { once: true },
+  );
+  op.stop("CANCELLED");
+  await op.settle();
+  expect(op.completion()).toEqual({
+    mediaStopped: "unknown",
+    relatedIo: "unconfirmed",
+    maintenanceRequired: true,
+  });
+  expect(op.canIssueStoppedReceipt()).toBe(false);
+  const write = vi.fn(async () => {});
+  await expect(op.stoppedReceiptTask(write)).rejects.toMatchObject({
+    code: "VALIDATION_RECOVERY_REQUIRED",
+  });
+  expect(write).not.toHaveBeenCalled();
+});
