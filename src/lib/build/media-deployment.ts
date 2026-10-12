@@ -5,6 +5,7 @@ import {
   open,
   opendir,
   realpath,
+  readlink,
   rename,
   unlink,
 } from "node:fs/promises";
@@ -14,6 +15,7 @@ import path from "node:path";
 
 const SCHEMA = "quizpack-media-deployment.v1" as const;
 const MAX_FILE = 16 * 1024 * 1024;
+const MAX_SHARP_FILE = 32 * 1024 * 1024;
 const MAX_TOTAL = 128 * 1024 * 1024;
 const MAX_MANIFEST = 2 * 1024 * 1024;
 const MAX_FILES = 4096;
@@ -57,13 +59,24 @@ export interface MediaDeploymentFile {
   sha256: string;
 }
 export interface MediaDeploymentSourceFile extends MediaDeploymentFile {
-  role: "source" | Dependency;
+  role: "source" | Dependency | "sharp-runtime";
+}
+export interface MediaDeploymentArtifactAlias {
+  path: string;
+  targetRoot: string;
+  readlinkSha256: string;
+}
+export interface MediaDeploymentSharpRuntime {
+  platform: "darwin-arm64" | "linux-x64";
+  packageRoots: { name: string; root: string }[];
 }
 export interface MediaDeploymentManifest extends MediaDeploymentRoots {
   schema: typeof SCHEMA;
   dependencyRoots: Record<Dependency, string>;
+  sharpRuntime: MediaDeploymentSharpRuntime;
   sourceFiles: MediaDeploymentSourceFile[];
   artifactFiles: MediaDeploymentFile[];
+  artifactAliases: MediaDeploymentArtifactAlias[];
   sourceBundleHash: string;
   deploymentId: string;
 }
@@ -195,11 +208,49 @@ function artifactPath(value: string): boolean {
     (value.startsWith("server/") && /\.(?:js|json)$/.test(value))
   );
 }
-function dependencyRoot(value: unknown, name: Dependency): value is string {
+function dependencyRoot(value: unknown, name: string): value is string {
   return (
     relativePath(value) &&
-    new RegExp(`^node_modules/\\.pnpm/[^/]+/node_modules/${name}$`).test(value)
+    new RegExp(
+      `^node_modules/\\.pnpm/[^/]+/node_modules/${name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`,
+    ).test(value)
   );
+}
+function sharpNames(platform: string): string[] {
+  if (platform !== "darwin-arm64" && platform !== "linux-x64")
+    fail("DEPENDENCY_INVALID");
+  return [
+    "sharp",
+    "@img/colour",
+    "detect-libc",
+    "semver",
+    `@img/sharp-${platform}`,
+    `@img/sharp-libvips-${platform}`,
+  ];
+}
+function sharpPlatform(): MediaDeploymentSharpRuntime["platform"] {
+  const platform = `${process.platform}-${process.arch}`;
+  sharpNames(platform);
+  if (platform === "linux-x64") {
+    // Only this one fixed, actual Node report header is inspected. Missing or
+    // malformed libc evidence fails closed, including musl with glibc packages.
+    let version: unknown;
+    try {
+      const report = process.report.getReport() as unknown as {
+        header?: { glibcVersionRuntime?: unknown };
+      };
+      version = report.header?.glibcVersionRuntime;
+    } catch {
+      fail("DEPENDENCY_INVALID");
+    }
+    if (
+      typeof version !== "string" ||
+      version.length > 32 ||
+      !/^\d{1,3}\.\d{1,3}(?:\.\d{1,3})?$/.test(version)
+    )
+      fail("DEPENDENCY_INVALID");
+  }
+  return platform as MediaDeploymentSharpRuntime["platform"];
 }
 function hashes(
   manifest: Omit<MediaDeploymentManifest, "sourceBundleHash" | "deploymentId">,
@@ -210,6 +261,10 @@ function hashes(
         "quizforge/media-source/v1",
         SCHEMA,
         DEPENDENCIES.map((name) => [name, manifest.dependencyRoots[name]]),
+        [
+          manifest.sharpRuntime.platform,
+          manifest.sharpRuntime.packageRoots.map((p) => [p.name, p.root]),
+        ],
         manifest.sourceFiles.map((f) => [f.role, f.path, f.bytes, f.sha256]),
       ]),
     ),
@@ -220,6 +275,11 @@ function hashes(
         manifest.checkoutRoot,
         manifest.deploymentRoot,
         manifest.artifactFiles.map((f) => [f.path, f.bytes, f.sha256]),
+        manifest.artifactAliases.map((a) => [
+          a.path,
+          a.targetRoot,
+          a.readlinkSha256,
+        ]),
       ]),
     ),
   };
@@ -240,8 +300,10 @@ function parseManifest(bytes: Buffer): MediaDeploymentManifest {
     "checkoutRoot",
     "deploymentRoot",
     "dependencyRoots",
+    "sharpRuntime",
     "sourceFiles",
     "artifactFiles",
+    "artifactAliases",
     "sourceBundleHash",
     "deploymentId",
   ]);
@@ -255,6 +317,37 @@ function parseManifest(bytes: Buffer): MediaDeploymentManifest {
   exactKeys(dependencies, DEPENDENCIES);
   for (const name of DEPENDENCIES)
     if (!dependencyRoot(dependencies[name], name)) fail("MANIFEST_INVALID");
+  const sharp = object(input.sharpRuntime);
+  exactKeys(sharp, ["platform", "packageRoots"]);
+  if (sharp.platform !== "darwin-arm64" && sharp.platform !== "linux-x64")
+    fail("MANIFEST_INVALID");
+  const names = sharpNames(sharp.platform);
+  if (
+    !Array.isArray(sharp.packageRoots) ||
+    sharp.packageRoots.length !== names.length
+  )
+    fail("MANIFEST_INVALID");
+  const packageRoots = sharp.packageRoots.map((value, i) => {
+    const p = object(value);
+    exactKeys(p, ["name", "root"]);
+    if (p.name !== names[i] || !dependencyRoot(p.root, names[i]!))
+      fail("MANIFEST_INVALID");
+    return p as unknown as { name: string; root: string };
+  });
+  if (!Array.isArray(input.artifactAliases) || input.artifactAliases.length > 1)
+    fail("MANIFEST_INVALID");
+  for (const value of input.artifactAliases) {
+    const a = object(value);
+    exactKeys(a, ["path", "targetRoot", "readlinkSha256"]);
+    if (
+      typeof a.path !== "string" ||
+      !/^node_modules\/sharp-[a-f0-9]{16}$/.test(a.path) ||
+      a.targetRoot !== packageRoots[0]!.root ||
+      typeof a.readlinkSha256 !== "string" ||
+      !/^[a-f0-9]{64}$/.test(a.readlinkSha256)
+    )
+      fail("MANIFEST_INVALID");
+  }
   if (!Array.isArray(input.sourceFiles) || !Array.isArray(input.artifactFiles))
     fail("MANIFEST_INVALID");
   if (input.sourceFiles.length + input.artifactFiles.length > MAX_FILES)
@@ -280,7 +373,8 @@ function parseManifest(bytes: Buffer): MediaDeploymentManifest {
     )
       fail("MANIFEST_INVALID");
     if (
-      (f.bytes as number) > MAX_FILE ||
+      (f.bytes as number) >
+        (source && f.role === "sharp-runtime" ? MAX_SHARP_FILE : MAX_FILE) ||
       (total += f.bytes as number) > MAX_TOTAL
     )
       fail("LIMIT_EXCEEDED");
@@ -289,6 +383,11 @@ function parseManifest(bytes: Buffer): MediaDeploymentManifest {
         if (!sourcePath(f.path)) fail("MANIFEST_INVALID");
       } else if (f.role === "zod" || f.role === "buffer-crc32") {
         if (!f.path.startsWith((dependencies[f.role] as string) + "/"))
+          fail("MANIFEST_INVALID");
+      } else if (f.role === "sharp-runtime") {
+        if (
+          !packageRoots.some((p) => (f.path as string).startsWith(p.root + "/"))
+        )
           fail("MANIFEST_INVALID");
       } else fail("MANIFEST_INVALID");
     } else if (!artifactPath(f.path)) fail("MANIFEST_INVALID");
@@ -450,6 +549,7 @@ async function readRegular(
   ctx: MediaDeploymentContext,
   budget?: Budget,
   privateManifest = false,
+  maxFile = MAX_FILE,
 ) {
   if (!privateManifest && !relativePath(rel)) fail("FILE_UNSAFE");
   const target = path.join(root, rel);
@@ -464,7 +564,7 @@ async function readRegular(
         before.nlink !== BigInt(1)))
   )
     fail("FILE_UNSAFE");
-  const max = privateManifest ? MAX_MANIFEST : MAX_FILE;
+  const max = privateManifest ? MAX_MANIFEST : maxFile;
   if (before.size > BigInt(max)) fail("LIMIT_EXCEEDED");
   if (
     budget &&
@@ -546,6 +646,7 @@ function packageIdentity(bytes: Buffer): {
   name: unknown;
   version: unknown;
   dependencies: Record<string, unknown>;
+  exports: unknown;
 } {
   try {
     const input = object(
@@ -554,12 +655,289 @@ function packageIdentity(bytes: Buffer): {
     return {
       name: input.name,
       version: input.version,
+      exports: input.exports,
       dependencies:
         input.dependencies === undefined ? {} : object(input.dependencies),
     };
   } catch {
     fail("DEPENDENCY_INVALID");
   }
+}
+async function sharpMapping(
+  bound: MediaDeploymentRoots,
+  ctx: MediaDeploymentContext,
+): Promise<MediaDeploymentSharpRuntime> {
+  const platform = sharpPlatform();
+  const names = sharpNames(platform);
+  const packageRoots: MediaDeploymentSharpRuntime["packageRoots"] = [];
+  let sharpRoot = "";
+  const declaration = packageIdentity(
+    (await readRegular(bound.checkoutRoot, "package.json", ctx)).bytes,
+  ).dependencies.sharp;
+  if (declaration !== "0.35.5") fail("DEPENDENCY_INVALID");
+  for (const name of names) {
+    const entry =
+      name === "sharp"
+        ? path.join(bound.checkoutRoot, "node_modules/sharp")
+        : path.join(path.dirname(sharpRoot), name);
+    await ancestors(bound.checkoutRoot, entry, ctx);
+    const before = await lstat(entry, { bigint: true });
+    checkpoint(ctx);
+    if (!before.isSymbolicLink() || before.uid !== BigInt(process.getuid!()))
+      fail("DEPENDENCY_INVALID");
+    const actual = await realpath(entry);
+    checkpoint(ctx);
+    const rel = path
+      .relative(bound.checkoutRoot, actual)
+      .split(path.sep)
+      .join("/");
+    if (!dependencyRoot(rel, name)) fail("DEPENDENCY_INVALID");
+    const metadata = await readRegular(
+      bound.checkoutRoot,
+      rel + "/package.json",
+      ctx,
+      undefined,
+      false,
+      64 * 1024,
+    );
+    const identity = packageIdentity(metadata.bytes);
+    if (
+      identity.name !== name ||
+      typeof identity.version !== "string" ||
+      identity.version.length > 80 ||
+      !/^\d+\.\d+\.\d+(?:[-+][A-Za-z0-9.-]+)?$/.test(identity.version) ||
+      (name === "sharp" && identity.version !== declaration)
+    )
+      fail("DEPENDENCY_INVALID");
+    if (
+      !same(before, await lstat(entry, { bigint: true })) ||
+      (await realpath(entry)) !== actual
+    )
+      fail("FILE_CHANGED");
+    checkpoint(ctx);
+    packageRoots.push({ name, root: rel });
+    if (name === "sharp") sharpRoot = actual;
+  }
+  // The native addon's Node query and its first loader-relative libvips lookup
+  // use the addon's own sibling edge, not the edge beside the sharp JS package.
+  const native = packageRoots[4]!;
+  const libvips = packageRoots[5]!;
+  const nativeRoot = path.join(bound.checkoutRoot, native.root);
+  const libvipsRoot = path.join(bound.checkoutRoot, libvips.root);
+  const edge = path.join(path.dirname(nativeRoot), `sharp-libvips-${platform}`);
+  await ancestors(bound.checkoutRoot, edge, ctx);
+  const edgeBefore = await lstat(edge, { bigint: true });
+  checkpoint(ctx);
+  if (
+    !edgeBefore.isSymbolicLink() ||
+    edgeBefore.uid !== BigInt(process.getuid!()) ||
+    (await realpath(edge)) !== libvipsRoot
+  )
+    fail("DEPENDENCY_INVALID");
+  checkpoint(ctx);
+  const nativeFile = `lib/sharp-${platform}-0.35.5.node`;
+  const libraryFile =
+    platform === "darwin-arm64"
+      ? "libvips-cpp.8.18.7.dylib"
+      : "libvips-cpp.so.8.18.7";
+  const nativeMetadata = packageIdentity(
+    (
+      await readRegular(
+        bound.checkoutRoot,
+        native.root + "/package.json",
+        ctx,
+        undefined,
+        false,
+        64 * 1024,
+      )
+    ).bytes,
+  );
+  const libMetadata = packageIdentity(
+    (
+      await readRegular(
+        bound.checkoutRoot,
+        libvips.root + "/package.json",
+        ctx,
+        undefined,
+        false,
+        64 * 1024,
+      )
+    ).bytes,
+  );
+  if (
+    object(nativeMetadata.exports)["./sharp.node"] !== "./index.cjs" ||
+    object(libMetadata.exports)["./binary"] !== `./lib/${libraryFile}`
+  )
+    fail("DEPENDENCY_INVALID");
+  const index = (
+    await readRegular(
+      bound.checkoutRoot,
+      native.root + "/index.cjs",
+      ctx,
+      undefined,
+      false,
+      64 * 1024,
+    )
+  ).bytes.toString("utf8");
+  if (
+    index.trim() !==
+    `try { require.resolve('${libvips.name}/binary'); } catch {}\nmodule.exports = require('./${nativeFile}');`
+  )
+    fail("DEPENDENCY_INVALID");
+  // Mapping needs existence/identity only. The package walk below hashes these
+  // complete bytes once against the shared source/artifact data budget.
+  for (const rel of [
+    native.root + "/" + nativeFile,
+    libvips.root + "/lib/" + libraryFile,
+  ]) {
+    const target = path.join(bound.checkoutRoot, rel);
+    await ancestors(bound.checkoutRoot, target, ctx);
+    const before = await lstat(target, { bigint: true });
+    checkpoint(ctx);
+    if (
+      !before.isFile() ||
+      !owned(before) ||
+      before.size > BigInt(MAX_SHARP_FILE)
+    )
+      fail("FILE_UNSAFE");
+    const fd = await open(
+      target,
+      constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK,
+    );
+    try {
+      if (
+        !same(before, await fd.stat({ bigint: true })) ||
+        !same(before, await lstat(target, { bigint: true }))
+      )
+        fail("FILE_CHANGED");
+      checkpoint(ctx);
+    } finally {
+      await fd.close();
+    }
+    checkpoint(ctx);
+  }
+  const expectedLibrary = path.join(libvipsRoot, "lib", libraryFile);
+  const firstLoaderCandidate = path.resolve(
+    nativeRoot,
+    "lib",
+    `../../sharp-libvips-${platform}/lib`,
+    libraryFile,
+  );
+  if ((await realpath(firstLoaderCandidate)) !== expectedLibrary)
+    fail("DEPENDENCY_INVALID");
+  checkpoint(ctx);
+  const require = createRequire(path.join(nativeRoot, "package.json"));
+  const queried = require.resolve(`${libvips.name}/binary`);
+  checkpoint(ctx);
+  if (
+    (await realpath(queried)) !== expectedLibrary ||
+    !same(edgeBefore, await lstat(edge, { bigint: true })) ||
+    (await realpath(edge)) !== libvipsRoot
+  )
+    fail("FILE_CHANGED");
+  checkpoint(ctx);
+  return {
+    platform: platform as MediaDeploymentSharpRuntime["platform"],
+    packageRoots,
+  };
+}
+async function readArtifactAlias(
+  bound: MediaDeploymentRoots,
+  rel: string,
+  sharpRoot: string,
+  ctx: MediaDeploymentContext,
+  hardening = false,
+) {
+  if (!/^node_modules\/sharp-[a-f0-9]{16}$/.test(rel)) fail("FILE_UNSAFE");
+  const target = path.join(bound.deploymentRoot, rel);
+  if (hardening) {
+    for (const p of [
+      bound.deploymentRoot,
+      path.join(bound.deploymentRoot, "node_modules"),
+    ]) {
+      const s = await lstat(p, { bigint: true });
+      checkpoint(ctx);
+      if (
+        !s.isDirectory() ||
+        s.uid !== BigInt(process.getuid!()) ||
+        (s.mode & BigInt(0o7000)) !== BigInt(0) ||
+        (s.mode & BigInt(0o700)) !== BigInt(0o700)
+      )
+        fail("FILE_UNSAFE");
+    }
+  } else await ancestors(bound.deploymentRoot, target, ctx);
+  const before = await lstat(target, { bigint: true });
+  checkpoint(ctx);
+  if (!before.isSymbolicLink() || before.uid !== BigInt(process.getuid!()))
+    fail("FILE_UNSAFE");
+  const text = await readlink(target);
+  checkpoint(ctx);
+  if (!validText(text) || Buffer.byteLength(text) > 4096) fail("FILE_UNSAFE");
+  if (
+    path.resolve(path.dirname(target), text) !==
+    path.join(bound.checkoutRoot, sharpRoot)
+  )
+    fail("FILE_UNSAFE");
+  const actual = await realpath(target);
+  checkpoint(ctx);
+  if (actual !== path.join(bound.checkoutRoot, sharpRoot)) fail("FILE_UNSAFE");
+  const after = await lstat(target, { bigint: true });
+  checkpoint(ctx);
+  if (
+    !same(before, after) ||
+    (await readlink(target)) !== text ||
+    (await realpath(target)) !== actual
+  )
+    fail("FILE_CHANGED");
+  checkpoint(ctx);
+  return {
+    stat: before,
+    entry: { path: rel, targetRoot: sharpRoot, readlinkSha256: digest(text) },
+  };
+}
+async function artifactAliases(
+  bound: MediaDeploymentRoots,
+  sharpRoot: string,
+  ctx: MediaDeploymentContext,
+  budget: Budget,
+): Promise<MediaDeploymentArtifactAlias[]> {
+  const target = path.join(bound.deploymentRoot, "node_modules");
+  try {
+    await directory(target, ctx);
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return [];
+    throw error;
+  }
+  const aliases: MediaDeploymentArtifactAlias[] = [];
+  const dir = await opendir(target, { bufferSize: 16 });
+  try {
+    const before = await lstat(target, { bigint: true });
+    checkpoint(ctx);
+    for (;;) {
+      const entry = await dir.read();
+      checkpoint(ctx);
+      if (!entry) break;
+      if (++budget.entries > MAX_ENTRIES) fail("LIMIT_EXCEEDED");
+      if (aliases.length >= 1 || !entry.isSymbolicLink()) fail("FILE_UNSAFE");
+      aliases.push(
+        (
+          await readArtifactAlias(
+            bound,
+            "node_modules/" + entry.name,
+            sharpRoot,
+            ctx,
+          )
+        ).entry,
+      );
+    }
+    if (!same(before, await lstat(target, { bigint: true })))
+      fail("FILE_CHANGED");
+    checkpoint(ctx);
+  } finally {
+    await dir.close();
+  }
+  checkpoint(ctx);
+  return aliases;
 }
 async function snapshot(
   bound: MediaDeploymentRoots,
@@ -568,6 +946,7 @@ async function snapshot(
   const budget = { entries: 0, files: 0, bytes: 0 };
   const sourceFiles: MediaDeploymentSourceFile[] = [];
   const artifactFiles: MediaDeploymentFile[] = [];
+  const sharpRuntime = await sharpMapping(bound, ctx);
   let declared: Record<string, unknown> = {};
   for (const rel of SOURCE_FIXED_FILES) {
     const result = await readRegular(bound.checkoutRoot, rel, ctx, budget);
@@ -643,6 +1022,34 @@ async function snapshot(
       fail("FILE_CHANGED");
     checkpoint(ctx);
   }
+  for (const p of sharpRuntime.packageRoots) {
+    await walk(bound.checkoutRoot, p.root, ctx, budget, async (file) => {
+      sourceFiles.push({
+        role: "sharp-runtime",
+        ...(
+          await readRegular(
+            bound.checkoutRoot,
+            file,
+            ctx,
+            budget,
+            false,
+            MAX_SHARP_FILE,
+          )
+        ).entry,
+      });
+    });
+  }
+  if (
+    JSON.stringify(await sharpMapping(bound, ctx)) !==
+    JSON.stringify(sharpRuntime)
+  )
+    fail("FILE_CHANGED");
+  const aliases = await artifactAliases(
+    bound,
+    sharpRuntime.packageRoots[0]!.root,
+    ctx,
+    budget,
+  );
   for (const rel of ARTIFACT_FIXED_FILES) {
     const result = await readRegular(bound.deploymentRoot, rel, ctx, budget);
     if (rel === "BUILD_ID") {
@@ -673,8 +1080,10 @@ async function snapshot(
     schema: SCHEMA,
     ...bound,
     dependencyRoots,
+    sharpRuntime,
     sourceFiles,
     artifactFiles,
+    artifactAliases: aliases,
   };
   checkpoint(ctx);
   return { ...result, ...hashes(result) };
@@ -928,6 +1337,9 @@ export async function hardenMediaDeploymentArtifacts(
       fail("ROOTS_INVALID");
     await ancestors(input.checkoutRoot, input.deploymentRoot, ctx);
     const entries: { rel: string; stat: BigIntStats }[] = [];
+    const sharpRuntime = await sharpMapping(input, ctx);
+    const sharpRoot = sharpRuntime.packageRoots[0]!.root;
+    const aliases: Awaited<ReturnType<typeof readArtifactAlias>>[] = [];
     let itemCount = 0;
     let totalBytes = 0;
     const ownerOnly = (s: BigIntStats) =>
@@ -939,7 +1351,15 @@ export async function hardenMediaDeploymentArtifacts(
       const target = path.join(input.deploymentRoot, rel);
       const stat = await lstat(target, { bigint: true });
       checkpoint(ctx!);
-      if (!ownerOnly(stat) || stat.isSymbolicLink()) fail("FILE_UNSAFE");
+      if (!ownerOnly(stat)) fail("FILE_UNSAFE");
+      if (stat.isSymbolicLink()) {
+        if (aliases.length >= 1) fail("FILE_UNSAFE");
+        aliases.push(
+          await readArtifactAlias(input, rel, sharpRoot, ctx!, true),
+        );
+        return;
+      }
+      if (rel.startsWith("node_modules/")) fail("FILE_UNSAFE");
       if (stat.isFile()) {
         if (
           stat.nlink !== BigInt(1) ||
@@ -1038,6 +1458,24 @@ export async function hardenMediaDeploymentArtifacts(
       }
       checkpoint(ctx);
     }
+    for (const alias of aliases) {
+      const after = await readArtifactAlias(
+        input,
+        alias.entry.path,
+        sharpRoot,
+        ctx,
+      );
+      if (
+        !same(alias.stat, after.stat) ||
+        JSON.stringify(alias.entry) !== JSON.stringify(after.entry)
+      )
+        fail("FILE_CHANGED");
+    }
+    if (
+      JSON.stringify(await sharpMapping(input, ctx)) !==
+      JSON.stringify(sharpRuntime)
+    )
+      fail("FILE_CHANGED");
     checkpoint(ctx);
     return { ok: true, summary };
   } catch (error) {

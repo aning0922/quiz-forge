@@ -15,7 +15,8 @@ import {
 import path from "node:path";
 import { createRequire } from "node:module";
 import { writeFileSync, readdirSync, existsSync } from "node:fs";
-import { describe, expect, it } from "vitest";
+import type { Dir } from "node:fs";
+import { describe, expect, it, vi } from "vitest";
 import {
   buildMediaDeployment,
   hardenMediaDeploymentArtifacts,
@@ -61,7 +62,11 @@ async function fixture(
       root,
       "package.json",
       JSON.stringify({
-        dependencies: { zod: "4.6.5", "buffer-crc32": "1.0.0" },
+        dependencies: {
+          zod: "4.6.5",
+          "buffer-crc32": "1.0.0",
+          sharp: "0.35.5",
+        },
       }),
     );
     for (const [name, version] of [
@@ -80,6 +85,84 @@ async function fixture(
         path.join(root, "node_modules", name!),
       );
     }
+    const platform = `${process.platform}-${process.arch}`;
+    const names = [
+      "sharp",
+      "@img/colour",
+      "detect-libc",
+      "semver",
+      `@img/sharp-${platform}`,
+      `@img/sharp-libvips-${platform}`,
+    ];
+    const sharpRoot = path.join(
+      root,
+      "node_modules/.pnpm/sharp@0.35.5/node_modules/sharp",
+    );
+    for (const name of names) {
+      const version = name === "sharp" ? "0.35.5" : "1.0.0";
+      const rel = `node_modules/.pnpm/${name.replace("/", "+")}@${version}/node_modules/${name}`;
+      await put(
+        root,
+        rel + "/package.json",
+        JSON.stringify({ name, version, exports: { ".": "./index.cjs" } }),
+      );
+      await put(root, rel + "/index.cjs", "module.exports = {};");
+      const entry =
+        name === "sharp"
+          ? path.join(root, "node_modules/sharp")
+          : path.join(path.dirname(sharpRoot), name);
+      await mkdir(path.dirname(entry), { recursive: true, mode: 0o700 });
+      await symlink(
+        path.relative(path.dirname(entry), path.join(root, rel)),
+        entry,
+      );
+    }
+    const nativeName = names[4]!;
+    const libName = names[5]!;
+    const nativeRel = `node_modules/.pnpm/${nativeName.replace("/", "+")}@1.0.0/node_modules/${nativeName}`;
+    const libRel = `node_modules/.pnpm/${libName.replace("/", "+")}@1.0.0/node_modules/${libName}`;
+    const nativeFile = `lib/sharp-${platform}-0.35.5.node`;
+    const libFile =
+      platform === "darwin-arm64"
+        ? "lib/libvips-cpp.8.18.7.dylib"
+        : "lib/libvips-cpp.so.8.18.7";
+    await put(
+      root,
+      nativeRel + "/package.json",
+      JSON.stringify({
+        name: nativeName,
+        version: "1.0.0",
+        exports: { "./sharp.node": "./index.cjs" },
+      }),
+    );
+    await put(
+      root,
+      nativeRel + "/index.cjs",
+      `try { require.resolve('${libName}/binary'); } catch {}\nmodule.exports = require('./${nativeFile}');`,
+    );
+    await put(
+      root,
+      nativeRel + "/" + nativeFile,
+      "synthetic-native-not-loaded",
+    );
+    await put(
+      root,
+      libRel + "/package.json",
+      JSON.stringify({
+        name: libName,
+        version: "1.0.0",
+        exports: { "./binary": "./" + libFile },
+      }),
+    );
+    await put(root, libRel + "/" + libFile, "synthetic-library-not-loaded");
+    const nativeEdge = path.join(
+      path.dirname(path.join(root, nativeRel)),
+      `sharp-libvips-${platform}`,
+    );
+    await symlink(
+      path.relative(path.dirname(nativeEdge), path.join(root, libRel)),
+      nativeEdge,
+    );
     for (const name of [
       "routes-manifest.json",
       "build-manifest.json",
@@ -118,6 +201,325 @@ async function replaceManifest(bound: MediaDeploymentRoots, value: unknown) {
 }
 
 describe("trusted media deployment binding", () => {
+  it.each([
+    "redirected",
+    "missing-edge",
+    "missing-library",
+    "missing-native",
+    "changed-entry",
+  ])(
+    "checks the actual native libvips edge and first loader candidate: %s",
+    async (kind) => {
+      await fixture(async (bound) => {
+        const platform = `${process.platform}-${process.arch}`;
+        const sharpRoot = await realpath(
+          path.join(bound.checkoutRoot, "node_modules/sharp"),
+        );
+        const nativeRoot = await realpath(
+          path.join(path.dirname(sharpRoot), `@img/sharp-${platform}`),
+        );
+        const libRoot = await realpath(
+          path.join(path.dirname(sharpRoot), `@img/sharp-libvips-${platform}`),
+        );
+        const edge = path.join(
+          path.dirname(nativeRoot),
+          `sharp-libvips-${platform}`,
+        );
+        const library =
+          platform === "darwin-arm64"
+            ? "lib/libvips-cpp.8.18.7.dylib"
+            : "lib/libvips-cpp.so.8.18.7";
+        await build(bound);
+        if (kind === "redirected") {
+          const shadow = `node_modules/.pnpm/shadow@1.0.0/node_modules/@img/sharp-libvips-${platform}`;
+          await put(
+            bound.checkoutRoot,
+            shadow + "/package.json",
+            JSON.stringify({
+              name: `@img/sharp-libvips-${platform}`,
+              version: "1.0.0",
+              exports: { "./binary": "./" + library },
+            }),
+          );
+          await put(
+            bound.checkoutRoot,
+            shadow + "/" + library,
+            "different-library",
+          );
+          await unlink(edge);
+          await symlink(path.join(bound.checkoutRoot, shadow), edge);
+        } else if (kind === "missing-edge") await unlink(edge);
+        else if (kind === "missing-library")
+          await unlink(path.join(libRoot, library));
+        else if (kind === "missing-native")
+          await unlink(
+            path.join(nativeRoot, `lib/sharp-${platform}-0.35.5.node`),
+          );
+        else
+          await writeFile(
+            path.join(nativeRoot, "index.cjs"),
+            "module.exports = require('unbound-fallback');",
+          );
+        expect((await verifyMediaDeployment(bound, context())).ok).toBe(false);
+      });
+    },
+  );
+  it("closes the actual alias directory when lstat fails immediately after opendir", async () => {
+    await fixture(async (bound) => {
+      const target = path.join(bound.deploymentRoot, "node_modules");
+      await mkdir(target, { mode: 0o700 });
+      const actual =
+        await vi.importActual<typeof import("node:fs/promises")>(
+          "node:fs/promises",
+        );
+      let captured: Dir | undefined;
+      vi.resetModules();
+      vi.doMock("node:fs/promises", () => ({
+        ...actual,
+        opendir: async (...args: Parameters<typeof actual.opendir>) => {
+          const dir = await actual.opendir(...args);
+          if (String(args[0]) === target) captured = dir;
+          return dir;
+        },
+        lstat: async (...args: Parameters<typeof actual.lstat>) => {
+          if (captured && String(args[0]) === target)
+            throw Object.assign(new Error("SYNTHETIC_METADATA_FAILURE"), {
+              code: "EIO",
+            });
+          return actual.lstat(...args);
+        },
+      }));
+      try {
+        const fresh = await import("./media-deployment");
+        expect(
+          await fresh.buildMediaDeployment(bound, context()),
+        ).toMatchObject({ ok: false, code: "IO_FAILED" });
+        expect(captured).toBeDefined();
+        await expect(
+          Promise.resolve().then(() => captured!.read()),
+        ).rejects.toMatchObject({
+          code: "ERR_DIR_CLOSED",
+        });
+      } finally {
+        if (captured) await captured.close().catch(() => undefined);
+        vi.doUnmock("node:fs/promises");
+        vi.resetModules();
+      }
+    });
+  });
+  it("reads hardlinked package bytes without changing store permissions and rejects later byte changes", async () => {
+    await fixture(async (bound, owned) => {
+      const installed = path.join(
+        bound.checkoutRoot,
+        "node_modules/.pnpm/zod@4.6.5/node_modules/zod/index.cjs",
+      );
+      const storeFile = path.join(owned, "synthetic-store-file");
+      const { link } = await import("node:fs/promises");
+      await link(installed, storeFile);
+      const before = await lstat(storeFile);
+      expect(before.nlink).toBe(2);
+      await build(bound);
+      expect((await verifyMediaDeployment(bound, context())).ok).toBe(true);
+      expect((await lstat(storeFile)).mode).toBe(before.mode);
+      await writeFile(storeFile, "module.exports = 2;");
+      expect(await verifyMediaDeployment(bound, context())).toMatchObject({
+        ok: false,
+        code: "MANIFEST_MISMATCH",
+      });
+      expect((await lstat(storeFile)).mode).toBe(before.mode);
+    });
+  });
+  it.each([undefined, false, "musl", "2.39-invalid", "9".repeat(33), "2.39"])(
+    "requires actual finite glibc evidence for Linux sharp: %s",
+    async (version) => {
+      const platform = Object.getOwnPropertyDescriptor(process, "platform")!;
+      const arch = Object.getOwnPropertyDescriptor(process, "arch")!;
+      const report = vi.spyOn(process.report, "getReport").mockReturnValue({
+        header: { glibcVersionRuntime: version },
+      } as unknown as ReturnType<typeof process.report.getReport>);
+      try {
+        Object.defineProperty(process, "platform", {
+          ...platform,
+          value: "linux",
+        });
+        Object.defineProperty(process, "arch", { ...arch, value: "x64" });
+        await fixture(async (bound) => {
+          const result = await buildMediaDeployment(bound, context());
+          if (version === "2.39") expect(result.ok).toBe(true);
+          else
+            expect(result).toMatchObject({
+              ok: false,
+              code: "DEPENDENCY_INVALID",
+            });
+        });
+      } finally {
+        report.mockRestore();
+        Object.defineProperty(process, "platform", platform);
+        Object.defineProperty(process, "arch", arch);
+      }
+    },
+  );
+  it("binds the fixed sharp closure and a Next alias without chmod on dependency bytes", async () => {
+    await fixture(async (bound) => {
+      const target = await realpath(
+        path.join(bound.checkoutRoot, "node_modules/sharp"),
+      );
+      const file = path.join(target, "index.cjs");
+      await chmod(file, 0o644);
+      const before = await lstat(file);
+      const alias = path.join(
+        bound.deploymentRoot,
+        "node_modules/sharp-0123456789abcdef",
+      );
+      await mkdir(path.dirname(alias), { mode: 0o775 });
+      await chmod(path.dirname(alias), 0o775);
+      await symlink(target, alias);
+      expect((await hardenMediaDeploymentArtifacts(bound, context())).ok).toBe(
+        true,
+      );
+      expect((await lstat(file)).mode).toBe(before.mode);
+      await build(bound);
+      const data = await manifest(bound);
+      expect(data.artifactAliases).toHaveLength(1);
+      expect(data.sharpRuntime.packageRoots).toHaveLength(6);
+      expect(
+        data.sourceFiles.filter((f) => f.role === "sharp-runtime"),
+      ).toHaveLength(14);
+      expect((await verifyMediaDeployment(bound, context())).ok).toBe(true);
+      await put(
+        bound.checkoutRoot,
+        path.relative(bound.checkoutRoot, file),
+        "changed dependency",
+      );
+      expect(await verifyMediaDeployment(bound, context())).toMatchObject({
+        ok: false,
+        code: "MANIFEST_MISMATCH",
+      });
+    });
+  });
+  it.each(["escaped", "unmanaged", "multiple", "ordinary-link", "chain"])(
+    "rejects unsafe artifact alias preflight: %s",
+    async (kind) => {
+      await fixture(async (bound, owned) => {
+        const target = await realpath(
+          path.join(bound.checkoutRoot, "node_modules/sharp"),
+        );
+        const before = (await lstat(path.join(target, "index.cjs"))).mode;
+        const file = path.join(bound.deploymentRoot, "server/probe.js");
+        await chmod(file, 0o664);
+        await mkdir(path.join(bound.deploymentRoot, "node_modules"), {
+          mode: 0o700,
+        });
+        let aliasTarget = target;
+        if (kind === "escaped") {
+          await put(owned, "outside/package.json", "{}");
+          aliasTarget = path.join(owned, "outside");
+        }
+        if (kind === "unmanaged") {
+          await put(bound.checkoutRoot, "unmanaged/package.json", "{}");
+          aliasTarget = path.join(bound.checkoutRoot, "unmanaged");
+        }
+        if (kind === "chain") {
+          await symlink(
+            target,
+            path.join(bound.checkoutRoot, "indirect-alias"),
+          );
+          aliasTarget = path.join(bound.checkoutRoot, "indirect-alias");
+        }
+        await symlink(
+          aliasTarget,
+          path.join(
+            bound.deploymentRoot,
+            "node_modules",
+            kind === "ordinary-link" ? "other" : "sharp-0123456789abcdef",
+          ),
+        );
+        if (kind === "multiple")
+          await symlink(
+            target,
+            path.join(
+              bound.deploymentRoot,
+              "node_modules/sharp-fedcba9876543210",
+            ),
+          );
+        expect(
+          await hardenMediaDeploymentArtifacts(bound, context()),
+        ).toMatchObject({
+          ok: false,
+          code: "FILE_UNSAFE",
+          summary: { changedFiles: 0, changedDirectories: 0 },
+        });
+        expect((await lstat(file)).mode & 0o777).toBe(0o664);
+        expect((await lstat(path.join(target, "index.cjs"))).mode).toBe(before);
+      });
+    },
+  );
+  it.each(["missing", "text-changed", "added"])(
+    "verification rechecks the exact alias set: %s",
+    async (kind) => {
+      await fixture(async (bound) => {
+        const target = await realpath(
+          path.join(bound.checkoutRoot, "node_modules/sharp"),
+        );
+        const alias = path.join(
+          bound.deploymentRoot,
+          "node_modules/sharp-0123456789abcdef",
+        );
+        await mkdir(path.dirname(alias), { mode: 0o700 });
+        if (kind !== "added") await symlink(target, alias);
+        await build(bound);
+        if (kind !== "added") await unlink(alias);
+        if (kind === "text-changed")
+          await symlink(path.relative(path.dirname(alias), target), alias);
+        if (kind === "added") await symlink(target, alias);
+        expect(await verifyMediaDeployment(bound, context())).toMatchObject({
+          ok: false,
+          code: "MANIFEST_MISMATCH",
+        });
+      });
+    },
+  );
+  it("allows a 17MiB sharp runtime file only, and rejects package links and unmanaged mappings", async () => {
+    await fixture(async (bound) => {
+      const target = await realpath(
+        path.join(bound.checkoutRoot, "node_modules/sharp"),
+      );
+      const file = await open(
+        path.join(target, "native-data.bin"),
+        "wx",
+        0o600,
+      );
+      try {
+        await file.truncate(17 * 1024 * 1024);
+      } finally {
+        await file.close();
+      }
+      await build(bound);
+      expect((await verifyMediaDeployment(bound, context())).ok).toBe(true);
+      await symlink(
+        path.join(target, "index.cjs"),
+        path.join(target, "other-link"),
+      );
+      expect(await verifyMediaDeployment(bound, context())).toMatchObject({
+        ok: false,
+        code: "FILE_UNSAFE",
+      });
+    });
+    await fixture(async (bound) => {
+      const entry = path.join(bound.checkoutRoot, "node_modules/sharp");
+      await unlink(entry);
+      await put(
+        bound.checkoutRoot,
+        "unmanaged/package.json",
+        JSON.stringify({ name: "sharp", version: "0.35.5" }),
+      );
+      await symlink("../unmanaged", entry);
+      expect(await buildMediaDeployment(bound, context())).toMatchObject({
+        ok: false,
+        code: "DEPENDENCY_INVALID",
+      });
+    });
+  });
   it("offline hardening normalizes generated artifacts before binding; verify never repairs", async () => {
     await fixture(async (bound) => {
       const file = path.join(bound.deploymentRoot, "server/probe.js");
@@ -219,7 +621,7 @@ describe("trusted media deployment binding", () => {
       const data = await manifest(bound);
       expect(data.schema).toBe("quizpack-media-deployment.v1");
       expect(new Set(data.sourceFiles.map((f) => f.role))).toEqual(
-        new Set(["source", "zod", "buffer-crc32"]),
+        new Set(["source", "zod", "buffer-crc32", "sharp-runtime"]),
       );
       expect(data.sourceFiles.some((f) => /\.(test|d)\.ts$/.test(f.path))).toBe(
         false,
