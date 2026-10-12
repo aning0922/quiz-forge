@@ -109,6 +109,11 @@ export class ArchiveOperation {
       throw new StudioError("VALIDATION_RECOVERY_REQUIRED");
     this.claimConfirmed = true;
   }
+  claimedIoCheckpoint() {
+    this.checkpoint();
+    if (!this.claimConfirmed)
+      throw new StudioError("VALIDATION_RECOVERY_REQUIRED");
+  }
   enterCandidateBoundary() {
     this.checkpoint();
     if (!this.claimConfirmed || this.candidateClosed || this.candidateEntered)
