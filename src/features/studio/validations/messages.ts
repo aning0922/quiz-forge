@@ -15,6 +15,11 @@ export function validationMessage(error: unknown): string {
       error.message === "PENDING_REQUEST_EXISTS")
   )
     return "本标签的待核实记录不可读取或已有请求。未发送新验证，请保留记录并核实服务器历史。";
+  if (
+    error instanceof Error &&
+    error.message === "INVALID_NOT_STARTED_RESPONSE"
+  )
+    return "本次放弃证明已失效。原请求已保留，请按原记录读取核实。";
   const code =
     error instanceof StudioClientError ? error.code : "STUDIO_UNAVAILABLE";
   switch (code) {
