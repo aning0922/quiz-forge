@@ -379,7 +379,8 @@ export async function matrixCodeHash(
         if (child.endsWith(".test.ts")) continue;
         if (
           !/\.(ts|mjs|json|c|h|sh)$/.test(child) &&
-          entry.name !== "Dockerfile"
+          entry.name !== "Dockerfile" &&
+          child !== "linux/common.d.mts"
         )
           throw new ProvisionError("IO_UNSAFE");
         const fd = await open(

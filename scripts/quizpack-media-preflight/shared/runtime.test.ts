@@ -279,3 +279,36 @@ test("final control and matrix-code stat reads remain inside their original dead
     await rm(checkoutRoot, { recursive: true, force: true });
   }
 });
+
+test("fixed Linux declaration bytes are hashed while unregistered module extensions remain closed", async () => {
+  const checkoutRoot = await mkdtemp(
+    join(realpathSync(tmpdir()), "quizpack-declaration-synthetic-"),
+  );
+  const roots = { checkoutRoot, deploymentRoot: join(checkoutRoot, ".next") };
+  const base = join(checkoutRoot, "scripts/quizpack-media-preflight"),
+    linux = join(base, "linux");
+  try {
+    await mkdir(linux, { recursive: true });
+    const declaration = join(linux, "common.d.mts");
+    await writeFile(
+      declaration,
+      "export declare function synthetic(): boolean;\n",
+    );
+    const first = await matrixCodeHash(roots, () => undefined);
+    await writeFile(
+      declaration,
+      "export declare function synthetic(): string;\n",
+    );
+    assert.notEqual(await matrixCodeHash(roots, () => undefined), first);
+    for (const name of ["unknown.mts", "unknown.d.mts", "unknown.bin"]) {
+      await writeFile(join(linux, name), "synthetic unknown source");
+      await assert.rejects(
+        matrixCodeHash(roots, () => undefined),
+        /IO_UNSAFE/,
+      );
+      await rm(join(linux, name));
+    }
+  } finally {
+    await rm(checkoutRoot, { recursive: true, force: true });
+  }
+});
