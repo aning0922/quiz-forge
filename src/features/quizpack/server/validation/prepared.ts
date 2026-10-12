@@ -123,10 +123,11 @@ export async function prepareValidationIdentity(
   } catch (error) {
     scope.requestStop(scope.runtimeFailure === "STOP_UNCONFIRMED");
     await scope.settleIo();
+    const completion = scope.completion();
     const code =
       scope.runtimeFailure === "STOP_UNCONFIRMED"
         ? "MEDIA_STOP_UNCONFIRMED"
-        : scope.completion().relatedIo === "unconfirmed"
+        : completion.relatedIo === "unconfirmed"
           ? "RELATED_IO_UNCONFIRMED"
           : error instanceof ValidationInterrupted &&
               PREPARE_INTERRUPTION_CODES.includes(
@@ -137,7 +138,7 @@ export async function prepareValidationIdentity(
     const sealed = preparedIdentityEvidenceSchema.parse({
       outcome: "interrupted",
       code,
-      completion: scope.completion(),
+      completion,
       runtimeFailure: scope.runtimeFailure,
     });
     if (sealed.outcome !== "interrupted")
