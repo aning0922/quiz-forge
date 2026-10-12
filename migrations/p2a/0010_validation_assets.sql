@@ -210,8 +210,17 @@ BEGIN
  IF v.evidence_text IS NOT NULL THEN
   evidence:=v.evidence_text::jsonb;
   FOR item IN SELECT value FROM jsonb_array_elements(evidence->'attempts') LOOP
-   IF (item#>>'{result,evidence,input,status}'='snapshotted' AND item#>>'{result,evidence,input,targetProductId}'=v.product_id AND item#>>'{result,evidence,input,archiveSha256}'=v.archive_sha256 AND item#>'{result,evidence,input,archiveBytes}'=to_jsonb(v.archive_bytes)
-     AND item#>>'{result,evidence,identity,status}'='bound' AND item#>>'{result,evidence,identity,value,identitySha256}'=v.identity_sha256) IS NOT TRUE THEN RETURN false; END IF;
+   IF item#>>'{result,evidence,input,status}'='snapshotted' THEN
+    IF (item#>>'{result,evidence,input,targetProductId}'=v.product_id AND item#>>'{result,evidence,input,archiveSha256}'=v.archive_sha256 AND item#>'{result,evidence,input,archiveBytes}'=to_jsonb(v.archive_bytes)) IS NOT TRUE THEN RETURN false; END IF;
+   ELSIF (item#>>'{result,evidence,input,status}'='unavailable' AND item#>>'{result,outcome}'='interrupted' AND item#>>'{result,evidence,input,code}' IN ('INVALID_INPUT','INVALID_TARGET_PRODUCT')) IS NOT TRUE THEN RETURN false;
+   END IF;
+   IF item#>>'{result,evidence,identity,status}'='bound' THEN
+    IF (item#>>'{result,evidence,identity,value,identitySha256}'=v.identity_sha256) IS NOT TRUE THEN RETURN false; END IF;
+   ELSIF (item#>>'{result,evidence,identity,status}'='unavailable' AND item#>>'{result,outcome}'='interrupted' AND item#>>'{result,evidence,identity,code}' IN ('INVALID_CONTEXT','RUNTIME_IDENTITY_UNAVAILABLE')) IS NOT TRUE THEN RETURN false;
+   END IF;
+   -- Unavailable facts are truthful interrupted evidence, including historical attempts.
+   -- A later accepted retry freezes a candidate without rewriting those earlier unavailable items.
+   IF item#>>'{result,outcome}' IN ('accepted','rejected') AND (item#>>'{result,evidence,input,status}'='snapshotted' AND item#>>'{result,evidence,identity,status}'='bound') IS NOT TRUE THEN RETURN false; END IF;
    IF item#>>'{result,outcome}'='accepted' THEN
     accepted:=item;
     IF (item#>>'{result,evidence,report,status}'='sealed' AND item#>'{result,evidence,report,value,candidateValid}'='true'::jsonb AND item#>>'{result,evidence,policy,status}'='passed'
