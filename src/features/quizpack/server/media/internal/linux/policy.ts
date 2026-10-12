@@ -111,156 +111,167 @@ export function createLinuxNormalRuntime(
   const loadPolicy: LinuxExecutionEnvironment["loadPolicy"] = async (
     options,
   ): Promise<LinuxNormalPolicy> => {
-    checkpoint();
-    if (process.platform !== "linux" || process.arch !== "x64")
-      throw new MediaPolicyError("UNSUPPORTED_PLATFORM");
-    if (
-      [
-        "DOCKER_HOST",
-        "DOCKER_CONTEXT",
-        "DOCKER_TLS_VERIFY",
-        "DOCKER_CERT_PATH",
-      ].some((key) => process.env[key])
-    )
-      throw new MediaPolicyError("ISOLATION_UNAVAILABLE");
-    if (!options.controlCommand)
-      throw new MediaPolicyError("ISOLATION_UNAVAILABLE");
-    const invoke = async (
-      args: readonly string[],
-      phase: LinuxDiagnostic["phase"],
-    ) => {
+    try {
       checkpoint();
-      const result = await options.controlCommand!(args, {
-        deadline: options.deadline - 100,
-        settleDeadline: options.deadline,
-        ...(options.signal ? { signal: options.signal } : {}),
-        ...(options.scope ? { scope: options.scope } : {}),
-      });
-      options.onDiagnostic?.({
-        phase,
-        exitCode: result.code,
-        settled: result.settled,
-        reason: result.reason ?? null,
-      });
-      if (!result.settled) throw new MediaPolicyError("STOP_UNCONFIRMED");
-      checkpoint();
-      if (result.code !== 0 || result.reason)
+      if (process.platform !== "linux" || process.arch !== "x64")
+        throw new MediaPolicyError("UNSUPPORTED_PLATFORM");
+      if (
+        [
+          "DOCKER_HOST",
+          "DOCKER_CONTEXT",
+          "DOCKER_TLS_VERIFY",
+          "DOCKER_CERT_PATH",
+        ].some((key) => process.env[key])
+      )
         throw new MediaPolicyError("ISOLATION_UNAVAILABLE");
-      return parseLinuxControlJson(result.stdout);
-    };
-    const imageBytes = await files.readPrivate(
-      join(location.stateRoot, "image.json"),
-    );
-    checkpoint();
-    const image = imageSchema.parse(parseLinuxControlJson(imageBytes));
-    const base = parseLinuxControlJson(
-      readRuntimeMetadata(location.base, checkpoint),
-    ) as {
-      base?: unknown;
-      indexDigest?: unknown;
-    };
-    checkpoint();
-    if (
-      image.base !== base.base ||
-      image.baseIndex !== base.indexDigest ||
-      image.buildInputsHash !== hashBytes(JSON.stringify(image.inputs)) ||
-      image.inputs["media-worker.mjs"] !== image.workerSha256 ||
-      hashFile(
-        join(
-          location.checkoutRoot,
-          "src/features/quizpack/v1/media-worker.mjs",
-        ),
-        checkpoint,
-      ) !== image.workerSha256
-    )
-      throw new MediaPolicyError("ISOLATION_UNAVAILABLE");
-    const dependencyBytes = await files.readPrivate(
-      join(location.stateRoot, "dependencies.json"),
-    );
-    checkpoint();
-    const dependencies = dependenciesSchema.parse(
-      parseLinuxControlJson(dependencyBytes),
-    );
-    if (dependencies.workerSha256 !== image.workerSha256)
-      throw new MediaPolicyError("ISOLATION_UNAVAILABLE");
-    if (
-      (await invoke(
-        ["image", "inspect", "--format", "{{json .Id}}", image.imageId],
-        "policy-image-inspect",
-      )) !== image.imageId
-    )
-      throw new MediaPolicyError("ISOLATION_UNAVAILABLE");
-    const daemon = daemonSchema.parse(
-      await invoke(["info", "--format", INFO], "policy-daemon-info"),
-    );
-    if (!daemon.security.some((value) => value.startsWith("name=seccomp")))
-      throw new MediaPolicyError("ISOLATION_UNAVAILABLE");
-    const components = z
-      .array(z.looseObject({ Name: z.string().max(80), Version: version }))
-      .max(32)
-      .parse(
-        await invoke(
-          ["version", "--format", "{{json .Server.Components}}"],
-          "policy-runtime-versions",
-        ),
+      if (!options.controlCommand)
+        throw new MediaPolicyError("ISOLATION_UNAVAILABLE");
+      const invoke = async (
+        args: readonly string[],
+        phase: LinuxDiagnostic["phase"],
+      ) => {
+        checkpoint();
+        const result = await options.controlCommand!(args, {
+          deadline: options.deadline - 100,
+          settleDeadline: options.deadline,
+          ...(options.signal ? { signal: options.signal } : {}),
+          ...(options.scope ? { scope: options.scope } : {}),
+        });
+        options.onDiagnostic?.({
+          phase,
+          exitCode: result.code,
+          settled: result.settled,
+          reason: result.reason ?? null,
+        });
+        if (!result.settled) throw new MediaPolicyError("STOP_UNCONFIRMED");
+        checkpoint();
+        if (result.code !== 0 || result.reason)
+          throw new MediaPolicyError("ISOLATION_UNAVAILABLE");
+        return parseLinuxControlJson(result.stdout);
+      };
+      const imageBytes = await files.readPrivate(
+        join(location.stateRoot, "image.json"),
       );
-    const names = {
-      Engine: "engine",
-      containerd: "containerd",
-      runc: "runc",
-      "docker-init": "init",
-    } as const;
-    const versions: Partial<
-      Record<keyof z.infer<typeof runtimeSchema>, string>
-    > = {};
-    for (const component of components)
-      if (Object.hasOwn(names, component.Name)) {
-        const key = names[component.Name as keyof typeof names];
-        if (versions[key]) throw new MediaPolicyError("ISOLATION_UNAVAILABLE");
-        versions[key] = component.Version;
-      }
-    const runtimeVersions = runtimeSchema.parse(versions);
-    if (
-      JSON.stringify(runtimeVersions) !== JSON.stringify(image.runtimeVersions)
-    )
+      checkpoint();
+      const image = imageSchema.parse(parseLinuxControlJson(imageBytes));
+      const base = parseLinuxControlJson(
+        readRuntimeMetadata(location.base, checkpoint),
+      ) as {
+        base?: unknown;
+        indexDigest?: unknown;
+      };
+      checkpoint();
+      if (
+        image.base !== base.base ||
+        image.baseIndex !== base.indexDigest ||
+        image.buildInputsHash !== hashBytes(JSON.stringify(image.inputs)) ||
+        image.inputs["media-worker.mjs"] !== image.workerSha256 ||
+        hashFile(
+          join(
+            location.checkoutRoot,
+            "src/features/quizpack/v1/media-worker.mjs",
+          ),
+          checkpoint,
+        ) !== image.workerSha256
+      )
+        throw new MediaPolicyError("ISOLATION_UNAVAILABLE");
+      const dependencyBytes = await files.readPrivate(
+        join(location.stateRoot, "dependencies.json"),
+      );
+      checkpoint();
+      const dependencies = dependenciesSchema.parse(
+        parseLinuxControlJson(dependencyBytes),
+      );
+      if (dependencies.workerSha256 !== image.workerSha256)
+        throw new MediaPolicyError("ISOLATION_UNAVAILABLE");
+      if (
+        (await invoke(
+          ["image", "inspect", "--format", "{{json .Id}}", image.imageId],
+          "policy-image-inspect",
+        )) !== image.imageId
+      )
+        throw new MediaPolicyError("ISOLATION_UNAVAILABLE");
+      const daemon = daemonSchema.parse(
+        await invoke(["info", "--format", INFO], "policy-daemon-info"),
+      );
+      if (!daemon.security.some((value) => value.startsWith("name=seccomp")))
+        throw new MediaPolicyError("ISOLATION_UNAVAILABLE");
+      const components = z
+        .array(z.looseObject({ Name: z.string().max(80), Version: version }))
+        .max(32)
+        .parse(
+          await invoke(
+            ["version", "--format", "{{json .Server.Components}}"],
+            "policy-runtime-versions",
+          ),
+        );
+      const names = {
+        Engine: "engine",
+        containerd: "containerd",
+        runc: "runc",
+        "docker-init": "init",
+      } as const;
+      const versions: Partial<
+        Record<keyof z.infer<typeof runtimeSchema>, string>
+      > = {};
+      for (const component of components)
+        if (Object.hasOwn(names, component.Name)) {
+          const key = names[component.Name as keyof typeof names];
+          if (versions[key])
+            throw new MediaPolicyError("ISOLATION_UNAVAILABLE");
+          versions[key] = component.Version;
+        }
+      const runtimeVersions = runtimeSchema.parse(versions);
+      if (
+        JSON.stringify(runtimeVersions) !==
+        JSON.stringify(image.runtimeVersions)
+      )
+        throw new MediaPolicyError("ISOLATION_UNAVAILABLE");
+      const seccomp = parseLinuxControlJson(
+        readRuntimeMetadata(location.seccomp, checkpoint),
+      );
+      checkpoint();
+      const seccompSha256 = hashBytes(JSON.stringify(seccomp));
+      const binding = {
+        schema: "qf-linux-policy.v2",
+        kernel: release(),
+        arch: process.arch,
+        imageId: image.imageId,
+        base: image.base,
+        buildInputsHash: image.buildInputsHash,
+        workerSha256: image.workerSha256,
+        seccompSha256,
+        daemon,
+        runtimeVersions,
+        dependencies,
+        limits: LIMITS,
+      };
+      const component = {
+        schema: "qf-linux-component.v2",
+        binding,
+        imageRecordSha256: hashBytes(imageBytes),
+        dependencyRecordSha256: hashBytes(dependencyBytes),
+        hostNodeSha256: hashFile(realpathSync(process.execPath), checkpoint),
+        hostNodeVersion: process.version,
+        dockerSha256: hashFile("/usr/bin/docker", checkpoint),
+        productionSources: mediaSourceIdentity(
+          location.checkoutRoot,
+          checkpoint,
+        ),
+        mediaLimits: MEDIA_LIMITS,
+      };
+      checkpoint();
+      return {
+        image,
+        binding,
+        componentId: hashBytes(JSON.stringify(component)),
+        profileId: hashBytes(JSON.stringify(binding)),
+      };
+    } catch (error) {
+      if (error instanceof MediaPolicyError) throw error;
+      checkpoint();
       throw new MediaPolicyError("ISOLATION_UNAVAILABLE");
-    const seccomp = parseLinuxControlJson(
-      readRuntimeMetadata(location.seccomp, checkpoint),
-    );
-    checkpoint();
-    const seccompSha256 = hashBytes(JSON.stringify(seccomp));
-    const binding = {
-      schema: "qf-linux-policy.v2",
-      kernel: release(),
-      arch: process.arch,
-      imageId: image.imageId,
-      base: image.base,
-      buildInputsHash: image.buildInputsHash,
-      workerSha256: image.workerSha256,
-      seccompSha256,
-      daemon,
-      runtimeVersions,
-      dependencies,
-      limits: LIMITS,
-    };
-    const component = {
-      schema: "qf-linux-component.v2",
-      binding,
-      imageRecordSha256: hashBytes(imageBytes),
-      dependencyRecordSha256: hashBytes(dependencyBytes),
-      hostNodeSha256: hashFile(realpathSync(process.execPath), checkpoint),
-      hostNodeVersion: process.version,
-      dockerSha256: hashFile("/usr/bin/docker", checkpoint),
-      productionSources: mediaSourceIdentity(location.checkoutRoot, checkpoint),
-      mediaLimits: MEDIA_LIMITS,
-    };
-    checkpoint();
-    return {
-      image,
-      binding,
-      componentId: hashBytes(JSON.stringify(component)),
-      profileId: hashBytes(JSON.stringify(binding)),
-    };
+    }
   };
   const core = createLinuxExecutionCore({
     ...files,

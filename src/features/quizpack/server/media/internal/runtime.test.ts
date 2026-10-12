@@ -6,6 +6,8 @@ import {
   disposeMediaOperationContext,
   requestMediaOperationStop,
 } from "../operation-context";
+import { MediaPolicyError } from "./runtime-files";
+import { readMediaOperationState } from "../operation-context";
 import { parseLaunchResult } from "../evidence";
 import type { ImageDeclaration } from "../contracts";
 const mocks = vi.hoisted(() => ({
@@ -14,6 +16,8 @@ const mocks = vi.hoisted(() => ({
   seal: vi.fn(),
   run: vi.fn(),
   mkdir: vi.fn(),
+  linuxRead: vi.fn(),
+  linuxExecute: vi.fn(),
 }));
 vi.mock("../../../../../lib/build/media-deployment", () => ({
   verifyMediaDeployment: mocks.verify,
@@ -25,6 +29,11 @@ vi.mock("./macos/control", () => ({
   createMacControl: () => ({ acquireControl: vi.fn() }),
 }));
 vi.mock("./macos/execute", () => ({ runOwnedMac: mocks.run }));
+vi.mock("./linux/policy", () => ({
+  createLinuxNormalRuntime: () => ({
+    core: { readPolicy: mocks.linuxRead, execute: mocks.linuxExecute },
+  }),
+}));
 import { createTrustedMediaRuntime } from "./runtime";
 const bytes = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
 const declaration: ImageDeclaration = {
@@ -69,7 +78,9 @@ beforeEach(() => {
   mocks.seal.mockReset().mockImplementation(() => {
     throw new Error("synthetic-unsealed");
   });
-  mocks.run.mockReset().mockResolvedValue({
+  mocks.run.mockReset().mockImplementation(async (runId, execution) => ({
+    runId,
+    profileId: execution.policy.profileId,
     code: null,
     stopped: "confirmed",
     output: Buffer.from(
@@ -82,7 +93,7 @@ beforeEach(() => {
         mediaDecoded: true,
       }),
     ),
-  });
+  }));
 });
 afterEach(() => {
   for (const c of contexts.splice(0)) disposeMediaOperationContext(c);
@@ -212,12 +223,104 @@ describe("trusted fixed runtime binding and launch", () => {
     });
     expect(mocks.verify).not.toHaveBeenCalled();
   });
+  it("an explicit unknown policy error upgrades an earlier cancellation", async () => {
+    const runtime = createTrustedMediaRuntime(roots),
+      c = context();
+    mocks.mac.mockImplementation(() => {
+      requestMediaOperationStop(c, "CANCELLED");
+      throw new MediaPolicyError("STOP_UNCONFIRMED");
+    });
+    expect(await runtime.readBinding(c, "candidate")).toEqual({
+      outcome: "unavailable",
+      code: "STOP_UNCONFIRMED",
+    });
+    expect(readMediaOperationState(c)).toMatchObject({
+      phase: "stopping",
+      stop: { reason: "STOP_UNCONFIRMED" },
+    });
+  });
+  it.each(["reject", "malformed", "wrong-run", "invalid-stop"])(
+    "trusted Mac %s cannot claim a not-started stop",
+    async (kind) => {
+      const runtime = createTrustedMediaRuntime(roots),
+        c = context();
+      mocks.run.mockImplementation(async (runId, execution) => {
+        if (kind === "reject") {
+          requestMediaOperationStop(c, "CANCELLED");
+          throw new Error("synthetic");
+        }
+        if (kind === "malformed") return {};
+        if (kind === "wrong-run")
+          return {
+            runId: "626e311b-4211-4f35-b874-a39d801b2df6",
+            profileId: execution.policy.profileId,
+            code: null,
+            stopped: "confirmed",
+            output: Buffer.alloc(0),
+          };
+        return {
+          runId,
+          profileId: execution.policy.profileId,
+          code: "STOP_UNCONFIRMED",
+          stopped: "not-started",
+          output: Buffer.alloc(0),
+        };
+      });
+      const result = await runtime.run(bytes, declaration, c, "candidate");
+      expect(result).toMatchObject({
+        code: "STOP_UNCONFIRMED",
+        stopped: "unknown",
+      });
+      expect(readMediaOperationState(c)).toMatchObject({
+        phase: "stopping",
+        stop: { reason: "STOP_UNCONFIRMED" },
+      });
+      expect(parseLaunchResult(Buffer.from(JSON.stringify(result)))).toEqual({
+        ok: true,
+        value: result,
+      });
+      expect(
+        await runtime.run(bytes, declaration, c, "candidate"),
+      ).toMatchObject({ code: "STOP_UNCONFIRMED", stopped: "unknown" });
+      expect(mocks.run).toHaveBeenCalledOnce();
+    },
+  );
+  it.each([
+    "policy-reject",
+    "policy-malformed",
+    "execute-reject",
+    "execute-malformed",
+  ])("Linux trusted %s retains unknown facts", async (kind) => {
+    vi.spyOn(process, "platform", "get").mockReturnValue("linux");
+    vi.spyOn(process, "arch", "get").mockReturnValue("x64");
+    const runtime = createTrustedMediaRuntime(roots),
+      c = context();
+    if (kind === "policy-reject")
+      mocks.linuxRead.mockImplementation(async () => {
+        requestMediaOperationStop(c, "CANCELLED");
+        throw new Error("synthetic");
+      });
+    if (kind === "policy-malformed") mocks.linuxRead.mockResolvedValue({});
+    if (kind === "execute-reject")
+      mocks.linuxExecute.mockRejectedValue(new Error("synthetic"));
+    if (kind === "execute-malformed") mocks.linuxExecute.mockResolvedValue({});
+    const result = kind.startsWith("policy")
+      ? await runtime.readBinding(c, "candidate")
+      : await runtime.run(bytes, declaration, c, "candidate");
+    expect(result).toMatchObject({ code: "STOP_UNCONFIRMED" });
+    expect(readMediaOperationState(c)).toMatchObject({
+      phase: "stopping",
+      stop: { reason: "STOP_UNCONFIRMED" },
+    });
+  });
   it("late output checkpoint retains actual confirmed stop evidence", async () => {
     const runtime = createTrustedMediaRuntime(roots),
       c = context();
-    mocks.run.mockImplementation(async () => {
+    mocks.run.mockImplementation(async (runId, execution) => {
       requestMediaOperationStop(c, "CANCELLED");
       return {
+        runId,
+        profileId: execution.policy.profileId,
         code: null,
         stopped: "confirmed",
         output: Buffer.from("synthetic"),

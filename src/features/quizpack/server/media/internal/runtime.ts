@@ -13,6 +13,7 @@ import {
   type MediaRuntimeBindingResult,
 } from "../contracts";
 import { beginMediaImage, createMediaControlScope } from "../operation-context";
+import { parseLaunchResult } from "../evidence";
 import { readMediaCapability } from "./capability";
 import { hashBytes, MediaPolicyError } from "./runtime-files";
 import {
@@ -49,6 +50,11 @@ function checkpoint(scope: Scope): void {
     throw new Interrupted(mediaStopFailureCode(state.stop));
 }
 function failureCode(error: unknown, scope: Scope): LaunchFailureCode {
+  if (
+    (error instanceof Interrupted || error instanceof MediaPolicyError) &&
+    error.code === "STOP_UNCONFIRMED"
+  )
+    scope.requestStop("STOP_UNCONFIRMED");
   try {
     checkpoint(scope);
   } catch (interrupted) {
@@ -56,11 +62,67 @@ function failureCode(error: unknown, scope: Scope): LaunchFailureCode {
     return "INVALID_INPUT";
   }
   if (error instanceof Interrupted || error instanceof MediaPolicyError) {
-    if (error.code === "STOP_UNCONFIRMED")
-      scope.requestStop("STOP_UNCONFIRMED");
     return error.code;
   }
   return "ISOLATION_UNAVAILABLE";
+}
+async function ownedCall<T>(
+  scope: Scope,
+  operation: () => Promise<T>,
+): Promise<T> {
+  try {
+    return await operation();
+  } catch {
+    scope.requestStop("STOP_UNCONFIRMED");
+    throw new MediaPolicyError("STOP_UNCONFIRMED");
+  }
+}
+async function ownedPolicyCall<T>(
+  scope: Scope,
+  operation: () => Promise<T>,
+): Promise<T> {
+  try {
+    return await operation();
+  } catch (error) {
+    if (error instanceof MediaPolicyError || error instanceof Interrupted)
+      throw error;
+    if (error instanceof Error && error.message === "BUSY")
+      throw new MediaPolicyError("BUSY");
+    scope.requestStop("STOP_UNCONFIRMED");
+    throw new MediaPolicyError("STOP_UNCONFIRMED");
+  }
+}
+function requireStopResult(
+  scope: Scope,
+  value: unknown,
+  runId: string,
+): LaunchResult {
+  let result: ReturnType<typeof parseLaunchResult>;
+  try {
+    result = parseLaunchResult(Buffer.from(JSON.stringify(value)));
+  } catch {
+    scope.requestStop("STOP_UNCONFIRMED");
+    throw new MediaPolicyError("STOP_UNCONFIRMED");
+  }
+  if (!result.ok || result.value.runId !== runId) {
+    scope.requestStop("STOP_UNCONFIRMED");
+    throw new MediaPolicyError("STOP_UNCONFIRMED");
+  }
+  if (
+    result.value.outcome === "failed" &&
+    result.value.code === "STOP_UNCONFIRMED"
+  )
+    scope.requestStop("STOP_UNCONFIRMED");
+  const state = scope.readState();
+  if (state.phase === "stopping" && state.stop.reason === "STOP_UNCONFIRMED")
+    return {
+      outcome: "failed",
+      runId,
+      profileId: result.value.profileId,
+      code: "STOP_UNCONFIRMED",
+      stopped: "unknown",
+    };
+  return result.value;
 }
 const failed = (
   runId: string,
@@ -122,10 +184,22 @@ export function createTrustedMediaRuntime(roots: MediaRuntimeRoots) {
         : null;
     const policy =
       mac ??
-      ((await linux!.core.readPolicy({
-        scope,
-        ...(runId ? { preallocatedRunId: runId } : {}),
-      })) as LinuxNormalPolicy);
+      ((await ownedPolicyCall(scope, () =>
+        linux!.core.readPolicy({
+          scope,
+          ...(runId ? { preallocatedRunId: runId } : {}),
+        }),
+      )) as LinuxNormalPolicy);
+    if (
+      !policy ||
+      !/^[a-f0-9]{64}$/.test(policy.componentId) ||
+      !/^[a-f0-9]{64}$/.test(policy.profileId)
+    ) {
+      if (linux) scope.requestStop("STOP_UNCONFIRMED");
+      throw new MediaPolicyError(
+        linux ? "STOP_UNCONFIRMED" : "ISOLATION_UNAVAILABLE",
+      );
+    }
     check();
     const limitsHash = hashBytes(JSON.stringify(MEDIA_LIMITS));
     const binding: MediaRuntimeBinding = Object.freeze({
@@ -255,6 +329,7 @@ export function createTrustedMediaRuntime(roots: MediaRuntimeRoots) {
       }
       let profileId: string | null = null;
       let stopped: "not-started" | "confirmed" | "unknown" = "not-started";
+      let ownedPending = false;
       try {
         checkpoint(scope);
         const input = precheckImage(bytes, declaration);
@@ -265,67 +340,128 @@ export function createTrustedMediaRuntime(roots: MediaRuntimeRoots) {
         checkpoint(scope);
         let output: Buffer;
         if (runtime.mac) {
+          const mac = runtime.mac;
           const control = createMacControl({
             checkoutRoot: roots.checkoutRoot,
             controlRoot: runtime.roles.controlRoot,
           });
-          const result = await runOwnedMac(
-            runId,
-            {
-              executable: runtime.mac.node,
-              args: [
-                runtime.roles.worker,
-                String(MEDIA_LIMITS.bytes),
-                String(MEDIA_LIMITS.dimension),
-                String(MEDIA_LIMITS.pixels),
-              ],
-              bytes: input.bytes,
-              policy: runtime.mac,
-            },
-            scope,
-            start,
-            {
-              checkoutRoot: roots.checkoutRoot,
-              identityHelper: runtime.roles.identityHelper,
-              acquireControl: control.acquireControl,
-            },
+          ownedPending = true;
+          const result = await ownedCall(scope, () =>
+            runOwnedMac(
+              runId,
+              {
+                executable: mac.node,
+                args: [
+                  runtime.roles.worker,
+                  String(MEDIA_LIMITS.bytes),
+                  String(MEDIA_LIMITS.dimension),
+                  String(MEDIA_LIMITS.pixels),
+                ],
+                bytes: input.bytes,
+                policy: mac,
+              },
+              scope,
+              start,
+              {
+                checkoutRoot: roots.checkoutRoot,
+                identityHelper: runtime.roles.identityHelper,
+                acquireControl: control.acquireControl,
+              },
+            ),
           );
-          if (result.code)
-            return failed(runId, profileId, result.code, result.stopped);
+          if (
+            !result ||
+            result.runId !== runId ||
+            result.profileId !== profileId ||
+            !Buffer.isBuffer(result.output) ||
+            (result.code === null && result.stopped !== "confirmed")
+          ) {
+            scope.requestStop("STOP_UNCONFIRMED");
+            throw new MediaPolicyError("STOP_UNCONFIRMED");
+          }
+          if (result.code !== null) {
+            const failure = requireStopResult(
+              scope,
+              {
+                outcome: "failed",
+                runId: result.runId,
+                profileId: result.profileId,
+                code: result.code,
+                stopped: result.stopped,
+              },
+              runId,
+            );
+            ownedPending = false;
+            return failure;
+          }
           if (result.stopped !== "confirmed") {
             scope.requestStop("STOP_UNCONFIRMED");
             return failed(runId, profileId, "STOP_UNCONFIRMED", "unknown");
           }
+          ownedPending = false;
           stopped = "confirmed";
           output = result.output;
         } else {
-          const result = await runtime.linux!.core.execute({
-            bytes: input.bytes,
-            scope,
-            preallocatedRunId: runId,
-            execution: {
-              entrypoint: "/usr/local/bin/node",
-              args: [
-                "/worker/media-worker.mjs",
-                String(MEDIA_LIMITS.bytes),
-                String(MEDIA_LIMITS.dimension),
-                String(MEDIA_LIMITS.pixels),
-              ],
-            },
-            hooks: {
-              afterPolicy(policy) {
-                checkpoint(scope!);
-                if (
-                  policy.profileId !== runtime.policy.profileId ||
-                  (policy as LinuxNormalPolicy).componentId !==
-                    runtime.binding.componentId
-                )
-                  throw new MediaPolicyError("ISOLATION_UNAVAILABLE");
+          ownedPending = true;
+          const result = await ownedCall(scope, () =>
+            runtime.linux!.core.execute({
+              bytes: input.bytes,
+              scope,
+              preallocatedRunId: runId,
+              execution: {
+                entrypoint: "/usr/local/bin/node",
+                args: [
+                  "/worker/media-worker.mjs",
+                  String(MEDIA_LIMITS.bytes),
+                  String(MEDIA_LIMITS.dimension),
+                  String(MEDIA_LIMITS.pixels),
+                ],
               },
-            },
-          });
-          if (result.outcome === "failed")
-            return failed(runId, result.profileId, result.code, result.stopped);
+              hooks: {
+                afterPolicy(policy) {
+                  checkpoint(scope!);
+                  if (
+                    policy.profileId !== runtime.policy.profileId ||
+                    (policy as LinuxNormalPolicy).componentId !==
+                      runtime.binding.componentId
+                  )
+                    throw new MediaPolicyError("ISOLATION_UNAVAILABLE");
+                },
+              },
+            }),
+          );
+          if (result?.outcome === "failed") {
+            if (result.profileId !== null && result.profileId !== profileId)
+              throw new Error("invalid-owned-result");
+            const failure = requireStopResult(
+              scope,
+              {
+                outcome: result.outcome,
+                runId: result.runId,
+                profileId: result.profileId,
+                code: result.code,
+                stopped: result.stopped,
+              },
+              runId,
+            );
+            ownedPending = false;
+            return failure;
+          }
+          if (
+            !result ||
+            result.outcome !== "exited" ||
+            result.runId !== runId ||
+            result.profileId !== profileId ||
+            result.stopped !== "confirmed" ||
+            !Buffer.isBuffer(result.stdout) ||
+            result.evidence?.containerStopped !== true ||
+            result.evidence.stdioSettled !== true ||
+            result.evidence.identityMatched !== true
+          ) {
+            scope.requestStop("STOP_UNCONFIRMED");
+            throw new MediaPolicyError("STOP_UNCONFIRMED");
+          }
+          ownedPending = false;
           stopped = "confirmed";
           output = result.stdout;
         }
@@ -349,6 +485,7 @@ export function createTrustedMediaRuntime(roots: MediaRuntimeRoots) {
           stopped: "confirmed",
         };
       } catch (error) {
+        if (ownedPending) scope.requestStop("STOP_UNCONFIRMED");
         const code = failureCode(error, scope);
         return failed(runId, profileId, code, stopped);
       } finally {
