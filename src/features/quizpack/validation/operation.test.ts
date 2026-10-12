@@ -562,3 +562,48 @@ it("closing the storage lock synchronously revokes ACK and finalization and repe
   expect(completed).toBe(true);
   expect(close).toHaveBeenCalledTimes(1);
 });
+
+it("synchronous abort reentry cannot replace the pending shared storage-lock close", async () => {
+  const { context } = fixture(),
+    io = deferred<boolean>(),
+    close = vi.fn(() => io.promise),
+    op = new ArchiveOperation({} as P2aDatabase, context);
+  op.attachLock({
+    controller: new AbortController(),
+    assert: () => {},
+    close,
+  } as unknown as StorageLock);
+  let inner: Promise<void> | undefined, preclaim: boolean | undefined;
+  context.signal.addEventListener(
+    "abort",
+    () => {
+      inner = op.closeStorageLock();
+      preclaim = op.canIssuePreclaimNotStarted();
+    },
+    { once: true },
+  );
+  const outer = op.closeStorageLock(),
+    later = op.closeStorageLock();
+  expect(inner).toBe(outer);
+  expect(later).toBe(outer);
+  expect(preclaim).toBe(false);
+  let done = 0;
+  void outer.then(() => {
+    done++;
+  });
+  void inner!.then(() => {
+    done++;
+  });
+  void later.then(() => {
+    done++;
+  });
+  await Promise.resolve();
+  await Promise.resolve();
+  expect(done).toBe(0);
+  expect(op.completion().relatedIo).toBe("unconfirmed");
+  io.resolve(true);
+  await outer;
+  expect(done).toBe(3);
+  expect(close).toHaveBeenCalledTimes(1);
+  expect(op.completion().relatedIo).toBe("settled");
+});
