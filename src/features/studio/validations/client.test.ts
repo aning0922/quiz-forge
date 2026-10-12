@@ -49,6 +49,34 @@ function sentStorage() {
 }
 afterEach(() => vi.unstubAllGlobals());
 describe("validation request coordination", () => {
+  it("two different pairs can prepare concurrently without overwriting either pending entry", async () => {
+    const storage = memoryStorage();
+    const other = { ...expected, productId: "other-synthetic" };
+    const fetch = vi.fn(async (path: string) => {
+      if (path.endsWith("prepare"))
+        return Response.json({
+          ...prepared,
+          productId: path.includes("other-synthetic")
+            ? other.productId
+            : expected.productId,
+        });
+      throw new Error("lost start response");
+    });
+    vi.stubGlobal("fetch", fetch);
+    const results = await Promise.allSettled([
+      prepareAndStart(storage, expected, "csrf"),
+      prepareAndStart(storage, other, "csrf"),
+    ]);
+    expect(results.every((result) => result.status === "rejected")).toBe(true);
+    expect(readPending(storage)).toHaveLength(2);
+    expect(readPending(storage).every((entry) => entry.mayHaveBeenSent)).toBe(
+      true,
+    );
+    expect(
+      new Set(readPending(storage).map((entry) => entry.tuple.productId)),
+    ).toEqual(new Set([expected.productId, other.productId]));
+  });
+
   it("a previous legitimate not-started response cannot abandon a later unknown invocation of the same tuple", async () => {
     const storage = memoryStorage();
     addPrepared(storage, tuple);
