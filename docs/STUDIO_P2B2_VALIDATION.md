@@ -53,7 +53,7 @@ A 必须提供足够的 run/profile/stop 事实；B 负责把它们与 attempt �
 | A-V：可信验证 | `src/features/quizpack/v1/**` 的必要内部执行拆分及独立 canonical 预算；新 `src/features/quizpack/server/validation/**` 的快照、dispatcher、候选、Unicode/报告 Schema；对应测试。调用 A-R 公共入口，不改其 internal。 |
 | 总控          | package/锁文件、Next/build/CI 接线、部署身份清单、共享文档和集成顺序；目标 worktree 封存及生产启动串行验收。两流提交建议，不并发改共享文件。                                                                         |
 
-以下为 A 的目标接口，**当前尚未实现**；路径/类型归属在开工前由对应所有者先交桩，接口调整先回总控。
+以下为 A 已集成的公共接口摘要；实际平台、封存与完整验收仍以上方阶段状态和P2B2A_REVIEW为准。接口调整先回总控。
 
 ```ts
 // server/media/index.ts：A-R；P1 declaration/facts 复用既有类型。
@@ -125,12 +125,16 @@ B 接入真实业务路由后，必须对最终应用构建重新确认 locator�
 
 - 固定server编译宏为`__QUIZFORGE_MEDIA_CHECKOUT_ROOT__`和`__QUIZFORGE_MEDIA_DEPLOYMENT_ROOT__`（actual `.next`目录）。普通入口无宏即关闭，不从runtime env/cwd推断回退；总控构建时提供核实realpath。
 - 总控拥有`src/lib/build/media-deployment.ts`与闭集CLI，固定manifest为checkout下`.cache/quizpack-media-runtime/deployment.json`；私有leaf0700/file0600，无链接、实际字节和最终IO期限检查。它是构建证据，不是capability seal。
-- strict `quizpack-media-deployment.v1`包含两根、sourceFiles（role/path/bytes/sha256）、artifactFiles（path/bytes/sha256）、两固定dependencyRoots、sourceBundleHash、deploymentId。源代码只扫描P1/媒体/validation固定生产目录、必要基础文件；固定zod/buffer-crc32的实际安装包经受管node_modules入口解析，包根内全部普通文件纳入绑定，包含非标准扩展名的代码与数据。实际解析入口必须出现在已读取清单中，不能只以lock声明或扩展名代替字节闭包。
-- `.next/server`实际JS/JSON及固定加载清单构成artifact清单，不包含manifest本身或任意私有cache。最多16,384目录项、4,096文件、单文件16MiB、总128MiB；相对路径512 UTF-8 bytes、manifest2MiB。对新增/删除/改变文件及解析映射一并复核；超限失败关闭，不截清单。
+- strict `quizpack-media-deployment.v1`包含两根、sourceFiles（role/path/bytes/sha256）、artifactFiles（path/bytes/sha256）、两固定dependencyRoots、sharpRuntime、artifactAliases、sourceBundleHash、deploymentId。源代码只扫描P1/媒体/validation固定生产目录、必要基础文件；固定zod/buffer-crc32的实际安装包经受管node_modules入口解析，包根内全部普通文件纳入绑定，包含非标准扩展名的代码与数据。实际解析入口必须出现在已读取清单中，不能只以lock声明或扩展名代替字节闭包。
+- Sharp固定0.35.5及六个实际宿主包根（sharp、colour、detect-libc、semver、对应native和libvips）完整入source hash，即使无Next alias也核实。只支持darwin-arm64/linux-x64，Linux另核真实Node report的有限glibc版本字段，不输出report。native自身的libvips兄弟映射、固定wrapper/export/native文件/首个loader候选必须与已绑定第六根一致；不允许另一个未绑定包根替代。只读依赖允许合法pnpm硬链接，仍核owner/mode/inode/字节；不修改依赖权限。
+- `.next/server`实际JS/JSON及固定加载清单构成artifact清单，不包含manifest本身或任意私有cache。最多16,384目录项、4,096文件、普通单文件16MiB、仅sharp-runtime角色单文件32MiB、全体总128MiB；相对路径512 UTF-8 bytes、manifest2MiB。对新增/删除/改变文件及解析映射一并复核；超限失败关闭，不截清单。
+- Next允许至多一个精确`node_modules/sharp-[a-f0-9]{16}`直接符号链接，仅指向已绑定实际sharp包根；路径、目标和readlink文本hash进入deploymentId。其他链接、链式/改变/新增/移除映射均关闭。离线hardener只在有界完整预检后将自己固定构建树文件/目录改为0600/0700，不跟随alias、不改依赖/源文件/祖先权限；构建文件和私有manifest仍要求单硬链接。普通verify永不修复权限。
 - A-R消费`verifyMediaDeployment(roots, {deadlineMonotonicMs, signal, checkpoint})`的有限结果，所有roots来自编译宏，同一个operation预算继续生效。只读核验不写seal、不删除控制状态；运行时文件IO须实际settled，定时器不冒称硬实时终止。
 - `runtimeBundleHash`绑定整个后台验证执行闭包，由domain hash组合sourceBundleHash、deploymentId、平台componentId和limitsHash。A-V的validatorBundleSha256引用此完整身份，不以媒体子目录hash代替P1/dispatcher/canonical/report/Unicode执行代码；actual compiled代码由deploymentId绑定。Node/sharp/native/helper真实字节仍由A-R componentId补齐。
 
-平台固定根为`.cache/quizpack-media-runtime/{darwin-arm64,linux-x64}/`，capability/control/tools由A-R单写；普通worker仍是受审`src/features/quizpack/v1/media-worker.mjs`。离线故障计划与候选封存工具不成为生产入口参数。固定布局具体实现尚在进行，不能将本段方案写成已验收。
+平台固定根为`.cache/quizpack-media-runtime/{darwin-arm64,linux-x64}/`，capability/control/tools由A-R单写；普通worker仍是受审`src/features/quizpack/v1/media-worker.mjs`。离线故障计划与候选封存工具不成为生产入口参数。固定布局已实现，目标工作树封存与实测尚未验收。
+
+离线准备只支持维护期间独占执行：总控停止自己正常服务，串行setup、固定target矩阵、封存，再启动服务验收。controlEmpty只是采样事实，不是跨整个过程的锁；本批不支持热封存或并发正常调用。封存器从固定脚本实测生成进程内WeakMap opaque receipt（60秒、单次），JSON审计记录不能恢复授权。核构建/源/矩阵代码及新鲜platform binding均一致、全部owned停止和control清空后才签发；无效receipt不改变旧capability。最终IO后重新核绝对期限；晚到提交准确报告记录和capability各自committed事实。seal不删除guard、UNKNOWN或业务占用，也不授予跨构建能力。
 
 ## 6. 同字节 P1 桥接及严格持久化证据
 

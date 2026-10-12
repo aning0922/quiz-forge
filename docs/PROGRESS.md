@@ -2,11 +2,11 @@
 
 ## 2026-10-12 托管推进
 
-B2-2A在独立 `codex/quizpack-validation-bridge` 工作树实施，基于媒体预检最终交付 `1f6f388`；该父head的[普通CI38183785073](https://github.com/aning0922/quiz-forge/actions/runs/38183785073) checks/database及[平台CI38183785046](https://github.com/aning0922/quiz-forge/actions/runs/38183785046)全部实际success。已集成同字节P1核心/候选证据、共享媒体生命周期及实际源码/构建绑定工具；两条Sol/high流修复独立Astra发现的停止边界问题，第三条受限子任务准备真实Next fixture。[Draft PR #12](https://github.com/aning0922/quiz-forge/pull/12)堆叠于#11。当前尚未完成普通生产入口接线、能力重封存和完整验收；无DB/HTTP业务/UI，三表/归档后台留B2-2B，过程和检查限制见[P2B2A_REVIEW](P2B2A_REVIEW.md)。
+B2-2A在独立 `codex/quizpack-validation-bridge` 工作树实施，基于媒体预检最终交付 `1f6f388`。同字节P1候选、生产媒体入口、实际源码/Next产物绑定及离线封存器已集成；普通入口和依赖映射已登记的P2均独立关闭。中间代码5d779a7的[普通CI38188941135](https://github.com/aning0922/quiz-forge/actions/runs/38188941135) checks/database及[Linux媒体CI38188941100](https://github.com/aning0922/quiz-forge/actions/runs/38188941100)均实际success，后者覆盖迁移核心31项smoke/11项生命周期。实际Next服务已验证未封存、取消、过期三种关闭行为且均未启动媒体；这不是新target完整矩阵与封存验收。最新代码仍待目标工作树macOS/Linux矩阵、封存后真实Next调用和阶段全套回归。[Draft PR #12](https://github.com/aning0922/quiz-forge/pull/12)堆叠于#11，未合并；无DB/HTTP业务/UI，三表/归档后台留B2-2B。准确增量与检查限制见[P2B2A_REVIEW](P2B2A_REVIEW.md)。
 
 媒体隔离可行性已技术验收：准确代码 `736d92354d2765a15ca6109c2611dfc7dde9b83e` 的[普通CI38183239291](https://github.com/aning0922/quiz-forge/actions/runs/38183239291) checks/database及[平台CI38183239317](https://github.com/aning0922/quiz-forge/actions/runs/38183239317)均实际success。macOS总控66项矩阵三次通过，Linux31项smoke/11项生命周期通过，独立登记问题全部关闭；本地612单测/214真实DB/46驱动/206生产E2E通过（10既有跳过），构建53trace/8614路径无私有违规。自有实例与服务已停止。见[验收](MEDIA_ISOLATION_ACCEPTANCE.md)及[审查过程](MEDIA_ISOLATION_REVIEW.md)。[Draft PR #11](https://github.com/aning0922/quiz-forge/pull/11)保持未合并，最终记录head CI另核；该阶段仅脚本层平台能力，尚未接入业务。
 
-下一优先为B2-2A可信P1桥接与生产运行模块迁移，再进入B2-2B三表/统一资源归档/后台操作。新合同[STUDIO_P2B2_VALIDATION](STUDIO_P2B2_VALIDATION.md)正在总控收口，候选状态不代表已开工。实际业务的同字节、版本/归属、事务/计量与生产运行路径仍须独立验证。
+下一优先为完成B2-2A目标平台与真实Next验收，再冻结B2-2B精确三表/统一资源归档/后台操作合同。A范围已冻结并实施；B目前只有不变量与待审精确提案。实际业务的同字节、版本/归属、事务/计量与应用构建运行路径仍须独立验证。
 
 B2-1原包接收与恢复已完成代码技术验收：最终代码 `f070428b72570977db835946227b2c49d0666e42`，612单测、214真实DB、46驱动故障、206生产E2E/10既有跳过，格式/lint/类型/构建全部通过；53份trace路径检查无私有违规且动态扫描warning已消除。独立Astra登记问题全部闭合，五状态×四宽20图已逐张检查。代码[CI38174716526](https://github.com/aning0922/quiz-forge/actions/runs/38174716526)的checks/database均实际success；[Draft PR #10](https://github.com/aning0922/quiz-forge/pull/10)未合并，最终文档head CI以该PR实际checks及描述为准。A/B/root实例均停止，3100/55421–55424无监听。received仍只表示未验证原字节，没有资源归档、草稿或发布。详情见[P2B2_RECEIVE_ACCEPTANCE](P2B2_RECEIVE_ACCEPTANCE.md)、[REVIEW](P2B2_RECEIVE_REVIEW.md)、[VISUAL_CHECK](P2B2_RECEIVE_VISUAL_CHECK.md)。
 
