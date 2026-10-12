@@ -310,13 +310,17 @@ export function ValidationPanel({
           <h3>
             {pending.mayHaveBeenSent
               ? "本标签有待核实请求"
-              : "本标签有尚未发送的准备"}
+              : busy
+                ? "正在处理验证请求"
+                : "本标签有尚未发送的准备"}
           </h3>
           <p>请求标识：{pending.tuple.expectedValidationKey.slice(0, 12)}…</p>
           <p>
             {pending.mayHaveBeenSent
               ? "请求可能已发送。刷新、超时或暂未找到记录都不能证明回滚；仅按原请求读取核实。"
-              : "准备已保存。请明确选择继续验证归档或取消本次准备。"}
+              : busy
+                ? "本次操作尚未结束，结果仍待确认。请等待操作完成。"
+                : "准备已保存。请明确选择继续验证归档或取消本次准备。"}
           </p>
           <div className={styles.actions}>
             {pending.mayHaveBeenSent ? (
@@ -345,7 +349,7 @@ export function ValidationPanel({
                     })
                   }
                 >
-                  取消尚未发送的准备
+                  {busy ? "取消准备" : "取消尚未发送的准备"}
                 </button>
               </>
             )}
