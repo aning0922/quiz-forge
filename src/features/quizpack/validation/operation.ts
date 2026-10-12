@@ -281,15 +281,21 @@ export class ArchiveOperation {
   }
   async finalizeDatabaseOnce<T>(work: () => PromiseLike<T>): Promise<T> {
     this.checkpoint();
-    if (
-      this.finalizationEntered ||
-      !this.nonDbClosed ||
-      this.receiptState !== "done" ||
-      this.completion().maintenanceRequired
-    )
+    if (!this.finalizationQualified())
       throw new StudioError("VALIDATION_RECOVERY_REQUIRED");
     this.finalizationEntered = true;
-    return this.awaitDatabase("write", work);
+    return this.awaitDatabase("write", work, (task) => {
+      if (!this.finalizationQualified(task))
+        throw new StudioError("VALIDATION_RECOVERY_REQUIRED");
+    });
+  }
+  private finalizationQualified(excludedTask?: Promise<unknown>) {
+    return (
+      (excludedTask ? this.finalizationEntered : !this.finalizationEntered) &&
+      this.nonDbClosed &&
+      this.receiptState === "done" &&
+      !this.completionFor(excludedTask).maintenanceRequired
+    );
   }
   hasEnteredFinalization() {
     return this.finalizationEntered;
@@ -298,13 +304,14 @@ export class ArchiveOperation {
     kind: "read" | "write",
     work: () => PromiseLike<T>,
   ): Promise<T> {
-    if (kind === "write" && this.finalizationEntered)
+    if (kind === "write" && (this.nonDbClosed || this.finalizationEntered))
       throw new StudioError("VALIDATION_RECOVERY_REQUIRED");
     return this.awaitDatabase(kind, work);
   }
   private async awaitDatabase<T>(
     kind: "read" | "write",
     work: () => PromiseLike<T>,
+    beforeWork?: (task: Promise<unknown>) => void,
   ): Promise<T> {
     this.checkpoint();
     if (invalidDatabases.has(this.db))
@@ -333,9 +340,10 @@ export class ArchiveOperation {
       );
     };
     this.context.signal.addEventListener("abort", abort, { once: true });
-    const task = this.track(
+    const task: Promise<T> = this.track(
       Promise.resolve().then(() => {
         this.checkpoint();
+        beforeWork?.(task);
         return work();
       }),
     );
