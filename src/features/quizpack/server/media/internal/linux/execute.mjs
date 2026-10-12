@@ -64,7 +64,11 @@ export function createLinuxExecutionCore(environment) {
       state?.phase === "stopping"
         ? state.stop.cleanupDeadlineMonotonicMs
         : activeScopes.get(runId)?.deadlineMonotonicMs;
-    return end !== undefined && performance.now() < end;
+    return (
+      end !== undefined &&
+      performance.now() < end &&
+      !(state?.phase === "stopping" && state.stop.reason === "STOP_UNCONFIRMED")
+    );
   };
   async function ownedPolicyDocker(record, args, options) {
     if (!policyRecords.has(record.runId)) {
@@ -238,7 +242,8 @@ export function createLinuxExecutionCore(environment) {
       return (
         performance.now() < deadline &&
         (state?.phase !== "stopping" ||
-          performance.now() < state.stop.cleanupDeadlineMonotonicMs)
+          (state.stop.reason !== "STOP_UNCONFIRMED" &&
+            performance.now() < state.stop.cleanupDeadlineMonotonicMs))
       );
     };
     if (!withinBudget()) return false;
@@ -308,7 +313,13 @@ export function createLinuxExecutionCore(environment) {
     if (recoveryActive) return fail(runId, null, "BUSY", "not-started");
     if (snapshot.length > LIMITS.bytes)
       return fail(runId, null, "INPUT_LIMIT", "not-started");
-    if (interrupt()) return fail(runId, null, interrupt(), "not-started");
+    if (interrupt())
+      return fail(
+        runId,
+        null,
+        interrupt(),
+        interrupt() === "STOP_UNCONFIRMED" ? "unknown" : "not-started",
+      );
     activeExecutions.add(runId);
     activeScopes.set(runId, scope);
     try {
@@ -339,7 +350,12 @@ export function createLinuxExecutionCore(environment) {
       profileId = policy.profileId;
       await hooks.afterPolicy?.(policy);
       if (interrupt())
-        return fail(runId, profileId, interrupt(), "not-started");
+        return fail(
+          runId,
+          profileId,
+          interrupt(),
+          interrupt() === "STOP_UNCONFIRMED" ? "unknown" : "not-started",
+        );
       if (!(await clearPolicyRecord(runId)))
         return fail(runId, profileId, "STOP_UNCONFIRMED", "unknown");
       const spec = execution;
@@ -359,7 +375,12 @@ export function createLinuxExecutionCore(environment) {
       await writePrivate(RECORD, persisted);
       record.recordHash = hash(persisted);
       if (interrupt()) {
-        return fail(runId, profileId, interrupt(), "not-started");
+        return fail(
+          runId,
+          profileId,
+          interrupt(),
+          interrupt() === "STOP_UNCONFIRMED" ? "unknown" : "not-started",
+        );
       } else {
         issued = true;
         controlStates.set(runId, {
@@ -565,7 +586,11 @@ export function createLinuxExecutionCore(environment) {
         guardOwned &&
         !issued &&
         !controlStates.get(runId)?.pending &&
-        !controlStates.get(runId)?.unsettled
+        !controlStates.get(runId)?.unsettled &&
+        !(
+          scope.readState().phase === "stopping" &&
+          scope.readState().stop.reason === "STOP_UNCONFIRMED"
+        )
       ) {
         try {
           if (record && hash(await readPrivate(RECORD)) === record.recordHash)

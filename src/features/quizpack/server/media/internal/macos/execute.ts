@@ -16,7 +16,7 @@ export type MacOwnedControl = {
     pid?: number | null,
     start?: { sec: number; usec: number } | null,
   ): void;
-  finish(): void;
+  finish(deadlineMonotonicMs?: number): void;
 };
 export type MacExecutionEnvironment = {
   checkoutRoot: string;
@@ -91,23 +91,47 @@ export async function runOwnedMac(
     return state.phase === "stopping" ? mediaStopFailureCode(state.stop) : null;
   };
   const before = interruption();
-  if (before) return { ...basic, code: before, stopped: "not-started" };
+  if (before)
+    return {
+      ...basic,
+      code: before,
+      stopped: before === "STOP_UNCONFIRMED" ? "unknown" : "not-started",
+    };
   let control: MacOwnedControl;
   try {
     control = env.acquireControl(runId, policy.profileId);
   } catch (error) {
+    const stopped = interruption();
     return {
       ...basic,
       code:
-        error instanceof MacControlError ? error.code : "ISOLATION_UNAVAILABLE",
-      stopped: "not-started",
+        stopped ??
+        (error instanceof MacControlError
+          ? error.code
+          : "ISOLATION_UNAVAILABLE"),
+      stopped: stopped === "STOP_UNCONFIRMED" ? "unknown" : "not-started",
     };
   }
   const after = interruption();
   if (after) {
+    if (after === "STOP_UNCONFIRMED")
+      return { ...basic, code: after, stopped: "unknown" };
     try {
-      control.finish();
+      const state = ctx.readState();
+      control.finish(
+        state.phase === "stopping"
+          ? state.stop.cleanupDeadlineMonotonicMs
+          : ctx.deadlineMonotonicMs,
+      );
+      const final = ctx.readState();
+      if (
+        final.phase === "stopping" &&
+        (final.stop.reason === "STOP_UNCONFIRMED" ||
+          performance.now() >= final.stop.cleanupDeadlineMonotonicMs)
+      )
+        throw new Error("STOP_UNCONFIRMED");
     } catch {
+      ctx.requestStop("STOP_UNCONFIRMED");
       return { ...basic, code: "STOP_UNCONFIRMED", stopped: "unknown" };
     }
     return { ...basic, code: after, stopped: "not-started" };
@@ -135,14 +159,35 @@ export async function runOwnedMac(
       // Persistence is synchronous and can consume the remaining absolute budget.
       const persistedInterruption = interruption();
       if (persistedInterruption) {
+        if (persistedInterruption === "STOP_UNCONFIRMED") {
+          resolve({
+            ...basic,
+            code: persistedInterruption,
+            stopped: "unknown",
+          });
+          return;
+        }
         try {
-          control.finish();
+          const state = ctx.readState();
+          control.finish(
+            state.phase === "stopping"
+              ? state.stop.cleanupDeadlineMonotonicMs
+              : ctx.deadlineMonotonicMs,
+          );
+          const final = ctx.readState();
+          if (
+            final.phase === "stopping" &&
+            (final.stop.reason === "STOP_UNCONFIRMED" ||
+              performance.now() >= final.stop.cleanupDeadlineMonotonicMs)
+          )
+            throw new Error("STOP_UNCONFIRMED");
           resolve({
             ...basic,
             code: persistedInterruption,
             stopped: "not-started",
           });
         } catch {
+          ctx.requestStop("STOP_UNCONFIRMED");
           resolve({ ...basic, code: "STOP_UNCONFIRMED", stopped: "unknown" });
         }
         return;
@@ -161,6 +206,7 @@ export async function runOwnedMac(
       try {
         control.update("unknown");
       } catch {}
+      ctx.requestStop("STOP_UNCONFIRMED");
       resolve({ ...basic, code: "STOP_UNCONFIRMED", stopped: "unknown" });
       return;
     }
@@ -192,7 +238,7 @@ export async function runOwnedMac(
             usec: found.startUsec,
           });
         } catch {
-          forced ??= "STOP_UNCONFIRMED";
+          terminate("STOP_UNCONFIRMED");
         }
       }
       resident = Math.max(resident, found.residentBytes);
@@ -207,13 +253,18 @@ export async function runOwnedMac(
       if (cleanupTimer) clearTimeout(cleanupTimer);
       ctx.signal.removeEventListener("abort", cancel);
       const state = ctx.readState();
+      const cleanupDeadline =
+        state.phase === "stopping"
+          ? state.stop.cleanupDeadlineMonotonicMs
+          : ctx.deadlineMonotonicMs;
+      const sharedUnknown =
+        state.phase === "stopping" && state.stop.reason === "STOP_UNCONFIRMED";
       let finalStopped =
-        state.phase === "stopping" &&
-        performance.now() >= state.stop.cleanupDeadlineMonotonicMs
+        sharedUnknown || performance.now() >= cleanupDeadline
           ? ("unknown" as const)
           : stopped;
       try {
-        if (finalStopped === "confirmed") control.finish();
+        if (finalStopped === "confirmed") control.finish(cleanupDeadline);
         else if (
           state.phase !== "stopping" ||
           performance.now() < state.stop.cleanupDeadlineMonotonicMs
@@ -222,6 +273,13 @@ export async function runOwnedMac(
       } catch {
         finalStopped = "unknown";
       }
+      const final = ctx.readState();
+      if (
+        performance.now() >= cleanupDeadline ||
+        (final.phase === "stopping" && final.stop.reason === "STOP_UNCONFIRMED")
+      )
+        finalStopped = "unknown";
+      if (finalStopped === "unknown") ctx.requestStop("STOP_UNCONFIRMED");
       resolve({
         runId,
         profileId: policy.profileId,

@@ -8,6 +8,7 @@ import {
   disposeMediaOperationContext,
   requestMediaOperationStop,
 } from "../../operation-context";
+import { parseLaunchResult } from "../../evidence";
 import { runOwnedMac } from "./execute";
 const subprocess = vi.hoisted(() => ({ spawn: vi.fn(), spawnSync: vi.fn() }));
 vi.mock("node:child_process", () => subprocess);
@@ -117,6 +118,105 @@ describe("Mac owned lifecycle with the shared stop budget", () => {
     expect(run.control.finish).toHaveBeenCalledOnce();
     run.scope.finish();
   });
+  it("CANCEL then UNKNOWN cannot be downgraded by an actual close or ordinary stop", async () => {
+    const run = launch();
+    now = 200;
+    requestMediaOperationStop(run.context, "CANCELLED", 1200);
+    now = 400;
+    requestMediaOperationStop(run.context, "STOP_UNCONFIRMED");
+    requestMediaOperationStop(run.context, "STOP_REQUESTED");
+    child.emit("close", 0, null);
+    expect(await run.pending).toMatchObject({
+      code: "STOP_UNCONFIRMED",
+      stopped: "unknown",
+    });
+    expect(run.control.finish).not.toHaveBeenCalled();
+    run.scope.finish();
+    disposeMediaOperationContext(run.context);
+  });
+  it("a control finish crossing the same absolute deadline cannot claim confirmation", async () => {
+    const run = launch();
+    now = 200;
+    requestMediaOperationStop(run.context, "CANCELLED", 1200);
+    run.control.finish.mockImplementation(() => {
+      now = 1300;
+    });
+    now = 1199;
+    child.emit("close", 0, null);
+    expect(await run.pending).toMatchObject({
+      code: "STOP_UNCONFIRMED",
+      stopped: "unknown",
+    });
+    expect(run.control.finish).toHaveBeenCalledWith(1200);
+    expect(run.scope.readState()).toMatchObject({
+      phase: "stopping",
+      stop: {
+        reason: "STOP_UNCONFIRMED",
+        stopStartedMonotonicMs: 200,
+        cleanupDeadlineMonotonicMs: 1200,
+      },
+    });
+    run.scope.finish();
+    disposeMediaOperationContext(run.context);
+  });
+  it.each(["before", "acquire", "persist"])(
+    "shared unknown at %s keeps strict evidence and never clears a guard",
+    async (stage) => {
+      const context = createMediaOperationContext({
+        signal: new AbortController().signal,
+        deadlineMonotonicMs: 60_100,
+      });
+      const scope = beginMediaImage(context)!;
+      const control = { update: vi.fn(), finish: vi.fn() };
+      if (stage === "before")
+        requestMediaOperationStop(context, "STOP_UNCONFIRMED");
+      control.update.mockImplementation((phase) => {
+        if (stage === "persist" && phase === "issued")
+          requestMediaOperationStop(context, "STOP_UNCONFIRMED");
+      });
+      const result = await runOwnedMac(
+        "626e311b-4211-4f35-b874-a39d801b2df6",
+        {
+          executable: "/synthetic/node",
+          args: ["/synthetic/worker"],
+          bytes: Buffer.alloc(0),
+          policy: { profile: "synthetic", profileId: "a".repeat(64) },
+        },
+        scope,
+        now,
+        {
+          checkoutRoot: "/synthetic/root",
+          identityHelper: "/synthetic/helper",
+          acquireControl() {
+            if (stage === "acquire")
+              requestMediaOperationStop(context, "STOP_UNCONFIRMED");
+            return control;
+          },
+        },
+      );
+      expect(result).toMatchObject({
+        code: "STOP_UNCONFIRMED",
+        stopped: "unknown",
+      });
+      expect(
+        parseLaunchResult(
+          Buffer.from(
+            JSON.stringify({
+              outcome: "failed",
+              runId: result.runId,
+              profileId: result.profileId,
+              code: result.code,
+              stopped: result.stopped,
+            }),
+          ),
+        ).ok,
+      ).toBe(true);
+      expect(subprocess.spawn).not.toHaveBeenCalled();
+      expect(control.finish).not.toHaveBeenCalled();
+      scope.finish();
+      disposeMediaOperationContext(context);
+    },
+  );
   it("late observation of the image deadline cannot create a fresh cleanup window", async () => {
     const run = launch();
     now = 11_000;

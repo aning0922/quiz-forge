@@ -21,6 +21,7 @@ export const MEDIA_STOP_REASONS = [
 ] as const;
 export type MediaStopReason = (typeof MEDIA_STOP_REASONS)[number];
 export type MediaStopState = Readonly<{
+  /** The first reason is retained, except for irreversible STOP_UNCONFIRMED escalation. */
   reason: MediaStopReason;
   stopStartedMonotonicMs: number;
   cleanupDeadlineMonotonicMs: number;

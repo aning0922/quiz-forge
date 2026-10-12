@@ -164,6 +164,41 @@ describe("Linux issued/control barriers without a daemon", () => {
     second.scope.finish();
     disposeMediaOperationContext(second.context);
   });
+  it("shared unknown before launch cannot be reported as not-started or invoke any command", async () => {
+    const fixtureRun = fixture(),
+      run = scoped();
+    requestMediaOperationStop(run.context, "CANCELLED");
+    requestMediaOperationStop(run.context, "STOP_UNCONFIRMED");
+    expect(
+      await fixtureRun.core.execute({
+        execution,
+        scope: run.scope,
+        bytes: Buffer.from("synthetic"),
+      }),
+    ).toMatchObject({ code: "STOP_UNCONFIRMED", stopped: "unknown" });
+    expect(fixtureRun.docker).not.toHaveBeenCalled();
+    run.scope.finish();
+    disposeMediaOperationContext(run.context);
+  });
+  it("unknown after policy does not clear its current guard", async () => {
+    const fixtureRun = fixture(),
+      run = scoped();
+    fixtureRun.loadPolicy.mockImplementation(async () => {
+      requestMediaOperationStop(run.context, "STOP_UNCONFIRMED");
+      return policy;
+    });
+    expect(
+      await fixtureRun.core.execute({
+        execution,
+        scope: run.scope,
+        bytes: Buffer.from("synthetic"),
+      }),
+    ).toMatchObject({ code: "STOP_UNCONFIRMED", stopped: "unknown" });
+    expect(await readdir(fixtureRun.controlRoot)).toContain("guard");
+    expect(fixtureRun.docker).not.toHaveBeenCalled();
+    run.scope.finish();
+    disposeMediaOperationContext(run.context);
+  });
   it("cancellation after policy IO prevents create and settles only its own local guard", async () => {
     const fixtureRun = fixture(),
       run = scoped();
