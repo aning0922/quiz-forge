@@ -5,6 +5,11 @@ on:
     paths:
       - "scripts/quizpack-media-preflight/**"
       - "src/features/quizpack/v1/**"
+      - "src/features/quizpack/server/**"
+      - "src/lib/build/media-deployment.ts"
+      - "scripts/quizpack-media-build.ts"
+      - "scripts/quizpack-media-next-fixture.ts"
+      - "next.config.ts"
       - "pnpm-lock.yaml"
       - ".github/workflows/media-isolation-preflight.yml"
   workflow_dispatch:
@@ -32,11 +37,20 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
-          node-version: "24"
+          node-version: "20.20.1"
           cache: pnpm
           cache-dependency-path: pnpm-lock.yaml
       - name: Frozen install
         run: pnpm install --frozen-lockfile
-      - name: Real Linux media isolation candidate
+      - name: Build fixed Next media fixture
+        run: |
+          node --conditions=react-server --import tsx scripts/quizpack-media-next-fixture.ts prepare
+          node --conditions=react-server --import tsx scripts/quizpack-media-next-fixture.ts build
+          node --conditions=react-server --import tsx scripts/quizpack-media-next-fixture.ts verify
+      - name: Prepare fixed Linux runtime
+        run: node --conditions=react-server --import tsx scripts/quizpack-media-preflight/linux/setup.mjs --runtime-target=fixture
+      - name: Real target matrix and offline seal
         shell: bash
-        run: bash scripts/quizpack-media-preflight/linux/ci.sh
+        run: node --conditions=react-server --import tsx scripts/quizpack-media-preflight/shared/provision-cli.ts --runtime-target=fixture
+      - name: Verify actual sealed Next public entry
+        run: node --conditions=react-server --import tsx scripts/quizpack-media-next-fixture.ts verify-sealed

@@ -10,6 +10,8 @@ import { randomUUID } from "node:crypto";
 import { release, arch } from "node:os";
 import {
   CACHE,
+  STATE,
+  RUNTIME_TARGET,
   hash,
   privateDir,
   writePrivate,
@@ -28,6 +30,10 @@ safeMain(async () => {
   const cases = [];
   const record = (id, passed, result) => {
     cases.push({ id, passed, result });
+    if (RUNTIME_TARGET) {
+      process.stdout.write(JSON.stringify({ case: id, passed }) + "\n");
+      return;
+    }
     process.stdout.write(
       JSON.stringify({
         case: id,
@@ -378,7 +384,7 @@ safeMain(async () => {
   // wait for guard presence, bounded; second must not load image or issue create
   for (let i = 0; i < 100; i++) {
     try {
-      await lstat(resolve(CACHE, "control", "guard"));
+      await lstat(resolve(STATE, "control", "guard"));
       break;
     } catch {
       await new Promise((r) => setTimeout(r, 10));
@@ -389,7 +395,7 @@ safeMain(async () => {
   await pending;
   const leftovers = await import("node:fs/promises").then(async (fs) => {
     try {
-      return (await fs.readdir(resolve(CACHE, "control"))).sort();
+      return (await fs.readdir(resolve(STATE, "control"))).sort();
     } catch {
       return ["unreadable"];
     }
@@ -455,6 +461,28 @@ safeMain(async () => {
         ? elapsedMs
         : null,
   };
+  if (RUNTIME_TARGET) {
+    process.stdout.write(
+      JSON.stringify({
+        schema: "quizpack-media-owned-matrix.v1",
+        matrix: "linux-smoke",
+        target: RUNTIME_TARGET,
+        completed: cases.every((c) => c.passed),
+        cases: cases.map(({ id, passed }) => ({ id, passed })),
+        profiles: {
+          normal: policy.profileId,
+          fault: policy.profileId,
+          posixProbe: policy.profileId,
+          nativeProbe: policy.profileId,
+        },
+        ownedOperationsStopped:
+          cases.every((c) => c.passed) && leftovers.length === 0,
+        residualControlEntries: Math.min(16, leftovers.length),
+      }) + "\n",
+    );
+    if (cases.some((c) => !c.passed)) process.exitCode = 1;
+    return;
+  }
   process.stdout.write(
     JSON.stringify({
       outcome: cases.every((c) => c.passed)

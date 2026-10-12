@@ -1,11 +1,11 @@
-# B2-2：可信复验与私有资源归档候选合同
+# B2-2：可信复验与私有资源归档合同
 
-日期：2026-10-12。状态：**总控候选合同，媒体最终 CI 通过及本合同审阅前不实施**。
-编写基线：`codex/media-isolation-preflight` 的 `736d92354d2765a15ca6109c2611dfc7dde9b83e`。
-本文件记录总控原则接受的技术决定，不宣称代码、迁移、业务接口或验收已经存在。
+日期：2026-10-12。状态：**B2-2A合同已由总控按独立Astra审查修订并冻结；B2-2B只冻结不变量，精确迁移/DTO尚未冻结**。
+实施基线：媒体预检交付 `1f6f3880f1d5c920835f5cf235c2a93b28588c29`，准确代码736d923的普通与平台CI均success；父交付记录head的最终CI核清后才开始代码实施。
+本文件记录工程决定，不宣称代码、迁移、业务接口或验收已经存在。
 
 依据：[原验证归档提案](STUDIO_P2B2_VALIDATION_PROPOSAL.md)、[持久化尺寸证据](QUIZPACK_PERSISTENCE_PREFLIGHT.md)、[B2-1 合同](STUDIO_P2B2.md)、[媒体隔离预检](QUIZPACK_MEDIA_ISOLATION_PREFLIGHT.md)。
-原提案保留推导和历史取舍；本合同审阅通过后，其明确决定优先于原提案的建议值。未明确的 B2-2B 迁移及 DTO 不据此自动实施。
+原提案保留推导和历史取舍；本合同明确决定优先于原提案建议值。未明确的 B2-2B 迁移及 DTO 不据此自动实施。
 
 ## 1. 范围与两个代码里程碑
 
@@ -33,6 +33,12 @@ B2-3 才应用首稿；P2-C 才有私有像素读取、结构预览及送审；P
 - lease 120,000ms，不无限续期；每 validation key 最多 3 个执行 attempt。已确认提交的结果不因随后超时而改成失败。
 - 稳定 limits/hash 与请求剩余时间分离；外层期限只收紧执行，不改变政策 hash。
 
+A-R提供统一上下文工厂 `createMediaOperationContext`。它绑定外部signal、业务绝对期限及单次停止状态；首次取消/超时/明确停止请求固定共用cleanup deadline，后续请求只能收紧，不能重启5秒。A-V及B原样传递同一个上下文，不能每图/每层重建。上下文的有效身份与只收紧的状态由受信任实现检查，不凭可改的结构字段声称已执行；精确类型由A-R第一公共接口交付，先于平台核心实现交接。
+
+停止原因保留首次触发值，唯一允许的保守升级是`STOP_UNCONFIRMED`；升级不改变首次停止时间、不延长cleanup、不重复abort，后续close或普通停止请求不能把未知降级为已确认。它表达后续出现的停止证明缺口，不能被较早的取消/超时原因掩盖。
+
+单图执行超时、取消、运行失败或STOP_UNCONFIRMED使整个候选结果interrupted并立即停止后续inspector调用。已确认停止的内容/格式拒绝可以成为rejected；P1 issue不能吞掉未知停止或将可恢复运行失败固化为内容结论。B可在整个candidate调用前一次持久化media-stop-unconfirmed，只有聚合结果证明全部媒体与相关IO停止后才解除，无需每图新增DB回调。
+
 B2-1 的主进程 ESRCH 不能直接充当 B2-2 媒体停止证明。调用 launcher 前，必须先持久化当前 attempt 的 `media-stop-unconfirmed` 事实。
 只有实际返回 `stopped: confirmed | not-started` 且本次相关输入/输出、文件任务均 settled，才能解除相应未确认事实。
 崩溃留下该事实时，普通 recover 保守返回需维护；不能因主进程退出、lease 过期或控制目录后来变空释放占用。
@@ -43,22 +49,25 @@ A 必须提供足够的 run/profile/stop 事实；B 负责把它们与 attempt �
 
 | 实现流        | 独占文件/职责                                                                                                                                                                                                        |
 | ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| A-R：运行模块 | 新 `src/features/quizpack/server/media/**`；原 scripts 平台 launcher、policy、control 的拆分及离线适配；对应平台/依赖边界测试。发布固定媒体入口与 runtime binding 类型。                                             |
+| A-R：运行模块 | 新 `src/features/quizpack/server/media/**`；原 `scripts/quizpack-media-preflight/{shared,macos,linux}/**` 的运行核心、公共类型、测试迁移与离线适配；发布固定媒体入口、统一上下文与runtime binding类型。              |
 | A-V：可信验证 | `src/features/quizpack/v1/**` 的必要内部执行拆分及独立 canonical 预算；新 `src/features/quizpack/server/validation/**` 的快照、dispatcher、候选、Unicode/报告 Schema；对应测试。调用 A-R 公共入口，不改其 internal。 |
 | 总控          | package/锁文件、Next/build/CI 接线、部署身份清单、共享文档和集成顺序；目标 worktree 封存及生产启动串行验收。两流提交建议，不并发改共享文件。                                                                         |
 
-以下为 A 的目标接口，**当前尚未实现**；路径/类型归属在开工前由对应所有者先交桩，接口调整先回总控。
+以下为 A 已集成的公共接口摘要；实际平台、封存与完整验收仍以上方阶段状态和P2B2A_REVIEW为准。接口调整先回总控。
 
 ```ts
 // server/media/index.ts：A-R；P1 declaration/facts 复用既有类型。
+createMediaOperationContext(input: {
+  signal: AbortSignal; deadlineMonotonicMs: number;
+}): MediaOperationContext;
 runIsolatedImage(bytes: Uint8Array, declaration: ImageDeclaration,
-  context: LaunchContext): Promise<LaunchResult>;
-// LaunchContext = { signal, deadlineMonotonicMs }。
+  context: MediaOperationContext): Promise<LaunchResult>;
+// MediaOperationContext必须来自该工厂，共用单次停止/收尾期限。
 // LaunchResult 保留预检已审的 decoded/failed、runId、profileId 和 stopped 联合。
 
 // server/validation/index.ts：A-V；只有可信服务可调用。
 validateArchiveCandidate(archive: Uint8Array, targetProductId: string,
-  context: LaunchContext): Promise<CandidateResult>;
+  context: MediaOperationContext): Promise<CandidateResult>;
 // CandidateResult：accepted/rejected/interrupted 严格联合，含有界证据。
 // accepted 持有同快照 manifest/content、资源集合及 hash，不能序列化进 DTO。
 // interrupted 明确 stopped/需维护事实；无候选可归档，不冒充内容永久拒绝。
@@ -109,6 +118,23 @@ trace guard 继续拒绝私有运行配置、control、uploads；明确区分可
 A 没有业务调用方，模块可能被 tree-shake；允许临时、隔离的测试专属 Next fixture 或离线构建 driver 显式引入新入口，以真实 next build/next start 验证实际编译产物正常运行和失败关闭。fixture 可有仅测试所需的调用入口，但不得写入永久业务路由或发布应用。
 fixture 必须调用同一生产源码并绑定真正执行的 artifact；仅启动 Next、运行源码 tsx 或执行未被 Next 使用的旁路副本均不足。其结果只证明编译/运行兼容性，不宣称当前应用已存在该业务路径。
 B 接入真实业务路由后，必须对最终应用构建重新确认 locator、执行代码闭包、依赖/权限、部署 identity 及普通 sealed 路径；重新 record/封存并通过真实路由验收。A 的 fixture identity、能力文件和通过结论不能作为 B 的部署授权。
+
+### 构建接线决定与实测依据
+
+独立合成fixture已实际运行Next16.4.0/Node20.20.1构建与127.0.0.1:3111启动：可信root模块执行成功，compiler.defineServer常量仅内嵌server代码，错误runtime env/global及请求参数不能改根；根tsconfig与next-env状态不变，服务已close/端口释放。74个产物694,633bytes的后置清单生成及启动前后hash相同。此证明只覆盖构建定位办法，不是实际媒体或B业务验收。用法依据[Next官方编译器文档](https://nextjs.org/docs/architecture/nextjs-compiler#define-replacing-variables-during-build)。
+
+- 固定server编译宏为`__QUIZFORGE_MEDIA_CHECKOUT_ROOT__`和`__QUIZFORGE_MEDIA_DEPLOYMENT_ROOT__`（actual `.next`目录）。普通入口无宏即关闭，不从runtime env/cwd推断回退；总控构建时提供核实realpath。
+- 总控拥有`src/lib/build/media-deployment.ts`与闭集CLI，固定manifest为checkout下`.cache/quizpack-media-runtime/deployment.json`；私有leaf0700/file0600，无链接、实际字节和最终IO期限检查。它是构建证据，不是capability seal。
+- strict `quizpack-media-deployment.v1`包含两根、sourceFiles（role/path/bytes/sha256）、artifactFiles（path/bytes/sha256）、两固定dependencyRoots、sharpRuntime、artifactAliases、sourceBundleHash、deploymentId。源代码只扫描P1/媒体/validation固定生产目录、必要基础文件；固定zod/buffer-crc32的实际安装包经受管node_modules入口解析，包根内全部普通文件纳入绑定，包含非标准扩展名的代码与数据。实际解析入口必须出现在已读取清单中，不能只以lock声明或扩展名代替字节闭包。
+- Sharp固定0.35.5及六个实际宿主包根（sharp、colour、detect-libc、semver、对应native和libvips）完整入source hash，即使无Next alias也核实。只支持darwin-arm64/linux-x64，Linux另核真实Node report的有限glibc版本字段，不输出report。native自身的libvips兄弟映射、固定wrapper/export/native文件/首个loader候选必须与已绑定第六根一致；不允许另一个未绑定包根替代。只读依赖允许合法pnpm硬链接，仍核owner/mode/inode/字节；不修改依赖权限。
+- `.next/server`实际JS/JSON及固定加载清单构成artifact清单，不包含manifest本身或任意私有cache。最多16,384目录项、4,096文件、普通单文件16MiB、仅sharp-runtime角色单文件32MiB、全体总128MiB；相对路径512 UTF-8 bytes、manifest2MiB。对新增/删除/改变文件及解析映射一并复核；超限失败关闭，不截清单。
+- Next允许至多一个精确`node_modules/sharp-[a-f0-9]{16}`直接符号链接，仅指向已绑定实际sharp包根；路径、目标和readlink文本hash进入deploymentId。其他链接、链式/改变/新增/移除映射均关闭。离线hardener只在有界完整预检后将自己固定构建树文件/目录改为0600/0700，不跟随alias、不改依赖/源文件/祖先权限；构建文件和私有manifest仍要求单硬链接。普通verify永不修复权限。
+- A-R消费`verifyMediaDeployment(roots, {deadlineMonotonicMs, signal, checkpoint})`的有限结果，所有roots来自编译宏，同一个operation预算继续生效。只读核验不写seal、不删除控制状态；运行时文件IO须实际settled，定时器不冒称硬实时终止。
+- `runtimeBundleHash`绑定整个后台验证执行闭包，由domain hash组合sourceBundleHash、deploymentId、平台componentId和limitsHash。A-V的validatorBundleSha256引用此完整身份，不以媒体子目录hash代替P1/dispatcher/canonical/report/Unicode执行代码；actual compiled代码由deploymentId绑定。Node/sharp/native/helper真实字节仍由A-R componentId补齐。
+
+平台固定根为`.cache/quizpack-media-runtime/{darwin-arm64,linux-x64}/`，capability/control/tools由A-R单写；普通worker仍是受审`src/features/quizpack/v1/media-worker.mjs`。离线故障计划与候选封存工具不成为生产入口参数。固定布局已实现，目标工作树封存与实测尚未验收。
+
+离线准备只支持维护期间独占执行：总控停止自己正常服务，串行setup、固定target矩阵、封存，再启动服务验收。controlEmpty只是采样事实，不是跨整个过程的锁；本批不支持热封存或并发正常调用。封存器从固定脚本实测生成进程内WeakMap opaque receipt（60秒、单次），JSON审计记录不能恢复授权。核构建/源/矩阵代码及新鲜platform binding均一致、全部owned停止和control清空后才签发；无效receipt不改变旧capability。最终IO后重新核绝对期限；晚到提交准确报告记录和capability各自committed事实。seal不删除guard、UNKNOWN或业务占用，也不授予跨构建能力。
 
 ## 6. 同字节 P1 桥接及严格持久化证据
 
@@ -176,4 +202,4 @@ A 两流先各自定向检查，再总控集成检查及独立审查；新核心
 B 冻结前交付：精确 SQL/触发器/权限、browser-safe DTO/错误码、服务签名、HTTP CAS/replay/recover/retry、目录 UI 状态及真实验收矩阵。
 B 必验包括真实 PG 三提交点、事务回滚/未知提交、当前降权/归档、同/异资源冲突，以及真实文件/连接故障、统一配额、late IO/停止证明和生产浏览器；另须完成最终应用构建与真实业务路由的实际部署 identity 重绑、重新封存及成功/失败关闭验收，不复用 A 的 fixture 身份。
 UI 分开显示 received 与验证/归档状态；ready 只称“私有资源已归档”，审批 unverified，没有草稿成功、评分通过或发布按钮。
-当前仅文档候选：媒体最终 CI、本合同审阅及各里程碑真实检查未完成前，不记录为实施/验收通过。
+独立Astra已确认分批范围与fixture/真实业务路径分离，并提出共用收尾上下文、原shared目录归属两项开工前补齐，现已纳入第2/3节。A-R第一公共接口须具备上述停止字段/分类再交A-V。各里程碑真实检查未完成前，不记录为功能实现或验收通过。
