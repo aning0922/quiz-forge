@@ -47,3 +47,9 @@ export type {
   EvidenceSqlProjection,
   EvidenceSqlProjectionResult,
 } from "./adapter-types";
+export {
+  restoreValidatedCandidate,
+  expectedCandidateFactsSchema,
+  frozenValidationEvidenceSchema,
+  restoreResultEvidenceSchema,
+} from "./restore";
