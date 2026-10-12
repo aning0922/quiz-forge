@@ -240,3 +240,110 @@ it("the exact receipt task does not count itself as unsettled prerequisite IO", 
   expect(work).toHaveBeenCalledTimes(1);
   expect(op.completion().relatedIo).toBe("settled");
 });
+
+it("receipt-owned continuation rechecks UNKNOWN after awaited IO before further writes", async () => {
+  const { op, context } = fixture();
+  op.enterClaimBoundary();
+  op.confirmClaim();
+  op.stop("CANCELLED");
+  await op.settle();
+  const io = deferred<void>(),
+    write = vi.fn();
+  const task = op.stoppedReceiptTask(async (check) => {
+    await io.promise;
+    check();
+    write();
+  });
+  await Promise.resolve();
+  requestMediaOperationStop(context, "STOP_UNCONFIRMED");
+  io.resolve();
+  await expect(task).rejects.toMatchObject({
+    code: "VALIDATION_RECOVERY_REQUIRED",
+  });
+  expect(write).not.toHaveBeenCalled();
+});
+
+it("normal receipt gates preserve the business deadline and permit one DB finalization only", async () => {
+  const { op, context } = fixture();
+  op.enterClaimBoundary();
+  op.confirmClaim();
+  op.enterCandidateBoundary();
+  op.recordPlatformCompletion({
+    mediaStopped: "confirmed",
+    relatedIo: "settled",
+    maintenanceRequired: false,
+  });
+  op.closeNonDbGate();
+  await op.settle();
+  expect(readMediaOperationState(context).phase).toBe("active");
+  expect(context.deadlineMonotonicMs).toBe(60100);
+  await expect(op.fileTask(async () => {})).rejects.toMatchObject({
+    code: "VALIDATION_RECOVERY_REQUIRED",
+  });
+  expect(
+    await op.stoppedReceiptTask(async (check) => {
+      check();
+      return "receipt";
+    }),
+  ).toBe("receipt");
+  expect(readMediaOperationState(context).phase).toBe("active");
+  const complete = vi.fn(async () => "ready");
+  expect(await op.finalizeDatabaseOnce(complete)).toBe("ready");
+  await expect(op.finalizeDatabaseOnce(complete)).rejects.toMatchObject({
+    code: "VALIDATION_RECOVERY_REQUIRED",
+  });
+  await expect(op.stoppedReceiptTask(async () => {})).rejects.toMatchObject({
+    code: "VALIDATION_RECOVERY_REQUIRED",
+  });
+  expect(complete).toHaveBeenCalledTimes(1);
+});
+it("pending finalization remains request IO and does not inherit the file receipt's settled scope", async () => {
+  const { op } = fixture(),
+    commit = deferred<void>();
+  op.enterClaimBoundary();
+  op.confirmClaim();
+  op.closeNonDbGate();
+  await op.settle();
+  await op.stoppedReceiptTask(async () => {});
+  const task = op.finalizeDatabaseOnce(() => commit.promise);
+  await Promise.resolve();
+  expect(op.completion().relatedIo).toBe("unconfirmed");
+  commit.resolve();
+  await task;
+  expect(op.completion().relatedIo).toBe("settled");
+});
+it("cancelled normal receipt cannot authorize complete under a cleanup extension", async () => {
+  const { op, abort } = fixture();
+  op.enterClaimBoundary();
+  op.confirmClaim();
+  op.closeNonDbGate();
+  await op.settle();
+  await op.stoppedReceiptTask(async () => {});
+  abort.abort();
+  const complete = vi.fn(async () => {});
+  await expect(op.finalizeDatabaseOnce(complete)).rejects.toMatchObject({
+    code: "VALIDATION_CANCELLED",
+  });
+  expect(complete).not.toHaveBeenCalled();
+});
+it("failure of finalization permanently bars any later write or receipt", async () => {
+  const { op } = fixture();
+  op.enterClaimBoundary();
+  op.confirmClaim();
+  op.closeNonDbGate();
+  await op.settle();
+  await op.stoppedReceiptTask(async () => {});
+  const complete = vi.fn(async () => {
+    throw new Error("SYNTHETIC_COMMIT_FAILURE");
+  });
+  await expect(op.finalizeDatabaseOnce(complete)).rejects.toThrow(
+    "SYNTHETIC_COMMIT_FAILURE",
+  );
+  await expect(op.databaseAwait("write", complete)).rejects.toMatchObject({
+    code: "VALIDATION_RECOVERY_REQUIRED",
+  });
+  await expect(op.stoppedReceiptTask(async () => {})).rejects.toMatchObject({
+    code: "VALIDATION_RECOVERY_REQUIRED",
+  });
+  expect(complete).toHaveBeenCalledTimes(1);
+});
