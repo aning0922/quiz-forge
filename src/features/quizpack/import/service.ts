@@ -43,6 +43,7 @@ import {
   privateDirectory,
   removeOwned,
   scanStorage,
+  scannedFiles,
   stopped,
   writeStopped,
   type Attempt,
@@ -52,13 +53,17 @@ import {
   audit,
   canIncrement,
   dto,
-  heldRows,
   importRow,
   parse,
   read,
   type ImportRow,
 } from "./repository";
-import { measuredQuota, requireQuota, requireReceiveCapacity } from "./quota";
+import {
+  measuredStorageQuota,
+  requireQuota,
+  requireStorageCapacity,
+} from "./quota";
+import { readHeldStorageRows } from "../validation/storage-ledger";
 import type {
   ImportReceiveService,
   ReceiveContext,
@@ -347,7 +352,7 @@ export function createImportReceiveService(
         const scan = await scanStorage(config, context);
         currentReceiptLimits(scan, id);
         lock.assert();
-        const rows = await lock.query(() => heldRows(lock!.connection));
+        const rows = await readHeldStorageRows(lock, "receive");
         remainingReceiveMs(context);
         const existing = await receiveDatabaseAwait(db, context, "read", () =>
           read(db, c.sessionToken, async (tx) => importRow(tx, p, id), c),
@@ -356,14 +361,18 @@ export function createImportReceiveService(
           return dto(existing);
         }
         recoveryRequired(existing);
-        requireReceiveCapacity(scan, id, rows);
+        requireStorageCapacity(scan, rows, {
+          namespace: "imports",
+          id,
+          assetBlobHashes: null,
+        });
         if (existing.status === "rejected")
           throw new StudioError(
             "IMPORT_STATE_CONFLICT",
             existing.state_revision,
           );
         requireQuota(
-          measuredQuota(scan, rows),
+          measuredStorageQuota(scan, rows),
           attemptReservation(existing.expected_archive_bytes),
         );
         claimed = await write(db, c, "import:create", async (tx, actor) => {
@@ -619,10 +628,10 @@ export function createImportReceiveService(
         const config = await writeConfig(db, lock);
         const scan = await scanStorage(config, context);
         currentReceiptLimits(scan, id);
-        const rows = await lock.query(() => heldRows(lock!.connection));
+        const rows = await readHeldStorageRows(lock, "receive");
         // Recovery creates no archive/temporary bytes. Validate the bounded held ledger,
         // then permit stopped cleanup/reconciliation even when conservative headroom exceeds admission quota.
-        measuredQuota(scan, rows);
+        measuredStorageQuota(scan, rows);
         const row = await receiveDatabaseAwait(db, context, "read", () =>
           read(db, c.sessionToken, async (tx) => importRow(tx, p, id), c),
         );
@@ -657,7 +666,7 @@ export function createImportReceiveService(
           return next!;
         });
         let archiveFact: { bytes: number; hash: string } | undefined;
-        const files = scan.files.get(id) ?? [];
+        const files = scannedFiles(scan, "imports", id);
         const archive = files.find(
           (f) => path.basename(f.file) === "archive.quizpack",
         );

@@ -9,9 +9,14 @@ import {
   ensureStorage,
   currentReceiptLimits,
   importDirectory,
+  validationDirectory,
+  blobsDirectory,
+  blobPath,
+  scannedFiles,
   importsDirectory,
   ownerExited,
   scanStorage,
+  storageScanKey,
   stopped,
   writeStopped,
   type Attempt,
@@ -41,6 +46,7 @@ async function fixture() {
     server: { version: 180004, address: "127.0.0.1", port: 55421 },
   });
   const dir = path.join(process.cwd(), ".cache", "p2a", id);
+  await mkdir(path.dirname(dir), { recursive: true, mode: 0o700 });
   await mkdir(dir, { mode: 0o700 });
   dirs.push(dir);
   await ensureStorage(config);
@@ -181,7 +187,7 @@ it("total entries 8192/+1, current receipt count and scan subdeadline fail close
   const lastId = randomUUID(),
     last = importDirectory(config, lastId);
   await mkdir(last, { mode: 0o700 });
-  for (let j = 0; j < 13; j++)
+  for (let j = 0; j < 11; j++)
     await writeFile(path.join(last, `attempt-${randomUUID()}.partial`), "", {
       mode: 0o600,
     });
@@ -194,7 +200,7 @@ it("total entries 8192/+1, current receipt count and scan subdeadline fail close
     bytes: 0,
     files: new Map([
       [
-        lastId,
+        storageScanKey("imports", lastId),
         Array.from({ length: 4 }, () => ({
           file: `stopped-${randomUUID()}.json`,
           size: 1,
@@ -223,4 +229,52 @@ it("total entries 8192/+1, current receipt count and scan subdeadline fail close
   } finally {
     clock.mockRestore();
   }
+}, 20000);
+
+it("scans closed namespaces with distinct UUID ownership and real blob bytes", async () => {
+  const config = await fixture(),
+    id = randomUUID(),
+    hash = "e".repeat(64);
+  await mkdir(importDirectory(config, id), { mode: 0o700 });
+  await mkdir(validationDirectory(config, id), { mode: 0o700 });
+  await writeFile(
+    path.join(importDirectory(config, id), `attempt-${id}.partial`),
+    Buffer.alloc(10),
+    { mode: 0o600 },
+  );
+  await writeFile(
+    path.join(validationDirectory(config, id), `attempt-${id}.partial`),
+    Buffer.alloc(20),
+    { mode: 0o600 },
+  );
+  await writeFile(blobPath(config, hash), Buffer.alloc(30), { mode: 0o600 });
+  const value = await scan(config);
+  expect(value.bytes).toBe(60);
+  expect(value.entries).toBe(8);
+  expect(scannedFiles(value, "imports", id)[0]?.size).toBe(10);
+  expect(scannedFiles(value, "validation", id)[0]?.size).toBe(20);
+  expect(scannedFiles(value, "blobs", hash)[0]?.size).toBe(30);
+  await symlink("/dev/null", blobPath(config, "f".repeat(64)));
+  await expect(scan(config)).rejects.toThrow("RECEIVE_STORAGE_CONFLICT");
+});
+it("validation directories and blob names enforce independent 1024/4096 limits", async () => {
+  const config = await fixture();
+  for (let i = 0; i < 1024; i++)
+    await mkdir(validationDirectory(config, randomUUID()), { mode: 0o700 });
+  expect((await scan(config)).files.size).toBe(1024);
+  const extra = validationDirectory(config, randomUUID());
+  await mkdir(extra, { mode: 0o700 });
+  await expect(scan(config)).rejects.toThrow("RECEIVE_SCAN_LIMIT");
+  await rmdir(extra);
+  for (let i = 0; i < 4096; i++)
+    await writeFile(blobPath(config, i.toString(16).padStart(64, "0")), "", {
+      mode: 0o600,
+    });
+  expect((await scan(config)).files.size).toBe(5120);
+  await writeFile(
+    path.join(blobsDirectory(config), `${"f".repeat(64)}.blob`),
+    "",
+    { mode: 0o600 },
+  );
+  await expect(scan(config)).rejects.toThrow("RECEIVE_SCAN_LIMIT");
 }, 20000);
