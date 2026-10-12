@@ -2,7 +2,7 @@
 
 ## 2026-10-12 托管推进
 
-B2-2A已在独立 `codex/quizpack-validation-bridge` 工作树开始，基于媒体预检最终交付 `1f6f388`；该head的[普通CI38183785073](https://github.com/aning0922/quiz-forge/actions/runs/38183785073) checks/database及[平台CI38183785046](https://github.com/aning0922/quiz-forge/actions/runs/38183785046)全部实际success。合同fce1246的统一收尾上下文与完整文件所有权修订已由独立Astra复核，两条Sol/high流在各自worktree实施运行核心与P1可信桥接；[Draft PR #12](https://github.com/aning0922/quiz-forge/pull/12)堆叠于#11。当前仅首次接口/纯边界开发，无功能验收声明；无DB/HTTP/UI，三表/归档后台留B2-2B。
+B2-2A在独立 `codex/quizpack-validation-bridge` 工作树实施，基于媒体预检最终交付 `1f6f388`；该父head的[普通CI38183785073](https://github.com/aning0922/quiz-forge/actions/runs/38183785073) checks/database及[平台CI38183785046](https://github.com/aning0922/quiz-forge/actions/runs/38183785046)全部实际success。已集成同字节P1核心/候选证据、共享媒体生命周期及实际源码/构建绑定工具；两条Sol/high流修复独立Astra发现的停止边界问题，第三条受限子任务准备真实Next fixture。[Draft PR #12](https://github.com/aning0922/quiz-forge/pull/12)堆叠于#11。当前尚未完成普通生产入口接线、能力重封存和完整验收；无DB/HTTP业务/UI，三表/归档后台留B2-2B，过程和检查限制见[P2B2A_REVIEW](P2B2A_REVIEW.md)。
 
 媒体隔离可行性已技术验收：准确代码 `736d92354d2765a15ca6109c2611dfc7dde9b83e` 的[普通CI38183239291](https://github.com/aning0922/quiz-forge/actions/runs/38183239291) checks/database及[平台CI38183239317](https://github.com/aning0922/quiz-forge/actions/runs/38183239317)均实际success。macOS总控66项矩阵三次通过，Linux31项smoke/11项生命周期通过，独立登记问题全部关闭；本地612单测/214真实DB/46驱动/206生产E2E通过（10既有跳过），构建53trace/8614路径无私有违规。自有实例与服务已停止。见[验收](MEDIA_ISOLATION_ACCEPTANCE.md)及[审查过程](MEDIA_ISOLATION_REVIEW.md)。[Draft PR #11](https://github.com/aning0922/quiz-forge/pull/11)保持未合并，最终记录head CI另核；该阶段仅脚本层平台能力，尚未接入业务。
 

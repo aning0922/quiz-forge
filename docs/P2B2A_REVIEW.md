@@ -28,12 +28,16 @@ Astra实际构造约50KiB合成ZIP，102题且索引101的prompt类型错误；�
 
 ## 同字节可信桥接
 
-原6aae0d1→rootbf20e0e将完整P1和ZIP核心复用到后台可信入口，先固定输入快照，再注入固定隔离inspector；不先裸解码。相关17文件287单测通过，使用受控媒体替身，不能代替真实平台验收。独立Astra另测65项及异常时序，确认四项P2待整改：binding未知停止被前置checkpoint丢弃；binding意外异常/畸形返回误判整体IO已结束；cleanup超时与任务结束竞态生成矛盾证据；等待IO未响应收尾期限进一步收紧。已交原开发流修复。
+原6aae0d1→rootbf20e0e将完整P1和ZIP核心复用到后台可信入口，先固定输入快照，再注入固定隔离inspector；不先裸解码。相关17文件287单测通过，使用受控媒体替身，不能代替真实平台验收。独立Astra另测65项及异常时序，确认四项P2：binding未知停止被前置checkpoint丢弃；binding意外异常/畸形返回误判整体IO已结束；cleanup超时与任务结束竞态生成矛盾证据；等待IO未响应收尾期限进一步收紧。
+
+原634a860→root29e2b49修复四项问题：先消费严格binding权威结果再checkpoint；异常返回保留未知；超时决策固定IO未确认；停止期间至多10ms重读同一个只收紧的cleanup期限。Astra重跑原10场景全部通过，期限收紧探针在收紧后约1.2ms返回、比原期限提前约258ms；正常有限失败不被误判未知，相关6文件72项通过。四项P2已独立关闭，成功context仍由调用方拥有。
 
 ## 平台核心和构建进度
 
 原d3a4313→root493fdf8使脚本与生产共享同一图片precheck/output实现；原6dfe735→9d549c1分离仅身份查询的mac生产helper，与离线probe复用query实现。31项共享/平台纯控制通过；尚未跑迁移后的真实mac/Linux完整矩阵，不沿用旧seal。
 
-原27c46b8/ae8ff29/5b9df19→root2e1749f/937a94d/b643358迁入macOS/Linux生命周期、控制与命令核心，脚本复用相同实现；50媒体单测通过，独立审查进行中。普通入口的平台身份接线及实际完整矩阵仍未完成。
+原27c46b8/ae8ff29/5b9df19→root2e1749f/937a94d/b643358迁入macOS/Linux生命周期、控制与命令核心，脚本复用相同实现；50媒体单测通过。独立Astra发现两项P2正在修复：共享UNKNOWN在早退/child close后被降级；mac同步control清理跨过cleanup后仍返回确认。普通入口的平台身份接线及实际完整矩阵仍未完成。
 
 总控隔离Next构建定位probe已成功，精确证据和接线决定见合同第5节。源码/产物manifest工具已实现，29边界单测通过；独立审查复现依赖入口或内部加载非标准扩展名文件未入hash的P2，总控已改为两个固定包根的全部普通文件，并增加实际require行为变化回归。Astra重跑29项及原入口/内部加载探针，均正确拒绝字节变化，该P2已关闭，限定构建工具范围无剩余P1/P2。A-R负责平台component/seal，A-V负责同字节可信validator，实际完整生产执行和能力重封存仍待集成。迁移后31项脚本控制回归通过；格式/lint/type已在首批接口集成运行，不代表后续完整改动通过；最终阶段全套工程、平台与独立审查尚未完成。
+
+中间b2f702e的普通CI38187099583：database成功，checks因ES2017下BigInt字面量失败；root2e5d6b8改用BigInt()，完整本地typecheck通过。平台CI38187099677因旧离线CLI缺react-server condition、导入server-only失败，尚未进入真实平台矩阵，脚本适配由A-R修复。root实际main build通过53trace/8614路径/0违规；随后manifest构建正确拒绝Next生成的组可写0664文件。正在补仅离线构建产物的有界权限归一化，不放宽普通verify条件；该main构建还没有capability seal。

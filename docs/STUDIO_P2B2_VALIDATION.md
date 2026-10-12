@@ -35,6 +35,8 @@ B2-3 才应用首稿；P2-C 才有私有像素读取、结构预览及送审；P
 
 A-R提供统一上下文工厂 `createMediaOperationContext`。它绑定外部signal、业务绝对期限及单次停止状态；首次取消/超时/明确停止请求固定共用cleanup deadline，后续请求只能收紧，不能重启5秒。A-V及B原样传递同一个上下文，不能每图/每层重建。上下文的有效身份与只收紧的状态由受信任实现检查，不凭可改的结构字段声称已执行；精确类型由A-R第一公共接口交付，先于平台核心实现交接。
 
+停止原因保留首次触发值，唯一允许的保守升级是`STOP_UNCONFIRMED`；升级不改变首次停止时间、不延长cleanup、不重复abort，后续close或普通停止请求不能把未知降级为已确认。它表达后续出现的停止证明缺口，不能被较早的取消/超时原因掩盖。
+
 单图执行超时、取消、运行失败或STOP_UNCONFIRMED使整个候选结果interrupted并立即停止后续inspector调用。已确认停止的内容/格式拒绝可以成为rejected；P1 issue不能吞掉未知停止或将可恢复运行失败固化为内容结论。B可在整个candidate调用前一次持久化media-stop-unconfirmed，只有聚合结果证明全部媒体与相关IO停止后才解除，无需每图新增DB回调。
 
 B2-1 的主进程 ESRCH 不能直接充当 B2-2 媒体停止证明。调用 launcher 前，必须先持久化当前 attempt 的 `media-stop-unconfirmed` 事实。
