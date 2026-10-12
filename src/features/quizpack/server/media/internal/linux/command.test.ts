@@ -100,6 +100,28 @@ describe("Linux command shared stop deadline", () => {
     run.scope.finish();
     disposeMediaOperationContext(run.context);
   });
+  it("an input error followed by cancellation kills immediately and only once", async () => {
+    const run = scoped();
+    const pending = command("/synthetic/command", [], {
+      scope: run.scope,
+      deadline: 5100,
+      settleDeadline: 10100,
+    });
+    child.stdin.emit("error", new Error("synthetic"));
+    expect(child.kill).not.toHaveBeenCalled();
+    now = 200;
+    requestMediaOperationStop(run.context, "CANCELLED");
+    expect(child.kill).toHaveBeenCalledExactlyOnceWith("SIGKILL");
+    vi.advanceTimersByTime(20);
+    expect(child.kill).toHaveBeenCalledOnce();
+    child.emit("close", null, "SIGKILL");
+    expect(await pending).toMatchObject({
+      reason: "WORKER_FAILED",
+      settled: true,
+    });
+    run.scope.finish();
+    disposeMediaOperationContext(run.context);
+  });
   it("a shorter operation stop budget bounds in-flight command/stdio together", async () => {
     const run = scoped();
     const pending = command("/synthetic/command", [], {

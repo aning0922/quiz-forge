@@ -72,6 +72,7 @@ export function command(
       reference: null,
     };
     let finished = false;
+    let stopIssued = false;
     let timer: NodeJS.Timeout | undefined,
       hardTimer: NodeJS.Timeout | undefined,
       poll: NodeJS.Timeout | undefined;
@@ -140,6 +141,12 @@ export function command(
     const stop = (why: CommandFailureReason) => {
       if (finished) return;
       reason ??= why;
+      if (stopIssued) {
+        armHardDeadline();
+        return;
+      }
+      // Abort broadcasts are synchronous; publish the action guard before requesting stop.
+      stopIssued = true;
       scope?.requestStop(
         why === "STOP_UNCONFIRMED"
           ? "STOP_UNCONFIRMED"
@@ -160,7 +167,7 @@ export function command(
       }
     };
     const cancel = () => {
-      if (!reason) stop(sharedInterruption() ?? "CANCELLED");
+      stop(sharedInterruption() ?? "CANCELLED");
     };
     const armExecutionDeadline = () => {
       if (finished) return;
