@@ -282,3 +282,49 @@ describe("bounded import conflict projection", () => {
     });
   });
 });
+
+describe("validation errors preserve uncertain execution", () => {
+  it("does not attach a not-started or retry authority to generic failure codes", async () => {
+    for (const [code, status] of [
+      ["VALIDATION_TIMEOUT", 504],
+      ["VALIDATION_LOCK_LOST", 503],
+      ["WRITE_OUTCOME_UNKNOWN", 503],
+      ["VALIDATION_IDENTITY_CHANGED", 409],
+    ] as const) {
+      const response = errorResponse(
+        new StudioError(code),
+        "synthetic-request",
+      );
+      expect(response.status).toBe(status);
+      expect(response.headers.get("cache-control")).toContain("no-store");
+      expect(await response.json()).toEqual({
+        code,
+        requestId: "synthetic-request",
+      });
+    }
+  });
+  it("only includes a finite validation revision for CAS conflicts", async () => {
+    const good = errorResponse(
+      new StudioError("VALIDATION_STATE_CONFLICT", 2),
+      "synthetic-request",
+    );
+    expect(await good.json()).toEqual({
+      code: "VALIDATION_STATE_CONFLICT",
+      requestId: "synthetic-request",
+      currentRevision: 2,
+    });
+    for (const revision of [0, -1, 1.5, NaN, Infinity, 2147483648]) {
+      const response = errorResponse(
+        new StudioError("VALIDATION_STATE_CONFLICT", revision),
+        "synthetic-request",
+      );
+      expect(await response.json()).not.toHaveProperty("currentRevision");
+    }
+    expect(
+      await errorResponse(
+        new StudioError("VALIDATION_LOCK_LOST", 2),
+        "synthetic-request",
+      ).json(),
+    ).not.toHaveProperty("currentRevision");
+  });
+});
