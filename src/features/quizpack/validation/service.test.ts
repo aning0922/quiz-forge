@@ -29,6 +29,8 @@ const mocks = vi.hoisted(() => ({
   publication: vi.fn(),
   ack: vi.fn(),
   append: vi.fn(),
+  begin: vi.fn(),
+  complete: vi.fn(),
   interrupt: vi.fn(),
   claim: vi.fn(),
   recover: vi.fn(),
@@ -83,6 +85,8 @@ vi.mock("./transactions", () => ({
     claimValidation: mocks.claim,
     acknowledgeValidationFileStop: mocks.ack,
     appendValidationEvidence: mocks.append,
+    beginArchiving: mocks.begin,
+    completeValidation: mocks.complete,
     interruptValidation: mocks.interrupt,
     recoverValidationClaim: mocks.recover,
     retryValidationClaim: mocks.retry,
@@ -96,6 +100,7 @@ import {
 } from "./repository";
 import type { ArchiveOperation } from "./operation";
 import type { ValidationAttempt, ValidationRow } from "./repository";
+import { sealP1Report, P1_UNVERIFIED } from "../server/validation/report";
 import { VALIDATION_RESERVATION_BYTES } from "./limits";
 import { ARCHIVE_POLICY_VERSION, archivePolicySha256 } from "./policy";
 const productId = "synthetic-dimensions",
@@ -135,8 +140,9 @@ function context() {
   contexts.push(value);
   return value;
 }
-const db = { sql: { end: vi.fn(async () => {}) } } as unknown as P2aDatabase;
+let db: P2aDatabase;
 beforeEach(() => {
+  db = { sql: { end: vi.fn(async () => {}) } } as unknown as P2aDatabase;
   vi.clearAllMocks();
   mocks.product.mockResolvedValue({ id: productId, archived_at: null });
   mocks.original.mockResolvedValue({
@@ -588,4 +594,157 @@ it("a normal content rejection freezes A evidence then ACK and interrupt, with n
   expect(mocks.ack).toHaveBeenCalledTimes(1);
   expect(mocks.interrupt).toHaveBeenCalledTimes(1);
   expect(mocks.archive).not.toHaveBeenCalled();
+});
+
+function candidateResult(accepted = false) {
+  const evidence = {
+    schemaVersion: "quizpack-candidate-evidence.v1",
+    input: {
+      status: "snapshotted",
+      archiveSha256: hash,
+      archiveBytes: 10,
+      targetProductId: productId,
+    },
+    identity: { status: "bound", value: identity },
+    media: [],
+    completion: {
+      mediaStopped: "not-started",
+      relatedIo: "settled",
+      maintenanceRequired: false,
+    },
+    runtimeFailure: null,
+  };
+  if (!accepted)
+    return {
+      outcome: "rejected",
+      code: "AUTHORED_NOT_SUPPORTED",
+      evidence: {
+        ...evidence,
+        report: { status: "not-run", reason: "BACKEND_POLICY_REJECTED" },
+        policy: { status: "rejected", code: "AUTHORED_NOT_SUPPORTED" },
+      },
+    };
+  return {
+    outcome: "accepted",
+    candidate: { facts: { resources: [{}] } },
+    evidence: {
+      ...evidence,
+      policy: { status: "passed" },
+      report: sealP1Report({
+        schemaVersion: "quizpack-validation.v1",
+        targetProductId: productId,
+        validatorVersion: "1.0.0",
+        policyId: "quizpack-local-p1.v1",
+        archiveSha256: hash,
+        manifestSha256: hash,
+        contentSha256: hash,
+        compatibilityPolicyHash: identity.compatibilityPolicyHash,
+        effectiveLimitsHash: identity.effectiveLimitsHash,
+        checks: {
+          container: "passed",
+          structure: "passed",
+          integrity: "passed",
+          media: "passed",
+          references: "passed",
+          compatibility: "passed",
+        },
+        candidateValid: true,
+        importable: false,
+        publishable: false,
+        issues: [],
+        issuesTruncated: false,
+        unverified: [...P1_UNVERIFIED],
+      }),
+    },
+  };
+}
+it.each(["evidence", "archiving"] as const)(
+  "%s COMMIT unknown cannot become an active failure record or open another ACK/interrupt transaction",
+  async (stage) => {
+    const row = claimedRow();
+    mocks.claim.mockResolvedValue({ row, created: true });
+    mocks.raw.mockResolvedValue(Buffer.from("synthetic"));
+    knownPublisher();
+    mocks.candidate.mockResolvedValue(candidateResult(stage === "archiving"));
+    if (stage === "evidence")
+      mocks.append.mockRejectedValue(new StudioError("WRITE_OUTCOME_UNKNOWN"));
+    else {
+      mocks.append.mockResolvedValue({
+        ...row,
+        status: "validated",
+        state_revision: 2,
+      });
+      mocks.begin.mockRejectedValue(new StudioError("WRITE_OUTCOME_UNKNOWN"));
+    }
+    await expect(
+      createQuizpackValidationService().startValidation(
+        db,
+        credentials,
+        productId,
+        importId,
+        input(),
+        context(),
+      ),
+    ).rejects.toMatchObject({ code: "WRITE_OUTCOME_UNKNOWN" });
+    expect(mocks.ack).not.toHaveBeenCalled();
+    expect(mocks.interrupt).not.toHaveBeenCalled();
+    expect(mocks.archive).not.toHaveBeenCalled();
+    expect(mocks.publication).not.toHaveBeenCalled();
+  },
+);
+
+it("complete COMMIT unknown never emits ready or opens an interrupt/second publisher", async () => {
+  let row = claimedRow();
+  mocks.claim.mockResolvedValue({ row, created: true });
+  mocks.raw.mockResolvedValue(Buffer.from("synthetic"));
+  knownPublisher();
+  const accepted = candidateResult(true);
+  if (!("candidate" in accepted)) throw new Error("SYNTHETIC_RESULT_EXPECTED");
+  mocks.candidate.mockResolvedValue(accepted);
+  mocks.append.mockImplementation(async () => {
+    row = { ...row, status: "validated", state_revision: 2, resource_count: 1 };
+    return row;
+  });
+  mocks.begin.mockImplementation(async () => {
+    row = { ...row, status: "archiving", state_revision: 3 };
+    return row;
+  });
+  mocks.archive.mockResolvedValue({
+    sha256: hash,
+    bytes: 7,
+    mediaType: "image/png",
+    width: 1,
+    height: 1,
+    frames: 1,
+  });
+  mocks.ack.mockImplementation(async (_db, _c, _s, value) => {
+    row = {
+      ...row,
+      state_revision: 4,
+      attempts_text: serializeValidationAttempts(
+        parseValidationAttempts(row.attempts_text).map((a) => ({
+          ...a,
+          mediaStop: value.proof.mediaStopped,
+          fileStopProof: value.proof,
+        })),
+      ),
+    };
+    return row;
+  });
+  mocks.complete.mockRejectedValue(new StudioError("WRITE_OUTCOME_UNKNOWN"));
+  await expect(
+    createQuizpackValidationService().startValidation(
+      db,
+      credentials,
+      productId,
+      importId,
+      input(),
+      context(),
+    ),
+  ).rejects.toMatchObject({ code: "WRITE_OUTCOME_UNKNOWN" });
+  expect(mocks.ack).toHaveBeenCalledTimes(1);
+  expect(mocks.complete).toHaveBeenCalledTimes(1);
+  expect(mocks.archive).toHaveBeenCalledTimes(1);
+  expect(mocks.interrupt).not.toHaveBeenCalled();
+  expect(mocks.receipt).toHaveBeenCalledTimes(1);
 });
