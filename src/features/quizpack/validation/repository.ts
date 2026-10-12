@@ -10,6 +10,7 @@ import {
   type Tx,
 } from "@/features/product/workspace/repository";
 import { canonicalP1Json } from "../v1/canonical";
+import { packIdSchema, packVersionSchema, sha256Schema } from "../v1/manifest";
 import { importIdSchema } from "../import/contracts";
 import type { StorageCondition } from "../import/contracts";
 import { validationIdentitySchema } from "../server/validation/contracts";
@@ -56,12 +57,34 @@ export type ValidationKeyInput = Readonly<{
   archivePolicySha256: string;
 }>;
 /** The only B key implementation. Request timing and attempt identity are deliberately excluded. */
+const validationKeyInputSchema = z.strictObject({
+  productId: packIdSchema,
+  importId: importIdSchema,
+  archiveSha256: sha256Schema,
+  archiveBytes: z.number().int().min(1).max(33554432),
+  identitySha256: sha256Schema,
+  archivePolicyVersion: z
+    .string()
+    .min(1)
+    .max(64)
+    .regex(/^[\x21-\x7e]+$/),
+  archivePolicySha256: sha256Schema,
+});
 export function validationKey(input: ValidationKeyInput): string {
+  const parsed = validationKeyInputSchema.safeParse(input);
+  if (!parsed.success) throw new StudioError("INVALID_REQUEST");
+  const v = parsed.data;
   return createHash("sha256")
     .update(
       canonicalP1Json({
         schemaVersion: "quizpack-validation-key.v1",
-        ...input,
+        productId: v.productId,
+        importId: v.importId,
+        archiveSha256: v.archiveSha256,
+        archiveBytes: v.archiveBytes,
+        identitySha256: v.identitySha256,
+        archivePolicyVersion: v.archivePolicyVersion,
+        archivePolicySha256: v.archivePolicySha256,
       }),
       "utf8",
     )
@@ -160,10 +183,39 @@ export type HeldValidation = Readonly<{
   attempts: ValidationAttempt[];
   reservedBytes: number;
   assetBlobHashes: string[] | null;
-  row: ValidationRow;
 }>;
+export type ValidationSummaryRow = Pick<
+  ValidationRow,
+  | "id"
+  | "product_id"
+  | "import_id"
+  | "validation_key"
+  | "state_revision"
+  | "status"
+  | "storage_condition"
+  | "last_error_code"
+  | "attempts_text"
+  | "archive_sha256"
+  | "archive_bytes"
+  | "identity_text"
+  | "identity_sha256"
+  | "pack_id"
+  | "pack_version"
+  | "container_schema_version"
+  | "content_schema_version"
+  | "identity_kind"
+  | "canonical_validation_id"
+  | "candidate_sha256"
+  | "asset_set_sha256"
+  | "asset_set_text"
+  | "resource_count"
+  | "created_at"
+  | "updated_at"
+  | "validated_at"
+  | "ready_at"
+>;
 export function validationDto(
-  row: ValidationRow,
+  row: ValidationSummaryRow,
   archivedResourceCount: number,
 ): ValidationDto {
   const attempts = parseValidationAttempts(row.attempts_text);
@@ -240,7 +292,7 @@ export async function exactValidation(
 }
 export async function archivedResourceCount(
   tx: Tx,
-  row: ValidationRow,
+  row: Pick<ValidationRow, "product_id" | "asset_set_text">,
 ): Promise<number> {
   if (row.asset_set_text === null) return 0;
   const [count] = await tx<
@@ -251,37 +303,77 @@ export async function archivedResourceCount(
 }
 export async function validationRowDto(
   tx: Tx,
-  row: ValidationRow,
+  row: ValidationSummaryRow,
 ): Promise<ValidationDto> {
   return validationDto(row, await archivedResourceCount(tx, row));
 }
+const assetSetLedgerSchema = z
+  .strictObject({
+    schemaVersion: z.literal("quizpack-candidate-asset-set.v1"),
+    productId: packIdSchema,
+    resources: z
+      .array(
+        z.strictObject({
+          resourceId: packIdSchema,
+          resourceVersion: packVersionSchema,
+          productId: packIdSchema,
+          blobSha256: sha256Schema,
+          declarationSha256: sha256Schema,
+        }),
+      )
+      .min(1)
+      .max(64),
+  })
+  .superRefine((set, ctx) => {
+    const keys = set.resources.map(
+      (r) => `${r.productId}/${r.resourceId}/${r.resourceVersion}`,
+    );
+    if (
+      set.resources.some((r) => r.productId !== set.productId) ||
+      new Set(keys).size !== keys.length ||
+      keys.some((k, i) => i > 0 && k <= keys[i - 1]!)
+    )
+      ctx.addIssue({ code: "custom", message: "Invalid asset set." });
+  });
 export async function heldValidations(
   sql: postgres.Sql | postgres.ReservedSql,
 ): Promise<HeldValidation[]> {
+  type LedgerRow = Pick<
+    ValidationRow,
+    "id" | "attempts_text" | "reserved_bytes" | "asset_set_text"
+  >;
   const rows = await sql<
-    ValidationRow[]
-  >`SELECT * FROM qf.quizpack_validation WHERE reserved_bytes>0 ORDER BY id LIMIT ${MAX_VALIDATIONS + 1}`;
+    LedgerRow[]
+  >`SELECT id,attempts_text,reserved_bytes,asset_set_text FROM qf.quizpack_validation WHERE reserved_bytes>0 ORDER BY id LIMIT ${MAX_VALIDATIONS + 1}`;
   if (rows.length > MAX_VALIDATIONS)
     throw new StudioError("VALIDATION_SCAN_LIMIT");
   return rows.map((row) => {
     let hashes: string[] | null = null;
     if (row.asset_set_text !== null) {
       try {
-        const value = JSON.parse(row.asset_set_text) as {
-          resources: { blobSha256: string }[];
-        };
+        if (Buffer.byteLength(row.asset_set_text, "utf8") > 65536)
+          throw new Error("Invalid asset set.");
+        const value = assetSetLedgerSchema.parse(
+          JSON.parse(row.asset_set_text),
+        );
         hashes = [...new Set(value.resources.map((r) => r.blobSha256))].sort();
       } catch {
         throw new StudioError("VALIDATION_STORAGE_CONFLICT");
       }
     }
+    const reservedBytes = Number(row.reserved_bytes);
+    if (
+      !Number.isSafeInteger(reservedBytes) ||
+      reservedBytes < 1 ||
+      reservedBytes > 536870912
+    )
+      throw new StudioError("VALIDATION_STORAGE_CONFLICT");
     return {
       namespace: "validation",
       id: row.id,
       attempts: parseValidationAttempts(row.attempts_text),
-      reservedBytes: Number(row.reserved_bytes),
+      reservedBytes,
       assetBlobHashes: hashes,
-      row,
     };
   });
 }
@@ -297,8 +389,8 @@ export async function validationsPage(
   >`SELECT count(*)::int total FROM qf.quizpack_validation WHERE ${filter}`;
   if (!count) throw new StudioError("STUDIO_UNAVAILABLE");
   const rows = await tx<
-    ValidationRow[]
-  >`SELECT * FROM qf.quizpack_validation WHERE ${filter} ORDER BY created_at DESC,id DESC LIMIT ${query.pageSize} OFFSET ${(query.page - 1) * query.pageSize}`;
+    ValidationSummaryRow[]
+  >`SELECT id,product_id,import_id,validation_key,state_revision,status,storage_condition,last_error_code,attempts_text,archive_sha256,archive_bytes,identity_text,identity_sha256,pack_id,pack_version,container_schema_version,content_schema_version,identity_kind,canonical_validation_id,candidate_sha256,asset_set_sha256,asset_set_text,resource_count,created_at,updated_at,validated_at,ready_at FROM qf.quizpack_validation WHERE ${filter} ORDER BY created_at DESC,id DESC LIMIT ${query.pageSize} OFFSET ${(query.page - 1) * query.pageSize}`;
   const items: ValidationDto[] = [];
   for (const row of rows) items.push(await validationRowDto(tx, row));
   return {
