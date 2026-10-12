@@ -124,3 +124,7 @@ B2-1最终文档head `5caef26` 的CI38175221128已核实checks/database均succes
 普通媒体入口、P1同字节候选与离线opaque封存器已集成；共享UNKNOWN、owned身份、期限竞态、native依赖映射与构建句柄问题均已独立关闭。中间5d779a7普通CI38188941135及Linux核心CI38188941100实际success；后者31smoke/11生命周期不能替代新target工作树和实际Next封存。Next已实测未封存/取消/过期三项关闭，无媒体启动，3111已释放。准确增量见P2B2A_REVIEW，最终target矩阵与阶段全套仍待完成。
 
 当前并行采用Sol/high的媒体适配和Next fixture专属实现、Astra/high的非实施复验，总控单写共享文档/CI并串行真实setup→build→matrix→seal→服务验收。期间普通服务必须停止，未引入跨流程锁或热封存承诺。B2-2B只有精确提案准备，不建业务表/路由；待A退出后冻结三表与DTO再分流实施。
+
+## B2-2B 精确预研登记
+
+三表、统一存储/计量、claim/evidence/complete、恢复与有限重试、DTO/后台和验收分工已整理为[精确候选](STUDIO_P2B2B_STORAGE_PROPOSAL.md)。总控选择包身份canonical/alias/conflict分列、报告原始canonical text冗余以便SQL核真实字节，以及最多三attempt；validate claim同时记录media未知和完整预留，避免额外intent提交窗口。A-R平台身份查询的preclaim IO由平台guard独立保护，尚未打开原包。A-V后续需交prepare identity/restore candidate/SQL evidence projection三个明确接口。当前仍未冻结或实施B，不绕过A的Mac剩余平台验收。
