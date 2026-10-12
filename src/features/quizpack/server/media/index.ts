@@ -1,11 +1,5 @@
 import "server-only";
-import { randomUUID } from "node:crypto";
-import type {
-  ImageDeclaration,
-  LaunchResult,
-  MediaOperationContext,
-} from "./contracts";
-import { readMediaRuntimeBinding } from "./runtime-binding";
+import { runFixedIsolatedImage } from "./runtime-binding";
 
 export * from "./contracts";
 export {
@@ -23,25 +17,4 @@ export {
 } from "./operation-context";
 export { readMediaRuntimeBinding } from "./runtime-binding";
 
-/** Fixed public entry. Until platform migration is complete every call fails closed. */
-export async function runIsolatedImage(
-  _bytes: Uint8Array,
-  _declaration: ImageDeclaration,
-  context: MediaOperationContext,
-): Promise<LaunchResult> {
-  const runId = randomUUID();
-  const binding = await readMediaRuntimeBinding(context);
-  return {
-    outcome: "failed",
-    runId,
-    profileId: null,
-    code:
-      binding.outcome === "unavailable"
-        ? binding.code
-        : "ISOLATION_UNAVAILABLE",
-    stopped:
-      binding.outcome === "unavailable" && binding.code === "STOP_UNCONFIRMED"
-        ? "unknown"
-        : "not-started",
-  };
-}
+export const runIsolatedImage = runFixedIsolatedImage;
