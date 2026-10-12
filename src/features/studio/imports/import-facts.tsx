@@ -10,7 +10,7 @@ import local from "./imports.module.css";
 const labels = {
   "awaiting-upload": "等待上传原包",
   receiving: "接收中 · 尚未确认完成",
-  received: "原包已隔离接收，尚未验证",
+  received: "原包已隔离接收",
   "retryable-failed": "本次接收已失败 · 请核实或恢复",
   rejected: "原包已拒绝 · 不可修改声明重传",
 };
@@ -51,7 +51,7 @@ export function ImportSummary({ value }: { value: ImportDto }) {
           <dd>{storageLabels[value.storageCondition]}</dd>
         </div>
       </dl>
-      <p>not-run · 不可发布</p>
+      <p>接收事实 · 不可发布</p>
       {value.lastErrorCode && (
         <p className={local.summaryError}>
           上次提示：{errorSummaries[value.lastErrorCode]}。完整说明见详情。
@@ -95,8 +95,8 @@ export function ImportFacts({ value }: { value: ImportDto }) {
           <dd>{value.actualArchiveSha256 ?? "尚未冻结"}</dd>
         </div>
         <div>
-          <dt>验证 / 发布</dt>
-          <dd>not-run · 不可发布</dd>
+          <dt>接收与发布</dt>
+          <dd>接收事实 · 独立验证状态见验证记录 · 不可发布</dd>
         </div>
       </dl>
       {value.lastErrorCode && (
@@ -106,7 +106,7 @@ export function ImportFacts({ value }: { value: ImportDto }) {
       )}
       <p className={styles.note}>
         此状态不证明 ZIP、内容
-        Schema、包内工作区、合成数据、图片或商用授权已验证，也没有生成草稿。
+        Schema、包内工作区、合成数据、图片或商用授权已验证。验证与归档请查看独立记录；本批没有生成草稿。
       </p>
     </div>
   );
