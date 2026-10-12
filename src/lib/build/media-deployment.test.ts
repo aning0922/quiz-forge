@@ -151,7 +151,7 @@ describe("trusted media deployment binding", () => {
         (await lstat(manifestPath(bound.checkoutRoot), { bigint: true }))
           .mtimeNs,
       ).toBe(before.mtimeNs);
-      expect(Number(before.mode & 0o777n)).toBe(0o600);
+      expect(Number(before.mode & BigInt(0o777))).toBe(0o600);
       expect(
         (await lstat(path.dirname(manifestPath(bound.checkoutRoot)))).mode &
           0o777,

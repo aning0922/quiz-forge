@@ -355,7 +355,7 @@ function owned(stat: BigIntStats): boolean {
   return (
     typeof process.getuid === "function" &&
     stat.uid === BigInt(process.getuid()) &&
-    (stat.mode & 0o022n) === 0n
+    (stat.mode & BigInt(0o022)) === BigInt(0)
   );
 }
 async function directory(
@@ -369,7 +369,7 @@ async function directory(
   if (
     !s.isDirectory() ||
     !owned(s) ||
-    (privateLeaf && (s.mode & 0o777n) !== 0o700n)
+    (privateLeaf && (s.mode & BigInt(0o777)) !== BigInt(0o700))
   )
     fail("FILE_UNSAFE");
   return s;
@@ -446,7 +446,8 @@ async function readRegular(
     !before.isFile() ||
     !owned(before) ||
     (privateManifest &&
-      ((before.mode & 0o777n) !== 0o600n || before.nlink !== 1n))
+      ((before.mode & BigInt(0o777)) !== BigInt(0o600) ||
+        before.nlink !== BigInt(1)))
   )
     fail("FILE_UNSAFE");
   const max = privateManifest ? MAX_MANIFEST : MAX_FILE;
@@ -704,8 +705,8 @@ async function save(
     if (
       !before.isFile() ||
       !owned(before) ||
-      (before.mode & 0o777n) !== 0o600n ||
-      before.nlink !== 1n
+      (before.mode & BigInt(0o777)) !== BigInt(0o600) ||
+      before.nlink !== BigInt(1)
     )
       fail("FILE_UNSAFE");
   } catch (error) {
@@ -729,7 +730,11 @@ async function save(
       checkpoint(ctx);
       const stat = await file.stat({ bigint: true });
       checkpoint(ctx);
-      if (!owned(stat) || (stat.mode & 0o777n) !== 0o600n || stat.nlink !== 1n)
+      if (
+        !owned(stat) ||
+        (stat.mode & BigInt(0o777)) !== BigInt(0o600) ||
+        stat.nlink !== BigInt(1)
+      )
         fail("FILE_UNSAFE");
       await file.writeFile(bytes);
       checkpoint(ctx);
