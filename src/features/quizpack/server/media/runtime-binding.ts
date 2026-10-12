@@ -121,7 +121,13 @@ export async function runFixedIsolatedImage(
     )
       unknown(context);
     if (before(context)?.code === "STOP_UNCONFIRMED")
-      return failed("STOP_UNCONFIRMED");
+      return {
+        outcome: "failed",
+        runId: parsed.value.runId,
+        profileId: parsed.value.profileId,
+        code: "STOP_UNCONFIRMED",
+        stopped: "unknown",
+      };
     return parsed.value;
   } catch {
     return failed(unknown(context).code);
