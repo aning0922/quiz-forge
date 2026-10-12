@@ -139,10 +139,16 @@ export async function validateArchiveCandidate(
   });
   const interrupted = (code: CandidateInterruptionCode): CandidateResult => {
     requestStop(scope.runtimeFailure === "STOP_UNCONFIRMED");
+    const current = evidence();
     const sealed = sealCandidateResultEvidence({
       outcome: "interrupted",
-      code,
-      evidence: evidence(),
+      code:
+        current.completion.mediaStopped === "unknown"
+          ? "MEDIA_STOP_UNCONFIRMED"
+          : current.completion.relatedIo === "unconfirmed"
+            ? "RELATED_IO_UNCONFIRMED"
+            : code,
+      evidence: current,
     });
     if (sealed.outcome !== "interrupted")
       throw new EvidenceError("EVIDENCE_SCHEMA_INVALID");

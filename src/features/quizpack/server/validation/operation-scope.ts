@@ -189,6 +189,20 @@ export function createValidationOperationScope(context: MediaOperationContext) {
   const completion = (
     media: readonly MediaFact[] = [],
   ): ValidationCompletion => {
+    // The shared context can escalate during synchronous abort listeners or
+    // while this scope settles. No local finite result can revoke that fact.
+    try {
+      const state = readMediaOperationState(context);
+      if (
+        state.phase === "stopping" &&
+        state.stop.reason === "STOP_UNCONFIRMED"
+      ) {
+        runtimeFailure = "STOP_UNCONFIRMED";
+        runtimeIoUnconfirmed = true;
+      }
+    } catch {
+      /* Invalid identity is rejected by checkpoints; it grants no handle. */
+    }
     const mediaStopped =
       runtimeFailure === "STOP_UNCONFIRMED" ||
       media.some((fact) => fact.result.stopped === "unknown")
