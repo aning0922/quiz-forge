@@ -5,7 +5,7 @@ import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
-import type { z } from "zod";
+import { z } from "zod";
 import { p2b2bFixtureSchema } from "../db/p2b2b-fixture-contract";
 import {
   pendingTupleSchema,
@@ -22,14 +22,28 @@ const helper = path.resolve("tests/db/p2b2b-e2e-fixture.ts");
 const execute = promisify(execFile);
 type Fixture = z.infer<typeof p2b2bFixtureSchema>;
 let fixture: Fixture;
-let prepared = false;
+const BUSINESS_RESULT_TIMEOUT = 75_000;
+let configuration: "known-disabled" | "known-enabled" | "unknown" = "unknown";
+const acknowledgedObservationSchema = z
+  .object({
+    recordObserved: z.literal(true),
+    state: z.literal("ready"),
+    revision: z.number().int().positive(),
+    acknowledged: z.literal(true),
+  })
+  .strict();
 let beforeFetchTuple: PendingTuple | null = null;
 async function fixtureCommand(
   mode: "prepare" | "enable" | "disable" | "observe-validation",
   key?: string,
 ) {
+  if (mode === "enable" || mode === "disable") {
+    if (configuration === "unknown")
+      throw new Error("VALIDATIONS_E2E_CONFIGURATION_UNKNOWN");
+    configuration = "unknown";
+  } else if (mode === "prepare") configuration = "unknown";
   try {
-    await execute(
+    const { stdout } = await execute(
       process.execPath,
       [
         "--conditions=react-server",
@@ -40,8 +54,17 @@ async function fixtureCommand(
         runId,
         ...(key ? [key] : []),
       ],
-      { cwd: process.cwd(), env: process.env, timeout: 60000, maxBuffer: 4096 },
+      {
+        cwd: process.cwd(),
+        env: process.env,
+        timeout: mode === "observe-validation" ? 10_000 : 60_000,
+        maxBuffer: 4096,
+      },
     );
+    if (mode === "prepare" || mode === "disable")
+      configuration = "known-disabled";
+    else if (mode === "enable") configuration = "known-enabled";
+    return stdout;
   } catch {
     throw new Error("VALIDATIONS_E2E_FIXTURE_FAILED");
   }
@@ -181,12 +204,11 @@ async function pending(page: Page): Promise<PendingTuple | null> {
 }
 test.beforeAll(async () => {
   await fixtureCommand("prepare");
-  prepared = true;
   fixture = await readFixture();
   await fixtureCommand("enable");
 });
 test.afterAll(async () => {
-  if (prepared) {
+  if (configuration === "known-enabled") {
     await fixtureCommand("disable");
     // Root runs private cleanup only after Playwright exits and its owned Next process has stopped.
     // Keep the private runId fixture and all attempt/control evidence on any failure.
@@ -213,7 +235,7 @@ test("real explicit validation archives synthetic resources while receive facts 
       name: "归档完成 · 待后续草稿导入",
       exact: true,
     }),
-  ).toBeVisible();
+  ).toBeVisible({ timeout: BUSINESS_RESULT_TIMEOUT });
   expect(prepares).toBe(1);
   expect(starts).toBe(1);
   expect(await pending(page)).toBeNull();
@@ -252,7 +274,7 @@ test("lost acknowledged start response survives reload and empty exact GET witho
       return;
     }
     try {
-      const response = await route.fetch({ timeout: 90000 });
+      const response = await route.fetch({ timeout: BUSINESS_RESULT_TIMEOUT });
       const tuple = await pending(page);
       if (!tuple) throw new Error();
       const result = checkStart(
@@ -261,7 +283,14 @@ test("lost acknowledged start response survives reload and empty exact GET witho
         tuple,
       );
       if (result.outcome !== "record") throw new Error();
-      await fixtureCommand("observe-validation", tuple.expectedValidationKey);
+      const output = await fixtureCommand(
+        "observe-validation",
+        tuple.expectedValidationKey,
+      );
+      const lines = output.trim().split("\n");
+      if (lines.length !== 2 || lines[1] !== "VALIDATIONS_E2E_FIXTURE_READY")
+        throw new Error();
+      acknowledgedObservationSchema.parse(JSON.parse(lines[0]!));
       observed = true;
       await route.abort("failed");
     } catch {
@@ -271,7 +300,7 @@ test("lost acknowledged start response survives reload and empty exact GET witho
   await page.getByRole("button", { name: "验证并归档", exact: true }).click();
   await expect(
     page.getByRole("heading", { name: "本标签有待核实请求", exact: true }),
-  ).toBeVisible();
+  ).toBeVisible({ timeout: BUSINESS_RESULT_TIMEOUT });
   await expect(
     page.getByRole("button", { name: "读取原请求核实", exact: true }),
   ).toBeEnabled();
@@ -600,7 +629,7 @@ test("a saved false tuple requires an explicit continuation and never re-prepare
       name: "归档完成 · 待后续草稿导入",
       exact: true,
     }),
-  ).toBeVisible();
+  ).toBeVisible({ timeout: BUSINESS_RESULT_TIMEOUT });
   expect(starts).toBe(1);
   expect(prepares).toBe(0);
   expect(await pending(page)).toBeNull();
