@@ -242,12 +242,15 @@ export class ArchiveOperation {
     if (!this.canIssueStoppedReceipt())
       throw new StudioError("VALIDATION_RECOVERY_REQUIRED");
     this.cleanupCheckpoint();
-    return this.boundedTask(
-      Promise.resolve().then(() => {
-        this.cleanupCheckpoint();
-        return work();
-      }),
-    );
+    let task: Promise<T>;
+    task = Promise.resolve().then(() => {
+      // Recheck at execution, excluding only this exact queued receipt task.
+      if (!this.receiptQualified(task))
+        throw new StudioError("VALIDATION_RECOVERY_REQUIRED");
+      this.cleanupCheckpoint();
+      return work();
+    });
+    return this.boundedTask(task);
   }
   async databaseAwait<T>(
     kind: "read" | "write",
@@ -304,7 +307,7 @@ export class ArchiveOperation {
     }
     this.observeExpiry();
   }
-  completion(): ValidationCompletion {
+  private completionFor(excludedTask?: Promise<unknown>): ValidationCompletion {
     this.observeExpiry();
     const state = readMediaOperationState(this.context);
     if (state.phase === "stopping" && state.stop.reason === "STOP_UNCONFIRMED")
@@ -315,12 +318,16 @@ export class ArchiveOperation {
       mediaUnknown ||
       this.relatedIoUnknown ||
       this.platformRelatedIoUnknown ||
-      this.pending.size > 0;
+      this.pending.size >
+        (excludedTask && this.pending.has(excludedTask) ? 1 : 0);
     return {
       mediaStopped: mediaUnknown ? "unknown" : this.platformStopped,
       relatedIo: ioUnknown ? "unconfirmed" : "settled",
       maintenanceRequired: mediaUnknown || ioUnknown,
     };
+  }
+  completion(): ValidationCompletion {
+    return this.completionFor();
   }
   /** An error code cannot confer this authority. The claim gate is permanently closed first. */
   canIssuePreclaimNotStarted(): boolean {
@@ -331,12 +338,15 @@ export class ArchiveOperation {
       !this.completion().maintenanceRequired
     );
   }
-  canIssueStoppedReceipt(): boolean {
+  private receiptQualified(excludedTask?: Promise<unknown>): boolean {
     return (
       this.claimConfirmed &&
       this.businessClosed &&
       this.candidateClosed &&
-      !this.completion().maintenanceRequired
+      !this.completionFor(excludedTask).maintenanceRequired
     );
+  }
+  canIssueStoppedReceipt(): boolean {
+    return this.receiptQualified();
   }
 }
