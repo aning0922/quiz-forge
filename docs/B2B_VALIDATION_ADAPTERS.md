@@ -106,7 +106,7 @@ A 只校验 controls 普通 JSON/canonical/Unicode/真实 UTF8 bytes，业务 ow
 
 1. 从 contracts.ts 抽内部 projection+budget 函数返回 frozen envelope/text、reportTexts、metadataText 和实测 bytes；sealEvidenceEnvelope/新 serializer 都走它。
 2. `sealEvidenceEnvelope` 继续使用 controlBytes=0 保持 A API；新 serializer 的 controls 参数只能从实际 validated text 算 bytes。
-3. 单报告≤256KiB、净 report payload≤768KiB、envelope≤1MiB；metadataBytes + attemptsControlBytes≤64KiB，controls 自身≤8KiB。
+3. 单报告≤256KiB、净 report payload≤768KiB、envelope≤1MiB；metadataBytes + attemptsControlBytes≤64KiB，controls 自身≤8KiB。B archive policy v2额外要求metadata≤57344，为最终含3份fileStopProof的controls预留8192；此B准入在D事务及SQL中核实，A serializer原计量与报告算法不改。
 4. metadata 不包含 report canonicalText；完整 envelope 中报告 payload 只出现一次，报告 hash/bytes 计外围。
 5. null envelope 时 evidence/metadata/hash=NULL、reportTexts=[]，只有 controls 字节参加预算；不给未取得结果的 attempt 补猜测报告。
 6. SQL 按原 report_texts UTF8字节及 hash、semantic value、value:null 投影、controls总和核冗余一致；不用 jsonb::text 重算 canonical 原字节。

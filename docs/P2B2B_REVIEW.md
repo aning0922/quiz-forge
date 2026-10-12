@@ -50,3 +50,7 @@ U b2486a4首批独立46纯测试通过，但旧not-started对象只绑定tuple�
 其二，封门后普通databaseAwait(write)可绕过finalizeDatabaseOnce，且排队finalize在实际work前不复核共享UNKNOWN。12f8b1a→root7c16a46禁止封门后普通新write，并在finalize实际work前排除仅自身pending任务复核资格；单次门不恢复。root定向operation20项通过，独立复验及ack整合仍待完成。
 
 后台73e2ef3/130c29c已集成为c7e1deb/6502b94；root与operation合跑5文件77项通过，类型通过。独立UI预审指出通用IDENTITY_CHANGED或storage错误不能描述为“未开始/未发送”，以及刷新列表期间可能临时回显旧summary，U正在整改。实际routes、factory、浏览器验收尚未完成。
+
+### ACK修订决策
+
+Astra在01a12e46-6d82-72d2-b4cf-a4d05b5dbc0c确认采用非权威candidate receipt+独立DB ACK：全部publisher IO settled后才有原请求私有资格，ACK失败/未知禁止原complete；recover必须同时核已提交proof和文件。主合同3.2/4.2–5及迁移节已改写，不再保留单文件release或ESRCH替代ACK。policy v2增加56KiB metadata准入以预留8KiB最终controls。先0011提交审计enum、再0012保护协议，旧0010不改。该决策已冻结供实现，尚无代码/DB验收结论。
