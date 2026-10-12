@@ -1,0 +1,19 @@
+/** Frozen B2-2B limits; callers cannot override policy through HTTP. */
+export const MAX_ARCHIVE_BYTES = 33_554_432;
+export const MAX_REVISION = 2_147_483_647;
+export const MAX_ATTEMPTS = 3;
+export const MAX_PENDING_VALIDATIONS = 20;
+export const VALIDATION_RESERVATION_BYTES = 134_283_264;
+export const VALIDATION_TIMEOUT_MS = 60_000;
+export const LEASE_MS = 120_000;
+export const MAX_VALIDATIONS = 1024;
+export const MAX_BLOBS = 4096;
+export const MAX_RESOURCES = 64;
+export const MAX_ATTEMPT_CONTROL_BYTES = 8192;
+export const MAX_IDENTITY_BYTES = 16384;
+export const MAX_DECLARATION_BYTES = 65536;
+export const MAX_REPORT_BYTES = 262144;
+export const MAX_REPORT_PAYLOAD_BYTES = 786432;
+export const MAX_METADATA_CONTROL_BYTES = 65536;
+export const MAX_EVIDENCE_BYTES = 1048576;
+export const ARCHIVE_POLICY_VERSION = "quizpack-private-archive.v1";
