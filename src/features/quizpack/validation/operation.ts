@@ -84,21 +84,35 @@ export class ArchiveOperation {
   }
   closeStorageLock(): Promise<void> {
     if (this.lockClosing) return this.lockClosing;
-    // Revoke every continuation before close can synchronously broadcast cancellation.
-    this.stop("STOP_REQUESTED");
-    this.detachLock();
-    const lock = this.lock;
-    this.lock = undefined;
-    this.lockClosing = lock
-      ? this.boundedTask(
-          Promise.resolve()
-            .then(() => lock.close())
-            .then((closed) => {
-              if (!closed) this.relatedIoUnknown = true;
-            }),
-        )
-      : Promise.resolve();
-    return this.lockClosing;
+    let resolve: () => void = () => {},
+      reject: (error: unknown) => void = () => {};
+    const shared = new Promise<void>((res, rej) => {
+      resolve = res;
+      reject = rej;
+    });
+    // Cache and track before stop's synchronous abort broadcast can re-enter close.
+    this.lockClosing = shared;
+    this.track(shared);
+    try {
+      this.stop("STOP_REQUESTED");
+      this.detachLock();
+      const lock = this.lock;
+      this.lock = undefined;
+      const actual = lock
+        ? this.boundedTask(
+            Promise.resolve()
+              .then(() => lock.close())
+              .then((closed) => {
+                if (!closed) this.relatedIoUnknown = true;
+              }),
+          )
+        : Promise.resolve();
+      void actual.then(resolve, reject);
+    } catch (error) {
+      this.relatedIoUnknown = true;
+      reject(error);
+    }
+    return shared;
   }
   checkpoint() {
     const state = readMediaOperationState(this.context);
