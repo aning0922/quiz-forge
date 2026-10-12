@@ -285,10 +285,8 @@ export async function writeValidationStopped(
       }
       check();
       const existing = await readReceipt(op, config, id, attempt, check);
-      if (existing) {
-        if (canonicalP1Json(existing) !== text) throw conflict();
-        return true;
-      }
+      // Only this request's new publication can qualify for ACK. Existing candidates are never authority.
+      if (existing) throw conflict();
       check();
       const entries = await opendir(dir, { bufferSize: 16 });
       try {
@@ -330,11 +328,8 @@ export async function writeValidationStopped(
       await close(op, handle);
       handle = undefined;
       check();
-      try {
-        await link(temp, destination);
-      } catch (error) {
-        if (!present(error)) throw error;
-      }
+      // EEXIST cannot transfer another publisher's candidate into this request's qualification.
+      await link(temp, destination);
       check();
       const published = await readReceipt(op, config, id, attempt, check);
       if (!published || canonicalP1Json(published) !== text) throw conflict();

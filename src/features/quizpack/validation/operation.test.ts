@@ -526,3 +526,39 @@ it("storage-lock close remains request IO until its actual driver and watcher dr
   await task;
   expect(op.completion().relatedIo).toBe("unconfirmed");
 });
+
+it("closing the storage lock synchronously revokes ACK and finalization and repeated calls await the same task", async () => {
+  const { context } = fixture(),
+    io = deferred<boolean>(),
+    close = vi.fn(() => io.promise),
+    op = new ArchiveOperation({} as P2aDatabase, context);
+  op.attachLock({
+    controller: new AbortController(),
+    assert: () => {},
+    close,
+  } as unknown as StorageLock);
+  op.enterClaimBoundary();
+  op.confirmClaim();
+  op.closeNonDbGate();
+  await op.stoppedReceiptTask(async () => {});
+  await acknowledge(op);
+  const first = op.closeStorageLock(),
+    second = op.closeStorageLock();
+  expect(second).toBe(first);
+  const finalize = vi.fn(async () => {});
+  await expect(op.finalizeDatabaseOnce(finalize)).rejects.toMatchObject({
+    code: "STUDIO_UNAVAILABLE",
+  });
+  expect(finalize).not.toHaveBeenCalled();
+  let completed = false;
+  void second.then(() => {
+    completed = true;
+  });
+  await Promise.resolve();
+  expect(completed).toBe(false);
+  expect(op.completion().relatedIo).toBe("unconfirmed");
+  io.resolve(true);
+  await first;
+  expect(completed).toBe(true);
+  expect(close).toHaveBeenCalledTimes(1);
+});
