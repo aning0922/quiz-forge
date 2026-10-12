@@ -14,7 +14,16 @@ const check = setInterval(() => {
     const r = readControlForHarness();
     if (r.ownerPid === process.pid && r.phase === "spawned" && r.workerStart) {
       clearInterval(check);
-      process.stdout.write('{"ready":true}');
+      process.stdout.write(
+        JSON.stringify({
+          schema: "mac-parent-crash-ready.v1",
+          runId: r.runId,
+          profileId: r.profileId,
+          ownerPid: r.ownerPid,
+          workerPid: r.pid,
+          workerStart: r.workerStart,
+        }) + "\n",
+      );
     }
   } catch {}
 }, 10);

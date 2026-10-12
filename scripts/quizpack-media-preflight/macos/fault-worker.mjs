@@ -57,7 +57,7 @@ switch (scenario) {
     break;
   case "unknown-stop":
     process.stdout.write(facts);
-    setTimeout(() => process.exit(0), 6500);
+    setTimeout(() => process.exit(0), 12000);
     break;
   case "parent-crash":
     process.stdout.write(facts);
