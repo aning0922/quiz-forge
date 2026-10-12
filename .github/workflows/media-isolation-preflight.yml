@@ -5,6 +5,10 @@ on:
     paths:
       - "scripts/quizpack-media-preflight/**"
       - "src/features/quizpack/v1/**"
+      - "src/features/quizpack/server/**"
+      - "src/lib/build/media-deployment.ts"
+      - "scripts/quizpack-media-build.ts"
+      - "next.config.ts"
       - "pnpm-lock.yaml"
       - ".github/workflows/media-isolation-preflight.yml"
   workflow_dispatch:

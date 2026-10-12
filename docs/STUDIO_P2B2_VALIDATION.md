@@ -123,7 +123,7 @@ B 接入真实业务路由后，必须对最终应用构建重新确认 locator�
 
 - 固定server编译宏为`__QUIZFORGE_MEDIA_CHECKOUT_ROOT__`和`__QUIZFORGE_MEDIA_DEPLOYMENT_ROOT__`（actual `.next`目录）。普通入口无宏即关闭，不从runtime env/cwd推断回退；总控构建时提供核实realpath。
 - 总控拥有`src/lib/build/media-deployment.ts`与闭集CLI，固定manifest为checkout下`.cache/quizpack-media-runtime/deployment.json`；私有leaf0700/file0600，无链接、实际字节和最终IO期限检查。它是构建证据，不是capability seal。
-- strict `quizpack-media-deployment.v1`包含两根、sourceFiles（role/path/bytes/sha256）、artifactFiles（path/bytes/sha256）、两固定dependencyRoots、sourceBundleHash、deploymentId。源代码只扫描P1/媒体/validation固定生产目录、必要基础文件；固定zod/buffer-crc32的实际安装运行文件另经受管node_modules入口解析并绑定，不能只以lock声明代替字节。
+- strict `quizpack-media-deployment.v1`包含两根、sourceFiles（role/path/bytes/sha256）、artifactFiles（path/bytes/sha256）、两固定dependencyRoots、sourceBundleHash、deploymentId。源代码只扫描P1/媒体/validation固定生产目录、必要基础文件；固定zod/buffer-crc32的实际安装包经受管node_modules入口解析，包根内全部普通文件纳入绑定，包含非标准扩展名的代码与数据。实际解析入口必须出现在已读取清单中，不能只以lock声明或扩展名代替字节闭包。
 - `.next/server`实际JS/JSON及固定加载清单构成artifact清单，不包含manifest本身或任意私有cache。最多16,384目录项、4,096文件、单文件16MiB、总128MiB；相对路径512 UTF-8 bytes、manifest2MiB。对新增/删除/改变文件及解析映射一并复核；超限失败关闭，不截清单。
 - A-R消费`verifyMediaDeployment(roots, {deadlineMonotonicMs, signal, checkpoint})`的有限结果，所有roots来自编译宏，同一个operation预算继续生效。只读核验不写seal、不删除控制状态；运行时文件IO须实际settled，定时器不冒称硬实时终止。
 - `runtimeBundleHash`绑定整个后台验证执行闭包，由domain hash组合sourceBundleHash、deploymentId、平台componentId和limitsHash。A-V的validatorBundleSha256引用此完整身份，不以媒体子目录hash代替P1/dispatcher/canonical/report/Unicode执行代码；actual compiled代码由deploymentId绑定。Node/sharp/native/helper真实字节仍由A-R componentId补齐。
