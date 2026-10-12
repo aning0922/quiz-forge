@@ -17,11 +17,19 @@ import {
   type MediaRuntimeBinding,
   type ImageDeclaration,
 } from "../media";
-const mocks = vi.hoisted(() => ({ binding: vi.fn(), run: vi.fn() }));
+const mocks = vi.hoisted(() => ({
+  binding: vi.fn(),
+  run: vi.fn(),
+  zipCore: vi.fn(),
+}));
 vi.mock("../media", async (importActual) => ({
   ...(await importActual<typeof import("../media")>()),
   readMediaRuntimeBinding: mocks.binding,
   runIsolatedImage: mocks.run,
+}));
+vi.mock("../../v1/zip", async (importActual) => ({
+  ...(await importActual<typeof import("../../v1/zip")>()),
+  readRestrictedZipCore: mocks.zipCore,
 }));
 import {
   createMediaOperationContext,
@@ -39,6 +47,20 @@ import { serializeEvidenceSqlProjection } from "./sql-projection";
 import { validateArchiveCandidate } from "./engine";
 import type { CandidateResult } from "./private-candidate";
 import { sealEvidenceEnvelope } from "./contracts";
+import { restoreValidatedCandidate } from "./restore";
+import {
+  copyCandidateResourceBytes,
+  preparePrivateCandidate,
+  issuePreparedCandidate,
+} from "./private-candidate";
+import type {
+  ExpectedCandidateFacts,
+  FrozenValidationEvidence,
+  RestoreCandidateInput,
+} from "./adapter-types";
+import { createStoredArchive } from "../../v1/build";
+import { PACK_LIMITS } from "../../v1/limits";
+
 const binding: MediaRuntimeBinding = {
   schema: "quizpack-media-runtime-binding.v1",
   platform: "darwin-arm64",
@@ -58,7 +80,11 @@ const context = (deadline = performance.now() + 60000) => {
 };
 let accepted: Extract<CandidateResult, { outcome: "accepted" }>;
 let archive: Uint8Array;
+let actualZip: typeof import("../../v1/zip");
 beforeAll(async () => {
+  actualZip =
+    await vi.importActual<typeof import("../../v1/zip")>("../../v1/zip");
+  mocks.zipCore.mockImplementation(actualZip.readRestrictedZipCore);
   mocks.binding.mockResolvedValue({ outcome: "bound", binding });
   mocks.run.mockImplementation(
     (_bytes: Uint8Array, declaration: ImageDeclaration) => ({
@@ -99,6 +125,7 @@ beforeAll(async () => {
 beforeEach(() => {
   mocks.binding.mockReset().mockResolvedValue({ outcome: "bound", binding });
   mocks.run.mockClear();
+  mocks.zipCore.mockReset().mockImplementation(actualZip.readRestrictedZipCore);
 });
 afterEach(() => {
   for (const ctx of contexts.splice(0)) disposeMediaOperationContext(ctx);
@@ -374,5 +401,371 @@ describe("canonical SQL evidence projection", () => {
       ).ok,
     ).toBe(false);
     expect(getter).not.toHaveBeenCalled();
+  });
+});
+
+function expectedFacts(): ExpectedCandidateFacts {
+  const facts = accepted.candidate.facts;
+  if (facts.content.kind !== "synthetic")
+    throw new Error("Synthetic content required.");
+  if (accepted.evidence.report.status !== "sealed")
+    throw new Error("Synthetic report unavailable.");
+  return {
+    archiveSha256: facts.archiveSha256,
+    archiveBytes: archive.byteLength,
+    productId: facts.productId,
+    packId: facts.packId,
+    packVersion: facts.packVersion,
+    containerSchemaVersion: facts.manifest.schemaVersion,
+    contentSchemaVersion: facts.content.schemaVersion,
+    contentKind: facts.content.kind,
+    manifestSha256: accepted.evidence.report.value.manifestSha256!,
+    contentSha256: accepted.evidence.report.value.contentSha256!,
+    canonicalManifestText: facts.canonicalManifestText,
+    canonicalManifestSha256: facts.canonicalManifestSha256,
+    canonicalContentText: facts.canonicalContentText,
+    canonicalContentSha256: facts.canonicalContentSha256,
+    assetSetText: facts.assetSetText,
+    assetSetSha256: facts.assetSetSha256,
+    candidateSha256: facts.candidateSha256,
+    resourceCount: facts.resources.length,
+  };
+}
+function frozenEvidence(): FrozenValidationEvidence {
+  const result = serializeEvidenceSqlProjection(envelope(), "[]");
+  if (
+    !result.ok ||
+    result.value.evidenceText === null ||
+    result.value.evidenceSha256 === null ||
+    result.value.metadataText === null
+  )
+    throw new Error("Synthetic projection rejected.");
+  return {
+    evidenceText: result.value.evidenceText,
+    evidenceSha256: result.value.evidenceSha256,
+    metadataText: result.value.metadataText,
+    reportTexts: result.value.reportTexts,
+    attemptsControlText: result.value.attemptsControlText,
+  };
+}
+async function restoration() {
+  const ctx = context(),
+    prepared = await prepareValidationIdentity(ctx);
+  if (prepared.outcome !== "prepared")
+    throw new Error("Synthetic preparation rejected.");
+  const input: RestoreCandidateInput = {
+    prepared: prepared.prepared,
+    frozenEvidence: frozenEvidence(),
+    expectedFacts: expectedFacts(),
+  };
+  mocks.binding.mockImplementation(() => {
+    throw new Error("Binding forbidden after claim.");
+  });
+  mocks.run.mockImplementation(() => {
+    throw new Error("Decoder forbidden during restore.");
+  });
+  return { ctx, input };
+}
+describe("same-original-archive restoration", () => {
+  it("restores exact frozen facts and private resource copies without postclaim platform IO/new report", async () => {
+    const { ctx, input } = await restoration();
+    const bindingCalls = mocks.binding.mock.calls.length,
+      reports = JSON.stringify(input.frozenEvidence);
+    const result = await restoreValidatedCandidate(archive, input, ctx);
+    expect(result.outcome).toBe("restored");
+    expect(result.completion).toEqual({
+      mediaStopped: "not-started",
+      relatedIo: "settled",
+      maintenanceRequired: false,
+    });
+    expect(mocks.binding).toHaveBeenCalledTimes(bindingCalls);
+    expect(mocks.run).not.toHaveBeenCalled();
+    expect(JSON.stringify(input.frozenEvidence)).toBe(reports);
+    expect(readMediaOperationState(ctx).phase).toBe("active");
+    if (result.outcome !== "restored") return;
+    expect(result.candidate.facts).toEqual(accepted.candidate.facts);
+    const copy = copyCandidateResourceBytes(result.candidate, 0),
+      original = copyCandidateResourceBytes(result.candidate, 0);
+    copy[0] = copy[0]! ^ 1;
+    expect(copyCandidateResourceBytes(result.candidate, 0)).toEqual(original);
+    expect(() => JSON.stringify(result.candidate)).toThrow();
+    expect(await restoreValidatedCandidate(archive, input, ctx)).toMatchObject({
+      outcome: "interrupted",
+      code: "INVALID_CONTEXT",
+    });
+  });
+  it.each([
+    "canonicalManifestText",
+    "canonicalContentText",
+    "assetSetText",
+    "canonicalManifestSha256",
+    "canonicalContentSha256",
+    "assetSetSha256",
+    "candidateSha256",
+    "manifestSha256",
+    "contentSha256",
+    "packId",
+    "resourceCount",
+  ] as const)(
+    "rejects changed frozen %s before candidate issuance",
+    async (key) => {
+      const { ctx, input } = await restoration();
+      const value = input.expectedFacts[key];
+      const changed = {
+        ...input.expectedFacts,
+        [key]:
+          typeof value === "number"
+            ? value + 1
+            : key.endsWith("Text")
+              ? value + " "
+              : key.endsWith("Sha256")
+                ? "f".repeat(64)
+                : "foreign-pack",
+      };
+      expect(
+        await restoreValidatedCandidate(
+          archive,
+          { ...input, expectedFacts: changed },
+          ctx,
+        ),
+      ).toMatchObject({
+        outcome: "unavailable",
+        code: "FROZEN_FACTS_MISMATCH",
+      });
+      expect(mocks.run).not.toHaveBeenCalled();
+    },
+  );
+  it.each([
+    "evidenceSha256",
+    "metadataText",
+    "reportTexts",
+    "attemptsControlText",
+  ] as const)(
+    "rejects corrupted original evidence projection %s",
+    async (key) => {
+      const { ctx, input } = await restoration();
+      const changed = {
+        ...input.frozenEvidence,
+        [key]:
+          key === "evidenceSha256"
+            ? "f".repeat(64)
+            : key === "reportTexts"
+              ? ["{}"]
+              : key === "attemptsControlText"
+                ? "[ ]"
+                : "{}",
+      };
+      expect(
+        await restoreValidatedCandidate(
+          archive,
+          { ...input, frozenEvidence: changed },
+          ctx,
+        ),
+      ).toMatchObject({
+        outcome: "unavailable",
+        code: "FROZEN_EVIDENCE_INVALID",
+      });
+      expect(mocks.zipCore).not.toHaveBeenCalled();
+    },
+  );
+  it("refuses old runtime identity before any archive parsing", async () => {
+    mocks.binding.mockResolvedValue({
+      outcome: "bound",
+      binding: { ...binding, runtimeBundleHash: "f".repeat(64) },
+    });
+    const { ctx, input } = await restoration();
+    expect(await restoreValidatedCandidate(archive, input, ctx)).toMatchObject({
+      outcome: "unavailable",
+      code: "REVALIDATION_REQUIRED",
+    });
+    expect(mocks.zipCore).not.toHaveBeenCalled();
+    expect(mocks.run).not.toHaveBeenCalled();
+  });
+  it("rejects changed raw bytes and semantically same JSON repacked into different raw archive", async () => {
+    const bytes = Buffer.from(archive);
+    bytes[bytes.length - 1] = bytes[bytes.length - 1]! ^ 1;
+    const first = await restoration();
+    expect(
+      await restoreValidatedCandidate(bytes, first.input, first.ctx),
+    ).toMatchObject({
+      outcome: "unavailable",
+      code: "ARCHIVE_BINDING_MISMATCH",
+    });
+    mocks.binding.mockResolvedValue({ outcome: "bound", binding });
+    const zip = await actualZip.readRestrictedZipCore(
+      (async function* () {
+        yield archive;
+      })(),
+      {
+        signal: new AbortController().signal,
+        limits: PACK_LIMITS,
+        checkpoint: () => {},
+      },
+    );
+    const files = new Map(zip.files);
+    files.set(
+      "content.json",
+      Buffer.from(
+        JSON.stringify(
+          JSON.parse(files.get("content.json")!.toString()),
+          null,
+          2,
+        ),
+      ),
+    );
+    const repacked = await createStoredArchive(
+      [...files].map(([path, bytes]) => ({ path, bytes })),
+      PACK_LIMITS.archiveBytes,
+      new AbortController().signal,
+    );
+    const second = await restoration();
+    expect(
+      await restoreValidatedCandidate(repacked, second.input, second.ctx),
+    ).toMatchObject({
+      outcome: "unavailable",
+      code: "ARCHIVE_BINDING_MISMATCH",
+    });
+    expect(mocks.zipCore).not.toHaveBeenCalled();
+  });
+  it("rejects structural/accessor/proxy handle and facts inputs without executing getters", async () => {
+    const { ctx, input } = await restoration(),
+      getter = vi.fn();
+    const facts = {
+      ...input.expectedFacts,
+      get packId() {
+        getter();
+        return "foreign";
+      },
+    };
+    expect(
+      await restoreValidatedCandidate(
+        archive,
+        { ...input, expectedFacts: facts },
+        ctx,
+      ),
+    ).toMatchObject({ outcome: "unavailable", code: "FROZEN_FACTS_MISMATCH" });
+    expect(getter).not.toHaveBeenCalled();
+    expect(
+      await restoreValidatedCandidate(
+        archive,
+        { ...input, prepared: {} as PreparedValidationIdentity },
+        context(),
+      ),
+    ).toMatchObject({ outcome: "interrupted", code: "INVALID_CONTEXT" });
+  });
+  it("late inflater close remains unconfirmed and cannot issue a candidate after cleanup expires", async () => {
+    const { ctx, input } = await restoration();
+    let close!: () => void;
+    const pendingClose = new Promise<void>((r) => {
+      close = r;
+    });
+    mocks.zipCore.mockImplementationOnce(
+      async (...args: Parameters<typeof actualZip.readRestrictedZipCore>) => {
+        args[1].trackIo?.(pendingClose);
+        return actualZip.readRestrictedZipCore(...args);
+      },
+    );
+    const task = restoreValidatedCandidate(archive, input, ctx);
+    setTimeout(
+      () => requestMediaOperationStop(ctx, "CANCELLED", performance.now() + 15),
+      5,
+    );
+    const result = await task;
+    expect(result).toMatchObject({
+      outcome: "interrupted",
+      code: "RELATED_IO_UNCONFIRMED",
+      completion: {
+        mediaStopped: "not-started",
+        relatedIo: "unconfirmed",
+        maintenanceRequired: true,
+      },
+    });
+    expect(result).not.toHaveProperty("candidate");
+    close();
+    await new Promise((r) => setImmediate(r));
+    expect(result.completion.relatedIo).toBe("unconfirmed");
+    expect(mocks.run).not.toHaveBeenCalled();
+  });
+  it("defers private candidate publication and rejects serialized prepared facts", async () => {
+    const zip = await actualZip.readRestrictedZipCore(
+      (async function* () {
+        yield archive;
+      })(),
+      {
+        signal: new AbortController().signal,
+        limits: PACK_LIMITS,
+        checkpoint: () => {},
+      },
+    );
+    const evidence = {
+      outcome: "accepted" as const,
+      evidence: accepted.evidence,
+    };
+    const facts = preparePrivateCandidate(evidence, zip.files);
+    expect(() =>
+      issuePreparedCandidate(JSON.parse(JSON.stringify(facts))),
+    ).toThrow();
+    expect(issuePreparedCandidate(facts).facts).toEqual(
+      accepted.candidate.facts,
+    );
+    expect(() => issuePreparedCandidate(facts)).toThrow();
+  });
+});
+
+describe("adapter final budget and ownership", () => {
+  it("does not issue prepared authority for a positive binding observed after the business deadline", async () => {
+    const ctx = context(performance.now() + 30);
+    mocks.binding.mockImplementationOnce(async () => {
+      await new Promise((r) => setTimeout(r, 45));
+      return { outcome: "bound", binding };
+    });
+    const result = await prepareValidationIdentity(ctx);
+    expect(result).toMatchObject({
+      outcome: "interrupted",
+      code: "OPERATION_TIMEOUT",
+    });
+    expect(result).not.toHaveProperty("prepared");
+  });
+  it("owns the original raw snapshot before the first restoration await", async () => {
+    const { ctx, input } = await restoration(),
+      raw = Buffer.from(archive);
+    const task = restoreValidatedCandidate(raw, input, ctx);
+    raw[0] = raw[0]! ^ 1;
+    const result = await task;
+    expect(result.outcome).toBe("restored");
+    if (result.outcome === "restored")
+      expect(result.candidate.facts.archiveSha256).toBe(
+        input.expectedFacts.archiveSha256,
+      );
+  });
+  it("an expired operation after final ZIP IO cannot restart authority or issue candidate", async () => {
+    const ctx = context(performance.now() + 80),
+      prepared = await prepareValidationIdentity(ctx);
+    if (prepared.outcome !== "prepared")
+      throw new Error("Synthetic preparation rejected.");
+    mocks.zipCore.mockImplementationOnce(
+      async (...args: Parameters<typeof actualZip.readRestrictedZipCore>) => {
+        const result = await actualZip.readRestrictedZipCore(...args);
+        while (performance.now() <= ctx.deadlineMonotonicMs + 10) {
+          /* Last real IO observation is late. */
+        }
+        return result;
+      },
+    );
+    const result = await restoreValidatedCandidate(
+      archive,
+      {
+        prepared: prepared.prepared,
+        frozenEvidence: frozenEvidence(),
+        expectedFacts: expectedFacts(),
+      },
+      ctx,
+    );
+    expect(result).toMatchObject({
+      outcome: "interrupted",
+      code: "OPERATION_TIMEOUT",
+    });
+    expect(result).not.toHaveProperty("candidate");
+    expect(mocks.run).not.toHaveBeenCalled();
   });
 });
