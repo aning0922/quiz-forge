@@ -18,6 +18,7 @@ import { writeFileSync, readdirSync, existsSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
   buildMediaDeployment,
+  hardenMediaDeploymentArtifacts,
   verifyMediaDeployment,
   type MediaDeploymentManifest,
   type MediaDeploymentRoots,
@@ -117,6 +118,101 @@ async function replaceManifest(bound: MediaDeploymentRoots, value: unknown) {
 }
 
 describe("trusted media deployment binding", () => {
+  it("offline hardening normalizes generated artifacts before binding; verify never repairs", async () => {
+    await fixture(async (bound) => {
+      const file = path.join(bound.deploymentRoot, "server/probe.js");
+      const source = path.join(
+        bound.checkoutRoot,
+        "src/features/quizpack/v1/entry.ts",
+      );
+      const sourceBefore = (await lstat(source)).mode;
+      const beforeBytes = await readFile(file);
+      await chmod(file, 0o664);
+      await chmod(path.join(bound.deploymentRoot, "server"), 0o775);
+      await chmod(bound.deploymentRoot, 0o775);
+      expect((await buildMediaDeployment(bound, context())).ok).toBe(false);
+      const hardened = await hardenMediaDeploymentArtifacts(bound, context());
+      expect(hardened.ok).toBe(true);
+      expect(hardened.summary.changedFiles).toBe(1);
+      expect(hardened.summary.changedDirectories).toBe(2);
+      expect((await lstat(file)).mode & 0o777).toBe(0o600);
+      expect((await lstat(bound.deploymentRoot)).mode & 0o777).toBe(0o700);
+      expect(await readFile(file)).toEqual(beforeBytes);
+      expect((await lstat(source)).mode).toBe(sourceBefore);
+      await build(bound);
+      await chmod(file, 0o664);
+      expect(await verifyMediaDeployment(bound, context())).toMatchObject({
+        ok: false,
+        code: "FILE_UNSAFE",
+      });
+      expect((await lstat(file)).mode & 0o777).toBe(0o664);
+    });
+  });
+
+  it("hardening preflight rejects aliases and hardlinks without touching outside permissions", async () => {
+    await fixture(async (bound) => {
+      const outside = path.join(
+        bound.checkoutRoot,
+        "src/features/quizpack/v1/entry.ts",
+      );
+      await chmod(outside, 0o664);
+      const alias = path.join(bound.deploymentRoot, "server/alias.js");
+      await symlink(outside, alias);
+      const result = await hardenMediaDeploymentArtifacts(bound, context());
+      expect(result).toMatchObject({
+        ok: false,
+        code: "FILE_UNSAFE",
+        summary: { changedFiles: 0, changedDirectories: 0 },
+      });
+      expect((await lstat(outside)).mode & 0o777).toBe(0o664);
+      await unlink(alias);
+      const { link } = await import("node:fs/promises");
+      await link(outside, alias);
+      expect(
+        await hardenMediaDeploymentArtifacts(bound, context()),
+      ).toMatchObject({
+        ok: false,
+        code: "FILE_UNSAFE",
+        summary: { changedFiles: 0, changedDirectories: 0 },
+      });
+      expect((await lstat(outside)).mode & 0o777).toBe(0o664);
+    });
+  });
+
+  it("hardening has no arbitrary target and leaves dependencies/ancestors unchanged", async () => {
+    await fixture(async (bound) => {
+      const dependency = path.join(
+        bound.checkoutRoot,
+        "node_modules/.pnpm/zod@4.6.5/node_modules/zod/index.cjs",
+      );
+      await chmod(dependency, 0o664);
+      const parentBefore = (await lstat(bound.checkoutRoot)).mode;
+      expect((await hardenMediaDeploymentArtifacts(bound, context())).ok).toBe(
+        true,
+      );
+      expect((await lstat(dependency)).mode & 0o777).toBe(0o664);
+      expect((await lstat(bound.checkoutRoot)).mode).toBe(parentBefore);
+      expect(
+        await hardenMediaDeploymentArtifacts(
+          { ...bound, deploymentRoot: path.join(bound.checkoutRoot, "src") },
+          context(),
+        ),
+      ).toMatchObject({
+        ok: false,
+        code: "ROOTS_INVALID",
+        summary: { changedFiles: 0, changedDirectories: 0 },
+      });
+      expect(
+        await hardenMediaDeploymentArtifacts(bound, {
+          deadlineMonotonicMs: performance.now() - 1,
+        }),
+      ).toMatchObject({
+        ok: false,
+        code: "DEADLINE_EXCEEDED",
+        summary: { changedFiles: 0, changedDirectories: 0 },
+      });
+    });
+  });
   it("binds code, both installed dependencies and completed artifacts; verify is read-only", async () => {
     await fixture(async (bound) => {
       const built = await build(bound);

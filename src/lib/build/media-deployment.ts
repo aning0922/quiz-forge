@@ -94,6 +94,20 @@ export type MediaDeploymentResult =
   | { ok: true; committed: boolean; summary: MediaDeploymentSummary }
   | { ok: false; committed: boolean; code: MediaDeploymentCode };
 
+export interface MediaDeploymentHardeningSummary {
+  checkedFiles: number;
+  checkedDirectories: number;
+  changedFiles: number;
+  changedDirectories: number;
+}
+export type MediaDeploymentHardeningResult =
+  | { ok: true; summary: MediaDeploymentHardeningSummary }
+  | {
+      ok: false;
+      code: MediaDeploymentCode;
+      summary: MediaDeploymentHardeningSummary;
+    };
+
 class Failure extends Error {
   constructor(readonly code: MediaDeploymentCode) {
     super(code);
@@ -867,5 +881,166 @@ export async function verifyMediaDeployment(
     return { ok: true, committed: false, summary: summary(actual) };
   } catch (error) {
     return { ok: false, committed: false, code: finalCode(error, ctx) };
+  }
+}
+
+/** Offline build step only. Runtime verification never calls this writer.
+ * The two fixed completed-Next roots are the entire permission-change scope.
+ * Preflight every entry before the first chmod; reject aliases/hardlinks rather
+ * than changing permissions on an inode shared with source or dependencies.
+ */
+export async function hardenMediaDeploymentArtifacts(
+  input: MediaDeploymentRoots,
+  supplied: MediaDeploymentContext,
+): Promise<MediaDeploymentHardeningResult> {
+  const summary: MediaDeploymentHardeningSummary = {
+    checkedFiles: 0,
+    checkedDirectories: 0,
+    changedFiles: 0,
+    changedDirectories: 0,
+  };
+  let ctx: MediaDeploymentContext | undefined;
+  try {
+    ctx = context(supplied);
+    checkpoint(ctx);
+    if (
+      !input ||
+      Object.keys(input).length !== 2 ||
+      !Object.hasOwn(input, "checkoutRoot") ||
+      !Object.hasOwn(input, "deploymentRoot") ||
+      !absolutePath(input.checkoutRoot) ||
+      !absolutePath(input.deploymentRoot)
+    )
+      fail("ROOTS_INVALID");
+    if (
+      (await realpath(input.checkoutRoot)) !== input.checkoutRoot ||
+      (await realpath(input.deploymentRoot)) !== input.deploymentRoot
+    )
+      fail("ROOTS_INVALID");
+    checkpoint(ctx);
+    const selected = path
+      .relative(input.checkoutRoot, input.deploymentRoot)
+      .split(path.sep)
+      .join("/");
+    if (
+      ![".next", ".cache/quizpack-media-next-fixture/.next"].includes(selected)
+    )
+      fail("ROOTS_INVALID");
+    await ancestors(input.checkoutRoot, input.deploymentRoot, ctx);
+    const entries: { rel: string; stat: BigIntStats }[] = [];
+    let itemCount = 0;
+    let totalBytes = 0;
+    const ownerOnly = (s: BigIntStats) =>
+      typeof process.getuid === "function" &&
+      s.uid === BigInt(process.getuid()) &&
+      (s.mode & BigInt(0o7000)) === BigInt(0);
+    const gather = async (rel: string): Promise<void> => {
+      checkpoint(ctx!);
+      const target = path.join(input.deploymentRoot, rel);
+      const stat = await lstat(target, { bigint: true });
+      checkpoint(ctx!);
+      if (!ownerOnly(stat) || stat.isSymbolicLink()) fail("FILE_UNSAFE");
+      if (stat.isFile()) {
+        if (
+          stat.nlink !== BigInt(1) ||
+          (stat.mode & BigInt(0o600)) !== BigInt(0o600)
+        )
+          fail("FILE_UNSAFE");
+        if (
+          ++summary.checkedFiles > MAX_FILES ||
+          stat.size > BigInt(MAX_FILE) ||
+          (totalBytes += Number(stat.size)) > MAX_TOTAL
+        )
+          fail("LIMIT_EXCEEDED");
+        entries.push({ rel, stat });
+      } else if (stat.isDirectory()) {
+        if ((stat.mode & BigInt(0o700)) !== BigInt(0o700)) fail("FILE_UNSAFE");
+        summary.checkedDirectories++;
+        entries.push({ rel, stat });
+        const dir = await opendir(target, { bufferSize: 16 });
+        try {
+          for (;;) {
+            const next = await dir.read();
+            checkpoint(ctx!);
+            if (!next) break;
+            if (++itemCount > MAX_ENTRIES) fail("LIMIT_EXCEEDED");
+            const child = rel ? rel + "/" + next.name : next.name;
+            if (!relativePath(child)) fail("FILE_UNSAFE");
+            await gather(child);
+          }
+        } finally {
+          await dir.close();
+        }
+        checkpoint(ctx!);
+        if (!same(stat, await lstat(target, { bigint: true })))
+          fail("FILE_CHANGED");
+        checkpoint(ctx!);
+      } else fail("FILE_UNSAFE");
+    };
+    await gather("");
+    for (const file of ARTIFACT_FIXED_FILES)
+      if (!entries.some((e) => e.rel === file && e.stat.isFile()))
+        fail("BUILD_INCOMPLETE");
+    if (
+      !entries.some(
+        (e) =>
+          e.rel.startsWith("server/") &&
+          e.rel.endsWith(".js") &&
+          e.stat.isFile(),
+      )
+    )
+      fail("BUILD_INCOMPLETE");
+    // Parents precede children. Chmod through a no-follow descriptor and require
+    // the exact preflight inode; no chmod(path) can follow a replacement alias.
+    for (const entry of entries) {
+      checkpoint(ctx);
+      const target = path.join(input.deploymentRoot, entry.rel);
+      if (entry.rel) await ancestors(input.deploymentRoot, target, ctx);
+      const flags =
+        constants.O_RDONLY |
+        constants.O_NOFOLLOW |
+        constants.O_NONBLOCK |
+        (entry.stat.isDirectory() ? constants.O_DIRECTORY : 0);
+      const descriptor = await open(target, flags);
+      try {
+        const before = await descriptor.stat({ bigint: true });
+        checkpoint(ctx);
+        if (
+          !same(entry.stat, before) ||
+          !ownerOnly(before) ||
+          (before.isFile() && before.nlink !== BigInt(1))
+        )
+          fail("FILE_CHANGED");
+        const mode = before.isDirectory() ? 0o700 : 0o600;
+        if ((before.mode & BigInt(0o7777)) !== BigInt(mode)) {
+          await descriptor.chmod(mode);
+          if (before.isDirectory()) summary.changedDirectories++;
+          else summary.changedFiles++;
+        }
+        checkpoint(ctx);
+        const after = await descriptor.stat({ bigint: true });
+        checkpoint(ctx);
+        if (
+          before.dev !== after.dev ||
+          before.ino !== after.ino ||
+          before.size !== after.size ||
+          before.mtimeNs !== after.mtimeNs ||
+          (after.mode & BigInt(0o7777)) !== BigInt(mode) ||
+          !ownerOnly(after) ||
+          (after.isFile() && after.nlink !== BigInt(1))
+        )
+          fail("FILE_CHANGED");
+        if (!same(after, await lstat(target, { bigint: true })))
+          fail("FILE_CHANGED");
+        checkpoint(ctx);
+      } finally {
+        await descriptor.close();
+      }
+      checkpoint(ctx);
+    }
+    checkpoint(ctx);
+    return { ok: true, summary };
+  } catch (error) {
+    return { ok: false, code: finalCode(error, ctx), summary };
   }
 }

@@ -1,13 +1,18 @@
 import { realpath } from "node:fs/promises";
 import path from "node:path";
-import { buildMediaDeployment } from "../src/lib/build/media-deployment";
+import {
+  buildMediaDeployment,
+  hardenMediaDeploymentArtifacts,
+} from "../src/lib/build/media-deployment";
 
 process.stdout.on("error", () => {
   process.exitCode = 1;
 });
-// Fixture selection is intentionally unavailable until Root supplies a fixed
-// fixture layout. No arbitrary path argument or runtime environment override.
-if (process.argv.length !== 3 || process.argv[2] !== "--main") {
+// Two fixed offline build targets; no arbitrary path or environment override.
+if (
+  process.argv.length !== 3 ||
+  !["--main", "--fixture"].includes(process.argv[2]!)
+) {
   process.stdout.write(
     `${JSON.stringify({ ok: false, committed: false, code: "BUILD_ARGUMENT_INVALID" })}\n`,
   );
@@ -15,11 +20,29 @@ if (process.argv.length !== 3 || process.argv[2] !== "--main") {
 } else {
   let result;
   try {
+    const context = { deadlineMonotonicMs: performance.now() + 60000 };
     const checkoutRoot = await realpath(process.cwd());
-    result = await buildMediaDeployment(
-      { checkoutRoot, deploymentRoot: path.join(checkoutRoot, ".next") },
-      { deadlineMonotonicMs: performance.now() + 60000 },
-    );
+    const roots = {
+      checkoutRoot,
+      deploymentRoot: path.join(
+        checkoutRoot,
+        process.argv[2] === "--main"
+          ? ".next"
+          : ".cache/quizpack-media-next-fixture/.next",
+      ),
+    };
+    const hardening = await hardenMediaDeploymentArtifacts(roots, context);
+    result = hardening.ok
+      ? {
+          ...(await buildMediaDeployment(roots, context)),
+          hardening: hardening.summary,
+        }
+      : {
+          ok: false,
+          committed: false,
+          code: hardening.code,
+          hardening: hardening.summary,
+        };
   } catch {
     result = { ok: false, committed: false, code: "BUILD_ROOT_INVALID" };
   }
