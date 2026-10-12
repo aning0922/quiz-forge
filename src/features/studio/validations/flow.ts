@@ -43,13 +43,26 @@ export function preparedTuple(
     expectedValidationKey: value.validationKey,
   });
 }
-const notStartedInvocations = new WeakMap<object, PendingTuple>();
+type Invocation = { tuple: PendingTuple; token: object };
+const notStartedInvocations = new WeakMap<object, Invocation>();
+const currentInvocations = new Map<string, Invocation>();
+const invocationPair = (tuple: PendingTuple) =>
+  JSON.stringify([tuple.productId, tuple.importId]);
+function retireInvocation(tuple: PendingTuple) {
+  const key = invocationPair(tuple);
+  const current = currentInvocations.get(key);
+  if (current && sameTuple(current.tuple, tuple))
+    currentInvocations.delete(key);
+}
 async function sendPrepared(
   storage: PendingStorage,
   tuple: PendingTuple,
   csrf: string,
 ): Promise<StartValidationResult> {
   // Persistence, complete readback, and first fetch are one synchronous turn.
+  const invocation = { tuple, token: Object.freeze({}) };
+  // Revoke any earlier proof even if persistence succeeds but its readback fails.
+  currentInvocations.set(invocationPair(tuple), invocation);
   markBeforeStart(storage, tuple);
   const result = await checkedValidationFetch(
     validationEndpoint(tuple),
@@ -61,8 +74,13 @@ async function sendPrepared(
     true,
     [200, 201],
   );
-  if (result.outcome === "record") removeExact(storage, tuple, true);
-  else notStartedInvocations.set(result, tuple);
+  if (result.outcome === "record") {
+    retireInvocation(tuple);
+    removeExact(storage, tuple, true);
+  } else if (
+    currentInvocations.get(invocationPair(tuple))?.token === invocation.token
+  )
+    notStartedInvocations.set(result, invocation);
   // A strict not-started result remains pending until the user explicitly abandons this invocation.
   return result;
 }
@@ -123,6 +141,7 @@ export async function reconcilePending(
   );
   const row = page.items[0];
   if (!row) return null;
+  retireInvocation(tuple);
   removeExact(storage, tuple, true);
   return row;
 }
@@ -132,17 +151,21 @@ export function abandonNotStarted(
   result: StartValidationResult,
 ): boolean {
   // Only the current invocation may pass its strict result; UI never offers this after reload.
+  const proof = notStartedInvocations.get(result);
   if (
-    !notStartedInvocations.has(result) ||
-    !notStartedInvocations.get(result) ||
-    !sameTuple(notStartedInvocations.get(result)!, tuple) ||
+    !proof ||
+    currentInvocations.get(invocationPair(tuple))?.token !== proof.token ||
+    !sameTuple(proof.tuple, tuple) ||
     checkStart(result, 200, tuple).outcome !== "not-started"
   )
     throw new Error("INVALID_NOT_STARTED_RESPONSE");
   const release = acquirePair(tuple);
   try {
     const removed = removeExact(storage, tuple, true);
-    if (removed) notStartedInvocations.delete(result);
+    if (removed) {
+      notStartedInvocations.delete(result);
+      retireInvocation(tuple);
+    }
     return removed;
   } finally {
     release();

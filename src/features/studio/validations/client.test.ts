@@ -49,6 +49,32 @@ function sentStorage() {
 }
 afterEach(() => vi.unstubAllGlobals());
 describe("validation request coordination", () => {
+  it("a previous legitimate not-started response cannot abandon a later unknown invocation of the same tuple", async () => {
+    const storage = memoryStorage();
+    addPrepared(storage, tuple);
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => Response.json(notStarted)),
+    );
+    const previous = await continuePrepared(storage, tuple, "csrf");
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => Response.json(page)),
+    );
+    await reconcilePending(storage, tuple);
+    expect(() => abandonNotStarted(storage, tuple, previous)).toThrow();
+    addPrepared(storage, tuple);
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => {
+        throw new Error("lost response");
+      }),
+    );
+    await expect(continuePrepared(storage, tuple, "csrf")).rejects.toThrow();
+    expect(() => abandonNotStarted(storage, tuple, previous)).toThrow();
+    expect(readPending(storage)).toEqual([{ tuple, mayHaveBeenSent: true }]);
+  });
+
   it("saves the complete true tuple before the first start fetch and uses separate prepare/start", async () => {
     const storage = memoryStorage();
     const paths: string[] = [];
