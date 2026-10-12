@@ -15,6 +15,8 @@ import {
   disposeMediaOperationContext,
   requestMediaOperationStop,
 } from "../../operation-context";
+import { createHash } from "node:crypto";
+import { LIMITS, type LinuxRunRecord } from "./container-policy.mjs";
 import { parseLaunchResult } from "../../evidence";
 import type { CommandResult } from "./command";
 const policy: LinuxPolicy = {
@@ -54,7 +56,10 @@ describe("Linux issued/control barriers without a daemon", () => {
   function fixture() {
     const stateRoot = join(root, ".cache/media"),
       controlRoot = join(stateRoot, "control");
-    const docker = vi.fn(async () => commandResult(false));
+    const docker = vi.fn(async (_args?: readonly string[]) => {
+      void _args;
+      return commandResult(false);
+    });
     const loadPolicy = vi.fn<LinuxExecutionEnvironment["loadPolicy"]>(
       async () => policy,
     );
@@ -80,6 +85,104 @@ describe("Linux issued/control barriers without a daemon", () => {
     entrypoint: "/usr/local/bin/node" as const,
     args: ["/worker/media-worker.mjs", "8388608", "8192", "16000000"],
   };
+  it("nonzero attach preserves inspected kernel OOM evidence after confirmed cleanup", async () => {
+    const fixtureRun = fixture(),
+      run = scoped();
+    const seccomp = "{}";
+    fixtureRun.loadPolicy.mockResolvedValue({
+      ...policy,
+      binding: {
+        ...policy.binding,
+        seccompSha256: createHash("sha256").update(seccomp).digest("hex"),
+      },
+    });
+    let record: LinuxRunRecord;
+    let started = false;
+    fixtureRun.docker.mockImplementation(async (args?: readonly string[]) => {
+      const success = { ...commandResult(true), code: 0, reason: undefined };
+      if (args?.[0] === "start") {
+        started = true;
+        return { ...success, code: 137 };
+      }
+      if (args?.[0] === "rm")
+        return { ...success, stdout: Buffer.from("a".repeat(64)) };
+      if (args?.[0] === "wait")
+        return { ...success, stdout: Buffer.from("137") };
+      if (args?.[0] !== "inspect") return success;
+      return {
+        ...success,
+        stdout: Buffer.from(
+          JSON.stringify({
+            id: "a".repeat(64),
+            name: `/${record.name}`,
+            image: record.imageId,
+            labels: {
+              "qf.run": record.runId,
+              "qf.nonce": record.nonce,
+              "qf.profile": record.profileId,
+            },
+            user: "10001:10001",
+            entrypoint: [record.entrypoint],
+            cmd: record.args,
+            mounts: [],
+            health: { Test: ["NONE"] },
+            env: [
+              "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+              "NODE_VERSION=20.20.1",
+              "YARN_VERSION=1.22.22",
+              "NODE_ENV=production",
+              "UV_THREADPOOL_SIZE=4",
+              "MALLOC_ARENA_MAX=2",
+            ],
+            host: {
+              Privileged: false,
+              ReadonlyRootfs: true,
+              CapDrop: ["ALL"],
+              SecurityOpt: ["no-new-privileges=true", `seccomp=${seccomp}`],
+              NetworkMode: "none",
+              IpcMode: "none",
+              PidMode: "",
+              CgroupnsMode: "private",
+              Memory: LIMITS.memory,
+              MemorySwap: LIMITS.memory,
+              NanoCpus: LIMITS.nanoCpus,
+              PidsLimit: LIMITS.pids,
+              RestartPolicy: { Name: "no" },
+              LogConfig: { Type: "none" },
+              AutoRemove: false,
+            },
+            state: {
+              Running: false,
+              Restarting: false,
+              Status: started ? "exited" : "created",
+              ExitCode: started ? 137 : 0,
+              OOMKilled: started,
+              Error: "",
+            },
+          }),
+        ),
+      };
+    });
+    const result = await fixtureRun.core.execute({
+      execution,
+      scope: run.scope,
+      bytes: Buffer.alloc(0),
+      hooks: {
+        afterCreate(value) {
+          record = value;
+        },
+      },
+    });
+    expect(result).toMatchObject({
+      outcome: "failed",
+      code: "WORKER_FAILED",
+      stopped: "confirmed",
+      evidence: { oomKilled: true, exitCode: 137, stdioSettled: true },
+    });
+    expect(await readdir(fixtureRun.controlRoot)).toEqual([]);
+    run.scope.finish();
+    disposeMediaOperationContext(run.context);
+  });
   it("unsettled create retains its exact record/guard and blocks another invocation", async () => {
     const fixtureRun = fixture(),
       first = scoped();

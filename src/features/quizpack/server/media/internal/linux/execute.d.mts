@@ -47,6 +47,7 @@ export type LinuxDiagnostic = {
   checks?: Record<string, boolean>;
   matched?: boolean;
   running?: boolean;
+  oomKilled?: boolean;
   status?:
     | "created"
     | "exited"
