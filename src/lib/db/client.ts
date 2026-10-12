@@ -90,7 +90,231 @@ export async function verifyDatabaseIdentity(
       FROM pg_roles WHERE rolname=current_user`;
     if (!privilege || Object.values(privilege).some((v) => v !== false))
       throw new StudioUnavailableError();
+    await verifyValidationSchema(sql);
   }
+}
+
+const validationSchemaColumns: Readonly<
+  Record<string, readonly (readonly [string, string, boolean])[]>
+> = {
+  quizpack_validation: [
+    ["id", "uuid", true],
+    ["product_id", "character varying(80)", true],
+    ["import_id", "uuid", true],
+    ["created_by", "uuid", true],
+    ["created_at", "timestamp with time zone", true],
+    ["validation_key", "character(64)", true],
+    ["archive_sha256", "character(64)", true],
+    ["archive_bytes", "integer", true],
+    ["identity_text", "text", true],
+    ["identity_sha256", "character(64)", true],
+    ["archive_policy_version", "character varying(64)", true],
+    ["archive_policy_sha256", "character(64)", true],
+    ["status", "text", true],
+    ["state_revision", "integer", true],
+    ["updated_at", "timestamp with time zone", true],
+    ["fence", "integer", true],
+    ["lease_until", "timestamp with time zone", false],
+    ["current_attempt_id", "uuid", true],
+    ["attempts_text", "text", true],
+    ["storage_condition", "text", true],
+    ["last_error_code", "character varying(64)", false],
+    ["reserved_bytes", "bigint", true],
+    ["accounted_bytes", "bigint", true],
+    ["evidence_text", "text", false],
+    ["evidence_sha256", "character(64)", false],
+    ["report_texts", "text[]", true],
+    ["evidence_metadata_text", "text", false],
+    ["pack_id", "character varying(80)", false],
+    ["pack_version", "character varying(32)", false],
+    ["container_schema_version", "character varying(64)", false],
+    ["content_schema_version", "character varying(64)", false],
+    ["content_kind", "character varying(32)", false],
+    ["manifest_sha256", "character(64)", false],
+    ["content_sha256", "character(64)", false],
+    ["canonical_manifest_text", "text", false],
+    ["canonical_manifest_sha256", "character(64)", false],
+    ["canonical_content_text", "text", false],
+    ["canonical_content_sha256", "character(64)", false],
+    ["asset_set_text", "text", false],
+    ["asset_set_sha256", "character(64)", false],
+    ["candidate_sha256", "character(64)", false],
+    ["resource_count", "smallint", false],
+    ["identity_kind", "text", true],
+    ["canonical_validation_id", "uuid", false],
+    ["validated_at", "timestamp with time zone", false],
+    ["ready_at", "timestamp with time zone", false],
+  ],
+  asset_blob: [
+    ["sha256", "character(64)", true],
+    ["bytes", "integer", true],
+    ["media_type", "character varying(32)", true],
+    ["width", "integer", true],
+    ["height", "integer", true],
+    ["frames", "smallint", true],
+    ["storage_key", "character varying(96)", true],
+    ["created_at", "timestamp with time zone", true],
+  ],
+  product_asset: [
+    ["product_id", "character varying(80)", true],
+    ["resource_id", "character varying(80)", true],
+    ["resource_version", "character varying(32)", true],
+    ["blob_sha256", "character(64)", true],
+    ["declaration_text", "text", true],
+    ["declaration_sha256", "character(64)", true],
+    ["purpose", "character varying(16)", true],
+    ["source_validation_id", "uuid", true],
+    ["platform_approval", "character varying(16)", true],
+    ["created_at", "timestamp with time zone", true],
+  ],
+};
+const validationMutableColumns = new Set([
+  "status",
+  "state_revision",
+  "updated_at",
+  "fence",
+  "lease_until",
+  "current_attempt_id",
+  "attempts_text",
+  "storage_condition",
+  "last_error_code",
+  "reserved_bytes",
+  "accounted_bytes",
+  "evidence_text",
+  "evidence_sha256",
+  "report_texts",
+  "evidence_metadata_text",
+  "pack_id",
+  "pack_version",
+  "container_schema_version",
+  "content_schema_version",
+  "content_kind",
+  "manifest_sha256",
+  "content_sha256",
+  "canonical_manifest_text",
+  "canonical_manifest_sha256",
+  "canonical_content_text",
+  "canonical_content_sha256",
+  "asset_set_text",
+  "asset_set_sha256",
+  "candidate_sha256",
+  "resource_count",
+  "identity_kind",
+  "canonical_validation_id",
+  "validated_at",
+  "ready_at",
+]);
+const validationHelpers: Readonly<Record<string, boolean>> = {
+  "qf.sha256_utf8(text)": true,
+  "qf.validation_attempts_valid(text,integer,uuid,bigint)": true,
+  "qf.validation_evidence_valid(text,text[],text,text)": true,
+  "qf.product_asset_declaration_valid(text,text,text,text,text,text)": true,
+  "qf.validation_shape_valid(qf.quizpack_validation)": true,
+  "qf.protect_validation()": false,
+  "qf.protect_product_asset()": false,
+  "qf.validation_ready_assets()": false,
+  "qf.product_asset_ready_source()": false,
+};
+/** App-only fail-closed B schema/privilege check. Owner remains able to migrate old instances. */
+async function verifyValidationSchema(sql: postgres.Sql): Promise<void> {
+  const tables = await sql<
+    {
+      table_name: string;
+      kind: string;
+      can_select: boolean;
+      can_insert: boolean;
+      can_update: boolean;
+      can_delete: boolean;
+      can_truncate: boolean;
+      can_references: boolean;
+      can_trigger: boolean;
+      schema_create: boolean;
+    }[]
+  >`
+    SELECT c.relname AS table_name,c.relkind AS kind,
+      has_table_privilege(current_user,c.oid,'SELECT') AS can_select,
+      has_table_privilege(current_user,c.oid,'INSERT') AS can_insert,
+      has_table_privilege(current_user,c.oid,'UPDATE') AS can_update,
+      has_table_privilege(current_user,c.oid,'DELETE') AS can_delete,
+      has_table_privilege(current_user,c.oid,'TRUNCATE') AS can_truncate,
+      has_table_privilege(current_user,c.oid,'REFERENCES') AS can_references,
+      has_table_privilege(current_user,c.oid,'TRIGGER') AS can_trigger,
+      has_schema_privilege(current_user,n.oid,'CREATE') AS schema_create
+    FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
+    WHERE n.nspname='qf' AND c.relname IN ('quizpack_validation','asset_blob','product_asset') ORDER BY c.relname`;
+  if (
+    tables.length !== 3 ||
+    tables.some(
+      (t) =>
+        t.kind !== "r" ||
+        !t.can_select ||
+        !t.can_insert ||
+        t.can_update ||
+        t.can_delete ||
+        t.can_truncate ||
+        t.can_references ||
+        t.can_trigger ||
+        t.schema_create,
+    )
+  )
+    throw new StudioUnavailableError();
+  const columns = await sql<
+    {
+      table_name: string;
+      column_name: string;
+      column_type: string;
+      required: boolean;
+      can_update: boolean;
+    }[]
+  >`
+    SELECT c.relname AS table_name,a.attname AS column_name,format_type(a.atttypid,a.atttypmod) AS column_type,a.attnotnull AS required,
+      has_column_privilege(current_user,c.oid,a.attnum,'UPDATE') AS can_update
+    FROM pg_attribute a JOIN pg_class c ON c.oid=a.attrelid JOIN pg_namespace n ON n.oid=c.relnamespace
+    WHERE n.nspname='qf' AND c.relname IN ('quizpack_validation','asset_blob','product_asset') AND a.attnum>0 AND NOT a.attisdropped ORDER BY c.relname,a.attnum`;
+  for (const [table, expected] of Object.entries(validationSchemaColumns)) {
+    const actual = columns.filter((c) => c.table_name === table);
+    if (
+      actual.length !== expected.length ||
+      expected.some(([name, type, required]) => {
+        const c = actual.find((c) => c.column_name === name);
+        return (
+          !c ||
+          c.column_type !== type ||
+          c.required !== required ||
+          c.can_update !==
+            (table === "quizpack_validation" &&
+              validationMutableColumns.has(name))
+        );
+      })
+    )
+      throw new StudioUnavailableError();
+  }
+  const helpers = await sql<
+    {
+      signature: string;
+      present: boolean;
+      can_execute: boolean;
+      security_definer: boolean;
+      fixed_path: boolean;
+    }[]
+  >`
+    SELECT s.signature,p.oid IS NOT NULL AS present,
+      CASE WHEN p.oid IS NULL THEN false ELSE has_function_privilege(current_user,p.oid,'EXECUTE') END AS can_execute,
+      coalesce(p.prosecdef,true) AS security_definer,
+      coalesce(p.proconfig=ARRAY['search_path=pg_catalog'],false) AS fixed_path
+    FROM unnest(${sql.array(Object.keys(validationHelpers))}::text[]) AS s(signature)
+    LEFT JOIN pg_proc p ON p.oid=to_regprocedure(s.signature)`;
+  if (
+    helpers.length !== Object.keys(validationHelpers).length ||
+    helpers.some(
+      (f) =>
+        !f.present ||
+        f.can_execute !== validationHelpers[f.signature] ||
+        f.security_definer ||
+        !f.fixed_path,
+    )
+  )
+    throw new StudioUnavailableError();
 }
 
 export async function createDatabase(
