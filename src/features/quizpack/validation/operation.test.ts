@@ -347,3 +347,38 @@ it("failure of finalization permanently bars any later write or receipt", async 
   });
   expect(complete).toHaveBeenCalledTimes(1);
 });
+
+it("ordinary write is blocked after files close and after receipt publication", async () => {
+  const { op } = fixture();
+  op.enterClaimBoundary();
+  op.confirmClaim();
+  op.closeNonDbGate();
+  await op.settle();
+  const work = vi.fn(async () => "unexpected write");
+  await expect(op.databaseAwait("write", work)).rejects.toMatchObject({
+    code: "VALIDATION_RECOVERY_REQUIRED",
+  });
+  await op.stoppedReceiptTask(async () => {});
+  await expect(op.databaseAwait("write", work)).rejects.toMatchObject({
+    code: "VALIDATION_RECOVERY_REQUIRED",
+  });
+  expect(work).not.toHaveBeenCalled();
+});
+it("queued finalization rechecks related IO immediately before work and consumes the gate forever", async () => {
+  const { op } = fixture();
+  op.enterClaimBoundary();
+  op.confirmClaim();
+  op.closeNonDbGate();
+  await op.settle();
+  await op.stoppedReceiptTask(async () => {});
+  const work = vi.fn(async () => "unexpected complete"),
+    task = op.finalizeDatabaseOnce(work);
+  op.markRelatedIoUnknown();
+  await expect(task).rejects.toMatchObject({
+    code: "VALIDATION_RECOVERY_REQUIRED",
+  });
+  await expect(op.finalizeDatabaseOnce(work)).rejects.toMatchObject({
+    code: "VALIDATION_RECOVERY_REQUIRED",
+  });
+  expect(work).not.toHaveBeenCalled();
+});
