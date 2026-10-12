@@ -1,21 +1,18 @@
+import {
+  createValidationOperationScope,
+  ValidationInterrupted as CoreInterrupted,
+} from "./operation-scope";
+import { runtimeIdentity, readTrustedBinding } from "./identity";
 import "server-only";
 import { createHash } from "node:crypto";
-import { performance } from "node:perf_hooks";
 import { types } from "node:util";
 import {
   classifyMediaFailure,
-  mediaStopFailureCode,
   parseLaunchResult,
-  parseMediaRuntimeBinding,
   readMediaOperationState,
-  readMediaRuntimeBinding,
-  requestMediaOperationStop,
   runIsolatedImage,
   type ImageDeclaration,
-  type LaunchFailureCode,
   type MediaOperationContext,
-  type MediaRuntimeBinding,
-  type MediaRuntimeBindingResult,
 } from "../media";
 import type {
   QuizPackValidationReport,
@@ -31,11 +28,9 @@ import { validateQuizPackCore } from "../../v1/validate-core";
 import { PackToolError, packIssue, readRestrictedZipCore } from "../../v1/zip";
 import {
   sealCandidateResultEvidence,
-  validationIdentitySchema,
   type CandidateEvidence,
   type CandidateInterruptionCode,
   type MediaFact,
-  type ValidationIdentity,
   type POLICY_REJECTION_CODES,
   type CANDIDATE_REJECTION_CODES,
 } from "./contracts";
@@ -43,30 +38,11 @@ import {
   issuePrivateCandidate,
   type CandidateResult,
 } from "./private-candidate";
-import { EVIDENCE_LIMITS, REPORT_SCHEMA_HASH, sealP1Report } from "./report";
-import {
-  assertPersistenceUnicode,
-  EvidenceError,
-  PERSISTENCE_UNICODE_POLICY_HASH,
-} from "./unicode";
+import { EVIDENCE_LIMITS, sealP1Report } from "./report";
+import { assertPersistenceUnicode, EvidenceError } from "./unicode";
 
 const hash = (input: Uint8Array | string) =>
   createHash("sha256").update(input).digest("hex");
-const COMPATIBILITY_HASH = hash(canonicalP1Json(DEFAULT_COMPATIBILITY_POLICY));
-const LIMITS_HASH = hash(canonicalP1Json(PACK_LIMITS));
-const BINDING_UNAVAILABLE_CODES: Record<
-  Extract<MediaRuntimeBindingResult, { outcome: "unavailable" }>["code"],
-  true
-> = {
-  INVALID_INPUT: true,
-  CANCELLED: true,
-  DEADLINE_EXCEEDED: true,
-  UNSUPPORTED_PLATFORM: true,
-  ISOLATION_UNAVAILABLE: true,
-  WORKER_FAILED: true,
-  STOP_UNCONFIRMED: true,
-};
-const CLEANUP_OBSERVATION_MS = 10;
 type PolicyCode = (typeof POLICY_REJECTION_CODES)[number];
 type RejectionCode = (typeof CANDIDATE_REJECTION_CODES)[number];
 class BackendPolicyRejection extends Error {
@@ -74,36 +50,6 @@ class BackendPolicyRejection extends Error {
     super("Backend validation policy rejected.");
   }
 }
-class CoreInterrupted extends Error {
-  report: QuizPackValidationReport | null = null;
-  constructor(
-    readonly code: CandidateInterruptionCode,
-    readonly p1Code = "VALIDATION_FAILED",
-  ) {
-    super("Trusted validation interrupted.");
-  }
-}
-function runtimeIdentity(binding: MediaRuntimeBinding): ValidationIdentity {
-  const payload = {
-    schemaVersion: "quizpack-validation-identity.v1" as const,
-    validatorVersion: "1.0.0" as const,
-    policyId: "quizpack-local-p1.v1" as const,
-    // Runtime bundle binds the complete validation execution closure, not source alone.
-    validatorBundleSha256: binding.runtimeBundleHash,
-    compatibilityPolicyHash: COMPATIBILITY_HASH,
-    effectiveLimitsHash: LIMITS_HASH,
-    persistencePolicyVersion: "quizpack-persistence-policy.v1" as const,
-    persistencePolicyHash: PERSISTENCE_UNICODE_POLICY_HASH,
-    reportSchemaVersion: "quizpack-validation.v1" as const,
-    reportSchemaHash: REPORT_SCHEMA_HASH,
-    runtime: binding,
-  };
-  return validationIdentitySchema.parse({
-    ...payload,
-    identitySha256: hash(canonicalP1Json(payload)),
-  });
-}
-
 function rawVersionGate(
   manifest: unknown,
   content: unknown,
@@ -144,9 +90,8 @@ export async function validateArchiveCandidate(
   targetProductId: string,
   context: MediaOperationContext,
 ): Promise<CandidateResult> {
-  const pendingIo = new Set<Promise<void>>();
+  const scope = createValidationOperationScope(context);
   const media: MediaFact[] = [];
-  let runtimeFailure: LaunchFailureCode | null = null;
   let identity: CandidateEvidence["identity"] = {
     status: "unavailable",
     code: "RUNTIME_IDENTITY_UNAVAILABLE",
@@ -166,197 +111,34 @@ export async function validateArchiveCandidate(
     content: QuizPackContent;
     files: ReadonlyMap<string, Buffer>;
   } | null = null;
-  let relatedIo: "settled" | "unconfirmed" = "settled";
-  let activeMedia = false;
-  let runtimeIoUnconfirmed = false;
-
+  const { requestStop, trackIo, awaitOperationTask, settleIo } = scope;
   const checkpoint = (): void => {
-    let state;
     try {
-      state = readMediaOperationState(context);
-    } catch {
-      identity = { status: "unavailable", code: "INVALID_CONTEXT" };
-      if (evidence().report.status !== "sealed")
-        report = { status: "not-run", reason: "IDENTITY_UNAVAILABLE" };
-      throw new CoreInterrupted("INVALID_CONTEXT");
-    }
-    if (state.phase === "stopping") {
-      runtimeFailure ??= mediaStopFailureCode(state.stop);
-      throw new CoreInterrupted(
-        runtimeFailure === "STOP_UNCONFIRMED"
-          ? "MEDIA_STOP_UNCONFIRMED"
-          : runtimeFailure === "CANCELLED"
-            ? "OPERATION_CANCELLED"
-            : runtimeFailure === "DEADLINE_EXCEEDED"
-              ? "OPERATION_TIMEOUT"
-              : "MEDIA_RUNTIME_FAILED",
-        runtimeFailure === "CANCELLED"
-          ? "OPERATION_CANCELLED"
-          : runtimeFailure === "DEADLINE_EXCEEDED"
-            ? "OPERATION_TIMEOUT"
-            : "MEDIA_WORKER_FAILED",
-      );
-    }
-  };
-  const requestStop = (unknownMedia = false): void => {
-    try {
-      requestMediaOperationStop(
-        context,
-        unknownMedia ? "STOP_UNCONFIRMED" : "RUNTIME_FAILED",
-      );
-    } catch {
-      /* Invalid/disposed contexts cannot confer completion authority. */
-    }
-  };
-  const trackIo = (task: Promise<void>): void => {
-    pendingIo.add(task);
-    const settled = () => {
-      // Observe when proof is available, even if a delayed timer has not run.
-      // A settled task after cleanup expiry must not erase the deadline fact.
-      try {
-        const state = readMediaOperationState(context);
-        if (
-          state.phase === "stopping" &&
-          performance.now() >= state.stop.cleanupDeadlineMonotonicMs
-        )
-          relatedIo = "unconfirmed";
-      } catch {
-        relatedIo = "unconfirmed";
+      scope.checkpoint();
+    } catch (error) {
+      if (
+        error instanceof CoreInterrupted &&
+        error.code === "INVALID_CONTEXT"
+      ) {
+        identity = { status: "unavailable", code: "INVALID_CONTEXT" };
+        if (report.status !== "sealed")
+          report = { status: "not-run", reason: "IDENTITY_UNAVAILABLE" };
       }
-      pendingIo.delete(task);
-    };
-    void task.then(settled, settled);
-  };
-  const awaitOperationTask = async <T>(task: Promise<T>): Promise<T> => {
-    // Track the operation itself as well as native close. A close proof alone
-    // cannot hide a callback still capable of continuing validation work.
-    trackIo(
-      task.then(
-        () => undefined,
-        () => undefined,
-      ),
-    );
-    let timer: NodeJS.Timeout | undefined;
-    let onAbort: () => void = () => {};
-    const stopped = new Promise<never>((_, reject) => {
-      const finish = () => {
-        // This is a decision-time fact, not a later count of pending promises.
-        // A late resolution in the same callback cannot revoke uncertainty.
-        relatedIo = "unconfirmed";
-        if (activeMedia) {
-          runtimeFailure = "STOP_UNCONFIRMED";
-          runtimeIoUnconfirmed = true;
-          requestStop(true);
-        }
-        reject(
-          new CoreInterrupted(
-            activeMedia ? "MEDIA_STOP_UNCONFIRMED" : "RELATED_IO_UNCONFIRMED",
-          ),
-        );
-      };
-      onAbort = () => {
-        try {
-          const state = readMediaOperationState(context);
-          if (state.phase !== "stopping") return;
-          const remaining =
-            state.stop.cleanupDeadlineMonotonicMs - performance.now();
-          if (remaining <= 0) finish();
-          else
-            timer = setTimeout(
-              onAbort,
-              Math.min(remaining, CLEANUP_OBSERVATION_MS),
-            );
-        } catch {
-          finish();
-        }
-      };
-      context.signal.addEventListener("abort", onAbort, { once: true });
-      if (context.signal.aborted) onAbort();
-    });
-    try {
-      return await Promise.race([task, stopped]);
-    } finally {
-      if (timer) clearTimeout(timer);
-      context.signal.removeEventListener("abort", onAbort);
+      throw error;
     }
   };
-  const settleIo = async (): Promise<void> => {
-    while (pendingIo.size) {
-      let state;
-      try {
-        state = readMediaOperationState(context);
-      } catch {
-        relatedIo = "unconfirmed";
-        return;
-      }
-      const deadline =
-        state.phase === "stopping"
-          ? state.stop.cleanupDeadlineMonotonicMs
-          : state.deadlineMonotonicMs;
-      const remaining = deadline - performance.now();
-      if (remaining <= 0) {
-        if (state.phase === "stopping") {
-          relatedIo = "unconfirmed";
-          return;
-        }
-        // Observe the factory's scheduled deadline; never create another 5s budget.
-        readMediaOperationState(context);
-        continue;
-      }
-      let timer: NodeJS.Timeout | undefined;
-      let abort: (() => void) | undefined;
-      const changed = new Promise<void>((resolve) => {
-        timer = setTimeout(
-          resolve,
-          state.phase === "stopping"
-            ? Math.min(remaining, CLEANUP_OBSERVATION_MS)
-            : remaining,
-        );
-        if (state.phase === "active") {
-          abort = resolve;
-          state.signal.addEventListener("abort", abort, { once: true });
-          if (state.signal.aborted) resolve();
-        }
-      });
-      try {
-        await Promise.race([Promise.allSettled([...pendingIo]), changed]);
-      } finally {
-        if (timer) clearTimeout(timer);
-        if (abort) state.signal.removeEventListener("abort", abort);
-      }
-    }
-  };
-  const evidence = (): CandidateEvidence => {
-    const mediaStopped =
-      runtimeFailure === "STOP_UNCONFIRMED" ||
-      media.some((fact) => fact.result.stopped === "unknown")
-        ? "unknown"
-        : media.some((fact) => fact.result.stopped === "confirmed")
-          ? "confirmed"
-          : "not-started";
-    return {
-      schemaVersion: "quizpack-candidate-evidence.v1",
-      input: inputEvidence,
-      identity,
-      report,
-      policy,
-      media,
-      completion: {
-        mediaStopped,
-        relatedIo:
-          runtimeIoUnconfirmed || mediaStopped === "unknown"
-            ? "unconfirmed"
-            : relatedIo,
-        maintenanceRequired:
-          mediaStopped === "unknown" ||
-          relatedIo === "unconfirmed" ||
-          runtimeIoUnconfirmed,
-      },
-      runtimeFailure,
-    };
-  };
+  const evidence = (): CandidateEvidence => ({
+    schemaVersion: "quizpack-candidate-evidence.v1",
+    input: inputEvidence,
+    identity,
+    report,
+    policy,
+    media,
+    completion: scope.completion(media),
+    runtimeFailure: scope.runtimeFailure,
+  });
   const interrupted = (code: CandidateInterruptionCode): CandidateResult => {
-    requestStop(runtimeFailure === "STOP_UNCONFIRMED");
+    requestStop(scope.runtimeFailure === "STOP_UNCONFIRMED");
     const sealed = sealCandidateResultEvidence({
       outcome: "interrupted",
       code,
@@ -390,68 +172,7 @@ export async function validateArchiveCandidate(
       throw new CoreInterrupted("BRIDGE_REPORT_INVALID");
     }
   };
-  const unknownBinding = (): never => {
-    runtimeFailure = "STOP_UNCONFIRMED";
-    runtimeIoUnconfirmed = true;
-    requestStop(true);
-    throw new CoreInterrupted("MEDIA_STOP_UNCONFIRMED");
-  };
-  const readBinding = async (): Promise<MediaRuntimeBinding> => {
-    let result: MediaRuntimeBindingResult;
-    try {
-      // A resolving outer Promise does not prove the platform's control IO
-      // stopped. Require one complete finite authority result first.
-      const raw: unknown = JSON.parse(
-        canonicalP1Json(
-          await awaitOperationTask(readMediaRuntimeBinding(context)),
-        ),
-      );
-      if (raw === null || typeof raw !== "object" || Array.isArray(raw))
-        return unknownBinding();
-      const fields = raw as Record<string, unknown>;
-      if (
-        fields.outcome === "bound" &&
-        Object.keys(fields).sort().join() === "binding,outcome"
-      ) {
-        const parsed = parseMediaRuntimeBinding(
-          Buffer.from(canonicalP1Json(fields.binding)),
-        );
-        if (!parsed.ok) return unknownBinding();
-        result = { outcome: "bound", binding: parsed.value };
-      } else if (
-        fields.outcome === "unavailable" &&
-        Object.keys(fields).sort().join() === "code,outcome" &&
-        typeof fields.code === "string" &&
-        Object.hasOwn(BINDING_UNAVAILABLE_CODES, fields.code)
-      ) {
-        result = {
-          outcome: "unavailable",
-          code: fields.code as Extract<
-            MediaRuntimeBindingResult,
-            { outcome: "unavailable" }
-          >["code"],
-        };
-      } else return unknownBinding();
-    } catch {
-      return unknownBinding();
-    }
-    if (result.outcome === "unavailable") {
-      // Preserve authoritative uncertainty before a simultaneously triggered
-      // storage/cancel checkpoint can throw a less-specific interruption.
-      runtimeFailure = result.code;
-      if (result.code === "STOP_UNCONFIRMED") runtimeIoUnconfirmed = true;
-    }
-    checkpoint();
-    if (result.outcome === "unavailable") {
-      requestStop(result.code === "STOP_UNCONFIRMED");
-      throw new CoreInterrupted(
-        result.code === "STOP_UNCONFIRMED"
-          ? "MEDIA_STOP_UNCONFIRMED"
-          : "RUNTIME_IDENTITY_UNAVAILABLE",
-      );
-    }
-    return result.binding;
-  };
+  const readBinding = () => readTrustedBinding(scope);
   try {
     if (!packIdSchema.safeParse(targetProductId).success) {
       inputEvidence = { status: "unavailable", code: "INVALID_TARGET_PRODUCT" };
@@ -548,12 +269,12 @@ export async function validateArchiveCandidate(
               height: expected.height,
             });
             let raw;
-            activeMedia = true;
+            scope.activeMedia = true;
             try {
               raw = await runIsolatedImage(bytes, declaration, context);
             } catch {
-              runtimeFailure = "STOP_UNCONFIRMED";
-              runtimeIoUnconfirmed = true;
+              scope.runtimeFailure = "STOP_UNCONFIRMED";
+              scope.runtimeIoUnconfirmed = true;
               requestStop(true);
               throw new CoreInterrupted(
                 "MEDIA_STOP_UNCONFIRMED",
@@ -564,8 +285,8 @@ export async function validateArchiveCandidate(
             try {
               result = parseLaunchResult(Buffer.from(canonicalP1Json(raw)));
             } catch {
-              runtimeFailure = "STOP_UNCONFIRMED";
-              runtimeIoUnconfirmed = true;
+              scope.runtimeFailure = "STOP_UNCONFIRMED";
+              scope.runtimeIoUnconfirmed = true;
               requestStop(true);
               throw new CoreInterrupted(
                 "MEDIA_STOP_UNCONFIRMED",
@@ -573,8 +294,8 @@ export async function validateArchiveCandidate(
               );
             }
             if (!result.ok) {
-              runtimeFailure = "STOP_UNCONFIRMED";
-              runtimeIoUnconfirmed = true;
+              scope.runtimeFailure = "STOP_UNCONFIRMED";
+              scope.runtimeIoUnconfirmed = true;
               requestStop(true);
               throw new CoreInterrupted(
                 "MEDIA_STOP_UNCONFIRMED",
@@ -582,15 +303,15 @@ export async function validateArchiveCandidate(
               );
             }
             media.push({ resourceIndex, result: result.value });
-            activeMedia = false;
+            scope.activeMedia = false;
             if (result.value.outcome === "failed") {
               if (
                 result.value.stopped === "unknown" ||
                 classifyMediaFailure(result.value.code) === "interrupted"
               ) {
-                runtimeFailure = result.value.code;
+                scope.runtimeFailure = result.value.code;
                 if (result.value.stopped === "unknown")
-                  runtimeIoUnconfirmed = true;
+                  scope.runtimeIoUnconfirmed = true;
                 requestStop(result.value.stopped === "unknown");
                 throw new CoreInterrupted(
                   result.value.stopped === "unknown"
@@ -728,7 +449,7 @@ export async function validateArchiveCandidate(
       }
       return rejected(error.code);
     }
-    requestStop(runtimeFailure === "STOP_UNCONFIRMED");
+    requestStop(scope.runtimeFailure === "STOP_UNCONFIRMED");
     if (error instanceof CoreInterrupted && error.report) {
       try {
         sealReport(error.report);
@@ -738,7 +459,7 @@ export async function validateArchiveCandidate(
     }
     await settleIo();
     return interrupted(
-      runtimeFailure === "STOP_UNCONFIRMED"
+      scope.runtimeFailure === "STOP_UNCONFIRMED"
         ? "MEDIA_STOP_UNCONFIRMED"
         : evidence().completion.relatedIo === "unconfirmed"
           ? "RELATED_IO_UNCONFIRMED"

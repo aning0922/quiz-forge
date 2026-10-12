@@ -31,3 +31,19 @@ export {
   PERSISTENCE_UNICODE_POLICY_HASH,
   assertPersistenceUnicode,
 } from "./unicode";
+export {
+  prepareValidationIdentity,
+  preparedIdentityEvidenceSchema,
+} from "./prepared";
+export { serializeEvidenceSqlProjection } from "./sql-projection";
+export type {
+  PreparedValidationIdentity,
+  PreparedIdentityResult,
+  FrozenValidationEvidence,
+  ExpectedCandidateFacts,
+  RestoreCandidateInput,
+  RestoreResult,
+  RestoreValidatedCandidate,
+  EvidenceSqlProjection,
+  EvidenceSqlProjectionResult,
+} from "./adapter-types";
