@@ -15,7 +15,7 @@ import path from "node:path";
 import { z } from "zod";
 import type { P2aRuntimeConfig } from "@/lib/db/runtime";
 import { StudioError } from "@/lib/http-security/errors";
-import { importIdSchema } from "./contracts";
+import { archiveHashSchema, importIdSchema } from "./contracts";
 import {
   MAX_FILES_PER_IMPORT,
   MAX_IMPORT_DIRECTORIES,
@@ -24,6 +24,7 @@ import {
   SCAN_TIMEOUT_MS,
 } from "./limits";
 import { remainingReceiveMs } from "./context";
+import { MAX_VALIDATIONS, MAX_BLOBS } from "../validation/limits";
 import type { ReceiveContext } from "./service-contract";
 
 export const attemptSchema = z.strictObject({
@@ -44,11 +45,29 @@ export const receiptSchema = z.strictObject({
   ownerNonce: attemptSchema.shape.ownerNonce,
 });
 export type FileFact = { file: string; size: number; inode: Stats };
+export type StorageNamespace = "imports" | "validation" | "blobs";
+export type StorageScanKey = `${StorageNamespace}:${string}`;
+export const storageScanKey = (
+  namespace: StorageNamespace,
+  id: string,
+): StorageScanKey => `${namespace}:${id}`;
 export type Scan = {
   bytes: number;
   entries: number;
-  files: Map<string, FileFact[]>;
+  files: Map<StorageScanKey, FileFact[]>;
 };
+export const storageNamespaceLimits = Object.freeze({
+  imports: MAX_IMPORT_DIRECTORIES,
+  validation: MAX_VALIDATIONS,
+  blobs: MAX_BLOBS,
+});
+export function scannedFiles(
+  scan: Scan,
+  namespace: StorageNamespace,
+  id: string,
+) {
+  return scan.files.get(storageScanKey(namespace, id)) ?? [];
+}
 const conflict = () => new StudioError("RECEIVE_STORAGE_CONFLICT");
 const missing = (e: unknown) => (e as NodeJS.ErrnoException)?.code === "ENOENT";
 export function instanceDirectory(config: P2aRuntimeConfig) {
@@ -59,8 +78,25 @@ export function instanceDirectory(config: P2aRuntimeConfig) {
     config.instanceId,
   );
 }
+export function uploadsDirectory(config: P2aRuntimeConfig) {
+  return path.join(instanceDirectory(config), "uploads");
+}
 export function importsDirectory(config: P2aRuntimeConfig) {
-  return path.join(instanceDirectory(config), "uploads", "imports");
+  return path.join(uploadsDirectory(config), "imports");
+}
+export function validationDirectory(config: P2aRuntimeConfig, id?: string) {
+  if (id !== undefined && !importIdSchema.safeParse(id).success)
+    throw conflict();
+  return id === undefined
+    ? path.join(uploadsDirectory(config), "validation")
+    : path.join(uploadsDirectory(config), "validation", id);
+}
+export function blobsDirectory(config: P2aRuntimeConfig) {
+  return path.join(uploadsDirectory(config), "blobs");
+}
+export function blobPath(config: P2aRuntimeConfig, sha256: string) {
+  if (!archiveHashSchema.safeParse(sha256).success) throw conflict();
+  return path.join(blobsDirectory(config), `${sha256}.blob`);
 }
 export function importDirectory(config: P2aRuntimeConfig, id: string) {
   if (!importIdSchema.safeParse(id).success) throw conflict();
@@ -102,8 +138,10 @@ export async function ensureStorage(
   await privateDirectory(path.dirname(instance), check);
   await privateDirectory(instance, check);
   for (const dir of [
-    path.join(instance, "uploads"),
+    uploadsDirectory(config),
     importsDirectory(config),
+    validationDirectory(config),
+    blobsDirectory(config),
   ]) {
     check();
     try {
@@ -145,9 +183,8 @@ export async function scanStorage(
     performance.now() + SCAN_TIMEOUT_MS,
   );
   let entries = 0,
-    directories = 0,
     bytes = 0;
-  const files = new Map<string, FileFact[]>();
+  const files = new Map<StorageScanKey, FileFact[]>();
   const assertScanDeadline = () => {
     remainingReceiveMs(context);
     if (performance.now() >= deadline)
@@ -158,48 +195,84 @@ export async function scanStorage(
     if (++entries > MAX_SCAN_ENTRIES)
       throw new StudioError("RECEIVE_SCAN_LIMIT");
   };
+  const readDirectory = async function* (dir: string) {
+    assertScanDeadline();
+    const handle = await opendir(dir, { bufferSize: 32 });
+    try {
+      assertScanDeadline();
+      for (;;) {
+        assertScanDeadline();
+        const entry = await handle.read();
+        assertScanDeadline();
+        if (!entry) return;
+        yield entry;
+      }
+    } finally {
+      await handle.close();
+      assertScanDeadline();
+    }
+  };
+  const addFile = async (file: string): Promise<FileFact> => {
+    assertScanDeadline();
+    const inode = await lstat(file);
+    assertScanDeadline();
+    privateFile(inode);
+    bytes += inode.size;
+    if (!Number.isSafeInteger(bytes)) throw conflict();
+    return { file, size: inode.size, inode };
+  };
   assertScanDeadline();
   await ensureStorage(config, assertScanDeadline);
   assertScanDeadline();
-  const uploads = await opendir(path.dirname(importsDirectory(config)), {
-    bufferSize: 32,
-  });
-  for await (const entry of uploads) {
+  for await (const entry of readDirectory(uploadsDirectory(config))) {
     countEntry();
-    if (entry.name !== "imports") throw conflict();
-    await privateDirectory(importsDirectory(config), assertScanDeadline);
+    if (!["imports", "validation", "blobs"].includes(entry.name))
+      throw conflict();
+    await privateDirectory(
+      path.join(uploadsDirectory(config), entry.name),
+      assertScanDeadline,
+    );
   }
   assertScanDeadline();
-  const root = await opendir(importsDirectory(config), { bufferSize: 32 });
-  for await (const entry of root) {
-    countEntry();
-    if (++directories > MAX_IMPORT_DIRECTORIES)
-      throw new StudioError("RECEIVE_SCAN_LIMIT");
-    if (!importIdSchema.safeParse(entry.name).success) throw conflict();
-    const dir = importDirectory(config, entry.name);
-    await privateDirectory(dir, assertScanDeadline);
-    assertScanDeadline();
-    const children = await opendir(dir, { bufferSize: 32 });
-    const facts: FileFact[] = [];
-    for await (const child of children) {
+  for (const namespace of ["imports", "validation", "blobs"] as const) {
+    let namespaceEntries = 0;
+    const base = path.join(uploadsDirectory(config), namespace);
+    for await (const entry of readDirectory(base)) {
       countEntry();
-      if (facts.length >= MAX_FILES_PER_IMPORT)
+      if (++namespaceEntries > storageNamespaceLimits[namespace])
         throw new StudioError("RECEIVE_SCAN_LIMIT");
-      if (!filename.test(child.name)) throw conflict();
-      const file = path.join(dir, child.name),
-        inode = await lstat(file);
+      if (namespace === "blobs") {
+        const match = /^([0-9a-f]{64})\.blob$/.exec(entry.name);
+        if (!match) throw conflict();
+        files.set(storageScanKey(namespace, match[1]!), [
+          await addFile(path.join(base, entry.name)),
+        ]);
+        continue;
+      }
+      if (!importIdSchema.safeParse(entry.name).success) throw conflict();
+      const dir = path.join(base, entry.name);
+      await privateDirectory(dir, assertScanDeadline);
+      const facts: FileFact[] = [];
+      for await (const child of readDirectory(dir)) {
+        countEntry();
+        if (facts.length >= MAX_FILES_PER_IMPORT)
+          throw new StudioError("RECEIVE_SCAN_LIMIT");
+        if (
+          !filename.test(child.name) ||
+          (namespace === "validation" && child.name === "archive.quizpack")
+        )
+          throw conflict();
+        facts.push(await addFile(path.join(dir, child.name)));
+      }
       assertScanDeadline();
-      privateFile(inode);
-      bytes += inode.size;
-      if (!Number.isSafeInteger(bytes)) throw conflict();
-      facts.push({ file, size: inode.size, inode });
+      files.set(storageScanKey(namespace, entry.name), facts);
     }
     assertScanDeadline();
-    files.set(entry.name, facts);
   }
   assertScanDeadline();
   return { bytes, entries, files };
 }
+
 export async function openPrivate(file: string): Promise<FileHandle> {
   const handle = await open(
     file,
@@ -373,7 +446,7 @@ export async function hashArchive(
 }
 
 export function currentReceiptLimits(scan: Scan, id: string) {
-  const receipts = (scan.files.get(id) ?? []).filter((f) =>
+  const receipts = scannedFiles(scan, "imports", id).filter((f) =>
     /^stopped-.*\.json$/.test(path.basename(f.file)),
   );
   if (receipts.length > 3 || receipts.reduce((n, f) => n + f.size, 0) > 6144)
