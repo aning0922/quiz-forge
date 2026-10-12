@@ -13,6 +13,7 @@ import {
   unlinkSync,
   writeSync,
 } from "node:fs";
+import { performance } from "node:perf_hooks";
 import { dirname, join, resolve, sep } from "node:path";
 import { z } from "zod";
 import { MEDIA_LIMITS } from "../../contracts";
@@ -231,8 +232,14 @@ export function createMacControl(location: {
           syncDirectory();
           record = changed;
         },
-        finish() {
+        finish(deadlineMonotonicMs = Infinity) {
+          const checkpoint = () => {
+            if (performance.now() >= deadlineMonotonicMs)
+              throw new ControlError("ISOLATION_UNAVAILABLE");
+          };
+          checkpoint();
           verify();
+          checkpoint();
           const d = opendirSync(CONTROL_ROOT);
           const entries: string[] = [];
           try {
@@ -248,13 +255,19 @@ export function createMacControl(location: {
           }
           if (entries.sort().join() !== "active.json,guard")
             throw new ControlError("ISOLATION_UNAVAILABLE");
+          checkpoint();
           unlinkSync(active);
+          checkpoint();
           syncDirectory();
+          checkpoint();
           const gs = privateObject(guard, true);
           if (gs.ino !== guardStat.ino || gs.dev !== guardStat.dev)
             throw new ControlError("ISOLATION_UNAVAILABLE");
+          checkpoint();
           rmdirSync(guard);
+          checkpoint();
           syncDirectory();
+          checkpoint();
         },
       };
     } catch (error) {

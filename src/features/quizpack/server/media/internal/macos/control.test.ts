@@ -8,9 +8,10 @@ import {
   unlinkSync,
   symlinkSync,
 } from "node:fs";
+import { performance } from "node:perf_hooks";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createMacControl } from "./control";
 describe("Mac fixed control lifecycle", () => {
   let root: string;
@@ -34,6 +35,17 @@ describe("Mac fixed control lifecycle", () => {
     owned.update("spawned", 123, { sec: 1, usec: 2 });
     owned.finish();
     expect(readdirSync(path)).toEqual([]);
+  });
+  it("an expired absolute cleanup budget preserves the active record and guard", () => {
+    const control = createMacControl({ checkoutRoot: root, controlRoot: path });
+    const owned = control.acquireControl(runId, profileId);
+    const clock = vi.spyOn(performance, "now").mockReturnValue(1200);
+    try {
+      expect(() => owned.finish(1200)).toThrow("ISOLATION_UNAVAILABLE");
+      expect(readdirSync(path).sort()).toEqual(["active.json", "guard"]);
+    } finally {
+      clock.mockRestore();
+    }
   });
   it("unknown facts block a new invocation and remain intact", () => {
     const control = createMacControl({ checkoutRoot: root, controlRoot: path });

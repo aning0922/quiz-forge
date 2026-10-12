@@ -182,6 +182,21 @@ describe("trusted media operation context", () => {
       });
     },
   );
+  it("unknown stop only escalates after cancellation without resetting trigger, budget or abort", () => {
+    const context = create();
+    const abort = vi.fn();
+    context.signal.addEventListener("abort", abort);
+    now = 200;
+    const first = requestMediaOperationStop(context, "CANCELLED", 1200);
+    now = 400;
+    const unknown = requestMediaOperationStop(context, "STOP_UNCONFIRMED");
+    expect(unknown).toEqual({ ...first, reason: "STOP_UNCONFIRMED" });
+    now = 800;
+    expect(requestMediaOperationStop(context, "RUNTIME_FAILED")).toEqual(
+      unknown,
+    );
+    expect(abort).toHaveBeenCalledOnce();
+  });
   it("single image is serial and each successful scope keeps the original business budget", () => {
     const context = create(7100);
     const first = beginMediaImage(context)!;

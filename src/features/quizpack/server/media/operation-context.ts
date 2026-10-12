@@ -51,10 +51,17 @@ function stopAt(
     if (state.image?.timer) clearTimeout(state.image.timer);
     // Publish the stop state before synchronous AbortSignal listeners run.
     state.controller.abort();
-  } else if (cleanupDeadline < state.stop.cleanupDeadlineMonotonicMs) {
+  } else if (
+    cleanupDeadline < state.stop.cleanupDeadlineMonotonicMs ||
+    reason === "STOP_UNCONFIRMED"
+  ) {
     state.stop = Object.freeze({
       ...state.stop,
-      cleanupDeadlineMonotonicMs: cleanupDeadline,
+      reason: reason === "STOP_UNCONFIRMED" ? reason : state.stop.reason,
+      cleanupDeadlineMonotonicMs: Math.min(
+        cleanupDeadline,
+        state.stop.cleanupDeadlineMonotonicMs,
+      ),
     });
   }
 }
