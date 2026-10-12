@@ -209,3 +209,34 @@ it("a synchronous abort listener upgrading shared UNKNOWN vetoes every receipt",
   });
   expect(write).not.toHaveBeenCalled();
 });
+
+it("queued receipt rechecks shared UNKNOWN immediately before executing", async () => {
+  const { op, context } = fixture();
+  op.enterClaimBoundary();
+  op.confirmClaim();
+  op.stop("CANCELLED");
+  await op.settle();
+  const work = vi.fn(async () => "published"),
+    task = op.stoppedReceiptTask(work);
+  requestMediaOperationStop(context, "STOP_UNCONFIRMED");
+  await expect(task).rejects.toMatchObject({
+    code: "VALIDATION_RECOVERY_REQUIRED",
+  });
+  expect(work).not.toHaveBeenCalled();
+  expect(op.completion()).toEqual({
+    mediaStopped: "unknown",
+    relatedIo: "unconfirmed",
+    maintenanceRequired: true,
+  });
+});
+it("the exact receipt task does not count itself as unsettled prerequisite IO", async () => {
+  const { op } = fixture();
+  op.enterClaimBoundary();
+  op.confirmClaim();
+  op.stop("CANCELLED");
+  await op.settle();
+  const work = vi.fn(async () => "published");
+  expect(await op.stoppedReceiptTask(work)).toBe("published");
+  expect(work).toHaveBeenCalledTimes(1);
+  expect(op.completion().relatedIo).toBe("settled");
+});
