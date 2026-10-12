@@ -1,3 +1,4 @@
+import { createTrustedMediaRuntime } from "../../../src/features/quizpack/server/media/internal/runtime.ts";
 import { createLinuxExecutionCore } from "../../../src/features/quizpack/server/media/internal/linux/execute.mjs";
 import {
   createMediaOperationContext,
@@ -13,6 +14,9 @@ import { randomUUID } from "node:crypto";
 import { resolve } from "node:path";
 import {
   CACHE,
+  STATE,
+  RUNTIME_TARGET,
+  RUNTIME_ROOTS,
   CORE_DIR,
   hash,
   privateDir,
@@ -75,7 +79,7 @@ export function fixedScenario(scenario, syntheticRoot) {
   throw new Error("SCENARIO_INVALID");
 }
 const core = createLinuxExecutionCore({
-  controlRoot: resolve(CACHE, "control"),
+  controlRoot: resolve(STATE, "control"),
   seccompPath: resolve(CORE_DIR, "seccomp.json"),
   hash,
   privateDir,
@@ -187,6 +191,22 @@ export async function runIsolatedImage(bytes, expected, context) {
   if (signal.aborted) return fail(runId, null, "CANCELLED", "not-started");
   if (platform() !== "linux" || arch() !== "x64")
     return fail(runId, null, "UNSUPPORTED_PLATFORM", "not-started");
+  if (RUNTIME_TARGET) {
+    const operation = createMediaOperationContext({
+      signal,
+      deadlineMonotonicMs: deadline,
+    });
+    try {
+      return await createTrustedMediaRuntime(RUNTIME_ROOTS).run(
+        checked.bytes,
+        checked.expected,
+        operation,
+        "candidate",
+      );
+    } finally {
+      disposeMediaOperationContext(operation);
+    }
+  }
   const result = await executeSynthetic({
     bytes: checked.bytes,
     expected: checked.expected,

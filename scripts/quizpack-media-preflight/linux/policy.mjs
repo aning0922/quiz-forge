@@ -1,9 +1,18 @@
+import { createLinuxNormalRuntime } from "../../../src/features/quizpack/server/media/internal/linux/policy.ts";
+import {
+  createMediaOperationContext,
+  createMediaControlScope,
+  disposeMediaOperationContext,
+} from "../../../src/features/quizpack/server/media/operation-context.ts";
+import { mediaStopFailureCode } from "../../../src/features/quizpack/server/media/contracts.ts";
 import { readRuntimeVersions } from "./runtime.mjs";
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { release, arch, platform } from "node:os";
 import {
-  CACHE,
+  STATE,
+  ROOT,
+  RUNTIME_TARGET,
   DIR,
   CORE_DIR,
   hash,
@@ -23,7 +32,45 @@ export const LIMITS = Object.freeze({
   nanoCpus: 1000000000,
   pids: 64,
 });
-export async function loadPolicy({
+/** Setup's fixed identity probe establishes the dependencies record before normal binding. */
+export async function loadPolicy(options = {}) {
+  if (!RUNTIME_TARGET || process.argv[1]?.endsWith("/setup.mjs"))
+    return loadLegacyPolicy(options);
+  const ownContext = options.scope
+    ? null
+    : createMediaOperationContext({
+        signal: options.signal ?? new AbortController().signal,
+        deadlineMonotonicMs: options.deadline ?? performance.now() + 5000,
+      });
+  const scope = options.scope ?? createMediaControlScope(ownContext);
+  const checkpoint = () => {
+    const state = scope.readState();
+    if (state.phase === "stopping")
+      throw new Error(mediaStopFailureCode(state.stop));
+  };
+  const runtime = createLinuxNormalRuntime(
+    {
+      checkoutRoot: ROOT,
+      stateRoot: STATE,
+      controlRoot: resolve(STATE, "control"),
+      seccomp: resolve(CORE_DIR, "seccomp.json"),
+      base: resolve(CORE_DIR, "base.json"),
+    },
+    checkpoint,
+  );
+  try {
+    return options.controlCommand
+      ? await runtime.loadPolicy({
+          ...options,
+          scope,
+          deadline: options.deadline ?? scope.deadlineMonotonicMs,
+        })
+      : await runtime.core.readPolicy({ scope });
+  } finally {
+    if (ownContext) disposeMediaOperationContext(ownContext);
+  }
+}
+async function loadLegacyPolicy({
   deadline = performance.now() + 5000,
   signal,
   onDiagnostic,
@@ -47,7 +94,7 @@ export async function loadPolicy({
     ].some((k) => process.env[k])
   )
     throw new Error("ENDPOINT_OVERRIDE");
-  const image = json(await readPrivate(resolve(CACHE, "image.json")));
+  const image = json(await readPrivate(resolve(STATE, "image.json")));
   const base = json(await readFile(resolve(CORE_DIR, "base.json")));
   if (
     image.schema !== "qf-linux-image.v1" ||
@@ -141,7 +188,7 @@ export async function loadPolicy({
   onDiagnostic?.({ phase: "policy-runtime-versions", matched: true });
   let dependencies = null;
   try {
-    dependencies = json(await readPrivate(resolve(CACHE, "dependencies.json")));
+    dependencies = json(await readPrivate(resolve(STATE, "dependencies.json")));
   } catch (e) {
     if (e.code !== "ENOENT") throw e;
   }
