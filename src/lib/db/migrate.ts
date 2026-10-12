@@ -94,6 +94,7 @@ export async function migrateDatabase(
       await tx`REVOKE ALL ON SCHEMA qf_meta FROM ${app}`;
       await tx`REVOKE ALL ON ALL TABLES IN SCHEMA qf FROM ${app}`;
       await tx`REVOKE ALL ON ALL TABLES IN SCHEMA qf FROM PUBLIC`;
+      await tx`REVOKE ALL ON ALL FUNCTIONS IN SCHEMA qf FROM ${app}`;
       await tx`REVOKE ALL ON ALL TABLES IN SCHEMA qf_meta FROM ${app}`;
       // PG18 table REVOKE also clears column grants; explicitly restate the application column boundary.
       await tx`REVOKE ALL(id,label,credential_digest,role,status,created_at,disabled_at) ON qf.operator FROM ${app}`;
@@ -120,6 +121,19 @@ export async function migrateDatabase(
       await tx`GRANT SELECT,INSERT ON qf.quizpack_import TO ${app}`;
       await tx`GRANT UPDATE(status,state_revision,updated_at,storage_condition,last_error_code,fence,lease_until,current_attempt_id,attempts,actual_archive_sha256,actual_archive_bytes,archive_storage_key,received_at,reserved_bytes,accounted_bytes) ON qf.quizpack_import TO ${app}`;
       await tx`GRANT EXECUTE ON FUNCTION qf.import_attempts_valid(jsonb,integer,uuid,bigint) TO ${app}`;
+      await tx`GRANT SELECT,INSERT ON qf.quizpack_validation,qf.asset_blob,qf.product_asset TO ${app}`;
+      await tx`GRANT UPDATE(status,state_revision,updated_at,fence,lease_until,current_attempt_id,attempts_text,storage_condition,last_error_code,reserved_bytes,accounted_bytes,evidence_text,evidence_sha256,report_texts,evidence_metadata_text,pack_id,pack_version,container_schema_version,content_schema_version,content_kind,manifest_sha256,content_sha256,canonical_manifest_text,canonical_manifest_sha256,canonical_content_text,canonical_content_sha256,asset_set_text,asset_set_sha256,candidate_sha256,resource_count,identity_kind,canonical_validation_id,validated_at,ready_at) ON qf.quizpack_validation TO ${app}`;
+      for (const signature of [
+        "sha256_utf8(text)",
+        "validation_attempts_valid(text,integer,uuid,bigint)",
+        "validation_evidence_valid(text,text[],text,text)",
+        "product_asset_declaration_valid(text,text,text,text,text,text)",
+        "validation_shape_valid(qf.quizpack_validation)",
+      ]) {
+        await tx.unsafe(
+          `GRANT EXECUTE ON FUNCTION qf.${signature} TO "${config.database.user}"`,
+        );
+      }
       // Enums require USAGE, never CREATE; metadata remains inaccessible.
       for (const name of [
         "operator_role",
