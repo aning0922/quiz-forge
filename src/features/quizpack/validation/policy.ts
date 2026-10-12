@@ -15,6 +15,8 @@ export const archivePolicyDescriptor = Object.freeze({
   stateProtocol: "validation-assets.v1",
   evidenceProjection: "sealed-report-text-metadata-controls.v1",
   storageProtocol: "serial-exclusive-no-clobber-verified-blobs.v1",
+  receiptProof: "files-and-media.v1",
+  finalizationProtocol: "receipt-before-complete-once.v1",
   immutableProtocol: "product-pack-canonical-alias-and-resource-declaration.v1",
   recoveryProtocol: "explicit-settled-proof-fence-no-attempt.v1",
   retryProtocol: "released-clean-current-identity-explicit.v1",
