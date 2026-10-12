@@ -15,6 +15,7 @@ import {
   disposeMediaOperationContext,
   requestMediaOperationStop,
 } from "../../operation-context";
+import { parseLaunchResult } from "../../evidence";
 import type { CommandResult } from "./command";
 const policy: LinuxPolicy = {
   image: { imageId: `sha256:${"a".repeat(64)}` },
@@ -194,6 +195,32 @@ describe("Linux issued/control barriers without a daemon", () => {
         bytes: Buffer.from("synthetic"),
       }),
     ).toMatchObject({ code: "STOP_UNCONFIRMED", stopped: "unknown" });
+    expect(await readdir(fixtureRun.controlRoot)).toContain("guard");
+    expect(fixtureRun.docker).not.toHaveBeenCalled();
+    run.scope.finish();
+    disposeMediaOperationContext(run.context);
+  });
+  it("policy rejection after cancellation escalates to unknown without issuing a CLI", async () => {
+    const fixtureRun = fixture(),
+      run = scoped();
+    fixtureRun.loadPolicy.mockImplementation(async () => {
+      requestMediaOperationStop(run.context, "CANCELLED");
+      requestMediaOperationStop(run.context, "STOP_UNCONFIRMED");
+      throw new Error("synthetic");
+    });
+    const result = await fixtureRun.core.execute({
+      execution,
+      scope: run.scope,
+      bytes: Buffer.from("synthetic"),
+    });
+    expect(result).toMatchObject({
+      code: "STOP_UNCONFIRMED",
+      stopped: "unknown",
+    });
+    expect(parseLaunchResult(Buffer.from(JSON.stringify(result)))).toEqual({
+      ok: true,
+      value: result,
+    });
     expect(await readdir(fixtureRun.controlRoot)).toContain("guard");
     expect(fixtureRun.docker).not.toHaveBeenCalled();
     run.scope.finish();

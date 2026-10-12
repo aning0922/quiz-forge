@@ -578,7 +578,7 @@ export function createLinuxExecutionCore(environment) {
         runId,
         profileId,
         interrupt() ?? "ISOLATION_UNAVAILABLE",
-        "not-started",
+        interrupt() === "STOP_UNCONFIRMED" ? "unknown" : "not-started",
       );
     } finally {
       // Before issuance only. Unknown started executions retain both fixed objects.
