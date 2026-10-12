@@ -1,0 +1,73 @@
+import type { ValidationDto } from "@/features/quizpack/validation/contracts";
+import { StudioClientError } from "../client";
+import { validationLabels, validationMessage } from "./messages";
+import styles from "../workspace/workspace.module.css";
+export function ValidationFacts({ value }: { value: ValidationDto }) {
+  return (
+    <div>
+      <h3>{validationLabels[value.status]}</h3>
+      <dl className={styles.facts}>
+        <div>
+          <dt>验证记录</dt>
+          <dd>{value.id}</dd>
+        </div>
+        <div>
+          <dt>请求标识（缩略）</dt>
+          <dd>{value.validationKey.slice(0, 12)}…</dd>
+        </div>
+        <div>
+          <dt>验证状态修订</dt>
+          <dd>{value.stateRevision}</dd>
+        </div>
+        <div>
+          <dt>资源归档</dt>
+          <dd>
+            {value.archivedResourceCount} / {value.resourceCount ?? "尚未确定"}
+          </dd>
+        </div>
+        <div>
+          <dt>存储核实</dt>
+          <dd>
+            {value.storageCondition === "clean"
+              ? "已对账"
+              : value.storageCondition === "cleanup-required"
+                ? "需要恢复对账"
+                : "文件与账目尚未确认"}
+          </dd>
+        </div>
+        <div>
+          <dt>尝试次数</dt>
+          <dd>
+            {value.attemptCount} 次 · 剩余 {value.remainingAttempts} 次
+          </dd>
+        </div>
+        <div>
+          <dt>包身份</dt>
+          <dd>
+            {value.packId
+              ? `${value.packId} / ${value.packVersion}`
+              : "尚未冻结"}
+          </dd>
+        </div>
+        <div>
+          <dt>最近更新</dt>
+          <dd>{value.updatedAt}</dd>
+        </div>
+      </dl>
+      {value.lastErrorCode && (
+        <p className={`${styles.status} ${styles.error}`}>
+          {validationMessage(new StudioClientError(value.lastErrorCode))}
+        </p>
+      )}
+      {value.maintenanceRequired && (
+        <p className={styles.status}>
+          需要维护核实；归档文件与停止情况仍未得到完整确认。
+        </p>
+      )}
+      <p className={styles.note}>
+        平台授权未审核（unverified） ·
+        不可发布。归档完成后仍待后续草稿导入，本批不生成或编辑草稿。
+      </p>
+    </div>
+  );
+}

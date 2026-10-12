@@ -100,6 +100,9 @@ export async function prepareAndStart(
       )
     )
       throw new Error("PENDING_REQUEST_EXISTS");
+    currentInvocations.delete(
+      JSON.stringify([expected.productId, expected.importId]),
+    );
     const dto = await checkedValidationFetch(
       `${validationEndpoint(expected)}/prepare`,
       json(csrf, {
