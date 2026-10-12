@@ -136,3 +136,9 @@ B2-1最终文档head `5caef26` 的CI38175221128已核实checks/database均succes
 ## B2-2B 合同准备登记
 
 A最终844054c的普通38195851289及媒体38195851290均实际success。总控新工作树codex/quizpack-validation-storage已建立并完成冻结安装；STUDIO_P2B2B和B2B_VALIDATION_ADAPTERS取代旧STORAGE_PROPOSAL，独立前置复验已闭合并冻结，详见P2B2B_REVIEW。新批次以三表、统一存储、prepare→start和显式recover/retry为边界；V可信适配、D数据事务、S存储服务分开，公共类型后接U后台。总控保留共享配置、迁移集成和3100，未创建B业务表/迁移或启动实例。
+
+## B2-2B 实施登记
+
+合同8173107；共享HTTP有限错误654e823已通过20定向测试/类型/lint/格式；D公共接口ad8a116集成为6818942，公共适配集成后66定向测试通过；root早审的ledger大正文查询和key字段污染已修复，资源前缀排序另由30d0bd6→4718097修复并增加用例。Draft PR #13堆叠于#12、已附加。V在codex/validation-storage-adapters，D在codex/validation-data-transactions，S在codex/validation-archive-service，均Sol/high与独立worktree；D持55421、S持55422、root持55423，3100仅root。root已在旧0001–0008基线创建升级验收用独立test实例949a98a25d2720546a5d4005a748d3c6并停止，未运行新迁移。
+
+远端CI38197814487（8173107）、38197842129（654e823）均未启动job步骤而失败；GitHub annotation明确为近期账号付款失败或支出上限需提高。不是代码检查结果，也不代表通过。需仓库账号Billing & plans恢复后再实际运行；独立本地实现/验证继续，不修改计费设置，不绕过阶段验收。
