@@ -23,6 +23,45 @@ const refuses = async () => {
 };
 const restore = () => safe(() => migrateDatabase(db.admin.sql, db.config));
 describe("B2-2B application connection verifies schema and precise privileges early", () => {
+  for (const name of [
+    "protect_validation",
+    "protect_validation_file_stop_ack",
+  ]) {
+    for (const mode of ["predicate", "columns", "arguments"] as const) {
+      it(`refuses ${name} with ${mode} while its function body remains unchanged`, async () => {
+        const create = (event: string, predicate: string, args: string) =>
+          `CREATE TRIGGER ${name} BEFORE ${event} ON qf.quizpack_validation FOR EACH ROW ${predicate} EXECUTE FUNCTION qf.${name}(${args})`;
+        await safe(() =>
+          db.admin.sql.unsafe(`DROP TRIGGER ${name} ON qf.quizpack_validation`),
+        );
+        try {
+          await safe(() =>
+            db.admin.sql.unsafe(
+              create(
+                mode === "columns"
+                  ? "INSERT OR UPDATE OF status"
+                  : "INSERT OR UPDATE",
+                mode === "predicate" ? "WHEN (false)" : "",
+                mode === "arguments" ? "'unexpected'" : "",
+              ),
+            ),
+          );
+          await refuses();
+        } finally {
+          await safe(() =>
+            db.admin.sql.unsafe(
+              `DROP TRIGGER IF EXISTS ${name} ON qf.quizpack_validation`,
+            ),
+          );
+          await safe(() =>
+            db.admin.sql.unsafe(create("INSERT OR UPDATE", "", "")),
+          );
+        }
+        const app = await safe(() => createDatabase(db.config));
+        await app.close();
+      });
+    }
+  }
   it("disabled ACK trigger, missing validated CHECK and same-signature old helper are refused", async () => {
     await safe(
       () =>
