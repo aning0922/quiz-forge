@@ -337,6 +337,7 @@ export async function assertControlEmpty(
       before.mtimeMs !== after.mtimeMs
     )
       throw 0;
+    checkpoint();
   } catch (error) {
     if (error instanceof ProvisionError) throw error;
     throw new ProvisionError("CONTROL_NOT_EMPTY");
@@ -442,11 +443,13 @@ export async function matrixCodeHash(
     throw new ProvisionError("IO_UNSAFE");
   }
   inventory.sort((a, b) => a.path.localeCompare(b.path, "en"));
-  return createHash("sha256")
+  const result = createHash("sha256")
     .update(
       JSON.stringify({ schema: "quizpack-media-matrix-code.v1", inventory }),
     )
     .digest("hex");
+  checkpoint();
+  return result;
 }
 
 export function runtimeCheckpoint(context: MediaOperationContext): void {
@@ -743,6 +746,9 @@ export async function runOfflineCandidateMatrix(
         },
       }),
     ) as OfflineCandidateReceipt;
+    // Keep the original matrix deadline through the last IO and serialization;
+    // the receipt lifetime must never restart an expired operation budget.
+    checkpoint();
     receipts.set(receipt, {
       roots,
       evidence,

@@ -13,6 +13,9 @@ import {
   writeFile,
 } from "node:fs/promises";
 import { realpathSync } from "node:fs";
+import fs from "node:fs";
+import { syncBuiltinESMExports } from "node:module";
+import { performance } from "node:perf_hooks";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
@@ -202,6 +205,52 @@ test("audit writer refuses wrong mode, symlink and hardlinked existing files wit
     );
     assert.equal(await readFile(victim, "utf8"), "synthetic-prior");
   } finally {
+    await rm(checkoutRoot, { recursive: true, force: true });
+  }
+});
+
+test("final target stat crossing the absolute deadline cannot commit a replacement record", async () => {
+  const checkoutRoot = await mkdtemp(
+    join(realpathSync(tmpdir()), "quizpack-final-stat-synthetic-"),
+  );
+  const roots = { checkoutRoot, deploymentRoot: join(checkoutRoot, ".next") };
+  const state = join(
+      checkoutRoot,
+      ".cache/quizpack-media-runtime/darwin-arm64",
+    ),
+    audit = join(state, "candidate-record.json");
+  const original = fs.lstatSync;
+  let calls = 0,
+    delayed = false;
+  try {
+    await mkdir(state, { recursive: true, mode: 0o700 });
+    await writeFile(audit, "synthetic-prior-record", { mode: 0o600 });
+    const deadline = performance.now() + 100;
+    Reflect.set(fs, "lstatSync", ((...args: Parameters<typeof original>) => {
+      const result = Reflect.apply(original, fs, args);
+      if (String(args[0]) === audit && ++calls === 2) {
+        delayed = true;
+        while (performance.now() <= deadline + 20) {
+          /* A delayed real final IO observation. */
+        }
+      }
+      return result;
+    }) as typeof original);
+    syncBuiltinESMExports();
+    assert.throws(
+      () =>
+        writeCandidateAuditRecord(roots, record(), () => {
+          if (performance.now() >= deadline)
+            throw new ProvisionError("INTERRUPTED");
+        }),
+      /INTERRUPTED/,
+    );
+    assert.equal(delayed, true);
+    assert.equal(await readFile(audit, "utf8"), "synthetic-prior-record");
+    assert.deepEqual(await readdir(state), ["candidate-record.json"]);
+  } finally {
+    Reflect.set(fs, "lstatSync", original);
+    syncBuiltinESMExports();
     await rm(checkoutRoot, { recursive: true, force: true });
   }
 });
