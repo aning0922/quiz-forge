@@ -146,3 +146,9 @@ A最终844054c的普通38195851289及媒体38195851290均实际success。总控�
 D数据线已完成本批独立交付（最终c838bbd），自身55421及探查实例全停；V可信适配最终8edb9c3已交付且独立复验闭合。root接入修后DDL/客户端与policy，并在旧8实例实际升级及独立跑通26PG，随后停止55423。U已在codex/validation-studio-console启动，b2486a4公共client/pending/http适配集成为18ea20b，46项纯测试通过；生产route等S实际factory，禁止stub按钮。S在codex/validation-archive-service继续应用服务与FS-safe共享fixture；root持有最终build/seal/3100，不将局部测试当阶段退出。
 
 B2-2B独立实现审查发现receipt最终文件提前可读不足以证明publisher close结束，现63ed778修订为candidate+独立ACK+一次互斥complete/interrupt；0011审计enum/0012保护协议及policy v2，由D复用独立分支实施，S实现私有资格/门/服务。Astra确认此修订和两步迁移无架构阻断。U历史/刷新UI已集成，59纯测试通过；两处UI审查修复独立复验中，routes/helper仍待S factory。root0010库保持停止，下一次升级前先验证0010/仅0011不能启用新业务。远端计费阻断不变。
+
+## B2-2B 集成验收检查点
+
+0011/0012已在root独立旧库实际升级，34项domain与13项client PG分别通过，随后停止。ACK、锁生命周期、写结果未知等运行代码审查问题已独立闭合。S真实应用服务与恢复、U实际API和详情/历史页面已集成；最后运行代码修订ddf195f，构建追踪注解e4ce925。该main构建零warning，59trace/11357路径/零私有违规，部署绑定已实际完成；新媒体三轮正在执行，第一次65/66的失败保留，49f4072只修正BUSY用例屏障并通过独立窄审。
+
+剩余工作为S测试夹具实际连接停止和审计归属两项P2、共享fixture的FS安全回收及实际服务PG故障测试；U补8个浏览器场景。root持有native/build/3100并在服务停止后维护测试数据，最后执行全套回归与四宽截图检查。它们不等于已交付或已通过。远端CI仍因已核实的计费限制没有运行步骤，不能把本地结果替代远端成功；阶段退出前需明确保留该限制。

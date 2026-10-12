@@ -76,3 +76,23 @@ S 44f2d6d→root984e9b8集成candidate.v2、原请求私有publication资格、�
 Astra在01a12e57-e418-7ae2-a34e-4a89eaf1d5be重跑原真实FS探针：最终dir close迟到/超时、nlink2后UNKNOWN均无ACK资格，未持久proof的reader返回null；普通write绕过/排队UNKNOWN均零work。原两P2关闭。真实patched driver+内存transport的150个pending/保留queue以及握手前reserve在end后2–3ms全settled，未发现新增可证旧StorageLock drain deadline问题；仍不替代真实网络回归。
 
 新增两P2继续交S：旧CANCELLED cleanup candidate能被新operation的existing/EEXIST路径采纳并登记publication资格；必须拒绝从既有文件补原publisher资格。closeStorageLock清空lock却未同步撤销业务资格、重复调用不等原关闭，ACK后关闭仍可finalize；须同一cached close task、同步封门、有效锁重检。48原定向与额外门/FS/driver探针通过不代表这两项已关闭，factory尚未交付。
+
+### 完整应用接线与服务异常闭合
+
+S cfe6bf4→roota34ee1b交付真实service/recovery，13纯服务测试与类型通过；U efc2139→root4c86904交付5 API route文件/只读详情及imports独立验证组合，root10文件114相关纯测试/类型通过。实际DB服务与生产浏览器尚未验收。
+
+S旧candidate补资格由98884e9→roota1ef966经Astra在01a12e61-d479-76a2-80b2-58d29843d964独立关闭；同轮又发现closeStorageLock在同步abort listener重入前未cache，63dd30c→root26a7458先cache/track共同deferred再广播。Astra在01a12e69-f3e7-73f2-9f1c-422bd0c1024a对preclaim/ACK确认两阶段原探针确认三个调用同promise、真实close暂停时均未返回、只close一次且不能finalize；30既有测试通过，该底层登记问题全部闭合。
+
+service独立审查发现evidence/beginArchiving WRITE_OUTCOME_UNKNOWN会继续activeFailure→ACK/interrupt，原probe实际ack1/interrupt1且伪record。bfc822f→rootddf195f将已进入work的write拒绝统一同步stop并永久使原DB失效、追踪end；保留原UNKNOWN。独立重跑原evidence和新增archiving两个实际service/operation纯probe，ACK/interrupt/promotion均0且无record，db.end1；新context也不能重用该DB。两自有探针及47定向通过，原P2闭合。
+
+### 构建追踪准备
+
+root首次main生产build在ddf195f成功，59 trace/21762路径/0私有违规，但新实际路由拉入媒体闭包后有5处whole-project动态FS tracing warning。Sol独立e4ce925仅在受限mac依赖解析、六固定sharp root与私有manifest操作的精确参数加turbopackIgnore，运行时表达式/校验与tracing guard不变；3文件95测试/类型/lint通过，root重新build中。main隔离setup已prepared，不代表新的部署已bind/seal或实际媒体通过。
+
+e4ce925的root实际重建已成功，零warning，59trace/11357路径/零私有违规。首次main绑定因生成的Turbopack缓存单文件44,407,641字节触发LIMIT_EXCEEDED，未提交绑定。Astra在01a12e75-a0f9-7f30-bdb8-3b770ec70d47批准保留迁出无运行引用的生成缓存；root离线预核精确16文件/87,843,260字节与inode后迁入独占0700私有目录，前后1143个server/root产物摘要相同。未扩大生产限额。随后main绑定成功：1033 source文件、675 artifact文件、总32,279,447字节，hardening检查1218文件/237目录。保留首次失败与私有缓存清单。
+
+### main实际隔离与夹具审查
+
+首轮实际main矩阵完成66项，65通过；BUSY用例未等原任务实际spawn且仅800ms，失败导致未签发record/capability，原失败保留。root另核自有native进程和control均为空，未删除未知记录。49f4072增加原owner的spawn屏障，两个调用共享固定5000ms，finally无条件abort并实际await原任务，BUSY/原identity/confirmed断言不放宽。独立Astra子代理跑25既有纯测试及五分支闭集probe，无P1/P2；完整三轮仍待实际重跑。
+
+E2E私有helper a45c946→root93db565首审在01a12e7a-fd60-7610-9627-f4321471883b发现两P2：cleanup的operation绑定已关闭app连接而实际维护SQL使用owner连接，无法在取消时停止真正写任务；按fixture actor删除全部audit未先排除其跨Product业务目标。S负责修正实际owner生命周期及删除前完整归属核验，同时补prepare临时启用/确认后停用。16纯合同测试通过不代表维护全流程通过；本轮未实际运行helper。
