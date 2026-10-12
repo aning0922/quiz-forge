@@ -358,13 +358,13 @@ export class ArchiveOperation {
     qualification: FileStopAckQualification,
     work: () => PromiseLike<T>,
   ): Promise<T> {
-    this.checkpoint();
     if (
       ackQualifications.get(qualification) !== this ||
       this.qualification !== qualification ||
       !this.ackQualified()
     )
       throw new StudioError("VALIDATION_RECOVERY_REQUIRED");
+    this.checkpoint();
     this.ackState = "running";
     try {
       const result = await this.awaitDatabase("write", work, (task) => {
@@ -403,6 +403,8 @@ export class ArchiveOperation {
     return this.ackState !== "available";
   }
   async finalizeDatabaseOnce<T>(work: () => PromiseLike<T>): Promise<T> {
+    if (this.finalizationEntered || this.ackState !== "confirmed")
+      throw new StudioError("VALIDATION_RECOVERY_REQUIRED");
     this.checkpoint();
     if (!this.finalizationQualified())
       throw new StudioError("VALIDATION_RECOVERY_REQUIRED");
@@ -474,16 +476,28 @@ export class ArchiveOperation {
       );
     };
     this.context.signal.addEventListener("abort", abort, { once: true });
+    let workEntered = false;
     const task: Promise<T> = this.track(
       Promise.resolve().then(() => {
         this.checkpoint();
         beforeWork?.(task);
+        workEntered = true;
         return work();
       }),
     );
     if (this.context.signal.aborted) abort();
     try {
       return await Promise.race([task, stopped]);
+    } catch (error) {
+      // A rejected mutation may have an unknown commit outcome; never issue another business transaction.
+      if (
+        workEntered &&
+        (kind === "write" ||
+          (error instanceof StudioError &&
+            error.code === "WRITE_OUTCOME_UNKNOWN"))
+      )
+        this.stop("RUNTIME_FAILED");
+      throw error;
     } finally {
       this.context.signal.removeEventListener("abort", abort);
     }

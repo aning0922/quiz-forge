@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
+import { StudioError } from "@/lib/http-security/errors";
 import type { StorageLock } from "../import/storage-lock";
 import type { P2aDatabase } from "@/lib/db/client";
 import { ArchiveOperation } from "./operation";
@@ -606,4 +607,27 @@ it("synchronous abort reentry cannot replace the pending shared storage-lock clo
   expect(done).toBe(3);
   expect(close).toHaveBeenCalledTimes(1);
   expect(op.completion().relatedIo).toBe("settled");
+});
+
+it("a postclaim write rejecting with unknown outcome permanently stops every later business and ACK gate", async () => {
+  const { op, context, end } = fixture();
+  op.enterClaimBoundary();
+  op.confirmClaim();
+  await expect(
+    op.databaseAwait("write", async () => {
+      throw new StudioError("WRITE_OUTCOME_UNKNOWN");
+    }),
+  ).rejects.toMatchObject({ code: "WRITE_OUTCOME_UNKNOWN" });
+  expect(readMediaOperationState(context).phase).toBe("stopping");
+  await op.settle();
+  expect(end).toHaveBeenCalledTimes(1);
+  const later = vi.fn(async () => {});
+  await expect(op.databaseAwait("write", later)).rejects.toMatchObject({
+    code: "VALIDATION_RECOVERY_REQUIRED",
+  });
+  await expect(op.fileTask(later)).rejects.toMatchObject({
+    code: "STUDIO_UNAVAILABLE",
+  });
+  expect(later).not.toHaveBeenCalled();
+  expect(() => op.fileStopAckQualification()).toThrow();
 });
