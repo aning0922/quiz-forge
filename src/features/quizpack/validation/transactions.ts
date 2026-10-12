@@ -606,7 +606,10 @@ async function reconcile(
       // Exact durable completion replay has no state change or audit, even after a lost response.
       if (current.status === "ready") return current;
       requireCurrentPolicy(current);
-      if (!recover) await authorityRow(tx, scope, input.authority);
+      if (!recover) {
+        await authorityRow(tx, scope, input.authority);
+        requireAcknowledgedAttempts(current);
+      }
       if (
         current.state_revision !== input.authority.expectedStateRevision ||
         current.fence !== input.authority.fence ||
@@ -703,6 +706,7 @@ export async function retryValidationClaim(
         validationId,
         true,
       );
+      requireCurrentPolicy(current);
       if (current.state_revision !== input.expectedStateRevision)
         throw new StudioError(
           "VALIDATION_STATE_CONFLICT",
