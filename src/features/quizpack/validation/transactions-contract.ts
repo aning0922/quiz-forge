@@ -10,6 +10,7 @@ import type {
   ValidationAttempt,
   ValidationBinding,
   ValidationRow,
+  ValidationFileStopProof,
 } from "./repository";
 export type ValidationScope = Readonly<{ productId: string; importId: string }>;
 export type ValidationOwner = Readonly<{
@@ -66,10 +67,16 @@ export type CompleteValidationInput = Readonly<{
   blobs: readonly BlobFact[];
   accountedBytes: number;
 }>;
+/** Private service input after receipt publication has actually settled; never an HTTP proof. */
+export type AcknowledgeValidationFileStopInput = Readonly<{
+  authority: ValidationAuthority;
+  proof: ValidationFileStopProof;
+}>;
 /** Read only from settled managed IO/receipt proof; SQL cannot authenticate native stopping. */
 export type SettledAttempt = Readonly<{
   attemptId: string;
   mediaStop: "not-started" | "confirmed";
+  fileStopProof: ValidationFileStopProof;
 }>;
 export type ReconcileValidationInput = Readonly<{
   authority: ValidationAuthority;
@@ -85,6 +92,12 @@ export type RetryValidationInput = Readonly<{
 }>;
 /** Every mutation starts a fresh current-auth transaction, then locks Product→import→validation. No IO callbacks. */
 export interface ValidationTransactions {
+  acknowledgeValidationFileStop(
+    db: P2aDatabase,
+    credentials: StudioWriteCredentials,
+    scope: ValidationScope,
+    input: AcknowledgeValidationFileStopInput,
+  ): Promise<ValidationRow>;
   claimValidation(
     db: P2aDatabase,
     credentials: StudioWriteCredentials,
