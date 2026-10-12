@@ -1,4 +1,5 @@
 import "server-only";
+import { createHash } from "node:crypto";
 import { constants, type Stats } from "node:fs";
 import {
   open,
@@ -20,10 +21,15 @@ import {
   privateFile,
 } from "../import/storage";
 import { canonicalP1Json } from "../v1/canonical";
-import { validationAttemptSchema, type ValidationAttempt } from "./repository";
+import {
+  validationAttemptSchema,
+  validationFileStopProofSchema,
+  type ValidationAttempt,
+  type ValidationFileStopProof,
+} from "./repository";
 import { ArchiveOperation } from "./operation";
 export const validationStoppedReceiptSchema = z.strictObject({
-  schemaVersion: z.literal("quizpack-validation-stopped.v1"),
+  schemaVersion: z.literal("quizpack-validation-stop-candidate.v2"),
   validationId: importIdSchema,
   attemptId: importIdSchema,
   fence: validationAttemptSchema.shape.fence,
@@ -164,16 +170,92 @@ async function readReceipt(
   check();
   return value;
 }
-/** No owner-exit fallback: media UNKNOWN remains held even when the main process is absent. */
-export function readValidationStopped(
+/** Candidate files acquire authority only from the row's already committed strict ACK. */
+export async function readValidationStopped(
   op: ArchiveOperation,
   config: P2aRuntimeConfig,
   id: string,
   attempt: ValidationAttempt,
 ) {
-  return op.fileTask(() =>
+  if (!attempt.fileStopProof) return null;
+  const proof = validationFileStopProofSchema.parse(attempt.fileStopProof);
+  const candidate = await op.fileTask(() =>
     readReceipt(op, config, id, attempt, () => op.nonDbCheckpoint()),
   );
+  if (!candidate) return null;
+  if (
+    proof.validationId !== candidate.validationId ||
+    proof.attemptId !== candidate.attemptId ||
+    proof.fence !== candidate.fence ||
+    proof.ownerPid !== candidate.ownerPid ||
+    proof.ownerNonce !== candidate.ownerNonce ||
+    proof.scope !== candidate.scope ||
+    proof.mediaStopped !== candidate.mediaStopped ||
+    proof.relatedIo !== candidate.relatedIo
+  )
+    throw conflict();
+  if (
+    createHash("sha256").update(canonicalP1Json(candidate)).digest("hex") !==
+    proof.receiptSha256
+  )
+    throw conflict();
+  return proof;
+}
+const publications = new WeakMap<
+  ArchiveOperation,
+  { proof: ValidationFileStopProof; bytes: number }
+>();
+/** Non-serializable, original-request-only qualification; the digest is from completed publisher bytes. */
+export function validationFileStopPublication(
+  op: ArchiveOperation,
+  id: string,
+  attempt: ValidationAttempt,
+) {
+  const published = publications.get(op);
+  if (
+    !published ||
+    published.proof.validationId !== id ||
+    published.proof.attemptId !== attempt.attemptId ||
+    published.proof.fence !== attempt.fence ||
+    published.proof.ownerPid !== attempt.ownerPid ||
+    published.proof.ownerNonce !== attempt.ownerNonce
+  )
+    throw conflict();
+  const qualification = op.fileStopAckQualification();
+  return Object.freeze({
+    ...published,
+    qualification,
+    toJSON() {
+      throw conflict();
+    },
+  });
+}
+export function validationStoppedReceiptBytes(
+  op: ArchiveOperation,
+  id: string,
+  attempt: ValidationAttempt,
+): number {
+  return Buffer.byteLength(stoppedReceiptText(op, id, attempt));
+}
+function stoppedReceiptText(
+  op: ArchiveOperation,
+  id: string,
+  attempt: ValidationAttempt,
+): string {
+  const completion = op.completion();
+  if (completion.mediaStopped === "unknown") throw conflict();
+  const value = validationStoppedReceiptSchema.parse({
+    schemaVersion: "quizpack-validation-stop-candidate.v2",
+    validationId: id,
+    attemptId: attempt.attemptId,
+    fence: attempt.fence,
+    ownerPid: attempt.ownerPid,
+    ownerNonce: attempt.ownerNonce,
+    mediaStopped: completion.mediaStopped,
+    scope: "files-and-media",
+    relatedIo: "settled",
+  });
+  return canonicalP1Json(value);
 }
 /** Called only after all business gates close and real platform/main-process tasks settle. */
 export async function writeValidationStopped(
@@ -186,20 +268,9 @@ export async function writeValidationStopped(
   if (attempt.ownerPid !== process.pid) throw conflict();
   const completion = op.completion();
   if (completion.mediaStopped === "unknown") return false;
-  const value = validationStoppedReceiptSchema.parse({
-    schemaVersion: "quizpack-validation-stopped.v1",
-    validationId: id,
-    attemptId: attempt.attemptId,
-    fence: attempt.fence,
-    ownerPid: attempt.ownerPid,
-    ownerNonce: attempt.ownerNonce,
-    mediaStopped: completion.mediaStopped,
-    scope: "files-and-media",
-    relatedIo: "settled",
-  });
-  const text = canonicalP1Json(value);
+  const text = stoppedReceiptText(op, id, attempt);
   if (Buffer.byteLength(text) > 2048) throw conflict();
-  return op.stoppedReceiptTask(async (check) => {
+  const published = await op.stoppedReceiptTask(async (check) => {
     const dir = directory(config, id, attempt),
       destination = path.join(dir, `stopped-${attempt.attemptId}.json`),
       temp = `${destination}.tmp-${attempt.attemptId}`;
@@ -293,4 +364,25 @@ export async function writeValidationStopped(
       if (handle) await close(op, handle);
     }
   });
+  if (published) {
+    const candidate = validationStoppedReceiptSchema.parse(JSON.parse(text));
+    const fields = {
+      validationId: candidate.validationId,
+      attemptId: candidate.attemptId,
+      fence: candidate.fence,
+      ownerPid: candidate.ownerPid,
+      ownerNonce: candidate.ownerNonce,
+      scope: candidate.scope,
+      mediaStopped: candidate.mediaStopped,
+      relatedIo: candidate.relatedIo,
+    };
+    const proof = validationFileStopProofSchema.parse({
+      ...fields,
+      schemaVersion: "quizpack-validation-file-stop-proof.v1",
+      protocol: "candidate-receipt-db-ack.v1",
+      receiptSha256: createHash("sha256").update(text).digest("hex"),
+    });
+    publications.set(op, { proof, bytes: Buffer.byteLength(text) });
+  }
+  return published;
 }

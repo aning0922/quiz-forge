@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
+import type { StorageLock } from "../import/storage-lock";
 import type { P2aDatabase } from "@/lib/db/client";
 import { ArchiveOperation } from "./operation";
 import {
@@ -30,7 +31,13 @@ function fixture() {
   contexts.push(context);
   const end = vi.fn(async () => {}),
     db = { sql: { end } } as unknown as P2aDatabase;
-  return { context, abort, end, op: new ArchiveOperation(db, context) };
+  const op = new ArchiveOperation(db, context);
+  op.attachLock({
+    controller: new AbortController(),
+    assert: () => {},
+    close: async () => true,
+  } as unknown as StorageLock);
+  return { context, abort, end, op };
 }
 function deferred<T>() {
   let resolve: (value: T) => void = () => {};
@@ -263,6 +270,12 @@ it("receipt-owned continuation rechecks UNKNOWN after awaited IO before further 
   expect(write).not.toHaveBeenCalled();
 });
 
+async function acknowledge(op: ArchiveOperation) {
+  return op.acknowledgeDatabaseOnce(
+    op.fileStopAckQualification(),
+    async () => "acknowledged",
+  );
+}
 it("normal receipt gates preserve the business deadline and permit one DB finalization only", async () => {
   const { op, context } = fixture();
   op.enterClaimBoundary();
@@ -287,6 +300,7 @@ it("normal receipt gates preserve the business deadline and permit one DB finali
     }),
   ).toBe("receipt");
   expect(readMediaOperationState(context).phase).toBe("active");
+  await acknowledge(op);
   const complete = vi.fn(async () => "ready");
   expect(await op.finalizeDatabaseOnce(complete)).toBe("ready");
   await expect(op.finalizeDatabaseOnce(complete)).rejects.toMatchObject({
@@ -305,6 +319,7 @@ it("pending finalization remains request IO and does not inherit the file receip
   op.closeNonDbGate();
   await op.settle();
   await op.stoppedReceiptTask(async () => {});
+  await acknowledge(op);
   const task = op.finalizeDatabaseOnce(() => commit.promise);
   await Promise.resolve();
   expect(op.completion().relatedIo).toBe("unconfirmed");
@@ -319,6 +334,7 @@ it("cancelled normal receipt cannot authorize complete under a cleanup extension
   op.closeNonDbGate();
   await op.settle();
   await op.stoppedReceiptTask(async () => {});
+  await acknowledge(op);
   abort.abort();
   const complete = vi.fn(async () => {});
   await expect(op.finalizeDatabaseOnce(complete)).rejects.toMatchObject({
@@ -333,6 +349,7 @@ it("failure of finalization permanently bars any later write or receipt", async 
   op.closeNonDbGate();
   await op.settle();
   await op.stoppedReceiptTask(async () => {});
+  await acknowledge(op);
   const complete = vi.fn(async () => {
     throw new Error("SYNTHETIC_COMMIT_FAILURE");
   });
@@ -359,6 +376,7 @@ it("ordinary write is blocked after files close and after receipt publication", 
     code: "VALIDATION_RECOVERY_REQUIRED",
   });
   await op.stoppedReceiptTask(async () => {});
+  await acknowledge(op);
   await expect(op.databaseAwait("write", work)).rejects.toMatchObject({
     code: "VALIDATION_RECOVERY_REQUIRED",
   });
@@ -371,6 +389,7 @@ it("queued finalization rechecks related IO immediately before work and consumes
   op.closeNonDbGate();
   await op.settle();
   await op.stoppedReceiptTask(async () => {});
+  await acknowledge(op);
   const work = vi.fn(async () => "unexpected complete"),
     task = op.finalizeDatabaseOnce(work);
   op.markRelatedIoUnknown();
@@ -392,4 +411,118 @@ it("an ordinary write queued before file closure cannot start after the gate clo
     code: "VALIDATION_RECOVERY_REQUIRED",
   });
   expect(work).not.toHaveBeenCalled();
+});
+
+it("a candidate file without an independently confirmed ACK cannot authorize finalization", async () => {
+  const { op } = fixture();
+  op.enterClaimBoundary();
+  op.confirmClaim();
+  op.closeNonDbGate();
+  await op.settle();
+  await op.stoppedReceiptTask(async () => {});
+  const work = vi.fn(async () => {});
+  await expect(op.finalizeDatabaseOnce(work)).rejects.toMatchObject({
+    code: "VALIDATION_RECOVERY_REQUIRED",
+  });
+  expect(work).not.toHaveBeenCalled();
+});
+it("ACK qualification is request-bound and cannot be reconstructed from JSON", async () => {
+  const { op } = fixture(),
+    other = fixture().op;
+  op.enterClaimBoundary();
+  op.confirmClaim();
+  op.closeNonDbGate();
+  await op.stoppedReceiptTask(async () => {});
+  const qualification = op.fileStopAckQualification(),
+    work = vi.fn(async () => {});
+  expect(() => JSON.stringify(qualification)).toThrow();
+  await expect(
+    other.acknowledgeDatabaseOnce(qualification, work),
+  ).rejects.toMatchObject({ code: "VALIDATION_RECOVERY_REQUIRED" });
+  await expect(
+    op.acknowledgeDatabaseOnce({ kind: "file-stop-ack" }, work),
+  ).rejects.toMatchObject({ code: "VALIDATION_RECOVERY_REQUIRED" });
+  expect(work).not.toHaveBeenCalled();
+  await op.acknowledgeDatabaseOnce(qualification, work);
+  expect(work).toHaveBeenCalledTimes(1);
+  await expect(
+    op.acknowledgeDatabaseOnce(qualification, work),
+  ).rejects.toMatchObject({ code: "VALIDATION_RECOVERY_REQUIRED" });
+});
+it("queued ACK rechecks UNKNOWN and permanently consumes its gate", async () => {
+  const { op, context } = fixture();
+  op.enterClaimBoundary();
+  op.confirmClaim();
+  op.closeNonDbGate();
+  await op.stoppedReceiptTask(async () => {});
+  const qualification = op.fileStopAckQualification(),
+    work = vi.fn(async () => {}),
+    task = op.acknowledgeDatabaseOnce(qualification, work);
+  requestMediaOperationStop(context, "STOP_UNCONFIRMED");
+  await expect(task).rejects.toMatchObject({ code: "WRITE_OUTCOME_UNKNOWN" });
+  expect(work).not.toHaveBeenCalled();
+  await expect(op.finalizeDatabaseOnce(work)).rejects.toMatchObject({
+    code: "VALIDATION_RECOVERY_REQUIRED",
+  });
+});
+it("ACK failure cannot authorize finalization, retry ACK or a failure transaction", async () => {
+  const { op } = fixture();
+  op.enterClaimBoundary();
+  op.confirmClaim();
+  op.closeNonDbGate();
+  await op.stoppedReceiptTask(async () => {});
+  const qualification = op.fileStopAckQualification(),
+    work = vi.fn(async () => {
+      throw new Error("SYNTHETIC_ACK_FAILURE");
+    });
+  await expect(op.acknowledgeDatabaseOnce(qualification, work)).rejects.toThrow(
+    "SYNTHETIC_ACK_FAILURE",
+  );
+  await expect(
+    op.acknowledgeDatabaseOnce(qualification, work),
+  ).rejects.toMatchObject({ code: "VALIDATION_RECOVERY_REQUIRED" });
+  await expect(op.finalizeDatabaseOnce(work)).rejects.toMatchObject({
+    code: "VALIDATION_RECOVERY_REQUIRED",
+  });
+  await expect(op.databaseAwait("write", work)).rejects.toMatchObject({
+    code: "VALIDATION_RECOVERY_REQUIRED",
+  });
+  expect(work).toHaveBeenCalledTimes(1);
+});
+it("cancelled cleanup publication never creates an ACK qualification", async () => {
+  const { op } = fixture();
+  op.enterClaimBoundary();
+  op.confirmClaim();
+  op.stop("CANCELLED");
+  await op.settle();
+  await op.stoppedReceiptTask(async () => {});
+  expect(() => op.fileStopAckQualification()).toThrow();
+});
+it("closing files during a tracked platform preparation permanently stops further work", async () => {
+  const { op } = fixture(),
+    io = deferred<void>(),
+    task = op.platformTask(() => io.promise);
+  await Promise.resolve();
+  expect(() => op.closeNonDbGate()).toThrow();
+  expect(() => op.checkpoint()).toThrow();
+  io.resolve();
+  await task;
+  await op.settle();
+  expect(() => op.fileStopAckQualification()).toThrow();
+});
+it("storage-lock close remains request IO until its actual driver and watcher drain", async () => {
+  const { context } = fixture(),
+    io = deferred<boolean>(),
+    op = new ArchiveOperation({} as P2aDatabase, context);
+  op.attachLock({
+    controller: new AbortController(),
+    assert: () => {},
+    close: () => io.promise,
+  } as unknown as StorageLock);
+  const task = op.closeStorageLock();
+  await Promise.resolve();
+  expect(op.completion().relatedIo).toBe("unconfirmed");
+  io.resolve(false);
+  await task;
+  expect(op.completion().relatedIo).toBe("unconfirmed");
 });
