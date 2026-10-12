@@ -307,7 +307,7 @@ export async function validationRowDto(
 ): Promise<ValidationDto> {
   return validationDto(row, await archivedResourceCount(tx, row));
 }
-const assetSetLedgerSchema = z
+export const assetSetLedgerSchema = z
   .strictObject({
     schemaVersion: z.literal("quizpack-candidate-asset-set.v1"),
     productId: packIdSchema,
@@ -331,7 +331,13 @@ const assetSetLedgerSchema = z
     if (
       set.resources.some((r) => r.productId !== set.productId) ||
       new Set(keys).size !== keys.length ||
-      keys.some((k, i) => i > 0 && k <= keys[i - 1]!)
+      set.resources.some(
+        (r, i) =>
+          i > 0 &&
+          (r.resourceId < set.resources[i - 1]!.resourceId ||
+            (r.resourceId === set.resources[i - 1]!.resourceId &&
+              r.resourceVersion <= set.resources[i - 1]!.resourceVersion)),
+      )
     )
       ctx.addIssue({ code: "custom", message: "Invalid asset set." });
   });
