@@ -12,6 +12,8 @@ B2-2A已技术验收：最终运行代码bdd5c51、集成记录head4793537；同
 
 下一优先为关闭测试夹具维护问题，完成B2-2B实际服务、资源归属与浏览器验收。B2-3草稿应用随后按依赖推进；当前归档完成不代表内容已成为草稿或可发布版本。
 
+351e8d1后的实际本地验收增量：main媒体隔离66项连续三轮通过且provision封存成功；全82文件1060单元、43离线工具、46真实驱动故障测试及格式/lint/类型通过。新8项后台生产浏览器场景已集成3e3d913并开始独立执行，尚无通过结论；服务PG测试另由Sol代理在独立codex/validation-service-tests/55421推进。下一批设计准备见[B2-3首稿预案](STUDIO_P2B3_PREFLIGHT.md)，未放行业务实现。
+
 B2-1原包接收与恢复已完成代码技术验收：最终代码 `f070428b72570977db835946227b2c49d0666e42`，612单测、214真实DB、46驱动故障、206生产E2E/10既有跳过，格式/lint/类型/构建全部通过；53份trace路径检查无私有违规且动态扫描warning已消除。独立Astra登记问题全部闭合，五状态×四宽20图已逐张检查。代码[CI38174716526](https://github.com/aning0922/quiz-forge/actions/runs/38174716526)的checks/database均实际success；[Draft PR #10](https://github.com/aning0922/quiz-forge/pull/10)未合并，最终文档head CI以该PR实际checks及描述为准。A/B/root实例均停止，3100/55421–55424无监听。received仍只表示未验证原字节，没有资源归档、草稿或发布。详情见[P2B2_RECEIVE_ACCEPTANCE](P2B2_RECEIVE_ACCEPTANCE.md)、[REVIEW](P2B2_RECEIVE_REVIEW.md)、[VISUAL_CHECK](P2B2_RECEIVE_VISUAL_CHECK.md)。
 
 独立媒体可行性已按上述验收完成，后续同字节P1复验/证据与Product资源归档继续采用受限launcher，能力不满足时失败关闭；不能把脚本层证明当业务接入已经完成。B2-3草稿应用、P3评分/表现、Key/报告与首款端到端仍按已授权路线继续；旧暂停聊天未恢复。
