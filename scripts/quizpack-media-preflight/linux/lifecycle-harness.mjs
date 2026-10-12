@@ -203,6 +203,7 @@ safeMain(async () => {
   const child = spawn(
     process.execPath,
     [
+      "--conditions=react-server",
       "--import",
       "tsx",
       "scripts/quizpack-media-preflight/linux/crash-child.mjs",
@@ -288,6 +289,7 @@ safeMain(async () => {
   const persisted = await readPrivate(resolve(CACHE, "control", "record.json"));
   const own = json(persisted);
   const fresh = await command(process.execPath, [
+    "--conditions=react-server",
     "--import",
     "tsx",
     "scripts/quizpack-media-preflight/linux/restart-child.mjs",

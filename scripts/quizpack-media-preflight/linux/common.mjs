@@ -2,6 +2,9 @@ import { createLinuxFiles } from "../../../src/features/quizpack/server/media/in
 import { resolve } from "node:path";
 export const ROOT = resolve(".");
 export const DIR = resolve("scripts/quizpack-media-preflight/linux");
+export const CORE_DIR = resolve(
+  "src/features/quizpack/server/media/internal/linux",
+);
 export const CACHE = resolve(".cache/quizpack-media-preflight/linux");
 const files = createLinuxFiles({ checkoutRoot: ROOT, stateRoot: CACHE });
 export const { hash, privateDir, writePrivate, readPrivate } = files;

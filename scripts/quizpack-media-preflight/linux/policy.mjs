@@ -2,7 +2,15 @@ import { readRuntimeVersions } from "./runtime.mjs";
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { release, arch, platform } from "node:os";
-import { CACHE, DIR, hash, docker, readPrivate, json } from "./common.mjs";
+import {
+  CACHE,
+  DIR,
+  CORE_DIR,
+  hash,
+  docker,
+  readPrivate,
+  json,
+} from "./common.mjs";
 export const LIMITS = Object.freeze({
   bytes: 8388608,
   dimension: 8192,
@@ -40,7 +48,7 @@ export async function loadPolicy({
   )
     throw new Error("ENDPOINT_OVERRIDE");
   const image = json(await readPrivate(resolve(CACHE, "image.json")));
-  const base = json(await readFile(resolve(DIR, "base.json")));
+  const base = json(await readFile(resolve(CORE_DIR, "base.json")));
   if (
     image.schema !== "qf-linux-image.v1" ||
     image.base !== base.base ||
@@ -146,7 +154,7 @@ export async function loadPolicy({
   )
     throw new Error("DEPENDENCIES_CHANGED");
   const seccompSha256 = hash(
-    JSON.stringify(json(await readFile(resolve(DIR, "seccomp.json")))),
+    JSON.stringify(json(await readFile(resolve(CORE_DIR, "seccomp.json")))),
   );
   const launcherInputs = {};
   for (const file of [
@@ -203,5 +211,10 @@ export {
 } from "../../../src/features/quizpack/server/media/internal/linux/container-policy.mjs";
 import { createArgs as createCoreArgs } from "../../../src/features/quizpack/server/media/internal/linux/container-policy.mjs";
 export function createArgs(record, entrypoint, args) {
-  return createCoreArgs(record, entrypoint, args, resolve(DIR, "seccomp.json"));
+  return createCoreArgs(
+    record,
+    entrypoint,
+    args,
+    resolve(CORE_DIR, "seccomp.json"),
+  );
 }

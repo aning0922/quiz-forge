@@ -7,6 +7,7 @@ import { arch, platform } from "node:os";
 import {
   CACHE,
   DIR,
+  CORE_DIR,
   hash,
   privateDir,
   writePrivate,
@@ -44,7 +45,7 @@ safeMain(
       }) + "\n",
     );
     stage = "base-metadata";
-    const base = json(await readFile(resolve(DIR, "base.json")));
+    const base = json(await readFile(resolve(CORE_DIR, "base.json")));
     const runId = randomUUID();
     const context = resolve(CACHE, runId, "build");
     await privateDir(context);
