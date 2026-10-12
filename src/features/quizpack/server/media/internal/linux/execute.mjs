@@ -211,6 +211,7 @@ export function createLinuxExecutionCore(environment) {
       onDiagnostic?.({
         phase: "container-state",
         running: value.state?.Running === true,
+        oomKilled: value.state?.OOMKilled === true,
         status: [
           "created",
           "exited",

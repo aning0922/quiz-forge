@@ -1,8 +1,13 @@
 import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
+import { mediaStopFailureCode } from "../../contracts";
 import { beginMediaImage } from "../../operation-context";
 import { classifySystemError } from "./diagnostic";
 export type CommandFailureReason =
-  "CANCELLED" | "DEADLINE_EXCEEDED" | "WORKER_FAILED" | "OUTPUT_INVALID";
+  | "CANCELLED"
+  | "DEADLINE_EXCEEDED"
+  | "WORKER_FAILED"
+  | "OUTPUT_INVALID"
+  | "STOP_UNCONFIRMED";
 export type CommandOptions = {
   deadline?: number;
   input?: Uint8Array;
@@ -70,6 +75,13 @@ export function command(
     let timer: NodeJS.Timeout | undefined,
       hardTimer: NodeJS.Timeout | undefined,
       poll: NodeJS.Timeout | undefined;
+    const sharedInterruption = (): CommandFailureReason | undefined => {
+      if (phase === "cleanup") return undefined;
+      const state = scope?.readState();
+      return state?.phase === "stopping"
+        ? mediaStopFailureCode(state.stop)
+        : undefined;
+    };
     const effectiveSettleDeadline = () => {
       const state = scope?.readState();
       return state?.phase === "stopping"
@@ -84,11 +96,13 @@ export function command(
       if (finished) return;
       finished = true;
       const finalDeadline = effectiveSettleDeadline();
-      reason ??= signal?.aborted
-        ? "CANCELLED"
-        : performance.now() >= deadline
-          ? "DEADLINE_EXCEEDED"
-          : undefined;
+      reason ??=
+        sharedInterruption() ??
+        (signal?.aborted
+          ? "CANCELLED"
+          : performance.now() >= deadline
+            ? "DEADLINE_EXCEEDED"
+            : undefined);
       if (timer) clearTimeout(timer);
       if (hardTimer) clearTimeout(hardTimer);
       if (poll) clearInterval(poll);
@@ -127,11 +141,13 @@ export function command(
       if (finished) return;
       reason ??= why;
       scope?.requestStop(
-        why === "CANCELLED"
-          ? "CANCELLED"
-          : why === "DEADLINE_EXCEEDED"
-            ? "IMAGE_DEADLINE_EXCEEDED"
-            : "RUNTIME_FAILED",
+        why === "STOP_UNCONFIRMED"
+          ? "STOP_UNCONFIRMED"
+          : why === "CANCELLED"
+            ? "CANCELLED"
+            : why === "DEADLINE_EXCEEDED"
+              ? "IMAGE_DEADLINE_EXCEEDED"
+              : "RUNTIME_FAILED",
       );
       // Tightening must apply before any more command/control work.
       armHardDeadline();
@@ -144,7 +160,7 @@ export function command(
       }
     };
     const cancel = () => {
-      if (!reason) stop("CANCELLED");
+      if (!reason) stop(sharedInterruption() ?? "CANCELLED");
     };
     const armExecutionDeadline = () => {
       if (finished) return;
@@ -170,7 +186,8 @@ export function command(
     scope?.readState();
     if (performance.now() >= deadline || signal?.aborted) {
       reason =
-        performance.now() >= deadline ? "DEADLINE_EXCEEDED" : "CANCELLED";
+        sharedInterruption() ??
+        (performance.now() >= deadline ? "DEADLINE_EXCEEDED" : "CANCELLED");
       finish(null, null);
       return;
     }
@@ -194,7 +211,11 @@ export function command(
     }
     signal?.addEventListener("abort", cancel, { once: true });
     child.on("error", () => stop("WORKER_FAILED"));
-    child.stdin.on("error", () => stop("WORKER_FAILED"));
+    // A closed input pipe does not establish client/worker close. Keep observing
+    // the owned command until its original deadline rather than killing attach early.
+    child.stdin.on("error", () => {
+      reason ??= "WORKER_FAILED";
+    });
     child.stdout.on("error", () => stop("WORKER_FAILED"));
     child.stderr.on("error", () => stop("WORKER_FAILED"));
     child.stdout.on("data", (chunk: Buffer) => {

@@ -63,6 +63,43 @@ describe("Linux command shared stop deadline", () => {
       settled: true,
     });
   });
+  it("factory image deadline abort is reported as its deadline reason", async () => {
+    const run = scoped();
+    const pending = command("/synthetic/command", [], {
+      scope: run.scope,
+      deadline: 5100,
+      settleDeadline: 10100,
+    });
+    now = 5100;
+    vi.advanceTimersByTime(5000);
+    child.emit("close", null, "SIGKILL");
+    expect(await pending).toMatchObject({
+      reason: "DEADLINE_EXCEEDED",
+      settled: true,
+    });
+    run.scope.finish();
+    disposeMediaOperationContext(run.context);
+  });
+  it("a broken input pipe does not kill attach before its observed close", async () => {
+    const run = scoped();
+    const pending = command("/synthetic/command", [], {
+      scope: run.scope,
+      deadline: 5100,
+      settleDeadline: 10100,
+    });
+    child.stdin.emit("error", new Error("synthetic"));
+    expect(child.kill).not.toHaveBeenCalled();
+    expect(run.scope.readState().phase).toBe("active");
+    now = 300;
+    child.emit("close", 137, null);
+    expect(await pending).toMatchObject({
+      code: 137,
+      reason: "WORKER_FAILED",
+      settled: true,
+    });
+    run.scope.finish();
+    disposeMediaOperationContext(run.context);
+  });
   it("a shorter operation stop budget bounds in-flight command/stdio together", async () => {
     const run = scoped();
     const pending = command("/synthetic/command", [], {
