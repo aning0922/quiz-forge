@@ -13,4 +13,20 @@
 
 ## 实施审查
 
-尚未开始；无实现验收结论。
+公共代码已开始独立审查，仍无阶段验收结论。
+
+- Root早审ad8a116：heldValidations的SELECT *会把1025条完整候选与报告搬入计量内存。4f09aba改为最小列，列表也只选摘要需要字段；strict asset-set与实际字节上限替代类型断言。
+- Root早审ad8a116：validationKey的对象spread允许宽对象额外字段改变hash。4f09aba改为严格七字段Schema及显式canonical payload，拒未知字段与schemaVersion覆盖，边界用例通过。
+- Root复验4f09aba：joined Product/id/version字符串排序与A逐id/version比较不等价，a及a-cover前缀可误拒。30d0bd6改为逐字段ASCII顺序并加合法/逆序/重复测试；root4项repository及3项DTO测试通过。
+- V公共821bd296集成为1807559：prepare、opaque prepared、SQL serializer及engine scope抽取，root相关7文件66项纯测试通过；restore尚只有明确函数类型，无伪runtime桩。Astra首代码独立复验进行中。
+- 新远端CI38197814487/38197842129为计费或支出上限阻断，job没有执行任何step；不当作代码检查结果。
+
+### 公共适配UNKNOWN复验
+
+Astra在首公共审查中用真实ctx复现：finite binding unavailable触发stop的同步abort listener可将ctx升级STOP_UNCONFIRMED，prepare及普通validate却沿旧局部状态输出无需维护。V de08f71→root d6f2030统一在最终completion、code和runtimeFailure吸收全局UNKNOWN；root42原相关测试与3个新增回归通过。独立Astra在01a12e1c-b89c-7c10-a7e8-b8cc5627586e重跑7个原/补充探针并关闭唯一P2，有限unavailable对照不变，迟到completion不降级；同轮窄读4718097 policy/ledger未见剩余P1/P2。此结论不替代FS/DB/实际媒体验收。
+
+S操作内核3366443/76852da已集成68c2dd7/c1ffcc3，root11项纯测试通过；强制confirmed claim才可进candidate，receipt门核共享UNKNOWN，media unknown关联IO也保持unconfirmed。独立审查进行中；统一scanner/receive接线fee282df等待D迁移同批集成，避免缺表中间态影响旧receive。
+
+### 归档完成前停止证明的合同补充
+
+Astra在01a12e28-f467-7cf0-aeba-3d1b62294c2a确认receipt-before-complete可采用，并要求文件/媒体门、唯一receipt例外、一次DB finalization三个内部门；原业务期限不可借cleanup延长。主合同4.3已明确receipt只证明files-and-media，后继DB与连接关闭仍须观察，fixture不能凭此单独销毁活动请求。正常complete之后零文件/媒体IO；失败/取消receipt不新开事务。此为实施细化，不是新功能验收。
