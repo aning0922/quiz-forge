@@ -1,14 +1,16 @@
-# 核心数据模型（P2-A/B1实现与后续规划）
+# 核心数据模型（已实现基础与B2-2B冻结合同）
 
 P2-A已实现qf.operator、operator_session、audit_event及qf_meta.schema_migrations。P2-B1已追加product、category、tag、product_tag，已完成技术验收。真实字段、权限、锁序与CAS以[目录合同](STUDIO_P2B1.md)为准；运营metadata_revision与未来草稿content revision分离。Product使用包的稳定字符串ID，category/tag使用服务器UUID，不能把下方历史拟议UUID一概套到Product。
 
-B2-1已追加quizpack_import，当前共八张业务表；214项真实DB测试、权限与独立审查已通过，代码技术验收见P2B2_RECEIVE_ACCEPTANCE。以下保留D0/F1业务约束和后续完整商品关系，其余实体尚未建立。当前Product只有运营身份/slug/title/主类目FK/metadata_revision/时间/归档字段，没有published指针或内容发布状态。草稿、资源、版本、Key和报告仍待后续追加迁移；B2-1的quizpack_import只记录接收意图、原字节冻结与显式恢复；实施合同见[STUDIO_P2B2](STUDIO_P2B2.md)，received不代表ZIP/内容或资源验证通过。完整草稿/blob/asset模型仍属后续批次。
+B2-1已追加quizpack_import，该检查点为八张业务表；214项真实DB测试、权限与独立审查已通过，代码技术验收见P2B2_RECEIVE_ACCEPTANCE。以下保留D0/F1业务约束和后续完整商品关系，其余实体尚未建立。当前Product只有运营身份/slug/title/主类目FK/metadata_revision/时间/归档字段，没有published指针或内容发布状态。草稿、资源、版本、Key和报告仍待后续追加迁移；B2-1的quizpack_import只记录接收意图、原字节冻结与显式恢复；实施合同见[STUDIO_P2B2](STUDIO_P2B2.md)，received不代表ZIP/内容或资源验证通过。完整草稿/blob/asset模型仍属后续批次。
+
+B2-2A已完成可信验证但没有新增业务表。B2-2B冻结新增三表：`quizpack_validation`固定同一次验证的原包、运行身份、证据、候选与资源集合；`asset_blob`固定物理hash/尺寸/MIME；`product_asset`以Product/resourceId/resourceVersion保存不可变完整授权声明。当前分支已建立三表并集成真实短事务，root旧8→10升级与26项真实PG域/权限回归通过；完整归档应用服务和页面仍在实施，未达到本批阶段验收。没有另加import-file或validation-resource关联表；每条validation自己的asset-set文本表达本次完整集合，source_validation_id只保留第一次来源。新增ACK合同已经修订、尚未实现：候选receipt全IO结束后独立事务在attempts_text固定fileStopProof，确认后才允许release；无ACK旧行不补权威。新增0011枚举/0012保护迁移，旧0009/0010不改，v1只读兼容、v2新key及56KiB metadata准入。精确字段、约束、迁移与事务合同见[STUDIO_P2B2B](STUDIO_P2B2B.md)。
 
 | 概念                  | 关键字段（拟议）                                                                                                                         | 关系与约束                                                                                      |
 | --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
 | QuizPack              | id、packId、packVersion、formatVersion、manifest、hash、compatibility、importStatus                                                      | ID/版本唯一；同版本不同哈希拒绝；validated 不等于人工批准                                       |
 | QuizPackImport        | id、productId、幂等key/指纹、声明bytes/hash、target、接收stateRevision/fence/attempts、实际bytes/hash及时间                              | B2-1已实现接收；received仅表示原字节冻结，不能代表验证、审核或草稿导入                          |
-| QuizPackValidation    | importId、稳定validationKey、validator/policy身份、独立状态、不可变候选与报告、asset-set hash                                            | B2-2提案；原接收事实不因复验失败而改写，运行故障与内容拒绝分开                                  |
+| QuizPackValidation    | importId、稳定validationKey、validator/policy身份、独立状态、不可变候选与报告、asset-set hash                                            | B2-2B已冻结、实施中；原接收事实不因复验失败而改写，运行故障与内容拒绝分开                       |
 | QuizDefinition        | id、slug、title、engineType、status                                                                                                      | 1:N QuizVersion；slug 唯一；身份与内容版本分离                                                  |
 | QuizVersion           | id、definitionId、version、schemaVersion、engineVersion、status、contentHash                                                             | 同测评版本号唯一；发布后不可编辑；同一 Product 可绑定不同视觉版本；跨 Product 通过模板复制/冻结 |
 | Question              | id、versionId、stableId、prompt、order、nodeId?                                                                                          | 版本内 ID/顺序唯一；剧情节点关联；不跨版本引用                                                  |
@@ -33,7 +35,7 @@ B2-1已追加quizpack_import，当前共八张业务表；214项真实DB测试�
 
 已实现category/tag及product_tag。Product以primary_category_id表达单一主类目，不另建ProductCategory多对多表；标签关联使用product/tag复合主键和每Product唯一slot(1..8)形成数据库硬上限。归档保留唯一身份和旧引用，新增分配要求active；不删除实体。Collection/CollectionProduct仍预留。目录组织不决定评分引擎或改写题目/报告。
 
-为草稿与资源导入预留的最小实体是 `ProductDraft(productId, revision, contentHash, state)`、`AssetBlob(contentHash, storageKey, mediaType, bytes)`、`AssetPackVersion`、`AssetPackItem`、`QuizPackImport`、`QuizPackImportFile` 与 `ValidationEvidence`。其字段/约束由 `ASSESSMENT_RESOURCES.md` 进一步说明；此处不表示已经有表或对象存储。
+后续草稿与发布仍预留 `ProductDraft(productId, revision, contentHash, state)`、`AssetPackVersion`及`AssetPackItem`等版本引用。F1旧提案中的QuizPackImportFile/ValidationEvidence不是本批建表清单；接收已由quizpack_import实现，验证证据与本次资源集合由上述quizpack_validation持有。AssetBlob及Product私有资源声明按B2-2B三表合同实施，不将历史概念名当额外表。资源关系另见ASSESSMENT_RESOURCES。
 
 `pinnedProductVersionId` 表示首次激活固定的 ProductVersion，其中绑定 QuizPack、QuizVersion、ProductVisualVersion、AssetPack、ReportTemplate 和专属组件版本。未激活 Key 默认首次激活绑定当前批准版本；之后 Product 升级/回滚均不改变进行中会话与已完成报告。
 
