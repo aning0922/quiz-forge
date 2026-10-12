@@ -31,10 +31,9 @@ export type EvidenceProjection = Readonly<{
   attemptsControlText: string;
 }>;
 export type FrozenCandidate = Readonly<{
-  facts: DeepReadonly<CandidateFacts>;
+  facts: DeepReadonly<CandidateFacts & { assetSetText: string }>;
   manifestSha256: string;
   contentSha256: string;
-  assetSetText: string;
 }>;
 export type ClaimValidationInput = Readonly<{
   expectedImportStateRevision: number;
