@@ -46,6 +46,11 @@ import {
   type FileFact,
 } from "@/features/quizpack/import/storage";
 import type { ImportRow } from "@/features/quizpack/import/repository";
+import {
+  fixtureMaintenanceOperation,
+  fixtureAuditAllowed,
+  type FixtureAuditTarget,
+} from "./p2b2b-maintenance";
 import { p2b2bFixtureSchema, ownerAbsent } from "./p2b2b-fixture-contract";
 
 const sha = (bytes: Uint8Array) =>
@@ -379,11 +384,13 @@ async function verifyFile(
 async function cleanup(database: TestDatabase, value: Fixture) {
   if (database.config.imports.enabled) throw new Error();
   await database.app.close(); // All subsequent DB work is the helper's owner connection and storage connection.
-  const lock = await StorageLock.acquire(database.config),
-    { context, dispose } = createValidationContext(
+  const { context, dispose } = createValidationContext(
       new AbortController().signal,
     ),
-    op = new ArchiveOperation(database.app, context);
+    op = fixtureMaintenanceOperation(database, context),
+    lock = await op.fileTask(() =>
+      StorageLock.acquire(database.config, context),
+    );
   op.attachLock(lock);
   try {
     await noOtherBackends(database, lock, op);
@@ -426,6 +433,34 @@ async function cleanup(database: TestDatabase, value: Fixture) {
               i.archiveBytes === row.archive_bytes,
           ),
       )
+    )
+      throw new Error();
+    const actors = [value.operator.identifier, value.readOnly.identifier];
+    const sessions = await op.databaseAwait(
+      "read",
+      () =>
+        database.admin.sql<
+          { id: string }[]
+        >`SELECT id FROM qf.operator_session WHERE operator_id=ANY(${database.admin.sql.array(actors)}) ORDER BY id LIMIT 1025`,
+    );
+    const audit = await op.databaseAwait(
+      "read",
+      () =>
+        database.admin.sql<
+          FixtureAuditTarget[]
+        >`SELECT id,action,actor_id,session_id,target_kind,target_id,target_revision FROM qf.audit_event WHERE actor_id=ANY(${database.admin.sql.array(actors)}) ORDER BY id LIMIT 8193`,
+    );
+    const auditScope = {
+      productId: value.productId,
+      importIds: new Set(value.imports.map((i) => i.importId)),
+      validationIds: new Set(validations.map((v) => v.id)),
+      actorIds: new Set(actors),
+      sessionIds: new Set(sessions.map((s) => s.id)),
+    };
+    if (
+      sessions.length > 1024 ||
+      audit.length > 8192 ||
+      audit.some((event) => !fixtureAuditAllowed(event, auditScope))
     )
       throw new Error();
     const outsideHeld = await op.databaseAwait(
@@ -568,8 +603,8 @@ async function cleanup(database: TestDatabase, value: Fixture) {
         await tx`DELETE FROM qf.product_tag WHERE product_id=${value.productId}`;
         await tx`DELETE FROM qf.product WHERE id=${value.productId}`;
         await tx`DELETE FROM qf.asset_blob WHERE sha256=ANY(${tx.array([...blobHashes].filter((h) => !shared.has(h)))}) AND NOT EXISTS(SELECT 1 FROM qf.product_asset p WHERE p.blob_sha256=qf.asset_blob.sha256)`;
-        await tx`DELETE FROM qf.audit_event WHERE actor_id=ANY(${tx.array([value.operator.identifier, value.readOnly.identifier])})`;
-        await tx`DELETE FROM qf.operator_session WHERE operator_id=ANY(${tx.array([value.operator.identifier, value.readOnly.identifier])})`;
+        await tx`DELETE FROM qf.audit_event WHERE id=ANY(${tx.array(audit.map((a) => a.id))}) AND actor_id=ANY(${tx.array(actors)})`;
+        await tx`DELETE FROM qf.operator_session WHERE id=ANY(${tx.array(sessions.map((s) => s.id))}) AND operator_id=ANY(${tx.array(actors)})`;
         await tx`DELETE FROM qf.operator WHERE id=ANY(${tx.array([value.operator.identifier, value.readOnly.identifier])})`;
       }),
     );
