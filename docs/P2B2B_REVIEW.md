@@ -60,3 +60,19 @@ Astra在01a12e4a-87a8-7a00-9cfb-d99b05b3f5df进一步确认0011枚举/0012协议
 Astra在01a12e4f-4e79-7ae3-b0a4-32a36614b5d4独立复验4abc51c：actual flow/client/messages的generic identity变化与POST成功后removeExact失败均保留mayHaveBeenSent并只说待核实；strict not-started对照仍需显式放弃。actual panel/use-read模拟调度经过刷新失败、翻页、迟到旧详情/列表和低revision显式读取，维持最高rev4 ready且无旧recover；loading/error禁写。45既有纯测试及11时序探针通过，两P2闭合，无新P1/P2；不替代真实浏览器。
 
 D f73f415→rootd71f1ad已集成ACK公共/事务首接口，尚等0011/0012及domain fixture适配。该中间head类型检查有3个旧SettledAttempt夹具缺fileStopProof，已交D适配，未记作检查通过。S e515e34→root189853e补齐已排队ordinary write实际work前封门重检，21项定向operation通过；ACK整体独立复验另行执行。
+
+### ACK数据迁移及独立总控回归
+
+6811e43→root11f6ed0完成0011/0012、旧v1只读兼容及fixture适配，root类型与12文件131定向测试通过。自有949a98a25d2720546a5d4005a748d3c6实际0010→0011/0012升级，启用/停用正常、重复migrate applied=[]，6文件34PG全部通过（.cache/b2b-ack-domain-db.log），实例已停止。该次包含独立合成无文件的10→仅11拒app→12及旧9字段保留/拒ACK/complete/retry，不把合成SQL proof当FS停止证明。
+
+Astra公共审查01a12e52-b3b0-71f1-9558-f75561d7306b发现retry遗漏旧policy保护，6811e43加requireCurrentPolicy；独立Astra子代理已窄复验关闭，21其他公共探针/7既有测试为前轮证据。本轮SQL/helper摘要6/6及当前policy hash一致，但新增P2：client触发器早检没有核tgqual/tgattr，WHEN(false)可同名同函数却不执行。D正在补无条件/无列过滤/无参数检查与PG回归；未给本批无问题结论。
+
+S 44f2d6d→root984e9b8集成candidate.v2、原请求私有publication资格、单次ACK→互斥finalize、StorageLock实际pending观察。root operation/receipt/storage共50项及storage-lock9项通过；独立真实FS/门/旧调用兼容审查进行中。factory与helper仍未交付，不作完整服务验收。
+
+11f6ed0时全量81文件1040单元通过（.cache/b2b-ack-unit.log）。trigger P2由e96a77d→rootaba7690修复，无条件/无列过滤/零参数及非constraint/partition/transition限制补齐；原Astra子代理窄复验关闭，无新P1/P2。root在自有0012库独立13项client PG全过（.cache/b2b-ack-client-db.log），随后stop确认；类型/lint通过。该补丁未改0012。
+
+### S ACK来源与关闭包装层复验
+
+Astra在01a12e57-e418-7ae2-a34e-4a89eaf1d5be重跑原真实FS探针：最终dir close迟到/超时、nlink2后UNKNOWN均无ACK资格，未持久proof的reader返回null；普通write绕过/排队UNKNOWN均零work。原两P2关闭。真实patched driver+内存transport的150个pending/保留queue以及握手前reserve在end后2–3ms全settled，未发现新增可证旧StorageLock drain deadline问题；仍不替代真实网络回归。
+
+新增两P2继续交S：旧CANCELLED cleanup candidate能被新operation的existing/EEXIST路径采纳并登记publication资格；必须拒绝从既有文件补原publisher资格。closeStorageLock清空lock却未同步撤销业务资格、重复调用不等原关闭，ACK后关闭仍可finalize；须同一cached close task、同步封门、有效锁重检。48原定向与额外门/FS/driver探针通过不代表这两项已关闭，factory尚未交付。
