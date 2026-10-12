@@ -23,6 +23,13 @@ export function createValidationContext(
   });
   return { context, dispose: () => disposeMediaOperationContext(context) };
 }
+export type FileStopAckQualification = Readonly<{
+  readonly kind: "file-stop-ack";
+}>;
+const ackQualifications = new WeakMap<
+  FileStopAckQualification,
+  ArchiveOperation
+>();
 const invalidDatabases = new WeakSet<P2aDatabase>();
 /** Owns only this request's business gate, DB budget and main-process IO. Platform proof comes from A. */
 export class ArchiveOperation {
@@ -35,10 +42,14 @@ export class ArchiveOperation {
   private nonDbClosed = false;
   private receiptState: "available" | "running" | "done" | "failed" =
     "available";
+  private ackState: "available" | "running" | "confirmed" | "failed" =
+    "available";
+  private qualification: FileStopAckQualification | undefined;
   private finalizationEntered = false;
   private claimEntered = false;
   private claimConfirmed = false;
   private candidateEntered = false;
+  private activePlatformTasks = 0;
   private candidateProof = false;
   private platformRelatedIoUnknown = false;
   private candidateClosed = false;
@@ -69,6 +80,19 @@ export class ArchiveOperation {
   detachLock() {
     this.removeLockListener?.();
     this.removeLockListener = undefined;
+  }
+  async closeStorageLock() {
+    this.detachLock();
+    const lock = this.lock;
+    this.lock = undefined;
+    if (lock)
+      await this.boundedTask(
+        Promise.resolve()
+          .then(() => lock.close())
+          .then((closed) => {
+            if (!closed) this.relatedIoUnknown = true;
+          }),
+      );
   }
   checkpoint() {
     const state = readMediaOperationState(this.context);
@@ -112,6 +136,22 @@ export class ArchiveOperation {
   closeNonDbGate() {
     this.nonDbClosed = true;
     this.candidateClosed = true;
+    if (
+      this.activePlatformTasks ||
+      (this.candidateEntered && !this.candidateProof)
+    ) {
+      this.stop("STOP_REQUESTED");
+      throw new StudioError("VALIDATION_RECOVERY_REQUIRED");
+    }
+  }
+  async platformTask<T>(work: () => Promise<T>): Promise<T> {
+    this.nonDbCheckpoint();
+    this.activePlatformTasks++;
+    try {
+      return await this.fileTask(work);
+    } finally {
+      this.activePlatformTasks--;
+    }
   }
   enterClaimBoundary() {
     this.nonDbCheckpoint();
@@ -279,6 +319,69 @@ export class ArchiveOperation {
       throw error;
     }
   }
+  /** Private authority exists only after this publisher's final close; it cannot survive serialization. */
+  fileStopAckQualification(): FileStopAckQualification {
+    this.checkpoint();
+    if (this.qualification || !this.ackQualified())
+      throw new StudioError("VALIDATION_RECOVERY_REQUIRED");
+    const qualification = Object.freeze({
+      kind: "file-stop-ack" as const,
+      toJSON() {
+        throw new StudioError("VALIDATION_RECOVERY_REQUIRED");
+      },
+    });
+    ackQualifications.set(qualification, this);
+    this.qualification = qualification;
+    return qualification;
+  }
+  async acknowledgeDatabaseOnce<T>(
+    qualification: FileStopAckQualification,
+    work: () => PromiseLike<T>,
+  ): Promise<T> {
+    this.checkpoint();
+    if (
+      ackQualifications.get(qualification) !== this ||
+      this.qualification !== qualification ||
+      !this.ackQualified()
+    )
+      throw new StudioError("VALIDATION_RECOVERY_REQUIRED");
+    this.ackState = "running";
+    try {
+      const result = await this.awaitDatabase("write", work, (task) => {
+        if (!this.ackQualified(task))
+          throw new StudioError("VALIDATION_RECOVERY_REQUIRED");
+      });
+      this.checkpoint();
+      if (!this.ackQualifiedForConfirmation())
+        throw new StudioError("VALIDATION_RECOVERY_REQUIRED");
+      this.ackState = "confirmed";
+      return result;
+    } catch (error) {
+      this.ackState = "failed";
+      throw error;
+    }
+  }
+  private ackQualified(excludedTask?: Promise<unknown>) {
+    return (
+      (excludedTask
+        ? this.ackState === "running"
+        : this.ackState === "available") &&
+      this.ackQualifiedForConfirmation(excludedTask)
+    );
+  }
+  private ackQualifiedForConfirmation(excludedTask?: Promise<unknown>) {
+    return (
+      Boolean(this.lock) &&
+      this.claimConfirmed &&
+      this.nonDbClosed &&
+      this.receiptState === "done" &&
+      !this.finalizationEntered &&
+      !this.completionFor(excludedTask).maintenanceRequired
+    );
+  }
+  hasEnteredAcknowledgement() {
+    return this.ackState !== "available";
+  }
   async finalizeDatabaseOnce<T>(work: () => PromiseLike<T>): Promise<T> {
     this.checkpoint();
     if (!this.finalizationQualified())
@@ -294,6 +397,7 @@ export class ArchiveOperation {
       (excludedTask ? this.finalizationEntered : !this.finalizationEntered) &&
       this.nonDbClosed &&
       this.receiptState === "done" &&
+      this.ackState === "confirmed" &&
       !this.completionFor(excludedTask).maintenanceRequired
     );
   }
