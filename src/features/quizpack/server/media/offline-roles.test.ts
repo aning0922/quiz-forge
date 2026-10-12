@@ -8,12 +8,10 @@ vi.mock("./internal/macos/policy", () => ({
 const originalArgv = process.argv;
 beforeEach(() => {
   vi.resetModules();
-  mocks.load
-    .mockReset()
-    .mockReturnValue({
-      profileId: "a".repeat(64),
-      componentId: "b".repeat(64),
-    });
+  mocks.load.mockReset().mockReturnValue({
+    profileId: "a".repeat(64),
+    componentId: "b".repeat(64),
+  });
 });
 afterEach(() => {
   process.argv = originalArgv;
