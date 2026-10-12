@@ -679,21 +679,53 @@ async function main() {
   await check(
     "second call rejected BUSY by persistent control guard",
     async () => {
+      requireTrue(readdirSync(CONTROL_ROOT).length === 0);
+      const expectedProfileId = loadPolicy("fault").profileId;
+      const abort = new AbortController(),
+        ctx = context(5000, abort.signal);
       const p = runHarnessCase(
         { kind: "fault", scenario: "success-hang" },
-        context(800),
+        ctx,
       );
-      const r = await runHarnessImage(
-        small,
-        declaration(small, 2, 2),
-        context(),
-      );
-      requireTrue(
-        r.outcome === "failed" &&
-          r.code === "BUSY" &&
-          r.stopped === "not-started",
-      );
-      requireTrue((await p).stopped === "confirmed");
+      void p.catch(() => undefined);
+      let before: Awaited<ReturnType<typeof waitForOwnedSpawn>> | undefined;
+      try {
+        before = await waitForOwnedSpawn(
+          p,
+          process.pid,
+          expectedProfileId,
+          ctx.deadlineMonotonicMs,
+        );
+        // The normal target verifies the complete build before checking BUSY;
+        // both calls retain this original absolute deadline.
+        const r = await runHarnessImage(small, declaration(small, 2, 2), ctx);
+        requireTrue(
+          r.outcome === "failed" &&
+            r.code === "BUSY" &&
+            r.stopped === "not-started",
+        );
+        const saved = readControlForHarness();
+        requireTrue(
+          saved.phase === "spawned" &&
+            saved.runId === before.runId &&
+            saved.profileId === before.profileId &&
+            saved.ownerPid === before.ownerPid &&
+            saved.pid === before.pid &&
+            saved.workerStart?.sec === before.workerStart?.sec &&
+            saved.workerStart?.usec === before.workerStart?.usec,
+        );
+      } finally {
+        // Barrier and BUSY failures must still drain this exact invocation.
+        abort.abort();
+        const stopped = await p;
+        requireTrue(
+          stopped.stopped === "confirmed" &&
+            stopped.code === "CANCELLED" &&
+            stopped.workerObserved &&
+            stopped.profileId === expectedProfileId &&
+            (!before || stopped.runId === before.runId),
+        );
+      }
     },
   );
   await check(
