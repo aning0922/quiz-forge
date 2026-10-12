@@ -30,3 +30,11 @@ S操作内核3366443/76852da已集成68c2dd7/c1ffcc3，root11项纯测试通过�
 ### 归档完成前停止证明的合同补充
 
 Astra在01a12e28-f467-7cf0-aeba-3d1b62294c2a确认receipt-before-complete可采用，并要求文件/媒体门、唯一receipt例外、一次DB finalization三个内部门；原业务期限不可借cleanup延长。主合同4.3已明确receipt只证明files-and-media，后继DB与连接关闭仍须观察，fixture不能凭此单独销毁活动请求。正常complete之后零文件/媒体IO；失败/取消receipt不新开事务。此为实施细化，不是新功能验收。
+
+### 数据层与当前集成实证
+
+- SQL独立审查发现按每个attempt无条件要求input snapshotted/identity bound会拒绝A合法interrupted evidence。86b5e4d→rootfa96d7d改为分支核绑定，unavailable仅有限interrupted，旧中断可与后续accepted共存；原Astra三个严格A合成实例与四条PG回归对应，原审查已窄复验关闭。
+- client7c673f2、policy c838bbd、license9c8c299经独立Astra窄审未见P1/P2；只说明列举三表形状/有效app权限，不宣称全库ACL或迁移定义指纹。owner管理连接仍可升级旧库。
+- root949a98a25d2720546a5d4005a748d3c6从0001–0008实际升级0009/0010；独立4文件26真实PG通过（.cache/b2b-domain-db.log）。升级前启用被明确拒且runtime逐字节不变；升级后启用/停用均成功，重跑migrate applied=[]；实例已停止。旧schema探针首次误读stderr为stdout而失败，修正探针后通过，没有修改业务来掩盖结果。
+- root814fec3集成时全74文件939单元通过（.cache/b2b-unit-integration.log）；随后S文件/receipt增量12ed2bb的37项及U18ea20b的46项分别通过。它们不是本批最终完整回归。
+- 原receipt微任务P2在7f82205/59c7947经独立Astra关闭，排队后UNKNOWN或新pending均零work；V restore e0a2fe0经30探针与相关既有测试复验未见新P1/P2。12ed2bb新增三门/实际receipt及U公共流程仍在独立审查。
