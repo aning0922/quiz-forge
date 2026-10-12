@@ -324,13 +324,17 @@ export const evidenceEnvelopeSchema = z
   });
 export type EvidenceEnvelope = z.infer<typeof evidenceEnvelopeSchema>;
 
-function enforceBudgets(envelope: EvidenceEnvelope): void {
-  let reportBytes = 0;
+export function projectEvidenceEnvelope(
+  envelope: EvidenceEnvelope,
+  controlsBytes = 0,
+) {
+  const reportTexts: string[] = [];
   const metadata = {
     ...envelope,
     attempts: envelope.attempts.map(({ attempt, result }) => {
       const report = result.evidence.report;
-      if (report.status === "sealed") reportBytes += report.canonicalBytes;
+      if (report.status === "sealed")
+        reportTexts.push(serializeSealedReport(report));
       return {
         attempt,
         result: {
@@ -344,18 +348,34 @@ function enforceBudgets(envelope: EvidenceEnvelope): void {
       };
     }),
   };
+  const reportBytes = reportTexts.reduce(
+    (bytes, text) => bytes + Buffer.byteLength(text, "utf8"),
+    0,
+  );
+  const metadataText = canonicalP1Json(metadata);
+  const evidenceText = canonicalP1Json(envelope);
+  const metadataBytes = Buffer.byteLength(metadataText, "utf8"),
+    envelopeBytes = Buffer.byteLength(evidenceText, "utf8");
   if (reportBytes > EVIDENCE_LIMITS.reportPayloadBytes)
     throw new EvidenceError("EVIDENCE_REPORT_PAYLOAD_LIMIT");
-  if (
-    Buffer.byteLength(canonicalP1Json(metadata), "utf8") >
-    EVIDENCE_LIMITS.metadataBytes
-  )
+  if (metadataBytes + controlsBytes > EVIDENCE_LIMITS.metadataBytes)
     throw new EvidenceError("EVIDENCE_METADATA_SIZE_LIMIT");
-  if (
-    Buffer.byteLength(canonicalP1Json(envelope), "utf8") >
-    EVIDENCE_LIMITS.envelopeBytes
-  )
+  if (envelopeBytes > EVIDENCE_LIMITS.envelopeBytes)
     throw new EvidenceError("EVIDENCE_ENVELOPE_SIZE_LIMIT");
+  return freezeJson({
+    evidenceText,
+    evidenceSha256: createHash("sha256")
+      .update(evidenceText, "utf8")
+      .digest("hex"),
+    reportTexts,
+    metadataText,
+    measuredBytes: {
+      envelope: envelopeBytes,
+      reportPayload: reportBytes,
+      metadata: metadataBytes,
+      attemptControls: controlsBytes,
+    },
+  });
 }
 
 export function sealEvidenceEnvelope(input: unknown): EvidenceEnvelope {
@@ -369,7 +389,7 @@ export function sealEvidenceEnvelope(input: unknown): EvidenceEnvelope {
   }
   if (!parsed.success) throw new EvidenceError("EVIDENCE_SCHEMA_INVALID");
   assertPersistenceUnicode(parsed.data);
-  enforceBudgets(parsed.data);
+  projectEvidenceEnvelope(parsed.data);
   return freezeJson(parsed.data);
 }
 
