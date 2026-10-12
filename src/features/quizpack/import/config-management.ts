@@ -141,12 +141,24 @@ export async function configureImports(
     lock.assert();
     const [migration] = await managed.sql<
       { ready: boolean }[]
-    >`SELECT EXISTS(SELECT 1 FROM qf_meta.schema_migrations WHERE version='0008_import_lease_renewal_guard') ready`;
-    const [permission] = await managed.sql<
-      { ready: boolean }[]
-    >`SELECT has_table_privilege(${current.config.database.user},'qf.quizpack_import','SELECT,INSERT') AND has_column_privilege(${current.config.database.user},'qf.quizpack_import','status','UPDATE') AND NOT has_table_privilege(${current.config.database.user},'qf.quizpack_import','DELETE') ready`;
-    if (!migration?.ready || !permission?.ready)
-      throw new StudioError("STUDIO_UNAVAILABLE");
+    >`SELECT EXISTS(SELECT 1 FROM qf_meta.schema_migrations WHERE version='0010_validation_assets') ready`;
+    if (!migration?.ready) throw new StudioError("STUDIO_UNAVAILABLE");
+    const [permission] = await managed.sql<{ ready: boolean }[]>`SELECT
+      has_table_privilege(${current.config.database.user},'qf.quizpack_import','SELECT')
+      AND has_table_privilege(${current.config.database.user},'qf.quizpack_import','INSERT')
+      AND has_column_privilege(${current.config.database.user},'qf.quizpack_import','status','UPDATE')
+      AND NOT has_table_privilege(${current.config.database.user},'qf.quizpack_import','DELETE')
+      AND has_table_privilege(${current.config.database.user},'qf.quizpack_validation','SELECT')
+      AND has_table_privilege(${current.config.database.user},'qf.quizpack_validation','INSERT')
+      AND has_column_privilege(${current.config.database.user},'qf.quizpack_validation','status','UPDATE')
+      AND NOT has_table_privilege(${current.config.database.user},'qf.quizpack_validation','DELETE,TRUNCATE')
+      AND has_table_privilege(${current.config.database.user},'qf.asset_blob','SELECT')
+      AND has_table_privilege(${current.config.database.user},'qf.asset_blob','INSERT')
+      AND NOT has_table_privilege(${current.config.database.user},'qf.asset_blob','UPDATE,DELETE,TRUNCATE')
+      AND has_table_privilege(${current.config.database.user},'qf.product_asset','SELECT')
+      AND has_table_privilege(${current.config.database.user},'qf.product_asset','INSERT')
+      AND NOT has_table_privilege(${current.config.database.user},'qf.product_asset','UPDATE,DELETE,TRUNCATE') ready`;
+    if (!permission?.ready) throw new StudioError("STUDIO_UNAVAILABLE");
     const config = normalizeRuntimeConfig({
       ...runtimeConfigFile(current.config),
       version: 2,
