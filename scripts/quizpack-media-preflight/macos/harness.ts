@@ -422,6 +422,7 @@ async function main() {
       const r = spawnSync(
         process.execPath,
         [
+          "--conditions=react-server",
           "--import",
           "tsx",
           resolve(
@@ -811,6 +812,7 @@ async function main() {
         const r = spawnSync(
           process.execPath,
           [
+            "--conditions=react-server",
             "--import",
             "tsx",
             resolve(
@@ -932,6 +934,7 @@ async function main() {
       const host = spawn(
         process.execPath,
         [
+          "--conditions=react-server",
           "--import",
           "tsx",
           resolve(
