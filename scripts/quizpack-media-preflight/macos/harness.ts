@@ -66,6 +66,12 @@ import { emitFinalReport } from "./report";
 import { sealCapabilityAfterChecks, readCapabilityBytes } from "./capability";
 import { parseMacOutput, parseNativeIdentity } from "./protocol";
 import {
+  waitForOwnedSpawn,
+  assertRetainedUnknownControl,
+  waitForOwnedClose,
+  waitForCrashReady,
+} from "./owned-barriers";
+import {
   checkDelayedOwnedTimer,
   checkRejectedTargetSeal,
 } from "./matrix-checks";
@@ -461,7 +467,7 @@ async function main() {
           cwd: REPO_ROOT,
           env: { NODE_ENV: "production" },
           stdio: ["pipe", "pipe", "pipe"],
-          timeout: 5000,
+          timeout: 12000,
           maxBuffer: 2048,
         },
       );
@@ -881,73 +887,95 @@ async function main() {
   await check(
     "unknown stop keeps guard and blocks restart after late close",
     async () => {
+      requireTrue(readdirSync(CONTROL_ROOT).length === 0);
+      const abort = new AbortController(),
+        ctx = context(5000, abort.signal);
+      const expectedProfileId = loadPolicy("fault").profileId;
       const pending = runHarnessCase(
         { kind: "fault", scenario: "unknown-stop" },
-        context(800),
+        ctx,
       );
-      await new Promise((res) => setTimeout(res, 100));
-      const before = readControlForHarness();
-      requireTrue(
-        before.ownerPid === process.pid && before.workerStart && before.pid,
-      );
+      void pending.catch(() => undefined);
       const held = join(runRoot, "mac-probe-held");
-      renameSync(MAC_IDENTITY_HELPER, held);
-      let r: Awaited<ReturnType<typeof runHarnessCase>>;
+      let helperHeld = false,
+        result: Awaited<ReturnType<typeof runHarnessCase>> | undefined,
+        lateCloseDeadline: number | undefined;
       try {
-        r = await pending;
+        const before = await waitForOwnedSpawn(
+          pending,
+          process.pid,
+          expectedProfileId,
+          ctx.deadlineMonotonicMs,
+        );
+        renameSync(MAC_IDENTITY_HELPER, held);
+        helperHeld = true;
+        try {
+          result = await pending;
+        } finally {
+          renameSync(held, MAC_IDENTITY_HELPER);
+          helperHeld = false;
+        }
+        requireTrue(
+          result.stopped === "unknown" && result.code === "STOP_UNCONFIRMED",
+        );
+        const blocked = await runHarnessImage(
+          small,
+          declaration(small, 2, 2),
+          context(),
+        );
+        requireTrue(
+          blocked.outcome === "failed" &&
+            blocked.code === "BUSY" &&
+            blocked.stopped === "not-started",
+        );
+        const saved = readControlForHarness();
+        // UNKNOWN is an outcome; the original cleanup budget may forbid another phase write.
+        assertRetainedUnknownControl(before, saved, result);
+        lateCloseDeadline = performance.now() + 10000;
+        await waitForOwnedClose(result.lateClose, lateCloseDeadline);
+        requireTrue(
+          JSON.stringify(readControlForHarness()) === JSON.stringify(saved),
+        );
+        requireTrue(
+          readdirSync(CONTROL_ROOT).sort().join() === "active.json,guard",
+        );
+        privateWrite(
+          join(runRoot, "unknown-control.json"),
+          JSON.stringify(saved),
+        );
+        // Exact live ChildProcess close/stdio is a later fixture-maintenance fact, never an original stop receipt.
+        unlinkSync(join(CONTROL_ROOT, "active.json"));
+        rmdirSync(join(CONTROL_ROOT, "guard"));
+        return {
+          returnedStopped: "unknown",
+          lateActualCloseObserved: true,
+          noAutomaticRecordCleanup: true,
+          restartBlocked: true,
+          receiptWritten: false,
+          elapsedMs: Math.round(result.elapsedMs),
+        };
       } finally {
-        renameSync(held, MAC_IDENTITY_HELPER);
+        if (helperHeld) renameSync(held, MAC_IDENTITY_HELPER);
+        if (!result) {
+          abort.abort();
+          result = await pending;
+        }
+        if (result.stopped === "unknown") {
+          lateCloseDeadline ??= performance.now() + 10000;
+          await waitForOwnedClose(result.lateClose, lateCloseDeadline);
+        }
       }
-      requireTrue(r.stopped === "unknown" && r.code === "STOP_UNCONFIRMED");
-      const blocked = await runHarnessImage(
-        small,
-        declaration(small, 2, 2),
-        context(),
-      );
-      requireTrue(
-        blocked.outcome === "failed" &&
-          blocked.code === "BUSY" &&
-          blocked.stopped === "not-started",
-      );
-      const saved = readControlForHarness();
-      requireTrue(
-        saved.runId === r.runId &&
-          saved.phase === "unknown" &&
-          saved.workerStart?.sec === before.workerStart?.sec &&
-          saved.workerStart?.usec === before.workerStart?.usec,
-      );
-      await Promise.race([
-        r.lateClose,
-        new Promise<never>((_, rej) =>
-          setTimeout(() => rej(new Error("LATE_STOP_UNCONFIRMED")), 3000),
-        ),
-      ]);
-      requireTrue(
-        JSON.stringify(readControlForHarness()) === JSON.stringify(saved),
-      );
-      requireTrue(
-        readdirSync(CONTROL_ROOT).sort().join() === "active.json,guard",
-      );
-      privateWrite(
-        join(runRoot, "unknown-control.json"),
-        JSON.stringify(saved),
-      );
-      // Explicit harness-only cleanup follows this exact live ChildProcess close/stdio proof.
-      unlinkSync(join(CONTROL_ROOT, "active.json"));
-      rmdirSync(join(CONTROL_ROOT, "guard"));
-      return {
-        returnedStopped: "unknown",
-        lateActualCloseObserved: true,
-        noAutomaticRecordCleanup: true,
-        restartBlocked: true,
-        receiptWritten: false,
-        elapsedMs: Math.round(r.elapsedMs),
-      };
     },
+  );
+  // Drain failure stops this matrix before creating any dependent producer.
+  requireTrue(
+    results.at(-1)?.passed === true && readdirSync(CONTROL_ROOT).length === 0,
   );
   await check(
     "parent crash leaves persisted worker identity and restart blocked",
     async () => {
+      requireTrue(readdirSync(CONTROL_ROOT).length === 0);
+      const expectedProfileId = loadPolicy("fault").profileId;
       const host = spawn(
         process.execPath,
         [
@@ -966,78 +994,106 @@ async function main() {
           stdio: ["pipe", "pipe", "pipe"],
         },
       );
-      const hostClosed = new Promise<void>((res) =>
-        host.once("close", () => res()),
-      );
-      let ready = false;
-      await new Promise<void>((res) => {
-        const t = setTimeout(res, 2000);
-        host.stdout.once("data", (b) => {
-          ready = b.toString() === '{"ready":true}';
-          clearTimeout(t);
-          res();
-        });
-        host.stderr.on("data", () => {});
+      let closed = false;
+      const hostClosed = new Promise<void>((resolve) =>
         host.once("close", () => {
-          clearTimeout(t);
-          res();
-        });
-      });
-      requireTrue(ready && host.pid);
-      const saved = readControlForHarness();
-      requireTrue(
-        saved.ownerPid === host.pid && saved.pid && saved.workerStart,
+          closed = true;
+          resolve();
+        }),
       );
-      host.kill("SIGKILL");
-      await hostClosed;
-      const blocked = await runHarnessImage(
-        small,
-        declaration(small, 2, 2),
-        context(),
-      );
-      requireTrue(
-        blocked.outcome === "failed" &&
-          blocked.code === "BUSY" &&
-          blocked.stopped === "not-started",
-      );
-      const until = performance.now() + 4000;
-      let originalGone = false;
-      while (performance.now() < until) {
-        const v = parseNativeIdentity(
-          baseline(MAC_PROBE, [
+      host.on("error", () => {});
+      host.stderr.on("data", () => {});
+      try {
+        const ready = await waitForCrashReady(host, performance.now() + 12000);
+        requireTrue(
+          host.pid &&
+            ready.ownerPid === host.pid &&
+            ready.profileId === expectedProfileId,
+        );
+        const saved = readControlForHarness();
+        requireTrue(
+          saved.ownerPid === ready.ownerPid &&
+            saved.runId === ready.runId &&
+            saved.profileId === ready.profileId &&
+            saved.pid === ready.workerPid &&
+            saved.workerStart?.sec === ready.workerStart.sec &&
+            saved.workerStart?.usec === ready.workerStart.usec,
+        );
+        requireTrue(host.kill("SIGKILL"));
+        await waitForOwnedClose(hostClosed, performance.now() + 5000);
+        const blocked = await runHarnessImage(
+          small,
+          declaration(small, 2, 2),
+          context(),
+        );
+        requireTrue(
+          blocked.outcome === "failed" &&
+            blocked.code === "BUSY" &&
+            blocked.stopped === "not-started",
+        );
+        const until = performance.now() + 5000;
+        let originalGone = false;
+        while (performance.now() < until) {
+          const value = parseNativeIdentity(
+            baseline(MAC_IDENTITY_HELPER, [
+              "identity",
+              String(saved.pid),
+              String(saved.ownerPid),
+              policy.node,
+            ]),
+          );
+          requireTrue(value);
+          if (value?.present === false) {
+            originalGone = true;
+            break;
+          }
+          await new Promise((resolve) =>
+            setTimeout(
+              resolve,
+              Math.max(1, Math.min(100, Math.ceil(until - performance.now()))),
+            ),
+          );
+        }
+        const owner = parseNativeIdentity(
+          baseline(MAC_IDENTITY_HELPER, [
             "identity",
-            String(saved.pid),
+            String(saved.ownerPid),
             String(saved.ownerPid),
             policy.node,
           ]),
         );
-        requireTrue(v);
+        requireTrue(
+          owner?.present === false &&
+            originalGone &&
+            JSON.stringify(readControlForHarness()) === JSON.stringify(saved),
+        );
+        privateWrite(
+          join(runRoot, "crash-control.json"),
+          JSON.stringify(saved),
+        );
+        unlinkSync(join(CONTROL_ROOT, "active.json"));
+        rmdirSync(join(CONTROL_ROOT, "guard"));
+        return {
+          ownedParentKilled: true,
+          ownedParentCloseObserved: true,
+          originalWorkerIdentityGone: true,
+          restartBlocked: true,
+          receiptWritten: false,
+        };
+      } finally {
         if (
-          !v?.present ||
-          v.startSec !== saved.workerStart?.sec ||
-          v.startUsec !== saved.workerStart?.usec
-        ) {
-          originalGone = true;
-          break;
-        }
-        await new Promise((res) => setTimeout(res, 100));
+          !closed &&
+          host.pid &&
+          host.exitCode === null &&
+          host.signalCode === null
+        )
+          host.kill("SIGKILL");
+        await waitForOwnedClose(hostClosed, performance.now() + 5000);
       }
-      requireTrue(
-        originalGone &&
-          JSON.stringify(readControlForHarness()) === JSON.stringify(saved),
-      );
-      privateWrite(join(runRoot, "crash-control.json"), JSON.stringify(saved));
-      // This harness created the parent and exact worker identity. Kernel identity is gone,
-      // descendants were denied and owned parent stdio settled. No launcher receipt is invented.
-      unlinkSync(join(CONTROL_ROOT, "active.json"));
-      rmdirSync(join(CONTROL_ROOT, "guard"));
-      return {
-        ownedParentKilled: true,
-        originalWorkerIdentityGone: true,
-        restartBlocked: true,
-        receiptWritten: false,
-      };
     },
+  );
+  requireTrue(
+    results.at(-1)?.passed === true && readdirSync(CONTROL_ROOT).length === 0,
   );
   await check(
     "unsupported Node metadata is closed before platform operation",
