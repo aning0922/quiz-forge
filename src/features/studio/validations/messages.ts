@@ -14,7 +14,7 @@ export function validationMessage(error: unknown): string {
     (error.message === "PENDING_STORAGE_UNAVAILABLE" ||
       error.message === "PENDING_REQUEST_EXISTS")
   )
-    return "本标签的待核实记录不可读取或已有请求。未发送新验证，请保留记录并核实服务器历史。";
+    return "本标签的待核实记录不可读取或保存，或已有请求。操作结果需核实，请保留记录并读取服务器历史。";
   if (
     error instanceof Error &&
     error.message === "INVALID_NOT_STARTED_RESPONSE"
@@ -35,7 +35,7 @@ export function validationMessage(error: unknown): string {
     case "VALIDATION_BUSY":
       return "此记录已有操作进行中。请先读取状态核实。";
     case "VALIDATION_IDENTITY_CHANGED":
-      return "验证环境已变化，本次尚未开始。请核实原请求状态。";
+      return "验证环境已变化。操作结果需核实，请保留原请求并读取服务器状态。";
     case "VALIDATION_REVALIDATION_REQUIRED":
       return "原验证环境无法用于归档重试；需要后续重新验证处理。";
     case "VALIDATION_ATTEMPT_LIMIT":

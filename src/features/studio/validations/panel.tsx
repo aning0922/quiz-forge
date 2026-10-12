@@ -35,6 +35,7 @@ import {
 import { validationMessage } from "./messages";
 import { ValidationFacts } from "./facts";
 import { useValidationRead } from "./use-read";
+import { mergeValidationSnapshots } from "./snapshots";
 import styles from "../workspace/workspace.module.css";
 const storage: PendingStorage = {
   getItem: (key) => window.sessionStorage.getItem(key),
@@ -81,15 +82,19 @@ export function ValidationPanel({
   const pair = { productId: value.productId, importId: value.id };
   const [page, setPage] = useState(1);
   const endpoint = validationEndpoint(pair);
+  const [snapshots, setSnapshots] = useState<Record<string, ValidationDto>>({});
+  const remember = (rows: readonly ValidationDto[]) =>
+    setSnapshots((previous) => mergeValidationSnapshots(previous, rows));
   const history = useValidationRead<Page<ValidationDto>>(
     `${endpoint}?page=${page}&pageSize=20`,
     (data) => checkValidationPage(data, { ...pair, page, pageSize: 20 }),
+    (data) => remember(data.items),
   );
   const [pending, setPending] = useState<PendingEntry>();
   const [storageError, setStorageError] = useState("");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
-  const [current, setCurrent] = useState<ValidationDto>();
+  const [currentId, setCurrentId] = useState<string>();
   const [halted, setHalted] = useState<Record<string, boolean>>({});
   const [refusal, setRefusal] = useState<{
     tuple: PendingTuple;
@@ -132,7 +137,8 @@ export function ValidationPanel({
           const row = await reconcilePending(storage, entry.tuple);
           if (!active.current || captured !== generation.current) return;
           if (row) {
-            setCurrent(row);
+            remember([row]);
+            setCurrentId(row.id);
             setPending(undefined);
           } else
             setMessage(
@@ -190,7 +196,8 @@ export function ValidationPanel({
         );
     if (!active.current || captured !== generation.current) return;
     if (result.outcome === "record") {
-      setCurrent(result.validation);
+      remember([result.validation]);
+      setCurrentId(result.validation.id);
       setRefusal(undefined);
       history.refresh();
     } else {
@@ -212,7 +219,8 @@ export function ValidationPanel({
     const row = await reconcilePending(storage, tuple);
     if (!active.current || captured !== generation.current) return;
     if (row) {
-      setCurrent(row);
+      remember([row]);
+      setCurrentId(row.id);
       setRefusal(undefined);
       history.refresh();
     } else setMessage("原请求暂未找到；这不证明已回滚。待核实记录已保留。");
@@ -247,6 +255,7 @@ export function ValidationPanel({
             validationId: row.id,
           });
           if (
+            result.stateRevision < row.stateRevision ||
             result.validationKey !== row.validationKey ||
             result.archiveSha256 !== row.archiveSha256 ||
             result.archiveBytes !== row.archiveBytes ||
@@ -261,22 +270,20 @@ export function ValidationPanel({
       release?.();
     }
     if (!active.current || captured !== generation.current) return;
-    setCurrent(next);
+    remember([next]);
+    setCurrentId(next.id);
     setHalted((states) => ({ ...states, [row.id]: false }));
     history.refresh();
   }
-  const latestCurrent =
-    current &&
-    history.value?.items.find(
-      (row) =>
-        row.id === current.id && row.stateRevision >= current.stateRevision,
-    );
+  const current = currentId ? snapshots[currentId] : undefined;
   const rows = current
     ? [
-        latestCurrent || current,
-        ...(history.value?.items ?? []).filter((row) => row.id !== current.id),
+        current,
+        ...(history.value?.items ?? [])
+          .filter((row) => row.id !== current.id)
+          .map((row) => snapshots[row.id] || row),
       ]
-    : (history.value?.items ?? []);
+    : (history.value?.items ?? []).map((row) => snapshots[row.id] || row);
   return (
     <section className={styles.panel} aria-labelledby="validation-heading">
       <h2 id="validation-heading">验证与私有资源归档</h2>
@@ -438,7 +445,9 @@ export function ValidationPanel({
                     !writable ||
                     !!pending ||
                     !!storageError ||
-                    !!halted[row.id]
+                    !!halted[row.id] ||
+                    history.loading ||
+                    !!history.error
                   }
                   onClick={() => void run(() => recordAction(row, "recover"))}
                 >
@@ -455,6 +464,8 @@ export function ValidationPanel({
                     !!pending ||
                     !!storageError ||
                     !!halted[row.id] ||
+                    history.loading ||
+                    !!history.error ||
                     row.maintenanceRequired ||
                     row.storageCondition !== "clean" ||
                     row.remainingAttempts === 0
