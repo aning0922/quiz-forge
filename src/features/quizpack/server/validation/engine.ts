@@ -15,6 +15,7 @@ import {
   type LaunchFailureCode,
   type MediaOperationContext,
   type MediaRuntimeBinding,
+  type MediaRuntimeBindingResult,
 } from "../media";
 import type {
   QuizPackValidationReport,
@@ -53,6 +54,19 @@ const hash = (input: Uint8Array | string) =>
   createHash("sha256").update(input).digest("hex");
 const COMPATIBILITY_HASH = hash(canonicalP1Json(DEFAULT_COMPATIBILITY_POLICY));
 const LIMITS_HASH = hash(canonicalP1Json(PACK_LIMITS));
+const BINDING_UNAVAILABLE_CODES: Record<
+  Extract<MediaRuntimeBindingResult, { outcome: "unavailable" }>["code"],
+  true
+> = {
+  INVALID_INPUT: true,
+  CANCELLED: true,
+  DEADLINE_EXCEEDED: true,
+  UNSUPPORTED_PLATFORM: true,
+  ISOLATION_UNAVAILABLE: true,
+  WORKER_FAILED: true,
+  STOP_UNCONFIRMED: true,
+};
+const CLEANUP_OBSERVATION_MS = 10;
 type PolicyCode = (typeof POLICY_REJECTION_CODES)[number];
 type RejectionCode = (typeof CANDIDATE_REJECTION_CODES)[number];
 class BackendPolicyRejection extends Error {
@@ -196,10 +210,22 @@ export async function validateArchiveCandidate(
   };
   const trackIo = (task: Promise<void>): void => {
     pendingIo.add(task);
-    void task.then(
-      () => pendingIo.delete(task),
-      () => pendingIo.delete(task),
-    );
+    const settled = () => {
+      // Observe when proof is available, even if a delayed timer has not run.
+      // A settled task after cleanup expiry must not erase the deadline fact.
+      try {
+        const state = readMediaOperationState(context);
+        if (
+          state.phase === "stopping" &&
+          performance.now() >= state.stop.cleanupDeadlineMonotonicMs
+        )
+          relatedIo = "unconfirmed";
+      } catch {
+        relatedIo = "unconfirmed";
+      }
+      pendingIo.delete(task);
+    };
+    void task.then(settled, settled);
   };
   const awaitOperationTask = async <T>(task: Promise<T>): Promise<T> => {
     // Track the operation itself as well as native close. A close proof alone
@@ -214,6 +240,9 @@ export async function validateArchiveCandidate(
     let onAbort: () => void = () => {};
     const stopped = new Promise<never>((_, reject) => {
       const finish = () => {
+        // This is a decision-time fact, not a later count of pending promises.
+        // A late resolution in the same callback cannot revoke uncertainty.
+        relatedIo = "unconfirmed";
         if (activeMedia) {
           runtimeFailure = "STOP_UNCONFIRMED";
           runtimeIoUnconfirmed = true;
@@ -232,7 +261,11 @@ export async function validateArchiveCandidate(
           const remaining =
             state.stop.cleanupDeadlineMonotonicMs - performance.now();
           if (remaining <= 0) finish();
-          else timer = setTimeout(onAbort, Math.min(remaining, 25));
+          else
+            timer = setTimeout(
+              onAbort,
+              Math.min(remaining, CLEANUP_OBSERVATION_MS),
+            );
         } catch {
           finish();
         }
@@ -273,7 +306,12 @@ export async function validateArchiveCandidate(
       let timer: NodeJS.Timeout | undefined;
       let abort: (() => void) | undefined;
       const changed = new Promise<void>((resolve) => {
-        timer = setTimeout(resolve, remaining);
+        timer = setTimeout(
+          resolve,
+          state.phase === "stopping"
+            ? Math.min(remaining, CLEANUP_OBSERVATION_MS)
+            : remaining,
+        );
         if (state.phase === "active") {
           abort = resolve;
           state.signal.addEventListener("abort", abort, { once: true });
@@ -352,6 +390,68 @@ export async function validateArchiveCandidate(
       throw new CoreInterrupted("BRIDGE_REPORT_INVALID");
     }
   };
+  const unknownBinding = (): never => {
+    runtimeFailure = "STOP_UNCONFIRMED";
+    runtimeIoUnconfirmed = true;
+    requestStop(true);
+    throw new CoreInterrupted("MEDIA_STOP_UNCONFIRMED");
+  };
+  const readBinding = async (): Promise<MediaRuntimeBinding> => {
+    let result: MediaRuntimeBindingResult;
+    try {
+      // A resolving outer Promise does not prove the platform's control IO
+      // stopped. Require one complete finite authority result first.
+      const raw: unknown = JSON.parse(
+        canonicalP1Json(
+          await awaitOperationTask(readMediaRuntimeBinding(context)),
+        ),
+      );
+      if (raw === null || typeof raw !== "object" || Array.isArray(raw))
+        return unknownBinding();
+      const fields = raw as Record<string, unknown>;
+      if (
+        fields.outcome === "bound" &&
+        Object.keys(fields).sort().join() === "binding,outcome"
+      ) {
+        const parsed = parseMediaRuntimeBinding(
+          Buffer.from(canonicalP1Json(fields.binding)),
+        );
+        if (!parsed.ok) return unknownBinding();
+        result = { outcome: "bound", binding: parsed.value };
+      } else if (
+        fields.outcome === "unavailable" &&
+        Object.keys(fields).sort().join() === "code,outcome" &&
+        typeof fields.code === "string" &&
+        Object.hasOwn(BINDING_UNAVAILABLE_CODES, fields.code)
+      ) {
+        result = {
+          outcome: "unavailable",
+          code: fields.code as Extract<
+            MediaRuntimeBindingResult,
+            { outcome: "unavailable" }
+          >["code"],
+        };
+      } else return unknownBinding();
+    } catch {
+      return unknownBinding();
+    }
+    if (result.outcome === "unavailable") {
+      // Preserve authoritative uncertainty before a simultaneously triggered
+      // storage/cancel checkpoint can throw a less-specific interruption.
+      runtimeFailure = result.code;
+      if (result.code === "STOP_UNCONFIRMED") runtimeIoUnconfirmed = true;
+    }
+    checkpoint();
+    if (result.outcome === "unavailable") {
+      requestStop(result.code === "STOP_UNCONFIRMED");
+      throw new CoreInterrupted(
+        result.code === "STOP_UNCONFIRMED"
+          ? "MEDIA_STOP_UNCONFIRMED"
+          : "RUNTIME_IDENTITY_UNAVAILABLE",
+      );
+    }
+    return result.binding;
+  };
   try {
     if (!packIdSchema.safeParse(targetProductId).success) {
       inputEvidence = { status: "unavailable", code: "INVALID_TARGET_PRODUCT" };
@@ -374,24 +474,9 @@ export async function validateArchiveCandidate(
     };
     report = { status: "not-run", reason: "OPERATION_INTERRUPTED_BEFORE_P1" };
     checkpoint();
-    const bound = await awaitOperationTask(readMediaRuntimeBinding(context));
-    checkpoint();
-    if (bound.outcome !== "bound") {
-      runtimeFailure = bound.code;
-      runtimeIoUnconfirmed = bound.code === "STOP_UNCONFIRMED";
-      report = { status: "not-run", reason: "IDENTITY_UNAVAILABLE" };
-      requestStop(bound.code === "STOP_UNCONFIRMED");
-      return interrupted(
-        bound.code === "STOP_UNCONFIRMED"
-          ? "MEDIA_STOP_UNCONFIRMED"
-          : "RUNTIME_IDENTITY_UNAVAILABLE",
-      );
-    }
-    const runtime = parseMediaRuntimeBinding(
-      Buffer.from(canonicalP1Json(bound.binding)),
-    );
-    if (!runtime.ok) throw new CoreInterrupted("RUNTIME_IDENTITY_UNAVAILABLE");
-    identity = { status: "bound", value: runtimeIdentity(runtime.value) };
+    report = { status: "not-run", reason: "IDENTITY_UNAVAILABLE" };
+    const runtime = await readBinding();
+    identity = { status: "bound", value: runtimeIdentity(runtime) };
     const operation = readMediaOperationState(context);
     report = { status: "not-run", reason: "OPERATION_INTERRUPTED_BEFORE_P1" };
     const validated = await awaitOperationTask(
@@ -609,19 +694,8 @@ export async function validateArchiveCandidate(
         throw new BackendPolicyRejection("CANONICAL_SIZE_LIMIT");
       throw error;
     }
-    const rebound = await awaitOperationTask(readMediaRuntimeBinding(context));
-    checkpoint();
-    if (rebound.outcome === "unavailable") {
-      runtimeFailure = rebound.code;
-      runtimeIoUnconfirmed = rebound.code === "STOP_UNCONFIRMED";
-      requestStop(rebound.code === "STOP_UNCONFIRMED");
-      throw new CoreInterrupted(
-        rebound.code === "STOP_UNCONFIRMED"
-          ? "MEDIA_STOP_UNCONFIRMED"
-          : "RUNTIME_IDENTITY_UNAVAILABLE",
-      );
-    }
-    if (canonicalP1Json(rebound.binding) !== canonicalP1Json(runtime.value))
+    const rebound = await readBinding();
+    if (canonicalP1Json(rebound) !== canonicalP1Json(runtime))
       throw new CoreInterrupted("RUNTIME_IDENTITY_UNAVAILABLE");
     policy = { status: "passed" };
     const accepted = sealCandidateResultEvidence({

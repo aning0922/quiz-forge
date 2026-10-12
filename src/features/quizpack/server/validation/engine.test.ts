@@ -22,7 +22,15 @@ import type {
   MediaRuntimeBinding,
 } from "../media";
 
-const mocks = vi.hoisted(() => ({ run: vi.fn(), binding: vi.fn() }));
+const mocks = vi.hoisted(() => ({
+  run: vi.fn(),
+  binding: vi.fn(),
+  zipCore: vi.fn(),
+}));
+vi.mock("../../v1/zip", async (importActual) => ({
+  ...(await importActual<typeof import("../../v1/zip")>()),
+  readRestrictedZipCore: mocks.zipCore,
+}));
 vi.mock("../media", async (importActual) => ({
   ...(await importActual<typeof import("../media")>()),
   runIsolatedImage: mocks.run,
@@ -127,11 +135,15 @@ beforeAll(async () => {
     archives.set(engine, built.value.archive);
   }
 }, 30000);
-beforeEach(() => {
+beforeEach(async () => {
+  const actual =
+    await vi.importActual<typeof import("../../v1/zip")>("../../v1/zip");
+  mocks.zipCore.mockReset().mockImplementation(actual.readRestrictedZipCore);
   mocks.run.mockReset().mockImplementation(decoded);
   mocks.binding.mockReset().mockResolvedValue({ outcome: "bound", binding });
 });
 afterEach(() => {
+  vi.restoreAllMocks();
   for (const value of contexts.splice(0)) disposeMediaOperationContext(value);
 });
 
@@ -507,10 +519,10 @@ describe("trusted candidate validation (mock isolation, real ZIP/P1 core)", () =
     );
     expect(result).toMatchObject({
       outcome: "interrupted",
-      code: "RELATED_IO_UNCONFIRMED",
+      code: "MEDIA_STOP_UNCONFIRMED",
       evidence: {
         completion: {
-          mediaStopped: "not-started",
+          mediaStopped: "unknown",
           relatedIo: "unconfirmed",
           maintenanceRequired: true,
         },
@@ -564,5 +576,196 @@ describe("trusted candidate validation (mock isolation, real ZIP/P1 core)", () =
       },
     });
     expect(mocks.run).not.toHaveBeenCalled();
+  });
+  it.each(["initial", "final"])(
+    "preserves %s binding unknown before a simultaneous storage stop",
+    async (stage) => {
+      const operation = context();
+      const stopUnknown = () => {
+        requestMediaOperationStop(operation, "STORAGE_LOCK_LOST");
+        return { outcome: "unavailable", code: "STOP_UNCONFIRMED" };
+      };
+      if (stage === "final")
+        mocks.binding.mockResolvedValueOnce({ outcome: "bound", binding });
+      mocks.binding.mockImplementationOnce(stopUnknown);
+      const result = await validateArchiveCandidate(
+        archives.get("dimensions")!,
+        "synthetic-dimensions",
+        operation,
+      );
+      expect(result).toMatchObject({
+        outcome: "interrupted",
+        code: "MEDIA_STOP_UNCONFIRMED",
+        evidence: {
+          runtimeFailure: "STOP_UNCONFIRMED",
+          completion: {
+            mediaStopped: "unknown",
+            relatedIo: "unconfirmed",
+            maintenanceRequired: true,
+          },
+        },
+      });
+      if (stage === "initial") expect(mocks.run).not.toHaveBeenCalled();
+    },
+  );
+  it.each(["initial", "final"])(
+    "retains %s binding uncertainty for rejection and malformed authority",
+    async (stage) => {
+      for (const failure of ["rejected", "malformed-bound", "unknown-code"]) {
+        mocks.binding
+          .mockReset()
+          .mockResolvedValue({ outcome: "bound", binding });
+        if (stage === "final")
+          mocks.binding.mockResolvedValueOnce({ outcome: "bound", binding });
+        if (failure === "rejected")
+          mocks.binding.mockRejectedValueOnce(
+            new Error("finite synthetic control failure"),
+          );
+        else
+          mocks.binding.mockResolvedValueOnce(
+            failure === "malformed-bound"
+              ? { outcome: "bound", binding: {} }
+              : { outcome: "unavailable", code: "UNKNOWN_CONTROL_RESULT" },
+          );
+        const result = await validateArchiveCandidate(
+          archives.get("dimensions")!,
+          "synthetic-dimensions",
+          context(),
+        );
+        expect(result).toMatchObject({
+          outcome: "interrupted",
+          code: "MEDIA_STOP_UNCONFIRMED",
+          evidence: {
+            runtimeFailure: "STOP_UNCONFIRMED",
+            completion: {
+              mediaStopped: "unknown",
+              relatedIo: "unconfirmed",
+              maintenanceRequired: true,
+            },
+          },
+        });
+      }
+    },
+  );
+  it("keeps finite isolation-unavailable separate from unknown control IO", async () => {
+    mocks.binding.mockResolvedValueOnce({
+      outcome: "unavailable",
+      code: "ISOLATION_UNAVAILABLE",
+    });
+    const result = await validateArchiveCandidate(
+      archives.get("dimensions")!,
+      "synthetic-dimensions",
+      context(),
+    );
+    expect(result).toMatchObject({
+      outcome: "interrupted",
+      code: "RUNTIME_IDENTITY_UNAVAILABLE",
+      evidence: {
+        completion: {
+          mediaStopped: "not-started",
+          relatedIo: "settled",
+          maintenanceRequired: false,
+        },
+      },
+    });
+  });
+  it("freezes cleanup-timeout IO evidence when the core settles in the same timer callback", async () => {
+    const parsed = await readRestrictedZip(
+      source(archives.get("dimensions")!),
+      { targetProductId: "synthetic-dimensions" },
+    );
+    if (!parsed.ok) throw new Error("Synthetic ZIP rejected.");
+    const operation = context();
+    let resolveZip: (() => void) | undefined;
+    mocks.zipCore.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolveZip = () => resolve(parsed.value);
+        }),
+    );
+    const resultPromise = validateArchiveCandidate(
+      archives.get("dimensions")!,
+      "synthetic-dimensions",
+      operation,
+    );
+    while (!resolveZip)
+      await new Promise<void>((resolve) => setImmediate(resolve));
+    const actualTimeout = globalThis.setTimeout;
+    vi.spyOn(globalThis, "setTimeout").mockImplementation(
+      (callback, delay, ...args) =>
+        actualTimeout(() => {
+          const state = readMediaOperationState(operation);
+          const expired =
+            state.phase === "stopping" &&
+            performance.now() >= state.stop.cleanupDeadlineMonotonicMs;
+          callback(...args);
+          if (expired) resolveZip?.();
+        }, delay),
+    );
+    requestMediaOperationStop(
+      operation,
+      "STORAGE_LOCK_LOST",
+      performance.now() + 20,
+    );
+    const result = await resultPromise;
+    expect(result).toMatchObject({
+      outcome: "interrupted",
+      code: "RELATED_IO_UNCONFIRMED",
+      evidence: {
+        completion: { relatedIo: "unconfirmed", maintenanceRequired: true },
+      },
+    });
+    await new Promise<void>((resolve) => setImmediate(resolve));
+    expect(result.evidence.completion.relatedIo).toBe("unconfirmed");
+    expect(mocks.run).not.toHaveBeenCalled();
+  });
+  it("observes a tightened cleanup deadline while waiting on registered IO", async () => {
+    const actual =
+      await vi.importActual<typeof import("../../v1/zip")>("../../v1/zip");
+    const operation = context();
+    let releaseIo: (() => void) | undefined;
+    mocks.zipCore.mockImplementationOnce(async (input, execution) => {
+      execution.trackIo(
+        new Promise<void>((resolve) => {
+          releaseIo = resolve;
+        }),
+      );
+      return actual.readRestrictedZipCore(input, execution);
+    });
+    let tightening: NodeJS.Timeout | undefined;
+    mocks.run.mockImplementationOnce((bytes, declaration) => {
+      requestMediaOperationStop(
+        operation,
+        "STORAGE_LOCK_LOST",
+        performance.now() + 160,
+      );
+      tightening = setTimeout(
+        () =>
+          requestMediaOperationStop(
+            operation,
+            "STORAGE_LOCK_LOST",
+            performance.now() + 15,
+          ),
+        5,
+      );
+      return decoded(bytes, declaration);
+    });
+    const started = performance.now();
+    const result = await validateArchiveCandidate(
+      archives.get("dimensions")!,
+      "synthetic-dimensions",
+      operation,
+    );
+    const elapsed = performance.now() - started;
+    if (tightening) clearTimeout(tightening);
+    releaseIo?.();
+    expect(result).toMatchObject({
+      outcome: "interrupted",
+      code: "RELATED_IO_UNCONFIRMED",
+      evidence: {
+        completion: { relatedIo: "unconfirmed", maintenanceRequired: true },
+      },
+    });
+    expect(elapsed).toBeLessThan(120);
   });
 });
