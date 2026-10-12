@@ -25,9 +25,32 @@ import type {
 import {
   MAX_ATTEMPTS,
   MAX_ATTEMPT_CONTROL_BYTES,
+  MAX_FILE_STOP_PROOF_BYTES,
   MAX_VALIDATIONS,
   VALIDATION_RESERVATION_BYTES,
 } from "./limits";
+export const validationFileStopProofSchema = z
+  .strictObject({
+    schemaVersion: z.literal("quizpack-validation-file-stop-proof.v1"),
+    protocol: z.literal("candidate-receipt-db-ack.v1"),
+    validationId: importIdSchema,
+    attemptId: importIdSchema,
+    fence: z.number().int().min(1).max(2147483647),
+    ownerPid: z.number().int().min(1).max(2147483647),
+    ownerNonce: z.string().regex(/^[A-Za-z0-9_-]{43}$/),
+    receiptSha256: sha256Schema,
+    scope: z.literal("files-and-media"),
+    mediaStopped: z.enum(["confirmed", "not-started"]),
+    relatedIo: z.literal("settled"),
+  })
+  .refine(
+    (proof) =>
+      Buffer.byteLength(canonicalP1Json(proof), "utf8") <=
+      MAX_FILE_STOP_PROOF_BYTES,
+  );
+export type ValidationFileStopProof = Readonly<
+  z.infer<typeof validationFileStopProofSchema>
+>;
 export const validationAttemptSchema = z.strictObject({
   attemptId: importIdSchema,
   ordinal: z.number().int().min(1).max(MAX_ATTEMPTS),
@@ -38,6 +61,8 @@ export const validationAttemptSchema = z.strictObject({
   reservationBytes: z.literal(VALIDATION_RESERVATION_BYTES),
   disposition: z.enum(["held", "released"]),
   mediaStop: z.enum(["not-started", "unconfirmed", "confirmed"]),
+  /** Omitted only on historical v1 controls. New v2 claims explicitly persist null. */
+  fileStopProof: validationFileStopProofSchema.nullable().optional(),
 });
 export type ValidationAttempt = z.infer<typeof validationAttemptSchema>;
 export type ValidationBinding = Readonly<{
