@@ -242,8 +242,7 @@ export class ArchiveOperation {
     if (!this.canIssueStoppedReceipt())
       throw new StudioError("VALIDATION_RECOVERY_REQUIRED");
     this.cleanupCheckpoint();
-    let task: Promise<T>;
-    task = Promise.resolve().then(() => {
+    const task: Promise<T> = Promise.resolve().then(() => {
       // Recheck at execution, excluding only this exact queued receipt task.
       if (!this.receiptQualified(task))
         throw new StudioError("VALIDATION_RECOVERY_REQUIRED");
