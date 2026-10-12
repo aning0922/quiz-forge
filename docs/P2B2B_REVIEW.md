@@ -42,3 +42,11 @@ Astra在01a12e28-f467-7cf0-aeba-3d1b62294c2a确认receipt-before-complete可采�
 ### 后台请求证明复验
 
 U b2486a4首批独立46纯测试通过，但旧not-started对象只绑定tuple，能在exact row清除后误删同tuple新发送的unknown。a37144b→rootd87d993用每次发送的incarnation token绑定证明，新发送与权威row接管撤销旧资格；独立重跑原四步得到oldProofRejected/newUnknownRetained且pendingCount=1，原P2关闭。root修后47纯测试通过；实际页面/路由/浏览器验收尚未交付，不计为UI阶段完成。
+
+### 文件证明发布与数据库完成门
+
+独立Astra在01a12e3a-09c3-70f0-b1da-999055f4920c复现两个P2。其一，最终receipt文件已可读不代表publisher后续unlink/fsync/close结束：延迟目录close时读端已接受nlink=1文件，而writer仍pending，超时后仍可读；只禁止nlink=2不足以关闭问题。当前文件只能作为非权威candidate，不能单独授予recover release；持久化确认合同正在修订。
+
+其二，封门后普通databaseAwait(write)可绕过finalizeDatabaseOnce，且排队finalize在实际work前不复核共享UNKNOWN。12f8b1a→root7c16a46禁止封门后普通新write，并在finalize实际work前排除仅自身pending任务复核资格；单次门不恢复。root定向operation20项通过，独立复验及ack整合仍待完成。
+
+后台73e2ef3/130c29c已集成为c7e1deb/6502b94；root与operation合跑5文件77项通过，类型通过。独立UI预审指出通用IDENTITY_CHANGED或storage错误不能描述为“未开始/未发送”，以及刷新列表期间可能临时回显旧summary，U正在整改。实际routes、factory、浏览器验收尚未完成。
