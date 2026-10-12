@@ -308,19 +308,23 @@ export function ValidationPanel({
       {pending && (
         <div className={styles.compare}>
           <h3>
-            {pending.mayHaveBeenSent
-              ? "本标签有待核实请求"
-              : busy
-                ? "正在处理验证请求"
-                : "本标签有尚未发送的准备"}
+            {storageError
+              ? "本标签状态待核实"
+              : pending.mayHaveBeenSent
+                ? "本标签有待核实请求"
+                : busy
+                  ? "正在处理验证请求"
+                  : "本标签有尚未发送的准备"}
           </h3>
           <p>请求标识：{pending.tuple.expectedValidationKey.slice(0, 12)}…</p>
           <p>
-            {pending.mayHaveBeenSent
-              ? "请求可能已发送。刷新、超时或暂未找到记录都不能证明回滚；仅按原请求读取核实。"
-              : busy
-                ? "本次操作尚未结束，结果仍待确认。请等待操作完成。"
-                : "准备已保存。请明确选择继续验证归档或取消本次准备。"}
+            {storageError
+              ? "本标签的记录当前无法读取或保存，发送状态仍待核实。请保留记录并读取服务器历史。"
+              : pending.mayHaveBeenSent
+                ? "请求可能已发送。刷新、超时或暂未找到记录都不能证明回滚；仅按原请求读取核实。"
+                : busy
+                  ? "本次操作尚未结束，结果仍待确认。请等待操作完成。"
+                  : "准备已保存。请明确选择继续验证归档或取消本次准备。"}
           </p>
           <div className={styles.actions}>
             {pending.mayHaveBeenSent ? (
@@ -342,21 +346,21 @@ export function ValidationPanel({
                 </button>
                 <button
                   className={`${styles.button} ${styles.secondary}`}
-                  disabled={busy}
+                  disabled={busy || !!storageError}
                   onClick={() =>
                     void run(async () => {
                       cancelPrepared(storage, pending.tuple);
                     })
                   }
                 >
-                  {busy ? "取消准备" : "取消尚未发送的准备"}
+                  {busy || storageError ? "取消准备" : "取消尚未发送的准备"}
                 </button>
               </>
             )}
             {refusal && (
               <button
                 className={`${styles.button} ${styles.secondary}`}
-                disabled={busy}
+                disabled={busy || !!storageError}
                 onClick={() =>
                   void run(async () => {
                     abandonNotStarted(storage, refusal.tuple, refusal.result);
@@ -364,7 +368,7 @@ export function ValidationPanel({
                   })
                 }
               >
-                放弃本次未开始准备
+                {storageError ? "放弃准备" : "放弃本次未开始准备"}
               </button>
             )}
           </div>
