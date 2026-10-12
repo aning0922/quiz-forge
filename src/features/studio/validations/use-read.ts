@@ -5,10 +5,13 @@ import { validationMessage } from "./messages";
 export function useValidationRead<T>(
   path: string,
   check: (value: unknown) => T,
+  onValue?: (value: T) => void,
 ) {
   const decoder = useRef(check);
+  const receive = useRef(onValue);
   useEffect(() => {
     decoder.current = check;
+    receive.current = onValue;
   });
   const [result, setResult] = useState<{
     path: string;
@@ -18,13 +21,17 @@ export function useValidationRead<T>(
   const [revision, setRevision] = useState(0);
   useEffect(() => {
     const controller = new AbortController();
+    const onSuccess = receive.current;
     checkedValidationFetch(
       path,
       { signal: controller.signal },
       decoder.current,
     ).then(
       (value) => {
-        if (!controller.signal.aborted) setResult({ path, value });
+        if (!controller.signal.aborted) {
+          onSuccess?.(value);
+          setResult({ path, value });
+        }
       },
       (error) => {
         if (!controller.signal.aborted)
