@@ -332,6 +332,9 @@ async function verifyValidationSchema(sql: postgres.Sql): Promise<void> {
       EXISTS(SELECT 1 FROM pg_constraint WHERE conrelid='qf.quizpack_validation'::regclass AND conname='validation_file_stop_controls' AND contype='c' AND convalidated
         AND pg_get_constraintdef(oid)='CHECK (qf.validation_file_stop_controls_valid((archive_policy_version)::text, id, attempts_text, evidence_metadata_text))') AS controls,
       (SELECT count(*)=2 FROM pg_trigger WHERE tgrelid='qf.quizpack_validation'::regclass AND NOT tgisinternal AND tgenabled='O' AND tgtype=23
+        AND tgqual IS NULL AND tgattr=''::int2vector AND tgnargs=0 AND octet_length(tgargs)=0
+        AND tgconstraint=0 AND tgconstrrelid=0 AND NOT tgdeferrable AND NOT tginitdeferred AND tgparentid=0
+        AND tgoldtable IS NULL AND tgnewtable IS NULL
         AND ((tgname='protect_validation' AND tgfoid='qf.protect_validation()'::regprocedure)
           OR (tgname='protect_validation_file_stop_ack' AND tgfoid='qf.protect_validation_file_stop_ack()'::regprocedure))) AS triggers`;
   if (
