@@ -132,3 +132,7 @@ B2-1最终文档head `5caef26` 的CI38175221128已核实checks/database均succes
 ## B2-2A 技术退出检查点
 
 运行代码bdd5c51、集成head4793537：873单元/43离线工具、214真实DB/46驱动、206生产E2E及10既有跳过通过；格式/lint/类型/构建、独立登记问题闭合。Mac目标66项连续三轮、Linux31+11及两平台sealed真实Next入口全部通过。4793537普通CI38194638007与媒体CI38194638047实际success，PR #12仍Draft。原失败合成轮保留失败，已核实退出的控制/哨兵现场完整隔离归档；当前control空，自有服务/DB已停。完整边界与证据见P2B2A_ACCEPTANCE。接续B2-2B精确合同冻结和独立工作树实现，不在已交付A分支堆积业务表，不沿用fixture seal。
+
+## B2-2B 合同准备登记
+
+A最终844054c的普通38195851289及媒体38195851290均实际success。总控新工作树codex/quizpack-validation-storage已建立并完成冻结安装；STUDIO_P2B2B和B2B_VALIDATION_ADAPTERS取代旧STORAGE_PROPOSAL，独立前置复验已闭合并冻结，详见P2B2B_REVIEW。新批次以三表、统一存储、prepare→start和显式recover/retry为边界；V可信适配、D数据事务、S存储服务分开，公共类型后接U后台。总控保留共享配置、迁移集成和3100，未创建B业务表/迁移或启动实例。

@@ -2,11 +2,13 @@
 
 ## 2026-10-12 托管推进
 
+B2-2B合同已冻结并放行分流实现：[STUDIO_P2B2B](STUDIO_P2B2B.md)、[可信适配器](B2B_VALIDATION_ADAPTERS.md)、[后台刷新恢复](B2B_PENDING_UI.md)。SQL/事务/适配器和typed not-started两轮独立Astra复验闭合，UI另经独立审查；真实迁移/归档服务/后台仍待实现与验收。独立codex/quizpack-validation-storage基于A最终844054c，正式origin已核实、冻结安装通过；父最终普通CI38195851289及媒体CI38195851290实际success。下一步V可信适配、D数据事务、S存储服务并行，公共类型后接U后台；总控集成与串行部署验证。A已交付分支停止增加实现，旧D1暂停聊天不恢复。
+
 B2-2A已技术验收：最终运行代码bdd5c51、集成记录head4793537；同字节P1候选、生产隔离入口、实际Next部署绑定及离线opaque封存已完成。macOS目标66项连续三轮通过，Linux31smoke/11lifecycle通过，两平台封存后真实Next公共入口均完成11场景验证；合法包各4资源的复制字节/归属/报告一致，非法输入与中断关闭。873单元、43离线工具、214真实DB、46驱动、206E2E/10既有跳过及其余工程回归通过，独立已登记P1/P2全部关闭。[普通CI38194638007](https://github.com/aning0922/quiz-forge/actions/runs/38194638007)和[媒体CI38194638047](https://github.com/aning0922/quiz-forge/actions/runs/38194638047)实际success。[Draft PR #12](https://github.com/aning0922/quiz-forge/pull/12)仍未合并；自有服务与数据库停止。详见[P2B2A_ACCEPTANCE](P2B2A_ACCEPTANCE.md)，历史失败与一次性合成维护保留在[P2B2A_REVIEW](P2B2A_REVIEW.md)。本批无DB业务表/HTTP业务/UI，接续B2-2B三表与资源归档后台。
 
 媒体隔离可行性已技术验收：准确代码 `736d92354d2765a15ca6109c2611dfc7dde9b83e` 的[普通CI38183239291](https://github.com/aning0922/quiz-forge/actions/runs/38183239291) checks/database及[平台CI38183239317](https://github.com/aning0922/quiz-forge/actions/runs/38183239317)均实际success。macOS总控66项矩阵三次通过，Linux31项smoke/11项生命周期通过，独立登记问题全部关闭；本地612单测/214真实DB/46驱动/206生产E2E通过（10既有跳过），构建53trace/8614路径无私有违规。自有实例与服务已停止。见[验收](MEDIA_ISOLATION_ACCEPTANCE.md)及[审查过程](MEDIA_ISOLATION_REVIEW.md)。[Draft PR #11](https://github.com/aning0922/quiz-forge/pull/11)保持未合并，最终记录head CI另核；该阶段仅脚本层平台能力，尚未接入业务。
 
-下一优先为冻结B2-2B精确三表/统一资源归档/后台操作合同，再并行实施。A已技术退出；B目前只有不变量与待审精确提案。实际业务的同字节、版本/归属、事务/计量与应用构建运行路径仍须独立验证。
+下一优先为按已冻结B2-2B合同并行实现三表、统一资源归档与后台操作。A已技术退出；B合同通过不表示功能已实现。实际业务的同字节、版本/归属、事务/计量与应用构建运行路径仍须独立验证。
 
 B2-1原包接收与恢复已完成代码技术验收：最终代码 `f070428b72570977db835946227b2c49d0666e42`，612单测、214真实DB、46驱动故障、206生产E2E/10既有跳过，格式/lint/类型/构建全部通过；53份trace路径检查无私有违规且动态扫描warning已消除。独立Astra登记问题全部闭合，五状态×四宽20图已逐张检查。代码[CI38174716526](https://github.com/aning0922/quiz-forge/actions/runs/38174716526)的checks/database均实际success；[Draft PR #10](https://github.com/aning0922/quiz-forge/pull/10)未合并，最终文档head CI以该PR实际checks及描述为准。A/B/root实例均停止，3100/55421–55424无监听。received仍只表示未验证原字节，没有资源归档、草稿或发布。详情见[P2B2_RECEIVE_ACCEPTANCE](P2B2_RECEIVE_ACCEPTANCE.md)、[REVIEW](P2B2_RECEIVE_REVIEW.md)、[VISUAL_CHECK](P2B2_RECEIVE_VISUAL_CHECK.md)。
 
