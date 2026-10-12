@@ -261,7 +261,7 @@ candidate已经进入时，只接收A严格completion；任何media/relatedIo UN
 1. 同步关闭archive reader、candidate/decoder、binding/平台CLI、blob写入、提升、清理等全部非DB入口，等待所有实际任务settled及严格A completion。不得存在能迟到报告媒体UNKNOWN或继续文件IO的未追踪任务；关门不stop、不续deadline。
 2. 唯一文件例外为本attempt的一次候选receipt发布。调用资格、单次消费和排队实际work前均重核，只排除该receipt自己的pending。全部write/sync/link/unlink/close结束，receipt门永久关闭；仍active、锁有效且无UNKNOWN才生成不可序列化、仅原请求/原attempt有效的ACK资格。SHA来自已完成发布的精确canonical文本，不为ACK重读文件。
 3. ACK仅原请求原DB原绝对业务deadline，单次消费并在实际DB work前重核资格，排除仅自身DB pending。fresh auth→Product→import→validation锁序，复核received、revision、当前attempt/owner/fence、live lease及固定v2policy。只可fileStopProof null→对象、匹配mediaStop必要单向变化、revision+1/更新时间和同事务validation_file_stop_acknowledged审计；status/fence/lease/候选/报告/占用/accounted/disposition均不变。完全相同的已提交ACK只读匹配，无重复写或审计。不得在cleanup发ACK。
-4. 仅ACK提交成功已确认后，在实际启动边界消费一次finalization门，使用ACK返回的新revision，允许恰一个completeValidation或interruptValidation：前者完成accepted归档，后者收束已知拒绝/中断且原ctx仍active的结果。两者互斥且都须fresh auth/fence/lease；不能把ACK与release放在同次UPDATE/同一服务事务。ACK失败、超时、取消或提交未知后均不调用finalization，不换连接、不另开失败记录事务。任何finalization结果之后零非DB IO，不能补证或删除文件。
+4. 仅ACK提交成功已确认后，在实际启动边界消费一次finalization门，使用ACK返回的新revision，允许恰一个completeValidation或interruptValidation：前者完成accepted归档，后者收束已知拒绝/中断且原ctx仍active的结果。两者互斥且都须fresh auth/fence/lease；不能把ACK与release放在同次UPDATE/同一服务事务。ACK失败、超时、取消或提交未知后均不调用finalization，不换连接、不另开失败记录事务。任何finalization结果之后零非DB IO，不能补证或删除文件。interrupt只使用封门前冻结的计量与已知receipt开销，不在事务回调补扫描/清理；accounting不明不得伪造clean。A当前interrupted返回通常已stop，不能复活ctx以取得ACK；只有实际仍active且合格的路径可终结。
 
 ACK只持久化其发出前已成立的files-and-media停止事实。ACK/query/COMMIT/sql.end仍属于原请求pending；DB取消/未知不会使文件重新运行，但禁止原请求继续complete。ArchiveOperation.completion()不能因ACK存在改成整个请求settled。fixture销毁还须观察原请求/DB实际结束，预核全部成功后才删自身合成文件。
 

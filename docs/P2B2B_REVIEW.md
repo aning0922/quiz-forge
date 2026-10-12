@@ -54,3 +54,5 @@ U b2486a4首批独立46纯测试通过，但旧not-started对象只绑定tuple�
 ### ACK修订决策
 
 Astra在01a12e46-6d82-72d2-b4cf-a4d05b5dbc0c确认采用非权威candidate receipt+独立DB ACK：全部publisher IO settled后才有原请求私有资格，ACK失败/未知禁止原complete；recover必须同时核已提交proof和文件。主合同3.2/4.2–5及迁移节已改写，不再保留单文件release或ESRCH替代ACK。policy v2增加56KiB metadata准入以预留8KiB最终controls。先0011提交审计enum、再0012保护协议，旧0010不改。该决策已冻结供实现，尚无代码/DB验收结论。
+
+Astra在01a12e4a-87a8-7a00-9cfb-d99b05b3f5df进一步确认0011枚举/0012协议分开提交，以及ACK后共享一次complete|interrupt终结门均无架构阻断；interrupt不得新增IO或猜clean，A已stop的interrupted不复活。U两P2由5dd987e→root4abc51c整改，59纯测试通过，独立闭合待核。

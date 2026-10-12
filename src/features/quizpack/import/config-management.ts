@@ -141,7 +141,7 @@ export async function configureImports(
     lock.assert();
     const [migration] = await managed.sql<
       { ready: boolean }[]
-    >`SELECT EXISTS(SELECT 1 FROM qf_meta.schema_migrations WHERE version='0010_validation_assets') ready`;
+    >`SELECT EXISTS(SELECT 1 FROM qf_meta.schema_migrations WHERE version='0012_validation_file_stop_ack') ready`;
     if (!migration?.ready) throw new StudioError("STUDIO_UNAVAILABLE");
     const [permission] = await managed.sql<{ ready: boolean }[]>`SELECT
       has_table_privilege(${current.config.database.user},'qf.quizpack_import','SELECT')
