@@ -265,9 +265,15 @@ export function ValidationPanel({
     setHalted((states) => ({ ...states, [row.id]: false }));
     history.refresh();
   }
+  const latestCurrent =
+    current &&
+    history.value?.items.find(
+      (row) =>
+        row.id === current.id && row.stateRevision >= current.stateRevision,
+    );
   const rows = current
     ? [
-        current,
+        latestCurrent || current,
         ...(history.value?.items ?? []).filter((row) => row.id !== current.id),
       ]
     : (history.value?.items ?? []);
