@@ -197,7 +197,11 @@ export async function domainFixture(db: TestDatabase, prefix = false) {
       db.admin
         .sql`INSERT INTO qf.quizpack_import(id,product_id,created_by,idempotency_key,request_fingerprint,expected_archive_sha256,expected_archive_bytes,target_kind,created_at,status,state_revision,updated_at,storage_condition,fence,attempts,actual_archive_sha256,actual_archive_bytes,archive_storage_key,received_at) VALUES(${importId},${productId},${auth.id},${randomUUID()},${hash("Synthetic request")},${archiveSha256},${archiveBytes},'new-draft',clock_timestamp(),'received',1,clock_timestamp(),'clean',0,'[]',${archiveSha256},${archiveBytes},${`imports/${importId}/archive.quizpack`},clock_timestamp())`,
   );
-  const projection = (row: ValidationRow): EvidenceProjection => {
+  const projection = (
+    row: ValidationRow,
+    resultValue = result,
+  ): EvidenceProjection => {
+    const result = resultValue;
     const controls = JSON.parse(row.attempts_text) as Parameters<
       typeof serializeValidationAttempts
     >[0];
@@ -244,6 +248,7 @@ export async function domainFixture(db: TestDatabase, prefix = false) {
     binding,
     candidate,
     result,
+    files,
     projection,
     owner: { ownerPid: process.pid, ownerNonce: "a".repeat(43) },
     blobs: facts.resources.map((r) => ({
