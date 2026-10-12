@@ -75,6 +75,23 @@ function remap(value: unknown, productId: string): unknown {
     );
   return value;
 }
+async function configureEnabled(database: TestDatabase, enabled: boolean) {
+  await promisify(execFile)(
+    process.execPath,
+    [
+      "--conditions=react-server",
+      "--import",
+      "tsx",
+      "scripts/p2a-db.ts",
+      "imports",
+      "--instance",
+      database.config.instanceId,
+      "--enabled",
+      enabled ? "true" : "false",
+    ],
+    { cwd: process.cwd(), env: process.env, timeout: 30000, maxBuffer: 4096 },
+  );
+}
 async function prepare(database: TestDatabase, runId: string) {
   const file = path.join(instanceDirectory(database.config), privateName),
     handle = await open(
@@ -99,6 +116,7 @@ async function prepare(database: TestDatabase, runId: string) {
     productId,
     imports: [] as Fixture["imports"],
   };
+  let enabledConfirmed = false;
   const save = async () => {
     await handle.truncate(0);
     const bytes = Buffer.from(JSON.stringify(value));
@@ -117,6 +135,8 @@ async function prepare(database: TestDatabase, runId: string) {
   };
   try {
     await save();
+    await configureEnabled(database, true);
+    enabledConfirmed = true;
     await database.admin.sql.begin(async (tx) => {
       await acquireAuthWriteLock(tx);
       await tx`INSERT INTO qf.operator(id,label,credential_digest,role,status) VALUES(${operatorId},'validations-e2e-operator',${operator.digest},'operator','active'),(${readOnlyId},'validations-e2e-read-only',${readOnly.digest},'read-only','active')`;
@@ -222,7 +242,11 @@ async function prepare(database: TestDatabase, runId: string) {
     }
     p2b2bFixtureSchema.parse(value);
   } finally {
-    await handle.close();
+    try {
+      if (enabledConfirmed) await configureEnabled(database, false);
+    } finally {
+      await handle.close();
+    }
   }
 }
 async function noOtherBackends(
@@ -569,26 +593,7 @@ async function run() {
     const stored = await storedFixture(database, runId);
     if (mode === "cleanup") return await cleanup(database, stored);
     if (mode === "enable" || mode === "disable") {
-      await promisify(execFile)(
-        process.execPath,
-        [
-          "--conditions=react-server",
-          "--import",
-          "tsx",
-          "scripts/p2a-db.ts",
-          "imports",
-          "--instance",
-          database.config.instanceId,
-          "--enabled",
-          mode === "enable" ? "true" : "false",
-        ],
-        {
-          cwd: process.cwd(),
-          env: process.env,
-          timeout: 30000,
-          maxBuffer: 4096,
-        },
-      );
+      await configureEnabled(database, mode === "enable");
       return;
     }
     const key = validationKeySchema.parse(process.argv[4]),
