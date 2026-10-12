@@ -128,6 +128,7 @@ export function createLinuxExecutionCore(
     preallocatedRunId?: string;
   }): Promise<LinuxOwnedResult>;
   readPolicy(options: {
+    preallocatedRunId?: string;
     scope: LinuxImageScope;
     hooks?: LinuxHooks;
   }): Promise<LinuxPolicy>;
