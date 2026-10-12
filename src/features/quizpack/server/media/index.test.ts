@@ -17,7 +17,7 @@ const declaration: ImageDeclaration = {
   width: 2,
   height: 2,
 };
-describe("public media entry before platform migration", () => {
+describe("public media fixed entry without build authorization", () => {
   it("does not authorize unbound execution", async () => {
     const context = createMediaOperationContext({
       signal: new AbortController().signal,

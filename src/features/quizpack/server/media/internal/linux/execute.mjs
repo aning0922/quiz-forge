@@ -123,8 +123,8 @@ export function createLinuxExecutionCore(environment) {
     localBarriers.delete(runId);
     return withinBudget(runId);
   }
-  async function readPolicy({ scope, hooks = {} }) {
-    const runId = randomUUID();
+  async function readPolicy({ scope, hooks = {}, preallocatedRunId }) {
+    const runId = preallocatedRunId ?? randomUUID();
     const record = { runId };
     if (recoveryActive) throw new Error("BUSY");
     activeExecutions.add(runId);
