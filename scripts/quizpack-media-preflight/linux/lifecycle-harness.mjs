@@ -7,6 +7,8 @@ import { controlFault } from "./control-fault.mjs";
 import { executeSynthetic, verifyOwnStopped } from "./controller.mjs";
 import {
   CACHE,
+  STATE,
+  RUNTIME_TARGET,
   setHarnessEndpoint,
   privateDir,
   writePrivate,
@@ -17,14 +19,19 @@ import {
   command,
   safeMain,
 } from "./common.mjs";
-import { INSPECT, matches } from "./policy.mjs";
+import { loadPolicy, INSPECT, matches } from "./policy.mjs";
 
 safeMain(async () => {
   const root = resolve(CACHE, randomUUID(), "lifecycle");
   await privateDir(root);
+  const normalPolicy = RUNTIME_TARGET ? await loadPolicy() : null;
   const cases = [];
   const record = (id, passed, result) => {
     cases.push({ id, passed, result });
+    if (RUNTIME_TARGET) {
+      process.stdout.write(JSON.stringify({ case: id, passed }) + "\n");
+      return;
+    }
     process.stdout.write(
       JSON.stringify({
         case: id,
@@ -70,9 +77,9 @@ safeMain(async () => {
       startSpawn() {
         recovery = verifyOwnStopped().then(async (r) => {
           const raw = await readPrivate(
-            resolve(CACHE, "control", "record.json"),
+            resolve(STATE, "control", "record.json"),
           );
-          const guard = await readPrivate(resolve(CACHE, "control", "guard"));
+          const guard = await readPrivate(resolve(STATE, "control", "guard"));
           guardPreserved = raw.length > 0 && guard.length > 0;
           recoveryResult = r;
         });
@@ -136,7 +143,7 @@ safeMain(async () => {
     const fired = channel.fired;
     const faultEvidence = channel.evidence();
     if (mode === "daemon-unavailable") {
-      const raw = await readPrivate(resolve(CACHE, "control", "record.json"));
+      const raw = await readPrivate(resolve(STATE, "control", "record.json"));
       const busy = await executeSynthetic();
       record(
         "daemon-unavailable-retained",
@@ -207,6 +214,7 @@ safeMain(async () => {
       "--import",
       "tsx",
       "scripts/quizpack-media-preflight/linux/crash-child.mjs",
+      ...(RUNTIME_TARGET ? [`--runtime-target=${RUNTIME_TARGET}`] : []),
     ],
     {
       stdio: ["ignore", "pipe", "pipe"],
@@ -286,13 +294,14 @@ safeMain(async () => {
     return;
   }
   if (!ready) throw new Error("CRASH_WINDOW_UNAVAILABLE");
-  const persisted = await readPrivate(resolve(CACHE, "control", "record.json"));
+  const persisted = await readPrivate(resolve(STATE, "control", "record.json"));
   const own = json(persisted);
   const fresh = await command(process.execPath, [
     "--conditions=react-server",
     "--import",
     "tsx",
     "scripts/quizpack-media-preflight/linux/restart-child.mjs",
+    ...(RUNTIME_TARGET ? [`--runtime-target=${RUNTIME_TARGET}`] : []),
   ]);
   const freshResult = json(fresh.stdout);
   record(
@@ -319,7 +328,7 @@ safeMain(async () => {
   // Parent crash proof is added separately; it never silently clears this guard.
   let residual = false;
   try {
-    await lstat(resolve(CACHE, "control", "record.json"));
+    await lstat(resolve(STATE, "control", "record.json"));
     residual = true;
   } catch (e) {
     if (e.code !== "ENOENT") throw e;
@@ -334,5 +343,28 @@ safeMain(async () => {
       accepted: false,
     }),
   );
+  if (RUNTIME_TARGET) {
+    const entries = await import("node:fs/promises")
+      .then((fs) => fs.readdir(resolve(STATE, "control")))
+      .catch(() => Array(16).fill("unknown"));
+    process.stdout.write(
+      JSON.stringify({
+        schema: "quizpack-media-owned-matrix.v1",
+        matrix: "linux-lifecycle",
+        target: RUNTIME_TARGET,
+        completed: cases.every((c) => c.passed),
+        cases: cases.map(({ id, passed }) => ({ id, passed })),
+        profiles: {
+          normal: normalPolicy.profileId,
+          fault: normalPolicy.profileId,
+          posixProbe: normalPolicy.profileId,
+          nativeProbe: normalPolicy.profileId,
+        },
+        ownedOperationsStopped:
+          cases.every((c) => c.passed) && entries.length === 0,
+        residualControlEntries: Math.min(16, entries.length),
+      }) + "\n",
+    );
+  }
   if (cases.some((c) => !c.passed)) process.exitCode = 1;
 });

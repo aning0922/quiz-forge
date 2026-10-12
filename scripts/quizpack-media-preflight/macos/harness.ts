@@ -1,3 +1,8 @@
+import { createTrustedMediaRuntime } from "../../../src/features/quizpack/server/media/internal/runtime";
+import {
+  createMediaOperationContext,
+  disposeMediaOperationContext,
+} from "../../../src/features/quizpack/server/media/operation-context";
 import { spawn, spawnSync } from "node:child_process";
 import { randomBytes, createHash, randomUUID } from "node:crypto";
 import {
@@ -39,6 +44,8 @@ import {
 import {
   loadPolicy,
   MAC_ROOT,
+  RUNTIME_TARGET,
+  RUNTIME_ROOTS,
   MAC_PROBE,
   MAC_IDENTITY_HELPER,
   POSIX_PROBE,
@@ -107,10 +114,22 @@ async function check(
       passed: true,
       ...(details === undefined ? {} : { details }),
     });
-    console.log(JSON.stringify({ assertion: name, passed: true }));
+    console.log(
+      JSON.stringify(
+        RUNTIME_TARGET
+          ? { case: name, passed: true }
+          : { assertion: name, passed: true },
+      ),
+    );
   } catch {
     results.push({ name, passed: false });
-    console.log(JSON.stringify({ assertion: name, passed: false }));
+    console.log(
+      JSON.stringify(
+        RUNTIME_TARGET
+          ? { case: name, passed: false }
+          : { assertion: name, passed: false },
+      ),
+    );
   }
 }
 function compile(source: string, target: string) {
@@ -222,13 +241,15 @@ async function main() {
     resolve(REPO_ROOT, "scripts/quizpack-media-preflight/macos/mac-probe.c"),
     MAC_PROBE,
   );
-  compile(
-    resolve(
-      REPO_ROOT,
-      "src/features/quizpack/server/media/internal/macos/identity-helper.c",
-    ),
-    MAC_IDENTITY_HELPER,
-  );
+  if (!RUNTIME_TARGET) {
+    compile(
+      resolve(
+        REPO_ROOT,
+        "src/features/quizpack/server/media/internal/macos/identity-helper.c",
+      ),
+      MAC_IDENTITY_HELPER,
+    );
+  }
   const policy = loadPolicy();
   privateWrite(join(runRoot, "worker.sb"), policy.profile);
   privateWrite(join(runRoot, "identity.json"), JSON.stringify(policy.identity));
@@ -430,6 +451,7 @@ async function main() {
             "scripts/quizpack-media-preflight/macos/deadline-host.ts",
           ),
           mode,
+          ...(RUNTIME_TARGET ? [`--runtime-target=${RUNTIME_TARGET}`] : []),
         ],
         {
           cwd: REPO_ROOT,
@@ -819,6 +841,7 @@ async function main() {
               REPO_ROOT,
               "scripts/quizpack-media-preflight/macos/fd-host.ts",
             ),
+            ...(RUNTIME_TARGET ? [`--runtime-target=${RUNTIME_TARGET}`] : []),
           ],
           {
             cwd: REPO_ROOT,
@@ -941,6 +964,7 @@ async function main() {
             REPO_ROOT,
             "scripts/quizpack-media-preflight/macos/crash-host.ts",
           ),
+          ...(RUNTIME_TARGET ? [`--runtime-target=${RUNTIME_TARGET}`] : []),
         ],
         {
           cwd: REPO_ROOT,
@@ -1155,7 +1179,21 @@ async function main() {
   });
   await check("public API requires frozen component identity", async () => {
     const actual = loadPolicy();
-    const priorSupported = policySupported(actual);
+    let priorSupported = policySupported(actual);
+    if (RUNTIME_TARGET) {
+      const operation = createMediaOperationContext(context());
+      try {
+        priorSupported =
+          (
+            await createTrustedMediaRuntime(RUNTIME_ROOTS).readBinding(
+              operation,
+              "sealed",
+            )
+          ).outcome === "bound";
+      } finally {
+        disposeMediaOperationContext(operation);
+      }
+    }
     const ordinary = await runIsolatedImage(
       small,
       declaration(small, 2, 2),
@@ -1247,6 +1285,26 @@ async function main() {
       passed: allChecksPassed,
     }),
   );
+  if (RUNTIME_TARGET) {
+    const bounded = {
+      schema: "quizpack-media-owned-matrix.v1",
+      matrix: "macos",
+      target: RUNTIME_TARGET,
+      completed: allChecksPassed,
+      cases: results.map(({ name, passed }) => ({ id: name, passed })),
+      profiles: {
+        normal: profiles.worker,
+        fault: profiles.fault,
+        posixProbe: profiles.posix,
+        macProbe: profiles.mac,
+      },
+      ownedOperationsStopped: allChecksPassed && finalResidual.length === 0,
+      residualControlEntries: Math.min(16, finalResidual.length),
+    };
+    process.stdout.write(JSON.stringify(bounded) + "\n");
+    if (!allChecksPassed) process.exitCode = 1;
+    return;
+  }
   let capabilityCommitted = false;
   if (allChecksPassed && process.argv.includes("--record-capability"))
     capabilityCommitted = sealCapabilityAfterChecks(true, candidateComponentId);

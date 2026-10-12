@@ -1,12 +1,40 @@
 import { createLinuxFiles } from "../../../src/features/quizpack/server/media/internal/linux/files.mjs";
+import { fileURLToPath } from "node:url";
 import { resolve } from "node:path";
-export const ROOT = resolve(".");
+export const ROOT = resolve(
+  fileURLToPath(new URL("../../../", import.meta.url)),
+);
 export const DIR = resolve("scripts/quizpack-media-preflight/linux");
 export const CORE_DIR = resolve(
   "src/features/quizpack/server/media/internal/linux",
 );
-export const CACHE = resolve(".cache/quizpack-media-preflight/linux");
-const files = createLinuxFiles({ checkoutRoot: ROOT, stateRoot: CACHE });
+export const CACHE = resolve(ROOT, ".cache/quizpack-media-preflight/linux");
+const targetArg = process.argv.find((arg) =>
+  arg.startsWith("--runtime-target="),
+);
+export const RUNTIME_TARGET =
+  targetArg === undefined
+    ? null
+    : targetArg === "--runtime-target=main"
+      ? "main"
+      : targetArg === "--runtime-target=fixture"
+        ? "fixture"
+        : (() => {
+            throw new Error("INVALID_RUNTIME_TARGET");
+          })();
+export const STATE = RUNTIME_TARGET
+  ? resolve(ROOT, ".cache/quizpack-media-runtime/linux-x64")
+  : CACHE;
+export const RUNTIME_ROOTS = {
+  checkoutRoot: ROOT,
+  deploymentRoot: resolve(
+    ROOT,
+    RUNTIME_TARGET === "fixture"
+      ? ".cache/quizpack-media-next-fixture/.next"
+      : ".next",
+  ),
+};
+const files = createLinuxFiles({ checkoutRoot: ROOT, stateRoot: STATE });
 export const { hash, privateDir, writePrivate, readPrivate } = files;
 export { command } from "../../../src/features/quizpack/server/media/internal/linux/command.ts";
 import { command } from "../../../src/features/quizpack/server/media/internal/linux/command.ts";
@@ -26,7 +54,7 @@ export async function docker(args, opts = {}) {
     "/usr/bin/docker",
     [
       "--config",
-      resolve(CACHE, "docker-config"),
+      resolve(STATE, "docker-config"),
       "--host",
       harnessEndpoint ?? "unix:///var/run/docker.sock",
       ...args,

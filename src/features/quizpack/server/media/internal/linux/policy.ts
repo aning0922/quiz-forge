@@ -281,5 +281,5 @@ export function createLinuxNormalRuntime(
     json: parseLinuxControlJson,
     loadPolicy,
   });
-  return { core };
+  return { core, loadPolicy };
 }

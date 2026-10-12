@@ -23,6 +23,34 @@ import {
 } from "../../../src/features/quizpack/server/media/internal/runtime-files";
 export { supportedOSInfo, PolicyError };
 export const REPO_ROOT = fileURLToPath(new URL("../../../", import.meta.url));
+const targetArg = process.argv.find((arg) =>
+  arg.startsWith("--runtime-target="),
+);
+export const RUNTIME_TARGET =
+  targetArg === undefined
+    ? null
+    : targetArg === "--runtime-target=main"
+      ? "main"
+      : targetArg === "--runtime-target=fixture"
+        ? "fixture"
+        : (() => {
+            throw new Error("INVALID_RUNTIME_TARGET");
+          })();
+if (RUNTIME_TARGET && process.argv.includes("--record-capability"))
+  throw new Error("INVALID_RUNTIME_TARGET");
+export const RUNTIME_ROOTS = {
+  checkoutRoot: resolve(REPO_ROOT),
+  deploymentRoot: resolve(
+    REPO_ROOT,
+    RUNTIME_TARGET === "fixture"
+      ? ".cache/quizpack-media-next-fixture/.next"
+      : ".next",
+  ),
+};
+export const RUNTIME_STATE = resolve(
+  REPO_ROOT,
+  ".cache/quizpack-media-runtime/darwin-arm64",
+);
 export const MAC_ROOT = resolve(
   REPO_ROOT,
   ".cache/quizpack-media-preflight/macos",
@@ -36,7 +64,10 @@ export const FAULT_WORKER = fileURLToPath(
 );
 export const POSIX_PROBE = resolve(MAC_ROOT, "tools/posix-probe");
 export const MAC_PROBE = resolve(MAC_ROOT, "tools/mac-probe");
-export const MAC_IDENTITY_HELPER = resolve(MAC_ROOT, "tools/identity-helper");
+export const MAC_IDENTITY_HELPER = resolve(
+  RUNTIME_TARGET ? RUNTIME_STATE : MAC_ROOT,
+  "tools/identity-helper",
+);
 export const SANDBOX = "/usr/bin/sandbox-exec";
 export type Policy = MacPolicy;
 export function loadPolicy(
@@ -64,7 +95,9 @@ export function loadPolicy(
   return loadMacPolicy(
     { checkoutRoot: REPO_ROOT, identityHelper: MAC_IDENTITY_HELPER },
     () => {},
-    { kind, executable, script, offlineIdentity },
+    RUNTIME_TARGET && kind === "worker"
+      ? undefined
+      : { kind, executable, script, offlineIdentity },
   );
 }
 export function readSyntheticPolicySummary(): Record<string, unknown> {

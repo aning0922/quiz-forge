@@ -6,6 +6,7 @@ import { executeSynthetic } from "./controller.mjs";
 import { arch, platform } from "node:os";
 import {
   CACHE,
+  STATE,
   DIR,
   CORE_DIR,
   hash,
@@ -33,7 +34,8 @@ safeMain(
       throw new Error("ENDPOINT_OVERRIDE");
     stage = "paths";
     await privateDir(CACHE);
-    await privateDir(resolve(CACHE, "docker-config"));
+    await privateDir(STATE);
+    await privateDir(resolve(STATE, "docker-config"));
     stage = "runtime-version";
     const runtimeVersions = await readRuntimeVersions({
       deadline: performance.now() + 5000,
@@ -179,7 +181,7 @@ safeMain(
       nativeProbePath: resolve(context, "native-probe"),
     };
     stage = "image-record";
-    await writePrivate(resolve(CACHE, "image.json"), JSON.stringify(identity));
+    await writePrivate(resolve(STATE, "image.json"), JSON.stringify(identity));
     stage = "native-identity";
     const checked = await executeSynthetic({
       scenario: "identity",
@@ -212,7 +214,7 @@ safeMain(
       throw new Error("NATIVE_IDENTITY_INVALID");
     stage = "dependencies-record";
     await writePrivate(
-      resolve(CACHE, "dependencies.json"),
+      resolve(STATE, "dependencies.json"),
       JSON.stringify(dependencies),
     );
     process.stdout.write(

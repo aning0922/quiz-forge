@@ -1,3 +1,4 @@
+import { createTrustedMediaRuntime } from "../../../src/features/quizpack/server/media/internal/runtime";
 import {
   runOwnedMac,
   type MacExecution,
@@ -32,6 +33,8 @@ import {
   MAC_IDENTITY_HELPER,
   REPO_ROOT,
   MAC_ROOT,
+  RUNTIME_TARGET,
+  RUNTIME_ROOTS,
   type Policy,
   policySupported,
   policyComponentId,
@@ -123,6 +126,34 @@ async function runImage(
   if (ctx.signal.aborted) return failed(runId, null, "CANCELLED");
   if (performance.now() >= ctx.deadline)
     return failed(runId, null, "DEADLINE_EXCEEDED");
+  if (RUNTIME_TARGET) {
+    if (typeof capability === "object") {
+      try {
+        if (policyComponentId(loadPolicy()) !== capability.candidateComponentId)
+          return failed(runId, null, "ISOLATION_UNAVAILABLE");
+      } catch (error) {
+        return failed(
+          runId,
+          null,
+          error instanceof PolicyError ? error.code : "ISOLATION_UNAVAILABLE",
+        );
+      }
+    }
+    const operation = createMediaOperationContext({
+      signal: ctx.signal,
+      deadlineMonotonicMs: ctx.deadline,
+    });
+    try {
+      return await createTrustedMediaRuntime(RUNTIME_ROOTS).run(
+        input.bytes,
+        input.expected,
+        operation,
+        capability === "sealed" ? "sealed" : "candidate",
+      );
+    } finally {
+      disposeMediaOperationContext(operation);
+    }
+  }
   let policy: Policy;
   try {
     policy = loadPolicy();
