@@ -1,5 +1,9 @@
 # 阶段进度
 
+## P3-A 合同冻结与共享底座准备
+
+从B2-3最终交付802585b建立codex/content-scoring-foundation，冻结[有限内容与评分合同](CONTENT_SCORING_P3A.md)。主控正在先交中立基础Schema、保持v1字节兼容的canonical包装、严格评分/见证/覆盖及authored-pending审阅封套；两条独立Sol聊天分别接纯引擎与v2适配，Astra仍独审。此处只有已审合同，尚无P3评分执行、v2准入、真实预览或首款完成证据。
+
 ## 2026-10-15 B2-3 技术验收完成
 
 运行代码0804126已完成首个持久草稿及只读Studio：1162单元、335真实PG、46驱动、222生产Chromium E2E（10既有跳过，8新增全过）、格式/lint/类型/build通过；最终main媒体66×3及封存成功，65trace/12941路径/零私有违规且零warning。24张四宽图由两条独立聊天逐张复核通过，按钮间距和320归档回执补拍问题已关闭。独立审查已登记P1/P2全部关闭，详情见[P2B3_ACCEPTANCE](P2B3_ACCEPTANCE.md)、[REVIEW](P2B3_REVIEW.md)、[图检](P2B3_VISUAL_CHECK.md)。

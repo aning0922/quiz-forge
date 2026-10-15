@@ -1,5 +1,11 @@
 # QuizForge 托管开发
 
+## P3-A 接续登记
+
+主控从B2-3交付802585b在同一受管根工作树创建codex/content-scoring-foundation，保留#14交付分支。[CONTENT_SCORING_P3A](CONTENT_SCORING_P3A.md)经独立Astra两轮合同及公共机器字段复验后冻结。现有独立聊天分别更名为“QuizForge P3-A · 纯评分引擎”（01a13f49-bff9-74b0-8f7c-03cd46b346c1）和“QuizForge P3-A · 内容合同与适配”（01a13f4a-3ac5-7a72-9ae0-70b24ec85f04），角色继续Sol/high；独立Astra审查聊天不变。先由主控提取不改v1行为的基础Schema/canonical并给出严格机器接口，再派两流实施。
+
+本批是离线内容合同与纯评分，不改变当前P2仅synthetic/v1准入。四卡逻辑审阅封套与完整内容来源明确分开，不造图片hash/许可或平台批准。B2-3最后文档head802585b的CI另核；已验收运行代码和08ecf57两条成功证据不随下一批混写。
+
 ## 2026-10-15 B2-3 技术退出与下一批
 
 两条可见独立Sol/high开发聊天与Astra/high独立审查已完成首稿交付；运行代码0804126，后续CI有限诊断08ecf57。1162单元/335PG/46driver/222生产E2E（10旧skip）、最终main媒体66×3与封存、24图、六项检查及独立问题闭合均已完成；08ecf57普通38745820486和媒体38745820485实际success。原080媒体失败保留且原因未定位，详见P2B3_REVIEW，不以新成功改写失败。PR #14未合并，所有自有实例与3100已停。
