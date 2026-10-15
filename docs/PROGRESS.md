@@ -1,12 +1,32 @@
 # 阶段进度
 
+## 2026-10-15 B2-2B 技术验收完成
+
+`8b21ddf` 已完成归档后台技术验收：1060 单元、298 fresh PG、46 驱动、214 生产 Chromium E2E（10既有跳过、新增8全部通过），格式/lint/类型/build通过；10服务与3媒体UNKNOWN专项分别在独立 fresh 实例本地和远端通过。macOS main 媒体66×3及封存通过，GitHub普通38720516687与Linux媒体38720516815实际success。24张四宽状态图已实际检查；仅截图滚动时机修订后，fresh ready场景另1项通过并复拍4图。详情见 [P2B2B_ACCEPTANCE](P2B2B_ACCEPTANCE.md)。
+
+原请求observer、清理作用域、旧迁移夹具、实时配置门和CI超时用例问题均经独立复验关闭。自有最终测试实例与3100均已停止，失败/UNKNOWN现场保留；PR #13仍为未合并堆叠Draft。接续B2-3首个持久草稿合同与实现，不将ready误称草稿或已批准内容。以下恢复检查点属于本批先前过程。
+
+## 2026-10-15 恢复检查点
+
+作者明确恢复本项目托管开发至历史人物首款 P5 端到端内测，并指定新主控。正式 GitHub 仓库已按明确授权改为 public，回读确认 PUBLIC；可达历史检查未发现已确认公开阻断项，范围和限制见 [公开检查](PUBLIC_READINESS.md)。main 仍为 `b3e30bc`；PR #6–#13 仍为未合并的堆叠 Draft PR。
+
+新主控沿用 `codex/quizpack-validation-storage`，在受管 worktree `quizforge-managed-resume/quiz-forge` 接续本地 `fb02afc`，保留两项尚未推送的历史提交。冻结安装成功。B2-2B 仍处于集成验收，原请求 observer 尚未接入实际服务 PG，最后 UI/维护修复需独立复验；旧公共前台与分批测试结果不代替本批完整验收。
+
+首批两条 Sol/high 实现线分别收口安全测试夹具与真实 service PG，Astra/high 独立审查；总控单写共享文档/配置并负责最终 build、媒体绑定封存和独占 3100 浏览器验收。新建合成测试实例，不清理旧未知结果现场。后续先 B2-3 首稿，再按既定 P3/P4/P5 依赖推进；内容、素材与发布批准仍为人工闸门。下方条目为恢复前证据，状态以本段及后续实际验证更新为准。
+
 ## 2026-10-12 托管推进
+
+B2-2B已进入集成验收：[STUDIO_P2B2B](STUDIO_P2B2B.md)、[可信适配器](B2B_VALIDATION_ADAPTERS.md)、[后台刷新恢复](B2B_PENDING_UI.md)为当前合同。三表、ACK事务、归档应用服务及后台实际路由已接入；尚未完成全套数据库服务与浏览器验收。独立codex/quizpack-validation-storage基于A最终844054c，父最终普通CI38195851289及媒体CI38195851290实际success。V/D/S/U保持独立实现，总控负责集成与串行部署验证；A已交付分支停止增加实现，旧D1暂停聊天不恢复。
+
+B2-2B [Draft PR #13](https://github.com/aning0922/quiz-forge/pull/13)保持未合并。root旧8→10→12实际升级已通过；11f6ed0时1040全量单元、6文件34PG通过，aba7690另有13client PG通过；这些是分批证据，不冒称最终全量验收。候选文件+独立DB ACK+一次终结已实现，旧v1只读保留；SQL触发器、旧candidate补资格、锁关闭重入和write UNKNOWN后继续终结等已登记P2均经独立复验闭合。真实service/recovery集成为a34ee1b，后台路由为4c86904，UNKNOWN修订为ddf195f。e4ce925实际生产构建通过：零tracing warning，59份trace/11357路径/零私有违规；本工作树main绑定完成，当前重跑媒体隔离三轮。首轮65/66，BUSY用例修订49f4072已独立审查，失败记录保留。测试夹具维护还存在两项待关闭P2；全量DB、驱动、E2E和图检尚待完成。数据库实例当前停止。远端CI38197814487/38197842129因GitHub账号付款/支出上限未启动任何job步骤，保留为外部验收阻断；本地工作继续，不能记为CI通过。
 
 B2-2A已技术验收：最终运行代码bdd5c51、集成记录head4793537；同字节P1候选、生产隔离入口、实际Next部署绑定及离线opaque封存已完成。macOS目标66项连续三轮通过，Linux31smoke/11lifecycle通过，两平台封存后真实Next公共入口均完成11场景验证；合法包各4资源的复制字节/归属/报告一致，非法输入与中断关闭。873单元、43离线工具、214真实DB、46驱动、206E2E/10既有跳过及其余工程回归通过，独立已登记P1/P2全部关闭。[普通CI38194638007](https://github.com/aning0922/quiz-forge/actions/runs/38194638007)和[媒体CI38194638047](https://github.com/aning0922/quiz-forge/actions/runs/38194638047)实际success。[Draft PR #12](https://github.com/aning0922/quiz-forge/pull/12)仍未合并；自有服务与数据库停止。详见[P2B2A_ACCEPTANCE](P2B2A_ACCEPTANCE.md)，历史失败与一次性合成维护保留在[P2B2A_REVIEW](P2B2A_REVIEW.md)。本批无DB业务表/HTTP业务/UI，接续B2-2B三表与资源归档后台。
 
 媒体隔离可行性已技术验收：准确代码 `736d92354d2765a15ca6109c2611dfc7dde9b83e` 的[普通CI38183239291](https://github.com/aning0922/quiz-forge/actions/runs/38183239291) checks/database及[平台CI38183239317](https://github.com/aning0922/quiz-forge/actions/runs/38183239317)均实际success。macOS总控66项矩阵三次通过，Linux31项smoke/11项生命周期通过，独立登记问题全部关闭；本地612单测/214真实DB/46驱动/206生产E2E通过（10既有跳过），构建53trace/8614路径无私有违规。自有实例与服务已停止。见[验收](MEDIA_ISOLATION_ACCEPTANCE.md)及[审查过程](MEDIA_ISOLATION_REVIEW.md)。[Draft PR #11](https://github.com/aning0922/quiz-forge/pull/11)保持未合并，最终记录head CI另核；该阶段仅脚本层平台能力，尚未接入业务。
 
-下一优先为冻结B2-2B精确三表/统一资源归档/后台操作合同，再并行实施。A已技术退出；B目前只有不变量与待审精确提案。实际业务的同字节、版本/归属、事务/计量与应用构建运行路径仍须独立验证。
+下一优先为关闭测试夹具维护问题，完成B2-2B实际服务、资源归属与浏览器验收。B2-3草稿应用随后按依赖推进；当前归档完成不代表内容已成为草稿或可发布版本。
+
+351e8d1后的实际本地验收增量：main媒体隔离66项连续三轮通过且provision封存成功；全82文件1060单元、43离线工具、46真实驱动故障测试及格式/lint/类型通过。新8项后台生产浏览器场景已集成3e3d913并开始独立执行，尚无通过结论；服务PG测试另由Sol代理在独立codex/validation-service-tests/55421推进。下一批设计准备见[B2-3首稿预案](STUDIO_P2B3_PREFLIGHT.md)，未放行业务实现。
 
 B2-1原包接收与恢复已完成代码技术验收：最终代码 `f070428b72570977db835946227b2c49d0666e42`，612单测、214真实DB、46驱动故障、206生产E2E/10既有跳过，格式/lint/类型/构建全部通过；53份trace路径检查无私有违规且动态扫描warning已消除。独立Astra登记问题全部闭合，五状态×四宽20图已逐张检查。代码[CI38174716526](https://github.com/aning0922/quiz-forge/actions/runs/38174716526)的checks/database均实际success；[Draft PR #10](https://github.com/aning0922/quiz-forge/pull/10)未合并，最终文档head CI以该PR实际checks及描述为准。A/B/root实例均停止，3100/55421–55424无监听。received仍只表示未验证原字节，没有资源归档、草稿或发布。详情见[P2B2_RECEIVE_ACCEPTANCE](P2B2_RECEIVE_ACCEPTANCE.md)、[REVIEW](P2B2_RECEIVE_REVIEW.md)、[VISUAL_CHECK](P2B2_RECEIVE_VISUAL_CHECK.md)。
 

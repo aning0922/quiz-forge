@@ -41,6 +41,7 @@ export type CandidateFacts = {
   canonicalContentText: string;
   canonicalContentSha256: string;
   resources: readonly Resource[];
+  assetSetText: string;
   assetSetSha256: string;
   candidateSha256: string;
 };
@@ -49,6 +50,7 @@ type State = {
   resources: readonly Buffer[];
 };
 const states = new WeakMap<PrivateArchiveCandidate, State>();
+const preparations = new WeakMap<DeepReadonly<CandidateFacts>, State>();
 const issuance = Object.freeze({});
 const hash = (input: Uint8Array | string) =>
   createHash("sha256").update(input).digest("hex");
@@ -70,17 +72,17 @@ export class PrivateArchiveCandidate {
 }
 
 /** Internal issuance follows fully bounded accepted evidence; not a JSON import API. */
-export function issuePrivateCandidate(
+export function preparePrivateCandidate(
   accepted: Extract<CandidateResultEvidence, { outcome: "accepted" }>,
   files: ReadonlyMap<string, Uint8Array>,
-): PrivateArchiveCandidate {
+): DeepReadonly<CandidateFacts> {
   const sealed = sealCandidateResultEvidence(accepted);
   if (sealed.outcome !== "accepted")
     throw new EvidenceError("INVALID_CANDIDATE");
   if (
-    accepted.evidence.input.status !== "snapshotted" ||
-    accepted.evidence.identity.status !== "bound" ||
-    accepted.evidence.report.status !== "sealed"
+    sealed.evidence.input.status !== "snapshotted" ||
+    sealed.evidence.identity.status !== "bound" ||
+    sealed.evidence.report.status !== "sealed"
   )
     throw new EvidenceError("INVALID_CANDIDATE");
   if (!(files instanceof Map) || types.isProxy(files))
@@ -99,8 +101,8 @@ export function issuePrivateCandidate(
   if (
     !manifestBytes ||
     !contentBytes ||
-    hash(manifestBytes) !== accepted.evidence.report.value.manifestSha256 ||
-    hash(contentBytes) !== accepted.evidence.report.value.contentSha256
+    hash(manifestBytes) !== sealed.evidence.report.value.manifestSha256 ||
+    hash(contentBytes) !== sealed.evidence.report.value.contentSha256
   )
     throw new EvidenceError("INVALID_CANDIDATE");
   // Sole source of declarations: the same bounded raw bytes already tied to
@@ -115,10 +117,10 @@ export function issuePrivateCandidate(
   const canonicalContentText = canonicalP1Json(content, "content");
   assertPersistenceUnicode(manifest);
   assertPersistenceUnicode(content);
-  if (accepted.evidence.media.length !== content.resources.length)
+  if (sealed.evidence.media.length !== content.resources.length)
     throw new EvidenceError("INVALID_CANDIDATE");
   for (const [index, declaration] of content.resources.entries()) {
-    const fact = accepted.evidence.media.find(
+    const fact = sealed.evidence.media.find(
       (item) => item.resourceIndex === index,
     )?.result;
     if (
@@ -166,29 +168,28 @@ export function issuePrivateCandidate(
       bytes: snapshot.length,
     };
   });
-  const productId = accepted.evidence.input.targetProductId;
+  const productId = sealed.evidence.input.targetProductId;
   if (
     manifest.productId !== productId ||
     content.product.productId !== productId ||
     content.kind !== "synthetic"
   )
     throw new EvidenceError("INVALID_CANDIDATE");
-  const assetSetSha256 = hash(
-    canonicalP1Json({
-      schemaVersion: "quizpack-candidate-asset-set.v1",
-      productId,
-      resources: resourceFacts.map((resource) => ({
-        resourceId: resource.declaration.id,
-        resourceVersion: resource.declaration.version,
-        productId: resource.declaration.productId,
-        blobSha256: resource.blobSha256,
-        declarationSha256: resource.declarationSha256,
-      })),
-    }),
-  );
+  const assetSetText = canonicalP1Json({
+    schemaVersion: "quizpack-candidate-asset-set.v1",
+    productId,
+    resources: resourceFacts.map((resource) => ({
+      resourceId: resource.declaration.id,
+      resourceVersion: resource.declaration.version,
+      productId: resource.declaration.productId,
+      blobSha256: resource.blobSha256,
+      declarationSha256: resource.declarationSha256,
+    })),
+  });
+  const assetSetSha256 = hash(assetSetText);
   const canonicalManifestSha256 = hash(canonicalManifestText);
   const canonicalContentSha256 = hash(canonicalContentText);
-  const archiveSha256 = accepted.evidence.input.archiveSha256;
+  const archiveSha256 = sealed.evidence.input.archiveSha256;
   const candidateSha256 = hash(
     canonicalP1Json({
       schemaVersion: "quizpack-candidate-hash.v1",
@@ -196,30 +197,46 @@ export function issuePrivateCandidate(
       canonicalManifestSha256,
       canonicalContentSha256,
       assetSetSha256,
-      identitySha256: accepted.evidence.identity.value.identitySha256,
+      identitySha256: sealed.evidence.identity.value.identitySha256,
     }),
   );
-  const handle = new PrivateArchiveCandidate(issuance);
-  states.set(handle, {
-    resources,
-    facts: freezeJson({
-      schemaVersion: "quizpack-private-candidate.v1",
-      archiveSha256,
-      productId,
-      packId: manifest.packId,
-      packVersion: manifest.packVersion,
-      manifest,
-      content,
-      canonicalManifestText,
-      canonicalManifestSha256,
-      canonicalContentText,
-      canonicalContentSha256,
-      resources: resourceFacts,
-      assetSetSha256,
-      candidateSha256,
-    }),
+  const facts = freezeJson({
+    schemaVersion: "quizpack-private-candidate.v1" as const,
+    archiveSha256,
+    productId,
+    packId: manifest.packId,
+    packVersion: manifest.packVersion,
+    manifest,
+    content,
+    canonicalManifestText,
+    canonicalManifestSha256,
+    canonicalContentText,
+    canonicalContentSha256,
+    resources: resourceFacts,
+    assetSetText,
+    assetSetSha256,
+    candidateSha256,
   });
+  preparations.set(facts, { facts, resources });
+  return facts;
+}
+
+/** Internal same-object issuance follows all comparison, IO and final checkpoint proofs. */
+export function issuePreparedCandidate(
+  facts: DeepReadonly<CandidateFacts>,
+): PrivateArchiveCandidate {
+  const state = preparations.get(facts);
+  if (!state) throw new EvidenceError("INVALID_CANDIDATE");
+  preparations.delete(facts);
+  const handle = new PrivateArchiveCandidate(issuance);
+  states.set(handle, state);
   return handle;
+}
+export function issuePrivateCandidate(
+  accepted: Extract<CandidateResultEvidence, { outcome: "accepted" }>,
+  files: ReadonlyMap<string, Uint8Array>,
+): PrivateArchiveCandidate {
+  return issuePreparedCandidate(preparePrivateCandidate(accepted, files));
 }
 
 /** Trusted service access returns a fresh copy; hashes/ownership remain unchanged. */

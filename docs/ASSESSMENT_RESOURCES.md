@@ -55,11 +55,13 @@ F1 validator 至少拒绝：未知顶级字段、空/重复 stable ID、跨 Prod
 2. 不可变内容 blob：`contentHash`、真实 media type、bytes、像素/字体元数据和私有 storage key。相同 hash 可以去重，但不会因此获得跨 Product 使用权。
 3. 版本化资源包条目：AssetPackVersion 将特定用途固定到一个 blob hash，并记录来源、许可证证据、裁切与审核结果；ProductVersion 固定 AssetPackVersion。
 
-B2-1已实现的接收流程把原包冻结在受管实例的私有 `uploads/imports/{importId}/archive.quizpack`，记录所属Product、声明与实际bytes/hash。`received`没有解压、识别内容或验证素材，不产生资源授权。B2-2拟通过同字节复验后将资源提升为私有hash blob，并以 `(productId,resourceId,resourceVersion)` 建立不可变业务声明；同blob去重不授予跨测评使用权，也不能覆盖原来源和许可证声明。具体目录与迁移待该批合同冻结。
+B2-1已实现的接收流程把原包冻结在受管实例的私有 `uploads/imports/{importId}/archive.quizpack`，记录所属Product、声明与实际bytes/hash。`received`没有解压、识别内容或验证素材，不产生资源授权。B2-2A已完成同字节可信候选验证；B2-2B正在按冻结合同将资源提升为私有hash blob，并以 `(productId,resourceId,resourceVersion)` 建立不可变业务声明。目录冻结为 `uploads/imports/{uuid}`、`uploads/validation/{uuid}`、`uploads/blobs/{sha256}.blob`，三者共享锁、扫描和配额；所有路径由服务生成，未批准资源不进入public。同blob去重不授予跨测评使用权，来源、许可证等完整声明的任何改变都需新资源版本；同版本不同声明拒绝，不覆盖首次来源。
+
+一条validation保存自己的完整asset-set；归档完成事务必须逐项匹配全部声明和blob，再同时创建引用、写ready、释放本次占用及审计。ready仍是可供后续草稿导入的技术状态，不是内容审核或发布。运行中断与内容拒绝分开；未知提交保留原标识/文件/占用，显式recover仅核实对账，retry才产生新的有限attempt。archive retry使用原冻结证据与原包重建候选，不再调用图片解码。精确三表、上限与恢复验收见STUDIO_P2B2B；当前尚未完成本批业务实现与验收。
 
 不要使用可覆盖公共路径作为历史版本引用。浏览器只获取已批准衍生物或经授权的短期 URL；原包、staging 和未批准素材不能放到 `public/`。技术验证通过仍保持平台审核 `unverified`，不等于素材来源或商用批准。
 
-对象存储写入和数据库写入没有跨系统原子事务。实现时必须保存 staging/archiving/ready/failed 状态，采用可重试的提升操作，并在失败后删除或标记孤儿对象；发布前再次检查 blob 存在和 hash 一致。资源只有在数据库记录、物理对象和批准状态全部成立时可被 ProductVersion 引用。
+对象存储写入和数据库写入没有跨系统原子事务。实现时必须保存 staging/archiving/ready/failed 状态，采用可重试的提升操作，并在失败后标记孤儿对象；本批原包与final blob不自动删除、无全局GC；发布前再次检查 blob 存在和 hash 一致。资源只有在数据库记录、物理对象和批准状态全部成立时可被 ProductVersion 引用。
 
 ## 后续最小服务端与 DTO 边界
 

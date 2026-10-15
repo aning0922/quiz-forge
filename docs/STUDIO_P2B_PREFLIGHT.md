@@ -1,5 +1,11 @@
 # P2-B：测评工作区、资源与导入预案
 
+> 历史预案，不能直接据此实施迁移。B1目录、B2-1接收和B2-2A可信桥接已交付，B2-2B正在按[精确合同](STUDIO_P2B2B.md)实施。下文“尚未建表”、九表数量、单一import状态链、pending blob与ESRCH恢复均为当时提案，不覆盖当前冻结合同。当前事实见[PROGRESS](PROGRESS.md)。
+
+当前接收记录固定在received原字节事实，独立quizpack_validation保存验证/归档状态；asset_blob只有冻结后事实，product_asset来源为source_validation_id且完整声明不可改。candidate receipt本身不授release，policy v2要求已提交DB ACK。运营分类仍独立于主题与评分。
+
+后续B2-3的首稿应用必须另行冻结product_draft/draft_revision及应用请求的幂等记录、目标CAS、证据绑定和来源关系；不能把received或ready改成本文旧提案的staged。先通过本批技术验收，再审查该数据决策与迁移方案；目前未实现首稿应用，也未确定新的总表数。
+
 2026-10-12，Astra high 只读预研、总控收敛。状态：下一里程碑预案，尚未建表或实施；P2-A 技术门槛通过后逐批冻结 DTO、迁移和服务接口。普通工程已获 P1–P5 托管授权，无需重复启动确认。
 
 ## 后台组织与交付顺序

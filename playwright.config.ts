@@ -15,6 +15,7 @@ export default defineConfig({
         "**/studio-auth.spec.ts",
         "**/studio-workspace.spec.ts",
         "**/studio-imports.spec.ts",
+        "**/studio-validations.spec.ts",
       ],
       use: {
         ...devices["Pixel 7"],
@@ -28,10 +29,25 @@ export default defineConfig({
         "**/studio-auth.spec.ts",
         "**/studio-workspace.spec.ts",
         "**/studio-imports.spec.ts",
+        "**/studio-validations.spec.ts",
       ],
       use: {
         ...devices["Desktop Chrome"],
         viewport: { width: 1440, height: 1000 },
+      },
+    },
+    {
+      name: "studio-validations",
+      testMatch: "**/studio-validations.spec.ts",
+      dependencies: ["studio-imports"],
+      fullyParallel: false,
+      workers: 1,
+      use: {
+        ...devices["Desktop Chrome"],
+        viewport: { width: 390, height: 844 },
+        trace: "off",
+        video: "off",
+        screenshot: "off",
       },
     },
     {

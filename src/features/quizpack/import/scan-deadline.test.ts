@@ -8,13 +8,14 @@ import {
   ensureStorage,
   importDirectory,
   scanStorage,
+  storageScanKey,
   type Scan,
 } from "./storage";
 import type { ImportRow } from "./repository";
 import { requireReceiveCapacity } from "./quota";
 vi.mock("node:fs/promises", async (importOriginal) => {
   const real = await importOriginal<typeof import("node:fs/promises")>();
-  return { ...real, lstat: vi.fn(real.lstat) };
+  return { ...real, lstat: vi.fn(real.lstat), opendir: vi.fn(real.opendir) };
 });
 const directories: string[] = [];
 afterEach(async () => {
@@ -25,6 +26,7 @@ afterEach(async () => {
 async function fixture() {
   const id = randomBytes(16).toString("hex"),
     dir = path.join(process.cwd(), ".cache", "p2a", id);
+  await mkdir(path.dirname(dir), { recursive: true, mode: 0o700 });
   await mkdir(dir, { mode: 0o700 });
   directories.push(dir);
   const config = normalizeRuntimeConfig({
@@ -100,7 +102,10 @@ it("reserves all new namespace names before claim, exactly at each capacity and 
   const empty: Scan = { bytes: 0, entries: 1, files: new Map() };
   requireReceiveCapacity(empty, id);
   const directories = new Map(
-    Array.from({ length: 1024 }, () => [randomUUID(), []]),
+    Array.from({ length: 1024 }, () => [
+      storageScanKey("imports", randomUUID()),
+      [],
+    ]),
   );
   expect(() =>
     requireReceiveCapacity({ ...empty, files: directories }, id),
@@ -114,8 +119,8 @@ it("reserves all new namespace names before claim, exactly at each capacity and 
   const current = {
     ...empty,
     files: new Map([
-      [id, files],
-      [other, []],
+      [storageScanKey("imports", id), files],
+      [storageScanKey("imports", other), []],
     ]),
   } as Scan;
   requireReceiveCapacity(current, id);
@@ -143,7 +148,12 @@ it("old held missing namespace reserves directory/file headroom until explicit r
   const scan: Scan = {
     bytes: 0,
     entries: 1024,
-    files: new Map(Array.from({ length: 1023 }, () => [randomUUID(), []])),
+    files: new Map(
+      Array.from({ length: 1023 }, () => [
+        storageScanKey("imports", randomUUID()),
+        [],
+      ]),
+    ),
   };
   expect(() => requireReceiveCapacity(scan, next, [row])).toThrow(
     "RECEIVE_SCAN_LIMIT",
@@ -159,7 +169,7 @@ it("old held missing namespace reserves directory/file headroom until explicit r
   const existing: Scan = {
     bytes: 0,
     entries: 8184,
-    files: new Map([[old, [partial]]]),
+    files: new Map([[storageScanKey("imports", old), [partial]]]),
   } as Scan;
   // Old partial exists, but its missing archive/receipt/tmp still reserves three new names.
   requireReceiveCapacity(existing, next, [row]);
@@ -169,10 +179,35 @@ it("old held missing namespace reserves directory/file headroom until explicit r
   const noFiles: Scan = {
     ...existing,
     entries: 8183,
-    files: new Map([[old, []]]),
+    files: new Map([[storageScanKey("imports", old), []]]),
   };
   requireReceiveCapacity(noFiles, next, [row]);
   expect(() =>
     requireReceiveCapacity({ ...noFiles, entries: 8184 }, next, [row]),
   ).toThrow("RECEIVE_SCAN_LIMIT");
+});
+
+it("the final namespace directory close is included in the same 5s scan budget", async () => {
+  const { config } = await fixture();
+  let now = 0;
+  vi.spyOn(performance, "now").mockImplementation(() => now);
+  const actual = (await vi.importActual<typeof fs>("node:fs/promises")).opendir;
+  vi.spyOn(fs, "opendir").mockImplementation(
+    async (...args: Parameters<typeof fs.opendir>) => {
+      const handle = await actual(...args),
+        close = handle.close.bind(handle);
+      if (String(args[0]).endsWith("/blobs"))
+        handle.close = async () => {
+          await close();
+          now = 5000;
+        };
+      return handle;
+    },
+  );
+  await expect(
+    scanStorage(config, {
+      signal: new AbortController().signal,
+      deadlineMonotonicMs: 60000,
+    }),
+  ).rejects.toThrow("RECEIVE_SCAN_LIMIT");
 });
