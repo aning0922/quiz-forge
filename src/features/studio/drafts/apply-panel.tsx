@@ -5,6 +5,7 @@ import { z } from "zod";
 import type { ValidationDto } from "@/features/quizpack/validation/contracts";
 import type { DraftApplicationDto } from "@/features/product/drafts/contracts";
 import type { StudioSessionDto } from "../contracts";
+import { StudioClientError } from "../client";
 import { ReadOnlyNotice } from "../workspace/primitives";
 import { useDraftRead } from "./use-read";
 import { checkDraftRead, draftEndpoint, draftWorkspacePath } from "./client";
@@ -43,6 +44,8 @@ export function ApplyDraftPanel({
   );
   const [pending, setPending] = useState<DraftPendingEntry>(),
     [storageReady, setStorageReady] = useState(false),
+    [storageLoaded, setStorageLoaded] = useState(false),
+    [writeDenied, setWriteDenied] = useState(false),
     [busy, setBusy] = useState(false),
     [message, setMessage] = useState(""),
     [confirm, setConfirm] = useState(false),
@@ -58,6 +61,8 @@ export function ApplyDraftPanel({
     } catch (error) {
       setStorageReady(false);
       setMessage(draftMessage(error));
+    } finally {
+      setStorageLoaded(true);
     }
   }
   useEffect(() => {
@@ -66,7 +71,7 @@ export function ApplyDraftPanel({
       clearTimeout(timer); /* Component is keyed by the source tuple. */
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [productId]);
-  const operator = session.operator.role === "operator";
+  const operator = session.operator.role === "operator" && !writeDenied;
   const blocked =
     busy ||
     refreshing ||
@@ -128,6 +133,13 @@ export function ApplyDraftPanel({
         current.refresh();
       }
     } catch (error) {
+      if (
+        error instanceof StudioClientError &&
+        ["CAPABILITY_DENIED", "UNAUTHENTICATED", "CSRF_REJECTED"].includes(
+          error.code,
+        )
+      )
+        setWriteDenied(true);
       setMessage(draftMessage(error));
     } finally {
       loadPending();
@@ -144,8 +156,13 @@ export function ApplyDraftPanel({
       <Link className={styles.link} href={draftWorkspacePath(productId)}>
         查看服务器草稿
       </Link>
-      {!operator && <ReadOnlyNotice />}
-      {(current.loading || product.loading || !storageReady) && (
+      {session.operator.role === "read-only" && <ReadOnlyNotice />}
+      {writeDenied && (
+        <p>
+          当前会话或写入权限已失效，写操作已关闭。请重新登录核实；原请求锚点仍保留。
+        </p>
+      )}
+      {(current.loading || product.loading || !storageLoaded) && (
         <p role="status">正在核对工作区与本页请求锚点…</p>
       )}
       {(current.error || product.error) && (

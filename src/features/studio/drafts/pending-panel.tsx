@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import type { StudioSessionDto } from "../contracts";
+import { StudioClientError } from "../client";
 import { readDraftPending, type DraftPendingEntry } from "./pending";
 import { reconcileDraftPending, retryOriginalDraft } from "./flow";
 import { draftMessage } from "./message";
@@ -20,6 +21,7 @@ export function DraftPendingPanel({
   const [entry, setEntry] = useState<DraftPendingEntry>(),
     [ready, setReady] = useState(false),
     [busy, setBusy] = useState(false),
+    [writeDenied, setWriteDenied] = useState(false),
     [message, setMessage] = useState("");
   function read() {
     try {
@@ -45,7 +47,7 @@ export function DraftPendingPanel({
       !ready ||
       busy ||
       refreshing ||
-      (replay && session.operator.role !== "operator")
+      (replay && (session.operator.role !== "operator" || writeDenied))
     )
       return;
     setBusy(true);
@@ -69,6 +71,13 @@ export function DraftPendingPanel({
         }
       }
     } catch (error) {
+      if (
+        error instanceof StudioClientError &&
+        ["CAPABILITY_DENIED", "UNAUTHENTICATED", "CSRF_REJECTED"].includes(
+          error.code,
+        )
+      )
+        setWriteDenied(true);
       setMessage(draftMessage(error));
     } finally {
       read();
@@ -113,7 +122,7 @@ export function DraftPendingPanel({
             >
               核对原 key 回执
             </button>
-            {session.operator.role === "operator" && (
+            {session.operator.role === "operator" && !writeDenied && (
               <button
                 className={`${styles.button} ${styles.secondary}`}
                 disabled={!ready || busy || refreshing}
