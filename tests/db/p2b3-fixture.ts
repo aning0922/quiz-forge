@@ -181,6 +181,8 @@ export async function prepareP2b3Source(
   ]);
   let facts = issuePrivateCandidate(result, files).facts;
   if (options.largeContent || options.transformContent) {
+    if (facts.contentSchemaVersion !== "quizpack-content.v1")
+      throw new Error("P2B3_V1_SNAPSHOT_REQUIRED");
     const content = structuredClone(fixture.content);
     if (options.largeContent) {
       const text = String.fromCharCode(92, 34).repeat(1500);
