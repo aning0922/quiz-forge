@@ -66,13 +66,16 @@ describe("real P2-A database", () => {
     const tables = await database.admin
       .sql`SELECT tablename FROM pg_tables WHERE schemaname='qf' ORDER BY tablename`;
     expect(tables.map((r) => r.tablename)).toEqual([
+      "asset_blob",
       "audit_event",
       "category",
       "operator",
       "operator_session",
       "product",
+      "product_asset",
       "product_tag",
       "quizpack_import",
+      "quizpack_validation",
       "tag",
     ]);
   });

@@ -53,6 +53,20 @@ export async function resetTestDatabase(database: TestDatabase): Promise<void> {
     );
     try {
       const scan = await scanStorage(verified.config, context);
+      const [validationState] = await verified.admin.sql<
+        { occupied: boolean }[]
+      >`SELECT EXISTS(SELECT 1 FROM qf.quizpack_validation)
+        OR EXISTS(SELECT 1 FROM qf.product_asset)
+        OR EXISTS(SELECT 1 FROM qf.asset_blob) AS occupied`;
+      if (!validationState || validationState.occupied)
+        throw new Error("TEST_VALIDATION_SCOPE_NOT_EMPTY");
+      const importFiles = new Map(
+        [...scan.files].map(([key, files]) => {
+          if (!key.startsWith("imports:"))
+            throw new Error("TEST_VALIDATION_SCOPE_NOT_EMPTY");
+          return [key.slice("imports:".length), files] as const;
+        }),
+      );
       const rows = await verified.admin.sql<
         ImportRow[]
       >`SELECT * FROM qf.quizpack_import ORDER BY id LIMIT 1025`;
@@ -66,7 +80,7 @@ export async function resetTestDatabase(database: TestDatabase): Promise<void> {
           )
             throw new Error("TEST_UPLOAD_WRITER_UNPROVEN");
       }
-      for (const [id, files] of scan.files) {
+      for (const [id, files] of importFiles) {
         const row = known.get(id);
         if (!row) throw new Error("TEST_UPLOAD_OWNER_UNKNOWN");
         const proofs = new Map<string, boolean>();
@@ -94,13 +108,13 @@ export async function resetTestDatabase(database: TestDatabase): Promise<void> {
         }
       }
       // Verify all ownership/stopping before deleting a single file or truncating any business row.
-      for (const [id, files] of scan.files) {
+      for (const [id, files] of importFiles) {
         for (const file of files) await removeOwned(file.file, file.inode);
         await rmdir(importDirectory(verified.config, id));
       }
       await lock.check();
       await verified.admin
-        .sql`TRUNCATE qf.quizpack_import,qf.product_tag,qf.product,qf.category,qf.tag,qf.operator_session,qf.audit_event,qf.operator`;
+        .sql`TRUNCATE qf.product_asset,qf.asset_blob,qf.quizpack_validation,qf.quizpack_import,qf.product_tag,qf.product,qf.category,qf.tag,qf.operator_session,qf.audit_event,qf.operator`;
     } finally {
       dispose();
       await lock.close();

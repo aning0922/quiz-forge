@@ -3,6 +3,16 @@
 set +x
 set -euo pipefail
 
+if [[ $# -gt 1 ]]; then
+  printf '%s\n' 'P2A_CI_SUITE_INVALID' >&2
+  exit 1
+fi
+ci_test_suite=${1:-baseline}
+case "$ci_test_suite" in
+  baseline|validation|media-unknown) ;;
+  *) printf '%s\n' 'P2A_CI_SUITE_INVALID' >&2; exit 1 ;;
+esac
+
 if [[ "${GITHUB_ACTIONS:-}" != "true" || ! -d "${RUNNER_TEMP:-}" ]]; then
   printf '%s\n' 'P2A_CI_ENVIRONMENT_REQUIRED' >&2
   exit 1
@@ -88,5 +98,11 @@ QF_DRIVER_TEST_INSTANCE=$(node -e '
 ' "$ci_service_dir/bootstrap.json")
 export QF_DRIVER_TEST_INSTANCE
 unset QUIZFORGE_P2A_CI_PASSWORD
-pnpm test:db
-pnpm test:driver
+case "$ci_test_suite" in
+  baseline)
+    pnpm test:db
+    pnpm test:driver
+    ;;
+  validation) pnpm test:db:service ;;
+  media-unknown) pnpm test:db:media-unknown ;;
+esac
