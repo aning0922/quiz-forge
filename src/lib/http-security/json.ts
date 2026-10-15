@@ -7,10 +7,20 @@ export const JSON_BYTE_LIMIT = 4096;
 export const JSON_DEADLINE_MS = 5000;
 
 /** Read the actual stream; neither Content-Length nor a client timeout is trusted. */
-export async function readStudioJson(request: Request): Promise<unknown> {
-  const expiresAt = performance.now() + JSON_DEADLINE_MS;
+export async function readStudioJson(
+  request: Request,
+  budget?: { signal: AbortSignal; deadlineMonotonicMs: number },
+): Promise<unknown> {
+  const expiresAt = Math.min(
+    performance.now() + JSON_DEADLINE_MS,
+    budget?.deadlineMonotonicMs ?? Infinity,
+  );
   function checkDeadline(): void {
-    if (performance.now() >= expiresAt) {
+    if (
+      !Number.isFinite(expiresAt) ||
+      budget?.signal.aborted ||
+      performance.now() >= expiresAt
+    ) {
       throw new StudioError("INVALID_REQUEST");
     }
   }
@@ -35,14 +45,15 @@ export async function readStudioJson(request: Request): Promise<unknown> {
     }
   }
   let timer: ReturnType<typeof setTimeout> | undefined;
+  let abort: (() => void) | undefined;
   const deadline = new Promise<never>((_, reject) => {
-    timer = setTimeout(
-      () => {
-        reject(new StudioError("INVALID_REQUEST"));
-        cancelReader();
-      },
-      Math.max(0, expiresAt - performance.now()),
-    );
+    abort = () => {
+      reject(new StudioError("INVALID_REQUEST"));
+      cancelReader();
+    };
+    budget?.signal.addEventListener("abort", abort, { once: true });
+    timer = setTimeout(abort, Math.max(0, expiresAt - performance.now()));
+    if (budget?.signal.aborted) abort();
   });
   // A single fixed buffer also bounds retained state for zero-byte chunks.
   const bytes = new Uint8Array(JSON_BYTE_LIMIT);
@@ -82,6 +93,7 @@ export async function readStudioJson(request: Request): Promise<unknown> {
     throw new StudioError("INVALID_REQUEST");
   } finally {
     clearTimeout(timer);
+    if (abort) budget?.signal.removeEventListener("abort", abort);
     try {
       reader.releaseLock();
     } catch {
