@@ -265,6 +265,16 @@ async function verifyFinished(db: TestDatabase, value: StudioDraftFixture) {
   >`SELECT EXISTS(SELECT 1 FROM qf.product_draft WHERE product_id=${value.sources[1]!.productId}) AS present`;
   if (other?.present) throw new Error("DRAFTS_FIXTURE_FOREIGN_PRODUCT_CHANGED");
 }
+export async function finishStudioDraftFixture(
+  db: TestDatabase,
+  runId: string,
+) {
+  const value = await readStudioDraftFixture(db, runId);
+  await verifyFinished(db, value);
+  const completed = { ...value, completed: true };
+  await save(db, completed);
+  return completed;
+}
 async function absent(file: string) {
   try {
     await lstat(file);
@@ -293,9 +303,24 @@ export async function cleanupStudioDraftFixture(
     const [app] = await db.app.sql<
       { pid: number }[]
     >`SELECT pg_backend_pid() pid`;
+    const [ownedLock] = await lock.query(
+      () =>
+        lock.connection<
+          { pid: number; database: string; role: string }[]
+        >`SELECT pg_backend_pid() pid,current_database() AS database,current_user AS role`,
+    );
+    if (
+      !ownedLock ||
+      !Number.isSafeInteger(ownedLock.pid) ||
+      ownedLock.pid < 1 ||
+      ownedLock.pid === app?.pid ||
+      ownedLock.database !== db.config.database.name ||
+      ownedLock.role !== db.config.database.user
+    )
+      throw new Error("DRAFTS_FIXTURE_LOCK_IDENTITY_CHANGED");
     const [other] = await db.admin.sql<
       { present: boolean }[]
-    >`SELECT EXISTS(SELECT 1 FROM pg_stat_activity WHERE datname=current_database() AND pid<>pg_backend_pid() AND pid<>${app!.pid}) AS present`;
+    >`SELECT EXISTS(SELECT 1 FROM pg_stat_activity WHERE datname=current_database() AND pid<>pg_backend_pid() AND pid<>${app!.pid} AND pid<>${ownedLock.pid}) AS present`;
     if (other?.present)
       throw new Error("DRAFTS_FIXTURE_SERVER_STILL_CONNECTED");
     for (const source of value.sources) {
@@ -387,8 +412,7 @@ async function main() {
     else {
       const value = await readStudioDraftFixture(db, runId!);
       if (mode === "finish") {
-        await verifyFinished(db, value);
-        await save(db, { ...value, completed: true });
+        await finishStudioDraftFixture(db, runId!);
       } else if (mode === "archive") {
         await verifyFinished(db, value);
         const [product] = await db.admin.sql<
