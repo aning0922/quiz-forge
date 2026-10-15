@@ -249,6 +249,8 @@ async function mobile(page: Page, info: TestInfo, state: string) {
   }
 }
 test.beforeAll(async () => {
+  // Hook timeouts are independent of the per-test timeout above.
+  test.setTimeout(120_000);
   await command("prepare");
   fixture = await readFixture();
   prepared = true;
@@ -257,6 +259,7 @@ test.afterEach(async ({}, info) => {
   if (info.status !== info.expectedStatus) allPassed = false;
 });
 test.afterAll(async () => {
+  test.setTimeout(90_000);
   if (prepared && allPassed) await command("finish");
 });
 
