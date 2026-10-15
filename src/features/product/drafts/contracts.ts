@@ -118,15 +118,9 @@ const snapshotShape = {
   platformApproval: z.literal("unverified"),
   publishable: z.literal(false),
 };
-const matchesComponentVersion = (value: {
-  contentSchemaVersion: string;
-  versions: { componentVersion: string };
-}) =>
-  value.versions.componentVersion ===
-  (value.contentSchemaVersion === "quizpack-content.v1" ? "1.0.0" : "2.0.0");
-export const draftSummarySchema = z
-  .strictObject(snapshotShape)
-  .refine(matchesComponentVersion);
+// Read-only receipts retain historical version metadata. Current component matrix
+// eligibility is enforced when reading a new ready source, never retroactively.
+export const draftSummarySchema = z.strictObject(snapshotShape);
 export const draftApplicationDtoSchema = z
   .strictObject({
     ...snapshotShape,
@@ -136,7 +130,6 @@ export const draftApplicationDtoSchema = z
     fingerprint: sha256Schema,
     target: draftTargetSchema,
   })
-  .refine(matchesComponentVersion)
   .refine((value) => value.expectedCandidateSha256 === value.candidateSha256);
 export const applyDraftResultSchema = z.strictObject({
   created: z.boolean(),

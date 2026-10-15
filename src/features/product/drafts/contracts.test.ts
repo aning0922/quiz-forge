@@ -121,7 +121,7 @@ it("revision DTO admits only the two bounded raw texts and an explicit strict su
             versions: { ...draft.versions, componentVersion: "3.0.0" },
           },
         }).success,
-      ).toBe(false);
+      ).toBe(true);
       expect(
         draftRevisionDtoSchema.safeParse({
           ...valid,

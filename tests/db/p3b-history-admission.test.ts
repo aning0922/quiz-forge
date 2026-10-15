@@ -9,6 +9,7 @@ import {
   retryValidationClaim,
   recoverValidationClaim,
   acknowledgeValidationFileStop,
+  interruptValidation,
 } from "@/features/quizpack/validation/transactions";
 import {
   openTestDatabase,
@@ -268,4 +269,143 @@ it("20 clean released historical failures consume total rows but no current pend
       >`SELECT count(*) FILTER(WHERE archive_policy_version='quizpack-private-archive.v2')::int historical,count(*)::int total FROM qf.quizpack_validation`,
   );
   expect(counts).toEqual({ historical: 20, total: 21 });
+});
+
+it("1023 historical rows allow one new validation, then 1024 total blocks new keys while exact historical replay still works", async () => {
+  const productId = `history-${randomUUID()}`,
+    legacy = await prepareP2b3Source(productId, { legacy: true });
+  const first = await historicalTransaction(db, async (tx) => {
+    let first: Awaited<ReturnType<typeof seedLegacySource>> | undefined;
+    for (let n = 0; n < 1023; n++) {
+      const old = await seedLegacySource(tx, auth, legacy, "retryable-failed");
+      first ??= old;
+    }
+    return first!;
+  });
+  const p = await prepareP2b3Source(productId);
+  const next = await seedReadyP2b3Source(db, auth, p, {
+    createProduct: false,
+    importId: first.scope.sourceImportId,
+  });
+  expect(next.row.status).toBe("ready");
+  await expect(
+    seedReadyP2b3Source(db, auth, p, { createProduct: false }),
+  ).rejects.toThrow("VALIDATION_SCAN_LIMIT");
+  const { claimValidation } =
+    await import("@/features/quizpack/validation/transactions");
+  const replay = await claimValidation(
+    db.app,
+    auth.credentials,
+    { productId, importId: first.scope.sourceImportId },
+    {
+      expectedImportStateRevision: 123,
+      expectedValidationKey: first.binding.validationKey,
+      binding: first.binding,
+      owner: legacy.owner,
+    },
+  );
+  expect(replay.created).toBe(false);
+  expect(replay.row.id).toBe(first.row.id);
+  expect(replay.row.status).toBe("retryable-failed");
+  expect(replay.row.attempts_text).toBe(first.row.attempts_text);
+  const [count] = await safe(
+    () =>
+      db.admin.sql<
+        { total: number }[]
+      >`SELECT count(*)::int total FROM qf.quizpack_validation`,
+  );
+  expect(count?.total).toBe(1024);
+}, 60000);
+
+it("a different archive SHA under the same legacy pack/version is rejected, without reassigning the canonical or resource source", async () => {
+  const productId = `history-${randomUUID()}`,
+    legacy = await prepareP2b3Source(productId, { legacy: true });
+  const old = await historicalTransaction(db, (tx) =>
+    seedLegacySource(tx, auth, legacy),
+  );
+  const changed = await prepareP2b3Source(productId, {
+    archiveLabel: "Explicit different no-file synthetic archive",
+  });
+  await expect(
+    seedReadyP2b3Source(db, auth, changed, { createProduct: false }),
+  ).rejects.toThrow("VALIDATION_STATE_CONFLICT");
+  const [conflict] = await safe(
+    () =>
+      db.admin.sql<
+        import("@/features/quizpack/validation/repository").ValidationRow[]
+      >`SELECT * FROM qf.quizpack_validation WHERE product_id=${productId} AND archive_sha256=${changed.archiveSha256}`,
+  );
+  if (!conflict) throw Error("SYNTHETIC_CONFLICT_REQUIRED");
+  expect(conflict).toMatchObject({
+    status: "rejected",
+    identity_kind: "conflict",
+    last_error_code: "PACK_IDENTITY_CONFLICT",
+    pack_id: old.row.pack_id,
+    pack_version: old.row.pack_version,
+  });
+  const scope = { productId, importId: conflict.import_id };
+  const authority = (r: typeof conflict) => ({
+    validationId: r.id,
+    expectedStateRevision: r.state_revision,
+    fence: r.fence,
+    attemptId: r.current_attempt_id,
+  });
+  const acknowledged = await acknowledgeValidationFileStop(
+    db.app,
+    auth.credentials,
+    scope,
+    {
+      authority: authority(conflict),
+      proof: syntheticFileStopProof(conflict, "confirmed"),
+    },
+  );
+  const a = parseValidationAttempts(acknowledged.attempts_text)[0]!;
+  if (!a.fileStopProof) throw Error("SYNTHETIC_CONFLICT_ACK_REQUIRED");
+  const released = await interruptValidation(db.app, auth.credentials, scope, {
+    authority: authority(acknowledged),
+    settledAttempts: [
+      {
+        attemptId: a.attemptId,
+        mediaStop: "confirmed",
+        fileStopProof: a.fileStopProof,
+      },
+    ],
+    storageCondition: "clean",
+    accountedBytes: 0,
+    errorCode: "PACK_IDENTITY_CONFLICT",
+  });
+  expect(released).toMatchObject({
+    status: "rejected",
+    reserved_bytes: "0",
+    storage_condition: "clean",
+  });
+  const canonical = await safe(
+    () =>
+      db.admin
+        .sql`SELECT id FROM qf.quizpack_validation WHERE product_id=${productId} AND identity_kind='canonical'`,
+  );
+  expect(canonical).toEqual([{ id: old.row.id }]);
+  const assets = await safe(
+    () =>
+      db.admin
+        .sql`SELECT source_validation_id FROM qf.product_asset WHERE product_id=${productId}`,
+  );
+  expect(assets).toHaveLength(4);
+  expect(assets.every((a) => a.source_validation_id === old.row.id)).toBe(true);
+  await expect(
+    service.applyReadyValidation(
+      db.app,
+      auth.credentials,
+      {
+        productId,
+        sourceImportId: conflict.import_id,
+        sourceValidationId: conflict.id,
+      },
+      {
+        ...old.input,
+        expectedValidationStateRevision: released.state_revision,
+        expectedCandidateSha256: released.candidate_sha256!,
+      },
+    ),
+  ).rejects.toThrow("DRAFT_SOURCE_INVALID");
 });

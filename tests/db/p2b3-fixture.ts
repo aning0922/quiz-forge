@@ -52,6 +52,8 @@ export type P2b3SourceOptions = {
   engine?: "dimensions" | "archetype";
   largeContent?: boolean;
   legacy?: boolean;
+  /** Explicit no-file SQL archive identity variation; not an actual ZIP hash. */
+  archiveLabel?: string;
   transformContent?: (content: QuizPackContent) => void;
 };
 /** SQL-only synthetic snapshot. It never certifies decoder, archive IO or commercial approval.
@@ -90,7 +92,7 @@ export async function prepareP2b3Source(
         : f,
     ),
   });
-  const archiveSha256 = hash("Synthetic DB archive");
+  const archiveSha256 = hash(options.archiveLabel ?? "Synthetic DB archive");
   const archiveBytes = 100;
   const identity = (legacy ? runtimeIdentity : supportedRuntimeIdentity)({
     schema: "quizpack-media-runtime-binding.v1",
