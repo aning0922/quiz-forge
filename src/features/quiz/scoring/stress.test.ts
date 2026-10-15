@@ -21,6 +21,20 @@ function good<T>(r: ScoringResult<T>): T {
   return r.value;
 }
 describe("actual fixed-policy exits and exact large denominator arithmetic", () => {
+  it("mechanically bounds all valid 16-dimensional wire fractions under the 160-digit cap", () => {
+    // Each recomputed span is 1..20000. LCM <= product(spans); the
+    // nonnegative squared-distance numerator is <= 16*10000*LCM^2.
+    const commonUpper = Array.from({ length: 16 }).reduce<bigint>(
+      (n) => n * BigInt(20000),
+      BigInt(1),
+    );
+    const denominatorUpper = commonUpper * commonUpper;
+    const numeratorUpper = BigInt(160000) * denominatorUpper;
+    expect(String(commonUpper).length).toBe(69);
+    expect(String(denominatorUpper).length).toBe(138);
+    expect(String(numeratorUpper).length).toBe(143);
+    expect(String(numeratorUpper).length).toBeLessThanOrEqual(160);
+  });
   it.each(["frontier", "transitions", "comparisons"] as const)(
     "halts the real %s model inside its frozen policy",
     (kind) => {
