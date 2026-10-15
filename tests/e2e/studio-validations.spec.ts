@@ -245,7 +245,7 @@ test("real explicit validation archives synthetic resources while receive facts 
   expect(await pending(page)).toBeNull();
   await expect(
     page.getByText(
-      "平台授权未审核（unverified） · 不可发布。归档完成后仍待后续草稿导入，本批不生成或编辑草稿。",
+      "平台授权未审核（unverified） · 不可发布。归档不会自动创建草稿；首次应用须显式确认。本批不提供草稿编辑或发布。",
       { exact: true },
     ),
   ).toBeVisible();
