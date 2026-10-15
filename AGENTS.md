@@ -4,6 +4,8 @@
 
 ## 当前阶段与授权
 
+- 2026-10-16 P3-C已完成独立技术出口：runtime ac69b76、tests49da513，1504单元/最终远端417PG/46driver、228生产E2E及10旧skip、main66×3、25图双线逐张复核、准确head双CI均通过，Astra无剩余P1/P2。详见docs/P3C_ACCEPTANCE.md。当前提交首款12题/四报告及四人物/四厅的具体内容与素材供作者审核；P4/P5尚未完成，后续常规工程授权继续有效，内容/素材/发布人工闸门保持。下方P3-C实施段为过程历史。
+
 - 当前实施P3-C固定修订内部预览，从P3-B59a83e0接续codex/fixed-revision-preview；docs/PREVIEW_P3C.md已Astra冻结。主控先交机器DTO/预算/错误/真实字体descriptor，A做固定来源/授权/私有读取和真实server退出清理，B做纯投影/六状态/PNG。临时预览无正式会话、Key、用户报告或发布；内容/素材/发布仍人工批准。
 
 - 2026-10-16 P3-B已技术验收：运行c419aa6、测试afaa43e，1363单元、最终远端356PG、46driver、222生产E2E/10旧skip、main/fixture各66×3封存、32图及双CI成功；Astra无剩余P1/P2。见docs/P3B_ACCEPTANCE.md。接续P3-C固定revision内部预览合同收口，冻结共享接口后两独立聊天实施；下方P3-B实施段为交付历史。

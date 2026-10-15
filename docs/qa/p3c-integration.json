@@ -1,0 +1,111 @@
+{
+  "schemaVersion": "quizforge-p3c-integration-observation.v1",
+  "observedAt": "2026-10-16",
+  "runtimeImplementationCommit": "ac69b76d08c2e02cf6a5ada8d1866866fcc9a533",
+  "finalTestCommit": "49da513b56c5d950e3f81e6fe365bc14d74459e2",
+  "scope": "synthetic local internal preview; no formal consumer report, human content/art or publication approval",
+  "build": {
+    "warnings": 0,
+    "traceCount": 69,
+    "pathCount": 14116,
+    "privateViolations": 0
+  },
+  "binding": {
+    "sourceBundleHash": "fab5e1ddbf68af9ccd516182b6c906ca8115dd68b04b060772f59d5e38b96e34",
+    "deploymentId": "3bb131792e84fa0554d8613b63c20fee3de2ef8e58f3a150fc1c5412d6b32e2f",
+    "sourceFileCount": 1059,
+    "artifactFileCount": 795,
+    "totalBytes": 33909807
+  },
+  "generatedCachePreservation": {
+    "cacheFiles": 19,
+    "cacheBytes": 90106743,
+    "oversized": [
+      {
+        "path": ".next/cache/turbopack/v16.4.0-e273d5b2/00000032.sst",
+        "bytes": 44919494
+      },
+      {
+        "path": ".next/cache/turbopack/v16.4.0-e273d5b2/00000033.sst",
+        "bytes": 17596618
+      }
+    ],
+    "destination": ".cache/p3c-layout-build-cache-preserved",
+    "unchangedNonCacheEntries": 1666,
+    "nonCacheIdentical": true
+  },
+  "media": {
+    "mode": "offline-exclusive",
+    "outcome": "sealed",
+    "capabilityCommitted": true,
+    "recordCommitted": true,
+    "target": "main",
+    "deploymentId": "3bb131792e84fa0554d8613b63c20fee3de2ef8e58f3a150fc1c5412d6b32e2f",
+    "runtimeBundleHash": "baa59b03cea1616b1d45bd489772c4584f75fedf437e6bb55bced0ca72b50c95",
+    "rounds": [
+      {
+        "cases": 66,
+        "passed": 66,
+        "completed": true,
+        "ownedOperationsStopped": true,
+        "residualControlEntries": 0
+      },
+      {
+        "cases": 66,
+        "passed": 66,
+        "completed": true,
+        "ownedOperationsStopped": true,
+        "residualControlEntries": 0
+      },
+      {
+        "cases": 66,
+        "passed": 66,
+        "completed": true,
+        "ownedOperationsStopped": true,
+        "residualControlEntries": 0
+      }
+    ],
+    "controlEmpty": true
+  },
+  "checks": {
+    "unitFiles": 124,
+    "unitPassed": 1504,
+    "localPostgresFiles": 43,
+    "localPostgresPassed": 395,
+    "separateRunnerArgumentsPassed": 13,
+    "separateAuthBudgetPassed": 7,
+    "separateActualPosterSourcePassed": 2,
+    "driverPassed": 46,
+    "productionE2E": {
+      "passed": 228,
+      "existingSkipped": 10,
+      "newPreviewPassed": 6,
+      "durationMinutes": 3.4,
+      "scope": "full"
+    },
+    "cleanup": {
+      "serverExit": "proven",
+      "workersStopped": true,
+      "nativeControl": "empty",
+      "previewFixture": "passed",
+      "draftsFixture": "passed",
+      "validationsFixture": "passed",
+      "database": "stopped"
+    },
+    "visualImages": 25,
+    "independentImageReview": "passed: both independent implementation chats each reviewed all 25 images; architecture reviewer checked PNG and 7 key screenshots"
+  },
+  "ci": {
+    "commit": "49da513b56c5d950e3f81e6fe365bc14d74459e2",
+    "checks": "https://github.com/aning0922/quiz-forge/actions/runs/38805921796",
+    "media": "https://github.com/aning0922/quiz-forge/actions/runs/38805921596",
+    "conclusion": "success",
+    "postgresFiles": 46,
+    "postgresPassed": 417,
+    "unitPassed": 1504,
+    "driverPassed": 46,
+    "servicePassed": 14,
+    "unknownMediaPassed": 3
+  },
+  "independentFinalReview": "P3-C technical exit passed; no remaining P1/P2 in reviewed scope"
+}
