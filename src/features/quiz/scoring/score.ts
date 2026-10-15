@@ -28,7 +28,7 @@ export function normalizeAnswers(
     return failure("INVALID_ANSWERS", ["answers"]);
   const answers = new Map<string, ScoringAnswer>();
   for (const [i, answer] of parsed.data.entries()) {
-    const option = c.options.get(answer.optionId);
+    const option = c.lookupOption(answer.optionId);
     if (
       !option ||
       c.definition.questions[option.questionIndex]!.ref.id !==
@@ -63,7 +63,10 @@ export function scoreCompleteAnswers(
   if (!normalized.ok) return normalized;
   const answers = normalized.value;
   const raw = c.definition.dimensions.map((_dim, di) =>
-    answers.reduce((sum, a) => sum + c.options.get(a.optionId)!.values[di]!, 0),
+    answers.reduce(
+      (sum, a) => sum + c.lookupOption(a.optionId)!.values[di]!,
+      0,
+    ),
   );
   const spans = c.maxima.map((max, i) => BigInt(max - c.minima[i]!));
   const numerators = raw.map((r, i) => BigInt(100) * BigInt(r - c.minima[i]!));
@@ -78,11 +81,11 @@ export function scoreCompleteAnswers(
   if (rules.kind === "dimensions") {
     const matching = rules.profiles
       .filter((p) =>
-        p.ranges.every(
-          (r, i) =>
-            numerators[i]! >= BigInt(r.min) * spans[i]! &&
-            numerators[i]! <= BigInt(r.max) * spans[i]!,
-        ),
+        p.ranges.every((r, i) => {
+          const lower = numerators[i]! >= BigInt(r.min) * spans[i]!;
+          const upper = numerators[i]! <= BigInt(r.max) * spans[i]!;
+          return lower && upper;
+        }),
       )
       .map((p) => p.resultRef);
     if (!matching.length) return failure("NO_PROFILE_MATCH");
