@@ -1,5 +1,13 @@
 # 阶段进度
 
+## 2026-10-15 恢复检查点
+
+作者明确恢复本项目托管开发至历史人物首款 P5 端到端内测，并指定新主控。正式 GitHub 仓库已按明确授权改为 public，回读确认 PUBLIC；可达历史检查未发现已确认公开阻断项，范围和限制见 [公开检查](PUBLIC_READINESS.md)。main 仍为 `b3e30bc`；PR #6–#13 仍为未合并的堆叠 Draft PR。
+
+新主控沿用 `codex/quizpack-validation-storage`，在受管 worktree `quizforge-managed-resume/quiz-forge` 接续本地 `fb02afc`，保留两项尚未推送的历史提交。冻结安装成功。B2-2B 仍处于集成验收，原请求 observer 尚未接入实际服务 PG，最后 UI/维护修复需独立复验；旧公共前台与分批测试结果不代替本批完整验收。
+
+首批两条 Sol/high 实现线分别收口安全测试夹具与真实 service PG，Astra/high 独立审查；总控单写共享文档/配置并负责最终 build、媒体绑定封存和独占 3100 浏览器验收。新建合成测试实例，不清理旧未知结果现场。后续先 B2-3 首稿，再按既定 P3/P4/P5 依赖推进；内容、素材与发布批准仍为人工闸门。下方条目为恢复前证据，状态以本段及后续实际验证更新为准。
+
 ## 2026-10-12 托管推进
 
 B2-2B已进入集成验收：[STUDIO_P2B2B](STUDIO_P2B2B.md)、[可信适配器](B2B_VALIDATION_ADAPTERS.md)、[后台刷新恢复](B2B_PENDING_UI.md)为当前合同。三表、ACK事务、归档应用服务及后台实际路由已接入；尚未完成全套数据库服务与浏览器验收。独立codex/quizpack-validation-storage基于A最终844054c，父最终普通CI38195851289及媒体CI38195851290实际success。V/D/S/U保持独立实现，总控负责集成与串行部署验证；A已交付分支停止增加实现，旧D1暂停聊天不恢复。
