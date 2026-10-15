@@ -503,8 +503,8 @@ it("current directory reserves four names at 12/+1 existing files before touchin
     for (const file of owned) await unlink(file);
   }
 });
-it("global 8192 entries budget includes attempt's new names; +1 admission does not claim", async () => {
-  const { importsDirectory } =
+it("global 8192 entries budget counts three namespace roots and attempt names; +1 admission does not claim", async () => {
+  const { importsDirectory, scanStorage } =
     await import("../../src/features/quizpack/import/storage");
   const root = importsDirectory(db.config),
     ownedDirs: string[] = [],
@@ -533,17 +533,31 @@ it("global 8192 entries budget includes attempt's new names; +1 admission does n
     }
     const current = importDirectory(db.config, created.id);
     await mkdir(current, { mode: 0o700 });
-    for (let j = 0; j < 10; j++) {
+    // 3 namespace roots + 481*(1 directory + 16 files) + current
+    // directory + 8 files = 8189. Four new receive names would reach 8193.
+    for (let j = 0; j < 8; j++) {
       const file = path.join(current, `attempt-${randomUUID()}.partial`);
       await writeFile(file, "", { mode: 0o600, flag: "wx" });
       ownedFiles.push(file);
     }
+    const entries = async () => {
+      const { context, dispose } = createReceiveContext(
+        new AbortController().signal,
+      );
+      try {
+        return (await scanStorage(db.config, context)).entries;
+      } finally {
+        dispose();
+      }
+    };
+    expect(await entries()).toBe(8189);
     await expect(receive(created.id, input)).rejects.toThrow(
       "RECEIVE_SCAN_LIMIT",
     );
     expect(consumed).toBe(0);
     expect((await row(created.id)).attempts.length).toBe(0);
     await unlink(ownedFiles.pop()!);
+    expect(await entries()).toBe(8188);
     expect((await receive(created.id, input)).status).toBe("received");
     expect(consumed).toBe(1);
   } finally {
