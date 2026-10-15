@@ -288,8 +288,8 @@ export function ValidationPanel({
     <section className={styles.panel} aria-labelledby="validation-heading">
       <h2 id="validation-heading">验证与私有资源归档</h2>
       <p className={styles.note}>
-        本批只验证 synthetic/v1
-        合成样本，与四卡内容草案分开。原包接收事实、独立验证结果和资源归档分别记录；本批不发布。
+        本批支持 content.v1／v2 与 synthetic／authored
+        的四种明确组合。作者内容标记不代表内容或素材获得批准。原包接收事实、独立验证结果和资源归档分别记录；本批不发布。
       </p>
       {!writable && (
         <p className={styles.status}>
@@ -442,47 +442,49 @@ export function ValidationPanel({
               >
                 读取此验证状态
               </button>
-              {(row.maintenanceRequired ||
-                row.storageCondition !== "clean" ||
-                row.status === "validating" ||
-                row.status === "archiving") && (
-                <button
-                  className={styles.button}
-                  disabled={
-                    busy ||
-                    !writable ||
-                    !!pending ||
-                    !!storageError ||
-                    !!halted[row.id] ||
-                    history.loading ||
-                    !!history.error
-                  }
-                  onClick={() => void run(() => recordAction(row, "recover"))}
-                >
-                  恢复核实与对账
-                </button>
-              )}
-              {(row.status === "validated" ||
-                row.status === "retryable-failed") && (
-                <button
-                  className={styles.button}
-                  disabled={
-                    busy ||
-                    !writable ||
-                    !!pending ||
-                    !!storageError ||
-                    !!halted[row.id] ||
-                    history.loading ||
-                    !!history.error ||
-                    row.maintenanceRequired ||
-                    row.storageCondition !== "clean" ||
-                    row.remainingAttempts === 0
-                  }
-                  onClick={() => void run(() => recordAction(row, "retry"))}
-                >
-                  明确重试验证或归档
-                </button>
-              )}
+              {!row.readOnly &&
+                (row.maintenanceRequired ||
+                  row.storageCondition !== "clean" ||
+                  row.status === "validating" ||
+                  row.status === "archiving") && (
+                  <button
+                    className={styles.button}
+                    disabled={
+                      busy ||
+                      !writable ||
+                      !!pending ||
+                      !!storageError ||
+                      !!halted[row.id] ||
+                      history.loading ||
+                      !!history.error
+                    }
+                    onClick={() => void run(() => recordAction(row, "recover"))}
+                  >
+                    恢复核实与对账
+                  </button>
+                )}
+              {!row.readOnly &&
+                (row.status === "validated" ||
+                  row.status === "retryable-failed") && (
+                  <button
+                    className={styles.button}
+                    disabled={
+                      busy ||
+                      !writable ||
+                      !!pending ||
+                      !!storageError ||
+                      !!halted[row.id] ||
+                      history.loading ||
+                      !!history.error ||
+                      row.maintenanceRequired ||
+                      row.storageCondition !== "clean" ||
+                      row.remainingAttempts === 0
+                    }
+                    onClick={() => void run(() => recordAction(row, "retry"))}
+                  >
+                    明确重试验证或归档
+                  </button>
+                )}
               <Link
                 className={`${styles.link} ${styles.secondary}`}
                 href={`/studio/products/${encodeURIComponent(pair.productId)}/imports/${pair.importId}/validations/${row.id}`}

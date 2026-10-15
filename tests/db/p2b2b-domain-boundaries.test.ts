@@ -323,7 +323,7 @@ describe("B2-2B SQL failure boundaries and current auth", () => {
     ).row;
     const { sealCandidateResultEvidence } =
       await import("@/features/quizpack/server/validation/contracts");
-    const { sealP1Report } =
+    const { sealSupportedReport } =
       await import("@/features/quizpack/server/validation/report");
     const oldReport = f.result.evidence.report;
     if (oldReport.status !== "sealed") throw new Error("TEST_EVIDENCE_INVALID");
@@ -337,7 +337,7 @@ describe("B2-2B SQL failure boundaries and current auth", () => {
           archiveBytes: 100,
           targetProductId: f.scope.productId,
         },
-        report: sealP1Report({
+        report: sealSupportedReport({
           ...oldReport.value,
           archiveSha256,
           manifestSha256: hash(manifestText),

@@ -48,6 +48,7 @@ import { ArchiveOperation } from "./operation";
 import {
   assetSetLedgerSchema,
   exactValidation,
+  requireCurrentValidation,
   validationRow,
   validationRowDto,
   validationDto,
@@ -93,6 +94,13 @@ function binding(
   original: ImportRow,
   identity: ValidationIdentity,
 ): ValidationBinding {
+  const identityRow = {
+    archive_policy_version: ARCHIVE_POLICY_VERSION,
+    archive_policy_sha256: archivePolicySha256,
+    identity_text: canonicalP1Json(identity),
+    identity_sha256: identity.identitySha256,
+  };
+  requireCurrentValidation(identityRow);
   const input = {
     ...scope,
     ...received(original),
@@ -796,6 +804,7 @@ export function createQuizpackValidationService(): QuizpackValidationService {
             c,
           ),
         );
+        requireCurrentValidation(row);
         if (row.status === "ready") return await dto(op, c, row);
         if (row.state_revision !== value.expectedStateRevision)
           throw new StudioError(
@@ -852,6 +861,7 @@ export function createQuizpackValidationService(): QuizpackValidationService {
             c,
           ),
         );
+        requireCurrentValidation(row);
         if (row.state_revision !== value.expectedStateRevision)
           throw new StudioError(
             "VALIDATION_STATE_CONFLICT",

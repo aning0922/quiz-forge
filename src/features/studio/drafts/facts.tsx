@@ -6,7 +6,8 @@ export function DraftFacts({ draft }: { draft: DraftSummaryDto }) {
   return (
     <>
       <p className={styles.note}>
-        合成内容 · 平台授权未审核 ·
+        {draft.contentKind === "authored" ? "作者内容" : "合成内容"} ·{" "}
+        {draft.contentSchemaVersion} · 平台授权未审核 ·
         不可发布。此页只读，不运行评分、消费者预览或发布。
       </p>
       <dl className={styles.facts}>

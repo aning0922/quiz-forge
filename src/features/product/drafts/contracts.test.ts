@@ -95,6 +95,41 @@ it("revision DTO admits only the two bounded raw texts and an explicit strict su
     assetSetText: "{}",
   };
   expect(draftRevisionDtoSchema.safeParse(valid).success).toBe(true);
+  for (const contentSchemaVersion of [
+    "quizpack-content.v1",
+    "quizpack-content.v2",
+  ] as const)
+    for (const contentKind of ["synthetic", "authored"] as const) {
+      const draft = {
+        ...summary,
+        contentSchemaVersion,
+        contentKind,
+        versions: {
+          ...summary.versions,
+          componentVersion:
+            contentSchemaVersion === "quizpack-content.v1" ? "1.0.0" : "2.0.0",
+        },
+      };
+      expect(
+        draftRevisionDtoSchema.safeParse({ ...valid, draft }).success,
+      ).toBe(true);
+      expect(
+        draftRevisionDtoSchema.safeParse({
+          ...valid,
+          draft: {
+            ...draft,
+            versions: { ...draft.versions, componentVersion: "3.0.0" },
+          },
+        }).success,
+      ).toBe(false);
+      expect(
+        draftRevisionDtoSchema.safeParse({
+          ...valid,
+          draft: { ...draft, platformApproval: "approved" },
+        }).success,
+      ).toBe(false);
+    }
+
   for (const changed of [
     { canonicalContentText: "a".repeat(DRAFT_LIMITS.contentBytes + 1) },
     { canonicalContentText: JSON.stringify({ text: "中".repeat(700_000) }) },
