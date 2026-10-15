@@ -30,4 +30,12 @@ B 的原始提交 `8326aba30c5dd83c980c9da5c83bab51b1c434dc` 在本分支同步�
 
 当前路由head最终本地回归：`pnpm format:check`、`pnpm lint`、`pnpm typecheck`、`pnpm test` 全部通过（117 files / 1478 unit）；普通 `pnpm test:db` 全部通过（42 files / 382 tests，172.70s）。自有 b03fce54a628fb595397f6cb35d78e07 / 55421 已正常停止，Next probe 子进程与夹具已完成真实退出和精确清理。未执行主控独占 `pnpm test:e2e`，未宣称远端CI/浏览器视觉成功。
 
-待主控明确的环境差异：普通 CI database job 没有 provision 平台 native runtime/control 目录；本地已有真实目录，因此当前严格 native-control 清理在本地通过，但不能据此断言普通CI会通过。A已报主控选择最窄策略，暂未更改旧清理条件、未创建替代 control 或改动 CI。独立审查整改与该环境边界未关闭前，不把 A 分支视为阶段技术验收完成。
+环境差异已交主控冻结窄策略：普通 CI database job 没有 provision 平台 native runtime/control 目录，单独执行不能依赖其他旧测试先建目录。主控随后报告普通集成 CI 38796115166（97f07d5）与 38794366475（4c2f921）实际 success，因此这是测试独立性/执行顺序边界，不是已发生的 CI 失败。A没有创建替代 control 或改动 CI，具体收口见下文。
+
+## 独审整改及独立无 runtime 场景
+
+owner竞态整改已独立提交949d932：同步占用cwd/instance/run身份后才进入异步portFree；失败/未知身份不退还。新增并发真实child与端口失败重用两项，owner5项通过。并发测试只延迟真实net.Server.close以保证观察原异步窗口，实际端口关闭、ChildProcess.close、组不存在与proof均真实；把实现临时换回旧顺序后该并发回归实际失败，恢复修复后全部通过，所有测试子进程均已收口。
+
+新增test-only `p3c-native-control.ts`，仅对qualification严格等于synthetic-db-and-private-pixels-no-native的本批夹具生效。先核cwd/.cache/quizpack-media-runtime已存在祖先的真实目录、owner、无symlink与实际realpath；只有当前平台stateRoot的严格ENOENT返回not-provisioned。任何EACCES/ENOTDIR、悬空symlink或未知错误均拒绝。stateRoot存在则要求0700/owner/无symlink及原control0700/身份/空目录前后核验；缺control/非空/错误mode照常拒绝。cleanup在最初和删除前实际重复检查，返回明确 `{nativeControl:"not-provisioned"|"empty"}`；not-provisioned不称native通过。旧B2/B3及生产native检查未改，也不创建空control替代证据。
+
+无runtime检查新增11项实际隔离FS测试，包括全新根（连.cache都不存在且检查不创建它）、现存祖先、平台根出现后缺control、正常空control后变为非空、目录mode/文件、各层悬空symlink和未知qualification拒绝。FS读取单测另显式创建其自有私有测试base，避免依赖之前数据库初始化；不修改已有目录权限。
