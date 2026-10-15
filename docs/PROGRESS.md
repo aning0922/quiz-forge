@@ -1,5 +1,9 @@
 # 阶段进度
 
+## 2026-10-15 B2-3 合同冻结
+
+基于 B2-2B 交付 `7fc0c55`，新独立分支 `codex/product-first-draft` 接续首个持久草稿。合同 [STUDIO_P2B3](STUDIO_P2B3.md) 已完成前置独审：纯DB应用、Product锁内原key重放、三表延迟复合FK和窄来源保护、固定revision1、4KiB写/有界正文、未知请求显式原key重试；不复制媒体生命周期，不批准内容或发布。总控继续使用受管主工作树，数据/UI两流各自独立分支；新迁移与业务尚未实现，B2-2B交付分支保持独立。
+
 ## 2026-10-15 B2-2B 技术验收完成
 
 `8b21ddf` 已完成归档后台技术验收：1060 单元、298 fresh PG、46 驱动、214 生产 Chromium E2E（10既有跳过、新增8全部通过），格式/lint/类型/build通过；10服务与3媒体UNKNOWN专项分别在独立 fresh 实例本地和远端通过。macOS main 媒体66×3及封存通过，GitHub普通38720516687与Linux媒体38720516815实际success。24张四宽状态图已实际检查；仅截图滚动时机修订后，fresh ready场景另1项通过并复拍4图。详情见 [P2B2B_ACCEPTANCE](P2B2B_ACCEPTANCE.md)。
