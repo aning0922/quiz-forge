@@ -17,6 +17,11 @@ export type StudioErrorCode =
   | "METADATA_REVISION_CONFLICT"
   | "TAXONOMY_REVISION_CONFLICT"
   | "PRODUCT_ARCHIVED"
+  | "DRAFT_ALREADY_EXISTS"
+  | "DRAFT_SOURCE_INVALID"
+  | "DRAFT_SOURCE_CHANGED"
+  | "DRAFT_NOT_FOUND"
+  | "DRAFT_REVISION_NOT_FOUND"
   | "TAXONOMY_ARCHIVED"
   | "TAG_LIMIT_EXCEEDED"
   | "REVISION_LIMIT"
@@ -72,6 +77,11 @@ const statuses: Record<StudioErrorCode, number> = {
   METADATA_REVISION_CONFLICT: 409,
   TAXONOMY_REVISION_CONFLICT: 409,
   PRODUCT_ARCHIVED: 409,
+  DRAFT_ALREADY_EXISTS: 409,
+  DRAFT_SOURCE_INVALID: 409,
+  DRAFT_SOURCE_CHANGED: 409,
+  DRAFT_NOT_FOUND: 404,
+  DRAFT_REVISION_NOT_FOUND: 404,
   TAXONOMY_ARCHIVED: 409,
   TAG_LIMIT_EXCEEDED: 400,
   REVISION_LIMIT: 409,
@@ -138,6 +148,7 @@ export function errorResponse(error: unknown, requestId: string): Response {
       (code === "METADATA_REVISION_CONFLICT" ||
         code === "TAXONOMY_REVISION_CONFLICT" ||
         code === "IMPORT_STATE_CONFLICT" ||
+        code === "DRAFT_SOURCE_CHANGED" ||
         code === "VALIDATION_STATE_CONFLICT") &&
       Number.isInteger(error.currentRevision) &&
       error.currentRevision! > 0 &&
