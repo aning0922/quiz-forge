@@ -111,6 +111,25 @@ it("original rejected COMMIT response with ACK and all actual observed closes re
   expect(t.snapshotClose).toHaveBeenCalledOnce();
   expect(t.lockClose).toHaveBeenCalledOnce();
   expect(testValidationRequestEnded(t.fixture, t.row)).toBe(true);
+  for (const changed of [
+    { product_id: "different-product" },
+    { import_id: randomUUID() },
+    { validation_key: "c".repeat(64) },
+    { state_revision: t.row.state_revision + 1 },
+    { attempts_text: "[]" },
+  ])
+    expect(
+      testValidationRequestEnded(t.fixture, { ...t.row, ...changed }),
+    ).toBe(false);
+  expect(
+    testValidationRequestEnded(
+      {
+        ...t.fixture,
+        config: { ...t.fixture.config, instanceId: randomUUID() },
+      },
+      t.row,
+    ),
+  ).toBe(false);
 });
 it("original rejection cannot register before its pending lock close actually settles", async () => {
   const t = setup();

@@ -4,6 +4,7 @@ import path from "node:path";
 import { createHash, randomUUID } from "node:crypto";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
+import { fileURLToPath } from "node:url";
 import { z } from "zod";
 import {
   openTestDatabase,
@@ -11,6 +12,7 @@ import {
   type TestDatabase,
 } from "./p2a-fixture";
 import { createDatabase } from "@/lib/db/client";
+import { instancePaths } from "@/lib/db/management";
 import { createProduct } from "@/features/product/workspace/service";
 import { issueToken } from "@/lib/security/p2a-tokens";
 import { createPreauth, login } from "@/lib/auth/service";
@@ -56,8 +58,9 @@ import { p2b2bFixtureSchema, ownerAbsent } from "./p2b2b-fixture-contract";
 const sha = (bytes: Uint8Array) =>
   createHash("sha256").update(bytes).digest("hex");
 const privateName = "validations-e2e-fixture.json";
-type Fixture = z.infer<typeof p2b2bFixtureSchema>;
-async function storedFixture(
+export type ValidationFixture = z.infer<typeof p2b2bFixtureSchema>;
+type Fixture = ValidationFixture;
+export async function readTestValidationFixture(
   database: TestDatabase,
   runId: string,
 ): Promise<Fixture> {
@@ -68,6 +71,36 @@ async function storedFixture(
   const value = p2b2bFixtureSchema.parse(await readPrivateJson(file));
   if (value.runId !== runId) throw new Error();
   return value;
+}
+/** Receive runs in its own process: its exit, never a validation marker, proves receive ownership ended. */
+export async function prepareTestValidationFixture(
+  database: TestDatabase,
+  runId: string,
+): Promise<ValidationFixture> {
+  z.uuid().parse(runId);
+  if (!["test", "ci"].includes(database.config.purpose))
+    throw new Error("TEST_VALIDATION_INSTANCE_REQUIRED");
+  await promisify(execFile)(
+    process.execPath,
+    [
+      "--conditions=react-server",
+      "--import",
+      "tsx",
+      fileURLToPath(import.meta.url),
+      "prepare",
+      runId,
+    ],
+    {
+      cwd: process.cwd(),
+      env: {
+        ...process.env,
+        QUIZFORGE_P2A_CONFIG: instancePaths(database.config.instanceId).runtime,
+      },
+      timeout: 60_000,
+      maxBuffer: 4096,
+    },
+  );
+  return readTestValidationFixture(database, runId);
 }
 function remap(value: unknown, productId: string): unknown {
   if (Array.isArray(value)) return value.map((v) => remap(v, productId));
@@ -617,6 +650,18 @@ async function cleanup(database: TestDatabase, value: Fixture) {
     dispose();
   }
 }
+/** Same checks as the CLI; no caller-supplied proof or cross-process marker is accepted. */
+export async function cleanupTestValidationFixture(
+  database: TestDatabase,
+  value: ValidationFixture,
+) {
+  if (!["test", "ci"].includes(database.config.purpose))
+    throw new Error("TEST_VALIDATION_INSTANCE_REQUIRED");
+  const stored = await readTestValidationFixture(database, value.runId);
+  if (canonicalP1Json(stored) !== canonicalP1Json(value))
+    throw new Error("TEST_VALIDATION_FIXTURE_MISMATCH");
+  await cleanup(database, stored);
+}
 async function run() {
   const mode = z
       .enum(["prepare", "cleanup", "enable", "disable", "observe-validation"])
@@ -625,7 +670,7 @@ async function run() {
     database = await openTestDatabase();
   try {
     if (mode === "prepare") return await prepare(database, runId);
-    const stored = await storedFixture(database, runId);
+    const stored = await readTestValidationFixture(database, runId);
     if (mode === "cleanup") return await cleanup(database, stored);
     if (mode === "enable" || mode === "disable") {
       await configureEnabled(database, mode === "enable");
@@ -662,11 +707,15 @@ async function run() {
     await database.close();
   }
 }
-safeTestOperation(run)
-  .then(() => {
-    process.stdout.write("VALIDATIONS_E2E_FIXTURE_READY\n");
-  })
-  .catch(() => {
-    process.stderr.write("VALIDATIONS_E2E_FIXTURE_FAILED\n");
-    process.exitCode = 1;
-  });
+if (
+  process.argv[1] &&
+  path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)
+)
+  safeTestOperation(run)
+    .then(() => {
+      process.stdout.write("VALIDATIONS_E2E_FIXTURE_READY\n");
+    })
+    .catch(() => {
+      process.stderr.write("VALIDATIONS_E2E_FIXTURE_FAILED\n");
+      process.exitCode = 1;
+    });

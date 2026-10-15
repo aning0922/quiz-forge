@@ -21,7 +21,16 @@ import { canonicalP1Json } from "@/features/quizpack/v1/canonical";
 const tokens = new Map<string, object>(),
   snapshots = new WeakMap<
     object,
-    Map<string, { revision: number; controls: string }>
+    Map<
+      string,
+      {
+        revision: number;
+        controls: string;
+        productId: string;
+        importId: string;
+        key: string;
+      }
+    >
   >(),
   endedAttempts = new WeakMap<object, Set<string>>();
 let observing = false;
@@ -54,7 +63,10 @@ export function testValidationRequestEnded(
   const saved = snapshots.get(token(fixture))?.get(row.id);
   return (
     saved?.revision === row.state_revision &&
-    saved.controls === row.attempts_text
+    saved.controls === row.attempts_text &&
+    saved.productId === row.product_id &&
+    saved.importId === row.import_id &&
+    saved.key === row.validation_key
   );
 }
 async function within<T>(task: Promise<T>, deadline: number): Promise<T> {
@@ -271,6 +283,9 @@ async function observeRequest<T>(
     stored.set(row.id, {
       revision: row.state_revision,
       controls: row.attempts_text,
+      productId: row.product_id,
+      importId: row.import_id,
+      key: row.validation_key,
     });
     snapshots.set(identity, stored);
     if (rejected) throw rejection;
