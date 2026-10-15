@@ -1,6 +1,26 @@
 import type { TestDatabase } from "./p2a-fixture";
 import type { MediaOperationContext } from "@/features/quizpack/server/media";
 import { ArchiveOperation } from "@/features/quizpack/validation/operation";
+import {
+  parseValidationAttempts,
+  type ValidationRow,
+} from "@/features/quizpack/validation/repository";
+import { ownerAbsent } from "./p2b2b-fixture-contract";
+import { testValidationRequestEnded } from "./p2b2b-request-fixture";
+/** This replaces only PID absence; callers still independently require durable ACK and exact receipt files. */
+export function fixtureValidationOwnersEnded(
+  database: TestDatabase,
+  row: ValidationRow,
+  mode: "cross-process" | "same-process",
+) {
+  const observed =
+    mode === "same-process" && testValidationRequestEnded(database, row);
+  return parseValidationAttempts(row.attempts_text).every(
+    (attempt) =>
+      ownerAbsent(attempt.ownerPid) ||
+      (attempt.ownerPid === process.pid && observed),
+  );
+}
 export function fixtureMaintenanceOperation(
   database: TestDatabase,
   context: MediaOperationContext,

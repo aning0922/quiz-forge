@@ -51,6 +51,7 @@ import type { ImportRow } from "@/features/quizpack/import/repository";
 import {
   fixtureMaintenanceOperation,
   fixtureAuditAllowed,
+  fixtureValidationOwnersEnded,
   type FixtureAuditTarget,
 } from "./p2b2b-maintenance";
 import { p2b2bFixtureSchema, ownerAbsent } from "./p2b2b-fixture-contract";
@@ -414,7 +415,11 @@ async function verifyFile(
     op.nonDbCheckpoint();
   });
 }
-async function cleanup(database: TestDatabase, value: Fixture) {
+async function cleanup(
+  database: TestDatabase,
+  value: Fixture,
+  mode: "cross-process" | "same-process" = "cross-process",
+) {
   if (database.config.imports.enabled) throw new Error();
   await database.app.close(); // All subsequent DB work is the helper's owner connection and storage connection.
   const { context, dispose } = createValidationContext(
@@ -474,14 +479,14 @@ async function cleanup(database: TestDatabase, value: Fixture) {
       () =>
         database.admin.sql<
           { id: string }[]
-        >`SELECT id FROM qf.operator_session WHERE operator_id=ANY(${database.admin.sql.array(actors)}) ORDER BY id LIMIT 1025`,
+        >`SELECT id FROM qf.operator_session WHERE operator_id=ANY(${database.admin.sql.array(actors)}::uuid[]) ORDER BY id LIMIT 1025`,
     );
     const audit = await op.databaseAwait(
       "read",
       () =>
         database.admin.sql<
           FixtureAuditTarget[]
-        >`SELECT id,action,actor_id,session_id,target_kind,target_id,target_revision FROM qf.audit_event WHERE actor_id=ANY(${database.admin.sql.array(actors)}) ORDER BY id LIMIT 8193`,
+        >`SELECT id,action,actor_id,session_id,target_kind,target_id,target_revision FROM qf.audit_event WHERE actor_id=ANY(${database.admin.sql.array(actors)}::uuid[]) ORDER BY id LIMIT 8193`,
     );
     const auditScope = {
       productId: value.productId,
@@ -546,12 +551,8 @@ async function cleanup(database: TestDatabase, value: Fixture) {
     for (const row of validations) {
       const attempts = parseValidationAttempts(row.attempts_text);
       if (
-        attempts.some(
-          (a) =>
-            !a.fileStopProof ||
-            a.mediaStop === "unconfirmed" ||
-            !ownerAbsent(a.ownerPid),
-        )
+        !fixtureValidationOwnersEnded(database, row, mode) ||
+        attempts.some((a) => !a.fileStopProof || a.mediaStop === "unconfirmed")
       )
         throw new Error();
       for (const a of attempts)
@@ -614,10 +615,8 @@ async function cleanup(database: TestDatabase, value: Fixture) {
     await runtimeControlEmpty(op);
     await noOtherBackends(database, lock, op);
     if (
-      validations.some((row) =>
-        parseValidationAttempts(row.attempts_text).some(
-          (a) => !ownerAbsent(a.ownerPid),
-        ),
+      validations.some(
+        (row) => !fixtureValidationOwnersEnded(database, row, mode),
       )
     )
       throw new Error();
@@ -636,9 +635,9 @@ async function cleanup(database: TestDatabase, value: Fixture) {
         await tx`DELETE FROM qf.product_tag WHERE product_id=${value.productId}`;
         await tx`DELETE FROM qf.product WHERE id=${value.productId}`;
         await tx`DELETE FROM qf.asset_blob WHERE sha256=ANY(${tx.array([...blobHashes].filter((h) => !shared.has(h)))}) AND NOT EXISTS(SELECT 1 FROM qf.product_asset p WHERE p.blob_sha256=qf.asset_blob.sha256)`;
-        await tx`DELETE FROM qf.audit_event WHERE id=ANY(${tx.array(audit.map((a) => a.id))}) AND actor_id=ANY(${tx.array(actors)})`;
-        await tx`DELETE FROM qf.operator_session WHERE id=ANY(${tx.array(sessions.map((s) => s.id))}) AND operator_id=ANY(${tx.array(actors)})`;
-        await tx`DELETE FROM qf.operator WHERE id=ANY(${tx.array([value.operator.identifier, value.readOnly.identifier])})`;
+        await tx`DELETE FROM qf.audit_event WHERE id=ANY(${tx.array(audit.map((a) => a.id))}::uuid[]) AND actor_id=ANY(${tx.array(actors)}::uuid[])`;
+        await tx`DELETE FROM qf.operator_session WHERE id=ANY(${tx.array(sessions.map((s) => s.id))}::uuid[]) AND operator_id=ANY(${tx.array(actors)}::uuid[])`;
+        await tx`DELETE FROM qf.operator WHERE id=ANY(${tx.array([value.operator.identifier, value.readOnly.identifier])}::uuid[])`;
       }),
     );
     await op.fileTask(() =>
@@ -650,7 +649,7 @@ async function cleanup(database: TestDatabase, value: Fixture) {
     dispose();
   }
 }
-/** Same checks as the CLI; no caller-supplied proof or cross-process marker is accepted. */
+/** Only this in-process entry may consult the original request observer; no proof is accepted from a caller. */
 export async function cleanupTestValidationFixture(
   database: TestDatabase,
   value: ValidationFixture,
@@ -660,7 +659,7 @@ export async function cleanupTestValidationFixture(
   const stored = await readTestValidationFixture(database, value.runId);
   if (canonicalP1Json(stored) !== canonicalP1Json(value))
     throw new Error("TEST_VALIDATION_FIXTURE_MISMATCH");
-  await cleanup(database, stored);
+  await cleanup(database, stored, "same-process");
 }
 async function run() {
   const mode = z
@@ -679,7 +678,7 @@ async function run() {
     const key = validationKeySchema.parse(process.argv[4]),
       rows = await database.admin.sql<
         { status: string; state_revision: number; attempts_text: string }[]
-      >`SELECT status,state_revision,attempts_text FROM qf.quizpack_validation WHERE product_id=${stored.productId} AND import_id=ANY(${database.admin.sql.array(stored.imports.map((i) => i.importId))}) AND validation_key=${key} LIMIT 2`;
+      >`SELECT status,state_revision,attempts_text FROM qf.quizpack_validation WHERE product_id=${stored.productId} AND import_id=ANY(${database.admin.sql.array(stored.imports.map((i) => i.importId))}::uuid[]) AND validation_key=${key} LIMIT 2`;
     if (rows.length !== 1) throw new Error();
     const row = rows[0]!;
     if (
