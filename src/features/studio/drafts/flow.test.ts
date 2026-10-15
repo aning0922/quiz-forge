@@ -149,4 +149,26 @@ describe("draft original-key pending flow", () => {
     storage.setItem(DRAFT_PENDING_STORAGE_KEY, " ".repeat(65537));
     expect(() => readDraftPending(storage)).toThrow();
   });
+  it("allows exactly sixteen distinct Product anchors and refuses a seventeenth without mutating the bucket", () => {
+    const storage = memoryStorage();
+    for (let index = 0; index < 16; index++) {
+      const item = { ...tuple, productId: `synthetic-draft-${index}` },
+        release = acquireDraftProduct(item.productId);
+      try {
+        addDraftPrepared(storage, item);
+      } finally {
+        release();
+      }
+    }
+    const before = storage.getItem(DRAFT_PENDING_STORAGE_KEY),
+      item = { ...tuple, productId: "synthetic-draft-overflow" },
+      release = acquireDraftProduct(item.productId);
+    try {
+      expect(() => addDraftPrepared(storage, item)).toThrow();
+    } finally {
+      release();
+    }
+    expect(storage.getItem(DRAFT_PENDING_STORAGE_KEY)).toBe(before);
+    expect(readDraftPending(storage)).toHaveLength(16);
+  });
 });
