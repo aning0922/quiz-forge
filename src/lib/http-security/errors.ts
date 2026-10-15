@@ -58,6 +58,14 @@ export type StudioErrorCode =
   | "VALIDATION_TIMEOUT"
   | "WRITE_BUSY"
   | "WRITE_OUTCOME_UNKNOWN"
+  | "PREVIEW_UNSUPPORTED"
+  | "PREVIEW_BINDING_MISMATCH"
+  | "PREVIEW_LIMIT_EXCEEDED"
+  | "PREVIEW_INVALID_ANSWERS"
+  | "PREVIEW_RESOURCE_UNAVAILABLE"
+  | "PREVIEW_BUSY"
+  | "PREVIEW_TIMEOUT"
+  | "PREVIEW_CANCELLED"
   | "STUDIO_UNAVAILABLE";
 
 const statuses: Record<StudioErrorCode, number> = {
@@ -118,6 +126,14 @@ const statuses: Record<StudioErrorCode, number> = {
   VALIDATION_TIMEOUT: 504,
   WRITE_BUSY: 409,
   WRITE_OUTCOME_UNKNOWN: 503,
+  PREVIEW_UNSUPPORTED: 422,
+  PREVIEW_BINDING_MISMATCH: 409,
+  PREVIEW_LIMIT_EXCEEDED: 422,
+  PREVIEW_INVALID_ANSWERS: 422,
+  PREVIEW_RESOURCE_UNAVAILABLE: 503,
+  PREVIEW_BUSY: 503,
+  PREVIEW_TIMEOUT: 504,
+  PREVIEW_CANCELLED: 499,
   STUDIO_UNAVAILABLE: 503,
 };
 
@@ -161,6 +177,7 @@ export function errorResponse(error: unknown, requestId: string): Response {
       headers: {
         ...privateHeaders,
         ...(code === "RATE_LIMITED" ? { "Retry-After": "60" } : {}),
+        ...(code === "PREVIEW_BUSY" ? { "Retry-After": "1" } : {}),
       },
     },
   );

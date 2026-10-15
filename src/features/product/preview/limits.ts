@@ -1,0 +1,26 @@
+export const PREVIEW_LIMITS = Object.freeze({
+  answersBytes: 65_536,
+  scoreRequestBytes: 98_304,
+  entryResponseBytes: 524_288,
+  revealResponseBytes: 262_144,
+  errorResponseBytes: 4096,
+  resourceQueryBytes: 4096,
+  imageBytes: 8_388_608,
+  imageReadSlots: 4,
+  imageChunkBytes: 65_536,
+  deadlineMs: 15_000,
+  lockDeadlineMs: 2000,
+  fileDeadlineMs: 5000,
+  closeObservationMs: 5000,
+  depth: 32,
+});
+export const PREVIEW_POSTER_LIMITS = Object.freeze({
+  width: 1080,
+  height: 1920,
+  dimensions: 4,
+  dimensionLabelCodepoints: 8,
+  displayNameCodepoints: 12,
+  subtitleCodepoints: 24,
+  lineCodepoints: 48,
+  disclosureCodepoints: 72,
+});
