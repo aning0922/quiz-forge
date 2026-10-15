@@ -69,7 +69,15 @@ export async function validateQuizPackCore(
     source,
     context,
     {
-      ...execution,
+      // Resolve each hook on the original object only at its invocation stage.
+      execute: (work) => execution.execute(work),
+      checkpoint: (signal) => execution.checkpoint(signal),
+      readZip: (input, value) => execution.readZip(input, value),
+      inspect: (...args) => execution.inspect(...args),
+      beforeStructure: (manifest, content) =>
+        execution.beforeStructure?.(manifest, content),
+      propagate: (error, report, active) =>
+        execution.propagate(error, report, active),
       parsed: (pack, files) =>
         execution.parsed?.(pack.manifest, pack.content, files),
     },
