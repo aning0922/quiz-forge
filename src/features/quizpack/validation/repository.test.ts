@@ -104,3 +104,53 @@ it("current admission binds the full policy and identity, while historical ident
     );
   }
 });
+
+import type postgres from "postgres";
+import { legacyValidationActivity, validationPolicyRow } from "./repository";
+it("legacy quiescence scan is bounded and selects only stopping metadata across every old policy", async () => {
+  const query = vi.fn(
+    async (_parts: TemplateStringsArray, ..._values: unknown[]) => {
+      void _parts;
+      void _values;
+      return [];
+    },
+  );
+  await legacyValidationActivity(query as unknown as postgres.TransactionSql);
+  const [parts, ...values] = query.mock.calls[0]!;
+  const sql = parts.join("?");
+  expect(sql).toBe(
+    "SELECT status,storage_condition,reserved_bytes,lease_until,attempts_text,archive_policy_version FROM qf.quizpack_validation WHERE archive_policy_version<>? OR archive_policy_sha256<>? ORDER BY id LIMIT ?",
+  );
+  expect(values).toEqual([ARCHIVE_POLICY_VERSION, archivePolicySha256, 1025]);
+  expect(sql).not.toMatch(
+    /SELECT \*|canonical_|evidence_|report_text|identity_text/,
+  );
+});
+it("pre-IO policy metadata query is scoped and has no body projection; missing scope fails closed", async () => {
+  const row = {
+    archive_policy_version: ARCHIVE_POLICY_VERSION,
+    archive_policy_sha256: archivePolicySha256,
+    identity_text: canonicalP1Json(supportedRuntimeIdentity(runtime)),
+    identity_sha256: supportedRuntimeIdentity(runtime).identitySha256,
+  };
+  const query = vi.fn(
+    async (_parts: TemplateStringsArray, ..._values: unknown[]) => {
+      void _parts;
+      void _values;
+      return [row];
+    },
+  );
+  const tx = query as unknown as postgres.TransactionSql;
+  expect(
+    await validationPolicyRow(tx, "synthetic", input.importId, input.importId),
+  ).toBe(row);
+  const [parts, ...values] = query.mock.calls[0]!;
+  expect(parts.join("?")).toBe(
+    "SELECT archive_policy_version,archive_policy_sha256,identity_text,identity_sha256 FROM qf.quizpack_validation WHERE product_id=? AND import_id=? AND id=?",
+  );
+  expect(values).toEqual(["synthetic", input.importId, input.importId]);
+  query.mockResolvedValueOnce([]);
+  await expect(
+    validationPolicyRow(tx, "synthetic", input.importId, input.importId),
+  ).rejects.toThrow("VALIDATION_NOT_FOUND");
+});

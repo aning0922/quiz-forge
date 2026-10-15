@@ -19,6 +19,7 @@ import {
 import { ARCHIVE_POLICY_VERSION, archivePolicySha256 } from "./policy";
 import {
   exactValidation,
+  legacyValidationActivity,
   requireCurrentValidation,
   parseValidationAttempts,
   serializeValidationAttempts,
@@ -166,9 +167,7 @@ function nextAttempt(
 async function countCapacity(tx: Tx, productId: string) {
   // A legacy row may be omitted from active pending only after real quiescence.
   // This bounded global check does not replace the cross-policy storage ledger.
-  const legacy = await tx<
-    ValidationRow[]
-  >`SELECT * FROM qf.quizpack_validation WHERE archive_policy_version<>${ARCHIVE_POLICY_VERSION} OR archive_policy_sha256<>${archivePolicySha256} ORDER BY id LIMIT ${MAX_VALIDATIONS + 1}`;
+  const legacy = await legacyValidationActivity(tx);
   if (legacy.length > MAX_VALIDATIONS)
     throw new StudioError("VALIDATION_SCAN_LIMIT");
   for (const row of legacy) {
