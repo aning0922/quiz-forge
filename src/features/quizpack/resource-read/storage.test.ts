@@ -1,3 +1,4 @@
+import path from "node:path";
 import { createHash, randomBytes } from "node:crypto";
 import {
   mkdir,
@@ -29,6 +30,9 @@ const png = Buffer.from(
 );
 beforeEach(async () => {
   config = { instanceId: randomBytes(16).toString("hex") } as P2aRuntimeConfig;
+  const base = path.dirname(instanceDirectory(config));
+  await mkdir(base, { recursive: true, mode: 0o700 });
+  await privateDirectory(base);
   for (const dir of [
     instanceDirectory(config),
     uploadsDirectory(config),

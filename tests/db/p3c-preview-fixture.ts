@@ -1,5 +1,5 @@
 import { constants } from "node:fs";
-import { open, lstat, unlink, opendir } from "node:fs/promises";
+import { open, lstat, unlink } from "node:fs/promises";
 import { createHash, randomUUID } from "node:crypto";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -17,7 +17,6 @@ import {
   ensureStorage,
   blobPath,
   privateFile,
-  privateDirectory,
   scanStorage,
   scannedFiles,
   removeOwned,
@@ -53,6 +52,10 @@ import {
   type TestDatabase,
 } from "./p2a-fixture";
 
+import {
+  inspectPreviewNativeControl,
+  type PreviewNativeControlStatus,
+} from "./p3c-native-control";
 import {
   PREVIEW_FIXTURE_PRIVATE_NAME,
   previewFixtureSchema,
@@ -336,38 +339,12 @@ async function absent(file: string) {
   }
   throw fail();
 }
-async function nativeControlEmpty() {
-  const platform =
-    process.platform === "darwin" && process.arch === "arm64"
-      ? "darwin-arm64"
-      : process.platform === "linux" && process.arch === "x64"
-        ? "linux-x64"
-        : null;
-  if (!platform) throw fail();
-  const dir = path.join(
-    process.cwd(),
-    ".cache",
-    "quizpack-media-runtime",
-    platform,
-    "control",
-  );
-  await privateDirectory(dir);
-  const before = await lstat(dir),
-    entries = await opendir(dir, { bufferSize: 16 });
-  try {
-    if (await entries.read()) throw fail();
-  } finally {
-    await entries.close();
-  }
-  const after = await lstat(dir);
-  if (before.dev !== after.dev || before.ino !== after.ino) throw fail();
-}
 /** No CLI cleanup: proof is unforgeable within the actual server owner's process. */
 export async function cleanupPreviewFixture(
   db: TestDatabase,
   runId: string,
   proof: ServerExitProof,
-): Promise<void> {
+): Promise<Readonly<{ nativeControl: PreviewNativeControlStatus }>> {
   requireTest(db);
   assertServerExitProof(proof, {
     cwd: process.cwd(),
@@ -407,7 +384,7 @@ export async function cleanupPreviewFixture(
         { present: boolean }[]
       >`SELECT EXISTS(SELECT 1 FROM pg_stat_activity WHERE datname=current_database() AND backend_type='client backend' AND pid<>pg_backend_pid() AND pid<>${storage.pid}) present`;
       if (other?.present) throw fail();
-      await nativeControlEmpty();
+      return inspectPreviewNativeControl(value.qualification);
     };
     await check();
     const products = value.sources.map((s) => s.scope.productId),
@@ -510,7 +487,7 @@ export async function cleanupPreviewFixture(
         }
       }
     }
-    await check();
+    const nativeControl = await check();
     for (const fact of remove) await removeOwned(fact.file, fact.inode);
     await lock.check();
     await db.admin.sql.begin(async (tx) => {
@@ -530,6 +507,7 @@ export async function cleanupPreviewFixture(
       await tx`DELETE FROM qf.operator WHERE id=ANY(${tx.array(actors)}::uuid[])`;
     });
     await unlink(fixturePath(db));
+    return { nativeControl };
   } finally {
     dispose();
     await lock.close();
