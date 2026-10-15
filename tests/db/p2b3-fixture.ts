@@ -325,12 +325,12 @@ export async function seedReadyP2b3Source(
   db: TestDatabase,
   auth: { id: string; credentials: StudioWriteCredentials },
   prepared: PreparedP2b3Source,
-  options: { createProduct?: boolean } = {},
+  options: { createProduct?: boolean; importId?: string } = {},
 ) {
   if (db.config.purpose !== "test" && db.config.purpose !== "ci")
     throw new Error("P2B3_TEST_DATABASE_REQUIRED");
   const { productId, archiveSha256, archiveBytes } = prepared;
-  const importId = randomUUID();
+  const importId = options.importId ?? randomUUID();
   const scope = { productId, importId };
   const binding = {
     identityText: prepared.identityText,
@@ -353,8 +353,9 @@ export async function seedReadyP2b3Source(
     INSERT INTO qf.product(id,slug,title,updated_at)
     VALUES(${productId},${productId},'B3 synthetic SQL product',clock_timestamp())`,
     );
-  await safe(
-    () => db.admin.sql`
+  if (!options.importId)
+    await safe(
+      () => db.admin.sql`
     INSERT INTO qf.quizpack_import(id,product_id,created_by,idempotency_key,request_fingerprint,
       expected_archive_sha256,expected_archive_bytes,target_kind,created_at,status,state_revision,
       updated_at,storage_condition,fence,attempts,actual_archive_sha256,actual_archive_bytes,
@@ -363,7 +364,7 @@ export async function seedReadyP2b3Source(
       ${archiveSha256},${archiveBytes},'new-draft',clock_timestamp(),'received',1,
       clock_timestamp(),'clean',0,'[]',${archiveSha256},${archiveBytes},
       ${`imports/${importId}/archive.quizpack`},clock_timestamp())`,
-  );
+    );
   let row = (
     await safe(() =>
       claimValidation(db.app, auth.credentials, scope, {
