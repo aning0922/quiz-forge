@@ -57,7 +57,12 @@ export async function probePreviewNext() {
           action,
           runId,
         ],
-        { cwd: process.cwd(), env, timeout: 30000, maxBuffer: 4096 },
+        {
+          cwd: process.cwd(),
+          env,
+          timeout: action === "prepare" ? 90000 : 30000,
+          maxBuffer: 4096,
+        },
       );
     } catch {
       throw fail();

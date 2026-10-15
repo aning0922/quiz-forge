@@ -38,6 +38,7 @@ import {
   assertServerExitProof,
   type ServerExitProof,
 } from "../support/p3c-server-owner";
+import { waitForPreviewAuthBudget } from "./p3c-auth-budget";
 import { prepareP3cSource } from "./p3c-source-fixture";
 import { seedReadyP2b3Source } from "./p2b3-fixture";
 import { syntheticFileStopProof } from "./p2b2b-domain-fixture";
@@ -120,7 +121,7 @@ export async function readPreviewFixture(
     throw fail();
   return value;
 }
-async function authenticate(
+async function createActor(
   db: TestDatabase,
   a: PreviewFixture["operator"],
   role: "operator" | "read-only",
@@ -128,6 +129,8 @@ async function authenticate(
 ) {
   await db.admin
     .sql`INSERT INTO qf.operator(id,label,credential_digest,role,status) VALUES(${a.identifier},${`p3c-e2e-${runId}-${role}`},${digestToken(a.secret, "credential")},${role},'active')`;
+}
+async function authenticate(db: TestDatabase, a: PreviewFixture["operator"]) {
   const pre = await createPreauth(db.app, null, randomUUID());
   const session = await login(
     db.app,
@@ -168,8 +171,9 @@ export async function preparePreviewFixture(
   await save(db, value, true); // Unknown preparation is intentionally non-retryable and preserved.
   await configureImports(db.config.instanceId, true);
   try {
-    const auth = await authenticate(db, value.operator, "operator", runId);
-    await authenticate(db, value.readOnly, "read-only", runId);
+    await createActor(db, value.operator, "operator", runId);
+    await createActor(db, value.readOnly, "read-only", runId);
+    const auth = await authenticate(db, value.operator);
     for (const engine of ["archetype", "dimensions"] as const) {
       const prepared = await prepareP3cSource(
         `preview-${runId.slice(0, 8)}-${engine}`,
@@ -519,8 +523,12 @@ async function main() {
   z.uuid().parse(runId);
   const db = await openTestDatabase();
   try {
-    if (action === "prepare") await preparePreviewFixture(db, runId!);
-    else await finishPreviewFixture(db, runId!);
+    if (action === "prepare") {
+      // Only the CLI suite bootstrap waits; direct PG fixtures retain their ordinary behavior.
+      await absent(fixturePath(db));
+      await waitForPreviewAuthBudget(db);
+      await preparePreviewFixture(db, runId!);
+    } else await finishPreviewFixture(db, runId!);
   } finally {
     await db.close();
   }
