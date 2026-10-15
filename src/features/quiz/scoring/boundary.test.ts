@@ -1,12 +1,59 @@
 import { expect, it } from "vitest";
 import { z } from "zod";
 import { output, snapshot, shapeFailure } from "./boundary";
-import { scoringFailureSchema } from "@/lib/assessment-contract/scoring-api-v1";
+import {
+  SCORING_API_LIMITS,
+  scoringFailureSchema,
+} from "@/lib/assessment-contract/scoring-api-v1";
 it("checks the actual serialized whole output including escaping and UTF-8, without returning truncated success", () => {
   const value = { a: '汉"\\', b: '字"\\' };
-  const bytes = Buffer.byteLength(JSON.stringify(value), "utf8");
-  expect(output(z.unknown(), value, bytes)).toEqual({ ok: true, value });
+  const bytes = Buffer.byteLength(JSON.stringify({ ok: true, value }), "utf8");
+  expect(
+    output(z.strictObject({ a: z.string(), b: z.string() }), value, bytes),
+  ).toEqual({ ok: true, value });
   expect(output(z.unknown(), value, bytes - 1)).toMatchObject({
+    ok: false,
+    issues: [{ code: "INPUT_LIMIT_EXCEEDED" }],
+  });
+});
+it.each(["", '汉字🙂"\\\n\t'])(
+  "bounds the complete 64KiB result exactly, including UTF-8 and escaping: %j",
+  (text) => {
+    const schema = z.strictObject({ padding: z.string() });
+    const limit = SCORING_API_LIMITS.scoreBytes;
+    const overhead = Buffer.byteLength(
+      JSON.stringify({ ok: true, value: { padding: text } }),
+      "utf8",
+    );
+    const value = { padding: text + "a".repeat(limit - overhead) };
+    const result = output(schema, value, limit);
+    expect(result).toEqual({ ok: true, value });
+    expect(Buffer.byteLength(JSON.stringify(result), "utf8")).toBe(limit);
+    expect(Object.isFrozen(result)).toBe(true);
+    if (result.ok) expect(Object.isFrozen(result.value)).toBe(true);
+    const plusOne = { padding: value.padding + "a" };
+    expect(
+      Buffer.byteLength(JSON.stringify({ ok: true, value: plusOne }), "utf8"),
+    ).toBe(limit + 1);
+    expect(output(schema, plusOne, limit)).toMatchObject({
+      ok: false,
+      issues: [{ code: "INPUT_LIMIT_EXCEEDED" }],
+    });
+  },
+);
+it("rejects a payload that fits 64KiB by itself but exceeds the public envelope budget", () => {
+  const schema = z.strictObject({ padding: z.string() });
+  const limit = SCORING_API_LIMITS.scoreBytes;
+  const payloadOverhead = Buffer.byteLength(
+    JSON.stringify({ padding: "" }),
+    "utf8",
+  );
+  const value = { padding: "a".repeat(limit - payloadOverhead) };
+  expect(Buffer.byteLength(JSON.stringify(value), "utf8")).toBe(limit);
+  expect(Buffer.byteLength(JSON.stringify({ ok: true, value }), "utf8")).toBe(
+    limit + 20,
+  );
+  expect(output(schema, value, limit)).toMatchObject({
     ok: false,
     issues: [{ code: "INPUT_LIMIT_EXCEEDED" }],
   });

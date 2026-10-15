@@ -95,8 +95,8 @@ export function output<T>(
   maxBytes: number,
 ): ScoringResult<T> {
   // Only internally constructed ordinary values reach this boundary. Check the
-  // complete actual wire representation, not a sum of individual field budgets.
-  if (Buffer.byteLength(JSON.stringify(value), "utf8") > maxBytes)
+  // complete public result envelope, not just its value or individual fields.
+  if (Buffer.byteLength(JSON.stringify({ ok: true, value }), "utf8") > maxBytes)
     return failure("INPUT_LIMIT_EXCEEDED");
   return freeze({ ok: true, value: schema.parse(value) });
 }
