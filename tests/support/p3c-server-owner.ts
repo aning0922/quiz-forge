@@ -84,8 +84,9 @@ export async function launchOwnedPreviewNodeProcess(
   };
   const key = JSON.stringify(identity);
   if (launches.has(key)) throw invalid();
-  await portFree(options.port);
+  // Reserve synchronously before any asynchronous port probe. A failed/unknown launch stays retired.
   launches.add(key);
+  await portFree(options.port);
   const child = spawn(process.execPath, [...args], {
     cwd: options.cwd,
     detached: true,
