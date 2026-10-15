@@ -461,3 +461,21 @@ it("a different archive SHA under the same legacy pack/version is rejected, with
     ),
   ).rejects.toThrow("DRAFT_SOURCE_INVALID");
 });
+
+it("historical fixture rejects demo purpose before entering the owner transaction", async () => {
+  let entered = false;
+  await expect(
+    historicalTransaction(
+      { ...db, config: { ...db.config, purpose: "demo" } },
+      async () => {
+        entered = true;
+      },
+    ),
+  ).rejects.toThrow("P3B_PURPOSE_TEST_REQUIRED");
+  expect(entered).toBe(false);
+  // The original managed test/ci connection and configuration remain untouched.
+  const [row] = await safe(
+    () => db.app.sql<{ alive: number }[]>`SELECT 1::int AS alive`,
+  );
+  expect(row?.alive).toBe(1);
+});
