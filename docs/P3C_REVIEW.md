@@ -47,3 +47,9 @@ B5c734a→c7d1421交六状态UI/真实PNG与6个生产E2E场景，开发方22文
 独审发现原参数黑名单漏-V及--ui-host/--ui-port，可非测试退出仍被误报passed，登记P2。改为只允许现有project和有界grep/grep-invert，归一为--key=value，在配置读取/启动之前执行；root13定向通过，独审加12非法/多项目探针共25/25通过，P2关闭。成功摘要明确full/filtered。初次类型检查因exactOptionalPropertyTypes不允许webServer:undefined失败，改为复制base后实际删除该属性，未降低类型设置。
 
 owner并发P2由A949d932→2e8de54修复并经原独立实际并发probe关闭；Aece2f0c→8f70bc0的合成未provision测试边界也已独审11FS通过，无新增阻断。root最终实现536e8fe上已有124文件1504单元、fresh43文件395PG、零warning生产build69trace/14116路径/0private；新增纯runner参数13项另记录，不冒称当前完整PG已跑408项。driver、重绑定/native及真实238项E2E继续执行。
+
+## 集成回归发现与测试协调
+
+5489fa4的普通CI38799585918在database的两项目录权限负例失败：CI umask077使mkdir0755实际成为0700。A4e247fa→995bfab显式chmod并断言实际mode，独审实际复现旧失败、修复11FS通过；995bfab普通38800898398和媒体38800898255均实际success。生产检查没有放宽。
+
+首轮root生产E2E实际222通过、10旧skip，preview beforeAll失败、后5项未运行。A真实PG复现定位前序B3已占19次preauth窗口，原bootstrap的第二次认证超过20/min；失败aabda354a84bce012a753444d115a7bb已停库保留。Ae7005a3→f4881db仅CLI prepare在首次写fixture前只读等待真实旧窗口清空，61s原起点预算，去掉未使用readOnly bootstrap登录；生产限额/审计不变，浏览器仍真实认证。root将prepare子进程上限同步90s、finish60s不变；新增7项预算边界与类型/格式通过。完整E2E将使用另一全新实例，原失败不清理或重复使用；独审及整轮结果另记。

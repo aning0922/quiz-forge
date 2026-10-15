@@ -52,7 +52,7 @@ async function command(mode: "prepare" | "finish") {
       {
         cwd: process.cwd(),
         env: process.env,
-        timeout: 60_000,
+        timeout: mode === "prepare" ? 90_000 : 60_000,
         maxBuffer: 4096,
       },
     );
