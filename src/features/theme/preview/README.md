@@ -1,6 +1,6 @@
-# P3-C projection M1
+# P3-C 固定投影与受控组件
 
-基线为冻结共享提交 `c3fdd8c`。本目录当前提供静态投影能力登记与真实 server-only 投影；六状态 React 组合、私有图片/字体加载和实际 PNG 属于随后 UI 里程碑，尚未在 M1 实现。共享 product/preview 合同、字体和原研究路由未修改。
+基线为冻结共享提交 `c3fdd8c`。M1 提供静态投影能力登记与真实 server-only 投影；后续 UI 里程碑增加 `components.tsx` 中的六个编译组件与 `PREVIEW_VIEW_REGISTRY`。该 registry 将 M1 的 schema/engine/state/精确版本登记与固定 React 组件表关联，不从内容加载源代码、CSS、模块路径或 HTML。共享 product/preview 合同、字体文件和原研究路由未修改。
 
 ## A 的实际接入接口
 
@@ -19,7 +19,7 @@ prepared 是无输入/Map 别名的冻结对象，只有私有 WeakMap 中的原
 
 入口只投影三种预揭晓 Layout、完整有序题目/选项显示字段、sections/frames 及 cover/scene 的精确中性资源并集；包括逐题 override，但无人物元数据。揭晓只包含实际选中的 portrait、完整 baseline 和真实维度，不增加年代、文化史实、维度解读或短标签。
 
-海报候选数据严格沿共享 `previewPosterSchema`：完整 1–4 维、码点和显式行数全部符合时才是 `ready`；否则仅 poster 返回 `unavailable/POSTER_LIMIT_EXCEEDED`，不截取前四维、不修改文案，不使真实评分或完整报告失效。`ready` 只表示 DTO 达到候选约束，实际字体、图片、measureText、画布边界和 PNG 编码仍须由导出里程碑验证。
+海报候选数据严格沿共享 `previewPosterSchema`：完整 1–4 维、码点和显式行数全部符合时才是 `ready`；否则仅 poster 返回 `unavailable/POSTER_LIMIT_EXCEEDED`，不截取前四维、不修改文案，不使真实评分或完整报告失效。`ready` 只表示 DTO 达到候选约束；实际导出仍须通过 `features/report/preview` 的字体、图片、measureText、画布边界和 PNG 编码检查。
 
 ## 预算、失败与证据
 
