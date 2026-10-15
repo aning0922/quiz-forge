@@ -113,7 +113,7 @@ describe("explicit offline content dispatch", () => {
     });
     expect(result.ok).toBe(false);
     if (!result.ok)
-      expect(result.issues[0]!.code).toBe("CONTENT_INPUT_REJECTED");
+      expect(result.issues[0]!.code).toBe("CONTENT_INPUT_LIMIT_EXCEEDED");
   });
   it("caps public issues, marks truncation and never echoes unknown field names or values", () => {
     const value = copy();
