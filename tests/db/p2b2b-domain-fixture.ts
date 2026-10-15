@@ -371,7 +371,7 @@ export async function resetDomainDatabase(db: TestDatabase) {
     await safe(
       () =>
         db.admin
-          .sql`TRUNCATE qf.product_asset,qf.asset_blob,qf.quizpack_validation,qf.quizpack_import,qf.product_tag,qf.product,qf.category,qf.tag,qf.operator_session,qf.audit_event,qf.operator`,
+          .sql`TRUNCATE qf.draft_application,qf.draft_revision,qf.product_draft,qf.product_asset,qf.asset_blob,qf.quizpack_validation,qf.quizpack_import,qf.product_tag,qf.product,qf.category,qf.tag,qf.operator_session,qf.audit_event,qf.operator`,
     );
   } finally {
     await lock.close();
