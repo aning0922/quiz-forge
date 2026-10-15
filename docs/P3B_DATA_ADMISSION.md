@@ -15,3 +15,26 @@ per-Product pending 仅统计当前 policy version/hash 精确匹配的原 pendi
 验证：相关单测 203 项；现有 domain/ACK/boundaries/B3 service/SQL 五套 PG 51 项；新增数据边界 PG 3 项；lint/typecheck 与 diff 空白检查通过。
 
 待完成：0010→0015 历史升级约束、静止旧行/旧 canonical/旧成功 application 的历史证据、全局容量及跨策略预算回归；B 的真实 supported candidate/restore 接入后验证四组合服务写入。当前 restore DTO 仍受旧桥接 v1 类型约束，未强制 cast 或制造 v2 opaque 候选。完整阶段六项/媒体/E2E/独审由主控集成后执行。
+
+## 第二步：历史与服务链闭合
+
+历史夹具在隔离 purpose=test 数据库中恢复真实旧函数，只在事务内按旧约束建立显式无文件 SQL 事实，执行所有延迟约束后运行原始 0015 静止检查并恢复当前保护；不关闭 trigger/CHECK，不改历史迁移收据。覆盖旧 ready 新申请拒绝、旧成功 key 先重放及归档后回执不变、原正文/hash 只读、旧 ready/validated canonical 同字节新 alias、自行 identity/report/evidence/ACK 与资源首来源精确复用、20 条历史 clean failures 不占当前 pending、1023 历史行允许一个新行而 1024 阻断新 key、同版本异 archive SHA 冲突且不转移 canonical/资源。
+
+0010→0014 升级回归明确从 legacyArchivePolicyDescriptor 重建 v1；仍验证原九字段 held 控制、缺 ACK 和禁止新 mutation。0015 对未决 IO 实际失败，原 tuple 完整保留；测试只在断言后删除自有已核无文件合成 fixture 以恢复空测试库，不将此清理冒充升级收口，不操作真实 UNKNOWN 现场。
+
+当前 restore 输入支持明确四组合。fresh-service 四案例运行真实 builder/ZIP、接收、prepared/opaque candidate、文件复制/hash/归档、PG、ACK 提交后 UNKNOWN、恢复、从冻结证据 restore、归档 retry 和不可变首稿 revision 1；只 stub 两个媒体运行时边界。归档重试不重复图片执行。标签 authored 只作为枚举事实，所有案例仍明确合成、unverified/不可发布。
+
+历史 DTO 保留原合法 semver 元数据读取语义；新来源的固定组件矩阵在 source admission 强制检查，不追溯收紧已有回执。
+
+本地验证证据：
+
+- 普通全 PG：37 文件、354 项通过；最后追加冲突边界后，历史/升级两文件 8 项通过（含完整 1023→1024 边界）。此处不把定向数累加冒称另一轮全量。
+- fresh-service：14 项通过；独立 fresh media-UNKNOWN：3 项通过。
+- 全单测 1351 项通过后，新增组件矩阵失败边界；最终数见后续记录。
+- format/lint/typecheck、生产 build 及 BUILD_TRACE_OK 通过。未占 3100，未运行生产 E2E/浏览器或真实隔离媒体；最终集成由主控执行。
+
+自有实例：普通 DB `0bfdf884e5deb6d047beddd0e2a88d94`；fresh-service `fc493e834e2f7e11bf09da7c1509ee2f`；fresh media-UNKNOWN `243164629d3372074f3a88905f240e6a`。服务失败现场保留原 tuple、文件及 held reservation，不 reset、不补 ACK。
+
+供主控集成的既有 A 提交：1594120（数据/只读）、3ed11f3（历史/alias）、424d820（两行相关联合夹具收窄，主控已取）。3eb0cdb 是 B 3fe6e33 的本地副本，不重复 cherry-pick。root 独占 tests/db/p2b2b-e2e-fixture.ts 的新 authored/v2 媒体夹具及三处事实文案；A 未改该夹具或两处 import 页面。1594120 已有 validations/panel.tsx 的 readOnly 操作门控和四组合文案，集成时保留门控，文案由 root 统一。
+
+最终本地收尾：107 文件 / 1352 单测、format:check、lint、typecheck、build 全部通过；build trace 为 65 traces / 12960 paths / 0 violations。上述三个自有实例均已停止，两个 fresh-service 失败现场完整保留。未运行生产 E2E、浏览器视觉、真实隔离媒体或最终 driver，均由主控串行集成验收。root 后续将 B2 媒体 fixture 从四资源 v1 改为五资源 authored/v2 时，需同步该 fixture 对应的 service/E2E 固定资源数断言；本记录的 14 项服务通过对应 A 当前分支的原 B2 fixture 加独立四组合产品。
