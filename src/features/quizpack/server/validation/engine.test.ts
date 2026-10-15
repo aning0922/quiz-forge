@@ -147,7 +147,7 @@ afterEach(() => {
   for (const value of contexts.splice(0)) disposeMediaOperationContext(value);
 });
 
-describe("trusted candidate validation (mock isolation, real ZIP/P1 core)", () => {
+describe("trusted candidate validation (mock isolation, real ZIP/supported core)", () => {
   it.each(["dimensions", "archetype"])(
     "fully validates same-byte %s with fixed inspector/context and private copies",
     async (engine) => {
@@ -194,8 +194,7 @@ describe("trusted candidate validation (mock isolation, real ZIP/P1 core)", () =
     },
   );
   it.each([
-    ["schemaVersion", "quizpack-content.v2", "UNSUPPORTED_CONTENT_VERSION"],
-    ["kind", "authored", "AUTHORED_NOT_SUPPORTED"],
+    ["schemaVersion", "quizpack-content.v3", "UNSUPPORTED_CONTENT_VERSION"],
   ])(
     "rejects %s precheck without P1 report or decoding",
     async (field, value, code) => {

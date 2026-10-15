@@ -2,7 +2,7 @@ import {
   createValidationOperationScope,
   ValidationInterrupted as CoreInterrupted,
 } from "./operation-scope";
-import { runtimeIdentity, readTrustedBinding } from "./identity";
+import { supportedRuntimeIdentity, readTrustedBinding } from "./identity";
 import "server-only";
 import { createHash } from "node:crypto";
 import { types } from "node:util";
@@ -14,17 +14,16 @@ import {
   type ImageDeclaration,
   type MediaOperationContext,
 } from "../media";
+import type { Result, ImageFacts } from "../../v1/api";
 import type {
-  QuizPackValidationReport,
-  Result,
-  ImageFacts,
-} from "../../v1/api";
+  SupportedParsedPack,
+  PackageValidationReport,
+} from "../../package/api";
 import { canonicalP1Json, P1CanonicalError } from "../../v1/canonical";
-import { DEFAULT_COMPATIBILITY_POLICY } from "../../v1/compatibility";
-import type { QuizPackContent } from "../../v1/content";
 import { PACK_LIMITS } from "../../v1/limits";
-import { packIdSchema, type QuizPackManifest } from "../../v1/manifest";
-import { validateQuizPackCore } from "../../v1/validate-core";
+import { packIdSchema } from "../../v1/manifest";
+import { validateSupportedQuizPackCore } from "../../package/validate-core";
+import { isContentSchemaVersion } from "../../package/manifest";
 import { PackToolError, packIssue, readRestrictedZipCore } from "../../v1/zip";
 import {
   sealCandidateResultEvidence,
@@ -38,7 +37,7 @@ import {
   issuePrivateCandidate,
   type CandidateResult,
 } from "./private-candidate";
-import { EVIDENCE_LIMITS, sealP1Report } from "./report";
+import { EVIDENCE_LIMITS, sealSupportedReport } from "./report";
 import { assertPersistenceUnicode, EvidenceError } from "./unicode";
 
 const hash = (input: Uint8Array | string) =>
@@ -61,7 +60,7 @@ function rawVersionGate(
       : null;
   const rawManifest = object(manifest),
     rawContent = object(content);
-  // Malformed v1 is still a real P1 structure failure. Explicit non-v1 dispatch is backend policy.
+  // Supported but malformed content receives a real structure report. Unknown dispatch is backend policy.
   if (
     rawManifest?.schemaVersion !== undefined &&
     rawManifest.schemaVersion !== "quizpack.v1"
@@ -69,11 +68,9 @@ function rawVersionGate(
     throw new BackendPolicyRejection("UNSUPPORTED_MANIFEST_VERSION");
   if (
     rawContent?.schemaVersion !== undefined &&
-    rawContent.schemaVersion !== "quizpack-content.v1"
+    !isContentSchemaVersion(rawContent.schemaVersion)
   )
     throw new BackendPolicyRejection("UNSUPPORTED_CONTENT_VERSION");
-  if (rawContent?.kind === "authored")
-    throw new BackendPolicyRejection("AUTHORED_NOT_SUPPORTED");
   const rawProduct = object(rawContent?.product);
   if (
     (typeof rawManifest?.productId === "string" &&
@@ -106,11 +103,12 @@ export async function validateArchiveCandidate(
   };
   let policy: CandidateEvidence["policy"] = { status: "not-run" };
   let archive: Buffer | null = null;
-  let parsed: {
-    manifest: QuizPackManifest;
-    content: QuizPackContent;
-    files: ReadonlyMap<string, Buffer>;
-  } | null = null;
+  const parsed: {
+    value: {
+      pack: SupportedParsedPack;
+      files: ReadonlyMap<string, Buffer>;
+    } | null;
+  } = { value: null };
   const { requestStop, trackIo, awaitOperationTask, settleIo } = scope;
   const checkpoint = (): void => {
     try {
@@ -164,9 +162,9 @@ export async function validateArchiveCandidate(
       throw new EvidenceError("EVIDENCE_SCHEMA_INVALID");
     return sealed;
   };
-  const sealReport = (value: QuizPackValidationReport): void => {
+  const sealReport = (value: PackageValidationReport): void => {
     try {
-      report = sealP1Report(value);
+      report = sealSupportedReport(value);
     } catch (error) {
       report = {
         status: "invalid",
@@ -203,17 +201,16 @@ export async function validateArchiveCandidate(
     checkpoint();
     report = { status: "not-run", reason: "IDENTITY_UNAVAILABLE" };
     const runtime = await readBinding();
-    identity = { status: "bound", value: runtimeIdentity(runtime) };
+    identity = { status: "bound", value: supportedRuntimeIdentity(runtime) };
     const operation = readMediaOperationState(context);
     report = { status: "not-run", reason: "OPERATION_INTERRUPTED_BEFORE_P1" };
     const validated = await awaitOperationTask(
-      validateQuizPackCore(
+      validateSupportedQuizPackCore(
         (async function* () {
           yield archive!;
         })(),
         {
           targetProductId,
-          compatibilityPolicy: DEFAULT_COMPATIBILITY_POLICY,
           limits: PACK_LIMITS,
           signal: operation.signal,
         },
@@ -256,8 +253,8 @@ export async function validateArchiveCandidate(
           },
           beforeStructure: (manifest, content) =>
             rawVersionGate(manifest, content, targetProductId),
-          parsed: (manifest, content, files) => {
-            parsed = { manifest, content, files };
+          parsed: (pack, files) => {
+            parsed.value = { pack, files };
           },
           inspect: async (
             bytes,
@@ -382,6 +379,7 @@ export async function validateArchiveCandidate(
             throw interruption;
           },
         },
+        { kind: "backend-matrix" },
       ),
     );
     sealReport(validated);
@@ -392,18 +390,14 @@ export async function validateArchiveCandidate(
     }
     checkpoint();
     if (!validated.candidateValid) return rejected("P1_REJECTED");
-    const frozenParsed = parsed as {
-      manifest: QuizPackManifest;
-      content: QuizPackContent;
-      files: ReadonlyMap<string, Buffer>;
-    } | null;
+    const frozenParsed = parsed.value;
     if (!frozenParsed) throw new CoreInterrupted("BRIDGE_INTERNAL_FAILED");
     try {
-      assertPersistenceUnicode(frozenParsed.manifest);
-      assertPersistenceUnicode(frozenParsed.content);
-      canonicalP1Json(frozenParsed.manifest, "manifest");
-      canonicalP1Json(frozenParsed.content, "content");
-      for (const declaration of frozenParsed.content.resources) {
+      assertPersistenceUnicode(frozenParsed.pack.manifest);
+      assertPersistenceUnicode(frozenParsed.pack.content);
+      canonicalP1Json(frozenParsed.pack.manifest, "manifest");
+      canonicalP1Json(frozenParsed.pack.content, "content");
+      for (const declaration of frozenParsed.pack.content.resources) {
         if (
           Buffer.byteLength(canonicalP1Json(declaration), "utf8") >
           EVIDENCE_LIMITS.resourceDeclarationBytes
