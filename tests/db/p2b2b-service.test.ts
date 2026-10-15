@@ -164,7 +164,7 @@ describe("B2-2B service: real PostgreSQL + finite media stub (not isolated-media
     expect(result).toMatchObject({
       outcome: "record",
       created: true,
-      validation: { status: "ready", archivedResourceCount: 4 },
+      validation: { status: "ready", archivedResourceCount: 5 },
     });
     const row = await serviceRow(db, prepared.validationKey);
     expect(Number(row.reserved_bytes)).toBe(0);
@@ -180,7 +180,7 @@ describe("B2-2B service: real PostgreSQL + finite media stub (not isolated-media
           { product_id: string; source_validation_id: string }[]
         >`SELECT product_id,source_validation_id FROM qf.product_asset`,
     );
-    expect(refs).toHaveLength(4);
+    expect(refs).toHaveLength(5);
     expect(
       refs.every(
         (r) =>
@@ -188,7 +188,7 @@ describe("B2-2B service: real PostgreSQL + finite media stub (not isolated-media
           r.source_validation_id === row.id,
       ),
     ).toBe(true);
-    expect(media.image).toHaveBeenCalledTimes(4);
+    expect(media.image).toHaveBeenCalledTimes(5);
   });
 
   it("exact replay precedes stale CAS/current runtime and adds no rows, reports or audit", async () => {
