@@ -1,5 +1,11 @@
 # QuizForge 托管开发
 
+## P3-B 接续分工
+
+P3-A交付0059175，运行ce190cd全部技术验收通过；主控分支codex/supported-pack-admission。[PACK_ADMISSION_P3B](PACK_ADMISSION_P3B.md)已独立Astra复审冻结。原A聊天更名“QuizForge P3-B · 准入数据与历史”，原B更名“QuizForge P3-B · 包工具与可信桥接”，thread ID和Sol/high配置不变；仍由“QuizForge · 架构与独立审查”独审。两聊天从0059175新建受管工作树，旧提交保留。
+
+主控独占共享合同/有限报告/identity/archive policy、0015迁移/guard、CLI/配置/闭包和3100；A负责validation应用与旧历史/首稿来源，B负责package与可信桥接。先公共机器Schema，再业务并行；未提前让两流放宽准入或改公共文件。真实升级限制及当前pending统计修订已入合同，生产迁移和发布不在授权内。
+
 ## 2026-10-16 P3-A 技术退出
 
 最终代码ce190cd、[验收](P3A_ACCEPTANCE.md)：1316单元/335PG/46driver/222生产E2E（10旧skip）、六项工程检查、最终main媒体66×3及五源码变更拒绝、双CI均通过。Astra确认全部登记P1/P2关闭。四卡真实数学执行已完成，仍authored-pending，无持久化准入或发布批准。PR #15未合并，自有DB/3100已停。
