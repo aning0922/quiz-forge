@@ -28,7 +28,7 @@ B 的原始提交 `8326aba30c5dd83c980c9da5c83bab51b1c434dc` 在本分支同步�
 
 全仓 format/lint/typecheck/unit 与普通PG完整回归正在当前路由head复验，最终结果另补。`pnpm test:e2e` 与四宽六状态截图由主控独占3100串行集成；A不执行主控端口任务。
 
-当前路由head最终本地回归：`pnpm format:check`、`pnpm lint`、`pnpm typecheck`、`pnpm test` 全部通过（117 files / 1478 unit）；普通 `pnpm test:db` 全部通过（42 files / 382 tests，172.70s）。自有 b03fce54a628fb595397f6cb35d78e07 / 55421 已正常停止，Next probe 子进程与夹具已完成真实退出和精确清理。未执行主控独占 `pnpm test:e2e`，未宣称远端CI/浏览器视觉成功。
+e9adeec 路由实现的完整本地回归：`pnpm format:check`、`pnpm lint`、`pnpm typecheck`、`pnpm test` 全部通过（117 files / 1478 unit）；普通 `pnpm test:db` 全部通过（42 files / 382 tests，172.70s）。自有 b03fce54a628fb595397f6cb35d78e07 / 55421 已正常停止，Next probe 子进程与夹具已完成真实退出和精确清理。未执行主控独占 `pnpm test:e2e`，未宣称远端CI/浏览器视觉成功。
 
 环境差异已交主控冻结窄策略：普通 CI database job 没有 provision 平台 native runtime/control 目录，单独执行不能依赖其他旧测试先建目录。主控随后报告普通集成 CI 38796115166（97f07d5）与 38794366475（4c2f921）实际 success，因此这是测试独立性/执行顺序边界，不是已发生的 CI 失败。A没有创建替代 control 或改动 CI，具体收口见下文。
 
@@ -39,3 +39,5 @@ owner竞态整改已独立提交949d932：同步占用cwd/instance/run身份后�
 新增test-only `p3c-native-control.ts`，仅对qualification严格等于synthetic-db-and-private-pixels-no-native的本批夹具生效。先核cwd/.cache/quizpack-media-runtime已存在祖先的真实目录、owner、无symlink与实际realpath；只有当前平台stateRoot的严格ENOENT返回not-provisioned。任何EACCES/ENOTDIR、悬空symlink或未知错误均拒绝。stateRoot存在则要求0700/owner/无symlink及原control0700/身份/空目录前后核验；缺control/非空/错误mode照常拒绝。cleanup在最初和删除前实际重复检查，返回明确 `{nativeControl:"not-provisioned"|"empty"}`；not-provisioned不称native通过。旧B2/B3及生产native检查未改，也不创建空control替代证据。
 
 无runtime检查新增11项实际隔离FS测试，包括全新根（连.cache都不存在且检查不创建它）、现存祖先、平台根出现后缺control、正常空control后变为非空、目录mode/文件、各层悬空symlink和未知qualification拒绝。FS读取单测另显式创建其自有私有测试base，避免依赖之前数据库初始化；不修改已有目录权限。
+
+ece2f0c 整改后复验：全仓format:check/lint/typecheck与117files/1478unit再次全部通过；owner5＋原生目录11＋真实PG锁3＋PG/FS直接HTTP7，共26项定向通过。完整普通PG的42files/382是上文e9adeec基线证据；没有把新增用例后的总数冒称已全量复跑。自有55421实例status再次确认为stopped。949d932/ece2f0c已分别交主控独审复核；最终集成CI、3100浏览器E2E及视觉/作者审核仍归主控，不在此声明通过。
