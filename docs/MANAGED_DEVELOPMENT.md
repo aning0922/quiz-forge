@@ -1,5 +1,11 @@
 # QuizForge 托管开发
 
+## P3-B 技术退出与P3-C准备
+
+运行c419aa6、最终测试afaa43e通过完整技术出口；详见[P3B_ACCEPTANCE](P3B_ACCEPTANCE.md)。远端普通38788800066与媒体38788800035均实际success，Astra无剩余P1/P2，32图已逐张检查。两实现聊天本批提交均集成，原分支与工作树保留；主控已清理最终浏览器夹具并停自有实例。
+
+接续P3-C固定修订内部预览的精确接口合同：当前授权运营员读资源与真实临时评分，固定正文/素材绑定、答案请求代次、受控六状态及PNG；不增加正式会话或发布权威。A预研鉴权/有限私有读取，B预研DTO/渲染/字体，Astra独立冻结前审查；接口冻结之前不实施。继续复用三条独立聊天，不恢复旧D1或改用子代理。
+
 ## P3-B 接续分工
 
 P3-A交付0059175，运行ce190cd全部技术验收通过；主控分支codex/supported-pack-admission。[PACK_ADMISSION_P3B](PACK_ADMISSION_P3B.md)已独立Astra复审冻结。原A聊天更名“QuizForge P3-B · 准入数据与历史”，原B更名“QuizForge P3-B · 包工具与可信桥接”，thread ID和Sol/high配置不变；仍由“QuizForge · 架构与独立审查”独审。两聊天从0059175新建受管工作树，旧提交保留。

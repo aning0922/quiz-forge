@@ -4,6 +4,8 @@
 
 ## 当前阶段与授权
 
+- 2026-10-16 P3-B已技术验收：运行c419aa6、测试afaa43e，1363单元、最终远端356PG、46driver、222生产E2E/10旧skip、main/fixture各66×3封存、32图及双CI成功；Astra无剩余P1/P2。见docs/P3B_ACCEPTANCE.md。接续P3-C固定revision内部预览合同收口，冻结共享接口后两独立聊天实施；下方P3-B实施段为交付历史。
+
 - 当前实施批次P3-B：P3-A已技术验收（代码ce190cd、交付0059175），从同一受管主树建立codex/supported-pack-admission。合同docs/PACK_ADMISSION_P3B.md已Astra复审冻结：显式完整包四组合准入、可信候选/归档/首稿revision1；不含预览renderer、追加修订、审批或Key。主控先交共享package API/compatibility、report/identity、archive policy、0015迁移/guard与配置；两独立Sol分别数据/历史与包工具/桥接，不双写共享文件。只在隔离purpose=test库迁移，真实静止/停旧写者为升级前置，旧历史只读且不补造终结。
 
 - 2026-10-15 作者再次明确选择“恢复独立开发、独立审查聊天”。主线必须采用项目侧栏内独立聊天，不能用主控会话内子代理替代：最多两条GPT-6.1 Sol/high开发聊天、一条GPT-6 Astra/high独立审查聊天；本聊天负责主控和集成。接管登记见docs/MANAGED_DEVELOPMENT.md。原子代理已提交并停止，自有实例已停，保存分支和工作树供独立聊天继承，不重做已验证成果。
