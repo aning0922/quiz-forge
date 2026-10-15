@@ -1,4 +1,5 @@
 import { types } from "node:util";
+import { SCORING_LIMITS } from "@/lib/assessment-contract/scoring-v1";
 
 import type { Result } from "./api";
 
@@ -35,10 +36,10 @@ export const PACK_LIMITS: Readonly<PackLimits> = Object.freeze({
   resourceBytes: 8 * 1024 * 1024,
   compressionRatio: 100,
   jsonDepth: 32,
-  questions: 100,
-  optionsPerQuestion: 8,
-  dimensions: 16,
-  results: 32,
+  questions: SCORING_LIMITS.questions,
+  optionsPerQuestion: SCORING_LIMITS.optionsPerQuestion,
+  dimensions: SCORING_LIMITS.dimensions,
+  results: SCORING_LIMITS.results,
   imageDimension: 8192,
   imagePixels: 16_000_000,
   operationMs: 60_000,

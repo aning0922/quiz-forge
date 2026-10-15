@@ -7,6 +7,12 @@ on:
       - "src/features/quizpack/v1/**"
       - "src/features/quizpack/server/**"
       - "src/lib/build/media-deployment.ts"
+      - "src/lib/assessment-contract/primitives.ts"
+      - "src/lib/assessment-contract/scoring-v1.ts"
+      - "src/lib/json/canonical.ts"
+      - "src/features/quizpack/content/reference-graph.ts"
+      - "tsconfig.json"
+      - "package.json"
       - "scripts/quizpack-media-build.ts"
       - "scripts/quizpack-media-next-fixture.ts"
       - "next.config.ts"
@@ -44,19 +50,19 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Build fixed Next media fixture
         run: |
-          node --conditions=react-server --import tsx scripts/quizpack-media-next-fixture.ts prepare
-          node --conditions=react-server --import tsx scripts/quizpack-media-next-fixture.ts build
-          node --conditions=react-server --import tsx scripts/quizpack-media-next-fixture.ts verify
+          pnpm --silent media:fixture prepare
+          pnpm --silent media:fixture build
+          pnpm --silent media:fixture verify
       - name: Prepare fixed Linux runtime
-        run: node --conditions=react-server --import tsx scripts/quizpack-media-preflight/linux/setup.mjs --runtime-target=fixture
+        run: pnpm --silent media:setup:linux --runtime-target=fixture
       - name: Real target matrix and offline seal
         shell: bash
-        run: node --conditions=react-server --import tsx scripts/quizpack-media-preflight/shared/provision-cli.ts --runtime-target=fixture
+        run: pnpm --silent media:provision --runtime-target=fixture
       - name: Bounded matrix failure diagnostics
         if: failure()
         shell: bash
         run: |
-          node --conditions=react-server --import tsx --input-type=module <<'NODE'
+          TSX_TSCONFIG_PATH=./tsconfig.json node --conditions=react-server --import tsx --input-type=module <<'NODE'
           import { constants } from "node:fs";
           import { readdir, lstat, open } from "node:fs/promises";
           import { join } from "node:path";
@@ -99,4 +105,4 @@ jobs:
           console.log(JSON.stringify({ diagnostic: "matrix-report-count.v1", reports }));
           NODE
       - name: Verify actual sealed Next public entry
-        run: node --conditions=react-server --import tsx scripts/quizpack-media-next-fixture.ts verify-sealed
+        run: pnpm --silent media:fixture verify-sealed

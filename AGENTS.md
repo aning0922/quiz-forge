@@ -4,6 +4,8 @@
 
 ## 当前阶段与授权
 
+- P3-A已于2026-10-16完成技术验收（最终代码ce190cd，见docs/P3A_ACCEPTANCE.md）；接续P3-B合同准备，冻结前不实施authored/v2准入。以下P3-A范围保留作交付边界：从B2-3交付802585b独立堆叠分支接续，严格范围见docs/CONTENT_SCORING_P3A.md。只做有限content.v2离线Schema/内容内部引用/分派、确定性纯评分及见证/覆盖，不开放ZIP/P2/DB/HTTP/消费者准入。主控先交中立Schema/canonical/审阅封套，A拥有quiz/scoring及首款逻辑转写，B拥有quizpack/content及adapter，Astra独审；共享文件不可双写。
+
 - 2026-10-15 作者再次明确选择“恢复独立开发、独立审查聊天”。主线必须采用项目侧栏内独立聊天，不能用主控会话内子代理替代：最多两条GPT-6.1 Sol/high开发聊天、一条GPT-6 Astra/high独立审查聊天；本聊天负责主控和集成。接管登记见docs/MANAGED_DEVELOPMENT.md。原子代理已提交并停止，自有实例已停，保存分支和工作树供独立聊天继承，不重做已验证成果。
 - 2026-10-15 作者明确恢复 QuizForge 托管开发，由新主控接续历史人物首款 P5 端到端内测；常规开发、测试、独立审查、整改、提交推送及 Draft PR 自行推进，内容、素材与发布批准保留人工闸门。继续下文 Sol/high 实施、Astra/high 独审和最多两条实现流的方式。恢复基线为 B2-2B 本地 `fb02afc`，不回退到旧 D1 工作树，不恢复无关项目。仓库 public 的独立授权已执行；它不批准素材商用、main 合并、生产迁移、部署或商业发布。
 - 2026-10-12 作者明确扩大托管范围：按已确认路线推进至 P5 首款端到端内测，在必要人工决策点暂停。下方“仅F1/后续另行授权”属于历史边界，由本条覆盖；P1–P5 的常规工程、测试、审查整改、独立提交/推送和Draft PR由总控连续推进，无需重复阶段启动确认。P6+、恢复旧D1-D聊天、自动合并main、生产迁移/部署/商业发布不在本次范围。
@@ -35,7 +37,7 @@
 - QuizPack 导入先限压缩大小/解压大小/文件数，拒绝路径穿越、符号链接、重复路径、未知/可执行类型和缺授权资源；未通过不能导入正式内容。详细提案见 `docs/QUIZPACK_SPEC.md`。
 - 领域模块不反向依赖 `app`；共享纯函数放 `lib`。跨模块只通过显式接口或应用服务，不任意互查数据库。
 - 禁止在通用组件中按商品 ID 硬编码行为；五个页面状态可以有不同配方，不能退化为单一布局换色。
-- PostgreSQL18.4 + Drizzle已在P2-A建立隔离实例与operator/session/audit，B1追加product/category/tag/product_tag及真实目录界面，最终验收见P2B1_ACCEPTANCE；不是生产环境。B2已完成synthetic/content.v1原包接收、资源归档及首个不可变草稿；authored/v2准入、追加修订、发布持久化与评分仍待后续阶段。固定postgres补丁及失效错误合同见P2B1_DRIVER_PATCH，升级前必须复验；build自动阻断私有路径追踪。
+- PostgreSQL18.4 + Drizzle已在P2-A建立隔离实例与operator/session/audit，B1追加product/category/tag/product_tag及真实目录界面，最终验收见P2B1_ACCEPTANCE；不是生产环境。B2已完成synthetic/content.v1原包接收、资源归档及首个不可变草稿；authored/v2准入、追加修订、发布持久化与消费者评分接入仍待后续阶段；P3-A纯评分与有限content.v2已技术验收。固定postgres补丁及失效错误合同见P2B1_DRIVER_PATCH，升级前必须复验；build自动阻断私有路径追踪。
 - AI 只生成符合版本化结构 Schema 的草稿。拒绝任意代码、eval、动态执行和从 AI 输出导入模块；正式评分由受测的确定性引擎完成。
 - Key 正式完成依赖数据库事务与唯一约束，前端状态不能授予完成权威。QuizReport 为不可变快照，发布内容不可原地修改。
 - 报告支持 DETERMINISTIC / COMPOSED / AI_ENHANCED，最终结论始终由确定性引擎产生。AI 仅增强已验证摘要的文案，不改分数/原型/结局，不编造经历，不做诊断/命运断言；失败回退完整基线报告。
@@ -54,6 +56,8 @@
 - 测试使用独立合成数据；D0 的主题简报是方向示例，不是真实测评题库。
 
 ## 测试与视觉验收
+
+- 当前媒体离线入口必须从受管仓库根使用固定package scripts：`pnpm --silent media:build --main`、`media:provision --runtime-target=main`、`media:setup:macos --runtime-target=main`，fixture/Linux使用相应`media:fixture`、`media:setup:linux`。这些入口在tsx loader启动前固定根tsconfig；不得继承其他项目的TSX_TSCONFIG_PATH。旧验收中的raw node命令仅为历史记录，不是当前支持入口。矩阵子进程再次固定绝对配置路径，原停止协议不变。
 
 - 阶段交付执行 `pnpm format:check`、`pnpm lint`、`pnpm typecheck`、`pnpm test`、`pnpm build`、`pnpm test:e2e`；报告实际结果和失败原因。
 - E2E 使用生产构建与独占端口 3100，不复用未知服务器；初次运行 `pnpm test:e2e:install`。

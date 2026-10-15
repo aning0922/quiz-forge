@@ -546,7 +546,14 @@ function runOwnedMatrix(
         join(roots.checkoutRoot, "scripts/quizpack-media-preflight", script),
         `--runtime-target=${target}`,
       ],
-      { cwd: roots.checkoutRoot, stdio: ["ignore", "pipe", "pipe"] },
+      {
+        cwd: roots.checkoutRoot,
+        env: {
+          ...process.env,
+          TSX_TSCONFIG_PATH: join(roots.checkoutRoot, "tsconfig.json"),
+        },
+        stdio: ["ignore", "pipe", "pipe"],
+      },
     );
     const chunks: Buffer[] = [];
     let size = 0,

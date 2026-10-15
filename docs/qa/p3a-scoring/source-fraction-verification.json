@@ -1,0 +1,227 @@
+{
+  "schemaVersion": "quiz-source-fraction-verification.v1",
+  "method": "Python fractions.Fraction recomputed from exact Git source tables; no TypeScript engine imports",
+  "implementationCommit": "1b1714d139ed1f52dacc46c38fadafd23244ae7e",
+  "source": {
+    "commit": "03fdc240c924e2fe7379534176e11d1e6ab3bc58",
+    "path": "docs/FIRST_PRODUCT_CONTENT_DRAFT.md",
+    "sha256": "8c049714ae07c5ed2f10fff334cc041364789781de28bfbbd5442a26d6dc0653"
+  },
+  "fixtureFileSha256": "0c6994e81d17bda5c266548aa0a17b46bac17547558cdcac3146a5c0284494df",
+  "logicHash": "6e44add1bf8bbcf2e3ccec319bd46fc4c6270c3fa474ea30a1887d6d8f8adb07",
+  "transcriptionSha256": "01a95213f955f7014a05d37163eed93a0d5dbd4c9662acf3dc3c3d265f9bb7a0",
+  "optionVectorsVerified": 48,
+  "witnessesVerified": 4,
+  "distancesVerified": 16,
+  "status": "passed",
+  "checks": [
+    {
+      "resultId": "li-bai",
+      "rawSums": [33, 29, 8, 8],
+      "normalized": [
+        {
+          "numerator": "275",
+          "denominator": "4"
+        },
+        {
+          "numerator": "725",
+          "denominator": "12"
+        },
+        {
+          "numerator": "100",
+          "denominator": "11"
+        },
+        {
+          "numerator": "300",
+          "denominator": "23"
+        }
+      ],
+      "distances": [
+        {
+          "resultId": "li-bai",
+          "value": {
+            "numerator": "29451725",
+            "denominator": "4608648"
+          }
+        },
+        {
+          "resultId": "su-shi",
+          "value": {
+            "numerator": "16773067625",
+            "denominator": "4608648"
+          }
+        },
+        {
+          "resultId": "tao-yuan-ming",
+          "value": {
+            "numerator": "21291850025",
+            "denominator": "4608648"
+          }
+        },
+        {
+          "resultId": "bai-ju-yi",
+          "value": {
+            "numerator": "47029312325",
+            "denominator": "4608648"
+          }
+        }
+      ]
+    },
+    {
+      "resultId": "su-shi",
+      "rawSums": [14, 32, 27, 7],
+      "normalized": [
+        {
+          "numerator": "175",
+          "denominator": "6"
+        },
+        {
+          "numerator": "200",
+          "denominator": "3"
+        },
+        {
+          "numerator": "575",
+          "denominator": "11"
+        },
+        {
+          "numerator": "250",
+          "denominator": "23"
+        }
+      ],
+      "distances": [
+        {
+          "resultId": "li-bai",
+          "value": {
+            "numerator": "8101656425",
+            "denominator": "2304324"
+          }
+        },
+        {
+          "resultId": "su-shi",
+          "value": {
+            "numerator": "26883125",
+            "denominator": "2304324"
+          }
+        },
+        {
+          "resultId": "tao-yuan-ming",
+          "value": {
+            "numerator": "16831370825",
+            "denominator": "2304324"
+          }
+        },
+        {
+          "resultId": "bai-ju-yi",
+          "value": {
+            "numerator": "10207274225",
+            "denominator": "2304324"
+          }
+        }
+      ]
+    },
+    {
+      "resultId": "tao-yuan-ming",
+      "rawSums": [24, 8, 7, 30],
+      "normalized": [
+        {
+          "numerator": "50",
+          "denominator": "1"
+        },
+        {
+          "numerator": "50",
+          "denominator": "3"
+        },
+        {
+          "numerator": "75",
+          "denominator": "11"
+        },
+        {
+          "numerator": "1400",
+          "denominator": "23"
+        }
+      ],
+      "distances": [
+        {
+          "resultId": "li-bai",
+          "value": {
+            "numerator": "2530100950",
+            "denominator": "576081"
+          }
+        },
+        {
+          "resultId": "su-shi",
+          "value": {
+            "numerator": "4404318625",
+            "denominator": "576081"
+          }
+        },
+        {
+          "resultId": "tao-yuan-ming",
+          "value": {
+            "numerator": "7868050",
+            "denominator": "576081"
+          }
+        },
+        {
+          "resultId": "bai-ju-yi",
+          "value": {
+            "numerator": "3176522275",
+            "denominator": "576081"
+          }
+        }
+      ]
+    },
+    {
+      "resultId": "bai-ju-yi",
+      "rawSums": [1, 11, 32, 28],
+      "normalized": [
+        {
+          "numerator": "25",
+          "denominator": "12"
+        },
+        {
+          "numerator": "275",
+          "denominator": "12"
+        },
+        {
+          "numerator": "700",
+          "denominator": "11"
+        },
+        {
+          "numerator": "1300",
+          "denominator": "23"
+        }
+      ],
+      "distances": [
+        {
+          "resultId": "li-bai",
+          "value": {
+            "numerator": "48799874725",
+            "denominator": "4608648"
+          }
+        },
+        {
+          "resultId": "su-shi",
+          "value": {
+            "numerator": "22071765625",
+            "denominator": "4608648"
+          }
+        },
+        {
+          "resultId": "tao-yuan-ming",
+          "value": {
+            "numerator": "24184518025",
+            "denominator": "4608648"
+          }
+        },
+        {
+          "resultId": "bai-ju-yi",
+          "value": {
+            "numerator": "78450325",
+            "denominator": "4608648"
+          }
+        }
+      ]
+    }
+  ]
+}

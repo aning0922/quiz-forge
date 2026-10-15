@@ -1,0 +1,139 @@
+{
+  "schemaVersion": "quiz-scoring-measurements.v1",
+  "implementationCommit": "1b1714d139ed1f52dacc46c38fadafd23244ae7e",
+  "node": "v20.20.1",
+  "platform": "darwin",
+  "arch": "arm64",
+  "method": "single local run; explicit GC before runs; elapsed and heap/RSS observations, process maxRSS is a cumulative high-water observation; no OS isolation claim",
+  "measurements": [
+    {
+      "model": "frontier",
+      "elapsedMs": 22.298958000000027,
+      "heapUsedBefore": 10378176,
+      "heapUsedAfter": 26723856,
+      "rssBefore": 106037248,
+      "rssAfter": 116686848,
+      "processMaxRssKiB": 113968,
+      "report": {
+        "schemaVersion": "quiz-coverage-evidence.v1",
+        "logicHash": "e1c7dcc6ad6d09601447720edb9df42821939e50bf9c218ba99bd4cfbd8213d7",
+        "policyId": "dimensions-coverage.v1",
+        "policyHash": "e103f084e52d3d661363c0af453afdfa5b5f3c0967cc0264700c407fe1f27960",
+        "budget": {
+          "schemaVersion": "quiz-coverage-policy.v1",
+          "id": "dimensions-coverage.v1",
+          "algorithm": "reachable-raw-vectors-dp",
+          "globalProfile": "last-only",
+          "frontierStates": 20000,
+          "retainedStates": 40000,
+          "transitions": 1000000,
+          "coordinateAdditions": 16000000,
+          "scalarComparisons": 10000000,
+          "pathBytes": 4000000
+        },
+        "processedQuestions": 4,
+        "stats": {
+          "transitions": 24681,
+          "coordinateAdditions": 123405,
+          "scalarComparisons": 2,
+          "peakFrontierStates": 20000,
+          "peakRetainedStates": 24096,
+          "peakPathBytes": 116384
+        },
+        "status": "inconclusive",
+        "limit": "frontierStates"
+      }
+    },
+    {
+      "model": "transitions",
+      "elapsedMs": 165.19958300000002,
+      "heapUsedBefore": 11397944,
+      "heapUsedAfter": 39350320,
+      "rssBefore": 123502592,
+      "rssAfter": 149520384,
+      "processMaxRssKiB": 146016,
+      "report": {
+        "schemaVersion": "quiz-coverage-evidence.v1",
+        "logicHash": "deb715d36555cda6f693ac7c33263edd11204a4727d9b611b66e5d1095f1b58c",
+        "policyId": "dimensions-coverage.v1",
+        "policyHash": "e103f084e52d3d661363c0af453afdfa5b5f3c0967cc0264700c407fe1f27960",
+        "budget": {
+          "schemaVersion": "quiz-coverage-policy.v1",
+          "id": "dimensions-coverage.v1",
+          "algorithm": "reachable-raw-vectors-dp",
+          "globalProfile": "last-only",
+          "frontierStates": 20000,
+          "retainedStates": 40000,
+          "transitions": 1000000,
+          "coordinateAdditions": 16000000,
+          "scalarComparisons": 10000000,
+          "pathBytes": 4000000
+        },
+        "processedQuestions": 57,
+        "stats": {
+          "transitions": 1000000,
+          "coordinateAdditions": 1000000,
+          "scalarComparisons": 2,
+          "peakFrontierStates": 4933,
+          "peakRetainedStates": 9766,
+          "peakPathBytes": 555579
+        },
+        "status": "inconclusive",
+        "limit": "transitions"
+      }
+    },
+    {
+      "model": "comparisons",
+      "elapsedMs": 471.605,
+      "heapUsedBefore": 10921952,
+      "heapUsedAfter": 26129936,
+      "rssBefore": 127991808,
+      "rssAfter": 136347648,
+      "processMaxRssKiB": 146016,
+      "report": {
+        "schemaVersion": "quiz-coverage-evidence.v1",
+        "logicHash": "d0a4874de5e4f395d9be8e92cb09c16ec173d5f1e720b778ff40220152ab0739",
+        "policyId": "dimensions-coverage.v1",
+        "policyHash": "e103f084e52d3d661363c0af453afdfa5b5f3c0967cc0264700c407fe1f27960",
+        "budget": {
+          "schemaVersion": "quiz-coverage-policy.v1",
+          "id": "dimensions-coverage.v1",
+          "algorithm": "reachable-raw-vectors-dp",
+          "globalProfile": "last-only",
+          "frontierStates": 20000,
+          "retainedStates": 40000,
+          "transitions": 1000000,
+          "coordinateAdditions": 16000000,
+          "scalarComparisons": 10000000,
+          "pathBytes": 4000000
+        },
+        "processedQuestions": 5,
+        "stats": {
+          "transitions": 21064,
+          "coordinateAdditions": 337024,
+          "scalarComparisons": 10000000,
+          "peakFrontierStates": 16384,
+          "peakRetainedStates": 20480,
+          "peakPathBytes": 98304
+        },
+        "status": "inconclusive",
+        "limit": "scalarComparisons"
+      }
+    }
+  ],
+  "largeDenominator": {
+    "elapsedMs": 2.2067919999999503,
+    "definitionWireBytes": 322070,
+    "scoreWireBytes": 8627,
+    "distanceDigitLengths": [
+      {
+        "numerator": 133,
+        "denominator": 128
+      },
+      {
+        "numerator": 133,
+        "denominator": 128
+      }
+    ]
+  }
+}

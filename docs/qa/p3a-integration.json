@@ -1,0 +1,104 @@
+{
+  "schemaVersion": "quizforge-p3a-integration-observation.v1",
+  "observedAt": "2026-10-16",
+  "codeCommit": "ce190cd50c3515cc0e3254a7ba1a8b4bee484711",
+  "scope": "local synthetic integration checks; no authored content, asset rights, human review or publication approval",
+  "build": {
+    "warnings": 0,
+    "traceCount": 65,
+    "pathCount": 12955,
+    "privateViolations": 0
+  },
+  "binding": {
+    "sourceBundleHash": "c073211b5ad9bc01823e933a76dc3133fdc118f3107f1467010e3eb1e6f886ac",
+    "deploymentId": "31257f256851648045c83d5d125908ab7352d5e3cf13f96a8cbd84fc64724bfd",
+    "sourceFileCount": 1039,
+    "artifactFileCount": 740,
+    "totalBytes": 33103961
+  },
+  "sourceMutations": [
+    {
+      "path": "src/lib/assessment-contract/primitives.ts",
+      "rejection": "MANIFEST_MISMATCH",
+      "restoredVerified": true
+    },
+    {
+      "path": "src/lib/assessment-contract/scoring-v1.ts",
+      "rejection": "MANIFEST_MISMATCH",
+      "restoredVerified": true
+    },
+    {
+      "path": "src/lib/json/canonical.ts",
+      "rejection": "MANIFEST_MISMATCH",
+      "restoredVerified": true
+    },
+    {
+      "path": "src/features/quizpack/content/reference-graph.ts",
+      "rejection": "MANIFEST_MISMATCH",
+      "restoredVerified": true
+    },
+    {
+      "path": "tsconfig.json",
+      "rejection": "MANIFEST_MISMATCH",
+      "restoredVerified": true
+    }
+  ],
+  "media": {
+    "mode": "offline-exclusive",
+    "outcome": "sealed",
+    "capabilityCommitted": true,
+    "recordCommitted": true,
+    "target": "main",
+    "deploymentId": "31257f256851648045c83d5d125908ab7352d5e3cf13f96a8cbd84fc64724bfd",
+    "runtimeBundleHash": "8e634193a61e0f4fcbaa50226975c22228ee15e5247e0fef8ddbbd01bb3ee4b2",
+    "rounds": [
+      {
+        "cases": 66,
+        "passed": 66,
+        "ownedOperationsStopped": true,
+        "residualControlEntries": 0
+      },
+      {
+        "cases": 66,
+        "passed": 66,
+        "ownedOperationsStopped": true,
+        "residualControlEntries": 0
+      },
+      {
+        "cases": 66,
+        "passed": 66,
+        "ownedOperationsStopped": true,
+        "residualControlEntries": 0
+      }
+    ],
+    "ownedOperationsStopped": true,
+    "controlEmpty": true
+  },
+  "ci": {
+    "checks": "https://github.com/aning0922/quiz-forge/actions/runs/38771885883",
+    "media": "https://github.com/aning0922/quiz-forge/actions/runs/38771886058",
+    "conclusion": "success"
+  },
+  "checks": {
+    "format": "passed",
+    "lint": "passed",
+    "typecheck": "passed",
+    "unitFiles": 103,
+    "unitPassed": 1316,
+    "postgresFiles": 34,
+    "postgresPassed": 335,
+    "driverPassed": 46,
+    "productionE2E": {
+      "passed": 222,
+      "existingSkipped": 10,
+      "durationMinutes": 2.2
+    },
+    "cleanup": {
+      "draftsFixture": "passed",
+      "validationsFixture": "passed",
+      "database": "stopped",
+      "ports3100And55423": "no listeners"
+    },
+    "independentReview": "P3-A technical exit passed; source/config closure P2 closed"
+  }
+}

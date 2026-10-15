@@ -1,4 +1,10 @@
 import { z } from "zod";
+import { assessmentReferenceSchema as contentReferenceSchema } from "@/lib/assessment-contract/primitives";
+import {
+  dimensionContributionSchema as dimensionContribution,
+  scoringRulesSchema as rules,
+} from "@/lib/assessment-contract/scoring-v1";
+export { assessmentReferenceSchema as contentReferenceSchema } from "@/lib/assessment-contract/primitives";
 import type { Result } from "./api";
 import { PACK_LIMITS } from "./limits";
 import {
@@ -21,81 +27,7 @@ const text = z
   .regex(
     /^(?![\s\S]*(?:[hH][tT][tT][pP][sS]?:|[fF][tT][pP]:|[fF][iI][lL][eE]:|[dD][aA][tT][aA]:|[jJ][aA][vV][aA][sS][cC][rR][iI][pP][tT]:|\/\/))[\s\S]*$/,
   );
-export const contentReferenceSchema = z.strictObject({
-  id,
-  productId: id,
-  version,
-});
 const definition = { id, productId: id, version };
-const dimensionContribution = z.strictObject({
-  dimensionRef: contentReferenceSchema,
-  value: z.number().int().min(-100).max(100),
-});
-const normalization = z.strictObject({
-  kind: z.literal("linear-to-0-100"),
-  bounds: z
-    .array(
-      z.strictObject({
-        dimensionRef: contentReferenceSchema,
-        min: z.number().int().min(-10000).max(10000),
-        max: z.number().int().min(-10000).max(10000),
-      }),
-    )
-    .min(1)
-    .max(PACK_LIMITS.dimensions),
-});
-const ruleBase = {
-  aggregation: z.literal("sum"),
-  normalization,
-  tieBreak: z.literal("result-order"),
-  resultOrder: z.array(contentReferenceSchema).min(1).max(PACK_LIMITS.results),
-};
-const rules = z.discriminatedUnion("kind", [
-  z.strictObject({
-    ...ruleBase,
-    kind: z.literal("dimensions"),
-    profiles: z
-      .array(
-        z.strictObject({
-          resultRef: contentReferenceSchema,
-          ranges: z
-            .array(
-              z.strictObject({
-                dimensionRef: contentReferenceSchema,
-                min: z.number().int().min(0).max(100),
-                max: z.number().int().min(0).max(100),
-              }),
-            )
-            .min(1)
-            .max(PACK_LIMITS.dimensions),
-        }),
-      )
-      .min(1)
-      .max(PACK_LIMITS.results),
-  }),
-  z.strictObject({
-    ...ruleBase,
-    kind: z.literal("archetype"),
-    distance: z.literal("squared-euclidean"),
-    profiles: z
-      .array(
-        z.strictObject({
-          resultRef: contentReferenceSchema,
-          targets: z
-            .array(
-              z.strictObject({
-                dimensionRef: contentReferenceSchema,
-                value: z.number().int().min(0).max(100),
-              }),
-            )
-            .min(1)
-            .max(PACK_LIMITS.dimensions),
-        }),
-      )
-      .min(1)
-      .max(PACK_LIMITS.results),
-  }),
-]);
 const layout = z.strictObject({
   component: componentDeclarationSchema,
   props: z.strictObject({
