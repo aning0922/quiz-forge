@@ -12,9 +12,23 @@ import {
   EVIDENCE_LIMITS,
   freezeJson,
   reportEvidenceSchema,
+  REPORT_SCHEMA_HASH,
+  SUPPORTED_REPORT_SCHEMA_HASH,
   serializeSealedReport,
 } from "./report";
-import { assertPersistenceUnicode, EvidenceError } from "./unicode";
+import {
+  assertPersistenceUnicode,
+  EvidenceError,
+  PERSISTENCE_UNICODE_POLICY_HASH,
+} from "./unicode";
+import { PACK_LIMITS } from "../../v1/limits";
+import {
+  SUPPORTED_COMPATIBILITY_HASH,
+  SUPPORTED_IDENTITY_VERSION,
+  SUPPORTED_POLICY_ID,
+  SUPPORTED_REPORT_VERSION,
+  SUPPORTED_VALIDATOR_VERSION,
+} from "../../package/compatibility";
 
 export const POLICY_REJECTION_CODES = [
   "UNSUPPORTED_MANIFEST_VERSION",
@@ -48,7 +62,7 @@ export const CANDIDATE_INTERRUPTION_CODES = [
 export type CandidateInterruptionCode =
   (typeof CANDIDATE_INTERRUPTION_CODES)[number];
 
-export const validationIdentitySchema = z
+export const legacyValidationIdentitySchema = z
   .strictObject({
     schemaVersion: z.literal("quizpack-validation-identity.v1"),
     validatorVersion: z.literal("1.0.0"),
@@ -77,6 +91,46 @@ export const validationIdentitySchema = z
         message: "Invalid validation identity binding.",
       });
   });
+export const supportedValidationIdentitySchema = z
+  .strictObject({
+    ...legacyValidationIdentitySchema.shape,
+    schemaVersion: z.literal(SUPPORTED_IDENTITY_VERSION),
+    validatorVersion: z.literal(SUPPORTED_VALIDATOR_VERSION),
+    policyId: z.literal(SUPPORTED_POLICY_ID),
+    compatibilityPolicyHash: z.literal(SUPPORTED_COMPATIBILITY_HASH),
+    effectiveLimitsHash: z.literal(
+      createHash("sha256")
+        .update(canonicalP1Json(PACK_LIMITS), "utf8")
+        .digest("hex"),
+    ),
+    persistencePolicyHash: z.literal(PERSISTENCE_UNICODE_POLICY_HASH),
+    reportSchemaVersion: z.literal(SUPPORTED_REPORT_VERSION),
+    reportSchemaHash: z.literal(SUPPORTED_REPORT_SCHEMA_HASH),
+  })
+  .superRefine((identity, context) => {
+    const { identitySha256, ...payload } = identity;
+    if (
+      identitySha256 !==
+        createHash("sha256")
+          .update(canonicalP1Json(payload), "utf8")
+          .digest("hex") ||
+      identity.validatorBundleSha256 !== identity.runtime.runtimeBundleHash
+    )
+      context.addIssue({
+        code: "custom",
+        message: "Invalid validation identity binding.",
+      });
+  });
+export const validationIdentitySchema = z.union([
+  legacyValidationIdentitySchema,
+  supportedValidationIdentitySchema,
+]);
+export type LegacyValidationIdentity = z.infer<
+  typeof legacyValidationIdentitySchema
+>;
+export type SupportedValidationIdentity = z.infer<
+  typeof supportedValidationIdentitySchema
+>;
 export type ValidationIdentity = z.infer<typeof validationIdentitySchema>;
 
 export const mediaFactSchema = z.strictObject({
@@ -196,8 +250,17 @@ export const candidateResultEvidenceSchema = z
         invalid();
       if (
         evidence.identity.status === "bound" &&
-        (evidence.report.value.compatibilityPolicyHash !==
-          evidence.identity.value.compatibilityPolicyHash ||
+        (evidence.report.value.schemaVersion !==
+          evidence.identity.value.reportSchemaVersion ||
+          evidence.report.value.validatorVersion !==
+            evidence.identity.value.validatorVersion ||
+          evidence.report.value.policyId !== evidence.identity.value.policyId ||
+          evidence.identity.value.reportSchemaHash !==
+            (evidence.report.value.schemaVersion === "quizpack-validation.v1"
+              ? REPORT_SCHEMA_HASH
+              : SUPPORTED_REPORT_SCHEMA_HASH) ||
+          evidence.report.value.compatibilityPolicyHash !==
+            evidence.identity.value.compatibilityPolicyHash ||
           evidence.report.value.effectiveLimitsHash !==
             evidence.identity.value.effectiveLimitsHash)
       )

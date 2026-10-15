@@ -7,3 +7,7 @@ A/B两条独立Sol只读预研已核真实ZIP入口、候选/恢复、policy/SQL
 独审要求旧写者/受管IO先退出，事务内NOWAIT两表锁、拒绝残留应用连接、核旧helper后同事务检查/DDL。整组identity/report/hash/policy和content/component矩阵绑定，避免分别union的错配；新issue collector保留上游截断，不误套旧“恰100项”条件。Astra复审确认合同P2关闭、无新增合同阻断；两处表述（identity报告Schema hash、pending统计例外）已校正。真实PG/两平台/生产E2E均仍待实施验收。
 
 首个共享交付为package/api.ts与compatibility.ts，只提供相关联合/必填完整版本签名和冻结两profile描述符，尚无准入执行。主控类型/定向lint/格式通过；Astra独立内存TS负向探针拒绝混代、漏版本/短版本、额外policy及新报告赋旧类型，递归9对象/数组冻结和3变异拒绝通过，独立canonical hash为a1366418639c8eac052955dae4670cf179a7c9774c8039f66cc46f78252c2899。可交B实施package M1，桥接仍待后续共享报告/身份机器合同。P3-A文档0059175普通38774143564与媒体38774143579也均实际success。
+
+共享机器合同已准备但未激活新准入：新strict report/identity、archive.v3 descriptor及精确policy+identity检查，ExpectedCandidateFacts四组合类型；旧runtimeIdentity与当前archive.v2写默认保持。主控16文件244定向与完整104文件1327单元、格式/lint/类型通过；旧report Schema/hash、旧archive descriptor bytes实际保持。Astra独立比较旧Schema/identity/封存bytes/runtime输出，33负向探针通过，含双向版本错配、自洽重算false identity、上游0/1/31/99/100截断与101拒绝、有限错误/未验证清单/封存变异。新report Schema hash=e7df48c0d4da4e941fa1486906b08104f5fc96b9c1a001e9489fa2eedf461867，archive.v3 hash=a330bf3d82ada4bba47a395655347ad94b20ec3c00ffbde3f52a06773d3511d5；独审无新阻断。
+
+候选证据新增所声明report Schema的真实hash核验，四处合成夹具原占位值改为实际旧REPORT_SCHEMA_HASH；不改真实内容。新增compatibility运行依赖已纳入main/fixture固定source与变异测试，CI覆盖package。bridge/SQL仍待实现联动，不能用此共享合同测试冒称四组合已导入。

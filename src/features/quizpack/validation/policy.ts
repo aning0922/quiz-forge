@@ -2,6 +2,8 @@ import "server-only";
 import { createHash } from "node:crypto";
 import { canonicalP1Json } from "../v1/canonical";
 import * as limits from "./limits";
+import { SUPPORTED_COMPATIBILITY_POLICY } from "../package/compatibility";
+import { supportedValidationIdentitySchema } from "../server/validation/contracts";
 const { ARCHIVE_POLICY_VERSION } = limits;
 /** Fixed trusted B policy. A's independent policy remains bound by identitySha256. */
 export const archivePolicyDescriptor = Object.freeze({
@@ -60,3 +62,34 @@ export const archivePolicySha256 = createHash("sha256")
   .update(archivePolicyText, "utf8")
   .digest("hex");
 export { ARCHIVE_POLICY_VERSION };
+
+/** Not selected by current writes until the matching migration/bridge activation. */
+export const supportedArchivePolicyDescriptor = Object.freeze({
+  ...archivePolicyDescriptor,
+  schemaVersion: limits.SUPPORTED_ARCHIVE_POLICY_VERSION,
+  accepted: Object.freeze({
+    containerSchema: "quizpack.v1" as const,
+    profiles: SUPPORTED_COMPATIBILITY_POLICY.profiles,
+  }),
+  pendingScope: "current-archive-policy-version-and-sha256.v1" as const,
+});
+export const supportedArchivePolicyText = canonicalP1Json(
+  supportedArchivePolicyDescriptor,
+);
+export const supportedArchivePolicySha256 = createHash("sha256")
+  .update(supportedArchivePolicyText, "utf8")
+  .digest("hex");
+export { SUPPORTED_ARCHIVE_POLICY_VERSION } from "./limits";
+
+/** Current admission requires the complete policy tuple, not a version string alone. */
+export function matchesSupportedArchiveIdentity(
+  version: string,
+  sha256: string,
+  identity: unknown,
+): boolean {
+  return (
+    version === limits.SUPPORTED_ARCHIVE_POLICY_VERSION &&
+    sha256 === supportedArchivePolicySha256 &&
+    supportedValidationIdentitySchema.safeParse(identity).success
+  );
+}

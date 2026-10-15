@@ -3,6 +3,11 @@ import { createHash } from "node:crypto";
 import { z } from "zod";
 import { canonicalP1Json } from "../../v1/canonical";
 import { PACK_LIMITS } from "../../v1/limits";
+import {
+  SUPPORTED_POLICY_ID,
+  SUPPORTED_REPORT_VERSION,
+  SUPPORTED_VALIDATOR_VERSION,
+} from "../../package/compatibility";
 import { packIdSchema, sha256Schema } from "../../v1/manifest";
 import { assertPersistenceUnicode, EvidenceError } from "./unicode";
 
@@ -248,9 +253,68 @@ export const strictP1ReportSchema = z
   });
 export type StrictP1Report = z.infer<typeof strictP1ReportSchema>;
 
+/** v2 consumes the content module's truncation marker; it is not a business issue. */
+export const SUPPORTED_ISSUE_CODES = [
+  ...P1_ISSUE_CODES,
+  "CONTENT_INPUT_LIMIT_EXCEEDED",
+  "CONTENT_INPUT_REJECTED",
+  "DUPLICATE_PRESENTATION_REFERENCE",
+  "DUPLICATE_SECTION_ID",
+  "NONCONTIGUOUS_SECTION_ORDER",
+  "PRESENTATION_REFERENCE_COVERAGE",
+  "PRESENTATION_REFERENCE_MISMATCH",
+  "QUESTION_FRAME_COVERAGE",
+  "QUESTION_FRAME_ORDER_OR_REFERENCE",
+  "UNKNOWN_SECTION_REFERENCE",
+  "UNUSED_SECTION",
+] as const;
+export const SUPPORTED_ISSUE_MESSAGES = [
+  ...P1_ISSUE_MESSAGES,
+  "Content must be bounded ordinary JSON.",
+  "Only explicitly supported content versions are accepted.",
+  "Value does not satisfy its declared content contract.",
+  "Content must use the exact declared presentation reference graph.",
+  "Manifest and content must match the expected content schema version.",
+] as const;
+export const strictSupportedReportSchema = z
+  .strictObject({
+    ...strictP1ReportSchema.shape,
+    schemaVersion: z.literal(SUPPORTED_REPORT_VERSION),
+    validatorVersion: z.literal(SUPPORTED_VALIDATOR_VERSION),
+    policyId: z.literal(SUPPORTED_POLICY_ID),
+    issues: z
+      .array(
+        strictP1ReportSchema.shape.issues.element.extend({
+          code: z.enum(SUPPORTED_ISSUE_CODES),
+          message: z.enum(SUPPORTED_ISSUE_MESSAGES),
+        }),
+      )
+      .max(100),
+  })
+  .superRefine((report, context) => {
+    if (
+      report.candidateValid &&
+      (Object.values(report.checks).some((value) => value !== "passed") ||
+        report.issues.length !== 0 ||
+        report.issuesTruncated ||
+        !report.archiveSha256 ||
+        !report.manifestSha256 ||
+        !report.contentSha256)
+    )
+      context.addIssue({
+        code: "custom",
+        message: "Inconsistent supported candidate evidence.",
+      });
+  });
+export type StrictSupportedReport = z.infer<typeof strictSupportedReportSchema>;
+export const supportedReportValueSchema = z.union([
+  strictP1ReportSchema,
+  strictSupportedReportSchema,
+]);
+
 export const sealedReportSchema = z.strictObject({
   status: z.literal("sealed"),
-  value: strictP1ReportSchema,
+  value: supportedReportValueSchema,
   canonicalBytes: z.number().int().positive().max(EVIDENCE_LIMITS.reportBytes),
   sha256: sha256Schema,
 });
@@ -283,14 +347,17 @@ export function freezeJson<T>(value: T): T {
 }
 
 /** Copies, checks, hashes and freezes the complete final report once. */
-export function sealP1Report(input: unknown): SealedReport {
+function sealStrictReport<T extends StrictP1Report | StrictSupportedReport>(
+  input: unknown,
+  schema: z.ZodType<T>,
+): { status: "sealed"; value: T; canonicalBytes: number; sha256: string } {
   let ordinary: unknown;
   try {
     ordinary = JSON.parse(canonicalP1Json(input));
   } catch {
     throw new EvidenceError("REPORT_SCHEMA_INVALID");
   }
-  const parsed = strictP1ReportSchema.safeParse(ordinary);
+  const parsed = schema.safeParse(ordinary);
   if (!parsed.success) throw new EvidenceError("REPORT_SCHEMA_INVALID");
   assertPersistenceUnicode(parsed.data);
   const text = canonicalP1Json(parsed.data);
@@ -303,6 +370,14 @@ export function sealP1Report(input: unknown): SealedReport {
     canonicalBytes,
     sha256: createHash("sha256").update(text, "utf8").digest("hex"),
   });
+}
+
+/** Legacy P1 retains its strict report type and byte format. */
+export function sealP1Report(input: unknown) {
+  return sealStrictReport(input, strictP1ReportSchema);
+}
+export function sealSupportedReport(input: unknown) {
+  return sealStrictReport(input, strictSupportedReportSchema);
 }
 
 /** No stored canonicalText: serialization is recreated from the frozen value. */
@@ -327,6 +402,21 @@ export const REPORT_SCHEMA_HASH = createHash("sha256")
       refinements: [
         "candidateValid-requires-all-checks-passed-no-issues-and-three-byte-hashes",
         "issuesTruncated-requires-one-hundred-retained-issues",
+      ],
+    }),
+    "utf8",
+  )
+  .digest("hex");
+
+export const SUPPORTED_REPORT_SCHEMA_HASH = createHash("sha256")
+  .update(
+    canonicalP1Json({
+      schema: JSON.parse(
+        JSON.stringify(z.toJSONSchema(strictSupportedReportSchema)),
+      ),
+      refinements: [
+        "candidateValid-requires-all-checks-passed-no-issues-and-three-byte-hashes",
+        "issuesTruncated-preserves-upstream-content-or-package-or-collector-truncation",
       ],
     }),
     "utf8",

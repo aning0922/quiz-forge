@@ -223,6 +223,7 @@ async function sourceSnapshot(checkout: string) {
     "src/lib/assessment-contract/scoring-v1.ts",
     "src/lib/json/canonical.ts",
     "src/features/quizpack/content/reference-graph.ts",
+    "src/features/quizpack/package/compatibility.ts",
     "src/lib/build/media-deployment.ts",
     "package.json",
     "pnpm-lock.yaml",
