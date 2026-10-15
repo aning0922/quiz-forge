@@ -1,4 +1,4 @@
-import font from "../../../../public/assets/fonts/preview-v1/manifest.json";
+import { PREVIEW_GENERATED_FONT as font } from "./font.generated";
 export const PREVIEW_RENDERER = Object.freeze({
   id: "folio-cabinet-preview",
   version: "1.0.0",

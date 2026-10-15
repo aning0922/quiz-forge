@@ -1,3 +1,4 @@
+import { PREVIEW_FONT_ASSET } from "../../src/features/product/preview/descriptor";
 import { test, expect, type Page, type TestInfo } from "@playwright/test";
 import { constants } from "node:fs";
 import { open, readFile, lstat, realpath } from "node:fs/promises";
@@ -450,7 +451,7 @@ test("corrupt private bytes and unavailable fonts show honest failures without a
   await answer(page, entry, s.witnesses[0]!.answers);
   await score(page, entry);
   await page.getByRole("button", { name: "查看海报", exact: true }).click();
-  await page.route("**/assets/fonts/preview-v1/serif-600.woff2", (route) =>
+  await page.route("**" + PREVIEW_FONT_ASSET.file, (route) =>
     route.fulfill({ status: 404, body: "" }),
   );
   await page.getByRole("button", { name: "生成完整 PNG", exact: true }).click();
