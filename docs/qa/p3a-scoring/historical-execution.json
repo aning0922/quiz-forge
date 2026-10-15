@@ -1,0 +1,1112 @@
+{
+  "schemaVersion": "quiz-authoring-execution.v1",
+  "status": "authored-pending",
+  "implementationCommit": "1b1714d139ed1f52dacc46c38fadafd23244ae7e",
+  "sourceBinding": {
+    "kind": "authoring-review",
+    "source": {
+      "commit": "03fdc240c924e2fe7379534176e11d1e6ab3bc58",
+      "path": "docs/FIRST_PRODUCT_CONTENT_DRAFT.md",
+      "sha256": "8c049714ae07c5ed2f10fff334cc041364789781de28bfbbd5442a26d6dc0653"
+    },
+    "transcriptionSha256": "01a95213f955f7014a05d37163eed93a0d5dbd4c9662acf3dc3c3d265f9bb7a0"
+  },
+  "identity": {
+    "productId": "historical-cabinet",
+    "contentVersion": "1.0.0",
+    "engine": {
+      "id": "archetype",
+      "version": "1.0.0"
+    },
+    "logicHash": "6e44add1bf8bbcf2e3ccec319bd46fc4c6270c3fa474ea30a1887d6d8f8adb07"
+  },
+  "witnessEvidence": {
+    "schemaVersion": "quiz-witness-evidence.v1",
+    "logicHash": "6e44add1bf8bbcf2e3ccec319bd46fc4c6270c3fa474ea30a1887d6d8f8adb07",
+    "inputSha256": "b7a200ce8932659b167f5c861940fba6fc6b2f747a7f8df8b367c48304928a3d",
+    "witnessesHash": "0ceeba46cb52ab393f786bdcf5ea787bbd37ddd6f2557443afcc71d1528f8419",
+    "policyId": "declared-witnesses.v1",
+    "policyHash": "51b32025e9298f609a48d7b9561fc56ac8fc717361f935ff4f452acc8e9f6850",
+    "status": "passed",
+    "entries": [
+      {
+        "status": "passed",
+        "expectedResultRef": {
+          "id": "li-bai",
+          "productId": "historical-cabinet",
+          "version": "1.0.0"
+        },
+        "selectedResultRef": {
+          "id": "li-bai",
+          "productId": "historical-cabinet",
+          "version": "1.0.0"
+        },
+        "answersHash": "242275d42818be6f4f2957b6f320a0d4a4f1f955f09a319bb61d10dfcb5fb28f",
+        "dimensions": [
+          {
+            "dimensionRef": {
+              "id": "exploration",
+              "productId": "historical-cabinet",
+              "version": "1.0.0"
+            },
+            "rawSum": 33,
+            "bounds": {
+              "min": 0,
+              "max": 48
+            },
+            "normalized": {
+              "numerator": "275",
+              "denominator": "4"
+            }
+          },
+          {
+            "dimensionRef": {
+              "id": "expression",
+              "productId": "historical-cabinet",
+              "version": "1.0.0"
+            },
+            "rawSum": 29,
+            "bounds": {
+              "min": 0,
+              "max": 48
+            },
+            "normalized": {
+              "numerator": "725",
+              "denominator": "12"
+            }
+          },
+          {
+            "dimensionRef": {
+              "id": "connection",
+              "productId": "historical-cabinet",
+              "version": "1.0.0"
+            },
+            "rawSum": 8,
+            "bounds": {
+              "min": 4,
+              "max": 48
+            },
+            "normalized": {
+              "numerator": "100",
+              "denominator": "11"
+            }
+          },
+          {
+            "dimensionRef": {
+              "id": "steadiness",
+              "productId": "historical-cabinet",
+              "version": "1.0.0"
+            },
+            "rawSum": 8,
+            "bounds": {
+              "min": 2,
+              "max": 48
+            },
+            "normalized": {
+              "numerator": "300",
+              "denominator": "23"
+            }
+          }
+        ]
+      },
+      {
+        "status": "passed",
+        "expectedResultRef": {
+          "id": "su-shi",
+          "productId": "historical-cabinet",
+          "version": "1.0.0"
+        },
+        "selectedResultRef": {
+          "id": "su-shi",
+          "productId": "historical-cabinet",
+          "version": "1.0.0"
+        },
+        "answersHash": "45bb091763c1597b77a54ae68b51739d946c1aeaf7bc16cc3061ab9b3759d284",
+        "dimensions": [
+          {
+            "dimensionRef": {
+              "id": "exploration",
+              "productId": "historical-cabinet",
+              "version": "1.0.0"
+            },
+            "rawSum": 14,
+            "bounds": {
+              "min": 0,
+              "max": 48
+            },
+            "normalized": {
+              "numerator": "175",
+              "denominator": "6"
+            }
+          },
+          {
+            "dimensionRef": {
+              "id": "expression",
+              "productId": "historical-cabinet",
+              "version": "1.0.0"
+            },
+            "rawSum": 32,
+            "bounds": {
+              "min": 0,
+              "max": 48
+            },
+            "normalized": {
+              "numerator": "200",
+              "denominator": "3"
+            }
+          },
+          {
+            "dimensionRef": {
+              "id": "connection",
+              "productId": "historical-cabinet",
+              "version": "1.0.0"
+            },
+            "rawSum": 27,
+            "bounds": {
+              "min": 4,
+              "max": 48
+            },
+            "normalized": {
+              "numerator": "575",
+              "denominator": "11"
+            }
+          },
+          {
+            "dimensionRef": {
+              "id": "steadiness",
+              "productId": "historical-cabinet",
+              "version": "1.0.0"
+            },
+            "rawSum": 7,
+            "bounds": {
+              "min": 2,
+              "max": 48
+            },
+            "normalized": {
+              "numerator": "250",
+              "denominator": "23"
+            }
+          }
+        ]
+      },
+      {
+        "status": "passed",
+        "expectedResultRef": {
+          "id": "tao-yuan-ming",
+          "productId": "historical-cabinet",
+          "version": "1.0.0"
+        },
+        "selectedResultRef": {
+          "id": "tao-yuan-ming",
+          "productId": "historical-cabinet",
+          "version": "1.0.0"
+        },
+        "answersHash": "4d6b02ee162bf64e7a55a68d166887580e64c1a12b51dfd6e6e6c4bc2d074fac",
+        "dimensions": [
+          {
+            "dimensionRef": {
+              "id": "exploration",
+              "productId": "historical-cabinet",
+              "version": "1.0.0"
+            },
+            "rawSum": 24,
+            "bounds": {
+              "min": 0,
+              "max": 48
+            },
+            "normalized": {
+              "numerator": "50",
+              "denominator": "1"
+            }
+          },
+          {
+            "dimensionRef": {
+              "id": "expression",
+              "productId": "historical-cabinet",
+              "version": "1.0.0"
+            },
+            "rawSum": 8,
+            "bounds": {
+              "min": 0,
+              "max": 48
+            },
+            "normalized": {
+              "numerator": "50",
+              "denominator": "3"
+            }
+          },
+          {
+            "dimensionRef": {
+              "id": "connection",
+              "productId": "historical-cabinet",
+              "version": "1.0.0"
+            },
+            "rawSum": 7,
+            "bounds": {
+              "min": 4,
+              "max": 48
+            },
+            "normalized": {
+              "numerator": "75",
+              "denominator": "11"
+            }
+          },
+          {
+            "dimensionRef": {
+              "id": "steadiness",
+              "productId": "historical-cabinet",
+              "version": "1.0.0"
+            },
+            "rawSum": 30,
+            "bounds": {
+              "min": 2,
+              "max": 48
+            },
+            "normalized": {
+              "numerator": "1400",
+              "denominator": "23"
+            }
+          }
+        ]
+      },
+      {
+        "status": "passed",
+        "expectedResultRef": {
+          "id": "bai-ju-yi",
+          "productId": "historical-cabinet",
+          "version": "1.0.0"
+        },
+        "selectedResultRef": {
+          "id": "bai-ju-yi",
+          "productId": "historical-cabinet",
+          "version": "1.0.0"
+        },
+        "answersHash": "1876392ad5b66f4d67aee3a58a7f7921237351c8d3a785312311162ebff67a67",
+        "dimensions": [
+          {
+            "dimensionRef": {
+              "id": "exploration",
+              "productId": "historical-cabinet",
+              "version": "1.0.0"
+            },
+            "rawSum": 1,
+            "bounds": {
+              "min": 0,
+              "max": 48
+            },
+            "normalized": {
+              "numerator": "25",
+              "denominator": "12"
+            }
+          },
+          {
+            "dimensionRef": {
+              "id": "expression",
+              "productId": "historical-cabinet",
+              "version": "1.0.0"
+            },
+            "rawSum": 11,
+            "bounds": {
+              "min": 0,
+              "max": 48
+            },
+            "normalized": {
+              "numerator": "275",
+              "denominator": "12"
+            }
+          },
+          {
+            "dimensionRef": {
+              "id": "connection",
+              "productId": "historical-cabinet",
+              "version": "1.0.0"
+            },
+            "rawSum": 32,
+            "bounds": {
+              "min": 4,
+              "max": 48
+            },
+            "normalized": {
+              "numerator": "700",
+              "denominator": "11"
+            }
+          },
+          {
+            "dimensionRef": {
+              "id": "steadiness",
+              "productId": "historical-cabinet",
+              "version": "1.0.0"
+            },
+            "rawSum": 28,
+            "bounds": {
+              "min": 2,
+              "max": 48
+            },
+            "normalized": {
+              "numerator": "1300",
+              "denominator": "23"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "scores": [
+    {
+      "schemaVersion": "quiz-score.v1",
+      "productId": "historical-cabinet",
+      "contentVersion": "1.0.0",
+      "engine": {
+        "id": "archetype",
+        "version": "1.0.0"
+      },
+      "logicHash": "6e44add1bf8bbcf2e3ccec319bd46fc4c6270c3fa474ea30a1887d6d8f8adb07",
+      "answersHash": "242275d42818be6f4f2957b6f320a0d4a4f1f955f09a319bb61d10dfcb5fb28f",
+      "normalizedAnswers": [
+        {
+          "questionId": "q01",
+          "optionId": "q01-a"
+        },
+        {
+          "questionId": "q02",
+          "optionId": "q02-a"
+        },
+        {
+          "questionId": "q03",
+          "optionId": "q03-c"
+        },
+        {
+          "questionId": "q04",
+          "optionId": "q04-c"
+        },
+        {
+          "questionId": "q05",
+          "optionId": "q05-a"
+        },
+        {
+          "questionId": "q06",
+          "optionId": "q06-a"
+        },
+        {
+          "questionId": "q07",
+          "optionId": "q07-c"
+        },
+        {
+          "questionId": "q08",
+          "optionId": "q08-c"
+        },
+        {
+          "questionId": "q09",
+          "optionId": "q09-a"
+        },
+        {
+          "questionId": "q10",
+          "optionId": "q10-a"
+        },
+        {
+          "questionId": "q11",
+          "optionId": "q11-c"
+        },
+        {
+          "questionId": "q12",
+          "optionId": "q12-c"
+        }
+      ],
+      "dimensions": [
+        {
+          "dimensionRef": {
+            "id": "exploration",
+            "productId": "historical-cabinet",
+            "version": "1.0.0"
+          },
+          "rawSum": 33,
+          "bounds": {
+            "min": 0,
+            "max": 48
+          },
+          "normalized": {
+            "numerator": "275",
+            "denominator": "4"
+          }
+        },
+        {
+          "dimensionRef": {
+            "id": "expression",
+            "productId": "historical-cabinet",
+            "version": "1.0.0"
+          },
+          "rawSum": 29,
+          "bounds": {
+            "min": 0,
+            "max": 48
+          },
+          "normalized": {
+            "numerator": "725",
+            "denominator": "12"
+          }
+        },
+        {
+          "dimensionRef": {
+            "id": "connection",
+            "productId": "historical-cabinet",
+            "version": "1.0.0"
+          },
+          "rawSum": 8,
+          "bounds": {
+            "min": 4,
+            "max": 48
+          },
+          "normalized": {
+            "numerator": "100",
+            "denominator": "11"
+          }
+        },
+        {
+          "dimensionRef": {
+            "id": "steadiness",
+            "productId": "historical-cabinet",
+            "version": "1.0.0"
+          },
+          "rawSum": 8,
+          "bounds": {
+            "min": 2,
+            "max": 48
+          },
+          "normalized": {
+            "numerator": "300",
+            "denominator": "23"
+          }
+        }
+      ],
+      "decision": {
+        "kind": "archetype",
+        "distances": [
+          {
+            "resultRef": {
+              "id": "li-bai",
+              "productId": "historical-cabinet",
+              "version": "1.0.0"
+            },
+            "value": {
+              "numerator": "29451725",
+              "denominator": "4608648"
+            }
+          },
+          {
+            "resultRef": {
+              "id": "su-shi",
+              "productId": "historical-cabinet",
+              "version": "1.0.0"
+            },
+            "value": {
+              "numerator": "16773067625",
+              "denominator": "4608648"
+            }
+          },
+          {
+            "resultRef": {
+              "id": "tao-yuan-ming",
+              "productId": "historical-cabinet",
+              "version": "1.0.0"
+            },
+            "value": {
+              "numerator": "21291850025",
+              "denominator": "4608648"
+            }
+          },
+          {
+            "resultRef": {
+              "id": "bai-ju-yi",
+              "productId": "historical-cabinet",
+              "version": "1.0.0"
+            },
+            "value": {
+              "numerator": "47029312325",
+              "denominator": "4608648"
+            }
+          }
+        ],
+        "tiedMinimumResultRefs": [
+          {
+            "id": "li-bai",
+            "productId": "historical-cabinet",
+            "version": "1.0.0"
+          }
+        ],
+        "selectedResultRef": {
+          "id": "li-bai",
+          "productId": "historical-cabinet",
+          "version": "1.0.0"
+        },
+        "tieBreak": "result-order"
+      }
+    },
+    {
+      "schemaVersion": "quiz-score.v1",
+      "productId": "historical-cabinet",
+      "contentVersion": "1.0.0",
+      "engine": {
+        "id": "archetype",
+        "version": "1.0.0"
+      },
+      "logicHash": "6e44add1bf8bbcf2e3ccec319bd46fc4c6270c3fa474ea30a1887d6d8f8adb07",
+      "answersHash": "45bb091763c1597b77a54ae68b51739d946c1aeaf7bc16cc3061ab9b3759d284",
+      "normalizedAnswers": [
+        {
+          "questionId": "q01",
+          "optionId": "q01-b"
+        },
+        {
+          "questionId": "q02",
+          "optionId": "q02-b"
+        },
+        {
+          "questionId": "q03",
+          "optionId": "q03-d"
+        },
+        {
+          "questionId": "q04",
+          "optionId": "q04-d"
+        },
+        {
+          "questionId": "q05",
+          "optionId": "q05-b"
+        },
+        {
+          "questionId": "q06",
+          "optionId": "q06-b"
+        },
+        {
+          "questionId": "q07",
+          "optionId": "q07-d"
+        },
+        {
+          "questionId": "q08",
+          "optionId": "q08-d"
+        },
+        {
+          "questionId": "q09",
+          "optionId": "q09-b"
+        },
+        {
+          "questionId": "q10",
+          "optionId": "q10-b"
+        },
+        {
+          "questionId": "q11",
+          "optionId": "q11-d"
+        },
+        {
+          "questionId": "q12",
+          "optionId": "q12-d"
+        }
+      ],
+      "dimensions": [
+        {
+          "dimensionRef": {
+            "id": "exploration",
+            "productId": "historical-cabinet",
+            "version": "1.0.0"
+          },
+          "rawSum": 14,
+          "bounds": {
+            "min": 0,
+            "max": 48
+          },
+          "normalized": {
+            "numerator": "175",
+            "denominator": "6"
+          }
+        },
+        {
+          "dimensionRef": {
+            "id": "expression",
+            "productId": "historical-cabinet",
+            "version": "1.0.0"
+          },
+          "rawSum": 32,
+          "bounds": {
+            "min": 0,
+            "max": 48
+          },
+          "normalized": {
+            "numerator": "200",
+            "denominator": "3"
+          }
+        },
+        {
+          "dimensionRef": {
+            "id": "connection",
+            "productId": "historical-cabinet",
+            "version": "1.0.0"
+          },
+          "rawSum": 27,
+          "bounds": {
+            "min": 4,
+            "max": 48
+          },
+          "normalized": {
+            "numerator": "575",
+            "denominator": "11"
+          }
+        },
+        {
+          "dimensionRef": {
+            "id": "steadiness",
+            "productId": "historical-cabinet",
+            "version": "1.0.0"
+          },
+          "rawSum": 7,
+          "bounds": {
+            "min": 2,
+            "max": 48
+          },
+          "normalized": {
+            "numerator": "250",
+            "denominator": "23"
+          }
+        }
+      ],
+      "decision": {
+        "kind": "archetype",
+        "distances": [
+          {
+            "resultRef": {
+              "id": "li-bai",
+              "productId": "historical-cabinet",
+              "version": "1.0.0"
+            },
+            "value": {
+              "numerator": "8101656425",
+              "denominator": "2304324"
+            }
+          },
+          {
+            "resultRef": {
+              "id": "su-shi",
+              "productId": "historical-cabinet",
+              "version": "1.0.0"
+            },
+            "value": {
+              "numerator": "26883125",
+              "denominator": "2304324"
+            }
+          },
+          {
+            "resultRef": {
+              "id": "tao-yuan-ming",
+              "productId": "historical-cabinet",
+              "version": "1.0.0"
+            },
+            "value": {
+              "numerator": "16831370825",
+              "denominator": "2304324"
+            }
+          },
+          {
+            "resultRef": {
+              "id": "bai-ju-yi",
+              "productId": "historical-cabinet",
+              "version": "1.0.0"
+            },
+            "value": {
+              "numerator": "10207274225",
+              "denominator": "2304324"
+            }
+          }
+        ],
+        "tiedMinimumResultRefs": [
+          {
+            "id": "su-shi",
+            "productId": "historical-cabinet",
+            "version": "1.0.0"
+          }
+        ],
+        "selectedResultRef": {
+          "id": "su-shi",
+          "productId": "historical-cabinet",
+          "version": "1.0.0"
+        },
+        "tieBreak": "result-order"
+      }
+    },
+    {
+      "schemaVersion": "quiz-score.v1",
+      "productId": "historical-cabinet",
+      "contentVersion": "1.0.0",
+      "engine": {
+        "id": "archetype",
+        "version": "1.0.0"
+      },
+      "logicHash": "6e44add1bf8bbcf2e3ccec319bd46fc4c6270c3fa474ea30a1887d6d8f8adb07",
+      "answersHash": "4d6b02ee162bf64e7a55a68d166887580e64c1a12b51dfd6e6e6c4bc2d074fac",
+      "normalizedAnswers": [
+        {
+          "questionId": "q01",
+          "optionId": "q01-a"
+        },
+        {
+          "questionId": "q02",
+          "optionId": "q02-c"
+        },
+        {
+          "questionId": "q03",
+          "optionId": "q03-c"
+        },
+        {
+          "questionId": "q04",
+          "optionId": "q04-a"
+        },
+        {
+          "questionId": "q05",
+          "optionId": "q05-a"
+        },
+        {
+          "questionId": "q06",
+          "optionId": "q06-c"
+        },
+        {
+          "questionId": "q07",
+          "optionId": "q07-c"
+        },
+        {
+          "questionId": "q08",
+          "optionId": "q08-a"
+        },
+        {
+          "questionId": "q09",
+          "optionId": "q09-a"
+        },
+        {
+          "questionId": "q10",
+          "optionId": "q10-c"
+        },
+        {
+          "questionId": "q11",
+          "optionId": "q11-c"
+        },
+        {
+          "questionId": "q12",
+          "optionId": "q12-a"
+        }
+      ],
+      "dimensions": [
+        {
+          "dimensionRef": {
+            "id": "exploration",
+            "productId": "historical-cabinet",
+            "version": "1.0.0"
+          },
+          "rawSum": 24,
+          "bounds": {
+            "min": 0,
+            "max": 48
+          },
+          "normalized": {
+            "numerator": "50",
+            "denominator": "1"
+          }
+        },
+        {
+          "dimensionRef": {
+            "id": "expression",
+            "productId": "historical-cabinet",
+            "version": "1.0.0"
+          },
+          "rawSum": 8,
+          "bounds": {
+            "min": 0,
+            "max": 48
+          },
+          "normalized": {
+            "numerator": "50",
+            "denominator": "3"
+          }
+        },
+        {
+          "dimensionRef": {
+            "id": "connection",
+            "productId": "historical-cabinet",
+            "version": "1.0.0"
+          },
+          "rawSum": 7,
+          "bounds": {
+            "min": 4,
+            "max": 48
+          },
+          "normalized": {
+            "numerator": "75",
+            "denominator": "11"
+          }
+        },
+        {
+          "dimensionRef": {
+            "id": "steadiness",
+            "productId": "historical-cabinet",
+            "version": "1.0.0"
+          },
+          "rawSum": 30,
+          "bounds": {
+            "min": 2,
+            "max": 48
+          },
+          "normalized": {
+            "numerator": "1400",
+            "denominator": "23"
+          }
+        }
+      ],
+      "decision": {
+        "kind": "archetype",
+        "distances": [
+          {
+            "resultRef": {
+              "id": "li-bai",
+              "productId": "historical-cabinet",
+              "version": "1.0.0"
+            },
+            "value": {
+              "numerator": "2530100950",
+              "denominator": "576081"
+            }
+          },
+          {
+            "resultRef": {
+              "id": "su-shi",
+              "productId": "historical-cabinet",
+              "version": "1.0.0"
+            },
+            "value": {
+              "numerator": "4404318625",
+              "denominator": "576081"
+            }
+          },
+          {
+            "resultRef": {
+              "id": "tao-yuan-ming",
+              "productId": "historical-cabinet",
+              "version": "1.0.0"
+            },
+            "value": {
+              "numerator": "7868050",
+              "denominator": "576081"
+            }
+          },
+          {
+            "resultRef": {
+              "id": "bai-ju-yi",
+              "productId": "historical-cabinet",
+              "version": "1.0.0"
+            },
+            "value": {
+              "numerator": "3176522275",
+              "denominator": "576081"
+            }
+          }
+        ],
+        "tiedMinimumResultRefs": [
+          {
+            "id": "tao-yuan-ming",
+            "productId": "historical-cabinet",
+            "version": "1.0.0"
+          }
+        ],
+        "selectedResultRef": {
+          "id": "tao-yuan-ming",
+          "productId": "historical-cabinet",
+          "version": "1.0.0"
+        },
+        "tieBreak": "result-order"
+      }
+    },
+    {
+      "schemaVersion": "quiz-score.v1",
+      "productId": "historical-cabinet",
+      "contentVersion": "1.0.0",
+      "engine": {
+        "id": "archetype",
+        "version": "1.0.0"
+      },
+      "logicHash": "6e44add1bf8bbcf2e3ccec319bd46fc4c6270c3fa474ea30a1887d6d8f8adb07",
+      "answersHash": "1876392ad5b66f4d67aee3a58a7f7921237351c8d3a785312311162ebff67a67",
+      "normalizedAnswers": [
+        {
+          "questionId": "q01",
+          "optionId": "q01-c"
+        },
+        {
+          "questionId": "q02",
+          "optionId": "q02-b"
+        },
+        {
+          "questionId": "q03",
+          "optionId": "q03-a"
+        },
+        {
+          "questionId": "q04",
+          "optionId": "q04-a"
+        },
+        {
+          "questionId": "q05",
+          "optionId": "q05-c"
+        },
+        {
+          "questionId": "q06",
+          "optionId": "q06-c"
+        },
+        {
+          "questionId": "q07",
+          "optionId": "q07-a"
+        },
+        {
+          "questionId": "q08",
+          "optionId": "q08-d"
+        },
+        {
+          "questionId": "q09",
+          "optionId": "q09-c"
+        },
+        {
+          "questionId": "q10",
+          "optionId": "q10-c"
+        },
+        {
+          "questionId": "q11",
+          "optionId": "q11-a"
+        },
+        {
+          "questionId": "q12",
+          "optionId": "q12-a"
+        }
+      ],
+      "dimensions": [
+        {
+          "dimensionRef": {
+            "id": "exploration",
+            "productId": "historical-cabinet",
+            "version": "1.0.0"
+          },
+          "rawSum": 1,
+          "bounds": {
+            "min": 0,
+            "max": 48
+          },
+          "normalized": {
+            "numerator": "25",
+            "denominator": "12"
+          }
+        },
+        {
+          "dimensionRef": {
+            "id": "expression",
+            "productId": "historical-cabinet",
+            "version": "1.0.0"
+          },
+          "rawSum": 11,
+          "bounds": {
+            "min": 0,
+            "max": 48
+          },
+          "normalized": {
+            "numerator": "275",
+            "denominator": "12"
+          }
+        },
+        {
+          "dimensionRef": {
+            "id": "connection",
+            "productId": "historical-cabinet",
+            "version": "1.0.0"
+          },
+          "rawSum": 32,
+          "bounds": {
+            "min": 4,
+            "max": 48
+          },
+          "normalized": {
+            "numerator": "700",
+            "denominator": "11"
+          }
+        },
+        {
+          "dimensionRef": {
+            "id": "steadiness",
+            "productId": "historical-cabinet",
+            "version": "1.0.0"
+          },
+          "rawSum": 28,
+          "bounds": {
+            "min": 2,
+            "max": 48
+          },
+          "normalized": {
+            "numerator": "1300",
+            "denominator": "23"
+          }
+        }
+      ],
+      "decision": {
+        "kind": "archetype",
+        "distances": [
+          {
+            "resultRef": {
+              "id": "li-bai",
+              "productId": "historical-cabinet",
+              "version": "1.0.0"
+            },
+            "value": {
+              "numerator": "48799874725",
+              "denominator": "4608648"
+            }
+          },
+          {
+            "resultRef": {
+              "id": "su-shi",
+              "productId": "historical-cabinet",
+              "version": "1.0.0"
+            },
+            "value": {
+              "numerator": "22071765625",
+              "denominator": "4608648"
+            }
+          },
+          {
+            "resultRef": {
+              "id": "tao-yuan-ming",
+              "productId": "historical-cabinet",
+              "version": "1.0.0"
+            },
+            "value": {
+              "numerator": "24184518025",
+              "denominator": "4608648"
+            }
+          },
+          {
+            "resultRef": {
+              "id": "bai-ju-yi",
+              "productId": "historical-cabinet",
+              "version": "1.0.0"
+            },
+            "value": {
+              "numerator": "78450325",
+              "denominator": "4608648"
+            }
+          }
+        ],
+        "tiedMinimumResultRefs": [
+          {
+            "id": "bai-ju-yi",
+            "productId": "historical-cabinet",
+            "version": "1.0.0"
+          }
+        ],
+        "selectedResultRef": {
+          "id": "bai-ju-yi",
+          "productId": "historical-cabinet",
+          "version": "1.0.0"
+        },
+        "tieBreak": "result-order"
+      }
+    }
+  ]
+}
