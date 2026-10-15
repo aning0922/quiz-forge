@@ -153,9 +153,22 @@ export function ApplyDraftPanel({
         将已归档的合成内容应用为此工作区唯一草稿的不可变修订
         1。平台授权仍未审核，不可发布；此操作不评分、不生成报告。
       </p>
-      <Link className={styles.link} href={draftWorkspacePath(productId)}>
-        查看服务器草稿
-      </Link>
+      <div className={styles.actions}>
+        <Link className={styles.link} href={draftWorkspacePath(productId)}>
+          查看服务器草稿
+        </Link>
+        <button
+          className={`${styles.button} ${styles.secondary}`}
+          disabled={busy || refreshing || current.loading || product.loading}
+          onClick={() => {
+            loadPending();
+            current.refresh();
+            product.refresh();
+          }}
+        >
+          刷新草稿与工作区状态
+        </button>
+      </div>
       {session.operator.role === "read-only" && <ReadOnlyNotice />}
       {writeDenied && (
         <p>
@@ -170,17 +183,6 @@ export function ApplyDraftPanel({
           {current.error || product.error}
         </p>
       )}
-      <button
-        className={`${styles.button} ${styles.secondary}`}
-        disabled={busy || refreshing || current.loading || product.loading}
-        onClick={() => {
-          loadPending();
-          current.refresh();
-          product.refresh();
-        }}
-      >
-        刷新草稿与工作区状态
-      </button>
       {pending ? (
         <section className={styles.compare} aria-label="待确认的原 key">
           <h3>此工作区有待确认请求</h3>

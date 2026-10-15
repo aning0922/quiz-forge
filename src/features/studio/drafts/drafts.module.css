@@ -1,3 +1,6 @@
+.separatedActions {
+  margin-top: 12px;
+}
 .body {
   display: grid;
   gap: 12px;
