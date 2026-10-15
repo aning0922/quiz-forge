@@ -23,7 +23,9 @@ export const DEFAULT_COMPATIBILITY_POLICY: TrustedCompatibilityPolicy =
     ),
   });
 export function checkCompatibility(
-  manifest: QuizPackManifest,
+  manifest: Omit<QuizPackManifest, "contentSchemaVersion"> & {
+    contentSchemaVersion: string;
+  },
   policy: TrustedCompatibilityPolicy,
 ): PackIssue[] {
   const issues: PackIssue[] = [];

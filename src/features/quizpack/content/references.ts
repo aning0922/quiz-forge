@@ -26,6 +26,16 @@ export function validateParsedContentReferences(
   );
   if (content.schemaVersion === "quizpack-content.v1")
     return boundedContentIssues(issues);
+  return boundedContentIssues([
+    ...issues,
+    ...validatePresentationReferences(content),
+  ]);
+}
+/** v2-only edges, composed after the shared base graph by full-package admission. */
+export function validatePresentationReferences(
+  content: import("./v2").QuizPackContentV2,
+): PackIssue[] {
+  const issues: PackIssue[] = [];
   const add = (code: string, path: (string | number)[]) =>
     issues.push({
       code,
@@ -139,7 +149,7 @@ export function validateParsedContentReferences(
       state,
       "resourceRefs",
     ]);
-  return boundedContentIssues(issues);
+  return issues;
 }
 /** Internal identities, rules and declarations only; no manifest/file/media qualification. */
 export function validateSupportedContentReferences(

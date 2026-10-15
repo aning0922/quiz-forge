@@ -25,7 +25,9 @@ export function validateContentGraph(
       { id: string; version: string; propsSchemaVersion: string }
     >
   >,
-  manifest?: QuizPackManifest,
+  manifest?: Omit<QuizPackManifest, "contentSchemaVersion"> & {
+    contentSchemaVersion: string;
+  },
 ): PackIssue[] {
   const issues: PackIssue[] = [];
   const add = (code: string, path: Path, message: string) => {
