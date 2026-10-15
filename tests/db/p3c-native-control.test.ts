@@ -1,5 +1,6 @@
 import {
   mkdtemp,
+  lstat,
   mkdir,
   chmod,
   symlink,
@@ -69,11 +70,16 @@ it.each([
   await mkdir(container(), { recursive: true, mode: 0o700 });
   if (kind === "state-file") await writeFile(state(), "bad");
   else {
-    await mkdir(state(), { mode: kind === "state-mode" ? 0o755 : 0o700 });
+    await mkdir(state(), { mode: 0o700 });
     if (kind === "control-file") await writeFile(control(), "bad");
     else if (kind === "control-symlink") await symlink("missing", control());
-    else
-      await mkdir(control(), { mode: kind === "control-mode" ? 0o755 : 0o700 });
+    else await mkdir(control(), { mode: 0o700 });
+  }
+  if (kind === "state-mode" || kind === "control-mode") {
+    const directory = kind === "state-mode" ? state() : control();
+    // mkdir permissions are filtered by umask; explicitly establish this negative fixture.
+    await chmod(directory, 0o755);
+    expect((await lstat(directory)).mode & 0o777).toBe(0o755);
   }
   await expect(
     inspectPreviewNativeControl(qualification, root),
