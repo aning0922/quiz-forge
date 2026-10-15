@@ -42,7 +42,15 @@ export const validateSupportedQuizPackCore: ValidateSupportedQuizPackCore = (
     source,
     safeContext,
     {
-      ...execution,
+      // Do not copy or bind hooks: prototype, receiver and lazy access are valid.
+      checkpoint: (signal) => execution.checkpoint(signal),
+      readZip: (input, value) => execution.readZip(input, value),
+      inspect: (...args) => execution.inspect(...args),
+      beforeStructure: (manifest, content) =>
+        execution.beforeStructure?.(manifest, content),
+      parsed: (pack, files) => execution.parsed?.(pack, files),
+      propagate: (error, report, active) =>
+        execution.propagate(error, report, active),
       execute: (work) => {
         if (failure) throw failure;
         return execution.execute(work);

@@ -37,3 +37,13 @@
 本地 `pnpm format:check`、`pnpm lint`、`pnpm typecheck`、`pnpm test`、`pnpm build` 均通过。全仓单元测试 104 文件 / 1,330 项通过；包工具、v1 与 content 定向 15 文件 / 299 项通过。构建含 `BUILD_TRACE_OK`，65 traces、0 violations。远端 CI 不在此本地结果中冒称通过。主控负责整体六项闭环；本工作树未运行生产 E2E、未占 3100、未启数据库或运行迁移。
 
 尚未实现本轮 backend/candidate/restore 桥接，也未修改 server/validation、CLI、依赖、DDL、媒体 source inventory 或 fixture groups。旧入口现在经提取后的 package 骨架引用新源码路径，主控集成后需重建并核实 main 与 fixture 的 source/compiled 媒体闭包与实际封存；本地普通图片解码和构建成功不代表隔离后端、视觉或商用审核通过。M1 完成后停止，桥接等待共享 report/identity 与下一次明确分派。
+
+## M1 独审 P2 整改：execution hook 对象语义
+
+Astra 独审发现适配层的 `{ ...execution }` 会丢失原型方法、改变普通方法的 `this`，并提前读取尚未到执行阶段的 getter。该复制假设不属于 `P1CoreExecution` 合同，原 M1 的箭头函数回调测试没有覆盖这类合法输入。
+
+旧 v1 与新 supported core 均改为逐个显式转发 hook：仅在原调用阶段通过原 execution 对象访问并调用，不提前复制、绑定或读取可选 hook。错误转换、propagate 阶段和新 context 失败关闭逻辑维持原有行为；共享执行骨架及公共 API/compatibility/report/identity 合同未修改。
+
+新增 `package/execution-hooks.test.ts` 共 6 项回归（两入口各三类），覆盖类原型 hook、所有普通 hook 的原始 `this`/参数/顺序及失败 propagate、ZIP 阶段已失败时不读取后续 getter。测试先在修复前重现六项失败，修复后通过。另以 `0059175` 原 core 对三类执行对象做 6 次旧/新比较：旧 v1 完整报告和事件相同；supported 除预期的新报告身份外，检查、问题、截断、候选状态、归档摘要、未验证项及事件均一致。探针留在忽略的 `.cache/p3b`，不提交基线重复算法。
+
+此次仅修 M1；root 共享 `530ede8` 已作为依赖接入，独立整改提交不包含该依赖提交。bridge、DB 准入及媒体部署仍未启动。整改本地 `format:check`、`lint`、`typecheck`、`test`、`build` 均通过；定向 16 文件 / 305 项，全仓 106 文件 / 1,347 项，构建 trace 65 项且 0 violations。E2E、DB、媒体封存和远端 CI 未在本整改回执中宣称通过。
