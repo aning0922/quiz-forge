@@ -117,7 +117,9 @@ export async function handlePreviewHttp(
         error = expired;
       }
     }
-    return errorResponse(error, observationId);
+    const response = errorResponse(error, observationId);
+    response.headers.set("Cache-Control", "private, no-store, max-age=0");
+    return response;
   } finally {
     try {
       await db?.close();
