@@ -152,10 +152,17 @@ async function mobile(page: Page, info: TestInfo, state: string) {
       if (box) expect(box.height).toBeGreaterThanOrEqual(44);
     }
     await page.evaluate(() => scrollTo(0, 0));
-    await page.screenshot({
+    await expect.poll(() => page.evaluate(() => scrollY)).toBe(0);
+    const height = await page.evaluate(() =>
+      Math.max(innerHeight, document.documentElement.scrollHeight),
+    );
+    const screenshot = await page.screenshot({
       path: info.outputPath(`drafts-${state}-${width}.png`),
       fullPage: true,
     });
+    // The PNG must contain the complete state, not just the viewport captured
+    // while a confirmed receipt is still refreshing the draft facts.
+    expect(screenshot.readUInt32BE(20)).toBe(height);
   }
 }
 test.beforeAll(async () => {
@@ -459,6 +466,12 @@ test("archived Product still reconciles the already committed original key; read
     .click();
   expect((await response).status()).toBe(200);
   await expect.poll(() => pending(page)).toBeNull();
+  await expect(
+    page.getByRole("button", { name: "读取服务器草稿", exact: true }),
+  ).toBeEnabled();
+  await expect(
+    page.getByRole("link", { name: "读取固定修订正文", exact: true }),
+  ).toBeVisible();
   await mobile(page, info, "archived-receipt");
 });
 
