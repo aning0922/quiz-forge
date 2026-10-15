@@ -17,6 +17,7 @@ export default defineConfig({
         "**/studio-imports.spec.ts",
         "**/studio-validations.spec.ts",
         "**/studio-drafts.spec.ts",
+        "**/studio-preview.spec.ts",
       ],
       use: {
         ...devices["Pixel 7"],
@@ -32,6 +33,7 @@ export default defineConfig({
         "**/studio-imports.spec.ts",
         "**/studio-validations.spec.ts",
         "**/studio-drafts.spec.ts",
+        "**/studio-preview.spec.ts",
       ],
       use: {
         ...devices["Desktop Chrome"],

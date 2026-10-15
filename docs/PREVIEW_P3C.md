@@ -50,7 +50,7 @@
 
 ## 精确投影合同
 
-共享机器合同位于features/product/preview/contracts.ts，限浏览器安全的Zod/纯标量依赖，不能因复用Schema把node:crypto或server-only带入客户端。范围字段复用现有productIdSchema、draftIdSchema和有界修订号Schema；productId是受限字符串，不是UUID；内容Ref仍为完整productId/id/version，不用显示名替代引用。renderer注册为folio-cabinet-preview@1.0.0；字体注册为historical-preview-serif@1.0.0，机器合同最终加入真实字体文件SHA及覆盖表SHA，不使用占位SHA。
+共享机器合同位于features/product/preview/contracts.ts，限浏览器安全的Zod/纯标量依赖，不能因复用Schema把node:crypto或server-only带入客户端。范围字段复用现有productIdSchema、draftIdSchema和有界修订号Schema；productId是受限字符串，不是UUID；内容Ref仍为完整productId/id/version，不用显示名替代引用。renderer注册为folio-cabinet-preview@1.0.0；字体当前注册为historical-preview-serif@1.0.1（1.0.0底座产物保留，1.0.1补实际UI八字），机器合同最终加入真实字体文件SHA及覆盖表SHA，不使用占位SHA。
 
 PreviewBinding固定productId/draftId/revision/canonicalContentSha256/assetSetSha256，以及renderer{id,version}/font{id,version,fileSha256,coverageSha256}。服务端依真实固定修订生成；全部请求校验完整绑定，任何字段不匹配返回PREVIEW_BINDING_MISMATCH；不能自动换current。主控先冻结Font descriptor再并行UI实现。
 
@@ -105,3 +105,7 @@ A依B投影的精确纯接口调用：preparePreviewContent(content, binding)得
 使用现有认证/来源/无权限/不可用错误语义，新增有限PREVIEW_UNSUPPORTED、PREVIEW_BINDING_MISMATCH、PREVIEW_LIMIT_EXCEEDED、PREVIEW_INVALID_ANSWERS、PREVIEW_RESOURCE_UNAVAILABLE、PREVIEW_BUSY、PREVIEW_TIMEOUT、PREVIEW_CANCELLED。错误不回显输入/文件路径/正文。入口不可预览仍显示真实原因和原文阅读入口；评分失败保留可编辑临时答案，不出现假完成；结果/报告/海报失效立即撤销。
 
 新增测试侧server owner/cleanup函数由A提出隔离模块，主控负责接入现有独占3100/Playwright编排，不能依赖“未知已运行服务”。真实P3-C夹具清理必须通过owner证明；不能给既有CLI任意加一个布尔参数绕过。
+
+### 合成测试实例的未 provision 状态
+
+仅对qualification明确为synthetic-db-and-private-pixels-no-native的P3-C测试夹具，若当前平台stateRoot经真实lstat确认严格ENOENT，且已存在祖先均是真实自有目录、没有符号链接或权限错误，可记录not-provisioned。此结果不是native通过或native停止证明。stateRoot存在时仍必须执行原control私有身份/空目录全检查；缺control、非空、错mode、symlink均拒绝。最终清理check重新观察，不能缓存prepare时的不存在，也不能创建假空目录。原server退出proof、独占锁、backends、ACK、来源hash、外部引用等条件全部保留，旧B2/B3及生产native检查不改。该细化用于消除独立无native测试对其他测试先建目录的隐含依赖；97f07d5普通CI实际success，不把潜在顺序问题记为已发生CI失败。

@@ -23,3 +23,27 @@ Astra两轮草案意见补齐同revision内requestId/答案快照/导出代次�
 独审实际复现两项P2：继承完整content/v2 Schema导致node:util进入浏览器依赖；仅有常量未执行完整响应封套字节上限。主控改为中立标量与独立有限display-shapes，旧v1/v2不改；响应Schema实际校验完整序列化UTF-8。主控53定向、类型/lint/格式及真实platform=browser打包通过，输出1555082未压缩字节（两个入口，非最终页面负载）。根直接import esbuild首次不可用，不当通过；实际通过使用已固定tsx的esbuild0.28.2依赖，没有增加依赖。
 
 Astra以最新副本独立浏览器打包成功、30定向通过（含额外六组中文/引号/换行转义的入口524288与揭晓262144精确上限/+1）、TypeScript组件类型零诊断。独审在自己工作树重建font/manifest逐字节一致，并核实际cmap1097字符、静态600字重和许可证/文件/字表hash。两项P2关闭，确认可交A/B实施；真实服务、评分投影、六状态/PNG及整体验收仍待完成。
+
+## 已集成服务与投影里程碑
+
+A8416069→4c2f921提供固定revision来源、完整正文/asset-set hash/canonical/schema/引用、真实DB归属与只读授权服务。root62定向及类型通过；Astra9repository、原7PG与加入4补充后的11PG通过，验证read-only成功不写session/audit、成功前真实撤权拒绝、HTTP来源/CSRF/过大正文和有限异常。本批仍明确DI合成投影替身，未当实际评分。
+
+B8326aba→f6ab9ae提供真实score驱动的六状态字段投影与private WeakMap，Astra双引擎逐结果与核心决策/答案hash/逻辑hash/报告引用一致，预揭晓不泄漏结果/规则/画像，完整维度保留、海报超限单独不可用，里程碑通过。Aafededc→97f07d5资源读/共享锁/owner/fixture同时集成；root124定向与类型通过。独审原13PG/owner/FS、M1加入真实两引擎13、资源HTTP加入锁断连/迟到FD/外部引用9均通过，但真实并发同identity启动复现两个owner，登记P2，A正在原子登记修复，未先记关闭。
+
+Ae087b57→fdeccc6将E2E纯fixture合同与server-only/FS服务分开；Ae9adeec→74c572b真实三API路由及HTTP/两引擎witness网络探测已集成，独审进行中。A自有3112实际production Next通过2entry/4完整image bytes+SHA/6score/2engines及HEAD/Range/cache检查，已真实停止和proof清理；这是执行方网络证据，不替代root浏览器。A完整382PG、1478单元及构建68trace/13952路径/0private为执行方证据，root最终全量待UI集成。
+
+准确c3fdd8c普通CI38793283272、4c2f921普通38794366475、97f07d5普通38796115166均实际success。这些head未触发媒体workflow，不能写作media CI通过。P3-C运行树已改变，旧P3-B部署/封存仅作历史证据；最终P3-C必须重新build/bind/native封存和生产E2E。
+
+## UI集成与字体联调
+
+B5c734a→c7d1421交六状态UI/真实PNG与6个生产E2E场景，开发方22文件242定向、格式/lint/类型通过，真实浏览器尚待root。主控集成时确认Playwright ESM直接导入JSON descriptor报import attribute错误；改由固定字体生成器同时输出纯TS descriptor，并用实际公开font/coverage/license/hash和manifest一致性测试防漂移。真实Playwright列表现为238项/17文件，列举不是执行通过。
+
+新UI八个缺字“护歇登稍繁绑航营”另建preview-v1-1/字体1.0.1，保留旧1.0.0；同一授权源及固定工具生成1105字符、220972字节，实际cmap缺字0。新fontSHA7b33efc0771d2b0aef14474f66f280eccc7f39996738e497fdf322973bb19a29，coverageSHA5e4828a70bb752096bdb008bcc9b02467ee32b4734d9217c182fcdcda2ab030a。页面CSS与导出descriptor一并改为新路径，字体失败E2E拦截从旧写死URL改为当前descriptor，避免负例失效。root167项定向通过；字体/runner进一步独审与最终全量待完成。
+
+## 受管E2E编排与整改
+
+新test:e2e由root直接持有Next3100 ChildProcess/进程组及A私有退出proof，Playwright使用明确无webServer的配置，原项目后串studio-preview；不复用未知服务器。新预览fixture完成后，必须等真实Playwright workers退出，再停止Next取得proof，精确清P3C→旧B3→B2。失败/未确认不清理。纯nonce只是运行关联，不能充当退出权威。
+
+独审发现原参数黑名单漏-V及--ui-host/--ui-port，可非测试退出仍被误报passed，登记P2。改为只允许现有project和有界grep/grep-invert，归一为--key=value，在配置读取/启动之前执行；root13定向通过，独审加12非法/多项目探针共25/25通过，P2关闭。成功摘要明确full/filtered。初次类型检查因exactOptionalPropertyTypes不允许webServer:undefined失败，改为复制base后实际删除该属性，未降低类型设置。
+
+owner并发P2由A949d932→2e8de54修复并经原独立实际并发probe关闭；Aece2f0c→8f70bc0的合成未provision测试边界也已独审11FS通过，无新增阻断。root最终实现536e8fe上已有124文件1504单元、fresh43文件395PG、零warning生产build69trace/14116路径/0private；新增纯runner参数13项另记录，不冒称当前完整PG已跑408项。driver、重绑定/native及真实238项E2E继续执行。
