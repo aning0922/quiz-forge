@@ -27,3 +27,7 @@ B 的原始提交 `8326aba30c5dd83c980c9da5c83bab51b1c434dc` 在本分支同步�
 已实际运行 `pnpm build`，production Next 三API编译成功，`BUILD_TRACE_OK` traceCount=68、pathCount=13952、violationCount=0。新增 `tests/db/p3c-next-probe.ts` 在自有 purpose=test/3112 上以真实受管 Next production 子进程完成网络探测：read-only 真实登录、两个 entry、四次完整图像字节/SHA、两引擎共六组真实 witness 评分、HEAD/Range/无ETag行为；输出 `P3C_NEXT_PROBE_OK`（entries2/images4/scores6/engines2/browser=false）。随后真实stop/proof、finish子进程及精确cleanup均成功。入口拒绝主控3100，未使用浏览器，不替代主控E2E/视觉验收。
 
 全仓 format/lint/typecheck/unit 与普通PG完整回归正在当前路由head复验，最终结果另补。`pnpm test:e2e` 与四宽六状态截图由主控独占3100串行集成；A不执行主控端口任务。
+
+当前路由head最终本地回归：`pnpm format:check`、`pnpm lint`、`pnpm typecheck`、`pnpm test` 全部通过（117 files / 1478 unit）；普通 `pnpm test:db` 全部通过（42 files / 382 tests，172.70s）。自有 b03fce54a628fb595397f6cb35d78e07 / 55421 已正常停止，Next probe 子进程与夹具已完成真实退出和精确清理。未执行主控独占 `pnpm test:e2e`，未宣称远端CI/浏览器视觉成功。
+
+待主控明确的环境差异：普通 CI database job 没有 provision 平台 native runtime/control 目录；本地已有真实目录，因此当前严格 native-control 清理在本地通过，但不能据此断言普通CI会通过。A已报主控选择最窄策略，暂未更改旧清理条件、未创建替代 control 或改动 CI。独立审查整改与该环境边界未关闭前，不把 A 分支视为阶段技术验收完成。
