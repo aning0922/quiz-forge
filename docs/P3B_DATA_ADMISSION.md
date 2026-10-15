@@ -38,3 +38,15 @@ per-Product pending 仅统计当前 policy version/hash 精确匹配的原 pendi
 供主控集成的既有 A 提交：1594120（数据/只读）、3ed11f3（历史/alias）、424d820（两行相关联合夹具收窄，主控已取）。3eb0cdb 是 B 3fe6e33 的本地副本，不重复 cherry-pick。root 独占 tests/db/p2b2b-e2e-fixture.ts 的新 authored/v2 媒体夹具及三处事实文案；A 未改该夹具或两处 import 页面。1594120 已有 validations/panel.tsx 的 readOnly 操作门控和四组合文案，集成时保留门控，文案由 root 统一。
 
 最终本地收尾：107 文件 / 1352 单测、format:check、lint、typecheck、build 全部通过；build trace 为 65 traces / 12960 paths / 0 violations。上述三个自有实例均已停止，两个 fresh-service 失败现场完整保留。未运行生产 E2E、浏览器视觉、真实隔离媒体或最终 driver，均由主控串行集成验收。root 后续将 B2 媒体 fixture 从四资源 v1 改为五资源 authored/v2 时，需同步该 fixture 对应的 service/E2E 固定资源数断言；本记录的 14 项服务通过对应 A 当前分支的原 B2 fixture 加独立四组合产品。
+
+## 独审两项 P2 整改（76537be 之后）
+
+确认 76537be 仍存在两处问题并修正：recover/retry 先拿 StorageLock/读配置，旧策略判断发生过晚；历史静止扫描使用 SELECT *，会拉取历史正文及证据。
+
+现在 recover/retry 首次 preflight 的当前授权事务，在 Product/import 范围核验后，仅按三元范围读 policy version/hash 与有界 identity text/hash 并判定当前完整身份；旧策略直接 REVALIDATION_REQUIRED，不获取存储锁、不读配置、不执行文件或媒体 IO。原锁后的当前授权、行状态/CAS及身份复核保留。
+
+历史静止查询只选 status、storage_condition、reserved_bytes、lease_until、attempts_text、archive_policy_version，仍跨所有旧策略、有界 1025 行；停止/held/未知/ACK 检查与 20 当前 pending、1024 历史总量规则不变。不投影 canonical 正文、report 或 evidence。
+
+新增有限 mock 证据：两种 mutation 在 disabled config 下先拒绝真实 legacy tuple，锁/config/full-row/scan/held/media/恢复/重试均不调用；授权失败先于元数据读取；元数据查询精确 scope、空结果失败关闭；历史查询仅元数据并保留全旧策略与 1025 上界。相关两文件 27 项通过，五个改动 TS 文件定向 ESLint 与 diff 空白检查通过。
+
+本次遵守主控 native 矩阵窗口限制：未启动 PG、构建、媒体或 3100；本整改后的类型/全量/真实 PG 复验待主控窗口结束安排，前文完整运行证据属于 76537be，不冒称整改后重跑。

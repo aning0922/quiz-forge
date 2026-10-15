@@ -13,7 +13,11 @@ import { canonicalP1Json } from "../v1/canonical";
 import { packIdSchema, packVersionSchema, sha256Schema } from "../v1/manifest";
 import { importIdSchema } from "../import/contracts";
 import type { StorageCondition } from "../import/contracts";
-import { matchesSupportedArchiveIdentity } from "./policy";
+import {
+  ARCHIVE_POLICY_VERSION,
+  archivePolicySha256,
+  matchesSupportedArchiveIdentity,
+} from "./policy";
 import { validationIdentitySchema } from "../server/validation/contracts";
 import type {
   IdentityKind,
@@ -330,6 +334,43 @@ export function validationDto(
     platformApproval: "unverified",
     publishable: false,
   };
+}
+export type ValidationPolicyRow = Pick<
+  ValidationRow,
+  | "archive_policy_version"
+  | "archive_policy_sha256"
+  | "identity_text"
+  | "identity_sha256"
+>;
+/** Authorized metadata read before any lock/config/file/media operation. No result bodies. */
+export async function validationPolicyRow(
+  tx: Tx,
+  productId: string,
+  importId: string,
+  id: string,
+): Promise<ValidationPolicyRow> {
+  const [row] = await tx<
+    ValidationPolicyRow[]
+  >`SELECT archive_policy_version,archive_policy_sha256,identity_text,identity_sha256 FROM qf.quizpack_validation WHERE product_id=${productId} AND import_id=${importId} AND id=${id}`;
+  if (!row) throw new StudioError("VALIDATION_NOT_FOUND");
+  return row;
+}
+export type LegacyValidationActivity = Pick<
+  ValidationRow,
+  | "status"
+  | "storage_condition"
+  | "reserved_bytes"
+  | "lease_until"
+  | "attempts_text"
+  | "archive_policy_version"
+>;
+/** Bounded global quiescence projection: never fetch canonical content, reports or evidence. */
+export async function legacyValidationActivity(
+  tx: Tx,
+): Promise<LegacyValidationActivity[]> {
+  return tx<
+    LegacyValidationActivity[]
+  >`SELECT status,storage_condition,reserved_bytes,lease_until,attempts_text,archive_policy_version FROM qf.quizpack_validation WHERE archive_policy_version<>${ARCHIVE_POLICY_VERSION} OR archive_policy_sha256<>${archivePolicySha256} ORDER BY id LIMIT ${MAX_VALIDATIONS + 1}`;
 }
 export async function validationRow(
   tx: Tx,

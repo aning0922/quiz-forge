@@ -50,6 +50,7 @@ import {
   exactValidation,
   requireCurrentValidation,
   validationRow,
+  validationPolicyRow,
   validationRowDto,
   validationDto,
   archivedResourceCount,
@@ -144,6 +145,7 @@ async function preflight(
   op: ArchiveOperation,
   c: StudioWriteCredentials,
   scope: ValidationScope,
+  validationId?: string,
 ) {
   return op.databaseAwait("read", () =>
     read(
@@ -153,6 +155,15 @@ async function preflight(
         const product = await productRow(tx, scope.productId),
           original = await importRow(tx, scope.productId, scope.importId);
         received(original);
+        if (validationId !== undefined)
+          requireCurrentValidation(
+            await validationPolicyRow(
+              tx,
+              scope.productId,
+              scope.importId,
+              validationId,
+            ),
+          );
         return { product, original };
       },
       c,
@@ -795,7 +806,7 @@ export function createQuizpackValidationService(): QuizpackValidationService {
         value = parse(validationCasSchema, input),
         op = new ArchiveOperation(db, context);
       try {
-        await preflight(op, c, scope);
+        await preflight(op, c, scope, id);
         const { lock, config } = await acquire(op);
         const row = await op.databaseAwait("read", () =>
           read(
@@ -849,7 +860,7 @@ export function createQuizpackValidationService(): QuizpackValidationService {
         value = parse(validationCasSchema, input),
         op = new ArchiveOperation(db, context);
       try {
-        await preflight(op, c, scope);
+        await preflight(op, c, scope, id);
         const { lock, config } = await acquire(op);
         const { product, original } = await preflight(op, c, scope);
         if (product.archived_at !== null)
