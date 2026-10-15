@@ -23,10 +23,10 @@ import {
 export type Compiled = Readonly<{
   definition: ScoringDefinitionV1;
   identity: ScoringIdentity;
-  options: ReadonlyMap<
-    string,
-    Readonly<{ questionIndex: number; values: readonly number[] }>
-  >;
+  lookupOption: (
+    id: string,
+  ) =>
+    Readonly<{ questionIndex: number; values: readonly number[] }> | undefined;
   minima: readonly number[];
   maxima: readonly number[];
 }>;
@@ -256,13 +256,19 @@ export function prepareScoringDefinition(
     logicHash: digest(normalized, SCORING_HASH_DOMAINS.logic),
   });
   const handle = Object.freeze({}) as PreparedScoringDefinition;
-  prepared.set(handle, {
-    definition: normalized,
-    identity,
-    options,
-    minima: Object.freeze(minima),
-    maxima: Object.freeze(maxima),
-  });
+  // The mutable index never crosses the closure boundary, even through internal
+  // accessors. Freezing a Map would not prevent set/delete/clear.
+  const lookupOption = Object.freeze((id: string) => options.get(id));
+  prepared.set(
+    handle,
+    Object.freeze({
+      definition: normalized,
+      identity,
+      lookupOption,
+      minima: Object.freeze(minima),
+      maxima: Object.freeze(maxima),
+    }),
+  );
   return Object.freeze({ ok: true, value: handle });
 }
 export function readScoringIdentity(
