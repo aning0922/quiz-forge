@@ -6,16 +6,19 @@ import {
   sha256Schema,
 } from "@/lib/assessment-contract/primitives";
 import {
-  SCORING_API_LIMITS,
   scoreSnapshotSchema,
+  witnessEvidenceSchema,
+  coverageEvidenceSchema,
   type DeepReadonly,
   type ScoringResult,
-  type ScoringErrorCode,
 } from "@/lib/assessment-contract/scoring-api-v1";
+import { scoringSourceBindingSchema } from "@/lib/assessment-contract/authoring-review-v1";
 import {
   prepareScoringDefinition,
   readScoringIdentity,
   scoreCompleteAnswers,
+  verifyDeclaredWitnesses,
+  analyzeDimensionsCoverage,
   type PreparedScoringDefinition,
 } from "@/features/quiz/scoring";
 import { canonicalP1Json } from "../v1/canonical";
@@ -26,12 +29,17 @@ import {
   type SupportedContent,
 } from "./supported";
 import { validateParsedContentReferences } from "./references";
+import {
+  contentScoringFailure as failure,
+  contentScoringOutput,
+} from "./scoring-output";
 
 declare const preparedContentIdentity: unique symbol;
 export type PreparedContent = Readonly<{ [preparedContentIdentity]: true }>;
 type FixedContent = {
   content: SupportedContent;
   canonicalContentSha256: string;
+  logicHash: string;
   core: PreparedScoringDefinition;
   reports: ReadonlyMap<string, ContentReference>;
 };
@@ -43,12 +51,24 @@ const ref = ({ id, productId, version }: ContentReference) => ({
 });
 const key = (value: ContentReference) =>
   JSON.stringify([value.productId, value.id, value.version]);
-const failure = (code: ScoringErrorCode): ScoringResult<never> =>
-  freezeContent({
-    ok: false,
-    issues: [{ code, path: [] }],
-    issuesTruncated: false,
-  });
+
+// The content adapter can only issue the complete-content arm. An authoring
+// review has different authority and cannot substitute for a content snapshot.
+const contentSourceBindingSchema = scoringSourceBindingSchema.options[0];
+export const contentWitnessEvidenceSchema = z.strictObject({
+  sourceBinding: contentSourceBindingSchema,
+  evidence: witnessEvidenceSchema,
+});
+export const contentCoverageEvidenceSchema = z.strictObject({
+  sourceBinding: contentSourceBindingSchema,
+  evidence: coverageEvidenceSchema,
+});
+export type ContentWitnessEvidence = DeepReadonly<
+  z.infer<typeof contentWitnessEvidenceSchema>
+>;
+export type ContentCoverageEvidence = DeepReadonly<
+  z.infer<typeof contentCoverageEvidenceSchema>
+>;
 
 export const contentScoreSchema = z.strictObject({
   contentSchemaVersion: z.enum(["quizpack-content.v1", "quizpack-content.v2"]),
@@ -102,6 +122,7 @@ export function prepareContentForScoring(
       .update(canonicalP1Json(content), "utf8")
       .digest("hex"),
     core: core.value,
+    logicHash: identity.value.logicHash,
     reports: new Map(
       content.results.map((result) => [
         key(result),
@@ -124,13 +145,15 @@ export function scorePreparedContent(
   if (!fixed) return failure("INVALID_PREPARED_DEFINITION");
   const actual = scoreCompleteAnswers(fixed.core, answers);
   if (!actual.ok) return actual;
+  if (actual.value.logicHash !== fixed.logicHash)
+    return failure("REFERENCE_MISMATCH");
   const reportTemplateRef = fixed.reports.get(
     key(actual.value.decision.selectedResultRef),
   );
   if (!reportTemplateRef) return failure("REFERENCE_MISMATCH");
-  const result = {
-    ok: true as const,
-    value: {
+  return contentScoringOutput(
+    contentScoreSchema,
+    {
       contentSchemaVersion: fixed.content.schemaVersion,
       contentVersion: fixed.content.contentVersion,
       reportVersion: fixed.content.reportVersion,
@@ -138,14 +161,62 @@ export function scorePreparedContent(
       reportTemplateRef,
       score: actual.value,
     },
+    "score",
+  );
+}
+
+function fixedContent(handle: PreparedContent) {
+  return handle !== null && typeof handle === "object"
+    ? prepared.get(handle)
+    : undefined;
+}
+const sourceBinding = (fixed: FixedContent) => ({
+  kind: "content" as const,
+  contentSchemaVersion: fixed.content.schemaVersion,
+  contentVersion: fixed.content.contentVersion,
+  canonicalContentSha256: fixed.canonicalContentSha256,
+});
+/** Execute the exact declarations held by the prepared complete-content snapshot. */
+export function verifyPreparedContentWitnesses(
+  handle: PreparedContent,
+): ScoringResult<ContentWitnessEvidence> {
+  const fixed = fixedContent(handle);
+  if (!fixed) return failure("INVALID_PREPARED_DEFINITION");
+  const declared = {
+    schemaVersion: "quiz-witness-input.v1" as const,
+    entries: fixed.content.results.map((result) => ({
+      expectedResultRef: ref(result),
+      answers: result.witness.answers.map((answer) => ({
+        questionId: answer.questionRef.id,
+        optionId: answer.optionRef.id,
+      })),
+    })),
   };
-  // Measure the entire result envelope, including the fixed content/report binding.
-  if (
-    Buffer.byteLength(JSON.stringify(result), "utf8") >
-    SCORING_API_LIMITS.scoreBytes
-  )
-    return failure("INPUT_LIMIT_EXCEEDED");
-  const checked = contentScoreSchema.safeParse(result.value);
-  if (!checked.success) return failure("INVALID_DEFINITION");
-  return freezeContent({ ok: true, value: checked.data });
+  // The actual core bounds and snapshots this complete derived witness input
+  // before its strict parser; no unbounded pre-parse or external evidence input.
+  const actual = verifyDeclaredWitnesses(fixed.core, declared);
+  if (!actual.ok) return actual;
+  if (actual.value.logicHash !== fixed.logicHash)
+    return failure("REFERENCE_MISMATCH");
+  return contentScoringOutput(
+    contentWitnessEvidenceSchema,
+    { sourceBinding: sourceBinding(fixed), evidence: actual.value },
+    "evidence",
+  );
+}
+/** Preserve the core's proven/uncovered/inconclusive distinctions and exact policy facts. */
+export function analyzePreparedContentCoverage(
+  handle: PreparedContent,
+): ScoringResult<ContentCoverageEvidence> {
+  const fixed = fixedContent(handle);
+  if (!fixed) return failure("INVALID_PREPARED_DEFINITION");
+  const actual = analyzeDimensionsCoverage(fixed.core);
+  if (!actual.ok) return actual;
+  if (actual.value.logicHash !== fixed.logicHash)
+    return failure("REFERENCE_MISMATCH");
+  return contentScoringOutput(
+    contentCoverageEvidenceSchema,
+    { sourceBinding: sourceBinding(fixed), evidence: actual.value },
+    "evidence",
+  );
 }
