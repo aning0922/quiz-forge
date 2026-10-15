@@ -29,19 +29,21 @@ export function DraftWorkspacePage({
       <WorkspaceNav />
       <section className={styles.panel}>
         <h1>工作区草稿</h1>
-        <Link
-          className={styles.link}
-          href={`/studio/products/${encodeURIComponent(productId)}`}
-        >
-          返回工作区
-        </Link>
-        <button
-          className={styles.button}
-          disabled={read.loading}
-          onClick={read.refresh}
-        >
-          读取服务器草稿
-        </button>
+        <div className={styles.actions}>
+          <Link
+            className={styles.link}
+            href={`/studio/products/${encodeURIComponent(productId)}`}
+          >
+            返回工作区
+          </Link>
+          <button
+            className={styles.button}
+            disabled={read.loading}
+            onClick={read.refresh}
+          >
+            读取服务器草稿
+          </button>
+        </div>
         {read.loading && <p role="status">正在读取草稿…</p>}
         {read.error && (
           <p role="alert" className={styles.error}>
@@ -86,16 +88,18 @@ export function DraftRevisionPage({
       <WorkspaceNav />
       <section className={styles.panel}>
         <h1>草稿固定修订 · 只读</h1>
-        <Link className={styles.link} href={draftWorkspacePath(productId)}>
-          返回服务器草稿
-        </Link>
-        <button
-          className={styles.button}
-          disabled={read.loading}
-          onClick={read.refresh}
-        >
-          重新读取固定修订
-        </button>
+        <div className={styles.actions}>
+          <Link className={styles.link} href={draftWorkspacePath(productId)}>
+            返回服务器草稿
+          </Link>
+          <button
+            className={styles.button}
+            disabled={read.loading}
+            onClick={read.refresh}
+          >
+            重新读取固定修订
+          </button>
+        </div>
         {read.loading && <p role="status">正在读取并核对完整正文摘要…</p>}
         {read.error && (
           <p role="alert" className={styles.error}>

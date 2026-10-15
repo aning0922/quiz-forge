@@ -6,6 +6,7 @@ import { readDraftPending, type DraftPendingEntry } from "./pending";
 import { reconcileDraftPending, retryOriginalDraft } from "./flow";
 import { draftMessage } from "./message";
 import styles from "../workspace/workspace.module.css";
+import draftStyles from "./drafts.module.css";
 /** The Product workspace can reconcile the original tuple even when its source page changed. */
 export function DraftPendingPanel({
   productId,
@@ -136,13 +137,15 @@ export function DraftPendingPanel({
       )}
       {busy && <p role="status">正在核对原请求…</p>}
       {message && <p role="status">{message}</p>}
-      <button
-        className={`${styles.button} ${styles.secondary}`}
-        disabled={busy || refreshing}
-        onClick={read}
-      >
-        重新读取本页请求锚点
-      </button>
+      <div className={`${styles.actions} ${draftStyles.separatedActions}`}>
+        <button
+          className={`${styles.button} ${styles.secondary}`}
+          disabled={busy || refreshing}
+          onClick={read}
+        >
+          重新读取本页请求锚点
+        </button>
+      </div>
     </section>
   );
 }
