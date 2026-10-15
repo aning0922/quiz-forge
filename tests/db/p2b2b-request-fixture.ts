@@ -124,7 +124,8 @@ async function observeRequest<T>(
     readDatabase: P2aDatabase | undefined,
     serviceSettled = false,
     rejected = false,
-    rejection: unknown;
+    rejection: unknown,
+    register: (() => void) | undefined;
   try {
     database = await createDatabase(fixture.config, {
       signal: context.signal,
@@ -275,28 +276,52 @@ async function observeRequest<T>(
       (after.phase === "stopping" && after.stop.reason === "STOP_UNCONFIRMED")
     )
       throw new Error("TEST_VALIDATION_REQUEST_UNSETTLED");
-    for (const a of attempts) known.add(attemptIdentity(row.id, a));
-    endedAttempts.set(identity, known);
     const stored = snapshots.get(identity) ?? new Map();
     if (stored.size >= 1024 && !stored.has(row.id))
       throw new Error("TEST_VALIDATION_MONITOR_LIMIT");
-    stored.set(row.id, {
-      revision: row.state_revision,
-      controls: row.attempts_text,
-      productId: row.product_id,
-      importId: row.import_id,
-      key: row.validation_key,
-    });
-    snapshots.set(identity, stored);
+    register = () => {
+      for (const a of attempts) known.add(attemptIdentity(row.id, a));
+      endedAttempts.set(identity, known);
+      stored.set(row.id, {
+        revision: row.state_revision,
+        controls: row.attempts_text,
+        productId: row.product_id,
+        importId: row.import_id,
+        key: row.validation_key,
+      });
+      snapshots.set(identity, stored);
+    };
     if (rejected) throw rejection;
     return result as T;
   } finally {
     // Keep capture installed until actual owned close continuations drain, even if the public observation budget expired.
+    let closeFailed = false;
     try {
-      if (database) await database.close();
-      if (readDatabase) await readDatabase.close();
-      await Promise.allSettled(acquisitions);
-      await Promise.allSettled(closes);
+      for (const db of [database, readDatabase]) {
+        if (!db) continue;
+        try {
+          await db.close();
+        } catch {
+          closeFailed = true;
+        }
+      }
+      // Acquisitions can publish locks, and their close continuations can append more closes.
+      // A rejected DB close cannot shorten this actual drain or reopen the observation gate.
+      let acquired = -1,
+        closed = -1;
+      while (acquired !== acquisitions.length || closed !== closes.length) {
+        acquired = acquisitions.length;
+        closed = closes.length;
+        const acquisitionsEnded = await Promise.allSettled(
+          acquisitions.slice(),
+        );
+        const closesEnded = await Promise.allSettled(closes.slice());
+        if (
+          acquisitionsEnded.some((item) => item.status === "rejected") ||
+          closesEnded.some((item) => item.status === "rejected" || !item.value)
+        )
+          closeFailed = true;
+      }
     } finally {
       StorageLock.acquire = original;
       validationTransactions.claimValidation = originalClaim;
@@ -305,6 +330,8 @@ async function observeRequest<T>(
       dispose();
       observing = false;
     }
+    if (closeFailed) throw new Error("TEST_VALIDATION_REQUEST_UNSETTLED");
+    register?.();
   }
 }
 

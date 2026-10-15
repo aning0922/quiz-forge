@@ -23,6 +23,7 @@ vi.mock("@/lib/db/client", async (importOriginal) => ({
 }));
 afterEach(() => vi.restoreAllMocks());
 function setup(proof = true) {
+  vi.mocked(createDatabase).mockReset();
   const id = randomUUID(),
     attemptId = randomUUID(),
     nonce = "a".repeat(43);
@@ -100,7 +101,7 @@ function setup(proof = true) {
     requestMediaOperationStop(ctx, "RUNTIME_FAILED");
     throw new StudioError("WRITE_OUTCOME_UNKNOWN");
   };
-  return { fixture, row, work, requestClose, snapshotClose, lockClose };
+  return { fixture, row, work, requestClose, snapshotClose, lockClose, lock };
 }
 it("original rejected COMMIT response with ACK and all actual observed closes registers serviceSettled", async () => {
   const t = setup();
@@ -175,5 +176,76 @@ it("snapshot connection close failure refuses an original rejected marker", asyn
   const t = setup();
   t.snapshotClose.mockRejectedValue(new Error("synthetic"));
   await expect(runTestValidationRequest(t.fixture, t.work)).rejects.toThrow();
+  expect(testValidationRequestEnded(t.fixture, t.row)).toBe(false);
+});
+it("request DB close rejection cannot restore observers before a pending actual lock close drains", async () => {
+  const t = setup();
+  let release: () => void = () => {};
+  const pending = new Promise<boolean>((resolve) => {
+    release = () => resolve(true);
+  });
+  t.lockClose.mockReturnValue(pending);
+  t.requestClose.mockRejectedValue(new Error("synthetic"));
+  const originalAcquire = StorageLock.acquire;
+  let returned = false;
+  const task = runTestValidationRequest(t.fixture, async (db, ctx) => {
+    const lock = await StorageLock.acquire(db.config, ctx);
+    void lock.close();
+    requestMediaOperationStop(ctx, "RUNTIME_FAILED");
+    throw new StudioError("WRITE_OUTCOME_UNKNOWN");
+  }).finally(() => {
+    returned = true;
+  });
+  const failed = expect(task).rejects.toThrow();
+  await vi.waitFor(() => expect(t.requestClose).toHaveBeenCalled());
+  expect(returned).toBe(false);
+  expect(StorageLock.acquire).not.toBe(originalAcquire);
+  expect(testValidationRequestEnded(t.fixture, t.row)).toBe(false);
+  release();
+  await failed;
+  expect(StorageLock.acquire).toBe(originalAcquire);
+  expect(testValidationRequestEnded(t.fixture, t.row)).toBe(false);
+});
+it("snapshot close rejection still drains new closes and their appended continuations before restoring observers", async () => {
+  const t = setup();
+  let release: () => void = () => {},
+    releaseLater: () => void = () => {};
+  const pending = new Promise<boolean>((resolve) => {
+    release = () => resolve(true);
+  });
+  const later = new Promise<boolean>((resolve) => {
+    releaseLater = () => resolve(true);
+  });
+  t.lockClose
+    .mockResolvedValueOnce(true)
+    .mockReturnValueOnce(pending)
+    .mockReturnValue(later);
+  let appended = false;
+  t.snapshotClose.mockImplementation(async () => {
+    if (!appended) {
+      appended = true;
+      void t.lock.close().then(() => {
+        void t.lock.close();
+      });
+    }
+    throw new Error("synthetic");
+  });
+  const originalAcquire = StorageLock.acquire;
+  let returned = false;
+  const task = runTestValidationRequest(t.fixture, t.work).finally(() => {
+    returned = true;
+  });
+  const failed = expect(task).rejects.toThrow();
+  await vi.waitFor(() => expect(t.snapshotClose).toHaveBeenCalledTimes(2));
+  expect(returned).toBe(false);
+  expect(StorageLock.acquire).not.toBe(originalAcquire);
+  expect(testValidationRequestEnded(t.fixture, t.row)).toBe(false);
+  release();
+  await vi.waitFor(() => expect(t.lockClose).toHaveBeenCalledTimes(3));
+  expect(returned).toBe(false);
+  expect(StorageLock.acquire).not.toBe(originalAcquire);
+  releaseLater();
+  await failed;
+  expect(StorageLock.acquire).toBe(originalAcquire);
   expect(testValidationRequestEnded(t.fixture, t.row)).toBe(false);
 });
