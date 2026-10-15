@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { lstat, mkdir, rename } from "node:fs/promises";
 import path from "node:path";
 import { expect, it } from "vitest";
+import { canonicalP1Json } from "@/features/quizpack/v1/canonical";
 import { openTestDatabase, safeTestOperation as safe } from "./p2a-fixture";
 import {
   cleanupTestValidationFixture,
@@ -62,9 +63,9 @@ it("real received files survive foreign-audit refusal, then exact fixture cleanu
     const fixture = await safe(() =>
       prepareTestValidationFixture(database, randomUUID()),
     );
-    expect(await readTestValidationFixture(database, fixture.runId)).toEqual(
-      fixture,
-    );
+    const actual = await readTestValidationFixture(database, fixture.runId);
+    const fixtureMatches = canonicalP1Json(actual) === canonicalP1Json(fixture);
+    expect(fixtureMatches).toBe(true);
     const imports = await safe(
       () =>
         database.admin.sql<
