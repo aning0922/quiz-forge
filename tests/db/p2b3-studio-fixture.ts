@@ -31,6 +31,10 @@ import {
   type ValidationRow,
 } from "@/features/quizpack/validation/repository";
 const privateName = "drafts-e2e-fixture.json";
+function requireTestDatabase(db: TestDatabase) {
+  if (!["test", "ci"].includes(db.config.purpose))
+    throw new Error("DRAFTS_TEST_DATABASE_REQUIRED");
+}
 const fixturePath = (db: TestDatabase) =>
   path.join(instanceDirectory(db.config), privateName);
 function privateFile(stat: Stats) {
@@ -44,6 +48,8 @@ function privateFile(stat: Stats) {
     throw new Error("DRAFTS_FIXTURE_PRIVATE_FILE_REQUIRED");
 }
 export async function readStudioDraftFixture(db: TestDatabase, runId: string) {
+  requireTestDatabase(db);
+  z.uuid().parse(runId);
   const file = await open(
     fixturePath(db),
     constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK,
@@ -115,6 +121,7 @@ export async function prepareStudioDraftFixture(
   db: TestDatabase,
   runId: string,
 ): Promise<StudioDraftFixture> {
+  requireTestDatabase(db);
   z.uuid().parse(runId);
   const operator = issueToken("credential"),
     readOnly = issueToken("credential"),
@@ -272,7 +279,14 @@ export async function cleanupStudioDraftFixture(
   db: TestDatabase,
   value: StudioDraftFixture,
 ) {
-  if (!value.completed) throw new Error("DRAFTS_FIXTURE_UNKNOWN_PRESERVED");
+  requireTestDatabase(db);
+  const current = await readStudioDraftFixture(db, value.runId);
+  if (
+    JSON.stringify(current) !==
+      JSON.stringify(studioDraftFixtureSchema.parse(value)) ||
+    !value.completed
+  )
+    throw new Error("DRAFTS_FIXTURE_UNKNOWN_PRESERVED");
   const lock = await StorageLock.acquire(db.config);
   try {
     await verifyFinished(db, value);
@@ -281,7 +295,7 @@ export async function cleanupStudioDraftFixture(
     >`SELECT pg_backend_pid() pid`;
     const [other] = await db.admin.sql<
       { present: boolean }[]
-    >`SELECT EXISTS(SELECT 1 FROM pg_stat_activity WHERE datname=current_database() AND backend_type='client backend' AND pid<>pg_backend_pid() AND pid<>${app!.pid}) AS present`;
+    >`SELECT EXISTS(SELECT 1 FROM pg_stat_activity WHERE datname=current_database() AND pid<>pg_backend_pid() AND pid<>${app!.pid}) AS present`;
     if (other?.present)
       throw new Error("DRAFTS_FIXTURE_SERVER_STILL_CONNECTED");
     for (const source of value.sources) {
