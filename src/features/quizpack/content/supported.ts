@@ -3,7 +3,7 @@ import {
   quizPackContentSchema,
   type QuizPackContent,
 } from "../v1/content";
-import { canonicalP1Json } from "../v1/canonical";
+import { canonicalP1Json, P1CanonicalError } from "../v1/canonical";
 import type { PackIssue, Result } from "../v1/api";
 import {
   quizPackContentV2Schema,
@@ -38,12 +38,16 @@ function parseSnapshot(input: unknown): Result<SupportedContent> {
   try {
     // This is the one ordinary-JSON snapshot, before accessing any caller property.
     value = JSON.parse(canonicalP1Json(input, "content"));
-  } catch {
+  } catch (error) {
     return {
       ok: false,
       issues: [
         {
-          code: "CONTENT_INPUT_REJECTED",
+          code:
+            error instanceof P1CanonicalError &&
+            ["JSON_SIZE_LIMIT", "JSON_DEPTH_LIMIT"].includes(error.code)
+              ? "CONTENT_INPUT_LIMIT_EXCEEDED"
+              : "CONTENT_INPUT_REJECTED",
           path: [],
           message: "Content must be bounded ordinary JSON.",
         },
