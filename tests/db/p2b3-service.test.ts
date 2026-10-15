@@ -138,6 +138,22 @@ describe("B3 first-draft actual PostgreSQL service", () => {
       ),
     ).toBe("DRAFT_REVISION_NOT_FOUND");
   });
+  it("application remains a pure DB write when imports.enabled is false", async () => {
+    const disabled = {
+      ...db.app,
+      config: {
+        ...db.app.config,
+        imports: { ...db.app.config.imports, enabled: false },
+      },
+    };
+    expect((await apply(disabled)).created).toBe(true);
+    expect(await counts()).toEqual({
+      drafts: 1,
+      revisions: 1,
+      applications: 1,
+      audits: 1,
+    });
+  });
   it("replays success before archived/source checks and refuses changed original tuple", async () => {
     const first = await apply();
     await safe(

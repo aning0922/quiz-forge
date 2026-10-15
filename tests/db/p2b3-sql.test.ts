@@ -116,11 +116,42 @@ describe("B3 actual PostgreSQL narrow source INSERT and immutable relationships"
     ).toBe("23514");
     await noDraft();
   });
-  it.each(["text", "asset", "version", "count", "source", "null"] as const)(
+  it.each([
+    "text",
+    "asset",
+    "version",
+    "count",
+    "source",
+    "null",
+    "content-bytes",
+    "asset-bytes",
+  ] as const)(
     "INSERT cannot copy a different %s while borrowing a ready validation identity",
     async (kind) => {
       const state = await sqlstate(() =>
         rawInsert((v) => {
+          if (kind === "content-bytes") {
+            const text = "a".repeat(2_097_153);
+            return {
+              ...v,
+              source: {
+                ...v.source,
+                canonicalContentText: text,
+                canonicalContentSha256: hash(text),
+              },
+            };
+          }
+          if (kind === "asset-bytes") {
+            const text = "a".repeat(65_537);
+            return {
+              ...v,
+              source: {
+                ...v.source,
+                assetSetText: text,
+                assetSetSha256: hash(text),
+              },
+            };
+          }
           if (kind === "text")
             return {
               ...v,
@@ -164,6 +195,14 @@ describe("B3 actual PostgreSQL narrow source INSERT and immutable relationships"
       await noDraft();
     },
   );
+  it("SQL source INSERT refuses an archived Product even when source and copy still match", async () => {
+    await safe(
+      () => db.admin.sql`UPDATE qf.product SET archived_at=clock_timestamp(),
+      metadata_revision=metadata_revision+1,updated_at=clock_timestamp() WHERE id=${source.scope.productId}`,
+    );
+    expect(await sqlstate(() => rawInsert((v) => v))).toBe("23514");
+    await noDraft();
+  });
   it("initial root without exact revision and application fails at COMMIT", async () => {
     expect(
       await sqlstate(() =>

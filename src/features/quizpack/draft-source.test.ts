@@ -176,6 +176,8 @@ it.each([
   "noncanonical",
   "corrupt-content",
   "candidate-hash",
+  "content-bytes",
+  "asset-bytes",
 ])("rejects %s source facts before accepting resources", async (kind) => {
   const f = await sourceFixture();
   if (kind === "status") f.row.status = "archiving";
@@ -191,6 +193,14 @@ it.each([
     if (kind === "unconfirmed") attempts[0].mediaStop = "unconfirmed";
     if (kind === "no-ack") attempts[0].fileStopProof = null;
     f.row.attempts_text = canonicalP1Json(attempts);
+  }
+  if (kind === "content-bytes") {
+    f.row.canonical_content_text = "a".repeat(2_097_153);
+    f.row.canonical_content_sha256 = hash(f.row.canonical_content_text);
+  }
+  if (kind === "asset-bytes") {
+    f.row.asset_set_text = "a".repeat(65_537);
+    f.row.asset_set_sha256 = hash(f.row.asset_set_text);
   }
   if (kind === "noncanonical") {
     f.row.canonical_content_text += " ";
