@@ -1,19 +1,22 @@
 "use client";
 import Link from "next/link";
+import type { StudioSessionDto } from "../contracts";
+import { ApplyDraftPanel } from "../drafts/apply-panel";
 import { WorkspaceNav } from "../workspace/primitives";
 import { checkValidation, validationEndpoint } from "./client";
 import { ValidationFacts } from "./facts";
 import { useValidationRead } from "./use-read";
 import styles from "../workspace/workspace.module.css";
-/** This page is strictly read-only. Explicit operations live beside import facts/history. */
 export function ValidationDetailPage({
   productId,
   importId,
   validationId,
+  session,
 }: {
   productId: string;
   importId: string;
   validationId: string;
+  session: StudioSessionDto;
 }) {
   const record = useValidationRead(
     `${validationEndpoint({ productId, importId })}/${encodeURIComponent(validationId)}`,
@@ -31,7 +34,7 @@ export function ValidationDetailPage({
           返回接收事实与验证历史
         </Link>
         <p className={styles.note}>
-          此页只读取当前权威摘要，不执行恢复、重试、发布或草稿编辑。
+          此页读取当前权威摘要；符合条件的归档可在下方明确应用为首次草稿。
         </p>
         <button
           className={styles.button}
@@ -52,6 +55,14 @@ export function ValidationDetailPage({
         )}
         {record.value && <ValidationFacts value={record.value} />}
       </section>
+      {record.value && (
+        <ApplyDraftPanel
+          key={`${record.value.id}/${record.value.stateRevision}/${record.value.candidateSha256}`}
+          validation={record.value}
+          session={session}
+          refreshing={record.loading || Boolean(record.error)}
+        />
+      )}
     </div>
   );
 }

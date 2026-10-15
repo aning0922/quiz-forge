@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { draftWorkspacePath } from "../drafts/client";
 import Link from "next/link";
 import {
   productReplaceMetadataSchema,
@@ -121,13 +122,16 @@ function ProductEditor({
     <section className={styles.panel}>
       <h1>{product.title}</h1>
       <p className={styles.note}>
-        原包接收仅隔离原字节，尚未验证或生成草稿。运营元数据不会自动改写包内版本声明。
+        原包接收、验证归档与草稿分别保留事实。运营元数据不会自动改写包内版本声明。
       </p>
       <Link
         className={`${styles.link} ${styles.secondary}`}
         href={`/studio/products/${encodeURIComponent(product.id)}/imports`}
       >
         原包接收与历史
+      </Link>
+      <Link className={styles.link} href={draftWorkspacePath(product.id)}>
+        查看服务器草稿
       </Link>
       <dl className={styles.facts}>
         <div>
