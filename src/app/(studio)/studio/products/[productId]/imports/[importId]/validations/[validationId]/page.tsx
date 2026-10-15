@@ -18,6 +18,7 @@ export default async function StudioValidationPage({
   return (
     <ValidationDetailPage
       key={`${ids.productId}/${ids.importId}/${ids.validationId}`}
+      session={state.session}
       {...ids}
     />
   );

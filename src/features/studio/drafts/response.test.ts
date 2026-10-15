@@ -84,3 +84,52 @@ it("accepts a legal >1MiB canonical document whose JSON envelope exceeds the raw
     assetSetText: "{}",
   });
 });
+
+it("expires a stalled body without awaiting the source's unresolved cancel", async () => {
+  const cancel = vi.fn(() => new Promise<void>(() => {}));
+  const response = json(new ReadableStream<Uint8Array>({ cancel }));
+  await expect(
+    readBoundedDraftJson(response, 64, {
+      signal: new AbortController().signal,
+      deadlineMonotonicMs: performance.now() + 20,
+    }),
+  ).rejects.toThrow("INVALID_DRAFT_RESPONSE");
+  expect(cancel).toHaveBeenCalledOnce();
+});
+it("observes external cancellation despite an endless stream of resolved empty chunks", async () => {
+  const controller = new AbortController(),
+    cancel = vi.fn();
+  let reads = 0;
+  const response = json(
+    new ReadableStream<Uint8Array>({
+      pull(stream) {
+        reads++;
+        stream.enqueue(new Uint8Array());
+      },
+      cancel,
+    }),
+  );
+  const timer = setTimeout(() => controller.abort(), 0);
+  try {
+    await expect(
+      readBoundedDraftJson(response, 64, {
+        signal: controller.signal,
+        deadlineMonotonicMs: performance.now() + 1000,
+      }),
+    ).rejects.toThrow("INVALID_DRAFT_RESPONSE");
+    expect(reads).toBeGreaterThanOrEqual(32);
+    expect(cancel).toHaveBeenCalledOnce();
+  } finally {
+    clearTimeout(timer);
+  }
+});
+it("cancels a body whose inherited absolute deadline has already expired", async () => {
+  const cancel = vi.fn();
+  await expect(
+    readBoundedDraftJson(json(new ReadableStream({ cancel })), 64, {
+      signal: new AbortController().signal,
+      deadlineMonotonicMs: performance.now() - 1,
+    }),
+  ).rejects.toThrow("INVALID_DRAFT_RESPONSE");
+  expect(cancel).toHaveBeenCalledOnce();
+});
