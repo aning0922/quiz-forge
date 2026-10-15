@@ -116,6 +116,80 @@ describe("draft original-key pending flow", () => {
     expect(fetcher).not.toHaveBeenCalled();
     expect(storage.getItem(DRAFT_PENDING_STORAGE_KEY)).toBe(original);
   });
+  it.each(["prepared", "sent"])(
+    "does not POST when the %s write succeeds but its full readback changes",
+    async (stage) => {
+      const storage = memoryStorage(),
+        write = storage.setItem;
+      let writes = 0;
+      storage.setItem = (key, text) => {
+        writes++;
+        const value = JSON.parse(text);
+        if (writes === (stage === "prepared" ? 1 : 2))
+          value.entries[0].tuple.expectedValidationStateRevision++;
+        write(key, JSON.stringify(value));
+      };
+      const fetcher = vi.fn();
+      vi.stubGlobal("fetch", fetcher);
+      await expect(
+        applyFirstDraft(storage, tuple, "synthetic"),
+      ).rejects.toThrow("DRAFT_PENDING_UNAVAILABLE");
+      expect(fetcher).not.toHaveBeenCalled();
+      expect(readDraftPending(storage)[0]!.tuple).toEqual({
+        ...tuple,
+        expectedValidationStateRevision:
+          tuple.expectedValidationStateRevision + 1,
+      });
+    },
+  );
+  it("a late original receipt cannot remove a replacement anchor for the same Product", async () => {
+    const storage = prepared(),
+      application = await receipt(),
+      replacement = { ...tuple, idempotencyKey: crypto.randomUUID() };
+    let release!: (response: Response) => void;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(
+        () =>
+          new Promise<Response>((resolve) => {
+            release = resolve;
+          }),
+      ),
+    );
+    const read = reconcileDraftPending(storage, tuple);
+    storage.setItem(
+      DRAFT_PENDING_STORAGE_KEY,
+      JSON.stringify({
+        schemaVersion: DRAFT_PENDING_STORAGE_KEY,
+        entries: [{ tuple: replacement, mayHaveBeenSent: true }],
+      }),
+    );
+    release(Response.json({ kind: "applied", application }));
+    await expect(read).resolves.toMatchObject({ kind: "applied" });
+    expect(readDraftPending(storage)).toEqual([
+      { tuple: replacement, mayHaveBeenSent: true },
+    ]);
+  });
+  it.each(["CAPABILITY_DENIED", "UNAUTHENTICATED", "CSRF_REJECTED"])(
+    "retains the original sent tuple after %s",
+    async (code) => {
+      const storage = prepared(),
+        before = storage.getItem(DRAFT_PENDING_STORAGE_KEY);
+      vi.stubGlobal(
+        "fetch",
+        vi.fn(async () =>
+          Response.json(
+            { code, requestId: crypto.randomUUID() },
+            { status: code === "UNAUTHENTICATED" ? 401 : 403 },
+          ),
+        ),
+      );
+      await expect(
+        retryOriginalDraft(storage, tuple, "synthetic"),
+      ).rejects.toMatchObject({ code });
+      expect(storage.getItem(DRAFT_PENDING_STORAGE_KEY)).toBe(before);
+    },
+  );
   it("gates concurrent same-product calls synchronously and rejects a fresh key while pending", async () => {
     const storage = prepared();
     vi.stubGlobal(
