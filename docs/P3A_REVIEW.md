@@ -60,3 +60,9 @@ root在9873e34时格式/lint/类型、102文件1306单元通过；5ece681核心6
 根tsconfig虽已绑定，外部TSX_TSCONFIG_PATH仍可能改变loader选择。五个固定media package入口在node/tsx启动前覆写为./tsconfig.json，matrix子进程再次固定根的绝对路径；CI改用固定入口，inline失败诊断也前置固定，workflow路径过滤同步五个文件与package。实际raw node负对照加载自有alias marker，固定入口不加载；preload另确认五个命令在loader启动前均正确选择根配置，不启动媒体或签发cap。独立62/62通过，代码窄审无新问题。
 
 修订后格式/lint/类型与103文件1316单元通过；新build/bind、五文件实际变更拒绝探针及重新封存/浏览器待完成前，不以旧54f80b seal记最终P2关闭。只扩大正确的源码绑定清单，不放宽硬化限额或使用未验证部署。
+
+## 最终技术出口
+
+最终代码ce190cd的零warning build为65trace/12955路径/0private；新main绑定1039source/740artifact。五文件实际修改均MANIFEST_MISMATCH且finally恢复后verify通过。最终66×3全通过并sealed，deployment31257f256851648045c83d5d125908ab7352d5e3cf13f96a8cbd84fc64724bfd，runtime8e634193a61e0f4fcbaa50226975c22228ee15e5247e0fef8ddbbd01bb3ee4b2。fresh最终E2E222pass/10旧skip，2.2m；自有Next退出后B3→B2清理成功并停库，3100/55423无监听。两条ce190cd CI38771885883/38771886058实际success。
+
+Astra独立核五文件唯一inventory及当前bytes/hash、原始三轮66/66/零control、公共摘要、最终E2E/清理与准确CI head，关闭源码/config闭包P2并确认本批技术出口。公开有限集成证据补全最终E2E与清理后归档。详见P3A_ACCEPTANCE；下批P3-B合同升级静止条件P2另行修订，不混成本批遗留。

@@ -1,5 +1,11 @@
 # QuizForge 托管开发
 
+## 2026-10-16 P3-A 技术退出
+
+最终代码ce190cd、[验收](P3A_ACCEPTANCE.md)：1316单元/335PG/46driver/222生产E2E（10旧skip）、六项工程检查、最终main媒体66×3及五源码变更拒绝、双CI均通过。Astra确认全部登记P1/P2关闭。四卡真实数学执行已完成，仍authored-pending，无持久化准入或发布批准。PR #15未合并，自有DB/3100已停。
+
+两开发聊天已提交的评分/内容成果均集成；旧handoff工作树当前不在Git注册列表，提交保留。下批由原独立聊天创建新的受管树继续，不能回到旧D1或覆盖目录。P3-B只读预研已完成，合同按升级静止/旧历史/新资格/跨策略alias及有限报告身份修订，冻结后才实施；不再向作者重复请求常规阶段启动许可。
+
 ## P3-A 接续登记
 
 主控从B2-3交付802585b在同一受管根工作树创建codex/content-scoring-foundation，保留#14交付分支。[CONTENT_SCORING_P3A](CONTENT_SCORING_P3A.md)经独立Astra两轮合同及公共机器字段复验后冻结。现有独立聊天分别更名为“QuizForge P3-A · 纯评分引擎”（01a13f49-bff9-74b0-8f7c-03cd46b346c1）和“QuizForge P3-A · 内容合同与适配”（01a13f4a-3ac5-7a72-9ae0-70b24ec85f04），角色继续Sol/high；独立Astra审查聊天不变。先由主控提取不改v1行为的基础Schema/canonical并给出严格机器接口，再派两流实施。
