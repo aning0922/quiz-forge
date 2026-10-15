@@ -89,3 +89,5 @@ coverage policy descriptor固定为{schemaVersion:"quiz-coverage-policy.v1",id:"
 主控：合同、共享基础schema/canonical提取、全局配置/CLI、集成及最终检查。A独立Sol/high：quiz/scoring全部逻辑与边界测试、四卡逻辑转写及执行证据。B独立Sol/high：quizpack/content v2/dispatcher/引用/adapter与兼容回归。主控先交共享Schema/canonical/封套，A随后交可调用核心接口，B再对接adapter；不得互改对方文件。Astra/high独立合同和非实施审查。现有独立开发聊天分别以同一基线在其干净受管工作树创建新分支，旧交付分支保留；精确公共合同提交由主控另行派发。
 
 验收：六项工程检查（沿用生产E2E确保无回归）、真实DB回归保持旧准入、旧v1两合成包原样构建验证、v1 JSON Schema/默认CLI前后结构一致、严格v2边界与引用、独立算术golden及精确平分/负贡献/大分母、所有失败路径、immutable prepared伪造拒绝、四卡实际见证、DP与独立小穷举对照及预算退出、逻辑/表现/hash隔离、无web consumer暴露、独立审查/推送Draft PR与准确CI。无新UI不伪造截图；真实六状态图检在后续preview批验收。
+
+公共实现补充：witness entry passed要求expected/selected完整Ref相等，mismatch要求不等；invalid issues仅INVALID_ANSWERS或NO_PROFILE_MATCH且单项原因一致，全体规范hash为null当且仅当存在INVALID_ANSWERS。结构非法witness整体失败；形状合法但缺题/重复/未知/跨题选项逐项invalid。coverage机器Schema直接核结构证明processedQuestions=0、穷举>0、反例答案数等该计数且questionId唯一；实际总题数与反例评分仍由Prepared执行层核验。共享Schema本身不执行ordinary JSON快照、整份UTF-8预算、深冻结或实际评分，A/B必须在入口/返回路径实现这些责任。

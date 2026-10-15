@@ -1,16 +1,19 @@
 import { z } from "zod";
+import {
+  assessmentIdSchema as packIdSchema,
+  assessmentVersionSchema as packVersionSchema,
+  sha256Schema,
+  engineDeclarationSchema,
+} from "@/lib/assessment-contract/primitives";
+export {
+  assessmentIdSchema as packIdSchema,
+  assessmentVersionSchema as packVersionSchema,
+  sha256Schema,
+  engineDeclarationSchema,
+} from "@/lib/assessment-contract/primitives";
 import type { Result } from "./api";
 import { PACK_LIMITS } from "./limits";
 
-export const packIdSchema = z
-  .string()
-  .regex(/^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/)
-  .max(80);
-export const packVersionSchema = z
-  .string()
-  .regex(/^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/)
-  .max(32);
-export const sha256Schema = z.string().regex(/^[a-f0-9]{64}$/);
 export const assetPathSchema = z
   .string()
   .regex(/^assets\/[a-z][a-z0-9]*(?:-[a-z0-9]+)*\.(png|jpg|webp)$/)
@@ -20,10 +23,6 @@ export const imageMediaTypeSchema = z.enum([
   "image/jpeg",
   "image/webp",
 ]);
-export const engineDeclarationSchema = z.strictObject({
-  id: z.enum(["dimensions", "archetype"]),
-  version: z.literal("1.0.0"),
-});
 export const componentDeclarationSchema = z.strictObject({
   id: packIdSchema,
   version: packVersionSchema,
