@@ -1,5 +1,7 @@
 "use client";
 import Link from "next/link";
+import type { StudioSessionDto } from "../contracts";
+import { DraftPendingPanel } from "./pending-panel";
 import { WorkspaceNav } from "../workspace/primitives";
 import {
   checkDraftRead,
@@ -12,7 +14,13 @@ import { useDraftRead } from "./use-read";
 import { DraftFacts } from "./facts";
 import styles from "../workspace/workspace.module.css";
 import draftStyles from "./drafts.module.css";
-export function DraftWorkspacePage({ productId }: { productId: string }) {
+export function DraftWorkspacePage({
+  productId,
+  session,
+}: {
+  productId: string;
+  session: StudioSessionDto;
+}) {
   const read = useDraftRead(draftEndpoint(productId), (value) =>
     checkDraftRead(value, productId),
   );
@@ -49,6 +57,13 @@ export function DraftWorkspacePage({ productId }: { productId: string }) {
           <DraftFacts draft={read.value.draft} />
         )}
       </section>
+      <DraftPendingPanel
+        key={productId}
+        productId={productId}
+        session={session}
+        refreshing={read.loading}
+        onConfirmed={read.refresh}
+      />
     </div>
   );
 }
