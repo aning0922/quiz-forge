@@ -81,6 +81,7 @@ export function ApplyDraftPanel({
     Boolean(current.error || product.error);
   const ready =
     validation.status === "ready" &&
+    !validation.readOnly &&
     !validation.maintenanceRequired &&
     validation.candidateSha256 !== null;
   async function perform(action: "new" | "read" | "replay") {
@@ -150,7 +151,7 @@ export function ApplyDraftPanel({
     <section className={styles.panel} aria-label="首次草稿应用">
       <h2>首次草稿应用</h2>
       <p className={styles.note}>
-        将已归档的合成内容应用为此工作区唯一草稿的不可变修订
+        将已归档内容应用为此工作区唯一草稿的不可变修订
         1。平台授权仍未审核，不可发布；此操作不评分、不生成报告。
       </p>
       <div className={styles.actions}>

@@ -1,3 +1,7 @@
+import {
+  supportedRuntimeIdentity,
+  runtimeIdentity,
+} from "@/features/quizpack/server/validation/identity";
 import { createHash, randomUUID } from "node:crypto";
 import { canonicalP1Json } from "@/features/quizpack/v1/canonical";
 import { createSyntheticFixture } from "@/features/quizpack/v1/fixtures/synthetic";
@@ -5,11 +9,14 @@ import { issuePrivateCandidate } from "@/features/quizpack/server/validation/pri
 import {
   P1_UNVERIFIED,
   sealP1Report,
+  sealSupportedReport,
 } from "@/features/quizpack/server/validation/report";
 import { sealCandidateResultEvidence } from "@/features/quizpack/server/validation/contracts";
 import {
   archivePolicySha256,
   ARCHIVE_POLICY_VERSION,
+  legacyArchivePolicySha256,
+  LEGACY_ARCHIVE_POLICY_VERSION,
 } from "@/features/quizpack/validation/policy";
 import {
   validationKey,
@@ -44,6 +51,9 @@ const hash = (text: string | Uint8Array) =>
 export type P2b3SourceOptions = {
   engine?: "dimensions" | "archetype";
   largeContent?: boolean;
+  legacy?: boolean;
+  /** Explicit no-file SQL archive identity variation; not an actual ZIP hash. */
+  archiveLabel?: string;
   transformContent?: (content: QuizPackContent) => void;
 };
 /** SQL-only synthetic snapshot. It never certifies decoder, archive IO or commercial approval.
@@ -53,6 +63,7 @@ export async function prepareP2b3Source(
   productIdInput: string,
   options: P2b3SourceOptions = {},
 ) {
+  const legacy = options.legacy === true;
   const productId = productIdSchema.parse(productIdInput);
   const fixture = await createSyntheticFixture(options.engine);
   const previousProductId = fixture.content.product.productId;
@@ -81,32 +92,16 @@ export async function prepareP2b3Source(
         : f,
     ),
   });
-  const archiveSha256 = hash("Synthetic DB archive");
+  const archiveSha256 = hash(options.archiveLabel ?? "Synthetic DB archive");
   const archiveBytes = 100;
-  const payload = {
-    schemaVersion: "quizpack-validation-identity.v1",
-    validatorVersion: "1.0.0",
-    policyId: "quizpack-local-p1.v1",
-    validatorBundleSha256: "a".repeat(64),
-    compatibilityPolicyHash: "a".repeat(64),
-    effectiveLimitsHash: "a".repeat(64),
-    persistencePolicyVersion: "quizpack-persistence-policy.v1",
-    persistencePolicyHash: "a".repeat(64),
-    reportSchemaVersion: "quizpack-validation.v1",
-    reportSchemaHash: "a".repeat(64),
-    runtime: {
-      schema: "quizpack-media-runtime-binding.v1",
-      platform: "darwin-arm64",
-      componentId: "a".repeat(64),
-      deploymentId: "a".repeat(64),
-      runtimeBundleHash: "a".repeat(64),
-      limitsHash: "a".repeat(64),
-    },
-  };
-  const identity = {
-    ...payload,
-    identitySha256: hash(canonicalP1Json(payload)),
-  };
+  const identity = (legacy ? runtimeIdentity : supportedRuntimeIdentity)({
+    schema: "quizpack-media-runtime-binding.v1",
+    platform: "darwin-arm64",
+    componentId: "a".repeat(64),
+    deploymentId: "a".repeat(64),
+    runtimeBundleHash: "a".repeat(64),
+    limitsHash: "a".repeat(64),
+  });
   const identityText = canonicalP1Json(identity);
   const manifestText = JSON.stringify(fixture.manifest);
   const manifestSha256 = hash(manifestText);
@@ -122,16 +117,16 @@ export async function prepareP2b3Source(
         targetProductId: productId,
       },
       identity: { status: "bound", value: identity },
-      report: sealP1Report({
-        schemaVersion: "quizpack-validation.v1",
+      report: (legacy ? sealP1Report : sealSupportedReport)({
+        schemaVersion: identity.reportSchemaVersion,
         targetProductId: productId,
-        validatorVersion: "1.0.0",
-        policyId: "quizpack-local-p1.v1",
+        validatorVersion: identity.validatorVersion,
+        policyId: identity.policyId,
         archiveSha256,
         manifestSha256,
         contentSha256,
-        compatibilityPolicyHash: "a".repeat(64),
-        effectiveLimitsHash: "a".repeat(64),
+        compatibilityPolicyHash: identity.compatibilityPolicyHash,
+        effectiveLimitsHash: identity.effectiveLimitsHash,
         checks: {
           container: "passed",
           structure: "passed",
@@ -180,6 +175,8 @@ export async function prepareP2b3Source(
   ]);
   let facts = issuePrivateCandidate(result, files).facts;
   if (options.largeContent || options.transformContent) {
+    if (facts.contentSchemaVersion !== "quizpack-content.v1")
+      throw new Error("P2B3_V1_SNAPSHOT_REQUIRED");
     const content = structuredClone(fixture.content);
     if (options.largeContent) {
       const text = String.fromCharCode(92, 34).repeat(1500);
@@ -257,7 +254,7 @@ export async function prepareP2b3Source(
       ...result,
       evidence: {
         ...result.evidence,
-        report: sealP1Report({
+        report: (legacy ? sealP1Report : sealSupportedReport)({
           ...result.evidence.report.value,
           manifestSha256: canonicalManifestSha256,
           contentSha256: canonicalContentSha256,
@@ -297,6 +294,12 @@ export async function prepareP2b3Source(
     archiveSha256,
     archiveBytes,
     identityText,
+    archivePolicyVersion: legacy
+      ? LEGACY_ARCHIVE_POLICY_VERSION
+      : ARCHIVE_POLICY_VERSION,
+    archivePolicySha256: legacy
+      ? legacyArchivePolicySha256
+      : archivePolicySha256,
     identitySha256: identity.identitySha256,
     candidate,
     result,
@@ -324,26 +327,26 @@ export async function seedReadyP2b3Source(
   db: TestDatabase,
   auth: { id: string; credentials: StudioWriteCredentials },
   prepared: PreparedP2b3Source,
-  options: { createProduct?: boolean } = {},
+  options: { createProduct?: boolean; importId?: string } = {},
 ) {
   if (db.config.purpose !== "test" && db.config.purpose !== "ci")
     throw new Error("P2B3_TEST_DATABASE_REQUIRED");
   const { productId, archiveSha256, archiveBytes } = prepared;
-  const importId = randomUUID();
+  const importId = options.importId ?? randomUUID();
   const scope = { productId, importId };
   const binding = {
     identityText: prepared.identityText,
     identitySha256: prepared.identitySha256,
-    archivePolicyVersion: ARCHIVE_POLICY_VERSION,
-    archivePolicySha256,
+    archivePolicyVersion: prepared.archivePolicyVersion,
+    archivePolicySha256: prepared.archivePolicySha256,
     validationKey: validationKey({
       productId,
       importId,
       archiveSha256,
       archiveBytes,
       identitySha256: prepared.identitySha256,
-      archivePolicyVersion: ARCHIVE_POLICY_VERSION,
-      archivePolicySha256,
+      archivePolicyVersion: prepared.archivePolicyVersion,
+      archivePolicySha256: prepared.archivePolicySha256,
     }),
   };
   if (options.createProduct !== false)
@@ -352,8 +355,9 @@ export async function seedReadyP2b3Source(
     INSERT INTO qf.product(id,slug,title,updated_at)
     VALUES(${productId},${productId},'B3 synthetic SQL product',clock_timestamp())`,
     );
-  await safe(
-    () => db.admin.sql`
+  if (!options.importId)
+    await safe(
+      () => db.admin.sql`
     INSERT INTO qf.quizpack_import(id,product_id,created_by,idempotency_key,request_fingerprint,
       expected_archive_sha256,expected_archive_bytes,target_kind,created_at,status,state_revision,
       updated_at,storage_condition,fence,attempts,actual_archive_sha256,actual_archive_bytes,
@@ -362,7 +366,7 @@ export async function seedReadyP2b3Source(
       ${archiveSha256},${archiveBytes},'new-draft',clock_timestamp(),'received',1,
       clock_timestamp(),'clean',0,'[]',${archiveSha256},${archiveBytes},
       ${`imports/${importId}/archive.quizpack`},clock_timestamp())`,
-  );
+    );
   let row = (
     await safe(() =>
       claimValidation(db.app, auth.credentials, scope, {

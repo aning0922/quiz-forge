@@ -42,6 +42,13 @@ import {
   validationAuditCount,
 } from "./p2b2b-service-support";
 
+import { createProductDraftService } from "@/features/product/drafts/service";
+import { importReceiveService } from "@/features/quizpack/import/service";
+import { createSyntheticFixture } from "@/features/quizpack/v1/fixtures/synthetic";
+import { createContentV2Fixture } from "@/features/quizpack/content/fixtures.test-support";
+import { buildSupportedQuizPack } from "@/features/quizpack/package/build";
+import { hashBytes } from "@/features/quizpack/v1/validate";
+import type { ContentSchemaVersion } from "@/features/quizpack/package/api";
 const service = createQuizpackValidationService();
 let db: TestDatabase;
 let fixture: Awaited<ReturnType<typeof prepareTestValidationFixture>>;
@@ -157,7 +164,7 @@ describe("B2-2B service: real PostgreSQL + finite media stub (not isolated-media
     expect(result).toMatchObject({
       outcome: "record",
       created: true,
-      validation: { status: "ready", archivedResourceCount: 4 },
+      validation: { status: "ready", archivedResourceCount: 5 },
     });
     const row = await serviceRow(db, prepared.validationKey);
     expect(Number(row.reserved_bytes)).toBe(0);
@@ -173,7 +180,7 @@ describe("B2-2B service: real PostgreSQL + finite media stub (not isolated-media
           { product_id: string; source_validation_id: string }[]
         >`SELECT product_id,source_validation_id FROM qf.product_asset`,
     );
-    expect(refs).toHaveLength(4);
+    expect(refs).toHaveLength(5);
     expect(
       refs.every(
         (r) =>
@@ -181,7 +188,7 @@ describe("B2-2B service: real PostgreSQL + finite media stub (not isolated-media
           r.source_validation_id === row.id,
       ),
     ).toBe(true);
-    expect(media.image).toHaveBeenCalledTimes(4);
+    expect(media.image).toHaveBeenCalledTimes(5);
   });
 
   it("exact replay precedes stale CAS/current runtime and adds no rows, reports or audit", async () => {
@@ -209,6 +216,204 @@ describe("B2-2B service: real PostgreSQL + finite media stub (not isolated-media
     expect(await validationAuditCount(db, before.id)).toBe(audit);
   });
 
+  it.each([
+    ["quizpack-content.v1", "synthetic", "dimensions"],
+    ["quizpack-content.v1", "authored", "archetype"],
+    ["quizpack-content.v2", "synthetic", "archetype"],
+    ["quizpack-content.v2", "authored", "dimensions"],
+  ] as const)(
+    "real supported %s/%s ZIP receives, validates, archives and applies revision 1 (%s); media boundary is synthetic",
+    async (version: ContentSchemaVersion, kind, engine) => {
+      const productId = `supported-${randomUUID()}`;
+      const base = await createSyntheticFixture(engine);
+      const declared =
+        version === "quizpack-content.v1"
+          ? base.content
+          : await createContentV2Fixture(engine);
+      const content = {
+        ...JSON.parse(
+          JSON.stringify(declared).replaceAll(
+            JSON.stringify(declared.product.productId),
+            JSON.stringify(productId),
+          ),
+        ),
+        kind,
+      };
+      const assets =
+        version === "quizpack-content.v1"
+          ? base.assets
+          : [
+              ...base.assets,
+              {
+                path: "assets/neutral-scene.png",
+                bytes: base.assets[0]!.bytes,
+              },
+            ];
+      const built = await buildSupportedQuizPack(
+        { packId: productId, packVersion: "1.0.0", content, assets },
+        { targetProductId: productId },
+        version,
+      );
+      if (!built.ok) throw Error("SUPPORTED_SERVICE_FIXTURE_BUILD_FAILED");
+      const archive = built.value.archive;
+      await createProduct(db.app, credentials, {
+        id: productId,
+        slug: productId,
+        title: "明确合成的四组合服务夹具",
+        primaryCategoryId: null,
+        tagIds: [],
+      });
+      const intent = await importReceiveService.createIntent(
+        db.app,
+        credentials,
+        productId,
+        randomUUID(),
+        {
+          expectedArchiveBytes: archive.byteLength,
+          expectedArchiveSha256: hashBytes(archive),
+          target: { kind: "new-draft" },
+        },
+      );
+      const received = await request((connection, context) =>
+        importReceiveService.receiveArchive(
+          connection,
+          credentials,
+          productId,
+          intent.import.id,
+          {
+            chunks: (async function* () {
+              yield archive;
+            })(),
+            cancel: async () => {},
+          },
+          context,
+        ),
+      );
+      expect(received.status).toBe("received");
+      const prepared = await request((connection, context) =>
+        service.prepareValidation(
+          connection,
+          credentials,
+          productId,
+          received.id,
+          { expectedImportStateRevision: received.stateRevision },
+          context,
+        ),
+      );
+      const acknowledge = validationTransactions.acknowledgeValidationFileStop;
+      const unknown = vi
+        .spyOn(validationTransactions, "acknowledgeValidationFileStop")
+        .mockImplementationOnce(async (...args) => {
+          await acknowledge(...args);
+          throw new StudioError("WRITE_OUTCOME_UNKNOWN");
+        });
+      await expect(
+        request((connection, context) =>
+          service.startValidation(
+            connection,
+            credentials,
+            productId,
+            received.id,
+            {
+              expectedValidationKey: prepared.validationKey,
+              expectedImportStateRevision: received.stateRevision,
+            },
+            context,
+          ),
+        ),
+      ).rejects.toMatchObject({ code: "WRITE_OUTCOME_UNKNOWN" });
+      unknown.mockRestore();
+      const unfinished = await serviceRow(db, prepared.validationKey);
+      expect(unfinished.status).toBe("archiving");
+      const recovered = await request((connection, context) =>
+        service.recoverValidation(
+          connection,
+          credentials,
+          productId,
+          received.id,
+          unfinished.id,
+          { expectedStateRevision: unfinished.state_revision },
+          context,
+        ),
+      );
+      expect(recovered.status).toBe("validated");
+      media.image.mockClear();
+      const validation = await request((connection, context) =>
+        service.retryValidation(
+          connection,
+          credentials,
+          productId,
+          received.id,
+          unfinished.id,
+          { expectedStateRevision: recovered.stateRevision },
+          context,
+        ),
+      );
+      expect(media.image).not.toHaveBeenCalled();
+      expect(validation).toMatchObject({
+        status: "ready",
+        readOnly: false,
+        contentSchemaVersion: version,
+        platformApproval: "unverified",
+        publishable: false,
+      });
+      const row = await serviceRow(db, prepared.validationKey);
+      expect(row.content_kind).toBe(kind);
+      expect(row.archive_policy_version).toBe("quizpack-private-archive.v3");
+      expect(JSON.parse(row.identity_text).schemaVersion).toBe(
+        "quizpack-validation-identity.v2",
+      );
+      const evidence = JSON.parse(row.evidence_text!);
+      expect(
+        evidence.attempts[0].result.evidence.report.value.schemaVersion,
+      ).toBe("quizpack-validation.v2");
+      expect(
+        parseValidationAttempts(row.attempts_text).every(
+          (a) =>
+            a.disposition === "released" &&
+            a.fileStopProof?.validationId === row.id,
+        ),
+      ).toBe(true);
+      const drafts = createProductDraftService();
+      const scope = {
+        productId,
+        sourceImportId: received.id,
+        sourceValidationId: row.id,
+      };
+      const input = {
+        idempotencyKey: randomUUID(),
+        expectedValidationStateRevision: row.state_revision,
+        expectedCandidateSha256: row.candidate_sha256!,
+        target: { kind: "new-draft" as const },
+      };
+      const applied = await drafts.applyReadyValidation(
+        db.app,
+        credentials,
+        scope,
+        input,
+      );
+      expect(applied.created).toBe(true);
+      expect(applied.application).toMatchObject({
+        contentSchemaVersion: version,
+        contentKind: kind,
+        revision: 1,
+        platformApproval: "unverified",
+        publishable: false,
+      });
+      const revision = await drafts.readDraftRevision(
+        db.app,
+        credentials.sessionToken,
+        productId,
+        applied.application.draftId,
+        1,
+      );
+      expect(revision.canonicalContentText).toBe(row.canonical_content_text);
+      expect(revision.assetSetText).toBe(row.asset_set_text);
+      expect(
+        await drafts.applyReadyValidation(db.app, credentials, scope, input),
+      ).toEqual({ ...applied, created: false });
+    },
+  );
   it("read-only can read but every write, bad CSRF and missing auth fail before media or claim", async () => {
     const prepared = await prepare();
     media.binding.mockClear();

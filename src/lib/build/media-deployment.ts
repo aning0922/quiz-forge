@@ -23,6 +23,8 @@ const MAX_ENTRIES = 16384;
 const MAX_DEPTH = 16;
 const SOURCE_DIRECTORIES = [
   "src/features/quizpack/v1",
+  "src/features/quizpack/package",
+  "src/features/quizpack/content",
   "src/features/quizpack/server/media",
   "src/features/quizpack/server/validation",
 ] as const;
@@ -31,7 +33,6 @@ const SOURCE_FIXED_FILES = [
   "src/lib/assessment-contract/primitives.ts",
   "src/lib/assessment-contract/scoring-v1.ts",
   "src/lib/json/canonical.ts",
-  "src/features/quizpack/content/reference-graph.ts",
   "src/lib/build/media-deployment.ts",
   "package.json",
   "pnpm-lock.yaml",

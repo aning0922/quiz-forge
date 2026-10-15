@@ -48,7 +48,9 @@ import { ArchiveOperation } from "./operation";
 import {
   assetSetLedgerSchema,
   exactValidation,
+  requireCurrentValidation,
   validationRow,
+  validationPolicyRow,
   validationRowDto,
   validationDto,
   archivedResourceCount,
@@ -93,6 +95,13 @@ function binding(
   original: ImportRow,
   identity: ValidationIdentity,
 ): ValidationBinding {
+  const identityRow = {
+    archive_policy_version: ARCHIVE_POLICY_VERSION,
+    archive_policy_sha256: archivePolicySha256,
+    identity_text: canonicalP1Json(identity),
+    identity_sha256: identity.identitySha256,
+  };
+  requireCurrentValidation(identityRow);
   const input = {
     ...scope,
     ...received(original),
@@ -136,6 +145,7 @@ async function preflight(
   op: ArchiveOperation,
   c: StudioWriteCredentials,
   scope: ValidationScope,
+  validationId?: string,
 ) {
   return op.databaseAwait("read", () =>
     read(
@@ -145,6 +155,15 @@ async function preflight(
         const product = await productRow(tx, scope.productId),
           original = await importRow(tx, scope.productId, scope.importId);
         received(original);
+        if (validationId !== undefined)
+          requireCurrentValidation(
+            await validationPolicyRow(
+              tx,
+              scope.productId,
+              scope.importId,
+              validationId,
+            ),
+          );
         return { product, original };
       },
       c,
@@ -194,8 +213,9 @@ function restoreInput(
     row.pack_id === null ||
     row.pack_version === null ||
     row.container_schema_version !== "quizpack.v1" ||
-    row.content_schema_version !== "quizpack-content.v1" ||
-    row.content_kind !== "synthetic" ||
+    (row.content_schema_version !== "quizpack-content.v1" &&
+      row.content_schema_version !== "quizpack-content.v2") ||
+    (row.content_kind !== "synthetic" && row.content_kind !== "authored") ||
     row.manifest_sha256 === null ||
     row.content_sha256 === null ||
     row.canonical_manifest_text === null ||
@@ -786,7 +806,7 @@ export function createQuizpackValidationService(): QuizpackValidationService {
         value = parse(validationCasSchema, input),
         op = new ArchiveOperation(db, context);
       try {
-        await preflight(op, c, scope);
+        await preflight(op, c, scope, id);
         const { lock, config } = await acquire(op);
         const row = await op.databaseAwait("read", () =>
           read(
@@ -796,6 +816,7 @@ export function createQuizpackValidationService(): QuizpackValidationService {
             c,
           ),
         );
+        requireCurrentValidation(row);
         if (row.status === "ready") return await dto(op, c, row);
         if (row.state_revision !== value.expectedStateRevision)
           throw new StudioError(
@@ -839,7 +860,7 @@ export function createQuizpackValidationService(): QuizpackValidationService {
         value = parse(validationCasSchema, input),
         op = new ArchiveOperation(db, context);
       try {
-        await preflight(op, c, scope);
+        await preflight(op, c, scope, id);
         const { lock, config } = await acquire(op);
         const { product, original } = await preflight(op, c, scope);
         if (product.archived_at !== null)
@@ -852,6 +873,7 @@ export function createQuizpackValidationService(): QuizpackValidationService {
             c,
           ),
         );
+        requireCurrentValidation(row);
         if (row.state_revision !== value.expectedStateRevision)
           throw new StudioError(
             "VALIDATION_STATE_CONFLICT",

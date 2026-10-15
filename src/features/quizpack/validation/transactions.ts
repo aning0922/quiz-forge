@@ -7,7 +7,7 @@ import type { StudioActor } from "@/lib/auth/capabilities";
 import { productRow, type Tx } from "@/features/product/workspace/repository";
 import { importRow } from "../import/repository";
 import { canonicalP1Json } from "../v1/canonical";
-import { validationIdentitySchema } from "../server/validation/contracts";
+import { supportedValidationIdentitySchema } from "../server/validation/contracts";
 import {
   MAX_ATTEMPTS,
   MAX_PENDING_VALIDATIONS,
@@ -19,6 +19,8 @@ import {
 import { ARCHIVE_POLICY_VERSION, archivePolicySha256 } from "./policy";
 import {
   exactValidation,
+  legacyValidationActivity,
+  requireCurrentValidation,
   parseValidationAttempts,
   serializeValidationAttempts,
   validationKey,
@@ -63,13 +65,7 @@ function increment(row: ValidationRow, fence = false) {
   )
     throw new StudioError("REVISION_LIMIT");
 }
-function requireCurrentPolicy(row: ValidationRow) {
-  if (
-    row.archive_policy_version !== ARCHIVE_POLICY_VERSION ||
-    row.archive_policy_sha256 !== archivePolicySha256
-  )
-    throw new StudioError("VALIDATION_REVALIDATION_REQUIRED");
-}
+const requireCurrentPolicy = requireCurrentValidation;
 function requireAcknowledgedAttempts(row: ValidationRow) {
   requireCurrentPolicy(row);
   const attempts = parseValidationAttempts(row.attempts_text);
@@ -97,7 +93,7 @@ function verifyBinding(
   archiveBytes: number,
 ) {
   try {
-    const identity = validationIdentitySchema.parse(
+    const identity = supportedValidationIdentitySchema.parse(
       JSON.parse(binding.identityText),
     );
     if (
@@ -140,6 +136,7 @@ async function authorityRow(
     row.current_attempt_id !== authority.attemptId
   )
     throw new StudioError("VALIDATION_STATE_CONFLICT", row.state_revision);
+  requireCurrentPolicy(row);
   increment(row);
   if (lease) {
     const [fact] = await tx<
@@ -168,9 +165,32 @@ function nextAttempt(
   };
 }
 async function countCapacity(tx: Tx, productId: string) {
+  // A legacy row may be omitted from active pending only after real quiescence.
+  // This bounded global check does not replace the cross-policy storage ledger.
+  const legacy = await legacyValidationActivity(tx);
+  if (legacy.length > MAX_VALIDATIONS)
+    throw new StudioError("VALIDATION_SCAN_LIMIT");
+  for (const row of legacy) {
+    const attempts = parseValidationAttempts(row.attempts_text);
+    if (
+      row.status === "validating" ||
+      row.status === "archiving" ||
+      row.storage_condition !== "clean" ||
+      row.reserved_bytes !== "0" ||
+      row.lease_until !== null ||
+      attempts.some(
+        (a) =>
+          a.disposition !== "released" ||
+          a.mediaStop === "unconfirmed" ||
+          (row.archive_policy_version !== "quizpack-private-archive.v1" &&
+            !a.fileStopProof),
+      )
+    )
+      throw new StudioError("VALIDATION_RECOVERY_REQUIRED");
+  }
   const pending = await tx<
     { id: string }[]
-  >`SELECT id FROM qf.quizpack_validation WHERE product_id=${productId} AND (status NOT IN ('ready','rejected') OR storage_condition<>'clean' OR reserved_bytes>0) ORDER BY id LIMIT ${MAX_PENDING_VALIDATIONS + 1}`;
+  >`SELECT id FROM qf.quizpack_validation WHERE product_id=${productId} AND archive_policy_version=${ARCHIVE_POLICY_VERSION} AND archive_policy_sha256=${archivePolicySha256} AND (status NOT IN ('ready','rejected') OR storage_condition<>'clean' OR reserved_bytes>0) ORDER BY id LIMIT ${MAX_PENDING_VALIDATIONS + 1}`;
   if (pending.length >= MAX_PENDING_VALIDATIONS)
     throw new StudioError("VALIDATION_PENDING_LIMIT");
   const all = await tx<

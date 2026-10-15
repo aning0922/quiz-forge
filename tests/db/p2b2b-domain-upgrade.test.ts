@@ -14,10 +14,7 @@ import {
 import { createDatabase, verifyDatabaseIdentity } from "@/lib/db/client";
 import { migrateDatabase, readMigrations } from "@/lib/db/migrate";
 import { canonicalP1Json } from "@/features/quizpack/v1/canonical";
-import {
-  archivePolicyDescriptor,
-  ARCHIVE_POLICY_VERSION,
-} from "@/features/quizpack/validation/policy";
+import { legacyArchivePolicyDescriptor } from "@/features/quizpack/validation/policy";
 import {
   validationKey,
   heldValidations,
@@ -40,12 +37,13 @@ afterAll(async () => {
     await db.close();
   }
 });
-it("real 0010 → 0011 → 0012 → 0013 → 0014 upgrade preserves historical controls without granting ACK or retry", async () => {
+it("real 0010 → 0014 preserves unresolved historical controls and 0015 rejects them without granting ACK or retry", async () => {
   // Dedicated no-file synthetic instance only. Never rewind a production or shared migration history.
   await resetDomainDatabase(db);
   const definitions = await readMigrations();
   expect(definitions[11]!.version).toBe("0012_validation_file_stop_ack");
-  expect(definitions.at(-1)!.version).toBe("0014_product_first_draft");
+  expect(definitions[13]!.version).toBe("0014_product_first_draft");
+  expect(definitions.at(-1)!.version).toBe("0015_supported_pack_admission");
   await safe(() => db.admin.sql`DROP SCHEMA qf CASCADE`);
   await safe(() => db.admin.sql`DROP SCHEMA qf_meta CASCADE`);
   try {
@@ -55,13 +53,13 @@ it("real 0010 → 0011 → 0012 → 0013 → 0014 upgrade preserves historical c
     await expect(createDatabase(db.config)).rejects.toThrow(
       "STUDIO_UNAVAILABLE",
     );
-    const f = await domainFixture(db);
+    const f = await domainFixture(db, false, true);
     const descriptor: {
       schemaVersion: string;
       receiptProof: string;
       finalizationProtocol: string;
       limits: Record<string, unknown>;
-    } = JSON.parse(canonicalP1Json(archivePolicyDescriptor));
+    } = JSON.parse(canonicalP1Json(legacyArchivePolicyDescriptor));
     descriptor.schemaVersion = "quizpack-private-archive.v1";
     descriptor.receiptProof = "files-and-media.v1";
     descriptor.finalizationProtocol = "receipt-before-complete-once.v1";
@@ -117,9 +115,12 @@ it("real 0010 → 0011 → 0012 → 0013 → 0014 upgrade preserves historical c
         "STUDIO_UNAVAILABLE",
       );
     }
-    await safe(() => migrateDatabase(db.admin.sql, db.config, definitions));
-    const app = await safe(() => createDatabase(db.config));
-    await app.close();
+    await safe(() =>
+      migrateDatabase(db.admin.sql, db.config, definitions.slice(0, 14)),
+    );
+    await expect(createDatabase(db.config)).rejects.toThrow(
+      "STUDIO_UNAVAILABLE",
+    );
     const replay = await claimValidation(db.app, f.auth.credentials, f.scope, {
       expectedImportStateRevision: 123,
       expectedValidationKey: oldKey,
@@ -170,24 +171,24 @@ it("real 0010 → 0011 → 0012 → 0013 → 0014 upgrade preserves historical c
         owner: f.owner,
       }),
     ).rejects.toThrow("VALIDATION_REVALIDATION_REQUIRED");
-    const current = await claimValidation(db.app, f.auth.credentials, f.scope, {
-      expectedImportStateRevision: 1,
-      expectedValidationKey: f.binding.validationKey,
-      binding: f.binding,
-      owner: f.owner,
-    });
-    expect(current.row.archive_policy_version).toBe(ARCHIVE_POLICY_VERSION);
-    expect(current.row.validation_key).not.toBe(oldKey);
-    expect(current.row.id).not.toBe(id);
+    await db.app.close();
+    await expect(
+      migrateDatabase(db.admin.sql, db.config, definitions),
+    ).rejects.toThrow("MIGRATION_FAILED");
     const [old] = await safe(
       () =>
-        db.app.sql<
+        db.admin.sql<
           ValidationRow[]
         >`SELECT * FROM qf.quizpack_validation WHERE id=${id}`,
     );
     expect(old!.attempts_text).toBe(controls);
     expect(old!.state_revision).toBe(1);
   } finally {
+    // Delete only this explicitly no-file synthetic fixture, after proving migration
+    // failure retained its complete held tuple. No production/unknown cleanup or release.
+    await resetDomainDatabase(db);
+    await db.app.close();
     await safe(() => migrateDatabase(db.admin.sql, db.config, definitions));
+    db.app = await createDatabase(db.config);
   }
 });

@@ -13,6 +13,7 @@ import {
   type PendingTuple,
 } from "../../src/features/studio/validations/pending";
 import { checkStart } from "../../src/features/studio/validations/client";
+import { startValidationResultSchema } from "../../src/features/quizpack/validation/contracts";
 
 test.use({ trace: "off", video: "off", screenshot: "off" });
 test.describe.configure({ mode: "serial" });
@@ -219,7 +220,7 @@ test.afterAll(async () => {
   }
 });
 
-test("real explicit validation archives synthetic resources while receive facts remain independent", async ({
+test("real authored v2 validation archives synthetic pixels while receive facts remain independent", async ({
   page,
 }, testInfo) => {
   await signIn(page, 0);
@@ -233,7 +234,27 @@ test("real explicit validation archives synthetic resources while receive facts 
       else if (request.url().endsWith("/validations")) starts++;
     }
   });
-  await start.click();
+  const [response] = await Promise.all([
+    page.waitForResponse(
+      (response) =>
+        response.request().method() === "POST" &&
+        response.url().endsWith("/validations"),
+      { timeout: BUSINESS_RESULT_TIMEOUT },
+    ),
+    start.click(),
+  ]);
+  const result = startValidationResultSchema.parse(await response.json());
+  expect(result).toMatchObject({
+    outcome: "record",
+    validation: {
+      status: "ready",
+      contentSchemaVersion: "quizpack-content.v2",
+      resourceCount: 5,
+      archivedResourceCount: 5,
+      platformApproval: "unverified",
+      publishable: false,
+    },
+  });
   await expect(
     page.getByRole("heading", {
       name: "归档完成 · 待后续草稿导入",

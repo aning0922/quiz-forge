@@ -1,3 +1,4 @@
+import { REPORT_SCHEMA_HASH } from "./report";
 import { createHash } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import { canonicalP1Json } from "../../v1/canonical";
@@ -25,7 +26,7 @@ function identity() {
     persistencePolicyVersion: "quizpack-persistence-policy.v1" as const,
     persistencePolicyHash: hash,
     reportSchemaVersion: "quizpack-validation.v1" as const,
-    reportSchemaHash: hash,
+    reportSchemaHash: REPORT_SCHEMA_HASH,
     runtime: {
       schema: "quizpack-media-runtime-binding.v1" as const,
       platform: "darwin-arm64" as const,

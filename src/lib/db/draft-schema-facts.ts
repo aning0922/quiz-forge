@@ -1,5 +1,5 @@
 import "server-only";
-/** Frozen PostgreSQL 18 definitions of migration 0014, independently checked at app open. */
+/** Frozen PostgreSQL 18 definitions after migration 0015, independently checked at app open. */
 export const draftSchemaFacts = {
   columns: [
     {
@@ -587,7 +587,8 @@ export const draftSchemaFacts = {
     {
       table_name: "draft_revision",
       name: "draft_revision_content_kind_check",
-      definition: "CHECK (((content_kind)::text = 'synthetic'::text))",
+      definition:
+        "CHECK (((content_kind)::text = ANY ((ARRAY['synthetic'::character varying, 'authored'::character varying])::text[])))",
       kind: "c",
     },
     {
@@ -600,7 +601,7 @@ export const draftSchemaFacts = {
       table_name: "draft_revision",
       name: "draft_revision_content_schema_version_check",
       definition:
-        "CHECK (((content_schema_version)::text = 'quizpack-content.v1'::text))",
+        "CHECK (((content_schema_version)::text = ANY ((ARRAY['quizpack-content.v1'::character varying, 'quizpack-content.v2'::character varying])::text[])))",
       kind: "c",
     },
     {
@@ -882,7 +883,7 @@ export const draftSchemaFacts = {
     {
       signature: "qf.protect_draft_revision_source()",
       body_sha256:
-        "aa55adea69942f6f5d84b8573d1c9bdd3cb70e2736103966ac4647362370ee14",
+        "207aed795f0613302038cd81ac000add3345fff4b7fe912e76f84e389b17f3da",
       volatility: "v",
     },
   ],

@@ -59,6 +59,11 @@ export function ValidationFacts({ value }: { value: ValidationDto }) {
           {validationMessage(new StudioClientError(value.lastErrorCode))}
         </p>
       )}
+      {value.readOnly && (
+        <p className={styles.status}>
+          旧策略历史记录只读。请在同一已接收原包上准备新验证；此记录不能恢复、重试或用于新的草稿申请。
+        </p>
+      )}
       {value.maintenanceRequired && (
         <p className={styles.status}>
           需要维护核实；归档文件与停止情况仍未得到完整确认。

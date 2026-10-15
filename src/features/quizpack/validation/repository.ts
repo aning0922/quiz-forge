@@ -13,6 +13,11 @@ import { canonicalP1Json } from "../v1/canonical";
 import { packIdSchema, packVersionSchema, sha256Schema } from "../v1/manifest";
 import { importIdSchema } from "../import/contracts";
 import type { StorageCondition } from "../import/contracts";
+import {
+  ARCHIVE_POLICY_VERSION,
+  archivePolicySha256,
+  matchesSupportedArchiveIdentity,
+} from "./policy";
 import { validationIdentitySchema } from "../server/validation/contracts";
 import type {
   IdentityKind,
@@ -202,6 +207,45 @@ export type ValidationRow = {
   validated_at: DatabaseTime | null;
   ready_at: DatabaseTime | null;
 };
+/** Deployment identity is deliberately not compared for read-only historical DTOs. */
+export function isCurrentValidation(
+  row: Pick<
+    ValidationRow,
+    | "archive_policy_version"
+    | "archive_policy_sha256"
+    | "identity_text"
+    | "identity_sha256"
+  >,
+): boolean {
+  try {
+    const identity = validationIdentitySchema.parse(
+      JSON.parse(row.identity_text),
+    );
+    return (
+      matchesSupportedArchiveIdentity(
+        row.archive_policy_version,
+        row.archive_policy_sha256,
+        identity,
+      ) &&
+      identity.identitySha256 === row.identity_sha256 &&
+      canonicalP1Json(identity) === row.identity_text
+    );
+  } catch {
+    return false;
+  }
+}
+export function requireCurrentValidation(
+  row: Pick<
+    ValidationRow,
+    | "archive_policy_version"
+    | "archive_policy_sha256"
+    | "identity_text"
+    | "identity_sha256"
+  >,
+): void {
+  if (!isCurrentValidation(row))
+    throw new StudioError("VALIDATION_REVALIDATION_REQUIRED");
+}
 export type HeldValidation = Readonly<{
   namespace: "validation";
   id: string;
@@ -224,6 +268,8 @@ export type ValidationSummaryRow = Pick<
   | "archive_bytes"
   | "identity_text"
   | "identity_sha256"
+  | "archive_policy_version"
+  | "archive_policy_sha256"
   | "pack_id"
   | "pack_version"
   | "container_schema_version"
@@ -257,6 +303,7 @@ export function validationDto(
     validationKey: row.validation_key,
     stateRevision: row.state_revision,
     status: row.status,
+    readOnly: !isCurrentValidation(row),
     storageCondition: row.storage_condition,
     lastErrorCode: row.last_error_code,
     attemptCount: attempts.length,
@@ -287,6 +334,43 @@ export function validationDto(
     platformApproval: "unverified",
     publishable: false,
   };
+}
+export type ValidationPolicyRow = Pick<
+  ValidationRow,
+  | "archive_policy_version"
+  | "archive_policy_sha256"
+  | "identity_text"
+  | "identity_sha256"
+>;
+/** Authorized metadata read before any lock/config/file/media operation. No result bodies. */
+export async function validationPolicyRow(
+  tx: Tx,
+  productId: string,
+  importId: string,
+  id: string,
+): Promise<ValidationPolicyRow> {
+  const [row] = await tx<
+    ValidationPolicyRow[]
+  >`SELECT archive_policy_version,archive_policy_sha256,identity_text,identity_sha256 FROM qf.quizpack_validation WHERE product_id=${productId} AND import_id=${importId} AND id=${id}`;
+  if (!row) throw new StudioError("VALIDATION_NOT_FOUND");
+  return row;
+}
+export type LegacyValidationActivity = Pick<
+  ValidationRow,
+  | "status"
+  | "storage_condition"
+  | "reserved_bytes"
+  | "lease_until"
+  | "attempts_text"
+  | "archive_policy_version"
+>;
+/** Bounded global quiescence projection: never fetch canonical content, reports or evidence. */
+export async function legacyValidationActivity(
+  tx: Tx,
+): Promise<LegacyValidationActivity[]> {
+  return tx<
+    LegacyValidationActivity[]
+  >`SELECT status,storage_condition,reserved_bytes,lease_until,attempts_text,archive_policy_version FROM qf.quizpack_validation WHERE archive_policy_version<>${ARCHIVE_POLICY_VERSION} OR archive_policy_sha256<>${archivePolicySha256} ORDER BY id LIMIT ${MAX_VALIDATIONS + 1}`;
 }
 export async function validationRow(
   tx: Tx,
@@ -421,7 +505,7 @@ export async function validationsPage(
   if (!count) throw new StudioError("STUDIO_UNAVAILABLE");
   const rows = await tx<
     ValidationSummaryRow[]
-  >`SELECT id,product_id,import_id,validation_key,state_revision,status,storage_condition,last_error_code,attempts_text,archive_sha256,archive_bytes,identity_text,identity_sha256,pack_id,pack_version,container_schema_version,content_schema_version,identity_kind,canonical_validation_id,candidate_sha256,asset_set_sha256,asset_set_text,resource_count,created_at,updated_at,validated_at,ready_at FROM qf.quizpack_validation WHERE ${filter} ORDER BY created_at DESC,id DESC LIMIT ${query.pageSize} OFFSET ${(query.page - 1) * query.pageSize}`;
+  >`SELECT id,product_id,import_id,validation_key,state_revision,status,storage_condition,last_error_code,attempts_text,archive_sha256,archive_bytes,identity_text,identity_sha256,archive_policy_version,archive_policy_sha256,pack_id,pack_version,container_schema_version,content_schema_version,identity_kind,canonical_validation_id,candidate_sha256,asset_set_sha256,asset_set_text,resource_count,created_at,updated_at,validated_at,ready_at FROM qf.quizpack_validation WHERE ${filter} ORDER BY created_at DESC,id DESC LIMIT ${query.pageSize} OFFSET ${(query.page - 1) * query.pageSize}`;
   const items: ValidationDto[] = [];
   for (const row of rows) items.push(await validationRowDto(tx, row));
   return {

@@ -9,6 +9,7 @@ import {
   archivePolicySha256,
 } from "./validation/policy";
 import { serializeValidationAttempts } from "./validation/repository";
+import { supportedRuntimeIdentity } from "./server/validation/identity";
 import { readReadyDraftSource } from "./draft-source";
 const hash = (text: string) => createHash("sha256").update(text).digest("hex");
 /** Synthetic SQL projection only. This fixture never certifies executed media, filesystem ACK or actual PG. */
@@ -71,6 +72,14 @@ async function sourceFixture() {
       declarationSha256: hash(canonicalP1Json(r)),
     })),
   });
+  const identity = supportedRuntimeIdentity({
+    schema: "quizpack-media-runtime-binding.v1",
+    platform: "darwin-arm64",
+    componentId: "a".repeat(64),
+    deploymentId: "b".repeat(64),
+    runtimeBundleHash: "c".repeat(64),
+    limitsHash: "d".repeat(64),
+  });
   const row = {
     id: scope.sourceValidationId,
     product_id: scope.productId,
@@ -83,7 +92,8 @@ async function sourceFixture() {
     attempts_text: controls,
     archive_sha256: "a".repeat(64),
     archive_bytes: 100,
-    identity_sha256: "b".repeat(64),
+    identity_sha256: identity.identitySha256,
+    identity_text: canonicalP1Json(identity),
     archive_policy_version: ARCHIVE_POLICY_VERSION,
     archive_policy_sha256: archivePolicySha256,
     canonical_manifest_text: canonicalManifestText,
@@ -324,3 +334,22 @@ it.each([2, 3])(
     expect(f.query).toHaveBeenCalledTimes(queryNumber);
   },
 );
+
+it("new ready-source admission rejects a rehashed content component generation outside its current profile", async () => {
+  const f = await sourceFixture();
+  const content = JSON.parse(f.row.canonical_content_text);
+  content.componentVersion = "3.0.0";
+  f.row.canonical_content_text = canonicalP1Json(content);
+  f.row.canonical_content_sha256 = hash(f.row.canonical_content_text);
+  f.row.candidate_sha256 = computeCandidateSha256({
+    archiveSha256: f.row.archive_sha256,
+    identitySha256: f.row.identity_sha256,
+    canonicalManifestSha256: f.row.canonical_manifest_sha256,
+    canonicalContentSha256: f.row.canonical_content_sha256,
+    assetSetSha256: f.row.asset_set_sha256,
+  });
+  f.expected.expectedCandidateSha256 = f.row.candidate_sha256;
+  await expect(readReadyDraftSource(f.tx, f.scope, f.expected)).rejects.toThrow(
+    "DRAFT_SOURCE_INVALID",
+  );
+});

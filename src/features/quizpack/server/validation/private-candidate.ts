@@ -4,11 +4,12 @@ import { types } from "node:util";
 import { canonicalP1Json } from "../../v1/canonical";
 import { parsePackJson } from "../../v1/io";
 import { PACK_LIMITS } from "../../v1/limits";
-import { quizPackContentSchema, type QuizPackContent } from "../../v1/content";
-import {
-  quizPackManifestSchema,
-  type QuizPackManifest,
-} from "../../v1/manifest";
+import type { QuizPackContent } from "../../v1/content";
+import type { SupportedParsedPack } from "../../package/api";
+import { parseSupportedPack } from "../../package/manifest";
+import { checkArchiveIntegrity } from "../../v1/validate-core";
+import { checkCompatibility } from "../../v1/compatibility";
+import { SUPPORTED_COMPATIBILITY_POLICY } from "../../package/compatibility";
 import {
   sealCandidateResultEvidence,
   type CandidateResultEvidence,
@@ -29,14 +30,12 @@ type Resource = {
   blobSha256: string;
   bytes: number;
 };
-export type CandidateFacts = {
+export type CandidateFacts = DeepReadonly<SupportedParsedPack> & {
   schemaVersion: "quizpack-private-candidate.v1";
   archiveSha256: string;
   productId: string;
   packId: string;
   packVersion: string;
-  manifest: DeepReadonly<QuizPackManifest>;
-  content: DeepReadonly<QuizPackContent>;
   canonicalManifestText: string;
   canonicalManifestSha256: string;
   canonicalContentText: string;
@@ -107,13 +106,39 @@ export function preparePrivateCandidate(
   )
     throw new EvidenceError("INVALID_CANDIDATE");
   // Sole source of declarations: the same bounded raw bytes already tied to
-  // the sealed P1 report. No independently supplied parsed objects are trusted.
-  const manifest = quizPackManifestSchema.parse(
+  // the sealed validation report. No independently supplied parsed objects are trusted.
+  const parsed = parseSupportedPack(
     parsePackJson(manifestBytes, PACK_LIMITS.jsonDepth),
-  );
-  const content = quizPackContentSchema.parse(
     parsePackJson(contentBytes, PACK_LIMITS.jsonDepth),
+    { kind: "backend-matrix" },
   );
+  if (!parsed.ok) throw new EvidenceError("INVALID_CANDIDATE");
+  const pack = parsed.value;
+  const { manifest, content } = pack;
+  // Legacy evidence is readable only for the original v1/synthetic matrix.
+  if (
+    sealed.evidence.identity.value.schemaVersion ===
+      "quizpack-validation-identity.v1" &&
+    (pack.contentSchemaVersion !== "quizpack-content.v1" ||
+      content.kind !== "synthetic")
+  )
+    throw new EvidenceError("INVALID_CANDIDATE");
+  const profile = SUPPORTED_COMPATIBILITY_POLICY.profiles.find(
+    (item) => item.contentSchemaVersion === pack.contentSchemaVersion,
+  )!;
+  if (
+    checkArchiveIntegrity(manifest, files).length ||
+    checkCompatibility(manifest, {
+      contentSchemaVersions: [profile.contentSchemaVersion],
+      engines: SUPPORTED_COMPATIBILITY_POLICY.engines,
+      components: Object.values(profile.states).map((id) => ({
+        id,
+        version: profile.componentVersion,
+        propsSchemaVersion: profile.propsSchemaVersion,
+      })),
+    }).length
+  )
+    throw new EvidenceError("INVALID_CANDIDATE");
   const canonicalManifestText = canonicalP1Json(manifest, "manifest");
   const canonicalContentText = canonicalP1Json(content, "content");
   assertPersistenceUnicode(manifest);
@@ -172,8 +197,7 @@ export function preparePrivateCandidate(
   const productId = sealed.evidence.input.targetProductId;
   if (
     manifest.productId !== productId ||
-    content.product.productId !== productId ||
-    content.kind !== "synthetic"
+    content.product.productId !== productId
   )
     throw new EvidenceError("INVALID_CANDIDATE");
   const assetSetText = canonicalP1Json({
@@ -204,8 +228,7 @@ export function preparePrivateCandidate(
     productId,
     packId: manifest.packId,
     packVersion: manifest.packVersion,
-    manifest,
-    content,
+    ...pack,
     canonicalManifestText,
     canonicalManifestSha256,
     canonicalContentText,

@@ -1,3 +1,7 @@
+import {
+  supportedRuntimeIdentity,
+  runtimeIdentity,
+} from "@/features/quizpack/server/validation/identity";
 import { lstat, readdir } from "node:fs/promises";
 import path from "node:path";
 import { importsDirectory } from "@/features/quizpack/import/storage";
@@ -9,11 +13,14 @@ import { issuePrivateCandidate } from "@/features/quizpack/server/validation/pri
 import {
   P1_UNVERIFIED,
   sealP1Report,
+  sealSupportedReport,
 } from "@/features/quizpack/server/validation/report";
 import { sealCandidateResultEvidence } from "@/features/quizpack/server/validation/contracts";
 import {
   archivePolicySha256,
   ARCHIVE_POLICY_VERSION,
+  legacyArchivePolicySha256,
+  LEGACY_ARCHIVE_POLICY_VERSION,
 } from "@/features/quizpack/validation/policy";
 import {
   validationKey,
@@ -89,7 +96,11 @@ export function domainSettledAttempt(row: ValidationRow) {
   };
 }
 /** This fixture supplies synthetic DB evidence only; it never asserts executed P1 or actual archive files. */
-export async function domainFixture(db: TestDatabase, prefix = false) {
+export async function domainFixture(
+  db: TestDatabase,
+  prefix = false,
+  legacy = false,
+) {
   const auth = await authenticateTestOperator(db);
   const fixture = await createSyntheticFixture();
   if (prefix) {
@@ -117,30 +128,14 @@ export async function domainFixture(db: TestDatabase, prefix = false) {
   const importId = randomUUID();
   const archiveSha256 = hash("Synthetic DB archive");
   const archiveBytes = 100;
-  const payload = {
-    schemaVersion: "quizpack-validation-identity.v1",
-    validatorVersion: "1.0.0",
-    policyId: "quizpack-local-p1.v1",
-    validatorBundleSha256: "a".repeat(64),
-    compatibilityPolicyHash: "a".repeat(64),
-    effectiveLimitsHash: "a".repeat(64),
-    persistencePolicyVersion: "quizpack-persistence-policy.v1",
-    persistencePolicyHash: "a".repeat(64),
-    reportSchemaVersion: "quizpack-validation.v1",
-    reportSchemaHash: "a".repeat(64),
-    runtime: {
-      schema: "quizpack-media-runtime-binding.v1",
-      platform: "darwin-arm64",
-      componentId: "a".repeat(64),
-      deploymentId: "a".repeat(64),
-      runtimeBundleHash: "a".repeat(64),
-      limitsHash: "a".repeat(64),
-    },
-  };
-  const identity = {
-    ...payload,
-    identitySha256: hash(canonicalP1Json(payload)),
-  };
+  const identity = (legacy ? runtimeIdentity : supportedRuntimeIdentity)({
+    schema: "quizpack-media-runtime-binding.v1",
+    platform: "darwin-arm64",
+    componentId: "a".repeat(64),
+    deploymentId: "a".repeat(64),
+    runtimeBundleHash: "a".repeat(64),
+    limitsHash: "a".repeat(64),
+  });
   const identityText = canonicalP1Json(identity);
   const manifestText = JSON.stringify(fixture.manifest);
   const manifestSha256 = hash(manifestText);
@@ -156,16 +151,16 @@ export async function domainFixture(db: TestDatabase, prefix = false) {
         targetProductId: productId,
       },
       identity: { status: "bound", value: identity },
-      report: sealP1Report({
-        schemaVersion: "quizpack-validation.v1",
+      report: (legacy ? sealP1Report : sealSupportedReport)({
+        schemaVersion: identity.reportSchemaVersion,
         targetProductId: productId,
-        validatorVersion: "1.0.0",
-        policyId: "quizpack-local-p1.v1",
+        validatorVersion: identity.validatorVersion,
+        policyId: identity.policyId,
         archiveSha256,
         manifestSha256,
         contentSha256,
-        compatibilityPolicyHash: "a".repeat(64),
-        effectiveLimitsHash: "a".repeat(64),
+        compatibilityPolicyHash: identity.compatibilityPolicyHash,
+        effectiveLimitsHash: identity.effectiveLimitsHash,
         checks: {
           container: "passed",
           structure: "passed",
@@ -232,16 +227,24 @@ export async function domainFixture(db: TestDatabase, prefix = false) {
   const binding = {
     identityText,
     identitySha256: identity.identitySha256,
-    archivePolicyVersion: ARCHIVE_POLICY_VERSION,
-    archivePolicySha256,
+    archivePolicyVersion: legacy
+      ? LEGACY_ARCHIVE_POLICY_VERSION
+      : ARCHIVE_POLICY_VERSION,
+    archivePolicySha256: legacy
+      ? legacyArchivePolicySha256
+      : archivePolicySha256,
     validationKey: validationKey({
       productId,
       importId,
       archiveSha256,
       archiveBytes,
       identitySha256: identity.identitySha256,
-      archivePolicyVersion: ARCHIVE_POLICY_VERSION,
-      archivePolicySha256,
+      archivePolicyVersion: legacy
+        ? LEGACY_ARCHIVE_POLICY_VERSION
+        : ARCHIVE_POLICY_VERSION,
+      archivePolicySha256: legacy
+        ? legacyArchivePolicySha256
+        : archivePolicySha256,
     }),
   };
   await safe(

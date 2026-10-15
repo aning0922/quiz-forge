@@ -24,6 +24,8 @@ import {
 } from "@/features/quizpack/import/service";
 import { createReceiveContext } from "@/features/quizpack/import/context";
 import { createStoredArchive } from "@/features/quizpack/v1/build";
+import { quizPackContentV2Schema } from "@/features/quizpack/content/v2";
+import { createContentV2Fixture } from "@/features/quizpack/content/fixtures.test-support";
 import { createSyntheticFixture } from "@/features/quizpack/v1/fixtures/synthetic";
 import { canonicalP1Json } from "@/features/quizpack/v1/canonical";
 import {
@@ -204,32 +206,54 @@ async function prepare(database: TestDatabase, runId: string) {
       primaryCategoryId: null,
       tagIds: [],
     });
-    const source = await createSyntheticFixture("dimensions"),
-      content = remap(source.content, productId),
-      contentBytes = Buffer.from(canonicalP1Json(content)),
-      manifest = {
-        ...source.manifest,
-        productId,
-        packId: `e2e-${runId.slice(0, 8)}`,
-        files: source.manifest.files.map((f) =>
+    // Authored is an enum under test; pixels and wording remain explicitly synthetic.
+    const source = await createSyntheticFixture("dimensions");
+    const content = quizPackContentV2Schema.parse(
+      remap(await createContentV2Fixture("dimensions"), productId),
+    );
+    content.kind = "authored";
+    const scene = content.resources.find((r) => r.id === "neutral-scene")!;
+    const assets = [
+      ...source.assets,
+      { path: scene.path, bytes: Buffer.from(source.assets[0]!.bytes) },
+    ];
+    const contentBytes = Buffer.from(canonicalP1Json(content));
+    const manifest = {
+      ...source.manifest,
+      productId,
+      packId: `e2e-${runId.slice(0, 8)}`,
+      contentSchemaVersion: "quizpack-content.v2" as const,
+      components: source.manifest.components.map((c) => ({
+        ...c,
+        version: "2.0.0",
+      })),
+      files: [
+        ...source.manifest.files.map((f) =>
           f.path === "content.json"
             ? { ...f, bytes: contentBytes.length, sha256: sha(contentBytes) }
             : f,
         ),
-      };
+        {
+          path: scene.path,
+          mediaType: scene.mediaType,
+          bytes: scene.bytes,
+          sha256: scene.sha256,
+        },
+      ],
+    };
     const bytes = await createStoredArchive(
-        [
-          {
-            path: "manifest.json",
-            bytes: Buffer.from(canonicalP1Json(manifest)),
-          },
-          { path: "content.json", bytes: contentBytes },
-          ...source.assets,
-        ],
-        33_554_432,
-        new AbortController().signal,
-      ),
-      archiveSha256 = sha(bytes);
+      [
+        {
+          path: "manifest.json",
+          bytes: Buffer.from(canonicalP1Json(manifest)),
+        },
+        { path: "content.json", bytes: contentBytes },
+        ...assets,
+      ],
+      33_554_432,
+      new AbortController().signal,
+    );
+    const archiveSha256 = sha(bytes);
     for (let i = 0; i < 3; i++) {
       const intent = await importReceiveService.createIntent(
         database.app,

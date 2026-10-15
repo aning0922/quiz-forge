@@ -107,8 +107,8 @@ const snapshotShape = {
   canonicalManifestSha256: sha256Schema,
   candidateSha256: sha256Schema,
   containerSchemaVersion: z.literal("quizpack.v1"),
-  contentSchemaVersion: z.literal("quizpack-content.v1"),
-  contentKind: z.literal("synthetic"),
+  contentSchemaVersion: z.enum(["quizpack-content.v1", "quizpack-content.v2"]),
+  contentKind: z.enum(["synthetic", "authored"]),
   packId: packIdSchema,
   packVersion: packVersionSchema,
   versions: draftVersionsSchema,
@@ -118,6 +118,8 @@ const snapshotShape = {
   platformApproval: z.literal("unverified"),
   publishable: z.literal(false),
 };
+// Read-only receipts retain historical version metadata. Current component matrix
+// eligibility is enforced when reading a new ready source, never retroactively.
 export const draftSummarySchema = z.strictObject(snapshotShape);
 export const draftApplicationDtoSchema = z
   .strictObject({

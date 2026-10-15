@@ -1,0 +1,96 @@
+{
+  "schemaVersion": "quizforge-p3b-integration-observation.v1",
+  "observedAt": "2026-10-16",
+  "runtimeImplementationCommit": "c419aa6a6244d58f0c2b7543cbc08122eeabf877",
+  "finalTestCommit": "afaa43ec09a5cb8ff8df2d54ad1819440dedf8b5",
+  "scope": "synthetic local integration; no historical content, asset rights, human or publication approval",
+  "build": {
+    "warnings": 0,
+    "traceCount": 65,
+    "pathCount": 12960,
+    "privateViolations": 0
+  },
+  "binding": {
+    "sourceBundleHash": "b25e04ed307ca76b75fd2f5826a912119328da192920021a79208a151a6af111",
+    "deploymentId": "c902f006a5d4d1786e9e6372e96d59f5e97e70bd170c754272eeef2e55cc661a",
+    "sourceFileCount": 1059,
+    "artifactFileCount": 740,
+    "totalBytes": 33196291
+  },
+  "media": {
+    "target": "main",
+    "outcome": "sealed",
+    "runtimeBundleHash": "c81dd27dd79d23a05235e7a924c320b035b2fcc533a7c165ef2773bc53ddb3f7",
+    "capabilityCommitted": true,
+    "recordCommitted": true,
+    "rounds": [
+      {
+        "cases": 66,
+        "passed": 66,
+        "ownedOperationsStopped": true,
+        "residualControlEntries": 0
+      },
+      {
+        "cases": 66,
+        "passed": 66,
+        "ownedOperationsStopped": true,
+        "residualControlEntries": 0
+      },
+      {
+        "cases": 66,
+        "passed": 66,
+        "ownedOperationsStopped": true,
+        "residualControlEntries": 0
+      }
+    ],
+    "controlEmpty": true
+  },
+  "fixture": {
+    "deploymentId": "48b3c8289df926560567093c58f98ccc76681cae022fb13649b323aba4b307a4",
+    "runtimeBundleHash": "3188eb8209251d3e083af64b1d95ceef7f78e9e94606dd3def9dd2f5cc5bf93a",
+    "nativeRoundsPassed": [66, 66, 66],
+    "nextObservations": 16,
+    "acceptedCompletePacks": 8,
+    "rejectedPacks": 5,
+    "interrupted": 2,
+    "image": 1,
+    "testPixelsOnly": true
+  },
+  "checks": {
+    "unitFiles": 108,
+    "unitPassed": 1363,
+    "finalCliIncrementPassed": 5,
+    "postgresFiles": 37,
+    "postgresPassed": 355,
+    "finalRootHistoryIncrementPassed": 8,
+    "developerPurposeGuardIncrementPassed": 9,
+    "driverPassed": 46,
+    "servicePassed": 14,
+    "unknownMediaPassed": 3,
+    "serviceMediaBoundary": "explicit mock; not native media proof",
+    "productionE2E": {
+      "passed": 222,
+      "existingSkipped": 10,
+      "durationMinutes": 2.2
+    },
+    "cleanup": {
+      "draftsFixture": "passed",
+      "validationsFixture": "passed",
+      "database": "stopped"
+    },
+    "visualImages": 32,
+    "independentImageReview": "passed"
+  },
+  "ci": {
+    "commit": "afaa43ec09a5cb8ff8df2d54ad1819440dedf8b5",
+    "checks": "https://github.com/aning0922/quiz-forge/actions/runs/38788800066",
+    "media": "https://github.com/aning0922/quiz-forge/actions/runs/38788800035",
+    "conclusion": "success",
+    "postgresPassed": 356,
+    "unitPassed": 1363,
+    "driverPassed": 46,
+    "servicePassed": 14,
+    "unknownMediaPassed": 3
+  },
+  "independentFinalReview": "P3-B technical exit passed; no open P1/P2 in reviewed scope"
+}

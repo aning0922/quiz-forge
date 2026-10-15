@@ -6,6 +6,21 @@ export function productArgument(value: string | undefined): string {
     throw new PackToolError("CLI_INVALID_ARGUMENTS");
   return value;
 }
+/** Only an explicit complete suffix opts into the supported package entry point. */
+export function contentVersionArgument(
+  args: readonly string[],
+):
+  | import("../src/features/quizpack/package/api").ContentSchemaVersion
+  | undefined {
+  if (args.length === 0) return undefined;
+  if (
+    args.length !== 2 ||
+    args[0] !== "--content-version" ||
+    !["v1", "v2"].includes(args[1]!)
+  )
+    throw new PackToolError("CLI_INVALID_ARGUMENTS");
+  return args[1] === "v1" ? "quizpack-content.v1" : "quizpack-content.v2";
+}
 export function outputJson(value: unknown): void {
   process.stdout.write(`${JSON.stringify(value)}\n`);
 }
