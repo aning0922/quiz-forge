@@ -1,8 +1,12 @@
 import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, beforeEach, expect, it } from "vitest";
+import { configureImports } from "@/features/quizpack/import/config-management";
+import { createQuizpackValidationService } from "@/features/quizpack/validation/service";
+import { serviceRequest } from "./p2b2b-service-support";
 import { createProductDraftService } from "@/features/product/drafts/service";
 import {
   validationRowDto,
+  legacyValidationActivity,
   parseValidationAttempts,
 } from "@/features/quizpack/validation/repository";
 import {
@@ -29,9 +33,14 @@ import {
 } from "./p3b-history-fixture";
 
 let db: TestDatabase;
+let originalImportsEnabled: boolean;
 let auth: Awaited<ReturnType<typeof authenticateTestOperator>>;
 const service = createProductDraftService();
 beforeAll(async () => {
+  db = await openTestDatabase();
+  originalImportsEnabled = db.config.imports.enabled;
+  await db.close();
+  await configureImports(db.config.instanceId, false);
   db = await openTestDatabase();
 });
 beforeEach(async () => {
@@ -40,8 +49,12 @@ beforeEach(async () => {
 });
 afterAll(async () => {
   if (db) {
-    await resetDomainDatabase(db);
-    await db.close();
+    try {
+      await resetDomainDatabase(db);
+    } finally {
+      await db.close();
+      await configureImports(db.config.instanceId, originalImportsEnabled);
+    }
   }
 });
 it("old ready remains a read-only fact and cannot authorize a new application, retry, recovery or ACK", async () => {
@@ -61,6 +74,45 @@ it("old ready remains a read-only fact and cannot authorize a new application, r
   const dto = await db.app.sql.begin((tx) => validationRowDto(tx, old.row));
   expect(dto.status).toBe("ready");
   expect(dto.readOnly).toBe(true);
+  // Real old row + actual authorization/SQL, with imports disabled in this test
+  // instance. These calls must reject policy before consulting that configuration.
+  expect(db.config.imports.enabled).toBe(false);
+  const validations = createQuizpackValidationService();
+  for (const method of ["recoverValidation", "retryValidation"] as const)
+    await expect(
+      serviceRequest(db, (connection, context) =>
+        validations[method](
+          connection,
+          auth.credentials,
+          old.scope.productId,
+          old.scope.sourceImportId,
+          old.row.id,
+          { expectedStateRevision: old.row.state_revision },
+          context,
+        ),
+      ),
+    ).rejects.toThrow("VALIDATION_REVALIDATION_REQUIRED");
+  const activity = await db.app.sql.begin((tx) => legacyValidationActivity(tx));
+  expect(activity).toHaveLength(1);
+  expect(Object.keys(activity[0]!).sort()).toEqual(
+    [
+      "status",
+      "storage_condition",
+      "reserved_bytes",
+      "lease_until",
+      "attempts_text",
+      "archive_policy_version",
+    ].sort(),
+  );
+  expect(activity[0]).toMatchObject({
+    status: "ready",
+    storage_condition: "clean",
+    reserved_bytes: "0",
+    lease_until: null,
+    attempts_text: old.row.attempts_text,
+    archive_policy_version: "quizpack-private-archive.v2",
+  });
+
   await expect(
     service.applyReadyValidation(
       db.app,

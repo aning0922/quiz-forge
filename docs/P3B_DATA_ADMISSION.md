@@ -50,3 +50,15 @@ per-Product pending 仅统计当前 policy version/hash 精确匹配的原 pendi
 新增有限 mock 证据：两种 mutation 在 disabled config 下先拒绝真实 legacy tuple，锁/config/full-row/scan/held/media/恢复/重试均不调用；授权失败先于元数据读取；元数据查询精确 scope、空结果失败关闭；历史查询仅元数据并保留全旧策略与 1025 上界。相关两文件 27 项通过，五个改动 TS 文件定向 ESLint 与 diff 空白检查通过。
 
 本次遵守主控 native 矩阵窗口限制：未启动 PG、构建、媒体或 3100；本整改后的类型/全量/真实 PG 复验待主控窗口结束安排，前文完整运行证据属于 76537be，不冒称整改后重跑。
+
+## 051 整改后的真实复验与五资源 fixture 同步
+
+已按主控要求接入 1e6e96a 与 20c3644；本树对应副本 c57db5e/20ea955，仅用于公共依赖，不交主控重复集成。主控报告 Astra 已以 27 项及 6 个顺序/并发探针关闭 051 两项 P2。
+
+本流新增实际 PG 探针：历史套件显式关闭自有测试实例的 imports 配置，结束后恢复原值；对真实旧 ready 行调用服务 recover/retry，确认即使配置禁用也先返回 REVALIDATION_REQUIRED；实际查询确认仅返回六个历史静止元数据字段。此探针不依赖实例先前配置，仍保留旧行完整快照不变断言。
+
+共享 B2 fixture 已为 authored/content.v2、五个资源且 scene/cover 共享 blob。首个服务 case 同步 archivedResourceCount=5、product_asset 引用数=5、媒体边界调用次数=5；没有把去重 blob 数量改为 5。
+
+整改及上述依赖后的本地实际结果：普通全 PG 37 文件/355 项；定向元数据/历史/容量/升级 11 项；完整单测 108 文件/1363 项；typecheck、format:check、lint、build/BUILD_TRACE_OK 均通过。新的 purpose=test fresh-service 实例 89c45e9f486d189a67fd13249319cf31 跑 14 项通过，新的独立 fresh media-UNKNOWN 实例 f1e5b9609f16cd900ce851312c4d3a75 跑 3 项通过；两者均已停止，原 tuple/文件/held reservations 保留。普通实例及此前 UNKNOWN 实例也保持停止，没有复用 UNKNOWN 库。
+
+本流仍不将有限媒体 stub 视为隔离媒体证明，不占 3100/3111，不代替主控最终集成/driver/浏览器证据。后续交主控的提交仅包含本段记录、service 五资源断言与实际 PG 探针。
