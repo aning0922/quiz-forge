@@ -22,6 +22,8 @@ import {
 } from "./p2b2b-request-fixture";
 import { fixtureValidationOwnersEnded } from "./p2b2b-maintenance";
 import { createPreauth, login } from "@/lib/auth/service";
+import { configureImports } from "@/features/quizpack/import/config-management";
+import { currentConfig } from "@/features/quizpack/import/service";
 import { validationTransactions as transactions } from "@/features/quizpack/validation/transactions";
 import {
   validationKey,
@@ -57,12 +59,18 @@ async function syntheticControlDirectory() {
 }
 
 it("real received files survive foreign-audit refusal, then exact fixture cleanup removes only its owned rows and files", async () => {
+  const initial = await openTestDatabase();
+  const instanceId = initial.config.instanceId;
+  await initial.close();
+  await configureImports(instanceId, true);
   const database = await openTestDatabase();
   try {
     await syntheticControlDirectory();
     const fixture = await safe(() =>
       prepareTestValidationFixture(database, randomUUID()),
     );
+    expect(database.config.imports.enabled).toBe(true);
+    expect((await currentConfig(database.app)).imports.enabled).toBe(false);
     const actual = await readTestValidationFixture(database, fixture.runId);
     const fixtureMatches = canonicalP1Json(actual) === canonicalP1Json(fixture);
     expect(fixtureMatches).toBe(true);
@@ -260,6 +268,27 @@ it("a real pre-candidate request publishes its actual file, commits ACK and drai
       parseValidationAttempts(row.attempts_text)[0]!.fileStopProof,
     ).not.toBeNull();
     expect(Number(row.reserved_bytes)).toBe(0);
+    expect(database.config.imports.enabled).toBe(false);
+    await configureImports(database.config.instanceId, true);
+    const refusedLiveEnabled = await cleanupTestValidationFixture(
+      database,
+      fixture,
+    ).then(
+      () => false,
+      (error: unknown) =>
+        error instanceof Error &&
+        error.message === "TEST_VALIDATION_IMPORTS_ENABLED",
+    );
+    expect(refusedLiveEnabled).toBe(true);
+    await expect(
+      lstat(
+        path.join(
+          importDirectory(database.config, original.importId),
+          "archive.quizpack",
+        ),
+      ),
+    ).resolves.toBeDefined();
+    await configureImports(database.config.instanceId, false);
     const receipt = path.join(
       validationDirectory(database.config, row.id),
       `stopped-${row.current_attempt_id}.json`,

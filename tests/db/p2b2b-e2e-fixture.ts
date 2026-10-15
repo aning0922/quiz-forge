@@ -18,7 +18,10 @@ import { issueToken } from "@/lib/security/p2a-tokens";
 import { createPreauth, login } from "@/lib/auth/service";
 import { acquireAuthWriteLock } from "@/lib/db/auth-lock";
 import { readPrivateJson } from "@/lib/db/runtime";
-import { importReceiveService } from "@/features/quizpack/import/service";
+import {
+  currentConfig,
+  importReceiveService,
+} from "@/features/quizpack/import/service";
 import { createReceiveContext } from "@/features/quizpack/import/context";
 import { createStoredArchive } from "@/features/quizpack/v1/build";
 import { createSyntheticFixture } from "@/features/quizpack/v1/fixtures/synthetic";
@@ -45,6 +48,7 @@ import {
   removeOwned,
   privateDirectory,
   privateFile,
+  assertNoConfigGuard,
   type FileFact,
 } from "@/features/quizpack/import/storage";
 import type { ImportRow } from "@/features/quizpack/import/repository";
@@ -420,7 +424,6 @@ async function cleanup(
   value: Fixture,
   mode: "cross-process" | "same-process" = "cross-process",
 ) {
-  if (database.config.imports.enabled) throw new Error();
   await database.app.close(); // All subsequent DB work is the helper's owner connection and storage connection.
   const { context, dispose } = createValidationContext(
       new AbortController().signal,
@@ -431,6 +434,7 @@ async function cleanup(
     );
   op.attachLock(lock);
   try {
+    await requireLiveDisabled(op);
     await noOtherBackends(database, lock, op);
     const imports = await op.databaseAwait(
       "read",
@@ -620,6 +624,7 @@ async function cleanup(
       )
     )
       throw new Error();
+    await requireLiveDisabled(op);
     // Root invokes this only after the managed server has exited, under exclusive synthetic maintenance.
     for (const f of remove)
       await op.fileTask(() => removeOwned(f.file, f.inode));
@@ -648,6 +653,17 @@ async function cleanup(
     await op.settle();
     dispose();
   }
+}
+/** Storage lock excludes configuration writes; an old caller snapshot never authorizes maintenance. */
+async function requireLiveDisabled(op: ArchiveOperation) {
+  await op.fileTask(async () => {
+    const config = await currentConfig(op.db);
+    op.nonDbCheckpoint();
+    await assertNoConfigGuard(config);
+    op.nonDbCheckpoint();
+    if (config.imports.enabled)
+      throw new Error("TEST_VALIDATION_IMPORTS_ENABLED");
+  });
 }
 /** Only this in-process entry may consult the original request observer; no proof is accepted from a caller. */
 export async function cleanupTestValidationFixture(
