@@ -52,5 +52,51 @@ jobs:
       - name: Real target matrix and offline seal
         shell: bash
         run: node --conditions=react-server --import tsx scripts/quizpack-media-preflight/shared/provision-cli.ts --runtime-target=fixture
+      - name: Bounded matrix failure diagnostics
+        if: failure()
+        shell: bash
+        run: |
+          node --conditions=react-server --import tsx --input-type=module <<'NODE'
+          import { constants } from "node:fs";
+          import { readdir, lstat, open } from "node:fs/promises";
+          import { join } from "node:path";
+          import { MATRIX_CASES } from "./scripts/quizpack-media-preflight/shared/runtime.ts";
+          const root = ".cache/quizpack-media-preflight/linux";
+          const allowed = new Set([...MATRIX_CASES["linux-smoke"], ...MATRIX_CASES["linux-lifecycle"], "crashed-parent-close-budget"]);
+          const codes = new Set(["CANCELLED", "DEADLINE_EXCEEDED", "INPUT_LIMIT", "ISOLATION_UNAVAILABLE", "WORKER_FAILED", "STOP_UNCONFIRMED", "BUSY", "OUTPUT_LIMIT", "INVALID_OUTPUT"]);
+          const stopped = new Set(["confirmed", "not-started", "unknown"]);
+          let reports = 0;
+          const directories = await readdir(root, { withFileTypes: true }).catch(() => []);
+          for (const entry of directories.filter((e) => e.isDirectory() && /^[a-f0-9-]{36}$/.test(e.name)).slice(0, 8)) {
+            for (const suffix of ["", "lifecycle"]) {
+              let file;
+              try {
+                const parent = join(root, entry.name, suffix);
+                if (!(await lstat(parent)).isDirectory()) continue;
+                file = await open(join(parent, "summary.json"), constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK);
+                const stat = await file.stat();
+                if (!stat.isFile() || stat.size > 524288) continue;
+                const bytes = Buffer.alloc(524289);
+                const { bytesRead } = await file.read(bytes, 0, bytes.length, 0);
+                if (bytesRead !== stat.size) continue;
+                const value = JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(bytes.subarray(0, bytesRead)));
+                if (!["qf-linux-preflight.v1", "qf-linux-lifecycle.v1"].includes(value.schema) || !Array.isArray(value.cases)) continue;
+                const cases = value.cases.slice(0, 64).filter((c) => c && allowed.has(c.id)).map((c) => ({
+                  id: c.id,
+                  passed: c.passed === true,
+                  code: codes.has(c.result?.code) ? c.result.code : null,
+                  stopped: stopped.has(c.result?.stopped) ? c.result.stopped : null,
+                }));
+                console.log(JSON.stringify({ diagnostic: "matrix-cases.v1", schema: value.schema, cases }));
+                reports++;
+              } catch {
+                // Missing/partial private reports are not permission to emit raw data.
+              } finally {
+                await file?.close();
+              }
+            }
+          }
+          console.log(JSON.stringify({ diagnostic: "matrix-report-count.v1", reports }));
+          NODE
       - name: Verify actual sealed Next public entry
         run: node --conditions=react-server --import tsx scripts/quizpack-media-next-fixture.ts verify-sealed
