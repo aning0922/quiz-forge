@@ -149,7 +149,14 @@ export async function launchPreviewServer(
 }
 export function assertPreviewServerRunning(owner: OwnedPreviewServer): void {
   const s = state(owner);
-  if (!s.child.pid || s.closed || s.failed || absentGroup(s.child.pid))
+  if (
+    !s.child.pid ||
+    s.closed ||
+    s.failed ||
+    s.child.exitCode !== null ||
+    s.child.signalCode !== null ||
+    absentGroup(s.child.pid)
+  )
     throw Error("PREVIEW_SERVER_NOT_RUNNING");
 }
 export function stopAndProveServerExit(
@@ -167,10 +174,13 @@ export function stopAndProveServerExit(
         if ((error as NodeJS.ErrnoException).code !== "ESRCH") throw invalid();
       }
     };
-    signal("SIGTERM");
+    if (s.closed) {
+      if (!absentGroup(pid)) throw invalid();
+    } else signal("SIGTERM");
     const started = performance.now(),
       deadline = started + 5000;
     while ((!s.closed || !absentGroup(pid)) && performance.now() < deadline) {
+      if (s.closed && !absentGroup(pid)) throw invalid();
       if (performance.now() - started >= 2000) signal("SIGKILL");
       await delay(25);
     }
