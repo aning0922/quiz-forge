@@ -4,6 +4,7 @@ import { StudioError } from "@/lib/http-security/errors";
 import { drizzle, type PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import * as schema from "./schema";
 import { validationAckFunctionHashes } from "./validation-ack-schema";
+import { verifyDraftSchema } from "./draft-schema";
 import {
   loadRuntimeConfig,
   normalizeRuntimeConfig,
@@ -92,6 +93,7 @@ export async function verifyDatabaseIdentity(
     if (!privilege || Object.values(privilege).some((v) => v !== false))
       throw new StudioUnavailableError();
     await verifyValidationSchema(sql);
+    await verifyDraftSchema(sql);
   }
 }
 

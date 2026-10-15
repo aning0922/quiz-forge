@@ -49,7 +49,7 @@ WRITE_OUTCOME_UNKNOWN、断连、取消或未知响应保留原请求。GET 空�
 
 闭环 FK 只证明关系。另设窄的 revision INSERT 来源保护：校验同 Product/import/validation、明确允许的 policy/protocol、ready 资格，以及复制的 canonical content/asset-set 原文与各 hash 完全等于不可变来源；不能拿合法source ID配任意正文。深入资源解释仍由quizpack接口承担，SQL沿用既有ready关系约束。实际PG覆盖直接SQL伪来源/错指针/空值拒绝，不把FK冒称完整内容验证。固定历史读取不受未来新应用policy白名单变化影响；content中的Product metadata只保留快照，不覆盖B1目录字段。
 
-总控负责 DDL、Drizzle schema、migration runner grants、DB schema guard、共享错误和测试 reset。guard 验证最新迁移收据、必要列/约束/权限/保护函数，不因缺新表降级旧行为。升级测试覆盖 0012 → 仅0013拒新业务 → 0014，重复 migrate 无操作，保留旧归档数据。
+四条闭环FK使用ON DELETE NO ACTION，并延迟到COMMIT检查，使测试owner可在单一事务精确删除完整闭环；外部source/Product/operator FK仍RESTRICT，应用角色没有删除权限，不采用CASCADE。总控负责 DDL、Drizzle schema、migration runner grants、DB schema guard、共享错误和测试 reset。owner迁移入口核完整版本/校验和收据；应用开库guard核实际列/完整约束/权限/保护函数和内部FK enforcement trigger，不增加应用对私有迁移元数据的读取权限，不因缺新表降级旧行为。升级测试覆盖 0012 → 仅0013拒新业务 → 0014，重复 migrate 无操作，保留旧归档数据。
 
 ## 服务、HTTP 与 DTO
 
@@ -81,3 +81,5 @@ ready详情加入明确的“应用为首个草稿”面板，RSC传已鉴权ses
 总控先冻结 contracts/service-contract、公共错误与预算、迁移/ACL/guard；数据流实现 product/drafts service/repository、quizpack受控来源接口、单测与真实PG；界面流实现 studio/drafts、薄API/页面路由和真实E2E。最多两Sol/high实现流，Astra/high独审。共享配置/文档/迁移和3100由总控单写，DB各自独立实例。
 
 必须覆盖：双连接竞争唯一首稿、原key重放/异输入、别key同import/别import alias；跨Product/非ready/旧协议/错误rev或hash/archived/已有稿；完整资源归属和声明/合法alias；回滚与审计失败无孤儿；UPDATE/DELETE/TRUNCATE及伪造SQL被拒；撤权、真实驱动故障与COMMIT响应丢失；>1MiB合法正文及2MiB+1、Unicode/NULL；四宽生产浏览器空态、首次应用/刷新、只读、丢响应核实、空GET、显式原key重试、storage失败零POST、错tuple/迟到响应与转义大正文。六项工程检查、PG、driver与独立审查实际完成后才技术验收，再接有限编辑/结构预览阶段。
+
+大正文证据须区分边界：现P1原始contentSource上限仍为1MiB，B持久化canonical预算为2MiB；本批不放宽P1发行入口。>1MiB用严格Schema/公共canonical/hash构造的明确合成历史DB快照，只证明B3持久化和HTTP完整读取预算，不能冒称该大包经过当前P1真实issuance或媒体执行。普通新包和最终P5真实包路径分别验收。

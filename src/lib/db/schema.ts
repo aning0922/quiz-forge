@@ -60,6 +60,7 @@ export const auditAction = qf.enum("audit_action", [
   "validation_recovered",
   "validation_retried",
   "validation_file_stop_acknowledged",
+  "draft_applied",
 ]);
 export const auditOutcome = qf.enum("audit_outcome", ["success", "rejected"]);
 export const auditReason = qf.enum("audit_reason", [
@@ -339,5 +340,78 @@ export const productAssets = qf.table("product_asset", {
   purpose: varchar("purpose", { length: 16 }).notNull(),
   sourceValidationId: uuid("source_validation_id").notNull(),
   platformApproval: varchar("platform_approval", { length: 16 }).notNull(),
+  createdAt: time("created_at").notNull(),
+});
+
+// Composite closure, source protection and immutable permissions are defined in 0014.
+export const productDrafts = qf.table("product_draft", {
+  id: uuid("id").notNull().primaryKey(),
+  productId: varchar("product_id", { length: 80 }).notNull(),
+  currentRevision: integer("current_revision").notNull(),
+  initialApplicationId: uuid("initial_application_id").notNull(),
+  createdBy: uuid("created_by").notNull(),
+  createdAt: time("created_at").notNull(),
+});
+
+// Composite closure, source protection and immutable permissions are defined in 0014.
+export const draftRevisions = qf.table("draft_revision", {
+  productId: varchar("product_id", { length: 80 }).notNull(),
+  draftId: uuid("draft_id").notNull(),
+  revision: integer("revision").notNull(),
+  applicationId: uuid("application_id").notNull(),
+  sourceImportId: uuid("source_import_id").notNull(),
+  sourceValidationId: uuid("source_validation_id").notNull(),
+  sourceValidationStateRevision: integer(
+    "source_validation_state_revision",
+  ).notNull(),
+  canonicalContentText: text("canonical_content_text").notNull(),
+  canonicalContentSha256: char("canonical_content_sha256", {
+    length: 64,
+  }).notNull(),
+  assetSetText: text("asset_set_text").notNull(),
+  assetSetSha256: char("asset_set_sha256", { length: 64 }).notNull(),
+  canonicalManifestSha256: char("canonical_manifest_sha256", {
+    length: 64,
+  }).notNull(),
+  candidateSha256: char("candidate_sha256", { length: 64 }).notNull(),
+  containerSchemaVersion: varchar("container_schema_version", {
+    length: 64,
+  }).notNull(),
+  contentSchemaVersion: varchar("content_schema_version", {
+    length: 64,
+  }).notNull(),
+  contentKind: varchar("content_kind", { length: 32 }).notNull(),
+  packId: varchar("pack_id", { length: 80 }).notNull(),
+  packVersion: varchar("pack_version", { length: 32 }).notNull(),
+  contentVersion: varchar("content_version", { length: 32 }).notNull(),
+  visualVersion: varchar("visual_version", { length: 32 }).notNull(),
+  reportVersion: varchar("report_version", { length: 32 }).notNull(),
+  resourceVersion: varchar("resource_version", { length: 32 }).notNull(),
+  componentVersion: varchar("component_version", { length: 32 }).notNull(),
+  engineId: varchar("engine_id", { length: 32 }).notNull(),
+  engineVersion: varchar("engine_version", { length: 32 }).notNull(),
+  resourceCount: smallint("resource_count").notNull(),
+  createdBy: uuid("created_by").notNull(),
+  createdAt: time("created_at").notNull(),
+});
+
+// Composite closure, source protection and immutable permissions are defined in 0014.
+export const draftApplications = qf.table("draft_application", {
+  id: uuid("id").notNull().primaryKey(),
+  productId: varchar("product_id", { length: 80 }).notNull(),
+  idempotencyKey: uuid("idempotency_key").notNull(),
+  fingerprint: char("fingerprint", { length: 64 }).notNull(),
+  sourceImportId: uuid("source_import_id").notNull(),
+  sourceValidationId: uuid("source_validation_id").notNull(),
+  expectedValidationStateRevision: integer(
+    "expected_validation_state_revision",
+  ).notNull(),
+  expectedCandidateSha256: char("expected_candidate_sha256", {
+    length: 64,
+  }).notNull(),
+  targetKind: text("target_kind").notNull(),
+  draftId: uuid("draft_id").notNull(),
+  revision: integer("revision").notNull(),
+  createdBy: uuid("created_by").notNull(),
   createdAt: time("created_at").notNull(),
 });
