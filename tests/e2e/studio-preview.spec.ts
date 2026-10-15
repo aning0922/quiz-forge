@@ -219,6 +219,14 @@ async function mobile(page: Page, info: TestInfo, state: string) {
   });
   for (const width of [320, 375, 390, 430]) {
     await page.setViewportSize({ width, height: 900 });
+    if (state === "question") {
+      const badge = await page.locator("[data-preview-approval]").boundingBox();
+      const caption = await page
+        .locator("[data-preview-scene-caption]")
+        .boundingBox();
+      if (!badge || !caption) throw Error("PREVIEW_SCENE_BOUNDS_MISSING");
+      expect(badge.y + badge.height).toBeLessThanOrEqual(caption.y);
+    }
     expect(
       await page.evaluate(
         () => document.documentElement.scrollWidth <= innerWidth,
