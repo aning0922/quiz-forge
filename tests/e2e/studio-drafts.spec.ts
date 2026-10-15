@@ -223,6 +223,55 @@ test("storage failure produces zero POST and retains an unusable anchor", async 
   expect(posts).toBe(0);
 });
 
+test("authorization denial closes apply and replay controls while preserving the sent tuple", async ({
+  page,
+}) => {
+  await signIn(page);
+  const s = source(1);
+  let posts = 0;
+  await page.route(
+    `**/api/studio/products/${s.productId}/imports/${s.sourceImportId}/validations/${s.sourceValidationId}/apply`,
+    async (route) => {
+      posts++;
+      await route.fulfill({
+        status: 403,
+        contentType: "application/json",
+        body: JSON.stringify({
+          code: "CAPABILITY_DENIED",
+          requestId: randomUUID(),
+        }),
+      });
+    },
+  );
+  await page.goto(detail(1));
+  await page
+    .getByRole("button", { name: "应用为首次草稿", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "确认应用为草稿修订 1", exact: true })
+    .click();
+  await expect(
+    page.getByText("当前会话或写入权限已失效", { exact: false }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "明确按原 key 重放", exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: "应用为首次草稿", exact: true }),
+  ).toHaveCount(0);
+  const anchor = await pending(page);
+  expect(anchor?.mayHaveBeenSent).toBe(true);
+  expect(anchor?.tuple.productId).toBe(s.productId);
+  await page
+    .getByRole("button", { name: "刷新草稿与工作区状态", exact: true })
+    .click();
+  await expect(
+    page.getByRole("button", { name: "核对原 key 回执", exact: true }),
+  ).toBeEnabled();
+  expect(await pending(page)).toEqual(anchor);
+  expect(posts).toBe(1);
+});
+
 test("real PG apply loses its response; empty lookup and finite error preserve exact original key; manual replay returns fixed receipt", async ({
   page,
 }, info) => {
