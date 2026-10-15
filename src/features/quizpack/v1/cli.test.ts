@@ -1,4 +1,5 @@
 import { spawn } from "node:child_process";
+import { createHash } from "node:crypto";
 import {
   mkdtemp,
   writeFile,
@@ -83,10 +84,13 @@ afterAll(async () => {
   if (root) await rm(root, { recursive: true, force: true });
 });
 describe("real pnpm QuizPack entrypoints", () => {
-  it("emits schema JSON only and rejects arguments", async () => {
+  it("preserves v1 schema stdout bytes and rejects unknown arguments", async () => {
     const result = await command("schema", []);
     expect(result.code).toBe(0);
     expect(result.stderr).toBe("");
+    expect(createHash("sha256").update(result.stdout).digest("hex")).toBe(
+      "1142db3b63f7ec5ea5ed90b8b630f324ae948c626e82e93f7c7c6f909d61f38d",
+    );
     expect(result.json).toMatchObject({
       schemaVersion: "quizpack-schemas.v1",
       manifest: { type: "object" },
@@ -99,6 +103,35 @@ describe("real pnpm QuizPack entrypoints", () => {
       importable: false,
       publishable: false,
     });
+  });
+  it("explicitly emits v2 content schema without a misleading package manifest", async () => {
+    const result = await command("schema", ["--content-version", "v2"]);
+    expect(result.code).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.json).toMatchObject({
+      schemaVersion: "quizpack-content-schema.v2",
+      content: {
+        type: "object",
+        properties: { schemaVersion: { const: "quizpack-content.v2" } },
+      },
+    });
+    expect(Object.keys(result.json).sort()).toEqual([
+      "content",
+      "schemaVersion",
+    ]);
+    for (const args of [
+      ["--content-version"],
+      ["--content-version", "v3"],
+      ["--content-version", "v2", "--extra"],
+    ]) {
+      const rejected = await command("schema", args);
+      expect(rejected.code).toBe(1);
+      expect(rejected.json).toMatchObject({
+        issues: [{ code: "CLI_INVALID_ARGUMENTS" }],
+        importable: false,
+        publishable: false,
+      });
+    }
   });
   it("builds deterministic archives across timezones, checks file/stdin and refuses overwrite", async () => {
     const utc = join(root, "utc.quizpack");
