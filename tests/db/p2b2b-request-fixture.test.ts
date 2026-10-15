@@ -249,3 +249,28 @@ it("snapshot close rejection still drains new closes and their appended continua
   expect(StorageLock.acquire).toBe(originalAcquire);
   expect(testValidationRequestEnded(t.fixture, t.row)).toBe(false);
 });
+it("UNKNOWN arriving during the final actual drain cannot publish a previously prepared marker", async () => {
+  const t = setup();
+  let release: () => void = () => {};
+  const pending = new Promise<boolean>((resolve) => {
+    release = () => resolve(true);
+  });
+  t.lockClose.mockResolvedValueOnce(true).mockReturnValue(pending);
+  t.snapshotClose.mockImplementation(async () => {
+    void t.lock.close();
+  });
+  let context: Parameters<typeof requestMediaOperationStop>[0] | undefined;
+  const task = runTestValidationRequest(t.fixture, (db, ctx) => {
+    context = ctx;
+    return t.work(db, ctx);
+  });
+  const failed = expect(task).rejects.toThrow(
+    "TEST_VALIDATION_REQUEST_UNSETTLED",
+  );
+  await vi.waitFor(() => expect(t.lockClose).toHaveBeenCalledTimes(2));
+  expect(testValidationRequestEnded(t.fixture, t.row)).toBe(false);
+  requestMediaOperationStop(context!, "STOP_UNCONFIRMED");
+  release();
+  await failed;
+  expect(testValidationRequestEnded(t.fixture, t.row)).toBe(false);
+});

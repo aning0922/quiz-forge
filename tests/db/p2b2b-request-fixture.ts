@@ -280,6 +280,13 @@ async function observeRequest<T>(
     if (stored.size >= 1024 && !stored.has(row.id))
       throw new Error("TEST_VALIDATION_MONITOR_LIMIT");
     register = () => {
+      const final = readMediaOperationState(context);
+      if (
+        performance.now() >= deadline ||
+        final.phase !== "stopping" ||
+        final.stop.reason === "STOP_UNCONFIRMED"
+      )
+        throw new Error("TEST_VALIDATION_REQUEST_UNSETTLED");
       for (const a of attempts) known.add(attemptIdentity(row.id, a));
       endedAttempts.set(identity, known);
       stored.set(row.id, {
@@ -322,6 +329,8 @@ async function observeRequest<T>(
         )
           closeFailed = true;
       }
+      if (closeFailed) throw new Error("TEST_VALIDATION_REQUEST_UNSETTLED");
+      register?.();
     } finally {
       StorageLock.acquire = original;
       validationTransactions.claimValidation = originalClaim;
@@ -330,8 +339,6 @@ async function observeRequest<T>(
       dispose();
       observing = false;
     }
-    if (closeFailed) throw new Error("TEST_VALIDATION_REQUEST_UNSETTLED");
-    register?.();
   }
 }
 
