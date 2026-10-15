@@ -1,6 +1,6 @@
 # B2-3 首个持久草稿合同
 
-本批从已 ready 的私有候选建立 Product 的首个不可变 revision 1，并提供真实只读草稿工作区。B2-2B 已技术验收，基线为其交付提交 `7fc0c55`；本合同经 Astra 前置审查后冻结，新增业务仍待实施及验收。常规工程沿既有托管授权推进；内容、素材、main 合并、生产迁移与发布批准不由本合同授予。
+本批从已 ready 的私有候选建立 Product 的首个不可变 revision 1，并提供真实只读草稿工作区。B2-2B 已技术验收，基线为其交付提交 `7fc0c55`；本合同经Astra前置审查后冻结，现已按[P2B3_ACCEPTANCE](P2B3_ACCEPTANCE.md)完成技术验收。常规工程沿既有托管授权推进；内容、素材、main 合并、生产迁移与发布批准不由本合同授予。
 
 ## 范围与事实
 
@@ -80,6 +80,6 @@ ready详情加入明确的“应用为首个草稿”面板，RSC传已鉴权ses
 
 总控先冻结 contracts/service-contract、公共错误与预算、迁移/ACL/guard；数据流实现 product/drafts service/repository、quizpack受控来源接口、单测与真实PG；界面流实现 studio/drafts、薄API/页面路由和真实E2E。最多两Sol/high实现流，Astra/high独审。共享配置/文档/迁移和3100由总控单写，DB各自独立实例。
 
-必须覆盖：双连接竞争唯一首稿、原key重放/异输入、别key同import/别import alias；跨Product/非ready/旧协议/错误rev或hash/archived/已有稿；完整资源归属和声明/合法alias；回滚与审计失败无孤儿；UPDATE/DELETE/TRUNCATE及伪造SQL被拒；撤权、真实驱动故障与COMMIT响应丢失；>1MiB合法正文及2MiB+1、Unicode/NULL；四宽生产浏览器空态、首次应用/刷新、只读、丢响应核实、空GET、显式原key重试、storage失败零POST、错tuple/迟到响应与转义大正文。六项工程检查、PG、driver与独立审查实际完成后才技术验收，再接有限编辑/结构预览阶段。
+必须覆盖：双连接竞争唯一首稿、原key重放/异输入、别key同import/别import alias；跨Product/非ready/旧协议/错误rev或hash/archived/已有稿；完整资源归属和声明/合法alias；回滚与审计失败无孤儿；UPDATE/DELETE/TRUNCATE及伪造SQL被拒；撤权、真实驱动故障与COMMIT响应丢失；>1MiB合法正文及2MiB+1、Unicode/NULL；四宽生产浏览器空态、首次应用/刷新、只读、丢响应核实、空GET、显式原key重试、storage失败零POST、错tuple/迟到响应与转义大正文。六项工程检查、PG、driver与独立审查实际完成后才技术验收，接续P3-A有限content.v2与纯评分，再authored/v2准入及固定修订真实预览；浏览器编辑后置，重新导入追加修订另批在首次返修前完成。
 
 大正文证据须区分边界：现P1原始contentSource上限仍为1MiB，B持久化canonical预算为2MiB；本批不放宽P1发行入口。>1MiB用严格Schema/公共canonical/hash构造的明确合成历史DB快照，只证明B3持久化和HTTP完整读取预算，不能冒称该大包经过当前P1真实issuance或媒体执行。普通新包和最终P5真实包路径分别验收。
