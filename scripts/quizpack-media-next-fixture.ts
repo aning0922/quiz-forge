@@ -14,6 +14,7 @@ import { spawn, spawnSync, type ChildProcess } from "node:child_process";
 import { request } from "node:http";
 import path from "node:path";
 import { createRequire } from "node:module";
+import { createContentV2Fixture } from "../src/features/quizpack/content/fixtures.test-support";
 import { createSyntheticFixture } from "../src/features/quizpack/v1/fixtures/synthetic";
 import { createStoredArchive } from "../src/features/quizpack/v1/build";
 import { canonicalPackJson } from "../src/features/quizpack/v1/io";
@@ -28,11 +29,20 @@ import {
 const FIXTURE = ".cache/quizpack-media-next-fixture";
 const PORT = 3111;
 const MAX_GENERATED = 2 * 1024 * 1024;
-const CASES = [
+const ACCEPTED_CASES = [
   "dimensions",
   "archetype",
-  "wrong-product",
   "authored",
+  "authored-dimensions",
+  "v2-dimensions",
+  "v2-archetype",
+  "v2-authored-dimensions",
+  "v2-authored-archetype",
+] as const;
+const acceptedCases = new Set<string>(ACCEPTED_CASES);
+const CASES = [
+  ...ACCEPTED_CASES,
+  "wrong-product",
   "unknown-schema",
   "bad-zip",
   "bad-json",
@@ -206,9 +216,13 @@ type CaseExpectation = {
   archiveBytes: number;
   resourceCount: number;
   resourceDigest: string | null;
+  contentSchemaVersion: "quizpack-content.v1" | "quizpack-content.v2" | null;
+  contentKind: "synthetic" | "authored" | null;
+  engineId: "dimensions" | "archetype" | null;
+  componentVersion: "1.0.0" | "2.0.0" | null;
 };
 type FixtureExpectations = {
-  schema: "quizpack-next-expectations.v1";
+  schema: "quizpack-next-expectations.v2";
   cases: Record<string, CaseExpectation>;
   image: { sha256: string; bytes: number };
 };
@@ -281,7 +295,7 @@ async function sourceSnapshot(checkout: string) {
 async function generateCases(deadline: number) {
   const cases: Record<string, Embedded> = {};
   const expectations = {} as FixtureExpectations;
-  expectations.schema = "quizpack-next-expectations.v1";
+  expectations.schema = "quizpack-next-expectations.v2";
   expectations.cases = {};
   let image: { bytes: string; declaration: unknown } | undefined;
   for (const engine of ["dimensions", "archetype"] as const) {
@@ -290,14 +304,38 @@ async function generateCases(deadline: number) {
     deadlineCheck(deadline);
     const pack = async (
       change?: "authored" | "unknown-schema" | "bad-json" | "bad-media",
+      options: { v2?: boolean; authored?: boolean; key?: string } = {},
     ) => {
-      const content = JSON.parse(canonicalPackJson(fixture.content));
+      const content = JSON.parse(
+        canonicalPackJson(
+          options.v2 ? await createContentV2Fixture(engine) : fixture.content,
+        ),
+      );
       const manifest = JSON.parse(canonicalPackJson(fixture.manifest));
       const assets = fixture.assets.map((a) => ({
         path: a.path,
         bytes: Buffer.from(a.bytes),
       }));
-      if (change === "authored") content.kind = "authored";
+      if (options.v2) {
+        manifest.contentSchemaVersion = "quizpack-content.v2";
+        manifest.components = manifest.components.map(
+          (c: Record<string, unknown>) => ({ ...c, version: "2.0.0" }),
+        );
+        const scene = content.resources.find(
+          (r: { id: string }) => r.id === "neutral-scene",
+        );
+        assets.push({
+          path: scene.path,
+          bytes: Buffer.from(fixture.assets[0]!.bytes),
+        });
+        manifest.files.push({
+          path: scene.path,
+          mediaType: scene.mediaType,
+          bytes: scene.bytes,
+          sha256: scene.sha256,
+        });
+      }
+      if (change === "authored" || options.authored) content.kind = "authored";
       if (change === "unknown-schema")
         manifest.schemaVersion = "quizpack.future";
       if (change === "bad-media") {
@@ -338,7 +376,7 @@ async function generateCases(deadline: number) {
         archive: archive.toString("base64"),
         target: fixture.manifest.productId,
       };
-      const key = change ?? engine;
+      const key = options.key ?? change ?? engine;
       const rows = [...content.resources]
         .sort((a: { id: string }, b: { id: string }) =>
           a.id < b.id ? -1 : a.id > b.id ? 1 : 0,
@@ -352,10 +390,27 @@ async function generateCases(deadline: number) {
         archiveBytes: archive.length,
         resourceCount: assets.length,
         resourceDigest: hash(JSON.stringify(rows)),
+        contentSchemaVersion: content.schemaVersion,
+        contentKind: content.kind,
+        engineId: engine,
+        componentVersion: content.componentVersion,
       };
       return embedded;
     };
     cases[engine] = await pack();
+    cases[`v2-${engine}`] = await pack(undefined, {
+      v2: true,
+      key: `v2-${engine}`,
+    });
+    cases[`v2-authored-${engine}`] = await pack(undefined, {
+      v2: true,
+      authored: true,
+      key: `v2-authored-${engine}`,
+    });
+    if (engine === "dimensions")
+      cases["authored-dimensions"] = await pack("authored", {
+        key: "authored-dimensions",
+      });
     if (engine === "archetype") {
       for (const change of [
         "authored",
@@ -383,6 +438,10 @@ async function generateCases(deadline: number) {
         archiveBytes: Buffer.from(cases["bad-zip"]!.archive, "base64").length,
         resourceCount: 0,
         resourceDigest: null,
+        contentSchemaVersion: null,
+        contentKind: null,
+        engineId: null,
+        componentVersion: null,
       };
       const resource = fixture.content.resources[0]!;
       image = {
@@ -408,7 +467,7 @@ async function generateCases(deadline: number) {
 function routeSource(expectedRootsHash: string) {
   return `import "server-only";
 import {createHash} from "node:crypto";
-import {validateArchiveCandidate,copyCandidateResourceBytes,strictP1ReportSchema,serializeSealedReport} from "@/features/quizpack/server/validation";
+import {validateArchiveCandidate,copyCandidateResourceBytes,strictSupportedReportSchema,serializeSealedReport} from "@/features/quizpack/server/validation";
 import {createMediaOperationContext,disposeMediaOperationContext,readMediaRuntimeBinding,runIsolatedImage,type ImageDeclaration} from "@/features/quizpack/server/media";
 import {cases,image} from "../../fixture-data";
 declare const __QUIZFORGE_MEDIA_CHECKOUT_ROOT__: string;
@@ -448,16 +507,18 @@ export async function GET(request:Request){
     const e=result.evidence;
     settled=e.completion.relatedIo==="settled"&&e.completion.mediaStopped!=="unknown";
     const report=e.report.status==="sealed"?e.report.value:null;
-    const reportValid=e.report.status==="sealed"&&strictP1ReportSchema.safeParse(e.report.value).success&&hash(serializeSealedReport(e.report))===e.report.sha256;
+    const reportValid=e.report.status==="sealed"&&strictSupportedReportSchema.safeParse(e.report.value).success&&hash(serializeSealedReport(e.report))===e.report.sha256;
     const checksPassed=!!report&&Object.keys(report.checks).length===6&&Object.values(report.checks).every((value)=>value==="passed");
     const checksFailed=!!report&&Object.values(report.checks).some((value)=>value==="failed");
     const mediaDecoded=e.media.length>0&&e.media.every((item)=>item.result.outcome==="decoded"&&item.result.stopped==="confirmed");
     const profiles=[...new Set(e.media.map((item)=>item.result.profileId))];
     const mediaProfileId=profiles.length===1?profiles[0]:null;
     let resourcesCopied=false,resourceCount=0,resourceDigest:string|null=null,candidateSha256:string|null=null,assetSetSha256:string|null=null;
+    let contentSchemaVersion:string|null=null,contentKind:string|null=null,engineId:string|null=null,componentVersion:string|null=null;
     if(result.outcome==="accepted"){
       const candidate=result.candidate;
       const facts=candidate.facts;
+      contentSchemaVersion=facts.contentSchemaVersion;contentKind=facts.content.kind;engineId=facts.content.engine.id;componentVersion=facts.content.componentVersion;
       resourceCount=facts.resources.length;
       const rows= facts.resources.map((resource,index)=>{
         const copy=copyCandidateResourceBytes(candidate,index);
@@ -475,7 +536,7 @@ export async function GET(request:Request){
       candidateSha256=facts.candidateSha256;
       assetSetSha256=facts.assetSetSha256;
     }
-    return Response.json({ok:true,case:name,publicApiImported:true,macrosPinned:pinned,outcome:result.outcome,code:result.outcome==="accepted"?null:result.code,candidatePresent:result.outcome==="accepted"&&!!result.candidate,candidateValid:report?.candidateValid??false,identity:e.identity.status,runtime:e.identity.status==="bound"?e.identity.value.runtime:null,report:e.report.status,reportValid,checksPassed,checksFailed,importable:report?.importable??null,publishable:report?.publishable??null,reportSha256:e.report.status==="sealed"?e.report.sha256:null,mediaCount:e.media.length,mediaDecoded,mediaNoUnknown:e.media.every((item)=>item.result.stopped!=="unknown"),mediaProfileId,completion:e.completion,archiveSha256:e.input.status==="snapshotted"?e.input.archiveSha256:null,resourcesCopied,resourceCount,resourceDigest,candidateSha256,assetSetSha256});
+    return Response.json({ok:true,case:name,publicApiImported:true,macrosPinned:pinned,outcome:result.outcome,code:result.outcome==="accepted"?null:result.code,candidatePresent:result.outcome==="accepted"&&!!result.candidate,candidateValid:report?.candidateValid??false,identity:e.identity.status,runtime:e.identity.status==="bound"?e.identity.value.runtime:null,report:e.report.status,reportValid,checksPassed,checksFailed,importable:report?.importable??null,publishable:report?.publishable??null,reportSha256:e.report.status==="sealed"?e.report.sha256:null,mediaCount:e.media.length,mediaDecoded,mediaNoUnknown:e.media.every((item)=>item.result.stopped!=="unknown"),mediaProfileId,completion:e.completion,archiveSha256:e.input.status==="snapshotted"?e.input.archiveSha256:null,resourcesCopied,resourceCount,resourceDigest,candidateSha256,assetSetSha256,contentSchemaVersion,contentKind,engineId,componentVersion,identitySchema:e.identity.status==="bound"?e.identity.value.schemaVersion:null});
   }catch{return Response.json({ok:false,code:"FIXTURE_ROUTE_FAILED",macrosPinned:pinned},{status:500});}
   finally{if(settled){request.signal.removeEventListener("abort",abort);disposeMediaOperationContext(context);}}
 }
@@ -809,7 +870,7 @@ async function readExpectations(fixture: string): Promise<FixtureExpectations> {
     fail("FIXTURE_EXPECTATIONS_INVALID");
   }
   const root = exact(value, ["schema", "cases", "image"]);
-  if (root.schema !== "quizpack-next-expectations.v1")
+  if (root.schema !== "quizpack-next-expectations.v2")
     fail("FIXTURE_EXPECTATIONS_INVALID");
   const cases = exact(root.cases, CASES);
   for (const name of CASES) {
@@ -818,16 +879,37 @@ async function readExpectations(fixture: string): Promise<FixtureExpectations> {
       "archiveBytes",
       "resourceCount",
       "resourceDigest",
+      "contentSchemaVersion",
+      "contentKind",
+      "engineId",
+      "componentVersion",
     ]);
     if (
       !isHash(item.archiveSha256) ||
       !Number.isSafeInteger(item.archiveBytes) ||
       (item.archiveBytes as number) < 1 ||
       (item.archiveBytes as number) > MAX_GENERATED ||
-      item.resourceCount !== (name === "bad-zip" ? 0 : 4) ||
+      item.resourceCount !==
+        (name === "bad-zip" ? 0 : name.startsWith("v2-") ? 5 : 4) ||
       (name === "bad-zip"
-        ? item.resourceDigest !== null
-        : !isHash(item.resourceDigest))
+        ? item.resourceDigest !== null ||
+          item.contentSchemaVersion !== null ||
+          item.contentKind !== null ||
+          item.engineId !== null ||
+          item.componentVersion !== null
+        : !isHash(item.resourceDigest) ||
+          item.contentSchemaVersion !==
+            (name.startsWith("v2-")
+              ? "quizpack-content.v2"
+              : "quizpack-content.v1") ||
+          item.componentVersion !==
+            (name.startsWith("v2-") ? "2.0.0" : "1.0.0") ||
+          item.contentKind !==
+            (name.includes("authored") ? "authored" : "synthetic") ||
+          item.engineId !==
+            (name === "dimensions" || name.endsWith("-dimensions")
+              ? "dimensions"
+              : "archetype"))
     )
       fail("FIXTURE_EXPECTATIONS_INVALID");
   }
@@ -954,10 +1036,8 @@ async function verify(
         mediaCount: 1,
       });
       for (const name of [
-        "dimensions",
-        "archetype",
+        ...ACCEPTED_CASES,
         "wrong-product",
-        "authored",
         "unknown-schema",
         "bad-zip",
         "bad-json",
@@ -977,12 +1057,17 @@ async function verify(
           result.archiveSha256 !== expected.archiveSha256
         )
           fail("FIXTURE_IDENTITY_INPUT_ASSERTION");
-        if (name === "dimensions" || name === "archetype") {
+        if (acceptedCases.has(name)) {
           if (
             result.outcome !== "accepted" ||
             result.code !== null ||
             result.candidatePresent !== true ||
             result.candidateValid !== true ||
+            result.contentSchemaVersion !== expected.contentSchemaVersion ||
+            result.contentKind !== expected.contentKind ||
+            result.engineId !== expected.engineId ||
+            result.componentVersion !== expected.componentVersion ||
+            result.identitySchema !== "quizpack-validation-identity.v2" ||
             result.report !== "sealed" ||
             result.reportValid !== true ||
             result.checksPassed !== true ||
@@ -1005,11 +1090,9 @@ async function verify(
           const expectedCode =
             name === "wrong-product"
               ? "TARGET_PRODUCT_MISMATCH"
-              : name === "authored"
-                ? "AUTHORED_NOT_SUPPORTED"
-                : name === "unknown-schema"
-                  ? "UNSUPPORTED_MANIFEST_VERSION"
-                  : "P1_REJECTED";
+              : name === "unknown-schema"
+                ? "UNSUPPORTED_MANIFEST_VERSION"
+                : "P1_REJECTED";
           if (
             result.outcome !== "rejected" ||
             result.code !== expectedCode ||
