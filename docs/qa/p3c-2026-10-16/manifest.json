@@ -1,0 +1,190 @@
+{
+  "schemaVersion": "quizforge-p3c-visual-evidence.v1",
+  "date": "2026-10-16",
+  "runtimeCommit": "ac69b76d08c2e02cf6a5ada8d1866866fcc9a533",
+  "testCommit": "49da513b56c5d950e3f81e6fe365bc14d74459e2",
+  "browser": "Chromium via Playwright 1.64.0",
+  "viewportWidths": [320, 375, 390, 430],
+  "viewportHeight": 900,
+  "deviceScaleFactor": 1,
+  "fullPage": true,
+  "scope": "synthetic private pixels; internal fixed-revision preview; no author/content/art/publication approval",
+  "exportSource": "playwright-report/data/13011c53a7ff6d5de9e9ac7bb2dc8bb62e7edfc6.png",
+  "files": [
+    {
+      "file": "preview-cover-320.png",
+      "width": 320,
+      "height": 1459,
+      "bytes": 258584,
+      "sha256": "e1593468e8ebe2bb86273b5c97ee16894e88b7f5e190272178ca345f04c7a7df"
+    },
+    {
+      "file": "preview-cover-375.png",
+      "width": 375,
+      "height": 1364,
+      "bytes": 288052,
+      "sha256": "becc1152369c28151fc949830a69c7880b27a56cf916bbaab31bf2289e48071e"
+    },
+    {
+      "file": "preview-cover-390.png",
+      "width": 390,
+      "height": 1380,
+      "bytes": 268976,
+      "sha256": "56930f5efc4668b5c6d0b8e10c6133e47f7431afae3a144ed0d9e2fe83cac661"
+    },
+    {
+      "file": "preview-cover-430.png",
+      "width": 430,
+      "height": 1339,
+      "bytes": 281267,
+      "sha256": "d7bce117df5177187abe36989af7a47309fea1c2bec38c83dadee00ccf8e7a18"
+    },
+    {
+      "file": "preview-poster-320.png",
+      "width": 320,
+      "height": 1711,
+      "bytes": 132094,
+      "sha256": "b8269c260dea32ad8ab77dd76cb5ea580e9282bdb6933cf81e5a6e0cf21f72ac"
+    },
+    {
+      "file": "preview-poster-375.png",
+      "width": 375,
+      "height": 1628,
+      "bytes": 197284,
+      "sha256": "0ebe0298a381f2d50978d44c4f15102ff188012f8af300665ede80fa40be6317"
+    },
+    {
+      "file": "preview-poster-390.png",
+      "width": 390,
+      "height": 1644,
+      "bytes": 211352,
+      "sha256": "f7e3da625341f8848591f8a46d570733c60e6e9cd03ccc14682c652a6af45fb7"
+    },
+    {
+      "file": "preview-poster-430.png",
+      "width": 430,
+      "height": 1603,
+      "bytes": 252153,
+      "sha256": "2947f5c104c6f4121094cae881c21ae04c6d5efea63ada37999e2ea1bed58465"
+    },
+    {
+      "file": "preview-question-320.png",
+      "width": 320,
+      "height": 1633,
+      "bytes": 199946,
+      "sha256": "60e5648ed611f84dac9f57a008720f6ec5f43938cccd9c3914d071cde322767b"
+    },
+    {
+      "file": "preview-question-375.png",
+      "width": 375,
+      "height": 1579,
+      "bytes": 213527,
+      "sha256": "61e650653125b85648691c9d11b31b8048e25994f4ae9715823d88066ea67bd9"
+    },
+    {
+      "file": "preview-question-390.png",
+      "width": 390,
+      "height": 1595,
+      "bytes": 214003,
+      "sha256": "6b6aaad6b5f39ce9c0c3f51d12119adbc0672ce9985ef7c2418167d0c87d8642"
+    },
+    {
+      "file": "preview-question-430.png",
+      "width": 430,
+      "height": 1513,
+      "bytes": 219640,
+      "sha256": "d6e98f293b821a9a88ae2362fdab3766d90e4b88be25b9158419406d2b18011b"
+    },
+    {
+      "file": "preview-report-320.png",
+      "width": 320,
+      "height": 2236,
+      "bytes": 223384,
+      "sha256": "92db8898e0c1fb818b60d82d33e269c2af060ee33a6f6b23748ebe9f4ef909f2"
+    },
+    {
+      "file": "preview-report-375.png",
+      "width": 375,
+      "height": 2107,
+      "bytes": 199426,
+      "sha256": "060c5049f024a9130c8d7660ce140eca911d2e39e52b851f4801fa34040b53f4"
+    },
+    {
+      "file": "preview-report-390.png",
+      "width": 390,
+      "height": 2123,
+      "bytes": 187035,
+      "sha256": "6fc5804caba32f0994def733f6cbbed51b9a21d1d8518049eb81b1751f701577"
+    },
+    {
+      "file": "preview-report-430.png",
+      "width": 430,
+      "height": 2051,
+      "bytes": 191235,
+      "sha256": "0a4d52e3c8d95079054a90315b546b680b4586505e65a97e9874eb241ddfe692"
+    },
+    {
+      "file": "preview-result-320.png",
+      "width": 320,
+      "height": 1485,
+      "bytes": 202436,
+      "sha256": "3fce21ff6cf88cf0bbe7bd75fe80cb5206d6da4c860b31f51b94948475889210"
+    },
+    {
+      "file": "preview-result-375.png",
+      "width": 375,
+      "height": 1403,
+      "bytes": 266617,
+      "sha256": "9ef6ffe569066ea8d4cc41b52e758cf2915558814b3f18a3e77a7715fcd222c7"
+    },
+    {
+      "file": "preview-result-390.png",
+      "width": 390,
+      "height": 1419,
+      "bytes": 275875,
+      "sha256": "7737d96276d06777a3b110bb1c2f2d939a0198f7e1e04a9d0324eefb46a74b91"
+    },
+    {
+      "file": "preview-result-430.png",
+      "width": 430,
+      "height": 1378,
+      "bytes": 285982,
+      "sha256": "8ea7665a04eb2944ba083710f8e8414f4a9367f92d7e3f5bfd1cf50c25d94db9"
+    },
+    {
+      "file": "preview-resume-320.png",
+      "width": 320,
+      "height": 1244,
+      "bytes": 78897,
+      "sha256": "80aa91a8ec436415acba9b1562655a66dc0aaec13c0ac33bbe41d85dac96e3ad"
+    },
+    {
+      "file": "preview-resume-375.png",
+      "width": 375,
+      "height": 1149,
+      "bytes": 80824,
+      "sha256": "34b0f4b5e56ed9a8231533b5a5821abf787b8a0f97863860f9a10c441bc92680"
+    },
+    {
+      "file": "preview-resume-390.png",
+      "width": 390,
+      "height": 1165,
+      "bytes": 79228,
+      "sha256": "a3e216d895a3eb78f9cbb884adabb6899677b7500665fbdc290ebfdda912829d"
+    },
+    {
+      "file": "preview-resume-430.png",
+      "width": 430,
+      "height": 1095,
+      "bytes": 79655,
+      "sha256": "568d6be640d6574ebcfc47599f73d80dee5ac6152357454dc17b5157fa1e0a42"
+    },
+    {
+      "file": "preview-export-1080x1920.png",
+      "width": 1080,
+      "height": 1920,
+      "bytes": 1257552,
+      "sha256": "df16e2c0ede600ab2d2c9f6ad737c22b3eb12daa7ea38df92b18522051fc0be5"
+    }
+  ]
+}

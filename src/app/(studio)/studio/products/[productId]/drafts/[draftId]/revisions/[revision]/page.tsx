@@ -2,6 +2,9 @@ import { redirect } from "next/navigation";
 import { studioPageState } from "@/features/studio/page-session";
 import { StudioUnavailable } from "@/features/studio/shell";
 import { DraftRevisionPage } from "@/features/studio/drafts/read-page";
+import Link from "next/link";
+import { previewScopeSchema } from "@/features/product/preview/contracts";
+import { previewPagePath } from "@/features/product/preview/urls";
 export default async function StudioDraftRevisionPage({
   params,
 }: {
@@ -15,12 +18,30 @@ export default async function StudioDraftRevisionPage({
     /^[1-9][0-9]{0,9}$/.test(ids.revision) && Number(ids.revision) <= 2147483647
       ? Number(ids.revision)
       : 0;
+  const scope = previewScopeSchema.safeParse({ ...ids, revision });
   return (
-    <DraftRevisionPage
-      key={`${ids.productId}/${ids.draftId}/${ids.revision}`}
-      productId={ids.productId}
-      draftId={ids.draftId}
-      revision={revision}
-    />
+    <>
+      {scope.success && (
+        <p>
+          <Link
+            href={previewPagePath(scope.data)}
+            style={{
+              display: "inline-flex",
+              minHeight: 44,
+              alignItems: "center",
+              textDecoration: "underline",
+            }}
+          >
+            进入此固定修订内部预览
+          </Link>
+        </p>
+      )}
+      <DraftRevisionPage
+        key={`${ids.productId}/${ids.draftId}/${ids.revision}`}
+        productId={ids.productId}
+        draftId={ids.draftId}
+        revision={revision}
+      />
+    </>
   );
 }
