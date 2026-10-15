@@ -304,13 +304,19 @@ async function verifyValidationSchema(sql: postgres.Sql): Promise<void> {
       security_definer: boolean;
       fixed_path: boolean;
       body_sha256: string | null;
+      admission_attributes: boolean;
     }[]
   >`
     SELECT s.signature,p.oid IS NOT NULL AS present,
       CASE WHEN p.oid IS NULL THEN false ELSE has_function_privilege(current_user,p.oid,'EXECUTE') END AS can_execute,
       coalesce(p.prosecdef,true) AS security_definer,
       CASE WHEN p.oid IS NULL THEN NULL ELSE encode(sha256(convert_to(p.prosrc,'UTF8')),'hex') END AS body_sha256,
-      coalesce(p.proconfig=ARRAY['search_path=pg_catalog'],false) AS fixed_path
+      coalesce(p.proconfig=ARRAY['search_path=pg_catalog'],false) AS fixed_path,
+      CASE WHEN p.proname IN ('validation_shape_valid','sha256_utf8') THEN
+        (NOT p.proretset AND NOT p.proleakproof AND p.prokind='f' AND p.pronargdefaults=0
+          AND ((p.proname='validation_shape_valid' AND p.provolatile='s' AND NOT p.proisstrict AND p.prorettype='boolean'::regtype AND p.prolang=(SELECT oid FROM pg_language WHERE lanname='plpgsql'))
+            OR(p.proname='sha256_utf8' AND p.provolatile='i' AND p.proisstrict AND p.prorettype='text'::regtype AND p.prolang=(SELECT oid FROM pg_language WHERE lanname='sql'))))
+        ELSE true END AS admission_attributes
     FROM unnest(${sql.array(Object.keys(validationHelpers))}::text[]) AS s(signature)
     LEFT JOIN pg_proc p ON p.oid=to_regprocedure(s.signature)`;
   if (
@@ -321,6 +327,7 @@ async function verifyValidationSchema(sql: postgres.Sql): Promise<void> {
         f.can_execute !== validationHelpers[f.signature] ||
         f.security_definer ||
         !f.fixed_path ||
+        f.admission_attributes !== true ||
         (validationAckFunctionHashes[f.signature] !== undefined &&
           validationAckFunctionHashes[f.signature] !== f.body_sha256),
     )
