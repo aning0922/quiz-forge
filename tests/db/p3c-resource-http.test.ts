@@ -50,7 +50,12 @@ async function command(action: "prepare" | "finish") {
         action,
         runId,
       ],
-      { cwd: process.cwd(), env: process.env, timeout: 30000, maxBuffer: 4096 },
+      {
+        cwd: process.cwd(),
+        env: process.env,
+        timeout: action === "prepare" ? 90000 : 30000,
+        maxBuffer: 4096,
+      },
     );
   } catch {
     throw Error("P3C_PRIVATE_FIXTURE_CHILD_FAILED");
@@ -85,7 +90,7 @@ beforeAll(async () => {
     },
     ["-e", "setInterval(()=>{},1000)"],
   );
-});
+}, 95_000);
 afterAll(async () => {
   if (owner) {
     const proof = await stopAndProveServerExit(owner);

@@ -39,3 +39,15 @@ owner竞态整改已独立提交949d932：同步占用cwd/instance/run身份后�
 新增test-only `p3c-native-control.ts`，仅对qualification严格等于synthetic-db-and-private-pixels-no-native的本批夹具生效。先核cwd/.cache/quizpack-media-runtime已存在祖先的真实目录、owner、无symlink与实际realpath；只有当前平台stateRoot的严格ENOENT返回not-provisioned。任何EACCES/ENOTDIR、悬空symlink或未知错误均拒绝。stateRoot存在则要求0700/owner/无symlink及原control0700/身份/空目录前后核验；缺control/非空/错误mode照常拒绝。cleanup在最初和删除前实际重复检查，返回明确 `{nativeControl:"not-provisioned"|"empty"}`；not-provisioned不称native通过。旧B2/B3及生产native检查未改，也不创建空control替代证据。
 
 无runtime检查新增11项实际隔离FS测试，包括全新根（连.cache都不存在且检查不创建它）、现存祖先、平台根出现后缺control、正常空control后变为非空、目录mode/文件、各层悬空symlink和未知qualification拒绝。FS读取单测另显式创建其自有私有测试base，避免依赖之前数据库初始化；不修改已有目录权限。
+
+ece2f0c 整改后复验：全仓format:check/lint/typecheck与117files/1478unit再次全部通过；owner5＋原生目录11＋真实PG锁3＋PG/FS直接HTTP7，共26项定向通过。完整普通PG的42files/382是上文e9adeec基线证据；没有把新增用例后的总数冒称已全量复跑。自有55421实例status再次确认为stopped。949d932/ece2f0c已分别交主控独审复核；最终集成CI、3100浏览器E2E及视觉/作者审核仍归主控，不在此声明通过。
+
+## 集成 E2E preauth 预算收口
+
+主控首次完整E2E旧222项通过，preview prepare在第二身份认证前失败。只读现场确认operator有1次login、read-only无login，创建时前60秒成功preauth已有20次；源码createPreauth的真实20/min限制与此吻合。自有a3109446dbab1b21d332c0e4879fc2c0/55421实际复现：真实B3 completed后先填窗口19次，旧prepare operator变第20次，read-only返回RATE_LIMITED，留下prepared=false/sources0/产品0。该失败现场已正常停库保留。configureImports没有全局blob物理扫描，此次失败尚未进入source/candidate/native构造，不删除该调用或调整suite顺序。
+
+新增test-only p3c-auth-budget，仅CLI prepare在首次写私有fixture前，只读真实DB等待旧成功preauth窗口清空且outstanding<100；原起点等待预算61s，DB只读事务statement2s/transaction5s，每次等待后重新查证。超预算、100未过期、事实错误或DB错误都有限失败；不会重试未知认证结果，不改20/min/100阈值、不删audit、不改时钟、不签发session。满足后仍执行真实createPreauth/login。普通preparePreviewFixture直接调用不等待；去掉未使用readOnly bootstrap login，保留readOnly actor/凭证，后续仍由浏览器实际登录。CLI prepare子进程timeout90s，finish原30s不变；本线PG资源测试beforeAll相应局部95s上限，fresh窗口不增加等待。主控/B另同步其prepare helper90s，finish原值不变。
+
+自有新purpose=test实例5d36d9c030da693aa10d6e7c4919b09b/55421真实验证：B3完成＋窗口19后，修复CLI prepare耗时60407ms，prepared=true/source2；readOnly bootstrap login0，随后首个真实readOnly preauth/login成功，当前窗口2；成功preauth历史总数19→21，旧B3私有fixture hash未变。没有把等待当认证成功，没有browser/Next声明。成功与失败复现现场均保留并正常停止；root aab现场未改。
+
+新增7项gate边界覆盖fresh立即通过、整窗等待后重新观察、并发新增请求再观察、100 outstanding超过一窗有限拒绝、原deadline不重置、非法事实/非test拒绝及DB查询耗时计入预算。
