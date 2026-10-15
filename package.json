@@ -31,7 +31,12 @@
     "p2a:db": "node --conditions=react-server --import tsx scripts/p2a-db.ts",
     "p2a:operator": "node --conditions=react-server --import tsx scripts/p2a-operator.ts",
     "p2a:db:ci": "node --conditions=react-server --import tsx scripts/p2a-db-ci.ts",
-    "test:driver": "node --conditions=react-server --import tsx scripts/test-postgres-disconnect.ts"
+    "test:driver": "node --conditions=react-server --import tsx scripts/test-postgres-disconnect.ts",
+    "media:build": "TSX_TSCONFIG_PATH=./tsconfig.json node --conditions=react-server --import tsx scripts/quizpack-media-build.ts",
+    "media:provision": "TSX_TSCONFIG_PATH=./tsconfig.json node --conditions=react-server --import tsx scripts/quizpack-media-preflight/shared/provision-cli.ts",
+    "media:fixture": "TSX_TSCONFIG_PATH=./tsconfig.json node --conditions=react-server --import tsx scripts/quizpack-media-next-fixture.ts",
+    "media:setup:macos": "TSX_TSCONFIG_PATH=./tsconfig.json node --conditions=react-server --import tsx scripts/quizpack-media-preflight/macos/setup.ts",
+    "media:setup:linux": "TSX_TSCONFIG_PATH=./tsconfig.json node --conditions=react-server --import tsx scripts/quizpack-media-preflight/linux/setup.mjs"
   },
   "dependencies": {
     "@radix-ui/react-slot": "1.4.0",

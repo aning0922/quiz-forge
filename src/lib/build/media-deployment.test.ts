@@ -53,8 +53,13 @@ async function fixture(
     }
     for (const name of [
       "src/lib/foundation-json.ts",
+      "src/lib/assessment-contract/primitives.ts",
+      "src/lib/assessment-contract/scoring-v1.ts",
+      "src/lib/json/canonical.ts",
+      "src/features/quizpack/content/reference-graph.ts",
       "src/lib/build/media-deployment.ts",
       "pnpm-lock.yaml",
+      "tsconfig.json",
       "next.config.ts",
     ])
       await put(root, name);
@@ -628,6 +633,18 @@ describe("trusted media deployment binding", () => {
       );
       expect(data.dependencyRoots.zod).toContain("node_modules/.pnpm/zod@");
       expect(data.artifactFiles.some((f) => f.path === "BUILD_ID")).toBe(true);
+      for (const required of [
+        "src/lib/assessment-contract/primitives.ts",
+        "src/lib/assessment-contract/scoring-v1.ts",
+        "src/lib/json/canonical.ts",
+        "src/features/quizpack/content/reference-graph.ts",
+        "tsconfig.json",
+      ])
+        expect(
+          data.sourceFiles.some(
+            (file) => file.path === required && file.role === "source",
+          ),
+        ).toBe(true);
       expect(
         [...data.sourceFiles, ...data.artifactFiles].some((f) =>
           f.path.includes("deployment.json"),
@@ -659,6 +676,11 @@ describe("trusted media deployment binding", () => {
 
   it.each([
     "src/features/quizpack/v1/entry.ts",
+    "src/lib/assessment-contract/primitives.ts",
+    "src/lib/assessment-contract/scoring-v1.ts",
+    "src/lib/json/canonical.ts",
+    "src/features/quizpack/content/reference-graph.ts",
+    "tsconfig.json",
     ".next/server/probe.js",
     "node_modules/.pnpm/zod@4.6.5/node_modules/zod/index.cjs",
     "node_modules/.pnpm/buffer-crc32@1.0.0/node_modules/buffer-crc32/index.cjs",

@@ -57,6 +57,8 @@
 
 ## 测试与视觉验收
 
+- 当前媒体离线入口必须从受管仓库根使用固定package scripts：`pnpm --silent media:build --main`、`media:provision --runtime-target=main`、`media:setup:macos --runtime-target=main`，fixture/Linux使用相应`media:fixture`、`media:setup:linux`。这些入口在tsx loader启动前固定根tsconfig；不得继承其他项目的TSX_TSCONFIG_PATH。旧验收中的raw node命令仅为历史记录，不是当前支持入口。矩阵子进程再次固定绝对配置路径，原停止协议不变。
+
 - 阶段交付执行 `pnpm format:check`、`pnpm lint`、`pnpm typecheck`、`pnpm test`、`pnpm build`、`pnpm test:e2e`；报告实际结果和失败原因。
 - E2E 使用生产构建与独占端口 3100，不复用未知服务器；初次运行 `pnpm test:e2e:install`。
 - 单元测试关注边界与失败行为，不为低影响格式变更添加镜像测试。
