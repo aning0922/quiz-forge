@@ -22,10 +22,13 @@ export type {
 export { copyCandidateResourceBytes } from "./private-candidate";
 export {
   strictP1ReportSchema,
+  strictSupportedReportSchema,
   sealP1Report,
+  sealSupportedReport,
   serializeSealedReport,
   EVIDENCE_LIMITS,
   REPORT_SCHEMA_HASH,
+  SUPPORTED_REPORT_SCHEMA_HASH,
 } from "./report";
 export {
   PERSISTENCE_UNICODE_POLICY_HASH,
