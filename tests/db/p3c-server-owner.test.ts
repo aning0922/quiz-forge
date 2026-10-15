@@ -1,6 +1,7 @@
+import * as net from "node:net";
 import { createServer } from "node:net";
 import { randomUUID } from "node:crypto";
-import { expect, it } from "vitest";
+import { expect, it, vi } from "vitest";
 import {
   launchOwnedPreviewNodeProcess,
   assertPreviewServerRunning,
@@ -9,6 +10,10 @@ import {
   type ServerExitProof,
   type OwnedPreviewServer,
 } from "../support/p3c-server-owner";
+vi.mock("node:net", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("node:net")>();
+  return { ...actual, createServer: vi.fn(actual.createServer) };
+});
 const cwd = process.cwd();
 async function freePort() {
   return new Promise<number>((resolve, reject) => {
@@ -83,4 +88,98 @@ it("a still-owned grandchild is terminated before the parent's proof is valid", 
     const proof = await stopAndProveServerExit(owner);
     assertServerExitProof(proof, identity);
   }
+});
+it("concurrent same-identity real launches issue only one owner and one exit authority", async () => {
+  const identity = { cwd, instanceId: "c".repeat(32), runId: randomUUID() };
+  const options = {
+    ...identity,
+    port: await freePort(),
+    runtimeConfigPath: cwd + "/.cache/unused-private-runtime.json",
+  };
+  const args = ["-e", "setInterval(()=>{},1000)"];
+  const otherPort = await freePort();
+  // Delay actual port-probe close so both callers reach the original await window.
+  // Neither a child lifecycle nor a successful close/proof is mocked.
+  const create = vi.mocked(net.createServer).getMockImplementation()!;
+  const pending: (() => void)[] = [];
+  const timers: ReturnType<typeof setTimeout>[] = [];
+  const probe = vi
+    .spyOn(net, "createServer")
+    .mockImplementation((...args: Parameters<typeof net.createServer>) => {
+      const server = create(...args),
+        close = server.close.bind(server);
+      vi.spyOn(server, "close").mockImplementation((callback) => {
+        let done = false;
+        const finish = () => {
+          if (done) return;
+          done = true;
+          close(callback);
+        };
+        pending.push(finish);
+        timers.push(setTimeout(finish, 200));
+        if (pending.length === 2) pending.forEach((f) => f());
+        return server;
+      });
+      return server;
+    });
+  let results: PromiseSettledResult<OwnedPreviewServer>[];
+  try {
+    results = await Promise.allSettled([
+      launchOwnedPreviewNodeProcess(options, args),
+      launchOwnedPreviewNodeProcess({ ...options, port: otherPort }, args),
+    ]);
+  } finally {
+    probe.mockRestore();
+    timers.forEach(clearTimeout);
+    pending.forEach((f) => f());
+  }
+
+  const owned = results.flatMap((result) =>
+    result.status === "fulfilled" ? [result.value] : [],
+  );
+  try {
+    expect(owned).toHaveLength(1);
+    expect(
+      results.filter((result) => result.status === "rejected"),
+    ).toHaveLength(1);
+    assertPreviewServerRunning(owned[0]!);
+    const proof = await stopAndProveServerExit(owned[0]!);
+    assertServerExitProof(proof, identity);
+    await expect(launchOwnedPreviewNodeProcess(options, args)).rejects.toThrow(
+      "PREVIEW_SERVER_EXIT_UNPROVEN",
+    );
+  } finally {
+    // Also stop both children if this assertion ever regresses to the original race.
+    await Promise.all(owned.map((child) => stopAndProveServerExit(child)));
+  }
+});
+it("failed real port acquisition retires its identity instead of allowing a later reuse", async () => {
+  const port = await freePort(),
+    server = createServer();
+  await new Promise<void>((resolve, reject) => {
+    server.once("error", reject);
+    server.listen(port, "127.0.0.1", resolve);
+  });
+  const options = {
+    cwd,
+    instanceId: "d".repeat(32),
+    runId: randomUUID(),
+    port,
+    runtimeConfigPath: cwd + "/.cache/unused-private-runtime.json",
+  };
+  try {
+    await expect(
+      launchOwnedPreviewNodeProcess(options, [
+        "-e",
+        "setInterval(()=>{},1000)",
+      ]),
+    ).rejects.toThrow("PREVIEW_SERVER_EXIT_UNPROVEN");
+  } finally {
+    await new Promise<void>((resolve, reject) =>
+      server.close((e) => (e ? reject(e) : resolve())),
+    );
+  }
+  await expect(
+    launchOwnedPreviewNodeProcess(options, ["-e", "setInterval(()=>{},1000)"]),
+  ).rejects.toThrow("PREVIEW_SERVER_EXIT_UNPROVEN");
 });
