@@ -22,6 +22,27 @@ export async function prepareP3cSource(
       JSON.stringify(productId),
     ),
   ) as typeof original;
+  // These are only positive-preview display labels. Scoring refs, vectors and targets stay intact.
+  const resultNames = new Map([
+    ["low", "合成低"],
+    ["middle", "合成中"],
+    ["high", "合成高"],
+  ]);
+  const dimensionNames = new Map([
+    ["pace", "节奏"],
+    ["focus", "专注"],
+  ]);
+  const requiredName = (names: ReadonlyMap<string, string>, id: string) => {
+    const name = names.get(id);
+    if (!name) throw Error("P3C_SYNTHETIC_DISPLAY_REFERENCE_REQUIRED");
+    return name;
+  };
+  for (const result of content.results)
+    result.label = requiredName(resultNames, result.id);
+  for (const card of content.reportPresentation.resultCards)
+    card.displayName = requiredName(resultNames, card.resultRef.id);
+  for (const dimension of content.dimensions)
+    dimension.label = requiredName(dimensionNames, dimension.id);
   const pixels = await createSyntheticFixture(engine);
   let assetFiles = [
     ...pixels.assets,

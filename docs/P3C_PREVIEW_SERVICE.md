@@ -51,3 +51,13 @@ ece2f0c 整改后复验：全仓format:check/lint/typecheck与117files/1478unit�
 自有新purpose=test实例5d36d9c030da693aa10d6e7c4919b09b/55421真实验证：B3完成＋窗口19后，修复CLI prepare耗时60407ms，prepared=true/source2；readOnly bootstrap login0，随后首个真实readOnly preauth/login成功，当前窗口2；成功preauth历史总数19→21，旧B3私有fixture hash未变。没有把等待当认证成功，没有browser/Next声明。成功与失败复现现场均保留并正常停止；root aab现场未改。
 
 新增7项gate边界覆盖fresh立即通过、整窗等待后重新观察、并发新增请求再观察、100 outstanding超过一窗有限拒绝、原deadline不重置、非法事实/非test拒绝及DB查询耗时计入预算。
+
+## 第三轮20图独立视觉检查与正例海报夹具
+
+A作为非UI实现方逐张原尺寸检查主控备份的preview-cover/question/resume/result/report各320/375/390/430，共20图。图像宽度与文件名一致；高度cover1459/1364/1380/1339、question1568/1514/1530/1448、resume1244/1149/1165/1095、result1540/1403/1419/1378、report2268/2107/2123/2051。明确可见问题为question四宽“素材待审”badge压住章名“入馆”，已交B处理。其余16张未见可见裁切、遮挡或底部按钮越界；报告四宽显示完整摘要、两维0.0、优势/张力、反思、免责声明和底部导航。P3排版细节：resume375/390“选择”的“择”孤行，result320“非正式报告”的“告”孤行，均未丢字。合成像素仅作测试素材，不构成人像或正式内容批准。本轮没有poster四图与真实PNG，不能写24图/PNG验收通过；后续修正必须重新截图检查。
+
+主控/B纯复现确认实际P3C正例中的Synthetic low/middle/high与Synthetic pace/focus超既定海报人物名12/维度名8码点容量。仅在prepareP3cSource内把结果显示label和resultCard.displayName改为“合成低/合成中/合成高”，维度显示名改为“节奏/专注”；不改共享旧content fixture、引用、贡献、rules/targets、报告基线、运行时限额或正式内容。
+
+新增p3c-poster-fixture纯测试直接调用真实prepareP3cSource的run专属像素路径，走真实preparePreviewContent/scorePreview两引擎全部六witness；全部poster ready。原始共享content仍保留长英文标签，修改前后完整实际评分snapshot逐项相等，完整question/rules/result非label字段、dimension非label字段与baseline均一致。测试读取最终共享descriptor指向的真实font/characters文件并核SHA，验证全部实际poster文本及固定“内部预览／待审／非正式报告”字形在受控覆盖表中。此为DTO/受控覆盖验证，不代替实际measureText、PNG和浏览器像素审查。
+
+本树依赖同步6992d3c/cf19490仅复制root536e8fe已批准的1.0.1字体/descriptor/generator及其audit依赖stylesheet，不能当作A新字体/UI开发重复集成。实际新增海报纯测试2项覆盖6witness、descriptor audit2项、类型/变更lint/format/diff通过；未启动数据库、服务、浏览器或native隔离任务。
