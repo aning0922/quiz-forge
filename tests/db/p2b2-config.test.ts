@@ -218,17 +218,19 @@ it("current enable switch requires 0012 migration receipt; missing receipt prese
       db.admin.sql<{ version: string; checksum: string; applied_at: string }[]>`
       SELECT version,checksum,applied_at::text FROM qf_meta.schema_migrations ORDER BY version`,
   );
-  const required = history.at(-1);
-  if (required?.version !== "0012_validation_file_stop_ack")
-    throw new Error("TEST_VALIDATION_MIGRATION_REQUIRED");
+  const requiredIndex = history.findIndex(
+    (entry) => entry.version === "0012_validation_file_stop_ack",
+  );
+  if (requiredIndex < 0) throw new Error("TEST_VALIDATION_MIGRATION_REQUIRED");
+  const suffix = history.slice(requiredIndex);
   const runtimeBefore = await readFile(file("runtime.json"));
-  // Current management admission requires 0012. Remove only its latest marker,
-  // leaving a valid history prefix; do not replay older migrations over B2 tables
+  // Current management admission requires 0012. Remove its marker and the newer
+  // suffix, leaving a valid history prefix; do not replay migrations over tables
   // or replace the import lease guard used by subsequent permission tests.
   await safeTestOperation(
     () =>
       db.admin
-        .sql`DELETE FROM qf_meta.schema_migrations WHERE version=${required.version}`,
+        .sql`DELETE FROM qf_meta.schema_migrations WHERE version=ANY(${db.admin.sql.array(suffix.map((entry) => entry.version))}::text[])`,
   );
   try {
     await expect(configureImports(db.config.instanceId, true)).rejects.toThrow(
@@ -243,11 +245,12 @@ it("current enable switch requires 0012 migration receipt; missing receipt prese
   } finally {
     // Preserve checksum and timestamp, including PostgreSQL microseconds. The
     // text cast prevents the driver from serializing this value as a JS Date.
-    await safeTestOperation(
-      () => db.admin
-        .sql`INSERT INTO qf_meta.schema_migrations(version,checksum,applied_at)
+    for (const required of suffix)
+      await safeTestOperation(
+        () => db.admin
+          .sql`INSERT INTO qf_meta.schema_migrations(version,checksum,applied_at)
         VALUES(${required.version},${required.checksum},${required.applied_at}::text::timestamptz)`,
-    );
+      );
   }
   expect(await migrateDatabase(db.admin.sql, db.config)).toEqual([]);
   expect(
