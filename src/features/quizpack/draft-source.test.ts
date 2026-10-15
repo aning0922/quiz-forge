@@ -261,3 +261,66 @@ it("uses a distinct freshness error and never disguises an actual SQL transport 
     failure,
   );
 });
+it.each(["protocol", "validation", "attempt", "fence", "owner", "media"])(
+  "rejects a released attempt with a mismatched %s ACK before reading assets",
+  async (kind) => {
+    const f = await sourceFixture();
+    const attempts = JSON.parse(f.row.attempts_text);
+    const proof = attempts[0].fileStopProof;
+    if (kind === "protocol") proof.protocol = "candidate-receipt.v0";
+    if (kind === "validation") proof.validationId = randomUUID();
+    if (kind === "attempt") proof.attemptId = randomUUID();
+    if (kind === "fence") proof.fence += 1;
+    if (kind === "owner") proof.ownerNonce = "b".repeat(43);
+    if (kind === "media") proof.mediaStopped = "not-started";
+    f.row.attempts_text = canonicalP1Json(attempts);
+    await expect(
+      readReadyDraftSource(f.tx, f.scope, f.expected),
+    ).rejects.toMatchObject({ code: "DRAFT_SOURCE_INVALID" });
+    expect(f.query).toHaveBeenCalledTimes(2);
+  },
+);
+it.each(["nul", "high-surrogate", "low-surrogate"])(
+  "rejects canonical, correctly hashed content containing %s without repairing it",
+  async (kind) => {
+    const f = await sourceFixture();
+    const content = JSON.parse(f.row.canonical_content_text);
+    content.product.title =
+      "Synthetic " +
+      (kind === "nul"
+        ? String.fromCharCode(0)
+        : kind === "high-surrogate"
+          ? String.fromCharCode(0xd800)
+          : String.fromCharCode(0xdc00));
+    f.row.canonical_content_text = canonicalP1Json(content);
+    f.row.canonical_content_sha256 = hash(f.row.canonical_content_text);
+    f.row.candidate_sha256 = computeCandidateSha256({
+      archiveSha256: f.row.archive_sha256,
+      identitySha256: f.row.identity_sha256,
+      canonicalManifestSha256: f.row.canonical_manifest_sha256,
+      canonicalContentSha256: f.row.canonical_content_sha256,
+      assetSetSha256: f.row.asset_set_sha256,
+    });
+    f.expected.expectedCandidateSha256 = f.row.candidate_sha256;
+    await expect(
+      readReadyDraftSource(f.tx, f.scope, f.expected),
+    ).rejects.toMatchObject({ code: "DRAFT_SOURCE_INVALID" });
+    expect(f.query).toHaveBeenCalledTimes(2);
+  },
+);
+it.each([2, 3])(
+  "preserves SQL transport failure from source query %s instead of reporting bad content",
+  async (queryNumber) => {
+    const f = await sourceFixture();
+    const failure = Object.assign(new Error("SYNTHETIC_TRANSPORT"), {
+      code: "08006",
+    });
+    f.query.mockReset().mockResolvedValueOnce([f.original]);
+    if (queryNumber === 3) f.query.mockResolvedValueOnce([f.row]);
+    f.query.mockRejectedValueOnce(failure);
+    await expect(readReadyDraftSource(f.tx, f.scope, f.expected)).rejects.toBe(
+      failure,
+    );
+    expect(f.query).toHaveBeenCalledTimes(queryNumber);
+  },
+);

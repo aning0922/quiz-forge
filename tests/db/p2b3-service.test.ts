@@ -209,6 +209,31 @@ describe("B3 first-draft actual PostgreSQL service", () => {
       audits: 1,
     });
   });
+  it("another currently authorized operator replays the exact original creator and receipt", async () => {
+    const first = await apply();
+    const other = await authenticateTestOperator(db);
+    expect(other.id).not.toBe(auth.id);
+    const replay = await safe(() =>
+      service.applyReadyValidation(
+        db.app,
+        other.credentials,
+        source.scope,
+        source.input,
+      ),
+    );
+    expect(replay.created).toBe(false);
+    expect(replay.application.createdBy).toBe(auth.id);
+    expect(
+      canonicalP1Json(replay.application) ===
+        canonicalP1Json(first.application),
+    ).toBe(true);
+    expect(await counts()).toEqual({
+      drafts: 1,
+      revisions: 1,
+      applications: 1,
+      audits: 1,
+    });
+  });
   it("accepts complete alias assets whose original validation differs", async () => {
     const alias = await seedReadyP2b3Source(db, auth, prepared, {
       createProduct: false,
@@ -454,5 +479,41 @@ describe("B3 first-draft actual PostgreSQL service", () => {
         target: { kind: "new-draft" },
       }),
     );
+  });
+  it("preserves Unicode and escaped text byte-for-byte without replacing Product directory metadata", async () => {
+    const title = '合成标题 🧪 e\u0301 "引号" \\ 路径';
+    const preparedUnicode = await prepareP2b3Source(`b3-${randomUUID()}`, {
+      transformContent(content) {
+        content.product.title = title;
+        content.questions[0]!.prompt = "合成首行\n第二行\t制表";
+      },
+    });
+    const ready = await seedReadyP2b3Source(db, auth, preparedUnicode);
+    const result = await apply(db.app, ready.input, ready.scope);
+    const body = await safe(() =>
+      service.readDraftRevision(
+        db.app,
+        auth.session.raw,
+        ready.scope.productId,
+        result.application.draftId,
+        1,
+      ),
+    );
+    expect(
+      body.canonicalContentText ===
+        preparedUnicode.candidate.facts.canonicalContentText,
+    ).toBe(true);
+    expect(JSON.parse(body.canonicalContentText).product.title === title).toBe(
+      true,
+    );
+    const [product] = await safe(
+      () =>
+        db.app.sql<{ title: string; metadata_revision: number }[]>`
+        SELECT title,metadata_revision FROM qf.product WHERE id=${ready.scope.productId}`,
+    );
+    expect(product).toEqual({
+      title: "B3 synthetic SQL product",
+      metadata_revision: 1,
+    });
   });
 });
