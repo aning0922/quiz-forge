@@ -40,11 +40,12 @@ afterAll(async () => {
     await db.close();
   }
 });
-it("real 0010 → enum-only 0011 → 0012 upgrade preserves historical nine-field controls without granting ACK or retry", async () => {
+it("real 0010 → 0011 → 0012 → 0013 → 0014 upgrade preserves historical controls without granting ACK or retry", async () => {
   // Dedicated no-file synthetic instance only. Never rewind a production or shared migration history.
   await resetDomainDatabase(db);
   const definitions = await readMigrations();
-  expect(definitions.at(-1)!.version).toBe("0012_validation_file_stop_ack");
+  expect(definitions[11]!.version).toBe("0012_validation_file_stop_ack");
+  expect(definitions.at(-1)!.version).toBe("0014_product_first_draft");
   await safe(() => db.admin.sql`DROP SCHEMA qf CASCADE`);
   await safe(() => db.admin.sql`DROP SCHEMA qf_meta CASCADE`);
   try {
@@ -108,6 +109,14 @@ it("real 0010 → enum-only 0011 → 0012 upgrade preserves historical nine-fiel
         `qf_owner_${db.config.instanceId}`,
       ),
     );
+    for (const count of [12, 13]) {
+      await safe(() =>
+        migrateDatabase(db.admin.sql, db.config, definitions.slice(0, count)),
+      );
+      await expect(createDatabase(db.config)).rejects.toThrow(
+        "STUDIO_UNAVAILABLE",
+      );
+    }
     await safe(() => migrateDatabase(db.admin.sql, db.config, definitions));
     const app = await safe(() => createDatabase(db.config));
     await app.close();
