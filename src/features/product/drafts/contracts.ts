@@ -107,8 +107,8 @@ const snapshotShape = {
   canonicalManifestSha256: sha256Schema,
   candidateSha256: sha256Schema,
   containerSchemaVersion: z.literal("quizpack.v1"),
-  contentSchemaVersion: z.literal("quizpack-content.v1"),
-  contentKind: z.literal("synthetic"),
+  contentSchemaVersion: z.enum(["quizpack-content.v1", "quizpack-content.v2"]),
+  contentKind: z.enum(["synthetic", "authored"]),
   packId: packIdSchema,
   packVersion: packVersionSchema,
   versions: draftVersionsSchema,
@@ -118,7 +118,15 @@ const snapshotShape = {
   platformApproval: z.literal("unverified"),
   publishable: z.literal(false),
 };
-export const draftSummarySchema = z.strictObject(snapshotShape);
+const matchesComponentVersion = (value: {
+  contentSchemaVersion: string;
+  versions: { componentVersion: string };
+}) =>
+  value.versions.componentVersion ===
+  (value.contentSchemaVersion === "quizpack-content.v1" ? "1.0.0" : "2.0.0");
+export const draftSummarySchema = z
+  .strictObject(snapshotShape)
+  .refine(matchesComponentVersion);
 export const draftApplicationDtoSchema = z
   .strictObject({
     ...snapshotShape,
@@ -128,6 +136,7 @@ export const draftApplicationDtoSchema = z
     fingerprint: sha256Schema,
     target: draftTargetSchema,
   })
+  .refine(matchesComponentVersion)
   .refine((value) => value.expectedCandidateSha256 === value.candidateSha256);
 export const applyDraftResultSchema = z.strictObject({
   created: z.boolean(),

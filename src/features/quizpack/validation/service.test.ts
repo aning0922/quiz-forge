@@ -3,7 +3,7 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import type { P2aDatabase } from "@/lib/db/client";
 import { StudioError } from "@/lib/http-security/errors";
 import { canonicalP1Json } from "../v1/canonical";
-import { runtimeIdentity } from "../server/validation/identity";
+import { supportedRuntimeIdentity } from "../server/validation/identity";
 import {
   createMediaOperationContext,
   disposeMediaOperationContext,
@@ -100,13 +100,16 @@ import {
 } from "./repository";
 import type { ArchiveOperation } from "./operation";
 import type { ValidationAttempt, ValidationRow } from "./repository";
-import { sealP1Report, P1_UNVERIFIED } from "../server/validation/report";
+import {
+  sealSupportedReport,
+  P1_UNVERIFIED,
+} from "../server/validation/report";
 import { VALIDATION_RESERVATION_BYTES } from "./limits";
 import { ARCHIVE_POLICY_VERSION, archivePolicySha256 } from "./policy";
 const productId = "synthetic-dimensions",
   importId = randomUUID(),
   hash = "a".repeat(64);
-const identity = runtimeIdentity({
+const identity = supportedRuntimeIdentity({
   schema: "quizpack-media-runtime-binding.v1",
   platform: "darwin-arm64",
   componentId: hash,
@@ -389,6 +392,9 @@ function claimedRow(): ValidationRow {
     archive_bytes: 10,
     archive_sha256: hash,
     identity_sha256: identity.identitySha256,
+    identity_text: canonicalP1Json(identity),
+    archive_policy_version: ARCHIVE_POLICY_VERSION,
+    archive_policy_sha256: archivePolicySha256,
     evidence_text: null,
     asset_set_text: null,
     last_error_code: null,
@@ -630,11 +636,11 @@ function candidateResult(accepted = false) {
     evidence: {
       ...evidence,
       policy: { status: "passed" },
-      report: sealP1Report({
-        schemaVersion: "quizpack-validation.v1",
+      report: sealSupportedReport({
+        schemaVersion: "quizpack-validation.v2",
         targetProductId: productId,
-        validatorVersion: "1.0.0",
-        policyId: "quizpack-local-p1.v1",
+        validatorVersion: "2.0.0",
+        policyId: "quizpack-local-supported.v1",
         archiveSha256: hash,
         manifestSha256: hash,
         contentSha256: hash,

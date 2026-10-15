@@ -96,6 +96,7 @@ export const validationDtoSchema = z
     validationKey: validationKeySchema,
     stateRevision: revisionSchema,
     status: validationStatusSchema,
+    readOnly: z.boolean(),
     storageCondition: storageConditionSchema,
     lastErrorCode: validationErrorCodeSchema.nullable(),
     attemptCount: z.number().int().min(1).max(MAX_ATTEMPTS),

@@ -5,17 +5,17 @@ import type postgres from "postgres";
 import { StudioError } from "@/lib/http-security/errors";
 import { importIdSchema } from "./import/contracts";
 import { canonicalP1Json } from "./v1/canonical";
-import {
-  quizPackManifestSchema,
-  packIdSchema,
-  sha256Schema,
-} from "./v1/manifest";
-import { quizPackContentSchema } from "./v1/content";
+import { packIdSchema, sha256Schema } from "./v1/manifest";
+import { supportedManifestSchema } from "./package/manifest";
+import { parseSupportedContent } from "./content/supported";
+import { SUPPORTED_COMPATIBILITY_POLICY } from "./package/compatibility";
+import { validationIdentitySchema } from "./server/validation/contracts";
 import { assertPersistenceUnicode } from "./server/validation/unicode";
 import { computeCandidateSha256 } from "./server/validation/candidate-hash";
 import {
   ARCHIVE_POLICY_VERSION,
   archivePolicySha256,
+  matchesSupportedArchiveIdentity,
 } from "./validation/policy";
 import {
   assetSetLedgerSchema,
@@ -56,6 +56,7 @@ type SourceValidationRow = Pick<
   | "archive_sha256"
   | "archive_bytes"
   | "identity_sha256"
+  | "identity_text"
   | "archive_policy_version"
   | "archive_policy_sha256"
   | "canonical_manifest_text"
@@ -103,8 +104,8 @@ export type ReadyDraftSource = Readonly<{
   canonicalManifestSha256: string;
   candidateSha256: string;
   containerSchemaVersion: "quizpack.v1";
-  contentSchemaVersion: "quizpack-content.v1";
-  contentKind: "synthetic";
+  contentSchemaVersion: "quizpack-content.v1" | "quizpack-content.v2";
+  contentKind: "synthetic" | "authored";
   packId: string;
   packVersion: string;
   resourceCount: number;
@@ -176,10 +177,21 @@ function inspectSource(
     row.archive_policy_version !== ARCHIVE_POLICY_VERSION ||
     row.archive_policy_sha256 !== archivePolicySha256 ||
     row.container_schema_version !== "quizpack.v1" ||
-    row.content_schema_version !== "quizpack-content.v1" ||
-    row.content_kind !== "synthetic" ||
     original.actual_archive_sha256 !== row.archive_sha256 ||
     original.actual_archive_bytes !== row.archive_bytes
+  )
+    return invalid();
+  const identity = validationIdentitySchema.parse(
+    JSON.parse(row.identity_text),
+  );
+  if (
+    !matchesSupportedArchiveIdentity(
+      row.archive_policy_version,
+      row.archive_policy_sha256,
+      identity,
+    ) ||
+    identity.identitySha256 !== row.identity_sha256 ||
+    canonicalP1Json(identity) !== row.identity_text
   )
     return invalid();
   if (row.candidate_sha256 === null) return invalid();
@@ -207,14 +219,17 @@ function inspectSource(
     row.canonical_manifest_text,
     row.canonical_manifest_sha256,
     524_288,
-    quizPackManifestSchema,
+    supportedManifestSchema,
     "manifest",
   );
   const content = canonical(
     row.canonical_content_text,
     row.canonical_content_sha256,
     2_097_152,
-    quizPackContentSchema,
+    z.unknown().transform((input) => {
+      const parsed = parseSupportedContent(input);
+      return parsed.ok ? parsed.value : invalid();
+    }),
   );
   const assets = canonical(
     row.asset_set_text,
@@ -226,7 +241,7 @@ function inspectSource(
     manifest.productId !== scope.productId ||
     content.product.productId !== scope.productId ||
     assets.productId !== scope.productId ||
-    content.kind !== "synthetic" ||
+    content.kind !== row.content_kind ||
     manifest.packId !== row.pack_id ||
     manifest.packVersion !== row.pack_version ||
     content.schemaVersion !== row.content_schema_version ||
@@ -234,6 +249,30 @@ function inspectSource(
     canonicalP1Json(manifest.engine) !== canonicalP1Json(content.engine) ||
     content.resources.length !== row.resource_count ||
     assets.resources.length !== row.resource_count
+  )
+    return invalid();
+  const profile = SUPPORTED_COMPATIBILITY_POLICY.profiles.find(
+    (p) => p.contentSchemaVersion === content.schemaVersion,
+  );
+  if (
+    !profile ||
+    content.componentVersion !== profile.componentVersion ||
+    manifest.components.length !== 6 ||
+    Object.entries(profile.states).some(([state, id]) => {
+      const component =
+        content.layouts[state as keyof typeof content.layouts].component;
+      return (
+        component.id !== id ||
+        component.version !== profile.componentVersion ||
+        component.propsSchemaVersion !== profile.propsSchemaVersion ||
+        manifest.components.filter(
+          (c) =>
+            c.id === id &&
+            c.version === profile.componentVersion &&
+            c.propsSchemaVersion === profile.propsSchemaVersion,
+        ).length !== 1
+      );
+    })
   )
     return invalid();
   const resources = [...content.resources].sort((a, b) =>
@@ -293,7 +332,7 @@ export async function readReadyDraftSource(
   if (!original) return invalid();
   const [row] = await tx<
     SourceValidationRow[]
-  >`SELECT id,product_id,import_id,state_revision,status,storage_condition,reserved_bytes,lease_until,attempts_text,archive_sha256,archive_bytes,identity_sha256,archive_policy_version,archive_policy_sha256,canonical_manifest_text,canonical_manifest_sha256,canonical_content_text,canonical_content_sha256,asset_set_text,asset_set_sha256,candidate_sha256,container_schema_version,content_schema_version,content_kind,pack_id,pack_version,resource_count,identity_kind,ready_at FROM qf.quizpack_validation WHERE product_id=${scope.productId} AND import_id=${scope.sourceImportId} AND id=${scope.sourceValidationId} FOR UPDATE`;
+  >`SELECT id,product_id,import_id,state_revision,status,storage_condition,reserved_bytes,lease_until,attempts_text,archive_sha256,archive_bytes,identity_sha256,identity_text,archive_policy_version,archive_policy_sha256,canonical_manifest_text,canonical_manifest_sha256,canonical_content_text,canonical_content_sha256,asset_set_text,asset_set_sha256,candidate_sha256,container_schema_version,content_schema_version,content_kind,pack_id,pack_version,resource_count,identity_kind,ready_at FROM qf.quizpack_validation WHERE product_id=${scope.productId} AND import_id=${scope.sourceImportId} AND id=${scope.sourceValidationId} FOR UPDATE`;
   if (!row) return invalid();
   let inspected: ReturnType<typeof inspectSource>;
   try {
@@ -348,8 +387,8 @@ export async function readReadyDraftSource(
     canonicalManifestSha256: row.canonical_manifest_sha256!,
     candidateSha256: row.candidate_sha256!,
     containerSchemaVersion: "quizpack.v1",
-    contentSchemaVersion: "quizpack-content.v1",
-    contentKind: "synthetic",
+    contentSchemaVersion: content.schemaVersion,
+    contentKind: content.kind,
     packId: row.pack_id!,
     packVersion: row.pack_version!,
     resourceCount: resources.length,
