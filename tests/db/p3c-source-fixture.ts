@@ -1,3 +1,4 @@
+import sharp from "sharp";
 import { createHash, randomUUID } from "node:crypto";
 import { prepareP2b3Source } from "./p2b3-fixture";
 import { createContentV2Fixture } from "@/features/quizpack/content/fixtures.test-support";
@@ -11,6 +12,7 @@ import { issuePrivateCandidate } from "@/features/quizpack/server/validation/pri
 export async function prepareP3cSource(
   productId: string,
   engine: "dimensions" | "archetype" = "archetype",
+  uniqueRun?: string,
 ) {
   const base = await prepareP2b3Source(productId, { engine });
   const original = await createContentV2Fixture(engine);
@@ -20,6 +22,34 @@ export async function prepareP3cSource(
       JSON.stringify(productId),
     ),
   ) as typeof original;
+  const pixels = await createSyntheticFixture(engine);
+  let assetFiles = [
+    ...pixels.assets,
+    { path: "assets/neutral-scene.png", bytes: pixels.assets[0]!.bytes },
+  ];
+  if (uniqueRun) {
+    assetFiles = [];
+    for (const [i, r] of content.resources.entries()) {
+      const seed = createHash("sha256")
+        .update(uniqueRun + engine + String(i))
+        .digest();
+      const raw = Buffer.alloc(48 * 48 * 3);
+      for (let n = 0; n < raw.length; n++)
+        raw[n] = (seed[n % 32]! + n * 13 + Math.floor(n / 48)) % 256;
+      const bytes = await sharp(raw, {
+        raw: { width: 48, height: 48, channels: 3 },
+      })
+        .png()
+        .toBuffer();
+      r.path = `assets/${r.id}.png`;
+      r.mediaType = "image/png";
+      r.width = 48;
+      r.height = 48;
+      r.bytes = bytes.length;
+      r.sha256 = createHash("sha256").update(bytes).digest("hex");
+      assetFiles.push({ path: r.path, bytes });
+    }
+  }
   const contentText = canonicalP1Json(content);
   const sha = (s: string | Uint8Array) =>
     createHash("sha256").update(s).digest("hex");
@@ -56,28 +86,35 @@ export async function prepareP3cSource(
         manifestSha256: sha(manifestText),
         contentSha256: sha(contentText),
       }),
-      media: [
-        ...evidence.media,
-        {
-          ...evidence.media[0]!,
-          resourceIndex: content.resources.length - 1,
-          result: { ...evidence.media[0]!.result, runId: randomUUID() },
+      media: content.resources.map((r, resourceIndex) => ({
+        resourceIndex,
+        result: {
+          outcome: "decoded" as const,
+          runId: randomUUID(),
+          profileId: "a".repeat(64),
+          stopped: "confirmed" as const,
+          facts: {
+            mediaType: r.mediaType,
+            width: r.width,
+            height: r.height,
+            frames: 1,
+            mediaDecoded: true,
+          },
         },
-      ],
+      })),
     },
   });
-  const pixels = await createSyntheticFixture(engine);
   const files = new Map<string, Uint8Array>([
     ["manifest.json", Buffer.from(manifestText)],
     ["content.json", Buffer.from(contentText)],
-    ...pixels.assets.map((a) => [a.path, a.bytes] as const),
-    ["assets/neutral-scene.png", pixels.assets[0]!.bytes],
+    ...assetFiles.map((a) => [a.path, a.bytes] as const),
   ]);
   if (result.outcome !== "accepted")
     throw Error("P3C_SYNTHETIC_CANDIDATE_REQUIRED");
   const facts = issuePrivateCandidate(result, files).facts;
   return {
     ...base,
+    assetFiles,
     result,
     candidate: {
       facts,
