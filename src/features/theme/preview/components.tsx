@@ -99,7 +99,7 @@ export function QuestionView({
     >
       <aside className={styles.questionScene}>
         {media}
-        <div className={styles.sceneCaption}>
+        <div className={styles.sceneCaption} data-preview-scene-caption>
           <span>{section.chapter}</span>
           <h2>{section.name}</h2>
           <p>{section.introduction}</p>
@@ -213,7 +213,11 @@ export function ResumeView({
         {entry.questions.map((q, i) => (
           <li key={q.id}>
             <button className={styles.secondary} onClick={() => onQuestion(i)}>
-              第 {i + 1} 题 · {answers[q.id] ? "已选择" : "未选择"}
+              <span className={styles.keepPhrase}>第 {i + 1} 题</span>
+              {" · "}
+              <span className={styles.keepPhrase}>
+                {answers[q.id] ? "已选择" : "未选择"}
+              </span>
             </button>
           </li>
         ))}
@@ -256,7 +260,13 @@ export function ResultView({
         </h1>
         <p className={styles.subtitle}>{reveal.result.subtitle}</p>
         <p className={styles.prose}>{p.body}</p>
-        <p className={styles.note}>确定性计算 · 临时预览 · 非正式报告</p>
+        <p className={styles.note}>
+          <span className={styles.keepPhrase}>确定性计算</span>
+          {" · "}
+          <span className={styles.keepPhrase}>临时预览</span>
+          {" · "}
+          <span className={styles.keepPhrase}>非正式报告</span>
+        </p>
         <div className={styles.actions}>
           <button className={styles.goldButton} onClick={onReport}>
             展开报告

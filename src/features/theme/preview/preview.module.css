@@ -136,24 +136,28 @@
 }
 .questionScene {
   position: relative;
+  display: flex;
+  flex-direction: column;
   min-height: 200px;
   background: #142f2e;
   color: #f3ebdd;
 }
 .questionScene > div:first-child {
   height: 220px;
-  opacity: 0.65;
+  flex: 0 0 220px;
 }
 .questionScene img {
+  position: absolute;
+  inset: 0;
   height: 100%;
   width: 100%;
   object-fit: cover;
+  opacity: 0.65;
 }
 .sceneCaption {
-  position: relative;
+  flex: 0 0 auto;
   padding: 20px 24px;
-  background: linear-gradient(transparent, #142f2e);
-  margin-top: -65px;
+  background: #142f2e;
 }
 .sceneCaption h2 {
   margin: 6px 0;
@@ -246,6 +250,10 @@
 }
 .questionList button {
   width: 100%;
+}
+.keepPhrase {
+  display: inline-block;
+  white-space: nowrap;
 }
 .cabinet {
   background: #142f2e;
@@ -414,14 +422,11 @@
     grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
   }
   .questionScene > div:first-child {
-    height: 100%;
-    min-height: 650px;
+    height: auto;
+    min-height: 420px;
+    flex: 1;
   }
   .sceneCaption {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
     padding: 28px;
   }
   .questionBody {

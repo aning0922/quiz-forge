@@ -61,7 +61,7 @@ export function PreviewImage({
             height={asset.height}
             alt={asset.alt}
           />
-          <span className={styles.assetBadge}>
+          <span className={styles.assetBadge} data-preview-approval>
             {asset.approval === "pending" ? "素材待审" : "素材声明已批准"}
           </span>
         </>
