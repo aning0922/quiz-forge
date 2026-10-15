@@ -11,6 +11,7 @@ on:
       - "src/lib/assessment-contract/scoring-v1.ts"
       - "src/lib/json/canonical.ts"
       - "src/features/quizpack/content/reference-graph.ts"
+      - "src/features/quizpack/package/**"
       - "tsconfig.json"
       - "package.json"
       - "scripts/quizpack-media-build.ts"

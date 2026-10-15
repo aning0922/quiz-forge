@@ -1,3 +1,4 @@
+import { REPORT_SCHEMA_HASH } from "../../src/features/quizpack/server/validation/report";
 import { lstat, readdir } from "node:fs/promises";
 import path from "node:path";
 import { importsDirectory } from "@/features/quizpack/import/storage";
@@ -127,7 +128,7 @@ export async function domainFixture(db: TestDatabase, prefix = false) {
     persistencePolicyVersion: "quizpack-persistence-policy.v1",
     persistencePolicyHash: "a".repeat(64),
     reportSchemaVersion: "quizpack-validation.v1",
-    reportSchemaHash: "a".repeat(64),
+    reportSchemaHash: REPORT_SCHEMA_HASH,
     runtime: {
       schema: "quizpack-media-runtime-binding.v1",
       platform: "darwin-arm64",
