@@ -62,3 +62,9 @@ per-Product pending 仅统计当前 policy version/hash 精确匹配的原 pendi
 整改及上述依赖后的本地实际结果：普通全 PG 37 文件/355 项；定向元数据/历史/容量/升级 11 项；完整单测 108 文件/1363 项；typecheck、format:check、lint、build/BUILD_TRACE_OK 均通过。新的 purpose=test fresh-service 实例 89c45e9f486d189a67fd13249319cf31 跑 14 项通过，新的独立 fresh media-UNKNOWN 实例 f1e5b9609f16cd900ce851312c4d3a75 跑 3 项通过；两者均已停止，原 tuple/文件/held reservations 保留。普通实例及此前 UNKNOWN 实例也保持停止，没有复用 UNKNOWN 库。
 
 本流仍不将有限媒体 stub 视为隔离媒体证明，不占 3100/3111，不代替主控最终集成/driver/浏览器证据。后续交主控的提交仅包含本段记录、service 五资源断言与实际 PG 探针。
+
+## 最终 CI 历史夹具 purpose 兼容修复
+
+历史夹具先前只接受 purpose=test，错误拒绝已有的真实隔离 CI profile。仅将 historicalTransaction 白名单扩为 test/ci，与 openTestDatabase 一致；demo 仍在关闭连接、读取迁移或进入 owner 事务前拒绝。未修改 runtime/manifest/marker/mode、数据库角色/版本/端点、迁移与原有所有权校验，也未重标 CI 配置。
+
+本地自有 55421 purpose=test：历史/升级两文件 9 项通过，含新增 demo 拒绝与原受管连接仍可用断言；typecheck、两文件定向 ESLint/格式与 diff 检查通过，自有实例已停止。实际 purpose=ci 运行等待主控重跑远端 CI，不用本地 test 成功冒充 CI 通过。

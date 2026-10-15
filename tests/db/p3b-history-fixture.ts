@@ -24,7 +24,8 @@ export async function historicalTransaction<T>(
   db: TestDatabase,
   work: (tx: postgres.TransactionSql) => Promise<T>,
 ): Promise<T> {
-  if (db.config.purpose !== "test") throw Error("P3B_PURPOSE_TEST_REQUIRED");
+  if (db.config.purpose !== "test" && db.config.purpose !== "ci")
+    throw Error("P3B_PURPOSE_TEST_REQUIRED");
   const migrations = await readMigrations();
   const old = migrations
     .filter((m) => m.version < "0015")
