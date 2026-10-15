@@ -1,5 +1,9 @@
 # 阶段进度
 
+## P3-C 固定修订预览合同冻结
+
+从P3-B交付59a83e0接续codex/fixed-revision-preview，前一交付head普通38789883159与媒体38789883025均success。[PREVIEW_P3C](PREVIEW_P3C.md)经两实现线预研和Astra独审冻结，精确来源/权限、同revision答案竞态、有限私有资源与真实退出清理、六状态白名单及海报容量均明确。先共享DTO和真实字体descriptor，再两线实施；尚无P3-C预览实现或验收。
+
 ## 2026-10-16 P3-B 技术验收完成
 
 最终运行c419aa6、测试修订afaa43e：完整包content.v1/v2×synthetic/authored四组合、可信候选/私有归档与首稿revision1已完成；旧历史只读、原成功key与跨策略canonical归属保留。1363单元、355本地PG及增量、356最终远端PG、46driver、fresh服务14/UNKNOWN3、222生产E2E/10旧skip、零warning build、main与fixture各66×3封存、32张四宽图均通过。准确head普通CI38788800066及媒体38788800035实际success；Astra确认无剩余P1/P2。详见[P3B_ACCEPTANCE](P3B_ACCEPTANCE.md)、[REVIEW](P3B_REVIEW.md)、[VISUAL_CHECK](P3B_VISUAL_CHECK.md)。

@@ -1,5 +1,9 @@
 # QuizForge 托管开发
 
+## P3-C 固定修订预览合同冻结
+
+从P3-B交付59a83e0接续codex/fixed-revision-preview，前一交付head普通38789883159与媒体38789883025均success。[PREVIEW_P3C](PREVIEW_P3C.md)经两实现线预研和Astra独审冻结，精确来源/权限、同revision答案竞态、有限私有资源与真实退出清理、六状态白名单及海报容量均明确。先共享DTO和真实字体descriptor，再两线实施；尚无P3-C预览实现或验收。
+
 ## P3-B 技术退出与P3-C准备
 
 运行c419aa6、最终测试afaa43e通过完整技术出口；详见[P3B_ACCEPTANCE](P3B_ACCEPTANCE.md)。远端普通38788800066与媒体38788800035均实际success，Astra无剩余P1/P2，32图已逐张检查。两实现聊天本批提交均集成，原分支与工作树保留；主控已清理最终浏览器夹具并停自有实例。

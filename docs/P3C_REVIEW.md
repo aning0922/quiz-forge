@@ -1,0 +1,9 @@
+# P3-C 合同与共享底座审查
+
+日期2026-10-16。基线P3-B交付59a83e01f2a99a834a7349ced713ba5fed55b93c，其普通38789883159与媒体38789883025均实际success；运行实现及技术验收分别见P3B_ACCEPTANCE。新分支codex/fixed-revision-preview，主控接续原两条独立Sol/high与Astra/high聊天。
+
+两线只读预研核实：import read的writeCredentials会要求import:create，临时评分须studio:read加独立来源/CSRF；固定revision读取不能重判当前归档策略资格；合法asset alias保留首来源；私有blob读取需真实共享锁及实际任务/FD生命周期，清理只在自有server真实退出后。界面不能复用旧固定李白/分数/年代或不存在的字段，海报明确完整1–4维容量与缺字失败。
+
+Astra两轮草案意见补齐同revision内requestId/答案快照/导出代次，以及最小DTO不是对授权运营员保密的权限含义。正式合同进一步冻结封套预算、响应正文全程持槽、真实close/进程组退出的私有清理proof。最终独审确认可进入共享底座，无架构阻断；productId UUID笔误按现有受限字符串Schema纠正。
+
+[PREVIEW_P3C](PREVIEW_P3C.md)是冻结设计，不是实现证据。主控接续严格机器DTO/错误/预算、纯registry接口、真实字体/覆盖descriptor及边界测试，之后两线实施。不用占位hash联调，不将旧演示或Schema通过当六状态真实预览。
