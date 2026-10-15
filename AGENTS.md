@@ -7,7 +7,7 @@
 - 2026-10-15 作者明确恢复 QuizForge 托管开发，由新主控接续历史人物首款 P5 端到端内测；常规开发、测试、独立审查、整改、提交推送及 Draft PR 自行推进，内容、素材与发布批准保留人工闸门。继续下文 Sol/high 实施、Astra/high 独审和最多两条实现流的方式。恢复基线为 B2-2B 本地 `fb02afc`，不回退到旧 D1 工作树，不恢复无关项目。仓库 public 的独立授权已执行；它不批准素材商用、main 合并、生产迁移、部署或商业发布。
 - 2026-10-12 作者明确扩大托管范围：按已确认路线推进至 P5 首款端到端内测，在必要人工决策点暂停。下方“仅F1/后续另行授权”属于历史边界，由本条覆盖；P1–P5 的常规工程、测试、审查整改、独立提交/推送和Draft PR由总控连续推进，无需重复阶段启动确认。P6+、恢复旧D1-D聊天、自动合并main、生产迁移/部署/商业发布不在本次范围。
 - 托管目标、进度、依赖、并行所有权和人工闸门见 `docs/MANAGED_DEVELOPMENT.md`。普通开发聊天使用 GPT-6.1 Sol/high，架构决策和独立审查使用 GPT-6 Astra/high；总体架构与集成仍由当前总控负责。
-- F1、P1、P2-A技术验收已完成，PR #6/#7/#8保持Draft；P2-B1也已技术验收，PR #9保持Draft；B2-1原包接收与独立媒体隔离可行性也已技术验收，PR #10/#11保持Draft；准确证据见P2B2_RECEIVE_ACCEPTANCE.md与MEDIA_ISOLATION_ACCEPTANCE.md。B2-2A可信桥接已技术验收，PR #12保持Draft；接续B2-2B归档后台，合同为STUDIO_P2B2B.md与B2B_VALIDATION_ADAPTERS.md，旧STORAGE_PROPOSAL为历史；B2-3草稿仍为后续批次；P1从已审核且CI成功的 `efe29e63839597dde557b791d03885e675c660ba` 建独立工作树，不改F1原交付或旧暂停成果。依赖未合并时采用堆叠分支/PR，不能冒称已进入main。
+- F1、P1、P2-A技术验收已完成，PR #6/#7/#8保持Draft；P2-B1也已技术验收，PR #9保持Draft；B2-1原包接收与独立媒体隔离可行性也已技术验收，PR #10/#11保持Draft；准确证据见P2B2_RECEIVE_ACCEPTANCE.md与MEDIA_ISOLATION_ACCEPTANCE.md。B2-2A可信桥接与B2-2B归档后台均已技术验收，PR #12/#13保持Draft，见P2B2A_ACCEPTANCE.md与P2B2B_ACCEPTANCE.md；接续B2-3首个持久草稿。旧STORAGE_PROPOSAL为历史；P1从已审核且CI成功的 `efe29e63839597dde557b791d03885e675c660ba` 建独立工作树，不改F1原交付或旧暂停成果。依赖未合并时采用堆叠分支/PR，不能冒称已进入main。
 
 - 2026-10-11 作者明确授权当前聊天接管：先更新前后台架构、数据模型、测评资源归属与开发路线，再实现第一批「测评与资源版本底座」F1；其他 QuizForge 开发聊天及其子代理暂停，保留分支、worktree、未提交成果，未经用户恢复不继续。
 - F1 范围与验收以 `docs/FOUNDATION_F1.md` 为准：Product 即独立测评工作区；运行时结构合同、资源归属与引用检查、草稿 revision/内容哈希纯逻辑、三结果合成参考包、JSON 校验入口与失败边界测试。先文档后代码，完成六项工程检查、审查、提交推送及面向 main 的 Draft PR 后停止供阶段验收。

@@ -178,6 +178,10 @@ async function mobileChecks(page: Page, testInfo: TestInfo, state: string) {
       if (box) expect(box.height).toBeGreaterThanOrEqual(44);
     }
     // Only synthetic status pages after the credential field has disappeared.
+    // Capture from the top: Chromium fullPage capture from a scrolled viewport
+    // can paint an off-screen fixed skip link inside the stitched page image.
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
     await page.screenshot({
       path: testInfo.outputPath(`validations-${state}-${width}.png`),
       fullPage: true,

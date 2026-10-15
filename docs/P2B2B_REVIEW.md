@@ -112,3 +112,17 @@ f17db3b→rootbfbce3c仅把三处实际业务结果等待设为75秒（test仍12
 7217808→rootcc4d27d修helper actual owner连接与完整audit目标预核，root16合同+13维护纯测试通过；原Astra窄复验进行中。shared同进程fixture预审另发现初始absence不能证明attempt为本invocation所有，其他原请求晚claim可能被replay补marker；S正改为观测实际claim/retry的原requestDb、nonce及attempt，不增加生产observer。
 
 Astra在01a12e8f-c67d-7ba1-ac4e-a09a66e57282允许tests-only marker观察原service settled（fulfilled/rejected），因为业务响应UNKNOWN不等于实际执行仍在继续；但必须原DB.close成功、所有原acquire/close/drain及相关任务真正结束且无迟到工作、当前原attempt真实ACK/candidate/exactcontrols匹配，freshsnapshot连接也关闭。后续replay不能补原证明；缺ACK或stop unconfirmed仍拒，前述949a失败不符合。该条是夹具合同判断，尚待新实现及真实PG验收。
+
+### 2026-10-15 恢复后的独立复验
+
+新主控从 `fb02afc` 接续。A 实现、Astra 独立审查并由 root 集成：原请求观察器在原 DB close 失败时仍排空 acquire/close；最后排空后再核 deadline 和 UNKNOWN；精确 marker 绑定 instance、Product、import、key、revision 和 controls。实际清理只接受原 ACK、候选回执、准确资源和审计归属，不能由 replay 或 owner 退出补 validation 停止权威。root 集成提交为 `2fb6c99`、`7ef1b54`、`68d8b00`、`70fd4cc`、`2d3b68d`，相关登记问题经独立复验关闭。夹具比较改为内部 canonical 比较后只断言布尔值，避免凭据出现在 assertion diff。
+
+B 的实际服务数据库测试分为 validation 和 media-unknown 两个独立新实例套件：10 与 3 项分别通过。仅媒体运行绑定及隔离图像执行使用有限桩，验证引擎、候选恢复、ZIP、实际私有文件、repository 和事务照常执行；不把它们当真实 HTTP/媒体验收。COMMIT 响应丢失场景是在实际 COMMIT 后注入方法边界错误，不能冒称真实网络断开。无 ACK 的 UNKNOWN 保留原配额及现场，两个套件分别停止实例，不交给通用 reset。对应集成 `a520191`，共享套件/CI 隔离为 `deec8a8`。
+
+普通 DB 回归发现旧 reset 未覆盖新表 FK、扫描 namespace 和旧迁移夹具污染。`deec8a8` 在任何文件删除前确认新归档表为空，并拒绝所有非 imports namespace；不使用 CASCADE。`abee7de` 将配额用例纳入根目录计数，迁移用例改为最新 0012 收据并精确保留时间戳，之后确认历史不变及重复 migrate 无操作。独立复验通过；曾失败的自有实例均停止并保留。
+
+最新两项 tests-only 修复：`fa7bcd4` 在 StorageLock 内读取实时配置、核实例身份与两种 config guard，并在首个文件删除前再次核 disabled，旧 parent 快照不再授权或阻断清理；A 实际 PG/FS 覆盖 stale true/live false 与反向拒绝，40 项定向通过。`8b21ddf` 用真实自有 child 的 next/cancel IPC 屏障替代 50ms 猜测，严格断言 RECEIVE_TIMEOUT、held、无 receipt 及活 owner 不可恢复，排空并正常退出后才使用 receive 既有 ownerExited 恢复；移除了手工 writeStopped。B fresh boundaries 12/12 通过。Astra 对两提交分别独立窄审，无剩余 P1/P2；不代替 root 最终全量和浏览器验收。
+
+`abee7de` 的 GitHub 普通检查 job 与 Linux 媒体工作流实际成功；数据库 job 297/298，唯一失败是上述 50ms 用例提前落在 claim 写 UNKNOWN。原失败保留，不记为全 CI 通过。`8b21ddf` 已推送，远端重新运行；本地格式/lint/类型及 82 文件 1060 单元通过，fresh 全量 DB、驱动和生产浏览器仍在执行中。
+
+最终 `8b21ddf` fresh 普通298、驱动46、生产E2E214（10既有跳过、新增8全部通过）均完成；GitHub普通38720516687的checks/database、Linux媒体38720516815均实际success，专项10+3在独立库运行成功。24图实际检查发现ready四图受Chromium滚动位置的fullPage固定元素捕获伪影影响；同CSS最小复现确认未聚焦top=-100元素在scrollY1300时被画入整页，从顶部捕获消失。仅tests加入scrollTo0+poll，不改CSS/焦点/业务，独立窄审通过；fresh真实ready另1项通过并重拍四宽，主控逐张确认无遮挡。跨进程受审helper在两个自有Next退出后均精确cleanup成功，随后stop数据库。技术验收和限制汇总见 [P2B2B_ACCEPTANCE](P2B2B_ACCEPTANCE.md)，本批无剩余已登记P1/P2。
