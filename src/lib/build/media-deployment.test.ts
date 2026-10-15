@@ -44,6 +44,8 @@ async function fixture(
     await mkdir(root, { mode: 0o700 });
     for (const directory of [
       "src/features/quizpack/v1",
+      "src/features/quizpack/package",
+      "src/features/quizpack/content",
       "src/features/quizpack/server/media",
       "src/features/quizpack/server/validation",
     ]) {

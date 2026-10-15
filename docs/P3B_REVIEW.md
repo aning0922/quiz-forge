@@ -21,3 +21,7 @@ archive当前导出切至已核v3 descriptor，显式legacyArchivePolicy*保留�
 B的M1 0edb581曾因{...execution}丢失原型方法/this并提前读取getter产生P2，主控未集成该中间版本。B修复09b7731逐hook延迟转发，6新增回归由失败变通过、旧基线6差分和305定向/1347全unit通过；Astra独立20hook/package与原三复现一致后关闭P2。M1可按0edb581+09b7731集成，跳过共享副本c315f1e；桥接另派。
 
 当前archive导出切换后再次104文件1327单元通过；15PG及实际旧/新开库探针再次通过。旧v2 descriptor另以legacyArchivePolicy*保留，新默认的descriptor/hash仍是此前独审的同一v3值。
+
+CLI/源码绑定准备已独审通过：root真实子进程四组合build/check、错版本/参数/无覆盖及Schema隔离5项，旧CLI/IO/清单77项通过；完整107文件1352单元、format/lint/type通过。Astra独立6文件99项，包含将提交后中断注入接到supported文件入口，原成功收据、取消/清理警告不丢失；默认stdout与v1 ZIP字节相同。main/fixture纳入package/content目录，独立遍历当前58个实际运行源码依赖无清单遗漏；最终bridge变化后仍须重新build/bind/封存。操作入口见P3B_TOOLCHAIN。
+
+M1实际集成为3f3ddaa，hook修复227d5bb；A/B已接root493598f，分别推进数据/历史与可信桥接。原99与类型修复后0e503两个root测试实例均停止保留；未运行生产迁移或HTTP服务。P3-B仍未全阶段验收，首款P5尚未完成。
