@@ -1,3 +1,4 @@
+import { REPORT_SCHEMA_HASH } from "../../src/features/quizpack/server/validation/report";
 import { createHash, randomUUID } from "node:crypto";
 import { canonicalP1Json } from "@/features/quizpack/v1/canonical";
 import { createSyntheticFixture } from "@/features/quizpack/v1/fixtures/synthetic";
@@ -93,7 +94,7 @@ export async function prepareP2b3Source(
     persistencePolicyVersion: "quizpack-persistence-policy.v1",
     persistencePolicyHash: "a".repeat(64),
     reportSchemaVersion: "quizpack-validation.v1",
-    reportSchemaHash: "a".repeat(64),
+    reportSchemaHash: REPORT_SCHEMA_HASH,
     runtime: {
       schema: "quizpack-media-runtime-binding.v1",
       platform: "darwin-arm64",

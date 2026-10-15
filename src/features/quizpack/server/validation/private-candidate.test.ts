@@ -1,3 +1,4 @@
+import { REPORT_SCHEMA_HASH } from "./report";
 import { randomUUID } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import { buildQuizPack } from "../../v1/build";
@@ -40,7 +41,7 @@ describe("same-source private candidate issuance", () => {
       persistencePolicyVersion: "quizpack-persistence-policy.v1",
       persistencePolicyHash: hash,
       reportSchemaVersion: "quizpack-validation.v1",
-      reportSchemaHash: hash,
+      reportSchemaHash: REPORT_SCHEMA_HASH,
       runtime: {
         schema: "quizpack-media-runtime-binding.v1",
         platform: "darwin-arm64",
