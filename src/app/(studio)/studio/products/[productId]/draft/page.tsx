@@ -11,5 +11,11 @@ export default async function StudioDraftPage({
   if (state.status === "unavailable") return <StudioUnavailable />;
   if (state.status === "unauthenticated") redirect("/studio/login");
   const { productId } = await params;
-  return <DraftWorkspacePage key={productId} productId={productId} />;
+  return (
+    <DraftWorkspacePage
+      key={productId}
+      productId={productId}
+      session={state.session}
+    />
+  );
 }
