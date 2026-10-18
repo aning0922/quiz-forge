@@ -79,3 +79,7 @@ fca21ee（Ae08b78c）的SQL admission与早期factory observer独审无P1/P2：�
 实际consumer登记已包含修复后host/controller、access、组件、transport、PNG与server投影；root新三项登记测试和相关旧/new gate共20项通过，真实Chromium127输入bundle无server/DB/评分运行依赖，正确身份绑定2项、身份/映射/字体16变体全部拒绝，pageErrors0，browser/server实际关闭。74源文件+3构建输入+268锁记录由build入口核验，旧3descriptor/51源文件/280锁记录仍通过。正式登记独审待完成，不把编译availability当P4/P5授权或服务完成。
 
 本登记集成点主控完整171文件1827单元、format/lint/typecheck与implementation:check通过；[安全验证记录](qa/p4-consumer-implementation-check.json)。没有执行本集成点生产build/native/E2E，下一步接真实服务和路由后验收。
+
+登记在任何实际play创建前随动态到期P3修复de30ef5（Baa52f2b）重算：当前entry193b48c92352d731c9c2e41de05316471a2c46f58d8e2f2596995ee531d974a1，implementation fd08554ea34f107440856644901da300950745b9d31eb0fc09c941ba51bf51ab；原9a4147b/a77 checkpoint留在Git历史和安全记录，但未用于业务。root现无consumer业务库，A尚未接登记，B无DB，39eb仍17停库。新相关3文件20项及类型/implementation门禁通过，真实浏览器同样127输入/16拒绝且无server运行依赖。当前证据见 [登记补验](qa/p4-consumer-implementation-current.json)；原1827全量只归属于9a checkpoint。
+
+独审提醒host实参可为完整entry/report对象，组合层必须投影renderer/mapping/font三字段再调用严格resolver；不能把窄函数直接当宽对象回调。B接真实app时补实际host+registry正例，当前静态浏览器probe仅验证resolver，不冒充已接通host。24305c7（B1139c06）新增有界HTTP适配与request-owner注入，原7单元通过，真实app/owner服务接线及独审继续。

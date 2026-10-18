@@ -28,5 +28,7 @@
   "implementationCheck": true,
   "productionBuild": false,
   "productionE2e": false,
-  "independentRegistrationReview": "pending"
+  "independentRegistrationReview": "pending",
+  "codeCommit": "9a4147b8228f34d7ce8cb00204d9d9be46fc6691",
+  "historicalCheckpoint": true
 }

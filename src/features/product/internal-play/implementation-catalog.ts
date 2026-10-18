@@ -52,7 +52,7 @@ export const CONSUMER_IMPLEMENTATION_AVAILABILITY = freeze({
     id: "consumer-folio-cabinet",
     version: "1.0.0",
     entrySha256:
-      "a77bab743b5827545add2272c0d7626e8699148a790e56fb6f365b76330adf46",
+      "193b48c92352d731c9c2e41de05316471a2c46f58d8e2f2596995ee531d974a1",
   }),
 });
 export function findConsumerImplementationDescriptor(input: unknown) {
