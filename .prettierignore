@@ -8,3 +8,8 @@ playwright-report
 test-results
 coverage
 *.tsbuildinfo
+# Exact canonical test inputs: their byte hashes are part of the P3-E registration.
+tests/fixtures/p3e-baseline/content.json
+tests/fixtures/p3e-baseline/manifest.json
+tests/fixtures/p3e-baseline/asset-set.json
+tests/fixtures/p3e-baseline/synthetic-evidence.json
