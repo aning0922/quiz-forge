@@ -56,3 +56,11 @@ A提交b004596/0d20483，Astra独立核六列revision及九列review FK、100 sl
 独审发现P2：新增audit_target OR分支在target_kind或target_revision为NULL时CHECK结果为NULL，PostgreSQL接受。A在原隔离库实际复现两action各两字段共四例，事务回滚后零残留。64ace0d显式非空并将整个CHECK包IS TRUE，精确guard同步；保留停止旧checksum现场，在fresh实例验证四负例23514/audit_target、两正例成功，连同谱系升级/两guard/核心合计23PG通过。Astra读精确diff与实际结果确认P2关闭，三个commit可集成。该结论不包含A后续未提交服务或真实owner+FD/晚COMMIT故障测试。
 
 主控集成为1b446c5/b2f726b/1633f55后，另升级此前从P3-D真实建立的0016实例：14旧表、16迁移checksum及5blob在任何新认证写入前逐项保持一致，3修订谱系保留，原首次及两次追加key回执一致；双向旧新guard验证正确，未补造review/version。实例已停止保存，安全证据见[旧库升级](qa/p3e-legacy-upgrade.json)。不是用新代码重建0016代替原现场，也不是native/浏览器准入验收。
+
+## 精确实现与浏览器复验
+
+Astra对a589b00实际永久manifest/resolver/checker独审通过，无P1/P2。独审副本30专项及3descriptor/51文件/280record门禁通过，另用独立YAML读取逐边核140个snapshot及packages/importer对应无漏边；注入真正无关dependency/importer/lock条目仍通过。metadata留存与精确可执行选择、固定字体、私有引擎句柄及篡改拒绝符合当前边界。
+
+独审实际Chromium156.0.8078.4重导3合成/4人物海报，七图1080×1920且字节/SHA与主控完全一致，7URL释放/FontFace零回归；四人物均逐张查看，无裁切/重叠。bundle无Node/Studio/评分代码，无Buffer。测试harness首次私有文件相对路径错误改为已知绝对只读路径后通过，未改产品代码。此处不代表生产Next或数据库封存E2E通过。
+
+主控底座完整1612单元、lint、类型通过。完整451PG首次450通过、唯一失败是旧数据库表清单尚缺新两表；仅补精确预期后原文件41项全过，保留首次失败日志。46真实驱动场景通过。B新增客户端集成159项通过；服务/HTTP/后台、最终完整测试与媒体/E2E出口仍继续。
