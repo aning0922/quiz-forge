@@ -1,6 +1,6 @@
 # P3-E 客户端与原请求状态
 
-沿主控0491420机器合同，仅实现Studio客户端、响应读取、两独立pending桶、Product代次和显示状态选择。未接实际HTTP/页面路由，不提供占位成功服务。真实service/owner、数据库、受信baseline/renderer/engine registry、媒体和最终浏览器验收仍由各自所有者推进。
+沿主控0491420机器合同，实现Studio客户端、响应读取、两独立pending桶、Product代次、显示状态选择及HTTP适配层。HTTP接收实际owner依赖的service factory；尚未挂载实际路由/页面，不提供占位成功服务。真实service、数据库、媒体和最终浏览器验收仍由各自所有者推进。已同步受信baseline/renderer/engine registry与A的owner底座。
 
 client严格使用共享URL、response Schema、INTERNAL_VERSION_HTTP_STATUSES及async integrity。POST只发送冻结输入，resolve发送完整原binding；记录回执另核fingerprint和review事实SHA，封存回执核fingerprint，详情另核完整snapshotSHA。列表仅含metadata，按共享Schema拒绝错Product、重复/乱序，不截断或用列表推导清锚证明。错误只接受code/requestId，不接旧currentRevision；WRITE_OUTCOME_UNKNOWN仅在写请求中有含义。
 
@@ -16,4 +16,4 @@ InternalOperationEpoch只跟稳定Product和原request，不随可变详情读�
 
 view-state只选择服务器已有baseline/renderer/engine及精确当前head。来源/依赖字段变化、失败读取或字段相同的新读取对象都使未发送确认失效。seal另要求可靠同Product版本metadata容量读取；100不可删除slot已满时不恢复新准备，不能因清掉容量终态锚点而开放。作者既有批准的来源/日期与运营记录人/时间分开，synthetic-test明确非作者批准；历史版本来源与当前head分开，所有记录/封存均限内测且不授予对外发布资格。
 
-纯测试使用独立合成DTO和内存storage，覆盖异步指纹/事实/snapshot核验、原始响应字节边界、UNKNOWN、跨桶/gate、读写/回读失败、完整重放、成功及永久证据显式清理、迟到代次/替换key、原key读不依赖详情、容量与批准显示语义。未启动数据库、3100、native或真实浏览器；后续HTTP只接A实际owner，finally统一closeIfNotTransferred，不自行关闭db或clock。
+纯测试使用独立合成DTO和内存storage，覆盖异步指纹/事实/snapshot核验、原始响应字节边界、UNKNOWN、跨桶/gate、读写/回读失败、完整重放、成功及永久证据显式清理、迟到代次/替换key、原key读不依赖详情、容量与批准显示语义。HTTP边界另用注入服务测试严格method/query/scope/CSRF、4KiB完整请求、201新建/200重放、解析与摘要失败、错误白名单和原连接/预算传递；这不是实际服务或数据库通过。HTTP按createProductInternalVersionService(owner)接口注入，owner持有原createStudioRequestBudget对象，record/seal传同一db/budget；读/resolve也创建owner但不调用runNew。finally统一closeIfNotTransferred；owner构造前失败才自行关闭db/clock。未启动数据库、3100、native或真实浏览器；实际factory路由接通与生产浏览器验证待后续提交。
