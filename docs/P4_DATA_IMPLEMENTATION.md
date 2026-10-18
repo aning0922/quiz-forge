@@ -62,3 +62,5 @@ fixture 中一次检查发现存储空目录路径遗漏 `uploads`，在提交�
 实际结果：7项core、1项真实17升级、1项旧16升级分别通过；namespace测试配置前置适配后，namespace4+core7+17升级1合计12项再次通过。格式、TypeScript、lint通过。普通完整PG第一轮发现旧表清单/授权修复预期，第二轮59文件/484断言通过、namespace4项beforeAll跳过，整体失败：旧suite短暂设置 `imports.enabled=true`。namespace现仅移除此非必要开关前置；重建schema仍要求标记验证、purpose=test/ci、22表全空且预算仅1行、实际uploads目录为空。完整回归待重跑最终结果，不能把484通过当488通过。
 
 开发过程的初次timestamp类型假设、原23503预期、整图比较解析差异及一次RETURNING复合行限定语法错误均已修正；有实际partial graph的过程实例停止保留，不复用重置。此笔没有实现grant轮转服务、8格SQL owner、业务HTTP服务或真实首款链路，仍待后续实现与独审。
+
+后续完整回归又实际暴露namespace与普通fixture隔离：旧认证suite留下6条合成audit行，namespace的严格空库证明在DROP前拒绝（230通过/1失败后bail）。这些行未被namespace清理，实例停止保留。该组四项现在使用独立 `vitest.p4-namespace.config.ts` 和新鲜marker-verified空实例，不再混在普通 `vitest.db.config.ts`；不降低空行/无文件证明、不借reset清除前suite行。独立命令为 `pnpm exec vitest run --config vitest.p4-namespace.config.ts`，应由CI在另一个新隔离service执行。新自有实例该4项通过；普通PG回归仍待最终结果。实例隔离修订不影响runtime gate或任何migration字节。
