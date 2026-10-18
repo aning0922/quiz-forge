@@ -16,3 +16,11 @@
 - pnpm typecheck 与数据范围ESLint通过。
 
 限制：以上候选使用明确的合成无文件archive/media证据，不是native媒体验收或正式内容批准；真实0015旧库升级由主控持有的已停实例单独验证。浏览器专用P3D夹具、完整PG/driver、六项工程检查、生产E2E/视觉、远端CI与独审仍待后续集成，不能把核心批当阶段完成。没有操作主控55423旧库、3100、native或生产环境。
+
+## 独审整改：反向账本闭合
+
+Astra 在核心批后用真实应用角色复现 P2：合法的 append application 可以单独提交而没有对应 revision。原 guard 和 47 项回归未覆盖这一反向关系，不能据此宣称原版本已经封闭。0016 增加 application(Product/draft/revision/id) → revision(Product/draft/revision/application_id) 的精确 DEFERRABLE INITIALLY DEFERRED 外键，与原 revision → application 的来源绑定外键构成双向闭合。开库 facts 增为102约束，并核该FK四个内部触发器。新增真实 app-only 提交23503回滚及同tuple随后正常追加测试；原 first/append、owner 单事务完整删除继续覆盖。
+
+整改没有修改已应用收据：92e374ca339b3bb3a89488335d29a1b7已停止保留，另建fresh purpose=test 2e8cc98d8096bb81760a9634cdfe9b06（55421）实际迁移新字节。前述空推进测试曾错误期待23514，实际正确由FK返回23503；只修正测试期待，未放宽业务行为。
+
+整改后四文件48项真实PG全部通过（14.28秒），包含app-only反例、正常first/append、99→100及owner完整闭环删除；类型和定向lint通过。浏览器夹具仍独立开发，不混入本次DDL整改提交。
