@@ -9,3 +9,7 @@ pending.ts在运营浏览器CSPRNG生成32字节raw，按独立access-key域求d
 8项合成测试覆盖raw/digest、严格独立CSRF与API零raw、正确create状态和原binding、坏Product/cursor、bucket隔离、原文丢失、坏存储/回读/摘要、失权与替换保护。typecheck和定向lint通过。实际controller/复制下载前新鲜issuer核验、Studio路由与生产E2E仍待后续接入，不能把测试fixture当真实服务。
 
 公共共享3ff3d1d已正常merge至本支9dcef7a，冲突仅治理/阶段文档和root独占registry，均使用主控版本，原Studio客户端成果35cc40f保留。当前精确consumer entry为193b48c92352d731c9c2e41de05316471a2c46f58d8e2f2596995ee531d974a1；未创建真实play/Key。
+
+controller.ts已建立整页代次与单一原请求所有权，公开snapshot只含hasRaw等安全摘要，不含raw或访问链接。refresh/失权同步使旧task失效；prepare→完整回读→mark/readback→POST，UNKNOWN不开放第二次新发放，resolve/replay沿原binding。显式终态finish才清本地锚点，不改变服务器结果。复制/下载只在已核applied、原raw仍在时执行：先新鲜同issuer/operator会话，读精确当前Key（核原issue/issuedBy、无void、未过期或已完成），完整回读同秘密锚点，再次新鲜issuer确认后才把fragment链接交给显式expose回调；回调后仍核代次才能显示成功。
+
+控制器6项合成测试通过：零API raw/公开snapshot raw、复制前新鲜身份、UNKNOWN原样保留/重放、不同issuer/只读降权、坏本地保存零POST、失权迟到成功、原文丢失仅可resolve。所有网络client/pending/controller目前共14项通过，typecheck与定向lint通过。StudioUI/真实HTTP业务factory与生产闭环仍待接入；这些不是实际发放或权限事务验收。
