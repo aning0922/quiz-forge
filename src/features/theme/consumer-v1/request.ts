@@ -21,6 +21,27 @@ export const consumerAuthorityFailure = (error: unknown) =>
     "OPERATOR_REQUIRED",
   ].includes(error.code);
 export type ConsumerFetch = typeof fetch;
+/** Validate the original spelling and the browser's actual URL normalization. */
+export function consumerSameOriginPathV1(
+  input: string,
+  trustedOrigin: string,
+): boolean {
+  if (
+    !input.startsWith("/") ||
+    input.startsWith("//") ||
+    /[\\\x00-\x20\x7f#]/.test(input)
+  )
+    return false;
+  try {
+    const base = new URL(trustedOrigin),
+      parsed = new URL(input, base);
+    return (
+      parsed.origin === base.origin && !parsed.username && !parsed.password
+    );
+  } catch {
+    return false;
+  }
+}
 /** One browser deadline covers fetch, full stream and verification; no response/credential on errors. */
 export async function requestConsumerJson<T>(
   url: string,
@@ -56,7 +77,12 @@ export async function requestConsumerJson<T>(
   });
   const perform = async () => {
     check();
-    if (!/^\/(?!\/)[^\\\r\n]*$/.test(url) || url.includes("#"))
+    if (
+      !consumerSameOriginPathV1(
+        url,
+        typeof location === "undefined" ? "http://127.0.0.1" : location.origin,
+      )
+    )
       throw new ConsumerClientError("INVALID_REQUEST");
     const headers: Record<string, string> = {
       Accept: "application/json",
@@ -69,6 +95,7 @@ export async function requestConsumerJson<T>(
       method: options.method,
       headers,
       credentials: "same-origin",
+      mode: "same-origin",
       cache: "no-store",
       redirect: "error",
       signal: controller.signal,

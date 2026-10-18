@@ -68,3 +68,5 @@ Chromium156.0.8078.4实际通过：六状态×四宽24图；320长文案/缺素�
 5项合成单测通过：准备/回读、损坏/写入失败/错误hash、全session绑定与替换保护、ticket失效/伪造，以及异步回读期间失权不标发送/不删锚点；typecheck和定向lint通过。该记录是客户端恢复辅助，不授予服务器完成或评分权威。
 
 浏览器JSON网络入口request.ts/client.ts已实现严格session/entry/save/complete/report验证、原binding resolution核对和有限错误；15秒单一外层竞速覆盖fetch/流/验证，分块只占固定buffer，拒绝编码/坏UTF8/超限/深度及跨源或反斜线URL。权限错误回调供整页同步revoke，未记录凭证或错误原文。7项transport边界单测通过；真实controller和路由接入尚未完成，不把合成fetch当业务闭环。
+
+URL边界补验：原ASCII控制/空白及反斜线一律拒绝，随后以浏览器当前origin进行WHATWG URL解析核同源，fetch显式mode:same-origin。离线反例/\t/invalid.example/经URL归一化可变外域；当前零fetch拒绝，不接触外域。
