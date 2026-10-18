@@ -4,6 +4,8 @@
 
 ## 当前阶段与授权
 
+- 当前P3-E从P3-D a66c456接续codex/internal-version-seal（Draft PR #19）；共享显示及review/version机器合同已Astra前置审查冻结，见docs/INTERNAL_VERSION_P3E.md。B独占现预览解耦及之后HTTP/后台，A独占0017/事务/资源留存；主控单写机器接口、受信registry/实现身份与集成。首款精确规范产物已离线独审，未正式导入/审核/封存；新实际链路仍须工程验收。
+
 - 2026-10-18 P3-D已完成独立技术出口，准确运行/测试c1ca647；追加修订、真实0015→0016升级、235生产E2E、61图双线及双CI通过，Astra无剩余P1/P2。见docs/P3D_ACCEPTANCE.md。接续P3-E精确基线落账与内测版本封存，再接P4/P5；作者已批准的同一内容/视觉不重复请批，常规工程沿既定独立聊天方式继续。
 
 - 2026-10-18作者已确认“内容与视觉可作为内测基线”；精确内容/8图hash见docs/FIRST_PRODUCT_BASELINE.md及其JSON记录。该确认解除首款内测内容视觉等待，原2026-10-16 pending条目保留为历史；不批准商业权利、main合并、生产迁移、对外部署或发布。主控从922937f接续codex/draft-revisions，P3-D先冻结同Product追加不可变revision合同，两独立Sol/high实施、Astra/high独审继续；后续常规P4/P5工程沿既有授权推进，不重复请求阶段启动或同一基线批准。

@@ -27,6 +27,8 @@ describe("data-source capabilities", () => {
       "import:create",
       "review:submit",
       "review:return",
+      "review:record-baseline",
+      "version:seal-internal",
     ] as const) {
       expect(() =>
         requireCapability(actor("operator"), capability),

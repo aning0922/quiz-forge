@@ -10,7 +10,9 @@ export type StudioCapability =
   | "draft:write"
   | "import:create"
   | "review:submit"
-  | "review:return";
+  | "review:return"
+  | "review:record-baseline"
+  | "version:seal-internal";
 
 export type StudioActor = Readonly<{
   id: string;
@@ -39,6 +41,8 @@ export function requireCapability(
     "import:create",
     "review:submit",
     "review:return",
+    "review:record-baseline",
+    "version:seal-internal",
   ];
   if (
     actor[authenticatedActor] !== true ||

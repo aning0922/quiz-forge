@@ -1,5 +1,11 @@
 # 阶段进度
 
+## 2026-10-18 P3-E 共享合同与首款规范产物
+
+受管分支codex/internal-version-seal从P3-D交付a66c456接续，Draft PR #19堆叠于#18。共享显示合同b055c4b已通过127主控/128独审测试和浏览器打包，B开始已有预览解耦。审核/版本机器Schema及有限精确登记方案已通过前置独审，A接0017/事务/资源留存。浏览器canonical依赖P2已独立关闭；实际新DB/后台/端到端尚未完成。
+
+首款最终规范content70647B、asset-set2364B、manifest2121B已完成严格解析、引用、规范往返和四真实评分见证，Astra独立逐字段/来源/三hash复核通过；原始八图仍私有或沿已有仓库文件，未新增上传私有PNG，尚未制作ZIP或走真实导入。使用依据见[FIRST_PRODUCT_ASSET_PROVENANCE](FIRST_PRODUCT_ASSET_PROVENANCE.md)；具体合同和已完成审查见[INTERNAL_VERSION_P3E](INTERNAL_VERSION_P3E.md)、[P3E_REVIEW](P3E_REVIEW.md)。这仍不代表P4/P5完成或发布获批。
+
 ## 2026-10-18 P3-D 技术出口完成，接续精确审核与内测版本
 
 作者已确认首款12题、四报告、八图作为内测基线，见[FIRST_PRODUCT_BASELINE](FIRST_PRODUCT_BASELINE.md)。追加不可变修订P3-D最终运行/测试c1ca647完成技术验收：1560单元、本地完整431PG及49增量、最终远端433PG/14服务/3UNKNOWN、46驱动、235生产E2E及10旧skip、main媒体66×3封存、72trace/15075路径/0私有违规。61图由两开发聊天分别逐张复核，Astra无剩余P1/P2，普通39110069377与Linux媒体39110065866均准确head实际success。详见[P3D_ACCEPTANCE](P3D_ACCEPTANCE.md)、[REVIEW](P3D_REVIEW.md)、[VISUAL_CHECK](P3D_VISUAL_CHECK.md)和[QA](qa/p3d-integration-progress.json)。

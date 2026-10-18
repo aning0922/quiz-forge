@@ -1,6 +1,6 @@
 # P3-E 精确基线落账与内测版本封存
 
-承接P3-D交付a66c456及其独立验收；范围、锁/保留与永久核实方案及第十节共享显示合同已通过Astra前置审查；共享显示Schema可先实施，review/version账本机器Schema仍须先提交独审再交数据/UI实施。作者已批准历史人物12题、四报告、八图作为内测基线；不重复请求同一内容/视觉批准。本阶段将既有批准精确记录到实际草稿，并封存内部版本；没有公开发布指针、生产迁移、部署、商业发布或消费者完成能力。P4内部Key将显式固定已封存versionId/snapshotHash/internal-test用途。
+承接P3-D交付a66c456及其独立验收；范围、锁/保留与永久核实方案、第十节共享显示合同及review/version机器Schema已通过Astra前置审查，交两独立实现流。实际事务、DB迁移、资源生命周期、后台和完整E2E仍待实现验收。作者已批准历史人物12题、四报告、八图作为内测基线；不重复请求同一内容/视觉批准。本阶段将既有批准精确记录到实际草稿，并封存内部版本；没有公开发布指针、生产迁移、部署、商业发布或消费者完成能力。P4内部Key将显式固定已封存versionId/snapshotHash/internal-test用途。
 
 ## 一、批准与字段覆盖
 
@@ -46,15 +46,15 @@ review与version的新引用写入均参加同一存储维护锁协议：初始�
 
 先冻结准确机器Schema、错误、registry/投影字段分类与资源预算，再两独立实现流：A迁移/约束/服务/资源保留与PG，B后台/HTTP/pending/流程/E2E；主控共享接口/受信profile/依赖描述/总验收，Astra独审。退出需真实旧库升级、逐字段映射变异、并发/幂等/UNKNOWN/权限/FS收口及外部引用保护、六项工程检查、生产浏览器四宽、媒体部署新绑定与准确CI。所有结果按真实证据记录，不用人工批准取代工程验收，亦不用工程检查冒称作者新内容/发布批准。
 
-## 六、机器合同草案及预算
+## 六、冻结机器合同及预算
 
 所有对象strict。Product沿现有assessment ID；draft/review/version/operation key沿现有规范UUID；revision沿1..100；SHA256为小写64hex；登记id为受控assessment ID、version为严格三段版本。schema version分域，不复用首稿或追加协议。请求路径Product必须与完整binding一致。
 
 - RevisionTarget：draftId、revision、canonicalContentSha256、assetSetSha256、canonicalManifestSha256，三hash均指该实际不可变修订。
-- RegistryIdentity：id、version、entrySha256。entry摘要基于条目自身规范JSON，字段覆盖source provenance/批准日期范围/实际三hash/九槽边及媒体声明/离线完整映射证据；不包含全registry列表、构建时间或请求key。
+- RegistryIdentity：固定kind（baseline/renderer/engine）、id、version、entrySha256。entry摘要基于条目自身规范JSON，字段覆盖source provenance/批准日期范围/实际三hash/九槽边及媒体声明/离线完整映射证据；不包含全registry列表、构建时间或请求key。
 - ReviewBinding：productId、idempotencyKey、target、baseline（RegistryIdentity）。fingerprint domain为quizforge.review-record.v1，含该完整binding，不含运行时生成id/时间。
 - SealBinding：productId、idempotencyKey、target、reviewId、reviewSha256、renderer（RegistryIdentity）、engine（RegistryIdentity）。fingerprint domain为quizforge.internal-version-seal.v1。字体及六组件由选中renderer条目固定，不接受客户端自选URL/源文件；engine必须与正文对应。
-- ReviewReceipt：id、binding、fingerprint、purpose=internal-test、baselineApproval（原日期/来源/范围）、recordedBy、recordedAt、reviewSha256。reviewSha固定批准的来源/registry/目标，不含记录人时间或操作key；回执仍完整保存原操作事实。内部资料原文/私有路径不进入DTO。
+- ReviewReceipt：id、binding、fingerprint、facts、recordedBy、recordedAt、reviewSha256。facts固定schemaVersion/Product/target/baseline/purpose=internal-test和approval（author-baseline原日期/来源/范围，或明确synthetic-test）。reviewSha固定批准的来源/registry/目标，不含记录人时间或操作key；回执仍完整保存原操作事实。内部资料原文/私有路径不进入DTO。
 - VersionReceipt：id、binding、fingerprint、purpose=internal-test、publicationApproved=false、snapshotSha256、createdBy、createdAt；另提供有界snapshot详情读取。相同语义/依赖快照不同key拒绝，不返回created=false冒充成功。
 - Snapshot：schemaVersion、productId、target、reviewId/reviewSha256/baseline identity、全部content/visual/report/resource/component版本、engine identity/logicHash、renderer identity及六组件精确三元组、字体id/version/fileSHA/coverageSHA/licenseSHA/weight、原validation的validator/policy/evidence/candidate身份。canonical snapshot自身不含versionId/操作key/创建时间，不允许自由额外字段。相同review可以在实际新实现条目被审查后封存另一不同snapshot；不原地替换旧快照。
 - 每Product最多100 review（对应最多100修订）、100 version。限制只在新申请时检查；原key回执不受容量改变影响。数据库强约束或Product锁下唯一slot1..100，不以浏览器计数作为权威。
@@ -65,7 +65,7 @@ review与version的新引用写入均参加同一存储维护锁协议：初始�
 
 封存资源总预算固定32MiB、最多64声明和64唯一blob，沿包/内容现有更小限制取最小；首款八图10491566字节、最大3034825。按唯一hash顺序读取验证并释放每块，任何时刻不保存全部图缓冲；整个操作一个15s单调deadline，单文件/锁/关闭观察预算只能进一步缩短，不能逐图重新启动15s。
 
-具体Zod/DTO命名与所有最大长度由主控先提交并经Astra审查；以上未实现，不允许A/B各自再发明不一致封套。
+具体Zod/DTO与最大长度已在features/product/internal-versions冻结并经Astra审查；完整100项metadata最坏探针129221B，详情5171B，8 renderer状态5367B。不得另造不一致封套；服务执行和数据库持久化仍未实现。
 
 ## 七、数据库与锁、永久核实证据
 
@@ -105,3 +105,17 @@ DisplayResourceTransport固定参数(asset:DisplayAssetV1, signal:AbortSignal, d
 浏览器基础错误类可以移动到lib/browser/display-task并由Studio沿PreviewClientError旧名重导出，以保持instanceof和可观察code一致；本次不重分类取消/超时/字体/图片/PNG错误。原15s预算和资源释放语义保持，任何已传入绝对deadline不得扩期。scorePreview继续私有WeakMap真实scorePreparedContent，再调用server-only projectContentScoreForDisplay(content,scored)得到共享正文，加回原封套；无新客户端分数入口。
 
 此处是可独立审查的前置解耦，保持六状态DOM/CSS、文案、临时重置行为及实际PNG排版；不提前编造P4控制器。主控先提交共享Schema与旧封套组合；B随后独占theme/preview、report/preview、studio/preview、lib/browser/display-*及相关测试。A不修改这些文件，主控不并发改B所有文件。后续实现摘要以最终稳定文件为准。
+
+## 十一、补充机器边界
+
+机器模块位于features/product/internal-versions；baseline/renderer/engine的RegistryIdentity各含固定kind防止跨类别解释。review与seal请求各有独立schemaVersion，完整binding（含原key）使用canonicalOrdinaryJson及SHA-256生成指纹；旧首稿/追加指纹规则不变。review批准事实区分author-baseline与synthetic-test，后者不能显示成作者批准。服务与HTTP解析后还要核fingerprint、review事实SHA及详情snapshotSHA，使用共享integrity函数，不把shape解析当哈希关系核验。
+
+当前snapshot.v1只接受实际已有studio-internal-preview能力及v2六组件，P4持久控制器以新受控snapshot/实现协议承接，不能把旧能力字面量重新解释成消费者能力。descriptor中同时保留该基线实际logicHash；只读target-used重建只用固定descriptor/源身份，不调用当前执行器重新评分。新seal仍实际校验该固定引擎与logicHash，执行可用性丢失不能抹去历史身份。
+
+旧first/append保持原auth→Product→原key优先；仅新申请在readReadyDraftSource之前执行同业务tx的pg_try_advisory_xact_lock_shared(72461,2)，必须返回true才继续，false走已确认回滚的WRITE_BUSY。纯DB操作不增加独立guard或FS名额；非等待try不建立维护锁等待环，事务锁覆盖提交。断连/回滚不确认仍UNKNOWN，不能扩成清锚证明。维护者取得独占锁后必须用新快照查询留存，持锁覆盖引用检查到物理/DB删除，不能用取锁前的缓存或RR快照。所有既存revision及review/version留存都要覆盖；旧夹具例外仅限精确证明确属本次删除范围的自身事实，不能按整个Product排除审核/版本。
+
+record/seal应用服务必须接HTTP原始单调DatabaseBudget（signal/deadline），不能在每图或进业务TX时重开15s。成功原key先读取/当前授权复核，不因新IO名额、依赖执行可用性或容量而变成新申请。新引用路径复用受限ResourceReadTask且真实work/FD/guard/DB的收口拥有者跟随实际异步操作，不能随HTTP超时提前释放。具体生命周期适配先由A提交并独审，禁止只是增加一个Promise.race就宣称真实工作已停。
+
+新review/seal的HTTP错误严格只含code/requestId；调用共用errorResponse前须按本协议重建允许code，禁止沿旧DRAFT_SOURCE_CHANGED携带currentRevision。状态以INTERNAL_VERSION_HTTP_STATUSES为唯一浏览器白名单；普通错误不变成永久清锚证据。
+
+生命周期前置审查允许每请求一次性owner closure：service factory绑定实际db与同一原budget/clock，runNew不可重复使用。task.run callback首句同步移交收口权，未进入callback由HTTP关闭，进入后actual work的finally拥有真实FD、全部SQL事务promise、幂等DB close、guard与clock，HTTP不双关。createDatabase已有预算取消client.end机制仍保持；owner追踪实际关闭与UNKNOWN，不能声称阻止所有自动DB关闭。close不确认先quarantine相关对象，不用finally补unlock或TTL释放。分类记录withStudioWrite真实成功/确认回滚/UNKNOWN，不用单一settled布尔抹去晚成功；late success只通过原key核实找回。此接缝仍待A实现和专项验收。
