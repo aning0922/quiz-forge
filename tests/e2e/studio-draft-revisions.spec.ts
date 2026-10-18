@@ -496,6 +496,18 @@ test("legacy anchors and corrupt revision storage block new preparation while se
   );
   await page.reload();
   await expect(
+    page.getByRole("region", { name: "首次草稿应用", exact: true }),
+  ).toBeVisible();
+  await expect(
+    appendPanel(page).getByRole("heading", {
+      name: "本次读取的当前基准：修订 1",
+      exact: true,
+    }),
+  ).toBeVisible();
+  await expect(
+    pendingPanel(page).getByText("无法可靠核对请求锚点", { exact: false }),
+  ).toBeVisible();
+  await expect(
     appendPanel(page).getByRole("button", {
       name: "准备追加到修订 1",
       exact: true,
