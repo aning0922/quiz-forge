@@ -92,3 +92,13 @@ fixture 中一次检查发现存储空目录路径遗漏 `uploads`，在提交�
 此owner尚未接三类业务服务或生产HTTP；完整实际资产闭包、FS源端口与P4专属r1-head物理fixture继续实施。旧process/fixture未知现场与首款39eb保持不动。
 
 本笔最终159文件/1777单元、format、lint、typecheck、生产build及上述2项真实PG再次通过；build trace80/0违规。没有重跑完整普通487PG、46driver或3100/E2E，不沿用上一笔485给新owner冒称整套已验收。下一步正常合入主控已封存最终consumer实现闭包，再接服务和物理fixture。
+
+## Request owner 前序失败 P2 整改（2026-10-19）
+
+独审在aeb8f51复现：上层callback捕获第一段SQL close拒绝后，原owner只清 `phasePending` 并计次数，允许exchange第二SQL或complete进入IO；前一个SQL primitive仍隔离占格，但不能以此代替请求阶段禁止后继。因此此前owner通过范围不代表其阶段安全已通过，该P2原证据由独审保留。
+
+修复加入请求级 `phaseFailed` 和 `confirmedSqlPhases`。SQL只有完整工作、实际关闭和原checkpoint都成功返回才计为confirmed；任何SQL失败后永久禁止此request再sql/io。调用方catch、迟到close成功和handler返回均不重置状态，不释放先前隔离槽、不换budget。服务也不得catch失败后继续，但阶段门禁由owner自己执行。
+
+原6项owner加4项新反例和5项SQL primitive共15单元通过：正常exchange两段仍可运行；callback拒绝、end拒绝、pending close取消及迟到fulfilled后，后继factory/guard/IO callback均0。真实PG子进程新增两个实际前序close拒绝（exchange/complete），捕获后第二SQL与IO都被拒；仍保留原4个真实FS拒绝guard，直到专有进程实际退出及父观察0 backend。仓储与transaction服务准备仍未提交，不混入本P2修复。独审复验待主控安排，不提前记为关闭。
+
+本笔实际173文件/1844单元、format、lint、typecheck、production build和2项真实PG通过；consumer精确实现门禁1/1、77源文件/268锁记录，旧实现仍3/3、51/280；build trace80/0违规。已正常合入最终主控闭包，未运行完整普通PG或E2E来冒称整阶段完成。

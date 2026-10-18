@@ -11,6 +11,43 @@ async function main() {
   const admin = await openManagedDatabase(config.instanceId);
   const actualEnds: (() => Promise<void>)[] = [];
   try {
+    // A caught failed predecessor must not start a second pool or enter FS in the same request.
+    for (const operation of ["exchange", "complete"] as const) {
+      const owner = createConsumerRequestOwner(
+        config,
+        createStudioRequestBudget(new AbortController().signal),
+      );
+      let successorEntered = false;
+      try {
+        await owner.run(operation, async (c) => {
+          await assert.rejects(
+            c.sql(async (db) => {
+              const nativeEnd = db.sql.end.bind(db.sql);
+              let actual: Promise<void> | undefined;
+              actualEnds.push(() => (actual ??= nativeEnd({ timeout: 0 })));
+              db.sql.end = () =>
+                Promise.reject(new Error("P4_IO_PREDECESSOR_CLOSE_REJECTED"));
+              return 1;
+            }),
+          );
+          await assert.rejects(
+            c.sql(async () => {
+              successorEntered = true;
+            }),
+            { code: "INVALID_REQUEST" },
+          );
+          await assert.rejects(
+            c.io(async () => {
+              successorEntered = true;
+            }),
+            { code: "INVALID_REQUEST" },
+          );
+        });
+        assert.equal(successorEntered, false);
+      } finally {
+        await owner.closeIfNotTransferred();
+      }
+    }
     for (let i = 0; i < 4; i++) {
       const owner = createConsumerRequestOwner(
         config,

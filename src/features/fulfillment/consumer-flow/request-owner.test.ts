@@ -12,6 +12,7 @@ vi.mock("@/features/quizpack/resource-read/guard", () => ({
 }));
 import { createConsumerRequestOwner } from "./request-owner";
 import { ResourceReadTask } from "@/features/quizpack/resource-read/task";
+import { ConsumerError } from "@/lib/consumer-contract/v1/errors";
 const config = {} as P2aRuntimeConfig;
 function setupOwner() {
   const controller = new AbortController(),
@@ -228,4 +229,141 @@ it("keeps the FS slot and maintenance guard while actual database close remains 
   expect(guardClosed).toHaveBeenCalledTimes(1);
   await Promise.all(remaining.map((t) => t.run(async () => undefined)));
   expect(f.dispose).toHaveBeenCalledTimes(1);
+});
+it("permits two successful exchange phases only after each actual close succeeds", async () => {
+  const f = setupOwner();
+  expect(
+    await f.owner.run("exchange", async (c) => [
+      await c.sql(async () => 1),
+      await c.sql(async () => 2),
+    ]),
+  ).toEqual([1, 2]);
+  expect(h.open).toHaveBeenCalledTimes(2);
+  await f.owner.closeIfNotTransferred();
+});
+it("blocks every successor SQL or IO when a rejected callback is caught by the caller", async () => {
+  for (const operation of ["exchange", "complete"] as const) {
+    h.open.mockClear();
+    h.guard.mockClear();
+    const f = setupOwner(),
+      next = vi.fn();
+    expect(
+      await f.owner.run(operation, async (c) => {
+        await expect(
+          c.sql(async () => {
+            throw new ConsumerError("OPERATION_CONFLICT");
+          }),
+        ).rejects.toMatchObject({ code: "OPERATION_CONFLICT" });
+        await expect(
+          c.sql(async () => {
+            next();
+          }),
+        ).rejects.toMatchObject({ code: "INVALID_REQUEST" });
+        await expect(
+          c.io(async () => {
+            next();
+          }),
+        ).rejects.toMatchObject({ code: "INVALID_REQUEST" });
+        return "successors-blocked";
+      }),
+    ).toBe("successors-blocked");
+    expect(h.open).toHaveBeenCalledTimes(1);
+    expect(h.guard).not.toHaveBeenCalled();
+    expect(next).not.toHaveBeenCalled();
+    await f.owner.closeIfNotTransferred();
+  }
+});
+it("blocks successors after pending close cancellation and never revives the request after its late success", async () => {
+  const f = setupOwner(),
+    gate = deferred(),
+    next = vi.fn();
+  h.open.mockImplementation(async (_c, _b, o: DatabaseLifecycleObserver) => {
+    const sql = {};
+    o.allocated(sql as P2aDatabase["sql"]);
+    o.verification(Promise.resolve());
+    return {
+      sql,
+      close: () => {
+        o.ending(gate.promise);
+        return gate.promise;
+      },
+    };
+  });
+  const result = f.owner.run("exchange", async (c) => {
+    await expect(c.sql(async () => 1)).rejects.toMatchObject({
+      code: "TIMEOUT",
+    });
+    await expect(
+      c.sql(async () => {
+        next();
+      }),
+    ).rejects.toMatchObject({ code: "TIMEOUT" });
+    await expect(
+      c.io(async () => {
+        next();
+      }),
+    ).rejects.toMatchObject({ code: "TIMEOUT" });
+    gate.resolve();
+    for (let i = 0; i < 30; i++) await Promise.resolve();
+    await expect(
+      c.sql(async () => {
+        next();
+      }),
+    ).rejects.toMatchObject({ code: "TIMEOUT" });
+    return "successors-blocked";
+  });
+  for (let i = 0; i < 30; i++) await Promise.resolve();
+  f.controller.abort();
+  expect(await result).toBe("successors-blocked");
+  expect(h.open).toHaveBeenCalledTimes(1);
+  expect(h.guard).not.toHaveBeenCalled();
+  expect(next).not.toHaveBeenCalled();
+  await f.owner.closeIfNotTransferred();
+});
+// Permanent close rejection remains quarantined in this isolated worker; no reset clears it.
+it("blocks successor factories and IO after actual end rejection even when the first error is caught", async () => {
+  for (const operation of ["exchange", "complete"] as const) {
+    h.open.mockReset();
+    h.guard.mockClear();
+    h.open.mockImplementation(async (_c, _b, o: DatabaseLifecycleObserver) => {
+      const sql = {};
+      o.allocated(sql as P2aDatabase["sql"]);
+      o.verification(Promise.resolve());
+      let actual: Promise<void> | undefined;
+      return {
+        sql,
+        close: () => {
+          if (!actual) {
+            actual = Promise.reject(new Error("synthetic-predecessor-close"));
+            o.ending(actual);
+          }
+          return actual;
+        },
+      };
+    });
+    const f = setupOwner(),
+      next = vi.fn();
+    expect(
+      await f.owner.run(operation, async (c) => {
+        await expect(c.sql(async () => 1)).rejects.toThrow(
+          "synthetic-predecessor-close",
+        );
+        await expect(
+          c.sql(async () => {
+            next();
+          }),
+        ).rejects.toMatchObject({ code: "INVALID_REQUEST" });
+        await expect(
+          c.io(async () => {
+            next();
+          }),
+        ).rejects.toMatchObject({ code: "INVALID_REQUEST" });
+        return "successors-blocked";
+      }),
+    ).toBe("successors-blocked");
+    expect(h.open).toHaveBeenCalledTimes(1);
+    expect(h.guard).not.toHaveBeenCalled();
+    expect(next).not.toHaveBeenCalled();
+    await f.owner.closeIfNotTransferred();
+  }
 });

@@ -99,6 +99,8 @@ export function createConsumerRequestOwner(
         throw new ConsumerError("INVALID_REQUEST");
       used = true;
       let sqlPhases = 0,
+        confirmedSqlPhases = 0,
+        phaseFailed = false,
         ioStarted = false,
         phasePending = false;
       const context: Context = Object.freeze({
@@ -110,11 +112,15 @@ export function createConsumerRequestOwner(
         ) {
           checkpoint();
           if (
+            phaseFailed ||
             phasePending ||
             ioStarted ||
+            confirmedSqlPhases !== sqlPhases ||
             sqlPhases >= (operation === "exchange" ? 2 : 1)
-          )
+          ) {
+            phaseFailed = true;
             throw new ConsumerError("INVALID_REQUEST");
+          }
           phasePending = true;
           sqlPhases++;
           try {
@@ -132,7 +138,11 @@ export function createConsumerRequestOwner(
               },
             );
             checkpoint();
+            confirmedSqlPhases++;
             return value;
+          } catch (error) {
+            phaseFailed = true;
+            throw error;
           } finally {
             phasePending = false;
           }
@@ -142,9 +152,11 @@ export function createConsumerRequestOwner(
         ): Promise<T> {
           checkpoint();
           if (
+            phaseFailed ||
             phasePending ||
             ioStarted ||
             sqlPhases !== 1 ||
+            confirmedSqlPhases !== 1 ||
             ![
               "complete",
               "create-play",
