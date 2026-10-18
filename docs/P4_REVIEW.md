@@ -32,3 +32,12 @@ B b476f37（root d3150ea）实现六纯视图、独立样式、精确组件映�
 root 另核精确批准 ZIP/content/全部 9 路径 8 独立素材，实际固定引擎跑四个作者评分见证，经新 server projection 生成 12 题和四份选中 display。entry 14623B，四 display 为 5136/5194/5179/5226B；真实 Chromium156.0.8078.4 四宽 30 图的溢出/正文字号/交互目标检查通过，页面错误0，四 PNG 均1080×1920，临时 browser/server 已关闭。root 实看 6 页面原图及全部4PNG，文字与图像完整；其他24截图仅自动几何断言，未声称全部人工看完。保留两项P3：320暂歇操作按钮碎行、已含姓名/副标题的报告标题下重复同一文本，B在controller接入时做局部修正。
 
 这些实际首款图片和投影仍仅本地私有；Git 只收 [预检安全记录](qa/p4-first-product-display-preflight.json)。离线 harness 的已完成视图输入来自作者见证，显式标记无持久化，不能冒充最终用户报告、grant 授权、P4/P5 或商业发布验收。
+
+## HTTP 基础当前整改项
+
+05647fe（B 3c2357d）的来源/Cookie/JSON/有限响应工具原7测试通过，但独审发现两项 P2，尚未关闭，不签本批通过：
+
+1. JSON read/yield 循环反复与同一个 pending interruption Promise race，快路径结束不移除旧 reaction。独立合成2字节正文加128/8192/32768空chunk，保留reaction为134/8450/33794，均远未到5秒；固定buffer和timer不足以保证等待状态常数。B须改单一外层race或可清理的有界机制，保留原deadline/取消/让出事件循环并补随chunk增长的反例。
+2. 私有固定headers之后展开extra，运行时宽对象可覆盖Cache-Control/Referrer-Policy/nosniff并增加CORS。独立实际响应已复现。B须只显式提取Set-Cookie或严格拒绝未知extra，不能依赖TypeScript窄类型。
+
+反例位于独审ignored http-boundary-probe-result.json；仅合成内存Request，无DB/真实token。后续handler的原token隔离、授权、单次owner body交接和完整业务仍另验。
