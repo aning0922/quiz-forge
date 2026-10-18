@@ -1,0 +1,9 @@
+# P4 Studio play / Key 操作客户端
+
+当前为客户端严格事实验证及本标签原请求/秘密保管基础，尚未挂真实Studio页面、HTTP factory或发放按钮；不声称实际Key发放成功。
+
+client.ts使用冻结operation DTO、完整binding resolution与独立Studio x-csrf-token，不借用消费者CSRF。create返回201/200与created必须一致；详情/列表核Product、精确ID与所有receipt hash。Key页游标仅使用issuedAt/keyId严格一对，并核Product；原binding总量有界。play详情封套预算为snapshot上限+receipt上限，不扩大两者内部机器限制。
+
+pending.ts在运营浏览器CSPRNG生成32字节raw，按独立access-key域求digest，准备后完整持久化/回读并核raw→digest，markBeforeSend再次完整回读后才允许POST。scope固定origin/instanceId/issuerId/productId，sessionStorage隐含本标签；不承诺跨标签唯一保管或XSS隔离。相同bucket不能覆盖未核请求，异步回读期间current失效拒绝标发送/删除。raw=null表示已知原文丢失，保留原binding供只读核对，拒绝发放/重放；不能用metadata重建私密链接。只有严格终态证据和用户显式确认后，调用方才可精确删除。Cookie、Studio/consumer CSRF、grant不入该记录。
+
+8项合成测试覆盖raw/digest、严格独立CSRF与API零raw、正确create状态和原binding、坏Product/cursor、bucket隔离、原文丢失、坏存储/回读/摘要、失权与替换保护。typecheck和定向lint通过。实际controller/复制下载前新鲜issuer核验、Studio路由与生产E2E仍待后续接入，不能把测试fixture当真实服务。
