@@ -271,10 +271,15 @@ export function StudioConsumerAccessPageV1({
     [voidId, setVoidId] = useState<string | null>(null);
   useEffect(() => {
     const unsubscribe = subscribeStudioAuthorityInvalidation(controller.revoke);
+    const visibility = () => {
+      if (document.hidden) controller.revoke();
+    };
+    document.addEventListener("visibilitychange", visibility);
     window.addEventListener("pagehide", controller.revoke);
     void controller.refresh();
     return () => {
       unsubscribe();
+      document.removeEventListener("visibilitychange", visibility);
       window.removeEventListener("pagehide", controller.revoke);
       controller.dispose();
     };
