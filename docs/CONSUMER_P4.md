@@ -2,7 +2,7 @@
 
 2026-10-18，从 P3-E 交付 c83788b 接续。作者已批准首款既有内容与视觉作为内测基线；本阶段无需重复批准同一材料。目标为本机 test/demo/ci 的真实 Key → 可恢复答题 → 一次完成 → 固定报告/PNG，随后接首款 P5。main 合并、生产迁移、部署和商品发布均不包含在此授权内。
 
-**当前状态：合同与共享 Schema 准备中。** 已有规范 JSON、标识/预算、六状态来源/运行映射、答案与游标状态、保存绑定及摘要检查的初稿，15 项边界单测、lint 和 TypeScript 通过；尚未完成独立机器合同审查，没有新增 0018、消费者表、服务或页面。本文协议方向经过前置讨论，具体 Schema/服务接口冻结后才进入数据业务实现。
+**当前状态：合同与共享 Schema 准备中。** 已有规范 JSON、标识/预算、六状态来源/运行映射、答案与游标状态、保存绑定及摘要检查的初稿，21 项边界单测、lint 和 TypeScript 通过；尚未完成独立机器合同审查，没有新增 0018、消费者表、服务或页面。本文协议方向经过前置讨论，具体 Schema/服务接口冻结后才进入数据业务实现。
 
 ## 1. 模块与实现归属
 
@@ -46,6 +46,8 @@ report 的精确复合 FK 指向 session 的 session/key/product/play/SHA/最终
 
 issue binding 固定 operationKey、keyId、digest、play ID/SHA 和 validForSeconds（整数 3600..2592000，UI 默认 604800）。首次实际 INSERT 一次 DB clock 采样毫秒 UTC issuedAt，expiresAt=issuedAt+duration；三个字段永久不改。响应到达、用户领取或同 key 重放均不重起算。原 issue absent 仍 unresolved，不能因相对期限宣布未执行。
 
+凭证 codec 初稿为 32 字节规范 base64url，无填充：AccessKey 前缀 `qfk_p4_`，grant 前缀 `qfg_p4_`（完整 token 均 50 字符）；摘要按 UTF-8 `quizforge.p4.token.v1:<access-key|grant>:` 加原始 32 字节做 SHA-256。grant CSRF 为以原始 grant 字节作密钥、对 `quizforge.p4.csrf.v1:consumer-grant` 做 HMAC-SHA256 的规范 43 字符 base64url，拒绝非规范尾位及旧 Studio 域。它们只定义编码，不授予授权；实际 Key/grant 查验由数据库服务负责。
+
 服务器不保存可恢复 raw；receipt、resolve、audit、列表及普通 DOM 只有安全事实。复制/下载私密 fragment 链接是显式动作，并先核当前 issuer 身份；不能把上个运营员的秘密桶交给下一次登录者。原文丢失不能靠 metadata 重建。相同发放只产生一个凭证，不声称网络/复制 exactly-once。
 
 首版只有独立 void-unused：Key 行锁内重核从未存在 session、无 report，原子单向作废并封存自身 binding/receipt。claim 与 void 同锁序，只能一方成功。确认原 issue 和已作废事实后，可另显式发新 Key；这不是原子换发。原发放/作废未知先核实，不凭空查造新 Key。已领取/完成不能用此动作重置资格；安全撤销已领取访问另立未来动作。
@@ -56,9 +58,9 @@ issue binding 固定 operationKey、keyId、digest、play ID/SHA 和 validForSec
 
 `/access#key=…` 落地立即擦除地址栏 fragment，raw 只在内存用于同源 exchange。禁止 query/path、被动日志、截图、报告或海报包含 raw/恢复链接。消费者不要求注册；资源 selector ID/hash 本身不授权。
 
-exchange 仅 JSON POST，精确配置 Host/Origin、必需 Sec-Fetch-Site=same-origin 和固定自定义 header；缺失/null/same-site/cross-site/form/GET 均拒绝，不开放跨源 CORS，不复用 Studio preauth。后续 Cookie 写使用独立域且绑定当前 grant 的 CSRF。所有 API 核 Key/session/play/report/resource 归属；同名歧义 Cookie 拒绝。
+exchange 仅 JSON POST，精确配置 Host/Origin、必需 Sec-Fetch-Site=same-origin 和固定 `x-quizforge-consumer-exchange: 1` header；缺失/null/same-site/cross-site/form/GET 均拒绝，不开放跨源 CORS，不复用 Studio preauth。后续 Cookie 写使用独立域且绑定当前 grant 的 CSRF。所有 API 核 Key/session/play/report/resource 归属；同名歧义 Cookie 拒绝。
 
-Cookie host-only、HttpOnly、SameSite=Strict、Path=/play/:sessionId、不设 Domain；本轮仅 local-http-p2a，Path 是发送范围而非授权边界，不声称 __Host 或生产 HTTPS 能力。各 session 的页面/API/资源/报告位于同一路径前缀，不让多 Key 互相覆盖。
+Cookie 名为 `qf_local_consumer_grant_v1`；host-only、HttpOnly、SameSite=Strict、Path=/play/:sessionId、不设 Domain；本轮仅 local-http-p2a，Path 是发送范围而非授权边界，不声称 __Host 或生产 HTTPS 能力。各 session 的页面/API/资源/报告位于同一路径前缀，不让多 Key 互相覆盖。
 
 同 Key 总是恢复同一 session。每次 exchange 由服务器生成新的 grantId/raw/digest，当前行的 grantId/digest 唯一；CSPRNG 不刻意重用，不声称数学上没有历史碰撞证明。每 Key 16 固定槽，优先过期/已撤槽，满时按 issuedAt/slot 替换最早，8 小时不滑动续期。第 17 次授权可使最早设备需用原链接重新进入；UNKNOWN 显式再次交换是一次新授权，不是恢复原 raw，不自动重试风暴。
 
