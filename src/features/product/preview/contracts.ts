@@ -3,26 +3,30 @@ import {
   assessmentIdSchema as id,
   assessmentVersionSchema as version,
   assessmentReferenceSchema as ref,
-  engineDeclarationSchema,
   sha256Schema,
 } from "@/lib/assessment-contract/primitives";
 import { SCORING_LIMITS } from "@/lib/assessment-contract/scoring-v1";
 import { importIdSchema as draftIdSchema } from "@/features/quizpack/import/contracts";
 import {
-  previewTextSchema,
-  previewShortText,
-  previewLayoutPropsSchema,
-  previewVisualPresentationSchema,
-  previewBaselineSchema,
-  previewCardSchema,
-} from "./display-shapes";
-import {
-  PREVIEW_FONT,
-  PREVIEW_RENDERER,
-  PREVIEW_COMPONENT_IDS,
-} from "./descriptor";
-import { PREVIEW_POSTER_LIMITS, PREVIEW_LIMITS } from "./limits";
-
+  displayEntryBodyShapeV1,
+  resultDisplaySnapshotShapeV1,
+  displayPosterExportBodyShapeV1,
+  checkDisplayEntryRelationsV1,
+  checkResultDisplayRelationsV1,
+  checkDisplayPosterExportRelationsV1,
+} from "@/lib/assessment-contract/display-v1";
+export {
+  displayAssetV1Schema as previewAssetSchema,
+  displayQuestionV1Schema as previewQuestionSchema,
+  displayDimensionV1Schema as previewDimensionSchema,
+  displayPosterV1Schema as previewPosterSchema,
+} from "@/lib/assessment-contract/display-v1";
+export type {
+  DisplayAssetV1 as PreviewAsset,
+  DisplayPosterV1 as PreviewPoster,
+} from "@/lib/assessment-contract/display-v1";
+import { PREVIEW_FONT, PREVIEW_RENDERER } from "./descriptor";
+import { PREVIEW_LIMITS } from "./limits";
 export const previewScopeSchema = z.strictObject({
   productId: id,
   draftId: draftIdSchema,
@@ -83,105 +87,14 @@ export type PreviewErrorCode = z.infer<typeof previewErrorCodeSchema>;
 export type PreviewResult<T> =
   | Readonly<{ ok: true; value: T }>
   | Readonly<{ ok: false; code: PreviewErrorCode }>;
-export const previewAssetSchema = z.strictObject({
-  resourceRef: ref,
-  mediaType: z.enum(["image/png", "image/jpeg", "image/webp"]),
-  bytes: z.number().int().min(1).max(PREVIEW_LIMITS.imageBytes),
-  sha256: sha256Schema,
-  width: z.number().int().min(1).max(8192),
-  height: z.number().int().min(1).max(8192),
-  purpose: z.enum(["cover", "portrait", "decoration"]),
-  approval: z.enum(["pending", "approved"]),
-  alt: previewShortText(240),
-});
-export type PreviewAsset = z.infer<typeof previewAssetSchema>;
-const neutralAsset = previewAssetSchema.extend({
-  purpose: z.enum(["cover", "decoration"]),
-});
-const portraitAsset = previewAssetSchema.extend({
-  purpose: z.literal("portrait"),
-});
-function layout<S extends keyof typeof PREVIEW_COMPONENT_IDS>(state: S) {
-  return z.strictObject({
-    component: z.strictObject({
-      id: z.literal(PREVIEW_COMPONENT_IDS[state]),
-      version: z.literal("2.0.0"),
-      propsSchemaVersion: z.literal("1.0.0"),
-    }),
-    props: previewLayoutPropsSchema,
-  });
-}
-export const previewQuestionSchema = ref.extend({
-  prompt: previewTextSchema,
-  options: ref
-    .extend({ label: previewTextSchema })
-    .array()
-    .min(2)
-    .max(SCORING_LIMITS.optionsPerQuestion),
-});
-const previewEntryShape = z.strictObject({
-  binding: previewBindingSchema,
-  contentSchemaVersion: z.literal("quizpack-content.v2"),
-  kind: z.enum(["synthetic", "authored"]),
-  engine: engineDeclarationSchema,
-  product: z.strictObject({ productId: id, title: previewTextSchema }),
-  layouts: z.strictObject({
-    cover: layout("cover"),
-    question: layout("question"),
-    resume: layout("resume"),
-  }),
-  questions: previewQuestionSchema.array().min(1).max(SCORING_LIMITS.questions),
-  visualPresentation: previewVisualPresentationSchema,
-  assets: neutralAsset.array().min(1).max(64),
-});
-type Ref = z.infer<typeof ref>;
-const refKey = (value: Ref) =>
-  JSON.stringify([value.productId, value.id, value.version]);
-export const previewEntrySchema = previewEntryShape.superRefine(
-  (value, ctx) => {
-    const reject = () =>
-      ctx.addIssue({
-        code: "custom",
-        message: "Preview source relationships must agree.",
-      });
-    const pid = value.binding.productId;
-    if (value.product.productId !== pid) reject();
-    const refs: Ref[] = [value.visualPresentation.coverSceneRef];
-    const qkeys = new Set(value.questions.map(refKey));
-    if (qkeys.size !== value.questions.length) reject();
-    for (const q of value.questions) {
-      if (
-        q.productId !== pid ||
-        q.options.some((o) => o.productId !== pid) ||
-        new Set(q.options.map((o) => o.id)).size !== q.options.length
-      )
-        reject();
-    }
-    const sections = new Set(
-      value.visualPresentation.sections.map((s) => s.id),
-    );
-    if (sections.size !== value.visualPresentation.sections.length) reject();
-    refs.push(...value.visualPresentation.sections.map((s) => s.sceneRef));
-    const framed = new Set<string>();
-    for (const frame of value.visualPresentation.questionFrames) {
-      const k = refKey(frame.questionRef);
-      if (!qkeys.has(k) || framed.has(k) || !sections.has(frame.sectionId))
-        reject();
-      framed.add(k);
-      if (frame.sceneOverrideRef) refs.push(frame.sceneOverrideRef);
-    }
-    if (framed.size !== qkeys.size) reject();
-    const needed = new Set(refs.map(refKey));
-    const declared = new Set(value.assets.map((a) => refKey(a.resourceRef)));
-    if (
-      declared.size !== value.assets.length ||
-      declared.size !== needed.size ||
-      refs.some((r) => r.productId !== pid || !declared.has(refKey(r))) ||
-      value.assets.some((a) => a.resourceRef.productId !== pid)
-    )
-      reject();
-  },
-);
+export const previewEntrySchema = z
+  .strictObject({
+    binding: previewBindingSchema,
+    ...displayEntryBodyShapeV1.shape,
+  })
+  .superRefine((value, ctx) =>
+    checkDisplayEntryRelationsV1(value, ctx, value.binding.productId),
+  );
 export type PreviewEntry = z.infer<typeof previewEntrySchema>;
 export const previewAnswersSchema = z
   .array(z.strictObject({ questionId: id, optionId: id }))
@@ -194,111 +107,15 @@ export const previewScoreRequestSchema = z.strictObject({
   answers: previewAnswersSchema,
 });
 export type PreviewScoreRequest = z.infer<typeof previewScoreRequestSchema>;
-export const previewDimensionSchema = z.strictObject({
-  dimensionRef: ref,
-  label: previewTextSchema,
-  normalizedText: z
-    .string()
-    .regex(/^(?:(?:[0-9]|[1-9][0-9])\.[0-9]|100\.0)(?![\s\S])/),
-});
-const dimensions = previewDimensionSchema
-  .array()
-  .min(1)
-  .max(SCORING_LIMITS.dimensions);
-const card = previewCardSchema;
-const fitsText = (value: string, maximum: number, lines: number) =>
-  [...value].length <= maximum && value.split(/\r\n|\r|\n/).length <= lines;
-const posterDimension = previewDimensionSchema.extend({
-  label: previewDimensionSchema.shape.label.refine((v) =>
-    fitsText(v, PREVIEW_POSTER_LIMITS.dimensionLabelCodepoints, 1),
-  ),
-});
-export const previewPosterSchema = z.discriminatedUnion("kind", [
-  z.strictObject({
-    kind: z.literal("ready"),
-    layout: layout("poster"),
-    displayName: card.shape.displayName.refine((v) =>
-      fitsText(v, PREVIEW_POSTER_LIMITS.displayNameCodepoints, 1),
-    ),
-    subtitle: card.shape.subtitle.refine((v) =>
-      fitsText(v, PREVIEW_POSTER_LIMITS.subtitleCodepoints, 1),
-    ),
-    posterLine: card.shape.posterLine.extend({
-      text: card.shape.posterLine.shape.text.refine((v) =>
-        fitsText(v, PREVIEW_POSTER_LIMITS.lineCodepoints, 2),
-      ),
-    }),
-    posterDisclosure: card.shape.posterDisclosure.refine((v) =>
-      fitsText(v, PREVIEW_POSTER_LIMITS.disclosureCodepoints, 2),
-    ),
-    portrait: portraitAsset,
-    dimensions: posterDimension
-      .array()
-      .min(1)
-      .max(PREVIEW_POSTER_LIMITS.dimensions),
-  }),
-  z.strictObject({
-    kind: z.literal("unavailable"),
-    code: z.literal("POSTER_LIMIT_EXCEEDED"),
-  }),
-]);
-export type PreviewPoster = z.infer<typeof previewPosterSchema>;
-const previewRevealShape = z.strictObject({
-  binding: previewBindingSchema,
-  requestId: previewRequestIdSchema,
-  answersHash: sha256Schema,
-  logicHash: sha256Schema,
-  contentSchemaVersion: z.literal("quizpack-content.v2"),
-  contentVersion: version,
-  reportVersion: version,
-  selectedResultRef: ref,
-  reportTemplateRef: ref,
-  dimensions,
-  result: z.strictObject({
-    layout: layout("result"),
-    displayName: card.shape.displayName,
-    subtitle: card.shape.subtitle,
-    portrait: portraitAsset,
-  }),
-  report: z.strictObject({
-    layout: layout("report"),
-    mode: z.literal("DETERMINISTIC"),
-    baseline: previewBaselineSchema,
-  }),
-  poster: previewPosterSchema,
-});
-export const previewRevealSchema = previewRevealShape.superRefine(
-  (value, ctx) => {
-    const reject = () =>
-      ctx.addIssue({
-        code: "custom",
-        message: "Reveal source and selected poster must agree.",
-      });
-    const refs = [
-      value.selectedResultRef,
-      value.reportTemplateRef,
-      value.result.portrait.resourceRef,
-      ...value.dimensions.map((d) => d.dimensionRef),
-    ];
-    if (
-      refs.some((r) => r.productId !== value.binding.productId) ||
-      new Set(value.dimensions.map((d) => refKey(d.dimensionRef))).size !==
-        value.dimensions.length
-    )
-      reject();
-    if (value.poster.kind === "ready") {
-      const poster = value.poster;
-      if (
-        poster.displayName !== value.result.displayName ||
-        poster.subtitle !== value.result.subtitle ||
-        JSON.stringify(poster.portrait) !==
-          JSON.stringify(value.result.portrait) ||
-        JSON.stringify(poster.dimensions) !== JSON.stringify(value.dimensions)
-      )
-        reject();
-    }
-  },
-);
+export const previewRevealSchema = z
+  .strictObject({
+    binding: previewBindingSchema,
+    requestId: previewRequestIdSchema,
+    ...resultDisplaySnapshotShapeV1.shape,
+  })
+  .superRefine((value, ctx) =>
+    checkResultDisplayRelationsV1(value, ctx, value.binding.productId),
+  );
 export type PreviewReveal = z.infer<typeof previewRevealSchema>;
 export const previewEntryResponseSchema = z
   .strictObject({ ok: z.literal(true), value: previewEntrySchema })
@@ -336,25 +153,11 @@ export const previewPosterExportSchema = z
   .strictObject({
     binding: previewBindingSchema,
     requestId: previewRequestIdSchema,
-    answersHash: sha256Schema,
-    logicHash: sha256Schema,
-    selectedResultRef: ref,
-    reportTemplateRef: ref,
-    poster: previewPosterSchema.options[0],
+    ...displayPosterExportBodyShapeV1.shape,
   })
-  .superRefine((value, ctx) => {
-    const refs = [
-      value.selectedResultRef,
-      value.reportTemplateRef,
-      value.poster.portrait.resourceRef,
-      ...value.poster.dimensions.map((d) => d.dimensionRef),
-    ];
-    if (refs.some((r) => r.productId !== value.binding.productId))
-      ctx.addIssue({
-        code: "custom",
-        message: "Export references must belong to the fixed Product.",
-      });
-  });
+  .superRefine((value, ctx) =>
+    checkDisplayPosterExportRelationsV1(value, ctx, value.binding.productId),
+  );
 export type PreviewPosterExport = z.infer<typeof previewPosterExportSchema>;
 /** Transport errors use the server observation ID; successful scoring echoes the caller requestId. */
 export const previewHttpErrorSchema = z.strictObject({
