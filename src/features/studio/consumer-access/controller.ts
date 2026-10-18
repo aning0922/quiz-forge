@@ -36,6 +36,7 @@ import {
   readStudioConsumerPendingV1,
   prepareStudioConsumerPendingV1,
   markStudioConsumerBeforeSendV1,
+  matchesStudioConsumerPendingV1,
   removeExactStudioConsumerPendingV1,
   type StudioConsumerPendingV1,
   type StudioConsumerOperationV1,
@@ -472,6 +473,10 @@ export class StudioConsumerControllerV1 {
     )
       return;
     const task = this.#task();
+    const current = () =>
+      task.current() &&
+      matchesStudioConsumerPendingV1(this.storage, pending) &&
+      task.current();
     this.#publish({ phase: "working", notice: "none" });
     try {
       const session = await this.#fresh(task, true),
@@ -495,12 +500,15 @@ export class StudioConsumerControllerV1 {
       )
         throw new ConsumerClientError("UNAVAILABLE");
       await this.#fresh(task, true);
-      if (!task.current()) return;
+      // Final issuer verification is the last await before the synchronous exact-anchor gate.
+      if (!current()) throw new ConsumerClientError("UNAVAILABLE");
       const link = new URL("/access", this.scope.origin);
       link.hash = new URLSearchParams({ key: back.operation.raw! }).toString();
-      await expose(link.toString(), task.current);
-      if (task.current()) this.#publish({ phase: "pending", notice: kind });
+      await expose(link.toString(), current);
+      if (!current()) throw new ConsumerClientError("UNAVAILABLE");
+      this.#publish({ phase: "pending", notice: kind });
     } catch (error) {
+      if (task.current() && !current()) this.#publish({ evidence: null });
       this.#failure(task, error);
     }
   }

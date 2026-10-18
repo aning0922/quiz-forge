@@ -227,3 +227,21 @@ export async function removeExactStudioConsumerPendingV1(
     throw new StudioConsumerPendingError();
   }
 }
+
+/**
+ * Final synchronous gate for an already fully verified original. No await may separate this
+ * comparison from disclosure. Exact canonical equality also covers raw loss and sent-flag changes.
+ */
+export function matchesStudioConsumerPendingV1(
+  storage: ConsumerPendingStorage,
+  expected: StudioConsumerPendingV1,
+): boolean {
+  try {
+    const raw = read(storage, expected.scope);
+    if (raw === null || raw.length > maximum) return false;
+    const current = pendingSchema.parse(JSON.parse(raw));
+    return text(current) === text(expected);
+  } catch {
+    return false;
+  }
+}
