@@ -5,6 +5,8 @@ export function internalVersionMessage(error: unknown) {
     return "无法可靠核对原请求锚点，或已有待核实请求。请保留会话存储；新准备保持关闭，原请求仍可只读核实。";
   if (error instanceof StudioClientError)
     switch (error.code) {
+      case "WRITE_BUSY":
+        return "写入暂忙。请保留原请求锚点并核实，不自动重试或推定回滚。";
       case "WRITE_OUTCOME_UNKNOWN":
         return "本次提交未收到可确认的成功回执。请保留原 key 和完整目标，以原请求核实区的最新证据为准。";
       case "REVIEW_BASELINE_MISMATCH":

@@ -4,6 +4,10 @@ import { StudioUnavailable } from "@/features/studio/shell";
 import { DraftRevisionPage } from "@/features/studio/drafts/read-page";
 import Link from "next/link";
 import { previewScopeSchema } from "@/features/product/preview/contracts";
+import {
+  internalReviewPageUrl,
+  internalRevisionScopeSchema,
+} from "@/features/product/internal-versions/urls";
 import { previewPagePath } from "@/features/product/preview/urls";
 export default async function StudioDraftRevisionPage({
   params,
@@ -19,6 +23,10 @@ export default async function StudioDraftRevisionPage({
       ? Number(ids.revision)
       : 0;
   const scope = previewScopeSchema.safeParse({ ...ids, revision });
+  const internalScope = internalRevisionScopeSchema.safeParse({
+    ...ids,
+    revision,
+  });
   return (
     <>
       {scope.success && (
@@ -33,6 +41,21 @@ export default async function StudioDraftRevisionPage({
             }}
           >
             进入此固定修订内部预览
+          </Link>
+        </p>
+      )}
+      {internalScope.success && (
+        <p>
+          <Link
+            href={internalReviewPageUrl(internalScope.data)}
+            style={{
+              display: "inline-flex",
+              minHeight: 44,
+              alignItems: "center",
+              textDecoration: "underline",
+            }}
+          >
+            查看此固定修订既有基线与内测封存
           </Link>
         </p>
       )}
