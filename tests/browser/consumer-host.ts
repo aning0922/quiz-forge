@@ -187,7 +187,13 @@ const server = createServer(async (req, res) => {
         ...f.view,
         ...(mode === "expired-pending"
           ? { keyExpiresAt: "2026-10-17T00:00:00.000Z" }
-          : {}),
+          : mode === "expiring-pending"
+            ? {
+                keyExpiresAt: new Date(
+                  Date.parse(f.view.observedAt) + 800,
+                ).toISOString(),
+              }
+            : {}),
         outcome:
           mode === "completed"
             ? { kind: "completed", report: stored.receipt }
@@ -339,7 +345,11 @@ try {
   browser = await chromium.launch({ headless: true });
   let networkAttemptsDuringLoss = 0,
     sameOriginalBindingDuringLoss = true;
-  if (!process.argv.includes("--expired-pending-only")) {
+  if (
+    !process.argv.some((a) =>
+      ["--expired-pending-only", "--live-expired-pending-only"].includes(a),
+    )
+  ) {
     for (const width of [320, 375, 390, 430]) {
       state = f.initial;
       mode = "normal";
@@ -479,7 +489,9 @@ try {
     await shot(access, "access-invalid-320");
     await access.close();
   }
-  mode = "expired-pending";
+  mode = process.argv.includes("--live-expired-pending-only")
+    ? "expiring-pending"
+    : "expired-pending";
   const complete = stored.receipt.binding;
   state = (
     await consumerAppliedFixtureV1({
@@ -512,6 +524,10 @@ try {
     { id: f.session.sessionId, binding: complete },
   );
   await expired.goto(`${base}/play/${f.session.sessionId}`);
+  if (mode === "expiring-pending")
+    await expect(
+      expired.getByRole("button", { name: "重放原操作" }),
+    ).toBeVisible();
   await expect(
     expired.getByText("本次答题期限已到，可查询原提交结果。", { exact: false }),
   ).toBeVisible();
@@ -548,7 +564,8 @@ try {
         scope:
           "synthetic in-memory HTTP + actual host; no business owner/database/native/3100; not P4/P5 acceptance",
         browser: await browser.version(),
-        viewports: [320, 375, 390, 430],
+        viewports: screenshots.length === 2 ? [320] : [320, 375, 390, 430],
+        expiryCase: mode === "expiring-pending" ? "live" : "already-expired",
         screenshots,
         observations,
         savePosts,

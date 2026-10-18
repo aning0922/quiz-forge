@@ -312,7 +312,10 @@ it("a real Key expiry before grant expiry stops editing while the grant remains 
     await c.bootstrap();
     expect(c.getSnapshot().phase).toBe("active");
     await new Promise<void>((resolve) => setTimeout(resolve, 600));
-    expect(c.getSnapshot().phase).toBe("expired");
+    expect(c.getSnapshot()).toMatchObject({
+      phase: "expired",
+      keyExpired: true,
+    });
     expect(c.task()?.current()).toBe(true);
     c.choose(f.q.id, f.q.options[0]!.id);
     expect(c.getSnapshot().answers).toEqual([]);
@@ -371,8 +374,10 @@ it("expired original completion pending exposes expiry and allows only resolve, 
       String(url).endsWith("session")
         ? {
             ...f.view,
-            keyExpiresAt: "2026-10-17T00:00:00.000Z",
-            outcome: { kind: "expired", state: accepted.state },
+            keyExpiresAt: new Date(
+              Date.parse(f.view.observedAt) + 500,
+            ).toISOString(),
+            outcome: { kind: "editable", state: accepted.state },
           }
         : f.entry,
     );
@@ -380,6 +385,11 @@ it("expired original completion pending exposes expiry and allows only resolve, 
   const c = new ConsumerControllerV1(f.session.sessionId, s, fetcher);
   try {
     await c.bootstrap();
+    expect(c.getSnapshot()).toMatchObject({
+      phase: "pending",
+      keyExpired: false,
+    });
+    await new Promise<void>((resolve) => setTimeout(resolve, 600));
     expect(c.getSnapshot()).toMatchObject({
       phase: "pending",
       keyExpired: true,
