@@ -160,3 +160,15 @@ backend proof改查同数据库全部非当前admin/当前exclusive维护PID，�
 初次故障用例及原运营生命周期合跑2项真实PG通过（77.12s，含原auth窗口协调等待），无skip；最新隔离父连接修订再定向复验中。format/lint/typecheck通过，下一笔消费者服务仍未行为验收或提交。本笔不是完整PG/E2E或独审关闭结论；须主控/Astra复验两P2。
 
 最新父连接完全关闭版quarantine用例再次通过（33.43s，含原auth预算真实等待）：foreign app为唯一额外backend、owner实际观测type/state NULL；子进程opens=1、deletes=0、late close与module reload仍blocked，实际退出后父进程整图/五图核验及cleanup通过。最终format/lint/typecheck均通过。独审是否关闭仍由Astra复验确认。
+
+## 消费者public factory首轮实际链路（2026-10-19）
+
+实现固定签名 `createConsumerFlowService(owner)`：exchange/readSession/readEntry/save/resolveSave/complete/resolveComplete/readReport/readResource/logout。没有修改冻结机器DTO、旧0018或任何已封存renderer/engine/consumer闭包。新增access域预算port，预算NOWAIT短事务按取得锁后的DB分钟窗口消费；该阶段真实COMMIT和实际连接关闭成功后才进入Key阶段，同一15秒owner、不退款、不自动重试。raw grant只在请求内产生，exchange的cookieGrantToken仍与JSON result分离。
+
+匿名读取在RR中核digest selector、grant、完整Key/session绑定和有界业务事实，结束后另起READ COMMITTED核同一grantId/digest/期限；不是在旧RR里假装新鲜。写路径先核grant-bound CSRF，再取SHARE维护栅栏→Key→Session锁，锁后核精确current grant；save/complete解析完整原binding。save只查固定SQL来源和成员，不碰FS、模型或latest；同base CAS、noop+1、仅last receipt与未来revision拒绝按冻结合同返回。complete先读原report，已完成直接返原事实；新完成在锁外实际完成字体/图片IO，锁内重核source/state/grant/Key、运行固定纯引擎与装配完整确定性快照，纯装配/hash结束后再核精确grant，唯一INSERT封存报告。
+
+历史report JSON只读完整持久快照及其摘要，不重评分/不重读图片/不调用模型。资源只选当前session中性entry或已完成selected portrait的有限allowlist；实际私有读取、FD结束及新鲜同grant观察完成后才issue原bytes body，沿已审owner直接交接。完成后Key普通到期不遮蔽原报告；grant自身失效仍拒绝。该期限规则代码已接通，真正server expiry与未知COMMIT/factory/close的更多故障矩阵仍需后续真实PG证明。
+
+`p4-consumer-service.test.ts`实际专属物理来源用例通过并在最终源再次通过：exchange/bootstrap与真实entry字体/图片读取、授权资源stream完整drain和SHA；跨session/错CSRF/未揭晓portrait拒绝；同base两个save恰一个applied-current、另一个superseded，noop+1、不完整答案complete拒绝；并发完成唯一report与completed-other、原binding resolve applied/同key异binding conflict、完成后save返回completed；图片暂时缺失时历史JSON仍读、资源明确dependency unavailable，精确恢复自己移动的文件；第17grant替换最早slot，旧token及旧logout拒绝，最新logout只撤自身；已claim void拒绝而unused void永久。最后三Key/两个state/一份真实完整report/十八次已观察grant（含已替换旧观察）进入operator-services manifest，实际退出proof后完整图/五图cleanup成功，completed仍false，不冒称8case生产consumer-e2e。
+
+最终该PG用例1项通过（8.36s，7.47s test含准备/服务/清理；先前34.14s一轮包含auth窗口等待，不能把32.65s test全当业务执行时长）。最终175文件1851单元、format/lint/typecheck/production build通过；旧implementation3/3、51源/280锁；consumer1/1、77源/268锁；trace80/0。没有跑全普通PG/46driver/生产3100 E2E；后续补预算/expiry、保存与完成未知结果、真正资源关闭/授权竞态矩阵，并由主控集成B routes/UI与Astra独审。fixture两P2的e1ac970独审复验仍待主控结果。

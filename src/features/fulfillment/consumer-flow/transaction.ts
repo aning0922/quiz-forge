@@ -78,6 +78,12 @@ export function consumerServiceError(error: unknown): ConsumerError {
       case "DRAFT_REVISION_NOT_FOUND":
       case "VERSION_NOT_FOUND":
         return new ConsumerError("NOT_FOUND");
+      case "DRAFT_SOURCE_INVALID":
+      case "DRAFT_SOURCE_CHANGED":
+      case "PREVIEW_RESOURCE_UNAVAILABLE":
+      case "VERSION_DEPENDENCY_UNAVAILABLE":
+      case "VERSION_RESOURCE_UNAVAILABLE":
+        return new ConsumerError("DEPENDENCY_UNAVAILABLE");
       case "PREVIEW_TIMEOUT":
       case "PREVIEW_CANCELLED":
       case "RECEIVE_TIMEOUT":
