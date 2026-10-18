@@ -5,6 +5,7 @@ import path from "node:path";
 import type postgres from "postgres";
 import { verifyDatabaseIdentity } from "./client";
 import type { P2aRuntimeConfig } from "./runtime";
+import { assertConsumerNamespace } from "./consumer-namespace";
 
 export type Migration = { version: string; source: string };
 export class MigrationError extends Error {
@@ -50,6 +51,8 @@ export async function migrateDatabase(
   try {
     await connection`SELECT pg_advisory_lock(716238419221::bigint)`;
     locked = true;
+    // Reject owner-mediated view/rule privileges before ANY migration or privilege reset.
+    await assertConsumerNamespace(connection);
     await transaction(connection, async (tx) => {
       await tx`CREATE SCHEMA IF NOT EXISTS qf_meta`;
       await tx`REVOKE ALL ON SCHEMA qf_meta FROM PUBLIC`;
@@ -68,6 +71,7 @@ export async function migrateDatabase(
       throw new MigrationError("MIGRATION_HISTORY_MISMATCH");
     const applied: string[] = [];
     for (const migration of definitions) {
+      await assertConsumerNamespace(connection);
       const checksum = createHash("sha256")
         .update(migration.source, "utf8")
         .digest("hex");
@@ -83,6 +87,7 @@ export async function migrateDatabase(
       });
       applied.push(migration.version);
     }
+    await assertConsumerNamespace(connection);
     await transaction(connection, async (tx) => {
       const app = tx(config.database.user);
       await tx`REVOKE ALL ON DATABASE ${tx(config.database.name)} FROM PUBLIC`;
