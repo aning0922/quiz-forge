@@ -1,0 +1,43 @@
+.details {
+  margin-block: 16px;
+}
+.details summary {
+  min-height: 48px;
+  padding: 12px 4px;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+.details summary:focus-visible {
+  outline: 3px solid #267bc1;
+  outline-offset: 3px;
+}
+.receipt {
+  margin-block: 16px;
+  padding: 18px;
+  border: 1px solid #a5b6c5;
+  border-radius: 8px;
+  background: #f1f6fa;
+}
+.history {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: 16px;
+  margin-block: 20px;
+}
+.history li {
+  padding: 18px;
+  border: 1px solid #ced7e0;
+  border-radius: 8px;
+}
+.history h3 {
+  font-size: 20px;
+  margin-bottom: 8px;
+}
+.history p {
+  margin-block: 8px;
+}
+.keep {
+  display: inline-block;
+  white-space: nowrap;
+}

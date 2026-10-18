@@ -1,5 +1,10 @@
 "use client";
 import Link from "next/link";
+import { useState } from "react";
+import type { AppendDraftApplication } from "@/features/product/draft-revisions/contracts";
+import { RevisionHistoryPanel } from "../draft-revisions/history";
+import { RevisionPendingPanel } from "../draft-revisions/pending-panel";
+import { RevisionLinks } from "../draft-revisions/primitives";
 import type { StudioSessionDto } from "../contracts";
 import { DraftPendingPanel } from "./pending-panel";
 import { WorkspaceNav } from "../workspace/primitives";
@@ -21,6 +26,7 @@ export function DraftWorkspacePage({
   productId: string;
   session: StudioSessionDto;
 }) {
+  const [application, setApplication] = useState<AppendDraftApplication>();
   const read = useDraftRead(draftEndpoint(productId), (value) =>
     checkDraftRead(value, productId),
   );
@@ -59,6 +65,13 @@ export function DraftWorkspacePage({
           <DraftFacts draft={read.value.draft} />
         )}
       </section>
+      {application && (
+        <section className={styles.panel} aria-label="已核实的固定追加回执">
+          <h2>已核实的固定追加回执：修订 {application.revision}</h2>
+          <p>此回执独立于当前草稿摘要。</p>
+          <RevisionLinks draft={application} />
+        </section>
+      )}
       <DraftPendingPanel
         key={productId}
         productId={productId}
@@ -66,6 +79,24 @@ export function DraftWorkspacePage({
         refreshing={read.loading}
         onConfirmed={read.refresh}
       />
+      <RevisionPendingPanel
+        key={`append/${productId}`}
+        productId={productId}
+        session={session}
+        refreshing={read.loading}
+        onChanged={(value) => {
+          if (value) setApplication(value);
+          read.refresh();
+        }}
+      />
+      {read.lastValue?.kind === "draft" && (
+        <RevisionHistoryPanel
+          key={`${productId}/${read.lastValue.draft.draftId}`}
+          productId={productId}
+          draftId={read.lastValue.draft.draftId}
+          currentRevision={read.lastValue.draft.revision}
+        />
+      )}
     </div>
   );
 }

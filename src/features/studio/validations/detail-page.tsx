@@ -2,6 +2,7 @@
 import Link from "next/link";
 import type { StudioSessionDto } from "../contracts";
 import { ApplyDraftPanel } from "../drafts/apply-panel";
+import { AppendRevisionPanel } from "../draft-revisions/append-panel";
 import { WorkspaceNav } from "../workspace/primitives";
 import { checkValidation, validationEndpoint } from "./client";
 import { ValidationFacts } from "./facts";
@@ -34,7 +35,7 @@ export function ValidationDetailPage({
           返回接收事实与验证历史
         </Link>
         <p className={styles.note}>
-          此页读取当前权威摘要；符合条件的归档可在下方明确应用为首次草稿。
+          此页读取当前权威摘要；符合条件的归档可明确用于首次草稿，或追加到现有草稿。
         </p>
         <button
           className={styles.button}
@@ -58,6 +59,14 @@ export function ValidationDetailPage({
       {record.value && (
         <ApplyDraftPanel
           key={`${record.value.id}/${record.value.stateRevision}/${record.value.candidateSha256}`}
+          validation={record.value}
+          session={session}
+          refreshing={record.loading || Boolean(record.error)}
+        />
+      )}
+      {record.value && (
+        <AppendRevisionPanel
+          key={`append/${record.value.id}/${record.value.stateRevision}/${record.value.candidateSha256}`}
           validation={record.value}
           session={session}
           refreshing={record.loading || Boolean(record.error)}
