@@ -214,6 +214,16 @@ export const draftRevisionResolutionSchema = z
         p.consumingIdempotencyKey === b.idempotencyKey
       )
         invalid();
+      // A single immutable revision cannot have two summaries. Earlier revisions
+      // also cannot reuse facts protected by the application/source/manifest keys.
+      if (r.revision === base.revision) {
+        if (JSON.stringify(r) !== JSON.stringify(base)) invalid();
+      } else if (
+        r.applicationId === base.applicationId ||
+        r.sourceImportId === base.sourceImportId ||
+        r.canonicalManifestSha256 === base.canonicalManifestSha256
+      )
+        invalid();
       if (p.reason === "source-import") {
         if (r.sourceImportId !== b.sourceImportId) invalid();
       } else if (r.canonicalManifestSha256 !== p.canonicalManifestSha256)
