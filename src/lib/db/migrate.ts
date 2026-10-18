@@ -135,6 +135,11 @@ export async function migrateDatabase(
         if (available?.present)
           await tx`GRANT SELECT,INSERT ON ${tx(`qf.${name}`)} TO ${app}`;
       }
+      const [appendSchema] = await tx<
+        { present: boolean }[]
+      >`SELECT EXISTS(SELECT 1 FROM pg_attribute WHERE attrelid=to_regclass('qf.product_draft') AND attname='initial_revision' AND NOT attisdropped) AS present`;
+      if (appendSchema?.present)
+        await tx`GRANT UPDATE(current_revision) ON qf.product_draft TO ${app}`;
       for (const signature of [
         "sha256_utf8(text)",
         "validation_attempts_valid(text,integer,uuid,bigint)",
@@ -145,11 +150,13 @@ export async function migrateDatabase(
         "validation_file_stop_proof_valid(jsonb,uuid,jsonb)",
         "validation_file_stop_controls_valid(text,uuid,text,text)",
         "draft_application_fingerprint(text,uuid,uuid,integer,text)",
+        "draft_revision_application_fingerprint(text,uuid,uuid,integer,text,uuid,integer,text,text)",
       ]) {
         // Owner can stage the enum-only migration; application capability checks still fail closed.
         if (
           signature.startsWith("validation_file_stop_") ||
-          signature.startsWith("draft_application_")
+          signature.startsWith("draft_application_") ||
+          signature.startsWith("draft_revision_application_")
         ) {
           const [available] = await tx<
             { present: boolean }[]

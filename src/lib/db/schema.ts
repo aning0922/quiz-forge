@@ -349,6 +349,7 @@ export const productDrafts = qf.table("product_draft", {
   productId: varchar("product_id", { length: 80 }).notNull(),
   currentRevision: integer("current_revision").notNull(),
   initialApplicationId: uuid("initial_application_id").notNull(),
+  initialRevision: integer("initial_revision").notNull().default(1),
   createdBy: uuid("created_by").notNull(),
   createdAt: time("created_at").notNull(),
 });
@@ -410,6 +411,13 @@ export const draftApplications = qf.table("draft_application", {
     length: 64,
   }).notNull(),
   targetKind: text("target_kind").notNull(),
+  expectedDraftRevision: integer("expected_draft_revision"),
+  expectedBaseContentSha256: char("expected_base_content_sha256", {
+    length: 64,
+  }),
+  expectedBaseAssetSetSha256: char("expected_base_asset_set_sha256", {
+    length: 64,
+  }),
   draftId: uuid("draft_id").notNull(),
   revision: integer("revision").notNull(),
   createdBy: uuid("created_by").notNull(),

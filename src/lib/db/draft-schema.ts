@@ -24,14 +24,16 @@ export async function verifyDraftSchema(sql: postgres.Sql): Promise<void> {
       column_type: string;
       required: boolean;
       allowed: boolean;
+      default_expression: string | null;
     }[]
   >`
-    SELECT c.relname AS table_name,a.attname AS column_name,format_type(a.atttypid,a.atttypmod) AS column_type,a.attnotnull AS required,
+    SELECT c.relname AS table_name,a.attname AS column_name,format_type(a.atttypid,a.atttypmod) AS column_type,a.attnotnull AS required,pg_get_expr(d.adbin,d.adrelid) AS default_expression,
       (has_column_privilege(current_user,c.oid,a.attnum,'SELECT')
        AND has_column_privilege(current_user,c.oid,a.attnum,'INSERT')
-       AND NOT has_column_privilege(current_user,c.oid,a.attnum,'UPDATE,REFERENCES')
+       AND has_column_privilege(current_user,c.oid,a.attnum,'UPDATE')=(c.relname='product_draft' AND a.attname='current_revision')
+       AND NOT has_column_privilege(current_user,c.oid,a.attnum,'REFERENCES')
        AND NOT EXISTS(SELECT 1 FROM aclexplode(a.attacl) p WHERE p.grantee=0)) AS allowed
-    FROM pg_attribute a JOIN pg_class c ON c.oid=a.attrelid JOIN pg_namespace n ON n.oid=c.relnamespace
+    FROM pg_attribute a JOIN pg_class c ON c.oid=a.attrelid JOIN pg_namespace n ON n.oid=c.relnamespace LEFT JOIN pg_attrdef d ON d.adrelid=c.oid AND d.adnum=a.attnum
     WHERE n.nspname='qf' AND c.relname IN ('product_draft','draft_revision','draft_application')
       AND a.attnum>0 AND NOT a.attisdropped ORDER BY c.relname,a.attnum`;
   if (
@@ -44,7 +46,8 @@ export async function verifyDraftSchema(sql: postgres.Sql): Promise<void> {
         actual.table_name !== expected.table_name ||
         actual.column_name !== expected.column_name ||
         actual.column_type !== expected.column_type ||
-        actual.required !== expected.required
+        actual.required !== expected.required ||
+        actual.default_expression !== expected.default_expression
       );
     })
   )
@@ -95,11 +98,11 @@ export async function verifyDraftSchema(sql: postgres.Sql): Promise<void> {
     SELECT p.oid::regprocedure::text AS signature,encode(sha256(convert_to(p.prosrc,'UTF8')),'hex') AS body_sha256,p.provolatile AS volatility,
       (NOT p.prosecdef AND NOT p.proretset AND NOT p.proleakproof AND p.prokind='f' AND p.pronargdefaults=0
        AND p.proconfig=ARRAY['search_path=pg_catalog']
-       AND ((p.proname='draft_application_fingerprint' AND p.proisstrict AND p.prorettype='text'::regtype AND p.prolang=(SELECT oid FROM pg_language WHERE lanname='sql'))
-         OR(p.proname='protect_draft_revision_source' AND NOT p.proisstrict AND p.prorettype='trigger'::regtype AND p.prolang=(SELECT oid FROM pg_language WHERE lanname='plpgsql')))
-       AND has_function_privilege(current_user,p.oid,'EXECUTE')=(p.proname='draft_application_fingerprint')
+       AND ((p.proname IN ('draft_application_fingerprint','draft_revision_application_fingerprint') AND p.proisstrict AND p.prorettype='text'::regtype AND p.prolang=(SELECT oid FROM pg_language WHERE lanname='sql'))
+         OR(p.proname IN ('protect_draft_revision_source','protect_draft_progress','check_draft_closure') AND NOT p.proisstrict AND p.prorettype='trigger'::regtype AND p.prolang=(SELECT oid FROM pg_language WHERE lanname='plpgsql')))
+       AND has_function_privilege(current_user,p.oid,'EXECUTE')=(p.proname IN ('draft_application_fingerprint','draft_revision_application_fingerprint'))
        AND NOT EXISTS(SELECT 1 FROM aclexplode(coalesce(p.proacl,acldefault('f',p.proowner))) a WHERE a.grantee=0)) AS allowed
-    FROM pg_proc p WHERE p.oid IN (to_regprocedure('qf.draft_application_fingerprint(text,uuid,uuid,integer,text)'),to_regprocedure('qf.protect_draft_revision_source()')) ORDER BY signature`;
+    FROM pg_proc p WHERE p.pronamespace='qf'::regnamespace AND p.proname IN ('draft_application_fingerprint','draft_revision_application_fingerprint','protect_draft_revision_source','protect_draft_progress','check_draft_closure') ORDER BY signature`;
   if (
     helpers.length !== draftSchemaFacts.helpers.length ||
     draftSchemaFacts.helpers.some((expected, index) => {
@@ -114,14 +117,28 @@ export async function verifyDraftSchema(sql: postgres.Sql): Promise<void> {
     })
   )
     throw new StudioUnavailableError();
-  const [guard] = await sql<{ audit: boolean; trigger: boolean }[]>`
-    SELECT EXISTS(SELECT 1 FROM pg_enum WHERE enumtypid='qf.audit_action'::regtype AND enumlabel='draft_applied') AS audit,
-      ((SELECT count(*) FROM pg_trigger WHERE tgrelid IN ('qf.product_draft'::regclass,'qf.draft_revision'::regclass,'qf.draft_application'::regclass) AND NOT tgisinternal)=1
-       AND EXISTS(SELECT 1 FROM pg_trigger WHERE tgrelid='qf.draft_revision'::regclass AND tgname='draft_revision_source'
-         AND tgfoid='qf.protect_draft_revision_source()'::regprocedure AND NOT tgisinternal AND tgenabled='O' AND tgtype=7
-         AND tgqual IS NULL AND tgattr=''::int2vector AND tgnargs=0 AND octet_length(tgargs)=0
-         AND tgconstraint=0 AND tgconstrrelid=0 AND NOT tgdeferrable AND NOT tginitdeferred AND tgparentid=0
-         AND tgoldtable IS NULL AND tgnewtable IS NULL)) AS trigger`;
-  if (guard?.audit !== true || guard.trigger !== true)
+  const triggers = await sql<
+    { table_name: string; name: string; definition: string; valid: boolean }[]
+  >`
+    SELECT c.relname AS table_name,t.tgname AS name,pg_get_triggerdef(t.oid) AS definition,
+      (t.tgenabled='O' AND t.tgqual IS NULL AND t.tgattr=''::int2vector AND t.tgnargs=0 AND octet_length(t.tgargs)=0 AND t.tgconstrrelid=0 AND t.tgparentid=0 AND t.tgoldtable IS NULL AND t.tgnewtable IS NULL AND ((t.tgconstraint=0 AND NOT t.tgdeferrable AND NOT t.tginitdeferred) OR(t.tgconstraint<>0 AND t.tgdeferrable AND t.tginitdeferred))) AS valid
+    FROM pg_trigger t JOIN pg_class c ON c.oid=t.tgrelid WHERE t.tgrelid IN ('qf.product_draft'::regclass,'qf.draft_revision'::regclass,'qf.draft_application'::regclass) AND NOT t.tgisinternal ORDER BY c.relname,t.tgname`;
+  if (
+    triggers.length !== draftSchemaFacts.triggers.length ||
+    draftSchemaFacts.triggers.some((expected, index) => {
+      const actual = triggers[index];
+      return (
+        !actual ||
+        !actual.valid ||
+        actual.table_name !== expected.table_name ||
+        actual.name !== expected.name ||
+        actual.definition !== expected.definition
+      );
+    })
+  )
     throw new StudioUnavailableError();
+  const [audit] = await sql<
+    { present: boolean }[]
+  >`SELECT EXISTS(SELECT 1 FROM pg_enum WHERE enumtypid='qf.audit_action'::regtype AND enumlabel='draft_applied') AS present`;
+  if (audit?.present !== true) throw new StudioUnavailableError();
 }
