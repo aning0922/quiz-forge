@@ -122,3 +122,13 @@ fixture 中一次检查发现存储空目录路径遗漏 `uploads`，在提交�
 新增3项与原5项baseline单元共8通过：实际静态bytes与独立派生相等、所有图片原字节、全引用属于新Product、三hash/Product篡改与demo拒绝、静态entry/hash及synthetic资格。implementation:check仍旧3/3、51源/280锁，consumer1/1、77源/268锁，均通过。本笔不打开DB、不创建parent/play/Key或运行任何native媒体验证；P4专属prepare/finish/清理和实际资产服务随后接此固定基线。
 
 本笔174文件/1847单元、format/lint/typecheck和production build通过，trace80/0违规；未运行PG/E2E来替代合成登记审查。
+
+## P4 专属物理 fixture 观察合同（2026-10-19）
+
+`tests/db/p4-consumer-fixture-contract.ts` 与同目录 `P4_FIXTURE_CONTRACT.md` 固定私有文件名、字段、数量/总量和观察来源。实现入口仍在准备，此笔不是已可运行CLI或真实完成：prepare/read/finish/cleanup将用独立r1/head父版本和实际私有文件；CLI仅prepare/finish+runId，observations只读同run的0600固定文件，不通过参数/stdout传raw或报告正文。
+
+明确分离 mode=`operator-services` 与正式 `consumer-e2e`。`finished`仅为fixture图封存；顶层 `completed` 必须等价于finished+正式模式+有限suiteCompletion+实际report，运营子测不能算完整E2E。完成摘要固定8类case、每类恰一次、status/expectedStatus皆passed、retry/repeatEachIndex皆0，B须沿实际testInfo形成，部分筛选/skip/expected fail/retry均不允许finish full E2E。固定case列表及具体字段见合同。
+
+play/Key/state/report来源是已核验HTTP事实，彼此ID/hash/终态必须一致；每个current grant都须来自bootstrap和对应HttpOnly cookie的私下digest，禁止收养Product扫描结果，不保存raw cookie/Key/CSRF。未知图、错run/actor/关联、重复行和伪造serverExited字段拒绝。cleanup仍须真实ServerExitProof与首次删除前完整图/文件/跨引用证明，按P4先于共享blob的P3-E顺序。合同没有签发数据库、FD或server退出能力。
+
+4项合同单元通过，覆盖准备态/两模式、full模式不完整拒绝、raw/扫描来源/跨Product/未绑定grant拒绝、错run/重复row/actor/未知authority字段拒绝，以及8类完成摘要缺项/重复/未知/skip/fail/retry/repeat反例。lint/typecheck通过；没有运行fixture实现/PG或E2E来冒称此合同已交付完整流程。
