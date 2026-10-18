@@ -21,6 +21,7 @@ export type InternalVersionWork = Readonly<{
   checkpoint(): void;
   checkGuard(): Promise<void>;
   quarantine(resource: unknown): void;
+  timeout(): void;
   write<T>(
     credentials: StudioWriteCredentials,
     capability: StudioCapability,
@@ -122,6 +123,9 @@ export function createInternalVersionOwner(
                 quarantine(resource: unknown) {
                   task.quarantine(resource);
                   task.quarantine(held);
+                },
+                timeout() {
+                  task.stop(new StudioError("PREVIEW_TIMEOUT"));
                 },
                 async write<T>(
                   credentials: StudioWriteCredentials,
