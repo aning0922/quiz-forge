@@ -217,7 +217,11 @@ export async function prepareDraftRevisionFixture(
       ["spare", 4],
       ["alias-initial", 1],
     ] as const) {
-      const prepared = await prepareP3dSource(value.productId, ordinal, runId),
+      const prepared = await prepareP3dSource(
+          value.productId,
+          ordinal,
+          `p3d:${runId}`,
+        ),
         ready = await seedReadyP2b3Source(db, auth, prepared, {
           createProduct: name === "initial",
         });
