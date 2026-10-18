@@ -96,3 +96,13 @@ A d9a4ca8两项在隔离Node child实际打开/读/hash文件及真实PG事务�
 root第一次后续完整PG共467项，186通过/263失败/18跳过。首个真实失败为生命周期final cleanup看到imports.enabled=true而保守拒绝；已保留账本使后续reset保护级联拒绝，并非把所有失败解释为独立业务缺陷。f677现场停止保存。c2d6e5只在两类测试调用方显式正式禁导入：普通生命周期在首次cleanup前，quarantine场景在child前；从enabled=true分别实际2项与2项通过，独审关闭对fresh默认false的依赖，生产cleanup检查未放宽。新的完整PG仍单独待结果。
 
 root E2E编排同runId、独立single-worker/retries0 project依赖P3D，默认mobile/desktop排除新spec；全PW成功且真实退出证明成立后，核completed、正式禁导入，再P3E→P3D→P3C→B3→B2精确清理。未知/失败保留；精确project名加入现有CLI白名单，不允许控制参数绕过真实执行。独审只读枚举251测试/19文件，P3E六case无重复；参数13项通过，实际完整E2E尚未运行。
+
+## 最终回归与版本列表成功分支 P2
+
+调用方修复后主控 fresh 完整 PG 56 文件 469 项全部通过，243.87 秒。5db7d46 远端普通 CI 39125409038 亦实际 1709 单元、469 PG、46 driver，并在另两个 fresh 库通过 14 服务与 3 媒体 UNKNOWN；媒体 CI 39125408991 success。此前失败现场未复用。
+
+第一轮生产 E2E 因新增 beforeAll 默认 30 秒小于正常认证窗口等待最多 61 秒而在准备期失败，235 通过/1 失败/10 旧 skip/5 未运行。34ba467+3cc1ca8（root 4cd8c2f/5db7d46）给两个 hook 各 120 秒，子进程仍 90 秒；Astra 精确复核实际 execFile close、六项完成门及失败保留不变，通过该修复。
+
+第二轮为 237 通过/1 失败/10 旧 skip/3 未运行；新增 review/seal 前两项及 40 张图实际完成。版本列表第三项在异步草稿成功返回后卸载，按钮 detached。root 用实际失败 fixture 的有效完整 DraftSummary 离线确认 URL helper 的 unrecognized_keys；Astra 独立严格 checkDraftRead 接受 21 字段 DTO，旧 helper 拒绝 18 个额外字段，三字段投影成功。实际 React/Chromium 156 operator 与 read-only 两类迟到合法 draft GET 均导致 ZodError、整页卸载、恢复按钮从可用变为 0，而两原锚点仍原样保留。此为生产 P2，B 正修复并等独立复验；不以 force click 或更长 timeout 绕过。独审证据为其私有 `.cache/p3e-ui-review/draft-crash-result.json`，未连接 root 失败库。
+
+此前 24 场景失权矩阵的 draft GET 使用失败响应，未覆盖此合法成功分支，故其通过不外推。两轮失败库 434…/d4faa… 均正式停止、相关进程与 3100 均无残余，finish/cleanup 未放行。最终技术出口和修复后全量图检仍待完成。

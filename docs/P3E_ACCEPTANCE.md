@@ -1,6 +1,6 @@
 # P3-E 精确基线审核与内部版本封存技术验收
 
-日期：2026-10-18。集成提交 `e0a5e6221e8ef6f5789e4831d6783e41d0e8e75e`。数据库、纯逻辑、构建、媒体封存与准确提交的双 CI 已通过；最终生产 E2E、四宽逐图检查和独立出口结论仍在进行。本文件不提前宣告本阶段完成。
+日期：2026-10-18。集成已至 `5db7d4640a93a2aaf2744d56fe08c540ac39de14`。数据库、纯逻辑、构建、媒体封存与准确提交的双 CI 已通过；第二轮生产 E2E 发现版本列表 render 异常，正在修复和独立复验。最终浏览器、四宽逐图检查和独立出口结论未完成。
 
 ## 已实现行为
 
@@ -28,6 +28,8 @@
 
 准确 e0a5e62 的普通 CI [39123248278](https://github.com/aning0922/quiz-forge/actions/runs/39123248278)和 Linux 媒体 CI [39123248228](https://github.com/aning0922/quiz-forge/actions/runs/39123248228)均为实际 success。
 
+两 hook 预算修复后的准确 5db7d46，普通 CI [39125409038](https://github.com/aning0922/quiz-forge/actions/runs/39125409038)及 Linux 媒体 CI [39125408991](https://github.com/aning0922/quiz-forge/actions/runs/39125408991)亦实际 success。这些 CI 不包含本机生产浏览器全套，不能替代其失败事实。
+
 最终 main sourceBundle 为 `0f5a9c6dfa12e05a5f8e33dde0c492524ded8ad2c12123af77d285abef545916`，deployment 为 `3b7c8890e015deb5ceea43c7f2a45c74aeae3c9da94a6b55a536ae2c887d8224`，runtimeBundle 为 `0cf7338a72f4d4f1d87c1ef11591305a2f20a2593bab50add539745922b07865`；1059 source、918 artifact、35365449 字节。24 个 Next 生成 cache 文件共 99011680 字节移至本地私有保留目录后绑定；1876 个非 cache 条目的字节、mode 和 inode 不变，没有放宽大小限制。
 
 ## 真实旧库与首款现场
@@ -41,6 +43,8 @@
 ## 保留的失败和修复
 
 最终生产 E2E 首轮 235 通过、1 失败、10 项既有 skip、5 项未运行。新增套件的 `beforeAll` 在业务测试开始前被 Playwright 默认 30 秒钩子预算中断；CLI 自身 90 秒预算中包含正常等待真实认证窗口的最多 61 秒。失败时新 fixture 已准备、未完成，写者及 Next 已退出，3100 无监听。434… 数据库正式停止保留，浏览器报告和截图移至 `.cache/p3e-e2e-first-failure`。正在修订钩子预算后用 fresh 实例重跑；不降低认证限制，不跳过新增测试。
+
+4cd8c2f/5db7d46 将 beforeAll、afterAll 分别设为 120 秒，CLI 仍为 90 秒，业务 15 秒和六项完成门不变，预算修复经独审通过。fresh 第二轮 237 通过、1 失败、10 旧 skip、3 未运行，8.7 分钟；新增前两项审核和封存实际通过，取得 40 张四宽图。只读第三项点击核实按钮时，按钮在页面 render 异常后消失。主控用实际失败 fixture 的有效 DraftSummary 离线复现：将完整 DTO 传入只接受 productId/draftId/revision 的 strict URL helper，产生 unrecognized_keys；显式三字段投影正常。B 正做最小修复及组件浏览器反例，Astra 独立复验。afterAll 正确拒绝 finish；d4faa… 已正式停库，全部进程退出，产物位于 `.cache/p3e-e2e-second-failure`。这 40 图不作为修复后的最终视觉证据。
 
 初次核心 PG 为 450 通过、1 失败，原因是旧测试精确表清单缺新增两表；修正清单后 41 定向通过。最终完整 PG 首轮为 186 通过、263 失败、18 skipped：第一个生命周期测试没有明确关闭前序套件留下的导入开关，fixture 按设计保留，后续 reset 持续拒绝导致级联失败。调用方现使用正式配置服务明确禁导入，未放宽生产清理保护；失败实例 f677… 已停止保留。独立测试再次从 enabled=true 起步通过，修正后新的 fcd… 完整 469 项全部通过，并已停止。
 
