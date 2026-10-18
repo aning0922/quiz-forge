@@ -198,3 +198,5 @@ backend proof改查同数据库全部非当前admin/当前exclusive维护PID，�
 另在真正RR结束后先由另一实际请求logout，再让原readSession进入新RC授权，原读取ACCESS_DENIED；在真实私有资源字节读完且native FD已关闭后用另一实际请求logout，原resource最终授权拒绝，未issue body。两次logoutObserved均只在exact logout成功后记录；scope/grant/state/report全部按实际响应与私下digest封存。末尾显式发起独立格式合法无效Key尝试，实际永久fixed-window budget达到used=60并RATE_LIMITED，不reset、不退款、不写请求历史；已有报告/运营读取不经该预算。
 
 新eeede实例1项真实PG用例9.10s（8.17s test）通过，涵盖上述多个边界，最终原图/完整row manifest与实际退出proof下cleanup成功。format/lint/typecheck通过；本笔仅加测试与日志，没有重跑未变生产源的1851单元/build，也不把定向通过计为root第二轮全ordinary PG/生产E2E或独审关闭。fixture仍mode=operator-services、completed=false。下一步等待主控对311四原期限反例、完整普通PG和B生产浏览器链路的实际结论，并处理新证据。
+
+该故障矩阵必须使用fresh独立consumer-faults suite与CI专属实例，不加入ordinary顺序共享库。它会永久留下budget.used=60，清理不触预算行；同分钟后续exchange会RATE。auth协调等待可能偶然跨分钟，不构成不干扰证明，也不能依赖测试顺序。上述9.10s仅证明fresh eeede独立1项通过，没有ordinary组合不干扰的实证。主控负责共享vitest/CI隔离配置；A不改test源码或重置/退款预算。此前主控第二轮ordinary固定源不含本新故障测试，不将两种scope混记。
