@@ -31,3 +31,9 @@ review 以 Product/key 唯一、Product/draft/revision 唯一；六列复合 FK 
 后续实际验证已补：`p3e-upgrade.test.ts` 在独占合成实例重建真实 0016，运行 r1→r2→r3，14 张既存表逐行原 JSON 文本在升级前后完全相同，5 blob/3 revisions 保留；新 app 在 0016 拒绝打开，活动旧写者/共享读取 guard/同名削弱旧约束均阻止升级，成功后新账本为空且原 key 回放仍固定。旧 0010→0014→拒绝不安全0015 升级回归与 P3-D 五源/真实进程退出清理回归也各 1 项实际通过。未修改主控保存的 0016 现场。
 
 尚待：review/version 应用服务及 resolver、真实 FD/SQL 关闭失败/物理留存、P3-E 自有夹具与旧夹具的完整清理回归、最终集成工程检查。缺实际受信 renderer/engine 执行条目时不提供占位 seal 成功。全阶段六项、3100 生产 E2E、媒体/浏览器验收由主控集成执行，本文件只报告本流实际结果。
+
+## 独审整改：审计 NULL 三值逻辑
+
+Astra 指出新增 audit_target OR 分支缺少 target_kind/target_revision 非空条件，SQL CHECK 可能接受 NULL。已在应用角色真实事务复现：审核/版本两种 action 分别缺 kind 或 revision，共 4 例均插入成功；逐例显式回滚后新 action 计数保持 0，没有反例留存。原 checksum 测试实例保留并停库，没有改迁移历史。
+
+最小修复为新增分支显式要求 target_kind、target_revision 非空，整个 audit_target 表达式以 IS TRUE 收口；对应 draft schema exact fact 同步更新。修订 SQL 在另一 fresh purpose=test 实例实际安装；4 个缺字段负例均报 23514/audit_target，2 个完整有限目标正例通过。有谱系 16→17、两套 schema guard 和数据核心共 23 项 PostgreSQL 再次通过。0001..0016 原字节保持。
