@@ -21,6 +21,7 @@ import {
   removeOwned,
 } from "@/features/quizpack/import/storage";
 import { StorageLock } from "@/features/quizpack/import/storage-lock";
+import { configureImports } from "@/features/quizpack/import/config-management";
 import { assertNoRetainedInternalReferences } from "@/features/product/internal-versions/retention";
 import { canonicalP1Json } from "@/features/quizpack/v1/canonical";
 import { quizPackContentSchema } from "@/features/quizpack/v1/content";
@@ -322,6 +323,9 @@ async function applyUiOperations(f: InternalVersionFixture) {
   };
 }
 it("reserves one exact fixed fixture, observes actual operations, preserves unowned ledger before unlink, and only real exit permits final cleanup", async () => {
+  // Earlier suites may leave imports enabled. Establish cleanup's REAL prerequisite
+  // before even the first negative probe, so later negatives exercise the graph checks.
+  await configureImports(db.config.instanceId, false);
   const runId = randomUUID();
   await cli("prepare", runId);
   let fixture = await readInternalVersionFixture(db, runId);
@@ -486,6 +490,7 @@ it("retains four earlier-owned shared PNGs and their old source while deleting o
   complete = false;
   db.app = await createDatabase(db.config);
   await resetDomainDatabase(db);
+  await configureImports(db.config.instanceId, false);
   const auth = await authenticateTestOperator(db),
     runId = randomUUID(),
     old = await legacySharedSource(`legacy-shared-${runId}`, runId),

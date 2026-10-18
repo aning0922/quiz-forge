@@ -79,3 +79,11 @@ FD 场景先真实 record/seal，再在子进程加载 reader 前安装只针对
 2026-10-18 fresh purpose=test 实例 `1d8b2c394e65f363042fd16677172c73` 的两项 PG 测试实际通过（45.38s）。安全摘要保存在该忽略缓存实例目录的 `p3e-close-fault-<runId>.json`（0600），不含凭据、SQL 或原始错误。全量 138 文件 / 1612 单元、format:check、lint、typecheck、build 通过；实现门禁核 3 descriptor / 51 文件 / 280 lock records，构建 trace 为 72 / 15075 paths / 0 违规。生产 E2E、最终四宽和整阶段验收仍由主控集成执行。
 
 首次运行误把多余 `--` 传给 Vitest，启动了完整 DB suite，发现后终止；期间旧 exact-table 期望及既有生命周期等失败。该 `763ab8e46a6ee88188ef63c592e0a437` 实例已停库原样保留，没有 reset 或重跑来覆盖失败现场；以上两项成功均来自另建 fresh 实例和准确文件过滤命令。所有更早失败实例继续停库保留。
+
+## 全套隔离整改：调用方明确禁导入
+
+主控完整 PG 发现前序 suite 可留下 imports.enabled=true，而本流两个生命周期文件依赖 fresh 默认 false；首例最终 cleanup 因严格禁导入前提拒绝，账本留存导致后续保护 reset 连带拒绝。该主控 f677 失败现场由主控停库保存，本流未操作。
+
+修复只在调用方补正式 configureImports(instanceId,false)：原生命周期每项用例首次任何 cleanup 探针前执行；真实关闭故障每项在隔离 child 启动前执行，因为开关本身需要维护独占锁，不能在 quarantine 后试图补关。cleanup 内部 live.imports.enabled 检查及所有归属/留存保护不变，负例不再误由导入开启的同名错误提前满足。
+
+在另建自有 fresh purpose=test 实例 `17fdeef23fd8323be724a8dbd37459f7`，先用正式 CLI enabled=true，再精确运行原生命周期文件，实际 2 项通过（4.29s）；随后再次正式 enabled=true，精确复跑关闭故障文件，实际 2 项通过（43.27s）。两次均有显式开启起点，未沿用 fresh 默认值。两份变更测试格式、lint、完整类型检查及 diff 检查通过；本次只有测试前提与记录变更，不将前次工程检查冒称本次完整 PG/E2E 结果，后者由主控换 fresh 重跑。
