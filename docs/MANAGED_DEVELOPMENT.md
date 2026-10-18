@@ -2,6 +2,8 @@
 
 ## 2026-10-18 P4 共享合同与并行归属
 
+机器/设计基线 6ae499a 已独审收口并由主控冻结，允许 A 进入 0018/guard/owner/事务/留存及真实 PG，B 进入 HTTP 与消费者/运营 controller；具体范围见 CONSUMER_P4/P4_DATA_DESIGN。root 继续精确实现登记与集成，3100 独占串行。此为实施启动，未验收实际 P4/P5；已批准同一内容/视觉不重复请批。
+
 主控在 `codex/consumer-session-report` / Draft PR #20，从 c83788b 接续；当前机器接口至 50a35a6。共享基础/codec、领域 DTO/纯视图接口、errors/resolve 已由原 Astra 独审分别通过；entry/service/owner/同事务 ports 正在收口。主控完整 1763 单元及 format/lint/typecheck 已过，尚未验收数据库或消费者端到端。
 
 A（原聊天 01a13f49-bff9-74b0-8f7c-03cd46b346c1，`codex/p4-consumer-data`）负责后续 0018、guard、惰性 owner、数据事务/领域 ports、保留与真实 PG；B（原聊天 01a13f4a-3ac5-7a72-9ae0-70b24ec85f04，`codex/p4-consumer-ui`）负责纯六视图/PNG，冻结后接消费者/Studio host 与 HTTP。root 独占共享基础/应用接口/精确实现登记/全量集成、生产构建与 3100；Astra 原独立聊天负责非实施审查。常规工作沿既有授权推进，同一内容与视觉内测基线不重复请批。详细状态和仍待实现的边界见 [CONSUMER_P4](CONSUMER_P4.md)、[P4_REVIEW](P4_REVIEW.md)。
