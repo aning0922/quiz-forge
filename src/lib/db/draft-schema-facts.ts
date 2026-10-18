@@ -535,6 +535,13 @@ export const draftSchemaFacts = {
     },
     {
       table_name: "draft_application",
+      name: "draft_application_revision_fk",
+      definition:
+        "FOREIGN KEY (product_id, draft_id, revision, id) REFERENCES qf.draft_revision(product_id, draft_id, revision, application_id) ON UPDATE RESTRICT DEFERRABLE INITIALLY DEFERRED",
+      kind: "f",
+    },
+    {
+      table_name: "draft_application",
       name: "draft_application_revision_not_null",
       definition: "NOT NULL revision",
       kind: "n",

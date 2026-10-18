@@ -575,3 +575,24 @@ it("app guard rejects disabled closure and unexpected column UPDATE grants; owne
     .sql`SELECT count(*)::int AS n FROM qf.draft_revision WHERE product_id=${productId}`;
   expect(row!.n).toBe(0);
 });
+
+it("application-only SQL cannot reserve a successful key/source without an exact revision", async () => {
+  const b = await binding(),
+    t = b.target,
+    fp = await appendDraftFingerprint(fingerprintInputFromAppendBinding(b));
+  await expect(
+    db.app.sql.begin(async (tx) => {
+      await tx`INSERT INTO qf.draft_application(id,product_id,idempotency_key,fingerprint,source_import_id,source_validation_id,expected_validation_state_revision,expected_candidate_sha256,target_kind,draft_id,revision,created_by,created_at,expected_draft_revision,expected_base_content_sha256,expected_base_asset_set_sha256) VALUES(${randomUUID()},${productId},${b.idempotencyKey},${fp},${b.sourceImportId},${b.sourceValidationId},${b.expectedValidationStateRevision},${b.expectedCandidateSha256},'append-revision',${t.draftId},2,${auth.id},clock_timestamp(),1,${t.expectedCanonicalContentSha256},${t.expectedAssetSetSha256})`;
+    }),
+  ).rejects.toMatchObject({ code: "23503" });
+  expect(await counts()).toEqual({
+    current: 1,
+    revisions: 1,
+    applications: 1,
+    audits: 1,
+  });
+  expect(
+    (await service.resolveApplication(db.app, auth.session.raw, b)).kind,
+  ).toBe("unresolved");
+  expect((await append(b)).application.revision).toBe(2);
+});
