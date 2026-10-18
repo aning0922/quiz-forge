@@ -114,173 +114,240 @@ try {
     consumerEvents: string[];
     exportConsumerProbe: (mode: string) => Promise<number[]>;
   };
-  for (const width of [320, 375, 390, 430]) {
-    await page.setViewportSize({ width, height: 900 });
-    for (const variant of width === 320
-      ? ["normal", "long", "missing", "loading", "saved"]
-      : ["normal"])
-      for (const state of [
-        "cover",
-        "question",
-        "resume",
-        "result",
+  if (process.argv.includes("--resume-only")) {
+    for (const width of [320, 375, 390, 430]) {
+      await page.setViewportSize({ width, height: 900 });
+      await page.evaluate(() =>
+        (window as unknown as ProbeWindow).renderConsumerProbe(
+          "resume",
+          "normal",
+        ),
+      );
+      await expect(page.locator("[data-consumer-state=resume]")).toBeVisible();
+      await page.evaluate(() => document.fonts.ready);
+      const result = await page.locator("main").evaluate((main) => ({
+        overflow: document.documentElement.scrollWidth > innerWidth,
+        buttons: [...main.querySelectorAll("button")].map((b) => ({
+          text: b.textContent?.trim(),
+          height: b.getBoundingClientRect().height,
+        })),
+      }));
+      expect(result.overflow).toBe(false);
+      expect(result.buttons.every((b) => b.height >= 44)).toBe(true);
+      const file = `resume-refined-${width}.png`;
+      await page.screenshot({ path: path.join(out, file), fullPage: true });
+      shots.push({ width, file, ...result });
+    }
+    await page.evaluate(() =>
+      (window as unknown as ProbeWindow).renderConsumerProbe(
         "report",
-        "poster",
-      ]) {
-        if (
-          variant === "saved" &&
-          !["cover", "question", "resume"].includes(state)
-        )
-          continue;
+        "duplicate",
+      ),
+    );
+    await expect(page.locator("[data-consumer-state=report]")).toBeVisible();
+    const title = await page.locator("main h1").textContent();
+    expect(title).toBeTruthy();
+    expect(await page.getByText(title!, { exact: true }).count()).toBe(1);
+    expect(errors).toEqual([]);
+    await writeFile(
+      path.join(out, "result.json"),
+      JSON.stringify(
+        {
+          qualification:
+            "Pure synthetic component follow-up only; four resume widths and exact duplicate report subtitle suppression; no persistence",
+          browser: browser.version(),
+          shots,
+          exactDuplicateSuppressed: true,
+          pageErrors: errors,
+          passed: true,
+        },
+        null,
+        2,
+      ),
+    );
+    console.log(
+      JSON.stringify({
+        output: out,
+        shots: 4,
+        exactDuplicateSuppressed: true,
+        passed: true,
+      }),
+    );
+  } else {
+    for (const width of [320, 375, 390, 430]) {
+      await page.setViewportSize({ width, height: 900 });
+      for (const variant of width === 320
+        ? ["normal", "long", "missing", "loading", "saved"]
+        : ["normal"])
+        for (const state of [
+          "cover",
+          "question",
+          "resume",
+          "result",
+          "report",
+          "poster",
+        ]) {
+          if (
+            variant === "saved" &&
+            !["cover", "question", "resume"].includes(state)
+          )
+            continue;
+          await page.evaluate(
+            ({ state, variant }) =>
+              (window as unknown as ProbeWindow).renderConsumerProbe(
+                state,
+                variant,
+              ),
+            { state, variant },
+          );
+          await expect(
+            page.locator(`[data-consumer-state=${state}]`),
+          ).toBeVisible();
+          await page.evaluate(() => document.fonts.ready);
+          const geometry = await page.evaluate(() => ({
+            width: innerWidth,
+            scroll: document.documentElement.scrollWidth,
+            smallTargets: [...document.querySelectorAll("button")].filter(
+              (b) => b.getBoundingClientRect().height < 44,
+            ).length,
+            smallBody: [
+              ...document.querySelectorAll("main p,main label,main li"),
+            ].filter((e) => parseFloat(getComputedStyle(e).fontSize) < 16)
+              .length,
+          }));
+          expect(geometry.scroll).toBeLessThanOrEqual(width);
+          expect(geometry.smallTargets).toBe(0);
+          expect(geometry.smallBody).toBe(0);
+          const file = `${state}-${variant}-${width}.png`;
+          await page.screenshot({ path: path.join(out, file), fullPage: true });
+          shots.push({ file, state, variant, ...geometry });
+        }
+    }
+    for (const reason of [
+      "saving",
+      "unknown",
+      "conflict",
+      "authority-lost",
+      "unavailable",
+    ])
+      for (const state of ["cover", "question", "resume"]) {
         await page.evaluate(
-          ({ state, variant }) =>
+          ({ state, reason }) =>
             (window as unknown as ProbeWindow).renderConsumerProbe(
               state,
-              variant,
+              "normal",
+              reason,
             ),
-          { state, variant },
+          { state, reason },
         );
         await expect(
-          page.locator(`[data-consumer-state=${state}]`),
+          page.locator(`[data-consumer-save=${reason}]`),
         ).toBeVisible();
-        await page.evaluate(() => document.fonts.ready);
-        const geometry = await page.evaluate(() => ({
-          width: innerWidth,
-          scroll: document.documentElement.scrollWidth,
-          smallTargets: [...document.querySelectorAll("button")].filter(
-            (b) => b.getBoundingClientRect().height < 44,
-          ).length,
-          smallBody: [
-            ...document.querySelectorAll("main p,main label,main li"),
-          ].filter((e) => parseFloat(getComputedStyle(e).fontSize) < 16).length,
-        }));
-        expect(geometry.scroll).toBeLessThanOrEqual(width);
-        expect(geometry.smallTargets).toBe(0);
-        expect(geometry.smallBody).toBe(0);
-        const file = `${state}-${variant}-${width}.png`;
-        await page.screenshot({ path: path.join(out, file), fullPage: true });
-        shots.push({ file, state, variant, ...geometry });
+        expect(
+          await page.locator("main button:enabled,main input:enabled").count(),
+        ).toBe(0);
       }
-  }
-  for (const reason of [
-    "saving",
-    "unknown",
-    "conflict",
-    "authority-lost",
-    "unavailable",
-  ])
-    for (const state of ["cover", "question", "resume"]) {
+    await page.evaluate(() =>
+      (window as unknown as ProbeWindow).renderConsumerProbe(
+        "question",
+        "normal",
+      ),
+    );
+    await expect(page.locator("[data-consumer-state=question]")).toBeVisible();
+    await page.locator("input[type=radio]").last().click();
+    expect(
+      (
+        await page.evaluate(
+          () => (window as unknown as ProbeWindow).consumerEvents,
+        )
+      ).some((e) => e.startsWith("choose:")),
+    ).toBe(true);
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    for (const state of [
+      "cover",
+      "question",
+      "resume",
+      "result",
+      "report",
+      "poster",
+    ]) {
       await page.evaluate(
-        ({ state, reason }) =>
+        (state) =>
           (window as unknown as ProbeWindow).renderConsumerProbe(
             state,
             "normal",
-            reason,
           ),
-        { state, reason },
+        state,
       );
       await expect(
-        page.locator(`[data-consumer-save=${reason}]`),
+        page.locator(`[data-consumer-state=${state}]`),
       ).toBeVisible();
       expect(
-        await page.locator("main button:enabled,main input:enabled").count(),
-      ).toBe(0);
-    }
-  await page.evaluate(() =>
-    (window as unknown as ProbeWindow).renderConsumerProbe(
-      "question",
-      "normal",
-    ),
-  );
-  await expect(page.locator("[data-consumer-state=question]")).toBeVisible();
-  await page.locator("input[type=radio]").last().click();
-  expect(
-    (
-      await page.evaluate(
-        () => (window as unknown as ProbeWindow).consumerEvents,
-      )
-    ).some((e) => e.startsWith("choose:")),
-  ).toBe(true);
-  await page.emulateMedia({ reducedMotion: "reduce" });
-  for (const state of [
-    "cover",
-    "question",
-    "resume",
-    "result",
-    "report",
-    "poster",
-  ]) {
-    await page.evaluate(
-      (state) =>
-        (window as unknown as ProbeWindow).renderConsumerProbe(state, "normal"),
-      state,
-    );
-    await expect(page.locator(`[data-consumer-state=${state}]`)).toBeVisible();
-    expect(
-      await page
-        .locator("main")
-        .evaluate((e) =>
-          [...e.querySelectorAll("*")].some(
-            (n) => getComputedStyle(n).animationName !== "none",
+        await page
+          .locator("main")
+          .evaluate((e) =>
+            [...e.querySelectorAll("*")].some(
+              (n) => getComputedStyle(n).animationName !== "none",
+            ),
           ),
-        ),
-    ).toBe(false);
-  }
-  const bytes = await page.evaluate(() =>
-    (window as unknown as ProbeWindow).exportConsumerProbe("normal"),
-  );
-  await writeFile(
-    path.join(out, "consumer-export-1080x1920.png"),
-    new Uint8Array(bytes),
-  );
-  const meta = await sharp(new Uint8Array(bytes)).metadata();
-  expect([meta.width, meta.height, meta.format]).toEqual([1080, 1920, "png"]);
-  for (const mode of ["wrong-hash", "missing-font", "stale"]) {
-    const failed = await page.evaluate(async (mode) => {
-      try {
-        await (window as unknown as ProbeWindow).exportConsumerProbe(mode);
-        return false;
-      } catch {
-        return true;
-      }
-    }, mode);
-    expect(failed).toBe(true);
-    observations.push({ mode, failed });
-  }
-  expect(errors).toEqual([]);
-  await writeFile(
-    path.join(out, "result.json"),
-    JSON.stringify(
-      {
-        qualification:
-          "Actual pure components and real Canvas PNG; synthetic data/pixels/status only; no business HTTP/controller/DB/3100/native/persistence acceptance",
-        browser: browser.version(),
-        shots,
-        blockedCases: 15,
-        reducedMotionStates: 6,
-        callbackObserved: true,
-        png: {
-          file: "consumer-export-1080x1920.png",
-          width: meta.width,
-          height: meta.height,
-          bytes: bytes.length,
+      ).toBe(false);
+    }
+    const bytes = await page.evaluate(() =>
+      (window as unknown as ProbeWindow).exportConsumerProbe("normal"),
+    );
+    await writeFile(
+      path.join(out, "consumer-export-1080x1920.png"),
+      new Uint8Array(bytes),
+    );
+    const meta = await sharp(new Uint8Array(bytes)).metadata();
+    expect([meta.width, meta.height, meta.format]).toEqual([1080, 1920, "png"]);
+    for (const mode of ["wrong-hash", "missing-font", "stale"]) {
+      const failed = await page.evaluate(async (mode) => {
+        try {
+          await (window as unknown as ProbeWindow).exportConsumerProbe(mode);
+          return false;
+        } catch {
+          return true;
+        }
+      }, mode);
+      expect(failed).toBe(true);
+      observations.push({ mode, failed });
+    }
+    expect(errors).toEqual([]);
+    await writeFile(
+      path.join(out, "result.json"),
+      JSON.stringify(
+        {
+          qualification:
+            "Actual pure components and real Canvas PNG; synthetic data/pixels/status only; no business HTTP/controller/DB/3100/native/persistence acceptance",
+          browser: browser.version(),
+          shots,
+          blockedCases: 15,
+          reducedMotionStates: 6,
+          callbackObserved: true,
+          png: {
+            file: "consumer-export-1080x1920.png",
+            width: meta.width,
+            height: meta.height,
+            bytes: bytes.length,
+          },
+          negativeExports: observations,
+          pageErrors: errors,
+          passed: true,
         },
-        negativeExports: observations,
-        pageErrors: errors,
+        null,
+        2,
+      ),
+    );
+    console.log(
+      JSON.stringify({
+        output: out,
+        shots: shots.length,
+        blockedCases: 15,
         passed: true,
-      },
-      null,
-      2,
-    ),
-  );
-  console.log(
-    JSON.stringify({
-      output: out,
-      shots: shots.length,
-      blockedCases: 15,
-      passed: true,
-    }),
-  );
+      }),
+    );
+  }
 } finally {
   await browser?.close();
   await new Promise<void>((resolve, reject) =>

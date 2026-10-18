@@ -52,3 +52,9 @@ Chromium156.0.8078.4实际通过：六状态×四宽24图；320长文案/缺素�
 业务HTTP/controller沿root/A冻结合同继续，当前尚未接入。真实DB、3100生产E2E、生产build及首款现场由总控安排；本步不能记作完整P4验收或对外发布批准。
 
 本工作树本次全局检查实际通过：pnpm format:check、pnpm lint、pnpm typecheck、pnpm test（152文件/1739项，20.02秒）。生产build/DB/3100 E2E按总控独占安排未运行，不能将本结果视为全阶段出口。
+
+## 显示小修补验
+
+按总控实际首款纯显示预检反馈，仅在 baseline.title 与“displayName · subtitle”完全相同的情况下省去重复副标题，源文字不改、不按商品ID分支。暂歇页操作组改为自适应行宽，320单列，其余移动宽度两列加整行，避免按钮碎行。
+
+仅以 --resume-only 补跑四宽实际组件及重复标题断言，未重拍原45图或重跑PNG；Chromium156.0.8078.4、viewport900、4图均无横向溢出且目标≥44px，4/4原图已查看，无P1/P2，原暂歇按钮P3关闭。补验目录为 .cache/p4-consumer-display/1792334081173/，result.json记录四图及exactDuplicateSuppressed=true。静态服务与浏览器实际await关闭，Node退出0。真实首款素材质量及持久化仍不在本合成补验内。

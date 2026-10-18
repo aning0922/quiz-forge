@@ -342,7 +342,7 @@ export function ConsumerResumeView({
           </li>
         ))}
       </ol>
-      <div className={styles.actions}>
+      <div className={`${styles.actions} ${styles.resumeActions}`}>
         <button
           className={styles.primary}
           disabled={!actions}
@@ -439,7 +439,8 @@ export function ConsumerReportView({
   onPoster,
 }: ConsumerReportProps) {
   const p = display.report.layout.props,
-    b = display.report.baseline;
+    b = display.report.baseline,
+    subtitle = `${display.result.displayName} · ${display.result.subtitle}`;
   return (
     <article
       data-consumer-state="report"
@@ -453,9 +454,9 @@ export function ConsumerReportView({
           <h1 tabIndex={-1} data-consumer-heading>
             {b.title}
           </h1>
-          <p className={styles.subtitle}>
-            {display.result.displayName} · {display.result.subtitle}
-          </p>
+          {b.title !== subtitle && (
+            <p className={styles.subtitle}>{subtitle}</p>
+          )}
         </div>
       </div>
       <div className={styles.reportBody}>
