@@ -2,7 +2,7 @@ import { afterEach, describe, it, expect, vi } from "vitest";
 import { readFile } from "node:fs/promises";
 import { PREVIEW_FONT_ASSET } from "@/features/product/preview/descriptor";
 import { withPreviewFont } from "./font";
-import { PreviewClientError } from "@/features/studio/preview/client";
+import { DisplayClientError as PreviewClientError } from "@/lib/browser/display-task";
 afterEach(() => vi.unstubAllGlobals());
 async function setup(corrupt = false) {
   const bytes = await readFile(`public${PREVIEW_FONT_ASSET.file}`),
@@ -48,6 +48,7 @@ describe("verified controlled poster font", () => {
     const render = vi.fn(async () => "rendered");
     expect(
       await withPreviewFont(
+        PREVIEW_FONT_ASSET,
         ["内部预览／待审／非正式报告", "100.0"],
         new AbortController().signal,
         render,
@@ -61,7 +62,12 @@ describe("verified controlled poster font", () => {
     const { constructed } = await setup(true),
       render = vi.fn();
     await expect(
-      withPreviewFont(["内部预览"], new AbortController().signal, render),
+      withPreviewFont(
+        PREVIEW_FONT_ASSET,
+        ["内部预览"],
+        new AbortController().signal,
+        render,
+      ),
     ).rejects.toThrow("FONT_UNAVAILABLE");
     expect(constructed).not.toHaveBeenCalled();
     expect(render).not.toHaveBeenCalled();
@@ -70,7 +76,12 @@ describe("verified controlled poster font", () => {
     const { constructed } = await setup(),
       render = vi.fn();
     await expect(
-      withPreviewFont(["🧪"], new AbortController().signal, render),
+      withPreviewFont(
+        PREVIEW_FONT_ASSET,
+        ["🧪"],
+        new AbortController().signal,
+        render,
+      ),
     ).rejects.toThrow("FONT_COVERAGE");
     expect(constructed).not.toHaveBeenCalled();
     expect(render).not.toHaveBeenCalled();
@@ -91,7 +102,12 @@ describe("verified controlled poster font", () => {
     );
     const controller = new AbortController(),
       render = vi.fn(),
-      task = withPreviewFont(["内部预览"], controller.signal, render);
+      task = withPreviewFont(
+        PREVIEW_FONT_ASSET,
+        ["内部预览"],
+        controller.signal,
+        render,
+      );
     await vi.waitFor(() => expect(finish).toBeTypeOf("function"));
     controller.abort();
     await expect(task).rejects.toThrow("PREVIEW_CANCELLED");
@@ -102,9 +118,14 @@ describe("verified controlled poster font", () => {
   it("preserves image/layout/encoding failures raised after verified font loading", async () => {
     await setup();
     await expect(
-      withPreviewFont(["内部预览"], new AbortController().signal, async () => {
-        throw new PreviewClientError("POSTER_LIMIT_EXCEEDED");
-      }),
+      withPreviewFont(
+        PREVIEW_FONT_ASSET,
+        ["内部预览"],
+        new AbortController().signal,
+        async () => {
+          throw new PreviewClientError("POSTER_LIMIT_EXCEEDED");
+        },
+      ),
     ).rejects.toThrow("POSTER_LIMIT_EXCEEDED");
   });
 });

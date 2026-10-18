@@ -28,3 +28,11 @@ prepared 是无输入/Map 别名的冻结对象，只有私有 WeakMap 中的原
 binding/source/ref 不符返回 `PREVIEW_BINDING_MISMATCH`；不支持的内容/registry/Unicode 返回 `PREVIEW_UNSUPPORTED`；答案结构、完整性、归属或 requestId 不合法返回 `PREVIEW_INVALID_ANSWERS`；结构/字节上限返回 `PREVIEW_LIMIT_EXCEEDED`。不回显原文、未知异常或路径。
 
 本里程碑纯测试涵盖双引擎逐卡真实计算、authored/synthetic 元数据、完整 baseline/选中卡隔离、原始别名和私有 handle、全部绑定、跨版本/乱序/错用途/registry、完整维度及海报单独失败、UTF-8/转义完整封套精确边界与 +1。测试夹具明确是合成声明，不构造正式素材/许可或批准；没有启动 DB、3100、native 媒体或真实浏览器。
+
+## P3-E 前置显示解耦
+
+沿 b055c4b 冻结的 display-v1 合同，六视图只使用 DisplayEntryBodyV1、ResultDisplaySnapshotV1、DisplayAnswers；不再反向导入 Studio 的答案类型。JSX、CSS、内部预览文案和按钮动作保持原样；这里只整理实际存在的临时预览，不声明持久消费者控制器能力。
+
+新增 server-only `projectContentScoreForDisplay(content, scored)`：受信完整 content 与服务端 ContentScore 映射为无 draft scope/requestId 的冻结显示正文，保留实际 canonical hash、Unicode、版本、Product、engine、结果/报告/维度引用核对。它不执行评分、不验证调用者权利，也不证明任意传入分数真实；未来服务必须先建立已保存评分的可信来源，不能把此函数接成客户端分数入口。
+
+当前 `scorePreview` 仍只接受私有 WeakMap 中的原 prepared 句柄，真实调用 scorePreparedContent，核原 binding 内容 hash，再调用新 helper；最后按原字段顺序加回 binding/requestId，并按旧完整响应封套预算验证。没有改变评分算法、原 HTTP 字段或资源/批准资格。首个新实现 entry 及精确代码摘要由主控在文件稳定后登记，本目录没有把旧身份重新声明成已封存消费者实现。

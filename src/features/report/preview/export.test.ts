@@ -9,18 +9,34 @@ import {
   preparePreviewContent,
   scorePreview,
 } from "@/features/theme/preview/projection";
-import type { PreviewPosterExport } from "@/features/product/preview/contracts";
-import { exportPreviewPoster } from "./export";
+import type { DisplayPosterExportBodyV1 } from "@/lib/assessment-contract/display-v1";
+import { exportDisplayPoster } from "./export";
+import { PREVIEW_FONT_ASSET } from "@/features/product/preview/descriptor";
+const exportPreviewPoster = (
+  value: DisplayPosterExportBodyV1,
+  signal: AbortSignal,
+  current: () => boolean,
+) =>
+  exportDisplayPoster(
+    value,
+    async () => {
+      throw Error("transport must be mocked");
+    },
+    PREVIEW_FONT_ASSET,
+    signal,
+    current,
+  );
 const release = vi.hoisted(() => vi.fn());
 vi.mock("./font", () => ({
   withPreviewFont: async (
+    _font: unknown,
     _texts: unknown,
     _signal: AbortSignal,
-    render: (f: string, signal: AbortSignal) => unknown,
-  ) => render("VerifiedTestFace", _signal),
+    render: (f: string, signal: AbortSignal, deadline: number) => unknown,
+  ) => render("VerifiedTestFace", _signal, performance.now() + 15000),
 }));
-vi.mock("@/features/studio/preview/media", () => ({
-  loadPreviewImage: async () => ({
+vi.mock("@/lib/browser/display-assets", () => ({
+  loadVerifiedImage: async () => ({
     image: { naturalWidth: 48, naturalHeight: 48 },
     release,
   }),
@@ -29,7 +45,7 @@ afterEach(() => {
   vi.unstubAllGlobals();
   release.mockClear();
 });
-async function input(): Promise<PreviewPosterExport> {
+async function input(): Promise<DisplayPosterExportBodyV1> {
   const c = await previewFixture(),
     p = preparePreviewContent(c, sourceBinding(c));
   if (!p.ok) throw Error(p.code);
@@ -37,13 +53,11 @@ async function input(): Promise<PreviewPosterExport> {
   if (!r.ok || r.value.poster.kind !== "ready") throw Error("fixture");
   const v = r.value;
   return {
-    binding: v.binding,
-    requestId: v.requestId,
     answersHash: v.answersHash,
     logicHash: v.logicHash,
     selectedResultRef: v.selectedResultRef,
     reportTemplateRef: v.reportTemplateRef,
-    poster: v.poster as PreviewPosterExport["poster"],
+    poster: v.poster as DisplayPosterExportBodyV1["poster"],
   };
 }
 function canvas(encode: (callback: (b: Blob | null) => void) => void) {

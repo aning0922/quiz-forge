@@ -17,3 +17,13 @@ PNG 由 `features/report/preview` 独立实现。严格 Export DTO 保留实际�
 `tests/e2e/studio-preview.spec.ts` 使用主控传入的 `QF_PREVIEW_E2E_RUN_ID`，调用 A 的 prepare；从 0600/同 uid/单链接/有界且身份稳定的私有文件读取合成 fixture，凭证不输出、不录 trace。仅全部通过后 finish。root 持有受管 Next 进程并证明真实退出后才能执行清理；本 spec 无 cleanup 权限。E2E 场景定义了两种真实引擎 witness、六状态四宽截图、真实 PNG 和失败路径；是否实际通过由主控执行结果记录，不能用本文件替代。
 
 本线未启动 DB、3100 或 native 媒体；生产构建、真实 E2E、截图像素检查与远端 CI 由主控集成后执行。新固定 UI 的字体缺字已向主控报告；真实首款四图尚未接入本合成 fixture，实际 PNG 四图与文案、素材权利、发布批准仍待后续人工检查。
+
+## P3-E 前置解耦
+
+共享错误类、取消/等待、15s 截止预算及有界字节/hash/decode/release 移至 lib/browser/display-*。client 沿原 PreviewClientError、withPreviewDeadline、checkpoint、awaitPreviewTask 名称重导出，保持 instanceof 和既有可观察错误 code；基础工具中的旧 STUDIO_UNAVAILABLE fallback 仅用于兼容，不具有身份或授权含义。传入绝对 deadline 只能进一步缩短预算，不能在字体到图片的嵌套工作中重启15s。
+
+`createPreviewResourceTransport(binding)` 严格解析并冻结一份固定 binding 副本，只构造原受保护资源 URL，保留 same-origin/no-store/redirect:error 和严格 Studio HTTP 错误读取。通用层只接收编译 adapter 提供的 transport，不接客户端任意 URL。image 继续拥有当前代次、取消、迟到释放与待审展示；media 的 loadPreviewImage 是原签名的薄组合。
+
+新 `studio/preview/export.ts` 保留原 PreviewPosterExport 封套解析、renderer/font 身份及 current 检查，再把纯正文、固定 transport 和原受控字体传给 report 的 exportDisplayPoster。页面仍管理答案、结果代次与下载 URL；刷新重置、待审/内部预览标记和六状态文案保持。未增加消费者会话、Key、评分或完成权威。
+
+本轮定向单元覆盖拆分边界、固定 transport 捕获、旧错误类同一性、绝对 deadline、图片/字体/Canvas 取消释放及纯投影；另对拆分前保存的双引擎10组入口/揭晓/错误 JSON 作原字节比较。真实生产构建、浏览器、PNG与远端CI仍待主控集成验证，不能沿用旧图外推本次修改后的通过结论。
