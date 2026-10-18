@@ -239,7 +239,11 @@ it("obsolete requires the exact immutable base and strictly greater observed cur
 });
 it("source-used evidence distinguishes an immutable import consumer from a verified manifest consumer", () => {
   const f = fixture(3),
-    consumed = { ...summary(1), sourceImportId: f.binding.sourceImportId };
+    consumed = {
+      ...summary(1),
+      sourceImportId: f.binding.sourceImportId,
+      canonicalManifestSha256: sha("e"),
+    };
   const proof = {
     reason: "source-import",
     consumed,
@@ -278,6 +282,59 @@ it("source-used evidence distinguishes an immutable import consumer from a verif
       proof: { ...alias, canonicalManifestSha256: sha("f") },
     }).success,
   ).toBe(false);
+  for (const consumed of [
+    { ...alias.consumed, applicationId: f.base.applicationId },
+    { ...alias.consumed, sourceImportId: f.base.sourceImportId },
+    {
+      ...alias.consumed,
+      canonicalManifestSha256: f.base.canonicalManifestSha256,
+    },
+  ])
+    expect(
+      draftRevisionResolutionSchema.safeParse({
+        ...value,
+        proof: {
+          ...alias,
+          consumed,
+          canonicalManifestSha256: consumed.canonicalManifestSha256,
+        },
+      }).success,
+    ).toBe(false);
+});
+it("source-used for the base revision must repeat its exact immutable summary", () => {
+  const f = fixture(3);
+  const proof = {
+    reason: "canonical-manifest",
+    consumed: { ...f.base },
+    consumingIdempotencyKey: randomUUID(),
+    canonicalManifestSha256: f.base.canonicalManifestSha256,
+  };
+  const value = {
+    kind: "not-applied-source-used",
+    binding: f.binding,
+    fingerprint: f.fingerprint,
+    base: f.base,
+    observedCurrentRevision: 3,
+    proof,
+  };
+  expect(draftRevisionResolutionSchema.safeParse(value).success).toBe(true);
+  for (const changed of [
+    { applicationId: randomUUID() },
+    { sourceImportId: randomUUID() },
+    { sourceValidationId: randomUUID() },
+    { canonicalContentSha256: sha("e") },
+    { assetSetSha256: sha("f") },
+    { candidateSha256: sha("e") },
+    { packVersion: "2.0.0" },
+    { resourceCount: 6 },
+    { createdBy: randomUUID() },
+  ])
+    expect(
+      draftRevisionResolutionSchema.safeParse({
+        ...value,
+        proof: { ...proof, consumed: { ...f.base, ...changed } },
+      }).success,
+    ).toBe(false);
 });
 it("history anchors, page endpoints and scopes cannot conceal gaps, duplicate rows, or a false last page", () => {
   expect(draftRevisionHistoryQuerySchema.parse({})).toEqual({ pageSize: 20 });
