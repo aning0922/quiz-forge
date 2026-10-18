@@ -1,13 +1,15 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { StudioClientError } from "../client";
+import { useInternalAuthority } from "./authority";
 import { internalVersionMessage } from "./message";
 /** Every refresh immediately removes confirmation authority, including equal subsequent DTOs. */
 export function useInternalRead<T>(
   path: string,
   load: (signal: AbortSignal) => Promise<T>,
 ) {
-  const loader = useRef(load);
+  const authority = useInternalAuthority(),
+    loader = useRef(load);
   useEffect(() => {
     loader.current = load;
   });
@@ -27,6 +29,7 @@ export function useInternalRead<T>(
         if (current) setResult({ path, generation, value });
       },
       (error) => {
+        if (current) authority.observe(error);
         if (current)
           setResult({
             path,
@@ -43,10 +46,10 @@ export function useInternalRead<T>(
       current = false;
       controller.abort();
     };
-  }, [path, generation]);
+  }, [path, generation, authority]);
   const active = result?.path === path && result.generation === generation;
   return {
-    value: active ? result.value : undefined,
+    value: active && !authority.isRevoked ? result.value : undefined,
     error: active ? result.error : undefined,
     code: active ? result.code : undefined,
     loading: !active,

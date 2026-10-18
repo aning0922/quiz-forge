@@ -23,6 +23,7 @@ import {
 } from "./flow";
 import { InternalEvidenceFacts } from "./pending-panel";
 import { RequestFacts } from "./facts";
+import { useInternalAuthority } from "./authority";
 import { internalVersionMessage } from "./message";
 import styles from "../workspace/workspace.module.css";
 export function InternalWritePanel({
@@ -32,7 +33,6 @@ export function InternalWritePanel({
   session,
   nonce,
   onChanged,
-  authorityInvalid = false,
 }: {
   productId: string;
   state?: InternalReviewState | undefined;
@@ -40,9 +40,9 @@ export function InternalWritePanel({
   session: StudioSessionDto;
   nonce: number;
   onChanged: () => void;
-  authorityInvalid?: boolean;
 }) {
-  const [epoch] = useState(() => new InternalOperationEpoch(productId)),
+  const authority = useInternalAuthority(),
+    [epoch] = useState(() => new InternalOperationEpoch(productId)),
     [confirmation, setConfirmation] = useState<InternalConfirmation>(),
     [renderer, setRenderer] = useState(""),
     [busy, setBusy] = useState(false),
@@ -57,7 +57,7 @@ export function InternalWritePanel({
       active.current = false;
       epoch.invalidate();
     };
-  }, [epoch, session.csrfToken, session.operator.role, authorityInvalid]);
+  }, [epoch, session.csrfToken, session.operator.role]);
   useEffect(() => {
     const timer = setTimeout(() => {
       try {
@@ -70,7 +70,7 @@ export function InternalWritePanel({
     return () => clearTimeout(timer);
   }, [productId, nonce]);
   const canWrite =
-      session.operator.role === "operator" && !denied && !authorityInvalid,
+      session.operator.role === "operator" && !denied && !authority.isRevoked,
     head = !!state && state.target.revision === state.observedCurrentRevision,
     valid =
       !!confirmation &&
@@ -102,7 +102,11 @@ export function InternalWritePanel({
   async function submit() {
     if (!confirmation || !valid || !canWrite || !available || busy) return;
     const ticket = epoch.begin(confirmation.request),
-      current = () => active.current && epoch.accepts(ticket);
+      authorityTicket = authority.capture(),
+      current = () =>
+        active.current &&
+        epoch.accepts(ticket) &&
+        authority.accepts(authorityTicket);
     setBusy(true);
     setMessage("");
     setResult(undefined);
@@ -115,7 +119,9 @@ export function InternalWritePanel({
       );
       if (current()) setResult(evidenceFromWrite(value));
     } catch (error) {
-      if (current()) {
+      const accepting = current();
+      if (active.current) authority.observe(error);
+      if (accepting) {
         if (
           error instanceof StudioClientError &&
           ["UNAUTHENTICATED", "CAPABILITY_DENIED", "CSRF_REJECTED"].includes(
@@ -144,7 +150,11 @@ export function InternalWritePanel({
         记录仅登记服务器已有的固定基线证据。运营记录人与作者批准来源分开；合成测试不会成为作者批准。
       </p>
       {!canWrite && (
-        <p role="status">当前写入口关闭；仍可阅读历史事实和只读核实原请求。</p>
+        <p role="status">
+          {authority.isRevoked
+            ? "本页授权已失效。请重新登录并重新打开本页；原请求锚点保留。"
+            : "当前写入口关闭；仍可阅读历史事实和只读核实原请求。"}
+        </p>
       )}
       {!available && (
         <p role="status">
@@ -264,8 +274,10 @@ export function InternalWritePanel({
           </div>
         </section>
       )}
-      {result && <InternalEvidenceFacts evidence={result} />}
-      {result && (
+      {result && !authority.isRevoked && (
+        <InternalEvidenceFacts evidence={result} />
+      )}
+      {result && !authority.isRevoked && (
         <p>
           成功回执已核验，原锚点仍保留。请在对应原请求核实区明确解除；不会自动进入下一步。
         </p>

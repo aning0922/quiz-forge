@@ -17,6 +17,10 @@ import {
   type InternalEvidence,
   type InternalOperationTicket,
 } from "./flow";
+import {
+  useInternalAuthority,
+  type InternalAuthorityTicket,
+} from "./authority";
 import { RequestFacts, ReviewFacts, VersionReceiptFacts } from "./facts";
 import { internalVersionMessage } from "./message";
 import styles from "../workspace/workspace.module.css";
@@ -100,15 +104,14 @@ export function InternalPendingPanel({
   operation,
   session,
   onChanged,
-  writeBlocked = false,
 }: {
   productId: string;
   operation: InternalOperation;
   session: StudioSessionDto;
   onChanged: () => void;
-  writeBlocked?: boolean;
 }) {
-  const label = operation === "review" ? "基线记录" : "内测封存",
+  const authority = useInternalAuthority(),
+    label = operation === "review" ? "基线记录" : "内测封存",
     [epoch] = useState(() => new InternalOperationEpoch(productId)),
     [entry, setEntry] = useState<{
       request: InternalRequest;
@@ -120,6 +123,7 @@ export function InternalPendingPanel({
     [message, setMessage] = useState(""),
     [evidence, setEvidence] = useState<{
       ticket: InternalOperationTicket;
+      authorityTicket: InternalAuthorityTicket;
       result: InternalEvidence;
     }>();
   const active = useRef(true),
@@ -169,15 +173,9 @@ export function InternalPendingPanel({
     };
     // Remounted by stable Product/operation and a local-write nonce, never by detail GET success.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    epoch,
-    productId,
-    operation,
-    session.csrfToken,
-    session.operator.role,
-    writeBlocked,
-  ]);
+  }, [epoch, productId, operation, session.csrfToken, session.operator.role]);
   function reject(error: unknown) {
+    authority.observe(error);
     if (
       error instanceof StudioClientError &&
       ["UNAUTHENTICATED", "CAPABILITY_DENIED", "CSRF_REJECTED"].includes(
@@ -193,14 +191,18 @@ export function InternalPendingPanel({
   async function perform(replay: boolean) {
     if (
       !entry ||
+      authority.isRevoked ||
       !loaded ||
       busy ||
-      (replay &&
-        (denied || writeBlocked || session.operator.role !== "operator"))
+      (replay && (denied || session.operator.role !== "operator"))
     )
       return;
     const ticket = epoch.begin(entry.request),
-      current = () => active.current && epoch.accepts(ticket),
+      authorityTicket = authority.capture(),
+      current = () =>
+        active.current &&
+        epoch.accepts(ticket) &&
+        authority.accepts(authorityTicket),
       abort = new AbortController();
     controller.current?.abort();
     controller.current = abort;
@@ -224,9 +226,11 @@ export function InternalPendingPanel({
             abort.signal,
             current,
           );
-      if (current()) setEvidence({ ticket, result });
+      if (current()) setEvidence({ ticket, authorityTicket, result });
     } catch (error) {
-      if (current()) reject(error);
+      const accepting = current();
+      if (active.current) authority.observe(error);
+      if (accepting) reject(error);
     } finally {
       if (active.current) setBusy(false);
     }
@@ -237,11 +241,15 @@ export function InternalPendingPanel({
       !evidence ||
       evidence.result.value.kind === "unresolved" ||
       busy ||
-      denied
+      denied ||
+      authority.isRevoked
     )
       return;
-    const { ticket, result } = evidence,
-      current = () => active.current && epoch.accepts(ticket);
+    const { ticket, result, authorityTicket } = evidence,
+      current = () =>
+        active.current &&
+        epoch.accepts(ticket) &&
+        authority.accepts(authorityTicket);
     setBusy(true);
     setMessage("");
     try {
@@ -259,7 +267,9 @@ export function InternalPendingPanel({
         onChanged();
       }
     } catch (error) {
-      if (current()) reject(error);
+      const accepting = current();
+      if (active.current) authority.observe(error);
+      if (accepting) reject(error);
     } finally {
       if (active.current) setBusy(false);
     }
@@ -283,17 +293,17 @@ export function InternalPendingPanel({
           <div className={styles.actions}>
             <button
               className={styles.button}
-              disabled={busy || !loaded}
+              disabled={busy || !loaded || authority.isRevoked}
               onClick={() => void perform(false)}
             >
               核实{label}原请求
             </button>
             {session.operator.role === "operator" &&
               !denied &&
-              !writeBlocked && (
+              !authority.isRevoked && (
                 <button
                   className={`${styles.button} ${styles.secondary}`}
-                  disabled={busy || !loaded}
+                  disabled={busy || !loaded || authority.isRevoked}
                   onClick={() => void perform(true)}
                 >
                   明确按原{label}请求重放
@@ -302,16 +312,18 @@ export function InternalPendingPanel({
           </div>
         </>
       )}
-      {denied && (
-        <p role="alert">当前身份或写验证已失效。写入口关闭，原锚点继续保留。</p>
+      {(denied || authority.isRevoked) && (
+        <p role="alert">
+          本页授权已失效。写入、核实与清理入口已关闭；原锚点保留，请重新登录并重新打开本页。
+        </p>
       )}
-      {evidence && (
+      {evidence && !authority.isRevoked && (
         <div data-internal-resolution={evidence.result.value.kind}>
           <InternalEvidenceFacts evidence={evidence.result} />
           {evidence.result.value.kind !== "unresolved" && (
             <button
               className={`${styles.button} ${styles.secondary}`}
-              disabled={busy || denied}
+              disabled={busy || denied || authority.isRevoked}
               onClick={() => void clear()}
             >
               依核实证据解除本原请求锚点
@@ -340,13 +352,11 @@ export function InternalRecoveryPanels({
   session,
   nonce = 0,
   onChanged = () => {},
-  writeBlocked = false,
 }: {
   productId: string;
   session: StudioSessionDto;
   nonce?: number;
   onChanged?: () => void;
-  writeBlocked?: boolean;
 }) {
   return (
     <>
@@ -356,7 +366,6 @@ export function InternalRecoveryPanels({
         productId={productId}
         session={session}
         onChanged={onChanged}
-        writeBlocked={writeBlocked}
       />
       <InternalPendingPanel
         key={`seal/${productId}/${nonce}`}
@@ -364,7 +373,6 @@ export function InternalRecoveryPanels({
         productId={productId}
         session={session}
         onChanged={onChanged}
-        writeBlocked={writeBlocked}
       />
     </>
   );

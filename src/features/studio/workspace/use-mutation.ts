@@ -10,7 +10,10 @@ export type MutationState = {
 };
 
 /** A submission is never replayed. An uncertain write requires an explicit read first. */
-export function useWorkspaceMutation<T>(csrfToken: string) {
+export function useWorkspaceMutation<T>(
+  csrfToken: string,
+  onError?: (error: unknown) => void,
+) {
   const locked = useRef(false);
   const [state, setState] = useState<MutationState>({
     phase: "idle",
@@ -43,6 +46,7 @@ export function useWorkspaceMutation<T>(csrfToken: string) {
       locked.current = false;
       return result;
     } catch (error) {
+      onError?.(error);
       const code =
         error instanceof StudioClientError
           ? error.code
