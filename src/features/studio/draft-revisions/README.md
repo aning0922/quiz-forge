@@ -10,6 +10,10 @@ resolve 只展示严格核验的证据，不自动移除条目。applied 可显�
 
 页面批增加验证详情的独立追加面板、显式冻结确认、固定回执和原请求核实；旧首次应用面板保持。工作区页增加独立追加锚点与锚定历史，current与原回执分别显示。历史scope使用已有只读hook新增的lastValue保留已知不可变draft身份，当前读取仍沿value只展示本次成功；刷新current或暂时失败不卸载历史组件，不拼新旧anchor。元数据仅按手动分页加载，最大100行，读取固定正文与预览仍使用原revision URL。
 
+独审发现初版把整个追加区条件挂在来源读取成功后，来源503/404会隐藏原核实入口。整改后按稳定Product挂载，来源undefined/刷新/失败只关闭新准备，pending核实、拒绝状态和固定回执不依赖可变来源，且不沿用来源error的refreshing禁用。未发送确认同时核原source/base读取对象及完整tuple；即便刷新后返回相同字段，也要重新确认，不能恢复旧确认。生产E2E专门覆盖R2丢响应后来源HTTP503和真实不存在validation的404，仍核实原key并明确解除，未因此增加成功修订。
+
 三条新API薄路由使用A真实createProductDraftRevisionService工厂：append、只读resolve、history。没有占位服务或伪成功状态。共享合同、A数据提交bc05261/6e9310b只作为依赖同步，不属于本线修改。
 
 单测覆盖的是合成 DTO、存储失败、跨桶冲突、迟到票据、严格返回身份、预算、确认失效、历史续页及注入 HTTP；未启动数据库、3100、native、生产构建或浏览器。生产E2E接续A的真实独立夹具，最终真实生产与四宽图检由主控集成后执行。
+
+七项生产E2E使用A正式fixture合同/helper和root传入QF_DRAFT_REVISION_E2E_RUN_ID；仅second、third成功追加至R2/R3，其他场景不制造额外成功。beforeAll120s/afterAll90s，prepare90s/finish60s；仅全通过finish，绝不从spec清理。实际执行和四宽截图尚待root，静态列举不代表通过。

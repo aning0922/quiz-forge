@@ -64,14 +64,13 @@ export function ValidationDetailPage({
           refreshing={record.loading || Boolean(record.error)}
         />
       )}
-      {record.value && (
-        <AppendRevisionPanel
-          key={`append/${record.value.id}/${record.value.stateRevision}/${record.value.candidateSha256}`}
-          validation={record.value}
-          session={session}
-          refreshing={record.loading || Boolean(record.error)}
-        />
-      )}
+      <AppendRevisionPanel
+        key={`append/${productId}`}
+        productId={productId}
+        validation={record.value}
+        session={session}
+        refreshing={record.loading}
+      />
     </div>
   );
 }
