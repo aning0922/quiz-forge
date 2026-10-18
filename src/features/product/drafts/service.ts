@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { StudioError } from "@/lib/http-security/errors";
 import { withStudioWrite } from "@/lib/auth/write";
+import { acquireReferenceWriteLock } from "../internal-versions/storage-lock";
 import type { DatabaseTime } from "@/lib/auth/internal";
 import { read as withStudioRead } from "@/features/quizpack/import/repository";
 import { readReadyDraftSource } from "@/features/quizpack/draft-source";
@@ -69,6 +70,7 @@ export function createProductDraftService(): ProductDraftService {
           }
           if (product.archived_at !== null)
             throw new StudioError("PRODUCT_ARCHIVED");
+          await acquireReferenceWriteLock(tx);
           const source = await readReadyDraftSource(tx, scope, {
             expectedValidationStateRevision:
               input.expectedValidationStateRevision,

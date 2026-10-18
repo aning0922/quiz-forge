@@ -1,3 +1,4 @@
+import { assertNoRetainedInternalReferences } from "@/features/product/internal-versions/retention";
 import { constants } from "node:fs";
 import { open, lstat, unlink } from "node:fs/promises";
 import { createHash, randomUUID } from "node:crypto";
@@ -492,6 +493,22 @@ export async function cleanupPreviewFixture(
       }
     }
     const nativeControl = await check();
+    await assertNoRetainedInternalReferences(lock, {
+      revisions: value.sources.map((s) => ({
+        productId: s.scope.productId,
+        draftId: s.scope.draftId,
+        revision: 1,
+      })),
+      imports: value.sources.map((s) => ({
+        productId: s.scope.productId,
+        id: s.sourceImportId,
+      })),
+      validations: value.sources.map((s) => ({
+        productId: s.scope.productId,
+        id: s.sourceValidationId,
+      })),
+      blobSha256: deletable,
+    });
     for (const fact of remove) await removeOwned(fact.file, fact.inode);
     await lock.check();
     await db.admin.sql.begin(async (tx) => {

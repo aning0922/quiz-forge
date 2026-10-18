@@ -3,6 +3,7 @@ import { sql } from "drizzle-orm";
 import {
   char,
   bigint,
+  boolean,
   jsonb,
   text,
   check,
@@ -61,6 +62,8 @@ export const auditAction = qf.enum("audit_action", [
   "validation_retried",
   "validation_file_stop_acknowledged",
   "draft_applied",
+  "draft_baseline_recorded",
+  "internal_version_sealed",
 ]);
 export const auditOutcome = qf.enum("audit_outcome", ["success", "rejected"]);
 export const auditReason = qf.enum("audit_reason", [
@@ -420,6 +423,59 @@ export const draftApplications = qf.table("draft_application", {
   }),
   draftId: uuid("draft_id").notNull(),
   revision: integer("revision").notNull(),
+  createdBy: uuid("created_by").notNull(),
+  createdAt: time("created_at").notNull(),
+});
+
+// Exact composite references, source checks and finite ACL are authoritative in 0017.
+export const draftReviews = qf.table("draft_review", {
+  id: uuid("id").primaryKey(),
+  productId: varchar("product_id", { length: 80 }).notNull(),
+  draftId: uuid("draft_id").notNull(),
+  revision: integer("revision").notNull(),
+  canonicalContentSha256: char("canonical_content_sha256", {
+    length: 64,
+  }).notNull(),
+  assetSetSha256: char("asset_set_sha256", { length: 64 }).notNull(),
+  canonicalManifestSha256: char("canonical_manifest_sha256", {
+    length: 64,
+  }).notNull(),
+  sourceImportId: uuid("source_import_id").notNull(),
+  sourceValidationId: uuid("source_validation_id").notNull(),
+  sourceValidationStateRevision: integer(
+    "source_validation_state_revision",
+  ).notNull(),
+  purpose: text("purpose").notNull(),
+  idempotencyKey: uuid("idempotency_key").notNull(),
+  bindingText: text("binding_text").notNull(),
+  fingerprint: char("fingerprint", { length: 64 }).notNull(),
+  factsText: text("facts_text").notNull(),
+  reviewSha256: char("review_sha256", { length: 64 }).notNull(),
+  recordedBy: uuid("recorded_by").notNull(),
+  recordedAt: time("recorded_at").notNull(),
+});
+export const productVersions = qf.table("product_version", {
+  id: uuid("id").primaryKey(),
+  productId: varchar("product_id", { length: 80 }).notNull(),
+  slot: integer("slot").notNull(),
+  draftId: uuid("draft_id").notNull(),
+  revision: integer("revision").notNull(),
+  canonicalContentSha256: char("canonical_content_sha256", {
+    length: 64,
+  }).notNull(),
+  assetSetSha256: char("asset_set_sha256", { length: 64 }).notNull(),
+  canonicalManifestSha256: char("canonical_manifest_sha256", {
+    length: 64,
+  }).notNull(),
+  reviewId: uuid("review_id").notNull(),
+  reviewSha256: char("review_sha256", { length: 64 }).notNull(),
+  purpose: text("purpose").notNull(),
+  publicationApproved: boolean("publication_approved").notNull(),
+  idempotencyKey: uuid("idempotency_key").notNull(),
+  bindingText: text("binding_text").notNull(),
+  fingerprint: char("fingerprint", { length: 64 }).notNull(),
+  snapshotText: text("snapshot_text").notNull(),
+  snapshotSha256: char("snapshot_sha256", { length: 64 }).notNull(),
   createdBy: uuid("created_by").notNull(),
   createdAt: time("created_at").notNull(),
 });
