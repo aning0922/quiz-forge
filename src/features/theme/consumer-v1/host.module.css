@@ -1,0 +1,69 @@
+.host {
+  min-height: 100dvh;
+  background: #f3ebdd;
+  color: #173432;
+  font-size: 16px;
+  overflow-wrap: anywhere;
+}
+.panel {
+  width: min(100%, 680px);
+  margin: 0 auto;
+  padding: 32px 20px;
+  line-height: 1.75;
+}
+.panel h1 {
+  font-size: clamp(26px, 6vw, 36px);
+  line-height: 1.4;
+}
+.panel p {
+  font-size: 16px;
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 24px;
+}
+.panel button,
+.panel a,
+.footer button {
+  min-height: 48px;
+  min-width: 48px;
+  padding: 12px 18px;
+  border: 1px solid #526c63;
+  border-radius: 4px;
+  background: #fffaf1;
+  color: #173432;
+  font-size: 16px;
+  cursor: pointer;
+}
+.panel a {
+  display: inline-flex;
+  align-items: center;
+}
+.panel button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+.notice {
+  margin: 0;
+  padding: 16px 20px;
+  text-align: center;
+}
+.footer {
+  padding: 24px 20px;
+  text-align: center;
+}
+@media (max-width: 360px) {
+  .actions {
+    flex-direction: column;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .host *,
+  .host *::before,
+  .host *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}

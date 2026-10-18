@@ -70,3 +70,21 @@ Chromium156.0.8078.4实际通过：六状态×四宽24图；320长文案/缺素�
 浏览器JSON网络入口request.ts/client.ts已实现严格session/entry/save/complete/report验证、原binding resolution核对和有限错误；15秒单一外层竞速覆盖fetch/流/验证，分块只占固定buffer，拒绝编码/坏UTF8/超限/深度及跨源或反斜线URL。权限错误回调供整页同步revoke，未记录凭证或错误原文。7项transport边界单测通过；真实controller和路由接入尚未完成，不把合成fetch当业务闭环。
 
 URL边界补验：原ASCII控制/空白及反斜线一律拒绝，随后以浏览器当前origin进行WHATWG URL解析核同源，fetch显式mode:same-origin。离线反例/\t/invalid.example/经URL归一化可变外域；当前零fetch拒绝，不接触外域。
+
+## Host / 原请求恢复
+
+host.tsx 现导出 ConsumerExperienceV1，接收 sessionId、可选report初屏，以及组合层resolveRuntime(facts)。facts包含renderer/mapping/font；组合层必须使用精确受信身份并核完整descriptor绑定，再注入components/exportPoster。host与controller不运行时导入实现catalog/descriptor；ConsumerAccessV1单独处理/access#key=，先擦地址栏，再解析唯一key，仅内存保管并显式exchange。
+
+controller.ts是全页授权、服务器已接受状态、本地候选、save/complete pending的单一所有者。所有网络、资源、PNG共享同一authority ticket；刷新/退出/失权同步revoke，旧成功不能覆盖或删pending。接受state才显示saved；本地choose显示unsaved，切题/暂歇/完成检查先存整组答案/游标。保存和完成先prepare完整回读，再mark可能已发送并回读，随后POST。UNKNOWN/冲突冻结新编辑与完成；resolve/replay仅用原binding。unresolved不清除，superseded/state-conflict必须显式采用服务器答案，不合并本地候选。完成只从存储报告receipt/view读取，无浏览器评分或重建历史报告。
+
+resource.ts针对新消费者网络流用固定imageBytes上限及单一外层竞速聚合，核实际字节、类型、编码、期限与授权；有限失权事实同步revoke。随后只把单个有界分块交给冻结图片字节/hash/解码实现，旧预览闭包未改。PNG从固定报告及注入字体导出，下载前再次核同一ticket；对象URL在下载触发后释放。授权失效同时隐藏内容、取消图片/PNG并阻止迟到回调。
+
+新增控制器7项、二进制transport4项、fragment1项单测通过；连同网络7项共19项。覆盖本地回读失败零POST、UNKNOWN原样保留/重放、superseded显式采用、失权迟到成功、标签恢复、已完成Key过期只读，以及同completionKey恢复。当前尚无业务HTTP route/owner或Studio操作UI，不能记作完整P4/P5。
+
+实际host浏览器入口tests/browser/consumer-host.ts在临时loopback端口提供合成内存HTTP，注入测试runtime（不声称精确registry资格），不接DB/native/3100。最终Chromium156.0.8078.4，四宽320/375/390/430×高900的封面/未保存答题/保存刷新12图；320的UNKNOWN、pending缺entry、刷新pending、完成检查、失权、无效access、结果、报告、海报9图，共21图。全部无横向溢出、交互目标≥44px、pageErrors=0；已通过12张原像素分带逐一查看21原图及实际下载1080×1920 PNG，无P1/P2。噪点是明确合成测试像素，不是角色立绘或商业素材；服务器fixture内存保存不证明数据库持久化。
+
+最终证据.cache/p4-consumer-host/1792337421170/保留result.json、21原图、host-export-1080x1920.png与qa-bands。原失败轮保留；浏览器断连后实际自动传输3次，完整binding相同，刷新/核对不新增save。该现象不是客户端自动业务重试许可。Node实际退出0，finally已await浏览器与静态HTTP关闭。视觉复核仅助手工程检查，不替代作者验收。
+
+待root闭包登记：browser根为host.tsx、access.tsx、renderer-client-v1.ts（实际传入的纯组件/PNG能力）；server根仍renderer-server-v1.ts。新依赖包含controller/pending/authority/client/request/resource/access-fragment和host.module.css，全部需纳入真实consumer实现closure；测试/fixture/browser harness不属于生产closure。后续预计只因独审整改修改这些runtime；Studio/HTTP薄路由在此closure之外，但若consumer handler投影能力修改则由root更新server闭包。
+
+本批实际完整format/lint/typecheck通过。全单测168文件1813项中1812通过、1失败：旧HTTP全局Promise.prototype.then探针得到[1,2,1]而严格期望[1,1,1]，与主控CI已发现的测试运行器污染一致；主控已独占该测试归因修复，本批不双写或放松生产限制。相关19项新网络/controller/resource/fragment测试均通过，整体全绿须集成主控探针修复后复验。没有运行build/DB/3100。
