@@ -18,6 +18,9 @@
   border-radius: 8px;
   background: #f1f6fa;
 }
+.receiptActions {
+  margin-block-start: 16px;
+}
 .history {
   list-style: none;
   padding: 0;

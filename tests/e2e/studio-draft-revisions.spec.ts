@@ -261,6 +261,22 @@ async function screenshot(page: Page, info: TestInfo, state: string) {
       const box = await target.boundingBox();
       if (box) expect(box.height).toBeGreaterThanOrEqual(44);
     }
+    for (const receipt of await page
+      .locator('[data-revision-resolution="applied"]')
+      .all()) {
+      const clear = await receipt
+        .getByRole("button", {
+          name: "解除已确认成功的本地锚点",
+          exact: true,
+        })
+        .boundingBox();
+      expect(clear).not.toBeNull();
+      for (const link of await receipt.getByRole("link").all()) {
+        const box = await link.boundingBox();
+        expect(box).not.toBeNull();
+        expect(clear!.y - (box!.y + box!.height)).toBeGreaterThanOrEqual(16);
+      }
+    }
     for (const p of await page.locator("main p").all()) {
       if (await p.isVisible())
         expect(
