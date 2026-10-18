@@ -11,6 +11,8 @@ import {
   type DraftPendingStorage,
 } from "../drafts/pending";
 
+import { assertNoInternalPending } from "../internal-versions/storage";
+
 export const REVISION_PENDING_STORAGE_KEY =
   "quizforge.studio.draft-revisions.v1";
 export const revisionPendingEntrySchema = z.strictObject({
@@ -81,8 +83,15 @@ export function assertNoRevisionPending(
   storage: DraftPendingStorage,
   productId: string,
 ) {
-  if (readRevisionPending(storage).some((e) => e.tuple.productId === productId))
+  try {
+    if (
+      readRevisionPending(storage).some((e) => e.tuple.productId === productId)
+    )
+      throw new RevisionPendingError();
+    assertNoInternalPending(storage, productId);
+  } catch {
     throw new RevisionPendingError();
+  }
 }
 function assertNoLegacyPending(
   storage: DraftPendingStorage,

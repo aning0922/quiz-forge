@@ -1,0 +1,19 @@
+# P3-E 客户端与原请求状态
+
+沿主控0491420机器合同，仅实现Studio客户端、响应读取、两独立pending桶、Product代次和显示状态选择。未接实际HTTP/页面路由，不提供占位成功服务。真实service/owner、数据库、受信baseline/renderer/engine registry、媒体和最终浏览器验收仍由各自所有者推进。
+
+client严格使用共享URL、response Schema、INTERNAL_VERSION_HTTP_STATUSES及async integrity。POST只发送冻结输入，resolve发送完整原binding；记录回执另核fingerprint和review事实SHA，封存回执核fingerprint，详情另核完整snapshotSHA。列表仅含metadata，按共享Schema拒绝错Product、重复/乱序，不截断或用列表推导清锚证明。错误只接受code/requestId，不接旧currentRevision；WRITE_OUTCOME_UNKNOWN仅在写请求中有含义。
+
+请求/错误4KiB，成功/resolve/详情64KiB，metadata列表256KiB。复用原有界流JSON读取且传原始15s绝对deadline；网络、body及async摘要核验共享该预算。客户端超时仅给写UNKNOWN或有限读错误，不证明服务器停止/回滚；不添加隐式重试。
+
+review-record.v1与version-seal.v1桶各最多16项、每项4KiB/整桶64KiB，同Product各限一个完整tuple。严格保留字段、原key及mayHaveBeenSent；不迁移或重写旧first/append桶。准备前核四桶，合法其他Product不误阻断；任一未知格式/整桶损坏/读取失败关闭新准备。所有写临界段复用acquireDraftProduct，WeakSet只核本调用lease，没有另建Product锁。最小扩展旧assertNoRevisionPending，使旧first和append的新准备也检查两新桶；旧原key读取/重放协议不改。
+
+先严格解析/序列化，再在共享gate内写完整准备tuple、写sent=true并同步全量回读，随即开始fetch，中间不await。新写成功、精确重放成功、普通409/失权/断连/空或坏响应均不自动清理。resolve只读本原请求桶，稳定Product+完整原tuple即可，既不要求当前详情GET成功，也不因另一桶损坏隐藏已知原请求。该性质仍须在后续真实页面中通过稳定Product挂载维持。
+
+显式clear必须重新严格解析共享成功/obsolete/target-used/capacity-exhausted证据、重算摘要与完整binding比对；异operation或unresolved不能清。异步核验前后都核当前代次和存储精确tuple，原锚点已换key则保留新条目。成功POST可经evidenceFromWrite组成同一严格成功证据，再走显式clear；清理不提交下一请求。重新准备须重新读取、新确认及新key，不自动采用当前head。
+
+InternalOperationEpoch只跟稳定Product和原request，不随可变详情读取重建；原ticket对象身份与单调代次共同接纳响应，复制、导航、撤权/新请求使旧ticket失效。所有flow要求调用者提供current回调，迟到POST/resolve/clear既不返回可操作成功证据，也不删除替代锚点。
+
+view-state只选择服务器已有baseline/renderer/engine及精确当前head。来源/依赖字段变化、失败读取或字段相同的新读取对象都使未发送确认失效。seal另要求可靠同Product版本metadata容量读取；100不可删除slot已满时不恢复新准备，不能因清掉容量终态锚点而开放。作者既有批准的来源/日期与运营记录人/时间分开，synthetic-test明确非作者批准；历史版本来源与当前head分开，所有记录/封存均限内测且不授予对外发布资格。
+
+纯测试使用独立合成DTO和内存storage，覆盖异步指纹/事实/snapshot核验、原始响应字节边界、UNKNOWN、跨桶/gate、读写/回读失败、完整重放、成功及永久证据显式清理、迟到代次/替换key、原key读不依赖详情、容量与批准显示语义。未启动数据库、3100、native或真实浏览器；后续HTTP只接A实际owner，finally统一closeIfNotTransferred，不自行关闭db或clock。
