@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { beforeAll, beforeEach, afterAll, expect, it } from "vitest";
+import { openManagedDatabase } from "@/lib/db/management";
 import { createDatabase } from "@/lib/db/client";
 import type { DraftSummaryDto } from "@/features/product/drafts/contracts";
 import { createProductDraftService } from "@/features/product/drafts/service";
@@ -10,7 +11,10 @@ import {
   type AppendDraftBinding,
 } from "@/features/product/draft-revisions/contracts";
 import { insertAppend } from "@/features/product/draft-revisions/repository";
-import { readReadyDraftSource } from "@/features/quizpack/draft-source";
+import {
+  readReadyDraftSource,
+  readReadyDraftSourceReadonly,
+} from "@/features/quizpack/draft-source";
 import { read } from "@/features/quizpack/import/repository";
 import { resetDomainDatabase } from "./p2b2b-domain-fixture";
 import {
@@ -595,4 +599,26 @@ it("application-only SQL cannot reserve a successful key/source without an exact
     (await service.resolveApplication(db.app, auth.session.raw, b)).kind,
   ).toBe("unresolved");
   expect((await append(b)).application.revision).toBe(2);
+});
+
+it("a fresh owner RR connection reads original asset-set text without JSON parameter double serialization", async () => {
+  const owner = await openManagedDatabase(db.config.instanceId);
+  try {
+    const exact = await owner.sql.begin(
+      "isolation level repeatable read read only",
+      (tx) =>
+        readReadyDraftSourceReadonly(tx, source.scope, {
+          expectedValidationStateRevision:
+            source.input.expectedValidationStateRevision,
+          expectedCandidateSha256: source.input.expectedCandidateSha256,
+        }),
+    );
+    expect(exact.canonicalContentSha256).toBe(
+      initial.application.canonicalContentSha256,
+    );
+    expect(exact.assetSetSha256).toBe(initial.application.assetSetSha256);
+    expect(exact.resourceCount).toBe(initial.application.resourceCount);
+  } finally {
+    await owner.close();
+  }
 });
