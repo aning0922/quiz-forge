@@ -101,3 +101,9 @@ Studio基础9ebcf6e（B35cc40f）已独审无P1/P2：原8+独立3测试、真实
 193c6aa（A0edad79）已合入request owner P2修复：phaseFailed锁存，只有前序工作、实际close和checkpoint均成功才累计confirmedSqlPhases；已捕获错误或迟到成功不使同request恢复后继准入。A15专项、2真实PG和完整1844单元通过；主控相关21测试/typecheck通过，独立原反例复验待回执。
 
 准确9ebcf6ea839c637fe471ffab3d963159529688c0的远端CI39143180437已actual success：175文件1848单元、61文件487PG、46driver、fresh服务14、namespace4、媒体UNKNOWN3，以及format/lint/type/生产build通过；数据库job于2026-10-18 16:11:29 UTC完成。该head早于后续app页面组合和phaseFailed修复，不能扩大为当前head、native或生产E2E通过。后续467ce2d页面组合只完成主控typecheck和implementation门禁；页面真实安全响应头仍待B补。
+
+0edad（root193c6aa）前序phase P2已独立关闭：原failed-predecessor探针exchange/complete各只open一次，捕获close未知后所有后继SQL/IO为INVALID_REQUEST、callback/guard open均0。16定向测试及修后真实PG2通过，原隔离子进程真实退出且父backend0；未重复此前已通过原流/15秒组合。证据request-owner-failed-predecessor-fixed-probe-result.json。aeb+0edad本批owner无剩余P1/P2，不扩为完整业务或资产授权。
+
+0953457（B81a51d1）页面边界独审3项通过：实际Next matcher的10正8负、真实NextResponse固定头和4场景React SSR唯一#main/main；冻结source/build交集为空。root进一步用准确095生产构建（84trace/17843path/0private）在独占3100实际启动Next，390/1440两宽×access/session/report/无效UUID/未知子路由共10case验证实际状态码、private/no-store/no-referrer/nosniff/无CORS、唯一main/skip target及Enter真实跳转全部通过。仅仅读旧成功测试实例f746配置，PG保持停止，无auth/业务数据/native/fixture准备；browser关闭、受管Next真实退出/进程组不存在/端口重绑定证明均通过。见 [页面HTTP证据](qa/p4-page-http-check.json)。完整P4/P5 E2E仍未运行。
+
+429e93d（A926450a）同事务ports与四领域repository已集成，主控typecheck/implementation门禁通过；A5真实PG覆盖完整报告读回/JS摘要、同TX/跨TX克隆锁见证拒绝、RR外禁用后fresh auth拒绝，独审进行中。三类业务service和专属物理fixture继续实施。为P4独立r1-head产品，root已将新增synthetic consumer baseline单entry/import注册及独立测试源交A，仅test/ci；不得改旧两个baseline或将合成数据视作已批准首款。
