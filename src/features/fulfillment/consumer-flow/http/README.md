@@ -17,3 +17,7 @@ handler.ts现提供handleConsumerHttp(request, endpoint, dependencies, startedAt
 资源只把service返回的同一Uint8Array原对象交给同owner.resourceBody一次，HTTP不预读、不克隆、不另包stream或dispose已移交timer；finally始终同owner.closeIfNotTransferred，JSON还在返回前await实际close。owner未建时才由HTTP dispose clock；真实owner须负责其最终close/quarantine及clock清理。7项适配单测通过：非法入口零owner、同clock/owner关闭、exchange隔离、写成功后封套/close UNKNOWN、exact资源身份与移交、重复selector/错误hash零服务、严格save及有限失权。测试owner/service为明确合成fixture，不是实际DB/事务/关闭证明。
 
 尚未导入未交付的A factory或挂app路由；待A request-owner/service及root实际resolver提交后再做真实接线，不能将此依赖注入层当可用消费者HTTP服务或P4验收。
+
+app消费者页组合预接：/access、/play/:sessionId及/report已建立独立动态布局（noindex/no-referrer），RSC只核本地Host和UUID后传安全sessionId；bootstrap仍由浏览器独立授权API完成。experience.tsx位于app边界，显式从host传来的完整entry/report facts挑renderer/mapping/font，再调用root严格resolveConsumerExperienceRuntime，catalog不进入host闭包。当前业务API实际factory仍待A交付，尚不能记为生产可用HTTP闭环。
+
+实际host+真实registry注入正例：consumer-host --registered-only使用真实app组合组件与root当前193b48...身份/字体/映射，合成源/play/report hash整组重建，传入完整facts；真实Chromium320×900，封面→选择→保存/刷新，以及到期pending resolve五图通过并原像素复核，0 pageError、无溢出、交互≥44px，证据.cache/p4-consumer-host/1792339469649/result.json。只验证组合不是业务授权/DB；不重拍原21图或重跑PNG。完整typecheck与定向lint通过。host/consumer runtime字节未改，无需因app组合层变动重算entry。
