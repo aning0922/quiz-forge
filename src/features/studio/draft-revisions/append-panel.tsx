@@ -7,6 +7,7 @@ import type {
   AppendDraftApplication,
 } from "@/features/product/draft-revisions/contracts";
 import { DRAFT_REVISION_LIMITS } from "@/features/product/draft-revisions/contracts";
+import type { DraftSummaryDto } from "@/features/product/drafts/contracts";
 import type { StudioSessionDto } from "../contracts";
 import { StudioClientError } from "../client";
 import { useDraftRead } from "../drafts/use-read";
@@ -24,16 +25,17 @@ const productSchema = z.object({
   archivedAt: z.string().nullable(),
 });
 export function AppendRevisionPanel({
+  productId,
   validation,
   session,
   refreshing,
 }: {
-  validation: ValidationDto;
+  productId: string;
+  validation: ValidationDto | undefined;
   session: StudioSessionDto;
   refreshing: boolean;
 }) {
-  const productId = validation.productId,
-    current = useDraftRead(draftEndpoint(productId), (v) =>
+  const current = useDraftRead(draftEndpoint(productId), (v) =>
       checkDraftRead(v, productId),
     ),
     product = useDraftRead(
@@ -44,7 +46,11 @@ export function AppendRevisionPanel({
         return p;
       },
     );
-  const [confirmation, setConfirmation] = useState<AppendDraftBinding>(),
+  const [confirmation, setConfirmation] = useState<{
+      binding: AppendDraftBinding;
+      source: ValidationDto;
+      base: DraftSummaryDto;
+    }>(),
     [receipt, setReceipt] = useState<AppendDraftApplication>(),
     [busy, setBusy] = useState(false),
     [denied, setDenied] = useState(false),
@@ -62,16 +68,19 @@ export function AppendRevisionPanel({
   useEffect(() => {
     const timer = setTimeout(availability, 0);
     return () => clearTimeout(timer);
-    // Source page is keyed by the complete validation revision/candidate.
+    // The entire operation workspace is keyed by stable Product, not mutable source reads.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [productId]);
   const base =
       current.value?.kind === "draft" ? current.value.draft : undefined,
-    ready =
+    ready = Boolean(
+      validation &&
+      validation.productId === productId &&
       validation.status === "ready" &&
       !validation.readOnly &&
       !validation.maintenanceRequired &&
-      validation.candidateSha256 !== null;
+      validation.candidateSha256 !== null,
+    );
   const unavailable =
       refreshing ||
       busy ||
@@ -92,16 +101,22 @@ export function AppendRevisionPanel({
     !full;
   const confirmed =
     confirmation &&
+    validation &&
     base &&
-    matchesAppendSelection(confirmation, validation, base) &&
+    !refreshing &&
+    confirmation.source === validation &&
+    confirmation.base === base &&
+    matchesAppendSelection(confirmation.binding, validation, base) &&
     ready &&
     !product.value?.archivedAt;
   function prepare() {
-    if (!canPrepare || !base) return;
+    if (!canPrepare || !base || !validation) return;
     try {
       inspectRevisionPreparation(sessionStorage, productId);
-      setConfirmation(
-        freezeAppendBinding({
+      setConfirmation({
+        source: validation,
+        base,
+        binding: freezeAppendBinding({
           productId,
           sourceImportId: validation.importId,
           sourceValidationId: validation.id,
@@ -116,7 +131,7 @@ export function AppendRevisionPanel({
             expectedAssetSetSha256: base.assetSetSha256,
           },
         }),
-      );
+      });
       setMessage("");
     } catch (error) {
       setStorageReady(false);
@@ -132,7 +147,7 @@ export function AppendRevisionPanel({
   }
   async function append() {
     if (!canPrepare || !confirmed || !confirmation) return;
-    const tuple = confirmation;
+    const tuple = confirmation.binding;
     setBusy(true);
     setMessage("");
     setConfirmation(undefined);
@@ -231,8 +246,10 @@ export function AppendRevisionPanel({
         )}
         {confirmed && confirmation ? (
           <section className={local.receipt} aria-label="确认追加不可变修订">
-            <h3>确认追加到修订 {confirmation.target.expectedRevision}</h3>
-            <AppendBindingFacts binding={confirmation} />
+            <h3>
+              确认追加到修订 {confirmation.binding.target.expectedRevision}
+            </h3>
+            <AppendBindingFacts binding={confirmation.binding} />
             <p>
               仅按以上固定来源与基准发送；若基准已变化，服务器将拒绝，不自动改用最新修订。
             </p>
@@ -261,14 +278,14 @@ export function AppendRevisionPanel({
           )
         )}
         {receipt && (
-          <div className={local.receipt} aria-label="已确认的固定追加回执">
+          <section className={local.receipt} aria-label="已确认的固定追加回执">
             <h3>已确认的固定追加回执：修订 {receipt.revision}</h3>
             <p>
               原 key {receipt.idempotencyKey}
               。此固定回执与上方当前摘要分别读取。
             </p>
             <RevisionLinks draft={receipt} />
-          </div>
+          </section>
         )}
         {busy && <p role="status">正在提交固定追加请求…</p>}
         {message && (
@@ -281,7 +298,7 @@ export function AppendRevisionPanel({
         key={`${productId}/${pendingRefresh}`}
         productId={productId}
         session={session}
-        refreshing={refreshing || busy}
+        refreshing={busy}
         writeBlocked={denied}
         onChanged={changed}
       />
