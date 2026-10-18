@@ -98,6 +98,8 @@ complete binding 固定 session/play、expectedStateRevision、两个 state hash
 
 机器预算见 `lib/consumer-contract/v1/limits.ts` 初稿。HTTP/规范文本/输出分别有界，最终 Schema 仍须验证最坏输入以及首款实际产物。所有阶段共享初始 15 秒，不因第二个 TX 或文件关闭重新起算。
 
+纯 SQL owner 独立设置每 Node 进程 8 个固定租约槽，跨本进程 route bundle/HMR 共用 Symbol.for 单例。开库前同步占槽，满即有界 busy，不排队；每格最多一个 pool、一个实际业务任务及常数个合并 close promise，覆盖 opening/running/closing/quarantine。沿当前每 pool max=5，此范围最多 8 pools/40 sockets；四个 FS 槽、旧路由和其他进程另计，不能声称全机或全应用总上限。只有实际 opening/work 已 settled 且所有实际 close 正向确认后归还；超时、abort、请求结束、被拒绝 promise 均不是关闭证明，无 TTL 或自动重试释放。开库时一旦 openSql 得到 client 即交 owner 观察，verification 早失败也不能吞 close 失败而释放槽。exchange 第一阶段真实关闭后才归还并申请第二槽；第二槽满不开始 Key 事务，已扣预算不退。实现/故障注入证据仍待 A。
+
 createPlay/资源读取的实际 IO 走 outer owner 和现有实际关闭隔离；纯 SQL save/logout/报告后授权恢复不占四个 FS 任务名额。纯 SQL 新引用在域锁前持同 TX 非等待 storage SHARE。维护在首次 unlink 甚至自有 ledger 删除前核完整 play/Key/session/report/当前 grant 留存图；过期/作废不释放业务来源引用。
 
 ## 10. 验收与明确非目标
