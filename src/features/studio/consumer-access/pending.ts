@@ -134,7 +134,7 @@ export async function readStudioConsumerPendingV1(
 /** CSPRNG only in the operator browser. Raw is returned for local escrow, never an API input. */
 export async function newStudioIssueV1(
   playInput: unknown,
-  validForSeconds = L.defaultKeyLifetimeSeconds,
+  validForSeconds: number = L.defaultKeyLifetimeSeconds,
 ): Promise<Extract<StudioConsumerOperationV1, { kind: "issue" }>> {
   const play = internalPlayRefSchema.parse(playInput),
     raw = createConsumerToken("access-key"),
