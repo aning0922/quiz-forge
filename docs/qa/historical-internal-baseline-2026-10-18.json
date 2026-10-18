@@ -1,0 +1,100 @@
+{
+  "schemaVersion": "quizforge-author-baseline-record.v1",
+  "recordedOn": "2026-10-18",
+  "timezone": "Asia/Shanghai",
+  "authorStatement": "内容与视觉可作为内测基线",
+  "scope": "internal-test-content-and-visual-baseline",
+  "product": "historical-cabinet",
+  "title": "千载同心",
+  "reviewedDeliveryCommit": "922937fbfd4672e6b15038a99f8b4316aed9cd2c",
+  "contentSource": {
+    "commit": "03fdc240c924e2fe7379534176e11d1e6ab3bc58",
+    "path": "docs/FIRST_PRODUCT_CONTENT_DRAFT.md",
+    "sha256": "8c049714ae07c5ed2f10fff334cc041364789781de28bfbbd5442a26d6dc0653"
+  },
+  "reviewArtifacts": [
+    {
+      "file": "content-review.json",
+      "bytes": 29489,
+      "sha256": "3b91353938c607a0767fca013fcaebfc92786c975c53964da1d323db7d806261"
+    },
+    {
+      "file": "manifest.json",
+      "bytes": 2472,
+      "sha256": "4a0dd264645c2cc965d1f6422380aaeecf9cc2b8faf797c0e182142a581a0c8f"
+    },
+    {
+      "file": "prompts.json",
+      "bytes": 7017,
+      "sha256": "7b2127501a7d490e705d6a29987ac6d46e29f2122e2ffe29656dfedaf1f24d80"
+    },
+    {
+      "file": "review/index.html",
+      "bytes": 32218,
+      "sha256": "9e8077702c61cf8403f420c28a8b8c9de6a1dbc8db388ead1a225c0c8cf555b6"
+    }
+  ],
+  "content": {
+    "questions": 12,
+    "options": 48,
+    "dimensions": 4,
+    "resultCards": ["li-bai", "su-shi", "tao-yuan-ming", "bai-ju-yi"],
+    "baselineReports": 4
+  },
+  "visual": {
+    "resourceSlots": 9,
+    "uniqueImages": 8,
+    "neutralCoverUses": "room-1.webp",
+    "assets": [
+      {
+        "reviewFile": "li-bai.webp",
+        "bytes": 526480,
+        "sha256": "3c5696a0aefa78dcec1a309922c7991a201cc347abe9e0295ab4787ce8f437d8"
+      },
+      {
+        "reviewFile": "su-shi.png",
+        "bytes": 2948302,
+        "sha256": "d29f1c383b088ff50efc28f8a27185f064e2a1c7940bd811cd3966f3716335e6"
+      },
+      {
+        "reviewFile": "tao-yuan-ming.png",
+        "bytes": 3034825,
+        "sha256": "182752e91a7a28b980e474f3ae5afd70be6f8ee5ba9ed85cd5836cb73ad811d7"
+      },
+      {
+        "reviewFile": "bai-ju-yi.png",
+        "bytes": 2862625,
+        "sha256": "6c4dc60921ce961705990f70f70a99d52d4b3f71d3137ddacd8d520d4e56d2c9"
+      },
+      {
+        "reviewFile": "room-1.webp",
+        "bytes": 321752,
+        "sha256": "ed47a6c4d46a8d8ddf5d9fb232ee9119ffdb4d50cd3f215546a55e841fe42ba7"
+      },
+      {
+        "reviewFile": "room-2.webp",
+        "bytes": 268732,
+        "sha256": "b798235e52dfc7ec1e34b426a6157022943ca7552baf662e17f25daffbaf17b5"
+      },
+      {
+        "reviewFile": "room-3.webp",
+        "bytes": 303492,
+        "sha256": "d8e8d555e3b0990b43b4a069dea9223b1aa43d507e5140f5da087cad11d043cc"
+      },
+      {
+        "reviewFile": "room-4.webp",
+        "bytes": 225358,
+        "sha256": "8773d02d9a94f5e93946b001f326edd7896c159d06b63f04ed2533dae7820bd2"
+      }
+    ]
+  },
+  "boundaries": {
+    "isQuizPack": false,
+    "runtimeReviewAuthority": false,
+    "commercialRightsGranted": false,
+    "publicationApproved": false,
+    "deploymentApproved": false,
+    "mainMergeApproved": false
+  },
+  "history": "The original review artifacts retain their preparation-time pending markers. This later author record confirms the named internal baseline; it does not rewrite earlier evidence or certify rights."
+}

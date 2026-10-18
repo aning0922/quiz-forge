@@ -1,5 +1,11 @@
 # 阶段进度
 
+## 2026-10-18 内测内容与视觉已确认，接续修订与版本流程
+
+作者已明确确认“内容与视觉可作为内测基线”，准确范围和不可变材料hash见[FIRST_PRODUCT_BASELINE](FIRST_PRODUCT_BASELINE.md)。下方2026-10-16等待作者审核的段落是历史；此次确认已解除内容/视觉内测基线等待，不扩大为商业权利、部署或发布批准。
+
+主控从已验收922937f建立codex/draft-revisions，恢复原两独立Sol/high开发聊天和Astra/high独审，先冻结P3-D追加不可变revision合同，再分别实施数据事务/后台流程。旧首稿、旧修订与原key回执保留；更改内容不得沿用旧审核资格。后续接审核/内测版本封存、P4消费者Key/会话/一次完成/不可变报告，目标仍为首款P5内测，尚未宣称完成。当前仅预研与范围记录，未修改数据模型或运行迁移。
+
 ## 2026-10-16 P3-C 技术出口完成，首款内容与素材待作者审核
 
 运行ac69b76、测试49da513完成固定revision/完整资源绑定、真实评分、只读运营预览、六状态和1080×1920 PNG。1504单元、395本地完整PG及增量、最终远端417PG/46driver/14服务/3UNKNOWN、228生产E2E/10旧skip、零warning build、新main媒体66×3、25图双线逐张复核均通过。准确代码head普通38805921796与媒体38805921596实际success，Astra最终无剩余P1/P2。详见[P3C_ACCEPTANCE](P3C_ACCEPTANCE.md)、[REVIEW](P3C_REVIEW.md)、[VISUAL_CHECK](P3C_VISUAL_CHECK.md)和[QA](qa/p3c-integration.json)。
