@@ -28,6 +28,7 @@ import {
   internalPanel,
   internalPending,
   internalRouteFetch,
+  fulfillInternalResponse,
 } from "./studio-internal-versions.ui";
 
 async function preparedRequest(
@@ -170,7 +171,7 @@ export async function exerciseInternalWriteUnknown(
         ? await checkReviewResult(envelope, 200, original.tuple)
         : await checkSealResult(envelope, 200, original.tuple);
     expect(value.created).toBe(false);
-    await route.fulfill({ response });
+    await fulfillInternalResponse(route, response);
   };
   await page.route(`**${path}`, replay);
   try {

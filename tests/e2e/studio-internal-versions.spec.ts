@@ -41,21 +41,37 @@ import {
 } from "../../src/features/product/draft-revisions/contracts";
 import {
   signInInternalOperator,
+  internalGet,
   internalPost,
   internalRouteFetch,
+  fulfillInternalResponse,
   internalPanel,
   internalPending,
   installInternalPending,
   captureInternalWidths,
 } from "./studio-internal-versions.ui";
+import { InternalSuiteCompletion } from "./studio-internal-versions.completion";
+import {
+  checkReviewResolution,
+  checkVersionResolution,
+} from "../../src/features/studio/internal-versions/client";
 import { exerciseInternalWriteUnknown } from "./studio-internal-versions.lifecycle";
+
+const CASES = [
+  "record exact synthetic r1 once, retain UNKNOWN anchor and resolve after detail GET error",
+  "seal exact r1 once, retain UNKNOWN anchor and verify actual fixed snapshot/list",
+  "read-only actor resolves original receipts and clears only local anchors while write replay is403",
+  "unregistered r2 append creates no baseline approval; original r1 receipts and historical metadata survive",
+  "late real resolve cannot accept old evidence or delete a replacement original key",
+  "shared Product authority rejects late proof after GET401, cross-panel403 or CSRF; ordinary404 preserves recovery",
+] as const;
+const completion = new InternalSuiteCompletion(CASES);
 
 test.use({ trace: "off", video: "off", screenshot: "off" });
 test.describe.configure({ mode: "serial" });
 test.setTimeout(180_000);
 let fixture: InternalVersionFixture,
   prepared = false,
-  allPassed = true,
   review: InternalReviewReceipt | undefined,
   version: InternalVersionReceipt | undefined;
 const execute = promisify(execFile),
@@ -192,15 +208,17 @@ test.beforeAll(async () => {
   fixture = await readFixture();
 });
 test.afterEach(async ({}, info) => {
-  if (info.status !== info.expectedStatus) allPassed = false;
+  completion.observe(info);
 });
 test.afterAll(async () => {
-  if (prepared && allPassed) await command("finish");
+  if (prepared) {
+    if (!completion.canFinish())
+      throw Error("INTERNAL_VERSION_E2E_FULL_SUITE_REQUIRED");
+    await command("finish");
+  }
 }); // Actual exit/cleanup belongs exclusively to root.
 
-test("record exact synthetic r1 once, retain UNKNOWN anchor and resolve after detail GET error", async ({
-  page,
-}, info) => {
+test(CASES[0], async ({ page }, info) => {
   await signIn(page);
   const result = await exerciseInternalWriteUnknown(
     page,
@@ -227,9 +245,7 @@ test("record exact synthetic r1 once, retain UNKNOWN anchor and resolve after de
   ).toBeVisible();
   await captureInternalWidths(page, info, "review-recorded");
 });
-test("seal exact r1 once, retain UNKNOWN anchor and verify actual fixed snapshot/list", async ({
-  page,
-}, info) => {
+test(CASES[1], async ({ page }, info) => {
   await signIn(page);
   const result = await exerciseInternalWriteUnknown(
     page,
@@ -244,7 +260,8 @@ test("seal exact r1 once, retain UNKNOWN anchor and verify actual fixed snapshot
   expect(version.binding.engine).toEqual(fixture.engine);
   expect(version.binding.reviewId).toBe(review!.id);
   expect(version.publicationApproved).toBe(false);
-  const response = await page.request.get(
+  const response = await internalGet(
+    page,
     internalVersionUrl(fixture.productId, version.id),
   );
   expect(response.status()).toBe(200);
@@ -253,7 +270,8 @@ test("seal exact r1 once, retain UNKNOWN anchor and verify actual fixed snapshot
   );
   expect(detail.version).toEqual(version);
   expect(detail.snapshot.target).toEqual(fixture.target);
-  const listResponse = await page.request.get(
+  const listResponse = await internalGet(
+    page,
     internalVersionsUrl(fixture.productId),
   );
   const list = internalVersionListResponseSchema.parse(
@@ -268,9 +286,7 @@ test("seal exact r1 once, retain UNKNOWN anchor and verify actual fixed snapshot
   ).toBeVisible();
   await captureInternalWidths(page, info, "sealed-detail");
 });
-test("read-only actor resolves original receipts and clears only local anchors while write replay is403", async ({
-  page,
-}, info) => {
+test(CASES[2], async ({ page }, info) => {
   await signIn(page, "readOnly");
   await page.goto(internalVersionsPageUrl(fixture.productId));
   for (const operation of ["review", "seal"] as const) {
@@ -309,7 +325,7 @@ test("read-only actor resolves original receipts and clears only local anchors w
       input,
     );
     expect(denied.status()).toBe(403);
-    expect((await denied.json()).code).toBe("CAPABILITY_DENIED");
+    expect(await denied.json()).toMatchObject({ code: "CAPABILITY_DENIED" });
     await captureInternalWidths(page, info, `readonly-${operation}-resolved`);
     await panel
       .getByRole("button", { name: "依核实证据解除本原请求锚点", exact: true })
@@ -319,9 +335,7 @@ test("read-only actor resolves original receipts and clears only local anchors w
       .toBeNull();
   }
 });
-test("unregistered r2 append creates no baseline approval; original r1 receipts and historical metadata survive", async ({
-  page,
-}, info) => {
+test(CASES[3], async ({ page }, info) => {
   await signIn(page);
   const next = fixture.sources.find((s) => s.name === "next")!;
   const binding: AppendDraftBinding = {
@@ -351,7 +365,7 @@ test("unregistered r2 append creates no baseline approval; original r1 receipts 
     appendDraftResultSchema.parse(await response.json()).application.revision,
   ).toBe(2);
   const r2 = { ...scope(), revision: 2 },
-    stateResponse = await page.request.get(internalReviewUrl(r2));
+    stateResponse = await internalGet(page, internalReviewUrl(r2));
   const state = internalReviewStateResponseSchema.parse(
     await stateResponse.json(),
   ).value;
@@ -422,7 +436,8 @@ test("unregistered r2 append creates no baseline approval; original r1 receipts 
     page.getByText("历史修订的固定内测版本", { exact: true }),
   ).toBeVisible();
   await captureInternalWidths(page, info, "historical-list");
-  const detail = await page.request.get(
+  const detail = await internalGet(
+    page,
     internalVersionUrl(fixture.productId, version!.id),
   );
   expect(
@@ -433,9 +448,7 @@ test("unregistered r2 append creates no baseline approval; original r1 receipts 
     ).version.snapshotSha256,
   ).toBe(version!.snapshotSha256);
 });
-test("late real resolve cannot accept old evidence or delete a replacement original key", async ({
-  page,
-}) => {
+test(CASES[4], async ({ page }) => {
   await signIn(page, "readOnly");
   await page.goto(internalVersionsPageUrl(fixture.productId));
   const request = original("review");
@@ -451,9 +464,14 @@ test("late real resolve cannot accept old evidence or delete a replacement origi
   const resolvePath = internalReviewResolveUrl(fixture.productId);
   await page.route(`**${resolvePath}`, async (route) => {
     const actual = await internalRouteFetch(route);
+    expect(actual.status()).toBe(200);
+    await checkReviewResolution(
+      internalReviewResolutionResponseSchema.parse(await actual.json()).value,
+      request.tuple,
+    );
     captured = true;
     await gate;
-    await route.fulfill({ response: actual });
+    await fulfillInternalResponse(route, actual);
   });
   try {
     const panel = internalPanel(page, "review");
@@ -497,9 +515,7 @@ test("late real resolve cannot accept old evidence or delete a replacement origi
   }
 });
 
-test("shared Product authority rejects late proof after GET401, cross-panel403 or CSRF; ordinary404 preserves recovery", async ({
-  page,
-}, info) => {
+test(CASES[5], async ({ page }, info) => {
   await signIn(page);
   for (const scenario of [
     "get401",
@@ -521,9 +537,14 @@ test("shared Product authority rejects late proof after GET401, cross-panel403 o
     const holdSeal = async (route: import("@playwright/test").Route) => {
       const actual = await internalRouteFetch(route);
       expect(actual.status()).toBe(200);
+      await checkVersionResolution(
+        internalVersionResolutionResponseSchema.parse(await actual.json())
+          .value,
+        version!.binding,
+      );
       captured = true;
       await gate;
-      await route.fulfill({ response: actual });
+      await fulfillInternalResponse(route, actual);
     };
     await page.route(
       `**${internalVersionResolveUrl(fixture.productId)}`,

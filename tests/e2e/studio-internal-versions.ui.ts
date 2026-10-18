@@ -1,5 +1,4 @@
-import { expect, type Page, type Route, type TestInfo } from "@playwright/test";
-import type { StudioSessionDto } from "../../src/features/studio/contracts";
+import { expect, type Page, type TestInfo } from "@playwright/test";
 import { internalRevisionScopeSchema } from "../../src/features/product/internal-versions/urls";
 import {
   INTERNAL_PENDING_KEYS,
@@ -40,38 +39,12 @@ export async function signInInternalOperator(page: Page, secret: string) {
     page.getByRole("heading", { name: "运营会话", exact: true }),
   ).toBeVisible();
 }
-export async function internalHeaders(page: Page) {
-  try {
-    const response = await page.request.get("/api/studio/auth/session");
-    if (!response.ok()) throw Error();
-    const value = (await response.json()) as Partial<StudioSessionDto>;
-    if (typeof value.csrfToken !== "string") throw Error();
-    return {
-      origin: new URL(page.url()).origin,
-      "x-csrf-token": value.csrfToken,
-    };
-  } catch {
-    throw Error("INTERNAL_VERSION_E2E_SESSION_UNAVAILABLE");
-  }
-}
-/** Keep session-derived headers out of request-failure call logs. */
-export async function internalPost(page: Page, url: string, data: unknown) {
-  try {
-    return await page.request.post(url, {
-      headers: await internalHeaders(page),
-      data,
-    });
-  } catch {
-    throw Error("INTERNAL_VERSION_E2E_POST_UNAVAILABLE");
-  }
-}
-export async function internalRouteFetch(route: Route) {
-  try {
-    return await route.fetch();
-  } catch {
-    throw Error("INTERNAL_VERSION_E2E_ROUTE_FETCH_UNAVAILABLE");
-  }
-}
+export {
+  internalGet,
+  internalPost,
+  internalRouteFetch,
+  fulfillInternalResponse,
+} from "./studio-internal-versions.network";
 
 export async function internalPending(
   page: Page,
