@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { StudioClientError, studioFetch, studioMessage } from "./client";
 import type { StudioPreauthDto, StudioSessionDto } from "./contracts";
 import styles from "./studio.module.css";
+import { invalidateStudioAuthority } from "./authority-events";
 
 export function StudioLoginForm() {
   const router = useRouter();
@@ -83,6 +84,7 @@ export function StudioLoginForm() {
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!preauth || busy) return;
+    invalidateStudioAuthority();
     setBusy(true);
     setFailed(false);
     setMessage("正在验证运营身份…");

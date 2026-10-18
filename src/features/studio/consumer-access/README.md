@@ -21,3 +21,7 @@ secret披露P2整改：最后一次新鲜issuer await后，立刻用同步完整
 两组回归共8种mutation在最终auth等待、callback等待两个窗口分别验证；旧生产实现负对照两组均失败（旧披露1次、旧callback current=true）。修后controller8+pending5共13项通过，lint/typecheck通过。原独审3个JSON、负对照与修后测试日志保留.cache/p4-review/studio-*-original.json、studio-disclosure-negative-control.log/after.log，仅合成，无真实剪贴板/文件写入或真实Key。此修补独立于尚未提交的Studio UI/HTTP。
 
 `http.ts` 在构造单一 request owner 前核 source、方法、查询、Studio Cookie/CSRF、路由与完整 binding；服务按操作懒构造，同一原始 15 秒时钟贯穿解析/执行/关闭。严格校验每份 receipt、完整 resolution 与列表范围，写成功后响应或实际关闭失败返回 UNKNOWN，读请求不制造写成功。finally 只关闭原 owner；没有数据库构造或替代业务实现。5 项合成单测通过，定向 lint 与 typecheck 通过；这不证明实际运营权限、PG 事务或生产路由通过。
+
+Studio 页面位于 `/studio/products/[productId]/consumer-access`，工作区新增入口；Server Component 只传固定 renderer 与 origin/instance/issuer/product 范围，不传原文、Cookie 或 CSRF。页面提供具体父版本/内测版本选择、发放期限、安全 Key 元数据、原请求核对/重放、显式终态清除、复制/下载与未领取作废。只读身份不展示写入/披露控件，UNKNOWN 不开放第二次新请求；raw 丢失只允许核对。复制/下载紧邻实际副作用调用 current，文件下载仅表示已触发，提示用户确认保存。离开链接/pagehide/卸载同步失效；登录尝试/退出先发布无任何身份或凭证载荷的同标签与 BroadcastChannel 失效通知，接收端撤销旧代次。每次敏感操作仍独立做服务器新鲜身份核验；广播不是授权依据，也不保证操作系统已接收的副作用可撤回。
+
+`pnpm exec tsx tests/browser/studio-consumer.ts` 使用临时独占随机端口、合成内存 HTTP 与实际 React 页面；无数据库/实际权限/3100/系统剪贴板。Chromium 156.0.8078.4，320/375/390/430 × 900 CSS px，15 张完整截图及全部原尺寸分段已复核：创建、发放、UNKNOWN 刷新不自动写入/原请求恢复、同标签失效中断等待披露、跨标签失效、导航阻断旧披露、issuer 变化、只读、claim 先于 void、未领取成功作废。断言无横溢出、无 raw DOM、交互目标 ≥44 px；隔离 Clipboard stub 只返回次数/安全布尔值，真实浏览器下载写入 0700 私有缓存目录中的 0600 合成文件，只比对摘要。证据在 `.cache/p4-studio-consumer/1792343762968`，13 图原尺寸复核在 `1792343519257/qa-bands`，新增两失效图直接原尺寸复核；未发现阻断布局。这不替代作者视觉验收，也不是实际 DB/生产 E2E 通过。真实 factory/API 路由与正式生产闭环仍待后续接线。

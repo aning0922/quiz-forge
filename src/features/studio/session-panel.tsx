@@ -6,6 +6,7 @@ import Link from "next/link";
 import type { StudioSessionDto } from "./contracts";
 import { StudioClientError, studioFetch, studioMessage } from "./client";
 import styles from "./studio.module.css";
+import { invalidateStudioAuthority } from "./authority-events";
 
 function expiry(value: string): string {
   return new Intl.DateTimeFormat("zh-CN", {
@@ -21,6 +22,7 @@ export function StudioSessionPanel({ session }: { session: StudioSessionDto }) {
   const [message, setMessage] = useState("");
   async function logout() {
     if (busy) return;
+    invalidateStudioAuthority();
     setBusy(true);
     setMessage("正在退出…");
     try {
