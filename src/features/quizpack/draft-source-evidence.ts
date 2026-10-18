@@ -4,6 +4,7 @@ import type postgres from "postgres";
 import { StudioError } from "@/lib/http-security/errors";
 import {
   readReadyDraftSourceReadonly,
+  readFrozenDraftSourceReadonly,
   type DraftSourceScope,
   type DraftSourceExpected,
   type ReadyDraftSource,
@@ -70,12 +71,15 @@ const invalid = (): never => {
 const hash = (text: string) =>
   createHash("sha256").update(text, "utf8").digest("hex");
 /** Same RR transaction as the exact immutable revision observation. Raw evidence never enters DTO/snapshot. */
-export async function readReadyDraftSourceEvidenceReadonly(
+async function readSourceEvidence(
   tx: postgres.TransactionSql,
   scope: DraftSourceScope,
   expected: DraftSourceExpected,
+  historical: boolean,
 ): Promise<ReadyDraftSourceEvidence> {
-  const source = await readReadyDraftSourceReadonly(tx, scope, expected);
+  const source = await (
+    historical ? readFrozenDraftSourceReadonly : readReadyDraftSourceReadonly
+  )(tx, scope, expected);
   const [row] = await tx<
     EvidenceRow[]
   >`SELECT identity_text,identity_sha256,archive_sha256,archive_bytes,archive_policy_version,archive_policy_sha256,evidence_text,evidence_sha256,report_texts,evidence_metadata_text,attempts_text,manifest_sha256,content_sha256,identity_kind,canonical_validation_id FROM qf.quizpack_validation WHERE product_id=${source.productId} AND import_id=${source.sourceImportId} AND id=${source.sourceValidationId}`;
@@ -176,4 +180,20 @@ export async function readReadyDraftSourceEvidenceReadonly(
   } catch {
     return invalid();
   }
+}
+
+export function readReadyDraftSourceEvidenceReadonly(
+  tx: postgres.TransactionSql,
+  scope: DraftSourceScope,
+  expected: DraftSourceExpected,
+) {
+  return readSourceEvidence(tx, scope, expected, false);
+}
+/** No current execution/policy availability requirement; all stored canonical/evidence relations still verified. */
+export function readFrozenDraftSourceEvidenceReadonly(
+  tx: postgres.TransactionSql,
+  scope: DraftSourceScope,
+  expected: DraftSourceExpected,
+) {
+  return readSourceEvidence(tx, scope, expected, true);
 }

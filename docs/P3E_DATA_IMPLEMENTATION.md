@@ -37,3 +37,15 @@ review 以 Product/key 唯一、Product/draft/revision 唯一；六列复合 FK 
 Astra 指出新增 audit_target OR 分支缺少 target_kind/target_revision 非空条件，SQL CHECK 可能接受 NULL。已在应用角色真实事务复现：审核/版本两种 action 分别缺 kind 或 revision，共 4 例均插入成功；逐例显式回滚后新 action 计数保持 0，没有反例留存。原 checksum 测试实例保留并停库，没有改迁移历史。
 
 最小修复为新增分支显式要求 target_kind、target_revision 非空，整个 audit_target 表达式以 IS TRUE 收口；对应 draft schema exact fact 同步更新。修订 SQL 在另一 fresh purpose=test 实例实际安装；4 个缺字段负例均报 23514/audit_target，2 个完整有限目标正例通过。有谱系 16→17、两套 schema guard 和数据核心共 23 项 PostgreSQL 再次通过。0001..0016 原字节保持。
+
+## 应用服务首批
+
+新增每请求 `createProductInternalVersionService(owner)`，公开方法保持冻结 service-contract。原 key 先在授权 RR 读取并完整核 binding/fingerprint，成功前 fresh 当前权限复核；不申请新 FS 名额、不读当前字体/图片、不要求当前执行器可用。新 review/seal 严格 outer guard → auth → try xact shared → guard.check → Product → key 再查；新申请 head、精确三 hash、受信 baseline/用途、review 与容量复核后 INSERT/单条专用审计/最终授权/COMMIT。
+
+seal 使用主控真实固定 engine wrapper prepare/witnesses，要求 actual canonical content hash、全见证 passed 及 logicHash 与固定 baseline 一致。实际逐唯一 blob hash 顺序读取/校验/关闭并丢弃缓冲，另在同一 owner/deadline 下逐一打开并核字体、coverage、license 的固定实际字节；这些操作不读取 repo 源码来重建身份。缺素材或执行依赖明确拒绝，不给占位成功。原始 evidence 仍只在 quizpack 内部端口核验，snapshot 只放冻结身份/hash。
+
+resolve/read 在单 RR 读取业务事实并另做 fresh 当前授权。原 key 永远优先；obsolete、精确 target-used 和 100 硬槽位证明严格分域。历史 snapshot 重建只依赖保留 descriptor、原来源事实与 baseline 的固定 logicHash，不调用当前评分器或 FS。新增历史源端口保留原 archive policy tuple，不以今日 policy 执行可用性重新批准旧来源。
+
+实际首轮服务 PostgreSQL 10 项通过：真实五图和三字体文件封存/详情/列表/状态，quota 全满+归档+执行器停用时原 key 重放，异 binding/异 key 重复及 target-used，历史缺当前代码/字体仍可读核实，新 seal 缺字体/图片拒绝，readonly/CSRF 拒绝，fresh 授权期间失权拒绝，真实 COMMIT 后投递未知由原 key 恢复且不重复审计，业务事务内实际 pg_terminate_backend 后 UNKNOWN/unresolved，以及并发推进 head 时保持单 RR 观察。夹具只清理已返回/核实的精确自有 ledger IDs，未知或外部事实即保留；未来生产 Next 接线与持久 P3E fixture 出口仍待集成。
+
+本服务提交的本地工程验证：format:check、lint、typecheck、138 文件 / 1612 单元、pnpm build 全部通过。实现门禁实际核 3 descriptor / 51 文件 / 280 lock records；现有 Next 构建 trace 72 / 15075 paths / 0 违规。新 HTTP/后台路由尚由另一实现流接线，不能把本轮现有路由 build 当作新生产链路或 E2E 通过。后续继续补容量证明、真实物理留存和关闭故障、P3E 持久夹具出口。
