@@ -25,7 +25,11 @@ A 接 0018/guard、同事务 ports、owner/凭证/状态/完成服务、真实 P
 
 新 consumer-folio-cabinet@1.0.0 descriptor 直接包含六个受控映射：source layout tuple（现 id、version 2.0.0、props 1.0.0）→精确 runtime component tuple。旧 content/parent/sourceComponents 不变；PlaySnapshot 分别记录 source/runtime/mapping 身份，并与 descriptor 逐字段一致。来源 DisplayEntryBodyV1/ResultDisplaySnapshotV1 的 layout 仍描述来源配方，新 host 严格映射到自己的真实组件，不索引旧 PREVIEW_COMPONENTS 冒充消费者实现。
 
-`product/internal-play/implementation-schema.ts` 已定义独立 consumer descriptor metadata：六映射/协议、真实字体、browser/server 入口、源码/构建输入/依赖锁事实、闭包 SHA 和 descriptor SHA。它只验证供给事实及三个嵌套摘要一致，不注册可执行能力；当前尚未生成实际 consumer descriptor、加入可用 catalog 或完成 build gate。真实 controller/host、六视图、PNG 与服务器投影完成后再计算完整闭包并登记；测试中的合成 metadata 不代表可用实现。
+`product/internal-play/implementation-schema.ts` 定义独立 consumer descriptor metadata；实际 `consumer-folio-cabinet@1.0.0` 已按完整 host/controller、access、六视图、PNG 与 server projection 登记。固定 entry SHA `a77bab743b5827545add2272c0d7626e8699148a790e56fb6f365b76330adf46`、implementation SHA `16401d89cb071bd1e05d03ebeacb96cd785e316e211781b70a4ec1057a960dba`、mapping SHA `eb2488d847a1e2de5c608ded9ca07e7524389efd9f35b8e512a2f3d3427de258`。闭包含74源文件、3构建输入、268锁记录，包含修复后的长Key计时器及到期pending界面。旧3个descriptor仍为51源文件/280锁记录，未改其字节。
+
+历史metadata与显式编译availability分离，按kind/id/version/entrySha精确选择，不fallback latest。server resolver只返回固定投影；client resolver绑定固定映射/字体，`resolveConsumerExperienceRuntime({renderer,mapping,font})` 再逐项比较已验证服务事实，供app组合层注入host，避免host反向依赖descriptor。纯component-map从registry拆出以便Node构建验证，不改变其导出API。既有 `implementation:check`/build入口现在同时校验consumer完整文件与锁事实；供给metadata或自洽hash仍不产生新可执行登记资格。
+
+这一登记提供本地编译能力，不授权用户、创建play、改变父版本、评分或落账报告；实际owner/服务/HTTP与生产端到端仍需验证。登记源码变更时必须先核未创建业务引用并重审身份；已有引用后保留历史metadata和精确版本，不能用最新实现重解释旧快照。
 
 实际文件/锁事实的只读核验已提取为 `verifyTrustedImplementationEntries`，旧 `verifyInternalImplementations` 保持原 catalog/可用性选择与 13 项回归；新增 consumer 包装先核 metadata，再核独立编译 identity 与精确 tuple、实际源码/字体/构建输入/依赖锁。两文件 16 项定向验证、lint/typecheck 通过。此时尚未把 consumer catalog 接入 build 命令，测试只使用明确合成 metadata 和已有真实源文件验证机制，不激活 consumer 能力。
 

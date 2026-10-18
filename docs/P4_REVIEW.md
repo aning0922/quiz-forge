@@ -54,7 +54,7 @@ root 另核精确批准 ZIP/content/全部 9 路径 8 独立素材，实际固�
 
 0018原7PG只证明所列结构反例，不能替代直接claim/void/reportFK、旧业务无损升级、完整retain、owner/服务和最终端到端。A正继续这些实施与修复，独审实例只用于独立反例。
 
-修复 14ea22e（A c671408）已加入 qf namespace gate，在 runtime 校验及官方 migrate 的任何 DDL/ACL 重置之前拒绝未登记对象、规则、策略及 namespace 权限；不修改 0018 或旧 migration checksum。A 实际 fresh1→18、4 namespace/7 schema 共11 PG 与1766单元、format/lint/type/build通过；污染18和旧17拒绝且行/history/ACL零变化。仅删除测试自建 view 后旧17→18保持旧行。独审待复验，原 view P2 当前仍打开。裸执行0018仍不是完整入口，必须使用官方runner。A后续普通PG回归发现旧16表枚举和自动修复CREATE权限的测试预期需适配，尚未宣称全量通过。Astra 独立 a536 测试库已实际停止并保留反例；root 首款39eb仍保持原样停库。
+修复 14ea22e（A c671408）已加入 qf namespace gate，在 runtime 校验及官方 migrate 的任何 DDL/ACL 重置之前拒绝未登记对象、规则、策略及 namespace 权限；不修改 0018 或旧 migration checksum。A 实际 fresh1→18、4 namespace/7 schema 共11 PG 与1766单元、format/lint/type/build通过；污染18和旧17拒绝且行/history/ACL零变化。仅删除测试自建 view 后旧17→18保持旧行。该提交初交时待独审，后续复验见下段。裸执行0018仍不是完整入口，必须使用官方runner。A后续普通PG回归发现旧16表枚举和自动修复CREATE权限的测试预期需适配，尚未宣称全量通过。Astra 独立 a536 测试库已实际停止并保留反例；root 首款39eb仍保持原样停库。
 
 14ea22e 的原 namespace P2 已独立复验关闭。Astra 自有新实例 fresh1→18 的11 PG通过，另独立探针在旧17和当前18重建同一个可更新view：app开库和官方migrate都拒绝，业务行/历史/目录/schema OID/schema及数据库ACL前后SHA一致。仅移除探针自建view后17→18成功，16旧表行和17历史不变；0018 SHA仍a723d409df2dc1225f4504ff14bc13b18824c93adac28b7f10058c3e586c060a。证据 namespace-fixed-probe-result.json。此处关闭原遗漏对象P2，不代表在线撤销既有连接、完整PG或业务owner/服务通过。
 
@@ -63,3 +63,19 @@ root 另核精确批准 ZIP/content/全部 9 路径 8 独立素材，实际固�
 0018 之后的远端 database job 曾在 bootstrap 失败（例如39138415716），不能记作已跑PG。root用固定同一Docker镜像新建两套独占隔离实例，仅改变initdb locale：镜像默认en_US.utf8实例在旧17停止、0018拒绝；明确UTF8/C实例1→18和app开库成功，最终catalog SHA与本地906ca374完全一致。两个容器均已核自身label并实际停止，失败/成功卷保留，未碰首款39eb。安全记录见 [CI locale 对照](qa/p4-ci-locale-probe.json)。
 
 CI脚本现在显式使用与本地管理器相同的 `--encoding=UTF8 --locale=C`。0018内嵌及runtime catalog排序具有locale前提，本轮不改任何既有SQL/checksum，也不对非C旧库强制升级或重写history；新CI实际结果仍需按准确head观察。消费者HTTP压力测试另修正全局Promise观测误归因：只计算reader调用栈附件，刻意加入8个无关reactions；旧生产负对照仍以134/8450/33794失败，新代码完整1804单元/166文件通过。
+
+## 实际 host 与事务约束的局部审查
+
+3b860f1（A64df464）的core/retain独审无P1/P2：原7core、真实旧17升级和旧16升级共9PG通过；另3独立PG实测claim先/void先两种Key锁顺序，第三个同app连接观察等待，首方提交后另一方23514且最终互斥。retain要求实际RR/maintenance锁及精确parent；插入fixture未记账但合法的Key后，cleanup首删前拒绝、旧图和五类新行SHA不变。误用owner观察app wait事件的首个独立探针失败只作为探针错误保留；纠正后的新实例全过且已正式stop。证据core-independent-probe-result.json。普通PG旧suite可留下审计行，fresh namespace探针因此独立到vitest.p4-namespace.config.ts；不删除其他suite数据凑空库，CI另建专属服务运行四项。
+
+a314372（B b9a145b）已集成实际consumer host/controller/resource/access，主控19项专项与typecheck通过。B真实Chromium临时合成HTTP完成四宽及恢复/失权/报告共21图、下载1080×1920 PNG，页面错误0；B逐图工程检查，root实看pending缺entry、完成确认、失权三个320原图，未见视觉阻断。此处仍为内存HTTP合成fixture，不证明真实数据库业务。独审发现合法25/30天Key的setTimeout整数溢出P2，正在修复；1/7/24天active与25/30天即时expired的真实浏览器对照见host-deadline-probe-result.json，不能将整个host记为通过。
+
+394908a/e944363的browser client原7测试加独立3adapters测试通过，独审无P1/P2。真实Chromium对38 URL变体零fetch拒绝；同源POST实际Sec-Fetch-Mode/Site正确，跨域302及外域base均零外域请求；真实停滞响应约15004ms超时并观察连接关闭。116浏览器输入无DB/评分运行依赖，浏览器/服务实际退出。证据client-adapters-probe-result.json和client-browser-probe-result.json。结论不延伸到host、handler或持久化授权。
+
+长Key计时器P2在e51ffbe（B2e554f8）独立复验关闭：原1/7/24/25/30天真实浏览器探针全部active，另800ms短到期实际active→expired且grant仍current、已完成且Key过期保持completed。原错误证据不覆盖。383cc7e（B2b204b0）已补到期pending提示并隐藏replay，保留resolve和原记录，P3等待定向独审。
+
+fca21ee（Ae08b78c）的SQL admission与早期factory observer独审无P1/P2：原5fault+独立2测试、真实PG父1项的4隔离driver模式通过；12次坏配置无client分配且随后真实phase恢复，app backend0。8个未settle opening取消后仍占满，late opening必须实际close确认才仅归还一格；无分配/关闭证明的同步factory rejection不会释放，随后100请求零新factory。证据sql-owner-independent-probe-result.json和sql-observer-preallocation-probe-result.json。A在固定e08生产源的普通完整PG为60文件485断言、无skip（285.10s），fresh namespace另4项通过。仅此P4入口每进程8pool/max5，不宣称全应用40连接，也不代替request/resource owner或三service。
+
+实际consumer登记已包含修复后host/controller、access、组件、transport、PNG与server投影；root新三项登记测试和相关旧/new gate共20项通过，真实Chromium127输入bundle无server/DB/评分运行依赖，正确身份绑定2项、身份/映射/字体16变体全部拒绝，pageErrors0，browser/server实际关闭。74源文件+3构建输入+268锁记录由build入口核验，旧3descriptor/51源文件/280锁记录仍通过。正式登记独审待完成，不把编译availability当P4/P5授权或服务完成。
+
+本登记集成点主控完整171文件1827单元、format/lint/typecheck与implementation:check通过；[安全验证记录](qa/p4-consumer-implementation-check.json)。没有执行本集成点生产build/native/E2E，下一步接真实服务和路由后验收。

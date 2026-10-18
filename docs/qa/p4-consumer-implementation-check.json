@@ -1,0 +1,32 @@
+{
+  "schemaVersion": "quizforge.p4-consumer-implementation-check.v1",
+  "scope": "Compiled local implementation availability; no play, Key, session or user report created.",
+  "entrySha256": "a77bab743b5827545add2272c0d7626e8699148a790e56fb6f365b76330adf46",
+  "implementationSha256": "16401d89cb071bd1e05d03ebeacb96cd785e316e211781b70a4ec1057a960dba",
+  "registeredAccepted": 2,
+  "mutationsRejected": 16,
+  "browser": "156.0.8078.4",
+  "bundleInputs": 127,
+  "serverRuntimeInputs": 0,
+  "pageErrors": 0,
+  "browserClosed": true,
+  "serverClosed": true,
+  "sourceFiles": 74,
+  "buildInputs": 3,
+  "lockRecords": 268,
+  "oldImplementationChecks": {
+    "descriptors": 3,
+    "available": 3,
+    "sourceFiles": 51,
+    "lockRecords": 280
+  },
+  "unitTests": 1827,
+  "unitFiles": 171,
+  "format": true,
+  "lint": true,
+  "typecheck": true,
+  "implementationCheck": true,
+  "productionBuild": false,
+  "productionE2e": false,
+  "independentRegistrationReview": "pending"
+}
