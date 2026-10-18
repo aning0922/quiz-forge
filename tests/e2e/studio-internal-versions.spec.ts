@@ -460,22 +460,31 @@ test(CASES[4], async ({ page }) => {
   await installInternalPending(page, request);
   await page.reload();
   let release!: () => void,
-    captured = false;
+    captured = false,
+    delivered = false,
+    intercepted = 0;
   const gate = new Promise<void>((resolve) => {
     release = resolve;
   });
   const resolvePath = internalReviewResolveUrl(fixture.productId);
-  await page.route(`**${resolvePath}`, async (route) => {
-    const actual = await internalRouteFetch(route);
-    expect(actual.status()).toBe(200);
-    await checkReviewResolution(
-      internalReviewResolutionResponseSchema.parse(await actual.json()).value,
-      request.tuple,
-    );
-    captured = true;
-    await gate;
-    await fulfillInternalResponse(route, actual);
-  });
+  await page.route(
+    `**${resolvePath}`,
+    async (route) => {
+      intercepted++;
+      expect(intercepted).toBe(1);
+      const actual = await internalRouteFetch(route);
+      expect(actual.status()).toBe(200);
+      await checkReviewResolution(
+        internalReviewResolutionResponseSchema.parse(await actual.json()).value,
+        request.tuple,
+      );
+      captured = true;
+      await gate;
+      await fulfillInternalResponse(route, actual);
+      delivered = true;
+    },
+    { times: 1 },
+  ); // Only the original response is held/checked against the old binding.
   try {
     const panel = internalPanel(page, "review");
     await panel
@@ -488,6 +497,10 @@ test(CASES[4], async ({ page }) => {
     };
     await installInternalPending(page, replacement);
     release();
+    await expect.poll(() => delivered).toBe(true);
+    await expect(
+      panel.getByText("正在核实或处理原请求…", { exact: true }),
+    ).toHaveCount(0);
     await expect(
       panel.getByRole("button", { name: "重新读取基线记录锚点", exact: true }),
     ).toBeEnabled();
@@ -512,6 +525,7 @@ test(CASES[4], async ({ page }) => {
     await expect
       .poll(() => internalPending(page, "review", fixture.productId))
       .toBeNull();
+    expect(intercepted).toBe(1); // Replacement went to the real service with its own binding.
   } finally {
     release();
     await page.unroute(`**${resolvePath}`);
