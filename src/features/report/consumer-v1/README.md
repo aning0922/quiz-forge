@@ -1,18 +1,16 @@
-# P4 消费者海报接口准备
+# P4 消费者纯海报实现
 
-本步只提供 `interfaces.ts` 中的 `ExportConsumerPosterV1` 类型。没有 PNG 导出实现或成功证据。它接受稳定的 `DisplayPosterExportBodyV1`、`DisplayResourceTransport`、精确 `DisplayFontDescriptorV1`、取消信号及当前授权代次检查；不接受 Key、恢复链接或客户端分数，也不证明输入已经持久化。
+interfaces.ts 提供 ExportConsumerPosterV1；export.ts 实现 exportConsumerPosterV1。输入为稳定 DisplayPosterExportBodyV1、DisplayResourceTransport、精确 DisplayFontDescriptorV1、取消信号及当前授权代次检查。不接受 Key、恢复链接或客户端分数，也不证明输入已持久化；host须先验证唯一锁定报告。
 
-后续由已经验证唯一锁定报告的 host 传入正文，禁止从未完成答案或预览结果调用来冒充已保存报告。
+| 文件           | 实际职责                                                                                          |
+| -------------- | ------------------------------------------------------------------------------------------------- |
+| layout.ts      | layoutConsumerPosterV1，独立布局与“内测报告／已完成”标记，完整维度/正文，不裁字、缩字或静默选维度 |
+| export.ts      | 1080×1920，固定字体/资源校验、有界绘制与编码、取消和代次检查，不持久化PNG                         |
+| layout.test.ts | 独立标记、完整维度、边界与长文案超限失败                                                          |
+| export.test.ts | 固定输入、尺寸、取消、迟到编码、失败与资源释放；mock canvas而非视觉证据                           |
 
-| 后续文件         | 职责                                                                             |
-| ---------------- | -------------------------------------------------------------------------------- |
-| `layout.ts`      | 独立 consumer 文本布局与内测报告标记；完整维度和正文，不静默裁字、缩字或选取维度 |
-| `export.ts`      | 1080 × 1920、固定字体与资源校验、有界绘制/编码、取消及代次检查；不持久化 PNG     |
-| `layout.test.ts` | 实际排版边界、长文案、缺覆盖及超限失败                                           |
-| `export.test.ts` | 固定输入/资源/字体、取消、超时、编码失败及释放资源                               |
+原样复用旧withPreviewFont的固定字体/覆盖校验及wrapPosterText纯换行能力；root需在新descriptor固定完整复用闭包。旧文件不变，不调用layoutPreviewPoster或沿用PREVIEW_MARK。字体缺失/覆盖不足明确不可用，无系统字体/latest回退。
 
-可原样复用旧 `withPreviewFont` 和 `wrapPosterText` 的稳定校验/换行能力，并由 root 在新 descriptor 中固定完整复用闭包；不修改旧文件，不调用旧 `layoutPreviewPoster` 或沿用 `PREVIEW_MARK`。精确字体文件缺失或覆盖不足时明确不可用，不用系统字体/latest 回退。
+导出只读显示快照，不评分、改报告、调用AI或补造人物事实。素材/排版/编码失败只影响海报，已保存报告仍可读。PNG不含Key、恢复链接、公开分享授权或发布资格。不同浏览器编码字节不承诺完全一致。
 
-导出只读已保存显示快照，不评分、不改报告、不调用 AI、不补造人物事实。缺素材/排版/编码失败只影响海报；完整锁定报告仍由 host 展示。PNG 不含原始 Key、恢复访问链接、公开分享授权或虚假发布资格。不同浏览器的编码字节不承诺完全一致。
-
-新组件/PNG 尚须 root/Astra 审查接口后实现，并经实际组件、浏览器四宽与真实 PNG 检查；本步不把纯接口或类型检查记为视觉/持久化通过。
+2026-10-18：tests/browser/consumer-display.ts在真实Chromium156.0.8078.4以既有合成像素/固定字体生成1080×1920PNG，并验证错误资源hash、缺字体和失效代次均拒绝。实际PNG已查看，未见文字裁切/重叠；原图与结果位于本worktree忽略目录 .cache/p4-consumer-display/1792332467748/。完整组件验证及45图范围见theme/consumer-v1/README.md。该纯显示证据不证明实际Key/session/report持久化或正式人物素材质量；当前未接业务HTTP/DB/3100。
