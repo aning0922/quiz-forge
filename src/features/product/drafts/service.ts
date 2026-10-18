@@ -60,7 +60,10 @@ export function createProductDraftService(): ProductDraftService {
             input.idempotencyKey,
           );
           if (previous) {
-            if (previous.fingerprint !== fingerprint)
+            if (
+              previous.target_kind !== "new-draft" ||
+              previous.fingerprint !== fingerprint
+            )
               throw new StudioError("IDEMPOTENCY_CONFLICT");
             return { created: false, application: applicationDto(previous) };
           }

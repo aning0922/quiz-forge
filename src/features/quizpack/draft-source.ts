@@ -315,10 +315,11 @@ function inspectSource(
   return { content, resources };
 }
 /** Called only after current write authorization and Product row lock; owns all cross-domain source queries. No FS/media IO. */
-export async function readReadyDraftSource(
+async function readSource(
   tx: postgres.TransactionSql,
   scopeInput: DraftSourceScope,
   expectedInput: DraftSourceExpected,
+  lock: boolean,
 ): Promise<ReadyDraftSource> {
   const scoped = scopeSchema.safeParse(scopeInput),
     expectedResult = expectedSchema.safeParse(expectedInput);
@@ -328,11 +329,11 @@ export async function readReadyDraftSource(
     expected = expectedResult.data;
   const [original] = await tx<
     SourceImportRow[]
-  >`SELECT id,product_id,status,target_kind,actual_archive_sha256,actual_archive_bytes FROM qf.quizpack_import WHERE product_id=${scope.productId} AND id=${scope.sourceImportId} FOR UPDATE`;
+  >`SELECT id,product_id,status,target_kind,actual_archive_sha256,actual_archive_bytes FROM qf.quizpack_import WHERE product_id=${scope.productId} AND id=${scope.sourceImportId} ${lock ? tx`FOR UPDATE` : tx``}`;
   if (!original) return invalid();
   const [row] = await tx<
     SourceValidationRow[]
-  >`SELECT id,product_id,import_id,state_revision,status,storage_condition,reserved_bytes,lease_until,attempts_text,archive_sha256,archive_bytes,identity_sha256,identity_text,archive_policy_version,archive_policy_sha256,canonical_manifest_text,canonical_manifest_sha256,canonical_content_text,canonical_content_sha256,asset_set_text,asset_set_sha256,candidate_sha256,container_schema_version,content_schema_version,content_kind,pack_id,pack_version,resource_count,identity_kind,ready_at FROM qf.quizpack_validation WHERE product_id=${scope.productId} AND import_id=${scope.sourceImportId} AND id=${scope.sourceValidationId} FOR UPDATE`;
+  >`SELECT id,product_id,import_id,state_revision,status,storage_condition,reserved_bytes,lease_until,attempts_text,archive_sha256,archive_bytes,identity_sha256,identity_text,archive_policy_version,archive_policy_sha256,canonical_manifest_text,canonical_manifest_sha256,canonical_content_text,canonical_content_sha256,asset_set_text,asset_set_sha256,candidate_sha256,container_schema_version,content_schema_version,content_kind,pack_id,pack_version,resource_count,identity_kind,ready_at FROM qf.quizpack_validation WHERE product_id=${scope.productId} AND import_id=${scope.sourceImportId} AND id=${scope.sourceValidationId} ${lock ? tx`FOR UPDATE` : tx``}`;
   if (!row) return invalid();
   let inspected: ReturnType<typeof inspectSource>;
   try {
@@ -401,4 +402,21 @@ export async function readReadyDraftSource(
       engine: Object.freeze({ ...content.engine }),
     }),
   });
+}
+
+/** Write entry: caller owns Product lock; source lock order is import then validation. */
+export function readReadyDraftSource(
+  tx: postgres.TransactionSql,
+  scope: DraftSourceScope,
+  expected: DraftSourceExpected,
+): Promise<ReadyDraftSource> {
+  return readSource(tx, scope, expected, true);
+}
+/** RR READ ONLY entry for alias proof; identical fact validation with no row locks or writes. */
+export function readReadyDraftSourceReadonly(
+  tx: postgres.TransactionSql,
+  scope: DraftSourceScope,
+  expected: DraftSourceExpected,
+): Promise<ReadyDraftSource> {
+  return readSource(tx, scope, expected, false);
 }
