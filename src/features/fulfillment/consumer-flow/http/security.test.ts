@@ -9,7 +9,7 @@ import {
   consumerSetCookie,
   readConsumerJson,
 } from "./security";
-import { consumerFailureResponse } from "./response";
+import { consumerFailureResponse, consumerJsonResponse } from "./response";
 import { ConsumerError } from "@/lib/consumer-contract/v1/errors";
 
 const config = {
@@ -110,7 +110,70 @@ describe("consumer HTTP source and credential separation", () => {
     ).toBe("UNAVAILABLE");
   });
 });
+describe("consumer response runtime header boundary", () => {
+  it("selects only a valid Set-Cookie from a wider runtime object", () => {
+    const extra = {
+      "Set-Cookie": "synthetic=1",
+      "Cache-Control": "public, max-age=3600",
+      "Referrer-Policy": "unsafe-url",
+      "X-Content-Type-Options": "",
+      "Access-Control-Allow-Origin": "*",
+    };
+    const response = consumerJsonResponse({ ok: true }, 200, 4096, extra);
+    expect(response.headers.get("Set-Cookie")).toBe("synthetic=1");
+    expect(response.headers.get("Cache-Control")).toBe(
+      "private, no-store, max-age=0",
+    );
+    expect(response.headers.get("Referrer-Policy")).toBe("no-referrer");
+    expect(response.headers.get("X-Content-Type-Options")).toBe("nosniff");
+    expect(response.headers.get("Access-Control-Allow-Origin")).toBeNull();
+    for (const cookie of ["", "a=1\r\nAccess-Control-Allow-Origin: *", 1])
+      expect(() =>
+        consumerJsonResponse({}, 200, 4096, { "Set-Cookie": cookie } as {
+          "Set-Cookie": string;
+        }),
+      ).toThrow("UNAVAILABLE");
+  });
+});
 describe("consumer actual bounded JSON stream", () => {
+  it("retains a constant number of reactions despite increasing empty chunks", async () => {
+    const maxima: number[] = [];
+    for (const count of [128, 8192, 32768]) {
+      const original = Promise.prototype.then;
+      const reactions = new WeakMap<Promise<unknown>, number>();
+      let maximum = 0,
+        pulls = 0;
+      const instrumented = function (
+        this: Promise<unknown>,
+        ...args: Parameters<typeof original>
+      ) {
+        const n = (reactions.get(this) ?? 0) + 1;
+        reactions.set(this, n);
+        maximum = Math.max(maximum, n);
+        return original.apply(this, args);
+      } as typeof original;
+      Promise.prototype.then = instrumented;
+      try {
+        const stream = new ReadableStream<Uint8Array>({
+          pull(c) {
+            if (pulls++ < count) c.enqueue(new Uint8Array());
+            else {
+              c.enqueue(new TextEncoder().encode("{}"));
+              c.close();
+            }
+          },
+        });
+        expect(
+          await readConsumerJson(req({}, stream), 4096, budget(4500)),
+        ).toEqual({});
+      } finally {
+        Promise.prototype.then = original;
+      }
+      maxima.push(maximum);
+    }
+    // The previous per-read race yields 134/8450/33794, even for only two body bytes.
+    expect(maxima).toEqual([1, 1, 1]);
+  });
   it("enforces depth/finite JSON values and UTF8 byte count before business parsing", async () => {
     for (const body of ["[".repeat(33) + "0" + "]".repeat(33), '{"x":1e999}'])
       await expect(
