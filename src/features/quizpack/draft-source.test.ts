@@ -10,7 +10,10 @@ import {
 } from "./validation/policy";
 import { serializeValidationAttempts } from "./validation/repository";
 import { supportedRuntimeIdentity } from "./server/validation/identity";
-import { readReadyDraftSource } from "./draft-source";
+import {
+  readReadyDraftSource,
+  readReadyDraftSourceReadonly,
+} from "./draft-source";
 const hash = (text: string) => createHash("sha256").update(text).digest("hex");
 /** Synthetic SQL projection only. This fixture never certifies executed media, filesystem ACK or actual PG. */
 async function sourceFixture() {
@@ -352,4 +355,21 @@ it("new ready-source admission rejects a rehashed content component generation o
   await expect(readReadyDraftSource(f.tx, f.scope, f.expected)).rejects.toThrow(
     "DRAFT_SOURCE_INVALID",
   );
+});
+
+it("RR alias source uses the same exact fact checks without row-lock SQL", async () => {
+  const f = await sourceFixture();
+  f.row.identity_kind = "alias";
+  const source = await readReadyDraftSourceReadonly(f.tx, f.scope, f.expected);
+  expect(source.canonicalManifestSha256).toBe(f.row.canonical_manifest_sha256);
+  expect(f.query).toHaveBeenCalledTimes(3);
+  for (const [parts] of f.query.mock.calls)
+    expect(Array.from(parts as TemplateStringsArray).join("")).not.toContain(
+      "FOR UPDATE",
+    );
+  const invalid = await sourceFixture();
+  invalid.row.candidate_sha256 = "b".repeat(64);
+  await expect(
+    readReadyDraftSourceReadonly(invalid.tx, invalid.scope, invalid.expected),
+  ).rejects.toMatchObject({ code: "DRAFT_SOURCE_CHANGED" });
 });
