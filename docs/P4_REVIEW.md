@@ -48,10 +48,12 @@ root 另核精确批准 ZIP/content/全部 9 路径 8 独立素材，实际固�
 
 新浏览器网络 client 394908a（B 8e35863）采用总 deadline、实际字节预算、有限错误和原 binding 验证。主控发现原路径正则接受 Tab，WHATWG URL 规范化后可变成跨源地址；离线 URL 反例不发网络请求。e944363（B 21ab30c）拒绝原始控制/空白字符并核规范化 origin，同时 fetch 强制 same-origin mode。主控21项相关测试与 typecheck 通过，独审待完成。
 
-## 数据底座当前整改项
+## 数据底座 namespace 整改已复验
 
 27a913d（A 50bb7ec）已集成六表/Drizzle/ACL/catalog guard；A 实际 fresh 新装1→18、app开库、7PG及1766单元通过，root完整typecheck通过。独审在其独立purpose=test实例另复现一项P2，当前不签底座通过：catalog仅收relkind r/p，未发现qf新增view及其ACL。添加指向operator的可更新view并给app视图列UPDATE后，原完整catalog SHA仍相同、app开库成功；app对底层credential_digest无直接UPDATE，却能经view修改一条合成记录。需覆盖或明确拒绝所有未允许qf relation kind/对象，并对旧17迁移前置使用相同完整范围。反例与失败现场单独保留，未操作首款39eb。
 
 0018原7PG只证明所列结构反例，不能替代直接claim/void/reportFK、旧业务无损升级、完整retain、owner/服务和最终端到端。A正继续这些实施与修复，独审实例只用于独立反例。
 
 修复 14ea22e（A c671408）已加入 qf namespace gate，在 runtime 校验及官方 migrate 的任何 DDL/ACL 重置之前拒绝未登记对象、规则、策略及 namespace 权限；不修改 0018 或旧 migration checksum。A 实际 fresh1→18、4 namespace/7 schema 共11 PG 与1766单元、format/lint/type/build通过；污染18和旧17拒绝且行/history/ACL零变化。仅删除测试自建 view 后旧17→18保持旧行。独审待复验，原 view P2 当前仍打开。裸执行0018仍不是完整入口，必须使用官方runner。A后续普通PG回归发现旧16表枚举和自动修复CREATE权限的测试预期需适配，尚未宣称全量通过。Astra 独立 a536 测试库已实际停止并保留反例；root 首款39eb仍保持原样停库。
+
+14ea22e 的原 namespace P2 已独立复验关闭。Astra 自有新实例 fresh1→18 的11 PG通过，另独立探针在旧17和当前18重建同一个可更新view：app开库和官方migrate都拒绝，业务行/历史/目录/schema OID/schema及数据库ACL前后SHA一致。仅移除探针自建view后17→18成功，16旧表行和17历史不变；0018 SHA仍a723d409df2dc1225f4504ff14bc13b18824c93adac28b7f10058c3e586c060a。证据 namespace-fixed-probe-result.json。此处关闭原遗漏对象P2，不代表在线撤销既有连接、完整PG或业务owner/服务通过。

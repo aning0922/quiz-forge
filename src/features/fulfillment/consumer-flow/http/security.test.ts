@@ -147,13 +147,20 @@ describe("consumer actual bounded JSON stream", () => {
         this: Promise<unknown>,
         ...args: Parameters<typeof original>
       ) {
-        const n = (reactions.get(this) ?? 0) + 1;
-        reactions.set(this, n);
-        maximum = Math.max(maximum, n);
+        // Vitest and stream internals also attach reactions while this hook is installed.
+        // Attribute only attachments whose synchronous origin is the reader under test.
+        if (new Error().stack?.includes("/consumer-flow/http/security.ts:")) {
+          const n = (reactions.get(this) ?? 0) + 1;
+          reactions.set(this, n);
+          maximum = Math.max(maximum, n);
+        }
         return original.apply(this, args);
       } as typeof original;
       Promise.prototype.then = instrumented;
       try {
+        // Deliberate unrelated runner-like work must not inflate the reader measurement.
+        const unrelated = Promise.resolve();
+        for (let i = 0; i < 8; i++) void unrelated.then(() => undefined);
         const stream = new ReadableStream<Uint8Array>({
           pull(c) {
             if (pulls++ < count) c.enqueue(new Uint8Array());

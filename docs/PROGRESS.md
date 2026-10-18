@@ -6,7 +6,7 @@
 
 **已核实：** 六纯视图、独立 CSS、确定投影与 PNG 已集成并独审无 P1/P2。主控完整 163 文件/1783 单元及 format/lint/typecheck 通过；精确批准首款做离线 30 图、四 PNG 预检，后续五图补验关闭窄屏按钮和重复次标题两项 P3。纯视图和作者评分见证不代替持久化用户报告，详见 [原预检](qa/p4-first-product-display-preflight.json)和[补验](qa/p4-first-product-display-refinement.json)。
 
-**基础修复：** HTTP 3ac7d91/d4dfb70 两项 P2 已独立复验关闭；4229cc6 pending/authority 的单元与真实浏览器存储反例通过。浏览器网络 client 394908a/e944363 已集成，主控21项相关测试/typecheck通过，独审继续。六表/0018/ACL/guard 27a913d已实现；未登记 view 绕过列权限的 P2 由14ea22e增加迁移前/runtime namespace gate修复，独审待完成，原0018 checksum不变。
+**基础修复：** HTTP 3ac7d91/d4dfb70 两项 P2 已独立复验关闭；4229cc6 pending/authority 的单元与真实浏览器存储反例通过。浏览器网络 client 394908a/e944363 已集成，主控21项相关测试/typecheck通过，独审继续。六表/0018/ACL/guard 27a913d已实现；未登记 view 绕过列权限的 P2 由14ea22e增加迁移前/runtime namespace gate修复，并经独审11PG及旧17/当前18原反例复验关闭，原0018 checksum不变。
 
 **进行中：** A 推进同事务业务服务、八格 SQL owner、旧业务升级、保留图与完整 PG 回归；B 推进实际消费者 host/controller、Studio 及 HTTP 路由。主控负责精确 consumer 实现登记及集成。实际 host 完整闭包尚未冻结登记，最终生产 build/native/E2E/四宽审图及首款现场均未完成。不能以 P3-E 的旧构建或局部通过替代 P4 技术出口。
 
