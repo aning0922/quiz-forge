@@ -1,6 +1,6 @@
 # P4 Studio play / Key 操作客户端
 
-当前已建立客户端严格事实验证、本标签原请求/秘密保管、Studio 页面及可注入的 HTTP 适配。真实业务 service factory 与 API 路由尚未接线；不声称实际 Key 发放成功。
+当前已建立客户端严格事实验证、本标签原请求/秘密保管、Studio 页面及 HTTP 适配；运营 API 已接入真实业务 service factory，尚待主控生产构建与实际 HTTP/浏览器闭环验证，不声称实际页面已完成 Key 发放。
 
 client.ts使用冻结operation DTO、完整binding resolution与独立Studio x-csrf-token，不借用消费者CSRF。create返回201/200与created必须一致；详情/列表核Product、精确ID与所有receipt hash。Key页游标仅使用issuedAt/keyId严格一对，并核Product；原binding总量有界。play详情封套预算为snapshot上限+receipt上限，不扩大两者内部机器限制。
 
@@ -27,3 +27,5 @@ Studio 页面位于 `/studio/products/[productId]/consumer-access`，工作区�
 `pnpm exec tsx tests/browser/studio-consumer.ts` 使用临时独占随机端口、合成内存 HTTP 与实际 React 页面；无数据库/实际权限/3100/系统剪贴板。Chromium 156.0.8078.4，320/375/390/430 × 900 CSS px，15 张完整截图及全部原尺寸分段已复核：创建、发放、UNKNOWN 刷新不自动写入/原请求恢复、同标签失效中断等待披露、跨标签失效、导航阻断旧披露、issuer 变化、只读、claim 先于 void、未领取成功作废。断言无横溢出、无 raw DOM、交互目标 ≥44 px；隔离 Clipboard stub 只返回次数/安全布尔值，真实浏览器下载写入 0700 私有缓存目录中的 0600 合成文件，只比对摘要。证据在 `.cache/p4-studio-consumer/1792343762968`，13 图原尺寸复核在 `1792343519257/qa-bands`，新增两失效图直接原尺寸复核；未发现阻断布局。这不替代作者视觉验收，也不是实际 DB/生产 E2E 通过。真实 factory/API 路由与正式生产闭环仍待后续接线。
 
 80126b7 独审补充 P2：pagehide 不覆盖后台隐藏。页面现订阅 document.visibilitychange，hidden 时同步 revoke，卸载移除订阅；重新 visible 不自动 refresh、重放或续接旧披露。实际页面的 held-auth → hidden → visible 回归中，等待披露被撤销、Clipboard stub 调用数不增加、旧成功提示不出现，原锚点保留供显式核对；修后完整 harness 16 图通过（`.cache/p4-studio-consumer/1792344045938`，新增失效图已原尺寸复核）。使用 80126b7 的原页面跑同一新 harness 为失败负对照，不能显示已撤销身份；日志保留 `.cache/p4-review/studio-hidden-negative-control.log`。定向 lint 与 typecheck 通过；hidden 事件为 Chromium 内合成事件，这不是操作系统标签调度或系统剪贴板验收。
+
+主控 2a42f62 的真实领域 ports/play/Key factories 与物理 fixture 已正常合入本支 848382a，合并冲突中保留 B 最新页面/隐藏保护，共享数据文档采用主控版本。`runtime.ts` 统一注入 createConsumerRequestOwner/createInternalPlayService/createAccessKeyService；8 个薄 route 文件覆盖列表/详情/创建/发放/作废及原请求 resolve。各 route 在 await params 前取 startedAt，不另建数据库、不续预算、不导入 mock。typecheck 与定向 lint/22 项客户端及 HTTP 单测通过；未运行 DB/3100/生产 build，A 的 PG 服务通过与页面实际 HTTP 成功分别记账。消费者业务 factory/API 尚未接线。
