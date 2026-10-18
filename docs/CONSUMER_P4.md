@@ -125,6 +125,32 @@ E2E 不将 raw 放 page.goto、locator.fill、APIRequest/route.fetch 或失败�
 
 `lib/consumer-contract/v1/errors.ts` 只允许有限 code 和合成 requestId，不反射 SQL、异常原文、请求体或凭证；错误不是旧请求未提交的证据，不携带自动重试许可。未取得定义中的永久证明时，pending 会持续保留；本期不承诺所有 UNKNOWN 都能自动清理。用户取消本地动作也不能被描述成撤销服务器写入。
 
-49 项包含两种域摘要、规范编码、源/报告一致性、已成功后又被覆盖、同/异完成 key、未来 revision、跨 session/Key、迟到响应、嵌套摘要篡改、原 issue 已作废及到期报告只读等边界。服务并发、真实数据库与 HTTP 行为仍需后续实际证明，本批单测不代表这些能力已实现。
+本批边界覆盖两种域摘要、规范编码、源/报告一致性、已成功后又被覆盖、同/异完成 key、未来 revision、跨 session/Key、迟到响应、嵌套摘要篡改、原 issue 已作废及到期报告只读。服务并发、真实数据库与 HTTP 行为仍需后续实际证明，本批单测不代表这些能力已实现。
+
+## 12. 服务与 HTTP 配对（独审前草案）
+
+`consumer-flow/service-contract.ts` 明确三组应用接口：InternalPlayService、AccessKeyService、ConsumerFlowService。A 的 factory 绑定本请求 owner、同一 config 和初始 15 秒 budget；HTTP 不传任意既有连接，不重新起钟。owner 惰性开库，纯 SQL 不取四个文件任务槽；exchange 的预算 COMMIT 和第一连接实际 close 均确认后，才开第二个独立连接。未知不继续、不退额度、不自动重试。首次 complete 先纯 SQL 查原报告；仅确实需要新完成时准备精确来源/依赖 IO，期间不持业务写锁，最终事务重新取得 Key→Session→当前 grant 并优先查 report，再纯评分、投影、插入。
+
+领域内部 ports 共享同一个实际 TransactionSql。Product/play、access/grant、quiz/session、report、quizpack source 各自只查自己领域；report 存在判断由应用服务经 report port 取得。grant digest 初次查询只定位；锁后重核完整 grantId/digest/归属/期限，不能把槽位当授权。普通 save 的固定题目校验经 quizpack 的不可变 SQL source port，不为校题读取文件。实际资源/字体读取才进入 guarded IO；owner 负责真实关闭和 quarantine，HTTP finally 始终调用 closeIfNotTransferred。
+
+| HTTP 路径（由严格 urls.ts 构造）                                           | 方法 / 输入 / 输出                                                                                                                 |
+| -------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `/api/studio/products/:productId/play-versions`                            | GET 有界 play 列表；POST create binding → `{created,play}` 严格结果                                                                |
+| `.../play-versions/:playId` / `.../play-version-applications/resolve`      | GET 固定详情；POST 原 binding → play resolution                                                                                    |
+| `.../access-keys` / `.../access-keys/:keyId`                               | GET 有界游标页 / 精确 Key 详情；列表 POST issue binding → `{created,key}`                                                          |
+| `.../access-key-applications/resolve`                                      | POST 原 issue binding → issue resolution                                                                                           |
+| `.../access-keys/:keyId/void` / `.../access-key-void-applications/resolve` | POST 原 void binding → void resolution；写接口与只读核实接口分别鉴权                                                               |
+| `/access/exchange`                                                         | POST 严格 `{rawKey}`，仅准 access-key codec → 有限 `{schemaVersion,session,destination}` JSON；原 grant 只能单独写 HttpOnly Cookie |
+| `/play/:sessionId/api/session` / `entry`                                   | GET 授权 bootstrap / 中性投影；bootstrap 校固定 route sessionId，entry 校完整已知 session 与 facts/mapping 摘要                    |
+| `.../save` / `.../save/resolve`                                            | POST saveInput / 原 save binding → save resolution                                                                                 |
+| `.../complete` / `.../complete/resolve`                                    | POST 原 complete binding → complete resolution                                                                                     |
+| `.../report` / `.../resources`                                             | GET 固定 report view / 严格 resourceId+resourceVersion+sha256 selector 的有界图片字节；selector 不授权                             |
+| `.../logout`                                                               | POST 严格空对象，当前 grant+CSRF 精确退出，204；不清业务 pending、不重置答题                                                       |
+
+运营 read/resolve 允许当前只读角色，写要求 operator。消费者 POST（包括只读核实）都要求精确 Host/Origin、必需 same-origin Fetch Metadata 和 JSON；exchange 用固定自定义头，其余用当前 grant 的独立 CSRF。GET API 亦要求精确 Host 和必需 same-origin Fetch Metadata；页面直接导航按 Host 与其页面策略检查。拒绝重复 selector/query、重复同名 Cookie、未知 JSON 字段、非 UTF-8/编码请求及超限实际字节。B 负责有界 HTTP 解析、Cookie/source/header 与 controller，复用 root codec 和机器 Schema；不得直接把 Zod issue/异常原文序列化。
+
+所有响应 private/no-store、no-referrer、nosniff，不跨源开放。服务再次解析 route scope 和 binding，不能只依赖 HTTP 验证。新 create/issue 结果也必须核原完整 binding；`created` 仅说明本次 INSERT 是否新建，不授予当前可写或可恢复 raw 的额外权利。未知、失权或迟到响应由整页授权代次和精确 pending 比较拦截。
+
+display-contract 仅包含 neutral entry、受控实现/字体/映射身份和独立事实 SHA；无完整父 snapshot、权重、候选报告或人物揭晓资源。状态按 questionId 寻址，入口额外拒绝不同 source version 重用同一题号，避免版本引用可区分但保存 ID 无法区分。缺精确 renderer/font/resource 明确不可用，不能选 latest 或拿旧 preview host 充当 consumer。
 
 API 自定义头/Fetch Metadata 与 Cookie Path 边界参考 [OWASP CSRF 指南](https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html#employing-custom-request-headers-for-ajaxapi)、[MDN Set-Cookie](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Set-Cookie#pathpath-value)（2026-10-18 实读）；16 槽、8 小时和 60/固定窗口是本项目有限内测选择，不是文档给出的普遍结论。

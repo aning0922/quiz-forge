@@ -26,6 +26,18 @@ const reject = (ctx: z.RefinementCtx) =>
     code: "custom",
     message: "Contradictory operator observation.",
   });
+export const createInternalPlayResultSchema = z
+  .strictObject({
+    created: z.boolean(),
+    play: internalPlayReceiptSchema,
+  })
+  .refine((v) => withinConsumerBytes(v, L.operationReceiptBytes));
+export const issueAccessKeyResultSchema = z
+  .strictObject({
+    created: z.boolean(),
+    key: accessKeyDetailSchema,
+  })
+  .refine((v) => withinConsumerBytes(v, L.operationReceiptBytes));
 const playOriginal = {
   schemaVersion: z.literal("quizforge.internal-play-resolution.v1"),
   binding: createInternalPlayBindingSchema,
