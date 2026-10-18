@@ -16,6 +16,7 @@ import { ProductFields, type ProductFormFields } from "./product-fields";
 import { ProductCard } from "./product-list";
 import { WorkspaceNav, ReadOnlyNotice } from "./primitives";
 import { ReconcilePanel } from "./reconcile-panel";
+import { StableInternalWorkspace } from "../internal-versions/pages";
 import styles from "./workspace.module.css";
 
 function formFields(product: ProductDto): ProductFormFields {
@@ -312,6 +313,11 @@ export function ProductDetail({
           session={session}
         />
       )}
+      <StableInternalWorkspace
+        key={productId}
+        productId={productId}
+        session={session}
+      />
     </div>
   );
 }
