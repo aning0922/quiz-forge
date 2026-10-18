@@ -6,9 +6,11 @@
 
 request/resource owner 的前序关闭失败 P2、Studio 秘密锚点竞态 P2 均已独立原反例闭合。A 的真实内测版本和 Key 领域服务已集成 2a42f62，B 的运营页面及 8 个真实 API route 已集成 8d99837；10 个 route 入口及原时钟由 Astra 独审通过。物理 fixture 已实现，仍保持 operator-services 与完整 consumer-e2e 的完成门分离。
 
-新发现的两个 fixture 清理 P2（未确认 manifest FD 关闭、owner 视角不可见 backend_type 的活连接）已由 bc17e6b 修复；Studio 后台隐藏时旧披露未撤销 P2 已由 ddfe162 修复。主控 format/lint/typecheck/实现门禁通过，三个原反例等待独立复验，不能记为已关闭。消费者业务 factory 的首轮真实 PG 已由 A 跑通，待固定提交、故障矩阵及接线。B 继续 8 场景生产 E2E；主控的独占 runner 新接线已纯审通过，实际全套尚未运行。
+两个 fixture 清理 P2 已由 bc17e6b 修复并经 Astra 两个原 PG 反例独立关闭；Studio 后台隐藏的旧披露 P2 已由 ddfe162 修复并经原16场景独审关闭。消费者真实 factory 已集成801b856，10个薄API已接入4110985，八场景E2E/helper已集成5321c99。routes与E2E源码/纯helper的独审无新增P1/P2；主控181文件1879单元、typecheck与e1f0e4f生产构建通过（103 traces、23852paths、0私有违规），尚未运行该构建的native与生产E2E。
 
-准确 2a42f62 的远端 CI 39149243131 已成功：179 文件 1873 单元、63 文件 493 PG、fresh 服务14/namespace4/媒体 UNKNOWN3及生产 build（85 traces、18021 paths、0违规）。这早于最新 route 和三个修复，不能代替当前 head 最终验收。主控之前准确095页面组合的独占3100两宽10项检查已通过，服务和浏览器已实际停止；完整新 build/native/E2E仍待接线收口。首款39eb保持禁导入、停库，未创建消费者play/Key/session/report；内容视觉沿已批准基线继续，P4/P5未完成。
+当前开放P2为实际业务写入跨到期：Astra在0d1771d真实PG中分别令save/complete跨过Key/grant期限，四原反例均仍写入；A正在把期限收紧到领域port的同一SQL语句DB时钟，保持0018和已封存身份不变。另主控5321c99全普通PG未通过：65文件40失败/25通过、495项198通过/264失败/33跳过；首因是consumer-service测试调用cleanup前漏正式禁导入，清理保护拒绝后其余reset级联。失败b513实例已官方停止、完整保留。A补caller前置后，将在全新实例重跑，不将这些skip或局部正例计作全量通过。
+
+准确 2a42f62 的远端 CI 39149243131 已成功：179 文件 1873 单元、63 文件 493 PG、fresh 服务14/namespace4/媒体 UNKNOWN3及生产 build（85 traces、18021 paths、0违规）。这早于最新 route 和三个修复，不能代替当前 head 最终验收。主控之前准确095页面组合的独占3100两宽10项检查已通过，服务和浏览器已实际停止；新native/完整生产E2E仍待期限修复和全量数据库回归收口。首款39eb保持禁导入、停库，未创建消费者play/Key/session/report；内容视觉沿已批准基线继续，P4/P5未完成。
 
 ## 2026-10-18 P4 消费者事务与页面实施中
 

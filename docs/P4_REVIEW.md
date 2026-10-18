@@ -127,3 +127,15 @@ bcd3587（B80126b7）Studio实际React/Chromium原图与原锚点/复制下载�
 主控受管runner加入串行consumer-flow项目，依赖P3E，关闭trace/video/自动截图及retry，普通两项目排除该spec。四阶段runId一致；启动拒绝既有consumer manifest/observations；实际worker和Next退出后，要求completed、consumer-e2e、八场景完成记录和真实report，再先清P4后清P3E。full run缺P4直接拒绝；filtered只记filtered。Astra对五文件纯审无新增P1/P2：13原selector加21禁止控制参数负例，实际import配置核唯一项目和无环依赖，静态核退出与清理顺序。证据root-runner-pure-result.json；没有执行runner main、DB/3100/cleanup，实际验收待后续。
 
 准确2a42f6292af01e65c4bf423733339ae029d759f1的CI39149243131实际success，179文件1873单元、63文件493PG、fresh服务14/namespace4/媒体UNKNOWN3及生产build85traces/18021paths/0违规。见[运营服务CI检查点](qa/p4-ci-operator-checkpoint.json)。这是后三修复及实际route之前的历史head，不替代当前head、native或完整consumer-e2e。
+
+## 原反例闭合与消费者实际写入期限
+
+bc17e6b（Ae1ac970）的两个cleanup P2现已独立原反例关闭。reviewer独占2a964中，原foreign app PID仍存活/type/state仍NULL，但首DELETE不达；真实manifest FD close拒绝后第二次cleanup、晚native close、read/finish和vi.resetModules均保持unknown拒绝，完整行/manifest/5PNG SHA不变。A原lifecycle+quarantine两PG亦独跑通过，reviewer实例官方停库保留，旧失败实例未动。证据fixture-cleanup-fix-e1ac970-review-result.json；不代替root全runner实跑。
+
+ddfe162（Bc75811e）hidden P2原held-auth→hidden→释放auth→visible独立复验通过：同步lost且visible仍lost，clipboard/POST/issue增量0，无旧成功notice，sessionStorage原锚点SHA不变；显式refresh+resolve恢复。原15场景随同重跑共16图，0页面异常/凭证DOM/API泄漏/溢出/过小目标，320失效原图已实看。证据hidden-disclosure-fixed-probe.json；限定实际React/受控visibility事件/Clipboard stub，未认操作系统剪贴板。
+
+5321c99（Bbc3c66b）八case/private helper独审原6+独立3通过，无新增P1/P2：8种遗漏、9种sticky失败、重复/错run均拒绝finish；Cookie按actual target/source path选取、native拒绝外部/未列入/交换路径、错误不附原cause/header。保留完成前state、仅204标记logout、final鲜读Key、仅8项首次成功才写obs/finish。4110985（B2909dee）实际10App+runtime模块复合测试通过，method/action/session/原Request/Response及params前原时钟准确，使用真实owner/service引用。两笔均未跑DB/3100，不代替实际reporter秘密扫描与生产八case。
+
+801b856（A0d1771d）consumer factory原完整服务生命周期PG独审通过，但新增实际写入期限P2。冻结设计要求等锁后、实际业务写入前新鲜DB clock。原report/save port最后授权检查后仍做异步摘要；reviewer在独占59e329对save/complete×Key/grant四case注入真实PG等待，入口active=true、实际写入前目标期限已过，原service仍save revision+1或report1。合成临期seed在owner单事务保持Key固定秒差/grant8小时差、恢复原trigger后verifyConsumerSchema；不改0018文件、不用浏览器改时钟。四越界行完整保留，59e329官方停库。证据consumer-expiry-before-write-0d1771d-result.json；待A同SQL期限修复及四原反例复验。
+
+root准确5321c99第一次全普通PG失败，407.20s：65文件40failed/25passed，495项198passed/264failed/33skipped。首个consumer-service stack为cleanupConsumerFixture:555 live.imports.enabled保护，调用test:547漏正式禁导入；随后reset/prepare拒绝未清图导致级联。旧单测成功只覆盖imports=false库。b513官方停库保留，未手工清图或改guard；A补三个caller正式前置，并从enabled=true证明后由root新库重跑。当前e1f0e4f薄route生产build103traces/23852paths/0违规通过，181文件1879单元只归属5321c99，不能以此替代失败PG或新native/E2E。
