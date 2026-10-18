@@ -9,6 +9,7 @@ import {
   blobPath,
 } from "@/features/quizpack/import/storage";
 import { StorageLock } from "@/features/quizpack/import/storage-lock";
+import { configureImports } from "@/features/quizpack/import/config-management";
 import { openTestDatabase } from "./p2a-fixture";
 import { resetDomainDatabase } from "./p2b2b-domain-fixture";
 import {
@@ -57,6 +58,9 @@ for (const mode of ["fd", "db"] as const) {
       Awaited<ReturnType<typeof launchOwnedPreviewNodeProcess>> | undefined;
     try {
       await resetDomainDatabase(db);
+      // Do this before launching/quarantining resources: the formal switch itself
+      // needs the exclusive storage lock. Never rely on a fresh instance default.
+      await configureImports(db.config.instanceId, false);
       const runId = randomUUID();
       const evidenceFile = path.join(
         instanceDirectory(db.config),
