@@ -210,6 +210,7 @@ async function main() {
     ...process.env,
     QUIZFORGE_P2A_CONFIG: configFile,
     QF_PREVIEW_E2E_RUN_ID: runId,
+    QF_DRAFT_REVISION_E2E_RUN_ID: runId,
     TSX_TSCONFIG_PATH: path.join(cwd, "tsconfig.json"),
     PLAYWRIGHT_BROWSERS_PATH: path.join(cwd, ".cache", "ms-playwright"),
   };
