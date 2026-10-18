@@ -2,7 +2,7 @@
 
 2026-10-18，从 P3-E 交付 c83788b 接续。作者已批准首款既有内容与视觉作为内测基线；本阶段无需重复批准同一材料。目标为本机 test/demo/ci 的真实 Key → 可恢复答题 → 一次完成 → 固定报告/PNG，随后接首款 P5。main 合并、生产迁移、部署和商品发布均不包含在此授权内。
 
-**当前状态：合同与共享 Schema 准备中。** 已有规范 JSON、标识/预算、六状态来源/运行映射、答案与游标状态、保存绑定及摘要检查的初稿，21 项边界单测、lint 和 TypeScript 通过；尚未完成独立机器合同审查，没有新增 0018、消费者表、服务或页面。本文协议方向经过前置讨论，具体 Schema/服务接口冻结后才进入数据业务实现。
+**当前状态：合同与共享 Schema 准备中。** 共享基础/凭证 codec、A 的 play/Key/report 数据合同和 B 的纯视图接口已分别通过独审（准确基线 62be5e9、064c4be，无 P1/P2）；新 errors/resolve 联合待独审，当前合并后 49 项合同边界测试、定向 lint 和完整 TypeScript 通过。消费者组件正在独立开发；尚无新增 0018、消费者表、业务服务或页面。具体 Schema/服务接口完整冻结后才进入数据业务实现。
 
 ## 1. 模块与实现归属
 
@@ -109,5 +109,22 @@ createPlay/资源读取的实际 IO 走 outer owner 和现有实际关闭隔离�
 E2E 不将 raw 放 page.goto、locator.fill、APIRequest/route.fetch 或失败日志；使用有界安全传输与合成哨兵核 stdout/JSON/HTML ZIP/附件。真实首款原图、答案、凭证、浏览器状态和实际截图继续本地私有，Git 仅保存合成 QA 与安全汇总。
 
 本期没有账号、支付、平台交易/API、AI 增强、公开分享、发布指针、生产 HTTPS/部署、服务端可恢复 raw、自动原子换发或已领取 Key 撤销。新内容/素材或发布仍另请作者批准，已批准同一基线不重复请批。
+
+## 11. 原请求核实的机器分支（独审前草案）
+
+`fulfillment/consumer-flow/contracts.ts` 与 `operator-resolutions.ts` 用严格联合描述核实结果。每个结果都携带完整原 binding 和其 SHA；异步验证函数还要求调用方交入自己保存的原 binding，拒绝迟到其他请求的自洽响应。验证字节自洽不等于查询权威；服务仍须在授权事务内观察永久事实并在返回前复核当前权限。
+
+| 动作                    | 可以返回的分支及依据                                                                                                                                                                                                                                                                                                                                         |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| save                    | applied-current：current=base+1 且 last 完整绑定相同；unresolved：current=base；superseded：current>base 且不是精确 last；completed：同 session 已有最终 report receipt。superseded 不断言原 save 从未成功。未来 base 不接受。                                                                                                                               |
+| complete                | applied：receipt 与原完整 binding 相同；completed-other：同 session、另一 completionKey 已完成；operation-conflict：同 completionKey、不同 binding 已落账；unresolved：无 report 且 revision/双 hash 原样；superseded：无 report 且 revision 已永久推进；state-conflict：无 report、同 revision 但 hash 不同。后三项的无 report 由服务在同一一致事务内确认。 |
+| create play / issue Key | applied：原完整 binding；operation-conflict：同 Product、同永久唯一 operationKey 的不同 binding 已落账；unresolved：未取得上述事实。首版没有基于 head、容量、普通错误、到期或空列表的永久缺席证明。                                                                                                                                                          |
+| void-unused             | applied：原 void receipt；voided-other：同 Key/原 issue 的另一 operationKey 已作废；claimed：同 Key/原 issue 已有永久 session；unresolved：尚未领取或作废。同 operationKey 在另一 Key 上冲突只报有限错误，不返回越权事实，也不清原 pending。                                                                                                                 |
+
+原成功记录优先于当前可变状态。issue applied 可以同时带当前过期或作废状态，不能解释为续期；完成后原 Key 到期仍可在有效 grant 下只读报告，grant 自身到期不能继续访问。session bootstrap 严格区分 editable、expired、completed，包含当前 grant 的安全标识、固定有效期和独立 CSRF；这些字段不记录到日志或浏览器业务 pending。
+
+`lib/consumer-contract/v1/errors.ts` 只允许有限 code 和合成 requestId，不反射 SQL、异常原文、请求体或凭证；错误不是旧请求未提交的证据，不携带自动重试许可。未取得定义中的永久证明时，pending 会持续保留；本期不承诺所有 UNKNOWN 都能自动清理。用户取消本地动作也不能被描述成撤销服务器写入。
+
+49 项包含两种域摘要、规范编码、源/报告一致性、已成功后又被覆盖、同/异完成 key、未来 revision、跨 session/Key、迟到响应、嵌套摘要篡改、原 issue 已作废及到期报告只读等边界。服务并发、真实数据库与 HTTP 行为仍需后续实际证明，本批单测不代表这些能力已实现。
 
 API 自定义头/Fetch Metadata 与 Cookie Path 边界参考 [OWASP CSRF 指南](https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html#employing-custom-request-headers-for-ajaxapi)、[MDN Set-Cookie](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Set-Cookie#pathpath-value)（2026-10-18 实读）；16 槽、8 小时和 60/固定窗口是本项目有限内测选择，不是文档给出的普遍结论。
