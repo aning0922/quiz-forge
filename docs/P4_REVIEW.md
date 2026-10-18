@@ -27,23 +27,31 @@
 
 ## 消费者纯显示与批准首款离线预检
 
-B b476f37（root d3150ea）实现六纯视图、独立样式、精确组件映射、server projection 和 Canvas PNG；纯代码独审仍进行中。主控实际 14 专项与完整 1783 单元、format/lint/typecheck 通过。B 独立 Chromium 合成验证 45 图全部实看；15 阻塞组合无编辑入口、减少动态效果及 PNG 资源 hash/字体/失效代次反例通过。root 实看其中 4 个原图，未见 P1/P2。
+B b476f37（root d3150ea）实现六纯视图、独立样式、精确组件映射、server projection 和 Canvas PNG；该批独审无 P1/P2。主控实际 14 专项与完整 1783 单元、format/lint/typecheck 通过。B 独立 Chromium 合成验证 45 图全部实看；15 阻塞组合无编辑入口、减少动态效果及 PNG 资源 hash/字体/失效代次反例通过。root 实看其中 4 个原图。Astra 另跑 45 图矩阵及 14 原测试/2 独立反例，验证两引擎六见证、36 映射字段篡改、字体输入修改隔离与 Canvas 编码后失效；object URL 创建/撤销各一次、FontFace 数量恢复原值，临时服务实际退出。
 
 root 另核精确批准 ZIP/content/全部 9 路径 8 独立素材，实际固定引擎跑四个作者评分见证，经新 server projection 生成 12 题和四份选中 display。entry 14623B，四 display 为 5136/5194/5179/5226B；真实 Chromium156.0.8078.4 四宽 30 图的溢出/正文字号/交互目标检查通过，页面错误0，四 PNG 均1080×1920，临时 browser/server 已关闭。root 实看 6 页面原图及全部4PNG，文字与图像完整；其他24截图仅自动几何断言，未声称全部人工看完。保留两项P3：320暂歇操作按钮碎行、已含姓名/副标题的报告标题下重复同一文本，B在controller接入时做局部修正。
 
 这些实际首款图片和投影仍仅本地私有；Git 只收 [预检安全记录](qa/p4-first-product-display-preflight.json)。离线 harness 的已完成视图输入来自作者见证，显式标记无持久化，不能冒充最终用户报告、grant 授权、P4/P5 或商业发布验收。
 
-## HTTP 基础当前整改项
+两项显示 P3 已由 6c63bd1（B 47c3242）修正，并经独审关闭：暂歇操作以 flex 换行保持目标宽度；只有完全相同的姓名/副标题才省略重复次标题，源正文不改。root 实际首款补拍四宽暂歇和 320 报告共五张，实看其中三张；Astra 核五文件完整性并逐张实看，浏览器/服务实际关闭。原 30 图和四 PNG 保留不覆盖，补验见 [安全记录](qa/p4-first-product-display-refinement.json)。
 
-05647fe（B 3c2357d）的来源/Cookie/JSON/有限响应工具原7测试通过，但独审发现两项 P2，尚未关闭，不签本批通过：
+## HTTP 基础整改已复验
+
+05647fe（B 3c2357d）的来源/Cookie/JSON/有限响应工具原7测试通过，但独审发现以下两项 P2；修复 3ac7d91（B 244833b）及 Cookie 消歧 d4dfb70（B b087118）已独立复验关闭：
 
 1. JSON read/yield 循环反复与同一个 pending interruption Promise race，快路径结束不移除旧 reaction。独立合成2字节正文加128/8192/32768空chunk，保留reaction为134/8450/33794，均远未到5秒；固定buffer和timer不足以保证等待状态常数。B须改单一外层race或可清理的有界机制，保留原deadline/取消/让出事件循环并补随chunk增长的反例。
 2. 私有固定headers之后展开extra，运行时宽对象可覆盖Cache-Control/Referrer-Policy/nosniff并增加CORS。独立实际响应已复现。B须只显式提取Set-Cookie或严格拒绝未知extra，不能依赖TypeScript窄类型。
 
-反例位于独审ignored http-boundary-probe-result.json；仅合成内存Request，无DB/真实token。后续handler的原token隔离、授权、单次owner body交接和完整业务仍另验。
+原反例保存在独审 ignored http-boundary-probe-result.json，不覆盖。相同输入复验最大 reaction 均为 1；宽 extra 不能覆盖私有缓存/Referrer-Policy/nosniff 或开启 CORS，只读取 own Set-Cookie 并验证 ASCII/4096 字节边界。原9测试加独立4测试全部通过，证据 http-boundary-fixed-result.json；仅合成内存 Request，无 DB/真实 token。后续 handler 的原 token 隔离、授权、单次 owner body 交接和完整业务仍另验。
+
+4229cc6（B a4c94d1）的 pending/authority 基础亦独审无 P1/P2：原5测试和真实 Chromium sessionStorage 补验通过。覆盖刷新保留原 binding/发送标志、克隆深冻结、伪造/跨 authority ticket 拒绝、revoke 后旧票据不复活、异步存储变化/失权不删 pending、敏感字段拒绝、存储异常及无 opener 新标签隔离。110 浏览器输入无 DB/评分执行依赖，服务和浏览器实际关闭。证据 pending-browser-probe-result.json；调用方仍须验证终态或显式动作后才可 remove，不将基础测试扩大为 host 通过。
+
+新浏览器网络 client 394908a（B 8e35863）采用总 deadline、实际字节预算、有限错误和原 binding 验证。主控发现原路径正则接受 Tab，WHATWG URL 规范化后可变成跨源地址；离线 URL 反例不发网络请求。e944363（B 21ab30c）拒绝原始控制/空白字符并核规范化 origin，同时 fetch 强制 same-origin mode。主控21项相关测试与 typecheck 通过，独审待完成。
 
 ## 数据底座当前整改项
 
 27a913d（A 50bb7ec）已集成六表/Drizzle/ACL/catalog guard；A 实际 fresh 新装1→18、app开库、7PG及1766单元通过，root完整typecheck通过。独审在其独立purpose=test实例另复现一项P2，当前不签底座通过：catalog仅收relkind r/p，未发现qf新增view及其ACL。添加指向operator的可更新view并给app视图列UPDATE后，原完整catalog SHA仍相同、app开库成功；app对底层credential_digest无直接UPDATE，却能经view修改一条合成记录。需覆盖或明确拒绝所有未允许qf relation kind/对象，并对旧17迁移前置使用相同完整范围。反例与失败现场单独保留，未操作首款39eb。
 
 0018原7PG只证明所列结构反例，不能替代直接claim/void/reportFK、旧业务无损升级、完整retain、owner/服务和最终端到端。A正继续这些实施与修复，独审实例只用于独立反例。
+
+修复 14ea22e（A c671408）已加入 qf namespace gate，在 runtime 校验及官方 migrate 的任何 DDL/ACL 重置之前拒绝未登记对象、规则、策略及 namespace 权限；不修改 0018 或旧 migration checksum。A 实际 fresh1→18、4 namespace/7 schema 共11 PG 与1766单元、format/lint/type/build通过；污染18和旧17拒绝且行/history/ACL零变化。仅删除测试自建 view 后旧17→18保持旧行。独审待复验，原 view P2 当前仍打开。裸执行0018仍不是完整入口，必须使用官方runner。A后续普通PG回归发现旧16表枚举和自动修复CREATE权限的测试预期需适配，尚未宣称全量通过。Astra 独立 a536 测试库已实际停止并保留反例；root 首款39eb仍保持原样停库。
