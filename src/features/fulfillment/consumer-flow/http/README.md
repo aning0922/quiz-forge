@@ -1,6 +1,6 @@
 # P4 HTTP 安全入口
 
-当前只实现来源/Cookie、有界 JSON 读取和有限私有错误响应，不是可用业务路由；不导入尚未落地的 factory，也不构造假成功服务。
+当前已建立来源/Cookie、有界 JSON、有限私有响应与业务 handler，并通过 runtime.ts 接入真实 request owner / consumer service factory 及十个消费者薄路由。实际生产 HTTP/DB/浏览器闭环仍待主控统一运行；下文较早“待 factory”描述保留为实施历史。
 
 security.ts 对消费者 API 核精确 loopback profile、Host、URL origin、POST Origin 和必需 same-origin Fetch Metadata；exchange 额外核固定头。grant Cookie 按精确名称读取，重复/歧义/坏 codec 拒绝，不借用 Studio/access-key token；仅生成 session 路径的 HttpOnly、SameSite=Strict、本地 HTTP Cookie，不设 Domain 或假 __Host 保证。
 
@@ -16,10 +16,12 @@ handler.ts现提供handleConsumerHttp(request, endpoint, dependencies, startedAt
 
 资源只把service返回的同一Uint8Array原对象交给同owner.resourceBody一次，HTTP不预读、不克隆、不另包stream或dispose已移交timer；finally始终同owner.closeIfNotTransferred，JSON还在返回前await实际close。owner未建时才由HTTP dispose clock；真实owner须负责其最终close/quarantine及clock清理。7项适配单测通过：非法入口零owner、同clock/owner关闭、exchange隔离、写成功后封套/close UNKNOWN、exact资源身份与移交、重复selector/错误hash零服务、严格save及有限失权。测试owner/service为明确合成fixture，不是实际DB/事务/关闭证明。
 
-尚未导入未交付的A factory或挂app路由；待A request-owner/service及root实际resolver提交后再做真实接线，不能将此依赖注入层当可用消费者HTTP服务或P4验收。
+当时尚未导入 A factory 或挂 app 路由；该依赖在下文真实接线提交中已解除，适配层单测仍不能单独代表 P4 验收。
 
 app消费者页组合预接：/access、/play/:sessionId及/report已建立独立动态布局（noindex/no-referrer），RSC只核本地Host和UUID后传安全sessionId；bootstrap仍由浏览器独立授权API完成。experience.tsx位于app边界，显式从host传来的完整entry/report facts挑renderer/mapping/font，再调用root严格resolveConsumerExperienceRuntime，catalog不进入host闭包。当前业务API实际factory仍待A交付，尚不能记为生产可用HTTP闭环。
 
 实际host+真实registry注入正例：consumer-host --registered-only使用真实app组合组件与root当前193b48...身份/字体/映射，合成源/play/report hash整组重建，传入完整facts；真实Chromium320×900，封面→选择→保存/刷新，以及到期pending resolve五图通过并原像素复核，0 pageError、无溢出、交互≥44px，证据.cache/p4-consumer-host/1792339469649/result.json。只验证组合不是业务授权/DB；不重拍原21图或重跑PNG。完整typecheck与定向lint通过。host/consumer runtime字节未改，无需因app组合层变动重算entry。
 
-页面HTTP边界：src/proxy.ts仅匹配/access/:path*与/play/:path*，在真实Response头附private/no-store、no-referrer、nosniff（含错误页），不读取凭证、不改next.config/已冻结host。consumer布局提供SSR存在的div#main焦点目标并包含唯一实际main；scoped not-found不重复id，全局未知路由仍使用原main#main。生产consumer-http-headers.spec.ts已编写5路径×手机/桌面10用例，禁trace/video/screenshot，覆盖三文档与错误页真实响应头/无CORS/唯一main及skip目标。当前只完成--list发现10项、lint/typecheck；实际生产build/3100运行交root，未宣称E2E通过。
+页面HTTP边界：src/proxy.ts仅匹配/access/:path*与/play/:path*，在真实Response头附private/no-store、no-referrer、nosniff（含错误页），不读取凭证、不改next.config/已冻结host。consumer布局提供SSR存在的div#main焦点目标并包含唯一实际main；scoped not-found不重复id，全局未知路由仍使用原main#main。生产consumer-http-headers.spec.ts已编写5路径×手机/桌面10用例，禁trace/video/screenshot，覆盖三文档与错误页真实响应头/无CORS/唯一main及skip目标。B 当时只完成--list/lint/type；root 后续已独立实际生产运行这 10 项及真实 Enter skip 通过，PG 停止、只读旧配置，不包含消费者业务验收；证据在主控 `.cache/p4-consumer-page-http-1792340698406/result.json`。
+
+真实业务路由接线：主控 801b856（A 0d1771d）已正常 merge 到本支 2a1b861，runtime.ts 只注入 createConsumerRequestOwner/createConsumerFlowService。/access/exchange 与 /play/[sessionId]/api 的 session/entry/save/save-resolve/complete/complete-resolve/report/resources/logout 十个 route 文件只组合 endpoint/params；入口在 await params 前取 startedAt，不重起时钟、不开 DB、不克隆 resource bytes 或提前 dispose clock。handler 仍将同一 issued bytes 对象仅交原 owner.resourceBody 一次，生命周期归原 owner。没有导入 mock。定向 lint、完整 typecheck、HTTP handler/security 16 项单测通过。未在 B 树运行 build/DB/3100；首轮生产联调与八场景 E2E 交主控执行，任何实际失败继续整改，不能用 A 的 PG 单线或 B 合成 UI 通过替代。
