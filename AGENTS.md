@@ -4,6 +4,8 @@
 
 ## 当前阶段与授权
 
+- 2026-10-18 P4 机器/设计已由 Astra 独审闭合并由主控在 f810f74 冻结，进入实施。A 独占 0018/guard/DB 最小适配、领域 ports/事务/request owner/留存及真实 PG；B 独占 consumer 六视图/PNG、HTTP/source/Cookie/stream、运营/消费者 controller 与薄路由；root 独占 lib/consumer-contract、已冻结 consumer-flow 机器合同、internal-play implementation-* 登记与全量集成/3100。细则见 docs/CONSUMER_P4.md、docs/P4_DATA_DESIGN.md、docs/P4_REVIEW.md。八格纯 SQL owner 与四格文件任务独立，未知实际关闭不按 TTL 释放；同 Key void/claim 双向 DB 保护、Key 页 RR 与返回前新鲜授权必须兑现。该冻结只允许开始实现，不是 P4/P5 通过；同一批准内容视觉不再请批。
+
 - 2026-10-18 P3-E 已完成技术出口（runtime eb7595a、tests f924f23、delivery c83788b，Draft PR #19）：1710 单元、469 PG、最终生产 E2E 241 通过/10 既有 skip、80 原图复核及准确 head 双 CI 通过。首款精确批准包已真实导入/审核/封存，39eb 内测实例停止保留。当前从 c83788b 接续 `codex/consumer-session-report`（Draft PR #20）准备 P4 消费者合同；root 维护共享协议/集成，A 独立数据线、B 独立体验线、Astra 独审保持。严格合同与服务接口完整冻结后才建 0018/业务服务；不得修改旧封存实现或复用未知实例。详见 docs/P3E_ACCEPTANCE.md、docs/CONSUMER_P4.md。下面较早 P3-E“未导入”段落为过程历史。
 
 - 当前P3-E从P3-D a66c456接续codex/internal-version-seal（Draft PR #19）；共享显示及review/version机器合同已Astra前置审查冻结，见docs/INTERNAL_VERSION_P3E.md。B独占现预览解耦及之后HTTP/后台，A独占0017/事务/资源留存；主控单写机器接口、受信registry/实现身份与集成。首款精确规范产物已离线独审，未正式导入/审核/封存；新实际链路仍须工程验收。
