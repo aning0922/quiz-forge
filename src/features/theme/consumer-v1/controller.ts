@@ -202,8 +202,12 @@ export class ConsumerControllerV1 {
         this.#keyTimer = setTimeout(() => {
           if (!task.current()) return;
           this.#keyExpired = true;
-          if (this.#value.phase === "active")
-            this.#publish({ phase: "expired" });
+          this.#publish({
+            keyExpired: true,
+            ...(this.#value.phase === "active"
+              ? { phase: "expired" as const }
+              : {}),
+          });
         }, keyRemaining);
       this.#publish({ session, keyExpired: this.#keyExpired });
       const pending = await readConsumerPendingV1(
