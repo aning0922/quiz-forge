@@ -66,12 +66,17 @@ describe("real P2-A database", () => {
     const tables = await database.admin
       .sql`SELECT tablename FROM pg_tables WHERE schemaname='qf' ORDER BY tablename`;
     expect(tables.map((r) => r.tablename)).toEqual([
+      "access_key",
       "asset_blob",
       "audit_event",
       "category",
+      "consumer_exchange_budget",
+      "consumer_grant",
+      "consumer_session",
       "draft_application",
       "draft_review",
       "draft_revision",
+      "internal_play_version",
       "operator",
       "operator_session",
       "product",
@@ -79,6 +84,7 @@ describe("real P2-A database", () => {
       "product_draft",
       "product_tag",
       "product_version",
+      "quiz_report",
       "quizpack_import",
       "quizpack_validation",
       "tag",
@@ -233,12 +239,24 @@ describe("real P2-A database", () => {
       database.app.sql`SELECT id FROM qf.audit_event WHERE id=${auditId}`,
     ).resolves.toHaveLength(1);
   });
-  it("replay removes drifted schema/database and forbidden column grants", async () => {
+  it("refuses namespace CREATE drift before replay; finite grant replay resumes only after explicit owner correction", async () => {
     const sql = database.admin.sql,
       app = sql(database.config.database.user);
     await sql`GRANT CREATE,TEMP ON DATABASE ${sql(database.config.database.name)} TO ${app}`;
     await sql`GRANT CREATE ON SCHEMA qf TO ${app}`;
     await sql`GRANT UPDATE(operator_id,absolute_expires_at) ON qf.operator_session TO ${app}`;
+    await expect(migrateDatabase(sql, database.config)).rejects.toThrow(
+      "MIGRATION_FAILED",
+    );
+    const [unrepaired] =
+      await sql`SELECT has_schema_privilege(${database.config.database.user},'qf','CREATE') schema_create,has_database_privilege(${database.config.database.user},current_database(),'TEMP') temporary,has_column_privilege(${database.config.database.user},'qf.operator_session','operator_id','UPDATE') column_update`;
+    expect(unrepaired).toEqual({
+      schema_create: true,
+      temporary: true,
+      column_update: true,
+    });
+    // Remove only this test's known namespace grant, never automatic migration repair.
+    await sql`REVOKE CREATE ON SCHEMA qf FROM ${app}`;
     await migrateDatabase(sql, database.config);
     for (const statement of [
       "CREATE TABLE qf.forbidden(id int)",

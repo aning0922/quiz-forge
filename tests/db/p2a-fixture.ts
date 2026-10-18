@@ -62,7 +62,12 @@ export async function resetTestDatabase(database: TestDatabase): Promise<void> {
         OR EXISTS(SELECT 1 FROM qf.draft_revision)
         OR EXISTS(SELECT 1 FROM qf.draft_application)
         OR EXISTS(SELECT 1 FROM qf.draft_review)
-        OR EXISTS(SELECT 1 FROM qf.product_version) AS occupied`;
+        OR EXISTS(SELECT 1 FROM qf.product_version)
+        OR EXISTS(SELECT 1 FROM qf.internal_play_version)
+        OR EXISTS(SELECT 1 FROM qf.access_key)
+        OR EXISTS(SELECT 1 FROM qf.consumer_session)
+        OR EXISTS(SELECT 1 FROM qf.consumer_grant)
+        OR EXISTS(SELECT 1 FROM qf.quiz_report) AS occupied`;
       if (!validationState || validationState.occupied)
         throw new Error("TEST_VALIDATION_SCOPE_NOT_EMPTY");
       const importFiles = new Map(
@@ -119,7 +124,7 @@ export async function resetTestDatabase(database: TestDatabase): Promise<void> {
       }
       await lock.check();
       await verified.admin
-        .sql`TRUNCATE qf.product_version,qf.draft_review,qf.draft_application,qf.draft_revision,qf.product_draft,qf.product_asset,qf.asset_blob,qf.quizpack_validation,qf.quizpack_import,qf.product_tag,qf.product,qf.category,qf.tag,qf.operator_session,qf.audit_event,qf.operator`;
+        .sql`TRUNCATE qf.quiz_report,qf.consumer_grant,qf.consumer_session,qf.access_key,qf.internal_play_version,qf.product_version,qf.draft_review,qf.draft_application,qf.draft_revision,qf.product_draft,qf.product_asset,qf.asset_blob,qf.quizpack_validation,qf.quizpack_import,qf.product_tag,qf.product,qf.category,qf.tag,qf.operator_session,qf.audit_event,qf.operator`;
     } finally {
       dispose();
       await lock.close();

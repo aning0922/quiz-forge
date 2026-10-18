@@ -50,3 +50,15 @@
 本笔全量157文件/1766单元、format、lint、typecheck及生产build通过，build trace为80条且0违规；没有运行生产E2E或完整PG回归，3100未启动或占用。本工作树同时保留下一笔未提交的core/retain准备，未混入本笔提交。
 
 fixture 中一次检查发现存储空目录路径遗漏 `uploads`，在提交前已修正为正式 storage helper 返回路径并重跑上述11项通过；没有在该实例写入导入文件。旧 `P4_TEST_GRAPH_CHANGED`、日期解析及23001断言过程实例继续停止保留。本笔独审仍待主控复验，不能提前登记“无P1/P2”；core/retain及完整业务验收留待下一笔。
+
+## 下一笔：直接 SQL、retain 与真实升级
+
+- 新增7项 core 真实PG测试：实际发行时刻与固定时长、app禁止延期、void后直接合法claim拒绝、claim后void拒绝、相反事务锁竞争只一方提交、等值save也revision+1及last单独更新拒绝、真实答案→受信纯评分→report封存及最终FK阻止后续合法save、只读report删除权限，以及首次删除前未知旧行保护。实际最终FK错误为PG `23001`（RESTRICT），不是原测试误写的 `23503`。
+- consumer引用检查接入两个原有internal-version维护入口，在任何旧review/version自有豁免前执行。实际exclusive lock与fresh READ COMMITTED下检查完整play来源；revision/import/validation/shared blob或精确parent版本命中即拒绝，未宣称void/expiry可释放来源。旧17测试阶段仅在新表确实不存在时跳过新层；正式应用仍要求完整18。
+- fixture先验证全部旧16表的原始数据库行文本、全部5类已观察新行文本和无文件条件，才首次DELETE；每条新行的原始文本从实际INSERT/UPDATE RETURNING取得，不通过Date转换比较、不截掉时间戳精度。未知行/不符事实直接保留；只删除已观察的精确子行与review/version，随后才运行旧的有限合成reset。
+- 真实旧17 fixture包含r1/r2、r1审批/封存版本和实际共享blob。升级前测试拒绝仍活跃的app writer、真实storage reader和同名弱化旧CHECK；升级后逐行比较全部旧16表和旧17完整migration历史，最终catalog与fresh18一致，原r1 binding仍解析为原封存版本，head已为r2。重复迁移为空。旧16→17→18的既有谱系回归同步适配最新迁移集合，不修改旧SQL。
+- 测试清理入口增加5类consumer行的非空拒绝；预算永久行不TRUNCATE。旧P2-A表清单改为22表。旧授权漂移测试明确先拒绝schema CREATE且全部权限保持，再由该测试显式撤销自己授予的CREATE后继续既有有限grant replay。
+
+实际结果：7项core、1项真实17升级、1项旧16升级分别通过；namespace测试配置前置适配后，namespace4+core7+17升级1合计12项再次通过。格式、TypeScript、lint通过。普通完整PG第一轮发现旧表清单/授权修复预期，第二轮59文件/484断言通过、namespace4项beforeAll跳过，整体失败：旧suite短暂设置 `imports.enabled=true`。namespace现仅移除此非必要开关前置；重建schema仍要求标记验证、purpose=test/ci、22表全空且预算仅1行、实际uploads目录为空。完整回归待重跑最终结果，不能把484通过当488通过。
+
+开发过程的初次timestamp类型假设、原23503预期、整图比较解析差异及一次RETURNING复合行限定语法错误均已修正；有实际partial graph的过程实例停止保留，不复用重置。此笔没有实现grant轮转服务、8格SQL owner、业务HTTP服务或真实首款链路，仍待后续实现与独审。
