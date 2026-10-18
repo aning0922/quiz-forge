@@ -7,3 +7,5 @@ client.ts使用冻结operation DTO、完整binding resolution与独立Studio x-c
 pending.ts在运营浏览器CSPRNG生成32字节raw，按独立access-key域求digest，准备后完整持久化/回读并核raw→digest，markBeforeSend再次完整回读后才允许POST。scope固定origin/instanceId/issuerId/productId，sessionStorage隐含本标签；不承诺跨标签唯一保管或XSS隔离。相同bucket不能覆盖未核请求，异步回读期间current失效拒绝标发送/删除。raw=null表示已知原文丢失，保留原binding供只读核对，拒绝发放/重放；不能用metadata重建私密链接。只有严格终态证据和用户显式确认后，调用方才可精确删除。Cookie、Studio/consumer CSRF、grant不入该记录。
 
 8项合成测试覆盖raw/digest、严格独立CSRF与API零raw、正确create状态和原binding、坏Product/cursor、bucket隔离、原文丢失、坏存储/回读/摘要、失权与替换保护。typecheck和定向lint通过。实际controller/复制下载前新鲜issuer核验、Studio路由与生产E2E仍待后续接入，不能把测试fixture当真实服务。
+
+公共共享3ff3d1d已正常merge至本支9dcef7a，冲突仅治理/阶段文档和root独占registry，均使用主控版本，原Studio客户端成果35cc40f保留。当前精确consumer entry为193b48c92352d731c9c2e41de05316471a2c46f58d8e2f2596995ee531d974a1；未创建真实play/Key。
