@@ -6,6 +6,7 @@ import * as schema from "./schema";
 import { validationAckFunctionHashes } from "./validation-ack-schema";
 import { verifyDraftSchema } from "./draft-schema";
 import { verifyInternalVersionSchema } from "./internal-version-schema";
+import { verifyConsumerSchema } from "./consumer-schema";
 import {
   loadRuntimeConfig,
   normalizeRuntimeConfig,
@@ -96,6 +97,7 @@ export async function verifyDatabaseIdentity(
     await verifyValidationSchema(sql);
     await verifyDraftSchema(sql);
     await verifyInternalVersionSchema(sql);
+    await verifyConsumerSchema(sql);
   }
 }
 

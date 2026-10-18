@@ -569,6 +569,12 @@ export const internalVersionSchemaFacts = {
     },
     {
       table_name: "product_version",
+      name: "product_version_parent_exact",
+      definition: "UNIQUE (id, product_id, snapshot_sha256)",
+      kind: "u",
+    },
+    {
+      table_name: "product_version",
       name: "product_version_pkey",
       definition: "PRIMARY KEY (id)",
       kind: "p",
