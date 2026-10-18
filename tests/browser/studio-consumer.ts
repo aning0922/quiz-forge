@@ -532,6 +532,52 @@ try {
     ),
   ).toBeUndefined();
   await shot(page, "issuer-changed-320");
+  mode = "normal";
+  // Known raw loss preserves only the original digest/binding, never a reconstructed link.
+  await page.evaluate(() => {
+    for (const key of Object.keys(sessionStorage)) {
+      if (!key.startsWith("quizforge:p4:studio-pending:v1:")) continue;
+      const value = JSON.parse(sessionStorage.getItem(key)!);
+      if (value.operation.kind === "issue") {
+        value.operation.raw = null;
+        sessionStorage.setItem(key, JSON.stringify(value));
+      }
+    }
+  });
+  await page.reload();
+  await expect(
+    page.getByText(
+      "原文已不在本标签，不能恢复私密链接或重放发放。仍可核对原请求。",
+      { exact: true },
+    ),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "重放原请求", exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: "复制私密访问链接", exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: "下载私密链接文件", exact: true }),
+  ).toHaveCount(0);
+  await shot(page, "raw-loss-before-resolve-320");
+  const beforeRawLoss = issueBindings.length;
+  await page.getByRole("button", { name: "核对原请求", exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: "原 Key 发放已记录", exact: true }),
+  ).toBeVisible();
+  expect(issueBindings.length).toBe(beforeRawLoss);
+  await expect(
+    page.getByRole("button", { name: "复制私密访问链接", exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: "下载私密链接文件", exact: true }),
+  ).toHaveCount(0);
+  await shot(page, "raw-loss-resolved-320");
+  await page.getByRole("checkbox").check();
+  await page
+    .getByRole("button", { name: "确认结束并清除本标签记录", exact: true })
+    .click();
   await page.close();
   mode = "readonly";
   const ro = await browser.newPage({ viewport: { width: 320, height: 900 } });
