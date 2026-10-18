@@ -1,8 +1,10 @@
-# P4 内部消费者闭环合同草案
+# P4 内部消费者闭环实施合同
 
 2026-10-18，从 P3-E 交付 c83788b 接续。作者已批准首款既有内容与视觉作为内测基线；本阶段无需重复批准同一材料。目标为本机 test/demo/ci 的真实 Key → 可恢复答题 → 一次完成 → 固定报告/PNG，随后接首款 P5。main 合并、生产迁移、部署和商品发布均不包含在此授权内。
 
-**当前状态：合同与共享 Schema 准备中。** 共享基础/凭证 codec、A 的 play/Key/report 数据合同和 B 的纯视图接口已分别通过独审（准确基线 62be5e9、064c4be，无 P1/P2）；新 errors/resolve 联合待独审，当前合并后 49 项合同边界测试、定向 lint 和完整 TypeScript 通过。消费者组件正在独立开发；尚无新增 0018、消费者表、业务服务或页面。具体 Schema/服务接口完整冻结后才进入数据业务实现。
+**当前状态：机器接口和数据/owner 设计已通过独审，冻结为实施基线。** 设计基线为 6ae499a：含共享基础/codec、领域 DTO/纯视图接口、cdb5cbf errors/resolve、50a35a6 entry/URL/service、0775412 八格 SQL 预算、bc1dba1 同 owner 资源交接、b982bc2 独立实现 metadata 与 A 正式数据设计（原 a85914b）。五处 ports 配接、void/claim 双向 DB 保护和 Key 页 RR 一致观察均已补齐。独审确认可进入 0018/owner/业务实现；这不是实现或阶段验收。56 项相关合同测试、定向 lint/typecheck 通过；此前准确 50a35a6 完整 1763 单元及 format/lint/typecheck 通过。
+
+A 接 0018/guard、同事务 ports、owner/凭证/状态/完成服务、真实 PG 与留存；B 接六视图/PNG、HTTP/source/Cookie/stream 解析、运营及消费者 controller；root 接受信实现登记/共享接口/集成，Astra 继续非实施代码审查。当前尚未建立消费者表或真实业务，历史人物 P5 未完成。数据细则和计划见 [P4_DATA_DESIGN](P4_DATA_DESIGN.md)，各项尚未实现的能力继续明确标注。
 
 ## 1. 模块与实现归属
 
@@ -114,7 +116,7 @@ E2E 不将 raw 放 page.goto、locator.fill、APIRequest/route.fetch 或失败�
 
 本期没有账号、支付、平台交易/API、AI 增强、公开分享、发布指针、生产 HTTPS/部署、服务端可恢复 raw、自动原子换发或已领取 Key 撤销。新内容/素材或发布仍另请作者批准，已批准同一基线不重复请批。
 
-## 11. 原请求核实的机器分支（独审前草案）
+## 11. 原请求核实的机器分支
 
 `fulfillment/consumer-flow/contracts.ts` 与 `operator-resolutions.ts` 用严格联合描述核实结果。每个结果都携带完整原 binding 和其 SHA；异步验证函数还要求调用方交入自己保存的原 binding，拒绝迟到其他请求的自洽响应。验证字节自洽不等于查询权威；服务仍须在授权事务内观察永久事实并在返回前复核当前权限。
 
@@ -131,7 +133,7 @@ E2E 不将 raw 放 page.goto、locator.fill、APIRequest/route.fetch 或失败�
 
 本批边界覆盖两种域摘要、规范编码、源/报告一致性、已成功后又被覆盖、同/异完成 key、未来 revision、跨 session/Key、迟到响应、嵌套摘要篡改、原 issue 已作废及到期报告只读。服务并发、真实数据库与 HTTP 行为仍需后续实际证明，本批单测不代表这些能力已实现。
 
-## 12. 服务与 HTTP 配对（独审前草案）
+## 12. 服务与 HTTP 配对
 
 `consumer-flow/service-contract.ts` 明确三组应用接口：InternalPlayService、AccessKeyService、ConsumerFlowService。A 的 factory 绑定本请求 owner、同一 config 和初始 15 秒 budget；HTTP 不传任意既有连接，不重新起钟。owner 惰性开库，纯 SQL 不取四个文件任务槽；exchange 的预算 COMMIT 和第一连接实际 close 均确认后，才开第二个独立连接。未知不继续、不退额度、不自动重试。首次 complete 先纯 SQL 查原报告；仅确实需要新完成时准备精确来源/依赖 IO，期间不持业务写锁，最终事务重新取得 Key→Session→当前 grant 并优先查 report，再纯评分、投影、插入。
 
