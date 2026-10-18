@@ -1,6 +1,9 @@
 import { StudioClientError, studioMessage } from "../client";
 import { DraftPendingError } from "./pending";
+import { RevisionPendingError } from "../draft-revisions/pending";
 export function draftMessage(error: unknown): string {
+  if (error instanceof RevisionPendingError)
+    return "此工作区有追加请求待核实，或追加锚点存储不可用。请先核实原请求，新准备已关闭。";
   if (error instanceof DraftPendingError)
     return "本页无法可靠保存或核对请求锚点。请保留当前会话存储，由维护者核实；不要建立新请求。";
   if (error instanceof StudioClientError)

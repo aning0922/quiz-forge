@@ -17,6 +17,7 @@ import {
   checkDraftApplication,
   draftApplicationEndpoint,
 } from "./client";
+import { assertNoRevisionPending } from "../draft-revisions/pending";
 function send(
   storage: DraftPendingStorage,
   tuple: DraftApplicationBinding,
@@ -50,6 +51,7 @@ export async function applyFirstDraft(
   const tuple = freezeDraftBinding(input),
     release = acquireDraftProduct(tuple.productId);
   try {
+    assertNoRevisionPending(storage, tuple.productId);
     addDraftPrepared(storage, tuple);
     const result = await send(storage, tuple, csrf, false);
     removeExactDraftPending(storage, tuple);
