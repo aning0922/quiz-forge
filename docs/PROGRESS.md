@@ -2,6 +2,8 @@
 
 ## 2026-10-18 P4 消费者合同与双线实施准备
 
+**界面预检：** B 六视图/独立 CSS/PNG/服务器展示投影 b476f37 已集成为 d3150ea；主控完整 163 文件 / 1783 单元与 format/lint/typecheck 通过，纯组件独审进行中。B 合成 Chromium 验证含 45 原图及真实 PNG；root 另使用精确批准首款包和四个作者评分见证，完成 30 张四宽原图、四张 1080×1920 PNG，页面错误 0，临时浏览器和服务已实际关闭。root 实看 10 原图，未见 P1/P2，暂歇页窄按钮碎行和相同报告次标题重复两项 P3 已交 B 后续局部收口。实际原图仅私有；[安全预检记录](qa/p4-first-product-display-preflight.json)明确这是离线展示，未证明 Key/会话/最终报告持久化或 P5。A 正实施 0018/guard/事务，B 已继续 HTTP/controller；root 尚未集成数据库代码，consumer catalog 尚未登记可用实现。
+
 **最新：** 机器与数据设计基线 6ae499a 已经独立审查收口，包含五处 ports 补齐、void/claim 双向保护、RR Key 页和八格 SQL owner；主控冻结合同并启动 A 数据/owner/真实 PG、B HTTP/controller 实施。56 项相关合同测试通过，consumer descriptor 目前仍只是 metadata Schema；实际闭包、服务、表和 P5 现场尚未验收。下段记录 50a35a6 的既有全量结果。
 
 从 P3-E 交付 c83788b 接续 `codex/consumer-session-report` / Draft PR #20。至 50a35a6，已实现严格 play/Key/report 数据合同、独立 token/CSRF codec、答案和游标规范摘要、原请求核实联合、中性 entry 与公开服务签名。主控实际全量 156 文件 / 1763 单元测试、format/lint/typecheck 全部通过；其中 P4 合同 11 文件 / 53 项通过。共享基础/codec、A/B 数据与视图接口、errors/resolve 已分批独审无 P1/P2；服务端口与 owner 有界关闭方案仍在独审，不能将局部通过写成 P4 验收。详见 [合同](CONSUMER_P4.md)、[审查记录](P4_REVIEW.md)。

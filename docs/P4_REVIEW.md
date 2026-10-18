@@ -22,3 +22,13 @@
 - HTTP/Cookie/实际 stream 预算、0018/guard/并发/保留图、consumer 实现闭包、四宽视觉、真实 PNG 和 P5 首款现场均尚未验收；不使用这些合同测试替代。
 
 实现 metadata b982bc2 两文件独审无 P1/P2：3 原测试加 2 独立测试通过；7类闭包/路径/未来协议反例及1098831B总量拒绝。不存在路径重算摘要仍只作为自洽metadata被接纳，符合明确边界，不产生available或真实文件证明。证据 metadata-probe-result.json。
+
+860b687 只读 gate 提取独审无 P1/P2：旧 13 与新增 3 测试、另 5 独立反例通过。11 类输入新旧结果/错误/override 读取顺序一致；旧基线仍 3 descriptors/3 available/51 sourceFiles/280 lockRecords。consumer 10 类摘要/错身份/重复/数量反例在源文件读取前拒绝；未登记的虚构路径 metadata 不读其 closure，精确选中后真实 ENOENT 拒绝；font file/coverage/license/bytes 独立检查有效。证据 gate-probe-result.json。真正 consumer catalog/compiled mapping/host/closure 仍另验，未接 build 入口。
+
+## 消费者纯显示与批准首款离线预检
+
+B b476f37（root d3150ea）实现六纯视图、独立样式、精确组件映射、server projection 和 Canvas PNG；纯代码独审仍进行中。主控实际 14 专项与完整 1783 单元、format/lint/typecheck 通过。B 独立 Chromium 合成验证 45 图全部实看；15 阻塞组合无编辑入口、减少动态效果及 PNG 资源 hash/字体/失效代次反例通过。root 实看其中 4 个原图，未见 P1/P2。
+
+root 另核精确批准 ZIP/content/全部 9 路径 8 独立素材，实际固定引擎跑四个作者评分见证，经新 server projection 生成 12 题和四份选中 display。entry 14623B，四 display 为 5136/5194/5179/5226B；真实 Chromium156.0.8078.4 四宽 30 图的溢出/正文字号/交互目标检查通过，页面错误0，四 PNG 均1080×1920，临时 browser/server 已关闭。root 实看 6 页面原图及全部4PNG，文字与图像完整；其他24截图仅自动几何断言，未声称全部人工看完。保留两项P3：320暂歇操作按钮碎行、已含姓名/副标题的报告标题下重复同一文本，B在controller接入时做局部修正。
+
+这些实际首款图片和投影仍仅本地私有；Git 只收 [预检安全记录](qa/p4-first-product-display-preflight.json)。离线 harness 的已完成视图输入来自作者见证，显式标记无持久化，不能冒充最终用户报告、grant 授权、P4/P5 或商业发布验收。
