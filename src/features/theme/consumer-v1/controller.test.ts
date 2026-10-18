@@ -272,3 +272,51 @@ it("completion UNKNOWN retains one original key and cannot silently start anothe
     c.dispose();
   }
 });
+it("25/30-day Key validity never creates a timer longer than the current eight-hour grant", async () => {
+  const f = await fixture();
+  for (const days of [25, 30]) {
+    const view = structuredClone(f.view);
+    view.keyExpiresAt = new Date(
+      Date.parse(view.observedAt) + days * 86400000,
+    ).toISOString();
+    const timers = vi.spyOn(globalThis, "setTimeout");
+    const c = new ConsumerControllerV1(
+      f.session.sessionId,
+      storage(),
+      async (url) => json(String(url).endsWith("session") ? view : f.entry),
+    );
+    try {
+      await c.bootstrap();
+      expect(c.getSnapshot().phase).toBe("active");
+      expect(
+        timers.mock.calls.every(
+          ([, delay]) => typeof delay === "number" && delay <= 8 * 3600000,
+        ),
+      ).toBe(true);
+    } finally {
+      c.dispose();
+      timers.mockRestore();
+    }
+  }
+});
+it("a real Key expiry before grant expiry stops editing while the grant remains valid", async () => {
+  const f = await fixture(),
+    view = structuredClone(f.view);
+  view.keyExpiresAt = new Date(Date.parse(view.observedAt) + 500).toISOString();
+  const c = new ConsumerControllerV1(
+    f.session.sessionId,
+    storage(),
+    async (url) => json(String(url).endsWith("session") ? view : f.entry),
+  );
+  try {
+    await c.bootstrap();
+    expect(c.getSnapshot().phase).toBe("active");
+    await new Promise<void>((resolve) => setTimeout(resolve, 600));
+    expect(c.getSnapshot().phase).toBe("expired");
+    expect(c.task()?.current()).toBe(true);
+    c.choose(f.q.id, f.q.options[0]!.id);
+    expect(c.getSnapshot().answers).toEqual([]);
+  } finally {
+    c.dispose();
+  }
+});

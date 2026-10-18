@@ -90,3 +90,5 @@ resource.ts针对新消费者网络流用固定imageBytes上限及单一外层�
 本批实际完整format/lint/typecheck通过。全单测168文件1813项中1812通过、1失败：旧HTTP全局Promise.prototype.then探针得到[1,2,1]而严格期望[1,1,1]，与主控CI已发现的测试运行器污染一致；主控已独占该测试归因修复，本批不双写或放松生产限制。相关19项新网络/controller/resource/fragment测试均通过，整体全绿须集成主控探针修复后复验。没有运行build/DB/3100。
 
 主控54158e1的探针归因修复已按单文件接入为本支69a0ebe，共享阶段文档保持本支原文避免复制主控后续历史。修后完整单测168文件/1813项实际全部通过（18.48秒），上述1812/1是保留的首轮结果，不是当前剩余失败；生产HTTP字节未改。
+
+长Key期限P2：不将25/30天的剩余时间直接传给浏览器32位setTimeout。每页授权最长8小时，只有Key早于当前grant到期时才排Key timer，否则由grant先同步失权；不截断Key期限、不延长grant。原独审probe在本树修前复现25/30天30ms后误expired，修后1/7/24/25/30天均active。真实Chromium补验tests/browser/consumer-deadlines.ts另验800ms短期限900ms后expired、已完成且Key过期仍completed，全部0 POST且grant仍current；证据.cache/p4-consumer-deadlines/1792338118859/result.json，原probe前后保留.cache/p4-review/host-deadline-before.json/after.json（内commit字段是原审查来源标签）。新增两项控制器回归后9项通过，定向lint/格式与完整typecheck通过。该修正不改CSS/页面布局，未重拍21图；生产descriptor须以修后字节重算。
