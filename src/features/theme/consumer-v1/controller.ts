@@ -182,17 +182,26 @@ export class ConsumerControllerV1 {
           0,
           Date.parse(until) - Date.parse(session.observedAt) - elapsed,
         );
+      const grantRemaining = remaining(session.grant.expiresAt),
+        keyRemaining = remaining(session.keyExpiresAt);
       this.#grantTimer = setTimeout(() => {
         if (task.current()) this.revoke();
-      }, remaining(session.grant.expiresAt));
+      }, grantRemaining);
       this.#keyExpired =
-        session.outcome.kind === "expired" ||
-        remaining(session.keyExpiresAt) === 0;
-      this.#keyTimer = setTimeout(() => {
-        if (!task.current()) return;
-        this.#keyExpired = true;
-        if (this.#value.phase === "active") this.#publish({ phase: "expired" });
-      }, remaining(session.keyExpiresAt));
+        session.outcome.kind === "expired" || keyRemaining === 0;
+      // Grant expiry revokes the page within eight hours. Never schedule a multi-day
+      // browser timeout (25/30-day Key lifetimes exceed the signed 32-bit timer range).
+      if (
+        session.outcome.kind !== "completed" &&
+        keyRemaining > 0 &&
+        keyRemaining < grantRemaining
+      )
+        this.#keyTimer = setTimeout(() => {
+          if (!task.current()) return;
+          this.#keyExpired = true;
+          if (this.#value.phase === "active")
+            this.#publish({ phase: "expired" });
+        }, keyRemaining);
       this.#publish({ session });
       const pending = await readConsumerPendingV1(
         this.storage,
