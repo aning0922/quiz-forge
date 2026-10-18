@@ -49,3 +49,5 @@ resolve/read 在单 RR 读取业务事实并另做 fresh 当前授权。原 key 
 实际首轮服务 PostgreSQL 10 项通过：真实五图和三字体文件封存/详情/列表/状态，quota 全满+归档+执行器停用时原 key 重放，异 binding/异 key 重复及 target-used，历史缺当前代码/字体仍可读核实，新 seal 缺字体/图片拒绝，readonly/CSRF 拒绝，fresh 授权期间失权拒绝，真实 COMMIT 后投递未知由原 key 恢复且不重复审计，业务事务内实际 pg_terminate_backend 后 UNKNOWN/unresolved，以及并发推进 head 时保持单 RR 观察。夹具只清理已返回/核实的精确自有 ledger IDs，未知或外部事实即保留；未来生产 Next 接线与持久 P3E fixture 出口仍待集成。
 
 本服务提交的本地工程验证：format:check、lint、typecheck、138 文件 / 1612 单元、pnpm build 全部通过。实现门禁实际核 3 descriptor / 51 文件 / 280 lock records；现有 Next 构建 trace 72 / 15075 paths / 0 违规。新 HTTP/后台路由尚由另一实现流接线，不能把本轮现有路由 build 当作新生产链路或 E2E 通过。后续继续补容量证明、真实物理留存和关闭故障、P3E 持久夹具出口。
+
+后续服务 PG 已扩至 13 项并全过：实际已封存引用在首次 unlink 前阻断，文件字节和 DB 计数不变；100 个明确 synthetic 直接 DB 约束条目占满硬槽位后，正常新 seal 给 VERSION_LIMIT，独立单 RR resolve 给严格 capacity-exhausted（这些填槽条目不注册字体或冒称真实受信封存）；外层 guard 的真实后端在服务最后 guard.check 后被终止，维护锁仍被业务事务 SHARE 拒绝，真实 COMMIT 后原请求 UNKNOWN，由原 key 找回唯一成功及单审计。该测试未修改业务锁实现。
