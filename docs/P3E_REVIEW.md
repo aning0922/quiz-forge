@@ -80,3 +80,19 @@ ce1357实际页面/路由生产构建在主控通过：80traces、17204paths、0
 独审真实React/Chromium156复现P2：已有seal原请求正在核实，页面state/list返回401后只清空页内事实，没有使独立pending区epoch失效；随后迟到的有效sealed响应仍可被接纳并启用清理，实际点击会删除原锚点。页面父层与两个恢复区必须共享稳定Product的授权失效代次，401/403/CSRF同步使在途写/核实/清理失效并保留锚点；普通503/404仍应保留原请求只读核实。已交B整改，未关闭前不签UI失权/迟到验收，不以1704单元或构建成功替代该实际反例。
 
 原反例使用精确组件/flow/client，Next Link仅替为a，既有未执行node:util使用throw shim；该隔离复现不能当生产Next视觉验收。独审其余45项SSR/flow/view-state通过，P2仍真实待修。主控14项PG（13服务+1不同key并发）日志已由独审直接复核。
+
+## 失权、夹具归属与测试日志整改关闭
+
+跨组件失权P2由2feb807/dd3448修复，主控集成dd0011d/4c29c09。Astra用四类真实React页面重跑24浏览器交互：16项401/权限/CSRF/Origin403先到后迟到有效proof均不允许清锚且保留原tuple；8项404/503仍可核实并显式清除。独立116相关单元通过。这是实际组件交互，不冒称生产Next E2E。
+
+cd590夹具首稿只核登记来源却按Product删除完整图，独审提出同Product外actor额外来源P2。A真实复现：finish后加入第三个无review/version引用、reserved=0的ready源，旧cleanup已删除自有review/version并达到首次unlink；精确拦截避免真实删图，原现场停止保留。a705在任何DELETE/unlink前核完整imports/validations/revisions/applications/assets、actor、首次来源及workspace事实。fresh负例保留所有账本/外来行及5文件，跨Product借用4旧PNG、只删除1自有scene的实际正例也通过；Astra逐行与实际工具证据复核关闭。不是只靠最终FK拒绝。
+
+247原测试中的Playwright APIRequest/route.fetch会在失败HTML报告嵌入Cookie/CSRF；独审用环境注入的纯合成哨兵证实，普通catch加固定错误也不能清掉内部step日志。e715改为受限Node http.request、不重试/不跟随redirect/不转发Set-Cookie、有限路径/方法/预算及无raw cause错误。Astra独立实际两旧对照检出、六新场景全部stdout/JSON/HTML ZIP/附件零哨兵，P2关闭。六case完成门禁11纯边界与7真实Playwright模式也通过，只有完整六次真实passed允许finish。535另确保迟到response及客户端finally完成之后再断言拒绝，新增真实原key重放校验。
+
+## 真实关闭拒绝与完整批次的前提修正
+
+A d9a4ca8两项在隔离Node child实际打开/读/hash文件及真实PG事务，再有意拒绝FileHandle.close或driver.end；保留真实FD/保留reserved连接。超最后原deadline再过完整5s仍四名额/四shared guards，维护忙且第五新工作拒绝，原key/只读resolve继续可用、账本仍1/1/2。只在实际child close/组消失、PG/guard为零后才精确清理；Astra代码与两份实际安全JSON复核通过。这是注入拒绝，不声称操作系统自行故障。
+
+root第一次后续完整PG共467项，186通过/263失败/18跳过。首个真实失败为生命周期final cleanup看到imports.enabled=true而保守拒绝；已保留账本使后续reset保护级联拒绝，并非把所有失败解释为独立业务缺陷。f677现场停止保存。c2d6e5只在两类测试调用方显式正式禁导入：普通生命周期在首次cleanup前，quarantine场景在child前；从enabled=true分别实际2项与2项通过，独审关闭对fresh默认false的依赖，生产cleanup检查未放宽。新的完整PG仍单独待结果。
+
+root E2E编排同runId、独立single-worker/retries0 project依赖P3D，默认mobile/desktop排除新spec；全PW成功且真实退出证明成立后，核completed、正式禁导入，再P3E→P3D→P3C→B3→B2精确清理。未知/失败保留；精确project名加入现有CLI白名单，不允许控制参数绕过真实执行。独审只读枚举251测试/19文件，P3E六case无重复；参数13项通过，实际完整E2E尚未运行。
