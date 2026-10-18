@@ -2,7 +2,7 @@
 
 ## 2026-10-18 P4 消费者合同与双线实施准备
 
-**界面预检：** B 六视图/独立 CSS/PNG/服务器展示投影 b476f37 已集成为 d3150ea；主控完整 163 文件 / 1783 单元与 format/lint/typecheck 通过，纯组件独审进行中。B 合成 Chromium 验证含 45 原图及真实 PNG；root 另使用精确批准首款包和四个作者评分见证，完成 30 张四宽原图、四张 1080×1920 PNG，页面错误 0，临时浏览器和服务已实际关闭。root 实看 10 原图，未见 P1/P2，暂歇页窄按钮碎行和相同报告次标题重复两项 P3 已交 B 后续局部收口。实际原图仅私有；[安全预检记录](qa/p4-first-product-display-preflight.json)明确这是离线展示，未证明 Key/会话/最终报告持久化或 P5。A 正实施 0018/guard/事务，B 已继续 HTTP/controller；root 尚未集成数据库代码，consumer catalog 尚未登记可用实现。
+**界面预检：** B 六视图/独立 CSS/PNG/服务器展示投影 b476f37 已集成为 d3150ea；主控完整 163 文件 / 1783 单元与 format/lint/typecheck 通过，纯组件独审进行中。B 合成 Chromium 验证含 45 原图及真实 PNG；root 另使用精确批准首款包和四个作者评分见证，完成 30 张四宽原图、四张 1080×1920 PNG，页面错误 0，临时浏览器和服务已实际关闭。root 实看 10 原图，未见 P1/P2，暂歇页窄按钮碎行和相同报告次标题重复两项 P3 已交 B 后续局部收口。实际原图仅私有；[安全预检记录](qa/p4-first-product-display-preflight.json)明确这是离线展示，未证明 Key/会话/最终报告持久化或 P5。A 的首笔 0018/guard 50bb7ec 已集成 27a913d，A 独立 fresh 新装与 7 项 PG 通过，但独审另发现未登记 view 可绕过列权限的 P2，正在整改；HTTP 基础也有两项 P2 待修。持久业务服务/生产 E2E 尚未接入，consumer catalog 尚未登记可用实现。
 
 **最新：** 机器与数据设计基线 6ae499a 已经独立审查收口，包含五处 ports 补齐、void/claim 双向保护、RR Key 页和八格 SQL owner；主控冻结合同并启动 A 数据/owner/真实 PG、B HTTP/controller 实施。56 项相关合同测试通过，consumer descriptor 目前仍只是 metadata Schema；实际闭包、服务、表和 P5 现场尚未验收。下段记录 50a35a6 的既有全量结果。
 

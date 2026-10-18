@@ -41,3 +41,9 @@ root 另核精确批准 ZIP/content/全部 9 路径 8 独立素材，实际固�
 2. 私有固定headers之后展开extra，运行时宽对象可覆盖Cache-Control/Referrer-Policy/nosniff并增加CORS。独立实际响应已复现。B须只显式提取Set-Cookie或严格拒绝未知extra，不能依赖TypeScript窄类型。
 
 反例位于独审ignored http-boundary-probe-result.json；仅合成内存Request，无DB/真实token。后续handler的原token隔离、授权、单次owner body交接和完整业务仍另验。
+
+## 数据底座当前整改项
+
+27a913d（A 50bb7ec）已集成六表/Drizzle/ACL/catalog guard；A 实际 fresh 新装1→18、app开库、7PG及1766单元通过，root完整typecheck通过。独审在其独立purpose=test实例另复现一项P2，当前不签底座通过：catalog仅收relkind r/p，未发现qf新增view及其ACL。添加指向operator的可更新view并给app视图列UPDATE后，原完整catalog SHA仍相同、app开库成功；app对底层credential_digest无直接UPDATE，却能经view修改一条合成记录。需覆盖或明确拒绝所有未允许qf relation kind/对象，并对旧17迁移前置使用相同完整范围。反例与失败现场单独保留，未操作首款39eb。
+
+0018原7PG只证明所列结构反例，不能替代直接claim/void/reportFK、旧业务无损升级、完整retain、owner/服务和最终端到端。A正继续这些实施与修复，独审实例只用于独立反例。
