@@ -9,7 +9,7 @@ if [[ $# -gt 1 ]]; then
 fi
 ci_test_suite=${1:-baseline}
 case "$ci_test_suite" in
-  baseline|validation|media-unknown) ;;
+  baseline|validation|media-unknown|namespace) ;;
   *) printf '%s\n' 'P2A_CI_SUITE_INVALID' >&2; exit 1 ;;
 esac
 
@@ -106,4 +106,5 @@ case "$ci_test_suite" in
     ;;
   validation) pnpm test:db:service ;;
   media-unknown) pnpm test:db:media-unknown ;;
+  namespace) pnpm exec vitest run --config vitest.p4-namespace.config.ts ;;
 esac
