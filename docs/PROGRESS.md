@@ -1,5 +1,11 @@
 # 阶段进度
 
+## 2026-10-18 P3-E 最终集成验收进行中
+
+e0a5e622 已推送；完整单元 1709/1709（145 文件）、fresh PostgreSQL 469/469（56 文件）、格式/lint/类型检查通过。最终生产 build 为 80 traces/17204 路径/0 私有违规，macOS main 66×3 封存通过且操作全部停止。准确 e0a5e62 的普通 CI 39123248278 与媒体 CI 39123248228 均实际 success。P3-E 已登记的运行时和测试日志泄密 P1/P2 均已修复并独立复核；这不代替最终浏览器和视觉出口。
+
+完整生产 E2E 首轮 235 通过、1 失败、10 旧 skip、5 未运行：新增套件在业务开始前被默认 30 秒 beforeAll 截断，其正常认证窗口等待可达 61 秒。正在修订有限 hook 预算并 fresh 重跑；434 实例、未完成 fixture 及首轮浏览器产物已停止保留。详情见 [P3-E 验收记录](P3E_ACCEPTANCE.md)。真实首款封存事实见下段；P4 只有 [前置方案](CONSUMER_P4_PREFLIGHT.md)，消费者闭环尚未实现。
+
 ## 2026-10-18 首款真实包已在本地完成内测版本封存
 
 已批准的历史人物包在独立purpose=test库经实际生产Next浏览器操作完成：10,887,344B原包接收、native验证与9项资源归档、首稿r1、author-baseline批准落账及slot1固定版本封存。content/asset-set/manifest三hash逐项与冻结批准产物一致；完整snapshot已再次经HTTP读取并核SHA。版本ade95bd0-833f-4696-9f3c-33b0db223bdc，snapshot SHA0fc8843a717d6878f995e402d1ac9deaa73b0ac2a07f67544febf01195cef9fb。来源/版本事实见[安全证据](qa/p3e-first-product-live.json)；没有把合成像素夹具替代真实首款。
