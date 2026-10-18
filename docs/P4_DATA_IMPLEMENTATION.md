@@ -172,3 +172,9 @@ backend proof改查同数据库全部非当前admin/当前exclusive维护PID，�
 `p4-consumer-service.test.ts`实际专属物理来源用例通过并在最终源再次通过：exchange/bootstrap与真实entry字体/图片读取、授权资源stream完整drain和SHA；跨session/错CSRF/未揭晓portrait拒绝；同base两个save恰一个applied-current、另一个superseded，noop+1、不完整答案complete拒绝；并发完成唯一report与completed-other、原binding resolve applied/同key异binding conflict、完成后save返回completed；图片暂时缺失时历史JSON仍读、资源明确dependency unavailable，精确恢复自己移动的文件；第17grant替换最早slot，旧token及旧logout拒绝，最新logout只撤自身；已claim void拒绝而unused void永久。最后三Key/两个state/一份真实完整report/十八次已观察grant（含已替换旧观察）进入operator-services manifest，实际退出proof后完整图/五图cleanup成功，completed仍false，不冒称8case生产consumer-e2e。
 
 最终该PG用例1项通过（8.36s，7.47s test含准备/服务/清理；先前34.14s一轮包含auth窗口等待，不能把32.65s test全当业务执行时长）。最终175文件1851单元、format/lint/typecheck/production build通过；旧implementation3/3、51源/280锁；consumer1/1、77源/268锁；trace80/0。没有跑全普通PG/46driver/生产3100 E2E；后续补预算/expiry、保存与完成未知结果、真正资源关闭/授权竞态矩阵，并由主控集成B routes/UI与Astra独审。fixture两P2的e1ac970独审复验仍待主控结果。
+
+## ordinary PG caller导入开关前置修复（2026-10-19）
+
+主控准确532/801（含0d）在全新b513/55423跑完整ordinary PG失败：65文件40fail/25pass，495项198pass/264fail/33skip，407.20s。首个实质栈是consumer-service调用cleanup时current imports.enabled=true，之后reset/prepare因保留图级联拒绝；末尾开关变false不抹除该首因。我的此前false实例单跑不能覆盖suite遗留true状态。主控已停库保留，不重置未知图。
+
+本笔仅修三个已提交物理fixture测试caller：prepare与任何negative cleanup前，通过正式configureImports(false)建立清理前置；consumer-service先正式切true并读currentConfig证实，再正式切false并证实，随后完整业务链路和cleanup通过。fixture本身仍要求实时false，不降低开关/guard/退出证明。定向真实PG1用例8.10s通过（本地同时含待提交expiry修复的工作源，不能称旧0d全套通过），格式/类型检查通过；root后续新实例重跑完整ordinary PG才可给整套结论。期限P2源修复另笔提交。
