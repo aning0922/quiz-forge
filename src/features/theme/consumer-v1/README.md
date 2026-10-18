@@ -88,3 +88,5 @@ resource.ts针对新消费者网络流用固定imageBytes上限及单一外层�
 待root闭包登记：browser根为host.tsx、access.tsx、renderer-client-v1.ts（实际传入的纯组件/PNG能力）；server根仍renderer-server-v1.ts。新依赖包含controller/pending/authority/client/request/resource/access-fragment和host.module.css，全部需纳入真实consumer实现closure；测试/fixture/browser harness不属于生产closure。后续预计只因独审整改修改这些runtime；Studio/HTTP薄路由在此closure之外，但若consumer handler投影能力修改则由root更新server闭包。
 
 本批实际完整format/lint/typecheck通过。全单测168文件1813项中1812通过、1失败：旧HTTP全局Promise.prototype.then探针得到[1,2,1]而严格期望[1,1,1]，与主控CI已发现的测试运行器污染一致；主控已独占该测试归因修复，本批不双写或放松生产限制。相关19项新网络/controller/resource/fragment测试均通过，整体全绿须集成主控探针修复后复验。没有运行build/DB/3100。
+
+主控54158e1的探针归因修复已按单文件接入为本支69a0ebe，共享阶段文档保持本支原文避免复制主控后续历史。修后完整单测168文件/1813项实际全部通过（18.48秒），上述1812/1是保留的首轮结果，不是当前剩余失败；生产HTTP字节未改。
