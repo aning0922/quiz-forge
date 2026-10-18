@@ -1,4 +1,5 @@
 import "server-only";
+import { assertNoConsumerReferences } from "../internal-play/retention";
 import { z } from "zod";
 import type { StorageLock } from "@/features/quizpack/import/storage-lock";
 import {
@@ -50,6 +51,7 @@ export async function assertNoRetainedInternalReferences(
   input: ReferenceRemovalScope,
 ): Promise<void> {
   const scope = removalScope.parse(input);
+  await assertNoConsumerReferences(lock, scope);
   await lock.check();
   const [row] = await lock.query(
     () => lock.connection<
@@ -93,6 +95,11 @@ export async function assertOnlyOwnedInternalReferences(
   }>,
 ): Promise<void> {
   const scope = removalScope.parse(input);
+  await assertNoConsumerReferences(
+    lock,
+    scope,
+    owned.versions.map((v) => v.id),
+  );
   const fail = () => new Error("INTERNAL_VERSION_REFERENCE_RETAINED");
   if (owned.reviews.length > 100 || owned.versions.length > 100) throw fail();
   const reviews = await Promise.all(

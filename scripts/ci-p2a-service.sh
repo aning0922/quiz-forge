@@ -9,7 +9,7 @@ if [[ $# -gt 1 ]]; then
 fi
 ci_test_suite=${1:-baseline}
 case "$ci_test_suite" in
-  baseline|validation|media-unknown) ;;
+  baseline|validation|media-unknown|namespace) ;;
   *) printf '%s\n' 'P2A_CI_SUITE_INVALID' >&2; exit 1 ;;
 esac
 
@@ -56,6 +56,7 @@ docker run --detach --cidfile "$ci_service_dir/container-id" \
   --mount "type=bind,source=$ci_service_dir/password,target=/run/secrets/pg-password,readonly" \
   --env POSTGRES_PASSWORD_FILE=/run/secrets/pg-password \
   --env POSTGRES_USER=postgres --env POSTGRES_DB=postgres \
+  --env 'POSTGRES_INITDB_ARGS=--encoding=UTF8 --locale=C' \
   --env POSTGRES_HOST_AUTH_METHOD=scram-sha-256 \
   --health-cmd 'pg_isready -U postgres -d postgres' \
   --health-interval 2s --health-timeout 3s --health-retries 30 \
@@ -105,4 +106,5 @@ case "$ci_test_suite" in
     ;;
   validation) pnpm test:db:service ;;
   media-unknown) pnpm test:db:media-unknown ;;
+  namespace) pnpm exec vitest run --config vitest.p4-namespace.config.ts ;;
 esac

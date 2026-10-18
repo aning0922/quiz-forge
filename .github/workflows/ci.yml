@@ -83,6 +83,9 @@ jobs:
       - name: Validation service with a separate fresh database
         shell: bash
         run: bash scripts/ci-p2a-service.sh validation
+      - name: Consumer namespace with a separate fresh database
+        shell: bash
+        run: bash scripts/ci-p2a-service.sh namespace
       - name: Media uncertainty with a separate fresh database
         shell: bash
         run: bash scripts/ci-p2a-service.sh media-unknown

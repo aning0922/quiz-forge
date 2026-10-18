@@ -22,3 +22,64 @@
 - HTTP/Cookie/实际 stream 预算、0018/guard/并发/保留图、consumer 实现闭包、四宽视觉、真实 PNG 和 P5 首款现场均尚未验收；不使用这些合同测试替代。
 
 实现 metadata b982bc2 两文件独审无 P1/P2：3 原测试加 2 独立测试通过；7类闭包/路径/未来协议反例及1098831B总量拒绝。不存在路径重算摘要仍只作为自洽metadata被接纳，符合明确边界，不产生available或真实文件证明。证据 metadata-probe-result.json。
+
+860b687 只读 gate 提取独审无 P1/P2：旧 13 与新增 3 测试、另 5 独立反例通过。11 类输入新旧结果/错误/override 读取顺序一致；旧基线仍 3 descriptors/3 available/51 sourceFiles/280 lockRecords。consumer 10 类摘要/错身份/重复/数量反例在源文件读取前拒绝；未登记的虚构路径 metadata 不读其 closure，精确选中后真实 ENOENT 拒绝；font file/coverage/license/bytes 独立检查有效。证据 gate-probe-result.json。真正 consumer catalog/compiled mapping/host/closure 仍另验，未接 build 入口。
+
+## 消费者纯显示与批准首款离线预检
+
+B b476f37（root d3150ea）实现六纯视图、独立样式、精确组件映射、server projection 和 Canvas PNG；该批独审无 P1/P2。主控实际 14 专项与完整 1783 单元、format/lint/typecheck 通过。B 独立 Chromium 合成验证 45 图全部实看；15 阻塞组合无编辑入口、减少动态效果及 PNG 资源 hash/字体/失效代次反例通过。root 实看其中 4 个原图。Astra 另跑 45 图矩阵及 14 原测试/2 独立反例，验证两引擎六见证、36 映射字段篡改、字体输入修改隔离与 Canvas 编码后失效；object URL 创建/撤销各一次、FontFace 数量恢复原值，临时服务实际退出。
+
+root 另核精确批准 ZIP/content/全部 9 路径 8 独立素材，实际固定引擎跑四个作者评分见证，经新 server projection 生成 12 题和四份选中 display。entry 14623B，四 display 为 5136/5194/5179/5226B；真实 Chromium156.0.8078.4 四宽 30 图的溢出/正文字号/交互目标检查通过，页面错误0，四 PNG 均1080×1920，临时 browser/server 已关闭。root 实看 6 页面原图及全部4PNG，文字与图像完整；其他24截图仅自动几何断言，未声称全部人工看完。保留两项P3：320暂歇操作按钮碎行、已含姓名/副标题的报告标题下重复同一文本，B在controller接入时做局部修正。
+
+这些实际首款图片和投影仍仅本地私有；Git 只收 [预检安全记录](qa/p4-first-product-display-preflight.json)。离线 harness 的已完成视图输入来自作者见证，显式标记无持久化，不能冒充最终用户报告、grant 授权、P4/P5 或商业发布验收。
+
+两项显示 P3 已由 6c63bd1（B 47c3242）修正，并经独审关闭：暂歇操作以 flex 换行保持目标宽度；只有完全相同的姓名/副标题才省略重复次标题，源正文不改。root 实际首款补拍四宽暂歇和 320 报告共五张，实看其中三张；Astra 核五文件完整性并逐张实看，浏览器/服务实际关闭。原 30 图和四 PNG 保留不覆盖，补验见 [安全记录](qa/p4-first-product-display-refinement.json)。
+
+## HTTP 基础整改已复验
+
+05647fe（B 3c2357d）的来源/Cookie/JSON/有限响应工具原7测试通过，但独审发现以下两项 P2；修复 3ac7d91（B 244833b）及 Cookie 消歧 d4dfb70（B b087118）已独立复验关闭：
+
+1. JSON read/yield 循环反复与同一个 pending interruption Promise race，快路径结束不移除旧 reaction。独立合成2字节正文加128/8192/32768空chunk，保留reaction为134/8450/33794，均远未到5秒；固定buffer和timer不足以保证等待状态常数。B须改单一外层race或可清理的有界机制，保留原deadline/取消/让出事件循环并补随chunk增长的反例。
+2. 私有固定headers之后展开extra，运行时宽对象可覆盖Cache-Control/Referrer-Policy/nosniff并增加CORS。独立实际响应已复现。B须只显式提取Set-Cookie或严格拒绝未知extra，不能依赖TypeScript窄类型。
+
+原反例保存在独审 ignored http-boundary-probe-result.json，不覆盖。相同输入复验最大 reaction 均为 1；宽 extra 不能覆盖私有缓存/Referrer-Policy/nosniff 或开启 CORS，只读取 own Set-Cookie 并验证 ASCII/4096 字节边界。原9测试加独立4测试全部通过，证据 http-boundary-fixed-result.json；仅合成内存 Request，无 DB/真实 token。后续 handler 的原 token 隔离、授权、单次 owner body 交接和完整业务仍另验。
+
+4229cc6（B a4c94d1）的 pending/authority 基础亦独审无 P1/P2：原5测试和真实 Chromium sessionStorage 补验通过。覆盖刷新保留原 binding/发送标志、克隆深冻结、伪造/跨 authority ticket 拒绝、revoke 后旧票据不复活、异步存储变化/失权不删 pending、敏感字段拒绝、存储异常及无 opener 新标签隔离。110 浏览器输入无 DB/评分执行依赖，服务和浏览器实际关闭。证据 pending-browser-probe-result.json；调用方仍须验证终态或显式动作后才可 remove，不将基础测试扩大为 host 通过。
+
+新浏览器网络 client 394908a（B 8e35863）采用总 deadline、实际字节预算、有限错误和原 binding 验证。主控发现原路径正则接受 Tab，WHATWG URL 规范化后可变成跨源地址；离线 URL 反例不发网络请求。e944363（B 21ab30c）拒绝原始控制/空白字符并核规范化 origin，同时 fetch 强制 same-origin mode。主控21项相关测试与 typecheck 通过，独审待完成。
+
+## 数据底座 namespace 整改已复验
+
+27a913d（A 50bb7ec）已集成六表/Drizzle/ACL/catalog guard；A 实际 fresh 新装1→18、app开库、7PG及1766单元通过，root完整typecheck通过。独审在其独立purpose=test实例另复现一项P2，当前不签底座通过：catalog仅收relkind r/p，未发现qf新增view及其ACL。添加指向operator的可更新view并给app视图列UPDATE后，原完整catalog SHA仍相同、app开库成功；app对底层credential_digest无直接UPDATE，却能经view修改一条合成记录。需覆盖或明确拒绝所有未允许qf relation kind/对象，并对旧17迁移前置使用相同完整范围。反例与失败现场单独保留，未操作首款39eb。
+
+0018原7PG只证明所列结构反例，不能替代直接claim/void/reportFK、旧业务无损升级、完整retain、owner/服务和最终端到端。A正继续这些实施与修复，独审实例只用于独立反例。
+
+修复 14ea22e（A c671408）已加入 qf namespace gate，在 runtime 校验及官方 migrate 的任何 DDL/ACL 重置之前拒绝未登记对象、规则、策略及 namespace 权限；不修改 0018 或旧 migration checksum。A 实际 fresh1→18、4 namespace/7 schema 共11 PG 与1766单元、format/lint/type/build通过；污染18和旧17拒绝且行/history/ACL零变化。仅删除测试自建 view 后旧17→18保持旧行。该提交初交时待独审，后续复验见下段。裸执行0018仍不是完整入口，必须使用官方runner。A后续普通PG回归发现旧16表枚举和自动修复CREATE权限的测试预期需适配，尚未宣称全量通过。Astra 独立 a536 测试库已实际停止并保留反例；root 首款39eb仍保持原样停库。
+
+14ea22e 的原 namespace P2 已独立复验关闭。Astra 自有新实例 fresh1→18 的11 PG通过，另独立探针在旧17和当前18重建同一个可更新view：app开库和官方migrate都拒绝，业务行/历史/目录/schema OID/schema及数据库ACL前后SHA一致。仅移除探针自建view后17→18成功，16旧表行和17历史不变；0018 SHA仍a723d409df2dc1225f4504ff14bc13b18824c93adac28b7f10058c3e586c060a。证据 namespace-fixed-probe-result.json。此处关闭原遗漏对象P2，不代表在线撤销既有连接、完整PG或业务owner/服务通过。
+
+## 本地与 CI 区域设置一致性
+
+0018 之后的远端 database job 曾在 bootstrap 失败（例如39138415716），不能记作已跑PG。root用固定同一Docker镜像新建两套独占隔离实例，仅改变initdb locale：镜像默认en_US.utf8实例在旧17停止、0018拒绝；明确UTF8/C实例1→18和app开库成功，最终catalog SHA与本地906ca374完全一致。两个容器均已核自身label并实际停止，失败/成功卷保留，未碰首款39eb。安全记录见 [CI locale 对照](qa/p4-ci-locale-probe.json)。
+
+CI脚本现在显式使用与本地管理器相同的 `--encoding=UTF8 --locale=C`。0018内嵌及runtime catalog排序具有locale前提，本轮不改任何既有SQL/checksum，也不对非C旧库强制升级或重写history；新CI实际结果仍需按准确head观察。消费者HTTP压力测试另修正全局Promise观测误归因：只计算reader调用栈附件，刻意加入8个无关reactions；旧生产负对照仍以134/8450/33794失败，新代码完整1804单元/166文件通过。
+
+## 实际 host 与事务约束的局部审查
+
+3b860f1（A64df464）的core/retain独审无P1/P2：原7core、真实旧17升级和旧16升级共9PG通过；另3独立PG实测claim先/void先两种Key锁顺序，第三个同app连接观察等待，首方提交后另一方23514且最终互斥。retain要求实际RR/maintenance锁及精确parent；插入fixture未记账但合法的Key后，cleanup首删前拒绝、旧图和五类新行SHA不变。误用owner观察app wait事件的首个独立探针失败只作为探针错误保留；纠正后的新实例全过且已正式stop。证据core-independent-probe-result.json。普通PG旧suite可留下审计行，fresh namespace探针因此独立到vitest.p4-namespace.config.ts；不删除其他suite数据凑空库，CI另建专属服务运行四项。
+
+a314372（B b9a145b）已集成实际consumer host/controller/resource/access，主控19项专项与typecheck通过。B真实Chromium临时合成HTTP完成四宽及恢复/失权/报告共21图、下载1080×1920 PNG，页面错误0；B逐图工程检查，root实看pending缺entry、完成确认、失权三个320原图，未见视觉阻断。此处仍为内存HTTP合成fixture，不证明真实数据库业务。独审发现合法25/30天Key的setTimeout整数溢出P2，正在修复；1/7/24天active与25/30天即时expired的真实浏览器对照见host-deadline-probe-result.json，不能将整个host记为通过。
+
+394908a/e944363的browser client原7测试加独立3adapters测试通过，独审无P1/P2。真实Chromium对38 URL变体零fetch拒绝；同源POST实际Sec-Fetch-Mode/Site正确，跨域302及外域base均零外域请求；真实停滞响应约15004ms超时并观察连接关闭。116浏览器输入无DB/评分运行依赖，浏览器/服务实际退出。证据client-adapters-probe-result.json和client-browser-probe-result.json。结论不延伸到host、handler或持久化授权。
+
+长Key计时器P2在e51ffbe（B2e554f8）独立复验关闭：原1/7/24/25/30天真实浏览器探针全部active，另800ms短到期实际active→expired且grant仍current、已完成且Key过期保持completed。原错误证据不覆盖。383cc7e（B2b204b0）已补到期pending提示并隐藏replay，保留resolve和原记录，P3等待定向独审。
+
+fca21ee（Ae08b78c）的SQL admission与早期factory observer独审无P1/P2：原5fault+独立2测试、真实PG父1项的4隔离driver模式通过；12次坏配置无client分配且随后真实phase恢复，app backend0。8个未settle opening取消后仍占满，late opening必须实际close确认才仅归还一格；无分配/关闭证明的同步factory rejection不会释放，随后100请求零新factory。证据sql-owner-independent-probe-result.json和sql-observer-preallocation-probe-result.json。A在固定e08生产源的普通完整PG为60文件485断言、无skip（285.10s），fresh namespace另4项通过。仅此P4入口每进程8pool/max5，不宣称全应用40连接，也不代替request/resource owner或三service。
+
+实际consumer登记已包含修复后host/controller、access、组件、transport、PNG与server投影；root新三项登记测试和相关旧/new gate共20项通过，真实Chromium127输入bundle无server/DB/评分运行依赖，正确身份绑定2项、身份/映射/字体16变体全部拒绝，pageErrors0，browser/server实际关闭。74源文件+3构建输入+268锁记录由build入口核验，旧3descriptor/51源文件/280锁记录仍通过。正式登记独审待完成，不把编译availability当P4/P5授权或服务完成。
+
+本登记集成点主控完整171文件1827单元、format/lint/typecheck与implementation:check通过；[安全验证记录](qa/p4-consumer-implementation-check.json)。没有执行本集成点生产build/native/E2E，下一步接真实服务和路由后验收。
+
+登记在任何实际play创建前随动态到期P3修复de30ef5（Baa52f2b）重算：当前entry193b48c92352d731c9c2e41de05316471a2c46f58d8e2f2596995ee531d974a1，implementation fd08554ea34f107440856644901da300950745b9d31eb0fc09c941ba51bf51ab；原9a4147b/a77 checkpoint留在Git历史和安全记录，但未用于业务。root现无consumer业务库，A尚未接登记，B无DB，39eb仍17停库。新相关3文件20项及类型/implementation门禁通过，真实浏览器同样127输入/16拒绝且无server运行依赖。当前证据见 [登记补验](qa/p4-consumer-implementation-current.json)；原1827全量只归属于9a checkpoint。
+
+独审提醒host实参可为完整entry/report对象，组合层必须投影renderer/mapping/font三字段再调用严格resolver；不能把窄函数直接当宽对象回调。B接真实app时补实际host+registry正例，当前静态浏览器probe仅验证resolver，不冒充已接通host。24305c7（B1139c06）新增有界HTTP适配与request-owner注入，原7单元通过，真实app/owner服务接线及独审继续。

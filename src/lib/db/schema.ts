@@ -10,6 +10,7 @@ import {
   index,
   integer,
   primaryKey,
+  foreignKey,
   unique,
   pgSchema,
   smallint,
@@ -64,6 +65,9 @@ export const auditAction = qf.enum("audit_action", [
   "draft_applied",
   "draft_baseline_recorded",
   "internal_version_sealed",
+  "internal_play_created",
+  "access_key_issued",
+  "access_key_voided",
 ]);
 export const auditOutcome = qf.enum("audit_outcome", ["success", "rejected"]);
 export const auditReason = qf.enum("audit_reason", [
@@ -479,3 +483,314 @@ export const productVersions = qf.table("product_version", {
   createdBy: uuid("created_by").notNull(),
   createdAt: time("created_at").notNull(),
 });
+
+// P4: exact SQL CHECK/trigger/ACL definitions are owned by immutable migration 0018.
+export const internalPlayVersions = qf.table(
+  "internal_play_version",
+  {
+    id: uuid("id").primaryKey(),
+    productId: varchar("product_id", { length: 80 }).notNull(),
+    slot: integer("slot").notNull(),
+    parentVersionId: uuid("parent_version_id").notNull(),
+    parentSnapshotSha256: char("parent_snapshot_sha256", {
+      length: 64,
+    }).notNull(),
+    operationKey: uuid("operation_key").notNull(),
+    bindingText: text("binding_text").notNull(),
+    bindingSha256: char("binding_sha256", { length: 64 }).notNull(),
+    snapshotText: text("snapshot_text").notNull(),
+    snapshotSha256: char("snapshot_sha256", { length: 64 }).notNull(),
+    createdBy: uuid("created_by").notNull(),
+    createdAt: time("created_at").notNull(),
+  },
+  (t) => [
+    unique("internal_play_capacity").on(t.productId, t.slot),
+    unique("internal_play_exact").on(t.id, t.productId, t.snapshotSha256),
+    unique("internal_play_operation").on(t.productId, t.operationKey),
+    foreignKey({
+      name: "internal_play_parent",
+      columns: [t.parentVersionId, t.productId, t.parentSnapshotSha256],
+      foreignColumns: [
+        productVersions.id,
+        productVersions.productId,
+        productVersions.snapshotSha256,
+      ],
+    })
+      .onUpdate("restrict")
+      .onDelete("restrict"),
+    unique("internal_play_snapshot").on(t.productId, t.snapshotSha256),
+    check(
+      "internal_play_text_exact",
+      sql.raw("((qf.consumer_play_valid(internal_play_version.*) IS TRUE))"),
+    ),
+    check(
+      "internal_play_version_binding_sha256_check",
+      sql.raw("((binding_sha256 ~ '^[a-f0-9]{64}$'::text))"),
+    ),
+    foreignKey({
+      name: "internal_play_version_created_by_fkey",
+      columns: [t.createdBy],
+      foreignColumns: [operators.id],
+    })
+      .onUpdate("restrict")
+      .onDelete("restrict"),
+    check(
+      "internal_play_version_slot_check",
+      sql.raw("(((slot >= 1) AND (slot <= 100)))"),
+    ),
+    check(
+      "internal_play_version_snapshot_sha256_check",
+      sql.raw("((snapshot_sha256 ~ '^[a-f0-9]{64}$'::text))"),
+    ),
+  ],
+);
+export const accessKeys = qf.table(
+  "access_key",
+  {
+    id: uuid("id").primaryKey(),
+    productId: varchar("product_id", { length: 80 }).notNull(),
+    playVersionId: uuid("play_version_id").notNull(),
+    playSnapshotSha256: char("play_snapshot_sha256", { length: 64 }).notNull(),
+    credentialDigest: char("credential_digest", { length: 64 }).notNull(),
+    issueOperationKey: uuid("issue_operation_key").notNull(),
+    issueBindingText: text("issue_binding_text").notNull(),
+    issueBindingSha256: char("issue_binding_sha256", { length: 64 }).notNull(),
+    validForSeconds: integer("valid_for_seconds").notNull(),
+    issuedBy: uuid("issued_by").notNull(),
+    issuedAt: time("issued_at").notNull(),
+    expiresAt: time("expires_at").notNull(),
+    revokedAt: time("revoked_at"),
+    voidOperationKey: uuid("void_operation_key"),
+    voidBindingText: text("void_binding_text"),
+    voidBindingSha256: char("void_binding_sha256", { length: 64 }),
+    voidedBy: uuid("voided_by"),
+  },
+  (t) => [
+    check(
+      "access_key_credential_digest_check",
+      sql.raw("((credential_digest ~ '^[a-f0-9]{64}$'::text))"),
+    ),
+    unique("access_key_credential_digest_key").on(t.credentialDigest),
+    unique("access_key_exact").on(
+      t.id,
+      t.productId,
+      t.playVersionId,
+      t.playSnapshotSha256,
+    ),
+    check(
+      "access_key_issue_binding_sha256_check",
+      sql.raw("((issue_binding_sha256 ~ '^[a-f0-9]{64}$'::text))"),
+    ),
+    unique("access_key_issue_operation").on(t.productId, t.issueOperationKey),
+    foreignKey({
+      name: "access_key_issued_by_fkey",
+      columns: [t.issuedBy],
+      foreignColumns: [operators.id],
+    })
+      .onUpdate("restrict")
+      .onDelete("restrict"),
+    foreignKey({
+      name: "access_key_play",
+      columns: [t.playVersionId, t.productId, t.playSnapshotSha256],
+      foreignColumns: [
+        internalPlayVersions.id,
+        internalPlayVersions.productId,
+        internalPlayVersions.snapshotSha256,
+      ],
+    })
+      .onUpdate("restrict")
+      .onDelete("restrict"),
+    check(
+      "access_key_text_exact",
+      sql.raw("((qf.consumer_key_valid(access_key.*) IS TRUE))"),
+    ),
+    check(
+      "access_key_valid_for_seconds_check",
+      sql.raw(
+        "(((valid_for_seconds >= 3600) AND (valid_for_seconds <= 2592000)))",
+      ),
+    ),
+    unique("access_key_void_operation").on(t.productId, t.voidOperationKey),
+    foreignKey({
+      name: "access_key_voided_by_fkey",
+      columns: [t.voidedBy],
+      foreignColumns: [operators.id],
+    })
+      .onUpdate("restrict")
+      .onDelete("restrict"),
+  ],
+);
+export const consumerSessions = qf.table(
+  "consumer_session",
+  {
+    id: uuid("id").primaryKey(),
+    keyId: uuid("key_id").notNull(),
+    productId: varchar("product_id", { length: 80 }).notNull(),
+    playVersionId: uuid("play_version_id").notNull(),
+    playSnapshotSha256: char("play_snapshot_sha256", { length: 64 }).notNull(),
+    createdAt: time("created_at").notNull(),
+    stateRevision: integer("state_revision").notNull(),
+    answersText: text("answers_text").notNull(),
+    consumerStateAnswersSha256: char("consumer_state_answers_sha256", {
+      length: 64,
+    }).notNull(),
+    progressText: text("progress_text").notNull(),
+    progressSha256: char("progress_sha256", { length: 64 }).notNull(),
+    lastBindingText: text("last_binding_text"),
+    lastBindingSha256: char("last_binding_sha256", { length: 64 }),
+    lastReceiptText: text("last_receipt_text"),
+    lastReceiptSha256: char("last_receipt_sha256", { length: 64 }),
+  },
+  (t) => [
+    unique("consumer_session_claim").on(t.keyId, t.id),
+    unique("consumer_session_final").on(
+      t.id,
+      t.keyId,
+      t.productId,
+      t.playVersionId,
+      t.playSnapshotSha256,
+      t.stateRevision,
+      t.consumerStateAnswersSha256,
+      t.progressSha256,
+    ),
+    foreignKey({
+      name: "consumer_session_key",
+      columns: [t.keyId, t.productId, t.playVersionId, t.playSnapshotSha256],
+      foreignColumns: [
+        accessKeys.id,
+        accessKeys.productId,
+        accessKeys.playVersionId,
+        accessKeys.playSnapshotSha256,
+      ],
+    })
+      .onUpdate("restrict")
+      .onDelete("restrict"),
+    unique("consumer_session_key_id_key").on(t.keyId),
+    check(
+      "consumer_session_state_revision_check",
+      sql.raw("(((state_revision >= 0) AND (state_revision <= 2147483647)))"),
+    ),
+    check(
+      "consumer_session_text_exact",
+      sql.raw("((qf.consumer_session_valid(consumer_session.*) IS TRUE))"),
+    ),
+  ],
+);
+export const consumerGrants = qf.table(
+  "consumer_grant",
+  {
+    keyId: uuid("key_id").notNull(),
+    slot: smallint("slot").notNull(),
+    sessionId: uuid("session_id").notNull(),
+    grantId: uuid("grant_id").notNull(),
+    credentialDigest: char("credential_digest", { length: 64 }).notNull(),
+    issuedAt: time("issued_at").notNull(),
+    expiresAt: time("expires_at").notNull(),
+    revokedAt: time("revoked_at"),
+  },
+  (t) => [
+    check(
+      "consumer_grant_credential_digest_check",
+      sql.raw("((credential_digest ~ '^[a-f0-9]{64}$'::text))"),
+    ),
+    unique("consumer_grant_credential_digest_key").on(t.credentialDigest),
+    unique("consumer_grant_grant_id_key").on(t.grantId),
+    primaryKey({ name: "consumer_grant_pkey", columns: [t.keyId, t.slot] }),
+    foreignKey({
+      name: "consumer_grant_session",
+      columns: [t.keyId, t.sessionId],
+      foreignColumns: [consumerSessions.keyId, consumerSessions.id],
+    })
+      .onUpdate("restrict")
+      .onDelete("restrict"),
+    check(
+      "consumer_grant_slot_check",
+      sql.raw("(((slot >= 1) AND (slot <= 16)))"),
+    ),
+    check(
+      "consumer_grant_times",
+      sql.raw(
+        "((((qf.consumer_moment(issued_at) IS NOT NULL) AND (qf.consumer_moment(expires_at) IS NOT NULL) AND (expires_at = (issued_at + '08:00:00'::interval)) AND ((revoked_at IS NULL) OR ((qf.consumer_moment(revoked_at) IS NOT NULL) AND (revoked_at >= issued_at)))) IS TRUE))",
+      ),
+    ),
+  ],
+);
+export const quizReports = qf.table(
+  "quiz_report",
+  {
+    id: uuid("id").primaryKey(),
+    keyId: uuid("key_id").notNull(),
+    sessionId: uuid("session_id").notNull(),
+    productId: varchar("product_id", { length: 80 }).notNull(),
+    playVersionId: uuid("play_version_id").notNull(),
+    playSnapshotSha256: char("play_snapshot_sha256", { length: 64 }).notNull(),
+    stateRevision: integer("state_revision").notNull(),
+    consumerStateAnswersSha256: char("consumer_state_answers_sha256", {
+      length: 64,
+    }).notNull(),
+    progressSha256: char("progress_sha256", { length: 64 }).notNull(),
+    completionKey: uuid("completion_key").notNull(),
+    bindingText: text("binding_text").notNull(),
+    bindingSha256: char("binding_sha256", { length: 64 }).notNull(),
+    snapshotText: text("snapshot_text").notNull(),
+    snapshotSha256: char("snapshot_sha256", { length: 64 }).notNull(),
+    displaySha256: char("display_sha256", { length: 64 }).notNull(),
+    completedAt: time("completed_at").notNull(),
+  },
+  (t) => [
+    unique("quiz_report_key_id_key").on(t.keyId),
+    unique("quiz_report_operation").on(t.sessionId, t.completionKey),
+    foreignKey({
+      name: "quiz_report_session_final",
+      columns: [
+        t.sessionId,
+        t.keyId,
+        t.productId,
+        t.playVersionId,
+        t.playSnapshotSha256,
+        t.stateRevision,
+        t.consumerStateAnswersSha256,
+        t.progressSha256,
+      ],
+      foreignColumns: [
+        consumerSessions.id,
+        consumerSessions.keyId,
+        consumerSessions.productId,
+        consumerSessions.playVersionId,
+        consumerSessions.playSnapshotSha256,
+        consumerSessions.stateRevision,
+        consumerSessions.consumerStateAnswersSha256,
+        consumerSessions.progressSha256,
+      ],
+    })
+      .onUpdate("restrict")
+      .onDelete("restrict"),
+    unique("quiz_report_session_id_key").on(t.sessionId),
+    check(
+      "quiz_report_text_exact",
+      sql.raw("((qf.consumer_report_valid(quiz_report.*) IS TRUE))"),
+    ),
+  ],
+);
+export const consumerExchangeBudgets = qf.table(
+  "consumer_exchange_budget",
+  {
+    singleton: boolean("singleton").primaryKey(),
+    windowIndex: bigint("window_index", { mode: "bigint" }).notNull(),
+    used: smallint("used").notNull(),
+  },
+  () => [
+    check(
+      "consumer_exchange_budget_singleton_check",
+      sql.raw("((singleton IS TRUE))"),
+    ),
+    check(
+      "consumer_exchange_budget_used_check",
+      sql.raw("(((used >= 0) AND (used <= 60)))"),
+    ),
+    check(
+      "consumer_exchange_budget_window_index_check",
+      sql.raw("((window_index >= 0))"),
+    ),
+  ],
+);

@@ -6,6 +6,8 @@ import * as schema from "./schema";
 import { validationAckFunctionHashes } from "./validation-ack-schema";
 import { verifyDraftSchema } from "./draft-schema";
 import { verifyInternalVersionSchema } from "./internal-version-schema";
+import { verifyConsumerSchema } from "./consumer-schema";
+import type { DatabaseLifecycleObserver } from "./lifecycle-observer";
 import {
   loadRuntimeConfig,
   normalizeRuntimeConfig,
@@ -96,6 +98,7 @@ export async function verifyDatabaseIdentity(
     await verifyValidationSchema(sql);
     await verifyDraftSchema(sql);
     await verifyInternalVersionSchema(sql);
+    await verifyConsumerSchema(sql);
   }
 }
 
@@ -361,7 +364,25 @@ export async function createDatabase(
   config: P2aRuntimeConfig,
   budget?: DatabaseBudget,
 ): Promise<P2aDatabase> {
+  return constructDatabase(config, budget);
+}
+
+/** Internal P4 ownership path; same guards and driver policy as the existing public factory. */
+export async function createObservedDatabase(
+  config: P2aRuntimeConfig,
+  budget: DatabaseBudget,
+  observer: DatabaseLifecycleObserver,
+): Promise<P2aDatabase> {
+  return constructDatabase(config, budget, observer);
+}
+
+async function constructDatabase(
+  config: P2aRuntimeConfig,
+  budget?: DatabaseBudget,
+  observer?: DatabaseLifecycleObserver,
+): Promise<P2aDatabase> {
   let sql: postgres.Sql | undefined;
+  let observedEnd: ((timeout: number) => Promise<void>) | undefined;
   let timer: ReturnType<typeof setTimeout> | undefined;
   let expire: (() => void) | undefined;
   let expired = false;
@@ -386,11 +407,16 @@ export async function createDatabase(
     let closing: Promise<void> | undefined;
     const end = (timeout: number) => {
       const pending = client.end({ timeout });
+      observer?.ending(pending);
       endings.push(pending);
       void pending.catch(() => {});
       return pending;
     };
+    observedEnd = end;
+    // Hand off the actual client before the first verification await, including failed opens.
+    observer?.allocated(client);
     const verification = verifyDatabaseIdentity(client, config);
+    observer?.verification(verification);
     if (budget) {
       const expiration = new Promise<never>((_, reject) => {
         expire = () => {
@@ -425,7 +451,11 @@ export async function createDatabase(
     };
   } catch (error) {
     dispose();
-    await sql?.end({ timeout: budget ? 0 : 1 }).catch(() => {});
+    if (!sql) observer?.neverAllocated();
+    // Keep the legacy finite error surface, but expose the ACTUAL catch-close result to its owner.
+    if (observer && observedEnd)
+      await observedEnd(budget ? 0 : 1).catch(() => {});
+    else await sql?.end({ timeout: budget ? 0 : 1 }).catch(() => {});
     if (expired || error instanceof StudioError)
       throw new StudioError("RECEIVE_TIMEOUT");
     throw new StudioUnavailableError();
