@@ -100,11 +100,13 @@ export function InternalPendingPanel({
   operation,
   session,
   onChanged,
+  writeBlocked = false,
 }: {
   productId: string;
   operation: InternalOperation;
   session: StudioSessionDto;
   onChanged: () => void;
+  writeBlocked?: boolean;
 }) {
   const label = operation === "review" ? "基线记录" : "内测封存",
     [epoch] = useState(() => new InternalOperationEpoch(productId)),
@@ -167,7 +169,14 @@ export function InternalPendingPanel({
     };
     // Remounted by stable Product/operation and a local-write nonce, never by detail GET success.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [epoch, productId, operation, session.csrfToken, session.operator.role]);
+  }, [
+    epoch,
+    productId,
+    operation,
+    session.csrfToken,
+    session.operator.role,
+    writeBlocked,
+  ]);
   function reject(error: unknown) {
     if (
       error instanceof StudioClientError &&
@@ -186,7 +195,8 @@ export function InternalPendingPanel({
       !entry ||
       !loaded ||
       busy ||
-      (replay && (denied || session.operator.role !== "operator"))
+      (replay &&
+        (denied || writeBlocked || session.operator.role !== "operator"))
     )
       return;
     const ticket = epoch.begin(entry.request),
@@ -278,15 +288,17 @@ export function InternalPendingPanel({
             >
               核实{label}原请求
             </button>
-            {session.operator.role === "operator" && !denied && (
-              <button
-                className={`${styles.button} ${styles.secondary}`}
-                disabled={busy || !loaded}
-                onClick={() => void perform(true)}
-              >
-                明确按原{label}请求重放
-              </button>
-            )}
+            {session.operator.role === "operator" &&
+              !denied &&
+              !writeBlocked && (
+                <button
+                  className={`${styles.button} ${styles.secondary}`}
+                  disabled={busy || !loaded}
+                  onClick={() => void perform(true)}
+                >
+                  明确按原{label}请求重放
+                </button>
+              )}
           </div>
         </>
       )}
@@ -328,11 +340,13 @@ export function InternalRecoveryPanels({
   session,
   nonce = 0,
   onChanged = () => {},
+  writeBlocked = false,
 }: {
   productId: string;
   session: StudioSessionDto;
   nonce?: number;
   onChanged?: () => void;
+  writeBlocked?: boolean;
 }) {
   return (
     <>
@@ -342,6 +356,7 @@ export function InternalRecoveryPanels({
         productId={productId}
         session={session}
         onChanged={onChanged}
+        writeBlocked={writeBlocked}
       />
       <InternalPendingPanel
         key={`seal/${productId}/${nonce}`}
@@ -349,6 +364,7 @@ export function InternalRecoveryPanels({
         productId={productId}
         session={session}
         onChanged={onChanged}
+        writeBlocked={writeBlocked}
       />
     </>
   );

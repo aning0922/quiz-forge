@@ -178,12 +178,14 @@ export function InternalReviewPage({
         session={session}
         nonce={nonce}
         onChanged={changed}
+        authorityInvalid={denied}
       />
       <InternalRecoveryPanels
         productId={scope.productId}
         session={session}
         nonce={nonce}
         onChanged={changed}
+        writeBlocked={denied}
       />
     </div>
   );

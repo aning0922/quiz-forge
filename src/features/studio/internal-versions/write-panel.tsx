@@ -32,6 +32,7 @@ export function InternalWritePanel({
   session,
   nonce,
   onChanged,
+  authorityInvalid = false,
 }: {
   productId: string;
   state?: InternalReviewState | undefined;
@@ -39,6 +40,7 @@ export function InternalWritePanel({
   session: StudioSessionDto;
   nonce: number;
   onChanged: () => void;
+  authorityInvalid?: boolean;
 }) {
   const [epoch] = useState(() => new InternalOperationEpoch(productId)),
     [confirmation, setConfirmation] = useState<InternalConfirmation>(),
@@ -55,7 +57,7 @@ export function InternalWritePanel({
       active.current = false;
       epoch.invalidate();
     };
-  }, [epoch, session.csrfToken, session.operator.role]);
+  }, [epoch, session.csrfToken, session.operator.role, authorityInvalid]);
   useEffect(() => {
     const timer = setTimeout(() => {
       try {
@@ -67,7 +69,8 @@ export function InternalWritePanel({
     }, 0);
     return () => clearTimeout(timer);
   }, [productId, nonce]);
-  const canWrite = session.operator.role === "operator" && !denied,
+  const canWrite =
+      session.operator.role === "operator" && !denied && !authorityInvalid,
     head = !!state && state.target.revision === state.observedCurrentRevision,
     valid =
       !!confirmation &&
