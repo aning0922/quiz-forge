@@ -89,3 +89,6 @@ jobs:
       - name: Media uncertainty with a separate fresh database
         shell: bash
         run: bash scripts/ci-p2a-service.sh media-unknown
+      - name: Consumer faults with a separate fresh database
+        shell: bash
+        run: bash scripts/ci-p2a-service.sh consumer-faults

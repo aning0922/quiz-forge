@@ -18,6 +18,7 @@ export default defineConfig({
     exclude: [
       "tests/db/p2b2b-service*.test.ts",
       "tests/db/p4-namespace.test.ts",
+      "tests/db/p4-consumer-faults.test.ts",
     ],
     fileParallelism: false,
     testTimeout: 20_000,
