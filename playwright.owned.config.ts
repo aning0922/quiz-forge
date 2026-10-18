@@ -15,6 +15,21 @@ export default defineConfig({
   projects: [
     ...(base.projects ?? []),
     {
+      name: "consumer-flow",
+      testMatch: "**/consumer-flow.spec.ts",
+      dependencies: ["studio-internal-versions"],
+      fullyParallel: false,
+      workers: 1,
+      retries: 0,
+      use: {
+        ...devices["Desktop Chrome"],
+        viewport: { width: 390, height: 844 },
+        trace: "off",
+        video: "off",
+        screenshot: "off",
+      },
+    },
+    {
       name: "studio-internal-versions",
       testMatch: "**/studio-internal-versions.spec.ts",
       dependencies: ["studio-draft-revisions"],

@@ -115,3 +115,15 @@ Studio基础9ebcf6e（B35cc40f）已独审无P1/P2：原8+独立3测试、真实
 Studio controller 1b60d96（B79a2b70）独审发现秘密锚点竞态P2，三个合成反例曾复现：最终fresh issuer等待中换锚、改raw=null，以及expose callback等待中移除锚，旧秘密仍可经旧局部变量披露。7f116f5（B19ffd76）加最后授权await之后同步规范全锚点比较，并让延迟callback与成功提示共用此current。独立3原反例、14漂移/存储异常分支和复制/导出正例全部通过，原13+独立7测试通过，P2在controller范围关闭。原反例保留，证据studio-secret-fix-19ffd76-review-result.json；实际UI仍须在副作用前使用该current，不把memory callback测试当OS剪贴板/实际发放。主控当前三文件17项与typecheck通过。
 
 fdef4e1（B711974c）父版本列表GET改用独立有界DTO读取，避免旧draft/Node运行图；10原测试与独立transport反例通过，浏览器目标打包无DB/Node/评分/旧draft response，独审无新增P1/P2。真实Studio页面接线仍继续。
+
+## 真实运营服务、页面与受管 E2E 接线
+
+cc84380（B4806ec1）运营 HTTP 适配原5+独立5测试通过：10 action 正确绑定，非法 source/token/CSRF/body/cursor 零 owner，写后 abort/关闭未知不转成功，读有限错误；held close 与实际 owner 保持原预算。8d99837（B4717ba1）8个真实 route 的10入口已独审，无新增P1/P2：实际 runtime 的三个factory引用严格等于实际 owner/play/Key实现，原Request透传，等待params前捕获startedAt，held params不续时钟。主控5项HTTP测试和typecheck通过，尚未做真实生产HTTP闭环。
+
+2a42f62（A8d9f931）真实play/Key与物理fixture的独审覆盖实际录入/封存/五图字体、缺图拒绝、原操作幂等、只读和新鲜权限、父修订变化、COMMIT后响应丢失再resolve，以及created=false共享五图不删。发现两个清理P2：manifest真实FD close失败只被保留但后继cleanup仍可进入；owner在pg_stat_activity看到foreign PID但type/state为NULL时活连接被忽略。独审均在首DELETE前拦截，图、文件、manifest保持。bc17e6b（Ae1ac970）增加跨模块加载的进程级unknown锁存及所有同库foreign PID检查；A真实故障子进程验证晚close/module reload不解锁、零DELETE尝试，父进程只在子实际退出后重验再清。准确修复仍待独立原反例回执，禁止先运行主控真实cleanup。
+
+bcd3587（B80126b7）Studio实际React/Chromium原图与原锚点/复制下载检查由Astra复核，新增后台hidden P2：pagehide不覆盖visibilitychange，held-auth期间hidden仍可复制。ddfe162（Bc75811e）现同步监听hidden撤销，visible不自动续接/重放，卸载移除监听；B16图与原代码负对照已通过。事件为浏览器内受控合成，Clipboard为stub；独立原反例仍待回执，不称操作系统剪贴板或真实发放验收。
+
+主控受管runner加入串行consumer-flow项目，依赖P3E，关闭trace/video/自动截图及retry，普通两项目排除该spec。四阶段runId一致；启动拒绝既有consumer manifest/observations；实际worker和Next退出后，要求completed、consumer-e2e、八场景完成记录和真实report，再先清P4后清P3E。full run缺P4直接拒绝；filtered只记filtered。Astra对五文件纯审无新增P1/P2：13原selector加21禁止控制参数负例，实际import配置核唯一项目和无环依赖，静态核退出与清理顺序。证据root-runner-pure-result.json；没有执行runner main、DB/3100/cleanup，实际验收待后续。
+
+准确2a42f6292af01e65c4bf423733339ae029d759f1的CI39149243131实际success，179文件1873单元、63文件493PG、fresh服务14/namespace4/媒体UNKNOWN3及生产build85traces/18021paths/0违规。见[运营服务CI检查点](qa/p4-ci-operator-checkpoint.json)。这是后三修复及实际route之前的历史head，不替代当前head、native或完整consumer-e2e。

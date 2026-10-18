@@ -148,3 +148,15 @@ cleanup先核真实不可序列化ServerExitProof、prepare writer消失、impor
 当前175文件/1851单元、生产build、implementation gate通过：旧3/3、51源/280锁；consumer1/1、77源/268锁；trace80/0违规。format/lint/typecheck随后最终复核。本笔没有实现消费者exchange/save/complete/resource public factory、没有跑完整普通PG/46driver或生产3100 E2E，也没有把本笔当P4技术出口或视觉通过。下一笔继续消费者服务和真实grant/保存/完成/资源测试。
 
 最终扩展生命周期在新自有test实例0f605f（55421）通过1项真实PG用例（3.32s业务测试）：包含正式父封存和实际源IO、play幂等/重复snapshot有限冲突/resolve/list、Key签发幂等/resolve/list/作废与读取、read-only能读不能写、形状合法但遗漏actual行/错play及Key actor/错摘要拒绝、伪造退出proof和额外audit行在删除前拒绝，最后真实退出proof下精确cleanup成功。相同用例先前两轮完整通过不叠加成多个测试数。最终format/lint/typecheck通过；175文件1851单元与生产build是本笔生产源的实际结果，未重跑全普通PG与生产E2E。未知开发现场继续停止保留。
+
+## 物理fixture清理两项P2整改（2026-10-19）
+
+8d9f931独审复现两项真实P2，先前运营生命周期通过不覆盖这两个反例：manifest实际FD close拒绝时只保留句柄，没有阻止同进程第二次cleanup继续；owner看得到foreign app PID但backend_type/state为NULL时，client backend筛选遗漏它。独审均在首DELETE前sentinel拦截，未实际删图，原现场保留。
+
+本笔仅整改fixture与真实故障测试，不混入下一笔consumer factory草稿。新增process-global Symbol owner，unknown后read/prepare/finish/save/cleanup和删除前检查全部fail closed；不提供reset/TTL/late-close解除接口，模块重载仍同一隔离状态。manifest读写open/写入/sync/close/rename不确定、私有图片FD/写入不确定、服务WRITE_OUTCOME_UNKNOWN、实际app close和维护lock close失败均设置sticky状态并留存资源。cleanup首次DELETE发起后任何失败也隔离owner/维护锁，避免未知DB提交或unlink后重跑。已知的首次删除前图不匹配仍只拒绝，允许测试显式移除自己已证明的extra行后重新核图；不把已知前置拒绝泛化成已删图。
+
+backend proof改查同数据库全部非当前admin/当前exclusive维护PID，不再按不可见的backend_type或state筛选。新增真实Node故障子进程：持有真实foreign app reserved连接，实际owner视角确认type/state均NULL；cleanup拒绝后该PID仍能SELECT且0次DELETE。随后真实manifest FileHandle close注入reject并保留FD，第一次失败；同进程反复cleanup/read/finish/prepare不新增open、不进入首DELETE；调用捕获的真实native close后及动态重载owner模块后仍拒绝。父测试在子进程前关闭自身全部DB连接，避免可见owner连接掩盖NULL类型漏洞；子进程实际退出后父进程再打开同一marker实例，核原manifest/五图不变和完整行SHA，最后独立真实退出proof下精确清理。
+
+初次故障用例及原运营生命周期合跑2项真实PG通过（77.12s，含原auth窗口协调等待），无skip；最新隔离父连接修订再定向复验中。format/lint/typecheck通过，下一笔消费者服务仍未行为验收或提交。本笔不是完整PG/E2E或独审关闭结论；须主控/Astra复验两P2。
+
+最新父连接完全关闭版quarantine用例再次通过（33.43s，含原auth预算真实等待）：foreign app为唯一额外backend、owner实际观测type/state NULL；子进程opens=1、deletes=0、late close与module reload仍blocked，实际退出后父进程整图/五图核验及cleanup通过。最终format/lint/typecheck均通过。独审是否关闭仍由Astra复验确认。
