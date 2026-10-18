@@ -1,46 +1,54 @@
-# P4 消费者显示接口准备
+# P4 消费者纯显示实现
 
-本步从 P3-E `c83788b` 接续共享 `5916516`、`6b5b4ef`。目前只交付纯显示 props/回调接口与下列文件计划；尚无 consumer 组件、服务器投影、PNG、持久化 host、业务 HTTP 或浏览器验收。不以接口准备声称保存、恢复或完成已实现。
-
-`interfaces.ts` 只依赖 React 类型与稳定的 display-v1。它不接受 raw Key、grant、Cookie、CSRF、operation key、数据库对象或完整评分源。显示组件不发送请求、不评分、不保存答案。调用方必须先验证 source/play/runtime 的精确绑定、获权内容及服务器事实；类型本身不授予这些权威。
+从 P3-E `c83788b` 接续共享 `5916516`、`6b5b4ef`，接口小提交为 `52cd7a4`。当前已实现独立六视图、精确 source/runtime 映射检查、server-only 显示投影及 consumer PNG；尚无持久化 host、业务 HTTP 或真实 Key/session/report 闭环。显示中的保存/完成状态由调用方提供，合成浏览器验证不证明真实持久化。
 
 ## Props 与回调边界
 
-- cover/question/resume 使用 `DisplayEntryBodyV1` 和显式保存呈现状态。`saved` 必须由已核验服务器 state/receipt 提供，没有默认成功状态。
-- 修改答案及游标的回调统一放在 enabled controls 中。saving、UNKNOWN、conflict、失权或不可用时，只提供 blocked controls，不附编辑回调。实际 host 仍须同步撤销授权代次并拒绝迟到动作；显示类型不能代替这一控制。
-- question/resume 的完成回调只打开完成检查，不直接评分、发送 complete 或将其显示为已完成。
-- result/report/poster 只使用已保存的 `ResultDisplaySnapshotV1`。没有返回可编辑答案、重新答题或重新完成的回调；页面切换仅在同一只读快照内导航。
-- 媒体由调用方提供已验证的内容、loading 或有限 unavailable 状态。缺图不替换成人物 Emoji、装饰图或其他结果，不接受任意网络地址或异常原文。
-- 海报导出状态显式区分 idle/exporting/ready/unavailable。导出或下载动作由 host 提供；生成失败不修改报告，也不触发重新评分。
+`interfaces.ts` 只依赖 React 类型与稳定 display-v1，不接受 raw Key、grant、Cookie、CSRF、operation key、数据库对象或完整评分源。调用方须先验证 source/play/runtime 的精确绑定、获权内容及服务器事实；类型不授予这些权威。
 
-## 实施文件清单与归属
+- cover/question/resume 使用 DisplayEntryBodyV1；saved 来自已核验服务器 state/receipt，无默认成功。保存提示不显示 stateRevision；时间按 zh-CN / Asia/Shanghai 呈现并标注北京时间。
+- saving、UNKNOWN、conflict、失权或不可用时只有 blocked controls，没有编辑或进度导航回调。实际 host 仍须同步撤销授权代次并拒绝迟到动作。
+- 完成回调只打开检查，不评分、发送 complete 或将其显示为已完成。
+- result/report/poster 只接保存后的 ResultDisplaySnapshotV1 和只读导航，没有重新答题、返回编辑或再次完成回调。
+- 媒体只接已验证内容、loading 或有限 unavailable。缺图不换成 Emoji、装饰图或其他结果，不接任意 URL/异常原文。
+- 海报显式区分 idle/exporting/ready/unavailable，导出失败不改报告或重新评分。
 
-本目录归 B，拟按以下精确入口实现；本步只创建 `interfaces.ts` 和本文。
+## 实施入口
 
-| 后续文件                | 职责                                                                            |
-| ----------------------- | ------------------------------------------------------------------------------- |
-| `components.tsx`        | 六个独立消费者视图，沿 folio/cabinet 配方与既有正文/素材；自身不持有业务权威    |
-| `consumer.module.css`   | 独立样式，沿既有排版与视觉，保留移动端/长文案/减少动态效果处理                  |
-| `registry.ts`           | 编译组件表及精确六角色检查；核对 root descriptor，不 fallback 旧 preview/latest |
-| `projection.ts`         | server-only 中性 entry 与可信评分后的显示投影；无浏览器评分入口                 |
-| `renderer-client-v1.ts` | 显式绑定六视图、consumer PNG 与固定字体 descriptor                              |
-| `renderer-server-v1.ts` | 显式绑定新服务器显示投影；不发明 source/评分/持久化权威                         |
-| `components.test.tsx`   | 实际组件的状态隔离、禁用回调、缺素材及长文案验证                                |
-| `projection.test.ts`    | 中性 allowlist、关系/预算/版本失败以及选中结果隔离                              |
-| `registry.test.ts`      | 精确 source/runtime 六映射，拒绝错误或缺失实现                                  |
+| 文件                  | 实际职责                                                              |
+| --------------------- | --------------------------------------------------------------------- |
+| components.tsx        | 沿 folio/cabinet 的六个纯消费者视图，各状态保留不同配方               |
+| consumer.module.css   | 独立样式、移动端/长文案/减少动态效果，不改旧 CSS                      |
+| registry.ts           | 编译表、固定六角色映射及逐字段核对，错误/缺失映射返回 null            |
+| projection.ts         | server-only 中性 entry 与可信评分显示投影，无浏览器评分入口           |
+| renderer-client-v1.ts | bindConsumerRendererClientV1(mapping, font)，绑定六组件及精确字体 PNG |
+| renderer-server-v1.ts | CONSUMER_SERVER_DISPLAY_V1，绑定 projectEntry/projectResult           |
+| components.test.ts    | 实际 SSR 组件的状态隔离、阻塞控件、只读入口及缺素材                   |
+| projection.test.ts    | 来源/hash/版本失败、预揭晓隔离、可信评分关系及冻结无别名              |
+| registry.test.ts      | 精确 source/runtime 映射，错误或缺失实现不能回退                      |
 
-PNG 文件计划见 `features/report/consumer-v1/README.md`。新实现方向为 `consumer-folio-cabinet@1.0.0`，source tuple 保留既有六 ID / `2.0.0` / props `1.0.0`；六个新 runtime ID 均以 `consumer-` 开头且互不相同。具体 tuple、entry SHA、能力登记及闭包摘要由 root 生成/冻结，本步不创建可用身份或修改共享 registry。
+新实现方向为 consumer-folio-cabinet@1.0.0。source 保留既有六 ID / 2.0.0 / props1.0.0；runtime 分别为 consumer-folio-cover、consumer-folio-question、consumer-folio-resume、consumer-cabinet-result、consumer-folio-report、consumer-folio-poster，均为1.0.0 / props1.0.0。entry SHA、能力登记及闭包摘要由 root 生成/冻结；本步没有注册可用消费者版本。
 
-## 复用与历史保持
+后续计划 host.tsx 导出 ConsumerExperienceV1，接收组合边界注入的已解析 runtime 能力。host/controller 不运行时导入 root catalog/descriptor，避免自身 entry SHA 循环；其真实依赖必须纳入最终 descriptor 闭包，不能只封纯视图。
 
-复用 display-v1 的严格正文与关系验证、`lib/browser/display-assets` 的有限字节/hash 读取及 `display-task` 的取消/期限。服务器结果可在可信服务先核固定来源并实际执行精确 engine 后调用原 `projectContentScoreForDisplay`，再转换到新 consumer 边界；历史报告读取只取已保存快照，不再评分或重建文案。
+## 投影与复用
 
-entry 投影必须独立显式挑选题目/选项、中性 cover/scene 及必要 frame，不调用带 Studio scope 的 `preparePreviewContent` 或创建假 `PreviewBinding`。不会将权重、候选报告、未揭晓人物资源或完整 source 带入浏览器。
+projectConsumerEntryV1(content, expectedCanonicalContentSha256) 从严格来源与精确内容 SHA 显式挑选题目/选项、中性 cover/scene 及 frame，不调用带 Studio scope 的 preparePreviewContent，也不造 PreviewBinding。权重、候选报告、未揭晓人物资源、完整 source 不进入浏览器。
 
-旧 `theme/preview`、`studio/preview`、`report/preview` 及已封存 descriptor 的字节保持不变。新组件不调用旧 `PREVIEW_COMPONENTS`；临时体验/刷新重置/待审操作提示由消费者自身真实状态文案替代，来源内容和布局 tuple 不改写。
+projectConsumerResultV1(content, actualContentScore, expectedCanonicalContentSha256) 在调用方实际执行固定 engine、核来源/授权后包装既有 projectContentScoreForDisplay。内部失败仅为 SOURCE_UNSUPPORTED / SOURCE_MISMATCH / DISPLAY_LIMIT_EXCEEDED，不是 HTTP 状态或永久未执行证明。结果 helper 保留原262144 B显示封套上限，外层再核 consumer 报告预算，不扩大旧闭包。历史报告读取只取已保存快照，不重评分、重建文案或调用 AI。
 
-共享业务 Schema、服务 ports、HTTP/controller、Key/session/report 接入等 root/A 合同冻结及本接口审查后再推进。真实 DB、3100 生产 E2E、最终截图/PNG 与持久化验收由总控安排。本步不新增依赖、素材、DB、路由或业务按钮。
+复用稳定 display-v1、lib/browser/display-assets 的有限字节/hash 读取、display-task 的取消/期限；PNG 复用既有字体验证及纯换行。旧 theme/preview、studio/preview、report/preview 和已封存 descriptor 字节不变，新视图不调用 PREVIEW_COMPONENTS。未新增依赖、素材、DB 或 app 路由。
 
-## 本步验证
+## 验证与限制
 
-2026-10-18：四个新增文件的 Prettier 检查、两个 TypeScript 接口文件的 ESLint、完整 `pnpm typecheck` 通过；接入的共享 state/identities 两文件共 15 项测试通过。本步没有组件实现，因此未新增镜像单测，也未运行 build、DB、服务、native 或 3100 E2E，不据此声明视觉或持久化已通过。
+接口步 Prettier、ESLint、完整 typecheck、共享 state/identities15项通过。新增五个测试文件共14项涵盖投影/组件/映射/PNG；SSR和mock canvas不冒称浏览器验收。
+
+实际浏览器入口：TSX_TSCONFIG_PATH=./tsconfig.json node --conditions=react-server --import tsx tests/browser/consumer-display.ts。它用实际组件 bundle、既有合成测试像素及固定真实字体，起独占临时 loopback 静态服务后关闭，不接业务HTTP/DB/native/3100。工具bundler仅从现有tsx依赖解析，无新依赖/全局浏览器设置。
+
+Chromium156.0.8078.4实际通过：六状态×四宽24图；320长文案/缺素材/loading六状态18图；320保存态3图，共45张完整页面。宽320/375/390/430、视口高900；断言无横向溢出、正文≥16px、按钮≥44px、15阻塞组合零可编辑控件、六状态减少动态效果无动画、实际选择回调。真实Canvas PNG1080×1920；错误资源hash/缺字体/失效代次均失败，页面零异常。
+
+45/45图及PNG已逐段原像素复核，无P1/P2；一项非阻断P3是320暂歇页三个并排操作的标签分多行，文字完整且目标尺寸合格。证据在本worktree忽略目录 .cache/p4-consumer-display/1792332467748/ 的 result.json、visual-review.json与原图。合成噪点不代表正式立绘质量，合成保存/完成输入不代表实际报告。首款同内容/视觉内测基线已批准，后续实际P5仍须验证。
+
+业务HTTP/controller沿root/A冻结合同继续，当前尚未接入。真实DB、3100生产E2E、生产build及首款现场由总控安排；本步不能记作完整P4验收或对外发布批准。
+
+本工作树本次全局检查实际通过：pnpm format:check、pnpm lint、pnpm typecheck、pnpm test（152文件/1739项，20.02秒）。生产build/DB/3100 E2E按总控独占安排未运行，不能将本结果视为全阶段出口。
