@@ -112,3 +112,13 @@ fixture 中一次检查发现存储空目录路径遗漏 `uploads`，在提交�
 真实PG5项通过：实际play/parent/issue读取、同事务product/Key/session见证和克隆/逃逸拒绝、真实答案→报告行的完整JS/hash重验及有界元数据、ConsumerError/primitive失败后的已确认rollback，以及RR内仍可见active但另一事务已disable时返回前的新鲜鉴权拒绝。fixture完成首次删除前精确整图proof后成功清理。测试使用DB-only合成来源，不是资源IO或P4物理fixture。grant轮转、新仓储写函数与三类public service仍需后续实际用例覆盖。
 
 本笔173文件/1844单元、format/lint/typecheck及production build通过，implementation门禁与trace无违规；5PG为定向结果，未重跑完整普通PG/E2E。Key service草稿未混入本笔交付，后续另交业务验证。
+
+## P4 独立 test/ci 合成基线（2026-10-19）
+
+经主控明确协调文件所有权，新增独立Product `consumer-flow-fixture`、固定测试输入和 `synthetic-consumer-flow-v1.json` 静态baseline。仅allowedInstancePurposes test/ci；approval仍synthetic-test、sourceEvidence仍synthetic-definition，不是作者批准、商用授权、真实媒体验证或首款39eb。旧synthetic/historical descriptor、原三hash与输入文件无diff，原两个entries顺序不变，只追加一项登记；baseline registry不在已封存renderer闭包。
+
+测试派生helper只读旧合成输入，递归改独立Product引用并重算全部declaration/asset-set/content/manifest与纯评分逻辑。五张48×48合成PNG逐字节沿用，两独立Node派生的文件与descriptor摘要全部相等后才写新目录，不覆盖既有目录。新规范content SHA为 `d2a2ccf9be34c2485f71080e73337e43a159132650f2d9f36e71e49bdc33fae6`，asset-set为 `19f6cfe15c3eb4364a8f64a1b1f9f13ec5ddba6f0549bee11f3c8175f30e39d3`，manifest为 `2d196b5fb1a36cb267e73ba28b8d37e167cd7c3d847d0d3c93c32c138a24485a`。canonical JSON保持无换行，`.prettierignore`仅追加这4个精确输入。
+
+新增3项与原5项baseline单元共8通过：实际静态bytes与独立派生相等、所有图片原字节、全引用属于新Product、三hash/Product篡改与demo拒绝、静态entry/hash及synthetic资格。implementation:check仍旧3/3、51源/280锁，consumer1/1、77源/268锁，均通过。本笔不打开DB、不创建parent/play/Key或运行任何native媒体验证；P4专属prepare/finish/清理和实际资产服务随后接此固定基线。
+
+本笔174文件/1847单元、format/lint/typecheck和production build通过，trace80/0违规；未运行PG/E2E来替代合成登记审查。

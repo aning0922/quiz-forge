@@ -17,6 +17,7 @@ import {
 } from "./identity-contracts";
 import historical from "./baselines/historical-cabinet-2026-10-18.json";
 import synthetic from "./baselines/synthetic-internal-version-v1.json";
+import consumerSynthetic from "./baselines/synthetic-consumer-flow-v1.json";
 const id = assessmentIdSchema.refine((v) => !/[\r\n]/.test(v)),
   version = assessmentVersionSchema.refine((v) => !/[\r\n]/.test(v)),
   sha = sha256Schema.length(64);
@@ -203,6 +204,7 @@ function register(value: unknown): TrustedBaseline {
 const entries: readonly TrustedBaseline[] = Object.freeze([
   register(historical),
   register(synthetic),
+  register(consumerSynthetic),
 ]);
 const same = (a: BaselineIdentity, b: BaselineIdentity) =>
   a.kind === b.kind &&
