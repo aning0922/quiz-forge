@@ -23,6 +23,8 @@
 
 新 consumer-folio-cabinet@1.0.0 descriptor 直接包含六个受控映射：source layout tuple（现 id、version 2.0.0、props 1.0.0）→精确 runtime component tuple。旧 content/parent/sourceComponents 不变；PlaySnapshot 分别记录 source/runtime/mapping 身份，并与 descriptor 逐字段一致。来源 DisplayEntryBodyV1/ResultDisplaySnapshotV1 的 layout 仍描述来源配方，新 host 严格映射到自己的真实组件，不索引旧 PREVIEW_COMPONENTS 冒充消费者实现。
 
+`product/internal-play/implementation-schema.ts` 已定义独立 consumer descriptor metadata：六映射/协议、真实字体、browser/server 入口、源码/构建输入/依赖锁事实、闭包 SHA 和 descriptor SHA。它只验证供给事实及三个嵌套摘要一致，不注册可执行能力；当前尚未生成实际 consumer descriptor、加入可用 catalog 或完成 build gate。真实 controller/host、六视图、PNG 与服务器投影完成后再计算完整闭包并登记；测试中的合成 metadata 不代表可用实现。
+
 旧预览硬编码的临时体验/刷新重置文案不能照用。新身份覆盖真实 controller/views/PNG、服务器投影和复用的稳定闭包；不改旧 renderer 字节，不按商品 ID 硬编码，不动态导入包代码/HTML/远程模块，不 fallback latest。基线题目、四报告、八图及原 hash 保持。
 
 ## 3. 计划中的六实体与最后防线
