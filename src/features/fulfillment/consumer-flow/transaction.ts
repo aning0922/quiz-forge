@@ -13,7 +13,7 @@ import {
   isStudioConnectionFailure,
   type StudioWriteCredentials,
 } from "@/lib/auth/write";
-import { digestToken } from "@/lib/security/p2a-tokens";
+import { digestToken, verifyCsrf } from "@/lib/security/p2a-tokens";
 import { StudioError } from "@/lib/http-security/errors";
 import { ConsumerError } from "@/lib/consumer-contract/v1/errors";
 import type { ConsumerRequestOwner } from "./request-owner";
@@ -34,6 +34,28 @@ export function parseConsumer<T>(schema: z.ZodType<T>, input: unknown): T {
   const result = schema.safeParse(input);
   if (!result.success) throw new ConsumerError("INVALID_REQUEST");
   return result.data;
+}
+/** Cheap check before admitting filesystem work; final transaction independently reauthenticates. */
+export function assertOperatorWriteCredentials(
+  credentials: StudioWriteCredentials,
+): void {
+  if (
+    !credentials ||
+    !credentials.sessionToken ||
+    !digestToken(credentials.sessionToken, "session")
+  )
+    throw new ConsumerError("OPERATOR_REQUIRED");
+  if (
+    !credentials.csrfToken ||
+    !verifyCsrf(credentials.sessionToken, "session", credentials.csrfToken)
+  )
+    throw new ConsumerError("CSRF_REJECTED");
+  if (
+    !/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/.test(
+      credentials.requestId,
+    )
+  )
+    throw new ConsumerError("INVALID_REQUEST");
 }
 export function consumerServiceError(error: unknown): ConsumerError {
   if (error instanceof ConsumerError) return error;

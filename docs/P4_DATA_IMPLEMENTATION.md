@@ -132,3 +132,19 @@ fixture 中一次检查发现存储空目录路径遗漏 `uploads`，在提交�
 play/Key/state/report来源是已核验HTTP事实，彼此ID/hash/终态必须一致；每个current grant都须来自bootstrap和对应HttpOnly cookie的私下digest，禁止收养Product扫描结果，不保存raw cookie/Key/CSRF。未知图、错run/actor/关联、重复行和伪造serverExited字段拒绝。cleanup仍须真实ServerExitProof与首次删除前完整图/文件/跨引用证明，按P4先于共享blob的P3-E顺序。合同没有签发数据库、FD或server退出能力。
 
 4项合同单元通过，覆盖准备态/两模式、full模式不完整拒绝、raw/扫描来源/跨Product/未绑定grant拒绝、错run/重复row/actor/未知authority字段拒绝，以及8类完成摘要缺项/重复/未知/skip/fail/retry/repeat反例。lint/typecheck通过；没有运行fixture实现/PG或E2E来冒称此合同已交付完整流程。
+
+## 运营服务与P4专属物理fixture（2026-10-19）
+
+新增真实 `createInternalPlayService(owner)` 与 `createAccessKeyService(owner)`，使用已审request owner、同事务ports和既有运营授权。新play要求active Product、当前head的固定sealed parent、精确consumer/engine/font/mapping与实际私有图片/字体读取；IO不持领域写锁，最终事务重新检查来源、head和授权。原operation成功在archive/head/新依赖判断前返回。Key签发/作废只走SQL；同Key锁与原issue/void绑定控制幂等，读取/列表在RR一致观察后另做新鲜运营授权。没有持久化raw Key或把列表当原操作未发生证明。
+
+固定SQL来源端口只读父版本绑定的import/validation/candidate/三hash，重新核完整固定证据和content.v2。执行适配只解析登记过的精确版本，真实读封存字体/图片并等待实际FD关闭；未知关闭留在现有owner隔离规则。旧0018、旧renderer/engine与已封存consumer闭包未改。
+
+物理fixture实现 `prepare/read/finish/cleanup` 与受限prepare/finish CLI。prepare为独立 `consumer-flow-fixture` 建r1/head，正式调用recordBaseline/sealInternalVersion并实际读五张私有PNG与字体；资格仍synthetic/no-native-validation，没有复用首款39eb或旧P3-E r2 head。0600 manifest只存合成凭证、已知业务观察与固定18类表的完整PostgreSQL行文本SHA；prepare保存来源初始事实。finish按已观察的精确IDs重读领域ports，核actor/parent/receipt/state/report及crypto，拒绝遗漏或额外consumer行、错actor/hash和外部引用，不从Product扫描收养未知授权。schema parse只是形状检查。
+
+cleanup先核真实不可序列化ServerExitProof、prepare writer消失、imports关闭、实际app backend为0、exclusive storage lock、完整图SHA/外部引用和真实文件，再首次DELETE/unlink；created=false文件不删除。此轮生命周期退出用例运行实际owned Node子进程并等待其真实close，不冒称已跑生产Next E2E。正式runner仍由root接真实生产server退出，P4必须先于共享五图的P3-E清理。operator-services只会finished，completed保持false；完整consumer-e2e仍要求8类真实通过摘要与至少一份报告。
+
+开发验证已发现并修正：fixture来源端口误传额外字段被strict拒绝；完整manifest超过旧readPrivateJson 16KiB上限，改为本fixture独立2MiB有界/O_NOFOLLOW/owner+inode+长度与读后稳定性核验；两次新增用例分别错误假定相同snapshot允许第二play、void resolution叫voided，实际唯一约束/合同正确拒绝或返回applied，测试已按冻结合同修正。相关已产生图的自有55421实例9af2、6c85、3730、50d9均停止保留，不从失败图重置凑绿；一次原完整生命周期与一次actor/hash/精确集合增强生命周期已完整通过，最终扩展用例复验结果随后记录。
+
+当前175文件/1851单元、生产build、implementation gate通过：旧3/3、51源/280锁；consumer1/1、77源/268锁；trace80/0违规。format/lint/typecheck随后最终复核。本笔没有实现消费者exchange/save/complete/resource public factory、没有跑完整普通PG/46driver或生产3100 E2E，也没有把本笔当P4技术出口或视觉通过。下一笔继续消费者服务和真实grant/保存/完成/资源测试。
+
+最终扩展生命周期在新自有test实例0f605f（55421）通过1项真实PG用例（3.32s业务测试）：包含正式父封存和实际源IO、play幂等/重复snapshot有限冲突/resolve/list、Key签发幂等/resolve/list/作废与读取、read-only能读不能写、形状合法但遗漏actual行/错play及Key actor/错摘要拒绝、伪造退出proof和额外audit行在删除前拒绝，最后真实退出proof下精确cleanup成功。相同用例先前两轮完整通过不叠加成多个测试数。最终format/lint/typecheck通过；175文件1851单元与生产build是本笔生产源的实际结果，未重跑全普通PG与生产E2E。未知开发现场继续停止保留。

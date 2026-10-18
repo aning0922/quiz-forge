@@ -15,6 +15,8 @@ import { CONSUMER_LIMITS_V1 as L } from "@/lib/consumer-contract/v1/limits";
 import { iso, nullableIso, productRow } from "../workspace/repository";
 import type { DatabaseTime } from "@/lib/auth/internal";
 import { versionById, versionDetail } from "../internal-versions/repository";
+import { draftRoot, revisionMetadata } from "../drafts/repository";
+import type { InternalVersionDetail } from "../internal-versions/contracts";
 import {
   internalPlayBindingText,
   internalPlayBindingSha256,
@@ -70,6 +72,38 @@ export async function readConsumerParent(
   if (parent.version.snapshotSha256 !== ref.snapshotSha256)
     throw new ConsumerError("SOURCE_OBSOLETE");
   return parent;
+}
+export async function assertConsumerParentSource(
+  tx: ConsumerTx,
+  parent: InternalVersionDetail,
+  requireHead: boolean,
+): Promise<void> {
+  assertConsumerTx(tx);
+  const p = parent.snapshot,
+    t = p.target;
+  const row = await revisionMetadata(
+    tx.sql,
+    p.productId,
+    t.draftId,
+    t.revision,
+  );
+  if (
+    !row ||
+    row.canonical_content_sha256 !== t.canonicalContentSha256 ||
+    row.asset_set_sha256 !== t.assetSetSha256 ||
+    row.canonical_manifest_sha256 !== t.canonicalManifestSha256 ||
+    row.source_import_id !== p.validation.sourceImportId ||
+    row.source_validation_id !== p.validation.sourceValidationId ||
+    row.source_validation_state_revision !==
+      p.validation.sourceValidationStateRevision ||
+    row.candidate_sha256 !== p.validation.candidateSha256
+  )
+    throw new ConsumerError("DEPENDENCY_UNAVAILABLE");
+  if (requireHead) {
+    const root = await draftRoot(tx.sql, p.productId);
+    if (!root || root.id !== t.draftId || root.current_revision !== t.revision)
+      throw new ConsumerError("SOURCE_OBSOLETE");
+  }
 }
 async function detail(row: PlayRow): Promise<InternalPlayDetail> {
   if (

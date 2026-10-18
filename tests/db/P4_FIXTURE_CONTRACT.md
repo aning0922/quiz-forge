@@ -1,8 +1,8 @@
 # P4 专属 fixture 接口
 
-状态：schema/接线合同；prepare/finish/cleanup 实现与实际验证继续，不能把此文件当已具备入口。类型在 `p4-consumer-fixture-contract.ts`，实现路径固定为 `p4-consumer-fixture.ts`。
+状态：prepare/read/finish/cleanup 与受限CLI已实现；专属物理来源和operator-services生命周期已实际验证，完整consumer-e2e仍待消费者服务与生产浏览器用例。类型在 `p4-consumer-fixture-contract.ts`，实现路径固定为 `p4-consumer-fixture.ts`。运营子测的finished不代表正式completed。
 
-实现将导出 `prepareConsumerFixture(db, runId)`、`readConsumerFixture(db, runId)`、`finishConsumerFixture(db, runId, observations)`、`cleanupConsumerFixture(db, runId, ServerExitProof)`。prepare只建独立 `consumer-flow-fixture` 的r1/head、真实审批/封存父版本和五个私有合成PNG文件，不预造play/Key/session/report成功。operator/readOnly凭证仅放当前instance的0600私有fixture文件。
+实现导出 `prepareConsumerFixture(db, runId)`、`readConsumerFixture(db, runId)`、`finishConsumerFixture(db, runId, observations)`、`cleanupConsumerFixture(db, runId, ServerExitProof)`。prepare只建独立 `consumer-flow-fixture` 的r1/head，通过正式recordBaseline/sealInternalVersion服务落账父版本，真实读取字体和五个私有合成PNG文件，不预造play/Key/session/report成功。operator/readOnly凭证仅放当前instance的0600私有fixture文件。合成媒体资格保持no-native-validation。
 
 Playwright进程只import合同，按P3-E模式以 `node --conditions=react-server --import tsx tests/db/p4-consumer-fixture.ts prepare|finish <runId>` 调CLI。CLI实现只接受这两个动作和UUID；不收路径、凭证或正文参数，不在stdout打印结果正文。finish从同一instance固定0600文件 `consumer-p4-e2e-observations.json` 读观察；最终manifest固定为 `consumer-p4-e2e-fixture.json`。两个文件均≤2MiB，验证mode/owner/非symlink/instance/runId，失败保留现场。root runner可在实际server退出后直接调用read/cleanup，并先清P4，再P3-E及更早fixture。
 
