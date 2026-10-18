@@ -24,3 +24,13 @@ Astra 在核心批后用真实应用角色复现 P2：合法的 append applicati
 整改没有修改已应用收据：92e374ca339b3bb3a89488335d29a1b7已停止保留，另建fresh purpose=test 2e8cc98d8096bb81760a9634cdfe9b06（55421）实际迁移新字节。前述空推进测试曾错误期待23514，实际正确由FK返回23503；只修正测试期待，未放宽业务行为。
 
 整改后四文件48项真实PG全部通过（14.28秒），包含app-only反例、正常first/append、99→100及owner完整闭环删除；类型和定向lint通过。浏览器夹具仍独立开发，不混入本次DDL整改提交。
+
+## 原始 JSON 文本参数修正
+
+独立浏览器夹具首次 prepare 在五来源/r1建立后、prepared=false时失败；现场2e8cc98d8096bb81760a9634cdfe9b06已停止保留，没有借未完成标记清理。定位到全新owner RR连接的资源集合参数：直接将canonical原文本绑定为jsonb可被固定驱动再次按JSON string序列化，导致recordset为空。改为参数先::text再::jsonb，不改变canonical/hash/引用/授权核验。新增fresh owner连接完整读取PG回归；15项P3D服务PG通过。反事实临时恢复旧写法，定向fresh-owner测试确实DRAFT_SOURCE_INVALID失败（其余14项为有意名称过滤），finally恢复正确字节。
+
+## 独立浏览器夹具
+
+独立文件 `draft-revisions-p3d-e2e-fixture.json`，原子私有写、32KiB上限；五个来源initial/second/third/spare/alias-initial、独立Product/actors/真实合成像素及r1原key，prepared时严格校身份与hash。prepare只应用r1；浏览器依次second、third追加；finish仅在精确r1/r2/r3与三成功应用、一修订一服务审计及未用来源完整时设置completed，不删除。cleanup只供根runner直接调用，先验WeakMap真实ServerExitProof、writer退出、imports禁用/维护锁、其他连接/预留/native控制、命名空间/外部引用及私有资源原字节和inode，再删除精确自有闭环与文件。
+
+fresh7b1c36cfd40f3999c7fad07596751675/55421实际通过独立生命周期测试：CLI prepare、未完整图finish拒绝、伪退出证明拒绝、两次实际服务追加、CLI finish后业务仍存在、实际受控Node子进程close/PGID缺席/端口释放后cleanup成功、私有文件及Product删除。此为真实owner协议和DB/FS证据，不是Next/Playwright生产链路完成；主控仍需用其实际Next退出证明跑P3D→P3C→B3→B2。类型与定向lint通过。
