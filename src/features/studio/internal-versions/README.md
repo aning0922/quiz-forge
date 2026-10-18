@@ -33,3 +33,5 @@ E2E已按A的cdc608d合同与cd5901e实际持久fixture CLI接线，未运行真
 finish改用固定六个case的InternalSuiteCompletion：每个必须实际status=passed且expectedStatus=passed、初次执行、无重复/未知case，6/6才调用CLI finish。expected fail、skip、筛选子集、retry不会标completed；不以PW退出码代替完成证明。pnpm exec tsx tests/browser/p3e-completion-check.ts的11项纯检查、python3 scripts/check-p3e-completion.py的7组真实PW生命周期检查均通过。后者只写“允许finish”的隔离决策文件，不调用实际fixture；只有完整六pass可产生该文件。重复CLI仍由受管runner既有白名单拒绝，不能依赖PW worker中已归一化的repeatEach配置。
 
 工作区创建说明指向已实现的原包接收、验证归档、草稿与内测版本入口，不再标为尚未接入。该生产文字的构建与视觉证据应使用包含此改动的后续构建；之前封存的artifact不覆盖此文字修正。
+
+内测版本详情标题简为“内测版本快照”，收短窄屏标题；固定、已封存及不授予发布资格的事实仍由现有详情展示。需在后续生产构建的四宽截图复核，旧390px截图仅证明原长标题出现孤字，不作为修正后的视觉通过。

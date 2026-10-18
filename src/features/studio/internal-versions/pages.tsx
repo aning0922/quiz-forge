@@ -306,7 +306,7 @@ function InternalVersionDetailContent({
       <WorkspaceNav />
       <InternalNav productId={productId} />
       <section className={styles.panel}>
-        <h1>固定内测版本 · 只读快照</h1>
+        <h1>内测版本快照</h1>
         <p>{INTERNAL_VERSION_DISCLOSURE}</p>
         <button
           className={styles.button}
