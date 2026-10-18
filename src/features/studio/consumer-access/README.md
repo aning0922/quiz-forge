@@ -15,3 +15,7 @@ controller.ts已建立整页代次与单一原请求所有权，公开snapshot�
 控制器6项合成测试通过：零API raw/公开snapshot raw、复制前新鲜身份、UNKNOWN原样保留/重放、不同issuer/只读降权、坏本地保存零POST、失权迟到成功、原文丢失仅可resolve。所有网络client/pending/controller目前共14项通过，typecheck与定向lint通过。StudioUI/真实HTTP业务factory与生产闭环仍待接入；这些不是实际发放或权限事务验收。
 
 父版本读取隔离：新readStudioParentVersionsV1直接读取同一冻结internalVersionListResponse DTO并核Product，使用本轮有界JSON transport；不再由controller默认导入旧draft response链中的Node模块。旧接口401/403按当前授权丢失处理且回调一次，旧协议/代码未改。新增用例后client4项+controller6项通过；独立浏览器打包已不再出现node:util依赖。UI行为与截图仍在验证，尚不记为浏览器通过。
+
+secret披露P2整改：最后一次新鲜issuer await后，立刻用同步完整规范记录比较核原scope/原binding/原raw/sent标记；无新的异步回读窗口。传入copy/download回调的current也持续结合相同原锚点与epoch，显示copied/exported前再核一次。存储缺失、原文丢失、合法替换、存储异常均failclosed，撤去旧证据展示，不清新锚点，不将raw放公开snapshot。
+
+两组回归共8种mutation在最终auth等待、callback等待两个窗口分别验证；旧生产实现负对照两组均失败（旧披露1次、旧callback current=true）。修后controller8+pending5共13项通过，lint/typecheck通过。原独审3个JSON、负对照与修后测试日志保留.cache/p4-review/studio-*-original.json、studio-disclosure-negative-control.log/after.log，仅合成，无真实剪贴板/文件写入或真实Key。此修补独立于尚未提交的Studio UI/HTTP。
