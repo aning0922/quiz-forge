@@ -9,3 +9,5 @@ readConsumerJson 用固定 buffer 核实际 UTF8 字节、单一原始 DatabaseB
 后续 handler 必须先按操作严格 Schema 解析/核完整原binding，再调用 A 的 request owner/三组 service factory。HTTP不能另开DB或重起15秒；finally调用closeIfNotTransferred，图片字节必须通过同owner的resourceBody精确一次交接。这里尚未实现这些业务与生命周期接入。
 
 2026-10-18：7项合成边界测试实际通过，覆盖缺/错源头、重复Cookie、独立codec、有限错误、误导Content-Length、实际+1、多字节、坏编码/流故障、深度/数值、停滞与无限零字节流。不接DB/native/3100，不是实际消费者授权事务或全P4出口。
+
+2026-10-18 HTTP P2 整改：读取循环只在外层与中断 Promise 竞速一次，保留原期限、每32读让出、检查点和取消；不再随空分块累计中断 reactions。原独审反例在本树修前为134/8450/33794，修后为1/1/1（128/8192/32768空分块，实际正文均2字节）。响应运行时仅显式读取并验证Set-Cookie，宽对象不能覆盖固定私有头或注入CORS。原7项加2项反应计数/运行时头边界回归；原反例与本树修前/修后JSON保留在忽略的.cache/p4-review（probe内commit字段为原审查来源，不是修后提交身份）。浏览器request新实现同步采用单一外层竞速，仍待自身测试及host接入。

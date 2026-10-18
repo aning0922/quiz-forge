@@ -127,12 +127,12 @@ export async function readConsumerJson(
     timer = setTimeout(abort, Math.max(0, until - performance.now()));
     if (budget.signal.aborted) abort();
   });
-  try {
+  const read = async () => {
     for (;;) {
       checkpoint();
-      if (reads > 0 && reads % 32 === 0)
-        await Promise.race([yieldToEventLoop(), interrupted]);
-      const part = await Promise.race([reader.read(), interrupted]);
+      if (reads > 0 && reads % 32 === 0) await yieldToEventLoop();
+      checkpoint();
+      const part = await reader.read();
       checkpoint();
       reads++;
       if (part.done) break;
@@ -151,6 +151,10 @@ export async function readConsumerJson(
     canonicalOrdinaryJson(result, { maxBytes: maximum, maxDepth: L.depth });
     checkpoint();
     return result;
+  };
+  try {
+    // A single race retains one interruption reaction, independently of chunk count.
+    return await Promise.race([read(), interrupted]);
   } catch (error) {
     cancel();
     throw error instanceof ConsumerError

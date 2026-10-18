@@ -29,14 +29,23 @@ export function consumerJsonResponse(
   } catch {
     throw new ConsumerError("UNAVAILABLE");
   }
-  return new Response(text, {
-    status,
-    headers: {
-      ...consumerPrivateHeaders,
-      ...extra,
-      "Content-Type": "application/json; charset=utf-8",
-    },
+  const headers = new Headers({
+    ...consumerPrivateHeaders,
+    "Content-Type": "application/json; charset=utf-8",
   });
+  // Runtime callers can carry wider objects than the TypeScript annotation.
+  // Only this explicitly selected header may cross the response boundary.
+  if (Object.hasOwn(extra, "Set-Cookie")) {
+    const cookie = extra["Set-Cookie"];
+    if (
+      typeof cookie !== "string" ||
+      cookie.length > 4096 ||
+      !/^[\x20-\x7e]+$/.test(cookie)
+    )
+      throw new ConsumerError("UNAVAILABLE");
+    headers.set("Set-Cookie", cookie);
+  }
+  return new Response(text, { status, headers });
 }
 export function consumerFailureResponse(
   error: unknown,
