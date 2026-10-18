@@ -1,5 +1,11 @@
 # 架构
 
+## 2026-10-18 架构检查点
+
+受管开发分支已完成P3-C固定修订预览：QuizPack受限接收、真实媒体隔离、验证/私有资源归档、首个持久草稿、content.v1/v2准入、双确定性引擎和六状态预览均有独立验收证据。首款内容/视觉已获作者确认作为内测基线；准确材料见[FIRST_PRODUCT_BASELINE](FIRST_PRODUCT_BASELINE.md)。这些能力仍在堆叠Draft PR中，下面旧阶段的“尚未实现”记录属于对应时期。
+
+当前P3-D扩展features/product/draft-revisions领域服务与features/studio/draft-revisions适配：追加新版、核实未知提交、读取稳定历史；app仍只组合路由。数据库保存不可变版本和原请求回执，界面状态不授予成功权威，固定预览始终读取指定修订。两独立开发聊天分别实现事务/数据与后台/交互，Astra独审，主控集成。下一依赖为精确审核与内测版本封存，再接消费者Key、会话和一次完成报告；当前尚无P5端到端完成结论。
+
 2026-10-12：F1、P1和P2-A已在堆叠分支完成技术验收，main仍为下文D1-C基线。P1提供本地内容/资源合同、受限ZIP、真实图片验证、构建与CLI；P2-A提供隔离数据库、迁移、运营认证。P2-B1现已接入Product目录、单一主类目、8标签、CAS、归档恢复及真实HTTP/Studio，技术验收已完成，见[B1合同](STUDIO_P2B1.md)、[验收](P2B1_ACCEPTANCE.md)。所有新增能力仍在Draft PR #6–#9，没有自动进入main或生产环境。
 
 B1的app路由只组合页面或调用HTTP适配层；features/studio负责可交互表单和受控DTO，features/product/workspace负责目录规则/应用服务/数据库访问，lib/auth的同事务鉴权在开始和提交前重验当前身份。错误提交不自动重发，界面保留冲突输入，目录自动刷新不能丢失未保存状态。运营metadata_revision独立于尚未实现的content revision。
