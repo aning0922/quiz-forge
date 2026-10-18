@@ -1,0 +1,73 @@
+{
+  "browser": "156.0.8078.4",
+  "exactResolvers": true,
+  "noNodeOrScoringBrowserCode": true,
+  "bufferAbsent": true,
+  "posters": [
+    {
+      "name": "synthetic-low",
+      "bytes": 1214431,
+      "sha256": "da4faf9ba36e6bae69443d4d1b3f67189b4ab34c057b78265c542c17b95deb80",
+      "width": 1080,
+      "height": 1920
+    },
+    {
+      "name": "synthetic-middle",
+      "bytes": 1262694,
+      "sha256": "c2e2efd8988929473e5a017e078bec95ec8a3c46ed9ae5bcc71ac007f9bfccf8",
+      "width": 1080,
+      "height": 1920
+    },
+    {
+      "name": "synthetic-high",
+      "bytes": 1257602,
+      "sha256": "680a75ad880f084c8e6a3b4ded16a63db3be50f31491fa92c5febec87a52107f",
+      "width": 1080,
+      "height": 1920
+    },
+    {
+      "name": "historical-li-bai",
+      "bytes": 1934057,
+      "sha256": "86ab0550763c8558b4e5e05c46c9591ace2b8a0f2a6d7c5fb60ebafffecaba7e",
+      "width": 1080,
+      "height": 1920
+    },
+    {
+      "name": "historical-su-shi",
+      "bytes": 1960569,
+      "sha256": "a749e8ce88d9b190a8d7022d8093a996644768bdc1405c1e35e8d8a9e86be8f9",
+      "width": 1080,
+      "height": 1920
+    },
+    {
+      "name": "historical-tao-yuan-ming",
+      "bytes": 1980337,
+      "sha256": "bbda50d037b83b09b353bcb7e373f81aecd62bf73b4c7eb2bca000f019f2de6c",
+      "width": 1080,
+      "height": 1920
+    },
+    {
+      "name": "historical-bai-ju-yi",
+      "bytes": 1917041,
+      "sha256": "267c2b710701a4427f1ada83b650c86759dee8ed6e3eab8ee3c2fc49c954c92e",
+      "width": 1080,
+      "height": 1920
+    }
+  ],
+  "retainedUrls": 0,
+  "released": 7,
+  "fontBefore": 0,
+  "fontAfter": 0,
+  "requests": 22,
+  "scope": "standalone exact renderer browser export; no database admission or production Next E2E",
+  "visualReview": {
+    "reviewer": "root",
+    "viewed": [
+      "historical-li-bai",
+      "historical-su-shi",
+      "historical-tao-yuan-ming",
+      "historical-bai-ju-yi"
+    ],
+    "finding": "No visible clipping or overlap; internal preview watermark retained."
+  }
+}
