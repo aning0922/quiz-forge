@@ -312,6 +312,7 @@ export function createConsumerFlowService(
               tx,
               a.key,
               a.session,
+              a.grant,
               input,
               at,
             );
@@ -451,6 +452,7 @@ export function createConsumerFlowService(
                 tx,
                 a.key,
                 a.session,
+                a.grant,
                 snapshot,
               );
               return observeConsumerCompletion(

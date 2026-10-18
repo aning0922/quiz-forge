@@ -56,3 +56,19 @@ export async function runInConsumerTransaction<T>(
     record.active = false;
   }
 }
+
+/** Failure classification only; the actual mutation must test both deadlines in its own SQL statement. */
+export async function assertConsumerMutationDeadline(
+  tx: ConsumerTx,
+  keyExpiresAt: string,
+  grantExpiresAt: string,
+) {
+  assertConsumerTx(tx);
+  const [row] = await tx.sql<
+    { key_expired: boolean; grant_expired: boolean }[]
+  >`WITH moment AS MATERIALIZED(SELECT clock_timestamp() AS at)
+    SELECT at>=${keyExpiresAt}::timestamptz AS key_expired,at>=${grantExpiresAt}::timestamptz AS grant_expired FROM moment`;
+  if (!row) throw new ConsumerError("UNAVAILABLE");
+  if (row.grant_expired) throw new ConsumerError("ACCESS_DENIED");
+  if (row.key_expired) throw new ConsumerError("KEY_NOT_ACTIVE");
+}

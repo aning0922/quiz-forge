@@ -2,11 +2,15 @@ import "server-only";
 import {
   assertConsumerTx,
   assertLockWitness,
+  assertConsumerMutationDeadline,
   type ConsumerTx,
 } from "@/lib/db/consumer-transaction";
 import { ConsumerError } from "@/lib/consumer-contract/v1/errors";
 import { CONSUMER_LIMITS_V1 as L } from "@/lib/consumer-contract/v1/limits";
-import type { LockedAccessKey } from "@/features/fulfillment/access/repository";
+import type {
+  LockedAccessKey,
+  GrantFact,
+} from "@/features/fulfillment/access/repository";
 import type { LockedConsumerSession } from "@/features/fulfillment/consumer-session/repository";
 import type { DatabaseTime } from "@/lib/auth/internal";
 import { iso } from "@/features/product/workspace/repository";
@@ -92,12 +96,20 @@ export async function insertPersistedReport(
   tx: ConsumerTx,
   key: LockedAccessKey,
   session: LockedConsumerSession,
+  grant: GrantFact,
   snapshot: PersistedReportSnapshot,
 ) {
   const b = snapshot.binding,
     s = b.session;
   assertLockWitness(tx, key, "key", s.keyId);
   assertLockWitness(tx, session, "session", s.sessionId);
+  assertLockWitness(tx, grant, "grant", grant.grantId);
+  if (
+    grant.keyId !== s.keyId ||
+    grant.sessionId !== s.sessionId ||
+    grant.revokedAt !== null
+  )
+    throw new ConsumerError("ACCESS_DENIED");
   const id = snapshot.view.reportId,
     completedAt = snapshot.view.completedAt;
   const bindingText = consumerCompleteBindingText(b),
@@ -107,8 +119,18 @@ export async function insertPersistedReport(
     displaySha = await persistedReportDisplaySha256(snapshot.view);
   const [row] = await tx.sql<
     ReportRow[]
-  >`INSERT INTO qf.quiz_report(id,key_id,session_id,product_id,play_version_id,play_snapshot_sha256,state_revision,consumer_state_answers_sha256,progress_sha256,completion_key,binding_text,binding_sha256,snapshot_text,snapshot_sha256,display_sha256,completed_at) VALUES(${id},${s.keyId},${s.sessionId},${s.productId},${s.playVersionId},${s.playSnapshotSha256},${b.expectedStateRevision},${b.consumerStateAnswersSha256},${b.progressSha256},${b.completionKey},${bindingText},${bindingSha},${snapshotText},${snapshotSha},${displaySha},${completedAt}::timestamptz) RETURNING *`;
-  if (!row) throw new ConsumerError("UNAVAILABLE");
+  >`WITH moment AS MATERIALIZED(SELECT clock_timestamp() AS at)
+    INSERT INTO qf.quiz_report(id,key_id,session_id,product_id,play_version_id,play_snapshot_sha256,state_revision,consumer_state_answers_sha256,progress_sha256,completion_key,binding_text,binding_sha256,snapshot_text,snapshot_sha256,display_sha256,completed_at)
+    SELECT ${id},${s.keyId},${s.sessionId},${s.productId},${s.playVersionId},${s.playSnapshotSha256},${b.expectedStateRevision},${b.consumerStateAnswersSha256},${b.progressSha256},${b.completionKey},${bindingText},${bindingSha},${snapshotText},${snapshotSha},${displaySha},${completedAt}::timestamptz FROM moment m
+    WHERE m.at<${key.issue.expiresAt}::timestamptz AND m.at<${grant.expiresAt}::timestamptz RETURNING *`;
+  if (!row) {
+    await assertConsumerMutationDeadline(
+      tx,
+      key.issue.expiresAt,
+      grant.expiresAt,
+    );
+    throw new ConsumerError("UNAVAILABLE");
+  }
   return detail(row);
 }
 export async function readCompletionMetadata(
