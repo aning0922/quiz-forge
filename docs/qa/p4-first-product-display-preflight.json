@@ -1,0 +1,119 @@
+{
+  "schemaVersion": "quizforge.p4-first-display-preflight.v1",
+  "scope": "Local offline author-witness display only; no access grant, persisted session, user report or P5 acceptance.",
+  "codeCommit": "d3150ea",
+  "contentSha256": "4ceae81de77fac8e9df9da1255bf21c31d2bb88c00495cfe68da1769fc562904",
+  "approvedArchiveSha256": "40b7660697d52c660897e153c7a9ef02163717c92b90f0680ae6558150f5c0c0",
+  "questions": 12,
+  "reports": 4,
+  "uniqueImages": 8,
+  "imagePaths": 9,
+  "entryBytes": 14623,
+  "selectedDisplayBytes": [
+    {
+      "id": "li-bai",
+      "bytes": 5136,
+      "posterBytes": 1679
+    },
+    {
+      "id": "su-shi",
+      "bytes": 5194,
+      "posterBytes": 1680
+    },
+    {
+      "id": "tao-yuan-ming",
+      "bytes": 5179,
+      "posterBytes": 1709
+    },
+    {
+      "id": "bai-ju-yi",
+      "bytes": 5226,
+      "posterBytes": 1697
+    }
+  ],
+  "browser": "156.0.8078.4",
+  "viewports": [320, 375, 390, 430],
+  "viewportHeight": 900,
+  "screenshots": 30,
+  "allGeometryChecksPassed": true,
+  "pageErrors": 0,
+  "posters": [
+    {
+      "file": "author-witness-poster-0.png",
+      "width": 1080,
+      "height": 1920,
+      "bytes": 1931023,
+      "sha256": "dad83b14fc370a8e7b44aa0bee2c1c3e232b5ee2f66726b425aa5c5da41ab9f5"
+    },
+    {
+      "file": "author-witness-poster-1.png",
+      "width": 1080,
+      "height": 1920,
+      "bytes": 1957833,
+      "sha256": "1e7d90acaab0446599fe1344e122670979ad3df0e8980d5aa25b2157b9670547"
+    },
+    {
+      "file": "author-witness-poster-2.png",
+      "width": 1080,
+      "height": 1920,
+      "bytes": 1978023,
+      "sha256": "6f09e1be78c79737a1b06188fe173dff1febd4912f2165aafd989394f9b15f78"
+    },
+    {
+      "file": "author-witness-poster-3.png",
+      "width": 1080,
+      "height": 1920,
+      "bytes": 1914032,
+      "sha256": "d3a02246e444438a1b7d35118b78c7a751d0397d9973236e928fc80ec3ede1f2"
+    }
+  ],
+  "rootOriginalsViewed": [
+    {
+      "file": "cover-0-0-320.png",
+      "sha256": "663ae81bad79d2f15bf04a8b11bd2f16621a62f8908412003e1933b2376fe393"
+    },
+    {
+      "file": "question-0-3-320.png",
+      "sha256": "42d3ada5c7cc80feda0a0e3c2974e751b53c13518dcb6d2c18e07e5aab41459f"
+    },
+    {
+      "file": "result-0-0-390.png",
+      "sha256": "0de655d6775edf691283f404efe0d584981fd11b9275f940701978d4d6576855"
+    },
+    {
+      "file": "report-2-0-320.png",
+      "sha256": "6a52ff9b6b0f1c9f21ea972801816bcf8abc1b89ad85c7014fbd679f6e0eaa49"
+    },
+    {
+      "file": "resume-0-0-320.png",
+      "sha256": "6df4e2b8fa4207150c2e3c90222d11523fe20bc0f264317b43c2bd48d2f1d777"
+    },
+    {
+      "file": "poster-0-0-430.png",
+      "sha256": "45c249b88d07580114c8d36abcc3243e88bf0faca57020e98e142a2ca4a29947"
+    },
+    {
+      "file": "author-witness-poster-0.png",
+      "sha256": "dad83b14fc370a8e7b44aa0bee2c1c3e232b5ee2f66726b425aa5c5da41ab9f5"
+    },
+    {
+      "file": "author-witness-poster-1.png",
+      "sha256": "1e7d90acaab0446599fe1344e122670979ad3df0e8980d5aa25b2157b9670547"
+    },
+    {
+      "file": "author-witness-poster-2.png",
+      "sha256": "6f09e1be78c79737a1b06188fe173dff1febd4912f2165aafd989394f9b15f78"
+    },
+    {
+      "file": "author-witness-poster-3.png",
+      "sha256": "d3a02246e444438a1b7d35118b78c7a751d0397d9973236e928fc80ec3ede1f2"
+    }
+  ],
+  "visualConclusion": "No P1/P2 observed in 10 inspected originals. Two P3 items queued: narrow resume action wrapping, duplicate identical report subtitle. Other captured originals have automatic geometry checks only.",
+  "browserClosed": true,
+  "temporaryServerClosed": true,
+  "rendererRegistered": false,
+  "persistenceVerified": false,
+  "publicationApproved": false,
+  "privateArtifactsRetained": true
+}

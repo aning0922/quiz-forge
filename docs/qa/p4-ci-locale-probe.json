@@ -1,0 +1,65 @@
+{
+  "schemaVersion": "quizforge.p4-ci-locale-probe.v1",
+  "scope": "Owned new local Docker CI-profile bootstrap only; not remote CI, complete DB suite, or P4/P5 acceptance.",
+  "codeCommit": "3b860f1",
+  "image": "postgres:18.4@sha256:a02db8cac496f15b094798a38254f14d6e00741f709360e5e00bb6668ea31636",
+  "variants": [
+    {
+      "variant": "default",
+      "scope": "new owned local Docker CI-profile probe only",
+      "containerId": "daf450d8488ceb829750fda2d82d50eedf24807b9b926fac1a51339f225ecf32",
+      "bootstrap": "failed",
+      "instanceId": "173aa24306bfe7486fc18abeef5096d0",
+      "locale": {
+        "datcollate": "en_US.utf8",
+        "datctype": "en_US.utf8",
+        "datlocprovider": "c"
+      },
+      "migrations": 17,
+      "lastMigration": "0017_internal_versions",
+      "catalogSha256": "d6b267c578bcc567aa1033788ffbc65839ed989a451c71063b6ac5c47d574bef",
+      "structureSha256": "11ecaea0b8615639c3bee832453e73f1a7f09a959db937e76e4f7f83c1ac6509",
+      "factDigests": {
+        "enums": "d153b7574dc0fa9374170953856d5a8cbd75a172f3e61e39a1f8952dc59ec4b0",
+        "tables": "d82936fdb0c4a9cbe442a6865515525f9891291ae41c06c10dbfa3154ca4d302",
+        "columns": "1251dc1de68e696a380e2fb345de96f3f85fa3e0aa974a5fdf85c84a2b0c68b6",
+        "indexes": "33aef3622ccc8c7d464b97d6df2151bfae43231422b1d1c17c3764b886035b80",
+        "triggers": "eec1482c33d386d2873c825534cd4875e52077c81fd2220189ddfaf209f178aa",
+        "functions": "b144836f90f532cd1d9cdc33590269f2332726843d3e21c282bc733b97c5b370",
+        "constraints": "da63df8bdaea1a82d0c8b305024251de7d87bc0393b00ed477a0f057c1e5e801"
+      },
+      "containerStopped": true,
+      "volumePreserved": true
+    },
+    {
+      "variant": "C",
+      "scope": "new owned local Docker CI-profile probe only",
+      "containerId": "e094e4ac858d3c16d871aa77e94e4e97b6ebce46ed4420ea5630ba9f639f1604",
+      "bootstrap": "passed",
+      "instanceId": "a7c4d32968e6977d8418158d18bea87b",
+      "locale": {
+        "datcollate": "C",
+        "datctype": "C",
+        "datlocprovider": "c"
+      },
+      "migrations": 18,
+      "lastMigration": "0018_consumer_session_report",
+      "catalogSha256": "906ca3748d7991b3a2095cb4a603465c5abb776e2df0213f2ee84ff7b2f98ab6",
+      "structureSha256": "3f34055f56a9384681f3d1654ee879f9ad30f509de64bf3a5b9ac3f07fe1b90a",
+      "factDigests": {
+        "enums": "aab4b7826224e97bbe56560a9c41d2ac9b86ef706c1fe0c3bb16cafbb4b82ac4",
+        "tables": "8a4429cbb30b8e012a6ecbd0b6a7ad443f1b4ed4be86f51f94447af1693962f9",
+        "columns": "dc6d5855a370cae42f5ca4e387c788ef683f1b3ba6dbc38650b51ba136e2ae1c",
+        "indexes": "9b21e542cd9eb0fa0a9d1686889cdd058cbb1af7de81732ded148ba892534f17",
+        "triggers": "6efc5bce360bc0d852de20258f5c9dbcccfcf89b720b548b5bf1d67d9fd22849",
+        "functions": "6b7ac583a5f381a988b98251c88c101aa1185c5db27a2dcddfac2dd25753d322",
+        "constraints": "433a3ad4d75a6c0ee5852d32ec0347e833bff362a443bab3794523c4d028d171"
+      },
+      "runtimeOpen": "passed",
+      "containerStopped": true,
+      "volumePreserved": true
+    }
+  ],
+  "existingSqlChecksumsChanged": false,
+  "existingInstancesModified": false
+}

@@ -1,12 +1,16 @@
 # 阶段进度
 
-## 2026-10-18 P4 消费者合同与双线实施准备
+## 2026-10-18 P4 消费者事务与页面实施中
 
-**最新：** 机器与数据设计基线 6ae499a 已经独立审查收口，包含五处 ports 补齐、void/claim 双向保护、RR Key 页和八格 SQL owner；主控冻结合同并启动 A 数据/owner/真实 PG、B HTTP/controller 实施。56 项相关合同测试通过，consumer descriptor 目前仍只是 metadata Schema；实际闭包、服务、表和 P5 现场尚未验收。下段记录 50a35a6 的既有全量结果。
+当前由 A 独立数据聊天、B 独立体验聊天、Astra 独立审查和本主控继续开发，分支 `codex/consumer-session-report` / Draft PR #20。内容与视觉内测基线已获作者批准；同一基线不重复请批。39eb 首款原实例仍禁导入、停库保留。没有完成真实消费者 Key 发放、持久答题、唯一报告或 P5 验收。
 
-从 P3-E 交付 c83788b 接续 `codex/consumer-session-report` / Draft PR #20。至 50a35a6，已实现严格 play/Key/report 数据合同、独立 token/CSRF codec、答案和游标规范摘要、原请求核实联合、中性 entry 与公开服务签名。主控实际全量 156 文件 / 1763 单元测试、format/lint/typecheck 全部通过；其中 P4 合同 11 文件 / 53 项通过。共享基础/codec、A/B 数据与视图接口、errors/resolve 已分批独审无 P1/P2；服务端口与 owner 有界关闭方案仍在独审，不能将局部通过写成 P4 验收。详见 [合同](CONSUMER_P4.md)、[审查记录](P4_REVIEW.md)。
+**已核实：** 六纯视图、独立 CSS、确定投影与 PNG 已集成并独审无 P1/P2。主控完整 163 文件/1783 单元及 format/lint/typecheck 通过；精确批准首款做离线 30 图、四 PNG 预检，后续五图补验关闭窄屏按钮和重复次标题两项 P3。纯视图和作者评分见证不代替持久化用户报告，详见 [原预检](qa/p4-first-product-display-preflight.json)和[补验](qa/p4-first-product-display-refinement.json)。
 
-原两条独立开发聊天继续：A 准备 0018、精确最终报告 FK、同事务领域 ports 与真实 PG 计划；B 实现独立六状态消费者组件和 PNG。主控持共享协议/登记/集成，Astra 独审，未替换成当前聊天子代理。当前仍没有消费者表、实际 Key 发放、持久答题/完成或 P5 现场。39eb 首款实例继续禁导入、停库保留；已批准内容/八图不变，不重复请批同一内测基线。
+**基础修复：** HTTP 3ac7d91/d4dfb70 两项 P2 已独立复验关闭；4229cc6 pending/authority 的单元与真实浏览器存储反例通过。浏览器网络 client 394908a/e944363 已集成，主控21项相关测试/typecheck与独立真实浏览器验证通过。六表/0018/ACL/guard 27a913d已实现；未登记 view 绕过列权限的 P2 由14ea22e增加迁移前/runtime namespace gate修复，并经独审11PG及旧17/当前18原反例复验关闭，原0018 checksum不变。
+
+**进行中：** A 的八格 SQL primitive、旧业务升级与保留图已独审，固定源普通485 PG及独立namespace4项通过；继续request/resource owner与同事务业务服务；B 的实际消费者 host/controller已集成a314372；19专项和合成HTTP21图/PNG通过，合法长Key定时器P2已独审关闭，到期pending提示P3已修待复验；Studio及HTTP路由继续。主控负责精确 consumer 实现登记及集成。完整host的精确consumer登记和build门禁已准备，登记独审继续；最终生产 build/native/E2E/四宽审图及首款现场均未完成。不能以 P3-E 的旧构建或局部通过替代 P4 技术出口。
+
+机器合同与数据设计已冻结，详见 [合同](CONSUMER_P4.md)、[数据设计](P4_DATA_DESIGN.md)和[独审记录](P4_REVIEW.md)。以下为既有 P3-E 及更早阶段的历史事实。
 
 ## 2026-10-18 P3-E 技术出口完成，接续消费者闭环
 

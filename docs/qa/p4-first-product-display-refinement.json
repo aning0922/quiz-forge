@@ -1,0 +1,89 @@
+{
+  "schemaVersion": "quizforge.p4-first-display-refinement.v1",
+  "scope": "approved author-witness offline display only, no persisted user report",
+  "codeCommit": "6c63bd124bd8f310e32153c7bb20d5a391b1cbf2",
+  "contentSha256": "4ceae81de77fac8e9df9da1255bf21c31d2bb88c00495cfe68da1769fc562904",
+  "browser": "156.0.8078.4",
+  "viewportHeight": 900,
+  "shots": [
+    {
+      "file": "resume-0-0-320.png",
+      "state": "resume",
+      "resultIndex": 0,
+      "questionIndex": 0,
+      "width": 320,
+      "scroll": 320,
+      "smallTargets": 0,
+      "smallBody": 0,
+      "bytes": 81912,
+      "sha256": "eab44d9db1d4c9a82fded65bcaf1a94c23ca8786119d24abeb12da29d31d4455"
+    },
+    {
+      "file": "resume-0-0-375.png",
+      "state": "resume",
+      "resultIndex": 0,
+      "questionIndex": 0,
+      "width": 375,
+      "scroll": 375,
+      "smallTargets": 0,
+      "smallBody": 0,
+      "bytes": 88736,
+      "sha256": "2ca68055dd28a670a80cbdccb5a02a6133faa81462cd1ec36bfa98183e9e70ac"
+    },
+    {
+      "file": "resume-0-0-390.png",
+      "state": "resume",
+      "resultIndex": 0,
+      "questionIndex": 0,
+      "width": 390,
+      "scroll": 390,
+      "smallTargets": 0,
+      "smallBody": 0,
+      "bytes": 83833,
+      "sha256": "01409ff74bc810730b43b79fec3018bd4e990b74c92e37b8bbdc7c476fa9e7d0"
+    },
+    {
+      "file": "resume-0-0-430.png",
+      "state": "resume",
+      "resultIndex": 0,
+      "questionIndex": 0,
+      "width": 430,
+      "scroll": 430,
+      "smallTargets": 0,
+      "smallBody": 0,
+      "bytes": 82715,
+      "sha256": "a88be6f74b46f823100a2f3e0fe4a51fe8debb95f4a487a65bd75c9edccd3b6f"
+    },
+    {
+      "file": "report-2-0-320.png",
+      "state": "report",
+      "resultIndex": 2,
+      "questionIndex": 0,
+      "width": 320,
+      "scroll": 320,
+      "smallTargets": 0,
+      "smallBody": 0,
+      "bytes": 352488,
+      "sha256": "f6533b776e657141642c5d760490cd0a31c41ed6f8e6eef7949939a9c9af9ff7"
+    }
+  ],
+  "pageErrors": 0,
+  "browserClosed": true,
+  "serverClosed": true,
+  "visualReview": {
+    "rootViewed": [
+      "resume-0-0-320.png",
+      "resume-0-0-375.png",
+      "report-2-0-320.png"
+    ],
+    "independentReviewer": "Astra independent chat",
+    "independentViewedAllFive": true,
+    "closedFindings": [
+      "narrow resume actions",
+      "exact duplicate report subtitle"
+    ],
+    "scope": "These two P3 findings only; no persisted consumer or P5 acceptance."
+  },
+  "originalEvidencePreserved": true,
+  "publicationApproved": false
+}
