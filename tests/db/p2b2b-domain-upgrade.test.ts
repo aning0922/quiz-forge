@@ -44,7 +44,7 @@ it("real 0010 → 0014 preserves unresolved historical controls and 0015 rejects
   expect(definitions[11]!.version).toBe("0012_validation_file_stop_ack");
   expect(definitions[13]!.version).toBe("0014_product_first_draft");
   expect(definitions[14]!.version).toBe("0015_supported_pack_admission");
-  expect(definitions.at(-1)!.version).toBe("0016_draft_revisions");
+  expect(definitions.at(-1)!.version).toBe("0017_internal_versions");
   await safe(() => db.admin.sql`DROP SCHEMA qf CASCADE`);
   await safe(() => db.admin.sql`DROP SCHEMA qf_meta CASCADE`);
   try {

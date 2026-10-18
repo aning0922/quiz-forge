@@ -129,6 +129,8 @@ export async function migrateDatabase(
         "product_draft",
         "draft_revision",
         "draft_application",
+        "draft_review",
+        "product_version",
       ]) {
         const [available] = await tx<{ present: boolean }[]>`
           SELECT to_regclass(${`qf.${name}`}) IS NOT NULL AS present`;
@@ -151,12 +153,23 @@ export async function migrateDatabase(
         "validation_file_stop_controls_valid(text,uuid,text,text)",
         "draft_application_fingerprint(text,uuid,uuid,integer,text)",
         "draft_revision_application_fingerprint(text,uuid,uuid,integer,text,uuid,integer,text,text)",
+        "internal_canonical(jsonb)",
+        "internal_registry_identity(jsonb,text)",
+        "internal_review_valid(qf.draft_review)",
+        "internal_version_valid(qf.product_version)",
       ]) {
+        if (signature.startsWith("internal_")) {
+          const [ledger] = await tx<
+            { present: boolean }[]
+          >`SELECT to_regclass('qf.draft_review') IS NOT NULL AND to_regclass('qf.product_version') IS NOT NULL AS present`;
+          if (!ledger?.present) continue;
+        }
         // Owner can stage the enum-only migration; application capability checks still fail closed.
         if (
           signature.startsWith("validation_file_stop_") ||
           signature.startsWith("draft_application_") ||
-          signature.startsWith("draft_revision_application_")
+          signature.startsWith("draft_revision_application_") ||
+          signature.startsWith("internal_")
         ) {
           const [available] = await tx<
             { present: boolean }[]

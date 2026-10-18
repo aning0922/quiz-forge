@@ -1,3 +1,4 @@
+import { assertNoRetainedInternalReferences } from "@/features/product/internal-versions/retention";
 import { constants, type Stats } from "node:fs";
 import { lstat, open, unlink } from "node:fs/promises";
 import path from "node:path";
@@ -381,6 +382,22 @@ export async function cleanupStudioDraftFixture(
       }
     }
     await lock.check();
+    await assertNoRetainedInternalReferences(lock, {
+      revisions: roots.map((r) => ({
+        productId: r.product_id,
+        draftId: r.id,
+        revision: 1,
+      })),
+      imports: value.sources.map((s) => ({
+        productId: s.productId,
+        id: s.sourceImportId,
+      })),
+      validations: value.sources.map((s) => ({
+        productId: s.productId,
+        id: s.sourceValidationId,
+      })),
+      blobSha256: deletable,
+    });
     await db.admin.sql.begin(async (tx) => {
       await acquireAuthWriteLock(tx);
       await tx`DELETE FROM qf.product_draft WHERE product_id=ANY(${tx.array(products)})`;
