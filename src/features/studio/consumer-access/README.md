@@ -1,6 +1,6 @@
 # P4 Studio play / Key 操作客户端
 
-当前为客户端严格事实验证及本标签原请求/秘密保管基础，尚未挂真实Studio页面、HTTP factory或发放按钮；不声称实际Key发放成功。
+当前已建立客户端严格事实验证、本标签原请求/秘密保管、Studio 页面及可注入的 HTTP 适配。真实业务 service factory 与 API 路由尚未接线；不声称实际 Key 发放成功。
 
 client.ts使用冻结operation DTO、完整binding resolution与独立Studio x-csrf-token，不借用消费者CSRF。create返回201/200与created必须一致；详情/列表核Product、精确ID与所有receipt hash。Key页游标仅使用issuedAt/keyId严格一对，并核Product；原binding总量有界。play详情封套预算为snapshot上限+receipt上限，不扩大两者内部机器限制。
 
@@ -19,3 +19,5 @@ controller.ts已建立整页代次与单一原请求所有权，公开snapshot�
 secret披露P2整改：最后一次新鲜issuer await后，立刻用同步完整规范记录比较核原scope/原binding/原raw/sent标记；无新的异步回读窗口。传入copy/download回调的current也持续结合相同原锚点与epoch，显示copied/exported前再核一次。存储缺失、原文丢失、合法替换、存储异常均failclosed，撤去旧证据展示，不清新锚点，不将raw放公开snapshot。
 
 两组回归共8种mutation在最终auth等待、callback等待两个窗口分别验证；旧生产实现负对照两组均失败（旧披露1次、旧callback current=true）。修后controller8+pending5共13项通过，lint/typecheck通过。原独审3个JSON、负对照与修后测试日志保留.cache/p4-review/studio-*-original.json、studio-disclosure-negative-control.log/after.log，仅合成，无真实剪贴板/文件写入或真实Key。此修补独立于尚未提交的Studio UI/HTTP。
+
+`http.ts` 在构造单一 request owner 前核 source、方法、查询、Studio Cookie/CSRF、路由与完整 binding；服务按操作懒构造，同一原始 15 秒时钟贯穿解析/执行/关闭。严格校验每份 receipt、完整 resolution 与列表范围，写成功后响应或实际关闭失败返回 UNKNOWN，读请求不制造写成功。finally 只关闭原 owner；没有数据库构造或替代业务实现。5 项合成单测通过，定向 lint 与 typecheck 通过；这不证明实际运营权限、PG 事务或生产路由通过。
