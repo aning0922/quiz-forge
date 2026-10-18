@@ -178,3 +178,13 @@ backend proof改查同数据库全部非当前admin/当前exclusive维护PID，�
 主控准确532/801（含0d）在全新b513/55423跑完整ordinary PG失败：65文件40fail/25pass，495项198pass/264fail/33skip，407.20s。首个实质栈是consumer-service调用cleanup时current imports.enabled=true，之后reset/prepare因保留图级联拒绝；末尾开关变false不抹除该首因。我的此前false实例单跑不能覆盖suite遗留true状态。主控已停库保留，不重置未知图。
 
 本笔仅修三个已提交物理fixture测试caller：prepare与任何negative cleanup前，通过正式configureImports(false)建立清理前置；consumer-service先正式切true并读currentConfig证实，再正式切false并证实，随后完整业务链路和cleanup通过。fixture本身仍要求实时false，不降低开关/guard/退出证明。定向真实PG1用例8.10s通过（本地同时含待提交expiry修复的工作源，不能称旧0d全套通过），格式/类型检查通过；root后续新实例重跑完整ordinary PG才可给整套结论。期限P2源修复另笔提交。
+
+## save/complete实际写语句期限P2（2026-10-19）
+
+独审在0d原四反例确认P2：save/complete × Key/grant，在port入口两者均active，真实PG等待跨到目标期限后仍save+1或report1。原0018的session UPDATE与report INSERT触发器保护来源/不可变性等，但不完整检查这两个期限；不能把“进锁时检查过”或outer最后grant检查当内层摘要await之后的写入证明。原59e329独审现场停止保留，未修改旧0018或其guard摘要。
+
+修复让save/report仓储显式接收同事务实际锁出的grant（WeakMap见证，绑定同Key/session且非revoked），所有canonical/hash await结束后，在真正UPDATE/INSERT的同一SQL里以MATERIALIZED clock_timestamp一次样本同时判定Key和grant期限。Key锁保持到事务结束，合法logout/轮转均需同Key锁，期间不能换成另一授权。没有从report域反查Key/grant表；用已核验锁事实的两期限作为谓词。0行后只用新鲜DB时钟分类ACCESS_DENIED/KEY_NOT_ACTIVE；该分类函数不授予写权。save+report均0写入时已确认rollback，不把它当结果未知。原成功report/receipt优先和grant本身到期拒绝的合同保持。
+
+新真实PG一项覆盖四个子场景和完成后普通Key到期：临期行是明确的synthetic owner seed，在exclusive维护下单一事务disable/update/enable原命名trigger并提交；应用无法观察已提交的弱schema，提交后重验原verifyConsumerSchema及所有实际factory guard。不是应用续期接口、自然等待8小时或修改全局/浏览器时钟。每个子场景在最后授权之后的port新receipt/snapshot摘要处确认DB now仍早于目标deadline，实际1850ms等待后确认DB now已到期；随后save/complete × Key/grant分别有限拒绝，stateRevision不变且report0。恢复访问只显式exchange新grant，不给旧token续期。另真实报告先完成，再合成Key临期seed/实际等待，原Key exchange仍destination report、读原完整report SHA不变。
+
+最终该用例14.36s/13.45s test通过（1 test内4个拒绝子case+已完成只读正例），原完整consumer服务用例修后两轮通过8.48s与enabled=true起步8.10s。175文件1851单元、format/lint/typecheck和production build通过；旧3/3、51源/280锁；consumer1/1、77源/268锁；trace80/0。0018 SHA保持a723d409df2dc1225f4504ff14bc13b18824c93adac28b7f10058c3e586c060a。本笔待Astra用四原反例复验，不宣称P2独审已关闭、完整ordinary PG或生产E2E已通过。e1两cleanup P2主控已转告独审原反例复验关闭，仅限该scope；下一步继续预算/未知提交/fresh授权竞态矩阵与主控最终集成回归。

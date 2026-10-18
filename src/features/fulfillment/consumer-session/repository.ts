@@ -4,6 +4,7 @@ import {
   assertConsumerTx,
   assertLockWitness,
   lockWitness,
+  assertConsumerMutationDeadline,
   type ConsumerTx,
 } from "@/lib/db/consumer-transaction";
 import { ConsumerError } from "@/lib/consumer-contract/v1/errors";
@@ -24,7 +25,7 @@ import {
   type ConsumerSaveInput,
   type ConsumerState,
 } from "@/lib/consumer-contract/v1/state";
-import type { LockedAccessKey } from "../access/repository";
+import type { LockedAccessKey, GrantFact } from "../access/repository";
 import type { DatabaseTime } from "@/lib/auth/internal";
 import { iso } from "@/features/product/workspace/repository";
 type SessionRow = {
@@ -139,11 +140,19 @@ export async function saveConsumerSession(
   tx: ConsumerTx,
   key: LockedAccessKey,
   session: LockedConsumerSession,
+  grant: GrantFact,
   input: ConsumerSaveInput,
   savedAt: string,
 ) {
   assertLockWitness(tx, key, "key", input.binding.session.keyId);
   assertLockWitness(tx, session, "session", input.binding.session.sessionId);
+  assertLockWitness(tx, grant, "grant", grant.grantId);
+  if (
+    grant.keyId !== input.binding.session.keyId ||
+    grant.sessionId !== input.binding.session.sessionId ||
+    grant.revokedAt !== null
+  )
+    throw new ConsumerError("ACCESS_DENIED");
   if (
     !sameConsumerFact(
       session.state.session,
@@ -170,8 +179,17 @@ export async function saveConsumerSession(
     p = consumerProgressText(input.progress);
   const [row] = await tx.sql<
     SessionRow[]
-  >`UPDATE qf.consumer_session SET state_revision=state_revision+1,answers_text=${a},consumer_state_answers_sha256=${input.binding.consumerStateAnswersSha256},progress_text=${p},progress_sha256=${input.binding.progressSha256},last_binding_text=${bindingText},last_binding_sha256=${bindingSha},last_receipt_text=${receiptText},last_receipt_sha256=${receiptSha} WHERE id=${input.binding.session.sessionId} AND key_id=${input.binding.session.keyId} AND state_revision=${input.binding.expectedStateRevision} RETURNING *`;
-  if (!row) throw new ConsumerError("STATE_CONFLICT");
+  >`WITH moment AS MATERIALIZED(SELECT clock_timestamp() AS at)
+    UPDATE qf.consumer_session SET state_revision=state_revision+1,answers_text=${a},consumer_state_answers_sha256=${input.binding.consumerStateAnswersSha256},progress_text=${p},progress_sha256=${input.binding.progressSha256},last_binding_text=${bindingText},last_binding_sha256=${bindingSha},last_receipt_text=${receiptText},last_receipt_sha256=${receiptSha} FROM moment m
+    WHERE id=${input.binding.session.sessionId} AND key_id=${input.binding.session.keyId} AND state_revision=${input.binding.expectedStateRevision} AND m.at<${key.issue.expiresAt}::timestamptz AND m.at<${grant.expiresAt}::timestamptz RETURNING qf.consumer_session.*`;
+  if (!row) {
+    await assertConsumerMutationDeadline(
+      tx,
+      key.issue.expiresAt,
+      grant.expiresAt,
+    );
+    throw new ConsumerError("STATE_CONFLICT");
+  }
   return state(row);
 }
 export async function readClaimMetadata(
