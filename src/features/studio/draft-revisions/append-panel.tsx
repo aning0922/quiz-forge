@@ -247,7 +247,7 @@ export function AppendRevisionPanel({
         {confirmed && confirmation ? (
           <section className={local.receipt} aria-label="确认追加不可变修订">
             <h3>
-              确认追加到修订 {confirmation.binding.target.expectedRevision}
+              确认基于修订 {confirmation.binding.target.expectedRevision} 追加
             </h3>
             <AppendBindingFacts binding={confirmation.binding} />
             <p>
@@ -273,7 +273,7 @@ export function AppendRevisionPanel({
         ) : (
           canPrepare && (
             <button className={styles.button} onClick={prepare}>
-              准备追加到修订 {base.revision}
+              基于修订 {base.revision} 准备追加
             </button>
           )
         )}
