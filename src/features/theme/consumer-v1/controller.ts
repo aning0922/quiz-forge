@@ -45,6 +45,7 @@ export type ConsumerHostStateV1 = Readonly<{
     | "lost"
     | "unavailable";
   screen: ConsumerScreenV1;
+  keyExpired: boolean;
   session?: ConsumerSessionView | undefined;
   entry?: ConsumerEntryView | undefined;
   report?: PersistedReportView | undefined;
@@ -63,6 +64,7 @@ export class ConsumerControllerV1 {
   #value: ConsumerHostStateV1 = Object.freeze({
     phase: "loading",
     screen: "cover",
+    keyExpired: false,
     answers: [],
     progress: { questionId: null },
   });
@@ -155,6 +157,7 @@ export class ConsumerControllerV1 {
     const current = () => epoch === this.#epoch && !active.signal.aborted;
     this.#publish({
       phase: "loading",
+      keyExpired: false,
       session: undefined,
       entry: undefined,
       report: undefined,
@@ -202,7 +205,7 @@ export class ConsumerControllerV1 {
           if (this.#value.phase === "active")
             this.#publish({ phase: "expired" });
         }, keyRemaining);
-      this.#publish({ session });
+      this.#publish({ session, keyExpired: this.#keyExpired });
       const pending = await readConsumerPendingV1(
         this.storage,
         session.grant.session,

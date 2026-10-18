@@ -185,10 +185,16 @@ const server = createServer(async (req, res) => {
     if (url.pathname.endsWith("/api/session")) {
       send({
         ...f.view,
+        ...(mode === "expired-pending"
+          ? { keyExpiresAt: "2026-10-17T00:00:00.000Z" }
+          : {}),
         outcome:
           mode === "completed"
             ? { kind: "completed", report: stored.receipt }
-            : { kind: "editable", state },
+            : {
+                kind: mode === "expired-pending" ? "expired" : "editable",
+                state,
+              },
       });
       return;
     }
@@ -237,6 +243,16 @@ const server = createServer(async (req, res) => {
       for await (const chunk of req) chunks.push(Buffer.from(chunk));
       const body = JSON.parse(Buffer.concat(chunks).toString("utf8"));
       requests.push(url.pathname);
+      if (url.pathname.endsWith("/complete/resolve")) {
+        send({
+          schemaVersion: "quizforge.consumer-complete-resolution.v1",
+          kind: "unresolved",
+          binding: body,
+          bindingSha256: await consumerCompleteBindingSha256(body),
+          state,
+        });
+        return;
+      }
       if (url.pathname.endsWith("/save/resolve")) {
         send(
           last && (await consumerSaveBindingSha256(body)) === last.bindingSha256
@@ -321,133 +337,209 @@ async function shot(page: Page, name: string) {
 }
 try {
   browser = await chromium.launch({ headless: true });
-  for (const width of [320, 375, 390, 430]) {
+  let networkAttemptsDuringLoss = 0,
+    sameOriginalBindingDuringLoss = true;
+  if (!process.argv.includes("--expired-pending-only")) {
+    for (const width of [320, 375, 390, 430]) {
+      state = f.initial;
+      mode = "normal";
+      last = null;
+      const page = await browser.newPage({ viewport: { width, height: 900 } });
+      page.on("pageerror", (e) => errors.push(e.message));
+      await page.goto(`${base}/play/${f.session.sessionId}`);
+      await expect(page.locator("[data-consumer-state=cover]")).toBeVisible();
+      await shot(page, `cover-${width}`);
+      await page.getByRole("button", { name: "开始答题", exact: true }).click();
+      await expect(
+        page.locator("[data-consumer-state=question]"),
+      ).toBeVisible();
+      await page.getByRole("radio").first().click();
+      await shot(page, `question-unsaved-${width}`);
+      await page.getByRole("button", { name: "暂歇，查看进度" }).click();
+      await expect(page.locator("[data-consumer-state=resume]")).toBeVisible();
+      await page.reload();
+      await expect(page.locator("[data-consumer-state=resume]")).toBeVisible();
+      await shot(page, `resume-reloaded-${width}`);
+      await page.close();
+    }
     state = f.initial;
-    mode = "normal";
     last = null;
-    const page = await browser.newPage({ viewport: { width, height: 900 } });
+    mode = "normal";
+    const page = await browser.newPage({
+      viewport: { width: 320, height: 900 },
+    });
     page.on("pageerror", (e) => errors.push(e.message));
     await page.goto(`${base}/play/${f.session.sessionId}`);
-    await expect(page.locator("[data-consumer-state=cover]")).toBeVisible();
-    await shot(page, `cover-${width}`);
     await page.getByRole("button", { name: "开始答题", exact: true }).click();
-    await expect(page.locator("[data-consumer-state=question]")).toBeVisible();
     await page.getByRole("radio").first().click();
-    await shot(page, `question-unsaved-${width}`);
+    mode = "unknown";
+    const before = savePosts;
     await page.getByRole("button", { name: "暂歇，查看进度" }).click();
-    await expect(page.locator("[data-consumer-state=resume]")).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "核对上一次操作" }),
+    ).toBeVisible();
+    expect(await page.locator("input:enabled").count()).toBe(0);
+    expect(savePosts).toBeGreaterThan(before);
+    const afterLoss = savePosts;
+    networkAttemptsDuringLoss = afterLoss - before;
+    sameOriginalBindingDuringLoss =
+      new Set(saveBindings.slice(before, afterLoss)).size === 1;
+    expect(sameOriginalBindingDuringLoss).toBe(true);
+    await shot(page, "unknown-320");
+    mode = "entry-unavailable";
     await page.reload();
+    await expect(
+      page.getByRole("heading", { name: "核对上一次操作" }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "暂时无法读取体验" }),
+    ).toBeVisible();
+    await shot(page, "pending-entry-unavailable-320");
+    mode = "normal";
+    await page.reload();
+    await expect(
+      page.getByRole("heading", { name: "核对上一次操作" }),
+    ).toBeVisible();
+    expect(savePosts).toBe(afterLoss);
+    await shot(page, "pending-restored-320");
+    mode = "normal";
+    await page.getByRole("button", { name: "核对原操作" }).click();
+    await expect(
+      page.getByRole("button", { name: "采用已核对结果" }),
+    ).toBeVisible();
+    await page.getByRole("button", { name: "采用已核对结果" }).click();
     await expect(page.locator("[data-consumer-state=resume]")).toBeVisible();
-    await shot(page, `resume-reloaded-${width}`);
-    await page.close();
-  }
-  state = f.initial;
-  last = null;
-  mode = "normal";
-  const page = await browser.newPage({ viewport: { width: 320, height: 900 } });
-  page.on("pageerror", (e) => errors.push(e.message));
-  await page.goto(`${base}/play/${f.session.sessionId}`);
-  await page.getByRole("button", { name: "开始答题", exact: true }).click();
-  await page.getByRole("radio").first().click();
-  mode = "unknown";
-  const before = savePosts;
-  await page.getByRole("button", { name: "暂歇，查看进度" }).click();
-  await expect(
-    page.getByRole("heading", { name: "核对上一次操作" }),
-  ).toBeVisible();
-  expect(await page.locator("input:enabled").count()).toBe(0);
-  expect(savePosts).toBeGreaterThan(before);
-  const afterLoss = savePosts;
-  expect(new Set(saveBindings.slice(before)).size).toBe(1);
-  await shot(page, "unknown-320");
-  mode = "entry-unavailable";
-  await page.reload();
-  await expect(
-    page.getByRole("heading", { name: "核对上一次操作" }),
-  ).toBeVisible();
-  await expect(
-    page.getByRole("heading", { name: "暂时无法读取体验" }),
-  ).toBeVisible();
-  await shot(page, "pending-entry-unavailable-320");
-  mode = "normal";
-  await page.reload();
-  await expect(
-    page.getByRole("heading", { name: "核对上一次操作" }),
-  ).toBeVisible();
-  expect(savePosts).toBe(afterLoss);
-  await shot(page, "pending-restored-320");
-  mode = "normal";
-  await page.getByRole("button", { name: "核对原操作" }).click();
-  await expect(
-    page.getByRole("button", { name: "采用已核对结果" }),
-  ).toBeVisible();
-  await page.getByRole("button", { name: "采用已核对结果" }).click();
-  await expect(page.locator("[data-consumer-state=resume]")).toBeVisible();
-  expect(savePosts).toBe(afterLoss);
-  await page.getByRole("button", { name: "继续答题", exact: true }).click();
-  for (let i = 0; i < f.entry.facts.entry.questions.length; i++) {
-    if (i > 0) {
-      await page
-        .getByRole("button", { name: new RegExp(`第 ${i + 1} 题`) })
-        .click();
+    expect(savePosts).toBe(afterLoss);
+    await page.getByRole("button", { name: "继续答题", exact: true }).click();
+    for (let i = 0; i < f.entry.facts.entry.questions.length; i++) {
+      if (i > 0) {
+        await page
+          .getByRole("button", { name: new RegExp(`第 ${i + 1} 题`) })
+          .click();
+      }
+      await page.getByRole("radio").first().click();
+      await page.getByRole("button", { name: "暂歇，查看进度" }).click();
+      await expect(page.locator("[data-consumer-state=resume]")).toBeVisible();
     }
-    await page.getByRole("radio").first().click();
-    await page.getByRole("button", { name: "暂歇，查看进度" }).click();
-    await expect(page.locator("[data-consumer-state=resume]")).toBeVisible();
+    await page.getByRole("button", { name: "检查并完成", exact: true }).click();
+    await expect(
+      page.getByRole("heading", { name: "确认完成本次测评" }),
+    ).toBeVisible();
+    await shot(page, "completion-review-320");
+    mode = "deny-resource";
+    await page.reload();
+    await page.getByRole("button", { name: "继续答题", exact: true }).click();
+    await expect(
+      page.getByRole("heading", { name: "请重新验证访问" }),
+    ).toBeVisible();
+    await shot(page, "authority-lost-320");
+    await page.close();
+    mode = "completed";
+    const completed = await browser.newPage({
+      viewport: { width: 320, height: 900 },
+    });
+    completed.on("pageerror", (e) => errors.push(e.message));
+    await completed.goto(`${base}/play/${f.session.sessionId}`);
+    await expect(
+      completed.locator("[data-consumer-state=result]"),
+    ).toBeVisible();
+    await expect(completed.locator("img")).toBeVisible();
+    await shot(completed, "completed-result-320");
+    await completed.getByRole("button", { name: "展开报告" }).click();
+    await expect(
+      completed.locator("[data-consumer-state=report]"),
+    ).toBeVisible();
+    await shot(completed, "completed-report-320");
+    await completed
+      .getByRole("button", { name: "查看海报", exact: true })
+      .click();
+    await completed.getByRole("button", { name: "生成报告海报" }).click();
+    await expect(
+      completed.getByRole("button", { name: "下载 PNG 海报" }),
+    ).toBeVisible();
+    await shot(completed, "completed-poster-ready-320");
+    const downloadPromise = completed.waitForEvent("download");
+    await completed.getByRole("button", { name: "下载 PNG 海报" }).click();
+    await (
+      await downloadPromise
+    ).saveAs(path.join(out, "host-export-1080x1920.png"));
+    const png = await sharp(
+      path.join(out, "host-export-1080x1920.png"),
+    ).metadata();
+    expect([png.width, png.height]).toEqual([1080, 1920]);
+    await completed.close();
+    const access = await browser.newPage({
+      viewport: { width: 320, height: 900 },
+    });
+    await access.goto(`${base}/access#key=malformed`);
+    await expect(
+      access.getByRole("heading", { name: "进入你的测评" }),
+    ).toBeVisible();
+    expect(new URL(access.url()).hash).toBe("");
+    await shot(access, "access-invalid-320");
+    await access.close();
   }
-  await page.getByRole("button", { name: "检查并完成", exact: true }).click();
-  await expect(
-    page.getByRole("heading", { name: "确认完成本次测评" }),
-  ).toBeVisible();
-  await shot(page, "completion-review-320");
-  mode = "deny-resource";
-  await page.reload();
-  await page.getByRole("button", { name: "继续答题", exact: true }).click();
-  await expect(
-    page.getByRole("heading", { name: "请重新验证访问" }),
-  ).toBeVisible();
-  await shot(page, "authority-lost-320");
-  await page.close();
-  mode = "completed";
-  const completed = await browser.newPage({
+  mode = "expired-pending";
+  const complete = stored.receipt.binding;
+  state = (
+    await consumerAppliedFixtureV1({
+      binding: {
+        schemaVersion: "quizforge.consumer-save.v1",
+        session: f.session,
+        expectedStateRevision: 0,
+        consumerStateAnswersSha256: complete.consumerStateAnswersSha256,
+        progressSha256: complete.progressSha256,
+      },
+      answers: rebuilt.answers,
+      progress: { questionId: null },
+    })
+  ).state;
+  const expired = await browser.newPage({
     viewport: { width: 320, height: 900 },
   });
-  completed.on("pageerror", (e) => errors.push(e.message));
-  await completed.goto(`${base}/play/${f.session.sessionId}`);
-  await expect(completed.locator("[data-consumer-state=result]")).toBeVisible();
-  await expect(completed.locator("img")).toBeVisible();
-  await shot(completed, "completed-result-320");
-  await completed.getByRole("button", { name: "展开报告" }).click();
-  await expect(completed.locator("[data-consumer-state=report]")).toBeVisible();
-  await shot(completed, "completed-report-320");
-  await completed
-    .getByRole("button", { name: "查看海报", exact: true })
-    .click();
-  await completed.getByRole("button", { name: "生成报告海报" }).click();
+  expired.on("pageerror", (e) => errors.push(e.message));
+  await expired.addInitScript(
+    ({ id, binding }) =>
+      sessionStorage.setItem(
+        `quizforge:p4:consumer-pending:v1:${id}`,
+        JSON.stringify({
+          schemaVersion: "quizforge.consumer-client-pending.v1",
+          operation: "complete",
+          mayHaveBeenSent: true,
+          binding,
+        }),
+      ),
+    { id: f.session.sessionId, binding: complete },
+  );
+  await expired.goto(`${base}/play/${f.session.sessionId}`);
   await expect(
-    completed.getByRole("button", { name: "下载 PNG 海报" }),
+    expired.getByText("本次答题期限已到，可查询原提交结果。", { exact: false }),
   ).toBeVisible();
-  await shot(completed, "completed-poster-ready-320");
-  const downloadPromise = completed.waitForEvent("download");
-  await completed.getByRole("button", { name: "下载 PNG 海报" }).click();
-  await (
-    await downloadPromise
-  ).saveAs(path.join(out, "host-export-1080x1920.png"));
-  const png = await sharp(
-    path.join(out, "host-export-1080x1920.png"),
-  ).metadata();
-  expect([png.width, png.height]).toEqual([1080, 1920]);
-  await completed.close();
-  const access = await browser.newPage({
-    viewport: { width: 320, height: 900 },
-  });
-  await access.goto(`${base}/access#key=malformed`);
+  await expect(expired.getByRole("button", { name: "重放原操作" })).toHaveCount(
+    0,
+  );
+  await shot(expired, "expired-complete-pending-320");
+  const beforeResolve = requests.length;
+  await expired.getByRole("button", { name: "核对原操作" }).click();
   await expect(
-    access.getByRole("heading", { name: "进入你的测评" }),
+    expired.getByRole("button", { name: "核对原操作" }),
   ).toBeVisible();
-  expect(new URL(access.url()).hash).toBe("");
-  await shot(access, "access-invalid-320");
-  await access.close();
+  await expect(expired.getByRole("button", { name: "重放原操作" })).toHaveCount(
+    0,
+  );
+  expect(requests.slice(beforeResolve)).toEqual([
+    `/play/${f.session.sessionId}/api/complete/resolve`,
+  ]);
+  expect(
+    await expired.evaluate(
+      (id) =>
+        sessionStorage.getItem(`quizforge:p4:consumer-pending:v1:${id}`) !==
+        null,
+      f.session.sessionId,
+    ),
+  ).toBe(true);
+  await shot(expired, "expired-complete-unresolved-320");
+  await expired.close();
   expect(errors).toEqual([]);
   await writeFile(
     path.join(out, "result.json"),
@@ -460,9 +552,8 @@ try {
         screenshots,
         observations,
         savePosts,
-        networkAttemptsDuringLoss: afterLoss - before,
-        sameOriginalBindingDuringLoss:
-          new Set(saveBindings.slice(before, afterLoss)).size === 1,
+        networkAttemptsDuringLoss,
+        sameOriginalBindingDuringLoss,
         requestPaths: requests,
         pageErrors: errors,
       },

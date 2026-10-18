@@ -320,3 +320,78 @@ it("a real Key expiry before grant expiry stops editing while the grant remains 
     c.dispose();
   }
 });
+it("expired original completion pending exposes expiry and allows only resolve, never replay or removal", async () => {
+  const f = await fixture(),
+    s = storage();
+  const answers = f.entry.facts.entry.questions.map((q) => ({
+      questionId: q.id,
+      optionId: q.options[0]!.id,
+    })),
+    progress = { questionId: null };
+  const accepted = await applied({
+    binding: {
+      schemaVersion: "quizforge.consumer-save.v1",
+      session: f.session,
+      expectedStateRevision: 0,
+      consumerStateAnswersSha256: await consumerAnswersSha256(answers),
+      progressSha256: f.initial.progressSha256,
+    },
+    answers,
+    progress,
+  });
+  const binding = {
+    schemaVersion: "quizforge.consumer-complete.v1" as const,
+    session: f.session,
+    expectedStateRevision: 1,
+    consumerStateAnswersSha256: accepted.state.consumerStateAnswersSha256,
+    progressSha256: accepted.state.progressSha256,
+    completionKey: crypto.randomUUID(),
+  };
+  const { prepareConsumerPendingV1 } = await import("./pending");
+  const original = await prepareConsumerPendingV1(
+    s,
+    { kind: "complete", binding },
+    () => true,
+  );
+  let posts = 0;
+  const fetcher: typeof fetch = async (url, options) => {
+    if (options?.method === "POST") {
+      posts++;
+      return json({
+        schemaVersion: "quizforge.consumer-complete-resolution.v1",
+        kind: "unresolved",
+        binding,
+        bindingSha256: await (
+          await import("@/features/report/persisted/view-contracts")
+        ).consumerCompleteBindingSha256(binding),
+        state: accepted.state,
+      });
+    }
+    return json(
+      String(url).endsWith("session")
+        ? {
+            ...f.view,
+            keyExpiresAt: "2026-10-17T00:00:00.000Z",
+            outcome: { kind: "expired", state: accepted.state },
+          }
+        : f.entry,
+    );
+  };
+  const c = new ConsumerControllerV1(f.session.sessionId, s, fetcher);
+  try {
+    await c.bootstrap();
+    expect(c.getSnapshot()).toMatchObject({
+      phase: "pending",
+      keyExpired: true,
+    });
+    await c.recover(true);
+    expect(posts).toBe(0);
+    await c.recover();
+    expect(posts).toBe(1);
+    expect(c.getSnapshot().resolution?.kind).toBe("unresolved");
+    await c.adoptObserved();
+    expect(await readConsumerPendingV1(s, f.session)).toEqual(original);
+  } finally {
+    c.dispose();
+  }
+});
