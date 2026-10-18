@@ -64,3 +64,17 @@ fixture 中一次检查发现存储空目录路径遗漏 `uploads`，在提交�
 开发过程的初次timestamp类型假设、原23503预期、整图比较解析差异及一次RETURNING复合行限定语法错误均已修正；有实际partial graph的过程实例停止保留，不复用重置。此笔没有实现grant轮转服务、8格SQL owner、业务HTTP服务或真实首款链路，仍待后续实现与独审。
 
 后续完整回归又实际暴露namespace与普通fixture隔离：旧认证suite留下6条合成audit行，namespace的严格空库证明在DROP前拒绝（230通过/1失败后bail）。这些行未被namespace清理，实例停止保留。该组四项现在使用独立 `vitest.p4-namespace.config.ts` 和新鲜marker-verified空实例，不再混在普通 `vitest.db.config.ts`；不降低空行/无文件证明、不借reset清除前suite行。独立命令为 `pnpm exec vitest run --config vitest.p4-namespace.config.ts`，应由CI在另一个新隔离service执行。新自有实例该4项通过；普通PG回归仍待最终结果。实例隔离修订不影响runtime gate或任何migration字节。
+
+## SQL admission 与工厂早期生命周期观察
+
+新增纯SQL阶段 primitive（尚未接三类public业务服务）：process-global固定Symbol registry最多8个当前owner，opening/running/closing/quarantine全计数；在factory前同步占格，第9个有限BUSY且零factory调用，无排队和TTL回收。一个phase仅一个既有max5 pool，因此仅此P4入口每进程池容量上界40；不声称整个应用或多进程总连接上限。
+
+只有实际factory及顶层callback都settled、真实verification也settled、所有实际end fulfilled且终态不再发起新工作/关闭时才归还。factory明确证明从未分配client时可无资源归还；裸factory rejection不是证明。关闭拒绝永久隔离，实际close迟到fulfilled可按全部条件归还；业务OUTCOME_UNKNOWN与资源归还分开。每owner只保留当前opening/work/verification及最多3条既有factory真实end观察，无历史/无限Promise数组，无reset API。
+
+`createObservedDatabase` 与既有 `createDatabase` 共用完整配置、身份、schema验证和既有driver策略。内部observer在verify首次await前同步拿到实际client，并观察actual verification与normal/abort/catch各end Promise；原catch对外有限错误不变，其吞掉的close rejection仍被owner保留。未观察的旧入口行为不变，不提供弱化schema或任意数据库来源的应用接口。
+
+当前实测：5项故障注入单元通过，涵盖8格/第9号、取消/超时后保持占位、close已fulfilled但实际work或verification仍pending、模块重载共用registry、迟到正向证明精确归还、显式无client证明、业务UNKNOWN且资源真关闭可归还，以及拒绝close后100次请求零新增open。另1项真实PG父测试运行4个独立真实driver子进程（normal、late-close、early-failure、rejected-close）通过：实际pool/client建立，end的迟到/拒绝观察由测试在真实资源上注入，额外请求被挡；cleanup调用捕获的原生end，父进程等待子进程actual close后再查询真实app backend数为0，才记为结束。不是声称driver自然发生了这些错误。
+
+早期失败夹具第一次用了本地配置不允许的server port，故在分配client前被配置校验拒绝，父测试记录失败但也确认0后端；修正为仅在内存使用CI-profile的错误预期server身份（连接参数仍是同一个自有test库），真实verification失败分配路径后四场景重验通过。没有修改实例配置/marker、业务行或旧SQL，永久故障registry随该独立测试进程实际结束；没有在运行进程清registry假装恢复。完整driver46项、普通PG全套、HTTP服务与FS资源body生命周期仍待后续验证。
+
+本笔当前158文件/1771单元、format、lint、typecheck和生产build通过；implementation校验3项可用，build trace80项/0违规。普通PG整套在此固定生产源继续运行，尚无通过结论。未运行3100/E2E，不把primitive当三类完整service或request/resource owner已交付。
