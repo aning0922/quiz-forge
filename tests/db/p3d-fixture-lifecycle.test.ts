@@ -5,6 +5,7 @@ import { createServer } from "node:net";
 import path from "node:path";
 import { lstat } from "node:fs/promises";
 import { beforeAll, afterAll, expect, it } from "vitest";
+import { prepareP3cSource } from "./p3c-source-fixture";
 import { openTestDatabase, type TestDatabase } from "./p2a-fixture";
 import { resetDomainDatabase } from "./p2b2b-domain-fixture";
 import { createPreauth, login } from "@/lib/auth/service";
@@ -93,6 +94,14 @@ it("prepares five exact sources; finish never deletes; fake proof or incomplete 
     "spare",
     "alias-initial",
   ]);
+  // Same UUID is intentional: these browser fixtures must own disjoint physical pixels.
+  const p3c = await prepareP3cSource(
+    `preview-${runId.slice(0, 8)}-archetype`,
+    "archetype",
+    runId,
+  );
+  const p3cHashes = new Set(p3c.blobs.map((b) => b.sha256));
+  expect(fixture.blobs.every((b) => !p3cHashes.has(b.sha256))).toBe(true);
   expect(fixture.initialIdempotencyKey).toBeTruthy();
   expect(fixture.completed).toBe(false);
   expect((await lstat(file)).mode & 0o777).toBe(0o600);

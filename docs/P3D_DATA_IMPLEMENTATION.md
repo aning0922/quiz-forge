@@ -34,3 +34,7 @@ Astra 在核心批后用真实应用角色复现 P2：合法的 append applicati
 独立文件 `draft-revisions-p3d-e2e-fixture.json`，原子私有写、32KiB上限；五个来源initial/second/third/spare/alias-initial、独立Product/actors/真实合成像素及r1原key，prepared时严格校身份与hash。prepare只应用r1；浏览器依次second、third追加；finish仅在精确r1/r2/r3与三成功应用、一修订一服务审计及未用来源完整时设置completed，不删除。cleanup只供根runner直接调用，先验WeakMap真实ServerExitProof、writer退出、imports禁用/维护锁、其他连接/预留/native控制、命名空间/外部引用及私有资源原字节和inode，再删除精确自有闭环与文件。
 
 fresh7b1c36cfd40f3999c7fad07596751675/55421实际通过独立生命周期测试：CLI prepare、未完整图finish拒绝、伪退出证明拒绝、两次实际服务追加、CLI finish后业务仍存在、实际受控Node子进程close/PGID缺席/端口释放后cleanup成功、私有文件及Product删除。此为真实owner协议和DB/FS证据，不是Next/Playwright生产链路完成；主控仍需用其实际Next退出证明跑P3D→P3C→B3→B2。类型与定向lint通过。
+
+## 夹具像素命名空间隔离
+
+P3-D prepare 仅将内容像素seed改为 `p3d:${runId}`；私有fixture/runId/真实退出身份仍使用原UUID，五来源内部继续同seed复用。生命周期测试以同一UUID实际构造P3C archetype像素，验证两个blob集合不相交，再完整执行prepare/两次追加/finish/真实owner-proof cleanup；1项PG通过（2.43秒），类型及定向lint通过。未修改生产代码或迁移。
