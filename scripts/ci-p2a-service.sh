@@ -56,6 +56,7 @@ docker run --detach --cidfile "$ci_service_dir/container-id" \
   --mount "type=bind,source=$ci_service_dir/password,target=/run/secrets/pg-password,readonly" \
   --env POSTGRES_PASSWORD_FILE=/run/secrets/pg-password \
   --env POSTGRES_USER=postgres --env POSTGRES_DB=postgres \
+  --env 'POSTGRES_INITDB_ARGS=--encoding=UTF8 --locale=C' \
   --env POSTGRES_HOST_AUTH_METHOD=scram-sha-256 \
   --health-cmd 'pg_isready -U postgres -d postgres' \
   --health-interval 2s --health-timeout 3s --health-retries 30 \

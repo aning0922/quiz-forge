@@ -57,3 +57,9 @@ root 另核精确批准 ZIP/content/全部 9 路径 8 独立素材，实际固�
 修复 14ea22e（A c671408）已加入 qf namespace gate，在 runtime 校验及官方 migrate 的任何 DDL/ACL 重置之前拒绝未登记对象、规则、策略及 namespace 权限；不修改 0018 或旧 migration checksum。A 实际 fresh1→18、4 namespace/7 schema 共11 PG 与1766单元、format/lint/type/build通过；污染18和旧17拒绝且行/history/ACL零变化。仅删除测试自建 view 后旧17→18保持旧行。独审待复验，原 view P2 当前仍打开。裸执行0018仍不是完整入口，必须使用官方runner。A后续普通PG回归发现旧16表枚举和自动修复CREATE权限的测试预期需适配，尚未宣称全量通过。Astra 独立 a536 测试库已实际停止并保留反例；root 首款39eb仍保持原样停库。
 
 14ea22e 的原 namespace P2 已独立复验关闭。Astra 自有新实例 fresh1→18 的11 PG通过，另独立探针在旧17和当前18重建同一个可更新view：app开库和官方migrate都拒绝，业务行/历史/目录/schema OID/schema及数据库ACL前后SHA一致。仅移除探针自建view后17→18成功，16旧表行和17历史不变；0018 SHA仍a723d409df2dc1225f4504ff14bc13b18824c93adac28b7f10058c3e586c060a。证据 namespace-fixed-probe-result.json。此处关闭原遗漏对象P2，不代表在线撤销既有连接、完整PG或业务owner/服务通过。
+
+## 本地与 CI 区域设置一致性
+
+0018 之后的远端 database job 曾在 bootstrap 失败（例如39138415716），不能记作已跑PG。root用固定同一Docker镜像新建两套独占隔离实例，仅改变initdb locale：镜像默认en_US.utf8实例在旧17停止、0018拒绝；明确UTF8/C实例1→18和app开库成功，最终catalog SHA与本地906ca374完全一致。两个容器均已核自身label并实际停止，失败/成功卷保留，未碰首款39eb。安全记录见 [CI locale 对照](qa/p4-ci-locale-probe.json)。
+
+CI脚本现在显式使用与本地管理器相同的 `--encoding=UTF8 --locale=C`。0018内嵌及runtime catalog排序具有locale前提，本轮不改任何既有SQL/checksum，也不对非C旧库强制升级或重写history；新CI实际结果仍需按准确head观察。消费者HTTP压力测试另修正全局Promise观测误归因：只计算reader调用栈附件，刻意加入8个无关reactions；旧生产负对照仍以134/8450/33794失败，新代码完整1804单元/166文件通过。
