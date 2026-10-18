@@ -47,6 +47,7 @@ async function savedState() {
     savedAt: at,
   };
   return {
+    schemaVersion: "quizforge.consumer-state.v1",
     session,
     createdAt: at,
     stateRevision: 1,
@@ -163,6 +164,7 @@ describe("consumer v1 state and revision-slot facts", () => {
   });
   it("verifies a complete initial state but does not accept a forged empty-state digest", async () => {
     const initial = {
+      schemaVersion: "quizforge.consumer-state.v1",
       session,
       createdAt: at,
       stateRevision: 0,
