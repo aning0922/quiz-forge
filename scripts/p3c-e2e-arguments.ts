@@ -9,6 +9,7 @@ const projects = new Set([
   "studio-preview",
   "studio-draft-revisions",
   "studio-internal-versions",
+  "consumer-flow",
 ]);
 /** Forward only test selectors. Playwright control/version/UI/config switches cannot bypass an actual run. */
 export function previewE2eArguments(input: readonly string[]): string[] {

@@ -4,7 +4,11 @@
 
 完整消费者实现已登记为精确entry193b48c92352d731c9c2e41de05316471a2c46f58d8e2f2596995ee531d974a1，包含修复后的host/controller、六视图、资源transport和PNG；独审真实host+registry及构建门禁通过。长Key计时器和动态到期pending提示均已复验关闭，消费者HTTP适配通过合成独审。SQL primitive、旧业务升级和retain已验证；固定数据源60文件485PG无skip，fresh namespace另4项。
 
-当前request/resource owner已合入f40947a，但“前序关闭失败后仍能进入下一phase”P2已在193c6aa修复并独立原反例闭合；Studio秘密pending/client与控制器已集成，7f116f5收口秘密披露锚点竞态并独审通过，实际页面继续接入。A/B正常合并共享代码，继续真实三类业务服务、运营/消费者路由及专属物理fixture。P4独立test/ci synthetic baseline ec1e4e3和八场景fixture观察合同eb7338e已独审；尚不代表prepare/cleanup或业务链路完成。主控已执行095页面组合的生产build（84trace/0private）与独占3100两宽10项页面headers/跳转检查，服务和浏览器已实际停止；完整native/E2E仍待业务接线，也没有在首款39eb创建真实consumer play/Key/session/report。内容和视觉仍用已批准基线，main、生产部署与商品发布未变。 准确9ebcf6e远端CI39143180437已全成功：1848单元、487PG、46driver、fresh服务14/namespace4/媒体UNKNOWN3及生产build；这是后续app组合和owner修复之前的检查点，不代表当前head最终验收。
+request/resource owner 的前序关闭失败 P2、Studio 秘密锚点竞态 P2 均已独立原反例闭合。A 的真实内测版本和 Key 领域服务已集成 2a42f62，B 的运营页面及 8 个真实 API route 已集成 8d99837；10 个 route 入口及原时钟由 Astra 独审通过。物理 fixture 已实现，仍保持 operator-services 与完整 consumer-e2e 的完成门分离。
+
+新发现的两个 fixture 清理 P2（未确认 manifest FD 关闭、owner 视角不可见 backend_type 的活连接）已由 bc17e6b 修复；Studio 后台隐藏时旧披露未撤销 P2 已由 ddfe162 修复。主控 format/lint/typecheck/实现门禁通过，三个原反例等待独立复验，不能记为已关闭。消费者业务 factory 的首轮真实 PG 已由 A 跑通，待固定提交、故障矩阵及接线。B 继续 8 场景生产 E2E；主控的独占 runner 新接线已纯审通过，实际全套尚未运行。
+
+准确 2a42f62 的远端 CI 39149243131 已成功：179 文件 1873 单元、63 文件 493 PG、fresh 服务14/namespace4/媒体 UNKNOWN3及生产 build（85 traces、18021 paths、0违规）。这早于最新 route 和三个修复，不能代替当前 head 最终验收。主控之前准确095页面组合的独占3100两宽10项检查已通过，服务和浏览器已实际停止；完整新 build/native/E2E仍待接线收口。首款39eb保持禁导入、停库，未创建消费者play/Key/session/report；内容视觉沿已批准基线继续，P4/P5未完成。
 
 ## 2026-10-18 P4 消费者事务与页面实施中
 

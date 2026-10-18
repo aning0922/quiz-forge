@@ -26,6 +26,14 @@ import {
 } from "../tests/db/p3e-internal-version-fixture";
 import { INTERNAL_VERSION_FIXTURE_PRIVATE_NAME } from "../tests/db/p3e-internal-version-fixture-contract";
 import {
+  cleanupConsumerFixture,
+  readConsumerFixture,
+} from "../tests/db/p4-consumer-fixture";
+import {
+  CONSUMER_FIXTURE_PRIVATE_NAME,
+  CONSUMER_OBSERVATIONS_PRIVATE_NAME,
+} from "../tests/db/p4-consumer-fixture-contract";
+import {
   launchPreviewServer,
   assertPreviewServerRunning,
   stopAndProveServerExit,
@@ -204,6 +212,8 @@ async function main() {
   const runId = randomUUID(),
     identity = { cwd, instanceId: config.instanceId, runId };
   for (const name of [
+    CONSUMER_FIXTURE_PRIVATE_NAME,
+    CONSUMER_OBSERVATIONS_PRIVATE_NAME,
     INTERNAL_VERSION_FIXTURE_PRIVATE_NAME,
     DRAFT_REVISION_FIXTURE_PRIVATE_NAME,
     PREVIEW_FIXTURE_PRIVATE_NAME,
@@ -219,6 +229,7 @@ async function main() {
     QF_PREVIEW_E2E_RUN_ID: runId,
     QF_DRAFT_REVISION_E2E_RUN_ID: runId,
     QF_INTERNAL_VERSION_E2E_RUN_ID: runId,
+    QF_CONSUMER_E2E_RUN_ID: runId,
     TSX_TSCONFIG_PATH: path.join(cwd, "tsconfig.json"),
     PLAYWRIGHT_BROWSERS_PATH: path.join(cwd, ".cache", "ms-playwright"),
   };
@@ -249,6 +260,42 @@ async function main() {
   checkpoint();
   if (!passed || !proof) throw Error("MANAGED_E2E_EXIT_UNPROVEN");
   assertServerExitProof(proof, identity);
+  // P4 references shared P3-E blobs. Remove only its fully observed graph before older owners.
+  phase = "consumer-cleanup";
+  const consumerFixtureFile = path.join(
+    path.dirname(configFile),
+    CONSUMER_FIXTURE_PRIVATE_NAME,
+  );
+  if (await exists(consumerFixtureFile)) {
+    const db = await openTestDatabase();
+    try {
+      const fixture = await readConsumerFixture(db, runId);
+      if (
+        !fixture.completed ||
+        fixture.observations?.mode !== "consumer-e2e" ||
+        !fixture.observations.suiteCompletion ||
+        fixture.observations.reports.length === 0
+      )
+        throw Error("CONSUMER_FIXTURE_UNKNOWN_PRESERVED");
+      await configureImports(db.config.instanceId, false);
+      const cleaned = await cleanupConsumerFixture(db, runId, proof);
+      process.stdout.write(
+        JSON.stringify({
+          phase: "consumer-native-control",
+          observation: cleaned.nativeControl,
+        }) + "\n",
+      );
+    } finally {
+      await db.close();
+    }
+    process.stdout.write(
+      JSON.stringify({
+        phase: "cleanup",
+        fixture: CONSUMER_FIXTURE_PRIVATE_NAME,
+        result: "passed",
+      }) + "\n",
+    );
+  } else if (args.length === 0) throw Error("CONSUMER_E2E_NOT_EXECUTED");
   phase = "internal-version-cleanup";
   const internalFixtureFile = path.join(
     path.dirname(configFile),
