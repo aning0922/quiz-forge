@@ -71,6 +71,7 @@ describe("consumer HTTP source and credential separation", () => {
     expect(consumerGrantCookie(new Headers())).toBeNull();
     for (const cookie of [
       `${name}=${raw};${name}=${raw}`,
+      `${name}=${raw}; ${name} =${raw}`,
       `${name}`,
       `${name}=`,
       `${name}=${createConsumerToken("access-key")}`,
