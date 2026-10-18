@@ -22,6 +22,7 @@ import {
   persistedReportReceiptSchema,
   verifyPersistedReportReceipt,
 } from "@/features/report/persisted/view-contracts";
+import { parseConsumerToken } from "@/lib/consumer-contract/v1/credentials";
 
 const same = (a: unknown, b: unknown) =>
   sameConsumerFact(a, b, L.operationReceiptBytes);
@@ -230,14 +231,25 @@ export const consumerSessionViewSchema = z
     )
       issue(ctx);
   });
-export async function verifyConsumerSessionView(input: unknown) {
+export async function verifyConsumerSessionView(
+  input: unknown,
+  expectedSessionId: string,
+) {
   const v = consumerSessionViewSchema.parse(input);
+  if (v.grant.session.sessionId !== uuid.parse(expectedSessionId))
+    throw Error("CONSUMER_SESSION_MISMATCH");
   if ("state" in v.outcome) await verifyConsumerState(v.outcome.state);
   else await verifyPersistedReportReceipt(v.outcome.report);
   return v;
 }
 
 /** Exchange alone sets the HttpOnly cookie; bootstrap separately returns grant-bound CSRF. */
+export const consumerExchangeInputSchema = z.strictObject({
+  rawKey: z
+    .string()
+    .length(50)
+    .refine((value) => parseConsumerToken(value, "access-key") !== null),
+});
 export const consumerExchangeResultSchema = z.strictObject({
   schemaVersion: z.literal("quizforge.consumer-exchange.v1"),
   session: consumerSessionRefSchema,
