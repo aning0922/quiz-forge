@@ -49,12 +49,14 @@ export function consumerGrantCookie(headers: Headers): string | null {
   const matches = (headers.get("cookie") ?? "")
     .split(";")
     .map((v) => v.trim())
-    .filter((v) => v.split("=", 1)[0] === CONSUMER_COOKIE_NAME_V1);
+    .filter((v) => v.split("=", 1)[0]!.trim() === CONSUMER_COOKIE_NAME_V1);
   if (matches.length === 0) return null;
   if (matches.length !== 1) throw new ConsumerError("ACCESS_DENIED");
   const part = matches[0]!,
     split = part.indexOf("="),
     raw = split < 0 ? null : part.slice(split + 1);
+  if (part.slice(0, split) !== CONSUMER_COOKIE_NAME_V1)
+    throw new ConsumerError("ACCESS_DENIED");
   if (!parseConsumerToken(raw, "grant"))
     throw new ConsumerError("ACCESS_DENIED");
   return raw;
