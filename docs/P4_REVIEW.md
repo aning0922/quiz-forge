@@ -107,3 +107,11 @@ Studio基础9ebcf6e（B35cc40f）已独审无P1/P2：原8+独立3测试、真实
 0953457（B81a51d1）页面边界独审3项通过：实际Next matcher的10正8负、真实NextResponse固定头和4场景React SSR唯一#main/main；冻结source/build交集为空。root进一步用准确095生产构建（84trace/17843path/0private）在独占3100实际启动Next，390/1440两宽×access/session/report/无效UUID/未知子路由共10case验证实际状态码、private/no-store/no-referrer/nosniff/无CORS、唯一main/skip target及Enter真实跳转全部通过。仅仅读旧成功测试实例f746配置，PG保持停止，无auth/业务数据/native/fixture准备；browser关闭、受管Next真实退出/进程组不存在/端口重绑定证明均通过。见 [页面HTTP证据](qa/p4-page-http-check.json)。完整P4/P5 E2E仍未运行。
 
 429e93d（A926450a）同事务ports与四领域repository已集成，主控typecheck/implementation门禁通过；A5真实PG覆盖完整报告读回/JS摘要、同TX/跨TX克隆锁见证拒绝、RR外禁用后fresh auth拒绝，独审进行中。三类业务service和专属物理fixture继续实施。为P4独立r1-head产品，root已将新增synthetic consumer baseline单entry/import注册及独立测试源交A，仅test/ci；不得改旧两个baseline或将合成数据视作已批准首款。
+
+6561d24（root ec1e4e3）测试专用baseline已独审无P1/P2：独立Python重算三份规范输入逐字节一致，98个Product引用无旧/外ID，五PNG原字节、48×48及声明/展示边匹配。48准入矩阵仅新旧各自test/ci四项接受，其余44拒绝；demo提升与未知身份拒绝，三个评分见证low/middle/high通过。entry2e2f54d1ad54d209686f6aac713d292266c8986469324926059638ad464fd444。未跑DB/native，不代表真实首款或物理fixture已验收。
+
+54cc1b8（root eb7338e）fixture合同原4测试及独立34项拒绝矩阵通过，限定无P1/P2；completed严格区分operator-services和consumer-e2e。实际actor、父版本、密码学摘要、完整row manifest和来源均仍需finish实现核验，Schema只核形状与所列交叉字段。Root新4测试/typecheck通过，prepare/finish/cleanup仍待A实现，runner也尚未接虚构入口。
+
+Studio controller 1b60d96（B79a2b70）独审发现秘密锚点竞态P2，三个合成反例曾复现：最终fresh issuer等待中换锚、改raw=null，以及expose callback等待中移除锚，旧秘密仍可经旧局部变量披露。7f116f5（B19ffd76）加最后授权await之后同步规范全锚点比较，并让延迟callback与成功提示共用此current。独立3原反例、14漂移/存储异常分支和复制/导出正例全部通过，原13+独立7测试通过，P2在controller范围关闭。原反例保留，证据studio-secret-fix-19ffd76-review-result.json；实际UI仍须在副作用前使用该current，不把memory callback测试当OS剪贴板/实际发放。主控当前三文件17项与typecheck通过。
+
+fdef4e1（B711974c）父版本列表GET改用独立有界DTO读取，避免旧draft/Node运行图；10原测试与独立transport反例通过，浏览器目标打包无DB/Node/评分/旧draft response，独审无新增P1/P2。真实Studio页面接线仍继续。
