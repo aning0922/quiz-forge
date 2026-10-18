@@ -427,6 +427,41 @@ try {
     notifyAuth = resolve;
   });
   holdAuth = true;
+  const beforeHidden = clipboardCalls;
+  await page.getByRole("button", { name: "复制私密访问链接" }).click();
+  await authReached;
+  await page.evaluate(() => {
+    Object.defineProperty(document, "hidden", {
+      configurable: true,
+      value: true,
+    });
+    document.dispatchEvent(new Event("visibilitychange"));
+  });
+  await expect(
+    page.getByRole("heading", { name: "请重新验证运营身份" }),
+  ).toBeVisible();
+  releaseAuth?.();
+  await page.evaluate(() => {
+    Object.defineProperty(document, "hidden", {
+      configurable: true,
+      value: false,
+    });
+    document.dispatchEvent(new Event("visibilitychange"));
+  });
+  await expect(
+    page.getByRole("heading", { name: "请重新验证运营身份" }),
+  ).toBeVisible();
+  expect(clipboardCalls).toBe(beforeHidden);
+  await shot(page, "hidden-pending-disclosure-320");
+  await page.getByRole("button", { name: "重新读取与核对身份" }).click();
+  await page.getByRole("button", { name: "核对原请求" }).click();
+  await expect(
+    page.getByRole("heading", { name: "原 Key 发放已记录" }),
+  ).toBeVisible();
+  authReached = new Promise<void>((resolve) => {
+    notifyAuth = resolve;
+  });
+  holdAuth = true;
   await page.getByRole("button", { name: "复制私密访问链接" }).click();
   await authReached;
   await page.evaluate(() =>
