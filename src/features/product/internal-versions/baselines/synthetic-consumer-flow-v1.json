@@ -1,0 +1,187 @@
+{
+  "schemaVersion": "quizforge.baseline-registry-entry.v1",
+  "kind": "baseline",
+  "id": "consumer-flow-synthetic-baseline",
+  "version": "1.0.0",
+  "productId": "consumer-flow-fixture",
+  "purpose": "internal-test",
+  "allowedInstancePurposes": ["test", "ci"],
+  "canonicalContentSha256": "d2a2ccf9be34c2485f71080e73337e43a159132650f2d9f36e71e49bdc33fae6",
+  "assetSetSha256": "19f6cfe15c3eb4364a8f64a1b1f9f13ec5ddba6f0549bee11f3c8175f30e39d3",
+  "canonicalManifestSha256": "2d196b5fb1a36cb267e73ba28b8d37e167cd7c3d847d0d3c93c32c138a24485a",
+  "logicHash": "fffd80bbf433d8ed8b734df3d84a7832fe6b5be324b35652f277655c03ac273e",
+  "approval": {
+    "kind": "synthetic-test",
+    "fixtureId": "consumer-flow-fixture-v1",
+    "evidenceSha256": "ac5727614cc3597c1566a5647461073bfa2ef9bd5f5fc2c6f48b7fd8dab7b86b",
+    "scope": "test-evidence-no-author-approval"
+  },
+  "sourceEvidence": {
+    "kind": "synthetic-definition",
+    "definitionSha256": "ac5727614cc3597c1566a5647461073bfa2ef9bd5f5fc2c6f48b7fd8dab7b86b",
+    "qualification": "synthetic-content-private-pixels-no-author-approval"
+  },
+  "engine": {
+    "id": "archetype",
+    "version": "1.0.0"
+  },
+  "components": {
+    "cover": {
+      "id": "folio-cover",
+      "propsSchemaVersion": "1.0.0",
+      "version": "2.0.0"
+    },
+    "poster": {
+      "id": "folio-poster",
+      "propsSchemaVersion": "1.0.0",
+      "version": "2.0.0"
+    },
+    "question": {
+      "id": "folio-question",
+      "propsSchemaVersion": "1.0.0",
+      "version": "2.0.0"
+    },
+    "report": {
+      "id": "folio-report",
+      "propsSchemaVersion": "1.0.0",
+      "version": "2.0.0"
+    },
+    "result": {
+      "id": "cabinet-result",
+      "propsSchemaVersion": "1.0.0",
+      "version": "2.0.0"
+    },
+    "resume": {
+      "id": "folio-resume",
+      "propsSchemaVersion": "1.0.0",
+      "version": "2.0.0"
+    }
+  },
+  "resourceEdges": [
+    {
+      "resourceId": "neutral-cover",
+      "version": "1.0.0",
+      "purpose": "cover",
+      "sha256": "f48056710540c0e02de61fd2b336093c1d08011cd9abcb77047130df4903c8e8",
+      "bytes": 6442,
+      "mediaType": "image/png",
+      "width": 48,
+      "height": 48,
+      "reviewFile": "neutral-cover.png"
+    },
+    {
+      "resourceId": "portrait-1",
+      "version": "1.0.0",
+      "purpose": "portrait",
+      "sha256": "e34319eecc54ad7d0543066221086f60f87d031039e54a3f9a279d870a274b2c",
+      "bytes": 6441,
+      "mediaType": "image/png",
+      "width": 48,
+      "height": 48,
+      "reviewFile": "portrait-1.png"
+    },
+    {
+      "resourceId": "portrait-2",
+      "version": "1.0.0",
+      "purpose": "portrait",
+      "sha256": "ff18e63946e68491b8ec42817aba87e3eaa66591142a0e65d22036104c561183",
+      "bytes": 6440,
+      "mediaType": "image/png",
+      "width": 48,
+      "height": 48,
+      "reviewFile": "portrait-2.png"
+    },
+    {
+      "resourceId": "portrait-3",
+      "version": "1.0.0",
+      "purpose": "portrait",
+      "sha256": "26e040181ea00fa677aac98065c2166a455456a50b074a3b7c5b5a8b62a6740e",
+      "bytes": 6440,
+      "mediaType": "image/png",
+      "width": 48,
+      "height": 48,
+      "reviewFile": "portrait-3.png"
+    },
+    {
+      "resourceId": "neutral-scene",
+      "version": "1.0.0",
+      "purpose": "decoration",
+      "sha256": "e5fc88a6fa14aa29ff614a5d5194b1ee6d1789c691351a3b806dd5795ab76249",
+      "bytes": 6441,
+      "mediaType": "image/png",
+      "width": 48,
+      "height": 48,
+      "reviewFile": "neutral-scene.png"
+    }
+  ],
+  "presentationEdges": {
+    "cover": {
+      "id": "neutral-cover",
+      "productId": "consumer-flow-fixture",
+      "version": "1.0.0"
+    },
+    "sections": [
+      {
+        "sectionId": "first-hall",
+        "resourceRef": {
+          "id": "neutral-scene",
+          "productId": "consumer-flow-fixture",
+          "version": "1.0.0"
+        }
+      }
+    ],
+    "results": [
+      {
+        "resultRef": {
+          "id": "low",
+          "productId": "consumer-flow-fixture",
+          "version": "1.0.0"
+        },
+        "reportTemplateRef": {
+          "id": "report-low",
+          "productId": "consumer-flow-fixture",
+          "version": "1.0.0"
+        },
+        "portraitRef": {
+          "id": "portrait-1",
+          "productId": "consumer-flow-fixture",
+          "version": "1.0.0"
+        }
+      },
+      {
+        "resultRef": {
+          "id": "middle",
+          "productId": "consumer-flow-fixture",
+          "version": "1.0.0"
+        },
+        "reportTemplateRef": {
+          "id": "report-middle",
+          "productId": "consumer-flow-fixture",
+          "version": "1.0.0"
+        },
+        "portraitRef": {
+          "id": "portrait-2",
+          "productId": "consumer-flow-fixture",
+          "version": "1.0.0"
+        }
+      },
+      {
+        "resultRef": {
+          "id": "high",
+          "productId": "consumer-flow-fixture",
+          "version": "1.0.0"
+        },
+        "reportTemplateRef": {
+          "id": "report-high",
+          "productId": "consumer-flow-fixture",
+          "version": "1.0.0"
+        },
+        "portraitRef": {
+          "id": "portrait-3",
+          "productId": "consumer-flow-fixture",
+          "version": "1.0.0"
+        }
+      }
+    ]
+  }
+}

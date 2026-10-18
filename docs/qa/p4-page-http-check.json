@@ -1,0 +1,99 @@
+{
+  "scope": "Actual production Next on owned3100; only credential-free synthetic pages/headers/skip target. Existing config read-only, PostgreSQL stayed stopped, no auth or business data/fixtures/native.",
+  "codeCommit": "09534570b25c67395f00dd4c1bca154de81f6f85",
+  "browser": "156.0.8078.4",
+  "observations": [
+    {
+      "label": "access",
+      "width": 390,
+      "status": 200,
+      "privateHeaders": true,
+      "oneMain": true,
+      "skipTarget": true
+    },
+    {
+      "label": "session",
+      "width": 390,
+      "status": 200,
+      "privateHeaders": true,
+      "oneMain": true,
+      "skipTarget": true
+    },
+    {
+      "label": "report",
+      "width": 390,
+      "status": 200,
+      "privateHeaders": true,
+      "oneMain": true,
+      "skipTarget": true
+    },
+    {
+      "label": "invalid",
+      "width": 390,
+      "status": 404,
+      "privateHeaders": true,
+      "oneMain": true,
+      "skipTarget": true
+    },
+    {
+      "label": "unknown",
+      "width": 390,
+      "status": 404,
+      "privateHeaders": true,
+      "oneMain": true,
+      "skipTarget": true
+    },
+    {
+      "label": "access",
+      "width": 1440,
+      "status": 200,
+      "privateHeaders": true,
+      "oneMain": true,
+      "skipTarget": true
+    },
+    {
+      "label": "session",
+      "width": 1440,
+      "status": 200,
+      "privateHeaders": true,
+      "oneMain": true,
+      "skipTarget": true
+    },
+    {
+      "label": "report",
+      "width": 1440,
+      "status": 200,
+      "privateHeaders": true,
+      "oneMain": true,
+      "skipTarget": true
+    },
+    {
+      "label": "invalid",
+      "width": 1440,
+      "status": 404,
+      "privateHeaders": true,
+      "oneMain": true,
+      "skipTarget": true
+    },
+    {
+      "label": "unknown",
+      "width": 1440,
+      "status": 404,
+      "privateHeaders": true,
+      "oneMain": true,
+      "skipTarget": true
+    }
+  ],
+  "browserClosed": true,
+  "serverExitProven": true,
+  "databaseStarted": false,
+  "failure": null,
+  "schemaVersion": "quizforge.p4-page-http-check.v1",
+  "build": {
+    "traceCount": 84,
+    "pathCount": 17843,
+    "privateViolations": 0
+  },
+  "fullProductionE2e": false,
+  "nativePreflight": false
+}

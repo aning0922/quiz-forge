@@ -83,3 +83,35 @@ fca21ee（Ae08b78c）的SQL admission与早期factory observer独审无P1/P2：�
 登记在任何实际play创建前随动态到期P3修复de30ef5（Baa52f2b）重算：当前entry193b48c92352d731c9c2e41de05316471a2c46f58d8e2f2596995ee531d974a1，implementation fd08554ea34f107440856644901da300950745b9d31eb0fc09c941ba51bf51ab；原9a4147b/a77 checkpoint留在Git历史和安全记录，但未用于业务。root现无consumer业务库，A尚未接登记，B无DB，39eb仍17停库。新相关3文件20项及类型/implementation门禁通过，真实浏览器同样127输入/16拒绝且无server运行依赖。当前证据见 [登记补验](qa/p4-consumer-implementation-current.json)；原1827全量只归属于9a checkpoint。
 
 独审提醒host实参可为完整entry/report对象，组合层必须投影renderer/mapping/font三字段再调用严格resolver；不能把窄函数直接当宽对象回调。B接真实app时补实际host+registry正例，当前静态浏览器probe仅验证resolver，不冒充已接通host。24305c7（B1139c06）新增有界HTTP适配与request-owner注入，原7单元通过，真实app/owner服务接线及独审继续。
+
+## 2026-10-19 最终登记与接线审查
+
+独审已确认3ff3d1d准确entry193b48c92352d731c9c2e41de05316471a2c46f58d8e2f2596995ee531d974a1及implfd08554ea34f107440856644901da300950745b9d31eb0fc09c941ba51bf51ab，无P1/P2。逐个核74源文件/3构建输入字节与SHA，20原测试及2独立边界通过；36tuple字段篡改拒绝、深冻结、重算自洽hash后遗漏controller依赖仍被门禁拒绝。实际host配合真实resolver、显式三字段投影的浏览器151输入正例显示封面，身份/字体/映射漂移拒绝，无server/DB/评分运行依赖。证据registration-final-independent-probe-result.json和registry-host-final-probe-result.json；无业务引用是主控确认，非独审查过业务库。
+
+aa52（root de30ef5）动态到期P3亦关闭：三真实320场景的刷新已到期/停留500ms到期都隐藏replay并解释仍可resolve，规范pending全文不变；未到期明确重放一次保持原binding/completionKey。动态修后原图已实看，临时服务/浏览器实际退出。仅关闭此P3，不宣称项目所有P3清零。
+
+24305c7（B1139c06）HTTP adapter独审原7+独立4测试通过、无P1/P2：跨grant CSRF/错token域/重复编码selector/已abort入口零owner；坏read有限503，write成功后abort为UNKNOWN且无成功cookie；exact bytes交同owner，重复idempotent close不提前dispose原stream，原request abort仍传播。全为合成DI，真实服务与app route还未交付。
+
+新request/resource owner f40947a（Aaeb8f51）已集成，主控17相关测试、typecheck和implementation门禁通过；独审正在进行。确认一个P2：若调用方捕获第一段SQL关闭失败，owner当前只清phasePending、未记录前序成功，会允许exchange第二SQL或转IO。独审真实owner/SQL owner注入close拒绝后，隔离槽保留但第二factory/work仍进入。需在该request前序失败后禁止所有后继SQL/IO，不以服务的catch约定替代owner准入，也不释放隔离资源或重置时钟。证据request-owner-failed-predecessor-probe-result.json，A正在独立修复。
+
+9ebcf6e（B35cc40f）集成Studio client及本标签原请求/秘密保管基础，主控8测试和typecheck通过，独审待完成。实际页面、复制/下载前fresh issuer核验、运营HTTP和生产E2E仍需接线。A/B均已正常合并最终共享3ff基线，未替换独立聊天或重置其成果。
+
+Studio基础9ebcf6e（B35cc40f）已独审无P1/P2：原8+独立3测试、真实Chromium124输入通过，完整原记录刷新恢复、四维scope、异步失权保护和raw缺失只核实均符合。issue实际请求仅含六binding字段及digest，URL/headers/body均无raw，存储无CSRF/grant/Cookie；独立新标签为空。尚未包含实际页面或复制下载前fresh issuer授权。证据studio-pending-browser-probe-result.json、studio-independent-probe-result.json。
+
+193c6aa（A0edad79）已合入request owner P2修复：phaseFailed锁存，只有前序工作、实际close和checkpoint均成功才累计confirmedSqlPhases；已捕获错误或迟到成功不使同request恢复后继准入。A15专项、2真实PG和完整1844单元通过；主控相关21测试/typecheck通过，独立原反例复验待回执。
+
+准确9ebcf6ea839c637fe471ffab3d963159529688c0的远端CI39143180437已actual success：175文件1848单元、61文件487PG、46driver、fresh服务14、namespace4、媒体UNKNOWN3，以及format/lint/type/生产build通过；数据库job于2026-10-18 16:11:29 UTC完成。该head早于后续app页面组合和phaseFailed修复，不能扩大为当前head、native或生产E2E通过。后续467ce2d页面组合只完成主控typecheck和implementation门禁；页面真实安全响应头仍待B补。
+
+0edad（root193c6aa）前序phase P2已独立关闭：原failed-predecessor探针exchange/complete各只open一次，捕获close未知后所有后继SQL/IO为INVALID_REQUEST、callback/guard open均0。16定向测试及修后真实PG2通过，原隔离子进程真实退出且父backend0；未重复此前已通过原流/15秒组合。证据request-owner-failed-predecessor-fixed-probe-result.json。aeb+0edad本批owner无剩余P1/P2，不扩为完整业务或资产授权。
+
+0953457（B81a51d1）页面边界独审3项通过：实际Next matcher的10正8负、真实NextResponse固定头和4场景React SSR唯一#main/main；冻结source/build交集为空。root进一步用准确095生产构建（84trace/17843path/0private）在独占3100实际启动Next，390/1440两宽×access/session/report/无效UUID/未知子路由共10case验证实际状态码、private/no-store/no-referrer/nosniff/无CORS、唯一main/skip target及Enter真实跳转全部通过。仅仅读旧成功测试实例f746配置，PG保持停止，无auth/业务数据/native/fixture准备；browser关闭、受管Next真实退出/进程组不存在/端口重绑定证明均通过。见 [页面HTTP证据](qa/p4-page-http-check.json)。完整P4/P5 E2E仍未运行。
+
+429e93d（A926450a）同事务ports与四领域repository已集成，主控typecheck/implementation门禁通过；A5真实PG覆盖完整报告读回/JS摘要、同TX/跨TX克隆锁见证拒绝、RR外禁用后fresh auth拒绝，独审进行中。三类业务service和专属物理fixture继续实施。为P4独立r1-head产品，root已将新增synthetic consumer baseline单entry/import注册及独立测试源交A，仅test/ci；不得改旧两个baseline或将合成数据视作已批准首款。
+
+6561d24（root ec1e4e3）测试专用baseline已独审无P1/P2：独立Python重算三份规范输入逐字节一致，98个Product引用无旧/外ID，五PNG原字节、48×48及声明/展示边匹配。48准入矩阵仅新旧各自test/ci四项接受，其余44拒绝；demo提升与未知身份拒绝，三个评分见证low/middle/high通过。entry2e2f54d1ad54d209686f6aac713d292266c8986469324926059638ad464fd444。未跑DB/native，不代表真实首款或物理fixture已验收。
+
+54cc1b8（root eb7338e）fixture合同原4测试及独立34项拒绝矩阵通过，限定无P1/P2；completed严格区分operator-services和consumer-e2e。实际actor、父版本、密码学摘要、完整row manifest和来源均仍需finish实现核验，Schema只核形状与所列交叉字段。Root新4测试/typecheck通过，prepare/finish/cleanup仍待A实现，runner也尚未接虚构入口。
+
+Studio controller 1b60d96（B79a2b70）独审发现秘密锚点竞态P2，三个合成反例曾复现：最终fresh issuer等待中换锚、改raw=null，以及expose callback等待中移除锚，旧秘密仍可经旧局部变量披露。7f116f5（B19ffd76）加最后授权await之后同步规范全锚点比较，并让延迟callback与成功提示共用此current。独立3原反例、14漂移/存储异常分支和复制/导出正例全部通过，原13+独立7测试通过，P2在controller范围关闭。原反例保留，证据studio-secret-fix-19ffd76-review-result.json；实际UI仍须在副作用前使用该current，不把memory callback测试当OS剪贴板/实际发放。主控当前三文件17项与typecheck通过。
+
+fdef4e1（B711974c）父版本列表GET改用独立有界DTO读取，避免旧draft/Node运行图；10原测试与独立transport反例通过，浏览器目标打包无DB/Node/评分/旧draft response，独审无新增P1/P2。真实Studio页面接线仍继续。

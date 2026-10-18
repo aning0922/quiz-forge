@@ -1,5 +1,11 @@
 # 阶段进度
 
+## 2026-10-19 P4 业务接线与独立复验
+
+完整消费者实现已登记为精确entry193b48c92352d731c9c2e41de05316471a2c46f58d8e2f2596995ee531d974a1，包含修复后的host/controller、六视图、资源transport和PNG；独审真实host+registry及构建门禁通过。长Key计时器和动态到期pending提示均已复验关闭，消费者HTTP适配通过合成独审。SQL primitive、旧业务升级和retain已验证；固定数据源60文件485PG无skip，fresh namespace另4项。
+
+当前request/resource owner已合入f40947a，但“前序关闭失败后仍能进入下一phase”P2已在193c6aa修复并独立原反例闭合；Studio秘密pending/client与控制器已集成，7f116f5收口秘密披露锚点竞态并独审通过，实际页面继续接入。A/B正常合并共享代码，继续真实三类业务服务、运营/消费者路由及专属物理fixture。P4独立test/ci synthetic baseline ec1e4e3和八场景fixture观察合同eb7338e已独审；尚不代表prepare/cleanup或业务链路完成。主控已执行095页面组合的生产build（84trace/0private）与独占3100两宽10项页面headers/跳转检查，服务和浏览器已实际停止；完整native/E2E仍待业务接线，也没有在首款39eb创建真实consumer play/Key/session/report。内容和视觉仍用已批准基线，main、生产部署与商品发布未变。 准确9ebcf6e远端CI39143180437已全成功：1848单元、487PG、46driver、fresh服务14/namespace4/媒体UNKNOWN3及生产build；这是后续app组合和owner修复之前的检查点，不代表当前head最终验收。
+
 ## 2026-10-18 P4 消费者事务与页面实施中
 
 当前由 A 独立数据聊天、B 独立体验聊天、Astra 独立审查和本主控继续开发，分支 `codex/consumer-session-report` / Draft PR #20。内容与视觉内测基线已获作者批准；同一基线不重复请批。39eb 首款原实例仍禁导入、停库保留。没有完成真实消费者 Key 发放、持久答题、唯一报告或 P5 验收。

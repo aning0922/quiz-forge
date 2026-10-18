@@ -13,3 +13,8 @@ tests/fixtures/p3e-baseline/content.json
 tests/fixtures/p3e-baseline/manifest.json
 tests/fixtures/p3e-baseline/asset-set.json
 tests/fixtures/p3e-baseline/synthetic-evidence.json
+# Exact independent P4 synthetic inputs; byte hashes form its test/ci-only registration.
+tests/fixtures/p4-baseline/content.json
+tests/fixtures/p4-baseline/manifest.json
+tests/fixtures/p4-baseline/asset-set.json
+tests/fixtures/p4-baseline/synthetic-evidence.json
