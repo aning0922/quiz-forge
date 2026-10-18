@@ -286,7 +286,12 @@ describe("consumer resolution boundaries", () => {
       keyExpiresAt: "2026-10-18T01:00:00.000Z",
       outcome: { kind: "completed", report: f.report.receipt },
     };
-    expect(await verifyConsumerSessionView(value)).toEqual(value);
+    expect(
+      await verifyConsumerSessionView(value, f.state.session.sessionId),
+    ).toEqual(value);
+    await expect(
+      verifyConsumerSessionView(value, testUuid(94)),
+    ).rejects.toThrow("CONSUMER_SESSION_MISMATCH");
     expect(
       consumerSessionViewSchema.safeParse({
         ...value,
@@ -294,10 +299,13 @@ describe("consumer resolution boundaries", () => {
       }).success,
     ).toBe(false);
     expect(
-      await verifyConsumerSessionView({
-        ...value,
-        outcome: { kind: "expired", state: f.state },
-      }),
+      await verifyConsumerSessionView(
+        {
+          ...value,
+          outcome: { kind: "expired", state: f.state },
+        },
+        f.state.session.sessionId,
+      ),
     ).toBeDefined();
     expect(
       consumerSessionViewSchema.safeParse({
