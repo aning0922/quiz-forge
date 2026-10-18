@@ -13,6 +13,7 @@ export function useDraftRead<T>(
       generation: number;
       loading: boolean;
       value?: T;
+      lastValue?: T;
       error?: string;
     }>({ path, generation: 0, loading: true });
   const checker = useRef(check);
@@ -29,16 +30,26 @@ export function useDraftRead<T>(
       { revision },
     ).then(
       (value) => {
-        if (current) setState({ path, generation, loading: false, value });
-      },
-      (error) => {
         if (current)
           setState({
             path,
             generation,
             loading: false,
-            error: draftMessage(error),
+            value,
+            lastValue: value,
           });
+      },
+      (error) => {
+        if (current)
+          setState((previous) => ({
+            path,
+            generation,
+            loading: false,
+            error: draftMessage(error),
+            ...(previous.path === path && previous.lastValue !== undefined
+              ? { lastValue: previous.lastValue }
+              : {}),
+          }));
       },
     );
     return () => {
@@ -50,6 +61,9 @@ export function useDraftRead<T>(
   return {
     loading: !active || state.loading,
     value: active && !state.loading ? state.value : undefined,
+    // Immutable navigation scope may survive a current-pointer refresh or failure.
+    // It is never presented as a newly confirmed current value.
+    lastValue: state.path === path ? state.lastValue : undefined,
     error: active ? state.error : undefined,
     refresh: () => setGeneration((n) => n + 1),
   };
