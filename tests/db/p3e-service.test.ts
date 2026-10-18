@@ -36,6 +36,10 @@ import {
   removeOwned,
 } from "@/features/quizpack/import/storage";
 import { StorageLock } from "@/features/quizpack/import/storage-lock";
+import { StorageReadGuard } from "@/features/quizpack/resource-read/guard";
+import type postgres from "postgres";
+import { readReadyDraftSourceEvidenceReadonly } from "@/features/quizpack/draft-source-evidence";
+import { buildInternalSnapshot } from "@/features/product/internal-versions/snapshot";
 import { ResourceReadTask } from "@/features/quizpack/resource-read/task";
 import { createInternalVersionOwner } from "@/features/product/internal-versions/lifecycle";
 import { createProductInternalVersionService } from "@/features/product/internal-versions/service";
@@ -540,4 +544,142 @@ it("keeps one RR business snapshot while another transaction advances head; the 
     ).kind,
   ).toBe("not-recorded-obsolete");
   expect((await readFile(files[0]!.file)).length).toBeGreaterThan(0);
+});
+
+it("an external immutable ledger blocks actual unlink and retains both original files and DB facts", async () => {
+  const review = await record();
+  await seal(sealInput(review.review));
+  const bytes = await readFile(files[0]!.file),
+    before = await counts();
+  const lock = await StorageLock.acquire(db.config);
+  try {
+    await expect(
+      (async () => {
+        await assertNoRetainedInternalReferences(lock, {
+          revisions: [
+            {
+              productId: source.scope.productId,
+              draftId: initial.application.draftId,
+              revision: 1,
+            },
+          ],
+          imports: [],
+          validations: [],
+          blobSha256: files.map((f) => path.basename(f.file, ".blob")),
+        });
+        for (const file of files) await removeOwned(file.file, file.inode);
+      })(),
+    ).rejects.toThrow("INTERNAL_VERSION_REFERENCE_RETAINED");
+    expect(await readFile(files[0]!.file)).toEqual(bytes);
+    expect(await counts()).toEqual(before);
+  } finally {
+    await lock.close();
+  }
+});
+
+it("uses the immutable 100-slot facts for capacity proof; a finite VERSION_LIMIT alone grants no proof", async () => {
+  const review = await record(),
+    request = sealInput(review.review);
+  const fixed = await reads.read(db.app, auth.session.raw, async (tx) =>
+    buildInternalSnapshot(
+      { productId: source.scope.productId, ...request },
+      review.review,
+      await readReadyDraftSourceEvidenceReadonly(tx, source.scope, {
+        expectedValidationStateRevision:
+          source.input.expectedValidationStateRevision,
+        expectedCandidateSha256: source.input.expectedCandidateSha256,
+      }),
+    ),
+  );
+  // Trusted-DB constraint fixture only: these synthetic font identities do NOT register executable implementations.
+  await writes.withStudioWrite(
+    db.app,
+    auth.credentials,
+    "version:seal-internal",
+    async (tx, actor) => {
+      for (let slot = 1; slot <= 100; slot++) {
+        const version = await repository.insertVersion(
+          tx,
+          {
+            productId: source.scope.productId,
+            ...request,
+            idempotencyKey: randomUUID(),
+          },
+          {
+            ...fixed.snapshot,
+            font: {
+              ...fixed.snapshot.font,
+              id: `capacity-fixture-font-${slot}`,
+            },
+          },
+          slot,
+          actor,
+        );
+        versionIds.add(version.id);
+      }
+    },
+  );
+  await expect(seal(request)).rejects.toThrow("VERSION_LIMIT");
+  const result = await operation((s, d) =>
+    s.resolveVersion(d, auth.session.raw, {
+      productId: source.scope.productId,
+      ...request,
+    }),
+  );
+  expect(result.kind).toBe("not-sealed-capacity-exhausted");
+  if (result.kind === "not-sealed-capacity-exhausted")
+    expect([
+      result.limit,
+      result.occupiedCount,
+      result.observedCurrentRevision,
+    ]).toEqual([100, 100, 1]);
+});
+
+it("a real outer-guard disconnect cannot let maintenance cross the transaction/COMMIT window", async () => {
+  const acquire = StorageReadGuard.acquire,
+    write = writes.withStudioWrite;
+  let guard: StorageReadGuard | undefined;
+  vi.spyOn(StorageReadGuard, "acquire").mockImplementation(
+    async (...args) => (guard = await acquire(...args)),
+  );
+  const spy = vi
+    .spyOn(writes, "withStudioWrite")
+    .mockImplementation((database, credentials, capability, callback) =>
+      write(database, credentials, capability, async (tx, actor) => {
+        const value = await callback(tx, actor);
+        // Service has completed its final guard.check; xact SHARE must now bridge through COMMIT.
+        const connection = (
+          guard as unknown as { connection: postgres.ReservedSql }
+        ).connection;
+        await Promise.resolve(
+          connection`SELECT pg_terminate_backend(pg_backend_pid())`,
+        ).catch(() => undefined);
+        await guard!.check().catch(() => undefined);
+        await expect(StorageLock.acquire(db.config)).rejects.toThrow(
+          "RECEIVE_BUSY",
+        );
+        const [held] = await tx<
+          { held: boolean }[]
+        >`SELECT EXISTS(SELECT 1 FROM pg_locks WHERE pid=pg_backend_pid() AND locktype='advisory' AND classid=72461 AND objid=2 AND objsubid=2 AND mode='ShareLock' AND granted) AS held`;
+        expect(held?.held).toBe(true);
+        return value;
+      }),
+    );
+  await expect(record()).rejects.toThrow("WRITE_OUTCOME_UNKNOWN");
+  spy.mockRestore();
+  const resolved = await operation((s, d) =>
+    s.resolveReview(d, auth.session.raw, {
+      productId: source.scope.productId,
+      ...input,
+    }),
+  );
+  expect(resolved.kind).toBe("recorded");
+  if (resolved.kind === "recorded") reviewIds.add(resolved.review.id);
+  const lock = await StorageLock.acquire(db.config);
+  try {
+    await lock.check();
+  } finally {
+    await lock.close();
+  }
+  expect(await counts()).toEqual({ reviews: 1, versions: 0, audits: 1 });
 });
