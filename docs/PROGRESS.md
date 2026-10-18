@@ -6,7 +6,7 @@
 
 首款最终规范content70647B、asset-set2364B、manifest2121B已完成严格解析、引用、规范往返和四真实评分见证，Astra独立逐字段/来源/三hash复核通过；原始八图仍私有或沿已有仓库文件，未新增上传私有PNG，已在本地构建10887344B、11文件的精确ZIP（SHA40b7660697d52c660897e153c7a9ef02163717c92b90f0680ae6558150f5c0c0），完整本地包验证candidateValid通过；仍未走真实后台/native准入、审核落账或封存。使用依据见[FIRST_PRODUCT_ASSET_PROVENANCE](FIRST_PRODUCT_ASSET_PROVENANCE.md)；具体合同和已完成审查见[INTERNAL_VERSION_P3E](INTERNAL_VERSION_P3E.md)、[P3E_REVIEW](P3E_REVIEW.md)。这仍不代表P4/P5完成或发布获批。
 
-精确实现metadata、server/client resolver和只读build门禁已实现，30专项、lint/typecheck及真实Chromium七海报导出通过；实际永久实现正待独审，见[INTERNAL_IMPLEMENTATIONS](INTERNAL_IMPLEMENTATIONS.md)。A的数据底座与谱系升级已独立提交b004596/0d20483，尚待独审整改与主控集成；B继续新操作pending/后台，P3-E整体工程出口未完成。
+精确实现metadata、server/client resolver和只读build门禁已实现，30专项、lint/typecheck及真实Chromium七海报导出通过；实际永久实现正待独审，见[INTERNAL_IMPLEMENTATIONS](INTERNAL_IMPLEMENTATIONS.md)。A的数据底座与谱系升级已集成1b446c5/b2f726b，审计NULL P2修复1633f55经Astra复核关闭；主控另完成原0016现场无损升级17及旧key复读，自有现场已停。完整1612单元与类型通过，完整PG/driver仍在运行；B继续新操作pending/后台，P3-E整体工程出口未完成。
 
 ## 2026-10-18 P3-D 技术出口完成，接续精确审核与内测版本
 

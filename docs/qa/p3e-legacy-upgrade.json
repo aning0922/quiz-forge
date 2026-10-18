@@ -1,0 +1,25 @@
+{
+  "schemaVersion": "quizforge-p3e-legacy-upgrade.v1",
+  "instanceId": "b71cf93595ac017bca5c661c5b697c23",
+  "beforeSchema": 16,
+  "afterSchema": 17,
+  "snapshotSha256": "e557c82ddcd742eeefaf207a063c61604af8749ff5698da9b527bbeeaa4dc412",
+  "sourceCommit": "a66c456edc083642e2de06f669ddb8627a10c00e",
+  "oldTablesUnchangedBeforeAnyNewAuth": 14,
+  "oldMigrationChecksumsUnchanged": 16,
+  "blobsVerified": 5,
+  "revisionsPreserved": 3,
+  "oldGuardPassed16": true,
+  "newGuardRejected16": true,
+  "newGuardPassed17": true,
+  "oldGuardRejected17": true,
+  "writersAbsent": true,
+  "emptyNewLedgers": {
+    "reviews": 0,
+    "versions": 0
+  },
+  "originalReceiptPreserved": true,
+  "originalAppendReceiptsReplayed": 2,
+  "qualification": "real-0016-synthetic-private-pixels-no-browser-no-native",
+  "stoppedAfterVerification": true
+}

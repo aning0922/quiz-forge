@@ -1,6 +1,6 @@
 # P3-E 独立审查记录
 
-2026-10-18，承接P3-D交付a66c456。当前只完成范围和共享显示合同前置审查，不是review/version、迁移或P5完成结论。
+2026-10-18，承接P3-D交付a66c456。已完成范围/共享合同、显示解耦、精确基线登记及数据底座审查；实际服务、后台与阶段集成仍在推进，不能视为P3-E或P5完成。
 
 ## 范围与锁协议
 
@@ -42,3 +42,17 @@ A的每请求owner闭包设计已前置复核：同步transfer和一次性runNew
 Astra独审17单元、深层冻结与purpose矩阵、全部实际字段/来源摘要/语义边及4+3评分见证通过。历史条目entrySHA为b16780ff815b38a224b456344e1509b672c10fe398482c4aaca297985bffd4a0，synthetic为808741230320dfd12ef7eb4bcfaec0063bfae6080ef2aa74393df94ec6ee55fc。synthetic原规范JSON/五PNG与双准备进程逐字节相同，作为固定测试输入保存以避免跨平台重新编码；仅四精确canonical JSON路径排除格式化。真实三张私有PNG未进入Git。
 
 registry实际server bundle闭包仅受控代码和两descriptor，没有tests/.cache/原图或私有路径；这不是最终Next trace验收。模块无剩余P1/P2，可供A接入；新写仍须源码端口重算真实hash、实际purpose限制、请求identity精确一致，facts由descriptor给出。原key优先与历史metadata独立于执行可用性，须在服务集成验证。
+
+## 显示实现解耦
+
+B 的 5a21027（主控集成2ca7698）改为纯显示DTO、编译adapter注入resource transport/字体，保留旧Studio封套和错误constructor。Astra实际21文件141项、56种引擎/长报告/维度/问题边界及非法输入逐字节投影对照通过；旧及伪造prepared句柄被拒绝。独审Chromium156导出的low/middle/high三PNG旧新字节完全相同，1080×1920，6个Blob URL均释放、FontFace回归零；实际查看中间样例无新问题。
+
+纯导出bundle没有Product/Studio/Node。旧Studio对照harness为其旧模块图提供未使用且调用即抛错的node:util proxy shim；没有将它冒称生产Next构建或消费者浏览器bundle。当前显示范围无剩余P1/P2，后续后台新链路独立验收。
+
+## 数据底座、真实旧库与审计NULL修复
+
+A提交b004596/0d20483，Astra独立核六列revision及九列review FK、100 slot硬约束、canonical文本/SHA/列对应、源触发器、有限SELECT/INSERT与禁UPDATE权限、函数/索引/触发器精确guard；owner同步transfer、一次性db/budget身份、实际SQL/close观察和quarantine符合合同。独审实际30项相关单元通过；A的31项PG及5项重复guard、谱系升级和两旧清理/升级测试由独审读取实际工具证据与断言，不冒称独审重跑PG。
+
+独审发现P2：新增audit_target OR分支在target_kind或target_revision为NULL时CHECK结果为NULL，PostgreSQL接受。A在原隔离库实际复现两action各两字段共四例，事务回滚后零残留。64ace0d显式非空并将整个CHECK包IS TRUE，精确guard同步；保留停止旧checksum现场，在fresh实例验证四负例23514/audit_target、两正例成功，连同谱系升级/两guard/核心合计23PG通过。Astra读精确diff与实际结果确认P2关闭，三个commit可集成。该结论不包含A后续未提交服务或真实owner+FD/晚COMMIT故障测试。
+
+主控集成为1b446c5/b2f726b/1633f55后，另升级此前从P3-D真实建立的0016实例：14旧表、16迁移checksum及5blob在任何新认证写入前逐项保持一致，3修订谱系保留，原首次及两次追加key回执一致；双向旧新guard验证正确，未补造review/version。实例已停止保存，安全证据见[旧库升级](qa/p3e-legacy-upgrade.json)。不是用新代码重建0016代替原现场，也不是native/浏览器准入验收。

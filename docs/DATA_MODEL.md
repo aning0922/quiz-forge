@@ -1,5 +1,7 @@
 # 核心数据模型（已实现基础与B2-2B冻结合同）
 
+2026-10-18 P3-E集成进度：0017已建立不可变draft_review/product_version及精确来源FK、文本哈希、100版本槽位和有限权限。底座独审及原0016谱系升级通过，review/version业务服务和后台尚未完成；详见[合同](INTERNAL_VERSION_P3E.md)、[独审](P3E_REVIEW.md)。下方0016说明保留为前阶段记录。
+
 ## 2026-10-18 数据模型检查点
 
 当前受管分支已完成至P3-D，数据库迁移为0016。已落地运营身份/会话/审计、Product目录、原包接收、验证与资源归档，以及product_draft、draft_revision、draft_application三表的首稿闭环；具体证据以[P3C验收](P3C_ACCEPTANCE.md)及各阶段合同为准。下方B2记录保留历史，拟议实体不代表新增业务表已经存在。
