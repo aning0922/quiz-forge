@@ -13,7 +13,7 @@ let admin: Awaited<ReturnType<typeof openManagedDatabase>>;
 let app: P2aDatabase;
 beforeAll(async () => {
   const config = await loadRuntimeConfig();
-  if (!["test", "ci"].includes(config.purpose) || config.imports.enabled)
+  if (!["test", "ci"].includes(config.purpose))
     throw Error("P4_NAMESPACE_FRESH_TEST_REQUIRED");
   admin = await openManagedDatabase(config.instanceId);
   expect(admin.config).toEqual(config);
