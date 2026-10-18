@@ -95,7 +95,7 @@ async function command(mode: "prepare" | "finish") {
       {
         cwd: process.cwd(),
         env: process.env,
-        timeout: mode === "prepare" ? 90_000 : 60_000,
+        timeout: 90_000,
         maxBuffer: 4096,
       },
     );
@@ -206,14 +206,14 @@ test.beforeAll(async () => {
   // Auth-budget coordination may legitimately wait61s before preparing any business data.
   test.setTimeout(120_000);
   await command("prepare"); // execFile resolves only after the actual child exits.
-  fixture = await readFixture();
   prepared = true;
+  fixture = await readFixture();
 });
 test.afterEach(async ({}, info) => {
   completion.observe(info);
 });
 test.afterAll(async () => {
-  test.setTimeout(90_000);
+  test.setTimeout(120_000);
   if (prepared) {
     if (!completion.canFinish())
       throw Error("INTERNAL_VERSION_E2E_FULL_SUITE_REQUIRED");
