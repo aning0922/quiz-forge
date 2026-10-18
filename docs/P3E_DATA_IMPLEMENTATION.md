@@ -67,3 +67,15 @@ Astra 指出 cd590 的 observeGraph 只核私有文件列明来源，没有比�
 修复将整个 Product 的 imports/validations/applications/revisions/assets 集合、每条来源/应用的创建人、完整目标/hash、资产声明和 baseline 首次归属、固定 workspace 元数据一并纳入持锁新快照核验，任何额外/缺失/错 owner 都在自身 ledger 删除及 unlink 前拒绝。使用新 fresh 实例，负例实际确认第三来源及另一 actor、自有 1/1 ledger、全部五 blob 原字节完整保留；只有测试明确撤销其自行注入的精确 no-file 外来事实后，才继续正常清理。
 
 实际两个生命周期 PG 通过：第一项另覆盖正常推进至 r2 后完整图谱清理；第二项由更早的未登记 v1 合成来源先物理持有四个固定 PNG，P3E prepare 正确记录 created=false×4 / true×1，实际封存后仅删除本次新 scene，较早来源四文件逐字节不变、4 asset/ready validation 保留。该较早来源没有批准记录或任何 registry 命中，仅共享测试像素字节；P3E 固定 Product 与批准条目未复制。类型已通过，最终 lint/格式随本整改提交执行。
+
+## 真实关闭拒绝出口补充
+
+新增 `tests/db/p3e-close-fault.test.ts` 与仅由它启动的 `tests/support/p3e-close-fault-child.ts`，不修改生产接口、名额、队列或锁实现。每种场景使用独立 owned Node child、真实合成来源、真实 PostgreSQL 及真实文件；这是生命周期/退出协议验证，不冒称 Next、native 或浏览器验收。
+
+FD 场景先真实 record/seal，再在子进程加载 reader 前安装只针对本实例五个 blob 的 native open 包装。实际 open/stat/read/hash 均执行，仅真实 FileHandle 的 close 返回拒绝且不调用原 close；四项新 seal 均返回 PREVIEW_RESOURCE_UNAVAILABLE，四个实际句柄保留，最后用其 native stat 再次确认仍打开。DB 场景保留实际 db.close 的幂等、dispose 与关闭结果观察路径，仅让该请求真实 driver end 返回拒绝；首次 seal 已实际 COMMIT 而返回 WRITE_OUTCOME_UNKNOWN，另外三次新 key 实际确认回滚并返回 VERSION_ALREADY_SEALED。测试在被拒绝关闭的实际 pool 上另保留真实 reserved connection，避免 idle_timeout 被误当作关闭证明；同一四个 PG backend 在等待后仍由实际查询及父进程 pg_stat_activity 核实。测试不调用这些拒绝资源的补偿 close/release/unlock。
+
+两种场景均实际占满四个名额、观察四个 session SHARE guard、拒绝维护独占锁，并确认第五项新 seal 立即 PREVIEW_BUSY。等待最后一个原始 request deadline 再过完整 5000ms 观察窗后（实际分别约 5151ms），第五项仍 PREVIEW_BUSY；原 review/version key 均 created=false，resolve 为 recorded/sealed，新 key 的只读 resolve 为 not-sealed-target-used，不增加 FS 打开/关闭尝试。真实库均保持 1 review、1 version、2 条专用审计。只有实际 child close、进程组消失及端口空闲 proof 成立，并新查保留 PG backend 与 advisory guard 均为零、维护独占锁可取得后，才使用已观察完整回执做精确 fixture cleanup；五文件与固定 Product 实际移除。
+
+2026-10-18 fresh purpose=test 实例 `1d8b2c394e65f363042fd16677172c73` 的两项 PG 测试实际通过（45.38s）。安全摘要保存在该忽略缓存实例目录的 `p3e-close-fault-<runId>.json`（0600），不含凭据、SQL 或原始错误。全量 138 文件 / 1612 单元、format:check、lint、typecheck、build 通过；实现门禁核 3 descriptor / 51 文件 / 280 lock records，构建 trace 为 72 / 15075 paths / 0 违规。生产 E2E、最终四宽和整阶段验收仍由主控集成执行。
+
+首次运行误把多余 `--` 传给 Vitest，启动了完整 DB suite，发现后终止；期间旧 exact-table 期望及既有生命周期等失败。该 `763ab8e46a6ee88188ef63c592e0a437` 实例已停库原样保留，没有 reset 或重跑来覆盖失败现场；以上两项成功均来自另建 fresh 实例和准确文件过滤命令。所有更早失败实例继续停库保留。
