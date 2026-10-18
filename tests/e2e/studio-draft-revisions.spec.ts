@@ -292,11 +292,17 @@ async function openSource(page: Page, name: Source["name"], revision: number) {
 }
 async function confirm(page: Page, revision: number) {
   await appendPanel(page)
-    .getByRole("button", { name: `准备追加到修订 ${revision}`, exact: true })
+    .getByRole("button", { name: `基于修订 ${revision} 准备追加`, exact: true })
     .click();
   await expect(
     appendPanel(page).getByRole("region", {
       name: "确认追加不可变修订",
+      exact: true,
+    }),
+  ).toBeVisible();
+  await expect(
+    appendPanel(page).getByRole("heading", {
+      name: `确认基于修订 ${revision} 追加`,
       exact: true,
     }),
   ).toBeVisible();
@@ -405,7 +411,7 @@ test("read-only access has no append action, resolves without write capability a
   await openSource(page, "second", 1);
   await expect(
     appendPanel(page).getByRole("button", {
-      name: "准备追加到修订 1",
+      name: "基于修订 1 准备追加",
       exact: true,
     }),
   ).toHaveCount(0);
@@ -462,7 +468,7 @@ test("legacy anchors and corrupt revision storage block new preparation while se
   await openSource(page, "second", 1);
   await expect(
     appendPanel(page).getByRole("button", {
-      name: "准备追加到修订 1",
+      name: "基于修订 1 准备追加",
       exact: true,
     }),
   ).toHaveCount(0);
@@ -486,7 +492,7 @@ test("legacy anchors and corrupt revision storage block new preparation while se
     .click();
   await expect(
     appendPanel(page).getByRole("button", {
-      name: "准备追加到修订 1",
+      name: "基于修订 1 准备追加",
       exact: true,
     }),
   ).toBeVisible();
@@ -509,7 +515,7 @@ test("legacy anchors and corrupt revision storage block new preparation while se
   ).toBeVisible();
   await expect(
     appendPanel(page).getByRole("button", {
-      name: "准备追加到修订 1",
+      name: "基于修订 1 准备追加",
       exact: true,
     }),
   ).toHaveCount(0);
@@ -543,7 +549,7 @@ test("legacy anchors and corrupt revision storage block new preparation while se
   ).toHaveCount(0);
   await expect(
     appendPanel(page).getByRole("button", {
-      name: "准备追加到修订 1",
+      name: "基于修订 1 准备追加",
       exact: true,
     }),
   ).toBeVisible();
@@ -576,7 +582,9 @@ test("actual second append survives lost response and source503/404; original ke
     }),
   ).toBeVisible();
   await expect(
-    appendPanel(page).getByText("追加结果尚未确认。", { exact: false }),
+    appendPanel(page).getByText("本次提交未收到可确认的成功回执。", {
+      exact: false,
+    }),
   ).toBeVisible();
   expect(intercepted).toBe(1);
   expect((await pending(page))?.mayHaveBeenSent).toBe(true);
@@ -609,7 +617,7 @@ test("actual second append survives lost response and source503/404; original ke
   await expect(page.getByRole("alert").first()).toBeVisible();
   await expect(
     appendPanel(page).getByRole("button", {
-      name: "准备追加到修订 2",
+      name: "基于修订 2 准备追加",
       exact: true,
     }),
   ).toHaveCount(0);
@@ -741,6 +749,12 @@ test("another tab appends third to r3; old history anchor and original spare req
   const result = await resolve(page);
   expect(result.kind).toBe("not-applied-obsolete");
   expect(await pending(page)).not.toBeNull();
+  await expect(
+    appendPanel(page).getByText(
+      "本次提交未收到可确认的成功回执。请保留原 key 和完整基准，并以原请求核实区的最新证据为准。",
+      { exact: true },
+    ),
+  ).toBeVisible();
   await screenshot(page, info, "obsolete-original-base2");
   await clearTerminal(page);
   expect((await current(page)).revision).toBe(3);

@@ -15,7 +15,7 @@ export function revisionMessage(error: unknown): string {
       case "DRAFT_SOURCE_INVALID":
         return "来源不符合追加条件。请核实验证归档；原请求锚点保持。";
       case "WRITE_OUTCOME_UNKNOWN":
-        return "追加结果尚未确认。请保留原 key 和完整基准，先核实原请求，或明确按原请求重放。";
+        return "本次提交未收到可确认的成功回执。请保留原 key 和完整基准，并以原请求核实区的最新证据为准。";
       case "CAPABILITY_DENIED":
         return "当前身份没有草稿写权限。仍可核实原请求、阅读当前与历史修订。";
       default:
