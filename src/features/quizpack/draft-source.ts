@@ -353,7 +353,7 @@ async function readSource(
   }
   const stored = await tx<
     AssetRow[]
-  >`SELECT p.product_id,p.resource_id,p.resource_version,p.blob_sha256,p.declaration_text,p.declaration_sha256,p.purpose,p.platform_approval,b.sha256 AS blob_hash,b.bytes AS blob_bytes,b.media_type,b.width,b.height,b.frames,b.storage_key FROM jsonb_to_recordset((${row.asset_set_text}::jsonb)->'resources') AS r("resourceId" text,"resourceVersion" text) JOIN qf.product_asset p ON p.product_id=${scope.productId} AND p.resource_id=r."resourceId" AND p.resource_version=r."resourceVersion" JOIN qf.asset_blob b ON b.sha256=p.blob_sha256 LIMIT 65`;
+  >`SELECT p.product_id,p.resource_id,p.resource_version,p.blob_sha256,p.declaration_text,p.declaration_sha256,p.purpose,p.platform_approval,b.sha256 AS blob_hash,b.bytes AS blob_bytes,b.media_type,b.width,b.height,b.frames,b.storage_key FROM jsonb_to_recordset((${row.asset_set_text}::text::jsonb)->'resources') AS r("resourceId" text,"resourceVersion" text) JOIN qf.product_asset p ON p.product_id=${scope.productId} AND p.resource_id=r."resourceId" AND p.resource_version=r."resourceVersion" JOIN qf.asset_blob b ON b.sha256=p.blob_sha256 LIMIT 65`;
   const { content, resources } = inspected;
   if (
     stored.length !== resources.length ||
