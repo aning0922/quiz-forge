@@ -21,3 +21,5 @@ handler.ts现提供handleConsumerHttp(request, endpoint, dependencies, startedAt
 app消费者页组合预接：/access、/play/:sessionId及/report已建立独立动态布局（noindex/no-referrer），RSC只核本地Host和UUID后传安全sessionId；bootstrap仍由浏览器独立授权API完成。experience.tsx位于app边界，显式从host传来的完整entry/report facts挑renderer/mapping/font，再调用root严格resolveConsumerExperienceRuntime，catalog不进入host闭包。当前业务API实际factory仍待A交付，尚不能记为生产可用HTTP闭环。
 
 实际host+真实registry注入正例：consumer-host --registered-only使用真实app组合组件与root当前193b48...身份/字体/映射，合成源/play/report hash整组重建，传入完整facts；真实Chromium320×900，封面→选择→保存/刷新，以及到期pending resolve五图通过并原像素复核，0 pageError、无溢出、交互≥44px，证据.cache/p4-consumer-host/1792339469649/result.json。只验证组合不是业务授权/DB；不重拍原21图或重跑PNG。完整typecheck与定向lint通过。host/consumer runtime字节未改，无需因app组合层变动重算entry。
+
+页面HTTP边界：src/proxy.ts仅匹配/access/:path*与/play/:path*，在真实Response头附private/no-store、no-referrer、nosniff（含错误页），不读取凭证、不改next.config/已冻结host。consumer布局提供SSR存在的div#main焦点目标并包含唯一实际main；scoped not-found不重复id，全局未知路由仍使用原main#main。生产consumer-http-headers.spec.ts已编写5路径×手机/桌面10用例，禁trace/video/screenshot，覆盖三文档与错误页真实响应头/无CORS/唯一main及skip目标。当前只完成--list发现10项、lint/typecheck；实际生产build/3100运行交root，未宣称E2E通过。
