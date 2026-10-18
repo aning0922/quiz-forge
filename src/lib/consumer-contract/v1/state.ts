@@ -126,6 +126,7 @@ export const consumerSaveBindingSha256 = (input: unknown) =>
 
 export const consumerStateSchema = z
   .strictObject({
+    schemaVersion: z.literal("quizforge.consumer-state.v1"),
     session: consumerSessionRefSchema,
     createdAt: consumerMomentSchema,
     stateRevision: consumerStateRevisionSchema,
