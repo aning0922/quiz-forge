@@ -1,5 +1,13 @@
 # 阶段进度
 
+## 2026-10-18 首款真实包已在本地完成内测版本封存
+
+已批准的历史人物包在独立purpose=test库经实际生产Next浏览器操作完成：10,887,344B原包接收、native验证与9项资源归档、首稿r1、author-baseline批准落账及slot1固定版本封存。content/asset-set/manifest三hash逐项与冻结批准产物一致；完整snapshot已再次经HTTP读取并核SHA。版本ade95bd0-833f-4696-9f3c-33b0db223bdc，snapshot SHA0fc8843a717d6878f995e402d1ac9deaa73b0ac2a07f67544febf01195cef9fb。来源/版本事实见[安全证据](qa/p3e-first-product-live.json)；没有把合成像素夹具替代真实首款。
+
+自有Next已获真实退出证明，39eb实例禁导入并停止保留，凭证/浏览器状态/私有PNG仅在本地私有目录。批准只作internal-test，publicationApproved=false，现renderer仍为studio-internal-preview；消费者Key/持久会话/最终用户报告及P5仍待P4接入。
+
+当前运行4c29c09的1709单元、format/lint/type、生产build80traces/17204paths/0private通过；本机main66×3封存通过且全部操作停止/control为空。跨组件失权P2由独审24实际浏览器场景关闭；测试夹具来源归属P2由A a705真实负例/共享正例修复并独审关闭。新增E2E的Playwright失败HTML日志凭证P2仍由B修复验证，完整生产E2E和最终四宽双线检查未完成。下面保留本阶段此前检查点。
+
 ## 2026-10-18 P3-E 共享合同与首款规范产物
 
 受管分支codex/internal-version-seal从P3-D交付a66c456接续，Draft PR #19堆叠于#18。共享显示合同b055c4b已通过127主控/128独审测试和浏览器打包，B已完成已有预览解耦，主控集成2ca7698；Astra 141项相关测试、56种投影对照及三海报新旧字节一致，无剩余P1/P2。审核/版本机器Schema及有限精确登记方案已通过前置独审，A接0017/事务/资源留存。浏览器canonical依赖P2已独立关闭；实际新DB/后台/端到端尚未完成。

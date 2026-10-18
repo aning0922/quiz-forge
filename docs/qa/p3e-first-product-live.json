@@ -1,0 +1,79 @@
+{
+  "schemaVersion": "quizforge-first-product-internal-evidence.v1",
+  "date": "2026-10-18",
+  "runtimeCommit": "4c29c09",
+  "qualification": "actual-approved-content-and-images-through-owned-production-Next-and-native-admission",
+  "instanceId": "39eb7bb10c4d809012767a415f9d379c",
+  "purpose": "test",
+  "productId": "historical-cabinet",
+  "archive": {
+    "bytes": 10887344,
+    "sha256": "40b7660697d52c660897e153c7a9ef02163717c92b90f0680ae6558150f5c0c0",
+    "importId": "c8e0f4ca-5e88-4673-b9c9-ecfc79e8c7e7",
+    "status": "received"
+  },
+  "validation": {
+    "id": "d630f1e8-bee6-414f-85e6-ff7cf9109a26",
+    "status": "ready",
+    "contentSchemaVersion": "quizpack-content.v2",
+    "resourceCount": 9,
+    "archivedResourceCount": 9,
+    "platformApproval": "unverified",
+    "publishable": false,
+    "candidateSha256": "4b36071c1ea5958e75d15f48a75ef40b21f73ae7462cffc4a2b562409349476d",
+    "identitySha256": "0e4ed3695aefbb5925d214684b802fb7d51cce4e3fabde7c3270d0f5a18a3117"
+  },
+  "draft": {
+    "draftId": "9a7171d1-4518-4c76-b389-5383fe999cd3",
+    "revision": 1,
+    "canonicalContentSha256": "4ceae81de77fac8e9df9da1255bf21c31d2bb88c00495cfe68da1769fc562904",
+    "assetSetSha256": "0f6511526c401573c0bf8e736eda5fca8e22fb54ab1f8455d82eda341aff6ade",
+    "canonicalManifestSha256": "8e402dacb21d25d5c5ebdb66de6a227a8840469d781871fbee77191cf6f79013"
+  },
+  "review": {
+    "id": "2ec7b63a-7e01-4f2f-bc31-c73789dd3cca",
+    "factsSha256": "803836dfda43d321a921f6fe283c02b191d35b62ea0c1bb5b486b898cdf93b24",
+    "baseline": {
+      "kind": "baseline",
+      "id": "historical-cabinet-internal-2026-10-18",
+      "version": "1.0.0",
+      "entrySha256": "b16780ff815b38a224b456344e1509b672c10fe398482c4aaca297985bffd4a0"
+    },
+    "approvalKind": "author-baseline",
+    "approvedOn": "2026-10-18"
+  },
+  "version": {
+    "id": "ade95bd0-833f-4696-9f3c-33b0db223bdc",
+    "slot": 1,
+    "snapshotSha256": "0fc8843a717d6878f995e402d1ac9deaa73b0ac2a07f67544febf01195cef9fb",
+    "renderer": {
+      "kind": "renderer",
+      "id": "folio-cabinet-preview",
+      "version": "1.0.0",
+      "entrySha256": "35a1f8c7c6ce06c1afe09d7c3920f50a13a8fbbd674b7b6609890ae7dc1ed4f2"
+    },
+    "rendererCapability": "studio-internal-preview",
+    "engine": {
+      "kind": "engine",
+      "id": "archetype",
+      "version": "1.0.0",
+      "entrySha256": "f934c3399f3731fb89afcbe9de8eb94f776f6d955d18e797eec072c532ba042d"
+    },
+    "logicHash": "6e44add1bf8bbcf2e3ccec319bd46fc4c6270c3fa474ea30a1887d6d8f8adb07",
+    "purpose": "internal-test",
+    "publicationApproved": false,
+    "contentKind": "authored"
+  },
+  "browser": "156.0.8078.4",
+  "serverExit": "proven",
+  "importsEnabledAfterVerification": false,
+  "databaseStoppedAndPreserved": true,
+  "visualCheck": {
+    "viewportWidth": 390,
+    "fullPage": true,
+    "viewedBy": "root",
+    "noHorizontalOverflow": true,
+    "limitation": "Single mobile metadata view; full four-width independent visual review pending."
+  },
+  "next": "P3-E final synthetic E2E and review; then P4 consumer play version, Key, session and immutable report."
+}
