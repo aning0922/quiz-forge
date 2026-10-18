@@ -1,5 +1,13 @@
 # 阶段进度
 
+## 2026-10-18 P3-D 技术出口完成，接续精确审核与内测版本
+
+作者已确认首款12题、四报告、八图作为内测基线，见[FIRST_PRODUCT_BASELINE](FIRST_PRODUCT_BASELINE.md)。追加不可变修订P3-D最终运行/测试c1ca647完成技术验收：1560单元、本地完整431PG及49增量、最终远端433PG/14服务/3UNKNOWN、46驱动、235生产E2E及10旧skip、main媒体66×3封存、72trace/15075路径/0私有违规。61图由两开发聊天分别逐张复核，Astra无剩余P1/P2，普通39110069377与Linux媒体39110065866均准确head实际success。详见[P3D_ACCEPTANCE](P3D_ACCEPTANCE.md)、[REVIEW](P3D_REVIEW.md)、[VISUAL_CHECK](P3D_VISUAL_CHECK.md)和[QA](qa/p3d-integration-progress.json)。
+
+真实0015旧库升级到0016，原六表事实、10blob和旧回执保留，并在原谱系追加r2后验证旧正文/首次归属及原key仍不变。最终生产Next/workers确已退出、四夹具精确清理、自有数据库停止；失败与旧升级现场保留。PR #18仍堆叠Draft，main未合并。
+
+接续P3-E：将已批准具体材料离线精确映射到实际包，受信registry固定规范内容/资源/manifest摘要，再记录内测批准并封存固定版本；通用运营审批及消费者会话尚未实现。之后继续P4内部Key、服务端恢复、一次完成与不可变报告、P5真实首款闭环。两独立Sol/high开发聊天与Astra/high独审方式不变，常规工程连续推进，同一基线不重复请批；实质内容/素材变更和发布仍保留人工闸门。以下为阶段过程历史。
+
 ## 2026-10-18 内测内容与视觉已确认，接续修订与版本流程
 
 作者已明确确认“内容与视觉可作为内测基线”，准确范围和不可变材料hash见[FIRST_PRODUCT_BASELINE](FIRST_PRODUCT_BASELINE.md)。下方2026-10-16等待作者审核的段落是历史；此次确认已解除内容/视觉内测基线等待，不扩大为商业权利、部署或发布批准。

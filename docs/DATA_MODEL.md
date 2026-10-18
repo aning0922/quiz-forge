@@ -2,9 +2,9 @@
 
 ## 2026-10-18 数据模型检查点
 
-当前受管分支已完成至P3-C，数据库迁移为0015。已落地运营身份/会话/审计、Product目录、原包接收、验证与资源归档，以及product_draft、draft_revision、draft_application三表的首稿闭环；具体证据以[P3C验收](P3C_ACCEPTANCE.md)及各阶段合同为准。下方B2记录保留历史，拟议实体不代表新增业务表已经存在。
+当前受管分支已完成至P3-D，数据库迁移为0016。已落地运营身份/会话/审计、Product目录、原包接收、验证与资源归档，以及product_draft、draft_revision、draft_application三表的首稿闭环；具体证据以[P3C验收](P3C_ACCEPTANCE.md)及各阶段合同为准。下方B2记录保留历史，拟议实体不代表新增业务表已经存在。
 
-P3-D正在实现[追加修订合同](DRAFT_REVISIONS_P3D.md)：同一Product/draft内追加不可变修订，保留首次应用身份；当前指针仅可逐次推进，应用账本绑定原来源、旧修订及内容/资源哈希。0016迁移、约束与服务尚待集成验收；当前共享Schema完成不代表数据库已升级。审核记录、固定内测版本、AccessKey、消费者会话与不可变用户报告仍待后续实现。
+P3-D已实现[追加修订合同](DRAFT_REVISIONS_P3D.md)：同一Product/draft内追加不可变修订，保留首次应用身份；当前指针仅可逐次推进，应用账本绑定原来源、旧修订及内容/资源哈希。0016迁移、精确双向延迟FK、闭合/不可变约束、事务服务及真实0015旧谱系升级/追加已技术验收，见[P3D验收](P3D_ACCEPTANCE.md)。审核记录、固定内测版本、AccessKey、消费者会话与不可变用户报告仍待后续实现。
 
 P2-A已实现qf.operator、operator_session、audit_event及qf_meta.schema_migrations。P2-B1已追加product、category、tag、product_tag，已完成技术验收。真实字段、权限、锁序与CAS以[目录合同](STUDIO_P2B1.md)为准；运营metadata_revision与未来草稿content revision分离。Product使用包的稳定字符串ID，category/tag使用服务器UUID，不能把下方历史拟议UUID一概套到Product。
 
