@@ -153,6 +153,8 @@ E2E 不将 raw 放 page.goto、locator.fill、APIRequest/route.fetch 或失败�
 
 所有响应 private/no-store、no-referrer、nosniff，不跨源开放。服务再次解析 route scope 和 binding，不能只依赖 HTTP 验证。新 create/issue 结果也必须核原完整 binding；`created` 仅说明本次 INSERT 是否新建，不授予当前可写或可恢复 raw 的额外权利。未知、失权或迟到响应由整页授权代次和精确 pending 比较拦截。
 
+资源响应通过 `ConsumerRequestLifecycle.resourceBody(bytes)` 交接，只接受同一 owner 本次读取发出的精确 bytes 对象一次，不能把任意数组注册为已授权资源。原 IO task 和 retained bytes 持有到响应 drain/cancel/deadline，并继续观察真实 FD/guard/DB close；HTTP finally 调用 closeIfNotTransferred，不直接 `new Response(bytes)` 后丢弃 owner。该生命周期接口与处理方向已明确，具体实现与重复交接/提前关闭反例仍待验证。
+
 display-contract 仅包含 neutral entry、受控实现/字体/映射身份和独立事实 SHA；无完整父 snapshot、权重、候选报告或人物揭晓资源。状态按 questionId 寻址，入口额外拒绝不同 source version 重用同一题号，避免版本引用可区分但保存 ID 无法区分。缺精确 renderer/font/resource 明确不可用，不能选 latest 或拿旧 preview host 充当 consumer。
 
 API 自定义头/Fetch Metadata 与 Cookie Path 边界参考 [OWASP CSRF 指南](https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html#employing-custom-request-headers-for-ajaxapi)、[MDN Set-Cookie](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Set-Cookie#pathpath-value)（2026-10-18 实读）；16 槽、8 小时和 60/固定窗口是本项目有限内测选择，不是文档给出的普遍结论。

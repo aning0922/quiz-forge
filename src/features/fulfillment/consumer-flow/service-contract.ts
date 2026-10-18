@@ -40,6 +40,17 @@ export type ConsumerReadCredentials = Readonly<{ grantToken: string | null }>;
 export type ConsumerWriteCredentials = ConsumerReadCredentials &
   Readonly<{ csrfToken: string | null; requestId: string }>;
 
+/** HTTP-visible lifecycle only; constructing an owner and executing phases remain server-internal. */
+export interface ConsumerRequestLifecycle {
+  closeIfNotTransferred(): Promise<void>;
+  /**
+   * Accept only the one bytes object issued by this owner's resource read, exactly once.
+   * Retain the actual IO task/bytes through stream drain/cancel/deadline; a handler return or
+   * Promise.race is not a resource-close proof. Unknown actual closes remain quarantined.
+   */
+  resourceBody(bytes: Uint8Array): ReadableStream<Uint8Array>;
+}
+
 /**
  * Application interfaces, not implementations. Factories bind a single request owner, config and
  * initial 15s budget. HTTP must not supply an arbitrary existing DB connection or renew the clock.
