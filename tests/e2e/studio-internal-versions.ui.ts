@@ -1,4 +1,4 @@
-import { expect, type Page, type TestInfo } from "@playwright/test";
+import { expect, type Page, type Route, type TestInfo } from "@playwright/test";
 import type { StudioSessionDto } from "../../src/features/studio/contracts";
 import { internalRevisionScopeSchema } from "../../src/features/product/internal-versions/urls";
 import {
@@ -54,6 +54,25 @@ export async function internalHeaders(page: Page) {
     throw Error("INTERNAL_VERSION_E2E_SESSION_UNAVAILABLE");
   }
 }
+/** Keep session-derived headers out of request-failure call logs. */
+export async function internalPost(page: Page, url: string, data: unknown) {
+  try {
+    return await page.request.post(url, {
+      headers: await internalHeaders(page),
+      data,
+    });
+  } catch {
+    throw Error("INTERNAL_VERSION_E2E_POST_UNAVAILABLE");
+  }
+}
+export async function internalRouteFetch(route: Route) {
+  try {
+    return await route.fetch();
+  } catch {
+    throw Error("INTERNAL_VERSION_E2E_ROUTE_FETCH_UNAVAILABLE");
+  }
+}
+
 export async function internalPending(
   page: Page,
   operation: InternalOperation,
