@@ -58,3 +58,11 @@ Chromium156.0.8078.4实际通过：六状态×四宽24图；320长文案/缺素�
 按总控实际首款纯显示预检反馈，仅在 baseline.title 与“displayName · subtitle”完全相同的情况下省去重复副标题，源文字不改、不按商品ID分支。暂歇页操作组改为自适应行宽，320单列，其余移动宽度两列加整行，避免按钮碎行。
 
 仅以 --resume-only 补跑四宽实际组件及重复标题断言，未重拍原45图或重跑PNG；Chromium156.0.8078.4、viewport900、4图均无横向溢出且目标≥44px，4/4原图已查看，无P1/P2，原暂歇按钮P3关闭。补验目录为 .cache/p4-consumer-display/1792334081173/，result.json记录四图及exactDuplicateSuppressed=true。静态服务与浏览器实际await关闭，Node退出0。真实首款素材质量及持久化仍不在本合成补验内。
+
+## 消费者控制器基础（尚未挂页面）
+
+新增 authority.ts / pending.ts，尚不是完整host或业务HTTP接入。ConsumerAuthorityV1按完整session/play身份发出不可伪造ticket；同步revoke/adopt后旧ticket永久失效，供后续读/保存/完成/图片/PNG共用。
+
+本标签sessionStorage每session最多一个save或complete原请求记录；不存rawKey/grant/CSRF。prepare完整保存并回读、核规范答案hash后才返回；markBeforeSend先持久mayHaveBeenSent并再次回读，完成前不准POST。已存在/损坏/写入失败/回读变化均拒绝，不覆盖另一候选。mark与显式remove都在异步校验后再次核当前授权回调及完整记录；普通错误/空读不会自动清理，remove调用方仍须先核允许的终态证据及用户显式动作。所有消费者controller实际接入和跨页面浏览器恢复仍待后续验证。
+
+5项合成单测通过：准备/回读、损坏/写入失败/错误hash、全session绑定与替换保护、ticket失效/伪造，以及异步回读期间失权不标发送/不删锚点；typecheck和定向lint通过。该记录是客户端恢复辅助，不授予服务器完成或评分权威。
