@@ -66,3 +66,5 @@ Chromium156.0.8078.4实际通过：六状态×四宽24图；320长文案/缺素�
 本标签sessionStorage每session最多一个save或complete原请求记录；不存rawKey/grant/CSRF。prepare完整保存并回读、核规范答案hash后才返回；markBeforeSend先持久mayHaveBeenSent并再次回读，完成前不准POST。已存在/损坏/写入失败/回读变化均拒绝，不覆盖另一候选。mark与显式remove都在异步校验后再次核当前授权回调及完整记录；普通错误/空读不会自动清理，remove调用方仍须先核允许的终态证据及用户显式动作。所有消费者controller实际接入和跨页面浏览器恢复仍待后续验证。
 
 5项合成单测通过：准备/回读、损坏/写入失败/错误hash、全session绑定与替换保护、ticket失效/伪造，以及异步回读期间失权不标发送/不删锚点；typecheck和定向lint通过。该记录是客户端恢复辅助，不授予服务器完成或评分权威。
+
+浏览器JSON网络入口request.ts/client.ts已实现严格session/entry/save/complete/report验证、原binding resolution核对和有限错误；15秒单一外层竞速覆盖fetch/流/验证，分块只占固定buffer，拒绝编码/坏UTF8/超限/深度及跨源或反斜线URL。权限错误回调供整页同步revoke，未记录凭证或错误原文。7项transport边界单测通过；真实controller和路由接入尚未完成，不把合成fetch当业务闭环。
