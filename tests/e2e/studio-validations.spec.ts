@@ -266,7 +266,7 @@ test("real authored v2 validation archives synthetic pixels while receive facts 
   expect(await pending(page)).toBeNull();
   await expect(
     page.getByText(
-      "平台授权未审核（unverified） · 不可发布。归档不会自动创建草稿；首次应用须显式确认。本批不提供草稿编辑或发布。",
+      "平台授权未审核（unverified） · 不可发布。归档不会自动创建或追加草稿；应用须显式确认。本批不提供网页内容编辑或发布。",
       { exact: true },
     ),
   ).toBeVisible();
