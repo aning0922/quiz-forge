@@ -344,3 +344,25 @@ export async function revokeExactGrant(
     await tx.sql`UPDATE qf.consumer_grant SET revoked_at=${at}::timestamptz WHERE key_id=${grant.keyId} AND slot=${grant.slot} AND session_id=${grant.sessionId} AND grant_id=${grant.grantId} AND credential_digest=${grant.credentialDigest} AND revoked_at IS NULL AND expires_at>clock_timestamp() RETURNING grant_id`;
   if (rows.length !== 1) throw new ConsumerError("ACCESS_DENIED");
 }
+
+/** Independent short transaction only. No Key lookup or domain lock may precede this reservation. */
+export async function reserveConsumerExchange(tx: ConsumerTx): Promise<void> {
+  assertConsumerTx(tx);
+  let rows;
+  try {
+    rows = await tx.sql<
+      { singleton: boolean }[]
+    >`SELECT singleton FROM qf.consumer_exchange_budget WHERE singleton IS TRUE FOR UPDATE NOWAIT`;
+  } catch (error) {
+    if ((error as { code?: string })?.code === "55P03")
+      throw new ConsumerError("RATE_LIMITED");
+    throw error;
+  }
+  if (rows.length !== 1 || rows[0]?.singleton !== true)
+    throw new ConsumerError("UNAVAILABLE");
+  const changed =
+    await tx.sql`WITH moment AS MATERIALIZED (SELECT floor(extract(epoch FROM clock_timestamp())/60)::bigint AS bucket)
+    UPDATE qf.consumer_exchange_budget b SET window_index=m.bucket,used=CASE WHEN b.window_index=m.bucket THEN b.used+1 ELSE 1 END FROM moment m
+    WHERE b.singleton IS TRUE AND b.window_index<=m.bucket AND (b.window_index<m.bucket OR b.used<60) RETURNING b.singleton`;
+  if (changed.length !== 1) throw new ConsumerError("RATE_LIMITED");
+}

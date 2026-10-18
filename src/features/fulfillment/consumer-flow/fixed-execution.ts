@@ -15,6 +15,7 @@ import { resolveConsumerImplementation } from "@/features/product/internal-play/
 import type { ConsumerRendererIdentity } from "@/lib/consumer-contract/v1/identities";
 import type { ConsumerIoContext } from "./request-owner";
 import type { InternalVersionWork } from "@/features/product/internal-versions/lifecycle";
+import type { ResolvedPreviewResource } from "@/features/product/preview/repository";
 
 export function fixedConsumerExecution(
   parent: InternalVersionSnapshot,
@@ -130,7 +131,7 @@ export async function verifyConsumerExecutionIo(
 }
 export async function readConsumerResourceIo(
   io: ConsumerIoContext,
-  resource: ConsumerFixedSource["evidence"]["resources"][number],
+  resource: ResolvedPreviewResource,
 ) {
   io.checkpoint();
   await io.guard.check();
