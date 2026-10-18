@@ -256,13 +256,15 @@ function Pending({
     <Panel>
       <h2>核对上一次操作</h2>
       <p>
-        {kind === "superseded"
-          ? "服务器进度已更新。采用当前保存的答案后再继续，本次候选不会自动合并。"
-          : kind === "unresolved"
-            ? "暂未取得最终结果，原操作仍保留。核对或重放都沿用同一次请求。"
-            : kind
-              ? "已取得服务器记录，请确认采用后继续。"
-              : "上一次操作的结果还不确定。答题与完成已暂时停用，原请求已保留在本标签中。"}
+        {state.keyExpired
+          ? "本次答题期限已到，可查询原提交结果。原操作记录继续保留，当前不能重放或新建提交。"
+          : kind === "superseded"
+            ? "服务器进度已更新。采用当前保存的答案后再继续，本次候选不会自动合并。"
+            : kind === "unresolved"
+              ? "暂未取得最终结果，原操作仍保留。核对或重放都沿用同一次请求。"
+              : kind
+                ? "已取得服务器记录，请确认采用后继续。"
+                : "上一次操作的结果还不确定。答题与完成已暂时停用，原请求已保留在本标签中。"}
       </p>
       <div className={styles.actions}>
         <button
@@ -272,7 +274,7 @@ function Pending({
         >
           核对原操作
         </button>
-        {(!kind || kind === "unresolved") && (
+        {!state.keyExpired && (!kind || kind === "unresolved") && (
           <button
             onClick={() => {
               void controller.recover(true);
