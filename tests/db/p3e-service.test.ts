@@ -43,7 +43,10 @@ import { buildInternalSnapshot } from "@/features/product/internal-versions/snap
 import { ResourceReadTask } from "@/features/quizpack/resource-read/task";
 import { createInternalVersionOwner } from "@/features/product/internal-versions/lifecycle";
 import { createProductInternalVersionService } from "@/features/product/internal-versions/service";
-import { assertNoRetainedInternalReferences } from "@/features/product/internal-versions/retention";
+import {
+  assertNoRetainedInternalReferences,
+  assertOnlyOwnedInternalReferences,
+} from "@/features/product/internal-versions/retention";
 import { matchRegisteredBaseline } from "@/features/product/internal-versions/baseline-registry";
 import {
   IMPLEMENTATION_DESCRIPTORS,
@@ -548,11 +551,39 @@ it("keeps one RR business snapshot while another transaction advances head; the 
 
 it("an external immutable ledger blocks actual unlink and retains both original files and DB facts", async () => {
   const review = await record();
-  await seal(sealInput(review.review));
+  const version = await seal(sealInput(review.review));
   const bytes = await readFile(files[0]!.file),
     before = await counts();
   const lock = await StorageLock.acquire(db.config);
   try {
+    const exact = {
+      revisions: [
+        {
+          productId: source.scope.productId,
+          draftId: initial.application.draftId,
+          revision: 1,
+        },
+      ],
+      imports: [],
+      validations: [],
+      blobSha256: files.map((f) => path.basename(f.file, ".blob")),
+    };
+    await assertOnlyOwnedInternalReferences(lock, exact, {
+      reviews: [review.review],
+      versions: [version.version],
+    });
+    await expect(
+      assertOnlyOwnedInternalReferences(lock, exact, {
+        reviews: [review.review],
+        versions: [],
+      }),
+    ).rejects.toThrow("INTERNAL_VERSION_REFERENCE_RETAINED");
+    await expect(
+      assertOnlyOwnedInternalReferences(lock, exact, {
+        reviews: [{ ...review.review, recordedBy: randomUUID() }],
+        versions: [version.version],
+      }),
+    ).rejects.toThrow("INTERNAL_VERSION_REFERENCE_RETAINED");
     await expect(
       (async () => {
         await assertNoRetainedInternalReferences(lock, {

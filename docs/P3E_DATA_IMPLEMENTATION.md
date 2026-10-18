@@ -51,3 +51,11 @@ resolve/read 在单 RR 读取业务事实并另做 fresh 当前授权。原 key 
 本服务提交的本地工程验证：format:check、lint、typecheck、138 文件 / 1612 单元、pnpm build 全部通过。实现门禁实际核 3 descriptor / 51 文件 / 280 lock records；现有 Next 构建 trace 72 / 15075 paths / 0 违规。新 HTTP/后台路由尚由另一实现流接线，不能把本轮现有路由 build 当作新生产链路或 E2E 通过。后续继续补容量证明、真实物理留存和关闭故障、P3E 持久夹具出口。
 
 后续服务 PG 已扩至 13 项并全过：实际已封存引用在首次 unlink 前阻断，文件字节和 DB 计数不变；100 个明确 synthetic 直接 DB 约束条目占满硬槽位后，正常新 seal 给 VERSION_LIMIT，独立单 RR resolve 给严格 capacity-exhausted（这些填槽条目不注册字体或冒称真实受信封存）；外层 guard 的真实后端在服务最后 guard.check 后被终止，维护锁仍被业务事务 SHARE 拒绝，真实 COMMIT 后原请求 UNKNOWN，由原 key 找回唯一成功及单审计。该测试未修改业务锁实现。
+
+## 独立 P3-E 夹具
+
+私有合同位于 tests/db/p3e-internal-version-fixture-contract.ts，真实实现位于同名 fixture.ts。read/prepare/finish/cleanup 导出与旧退出 proof 协议组合；version:1 是文件格式号，实际详情字段 versionDetail。CLI prepare 可在 Next 启动后执行，先短 DB 事务、实际落五图时才持存储独占锁；无预造 review/version。baseline 来源是固定三 hash，next 仅供推进 head 的未登记结构测试，五 PNG 不重编码。已有 blob 只核原字节并记 created=false，不假定物理拥有。
+
+finish 从实际持久事实核完整三 hash、源身份、review/snapshot 与精确登记，并封存观察到的回执；未落账拒绝完成。cleanup 先要求真实服务退出 proof、原 writer 已退出、imports 禁用、无其他 DB backend/native 控制任务、精确两 actor/source/audit 图谱。新增 assertOnlyOwnedInternalReferences 在删除自身 ledger 前用持锁后的新快照检查全局相关 review/version，逐一比较完整已观察回执；未知/额外/错 actor 的记录拒绝，绝无 Product-wide 豁免。随后仅删除已证明的 version→review，再原留存检查、只移除本次首次创建且无共享引用的文件，再删除原精确图谱。关闭不确认保留 guard/FD，不返回假清理成功。
+
+实际 CLI/PG 生命周期首项通过：0600 私有文件、双 prepare 拒绝、未落账 finish 拒绝、假退出 proof 拒绝、实际服务 record/seal 后 finish、未登记额外同 Product version 保留原文件/全部账本、实际 child close+进程组消失+空闲端口证明后精确清理。与服务 13 项组合共 14 PG 通过。首个探针因重复 prepare 在检查文件存在前等完整认证窗口而超 20s，已把存在检查前置；该失败实例保留并停库，新 fresh 实例验证，没有清理失败现场。created=false 的真实跨 Product 共享物理拥有者正例仍待补；本生命周期是退出协议测试，不冒称实际 Next/E2E。
