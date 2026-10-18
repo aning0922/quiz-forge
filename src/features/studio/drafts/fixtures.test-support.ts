@@ -51,6 +51,7 @@ export async function receipt() {
   return {
     ...summary,
     ...tuple,
+    revision: 1 as const,
     fingerprint: await draftApplicationFingerprint(input),
   };
 }

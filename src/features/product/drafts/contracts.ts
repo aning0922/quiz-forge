@@ -19,7 +19,7 @@ export const DRAFT_LIMITS = Object.freeze({
 export const draftIdSchema = importIdSchema;
 export const draftApplicationIdSchema = importIdSchema;
 export const draftIdempotencyKeySchema = importIdSchema;
-export const draftRevisionSchema = z.literal(1);
+export const draftRevisionSchema = z.number().int().min(1).max(2_147_483_647);
 export const validationStateRevisionSchema = z
   .number()
   .int()
@@ -124,6 +124,7 @@ export const draftSummarySchema = z.strictObject(snapshotShape);
 export const draftApplicationDtoSchema = z
   .strictObject({
     ...snapshotShape,
+    revision: z.literal(1),
     idempotencyKey: draftIdempotencyKeySchema,
     expectedValidationStateRevision: validationStateRevisionSchema,
     expectedCandidateSha256: sha256Schema,
