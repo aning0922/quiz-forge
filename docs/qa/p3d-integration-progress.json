@@ -1,0 +1,136 @@
+{
+  "schemaVersion": "quizforge-p3d-integration-progress.v1",
+  "recordedOn": "2026-10-18",
+  "status": "in-progress",
+  "baselineApprovalCommit": "68ee7f2ef7ec3eee370aab94d5d16dec61160398",
+  "core": {
+    "commit": "99423bdb70cb9e04d9c050cdbbd945f075545f16",
+    "unit": 1558,
+    "format": "passed",
+    "lint": "passed",
+    "typecheck": "passed",
+    "build": {
+      "traceCount": 69,
+      "paths": 14116,
+      "privatePaths": 0
+    },
+    "firstDatabaseRun": {
+      "passed": 429,
+      "failed": 1,
+      "failure": "historical upgrade test pinned latest migration to 0015; failed before DROP",
+      "remoteFailureRun": 39105846002
+    }
+  },
+  "fixedDatabaseRun": {
+    "commit": "5fbce3b150cefbf37a2a77f4309cd3a805dadd46",
+    "passed": 431,
+    "failed": 0,
+    "seconds": 180.22,
+    "instanceStopped": true
+  },
+  "sourceAndFixtureIncrement": {
+    "baseCommit": "567b9a5",
+    "includesOwnedRunnerPatch": true,
+    "databaseTestsPassed": 49,
+    "sourceUnitTestsPassed": 35,
+    "format": "passed",
+    "lint": "passed",
+    "typecheck": "passed",
+    "qualification": "synthetic-db-private-pixels-and-real-node-owner-exit-not-next-e2e"
+  },
+  "realLegacyUpgrade": {
+    "before": {
+      "schemaVersion": "quizforge-p3d-real-upgrade-check.v1",
+      "observedOn": "2026-10-18",
+      "mode": "before",
+      "instanceId": "997cfcdf7e07f21fb236aa51cfccde2e",
+      "snapshotSha256": "f678129ff90ed415c11f1f68f8d45df14fe5756c7e43a4e498ce829bc9dd761d",
+      "migrations": 15,
+      "legacyRowsUnchanged": true,
+      "oldFirstFieldsPreserved": true,
+      "blobsUnchanged": 10,
+      "auditsUnchanged": 2,
+      "applicationGuards": "passed",
+      "qualification": "real-0015-private-pixels-no-native"
+    },
+    "after": {
+      "schemaVersion": "quizforge-p3d-real-upgrade-check.v1",
+      "observedOn": "2026-10-18",
+      "mode": "after",
+      "instanceId": "997cfcdf7e07f21fb236aa51cfccde2e",
+      "snapshotSha256": "f678129ff90ed415c11f1f68f8d45df14fe5756c7e43a4e498ce829bc9dd761d",
+      "migrations": 16,
+      "legacyRowsUnchanged": true,
+      "oldFirstFieldsPreserved": true,
+      "blobsUnchanged": 10,
+      "auditsUnchanged": 2,
+      "applicationGuards": "passed",
+      "qualification": "real-0015-private-pixels-no-native"
+    },
+    "domainReads": {
+      "schemaVersion": "quizforge-p3d-legacy-domain-read.v1",
+      "observedOn": "2026-10-18",
+      "instanceId": "997cfcdf7e07f21fb236aa51cfccde2e",
+      "oldReceiptsReplayed": 2,
+      "oldBodiesExact": 2,
+      "oldFixedPreviewEntries": 2,
+      "oldWitnessesScored": 6,
+      "draftAuditRows": 2,
+      "qualification": "real-upgraded-service-reads-no-browser-no-native"
+    },
+    "appendToOriginalLineage": {
+      "schemaVersion": "quizforge-p3d-real-upgrade-append.v1",
+      "observedOn": "2026-10-18",
+      "instanceId": "997cfcdf7e07f21fb236aa51cfccde2e",
+      "upgrade": "0015-to-0016",
+      "appendedToOriginalDraft": true,
+      "oldRevisionBodyPreserved": true,
+      "oldFirstReceiptPreserved": true,
+      "newBodyDifferent": true,
+      "originalAssetsAndOwnershipPreserved": true,
+      "appendReplayAddedNoAudit": true,
+      "counts": {
+        "current": 2,
+        "revisions": 2,
+        "applications": 2,
+        "audits": 2
+      },
+      "qualification": "real-upgraded-lineage-synthetic-source-no-browser-no-native"
+    },
+    "finalInstanceStopped": true,
+    "privateScripts": [
+      {
+        "file": "p3d-capture-legacy.ts",
+        "sha256": "69895bc20f5ea52ceec706f2fdcbf02336c4387d9e748ea029f04dda5d4e4fb9"
+      },
+      {
+        "file": "p3d-verify-legacy.ts",
+        "sha256": "8820ed0491685188fe2b699bd1460400fee621d198f7cb566a11810d5a58d3e9"
+      },
+      {
+        "file": "p3d-legacy-domain-read.ts",
+        "sha256": "b671463e01b4c72683088b080a936d6df4641e40ec4a03b068380e903d8ff11b"
+      },
+      {
+        "file": "p3d-legacy-append.ts",
+        "sha256": "a991bcce01757bb4354cda38748332eb196f274900779f0fa389c12f2789150d"
+      }
+    ]
+  },
+  "fontPrecheck": {
+    "schemaVersion": "quizforge-first-product-font-precheck.v1",
+    "observedOn": "2026-10-18",
+    "contentReviewSha256": "3b91353938c607a0767fca013fcaebfc92786c975c53964da1d323db7d806261",
+    "coverageSha256": "5e4828a70bb752096bdb008bcc9b02467ee32b4734d9217c182fcdcda2ab030a",
+    "scope": ["product", "dimensions", "questions", "reports"],
+    "visibleCodepoints": 597,
+    "missingCodepoints": [],
+    "isBrowserVisualAcceptance": false
+  },
+  "pending": [
+    "UI recovery P2 independent verification",
+    "final production build and media binding",
+    "fresh complete Next/Playwright E2E and four-width screenshots",
+    "final exact-head CI and stage review"
+  ]
+}

@@ -15,6 +15,11 @@ import {
 } from "../tests/db/p3c-preview-fixture";
 import { PREVIEW_FIXTURE_PRIVATE_NAME } from "../tests/db/p3c-preview-fixture-contract";
 import {
+  cleanupDraftRevisionFixture,
+  readDraftRevisionFixture,
+} from "../tests/db/p3d-draft-revision-fixture";
+import { DRAFT_REVISION_FIXTURE_PRIVATE_NAME } from "../tests/db/p3d-draft-revision-fixture-contract";
+import {
   launchPreviewServer,
   assertPreviewServerRunning,
   stopAndProveServerExit,
@@ -193,6 +198,7 @@ async function main() {
   const runId = randomUUID(),
     identity = { cwd, instanceId: config.instanceId, runId };
   for (const name of [
+    DRAFT_REVISION_FIXTURE_PRIVATE_NAME,
     PREVIEW_FIXTURE_PRIVATE_NAME,
     "drafts-e2e-fixture.json",
     "validations-e2e-fixture.json",
@@ -234,6 +240,29 @@ async function main() {
   checkpoint();
   if (!passed || !proof) throw Error("MANAGED_E2E_EXIT_UNPROVEN");
   assertServerExitProof(proof, identity);
+  phase = "draft-revision-cleanup";
+  const revisionFixtureFile = path.join(
+    path.dirname(configFile),
+    DRAFT_REVISION_FIXTURE_PRIVATE_NAME,
+  );
+  if (await exists(revisionFixtureFile)) {
+    const db = await openTestDatabase();
+    try {
+      const fixture = await readDraftRevisionFixture(db, runId);
+      if (!fixture.completed)
+        throw Error("DRAFT_REVISION_FIXTURE_UNKNOWN_PRESERVED");
+      await cleanupDraftRevisionFixture(db, runId, proof);
+    } finally {
+      await db.close();
+    }
+    process.stdout.write(
+      JSON.stringify({
+        phase: "cleanup",
+        fixture: DRAFT_REVISION_FIXTURE_PRIVATE_NAME,
+        result: "passed",
+      }) + "\n",
+    );
+  } else if (args.length === 0) throw Error("DRAFT_REVISION_E2E_NOT_EXECUTED");
   phase = "preview-cleanup";
   const fixtureFile = path.join(
     path.dirname(configFile),

@@ -15,6 +15,20 @@ export default defineConfig({
   projects: [
     ...(base.projects ?? []),
     {
+      name: "studio-draft-revisions",
+      testMatch: "**/studio-draft-revisions.spec.ts",
+      dependencies: ["studio-preview"],
+      fullyParallel: false,
+      workers: 1,
+      use: {
+        ...devices["Desktop Chrome"],
+        viewport: { width: 390, height: 844 },
+        trace: "off",
+        video: "off",
+        screenshot: "off",
+      },
+    },
+    {
       name: "studio-preview",
       testMatch: "**/studio-preview.spec.ts",
       dependencies: ["studio-drafts"],
