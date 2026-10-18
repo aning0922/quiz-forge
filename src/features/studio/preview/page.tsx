@@ -19,7 +19,7 @@ import { PreviewFlow, type Answers } from "./flow";
 import { PreviewImage } from "./image";
 import { PREVIEW_VIEW_REGISTRY } from "@/features/theme/preview/components";
 import type { PreviewState } from "@/features/theme/preview/registry";
-import { exportPreviewPoster } from "@/features/report/preview/export";
+import { exportPreviewPoster } from "./export";
 import styles from "./preview.module.css";
 
 export function FixedRevisionPreviewPage({

@@ -12,11 +12,16 @@ import { PREVIEW_LIMITS } from "@/features/product/preview/limits";
 import { previewApiPath } from "@/features/product/preview/urls";
 import { readBoundedDraftJson } from "../drafts/response";
 
-export class PreviewClientError extends Error {
-  constructor(readonly code: string) {
-    super(code);
-  }
-}
+import {
+  DisplayClientError as PreviewClientError,
+  withDisplayDeadline as withPreviewDeadline,
+} from "@/lib/browser/display-task";
+export {
+  DisplayClientError as PreviewClientError,
+  withDisplayDeadline as withPreviewDeadline,
+  checkpoint,
+  awaitDisplayTask as awaitPreviewTask,
+} from "@/lib/browser/display-task";
 const statuses: Record<string, number> = {
   INVALID_REQUEST: 400,
   PAYLOAD_TOO_LARGE: 413,
@@ -52,58 +57,6 @@ export async function checkedPreviewError(
     throw new PreviewClientError("STUDIO_UNAVAILABLE");
   // This UUID observes the failed HTTP request; it is not a successful scoring requestId.
   throw new PreviewClientError(value.data.code);
-}
-export async function withPreviewDeadline<T>(
-  signal: AbortSignal,
-  task: (signal: AbortSignal, deadline: number) => Promise<T>,
-): Promise<T> {
-  const controller = new AbortController(),
-    deadline = performance.now() + PREVIEW_LIMITS.deadlineMs;
-  const abort = () => controller.abort();
-  signal.addEventListener("abort", abort, { once: true });
-  if (signal.aborted) abort();
-  const timer = setTimeout(abort, PREVIEW_LIMITS.deadlineMs);
-  try {
-    const result = await task(controller.signal, deadline);
-    checkpoint(controller.signal, deadline);
-    return result;
-  } catch (error) {
-    if (error instanceof PreviewClientError) throw error;
-    throw new PreviewClientError(
-      signal.aborted
-        ? "PREVIEW_CANCELLED"
-        : controller.signal.aborted
-          ? "PREVIEW_TIMEOUT"
-          : "STUDIO_UNAVAILABLE",
-    );
-  } finally {
-    clearTimeout(timer);
-    signal.removeEventListener("abort", abort);
-    controller.abort();
-  }
-}
-export function checkpoint(signal: AbortSignal, deadline = Infinity) {
-  if (signal.aborted) throw new PreviewClientError("PREVIEW_CANCELLED");
-  if (performance.now() >= deadline)
-    throw new PreviewClientError("PREVIEW_TIMEOUT");
-}
-export async function awaitPreviewTask<T>(
-  task: Promise<T>,
-  signal: AbortSignal,
-): Promise<T> {
-  let abort: (() => void) | undefined;
-  try {
-    return await Promise.race([
-      task,
-      new Promise<never>((_, reject) => {
-        abort = () => reject(new PreviewClientError("PREVIEW_CANCELLED"));
-        signal.addEventListener("abort", abort, { once: true });
-        if (signal.aborted) abort();
-      }),
-    ]);
-  } finally {
-    if (abort) signal.removeEventListener("abort", abort);
-  }
 }
 const fetchOptions = {
   credentials: "same-origin",

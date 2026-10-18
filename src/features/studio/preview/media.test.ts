@@ -1,181 +1,106 @@
-import { afterEach, describe, it, expect, vi } from "vitest";
-import { createHash } from "node:crypto";
-import { readVerifiedBytes, loadPreviewImage } from "./media";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
-  sourceBinding,
   previewFixture,
+  sourceBinding,
 } from "@/features/theme/preview/fixtures.test-support";
 import type { PreviewAsset } from "@/features/product/preview/contracts";
-const bytes = new Uint8Array([1, 2, 3, 4]),
-  hash = createHash("sha256").update(bytes).digest("hex");
-const signal = () => new AbortController().signal;
+import { previewResourceUrl } from "@/features/product/preview/urls";
+import { createPreviewResourceTransport } from "./media";
+import { PreviewClientError } from "./client";
+import { DisplayClientError } from "@/lib/browser/display-task";
 afterEach(() => vi.unstubAllGlobals());
-describe("complete private image verification", () => {
-  it("accepts exact bytes and rejects truncation, extra bytes and same-length hash corruption", async () => {
-    expect(
-      await readVerifiedBytes(
-        new Response(bytes),
-        4,
-        hash,
-        signal(),
+describe("controlled Studio resource transport", () => {
+  it("captures an immutable exact binding and only selects the private resource endpoint", async () => {
+    const content = await previewFixture(),
+      binding = sourceBinding(content);
+    const resource = content.resources[0]!;
+    const asset: PreviewAsset = {
+      resourceRef: {
+        productId: resource.productId,
+        id: resource.id,
+        version: resource.version,
+      },
+      mediaType: resource.mediaType,
+      bytes: resource.bytes,
+      sha256: resource.sha256,
+      width: resource.width,
+      height: resource.height,
+      purpose: resource.purpose,
+      approval: resource.approval,
+      alt: "合成素材",
+    };
+    const expected = previewResourceUrl({
+      binding,
+      resourceRef: asset.resourceRef,
+    });
+    const transport = createPreviewResourceTransport(binding);
+    binding.revision = 2;
+    binding.font.fileSha256 = "f".repeat(64);
+    const response = new Response(new Uint8Array([1]));
+    const fetcher = vi.fn(async () => response);
+    vi.stubGlobal("fetch", fetcher);
+    const signal = new AbortController().signal;
+    expect(await transport(asset, signal, performance.now() + 1000)).toBe(
+      response,
+    );
+    expect(fetcher).toHaveBeenCalledWith(expected, {
+      signal,
+      credentials: "same-origin",
+      cache: "no-store",
+      redirect: "error",
+    });
+  });
+  it("keeps strict Studio HTTP failures and the original error-class identity", async () => {
+    expect(PreviewClientError).toBe(DisplayClientError);
+    const content = await previewFixture(),
+      binding = sourceBinding(content);
+    const resource = content.resources[0]!;
+    const asset = {
+      resourceRef: {
+        productId: resource.productId,
+        id: resource.id,
+        version: resource.version,
+      },
+    } as PreviewAsset;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(
+        async () =>
+          new Response(
+            JSON.stringify({
+              code: "DRAFT_REVISION_NOT_FOUND",
+              requestId: "22222222-2222-4222-8222-222222222222",
+            }),
+            { status: 404, headers: { "content-type": "application/json" } },
+          ),
+      ),
+    );
+    await expect(
+      createPreviewResourceTransport(binding)(
+        asset,
+        new AbortController().signal,
         performance.now() + 1000,
       ),
-    ).toEqual(bytes);
-    for (const value of [
-      bytes.slice(0, 3),
-      new Uint8Array([1, 2, 3, 4, 5]),
-      new Uint8Array([1, 2, 3, 5]),
-    ]) {
-      await expect(
-        readVerifiedBytes(
-          new Response(value),
-          4,
-          hash,
-          signal(),
-          performance.now() + 1000,
-        ),
-      ).rejects.toThrow("PREVIEW_RESOURCE_UNAVAILABLE");
-    }
-  });
-  it("deadline and abort settle a body whose producer never returns", async () => {
-    for (const kind of ["deadline", "abort"]) {
-      const controller = new AbortController();
-      let cancelled = false;
-      const response = new Response(
-        new ReadableStream({
-          pull: () => new Promise(() => {}),
-          cancel: () => {
-            cancelled = true;
-          },
-        }),
-      );
-      const task = readVerifiedBytes(
-        response,
-        4,
-        hash,
-        controller.signal,
-        performance.now() + (kind === "deadline" ? 5 : 1000),
-      );
-      if (kind === "abort") controller.abort();
-      await expect(task).rejects.toThrow(
-        kind === "abort" ? "PREVIEW_CANCELLED" : "PREVIEW_TIMEOUT",
-      );
-      expect(cancelled).toBe(true);
-    }
-  });
-  it("does not create a decode URL for unverified bytes, and revokes a verified URL after dimension mismatch", async () => {
-    const content = await previewFixture(),
-      binding = sourceBinding(content),
-      asset: PreviewAsset = {
-        resourceRef: {
-          productId: binding.productId,
-          id: "portrait",
-          version: "1.0.0",
-        },
-        bytes: 4,
-        sha256: hash,
-        mediaType: "image/png",
-        width: 48,
-        height: 48,
-        purpose: "portrait",
-        approval: "pending",
-        alt: "合成测试素材",
-      };
-    const create = vi.fn(() => "blob:synthetic"),
-      revoke = vi.fn();
-    vi.stubGlobal(
-      "URL",
-      class extends URL {
-        static createObjectURL = create;
-        static revokeObjectURL = revoke;
-      },
-    );
+    ).rejects.toBeInstanceOf(PreviewClientError);
     vi.stubGlobal(
       "fetch",
       vi.fn(
         async () =>
-          new Response(bytes.slice(0, 3), {
-            headers: { "content-type": "image/png" },
-          }),
+          new Response(
+            JSON.stringify({
+              code: "DRAFT_REVISION_NOT_FOUND",
+              requestId: "22222222-2222-4222-8222-222222222222",
+            }),
+            { status: 403, headers: { "content-type": "application/json" } },
+          ),
       ),
     );
-    await expect(loadPreviewImage(binding, asset, signal())).rejects.toThrow(
-      "PREVIEW_RESOURCE_UNAVAILABLE",
-    );
-    expect(create).not.toHaveBeenCalled();
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(
-        async () =>
-          new Response(bytes, { headers: { "content-type": "image/png" } }),
+    await expect(
+      createPreviewResourceTransport(binding)(
+        asset,
+        new AbortController().signal,
+        performance.now() + 1000,
       ),
-    );
-    vi.stubGlobal(
-      "Image",
-      class {
-        naturalWidth = 1;
-        naturalHeight = 1;
-        src = "";
-        decode = async () => {};
-      },
-    );
-    await expect(loadPreviewImage(binding, asset, signal())).rejects.toThrow(
-      "PREVIEW_RESOURCE_UNAVAILABLE",
-    );
-    expect(revoke).toHaveBeenCalledWith("blob:synthetic");
-  });
-  it("late image decode cannot publish after cancellation and its URL is revoked", async () => {
-    const content = await previewFixture(),
-      binding = sourceBinding(content),
-      asset: PreviewAsset = {
-        resourceRef: {
-          productId: binding.productId,
-          id: "portrait",
-          version: "1.0.0",
-        },
-        bytes: 4,
-        sha256: hash,
-        mediaType: "image/png",
-        width: 48,
-        height: 48,
-        purpose: "portrait",
-        approval: "pending",
-        alt: "合成测试素材",
-      };
-    let finish: (() => void) | undefined;
-    const controller = new AbortController(),
-      revoke = vi.fn();
-    vi.stubGlobal(
-      "URL",
-      class extends URL {
-        static createObjectURL = () => "blob:late";
-        static revokeObjectURL = revoke;
-      },
-    );
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(
-        async () =>
-          new Response(bytes, { headers: { "content-type": "image/png" } }),
-      ),
-    );
-    vi.stubGlobal(
-      "Image",
-      class {
-        naturalWidth = 48;
-        naturalHeight = 48;
-        src = "";
-        decode = () =>
-          new Promise<void>((resolve) => {
-            finish = resolve;
-          });
-      },
-    );
-    const task = loadPreviewImage(binding, asset, controller.signal);
-    await vi.waitFor(() => expect(finish).toBeTypeOf("function"));
-    controller.abort();
-    await expect(task).rejects.toThrow("PREVIEW_CANCELLED");
-    finish!();
-    expect(revoke).toHaveBeenCalledWith("blob:late");
+    ).rejects.toThrow("STUDIO_UNAVAILABLE");
   });
 });

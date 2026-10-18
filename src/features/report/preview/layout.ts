@@ -1,4 +1,4 @@
-import type { PreviewPosterExport } from "@/features/product/preview/contracts";
+import type { DisplayPosterExportBodyV1 } from "@/lib/assessment-contract/display-v1";
 export const PREVIEW_MARK = "内部预览／待审／非正式报告";
 export type TextBlock = Readonly<{
   text: string;
@@ -33,7 +33,7 @@ export function wrapPosterText(
   return lines;
 }
 export function layoutPreviewPoster(
-  input: PreviewPosterExport,
+  input: DisplayPosterExportBodyV1,
   measure: Measure,
 ): readonly TextBlock[] {
   const p = input.poster,

@@ -5,7 +5,8 @@ import {
   type PreviewScoreRequest,
 } from "@/features/product/preview/contracts";
 
-export type Answers = Readonly<Record<string, string>>;
+import type { DisplayAnswers } from "@/lib/assessment-contract/display-v1";
+export type Answers = DisplayAnswers;
 export type ScoreTicket = Readonly<{
   generation: number;
   request: PreviewScoreRequest;
