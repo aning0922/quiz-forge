@@ -233,7 +233,14 @@ function InternalVersionsContent({
             读取当前草稿指针
           </button>
           {current && (
-            <Link className={styles.link} href={internalReviewPageUrl(current)}>
+            <Link
+              className={styles.link}
+              href={internalReviewPageUrl({
+                productId: current.productId,
+                draftId: current.draftId,
+                revision: current.revision,
+              })}
+            >
               当前修订 {current.revision} 的基线与封存
             </Link>
           )}

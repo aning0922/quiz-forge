@@ -2,6 +2,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 import type { StudioSessionDto } from "../contracts";
+import { summary } from "../drafts/fixtures.test-support";
 import { binding, fixture, sha, uuid } from "./fixtures.test-support";
 import { ReviewFacts, VersionMetadataFacts } from "./facts";
 import { InternalEvidenceFacts } from "./pending-panel";
@@ -12,10 +13,13 @@ import {
 } from "./pages";
 import { ProductDetail } from "../workspace/product-detail";
 import { internalVersionsPageUrl, internalVersionPageUrl } from "./paths";
-const reads = vi.hoisted(() => ({ error: "synthetic unavailable" }));
+const reads = vi.hoisted(() => ({
+  error: "synthetic unavailable",
+  draft: undefined as unknown,
+}));
 vi.mock("./use-read", () => ({
-  useInternalRead: () => ({
-    value: undefined,
+  useInternalRead: (path: string) => ({
+    value: path.endsWith("/draft") ? reads.draft : undefined,
     loading: false,
     error: reads.error,
     refresh: () => {},
@@ -80,6 +84,27 @@ describe("internal metadata and recovery presentation, server markup only", () =
       expect(html).toContain('aria-label="内测封存原请求核实"');
       expect(html).not.toContain("确认并发送此固定请求");
       expect(html).toContain("不授予对外发布资格");
+    }
+  });
+  it("renders a loaded full DraftSummaryDto by projecting only the strict revision link scope", () => {
+    reads.draft = {
+      kind: "draft",
+      draft: { ...summary, productId: binding.productId },
+    };
+    try {
+      const html = renderToStaticMarkup(
+        createElement(InternalVersionsPage, {
+          productId: binding.productId,
+          session,
+        }),
+      );
+      expect(html).toContain(
+        `/studio/products/${binding.productId}/drafts/${summary.draftId}/revisions/${summary.revision}/internal-review`,
+      );
+      expect(html).toContain('aria-label="基线记录原请求核实"');
+      expect(html).toContain('aria-label="内测封存原请求核实"');
+    } finally {
+      reads.draft = undefined;
     }
   });
   it("synthetic evidence never acquires author approval or an approval date", async () => {
