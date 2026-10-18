@@ -77,6 +77,7 @@ export class StorageReadGuard {
     config: P2aRuntimeConfig,
     checkpoint: () => void,
     deadlineMonotonicMs: number,
+    onUnconfirmedClose?: (guard: StorageReadGuard) => void,
   ): Promise<StorageReadGuard> {
     const guard = new StorageReadGuard(config, checkpoint, deadlineMonotonicMs);
     try {
@@ -98,7 +99,12 @@ export class StorageReadGuard {
       guard.schedule();
       return guard;
     } catch (error) {
-      await guard.close();
+      try {
+        await guard.close();
+      } catch (closingError) {
+        onUnconfirmedClose?.(guard);
+        throw closingError;
+      }
       throw error;
     }
   }

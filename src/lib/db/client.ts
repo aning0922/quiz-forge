@@ -5,6 +5,7 @@ import { drizzle, type PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import * as schema from "./schema";
 import { validationAckFunctionHashes } from "./validation-ack-schema";
 import { verifyDraftSchema } from "./draft-schema";
+import { verifyInternalVersionSchema } from "./internal-version-schema";
 import {
   loadRuntimeConfig,
   normalizeRuntimeConfig,
@@ -94,6 +95,7 @@ export async function verifyDatabaseIdentity(
       throw new StudioUnavailableError();
     await verifyValidationSchema(sql);
     await verifyDraftSchema(sql);
+    await verifyInternalVersionSchema(sql);
   }
 }
 
@@ -378,12 +380,22 @@ export async function createDatabase(
       throw new StudioError("RECEIVE_TIMEOUT");
     sql = openSql(config.database);
     const client = sql;
+    // Budget cancellation may force-close independently of the handler. Keep that
+    // real promise observable by the caller's idempotent close as well.
+    const endings: Promise<void>[] = [];
+    let closing: Promise<void> | undefined;
+    const end = (timeout: number) => {
+      const pending = client.end({ timeout });
+      endings.push(pending);
+      void pending.catch(() => {});
+      return pending;
+    };
     const verification = verifyDatabaseIdentity(client, config);
     if (budget) {
       const expiration = new Promise<never>((_, reject) => {
         expire = () => {
           expired = true;
-          void client.end({ timeout: 0 }).catch(() => {});
+          void end(0);
           reject(new StudioError("RECEIVE_TIMEOUT"));
         };
         budget.signal.addEventListener("abort", expire, { once: true });
@@ -401,8 +413,14 @@ export async function createDatabase(
       db: drizzle(sql, { schema }),
       config,
       close: () => {
+        if (closing) return closing;
         dispose();
-        return client.end({ timeout: expired ? 0 : 3 });
+        void end(expired ? 0 : 3);
+        closing = Promise.allSettled(endings).then((results) => {
+          const failed = results.find((result) => result.status === "rejected");
+          if (failed?.status === "rejected") throw failed.reason;
+        });
+        return closing;
       },
     };
   } catch (error) {

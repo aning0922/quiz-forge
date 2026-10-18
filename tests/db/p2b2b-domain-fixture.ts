@@ -328,6 +328,24 @@ export async function resetDomainDatabase(db: TestDatabase) {
     throw new Error("P2A_TEST_DATABASE_REQUIRED");
   const lock = await StorageLock.acquire(db.config);
   try {
+    const [ledgerSchema] = await lock.query(
+      () =>
+        lock.connection<
+          { reviews: boolean; versions: boolean }[]
+        >`SELECT to_regclass('qf.draft_review') IS NOT NULL AS reviews,to_regclass('qf.product_version') IS NOT NULL AS versions`,
+    );
+    if (!ledgerSchema || ledgerSchema.reviews !== ledgerSchema.versions)
+      throw new Error("TEST_INTERNAL_VERSION_SCHEMA_INCOMPLETE");
+    const [ledger] = ledgerSchema.reviews
+      ? await lock.query(
+          () =>
+            lock.connection<
+              { occupied: boolean }[]
+            >`SELECT EXISTS(SELECT 1 FROM qf.draft_review) OR EXISTS(SELECT 1 FROM qf.product_version) AS occupied`,
+        )
+      : [{ occupied: false }];
+    if (ledger?.occupied !== false)
+      throw new Error("TEST_INTERNAL_VERSION_SCOPE_NOT_EMPTY");
     const uploads = path.dirname(importsDirectory(db.config));
     const roots = await readdir(uploads, { withFileTypes: true }).catch(
       (e: unknown) => {
@@ -371,10 +389,10 @@ export async function resetDomainDatabase(db: TestDatabase) {
     )
       throw new Error("TEST_DOMAIN_SYNTHETIC_OWNER_REQUIRED");
     await lock.check();
-    await safe(
-      () =>
-        db.admin
-          .sql`TRUNCATE qf.draft_application,qf.draft_revision,qf.product_draft,qf.product_asset,qf.asset_blob,qf.quizpack_validation,qf.quizpack_import,qf.product_tag,qf.product,qf.category,qf.tag,qf.operator_session,qf.audit_event,qf.operator`,
+    await safe(() =>
+      db.admin.sql.unsafe(
+        `TRUNCATE ${ledgerSchema.reviews ? "qf.product_version,qf.draft_review," : ""}qf.draft_application,qf.draft_revision,qf.product_draft,qf.product_asset,qf.asset_blob,qf.quizpack_validation,qf.quizpack_import,qf.product_tag,qf.product,qf.category,qf.tag,qf.operator_session,qf.audit_event,qf.operator`,
+      ),
     );
   } finally {
     await lock.close();
