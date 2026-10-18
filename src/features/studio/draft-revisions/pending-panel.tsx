@@ -269,15 +269,21 @@ export function RevisionPendingPanel({
             </>
           )}
           {result.kind !== "unresolved" && (
-            <button
-              className={`${styles.button} ${styles.secondary}`}
-              disabled={busy || refreshing}
-              onClick={() => void clear()}
+            <div
+              className={
+                result.kind === "applied" ? local.receiptActions : undefined
+              }
             >
-              {result.kind === "applied"
-                ? "解除已确认成功的本地锚点"
-                : "移除已失效原请求并重新准备"}
-            </button>
+              <button
+                className={`${styles.button} ${styles.secondary}`}
+                disabled={busy || refreshing}
+                onClick={() => void clear()}
+              >
+                {result.kind === "applied"
+                  ? "解除已确认成功的本地锚点"
+                  : "移除已失效原请求并重新准备"}
+              </button>
+            </div>
           )}
         </div>
       )}
