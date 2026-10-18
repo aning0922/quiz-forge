@@ -74,13 +74,16 @@ import {
   consumerFixtureFailure as fail,
   verifyConsumerFixtureGraph,
 } from "./p4-consumer-fixture-graph";
+import {
+  assertConsumerFixtureKnown,
+  retainConsumerFixtureUnknown,
+} from "./p4-consumer-fixture-owner";
 export {
   CONSUMER_FIXTURE_PRIVATE_NAME,
   consumerFixtureSchema,
   type ConsumerFixture,
 } from "./p4-consumer-fixture-contract";
 
-const quarantined: unknown[] = [];
 const fixturePath = (db: TestDatabase) =>
   path.join(instanceDirectory(db.config), CONSUMER_FIXTURE_PRIVATE_NAME);
 const observationsPath = (db: TestDatabase) =>
@@ -88,6 +91,7 @@ const observationsPath = (db: TestDatabase) =>
 const same = (a: unknown, b: unknown) =>
   internalCanonicalText(a) === internalCanonicalText(b);
 function requireTest(db: TestDatabase) {
+  assertConsumerFixtureKnown();
   if (!["test", "ci"].includes(db.config.purpose)) throw fail();
 }
 async function absent(file: string) {
@@ -101,13 +105,19 @@ async function absent(file: string) {
 }
 async function privateJson(
   file: string,
-  onUnconfirmed: (handle: unknown) => void = (h) => quarantined.push(h),
+  onUnconfirmed: (handle: unknown) => void = retainConsumerFixtureUnknown,
 ) {
+  assertConsumerFixtureKnown();
   const before = await lstat(file);
   privateFile(before);
   if (before.nlink !== 1 || before.size > CONSUMER_FIXTURE_MAX_BYTES)
     throw fail();
-  const h = await open(file, constants.O_RDONLY | constants.O_NOFOLLOW);
+  const h = await open(file, constants.O_RDONLY | constants.O_NOFOLLOW).catch(
+    (e) => {
+      retainConsumerFixtureUnknown("manifest-read-open");
+      throw e;
+    },
+  );
   try {
     const st = await h.stat();
     privateFile(st);
@@ -145,12 +155,14 @@ async function privateJson(
     try {
       await h.close();
     } catch (e) {
+      retainConsumerFixtureUnknown(h);
       onUnconfirmed(h);
       throw e;
     }
   }
 }
 async function save(db: TestDatabase, value: ConsumerFixture, create = false) {
+  assertConsumerFixtureKnown();
   const bytes = Buffer.from(JSON.stringify(consumerFixtureSchema.parse(value)));
   if (bytes.length > CONSUMER_FIXTURE_MAX_BYTES) throw fail();
   const file = fixturePath(db),
@@ -167,23 +179,42 @@ async function save(db: TestDatabase, value: ConsumerFixture, create = false) {
       constants.O_EXCL |
       constants.O_NOFOLLOW,
     0o600,
-  );
+  ).catch((e) => {
+    retainConsumerFixtureUnknown("manifest-write-open");
+    throw e;
+  });
   try {
     const st = await h.stat();
     privateFile(st);
     if (st.nlink !== 1) throw fail();
-    await h.writeFile(bytes);
-    await h.sync();
+    try {
+      await h.writeFile(bytes);
+      await h.sync();
+    } catch (e) {
+      retainConsumerFixtureUnknown(h);
+      throw e;
+    }
   } finally {
-    await h.close();
+    try {
+      await h.close();
+    } catch (e) {
+      retainConsumerFixtureUnknown(h);
+      throw e;
+    }
   }
   if (before) {
     const st = await lstat(file);
     privateFile(st);
     if (st.ino !== before.ino || st.dev !== before.dev || st.nlink !== 1)
       throw fail();
-    await rename(target, file);
+    try {
+      await rename(target, file);
+    } catch (e) {
+      retainConsumerFixtureUnknown(h);
+      throw e;
+    }
   }
+  assertConsumerFixtureKnown();
 }
 export async function readConsumerFixture(
   db: TestDatabase,
@@ -196,6 +227,7 @@ export async function readConsumerFixture(
     throw fail();
   if (v.review) await verifyInternalReviewReceipt(v.review);
   if (v.parent) await verifyInternalVersionDetail(v.parent);
+  assertConsumerFixtureKnown();
   return v;
 }
 export async function prepareConsumerFixture(
@@ -336,14 +368,20 @@ export async function prepareConsumerFixture(
         value.blobs.push({ sha256: blob.sha256, bytes: blob.bytes, created });
         try {
           await save(db, value);
-          await h.writeFile(asset.bytes);
-          await h.sync();
+          try {
+            await h.writeFile(asset.bytes);
+            await h.sync();
+          } catch (e) {
+            unconfirmed = true;
+            retainConsumerFixtureUnknown(h, lock);
+            throw e;
+          }
         } finally {
           try {
             await h.close();
           } catch (e) {
             unconfirmed = true;
-            quarantined.push(h, lock);
+            retainConsumerFixtureUnknown(h, lock);
             throw e;
           }
         }
@@ -368,7 +406,7 @@ export async function prepareConsumerFixture(
         () => {},
         (h) => {
           unconfirmed = true;
-          quarantined.push(h, lock);
+          retainConsumerFixtureUnknown(h, lock);
         },
       );
       if (!created)
@@ -381,7 +419,7 @@ export async function prepareConsumerFixture(
     }
   } finally {
     if (!unconfirmed && !(await lock.close())) {
-      quarantined.push(lock);
+      retainConsumerFixtureUnknown(lock);
       throw fail();
     }
   }
@@ -397,8 +435,17 @@ export async function prepareConsumerFixture(
       owner = createInternalVersionOwner(app, clock);
     try {
       return await work(createProductInternalVersionService(owner), app, clock);
+    } catch (error) {
+      if ((error as { code?: string })?.code === "WRITE_OUTCOME_UNKNOWN")
+        retainConsumerFixtureUnknown(app, owner);
+      throw error;
     } finally {
-      await owner.closeIfNotTransferred();
+      try {
+        await owner.closeIfNotTransferred();
+      } catch (e) {
+        retainConsumerFixtureUnknown(app, owner);
+        throw e;
+      }
     }
   };
   const recorded = await request((service, app, clock) =>
@@ -493,6 +540,7 @@ export async function cleanupConsumerFixture(
   runId: string,
   proof: ServerExitProof,
 ) {
+  assertConsumerFixtureKnown();
   requireTest(db);
   const identity = {
     cwd: process.cwd(),
@@ -506,13 +554,20 @@ export async function cleanupConsumerFixture(
   const live = await currentConfig(db.app);
   if (live.imports.enabled) throw fail();
   await assertNoConfigGuard(live);
-  await db.app.close();
+  try {
+    await db.app.close();
+  } catch (e) {
+    retainConsumerFixtureUnknown(db.app);
+    throw e;
+  }
   const controller = new AbortController(),
     { context, dispose } = createReceiveContext(controller.signal),
     lock = await StorageLock.acquire(live, context);
-  let unconfirmed = false;
+  let unconfirmed = false,
+    mutationStarted = false;
   try {
     const check = async () => {
+      assertConsumerFixtureKnown();
       remainingReceiveMs(context);
       assertServerExitProof(proof, identity);
       if (
@@ -529,7 +584,7 @@ export async function cleanupConsumerFixture(
       if (!pid) throw fail();
       const [other] = await db.admin.sql<
         { present: boolean }[]
-      >`SELECT EXISTS(SELECT 1 FROM pg_stat_activity WHERE datname=current_database() AND backend_type='client backend' AND pid<>pg_backend_pid() AND pid<>${pid.pid}) AS present`;
+      >`SELECT EXISTS(SELECT 1 FROM pg_stat_activity WHERE datname=current_database() AND pid<>pg_backend_pid() AND pid<>${pid.pid}) AS present`;
       if (other?.present !== false) throw fail();
       // Same synthetic no-native policy as older physical fixtures; no native validation is inferred.
       return inspectPreviewNativeControl(
@@ -573,7 +628,7 @@ export async function cleanupConsumerFixture(
         () => controller.abort(),
         (h) => {
           unconfirmed = true;
-          quarantined.push(h, lock);
+          retainConsumerFixtureUnknown(h, lock);
         },
       );
       if (!blob.created) continue;
@@ -591,7 +646,7 @@ export async function cleanupConsumerFixture(
       const observations = consumerFixtureObservationsSchema.parse(
         await privateJson(observationsPath(db), (h) => {
           unconfirmed = true;
-          quarantined.push(h, lock);
+          retainConsumerFixtureUnknown(h, lock);
         }),
       );
       if (!same(observations, value.observations)) throw fail();
@@ -611,6 +666,8 @@ export async function cleanupConsumerFixture(
         value.observations,
       );
       if (!same(now.rows, value.rows)) throw fail();
+      assertConsumerFixtureKnown();
+      mutationStarted = true;
       await tx`DELETE FROM qf.quiz_report WHERE product_id=${value.productId}`;
       await tx`DELETE FROM qf.consumer_grant WHERE key_id IN(SELECT id FROM qf.access_key WHERE product_id=${value.productId})`;
       await tx`DELETE FROM qf.consumer_session WHERE product_id=${value.productId}`;
@@ -631,16 +688,23 @@ export async function cleanupConsumerFixture(
       await tx`DELETE FROM qf.operator WHERE id=ANY(${tx.array(actors)}::uuid[])`;
       if (deletable.length)
         await tx`DELETE FROM qf.asset_blob WHERE sha256=ANY(${tx.array(deletable)}::text[])`;
+      assertConsumerFixtureKnown();
     });
     for (const file of remove) await removeOwned(file.file, file.inode);
     await unlink(fixturePath(db));
     if (observationInode)
       await removeOwned(observationsPath(db), observationInode);
     return { nativeControl: await check() };
+  } catch (error) {
+    if (mutationStarted) {
+      unconfirmed = true;
+      retainConsumerFixtureUnknown(db.admin, lock);
+    }
+    throw error;
   } finally {
     dispose();
     if (!unconfirmed && !(await lock.close())) {
-      quarantined.push(lock);
+      retainConsumerFixtureUnknown(lock);
       throw fail();
     }
   }
