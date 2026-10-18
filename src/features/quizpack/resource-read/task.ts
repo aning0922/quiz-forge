@@ -113,7 +113,7 @@ export class ResourceReadTask {
     }
   }
   /** Only already verified memory enters here; FS is closed before creating the body. */
-  body(bytes: Buffer): ReadableStream<Uint8Array> {
+  body(bytes: Buffer, onBodySettled?: () => void): ReadableStream<Uint8Array> {
     this.checkpoint();
     this.bodyEnded = false;
     let retained: Buffer | undefined = bytes,
@@ -126,7 +126,11 @@ export class ResourceReadTask {
       retained = undefined;
       this.signal.removeEventListener("abort", abort);
       this.bodyEnded = true;
-      this.maybeRelease();
+      try {
+        onBodySettled?.();
+      } finally {
+        this.maybeRelease();
+      }
     };
     const abort = () => {
       if (ended) return;

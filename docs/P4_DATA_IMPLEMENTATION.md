@@ -78,3 +78,17 @@ fixture 中一次检查发现存储空目录路径遗漏 `uploads`，在提交�
 早期失败夹具第一次用了本地配置不允许的server port，故在分配client前被配置校验拒绝，父测试记录失败但也确认0后端；修正为仅在内存使用CI-profile的错误预期server身份（连接参数仍是同一个自有test库），真实verification失败分配路径后四场景重验通过。没有修改实例配置/marker、业务行或旧SQL，永久故障registry随该独立测试进程实际结束；没有在运行进程清registry假装恢复。完整driver46项、普通PG全套、HTTP服务与FS资源body生命周期仍待后续验证。
 
 本笔当前158文件/1771单元、format、lint、typecheck和生产build通过；implementation校验3项可用，build trace80项/0违规。普通PG整套在此固定生产源继续运行，尚无通过结论。未运行3100/E2E，不把primitive当三类完整service或request/resource owner已交付。
+
+随后同一固定e08b78c生产源的普通PG已完成：**60文件/485项通过，无skip**（285.10s），fresh namespace另4通过。485包含真实SQL owner父1项/4子场景；不包含之后新增的request owner测试。主控已转告Astra对core与SQL primitive独审无P1/P2，该结论不扩展到下文新owner或尚未接通的服务。
+
+## 单请求与资源 body owner
+
+新增 `createConsumerRequestOwner(config, clock)`：构建时不打开SQL/FS；每请求只接一个public方法、固定原budget，顺序阶段不并行，exchange最多两段SQL；其他方法最多一段SQL，再按需进入一段FS任务。pure SQL不占4个FS槽。IO路径持有真实storage guard、同一完整guard的observed app DB及实际callback；实际关闭未知/拒绝时继续隔离guard/task，不拿HTTP返回、dispose或stream回调作为资源关闭证明。
+
+资源仅能由该owner的read-resource路径发行一个非空有界bytes对象。body adapter要求同一对象、只能交接一次，直接返回原 `ResourceReadTask.body`，没有额外ReadableStream预取队列；body在实际Task.run结束前建立，所以最后queued chunk仍占4槽。`onBodySettled`为旧body API增加可选回调，仅清理请求clock；原task的actual settlement、unconfirmed IO、bodyEnded等释放条件未改变。请求finally不会取消已交接body的原abort传播；drain/cancel/deadline清理clock，未交接body明确cancel。actual IO callback尚未开始即取消也回收clock，不假造任何关闭证明。
+
+当前新6项owner单元+旧6项resource任务共12通过，覆盖exact bytes、单次交接、4个小图最后chunk回压、lazy/单public call/两SQL阶段、取消、原deadline、尚未进入IO就取消、DB close pending时guard与名额保留和迟到成功。另2项真实PG通过：真实guard/app DB关闭后4个合成内存body仍占IO名额，独立SQL可运行；隔离子进程在4个真实pool上注入end拒绝，实际4把维护SHARE锁保持、第五IO被拒、SQL仍可运行，后续原生end也不清掉隔离状态，直到该进程真实SIGTERM退出，父进程再确认自有app backend为0。没有使用真实业务行/图片文件，合成内存body测试不代表私有资产授权和读取已经接通。
+
+此owner尚未接三类业务服务或生产HTTP；完整实际资产闭包、FS源端口与P4专属r1-head物理fixture继续实施。旧process/fixture未知现场与首款39eb保持不动。
+
+本笔最终159文件/1777单元、format、lint、typecheck、生产build及上述2项真实PG再次通过；build trace80/0违规。没有重跑完整普通487PG、46driver或3100/E2E，不沿用上一笔485给新owner冒称整套已验收。下一步正常合入主控已封存最终consumer实现闭包，再接服务和物理fixture。
