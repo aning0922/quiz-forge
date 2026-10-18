@@ -11,3 +11,9 @@ readConsumerJson 用固定 buffer 核实际 UTF8 字节、单一原始 DatabaseB
 2026-10-18：7项合成边界测试实际通过，覆盖缺/错源头、重复Cookie、独立codec、有限错误、误导Content-Length、实际+1、多字节、坏编码/流故障、深度/数值、停滞与无限零字节流。不接DB/native/3100，不是实际消费者授权事务或全P4出口。
 
 2026-10-18 HTTP P2 整改：读取循环只在外层与中断 Promise 竞速一次，保留原期限、每32读让出、检查点和取消；不再随空分块累计中断 reactions。原独审反例在本树修前为134/8450/33794，修后为1/1/1（128/8192/32768空分块，实际正文均2字节）。响应运行时仅显式读取并验证Set-Cookie，宽对象不能覆盖固定私有头或注入CORS。原7项加2项反应计数/运行时头边界回归；原反例与本树修前/修后JSON保留在忽略的.cache/p4-review（probe内commit字段为原审查来源，不是修后提交身份）。浏览器request新实现同步采用单一外层竞速，仍待自身测试及host接入。
+
+handler.ts现提供handleConsumerHttp(request, endpoint, dependencies, startedAt)，依赖只注入真实createOwner(config, clock)/createService(owner)，本文件不创建DB或伪造业务。clock在入口开始且一路同一15秒；source、method、query重复/未知、Cookie、CSRF及严格body/full session binding先核，非法请求零owner。save双hash与响应session/entry/report/resolution再核。写服务返回后的封套验证/真实close失败转OUTCOME_UNKNOWN；读错误不变成写权限。exchange只输出result，grant仅Set-Cookie；logout严格空对象，204并清同session路径Cookie。
+
+资源只把service返回的同一Uint8Array原对象交给同owner.resourceBody一次，HTTP不预读、不克隆、不另包stream或dispose已移交timer；finally始终同owner.closeIfNotTransferred，JSON还在返回前await实际close。owner未建时才由HTTP dispose clock；真实owner须负责其最终close/quarantine及clock清理。7项适配单测通过：非法入口零owner、同clock/owner关闭、exchange隔离、写成功后封套/close UNKNOWN、exact资源身份与移交、重复selector/错误hash零服务、严格save及有限失权。测试owner/service为明确合成fixture，不是实际DB/事务/关闭证明。
+
+尚未导入未交付的A factory或挂app路由；待A request-owner/service及root实际resolver提交后再做真实接线，不能将此依赖注入层当可用消费者HTTP服务或P4验收。
