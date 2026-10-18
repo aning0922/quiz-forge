@@ -128,7 +128,7 @@ function ProductCreateForm({ session }: { session: StudioSessionDto }) {
       <h2>创建工作区</h2>
       <p className={styles.note}>
         稳定 ID 创建后不能修改。归档记录仍保留 ID 与
-        slug。本阶段尚未接入草稿与导入。
+        slug。创建后可进入工作区接收原包、验证归档并查看草稿与内测版本。
       </p>
       <form
         aria-label="新建工作区"
