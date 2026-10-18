@@ -12,6 +12,7 @@ import {
   createStudioPlayV1,
   resolveStudioPlayV1,
   readStudioKeysV1,
+  readStudioParentVersionsV1,
 } from "./client";
 const json = (v: unknown, status = 200) =>
   new Response(JSON.stringify(v), {
@@ -119,4 +120,28 @@ it("read pages expose no consumer/Studio CSRF header and reject cross-product or
       issuedAt: testMoment,
     }),
   ).toThrow("INVALID_REQUEST");
+});
+
+it("reads the frozen parent-list envelope without the old draft response graph and revokes on old auth errors", async () => {
+  const revoked = vi.fn(),
+    context = {
+      signal: new AbortController().signal,
+      csrf: "synthetic",
+      onAuthorityFailure: revoked,
+    };
+  expect(
+    await readStudioParentVersionsV1("synthetic", {
+      ...context,
+      fetcher: async () =>
+        json({ ok: true, value: { productId: "synthetic", versions: [] } }),
+    }),
+  ).toEqual({ productId: "synthetic", versions: [] });
+  await expect(
+    readStudioParentVersionsV1("synthetic", {
+      ...context,
+      fetcher: async () =>
+        json({ code: "UNAUTHENTICATED", requestId: testUuid(1) }, 401),
+    }),
+  ).rejects.toMatchObject({ code: "ACCESS_DENIED" });
+  expect(revoked).toHaveBeenCalledOnce();
 });

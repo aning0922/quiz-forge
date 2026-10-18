@@ -1,3 +1,5 @@
+import { internalVersionListResponseSchema } from "@/features/product/internal-versions/contracts";
+import { internalVersionsUrl } from "@/features/product/internal-versions/urls";
 import { CONSUMER_LIMITS_V1 as L } from "@/lib/consumer-contract/v1/limits";
 import {
   ConsumerClientError,
@@ -206,6 +208,38 @@ export function readStudioKeyV1(
         value.issue.binding.play.productId !== productId ||
         value.issue.binding.keyId !== keyId
       )
+        throw new ConsumerClientError("UNAVAILABLE");
+      return value;
+    },
+  );
+}
+
+/** Read the frozen parent-list DTO without importing the old draft response/Node graph. */
+export function readStudioParentVersionsV1(
+  productId: string,
+  c: StudioConsumerContextV1,
+) {
+  const send = c.fetcher ?? fetch;
+  return requestConsumerJson(
+    internalVersionsUrl(productId),
+    {
+      ...readOptions(c, L.playListResponseBytes),
+      fetcher: async (url, options) => {
+        const response = await send(url, options);
+        if (response.status === 401 || response.status === 403) {
+          try {
+            void response.body?.cancel().catch(() => undefined);
+          } catch {
+            /* Finite auth failure only. */
+          }
+          throw new ConsumerClientError("ACCESS_DENIED");
+        }
+        return response;
+      },
+    },
+    (input) => {
+      const value = internalVersionListResponseSchema.parse(input).value;
+      if (value.productId !== productId)
         throw new ConsumerClientError("UNAVAILABLE");
       return value;
     },

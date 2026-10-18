@@ -1,7 +1,6 @@
 import { z } from "zod";
 import type { StudioSessionDto } from "../contracts";
 import type { InternalVersionList } from "@/features/product/internal-versions/contracts";
-import { readInternalVersions } from "../internal-versions/client";
 import { StudioClientError } from "../client";
 import {
   consumerMomentSchema,
@@ -100,7 +99,10 @@ export class StudioConsumerControllerV1 {
     readonly renderer: ConsumerRendererIdentity,
     readonly storage: ConsumerPendingStorage,
     readonly fetcher?: ConsumerFetch,
-    readonly readVersions = readInternalVersions,
+    readonly readVersions?: (
+      productId: string,
+      signal: AbortSignal,
+    ) => Promise<InternalVersionList>,
   ) {
     this.scope = Object.freeze(studioConsumerScopeSchemaV1.parse(scope));
   }
@@ -225,7 +227,9 @@ export class StudioConsumerControllerV1 {
       this.#publish({ pending: this.#publicPending(pending) });
       const context = this.#context(task, session);
       const [versions, plays, keys] = await Promise.all([
-        this.readVersions(this.scope.productId, task.signal),
+        this.readVersions
+          ? this.readVersions(this.scope.productId, task.signal)
+          : api.readStudioParentVersionsV1(this.scope.productId, context),
         api.readStudioPlaysV1(this.scope.productId, context),
         api.readStudioKeysV1(this.scope.productId, context),
       ]);

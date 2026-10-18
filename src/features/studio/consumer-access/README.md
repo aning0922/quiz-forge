@@ -13,3 +13,5 @@ pending.ts在运营浏览器CSPRNG生成32字节raw，按独立access-key域求d
 controller.ts已建立整页代次与单一原请求所有权，公开snapshot只含hasRaw等安全摘要，不含raw或访问链接。refresh/失权同步使旧task失效；prepare→完整回读→mark/readback→POST，UNKNOWN不开放第二次新发放，resolve/replay沿原binding。显式终态finish才清本地锚点，不改变服务器结果。复制/下载只在已核applied、原raw仍在时执行：先新鲜同issuer/operator会话，读精确当前Key（核原issue/issuedBy、无void、未过期或已完成），完整回读同秘密锚点，再次新鲜issuer确认后才把fragment链接交给显式expose回调；回调后仍核代次才能显示成功。
 
 控制器6项合成测试通过：零API raw/公开snapshot raw、复制前新鲜身份、UNKNOWN原样保留/重放、不同issuer/只读降权、坏本地保存零POST、失权迟到成功、原文丢失仅可resolve。所有网络client/pending/controller目前共14项通过，typecheck与定向lint通过。StudioUI/真实HTTP业务factory与生产闭环仍待接入；这些不是实际发放或权限事务验收。
+
+父版本读取隔离：新readStudioParentVersionsV1直接读取同一冻结internalVersionListResponse DTO并核Product，使用本轮有界JSON transport；不再由controller默认导入旧draft response链中的Node模块。旧接口401/403按当前授权丢失处理且回调一次，旧协议/代码未改。新增用例后client4项+controller6项通过；独立浏览器打包已不再出现node:util依赖。UI行为与截图仍在验证，尚不记为浏览器通过。
