@@ -1,5 +1,11 @@
 # QuizForge 托管开发
 
+## 2026-10-18 P4 共享合同与并行归属
+
+主控在 `codex/consumer-session-report` / Draft PR #20，从 c83788b 接续；当前机器接口至 50a35a6。共享基础/codec、领域 DTO/纯视图接口、errors/resolve 已由原 Astra 独审分别通过；entry/service/owner/同事务 ports 正在收口。主控完整 1763 单元及 format/lint/typecheck 已过，尚未验收数据库或消费者端到端。
+
+A（原聊天 01a13f49-bff9-74b0-8f7c-03cd46b346c1，`codex/p4-consumer-data`）负责后续 0018、guard、惰性 owner、数据事务/领域 ports、保留与真实 PG；B（原聊天 01a13f4a-3ac5-7a72-9ae0-70b24ec85f04，`codex/p4-consumer-ui`）负责纯六视图/PNG，冻结后接消费者/Studio host 与 HTTP。root 独占共享基础/应用接口/精确实现登记/全量集成、生产构建与 3100；Astra 原独立聊天负责非实施审查。常规工作沿既有授权推进，同一内容与视觉内测基线不重复请批。详细状态和仍待实现的边界见 [CONSUMER_P4](CONSUMER_P4.md)、[P4_REVIEW](P4_REVIEW.md)。
+
 ## 2026-10-18 P3-E 技术出口完成，接续 P4
 
 生产 eb7595a / 测试 f924f23 已完成精确基线批准和不可变内测版本：1710 单元、469 fresh PG、46 driver、独立 fresh 服务 14/媒体 UNKNOWN 3、完整生产 E2E 241/10 旧 skip 均通过；最终 main 媒体 66×3 封存、80 traces/17204 路径/0 私有违规。准确 f924f23 的 CI 39128057215 与 39128057251 均 success。A/B 分别检查 80 原图，Astra 核完整证据并实际查看 20 状态代表图，无剩余 P1/P2，保留三类非阻断后台排版 P3。详见 [P3E_ACCEPTANCE](P3E_ACCEPTANCE.md)、[P3E_REVIEW](P3E_REVIEW.md)、[P3E_VISUAL_CHECK](P3E_VISUAL_CHECK.md)。

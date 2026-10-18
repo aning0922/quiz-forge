@@ -1,5 +1,11 @@
 # 阶段进度
 
+## 2026-10-18 P4 消费者合同与双线实施准备
+
+从 P3-E 交付 c83788b 接续 `codex/consumer-session-report` / Draft PR #20。至 50a35a6，已实现严格 play/Key/report 数据合同、独立 token/CSRF codec、答案和游标规范摘要、原请求核实联合、中性 entry 与公开服务签名。主控实际全量 156 文件 / 1763 单元测试、format/lint/typecheck 全部通过；其中 P4 合同 11 文件 / 53 项通过。共享基础/codec、A/B 数据与视图接口、errors/resolve 已分批独审无 P1/P2；服务端口与 owner 有界关闭方案仍在独审，不能将局部通过写成 P4 验收。详见 [合同](CONSUMER_P4.md)、[审查记录](P4_REVIEW.md)。
+
+原两条独立开发聊天继续：A 准备 0018、精确最终报告 FK、同事务领域 ports 与真实 PG 计划；B 实现独立六状态消费者组件和 PNG。主控持共享协议/登记/集成，Astra 独审，未替换成当前聊天子代理。当前仍没有消费者表、实际 Key 发放、持久答题/完成或 P5 现场。39eb 首款实例继续禁导入、停库保留；已批准内容/八图不变，不重复请批同一内测基线。
+
 ## 2026-10-18 P3-E 技术出口完成，接续消费者闭环
 
 生产 eb7595a、测试 f924f23 已完成精确基线审核与不可变内测版本：1710 单元、完整 fresh 469 PG、46 driver、另两远端 fresh 库 14 服务/3 媒体 UNKNOWN、format/lint/typecheck/build 均通过。最终构建 80 traces/17204 路径/0 私有违规；macOS main 66×3 封存完成且实际操作停止/control 空。准确 f924f23 的普通 CI 39128057215 与媒体 CI 39128057251 均 completed/success。

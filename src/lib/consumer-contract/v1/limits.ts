@@ -2,6 +2,7 @@
 export const CONSUMER_LIMITS_V1 = Object.freeze({
   playVersionsPerProduct: 100,
   currentGrantsPerKey: 16,
+  maximumSqlOwnersPerProcess: 8,
   grantLifetimeSeconds: 28_800,
   exchangeWindowSeconds: 60,
   exchangeAdmissionsPerWindow: 60,
