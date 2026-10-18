@@ -35,7 +35,14 @@ import {
   summaryDto,
   applicationByKey,
   applicationDto,
+  type DraftRevisionRow,
 } from "@/features/product/drafts/repository";
+import type { ApplicationRow } from "@/features/product/draft-revisions/repository";
+import type { ImportRow } from "@/features/quizpack/import/repository";
+import type { ValidationRow } from "@/features/quizpack/validation/repository";
+import type { ReadyDraftSourceEvidence } from "@/features/quizpack/draft-source-evidence";
+import type postgres from "postgres";
+import { canonicalP1Json } from "@/features/quizpack/v1/canonical";
 import {
   reviewReceipt,
   versionDetail,
@@ -411,6 +418,7 @@ async function observeGraph(db: TestDatabase, value: InternalVersionFixture) {
           r.source_validation_id !== s.scope.sourceValidationId ||
           r.source_validation_state_revision !==
             s.expectedValidationStateRevision ||
+          r.candidate_sha256 !== s.expectedCandidateSha256 ||
           r.canonical_content_sha256 !== s.canonicalContentSha256 ||
           r.asset_set_sha256 !== s.assetSetSha256 ||
           r.canonical_manifest_sha256 !== s.canonicalManifestSha256
@@ -444,6 +452,7 @@ async function observeGraph(db: TestDatabase, value: InternalVersionFixture) {
           throw fail();
         sourceProofs.push(p);
       }
+      await assertExactGraphSets(tx, value, revisions, sourceProofs);
       const reviews = await tx<
           ReviewRow[]
         >`SELECT * FROM qf.draft_review WHERE product_id=${value.productId} LIMIT 101`,
@@ -470,6 +479,173 @@ async function observeGraph(db: TestDatabase, value: InternalVersionFixture) {
       return { root, revisions, sourceProofs, review, detail };
     },
   );
+}
+
+/** Full Product collections, not merely the subset named in the private file. Runs before any DELETE/unlink. */
+async function assertExactGraphSets(
+  tx: postgres.TransactionSql,
+  value: InternalVersionFixture,
+  revisions: readonly DraftRevisionRow[],
+  proofs: readonly ReadyDraftSourceEvidence[],
+) {
+  const imports = await tx<
+    (ImportRow & { target_kind: string })[]
+  >`SELECT * FROM qf.quizpack_import WHERE product_id=${value.productId} LIMIT 3`;
+  const validations = await tx<
+    ValidationRow[]
+  >`SELECT * FROM qf.quizpack_validation WHERE product_id=${value.productId} LIMIT 3`;
+  if (
+    imports.length !== value.sources.length ||
+    validations.length !== value.sources.length
+  )
+    throw fail();
+  for (const s of value.sources) {
+    const imported = imports.find((i) => i.id === s.scope.sourceImportId),
+      validation = validations.find((v) => v.id === s.scope.sourceValidationId),
+      proof = proofs.find(
+        (p) =>
+          p.sourceImportId === s.scope.sourceImportId &&
+          p.sourceValidationId === s.scope.sourceValidationId,
+      );
+    if (
+      !imported ||
+      !validation ||
+      !proof ||
+      imported.created_by !== value.operator.identifier ||
+      imported.status !== "received" ||
+      imported.target_kind !== "new-draft" ||
+      imported.storage_condition !== "clean" ||
+      String(imported.reserved_bytes) !== "0" ||
+      imported.lease_until !== null ||
+      imported.actual_archive_sha256 !== proof.validation.archiveSha256 ||
+      imported.expected_archive_sha256 !== proof.validation.archiveSha256 ||
+      imported.actual_archive_bytes !== 100 ||
+      imported.expected_archive_bytes !== 100 ||
+      imported.archive_storage_key !==
+        `imports/${imported.id}/archive.quizpack` ||
+      validation.created_by !== value.operator.identifier ||
+      validation.import_id !== imported.id ||
+      validation.status !== "ready" ||
+      validation.storage_condition !== "clean" ||
+      String(validation.reserved_bytes) !== "0" ||
+      validation.lease_until !== null ||
+      validation.state_revision !== s.expectedValidationStateRevision ||
+      validation.candidate_sha256 !== s.expectedCandidateSha256 ||
+      validation.canonical_content_sha256 !== s.canonicalContentSha256 ||
+      validation.asset_set_sha256 !== s.assetSetSha256 ||
+      validation.canonical_manifest_sha256 !== s.canonicalManifestSha256
+    )
+      throw fail();
+  }
+  const actualRevisions = await tx<
+    {
+      draft_id: string;
+      revision: number;
+      application_id: string;
+      created_by: string;
+    }[]
+  >`SELECT draft_id,revision,application_id,created_by FROM qf.draft_revision WHERE product_id=${value.productId} ORDER BY revision LIMIT 101`;
+  const applications = await tx<
+    ApplicationRow[]
+  >`SELECT * FROM qf.draft_application WHERE product_id=${value.productId} ORDER BY revision LIMIT 101`;
+  if (
+    actualRevisions.length !== revisions.length ||
+    applications.length !== revisions.length
+  )
+    throw fail();
+  for (const r of revisions) {
+    const actual = actualRevisions.find(
+        (a) => a.draft_id === r.draft_id && a.revision === r.revision,
+      ),
+      application = applications.find(
+        (a) =>
+          a.id === r.application_id &&
+          a.draft_id === r.draft_id &&
+          a.revision === r.revision,
+      ),
+      s = value.sources.find(
+        (s) => s.name === (r.revision === 1 ? "baseline" : "next"),
+      );
+    if (
+      !actual ||
+      !application ||
+      !s ||
+      actual.application_id !== r.application_id ||
+      actual.created_by !== value.operator.identifier ||
+      application.created_by !== value.operator.identifier ||
+      application.source_import_id !== s.scope.sourceImportId ||
+      application.source_validation_id !== s.scope.sourceValidationId ||
+      application.expected_validation_state_revision !==
+        s.expectedValidationStateRevision ||
+      application.expected_candidate_sha256 !== s.expectedCandidateSha256 ||
+      application.target_kind !==
+        (r.revision === 1 ? "new-draft" : "append-revision") ||
+      (r.revision === 1 &&
+        (application.idempotency_key !== value.initialIdempotencyKey ||
+          application.expected_draft_revision !== null ||
+          application.expected_base_content_sha256 !== null ||
+          application.expected_base_asset_set_sha256 !== null)) ||
+      (r.revision === 2 &&
+        (application.expected_draft_revision !== 1 ||
+          application.expected_base_content_sha256 !==
+            value.target!.canonicalContentSha256 ||
+          application.expected_base_asset_set_sha256 !==
+            value.target!.assetSetSha256))
+    )
+      throw fail();
+  }
+  const baseline = value.sources.find((s) => s.name === "baseline")!,
+    source = proofs.find(
+      (p) => p.sourceValidationId === baseline.scope.sourceValidationId,
+    )!;
+  const content = JSON.parse(source.canonicalContentText) as {
+    resources: { id: string; version: string; purpose: string }[];
+  };
+  const assets = await tx<
+    {
+      resource_id: string;
+      resource_version: string;
+      blob_sha256: string;
+      declaration_sha256: string;
+      declaration_text: string;
+      source_validation_id: string;
+      purpose: string;
+      platform_approval: string;
+    }[]
+  >`SELECT resource_id,resource_version,blob_sha256,declaration_sha256,declaration_text,source_validation_id,purpose,platform_approval FROM qf.product_asset WHERE product_id=${value.productId} LIMIT 65`;
+  if (
+    assets.length !== source.resources.length ||
+    value.blobs.length !== new Set(source.resources.map((r) => r.sha256)).size
+  )
+    throw fail();
+  for (const r of source.resources) {
+    const asset = assets.find(
+        (a) =>
+          a.resource_id === r.resourceRef.id &&
+          a.resource_version === r.resourceRef.version,
+      ),
+      declaration = content.resources.find(
+        (d) => d.id === r.resourceRef.id && d.version === r.resourceRef.version,
+      ),
+      blob = value.blobs.find((b) => b.sha256 === r.sha256);
+    if (
+      !asset ||
+      !declaration ||
+      !blob ||
+      blob.bytes !== r.bytes ||
+      asset.blob_sha256 !== r.sha256 ||
+      asset.declaration_sha256 !== r.declarationSha256 ||
+      asset.declaration_text !== canonicalP1Json(declaration) ||
+      asset.source_validation_id !== baseline.scope.sourceValidationId ||
+      asset.purpose !== declaration.purpose ||
+      asset.platform_approval !== "unverified"
+    )
+      throw fail();
+  }
+  const [product] = await tx<
+    { exact: boolean }[]
+  >`SELECT slug=${value.productId} AND title='B3 synthetic SQL product' AND primary_category_id IS NULL AND NOT EXISTS(SELECT 1 FROM qf.product_tag WHERE product_id=${value.productId}) AS exact FROM qf.product WHERE id=${value.productId}`;
+  if (product?.exact !== true) throw fail();
 }
 export async function finishInternalVersionFixture(
   db: TestDatabase,
