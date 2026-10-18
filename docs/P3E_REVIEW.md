@@ -34,3 +34,11 @@ Astra已实际读取ROW/Europe Terms、Services Agreement和官方商业输出FA
 修复后主控12合同单测、类型/lint和真实Chromium156的5项完整性/4身份家族逐字SHA对照通过。Astra独立重跑12测试、实际browser bundle/file页面（Buffer/require均不存在）及4家族对照；另256组Unicode/转义/数值/顺序差分、512次字节边界、14类非JSON/accessor零执行/深度拒绝均通过，P2关闭。独审最坏完整100列表129221B、detail5171B、8renderer state5367B均在预算；无剩余机器合同P1/P2，可冻结交两实现流。权限、DB、真正same-RR/当前授权、资源收口和维护并发仍须实际实施验证。
 
 A的每请求owner闭包设计已前置复核：同步transfer和一次性runNew、精确db/budget/clock身份、实际FS及SQL/关闭收口归actual callback；保留原数据库取消关闭机制、UNKNOWN与晚成功核实。独审18项既有task/storage回归通过只说明现有基础，不冒称新owner已验收。
+
+## 编译期精确基线登记
+
+主控登记历史人物与明确synthetic-test两条descriptor，register仅模块内静态调用；metadata按完整kind/id/version/entrySHA查找，申请按真实源Product/三hash/实例用途匹配，供已核真实来源的应用服务使用。无请求、环境变量、数据库或cache动态注册入口，不宣称hash匹配授予导入/native资格。
+
+Astra独审17单元、深层冻结与purpose矩阵、全部实际字段/来源摘要/语义边及4+3评分见证通过。历史条目entrySHA为b16780ff815b38a224b456344e1509b672c10fe398482c4aaca297985bffd4a0，synthetic为808741230320dfd12ef7eb4bcfaec0063bfae6080ef2aa74393df94ec6ee55fc。synthetic原规范JSON/五PNG与双准备进程逐字节相同，作为固定测试输入保存以避免跨平台重新编码；仅四精确canonical JSON路径排除格式化。真实三张私有PNG未进入Git。
+
+registry实际server bundle闭包仅受控代码和两descriptor，没有tests/.cache/原图或私有路径；这不是最终Next trace验收。模块无剩余P1/P2，可供A接入；新写仍须源码端口重算真实hash、实际purpose限制、请求identity精确一致，facts由descriptor给出。原key优先与历史metadata独立于执行可用性，须在服务集成验证。
