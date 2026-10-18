@@ -21,6 +21,8 @@ import {
   type ConsumerState,
 } from "@/lib/consumer-contract/v1/state";
 import { StorageLock } from "@/features/quizpack/import/storage-lock";
+import { configureImports } from "@/features/quizpack/import/config-management";
+import { currentConfig } from "@/features/quizpack/import/service";
 import { blobPath } from "@/features/quizpack/import/storage";
 import { openTestDatabase } from "./p2a-fixture";
 import {
@@ -78,6 +80,11 @@ it("actual consumer grants, CAS races, immutable completion, scoped resource str
     }
   };
   try {
+    // Reproduce the earlier suite's enabled state, then establish the real cleanup prerequisite.
+    await configureImports(db.config.instanceId, true);
+    expect((await currentConfig(db.app)).imports.enabled).toBe(true);
+    await configureImports(db.config.instanceId, false);
+    expect((await currentConfig(db.app)).imports.enabled).toBe(false);
     await exec(
       process.execPath,
       [

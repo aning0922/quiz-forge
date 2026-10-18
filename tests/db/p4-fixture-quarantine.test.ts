@@ -10,6 +10,7 @@ import {
   blobPath,
 } from "@/features/quizpack/import/storage";
 import { openTestDatabase } from "./p2a-fixture";
+import { configureImports } from "@/features/quizpack/import/config-management";
 import {
   readConsumerFixture,
   finishConsumerFixture,
@@ -44,6 +45,7 @@ it("real foreign app connection and unknown manifest close block cleanup before 
       maxBuffer: 8192,
     };
   try {
+    await configureImports(db.config.instanceId, false);
     await exec(
       process.execPath,
       [

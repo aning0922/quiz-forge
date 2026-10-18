@@ -10,6 +10,7 @@ import { createStudioRequestBudget } from "@/lib/http-security/request-budget";
 import { createConsumerRequestOwner } from "@/features/fulfillment/consumer-flow/request-owner";
 import { createInternalPlayService } from "@/features/product/internal-play/service";
 import { createAccessKeyService } from "@/features/fulfillment/access/service";
+import { configureImports } from "@/features/quizpack/import/config-management";
 import { digestConsumerToken } from "@/lib/consumer-contract/v1/credentials";
 import {
   instanceDirectory,
@@ -70,6 +71,7 @@ it("dedicated r1 physical source, actual play/Key services, exact finish and pre
   const db = await openTestDatabase(),
     runId = randomUUID();
   try {
+    await configureImports(db.config.instanceId, false);
     await cli("prepare", runId);
     const fixture = await readConsumerFixture(db, runId),
       manifest = path.join(
