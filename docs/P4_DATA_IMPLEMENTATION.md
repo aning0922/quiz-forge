@@ -102,3 +102,13 @@ fixture 中一次检查发现存储空目录路径遗漏 `uploads`，在提交�
 原6项owner加4项新反例和5项SQL primitive共15单元通过：正常exchange两段仍可运行；callback拒绝、end拒绝、pending close取消及迟到fulfilled后，后继factory/guard/IO callback均0。真实PG子进程新增两个实际前序close拒绝（exchange/complete），捕获后第二SQL与IO都被拒；仍保留原4个真实FS拒绝guard，直到专有进程实际退出及父观察0 backend。仓储与transaction服务准备仍未提交，不混入本P2修复。独审复验待主控安排，不提前记为关闭。
 
 本笔实际173文件/1844单元、format、lint、typecheck、production build和2项真实PG通过；consumer精确实现门禁1/1、77源文件/268锁记录，旧实现仍3/3、51/280；build trace80/0违规。已正常合入最终主控闭包，未运行完整普通PG或E2E来冒称整阶段完成。
+
+## 同事务领域 ports（2026-10-19，服务接线准备）
+
+新增lib DB事务上下文与per-transaction WeakMap锁见证，事务callback结束即失效；克隆或跨事务对象不授权写。product/internal-play只读自己及同product模块的父版本，access只查Key/grant，consumer-session只查状态，report只查报告；claim/completion元数据由应用层在同一RR中组合。每个持久正文先限字节、按机器合同核canonical/hash和实际列绑定；列表只读有界元数据，不拉取50份完整报告正文。
+
+应用事务适配沿用原withStudioWrite的auth lock、前后运营鉴权和真实COMMIT判断；已确认rollback的ConsumerError用唯一sentinel保留原有限业务错误，未知提交仍OUTCOME_UNKNOWN。运营读取先RR一致快照，结束后在独立READ COMMITTED事务重新观察授权；没有在原RR里做无效的“再查”。匿名写包装也仅在真实原callback错误+成功rollback可证明时标为rolled-back，late COMMIT/连接失效不翻译成未执行。新增有限运营audit接口只接受既有3个动作，不记录原token、答案或匿名历史。
+
+真实PG5项通过：实际play/parent/issue读取、同事务product/Key/session见证和克隆/逃逸拒绝、真实答案→报告行的完整JS/hash重验及有界元数据、ConsumerError/primitive失败后的已确认rollback，以及RR内仍可见active但另一事务已disable时返回前的新鲜鉴权拒绝。fixture完成首次删除前精确整图proof后成功清理。测试使用DB-only合成来源，不是资源IO或P4物理fixture。grant轮转、新仓储写函数与三类public service仍需后续实际用例覆盖。
+
+本笔173文件/1844单元、format/lint/typecheck及production build通过，implementation门禁与trace无违规；5PG为定向结果，未重跑完整普通PG/E2E。Key service草稿未混入本笔交付，后续另交业务验证。
