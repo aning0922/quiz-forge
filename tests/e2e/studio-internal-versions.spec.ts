@@ -41,7 +41,8 @@ import {
 } from "../../src/features/product/draft-revisions/contracts";
 import {
   signInInternalOperator,
-  internalHeaders,
+  internalPost,
+  internalRouteFetch,
   internalPanel,
   internalPending,
   installInternalPending,
@@ -300,11 +301,12 @@ test("read-only actor resolves original receipts and clears only local anchors w
     ).toEqual(request.tuple);
     const { productId, ...input } = request.tuple;
     expect(productId).toBe(fixture.productId);
-    const denied = await page.request.post(
+    const denied = await internalPost(
+      page,
       operation === "review"
         ? internalReviewUrl(scope())
         : internalVersionsUrl(fixture.productId),
-      { headers: await internalHeaders(page), data: input },
+      input,
     );
     expect(denied.status()).toBe(403);
     expect((await denied.json()).code).toBe("CAPABILITY_DENIED");
@@ -339,10 +341,11 @@ test("unregistered r2 append creates no baseline approval; original r1 receipts 
   expect(productId).toBe(fixture.productId);
   expect(sourceImportId).toBe(next.scope.sourceImportId);
   expect(sourceValidationId).toBe(next.scope.sourceValidationId);
-  const response = await page.request.post(appendRevisionEndpoint(binding), {
-    headers: await internalHeaders(page),
-    data: input,
-  });
+  const response = await internalPost(
+    page,
+    appendRevisionEndpoint(binding),
+    input,
+  );
   expect(response.status()).toBe(201);
   expect(
     appendDraftResultSchema.parse(await response.json()).application.revision,
@@ -367,10 +370,11 @@ test("unregistered r2 append creates no baseline approval; original r1 receipts 
         operation === "review"
           ? internalReviewResolveUrl
           : internalVersionResolveUrl;
-    const old = await page.request.post(resolve(fixture.productId), {
-      headers: await internalHeaders(page),
-      data: request.tuple,
-    });
+    const old = await internalPost(
+      page,
+      resolve(fixture.productId),
+      request.tuple,
+    );
     expect(old.status()).toBe(200);
     const value =
       operation === "review"
@@ -446,7 +450,7 @@ test("late real resolve cannot accept old evidence or delete a replacement origi
   });
   const resolvePath = internalReviewResolveUrl(fixture.productId);
   await page.route(`**${resolvePath}`, async (route) => {
-    const actual = await route.fetch();
+    const actual = await internalRouteFetch(route);
     captured = true;
     await gate;
     await route.fulfill({ response: actual });
@@ -515,7 +519,7 @@ test("shared Product authority rejects late proof after GET401, cross-panel403 o
       release = resolve;
     });
     const holdSeal = async (route: import("@playwright/test").Route) => {
-      const actual = await route.fetch();
+      const actual = await internalRouteFetch(route);
       expect(actual.status()).toBe(200);
       captured = true;
       await gate;
@@ -581,6 +585,10 @@ test("shared Product authority rejects late proof after GET401, cross-panel403 o
       }
       await expect(page.getByRole("alert").first()).toBeVisible();
       release();
+      // Wait until the delayed real200 has actually been processed; absence before arrival is not a regression proof.
+      await expect(
+        sealPanel.getByText("正在核实或处理原请求…", { exact: true }),
+      ).toHaveCount(0);
       if (scenario === "get404") {
         await expect(
           sealPanel.locator('[data-internal-resolution="sealed"]'),

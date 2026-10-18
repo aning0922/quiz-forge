@@ -27,6 +27,7 @@ import {
   captureInternalWidths,
   internalPanel,
   internalPending,
+  internalRouteFetch,
 } from "./studio-internal-versions.ui";
 
 async function preparedRequest(
@@ -101,7 +102,7 @@ export async function exerciseInternalWriteUnknown(
       return;
     }
     writes++;
-    const response = await route.fetch();
+    const response = await internalRouteFetch(route);
     expect(response.status()).toBe(201);
     const envelope: unknown = await response.json();
     proof =
@@ -150,6 +151,45 @@ export async function exerciseInternalWriteUnknown(
     await captureInternalWidths(page, info, `${operation}-unknown`);
   } finally {
     await page.unroute(`**${path}`, hideCommittedResponse);
+  }
+  // Explicit exact replay is a real second POST returning200, not another new write.
+  const replayPanel = internalPanel(page, operation),
+    label = operation === "review" ? "基线记录" : "内测封存";
+  let replayPosts = 0;
+  const replay = async (route: Route) => {
+    if (route.request().method() !== "POST") {
+      await route.continue();
+      return;
+    }
+    replayPosts++;
+    const response = await internalRouteFetch(route);
+    expect(response.status()).toBe(200);
+    const envelope: unknown = await response.json();
+    const value =
+      original.operation === "review"
+        ? await checkReviewResult(envelope, 200, original.tuple)
+        : await checkSealResult(envelope, 200, original.tuple);
+    expect(value.created).toBe(false);
+    await route.fulfill({ response });
+  };
+  await page.route(`**${path}`, replay);
+  try {
+    await replayPanel
+      .getByRole("button", { name: `明确按原${label}请求重放`, exact: true })
+      .click();
+    await expect(
+      replayPanel.locator(
+        `[data-internal-resolution="${operation === "review" ? "recorded" : "sealed"}"]`,
+      ),
+    ).toBeVisible();
+    expect(replayPosts).toBe(1);
+    expect(await internalPending(page, operation, scope.productId)).toEqual({
+      tuple: original.tuple,
+      mayHaveBeenSent: true,
+    });
+    await captureInternalWidths(page, info, `${operation}-replayed`);
+  } finally {
+    await page.unroute(`**${path}`, replay);
   }
   // Break only the mutable detail GET. The real original-key resolve must remain usable.
   const breakDetail = async (route: Route) => {
