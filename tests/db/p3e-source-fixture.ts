@@ -5,18 +5,21 @@ import { canonicalP1Json } from "@/features/quizpack/v1/canonical";
 import { sealCandidateResultEvidence } from "@/features/quizpack/server/validation/contracts";
 import { sealSupportedReport } from "@/features/quizpack/server/validation/report";
 import { issuePrivateCandidate } from "@/features/quizpack/server/validation/private-candidate";
+import { supportedManifestSchema } from "@/features/quizpack/package/manifest";
 
 const sha = (s: string | Uint8Array) =>
   createHash("sha256").update(s).digest("hex");
 const productId = "internal-version-fixture";
 /** Fixed TEST inputs, fresh no-file archive/source identity. Never registers/approves runtime content. */
-export async function prepareP3eSource(runId: string) {
+export async function prepareP3eSource(runId: string, ordinal = 1) {
+  if (!Number.isInteger(ordinal) || ordinal < 1 || ordinal > 100)
+    throw Error("P3E_TEST_REVISION_INVALID");
   const base = await prepareP2b3Source(productId, { engine: "archetype" });
   const read = (p: string) =>
     readFile(new URL(`../fixtures/p3e-baseline/${p}`, import.meta.url));
-  const manifestBytes = await read("manifest.json"),
-    contentBytes = await read("content.json"),
-    assetSetBytes = await read("asset-set.json");
+  let manifestBytes = await read("manifest.json"),
+    contentBytes = await read("content.json");
+  const assetSetBytes = await read("asset-set.json");
   if (
     sha(contentBytes) !==
       "482e06eb50d1a5cd9a9d3048b8e2a7c2fbca6831284f2a2fa0d474bc94b016fd" ||
@@ -26,9 +29,34 @@ export async function prepareP3eSource(runId: string) {
       "6352846a3baa4c52940679da11f14db5b0c63c498473f68b598bcf9a8f619108"
   )
     throw Error("P3E_FIXED_INPUT_CHANGED");
-  const content = JSON.parse(
+  let content = JSON.parse(
     contentBytes.toString(),
   ) as typeof base.candidate.facts.content;
+  if (ordinal > 1) {
+    // Deliberately UNREGISTERED next revision for head/obsolete tests. Static image bytes are preserved.
+    content = {
+      ...content,
+      product: { ...content.product, title: `Synthetic revision ${ordinal}` },
+    };
+    contentBytes = Buffer.from(canonicalP1Json(content));
+    const manifest = supportedManifestSchema.parse(
+      JSON.parse(manifestBytes.toString()),
+    );
+    manifestBytes = Buffer.from(
+      canonicalP1Json(
+        {
+          ...manifest,
+          packVersion: `1.0.${ordinal}`,
+          files: manifest.files.map((f) =>
+            f.path === "content.json"
+              ? { ...f, bytes: contentBytes.length, sha256: sha(contentBytes) }
+              : f,
+          ),
+        },
+        "manifest",
+      ),
+    );
+  }
   const assetFiles = await Promise.all(
     content.resources.map(async (r) => {
       if (!/^assets\/[a-z0-9-]+\.png$/.test(r.path))

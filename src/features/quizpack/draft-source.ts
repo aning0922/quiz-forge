@@ -147,6 +147,7 @@ function inspectSource(
   original: SourceImportRow,
   scope: DraftSourceScope,
   expected: DraftSourceExpected,
+  requireCurrentPolicy: boolean,
 ) {
   if (
     row.id !== scope.sourceValidationId ||
@@ -174,8 +175,10 @@ function inspectSource(
     row.lease_until !== null ||
     row.ready_at === null ||
     !["canonical", "alias"].includes(row.identity_kind) ||
-    row.archive_policy_version !== ARCHIVE_POLICY_VERSION ||
-    row.archive_policy_sha256 !== archivePolicySha256 ||
+    (requireCurrentPolicy &&
+      row.archive_policy_version !== ARCHIVE_POLICY_VERSION) ||
+    (requireCurrentPolicy &&
+      row.archive_policy_sha256 !== archivePolicySha256) ||
     row.container_schema_version !== "quizpack.v1" ||
     original.actual_archive_sha256 !== row.archive_sha256 ||
     original.actual_archive_bytes !== row.archive_bytes
@@ -185,11 +188,12 @@ function inspectSource(
     JSON.parse(row.identity_text),
   );
   if (
-    !matchesSupportedArchiveIdentity(
-      row.archive_policy_version,
-      row.archive_policy_sha256,
-      identity,
-    ) ||
+    (requireCurrentPolicy &&
+      !matchesSupportedArchiveIdentity(
+        row.archive_policy_version,
+        row.archive_policy_sha256,
+        identity,
+      )) ||
     identity.identitySha256 !== row.identity_sha256 ||
     canonicalP1Json(identity) !== row.identity_text
   )
@@ -320,6 +324,7 @@ async function readSource(
   scopeInput: DraftSourceScope,
   expectedInput: DraftSourceExpected,
   lock: boolean,
+  requireCurrentPolicy = true,
 ): Promise<ReadyDraftSource> {
   const scoped = scopeSchema.safeParse(scopeInput),
     expectedResult = expectedSchema.safeParse(expectedInput);
@@ -345,7 +350,13 @@ async function readSource(
   if (!row) return invalid();
   let inspected: ReturnType<typeof inspectSource>;
   try {
-    inspected = inspectSource(row, original, scope, expected);
+    inspected = inspectSource(
+      row,
+      original,
+      scope,
+      expected,
+      requireCurrentPolicy,
+    );
   } catch (error) {
     if (error instanceof StudioError && error.code === "DRAFT_SOURCE_CHANGED")
       throw error;
@@ -427,4 +438,13 @@ export function readReadyDraftSourceReadonly(
   expected: DraftSourceExpected,
 ): Promise<ReadyDraftSource> {
   return readSource(tx, scope, expected, false);
+}
+
+/** Historical identity proof only: preserves the original tuple rather than requiring today's archive policy. */
+export function readFrozenDraftSourceReadonly(
+  tx: postgres.TransactionSql,
+  scope: DraftSourceScope,
+  expected: DraftSourceExpected,
+): Promise<ReadyDraftSource> {
+  return readSource(tx, scope, expected, false, false);
 }
