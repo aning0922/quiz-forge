@@ -17,6 +17,12 @@ Astra认可首款有限精确登记路径：离线核完整批准语义及技术
 
 主控提取lib/assessment-contract/display-v1、display-shapes-v1和display-limits-v1；旧Studio合同按原字段顺序组合并继续以binding.productId检查引用，显示正文不带draft/requestId或消费者权威。字体descriptor和resource transport仅供项目内受控adapter构造，无动态URL或代码能力。
 
-主控15文件127项相关单元、类型、定向lint/format通过。Astra在独审副本复制准确8文件，实际16文件128项通过，包括独立旧版解析器与新版逐路径差分；浏览器独立打包仅包含中性合同及Zod，没有feature/server-only/Node依赖。旧字段顺序、完整封套预算、Product绑定、资源/结果/海报关系均保留，无剩余P1/P2，可冻结第十节并交B解耦。
+主控15文件127项相关单元、类型、定向lint/format通过。Astra在独审副本复制准确8文件，实际16文件128项通过，包括5776例旧版解析器与新版逐路径差分（成功数据及失败issues完全一致）；浏览器独立打包仅包含中性合同及Zod，没有feature/server-only/Node依赖。旧字段顺序、完整封套预算、Product绑定、资源/结果/海报关系均保留，无剩余P1/P2，可冻结第十节并交B解耦。
 
 B后续transport/媒体收口、私有评分句柄、六状态DOM和实际PNG尚未实施/验收；不能把本段Schema审查外推为这些运行链路通过。素材来源依据和首款离线映射另行核验，不用代理检查代替作者新内容或发布批准。
+
+## 首款来源与离线映射
+
+Astra已实际读取ROW/Europe Terms、Services Agreement和官方商业输出FAQ，认为来源文稿准确，可结合具体生成记录作为八图commercialUse/redistribution的供应方输出使用依据；不等于独占版权鉴证或作者商业发布批准。正式声明须绑定最终来源文稿SHA、单图SHA和精确生成记录，原资源pending/平台unverified及独立内测账本边界保留。
+
+独审核19离线产物摘要、36实际输入摘要、来源公开文稿和OFL摘要；三张新原始PNG及李白原PNG核验通过。1971叶映射与outline逐项一致，168 reviewed-exact及1364可寻址评分转录逐源一致；四个witness.status沿既有declared-not-executed常量。九条alt只移除历史待审二字并记录批准来源，其他文本不改；category、空tags及列明的heading/ID/template属于受控技术映射，无新P1/P2。此时45来源/许可null和三权威hash为空的状态仍真实，最终规范包须完成声明后重新核验，不能据草案提前记准入成功。
