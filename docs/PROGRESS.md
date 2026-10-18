@@ -2,9 +2,11 @@
 
 ## 2026-10-18 P3-E 共享合同与首款规范产物
 
-受管分支codex/internal-version-seal从P3-D交付a66c456接续，Draft PR #19堆叠于#18。共享显示合同b055c4b已通过127主控/128独审测试和浏览器打包，B开始已有预览解耦。审核/版本机器Schema及有限精确登记方案已通过前置独审，A接0017/事务/资源留存。浏览器canonical依赖P2已独立关闭；实际新DB/后台/端到端尚未完成。
+受管分支codex/internal-version-seal从P3-D交付a66c456接续，Draft PR #19堆叠于#18。共享显示合同b055c4b已通过127主控/128独审测试和浏览器打包，B已完成已有预览解耦，主控集成2ca7698；Astra 141项相关测试、56种投影对照及三海报新旧字节一致，无剩余P1/P2。审核/版本机器Schema及有限精确登记方案已通过前置独审，A接0017/事务/资源留存。浏览器canonical依赖P2已独立关闭；实际新DB/后台/端到端尚未完成。
 
-首款最终规范content70647B、asset-set2364B、manifest2121B已完成严格解析、引用、规范往返和四真实评分见证，Astra独立逐字段/来源/三hash复核通过；原始八图仍私有或沿已有仓库文件，未新增上传私有PNG，尚未制作ZIP或走真实导入。使用依据见[FIRST_PRODUCT_ASSET_PROVENANCE](FIRST_PRODUCT_ASSET_PROVENANCE.md)；具体合同和已完成审查见[INTERNAL_VERSION_P3E](INTERNAL_VERSION_P3E.md)、[P3E_REVIEW](P3E_REVIEW.md)。这仍不代表P4/P5完成或发布获批。
+首款最终规范content70647B、asset-set2364B、manifest2121B已完成严格解析、引用、规范往返和四真实评分见证，Astra独立逐字段/来源/三hash复核通过；原始八图仍私有或沿已有仓库文件，未新增上传私有PNG，已在本地构建10887344B、11文件的精确ZIP（SHA40b7660697d52c660897e153c7a9ef02163717c92b90f0680ae6558150f5c0c0），完整本地包验证candidateValid通过；仍未走真实后台/native准入、审核落账或封存。使用依据见[FIRST_PRODUCT_ASSET_PROVENANCE](FIRST_PRODUCT_ASSET_PROVENANCE.md)；具体合同和已完成审查见[INTERNAL_VERSION_P3E](INTERNAL_VERSION_P3E.md)、[P3E_REVIEW](P3E_REVIEW.md)。这仍不代表P4/P5完成或发布获批。
+
+精确实现metadata、server/client resolver和只读build门禁已实现，30专项、lint/typecheck及真实Chromium七海报导出通过；实际永久实现正待独审，见[INTERNAL_IMPLEMENTATIONS](INTERNAL_IMPLEMENTATIONS.md)。A的数据底座与谱系升级已独立提交b004596/0d20483，尚待独审整改与主控集成；B继续新操作pending/后台，P3-E整体工程出口未完成。
 
 ## 2026-10-18 P3-D 技术出口完成，接续精确审核与内测版本
 
