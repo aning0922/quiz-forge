@@ -24,4 +24,10 @@ view-state只选择服务器已有baseline/renderer/engine及精确当前head。
 
 浏览器回归准备在tests/e2e/studio-internal-versions.spec.ts及同名前缀的ui/lifecycle辅助文件：六个串行场景覆盖真实r1记录/封存后遮蔽响应得到UNKNOWN、明确原请求重放真实200/created:false且保留锚点、刷新使未发送确认失效、详情503仍可resolve、只读恢复与重放403、真实未登记r2追加/历史/obsolete、替换原key后的迟到resolve，以及跨面板授权401/403/CSRF失效和普通404对照。四宽截图检查完整PNG宽高、横向溢出、正文16px与交互目标44px。尚未运行或宣称通过；它们要求A实际持久fixture实现、QF_INTERNAL_VERSION_E2E_RUN_ID与root owner同runId，读取0600私有manifest，全部用例成功才CLI finish；退出proof与cleanup仅由root串行处理。root须把此spec置于独立单worker串行project并从默认mobile/desktop排除，避免两份并发消耗固定baseline。未修改runner/config或启动3100/native/DB。
 
-E2E已按A的cdc608d合同与cd5901e实际持久fixture CLI接线，未运行真实DB/HTTP/浏览器。授权回归在释放挂起的真实200后等待对应busy状态结束，再断言无成功/清理入口与原锚点精确保留，避免用响应尚未到达冒充迟到响应被拒绝。带会话验证头的POST及route.fetch网络错误统一脱敏包装。
+E2E已按A的cdc608d合同与cd5901e实际持久fixture CLI接线，未运行真实DB/HTTP/浏览器。授权回归在释放挂起的真实200后等待对应busy状态结束，再断言无成功/清理入口与原锚点精确保留，避免用响应尚未到达冒充迟到响应被拒绝。带会话API与原请求转发改走受限Node原生http.request；不再调用page.request/route.fetch。仅catch不能阻止Playwright把自动Cookie/CSRF写入最终HTML内嵌ZIP，不能作为防泄漏证据。
+
+测试网络边界见tests/e2e/studio-internal-versions.network.ts：正常只允许受管127.0.0.1:3100及此固定synthetic Product的预期Studio API，有限GET/POST、4KiB请求、4KiB错误/64KiB普通/256KiB列表响应、20s绝对传输时限，独占HTTP连接、不重试/不跟随redirect。Cookie/CSRF只在Node工作内存中，直接请求从context.cookies及私有session GET构造，转发保留原请求身份与完整body；返回值不保留请求头/原异常。session响应不得经通用GET/转发接口交Playwright，Set-Cookie不转发。已有共享Schema/hash核验保留在真实201/200及延迟resolve转发前。
+
+可复跑合成检查：python3 scripts/check-p3e-network-privacy.py，用受控临时loopback端口、纯env sentinel、trace/video/screenshot全off，既运行两条不安全正向对照，也运行六条替代路径（拒连/reset/超时/迟到成功），扫描stdout、JSON、最终HTML解码ZIP及全部产物；并确认实际传输、身份头与预设最终错误已到达。最终本地结果为两对照Cookie/CSRF均检出、六替代均未检出；未读取真实凭证、配置、DB或使用3100。合成模式要求显式synthetic-only且无QUIZFORGE_P2A_CONFIG，只在该隔离probe开放其临时origin/200ms时限。
+
+finish改用固定六个case的InternalSuiteCompletion：每个必须实际status=passed且expectedStatus=passed、初次执行、无重复/未知case，6/6才调用CLI finish。expected fail、skip、筛选子集、retry不会标completed；不以PW退出码代替完成证明。pnpm exec tsx tests/browser/p3e-completion-check.ts的11项纯检查、python3 scripts/check-p3e-completion.py的7组真实PW生命周期检查均通过。后者只写“允许finish”的隔离决策文件，不调用实际fixture；只有完整六pass可产生该文件。重复CLI仍由受管runner既有白名单拒绝，不能依赖PW worker中已归一化的repeatEach配置。
