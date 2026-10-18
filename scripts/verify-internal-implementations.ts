@@ -10,11 +10,12 @@ import {
   engineImplementationAvailable,
 } from "../src/features/product/internal-versions/implementation-catalog";
 import type { ImplementationEntry } from "../src/features/product/internal-versions/implementation-schema";
+import type { ConsumerImplementationEntry } from "../src/features/product/internal-play/implementation-schema";
 import { readImplementationLock } from "./internal-implementation-lock";
 const sha = (value: string | Buffer) =>
   createHash("sha256").update(value).digest("hex");
-const canonical = (value: unknown) =>
-  canonicalOrdinaryJson(value, { maxBytes: 131072, maxDepth: 32 });
+const canonical = (value: unknown, maxBytes = 131072) =>
+  canonicalOrdinaryJson(value, { maxBytes, maxDepth: 32 });
 const runtimeImport = (node: ts.ImportDeclaration | ts.ExportDeclaration) => {
   if (ts.isImportDeclaration(node)) {
     const clause = node.importClause;
@@ -43,6 +44,32 @@ const packageName = (specifier: string) =>
 /** Read-only build gate. The override is a local failure-injection seam, never a package/runtime option. */
 export async function verifyInternalImplementations(
   cwd: string,
+  overrideRead?: (path: string) => Promise<Buffer>,
+) {
+  return verifyTrustedImplementationEntries(
+    cwd,
+    [
+      ...IMPLEMENTATION_DESCRIPTORS.renderers,
+      ...IMPLEMENTATION_DESCRIPTORS.engines,
+    ],
+    (entry) => {
+      if (entry.descriptor.kind === "consumer-renderer") return false;
+      const identity = implementationIdentity(entry as ImplementationEntry);
+      return identity.kind === "renderer"
+        ? rendererImplementationAvailable(identity)
+        : engineImplementationAvailable(identity);
+    },
+    overrideRead,
+  );
+}
+
+/** Build-time local catalogs only, never request/QuizPack descriptors or runtime registration. */
+export async function verifyTrustedImplementationEntries(
+  cwd: string,
+  entries: readonly (ImplementationEntry | ConsumerImplementationEntry)[],
+  isAvailable: (
+    entry: ImplementationEntry | ConsumerImplementationEntry,
+  ) => boolean,
   overrideRead?: (path: string) => Promise<Buffer>,
 ) {
   cwd = resolve(cwd);
@@ -84,27 +111,19 @@ export async function verifyInternalImplementations(
       throw Error("IMPLEMENTATION_PACKAGE_NAME_MISMATCH");
     return manifest.version;
   };
-  const entries: ImplementationEntry[] = [
-    ...IMPLEMENTATION_DESCRIPTORS.renderers,
-    ...IMPLEMENTATION_DESCRIPTORS.engines,
-  ];
   let available = 0,
     lockRecords = 0;
   const sourceFiles = new Set<string>();
   for (const entry of entries) {
     const descriptor = entry.descriptor;
+    const maximum = descriptor.kind === "consumer-renderer" ? 262144 : 131072;
     if (
-      sha(canonical(descriptor)) !== entry.entrySha256 ||
-      sha(canonical(descriptor.closure)) !== descriptor.implementationSha256
+      sha(canonical(descriptor, maximum)) !== entry.entrySha256 ||
+      sha(canonical(descriptor.closure, maximum)) !==
+        descriptor.implementationSha256
     )
       throw Error("IMPLEMENTATION_DESCRIPTOR_DIGEST");
-    const identity = implementationIdentity(entry);
-    if (
-      !(identity.kind === "renderer"
-        ? rendererImplementationAvailable(identity)
-        : engineImplementationAvailable(identity))
-    )
-      continue;
+    if (!isAvailable(entry)) continue;
     available++;
     const names = new Set(
       descriptor.closure.dependencies.roots.map((r) => r.name),
@@ -238,7 +257,10 @@ export async function verifyInternalImplementations(
         packageJson.packageManager
     )
       throw Error("IMPLEMENTATION_RUNTIME_POLICY_CHANGED");
-    if (descriptor.kind === "renderer") {
+    if (
+      descriptor.kind === "renderer" ||
+      descriptor.kind === "consumer-renderer"
+    ) {
       const font = descriptor.font;
       for (const [path, hash] of [
         [font.file, font.fileSha256],

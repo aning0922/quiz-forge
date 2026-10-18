@@ -27,6 +27,8 @@ A 接 0018/guard、同事务 ports、owner/凭证/状态/完成服务、真实 P
 
 `product/internal-play/implementation-schema.ts` 已定义独立 consumer descriptor metadata：六映射/协议、真实字体、browser/server 入口、源码/构建输入/依赖锁事实、闭包 SHA 和 descriptor SHA。它只验证供给事实及三个嵌套摘要一致，不注册可执行能力；当前尚未生成实际 consumer descriptor、加入可用 catalog 或完成 build gate。真实 controller/host、六视图、PNG 与服务器投影完成后再计算完整闭包并登记；测试中的合成 metadata 不代表可用实现。
 
+实际文件/锁事实的只读核验已提取为 `verifyTrustedImplementationEntries`，旧 `verifyInternalImplementations` 保持原 catalog/可用性选择与 13 项回归；新增 consumer 包装先核 metadata，再核独立编译 identity 与精确 tuple、实际源码/字体/构建输入/依赖锁。两文件 16 项定向验证、lint/typecheck 通过。此时尚未把 consumer catalog 接入 build 命令，测试只使用明确合成 metadata 和已有真实源文件验证机制，不激活 consumer 能力。
+
 旧预览硬编码的临时体验/刷新重置文案不能照用。新身份覆盖真实 controller/views/PNG、服务器投影和复用的稳定闭包；不改旧 renderer 字节，不按商品 ID 硬编码，不动态导入包代码/HTML/远程模块，不 fallback latest。基线题目、四报告、八图及原 hash 保持。
 
 ## 3. 计划中的六实体与最后防线
