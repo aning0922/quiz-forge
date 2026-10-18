@@ -264,6 +264,9 @@
 .actions > * {
   flex: 1;
 }
+.resumeActions > * {
+  flex: 1 1 130px;
+}
 .srOnly {
   position: absolute;
   width: 1px;

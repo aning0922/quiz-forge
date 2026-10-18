@@ -22,7 +22,8 @@ const fixture = JSON.parse(
   font: DisplayFontDescriptorV1;
 };
 type State = "cover" | "question" | "resume" | "result" | "report" | "poster";
-type Variant = "normal" | "long" | "missing" | "loading" | "saved";
+type Variant =
+  "normal" | "long" | "missing" | "loading" | "saved" | "duplicate";
 const root = createRoot(document.getElementById("root")!);
 const events: string[] = [];
 const event = (name: string) => () => {
@@ -35,6 +36,8 @@ function render(
 ) {
   const entry = structuredClone(fixture.entry),
     display = structuredClone(fixture.display);
+  if (variant === "duplicate")
+    display.report.baseline.title = `${display.result.displayName} · ${display.result.subtitle}`;
   if (variant === "long") {
     entry.product.title = "长文案边界验证·".repeat(10);
     entry.questions.forEach((q) => {
