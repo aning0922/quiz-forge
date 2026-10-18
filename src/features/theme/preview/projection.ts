@@ -4,13 +4,10 @@ import {
   bindingUsesCurrentRenderer,
   previewBindingSchema,
   previewEntrySchema,
-  previewPosterSchema,
   previewRequestIdSchema,
   previewRevealSchema,
-  type PreviewAsset,
   type PreviewBinding,
   type PreviewErrorCode,
-  type PreviewPoster,
 } from "@/features/product/preview/contracts";
 import type {
   PreparePreviewContent,
@@ -31,8 +28,11 @@ import type { QuizPackContentV2 } from "@/features/quizpack/content/v2";
 import type { ContentReference } from "@/features/quizpack/v1/content";
 import { canonicalP1Json } from "@/features/quizpack/v1/canonical";
 import { assertPersistenceUnicode } from "@/features/quizpack/server/validation/unicode";
-import { displayHalfUp } from "@/features/quiz/scoring/rational";
 import { supportsPreviewContent, projectPreviewLayout } from "./registry";
+import {
+  projectContentScoreForDisplay,
+  projectDisplayAsset as asset,
+} from "./result-projection";
 import {
   boundedOutput,
   failure,
@@ -82,29 +82,6 @@ function contentAssetSetHash(content: QuizPackContentV2): string {
         })),
     }),
   );
-}
-function asset(
-  content: QuizPackContentV2,
-  resourceRef: ContentReference,
-): PreviewAsset {
-  const resource = content.resources.find(
-    (item) => key(item) === key(resourceRef),
-  );
-  const description = content.visualPresentation.resourceDescriptions.find(
-    (item) => key(item.resourceRef) === key(resourceRef),
-  );
-  if (!resource || !description) throw new Error("PREVIEW_REFERENCE_MISMATCH");
-  return {
-    resourceRef: ref(resource),
-    mediaType: resource.mediaType,
-    bytes: resource.bytes,
-    sha256: resource.sha256,
-    width: resource.width,
-    height: resource.height,
-    purpose: resource.purpose,
-    approval: resource.approval,
-    alt: description.alt,
-  };
 }
 function preparationFailure(code: string): PreviewErrorCode {
   return code === "INPUT_LIMIT_EXCEEDED"
@@ -243,90 +220,15 @@ export const scorePreview: ScorePreview = (
           ? "PREVIEW_LIMIT_EXCEEDED"
           : "PREVIEW_INVALID_ANSWERS",
       );
-    const scored = actual.value,
-      { content, binding } = fixed;
     if (
-      scored.canonicalContentSha256 !== binding.canonicalContentSha256 ||
-      scored.contentSchemaVersion !== content.schemaVersion ||
-      scored.contentVersion !== content.contentVersion ||
-      scored.reportVersion !== content.reportVersion ||
-      scored.score.productId !== binding.productId ||
-      scored.score.contentVersion !== content.contentVersion ||
-      scored.score.engine.id !== content.engine.id ||
-      scored.score.engine.version !== content.engine.version
+      actual.value.canonicalContentSha256 !==
+      fixed.binding.canonicalContentSha256
     )
       return failure("PREVIEW_BINDING_MISMATCH");
-    const selectedResultRef = scored.score.decision.selectedResultRef;
-    const result = content.results.find(
-      (item) => key(item) === key(selectedResultRef),
-    );
-    const card = content.reportPresentation.resultCards.find(
-      (item) => key(item.resultRef) === key(selectedResultRef),
-    );
-    const report = content.reportTemplates.find(
-      (item) => key(item) === key(scored.reportTemplateRef),
-    );
-    if (
-      !result ||
-      !card ||
-      !report ||
-      key(result.reportTemplateRef) !== key(scored.reportTemplateRef) ||
-      scored.score.dimensions.length !== content.dimensions.length
-    )
-      return failure("PREVIEW_BINDING_MISMATCH");
-    const dimensions = content.dimensions.map((dimension) => {
-      const score = scored.score.dimensions.find(
-        (item) => key(item.dimensionRef) === key(dimension),
-      );
-      if (!score) throw new Error("PREVIEW_REFERENCE_MISMATCH");
-      return {
-        dimensionRef: ref(dimension),
-        label: dimension.label,
-        normalizedText: displayHalfUp(
-          BigInt(score.normalized.numerator),
-          BigInt(score.normalized.denominator),
-        ),
-      };
-    });
-    const portrait = asset(content, result.portraitRef);
-    const posterResult = previewPosterSchema.safeParse({
-      kind: "ready",
-      layout: projectPreviewLayout(content, "poster"),
-      displayName: card.displayName,
-      subtitle: card.subtitle,
-      posterLine: card.posterLine,
-      posterDisclosure: card.posterDisclosure,
-      portrait,
-      dimensions,
-    });
-    const poster: PreviewPoster = posterResult.success
-      ? posterResult.data
-      : { kind: "unavailable", code: "POSTER_LIMIT_EXCEEDED" };
+    const display = projectContentScoreForDisplay(fixed.content, actual.value);
+    if (!display.ok) return display;
     return boundedOutput(
-      {
-        binding,
-        requestId: requestId.data,
-        answersHash: scored.score.answersHash,
-        logicHash: scored.score.logicHash,
-        contentSchemaVersion: scored.contentSchemaVersion,
-        contentVersion: scored.contentVersion,
-        reportVersion: scored.reportVersion,
-        selectedResultRef,
-        reportTemplateRef: scored.reportTemplateRef,
-        dimensions,
-        result: {
-          layout: projectPreviewLayout(content, "result"),
-          displayName: card.displayName,
-          subtitle: card.subtitle,
-          portrait,
-        },
-        report: {
-          layout: projectPreviewLayout(content, "report"),
-          mode: report.mode,
-          baseline: report.baseline,
-        },
-        poster,
-      },
+      { binding: fixed.binding, requestId: requestId.data, ...display.value },
       PREVIEW_LIMITS.revealResponseBytes,
       (value) => previewRevealSchema.parse(value),
     );

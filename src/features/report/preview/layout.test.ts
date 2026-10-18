@@ -10,10 +10,10 @@ import {
   preparePreviewContent,
   scorePreview,
 } from "@/features/theme/preview/projection";
-import type { PreviewPosterExport } from "@/features/product/preview/contracts";
+import type { DisplayPosterExportBodyV1 } from "@/lib/assessment-contract/display-v1";
 import { layoutPreviewPoster, wrapPosterText, PREVIEW_MARK } from "./layout";
 const measure = (text: string, size: number) => [...text].length * size;
-async function input(): Promise<PreviewPosterExport> {
+async function input(): Promise<DisplayPosterExportBodyV1> {
   const c = await previewFixture();
   expandDimensions(c, 4);
   const p = preparePreviewContent(c, sourceBinding(c));
@@ -22,13 +22,11 @@ async function input(): Promise<PreviewPosterExport> {
   if (!r.ok || r.value.poster.kind !== "ready") throw Error("fixture");
   const v = r.value;
   return {
-    binding: v.binding,
-    requestId: v.requestId,
     answersHash: v.answersHash,
     logicHash: v.logicHash,
     selectedResultRef: v.selectedResultRef,
     reportTemplateRef: v.reportTemplateRef,
-    poster: v.poster as PreviewPosterExport["poster"],
+    poster: v.poster as DisplayPosterExportBodyV1["poster"],
   };
 }
 describe("bounded complete poster text", () => {
