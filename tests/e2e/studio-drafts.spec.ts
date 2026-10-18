@@ -1,5 +1,6 @@
-import { test, expect, type Page, type TestInfo } from "@playwright/test";
+import { test, expect, type Page } from "@playwright/test";
 import { constants } from "node:fs";
+import { captureDraftMobile as mobile } from "./studio-drafts.visual";
 import { open } from "node:fs/promises";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
@@ -133,37 +134,6 @@ async function pending(page: Page) {
     return bucket.entries?.[0] ?? null;
   }, DRAFT_PENDING_STORAGE_KEY);
   return value === null ? null : draftPendingEntrySchema.parse(value);
-}
-async function mobile(page: Page, info: TestInfo, state: string) {
-  for (const width of [320, 375, 390, 430]) {
-    await page.setViewportSize({ width, height: 900 });
-    expect(
-      await page.evaluate(
-        () => document.documentElement.scrollWidth <= innerWidth,
-      ),
-    ).toBe(true);
-    expect(
-      await page
-        .locator("main")
-        .evaluate((e) => parseFloat(getComputedStyle(e).fontSize) >= 16),
-    ).toBe(true);
-    for (const button of await page.getByRole("button").all()) {
-      const box = await button.boundingBox();
-      if (box) expect(box.height).toBeGreaterThanOrEqual(44);
-    }
-    await page.evaluate(() => scrollTo(0, 0));
-    await expect.poll(() => page.evaluate(() => scrollY)).toBe(0);
-    const height = await page.evaluate(() =>
-      Math.max(innerHeight, document.documentElement.scrollHeight),
-    );
-    const screenshot = await page.screenshot({
-      path: info.outputPath(`drafts-${state}-${width}.png`),
-      fullPage: true,
-    });
-    // The PNG must contain the complete state, not just the viewport captured
-    // while a confirmed receipt is still refreshing the draft facts.
-    expect(screenshot.readUInt32BE(20)).toBe(height);
-  }
 }
 test.beforeAll(async () => {
   await command("prepare");
