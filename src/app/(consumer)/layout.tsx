@@ -11,5 +11,9 @@ export default function ConsumerLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return children;
+  return (
+    <div id="main" tabIndex={-1}>
+      {children}
+    </div>
+  );
 }
