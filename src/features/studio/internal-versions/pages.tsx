@@ -29,10 +29,11 @@ import {
   INTERNAL_VERSION_DISCLOSURE,
   versionRevisionRelation,
 } from "./view-state";
-import { useDraftRead } from "../drafts/use-read";
+import { InternalAuthorityProvider } from "./authority";
 import {
   draftEndpoint,
   checkDraftRead,
+  checkedDraftFetch,
   draftWorkspacePath,
 } from "../drafts/client";
 import { previewPagePath } from "@/features/product/preview/urls";
@@ -90,7 +91,7 @@ export function StableInternalWorkspace({
     </>
   );
 }
-export function InternalReviewPage({
+function InternalReviewContent({
   scope,
   session,
 }: {
@@ -109,11 +110,6 @@ export function InternalReviewPage({
     read.refresh();
     list.refresh();
   }
-  const denied = [read.code, list.code].some((code) =>
-    ["UNAUTHENTICATED", "CAPABILITY_DENIED", "CSRF_REJECTED"].includes(
-      code ?? "",
-    ),
-  );
   return (
     <div className={styles.workspace}>
       <WorkspaceNav />
@@ -173,24 +169,22 @@ export function InternalReviewPage({
       <InternalWritePanel
         key={scope.productId}
         productId={scope.productId}
-        state={denied ? undefined : read.value}
-        versions={denied ? undefined : list.value}
+        state={read.value}
+        versions={list.value}
         session={session}
         nonce={nonce}
         onChanged={changed}
-        authorityInvalid={denied}
       />
       <InternalRecoveryPanels
         productId={scope.productId}
         session={session}
         nonce={nonce}
         onChanged={changed}
-        writeBlocked={denied}
       />
     </div>
   );
 }
-export function InternalVersionsPage({
+function InternalVersionsContent({
   productId,
   session,
 }: {
@@ -201,8 +195,10 @@ export function InternalVersionsPage({
     list = useInternalRead(internalVersionsUrl(productId), (signal) =>
       readInternalVersions(productId, signal),
     ),
-    draft = useDraftRead(draftEndpoint(productId), (value) =>
-      checkDraftRead(value, productId),
+    draft = useInternalRead(draftEndpoint(productId), (signal) =>
+      checkedDraftFetch(draftEndpoint(productId), { signal }, (value) =>
+        checkDraftRead(value, productId),
+      ),
     );
   const current = draft.value?.kind === "draft" ? draft.value.draft : undefined;
   function changed() {
@@ -286,7 +282,7 @@ export function InternalVersionsPage({
     </div>
   );
 }
-export function InternalVersionDetailPage({
+function InternalVersionDetailContent({
   productId,
   versionId,
   session,
@@ -299,8 +295,10 @@ export function InternalVersionDetailPage({
     read = useInternalRead(internalVersionUrl(productId, versionId), (signal) =>
       readInternalVersion(productId, versionId, signal),
     ),
-    draft = useDraftRead(draftEndpoint(productId), (value) =>
-      checkDraftRead(value, productId),
+    draft = useInternalRead(draftEndpoint(productId), (signal) =>
+      checkedDraftFetch(draftEndpoint(productId), { signal }, (value) =>
+        checkDraftRead(value, productId),
+      ),
     );
   const current = draft.value?.kind === "draft" ? draft.value.draft : undefined;
   return (
@@ -359,5 +357,42 @@ export function InternalVersionDetailPage({
         }}
       />
     </div>
+  );
+}
+
+export function InternalReviewPage(
+  props: Parameters<typeof InternalReviewContent>[0],
+) {
+  return (
+    <InternalAuthorityProvider
+      key={props.scope.productId}
+      productId={props.scope.productId}
+    >
+      <InternalReviewContent {...props} />
+    </InternalAuthorityProvider>
+  );
+}
+export function InternalVersionsPage(
+  props: Parameters<typeof InternalVersionsContent>[0],
+) {
+  return (
+    <InternalAuthorityProvider
+      key={props.productId}
+      productId={props.productId}
+    >
+      <InternalVersionsContent {...props} />
+    </InternalAuthorityProvider>
+  );
+}
+export function InternalVersionDetailPage(
+  props: Parameters<typeof InternalVersionDetailContent>[0],
+) {
+  return (
+    <InternalAuthorityProvider
+      key={props.productId}
+      productId={props.productId}
+    >
+      <InternalVersionDetailContent {...props} />
+    </InternalAuthorityProvider>
   );
 }
