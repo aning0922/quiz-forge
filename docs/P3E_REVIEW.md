@@ -106,3 +106,17 @@ root E2E编排同runId、独立single-worker/retries0 project依赖P3D，默认m
 第二轮为 237 通过/1 失败/10 旧 skip/3 未运行；新增 review/seal 前两项及 40 张图实际完成。版本列表第三项在异步草稿成功返回后卸载，按钮 detached。root 用实际失败 fixture 的有效完整 DraftSummary 离线确认 URL helper 的 unrecognized_keys；Astra 独立严格 checkDraftRead 接受 21 字段 DTO，旧 helper 拒绝 18 个额外字段，三字段投影成功。实际 React/Chromium 156 operator 与 read-only 两类迟到合法 draft GET 均导致 ZodError、整页卸载、恢复按钮从可用变为 0，而两原锚点仍原样保留。此为生产 P2，B 正修复并等独立复验；不以 force click 或更长 timeout 绕过。独审证据为其私有 `.cache/p3e-ui-review/draft-crash-result.json`，未连接 root 失败库。
 
 此前 24 场景失权矩阵的 draft GET 使用失败响应，未覆盖此合法成功分支，故其通过不外推。两轮失败库 434…/d4faa… 均正式停止、相关进程与 3100 均无残余，finish/cleanup 未放行。最终技术出口和修复后全量图检仍待完成。
+
+### 版本列表 P2 修复复验
+
+e51436d（root eb7595a）只在当前修订链接处显式投影 productId/draftId/revision；严格 URL Schema 未改，新增完整 DraftSummary 的组件展示回归。主控重新完整 format/lint/typecheck、145 文件 1710 单元与生产构建全部通过，80 traces/17204 路径/0 私有违规；新构建正在重新执行 main 媒体验证及 fresh 全量浏览器检查。
+
+Astra 确认两提交的页面 blob 完全相同，沿原崩溃反例的同一 React/Chromium 156 harness 验证八组合：operator/read-only × draft 先/list 先 × 正常核实清除/失权后迟到证明。合法完整 21 字段草稿和真实格式版本 metadata 迟到返回后，页面及两个原锚点保留，当前修订链接正确；正常支路经真实组件 POST、原 tuple 比较和 client 摘要校验，显式 clear 仅删对应桶；只读无重放按钮。失权支路等处理结束后，旧 proof/clear 均不出现，原锚点不变，八项均零 pageerror；另三文件 46 展示/flow/authority 测试通过。该 P2 已关闭，安全记录见[实际组件复验](qa/p3e-list-scope-browser.json)。受控网络组件交互不冒称真实 PG/Next 全量或作者视觉批准。
+
+## 最终独立出口复核
+
+第三轮第五项测试把 replacement 新请求的响应按旧 binding 检查，生产严格 client 正确拒绝；92d7a90（root f924f23）将旧响应拦截限制一次，等待真实交付及客户端收尾，再让新请求走正常路径。Astra 实际组件双变体证明旧 handler 第二次误报，新 handler 两次实际 POST/一次拦截、新绑定核验及对应显式清除通过，另一 seal 锚点不动；client 与六项完成门未变。这是测试修复，不列为新的生产缺陷修复。
+
+第四轮 241 passed/10 旧 skipped，六项新增全过；日志明确 full、serverExit proven、workersStopped true、五组 cleanup passed、native control empty，f746 正式停库。最终 main 三轮各 66 通过，source 0f5a9c6…、deployment 97e76ee…、runtimeBundle 812293f…，全部操作停止/control 空。准确 f924f23 的 39128057215 与 39128057251 经主控和 Astra 实查均 completed/success。
+
+80 张原图全部与 manifest 及原 test-results 的 SHA/字节/尺寸一致。A/B 各逐张检查 80 张；Astra 实际查看 20 状态代表图、每宽 5 张，并核全部 80 文件及完整工程证据，无剩余 P1/P2。三个后台排版 P3 保留，不写“P3 清零”；范围见[视觉记录](P3E_VISUAL_CHECK.md)。独审原证据在其私有 `.cache/p3e-ui-review/final-evidence-check.json`，没有访问根数据库/3100。以 runtime eb7595a / test f924f23 收口 P3-E 技术出口；首款真实材料另有批准/准入/封存记录，P4/P5 继续待实现。
