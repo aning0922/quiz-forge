@@ -188,3 +188,13 @@ backend proof改查同数据库全部非当前admin/当前exclusive维护PID，�
 新真实PG一项覆盖四个子场景和完成后普通Key到期：临期行是明确的synthetic owner seed，在exclusive维护下单一事务disable/update/enable原命名trigger并提交；应用无法观察已提交的弱schema，提交后重验原verifyConsumerSchema及所有实际factory guard。不是应用续期接口、自然等待8小时或修改全局/浏览器时钟。每个子场景在最后授权之后的port新receipt/snapshot摘要处确认DB now仍早于目标deadline，实际1850ms等待后确认DB now已到期；随后save/complete × Key/grant分别有限拒绝，stateRevision不变且report0。恢复访问只显式exchange新grant，不给旧token续期。另真实报告先完成，再合成Key临期seed/实际等待，原Key exchange仍destination report、读原完整report SHA不变。
 
 最终该用例14.36s/13.45s test通过（1 test内4个拒绝子case+已完成只读正例），原完整consumer服务用例修后两轮通过8.48s与enabled=true起步8.10s。175文件1851单元、format/lint/typecheck和production build通过；旧3/3、51源/280锁；consumer1/1、77源/268锁；trace80/0。0018 SHA保持a723d409df2dc1225f4504ff14bc13b18824c93adac28b7f10058c3e586c060a。本笔待Astra用四原反例复验，不宣称P2独审已关闭、完整ordinary PG或生产E2E已通过。e1两cleanup P2主控已转告独审原反例复验关闭，仅限该scope；下一步继续预算/未知提交/fresh授权竞态矩阵与主控最终集成回归。
+
+## 预算、真实提交后结果丢失与新鲜授权矩阵（2026-10-19）
+
+新增独立真实PG故障用例，生产服务保持311ba15不变。测试仍创建实际完整guard的observer-issued数据库对象；只在同一SQL对象上包装捕获的native begin，在真实事务COMMIT成功后注入返回结果丢失。不是声称真实网络自然丢包，也没有假造COMMIT/FD关闭。第一次harness误用Proxy替换SQL对象，被owner身份门禁在业务前正确拒绝UNAVAILABLE；该次已准备但未finish的0f605f实例停止保留，不reset或从扫描收养图，改新eeede/55421后测试通过。
+
+实际预算COMMIT后丢返回：OUTCOME_UNKNOWN、只有1个factory且实际close已fulfilled、Key仍无session，实际永久预算已消费1（窗口推进时从1开始）；证明没有因业务未知打开第二Key阶段或退款。真实reserved budget行锁下NOWAIT有限RATE_LIMITED，1个factory/1个实际close、预算未加。廉价格式拒绝0个factory且预算行未变。真实save/report COMMIT后分别注入结果丢失，均OUTCOME_UNKNOWN；实际close均完成，原save resolution为applied-current，原complete resolution为applied，未追加重复报告。
+
+另在真正RR结束后先由另一实际请求logout，再让原readSession进入新RC授权，原读取ACCESS_DENIED；在真实私有资源字节读完且native FD已关闭后用另一实际请求logout，原resource最终授权拒绝，未issue body。两次logoutObserved均只在exact logout成功后记录；scope/grant/state/report全部按实际响应与私下digest封存。末尾显式发起独立格式合法无效Key尝试，实际永久fixed-window budget达到used=60并RATE_LIMITED，不reset、不退款、不写请求历史；已有报告/运营读取不经该预算。
+
+新eeede实例1项真实PG用例9.10s（8.17s test）通过，涵盖上述多个边界，最终原图/完整row manifest与实际退出proof下cleanup成功。format/lint/typecheck通过；本笔仅加测试与日志，没有重跑未变生产源的1851单元/build，也不把定向通过计为root第二轮全ordinary PG/生产E2E或独审关闭。fixture仍mode=operator-services、completed=false。下一步等待主控对311四原期限反例、完整普通PG和B生产浏览器链路的实际结论，并处理新证据。
