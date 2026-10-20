@@ -88,6 +88,8 @@ node --conditions=react-server --import tsx tests/browser/consumer-access-open.t
 
 B's default proof did not occupy 3100. Typecheck, scoped lint/format, the access-fragment unit test and diff check pass; the complete production regression remains root-owned.
 
+Independent review subsequently identified a separate **open product P2**: the frozen Access component does not handle a same-document fragment change. Astra's actual-component Chromium proof at root source `1d584f1e3042a4ad0cf3c60c4809edfbe45f4465` observed empty Access → hash B retaining the fragment with no verification button; ready Access holding A → hash B retained B in the address bar, and the explicit verification POST submitted previous A rather than B. Reviewer evidence: `.cache/p4-access-same-document-independent/1792494310134/result.json` in the review worktree; synthetic tokens never recorded, no DB/Next/3100, browser/server actually closed. B read this evidence and confirmed the mount-only effect against `docs/CONSUMER_P4.md` §5, which requires fragment erasure and original-link recovery without a mount-only exception. The new helper's complete-document path therefore does **not** close all product entry behavior or this P2. Root owns the decision and controlled new implementation/version review; B has not changed frozen Access/fragment bytes or added an unregistered wrapper.
+
 ## Question identity and completion adoption boundaries
 
 The ninth-run follow-on audit identified two concrete waits that could accept retained content. They are now reproduced against the actual `ConsumerSessionExperienceV1`, frozen renderer/mapping/font, real Chromium and synthetic in-memory HTTP. The bounded probe uses an ephemeral port with no DB/Next/3100:
