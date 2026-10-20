@@ -9,6 +9,240 @@
   "runtimeCodeCommit": "144d0b1e7e72843b256e44b1d52ced20dfdaadad",
   "testCommit": "898fbfcc1c1fdcfc8a028fe4a7bf9b0e11335e8f",
   "p4DeliveryCommit": "4f06966f51c4a9dd18055e52e76f7edc2c7aa63e",
+  "finalDeliveryChecks": {
+    "status": "local-repair-verified; exact-final-head-ci-tracked-in-pr20",
+    "firstDocumentationCommit": "37bb8ca68cebb401c30b2a25c73b32cb20817595",
+    "failedRun": {
+      "id": 39430084373,
+      "url": "https://github.com/aning0922/quiz-forge/actions/runs/39430084373",
+      "conclusion": "failure",
+      "checks": "success",
+      "database": "failure",
+      "firstFailure": "tests/db/p3e-close-fault.test.ts:156",
+      "observedAfterRealChildExit": {
+        "connections": 1,
+        "guards": 0
+      },
+      "required": {
+        "connections": 0,
+        "guards": 0
+      },
+      "unitTestsPassed": 1961,
+      "pgTestsPassed": 458,
+      "pgTestsFailed": 21,
+      "pgTestsSkipped": 17,
+      "laterFreshChecks": "skipped",
+      "fixtureCleanupPreventedByFailedAssertion": true,
+      "subsequentScopeProtectionFailures": true,
+      "localLog": ".cache/p5-preparation/ci-37bb8ca-first-failure.log"
+    },
+    "firstProductDataPreservedAndStopped": true,
+    "firstProductUpgradeOrLiveRerun": false,
+    "finalHeadEvidenceLocation": "https://github.com/aning0922/quiz-forge/pull/20",
+    "isolatedReproduction": {
+      "instanceId": "8ea71744e4249f14b684d4687d717d39",
+      "trials": 3,
+      "firstObservations": [
+        {
+          "connections": 1,
+          "guards": 0
+        },
+        {
+          "connections": 1,
+          "guards": 0
+        },
+        {
+          "connections": 1,
+          "guards": 0
+        }
+      ],
+      "finalObservations": [
+        {
+          "connections": 0,
+          "guards": 0
+        },
+        {
+          "connections": 0,
+          "guards": 0
+        },
+        {
+          "connections": 0,
+          "guards": 0
+        }
+      ],
+      "elapsedMs": [1467, 1481, 1474],
+      "realOwnedChildExitProven": true,
+      "inFlightPgSleepActuallyObserved": true,
+      "backendTerminationUsed": false,
+      "officialStop": true,
+      "independentEvidenceReviewed": true,
+      "qualification": "Proves the asynchronous exit-observation window; does not identify the original CI backend query or state."
+    },
+    "testOnlyRepair": {
+      "sourceCommit": "32594da4b319f37b121c74791ac13f2d749813ff",
+      "integratedCommit": "78939ed3c7c1847e1d665eb85cfee440c19819a9",
+      "files": [
+        "tests/support/p3e-backend-exit.ts",
+        "tests/db/p3e-backend-exit.test.ts",
+        "tests/db/p3e-close-fault.test.ts"
+      ],
+      "productionCodeChanged": false,
+      "requiresRealIdentityBoundExitProof": true,
+      "samePidAndGuardQueryUnchanged": true,
+      "requiredCounts": {
+        "connections": 0,
+        "guards": 0
+      },
+      "resultAcceptanceWindowMs": 2000,
+      "pendingSqlCancelledByWindow": false,
+      "originalTestTimeoutMs": 65000,
+      "queryFailureOrMissingOrLateResultRejected": true,
+      "maintenanceAndFullCleanupUnchanged": true,
+      "focusedFilesPassed": 2,
+      "focusedTestsPassed": 8,
+      "focusedTestExitCode": 0,
+      "independentBoundaryTestsPassed": 6,
+      "candidateRealPgTrialsPassed": 3,
+      "candidateElapsedMs": [1475, 1469, 1477],
+      "allNewOwnedInstancesStopped": true,
+      "safeResults": [
+        {
+          "path": ".cache/p5-preparation/ci-close-original-reproduction.json",
+          "sha256": "96a345b8901bd8c7b7cbff8811948ef7cbd42990e7001a04b04811f87e9b0391",
+          "result": {
+            "schemaVersion": "quizforge.p5.backend-exit-probe.v1",
+            "instanceId": "8ea71744e4249f14b684d4687d717d39",
+            "observations": [
+              {
+                "index": 0,
+                "ownedChildExitProven": true,
+                "realPgSleepObserved": true,
+                "first": {
+                  "connections": 1,
+                  "guards": 0
+                },
+                "final": {
+                  "connections": 0,
+                  "guards": 0
+                },
+                "polls": 123,
+                "elapsedMs": 1467
+              },
+              {
+                "index": 1,
+                "ownedChildExitProven": true,
+                "realPgSleepObserved": true,
+                "first": {
+                  "connections": 1,
+                  "guards": 0
+                },
+                "final": {
+                  "connections": 0,
+                  "guards": 0
+                },
+                "polls": 130,
+                "elapsedMs": 1481
+              },
+              {
+                "index": 2,
+                "ownedChildExitProven": true,
+                "realPgSleepObserved": true,
+                "first": {
+                  "connections": 1,
+                  "guards": 0
+                },
+                "final": {
+                  "connections": 0,
+                  "guards": 0
+                },
+                "polls": 128,
+                "elapsedMs": 1474
+              }
+            ],
+            "adminClosed": true,
+            "officialStop": true,
+            "passed": true
+          }
+        },
+        {
+          "path": ".cache/p5-preparation/ci-close-candidate-reproduction.json",
+          "sha256": "cbce2603942ab15f4927c8a31e8fbfd8071693e37132bb1117c5745fe28ede61",
+          "result": {
+            "schemaVersion": "quizforge.p5.backend-exit-probe.v1",
+            "candidateHelper": true,
+            "instanceId": "a5072e26ccd4fb00728612ccbf2f2223",
+            "observations": [
+              {
+                "index": 0,
+                "ownedChildExitProven": true,
+                "realPgSleepObserved": true,
+                "first": {
+                  "connections": 1,
+                  "guards": 0
+                },
+                "final": {
+                  "connections": 0,
+                  "guards": 0
+                },
+                "polls": 127,
+                "elapsedMs": 1475
+              },
+              {
+                "index": 1,
+                "ownedChildExitProven": true,
+                "realPgSleepObserved": true,
+                "first": {
+                  "connections": 1,
+                  "guards": 0
+                },
+                "final": {
+                  "connections": 0,
+                  "guards": 0
+                },
+                "polls": 126,
+                "elapsedMs": 1469
+              },
+              {
+                "index": 2,
+                "ownedChildExitProven": true,
+                "realPgSleepObserved": true,
+                "first": {
+                  "connections": 1,
+                  "guards": 0
+                },
+                "final": {
+                  "connections": 0,
+                  "guards": 0
+                },
+                "polls": 127,
+                "elapsedMs": 1477
+              }
+            ],
+            "adminClosed": true,
+            "officialStop": true,
+            "passed": true
+          }
+        },
+        {
+          "path": ".cache/p5-preparation/ci-close-focused-tests.json",
+          "sha256": "78fa88352bf299d7b17366f67f5e6a52b8f888eae3261d7eee5b15a83bb3ca6e",
+          "result": {
+            "schemaVersion": "quizforge.p5.close-fault-verification.v1",
+            "instanceId": "d300f4525094211bb1db929e1e1ff7a2",
+            "testExitCode": 0,
+            "graph": {
+              "products": 0,
+              "reviews": 0,
+              "versions": 0,
+              "locks": 0
+            },
+            "officialStop": true,
+            "passed": true
+          }
+        }
+      ]
+    }
+  },
   "approvedInput": {
     "approvalRecord": "docs/qa/historical-internal-baseline-2026-10-18.json",
     "packageSha256": "40b7660697d52c660897e153c7a9ef02163717c92b90f0680ae6558150f5c0c0",
