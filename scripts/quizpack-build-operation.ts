@@ -1,5 +1,12 @@
 import { dirname, resolve } from "node:path";
 import { z } from "zod";
+import { buildSupportedQuizPack } from "../src/features/quizpack/package/build";
+import type {
+  ContentSchemaVersion,
+  PackageValidationReport,
+  SupportedValidationContext,
+  SupportedValidationReportV2,
+} from "../src/features/quizpack/package/api";
 import { buildQuizPack } from "../src/features/quizpack/v1/build";
 import {
   parsePackJson,
@@ -21,6 +28,8 @@ import {
 } from "../src/features/quizpack/v1/zip";
 import type {
   ValidationContext,
+  BuildInput,
+  Result,
   QuizPackValidationReport,
 } from "../src/features/quizpack/v1/api";
 const inputSchema = z.strictObject({
@@ -36,19 +45,27 @@ const inputSchema = z.strictObject({
     )
     .max(64),
 });
-export interface CommittedBuildOutput {
+export interface CommittedBuildOutput<
+  R extends PackageValidationReport = QuizPackValidationReport,
+> {
   ok: true;
   committed: true;
-  report: QuizPackValidationReport;
+  report: R;
   output: ArchiveCommitReceipt;
 }
 /** Shared by the CLI and IO injection tests; packages cannot configure IO hooks. */
-export async function buildQuizPackFile(
+async function buildQuizPackFileWith<R extends PackageValidationReport>(
   inputFile: string,
   outFile: string,
   context: ValidationContext,
+  builder: (
+    input: BuildInput,
+    context: ValidationContext,
+  ) => Promise<
+    Result<{ archive: Uint8Array; report: R }> & { issuesTruncated?: boolean }
+  >,
 ) {
-  let committed: CommittedBuildOutput | undefined;
+  let committed: CommittedBuildOutput<R> | undefined;
   try {
     return await withPackDeadline(context, async (signal, limits) => {
       const spec = inputSchema.safeParse(
@@ -89,7 +106,7 @@ export async function buildQuizPackFile(
           bytes,
         });
       }
-      const result = await buildQuizPack(
+      const result = await builder(
         {
           packId: spec.data.packId,
           packVersion: spec.data.packVersion,
@@ -125,4 +142,37 @@ export async function buildQuizPackFile(
     recordPostCommitInterruption(committed.output, error);
     return committed;
   }
+}
+
+/** Legacy path keeps the exact P1 report type and output bytes. */
+export function buildQuizPackFile(
+  inputFile: string,
+  outFile: string,
+  context: ValidationContext,
+) {
+  return buildQuizPackFileWith<QuizPackValidationReport>(
+    inputFile,
+    outFile,
+    context,
+    buildQuizPack,
+  );
+}
+export function buildSupportedQuizPackFile(
+  inputFile: string,
+  outFile: string,
+  context: SupportedValidationContext,
+  expectedContentVersion: ContentSchemaVersion,
+) {
+  if (
+    expectedContentVersion !== "quizpack-content.v1" &&
+    expectedContentVersion !== "quizpack-content.v2"
+  )
+    throw new PackToolError("CLI_INVALID_ARGUMENTS");
+  return buildQuizPackFileWith<SupportedValidationReportV2>(
+    inputFile,
+    outFile,
+    context,
+    (input, selected) =>
+      buildSupportedQuizPack(input, selected, expectedContentVersion),
+  );
 }

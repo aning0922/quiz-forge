@@ -3,7 +3,10 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import type { P2aDatabase } from "@/lib/db/client";
 import { StudioError } from "@/lib/http-security/errors";
 import { canonicalP1Json } from "../v1/canonical";
-import { runtimeIdentity } from "../server/validation/identity";
+import {
+  runtimeIdentity,
+  supportedRuntimeIdentity,
+} from "../server/validation/identity";
 import {
   createMediaOperationContext,
   disposeMediaOperationContext,
@@ -15,6 +18,8 @@ const mocks = vi.hoisted(() => ({
   original: vi.fn(),
   exact: vi.fn(),
   row: vi.fn(),
+  policy: vi.fn(),
+  read: vi.fn(),
   dto: vi.fn(),
   config: vi.fn(),
   acquire: vi.fn(),
@@ -43,8 +48,7 @@ vi.mock("@/features/product/workspace/repository", async (actual) => ({
 vi.mock("../import/repository", async (actual) => ({
   ...(await actual<typeof import("../import/repository")>()),
   importRow: mocks.original,
-  read: (_db: unknown, _token: unknown, work: (tx: unknown) => unknown) =>
-    work({}),
+  read: mocks.read,
 }));
 vi.mock("../import/service", () => ({ currentConfig: mocks.config }));
 vi.mock("../import/storage-lock", () => ({
@@ -60,6 +64,7 @@ vi.mock("./repository", async (actual) => ({
   ...(await actual<typeof import("./repository")>()),
   exactValidation: mocks.exact,
   validationRow: mocks.row,
+  validationPolicyRow: mocks.policy,
   validationRowDto: mocks.dto,
   validationDto: (row: ValidationRow) => ({ id: row.id, status: row.status }),
   archivedResourceCount: async () => 0,
@@ -100,13 +105,21 @@ import {
 } from "./repository";
 import type { ArchiveOperation } from "./operation";
 import type { ValidationAttempt, ValidationRow } from "./repository";
-import { sealP1Report, P1_UNVERIFIED } from "../server/validation/report";
+import {
+  sealSupportedReport,
+  P1_UNVERIFIED,
+} from "../server/validation/report";
 import { VALIDATION_RESERVATION_BYTES } from "./limits";
-import { ARCHIVE_POLICY_VERSION, archivePolicySha256 } from "./policy";
+import {
+  ARCHIVE_POLICY_VERSION,
+  archivePolicySha256,
+  LEGACY_ARCHIVE_POLICY_VERSION,
+  legacyArchivePolicySha256,
+} from "./policy";
 const productId = "synthetic-dimensions",
   importId = randomUUID(),
   hash = "a".repeat(64);
-const identity = runtimeIdentity({
+const identity = supportedRuntimeIdentity({
   schema: "quizpack-media-runtime-binding.v1",
   platform: "darwin-arm64",
   componentId: hash,
@@ -144,6 +157,8 @@ let db: P2aDatabase;
 beforeEach(() => {
   db = { sql: { end: vi.fn(async () => {}) } } as unknown as P2aDatabase;
   vi.clearAllMocks();
+  mocks.read.mockImplementation((_db, _token, work) => work({}));
+  mocks.policy.mockImplementation(async () => claimedRow());
   mocks.product.mockResolvedValue({ id: productId, archived_at: null });
   mocks.original.mockResolvedValue({
     id: importId,
@@ -389,6 +404,9 @@ function claimedRow(): ValidationRow {
     archive_bytes: 10,
     archive_sha256: hash,
     identity_sha256: identity.identitySha256,
+    identity_text: canonicalP1Json(identity),
+    archive_policy_version: ARCHIVE_POLICY_VERSION,
+    archive_policy_sha256: archivePolicySha256,
     evidence_text: null,
     asset_set_text: null,
     last_error_code: null,
@@ -630,11 +648,11 @@ function candidateResult(accepted = false) {
     evidence: {
       ...evidence,
       policy: { status: "passed" },
-      report: sealP1Report({
-        schemaVersion: "quizpack-validation.v1",
+      report: sealSupportedReport({
+        schemaVersion: "quizpack-validation.v2",
         targetProductId: productId,
-        validatorVersion: "1.0.0",
-        policyId: "quizpack-local-p1.v1",
+        validatorVersion: "2.0.0",
+        policyId: "quizpack-local-supported.v1",
         archiveSha256: hash,
         manifestSha256: hash,
         contentSha256: hash,
@@ -748,3 +766,67 @@ it("complete COMMIT unknown never emits ready or opens an interrupt/second publi
   expect(mocks.interrupt).not.toHaveBeenCalled();
   expect(mocks.receipt).toHaveBeenCalledTimes(1);
 });
+
+it.each(["recoverValidation", "retryValidation"] as const)(
+  "%s rejects legacy policy before disabled config, lock, or file IO",
+  async (method) => {
+    const old = runtimeIdentity(identity.runtime);
+    const row = {
+      ...claimedRow(),
+      archive_policy_version: LEGACY_ARCHIVE_POLICY_VERSION,
+      archive_policy_sha256: legacyArchivePolicySha256,
+      identity_text: canonicalP1Json(old),
+      identity_sha256: old.identitySha256,
+    };
+    mocks.policy.mockResolvedValue({
+      archive_policy_version: row.archive_policy_version,
+      archive_policy_sha256: row.archive_policy_sha256,
+      identity_text: row.identity_text,
+      identity_sha256: row.identity_sha256,
+    });
+    mocks.config.mockResolvedValue({ imports: { enabled: false } });
+    await expect(
+      createQuizpackValidationService()[method](
+        db,
+        credentials,
+        productId,
+        importId,
+        row.id,
+        { expectedStateRevision: row.state_revision },
+        context(),
+      ),
+    ).rejects.toMatchObject({ code: "VALIDATION_REVALIDATION_REQUIRED" });
+    expect(mocks.policy).toHaveBeenCalledWith({}, productId, importId, row.id);
+    expect(mocks.acquire).not.toHaveBeenCalled();
+    expect(mocks.config).not.toHaveBeenCalled();
+    expect(mocks.row).not.toHaveBeenCalled();
+    expect(mocks.scan).not.toHaveBeenCalled();
+    expect(mocks.held).not.toHaveBeenCalled();
+    expect(mocks.prepare).not.toHaveBeenCalled();
+    expect(mocks.restore).not.toHaveBeenCalled();
+    expect(mocks.recover).not.toHaveBeenCalled();
+    expect(mocks.retry).not.toHaveBeenCalled();
+  },
+);
+it.each(["recoverValidation", "retryValidation"] as const)(
+  "%s checks current authorization before reading policy metadata or touching IO",
+  async (method) => {
+    const row = claimedRow();
+    mocks.read.mockRejectedValue(new StudioError("UNAUTHENTICATED"));
+    await expect(
+      createQuizpackValidationService()[method](
+        db,
+        credentials,
+        productId,
+        importId,
+        row.id,
+        { expectedStateRevision: row.state_revision },
+        context(),
+      ),
+    ).rejects.toMatchObject({ code: "UNAUTHENTICATED" });
+    expect(mocks.policy).not.toHaveBeenCalled();
+    expect(mocks.row).not.toHaveBeenCalled();
+    expect(mocks.acquire).not.toHaveBeenCalled();
+    expect(mocks.config).not.toHaveBeenCalled();
+  },
+);

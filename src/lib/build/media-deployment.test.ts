@@ -44,6 +44,8 @@ async function fixture(
     await mkdir(root, { mode: 0o700 });
     for (const directory of [
       "src/features/quizpack/v1",
+      "src/features/quizpack/package",
+      "src/features/quizpack/content",
       "src/features/quizpack/server/media",
       "src/features/quizpack/server/validation",
     ]) {
@@ -57,6 +59,7 @@ async function fixture(
       "src/lib/assessment-contract/scoring-v1.ts",
       "src/lib/json/canonical.ts",
       "src/features/quizpack/content/reference-graph.ts",
+      "src/features/quizpack/package/compatibility.ts",
       "src/lib/build/media-deployment.ts",
       "pnpm-lock.yaml",
       "tsconfig.json",
@@ -638,6 +641,7 @@ describe("trusted media deployment binding", () => {
         "src/lib/assessment-contract/scoring-v1.ts",
         "src/lib/json/canonical.ts",
         "src/features/quizpack/content/reference-graph.ts",
+        "src/features/quizpack/package/compatibility.ts",
         "tsconfig.json",
       ])
         expect(
@@ -680,6 +684,7 @@ describe("trusted media deployment binding", () => {
     "src/lib/assessment-contract/scoring-v1.ts",
     "src/lib/json/canonical.ts",
     "src/features/quizpack/content/reference-graph.ts",
+    "src/features/quizpack/package/compatibility.ts",
     "tsconfig.json",
     ".next/server/probe.js",
     "node_modules/.pnpm/zod@4.6.5/node_modules/zod/index.cjs",

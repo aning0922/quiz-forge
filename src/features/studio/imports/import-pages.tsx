@@ -51,8 +51,7 @@ function ImportEnvironment({
       )}
       {readOnly && <ReadOnlyNotice />}
       <p className={styles.note}>
-        配置和权限会由每次写入重新核实。原包接收步骤不执行
-        ZIP、Schema、资源、合成内容及授权验证；验证状态请查看独立记录。
+        配置和权限会由每次写入重新核实。接收步骤记录原包大小与哈希；包结构验证、资源归档和草稿应用分别记录，内容与素材授权另行人工审核。
       </p>
     </>
   );

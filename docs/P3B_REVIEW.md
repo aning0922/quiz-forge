@@ -1,0 +1,74 @@
+# P3-B 实施与独立审查记录
+
+日期2026-10-16。基线P3-A交付0059175，运行ce190cd已经技术验收；本文件只记录P3-B准备/实施，不是验收。
+
+A/B两条独立Sol只读预研已核真实ZIP入口、候选/恢复、policy/SQL/首稿和历史链；主控据此冻结PACK_ADMISSION_P3B，Astra独立复审。首轮P2指出“非终态一概拒绝”会使三次耗尽但已停止释放的合法旧记录无法升级。按真实storage/reservation/lease/attempt/停止证明静止条件修订，旧validated/retryable-failed保留只读，新key完整重验；20pending限定当前policy精确version/hash，1024总行及磁盘继续跨policy。主控/A共同核现有countCapacity，旧规则确实会永久占位，不能靠改旧状态绕过。
+
+独审要求旧写者/受管IO先退出，事务内NOWAIT两表锁、拒绝残留应用连接、核旧helper后同事务检查/DDL。整组identity/report/hash/policy和content/component矩阵绑定，避免分别union的错配；新issue collector保留上游截断，不误套旧“恰100项”条件。Astra复审确认合同P2关闭、无新增合同阻断；两处表述（identity报告Schema hash、pending统计例外）已校正。真实PG/两平台/生产E2E均仍待实施验收。
+
+首个共享交付为package/api.ts与compatibility.ts，只提供相关联合/必填完整版本签名和冻结两profile描述符，尚无准入执行。主控类型/定向lint/格式通过；Astra独立内存TS负向探针拒绝混代、漏版本/短版本、额外policy及新报告赋旧类型，递归9对象/数组冻结和3变异拒绝通过，独立canonical hash为a1366418639c8eac052955dae4670cf179a7c9774c8039f66cc46f78252c2899。可交B实施package M1，桥接仍待后续共享报告/身份机器合同。P3-A文档0059175普通38774143564与媒体38774143579也均实际success。
+
+共享机器合同已准备但未激活新准入：新strict report/identity、archive.v3 descriptor及精确policy+identity检查，ExpectedCandidateFacts四组合类型；旧runtimeIdentity与当前archive.v2写默认保持。主控16文件244定向与完整104文件1327单元、格式/lint/类型通过；旧report Schema/hash、旧archive descriptor bytes实际保持。Astra独立比较旧Schema/identity/封存bytes/runtime输出，33负向探针通过，含双向版本错配、自洽重算false identity、上游0/1/31/99/100截断与101拒绝、有限错误/未验证清单/封存变异。新report Schema hash=e7df48c0d4da4e941fa1486906b08104f5fc96b9c1a001e9489fa2eedf461867，archive.v3 hash=a330bf3d82ada4bba47a395655347ad94b20ec3c00ffbde3f52a06773d3511d5；独审无新阻断。
+
+候选证据新增所声明report Schema的真实hash核验，四处合成夹具原占位值改为实际旧REPORT_SCHEMA_HASH；不改真实内容。新增compatibility运行依赖已纳入main/fixture固定source与变异测试，CI覆盖package。bridge/SQL仍待实现联动，不能用此共享合同测试冒称四组合已导入。
+
+0015/guard已完成前置技术复验，尚未完成业务准入：空14库实际迁移、旧guard与新迁移边界共15PG通过，类型/lint/格式通过。新helper固定current v3 tuple/身份原始JSON类型/独立canonical hash/四组合/六组件，当前row与evidence identity全等；历史分支不追溯改变，新首稿INSERT只接受v3ready。guard固定shape与sha函数体和属性，首稿facts与实际PG定义一致。root首次预检查将字段别名strict误用于PL/pgSQL record，0015整事务回滚；修正is_strict并修元数据提取只检查函数头后升级成功。原99da实例保留停止，未改迁移收据。
+
+Astra进一步实际复现runtime纯数字hash可作为JSON number通过旧SQL强转文本并保留原identity hash，登记P2。root新增current identity顶层/六runtime字段JSON string核验及五字段回归。新fresh0e503实例通过15PG；Astra新独立55424实例也15/15，并以真实INSERT验证numeric deploymentId被VALIDATION_SHAPE/23514拒绝、合法字符串通过全trigger/CHECK，均回滚；P2关闭，0015字节SHA d869b3106f34e6b0f33b8356f3980dab8467f93d02e889cd9ae687f344f65a80，shape hash e09bd590fef549d6566b738832402e3058d1bbe9af184607bcb52adc980d38a6。两个独审实例已停。root另实际加载与0059175字节一致的旧开库代码，新库被旧代码拒绝而当前代码打开。
+
+archive当前导出切至已核v3 descriptor，显式legacyArchivePolicy*保留原v2字节/hash；桥接当前prepare与数据服务仍待A/B联动，不能把DDL/配置存在当作可用端到端链。此中间提交全量DB/浏览器仍待业务实现，独立PG这里只覆盖迁移/guard及当前SQL身份边界。下一步A接续完整四组合写入、旧key/正文、只读旧策略/容量/alias等业务回归。
+
+B的M1 0edb581曾因{...execution}丢失原型方法/this并提前读取getter产生P2，主控未集成该中间版本。B修复09b7731逐hook延迟转发，6新增回归由失败变通过、旧基线6差分和305定向/1347全unit通过；Astra独立20hook/package与原三复现一致后关闭P2。M1可按0edb581+09b7731集成，跳过共享副本c315f1e；桥接另派。
+
+当前archive导出切换后再次104文件1327单元通过；15PG及实际旧/新开库探针再次通过。旧v2 descriptor另以legacyArchivePolicy*保留，新默认的descriptor/hash仍是此前独审的同一v3值。
+
+CLI/源码绑定准备已独审通过：root真实子进程四组合build/check、错版本/参数/无覆盖及Schema隔离5项，旧CLI/IO/清单77项通过；完整107文件1352单元、format/lint/type通过。Astra独立6文件99项，包含将提交后中断注入接到supported文件入口，原成功收据、取消/清理警告不丢失；默认stdout与v1 ZIP字节相同。main/fixture纳入package/content目录，独立遍历当前58个实际运行源码依赖无清单遗漏；最终bridge变化后仍须重新build/bind/封存。操作入口见P3B_TOOLCHAIN。
+
+M1实际集成为3f3ddaa，hook修复227d5bb；A/B已接root493598f，分别推进数据/历史与可信桥接。原99与类型修复后0e503两个root测试实例均停止保留；未运行生产迁移或HTTP服务。P3-B仍未全阶段验收，首款P5尚未完成。
+
+真实隔离媒体准备与fixture已实跑：root当前bridge c4d5b11（B3fe6e33）及两行fixture收窄7c99735接入，类型通过。媒体fixture扩16case，8正向覆盖两引擎×两schema×两kind；独审只读核生成ZIP/expectations的完整矩阵及bytes/hash/digest，未发现阻断。root另实际本地decoder检查8包均通过；prepare生成324719字节/16case。production fixture构建1059source/74artifact、sourceStable，deployment48b3c8289df926560567093c58f98ccc76681cae022fb13649b323aba4b307a4，sourceBundle b25e04ed307ca76b75fd2f5826a912119328da192920021a79208a151a6af111。
+
+macOS fixture目标66项连续三轮全部通过并sealed，runtime3188eb8209251d3e083af64b1d95ceef7f78e9e94606dd3def9dd2f5cc5bf93a；实际Next sealed公共入口16场景通过，8正向资源复制/归属/digest/新身份/新严格报告正确，原非法/中断仍拒绝，owned Next及3111已关闭。未封存入口3场景也实际失败关闭。两种证据与仅mock媒体的service测试分别记录；最终main目标与浏览器仍待A数据修复整合后验收。
+
+B2浏览器归档fixture准备改为3份完全相同的authored/v2枚举、五个明确合成像素资源，保留原3-import canonical/alias与停止清理协议；新增首个实际HTTP响应对ready/schema.v2/5资源/unverified的断言。此浏览器测试尚未运行，不能据fixture准备称全链通过。import页两处旧阶段限制文字更新，A panel的只读入口门控完整保留。
+
+493598f中间CI的checks成功、media38779406685成功，database38779406692实际失败57项（当时A数据/新tuple夹具及旧升级适配未集成），未把旧530成功覆盖该结果。最终集成必须重新核完整PG/driver/service/browser及准确CI。A当前76537be仍有两P2：旧策略recover/retry首次存储/配置操作前未拦截；历史静止SELECT *读取过大字段。修复051e177已提交，等待独立复验，主控暂未集成这部分业务。
+
+## 最终集成与CI收口记录
+
+日期：2026-10-16。两个独立Sol/high开发聊天分别负责数据/历史和包工具/可信桥接，Astra/high独立审查；主控管理公共合同、迁移、CLI、构建绑定及集成。当前最终核验进行中。
+
+## 已修复并独立复验
+
+- 合同初版将所有非终态历史均视作升级阻断，会使安全旧历史无法保留。改为真实停止/释放/无未知任务的精确条件；旧记录保留只读，新策略独立准入，历史总预算不排除旧行。Astra合同复审通过。
+- 包核心曾展开execution对象，丢失原型方法和this并提前读取getter。09b7731采用显式惰性转发；原失败探针与新增测试独立复验通过，保留原回调时机。
+- 0015初版SQL可接受数字JSON身份字段，通过实际INSERT复现。改为严格字符串及完整元组核验，合法字符串通过、数字拒绝；新函数体与属性guard、真实锁竞争及残留连接场景均验证。没有更改旧已应用迁移或生产库。
+- 旧策略recover/retry原先在FS接触后拒绝，历史检查还读取了完整大字段。051e177在当前授权后、私有IO前拒绝旧策略，同时保留当前锁内复核；只投影六个控制字段、最多1025行。独审27定向与六个顺序/并发探针通过。
+- 可信候选使用私有opaque身份，绑定真实ZIP及资源独立副本。独审103定向及额外2项独立测试，包含12类事实变异及上下文、句柄、资源副本边界通过；旧恢复不重签新报告。
+- source inventory包含package/content目录与显式中立依赖，真实运行闭包61文件核查无遗漏；CLI显式版本、旧字节/默认Schema及不覆盖输出行为经独审99定向和实际IO注入复验。
+
+## CI失败保留与修复
+
+493598f普通CI38779406692、20c3644普通38784555930为中间集成失败，分别保留，未以同时成功的媒体CI替代。
+
+最终测试前的f11cbae普通CI38786631417实际失败：普通单元1363项中的一个真实CLI组合测试触发Vitest默认5秒；数据库355项中的七项历史测试被夹具purpose=test白名单拒绝，而CI受管配置为purpose=ci。同期媒体38786631203实际success。
+
+A的fa059a8（集成9cd9b48）仅允许既有受管test/ci用途，新增demo在owner事务前拒绝的回归，未改managed marker、角色、连接或所有权校验。A真实test库9项及类型/格式/lint通过，实际ci仍须远端确认。主控afaa43e只给五个多进程CLI测试定向30秒预算，不改应用、媒体或子进程安全期限；五项本地7.45秒通过。
+
+最终准确head afaa43ec09a5cb8ff8df2d54ad1819440dedf8b5 的[普通CI38788800066](https://github.com/aning0922/quiz-forge/actions/runs/38788800066)及[媒体CI38788800035](https://github.com/aning0922/quiz-forge/actions/runs/38788800035)正在核实。最终退出须结合main原始三轮封存、fresh E2E、清理与实际移动截图，不能只凭测试数宣告通过。
+
+## 证据边界
+
+主控完整PG355项、最终历史增量8项与A目的修复后的9项分别记录，不混称主控11项或最终完整356已经本地运行。服务14/UNKNOWN3使用真实PG但模拟媒体边界；原生媒体证据来自独立main/fixture66×3及真实Next包矩阵。
+
+fixture八正例来自2引擎×2内容版本×2kind，另五拒绝、两中止和单图入口合计16观察。坏媒体例记录4次媒体检查后拒绝，不代表4张均解码成功，不声称所有拒绝均零媒体调用；中止/过期零调用。新ready只表示独立验证归档完成，首稿仍需明确应用，内容/素材/发布批准均未授予。
+
+前述0015文件SHA d869b310记录的是独审当时版本；最终提交仅修正EOF空行，函数体不变。该历史SHA不冒称最终迁移文件SHA。
+
+## 准确head CI完成
+
+afaa43ec09a5cb8ff8df2d54ad1819440dedf8b5的普通38788800066和媒体38788800035均completed/success。实际成功日志为108文件1363单元、37文件356PG、46driver、fresh服务14及fresh媒体UNKNOWN3、65trace/12960路径/0private。Linux媒体真实封存及实际Next入口成功。本地完整PG355与增量、远端最终356分别保留；这次成功关闭已定位的purpose与CLI预算失败，不重写中间失败历史。
+
+## 最终独立技术出口
+
+Astra绑定运行c419aa6与最终测试afaa43e，独立核实两条准确head CI均completed/success、main原始三轮及当前绑定、fixture真实Next矩阵、fresh E2E、32图尺寸/hash及代表截图，确认本批无未关闭P1/P2，技术出口通过。主控B3→B2精确清理按执行回执记录，监听状态由独审复核；不伪造额外清理日志。验收材料见[P3B_ACCEPTANCE](P3B_ACCEPTANCE.md)及[VISUAL_CHECK](P3B_VISUAL_CHECK.md)。P3-C合同独立收口，不属于本批未完成项。

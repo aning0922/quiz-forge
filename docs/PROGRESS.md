@@ -1,5 +1,15 @@
 # 阶段进度
 
+## 2026-10-16 P3-B 技术验收完成
+
+最终运行c419aa6、测试修订afaa43e：完整包content.v1/v2×synthetic/authored四组合、可信候选/私有归档与首稿revision1已完成；旧历史只读、原成功key与跨策略canonical归属保留。1363单元、355本地PG及增量、356最终远端PG、46driver、fresh服务14/UNKNOWN3、222生产E2E/10旧skip、零warning build、main与fixture各66×3封存、32张四宽图均通过。准确head普通CI38788800066及媒体38788800035实际success；Astra确认无剩余P1/P2。详见[P3B_ACCEPTANCE](P3B_ACCEPTANCE.md)、[REVIEW](P3B_REVIEW.md)、[VISUAL_CHECK](P3B_VISUAL_CHECK.md)。
+
+PR #16保持堆叠Draft，main未变，自有DB/3100已停。接续固定revision真实预览P3-C合同；仍由两条独立Sol/high开发聊天和Astra/high独审，内容、素材与发布由作者批准。尚未接通正式Key/消费者报告或完成首款P5，以下为历史过程。
+
+## 2026-10-16 P3-B 合同冻结
+
+从P3-A交付0059175接续codex/supported-pack-admission。[准入合同](PACK_ADMISSION_P3B.md)经Astra前置与修订复审通过：真实停止/释放条件允许安全旧历史保留，新策略独立验证，当前20pending与全部1024历史行/磁盘预算分开，整组identity/report/policy严格关联。旧合同“全部非终态阻断升级”P2已解决。此处是设计冻结，不冒称authored/v2已能导入；主控先交机器合同和迁移/guard，两独立Sol依精确文件所有权实施。
+
 ## 2026-10-16 P3-A 技术验收完成
 
 最终代码ce190cd完成有限content.v2、严格v1/v2分派、确定性纯评分、真实见证与有限覆盖、不可变内容/报告适配。四卡12题/48向量实际执行并独立Fraction复算通过。最终1316单元、335PG、46driver、222生产E2E/10旧skip、格式/lint/类型和零warning build通过；65trace/12955路径/0private，1039source新绑定、五文件真实变更拒绝、main66×3封存完成。独立Astra所有登记P1/P2关闭，ce190cd普通38771885883与媒体38771886058均success。详见[P3A_ACCEPTANCE](P3A_ACCEPTANCE.md)和[REVIEW](P3A_REVIEW.md)。

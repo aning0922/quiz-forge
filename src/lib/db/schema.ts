@@ -343,7 +343,7 @@ export const productAssets = qf.table("product_asset", {
   createdAt: time("created_at").notNull(),
 });
 
-// Composite closure, source protection and immutable permissions are defined in 0014.
+// Composite closure/permissions are defined in 0014; supported admission is defined in 0015.
 export const productDrafts = qf.table("product_draft", {
   id: uuid("id").notNull().primaryKey(),
   productId: varchar("product_id", { length: 80 }).notNull(),
@@ -353,7 +353,7 @@ export const productDrafts = qf.table("product_draft", {
   createdAt: time("created_at").notNull(),
 });
 
-// Composite closure, source protection and immutable permissions are defined in 0014.
+// Composite closure/permissions are defined in 0014; supported admission is defined in 0015.
 export const draftRevisions = qf.table("draft_revision", {
   productId: varchar("product_id", { length: 80 }).notNull(),
   draftId: uuid("draft_id").notNull(),
@@ -395,7 +395,7 @@ export const draftRevisions = qf.table("draft_revision", {
   createdAt: time("created_at").notNull(),
 });
 
-// Composite closure, source protection and immutable permissions are defined in 0014.
+// Composite closure/permissions are defined in 0014; supported admission is defined in 0015.
 export const draftApplications = qf.table("draft_application", {
   id: uuid("id").notNull().primaryKey(),
   productId: varchar("product_id", { length: 80 }).notNull(),

@@ -4,7 +4,9 @@
 
 ## 当前阶段与授权
 
-- P3-A已于2026-10-16完成技术验收（最终代码ce190cd，见docs/P3A_ACCEPTANCE.md）；接续P3-B合同准备，冻结前不实施authored/v2准入。以下P3-A范围保留作交付边界：从B2-3交付802585b独立堆叠分支接续，严格范围见docs/CONTENT_SCORING_P3A.md。只做有限content.v2离线Schema/内容内部引用/分派、确定性纯评分及见证/覆盖，不开放ZIP/P2/DB/HTTP/消费者准入。主控先交中立Schema/canonical/审阅封套，A拥有quiz/scoring及首款逻辑转写，B拥有quizpack/content及adapter，Astra独审；共享文件不可双写。
+- 2026-10-16 P3-B已技术验收：运行c419aa6、测试afaa43e，1363单元、最终远端356PG、46driver、222生产E2E/10旧skip、main/fixture各66×3封存、32图及双CI成功；Astra无剩余P1/P2。见docs/P3B_ACCEPTANCE.md。接续P3-C固定revision内部预览合同收口，冻结共享接口后两独立聊天实施；下方P3-B实施段为交付历史。
+
+- 当前实施批次P3-B：P3-A已技术验收（代码ce190cd、交付0059175），从同一受管主树建立codex/supported-pack-admission。合同docs/PACK_ADMISSION_P3B.md已Astra复审冻结：显式完整包四组合准入、可信候选/归档/首稿revision1；不含预览renderer、追加修订、审批或Key。主控先交共享package API/compatibility、report/identity、archive policy、0015迁移/guard与配置；两独立Sol分别数据/历史与包工具/桥接，不双写共享文件。只在隔离purpose=test库迁移，真实静止/停旧写者为升级前置，旧历史只读且不补造终结。
 
 - 2026-10-15 作者再次明确选择“恢复独立开发、独立审查聊天”。主线必须采用项目侧栏内独立聊天，不能用主控会话内子代理替代：最多两条GPT-6.1 Sol/high开发聊天、一条GPT-6 Astra/high独立审查聊天；本聊天负责主控和集成。接管登记见docs/MANAGED_DEVELOPMENT.md。原子代理已提交并停止，自有实例已停，保存分支和工作树供独立聊天继承，不重做已验证成果。
 - 2026-10-15 作者明确恢复 QuizForge 托管开发，由新主控接续历史人物首款 P5 端到端内测；常规开发、测试、独立审查、整改、提交推送及 Draft PR 自行推进，内容、素材与发布批准保留人工闸门。继续下文 Sol/high 实施、Astra/high 独审和最多两条实现流的方式。恢复基线为 B2-2B 本地 `fb02afc`，不回退到旧 D1 工作树，不恢复无关项目。仓库 public 的独立授权已执行；它不批准素材商用、main 合并、生产迁移、部署或商业发布。

@@ -10,7 +10,18 @@ import {
   type MediaRuntimeBindingResult,
 } from "../media";
 import { validationIdentitySchema, type ValidationIdentity } from "./contracts";
-import { REPORT_SCHEMA_HASH } from "./report";
+import { REPORT_SCHEMA_HASH, SUPPORTED_REPORT_SCHEMA_HASH } from "./report";
+import {
+  supportedValidationIdentitySchema,
+  type SupportedValidationIdentity,
+} from "./contracts";
+import {
+  SUPPORTED_COMPATIBILITY_HASH,
+  SUPPORTED_IDENTITY_VERSION,
+  SUPPORTED_POLICY_ID,
+  SUPPORTED_REPORT_VERSION,
+  SUPPORTED_VALIDATOR_VERSION,
+} from "../../package/compatibility";
 import { PERSISTENCE_UNICODE_POLICY_HASH } from "./unicode";
 import {
   ValidationInterrupted,
@@ -50,6 +61,29 @@ export function runtimeIdentity(
     runtime: binding,
   };
   return validationIdentitySchema.parse({
+    ...payload,
+    identitySha256: hash(canonicalP1Json(payload)),
+  });
+}
+
+/** Current supported tuple; activation is explicit in the trusted bridge. */
+export function supportedRuntimeIdentity(
+  binding: MediaRuntimeBinding,
+): SupportedValidationIdentity {
+  const payload = {
+    schemaVersion: SUPPORTED_IDENTITY_VERSION,
+    validatorVersion: SUPPORTED_VALIDATOR_VERSION,
+    policyId: SUPPORTED_POLICY_ID,
+    validatorBundleSha256: binding.runtimeBundleHash,
+    compatibilityPolicyHash: SUPPORTED_COMPATIBILITY_HASH,
+    effectiveLimitsHash: LIMITS_HASH,
+    persistencePolicyVersion: "quizpack-persistence-policy.v1" as const,
+    persistencePolicyHash: PERSISTENCE_UNICODE_POLICY_HASH,
+    reportSchemaVersion: SUPPORTED_REPORT_VERSION,
+    reportSchemaHash: SUPPORTED_REPORT_SCHEMA_HASH,
+    runtime: binding,
+  };
+  return supportedValidationIdentitySchema.parse({
     ...payload,
     identitySha256: hash(canonicalP1Json(payload)),
   });

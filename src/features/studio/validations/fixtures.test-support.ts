@@ -16,6 +16,7 @@ export const dto: ValidationDto = {
   validationKey: tuple.expectedValidationKey,
   stateRevision: 2,
   status: "validating",
+  readOnly: false,
   storageCondition: "unknown",
   lastErrorCode: null,
   attemptCount: 1,

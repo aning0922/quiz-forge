@@ -7,7 +7,7 @@ import {
   type MediaOperationContext,
   type LaunchFailureCode,
 } from "../media";
-import type { QuizPackValidationReport } from "../../v1/api";
+import type { PackageValidationReport } from "../../package/api";
 import type { CandidateInterruptionCode, MediaFact } from "./contracts";
 export type ValidationCompletion = Readonly<{
   mediaStopped: "not-started" | "confirmed" | "unknown";
@@ -16,7 +16,7 @@ export type ValidationCompletion = Readonly<{
 }>;
 const CLEANUP_OBSERVATION_MS = 10;
 export class ValidationInterrupted extends Error {
-  report: QuizPackValidationReport | null = null;
+  report: PackageValidationReport | null = null;
   constructor(
     readonly code: CandidateInterruptionCode,
     readonly p1Code = "VALIDATION_FAILED",

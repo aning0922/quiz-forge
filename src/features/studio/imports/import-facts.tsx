@@ -105,8 +105,7 @@ export function ImportFacts({ value }: { value: ImportDto }) {
         </p>
       )}
       <p className={styles.note}>
-        此状态不证明 ZIP、内容
-        Schema、包内工作区、合成数据、图片或商用授权已验证。验证与归档请查看独立记录；本批没有生成草稿。
+        原包接收与技术验证、资源归档、草稿应用分别记录。内容与素材的商用授权另行人工审核。
       </p>
     </div>
   );
