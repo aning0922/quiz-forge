@@ -1,6 +1,10 @@
 # 架构
 
-2026-10-12：F1 与 P1 已在堆叠分支完成技术验收，主线仍是下文的 D1-C 基线。P1 新增 src/features/quizpack/v1 的本地内容/资源合同、受限容器、真实图片验证、确定性构建与 CLI；不会授予数据库导入或发布权威。实际范围和证据见 [P1 验收](P1_ACCEPTANCE.md)。接续 P2-A/B/C 的数据库、认证、目录与工作区安排见 [P2 预案](P2_DESIGN_PREFLIGHT.md)，P2-A已在堆叠分支实现隔离数据库、迁移、运营认证与最小Studio，技术验收见[P2-A验收](P2A_ACCEPTANCE.md)。Product目录、草稿/资源导入和送审仍在P2-B/C；main未合并这些能力。
+2026-10-12：F1、P1和P2-A已在堆叠分支完成技术验收，main仍为下文D1-C基线。P1提供本地内容/资源合同、受限ZIP、真实图片验证、构建与CLI；P2-A提供隔离数据库、迁移、运营认证。P2-B1现已接入Product目录、单一主类目、8标签、CAS、归档恢复及真实HTTP/Studio，技术验收已完成，见[B1合同](STUDIO_P2B1.md)、[验收](P2B1_ACCEPTANCE.md)。所有新增能力仍在Draft PR #6–#9，没有自动进入main或生产环境。
+
+B1的app路由只组合页面或调用HTTP适配层；features/studio负责可交互表单和受控DTO，features/product/workspace负责目录规则/应用服务/数据库访问，lib/auth的同事务鉴权在开始和提交前重验当前身份。错误提交不自动重发，界面保留冲突输入，目录自动刷新不能丢失未保存状态。运营metadata_revision独立于尚未实现的content revision。
+
+下一步仍按[接收提案](STUDIO_P2B2_RECEIVE_PROPOSAL.md)分批做隔离原包→P1复验/资源归档→首稿，再编辑/结构预览/送审。评分预案和[P3表现预案](PRESENTATION_P3_PREFLIGHT.md)均未实现；拟保留content.v1并以有限content.v2表达分厅、题签、场景和海报，不开放包内代码或任意props。
 
 ## D1-C 与 F1 历史基线
 

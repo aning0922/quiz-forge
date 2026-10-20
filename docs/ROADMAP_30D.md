@@ -51,4 +51,6 @@ F1 的三结果 synthetic 参考包用于检验契约和工具接口：它不代
 
 ## 当前退出检查点
 
-F1、P1和P2-A技术门槛均已通过，Draft PR #6/#7/#8未合并。P2-A最新代码720b982：442单测、57真实DB、189 E2E/10既有跳过、独立审查及普通/数据库CI均通过，详见P2A_ACCEPTANCE.md。接续P2-B1目录工作区→B2隔离导入→B3编辑恢复→P2-C结构预览送审；STUDIO_P2B_PREFLIGHT和SCORING_P3_PREFLIGHT仍是后续预案，不是已实现能力。
+F1、P1和P2-A技术门槛均已通过，Draft PR #6/#7/#8未合并。P2-A证据见P2A_ACCEPTANCE.md。P2-B1真实目录已在Draft PR #9集成，最终528单测/154真实DB/46驱动故障/198生产E2E（10既有跳过）及独立审查已通过，代码CI38168728761成功；精确事实见P2B1_ACCEPTANCE.md。
+
+后续优先顺序进一步拆为：B2-1意图与受限原包接收（received仅为未验证字节）→B2-2服务端P1复验与Product资源归档→B2-3首个草稿及显式替换CAS→B3有限编辑/恢复→P2-C结构预览送审。合同提案见STUDIO_P2B2_RECEIVE_PROPOSAL.md。SCORING_P3_PREFLIGHT和PRESENTATION_P3_PREFLIGHT仅为评分/受控组件方向，尚无引擎或content.v2运行代码。

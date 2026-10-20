@@ -2,6 +2,8 @@
 
 ## 2026-10-12 托管推进
 
+P2-B1已完成技术验收：最终代码 `44a0d38c781feb9ea65156dab094a2c9f8907257`，528单测、154真实DB、46驱动故障场景、198生产E2E/10既有跳过，格式/lint/类型/构建及46份trace路径审计通过；独立Astra全部问题闭合、无剩余P1/P2。代码[CI38168728761](https://github.com/aning0922/quiz-forge/actions/runs/38168728761)的checks/database均实际success。[Draft PR #9](https://github.com/aning0922/quiz-forge/pull/9)仍未合并；四宽及异常/生命周期图检已完成，所有测试实例已停止。详见P2B1_ACCEPTANCE/P2B1_REVIEW/P2B1_VISUAL_CHECK。下一优先为B2隔离原包接收，再复验资源归档与首稿；P2-C/P3/P4/P5仍按授权依赖推进。旧暂停聊天未恢复。
+
 P2-A 已完成技术验收：集成代码 `720b982ae486dbe7349dfa7034367cf8a6c76875`，442单测、57真实PostgreSQL测试、189生产Chromium E2E通过/10既有跳过，格式/lint/类型/构建通过。独立Astra审查无剩余P1/P2，移动页面及真实停库状态已图检。[Draft PR #8](https://github.com/aning0922/quiz-forge/pull/8) 保持堆叠于P1，代码head的[CI38163271691](https://github.com/aning0922/quiz-forge/actions/runs/38163271691) 普通与数据库job均success。数据库/浏览器进程已停止，实例保留可恢复；详见P2A_ACCEPTANCE.md。接续P2-B1目录工作区，P2-B导入和P3评分分别已有预案，尚未实施。
 
 作者已于2026-10-12明确选择首款四卡内测草案：李白、苏轼、陶渊明、白居易。内容文档在独立codex/first-product-content分支e8ba810提交；十二题、四十八选项、四报告和待执行见证已备齐，数学结构经过独立复审，尚未执行P3引擎或取得内容/权重/视觉/素材商用与发布验收。

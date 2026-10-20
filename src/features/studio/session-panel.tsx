@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import type { StudioSessionDto } from "./contracts";
 import { StudioClientError, studioFetch, studioMessage } from "./client";
 import styles from "./studio.module.css";
@@ -49,6 +50,14 @@ export function StudioSessionPanel({ session }: { session: StudioSessionDto }) {
     <section className={styles.panel}>
       <h1>运营会话</h1>
       <p className={styles.intro}>当前身份来自本地数据库中的有效运营会话。</p>
+      <nav aria-label="Studio 导航" className={styles.navigation}>
+        <Link className={styles.link} href="/studio/products">
+          工作区
+        </Link>
+        <Link className={styles.link} href="/studio/taxonomy">
+          类目与标签
+        </Link>
+      </nav>
       <dl className={styles.facts}>
         <div>
           <dt>运营标识</dt>
@@ -93,7 +102,7 @@ export function StudioSessionPanel({ session }: { session: StudioSessionDto }) {
         </p>
       )}
       <p className={styles.note}>
-        本机运营内测环境。当前阶段提供登录与会话验证；测评工作区、导入与审核将在后续阶段提供。运营身份独立于消费者测评访问凭证。
+        本机运营内测环境。工作区提供运营元数据与可恢复归档，本阶段尚未接入草稿与导入。运营身份独立于消费者测评访问凭证。
       </p>
     </section>
   );
