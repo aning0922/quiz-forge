@@ -53,4 +53,4 @@ F1 的三结果 synthetic 参考包用于检验契约和工具接口：它不代
 
 F1、P1和P2-A技术门槛均已通过，Draft PR #6/#7/#8未合并。P2-A证据见P2A_ACCEPTANCE.md。P2-B1真实目录已在Draft PR #9集成，最终528单测/154真实DB/46驱动故障/198生产E2E（10既有跳过）及独立审查已通过，代码CI38168728761成功；精确事实见P2B1_ACCEPTANCE.md。
 
-后续优先顺序进一步拆为：B2-1意图与受限原包接收（received仅为未验证字节）→B2-2服务端P1复验与Product资源归档→B2-3首个草稿及显式替换CAS→B3有限编辑/恢复→P2-C结构预览送审。合同提案见STUDIO_P2B2_RECEIVE_PROPOSAL.md。SCORING_P3_PREFLIGHT和PRESENTATION_P3_PREFLIGHT仅为评分/受控组件方向，尚无引擎或content.v2运行代码。
+后续优先顺序进一步拆为：B2-1意图与受限原包接收（received仅为未验证字节）→B2-2服务端P1复验与Product资源归档→B2-3首个草稿及显式替换CAS→B3有限编辑/恢复→P2-C结构预览送审。B2-1实施合同见STUDIO_P2B2.md，背景提案见STUDIO_P2B2_RECEIVE_PROPOSAL.md；原包接收已完成代码技术验收。B2-2前先完成独立媒体隔离launcher可行性：macOS与真实Linux CI均需实际权限/停止证据，能力不足失败关闭；提案见QUIZPACK_MEDIA_ISOLATION_PREFLIGHT.md，尚未实施。SCORING_P3_PREFLIGHT和PRESENTATION_P3_PREFLIGHT仅为评分/受控组件方向，尚无引擎或content.v2运行代码。

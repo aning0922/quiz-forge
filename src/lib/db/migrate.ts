@@ -116,6 +116,10 @@ export async function migrateDatabase(
       await tx`GRANT SELECT,INSERT ON qf.product TO ${app}`;
       await tx`GRANT UPDATE(slug,title,primary_category_id,metadata_revision,updated_at,archived_at) ON qf.product TO ${app}`;
       await tx`GRANT SELECT,INSERT,DELETE ON qf.product_tag TO ${app}`;
+      await tx`REVOKE ALL(id,product_id,created_by,idempotency_key,request_fingerprint,expected_archive_sha256,expected_archive_bytes,target_kind,created_at,status,state_revision,updated_at,storage_condition,last_error_code,fence,lease_until,current_attempt_id,attempts,actual_archive_sha256,actual_archive_bytes,archive_storage_key,received_at,reserved_bytes,accounted_bytes) ON qf.quizpack_import FROM ${app}`;
+      await tx`GRANT SELECT,INSERT ON qf.quizpack_import TO ${app}`;
+      await tx`GRANT UPDATE(status,state_revision,updated_at,storage_condition,last_error_code,fence,lease_until,current_attempt_id,attempts,actual_archive_sha256,actual_archive_bytes,archive_storage_key,received_at,reserved_bytes,accounted_bytes) ON qf.quizpack_import TO ${app}`;
+      await tx`GRANT EXECUTE ON FUNCTION qf.import_attempts_valid(jsonb,integer,uuid,bigint) TO ${app}`;
       // Enums require USAGE, never CREATE; metadata remains inaccessible.
       for (const name of [
         "operator_role",

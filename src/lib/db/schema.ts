@@ -2,6 +2,9 @@ import "server-only";
 import { sql } from "drizzle-orm";
 import {
   char,
+  bigint,
+  jsonb,
+  text,
   check,
   index,
   integer,
@@ -44,6 +47,11 @@ export const auditAction = qf.enum("audit_action", [
   "tag_updated",
   "tag_archived",
   "tag_restored",
+  "import_intent_created",
+  "import_receive_started",
+  "import_receive_completed",
+  "import_receive_failed",
+  "import_receive_recovered",
 ]);
 export const auditOutcome = qf.enum("audit_outcome", ["success", "rejected"]);
 export const auditReason = qf.enum("audit_reason", [
@@ -213,3 +221,37 @@ export const productTags = qf.table(
 export type Product = typeof products.$inferSelect;
 export type Category = typeof categories.$inferSelect;
 export type Tag = typeof tags.$inferSelect;
+
+// Full state/attempt/immutable constraints are owned by the append-only SQL migrations.
+export const quizpackImports = qf.table("quizpack_import", {
+  id: uuid("id").primaryKey(),
+  productId: varchar("product_id", { length: 80 })
+    .notNull()
+    .references(() => products.id, { onDelete: "restrict" }),
+  createdBy: uuid("created_by")
+    .notNull()
+    .references(() => operators.id, { onDelete: "restrict" }),
+  idempotencyKey: uuid("idempotency_key").notNull(),
+  requestFingerprint: char("request_fingerprint", { length: 64 }).notNull(),
+  expectedArchiveSha256: char("expected_archive_sha256", {
+    length: 64,
+  }).notNull(),
+  expectedArchiveBytes: integer("expected_archive_bytes").notNull(),
+  targetKind: text("target_kind").notNull(),
+  createdAt: time("created_at").notNull(),
+  status: text("status").notNull(),
+  stateRevision: integer("state_revision").notNull(),
+  updatedAt: time("updated_at").notNull(),
+  storageCondition: text("storage_condition").notNull(),
+  lastErrorCode: text("last_error_code"),
+  fence: integer("fence").notNull(),
+  leaseUntil: time("lease_until"),
+  currentAttemptId: uuid("current_attempt_id"),
+  attempts: jsonb("attempts").notNull(),
+  actualArchiveSha256: char("actual_archive_sha256", { length: 64 }),
+  actualArchiveBytes: integer("actual_archive_bytes"),
+  archiveStorageKey: varchar("archive_storage_key", { length: 160 }),
+  receivedAt: time("received_at"),
+  reservedBytes: bigint("reserved_bytes", { mode: "number" }).notNull(),
+  accountedBytes: bigint("accounted_bytes", { mode: "number" }).notNull(),
+});

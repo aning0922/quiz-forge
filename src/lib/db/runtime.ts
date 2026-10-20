@@ -21,31 +21,38 @@ export function isLocalOrigin(value: string): boolean {
   );
 }
 const identifier = z.string().regex(/^qf_(app|owner|db)_[a-f0-9]{32}$/);
+const runtimeFields = {
+  profile: z.literal("local-http-p2a"),
+  purpose: z.enum(["test", "demo", "ci"]),
+  origin: z.string().refine(isLocalOrigin),
+  instanceId: z.string().regex(/^[a-f0-9]{32}$/),
+  database: z.strictObject({
+    host: z.literal("127.0.0.1"),
+    port: z
+      .number()
+      .int()
+      .min(1024)
+      .max(65535)
+      .refine((p) => p !== 5432),
+    name: identifier,
+    user: identifier,
+    password: z.string().regex(/^[A-Za-z0-9_-]{43}$/),
+  }),
+  server: z.strictObject({
+    version: z.literal(180004),
+    address: z.string().refine((s) => /^(?:\d{1,3}\.){3}\d{1,3}$/.test(s)),
+    port: z.number().int().min(1).max(65535),
+  }),
+};
 export const runtimeConfigSchema = z
-  .strictObject({
-    version: z.literal(1),
-    profile: z.literal("local-http-p2a"),
-    purpose: z.enum(["test", "demo", "ci"]),
-    origin: z.string().refine(isLocalOrigin),
-    instanceId: z.string().regex(/^[a-f0-9]{32}$/),
-    database: z.strictObject({
-      host: z.literal("127.0.0.1"),
-      port: z
-        .number()
-        .int()
-        .min(1024)
-        .max(65535)
-        .refine((p) => p !== 5432),
-      name: identifier,
-      user: identifier,
-      password: z.string().regex(/^[A-Za-z0-9_-]{43}$/),
+  .discriminatedUnion("version", [
+    z.strictObject({ version: z.literal(1), ...runtimeFields }),
+    z.strictObject({
+      version: z.literal(2),
+      ...runtimeFields,
+      imports: z.strictObject({ enabled: z.boolean() }),
     }),
-    server: z.strictObject({
-      version: z.literal(180004),
-      address: z.string().refine((s) => /^(?:\d{1,3}\.){3}\d{1,3}$/.test(s)),
-      port: z.number().int().min(1).max(65535),
-    }),
-  })
+  ])
   .superRefine((c, ctx) => {
     if (
       c.database.name !== `qf_db_${c.instanceId}` ||
@@ -58,7 +65,27 @@ export const runtimeConfigSchema = z
     )
       ctx.addIssue({ code: "custom", message: "Invalid local server" });
   });
-export type P2aRuntimeConfig = z.infer<typeof runtimeConfigSchema>;
+export type P2aRuntimeFile = z.infer<typeof runtimeConfigSchema>;
+export type P2aRuntimeConfig = P2aRuntimeFile & {
+  imports: { enabled: boolean };
+};
+export function normalizeRuntimeConfig(input: unknown): P2aRuntimeConfig {
+  const file = runtimeConfigSchema.parse(input);
+  return {
+    ...file,
+    imports: file.version === 1 ? { enabled: false } : file.imports,
+  };
+}
+/** Internal normalized v1 never leaks its added field into a version 1 file. */
+export function runtimeConfigFile(config: P2aRuntimeConfig): P2aRuntimeFile {
+  if (config.version === 1) {
+    if (config.imports.enabled !== false) throw new StudioUnavailableError();
+    const { imports: _imports, ...file } = config;
+    void _imports;
+    return runtimeConfigSchema.parse(file);
+  }
+  return runtimeConfigSchema.parse(config);
+}
 
 // Every ancestor below this worktree's private instance root must be a real 0700 directory.
 export async function readPrivateJson(
@@ -66,7 +93,7 @@ export async function readPrivateJson(
   root = process.cwd(),
 ): Promise<unknown> {
   if (!path.isAbsolute(file)) throw new StudioUnavailableError();
-  const base = path.join(root, ".cache", "p2a");
+  const base = path.join(/* turbopackIgnore: true */ root, ".cache", "p2a");
   const relative = path.relative(base, file);
   if (
     relative.startsWith("..") ||
@@ -124,7 +151,7 @@ export async function loadRuntimeConfig(): Promise<P2aRuntimeConfig> {
   try {
     const file = process.env.QUIZFORGE_P2A_CONFIG;
     if (!file) throw new StudioUnavailableError();
-    const config = runtimeConfigSchema.parse(await readPrivateJson(file));
+    const config = normalizeRuntimeConfig(await readPrivateJson(file));
     if (
       path.basename(path.dirname(file)) !== config.instanceId ||
       path.basename(file) !== "runtime.json"
