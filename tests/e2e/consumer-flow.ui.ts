@@ -244,6 +244,12 @@ export async function observeConsumerGrant(page: Page, sessionId: string) {
     throw unavailable();
   }
 }
+/** Frame a full-page image at document origin without changing focus or CSS. */
+export async function positionConsumerCaptureAtTop(page: Page) {
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+}
+
 export async function captureConsumerWidths(
   page: Page,
   info: TestInfo,
@@ -271,6 +277,9 @@ export async function captureConsumerWidths(
       }),
       { minimumTargetWidth: 44 },
     );
+    // A scrolled Chromium full-page capture can paint an offscreen fixed
+    // skip-link at its document offset. Preserve that accessibility control.
+    await positionConsumerCaptureAtTop(page);
     await page.screenshot({
       path: info.outputPath(`p4-${state}-${width}.png`),
       fullPage: true,
