@@ -1,0 +1,634 @@
+{
+  "schemaVersion": "quizforge.p5.main-archive.v1",
+  "date": "2026-10-20",
+  "timezone": "Asia/Taipei",
+  "versionTag": "p5-internal-beta-1",
+  "statusAtDocumentPreparation": "stage-code-merged; final-documentation-main-ci-and-tag-recorded-separately",
+  "authorization": {
+    "instruction": "好的，开始第 1、2 步吧",
+    "authorFlowFeedback": "整个流程目前没什么问题",
+    "scope": [
+      "merge accepted F1-P5 to main",
+      "verify final main",
+      "archive internal-beta version and tag"
+    ],
+    "productionMigration": false,
+    "externalDeployment": false,
+    "commercialPublication": false,
+    "p6Plus": false
+  },
+  "initialMain": "b3e30bc2e77c4da2a2cce950d0353123d19bf592",
+  "acceptedDevelopmentHead": "5686ff0fb9040456ec1b5782004cd0ba3fff1069",
+  "acceptedDevelopmentTree": "ace4c0eb867e79a44209f87fe8fec925e079aaf1",
+  "stageCodeMerge": {
+    "complete": true,
+    "mainCommit": "56c28380f1d9ddde6dc5d06097c4156098a7c7fe",
+    "tree": "ace4c0eb867e79a44209f87fe8fec925e079aaf1",
+    "sameTreeAsAcceptedDevelopmentHead": true,
+    "method": "merge-commit",
+    "prs": [
+      {
+        "pr": 6,
+        "head": "efe29e63839597dde557b791d03885e675c660ba",
+        "previousMain": "b3e30bc2e77c4da2a2cce950d0353123d19bf592",
+        "mergeCommit": "27cc68e4a62164b403d5ac5aa60662d34e6cbb21",
+        "tree": "48f0241c621303daa307adcdb4d8e4984225eb34",
+        "parentsVerified": true,
+        "treeMatchesActualSuccessfulCi": true,
+        "successfulOriginalRuns": [38153151107],
+        "retargetOrIntermediateNewRunsNotClaimedPassed": true
+      },
+      {
+        "pr": 7,
+        "head": "e63df6439fc48f61f2011ddb3516b9b88d67988f",
+        "previousMain": "27cc68e4a62164b403d5ac5aa60662d34e6cbb21",
+        "mergeCommit": "dde6cf9e965e5b13a359ffc74e202166082b201f",
+        "tree": "ed3b440ea640891953029bc3a92696a3c4844409",
+        "parentsVerified": true,
+        "treeMatchesActualSuccessfulCi": true,
+        "successfulOriginalRuns": [38159199724],
+        "retargetOrIntermediateNewRunsNotClaimedPassed": true
+      },
+      {
+        "pr": 8,
+        "head": "38177fb54a205ae05509c7f2ed23a9770a6095e7",
+        "previousMain": "dde6cf9e965e5b13a359ffc74e202166082b201f",
+        "mergeCommit": "512663e97a8883b7e56d31448b8f967a3a4c3ad4",
+        "tree": "a6238753eccfdced98ba7bb1cb4651fc84e3a7b9",
+        "parentsVerified": true,
+        "treeMatchesActualSuccessfulCi": true,
+        "successfulOriginalRuns": [38163814070],
+        "retargetOrIntermediateNewRunsNotClaimedPassed": true
+      },
+      {
+        "pr": 9,
+        "head": "e8da98b27ed1469a5e15f927cfdbf51445d553fe",
+        "previousMain": "512663e97a8883b7e56d31448b8f967a3a4c3ad4",
+        "mergeCommit": "3aca6c3a602e8a2918b59addc2a233d4396089be",
+        "tree": "5d54da47ccc06d422e5e847bd98134fc3cb0ef55",
+        "parentsVerified": true,
+        "treeMatchesActualSuccessfulCi": true,
+        "successfulOriginalRuns": [38169117712],
+        "retargetOrIntermediateNewRunsNotClaimedPassed": true
+      },
+      {
+        "pr": 10,
+        "head": "5caef260e0f17e3db02df911e3a4f1014012e081",
+        "previousMain": "3aca6c3a602e8a2918b59addc2a233d4396089be",
+        "mergeCommit": "713b6556462878f562c630c1b2d97e3557e6295f",
+        "tree": "58ca6be99ca8807559674ae4dd07f60fbf1df9e3",
+        "parentsVerified": true,
+        "treeMatchesActualSuccessfulCi": true,
+        "successfulOriginalRuns": [38175221128],
+        "retargetOrIntermediateNewRunsNotClaimedPassed": true
+      },
+      {
+        "pr": 11,
+        "head": "1f6f3880f1d5c920835f5cf235c2a93b28588c29",
+        "previousMain": "713b6556462878f562c630c1b2d97e3557e6295f",
+        "mergeCommit": "eda8aa074c1bcce1db076b7bac2f283b5245c5bd",
+        "tree": "a73e06d09bd4784818a21d62444588f7d78c71c9",
+        "parentsVerified": true,
+        "treeMatchesActualSuccessfulCi": true,
+        "successfulOriginalRuns": [38183785046, 38183785073],
+        "retargetOrIntermediateNewRunsNotClaimedPassed": true
+      },
+      {
+        "pr": 12,
+        "head": "844054c89b5587ed6cd41dd52c9c8fffd289f9e4",
+        "previousMain": "eda8aa074c1bcce1db076b7bac2f283b5245c5bd",
+        "mergeCommit": "84f41532c41933a2527beab676a9c62d961d3211",
+        "tree": "873321fbb212c7a62f0166b098a0503a6110c304",
+        "parentsVerified": true,
+        "treeMatchesActualSuccessfulCi": true,
+        "successfulOriginalRuns": [38195851289, 38195851290],
+        "retargetOrIntermediateNewRunsNotClaimedPassed": true
+      },
+      {
+        "pr": 13,
+        "head": "7fc0c55045672a7f5a08f329e172f2a92a49c033",
+        "previousMain": "84f41532c41933a2527beab676a9c62d961d3211",
+        "mergeCommit": "6212bcb273cf20f1bcf5d789a7939e4b1b6f4bc4",
+        "tree": "8dfc49907211a06f3adad4d973b877cf19713dde",
+        "parentsVerified": true,
+        "treeMatchesActualSuccessfulCi": true,
+        "successfulOriginalRuns": [38722021562, 38722021565],
+        "retargetOrIntermediateNewRunsNotClaimedPassed": true
+      },
+      {
+        "pr": 14,
+        "head": "802585bff3d4c13a82783f23a4a0d5105a26addf",
+        "previousMain": "6212bcb273cf20f1bcf5d789a7939e4b1b6f4bc4",
+        "mergeCommit": "56a4dda8c8ac710b4254fd0ce0f969393901df98",
+        "tree": "a433d4e9431a0aeef55cf38645515aa12f680cec",
+        "parentsVerified": true,
+        "treeMatchesActualSuccessfulCi": true,
+        "successfulOriginalRuns": [38746840257, 38746840789],
+        "retargetOrIntermediateNewRunsNotClaimedPassed": true
+      },
+      {
+        "pr": 15,
+        "head": "0059175dfeccff96d84570990e3f89a25b7999ec",
+        "previousMain": "56a4dda8c8ac710b4254fd0ce0f969393901df98",
+        "mergeCommit": "662841f364ded9f6161354ee9147949b9723fd95",
+        "tree": "3d7bc0fbe6022ed9b6f6305e943c13466df3d178",
+        "parentsVerified": true,
+        "treeMatchesActualSuccessfulCi": true,
+        "successfulOriginalRuns": [38774143564, 38774143579],
+        "retargetOrIntermediateNewRunsNotClaimedPassed": true
+      },
+      {
+        "pr": 16,
+        "head": "59a83e01f2a99a834a7349ced713ba5fed55b93c",
+        "previousMain": "662841f364ded9f6161354ee9147949b9723fd95",
+        "mergeCommit": "4c9ebe8a3dc3d8fa722a76a5baa4fabf0f779e56",
+        "tree": "2ab1fc521defcaf9ef9a84f526f5e1f23ef51fc0",
+        "parentsVerified": true,
+        "treeMatchesActualSuccessfulCi": true,
+        "successfulOriginalRuns": [38789883025, 38789883159],
+        "retargetOrIntermediateNewRunsNotClaimedPassed": true
+      },
+      {
+        "pr": 17,
+        "head": "922937fbfd4672e6b15038a99f8b4316aed9cd2c",
+        "previousMain": "4c9ebe8a3dc3d8fa722a76a5baa4fabf0f779e56",
+        "mergeCommit": "d77df1f8f7db6c42423f00a79fc7bd3b857c61d7",
+        "tree": "b3bb1c58c59d91fb8b9f1226295e89eedfe6d796",
+        "parentsVerified": true,
+        "treeMatchesActualSuccessfulCi": true,
+        "successfulOriginalRuns": [38807708419, 38807708590],
+        "retargetOrIntermediateNewRunsNotClaimedPassed": true
+      },
+      {
+        "pr": 18,
+        "head": "a66c456edc083642e2de06f669ddb8627a10c00e",
+        "previousMain": "d77df1f8f7db6c42423f00a79fc7bd3b857c61d7",
+        "mergeCommit": "f10afd85d618c370d4e300af31c77a2e21b4ee58",
+        "tree": "aa993f09a053a74994891a905bb7f54c75f34825",
+        "parentsVerified": true,
+        "treeMatchesActualSuccessfulCi": true,
+        "successfulOriginalRuns": [39111813296],
+        "retargetOrIntermediateNewRunsNotClaimedPassed": true
+      },
+      {
+        "pr": 19,
+        "head": "c83788b5ec56eb481f62119479af54bfd1f805b7",
+        "previousMain": "f10afd85d618c370d4e300af31c77a2e21b4ee58",
+        "mergeCommit": "76f5f27e32a73535583d83cc503f7033d9252db9",
+        "tree": "9f5d5401c08beb88166a6b690e9b163239aeeeca",
+        "parentsVerified": true,
+        "treeMatchesActualSuccessfulCi": true,
+        "successfulOriginalRuns": [39129908331, 39129908337],
+        "retargetOrIntermediateNewRunsNotClaimedPassed": true
+      },
+      {
+        "pr": 20,
+        "head": "5686ff0fb9040456ec1b5782004cd0ba3fff1069",
+        "previousMain": "76f5f27e32a73535583d83cc503f7033d9252db9",
+        "mergeCommit": "56c28380f1d9ddde6dc5d06097c4156098a7c7fe",
+        "tree": "ace4c0eb867e79a44209f87fe8fec925e079aaf1",
+        "parentsVerified": true,
+        "treeMatchesActualSuccessfulCi": true,
+        "successfulOriginalRuns": [39435198331],
+        "retargetOrIntermediateNewRunsNotClaimedPassed": true
+      }
+    ],
+    "stageBranchesPreserved": true,
+    "baseLockSemantics": "API locks head only; base re-read before merge and both parents/tree/main re-read after. Not atomic base CAS.",
+    "unknownWriteAutomaticallyRetried": false,
+    "forcedPush": false
+  },
+  "originalCiTreeEvidence": {
+    "prs": 15,
+    "runs": 23,
+    "allPassed": true,
+    "manifestSha256": "482590199bbb1bc9d1f5aa7aec8b15a7c99a8f88fdff46e3072eb0fbea4ae93d",
+    "results": [
+      {
+        "pr": 6,
+        "run": 38153151107,
+        "head": "efe29e63839597dde557b791d03885e675c660ba",
+        "conclusion": "success",
+        "event": "pull_request",
+        "actualCheckout": "afd14da6cc7da3847787062c98b730dff06c6ba2",
+        "actualCheckoutTree": "48f0241c621303daa307adcdb4d8e4984225eb34",
+        "checkoutParents": [
+          "b3e30bc2e77c4da2a2cce950d0353123d19bf592",
+          "efe29e63839597dde557b791d03885e675c660ba"
+        ],
+        "headTree": "48f0241c621303daa307adcdb4d8e4984225eb34",
+        "actualCiTreeEqualsHeadTree": true,
+        "logSha256": "b97e298f6f1e63c9321e6171f1fac8fad8523d0e08bba267a466df3139001d2a",
+        "url": "https://github.com/aning0922/quiz-forge/actions/runs/38153151107"
+      },
+      {
+        "pr": 7,
+        "run": 38159199724,
+        "head": "e63df6439fc48f61f2011ddb3516b9b88d67988f",
+        "conclusion": "success",
+        "event": "pull_request",
+        "actualCheckout": "a8737898acdd8cadb3d8b482a63e822b557a064b",
+        "actualCheckoutTree": "ed3b440ea640891953029bc3a92696a3c4844409",
+        "checkoutParents": [
+          "efe29e63839597dde557b791d03885e675c660ba",
+          "e63df6439fc48f61f2011ddb3516b9b88d67988f"
+        ],
+        "headTree": "ed3b440ea640891953029bc3a92696a3c4844409",
+        "actualCiTreeEqualsHeadTree": true,
+        "logSha256": "4244489746538792acbfb675d61a3142f949fda8ef2e23175dbb8a7d31bdf599",
+        "url": "https://github.com/aning0922/quiz-forge/actions/runs/38159199724"
+      },
+      {
+        "pr": 8,
+        "run": 38163814070,
+        "head": "38177fb54a205ae05509c7f2ed23a9770a6095e7",
+        "conclusion": "success",
+        "event": "pull_request",
+        "actualCheckout": "c7db8633ce62dedb787f7d7dbfdaa4aa52e96043",
+        "actualCheckoutTree": "a6238753eccfdced98ba7bb1cb4651fc84e3a7b9",
+        "checkoutParents": [
+          "e63df6439fc48f61f2011ddb3516b9b88d67988f",
+          "38177fb54a205ae05509c7f2ed23a9770a6095e7"
+        ],
+        "headTree": "a6238753eccfdced98ba7bb1cb4651fc84e3a7b9",
+        "actualCiTreeEqualsHeadTree": true,
+        "logSha256": "0921563411ca89ed47104786ee75762e43ab09f8abe5fe25433528333f7fda24",
+        "url": "https://github.com/aning0922/quiz-forge/actions/runs/38163814070"
+      },
+      {
+        "pr": 9,
+        "run": 38169117712,
+        "head": "e8da98b27ed1469a5e15f927cfdbf51445d553fe",
+        "conclusion": "success",
+        "event": "pull_request",
+        "actualCheckout": "f7a0eca9c2bba1d76cad0cd77a0305c5e0b17dbc",
+        "actualCheckoutTree": "5d54da47ccc06d422e5e847bd98134fc3cb0ef55",
+        "checkoutParents": [
+          "38177fb54a205ae05509c7f2ed23a9770a6095e7",
+          "e8da98b27ed1469a5e15f927cfdbf51445d553fe"
+        ],
+        "headTree": "5d54da47ccc06d422e5e847bd98134fc3cb0ef55",
+        "actualCiTreeEqualsHeadTree": true,
+        "logSha256": "6beaea7e792649a84db96ec43c90a5d1d7ba2b8be5e7d09fcfbe2678298fa113",
+        "url": "https://github.com/aning0922/quiz-forge/actions/runs/38169117712"
+      },
+      {
+        "pr": 10,
+        "run": 38175221128,
+        "head": "5caef260e0f17e3db02df911e3a4f1014012e081",
+        "conclusion": "success",
+        "event": "pull_request",
+        "actualCheckout": "81f00d0bd23631637d52776a2a035b10ddb7fbc1",
+        "actualCheckoutTree": "58ca6be99ca8807559674ae4dd07f60fbf1df9e3",
+        "checkoutParents": [
+          "e8da98b27ed1469a5e15f927cfdbf51445d553fe",
+          "5caef260e0f17e3db02df911e3a4f1014012e081"
+        ],
+        "headTree": "58ca6be99ca8807559674ae4dd07f60fbf1df9e3",
+        "actualCiTreeEqualsHeadTree": true,
+        "logSha256": "d54741fe4e611422ef08d7696f479943aec382595c3d8bca344daa9f81bb5723",
+        "url": "https://github.com/aning0922/quiz-forge/actions/runs/38175221128"
+      },
+      {
+        "pr": 11,
+        "run": 38183785046,
+        "head": "1f6f3880f1d5c920835f5cf235c2a93b28588c29",
+        "conclusion": "success",
+        "event": "pull_request",
+        "actualCheckout": "ba238e4d0ea0a40d7eeb2c79ece1b2288bab6dd7",
+        "actualCheckoutTree": "a73e06d09bd4784818a21d62444588f7d78c71c9",
+        "checkoutParents": [
+          "5caef260e0f17e3db02df911e3a4f1014012e081",
+          "1f6f3880f1d5c920835f5cf235c2a93b28588c29"
+        ],
+        "headTree": "a73e06d09bd4784818a21d62444588f7d78c71c9",
+        "actualCiTreeEqualsHeadTree": true,
+        "logSha256": "53fdf5f9a09c4f4d4c9ba91216b0bef2e690703157e64255088c218b76c4d1b2",
+        "url": "https://github.com/aning0922/quiz-forge/actions/runs/38183785046"
+      },
+      {
+        "pr": 11,
+        "run": 38183785073,
+        "head": "1f6f3880f1d5c920835f5cf235c2a93b28588c29",
+        "conclusion": "success",
+        "event": "pull_request",
+        "actualCheckout": "ba238e4d0ea0a40d7eeb2c79ece1b2288bab6dd7",
+        "actualCheckoutTree": "a73e06d09bd4784818a21d62444588f7d78c71c9",
+        "checkoutParents": [
+          "5caef260e0f17e3db02df911e3a4f1014012e081",
+          "1f6f3880f1d5c920835f5cf235c2a93b28588c29"
+        ],
+        "headTree": "a73e06d09bd4784818a21d62444588f7d78c71c9",
+        "actualCiTreeEqualsHeadTree": true,
+        "logSha256": "3c1b711af2f36ff4ad3bfac840cb6265ba7383d44d296d6773394ae78311f4f0",
+        "url": "https://github.com/aning0922/quiz-forge/actions/runs/38183785073"
+      },
+      {
+        "pr": 12,
+        "run": 38195851289,
+        "head": "844054c89b5587ed6cd41dd52c9c8fffd289f9e4",
+        "conclusion": "success",
+        "event": "pull_request",
+        "actualCheckout": "0ecb7d96b82d719467a5923086c9f35a424f6eaf",
+        "actualCheckoutTree": "873321fbb212c7a62f0166b098a0503a6110c304",
+        "checkoutParents": [
+          "1f6f3880f1d5c920835f5cf235c2a93b28588c29",
+          "844054c89b5587ed6cd41dd52c9c8fffd289f9e4"
+        ],
+        "headTree": "873321fbb212c7a62f0166b098a0503a6110c304",
+        "actualCiTreeEqualsHeadTree": true,
+        "logSha256": "730c7d466abc36d312cdaa13f4204a35df753d3e95d19ebd0462e96608a245c7",
+        "url": "https://github.com/aning0922/quiz-forge/actions/runs/38195851289"
+      },
+      {
+        "pr": 12,
+        "run": 38195851290,
+        "head": "844054c89b5587ed6cd41dd52c9c8fffd289f9e4",
+        "conclusion": "success",
+        "event": "pull_request",
+        "actualCheckout": "0ecb7d96b82d719467a5923086c9f35a424f6eaf",
+        "actualCheckoutTree": "873321fbb212c7a62f0166b098a0503a6110c304",
+        "checkoutParents": [
+          "1f6f3880f1d5c920835f5cf235c2a93b28588c29",
+          "844054c89b5587ed6cd41dd52c9c8fffd289f9e4"
+        ],
+        "headTree": "873321fbb212c7a62f0166b098a0503a6110c304",
+        "actualCiTreeEqualsHeadTree": true,
+        "logSha256": "f21c64e14a0b91477299b6ca487223240fe2f0cd01996de3ea7ab33d11fb9a54",
+        "url": "https://github.com/aning0922/quiz-forge/actions/runs/38195851290"
+      },
+      {
+        "pr": 13,
+        "run": 38722021562,
+        "head": "7fc0c55045672a7f5a08f329e172f2a92a49c033",
+        "conclusion": "success",
+        "event": "pull_request",
+        "actualCheckout": "d3d4754b4e89223a87dea43567c491779575fcbe",
+        "actualCheckoutTree": "8dfc49907211a06f3adad4d973b877cf19713dde",
+        "checkoutParents": [
+          "844054c89b5587ed6cd41dd52c9c8fffd289f9e4",
+          "7fc0c55045672a7f5a08f329e172f2a92a49c033"
+        ],
+        "headTree": "8dfc49907211a06f3adad4d973b877cf19713dde",
+        "actualCiTreeEqualsHeadTree": true,
+        "logSha256": "15657342e9587f5419150a266da8289f52181392a2e82eb40804ba4c51174336",
+        "url": "https://github.com/aning0922/quiz-forge/actions/runs/38722021562"
+      },
+      {
+        "pr": 13,
+        "run": 38722021565,
+        "head": "7fc0c55045672a7f5a08f329e172f2a92a49c033",
+        "conclusion": "success",
+        "event": "pull_request",
+        "actualCheckout": "d3d4754b4e89223a87dea43567c491779575fcbe",
+        "actualCheckoutTree": "8dfc49907211a06f3adad4d973b877cf19713dde",
+        "checkoutParents": [
+          "844054c89b5587ed6cd41dd52c9c8fffd289f9e4",
+          "7fc0c55045672a7f5a08f329e172f2a92a49c033"
+        ],
+        "headTree": "8dfc49907211a06f3adad4d973b877cf19713dde",
+        "actualCiTreeEqualsHeadTree": true,
+        "logSha256": "ca3bfb3915e09162b180cf1e681f36864fc292a9ad39b32966c1bf79d11b42a2",
+        "url": "https://github.com/aning0922/quiz-forge/actions/runs/38722021565"
+      },
+      {
+        "pr": 14,
+        "run": 38746840257,
+        "head": "802585bff3d4c13a82783f23a4a0d5105a26addf",
+        "conclusion": "success",
+        "event": "pull_request",
+        "actualCheckout": "f05c53bb7015033b2cf959c1095163437b4f70ee",
+        "actualCheckoutTree": "a433d4e9431a0aeef55cf38645515aa12f680cec",
+        "checkoutParents": [
+          "7fc0c55045672a7f5a08f329e172f2a92a49c033",
+          "802585bff3d4c13a82783f23a4a0d5105a26addf"
+        ],
+        "headTree": "a433d4e9431a0aeef55cf38645515aa12f680cec",
+        "actualCiTreeEqualsHeadTree": true,
+        "logSha256": "2bdc2c26473214bb544383ab18ec4edfa4eca8a9e25729eb29e6da536c66742a",
+        "url": "https://github.com/aning0922/quiz-forge/actions/runs/38746840257"
+      },
+      {
+        "pr": 14,
+        "run": 38746840789,
+        "head": "802585bff3d4c13a82783f23a4a0d5105a26addf",
+        "conclusion": "success",
+        "event": "pull_request",
+        "actualCheckout": "f05c53bb7015033b2cf959c1095163437b4f70ee",
+        "actualCheckoutTree": "a433d4e9431a0aeef55cf38645515aa12f680cec",
+        "checkoutParents": [
+          "7fc0c55045672a7f5a08f329e172f2a92a49c033",
+          "802585bff3d4c13a82783f23a4a0d5105a26addf"
+        ],
+        "headTree": "a433d4e9431a0aeef55cf38645515aa12f680cec",
+        "actualCiTreeEqualsHeadTree": true,
+        "logSha256": "14391748130ff4ec20ff98a81146febd6471c1171d19a173540b024e039de223",
+        "url": "https://github.com/aning0922/quiz-forge/actions/runs/38746840789"
+      },
+      {
+        "pr": 15,
+        "run": 38774143564,
+        "head": "0059175dfeccff96d84570990e3f89a25b7999ec",
+        "conclusion": "success",
+        "event": "pull_request",
+        "actualCheckout": "0921f6edea6cdaa84e57db028ebb5b7ea13a18ee",
+        "actualCheckoutTree": "3d7bc0fbe6022ed9b6f6305e943c13466df3d178",
+        "checkoutParents": [
+          "802585bff3d4c13a82783f23a4a0d5105a26addf",
+          "0059175dfeccff96d84570990e3f89a25b7999ec"
+        ],
+        "headTree": "3d7bc0fbe6022ed9b6f6305e943c13466df3d178",
+        "actualCiTreeEqualsHeadTree": true,
+        "logSha256": "6c3620598b75078c6aef5da38d160352c2ac414fa629ea3041ef51403ba18d8b",
+        "url": "https://github.com/aning0922/quiz-forge/actions/runs/38774143564"
+      },
+      {
+        "pr": 15,
+        "run": 38774143579,
+        "head": "0059175dfeccff96d84570990e3f89a25b7999ec",
+        "conclusion": "success",
+        "event": "pull_request",
+        "actualCheckout": "0921f6edea6cdaa84e57db028ebb5b7ea13a18ee",
+        "actualCheckoutTree": "3d7bc0fbe6022ed9b6f6305e943c13466df3d178",
+        "checkoutParents": [
+          "802585bff3d4c13a82783f23a4a0d5105a26addf",
+          "0059175dfeccff96d84570990e3f89a25b7999ec"
+        ],
+        "headTree": "3d7bc0fbe6022ed9b6f6305e943c13466df3d178",
+        "actualCiTreeEqualsHeadTree": true,
+        "logSha256": "0ef828f37ff1f706d967c1fa796dd2fb76c6bc2b89cdb8c7b34f6408c7816b65",
+        "url": "https://github.com/aning0922/quiz-forge/actions/runs/38774143579"
+      },
+      {
+        "pr": 16,
+        "run": 38789883025,
+        "head": "59a83e01f2a99a834a7349ced713ba5fed55b93c",
+        "conclusion": "success",
+        "event": "pull_request",
+        "actualCheckout": "36cb8a519fba1219ab929886c5cd5ea3c4a2e14e",
+        "actualCheckoutTree": "2ab1fc521defcaf9ef9a84f526f5e1f23ef51fc0",
+        "checkoutParents": [
+          "0059175dfeccff96d84570990e3f89a25b7999ec",
+          "59a83e01f2a99a834a7349ced713ba5fed55b93c"
+        ],
+        "headTree": "2ab1fc521defcaf9ef9a84f526f5e1f23ef51fc0",
+        "actualCiTreeEqualsHeadTree": true,
+        "logSha256": "fad000cc8bf111f249046d2d9636464782fccf3e86d87c20e9d915f1b0abf035",
+        "url": "https://github.com/aning0922/quiz-forge/actions/runs/38789883025"
+      },
+      {
+        "pr": 16,
+        "run": 38789883159,
+        "head": "59a83e01f2a99a834a7349ced713ba5fed55b93c",
+        "conclusion": "success",
+        "event": "pull_request",
+        "actualCheckout": "36cb8a519fba1219ab929886c5cd5ea3c4a2e14e",
+        "actualCheckoutTree": "2ab1fc521defcaf9ef9a84f526f5e1f23ef51fc0",
+        "checkoutParents": [
+          "0059175dfeccff96d84570990e3f89a25b7999ec",
+          "59a83e01f2a99a834a7349ced713ba5fed55b93c"
+        ],
+        "headTree": "2ab1fc521defcaf9ef9a84f526f5e1f23ef51fc0",
+        "actualCiTreeEqualsHeadTree": true,
+        "logSha256": "f3b7f26b724e068a91fbdab8bf54aa0ac808bdfed4d5ef6a3d12beafec91e0a6",
+        "url": "https://github.com/aning0922/quiz-forge/actions/runs/38789883159"
+      },
+      {
+        "pr": 17,
+        "run": 38807708419,
+        "head": "922937fbfd4672e6b15038a99f8b4316aed9cd2c",
+        "conclusion": "success",
+        "event": "pull_request",
+        "actualCheckout": "eb1ff9716c4b71a7a5074c71b0557f128e16aaad",
+        "actualCheckoutTree": "b3bb1c58c59d91fb8b9f1226295e89eedfe6d796",
+        "checkoutParents": [
+          "59a83e01f2a99a834a7349ced713ba5fed55b93c",
+          "922937fbfd4672e6b15038a99f8b4316aed9cd2c"
+        ],
+        "headTree": "b3bb1c58c59d91fb8b9f1226295e89eedfe6d796",
+        "actualCiTreeEqualsHeadTree": true,
+        "logSha256": "80423207fb9905220ca3d8dc7d3751734d644d83d9caeb15ade6dc6706d6e3a1",
+        "url": "https://github.com/aning0922/quiz-forge/actions/runs/38807708419"
+      },
+      {
+        "pr": 17,
+        "run": 38807708590,
+        "head": "922937fbfd4672e6b15038a99f8b4316aed9cd2c",
+        "conclusion": "success",
+        "event": "pull_request",
+        "actualCheckout": "eb1ff9716c4b71a7a5074c71b0557f128e16aaad",
+        "actualCheckoutTree": "b3bb1c58c59d91fb8b9f1226295e89eedfe6d796",
+        "checkoutParents": [
+          "59a83e01f2a99a834a7349ced713ba5fed55b93c",
+          "922937fbfd4672e6b15038a99f8b4316aed9cd2c"
+        ],
+        "headTree": "b3bb1c58c59d91fb8b9f1226295e89eedfe6d796",
+        "actualCiTreeEqualsHeadTree": true,
+        "logSha256": "34a63cc963dfc527b5e02e2c5789c003725ddcf2a0ff1e07f5d4584e21441fb6",
+        "url": "https://github.com/aning0922/quiz-forge/actions/runs/38807708590"
+      },
+      {
+        "pr": 18,
+        "run": 39111813296,
+        "head": "a66c456edc083642e2de06f669ddb8627a10c00e",
+        "conclusion": "success",
+        "event": "pull_request",
+        "actualCheckout": "7ecef419f669e187563e76e4bcec4e89a75d6938",
+        "actualCheckoutTree": "aa993f09a053a74994891a905bb7f54c75f34825",
+        "checkoutParents": [
+          "922937fbfd4672e6b15038a99f8b4316aed9cd2c",
+          "a66c456edc083642e2de06f669ddb8627a10c00e"
+        ],
+        "headTree": "aa993f09a053a74994891a905bb7f54c75f34825",
+        "actualCiTreeEqualsHeadTree": true,
+        "logSha256": "3cda070548ed600dc02f92fa3f3ae3baf8646f05426fd1167b71918e031f9a7a",
+        "url": "https://github.com/aning0922/quiz-forge/actions/runs/39111813296"
+      },
+      {
+        "pr": 19,
+        "run": 39129908331,
+        "head": "c83788b5ec56eb481f62119479af54bfd1f805b7",
+        "conclusion": "success",
+        "event": "pull_request",
+        "actualCheckout": "b7941e8cd3ee3e4ee1576f0ad8a0641f00f8050d",
+        "actualCheckoutTree": "9f5d5401c08beb88166a6b690e9b163239aeeeca",
+        "checkoutParents": [
+          "a66c456edc083642e2de06f669ddb8627a10c00e",
+          "c83788b5ec56eb481f62119479af54bfd1f805b7"
+        ],
+        "headTree": "9f5d5401c08beb88166a6b690e9b163239aeeeca",
+        "actualCiTreeEqualsHeadTree": true,
+        "logSha256": "dd775557cf2c386014b044f467deb61ea071ca952cfe956af6ff7fb35f9b5b0c",
+        "url": "https://github.com/aning0922/quiz-forge/actions/runs/39129908331"
+      },
+      {
+        "pr": 19,
+        "run": 39129908337,
+        "head": "c83788b5ec56eb481f62119479af54bfd1f805b7",
+        "conclusion": "success",
+        "event": "pull_request",
+        "actualCheckout": "b7941e8cd3ee3e4ee1576f0ad8a0641f00f8050d",
+        "actualCheckoutTree": "9f5d5401c08beb88166a6b690e9b163239aeeeca",
+        "checkoutParents": [
+          "a66c456edc083642e2de06f669ddb8627a10c00e",
+          "c83788b5ec56eb481f62119479af54bfd1f805b7"
+        ],
+        "headTree": "9f5d5401c08beb88166a6b690e9b163239aeeeca",
+        "actualCiTreeEqualsHeadTree": true,
+        "logSha256": "2022cb1c1ec08319b496badcff247045258428c5d7374bfaa7c5cf188e153c6c",
+        "url": "https://github.com/aning0922/quiz-forge/actions/runs/39129908337"
+      },
+      {
+        "pr": 20,
+        "run": 39435198331,
+        "head": "5686ff0fb9040456ec1b5782004cd0ba3fff1069",
+        "conclusion": "success",
+        "event": "pull_request",
+        "actualCheckout": "4358cb15f1fb0d295a99e5938b6f16f5e72a0995",
+        "actualCheckoutTree": "ace4c0eb867e79a44209f87fe8fec925e079aaf1",
+        "checkoutParents": [
+          "c83788b5ec56eb481f62119479af54bfd1f805b7",
+          "5686ff0fb9040456ec1b5782004cd0ba3fff1069"
+        ],
+        "headTree": "ace4c0eb867e79a44209f87fe8fec925e079aaf1",
+        "actualCiTreeEqualsHeadTree": true,
+        "logSha256": "b4ffe96eb6fe8baf9165d3257f60da23089dc955a8917d5ecd50594ef88d7a58",
+        "url": "https://github.com/aning0922/quiz-forge/actions/runs/39435198331"
+      }
+    ]
+  },
+  "archiveDocumentationPolicy": {
+    "allowedPaths": ["AGENTS.md", "docs/**"],
+    "allOtherPathsAndFileModesMustMatchAcceptedDevelopment": true,
+    "localFormatLintTypecheckRequired": true,
+    "independentDocumentReviewRequired": true
+  },
+  "finalTagGate": {
+    "tagMustReferenceFinalMainIncludingDocumentation": true,
+    "pushMainChecksAndDatabaseRequired": true,
+    "linuxMediaWorkflowDispatchRequired": true,
+    "bothRunHeadsMustEqualFinalMain": true,
+    "mainReReadBeforeTag": true,
+    "independentFinalEvidenceReviewRequired": true,
+    "actualFinalEvidenceLocation": "annotated p5-internal-beta-1 Git tag message and the archive PR body, with exact commit and Actions run URLs",
+    "intermediateOrPrRunsNotAssumedPassed": true
+  },
+  "inheritedUnchangedRuntimeEvidence": {
+    "productionE2ePassed": 259,
+    "existingE2eSkipped": 10,
+    "runtimeCommit": "144d0b1e7e72843b256e44b1d52ced20dfdaadad",
+    "testCommit": "898fbfcc1c1fdcfc8a028fe4a7bf9b0e11335e8f",
+    "macOsMediaCasesPerRound": 66,
+    "macOsMediaRounds": 3,
+    "rerunForDocumentationOnlyMerge": false
+  },
+  "authorEnvironmentPreservation": {
+    "originalManagedWorktreeKept": true,
+    "runningServiceNotRebuiltOrSwitched": true,
+    "databaseNotMigratedOrRestored": true,
+    "privateUserAnswersOrResultsNotRead": true,
+    "privateDataOrAssetsIncludedInTag": false,
+    "originalInstanceRestartNotEquivalentToBackupRestore": true,
+    "consistentBackupAndRestoreDrillDelivered": false
+  }
+}

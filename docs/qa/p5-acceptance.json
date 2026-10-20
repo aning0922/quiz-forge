@@ -1021,5 +1021,33 @@
     "remainingKnownP1P2": [],
     "authorBaselineRetained": true,
     "commercialApprovalNotInferred": true
+  },
+  "authorExperienceAcceptance": {
+    "date": "2026-10-20",
+    "timezone": "Asia/Taipei",
+    "feedback": "整个流程目前没什么问题",
+    "scope": "complete historical-product flow personally experienced by author",
+    "flowAccepted": true,
+    "newUserAnswersOrReportsReadForRecord": false,
+    "privateCredentialsIncluded": false,
+    "historicalWitnessCountsAreNotLiveUserCounts": true
+  },
+  "mainArchiveAuthorization": {
+    "date": "2026-10-20",
+    "instruction": "好的，开始第 1、2 步吧",
+    "scope": [
+      "merge accepted F1-P5 into main preserving history",
+      "verify final merged main commit",
+      "document version and recovery limits",
+      "create p5-internal-beta-1 tag after final verification and independent review"
+    ],
+    "priorMain": "b3e30bc2e77c4da2a2cce950d0353123d19bf592",
+    "acceptedHead": "5686ff0fb9040456ec1b5782004cd0ba3fff1069",
+    "publicationApproved": false,
+    "productionMigrationApproved": false,
+    "externalDeploymentApproved": false,
+    "githubReleasePublicationApproved": false,
+    "p6PlusApproved": false,
+    "actualCompletionEvidence": "GitHub merge receipts, final main CI, and annotated p5-internal-beta-1 tag; do not infer completion from this authorization"
   }
 }
