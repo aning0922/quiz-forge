@@ -1,0 +1,125 @@
+import "server-only";
+import { sql } from "drizzle-orm";
+import {
+  char,
+  check,
+  index,
+  pgSchema,
+  smallint,
+  timestamp,
+  uuid,
+  varchar,
+} from "drizzle-orm/pg-core";
+
+export const qf = pgSchema("qf");
+export const operatorRole = qf.enum("operator_role", ["operator", "read-only"]);
+export const operatorStatus = qf.enum("operator_status", [
+  "active",
+  "disabled",
+]);
+export const sessionKind = qf.enum("session_kind", [
+  "preauth",
+  "authenticated",
+]);
+export const auditAction = qf.enum("audit_action", [
+  "bootstrap",
+  "operator_disabled",
+  "preauth_created",
+  "login_succeeded",
+  "login_failed",
+  "logout",
+  "session_revoked",
+]);
+export const auditOutcome = qf.enum("audit_outcome", ["success", "rejected"]);
+export const auditReason = qf.enum("audit_reason", [
+  "AUTHENTICATION_FAILED",
+  "PREAUTH_EXPIRED",
+  "PREAUTH_REVOKED",
+  "RATE_LIMITED",
+  "SESSION_EXPIRED",
+  "SESSION_REVOKED",
+  "OPERATOR_DISABLED",
+  "MANUAL",
+]);
+const time = (name: string) =>
+  timestamp(name, { withTimezone: true, mode: "date" });
+
+export const operators = qf.table(
+  "operator",
+  {
+    id: uuid("id").primaryKey(),
+    label: varchar("label", { length: 64 }).notNull().unique(),
+    credentialDigest: char("credential_digest", { length: 64 })
+      .notNull()
+      .unique(),
+    role: operatorRole("role").notNull(),
+    status: operatorStatus("status").notNull(),
+    createdAt: time("created_at").notNull().defaultNow(),
+    disabledAt: time("disabled_at"),
+  },
+  (t) => [
+    check("operator_label", sql`${t.label} ~ '^[a-z0-9-]{1,64}$'`),
+    check("operator_digest", sql`${t.credentialDigest} ~ '^[0-9a-f]{64}$'`),
+    check(
+      "operator_status_time",
+      sql`(${t.status} = 'active' AND ${t.disabledAt} IS NULL) OR (${t.status} = 'disabled' AND ${t.disabledAt} IS NOT NULL AND ${t.disabledAt} >= ${t.createdAt})`,
+    ),
+  ],
+);
+
+export const operatorSessions = qf.table(
+  "operator_session",
+  {
+    id: uuid("id").primaryKey(),
+    tokenDigest: char("token_digest", { length: 64 }).notNull().unique(),
+    kind: sessionKind("kind").notNull(),
+    operatorId: uuid("operator_id").references(() => operators.id, {
+      onDelete: "restrict",
+    }),
+    createdAt: time("created_at").notNull(),
+    lastSeenAt: time("last_seen_at").notNull(),
+    idleExpiresAt: time("idle_expires_at").notNull(),
+    absoluteExpiresAt: time("absolute_expires_at").notNull(),
+    revokedAt: time("revoked_at"),
+    failedAttempts: smallint("failed_attempts").notNull().default(0),
+  },
+  (t) => [
+    index("session_operator_revoked").on(t.operatorId, t.revokedAt),
+    index("session_absolute").on(t.absoluteExpiresAt),
+    check("session_digest", sql`${t.tokenDigest} ~ '^[0-9a-f]{64}$'`),
+    check("session_attempts", sql`${t.failedAttempts} BETWEEN 0 AND 5`),
+    check(
+      "session_identity",
+      sql`(${t.kind} = 'preauth' AND ${t.operatorId} IS NULL) OR (${t.kind} = 'authenticated' AND ${t.operatorId} IS NOT NULL AND ${t.failedAttempts} = 0)`,
+    ),
+    check(
+      "session_times",
+      sql`${t.createdAt} <= ${t.lastSeenAt} AND ${t.lastSeenAt} < ${t.absoluteExpiresAt} AND ${t.createdAt} < ${t.idleExpiresAt} AND ${t.idleExpiresAt} <= ${t.absoluteExpiresAt} AND (${t.revokedAt} IS NULL OR ${t.revokedAt} >= ${t.createdAt})`,
+    ),
+    check(
+      "session_lifetime",
+      sql`(${t.kind} = 'preauth' AND ${t.absoluteExpiresAt} = ${t.createdAt} + interval '5 minutes' AND ${t.idleExpiresAt} = ${t.absoluteExpiresAt}) OR (${t.kind} = 'authenticated' AND ${t.absoluteExpiresAt} = ${t.createdAt} + interval '8 hours' AND ${t.idleExpiresAt} <= ${t.lastSeenAt} + interval '30 minutes')`,
+    ),
+  ],
+);
+
+export const auditEvents = qf.table(
+  "audit_event",
+  {
+    id: uuid("id").primaryKey(),
+    occurredAt: time("occurred_at").notNull().defaultNow(),
+    action: auditAction("action").notNull(),
+    outcome: auditOutcome("outcome").notNull(),
+    reasonCode: auditReason("reason_code"),
+    actorId: uuid("actor_id").references(() => operators.id, {
+      onDelete: "restrict",
+    }),
+    sessionId: uuid("session_id"),
+    requestId: uuid("request_id").notNull(),
+  },
+  (t) => [index("audit_action_time").on(t.action, t.occurredAt)],
+);
+
+export type Operator = typeof operators.$inferSelect;
+export type OperatorSession = typeof operatorSessions.$inferSelect;
+export type AuditEvent = typeof auditEvents.$inferSelect;

@@ -2,7 +2,11 @@
 
 ## 2026-10-12 托管推进
 
-P1 包工具已完成技术验收：代码提交 `3a1ad7a`，总控六项检查全部通过，385 单测、186 Chromium E2E/10 既有跳过；独立审查 200 项 P1 专项通过、五项发现全部闭合。代码 head 的 [CI 38158768248](https://github.com/aning0922/quiz-forge/actions/runs/38158768248) 已实际 success。[Draft PR #7](https://github.com/aning0922/quiz-forge/pull/7) 以 F1 分支为基线，依赖 #6，均未合并 main。详见 [P1 验收](P1_ACCEPTANCE.md)。下一步为已授权 P2-A 隔离数据库与运营认证；尚未启动数据库、创建表或上线后台。
+P2-A 已完成技术验收：集成代码 `720b982ae486dbe7349dfa7034367cf8a6c76875`，442单测、57真实PostgreSQL测试、189生产Chromium E2E通过/10既有跳过，格式/lint/类型/构建通过。独立Astra审查无剩余P1/P2，移动页面及真实停库状态已图检。[Draft PR #8](https://github.com/aning0922/quiz-forge/pull/8) 保持堆叠于P1，代码head的[CI38163271691](https://github.com/aning0922/quiz-forge/actions/runs/38163271691) 普通与数据库job均success。数据库/浏览器进程已停止，实例保留可恢复；详见P2A_ACCEPTANCE.md。接续P2-B1目录工作区，P2-B导入和P3评分分别已有预案，尚未实施。
+
+作者已于2026-10-12明确选择首款四卡内测草案：李白、苏轼、陶渊明、白居易。内容文档在独立codex/first-product-content分支e8ba810提交；十二题、四十八选项、四报告和待执行见证已备齐，数学结构经过独立复审，尚未执行P3引擎或取得内容/权重/视觉/素材商用与发布验收。
+
+P1 包工具已完成技术验收：代码提交 `3a1ad7a`，总控六项检查全部通过，385 单测、186 Chromium E2E/10 既有跳过；独立审查 200 项 P1 专项通过、五项发现全部闭合。代码 head 的 [CI 38158768248](https://github.com/aning0922/quiz-forge/actions/runs/38158768248) 已实际 success。[Draft PR #7](https://github.com/aning0922/quiz-forge/pull/7) 以 F1 分支为基线，依赖 #6，均未合并 main。详见 [P1 验收](P1_ACCEPTANCE.md)。这是P1交付检查点，P2-A当前结果以上方为准。
 
 作者已授权按路线连续推进P1–P5至首款端到端内测，必要人工决策点暂停。F1 PR #6仍OPEN/Draft，最终提交`efe29e6`的CI 38153151107已核实success；main仍`b3e30bc`。当前P1独立worktree/分支`codex/quizpack-toolchain`基于F1已验证提交，采用堆叠依赖，不修改旧暂停成果。详细范围与任务状态见 `MANAGED_DEVELOPMENT.md`；下文F1停止记录是历史交付检查点。
 
@@ -33,7 +37,7 @@ P1 包工具已完成技术验收：代码提交 `3a1ad7a`，总控六项检查�
 
 ## 仍未实现
 
-数据库/迁移、真实管理后台、正式隔离导入、正式评分与原型匹配、受控运行组件注册、AccessKey、服务端会话与一次完成事务、不可变用户报告、正式发布运营、支付与生产部署。受限 ZIP/真实资源验证与确定性构建已由 P1 完成；资源/字体及文化内容批准、移动实机和跨主题十五状态仍需后续阶段验收。
+Product目录/工作区与草稿资源持久化、正式隔离导入、正式评分与原型匹配、受控运行组件注册、AccessKey、服务端会话与一次完成事务、不可变用户报告、正式发布运营、支付与生产部署。受限 ZIP/真实资源验证与确定性构建已由 P1 完成，隔离数据库、迁移与真实运营认证由P2-A完成；资源/字体及文化内容批准、移动实机和跨主题十五状态仍需后续阶段验收。
 
 ## 历史 F1 下一阶段条件
 
