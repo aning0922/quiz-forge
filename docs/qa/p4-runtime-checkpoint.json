@@ -1,19 +1,21 @@
 {
   "schemaVersion": "quizforge.p4-runtime-checkpoint.v1",
   "status": "production-e2e-incomplete",
-  "runtimeCommit": "7ebfca5a9119c3808b1f1e39a10fb23c37c9c052",
-  "testCommit": "abf68970d639d03d931c12e4b307f52b2803a54a",
+  "runtimeCommit": "25bf2df969bd4eb19ecc83a92048625626c49ae9",
+  "testCommit": "25bf2df969bd4eb19ecc83a92048625626c49ae9",
   "unit": {
     "files": 181,
-    "tests": 1879,
-    "sourceCommit": "d339b4ff2df8adda55e1ee280884e57b2a0303b3"
+    "tests": 1912,
+    "sourceCommit": "25bf2df969bd4eb19ecc83a92048625626c49ae9"
   },
   "ordinaryPg": {
     "files": 66,
     "tests": 496,
     "skipped": 0,
     "seconds": 467.97,
-    "sourceCommit": "d339b4ff2df8adda55e1ee280884e57b2a0303b3"
+    "sourceCommit": "d339b4ff2df8adda55e1ee280884e57b2a0303b3",
+    "ciSourceCommit": "25bf2df969bd4eb19ecc83a92048625626c49ae9",
+    "ciRunId": 39405139350
   },
   "driverTests": 46,
   "separateFreshSuites": {
@@ -33,8 +35,8 @@
     "casesPerRound": 66,
     "ownedOperationsStopped": true,
     "controlEmpty": true,
-    "deploymentId": "6ce1090bc50d217dccc4907cf08eef5c993a11d785492e3f4bb25d029e0e80f5",
-    "runtimeBundleHash": "66eb865b24a872ba24d37fe5f80370ab962ea8fd566a0daf96432e5207917cd4"
+    "deploymentId": "632d2f23ae986d660250e9c81869f7755099a1d7b4cc3b84fde1bb2ae92e2051",
+    "runtimeBundleHash": "f73ca62c2f2ea732882bd0c3e1a1d2bdf8260aa24c4b486c96af569a2cc4ac54"
   },
   "ci": [
     {
@@ -58,6 +60,12 @@
     {
       "head": "abf68970d639d03d931c12e4b307f52b2803a54a",
       "runId": 39392661243,
+      "kind": "checks",
+      "conclusion": "success"
+    },
+    {
+      "head": "25bf2df969bd4eb19ecc83a92048625626c49ae9",
+      "runId": 39405139350,
       "kind": "checks",
       "conclusion": "success"
     }
@@ -94,16 +102,85 @@
       "oldSkipped": 10,
       "notRun": 25,
       "consumerCasesExecuted": 0
+    },
+    {
+      "head": "8426f13",
+      "passed": 238,
+      "failed": 1,
+      "oldSkipped": 10,
+      "notRun": 20,
+      "minutes": 4.8,
+      "consumerCasesExecuted": 0,
+      "consumerCasesPassed": 0
+    },
+    {
+      "head": "bc86fc9",
+      "passed": 251,
+      "failed": 1,
+      "oldSkipped": 10,
+      "notRun": 7,
+      "minutes": 6.7,
+      "consumerCasesExecuted": 0,
+      "consumerCasesPassed": 0
+    },
+    {
+      "head": "12460a8",
+      "passed": 251,
+      "failed": 1,
+      "oldSkipped": 10,
+      "notRun": 7,
+      "minutes": 10.2,
+      "consumerCasesExecuted": 1,
+      "consumerCasesPassed": 0
+    },
+    {
+      "head": "25bf2df",
+      "passed": 251,
+      "failed": 1,
+      "oldSkipped": 10,
+      "notRun": 7,
+      "minutes": 7.3,
+      "consumerCasesExecuted": 1,
+      "consumerCasesPassed": 0
     }
   ],
   "firstProductP5Completed": false,
   "publicationApproved": false,
-  "currentFailure": "P3-C resume capture scrollY expected 0 actual 344; diagnosis pending",
+  "currentFailure": "third issue-key lost-response interception lacks Fetch Metadata in native forwarding; test-only bridge pending",
   "fourthArtifactScan": {
     "files": 240,
     "zipMembers": 22,
     "credentialPatternOccurrences": 0,
     "csrfPatternOccurrences": 0,
     "passed": true
+  },
+  "previousNative": {
+    "target": "main",
+    "rounds": 3,
+    "casesPerRound": 66,
+    "ownedOperationsStopped": true,
+    "controlEmpty": true,
+    "deploymentId": "6ce1090bc50d217dccc4907cf08eef5c993a11d785492e3f4bb25d029e0e80f5",
+    "runtimeBundleHash": "66eb865b24a872ba24d37fe5f80370ab962ea8fd566a0daf96432e5207917cd4"
+  },
+  "eighthReadonlyCounts": {
+    "plays": 1,
+    "keys": 2,
+    "sessions": 0,
+    "reports": 0,
+    "grants": 0
+  },
+  "eighthArtifactScan": {
+    "files": 397,
+    "zipMembers": 22,
+    "credentialPatternOccurrences": 0,
+    "csrfPatternOccurrences": 0,
+    "passed": true
+  },
+  "nativeSourceFix": {
+    "independentReviewClosed": true,
+    "actualNewBuildFourApis200": true,
+    "actualNewBuildLostFalse": true,
+    "frozenConsumerEntryUnchanged": true
   }
 }

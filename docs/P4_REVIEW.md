@@ -161,3 +161,17 @@ e2f0801（root9986afc）等待空草稿页三个独立读取和本地pending初�
 第四轮abf6897完整生产E2E为233通过/1失败/10旧skip/25未运行（3.7分钟）。P3-C六状态用例在resume截图的归零断言失败：期望scrollY0、实际344，5秒轮询未通过；cover/question已完成。B负责真实React状态与focus/scroll顺序定位，尚无原因或修复验收结论。消费者八项仍未执行。ecd957库已正式stop保留，3100无监听，失败图不清理；隐私v2扫描240文件/71104887字节、22ZIP成员/6867644解压字节，所覆盖凭证与CSRF模式均0。
 
 abf6897准确普通CI39392661243的checks/database实际success。官方media:build再次确认部署6ce1090b、运行66eb865b身份与7eb构建相同，变动仅测试/文档，未重跑或伪造native验收。P5私有最终只读审计03fb057静态独审通过：精确1/4/4/4/8已观测集合、实际HTTP三锚点、完整持久快照及原parent/source一致，SQL/FD真实关闭后才构造passed；不重评分、不重造ServerExitProof。脚本未执行，39eb仍停止，P4/P5均未技术验收。
+
+## 第五至八轮：截图就绪、hook预算与真实Next来源边界
+
+第五轮8426f13为238通过/1失败/10旧skip/20未运行。P3-C六状态已通过；P3-D首readonly截图2944→2969被实际React精确复现，唯一迟到读取是ApplyDraftPanel自己的draft请求。71964ad（rootbc86fc9）覆盖15个P3-D和20个P3-E截图的独立reader/本地timer终态；503/404、corrupt、UNKNOWN、authority错误均保留。P4媒体仅等待实际带图的四类状态，UNKNOWN刷新明确为无媒体resume。A最初“保留question媒体”的静态推断已由root按bootstrap真实分支纠正，不能沿用。Astra精确源独立复验4reader×4宽、预期错误/零假图、P3-E六reader与三timer分别延迟、四种失权、P4实际app22图通过；首个reviewer旧P4入口已排除并只重跑受影响项。详见[就绪说明](../tests/e2e/STUDIO_CAPTURE_READINESS.md)。
+
+第六轮bc86fc9旧251项通过，但consumer beforeAll默认30秒超时，1失败/10旧skip/7未运行，首case0ms。fixture子进程随后真实消失、prepared=true，但没有其exitcode，不补造cleanup资格；eabedb正式停库、control空、图保留。fadfff1（root12460a8）仅设beforeAll180秒、afterAll240秒，包住既有prepare/finish90秒及三个Key各20秒等候，业务15秒和八case门禁不变。Astra核安装Playwright实际独立hook slot和精确diff，无剩余P1/P2；有限时间余量不是物理退出保证。
+
+第七轮12460a8已通过prepare，首consumer业务180秒超时，旧251通过/1失败/10旧skip/7未运行，10.2分钟。实际DOM是运营身份lost；对失败库RR READ ONLY核五张新表均0并真实close，dec31正式停止。root使用新ba3d诊断库正常登录，实际session200/254B/形状正确，原requestConsumerJson可接纳；1639B认证JSON同样无编码且可接纳，未将压缩猜测当根因或修改传输合同。实际consumer-access页session200后play/key403 SOURCE_REJECTED，visibility始终visible、无pageerror。
+
+安装Next16.4的NextURL将派生URL环回hostname规范为localhost。root临时旁观标准headers getter、原样返回Headers的私有preload证明实际adapter的auth/play/key三请求native URL origin仍为http127，派生request.url为localhost；浏览器实际Host与FetchMetadata另行记录，native URL不冒称原始wire目标。9baf181（root25bf2df）用标准Request.prototype.url getter保持原origin精确比较；getter/brand/parse失败有限SOURCE_REJECTED，无localhost/其他环回别名、forwarded信任、body消费或Request克隆。Astra54现有测试+独立64项实际guard/NextRequest/clone/负例及getter故障通过。4fe6efe（root425d27e）仅有限阶段和32条白名单诊断，独审5类AST抽取检查通过；close尝试settled不冒称成功关闭/cleanup授权。
+
+root完整1912单元与新build103/23852/0通过；新构建无observer的原实际页面复验四接口200、lost=false、三个select，browser与ownedNext真实退出，ba3d停止保留。24个生成cache文件117574834B被原样移存，2294非cache条目字节/mode/inode不变、cache目录保留。媒体源闭包0f5a9c6d未变，整应用部署身份已变为632d2f23ae986d660250e9c81869f7755099a1d7b4cc3b84fde1bb2ae92e2051，运行包f73ca62c2f2ea732882bd0c3e1a1d2bdf8260aa24c4b486c96af569a2cc4ac54；实际main66×3全过/操作停止/control0。25bf准确普通CI39405139350 success。旧6ce部署/66eb运行证据独立保留，未拿旧验收冒充新部署。
+
+第八轮25bf完整251通过/1失败/10旧skip/7未运行，7.3分钟；实际play创建及前两枚Key/私密下载通过，第3枚lost-response route在consumerRouteFetch返回后核key失败。只读新表计数1/2/0/0/0，失败库2c0b正式停止，原图/两私密链接/业务图保留。有限扫描397文件、22ZIP成员，所覆盖凭证/CSRF模式均0。root用独立诊断库对空绑定POST作原生无业务写实验：Chrome被route拦截的allHeaders中Origin/CSRF/Cookie存在而sec-fetch-site缺失，原helper403 SOURCE_REJECTED；不拦截浏览器直发400 INVALID_REQUEST；仅测试补缺失metadata后也400。证明是拦截转发缺元数据，不能放宽生产guard。测试桥接修复及全八场景仍待完成；P4/P5未技术验收。
