@@ -4,6 +4,8 @@
 
 ## 当前阶段与授权
 
+- 2026-10-20 P5历史人物首款《千载同心》端到端内测已完成：原39eb test实例仅升级0018，原16表/17history/8素材保持；真实UI四个12题见证、三题刷新恢复、原Key只读同报告及4张1080×1920PNG通过，最终只读精确1play/4Key/4session/4report/8grant，所有拥有的进程/SQL/FD关闭且实例停止保留。A/B各68原图、Astra20原图、71安全产物限定隐私扫描通过；见docs/P5_ACCEPTANCE.md及docs/qa/p5-acceptance.json。本次P1–P5托管目标已到交付点，保持独立聊天/分支/证据，不默认启动P6+、重跑一次性升级/live、合并main、生产迁移、部署或发布。原内容视觉批准仍只限内测。
+
 - 2026-10-20 P4已完成技术出口（运行144d0b1、最终测试898fbfc）：259生产E2E/10既有skip、实际退出与全fixture清理、1961单元/496PG、新main66×3、29图A/B全量与Astra9图、准确CI39422702012通过；新dc195入口兼容旧193b会话/报告，原Key自然过期后只读报告已真实验证。详见docs/P4_ACCEPTANCE.md及docs/qa/p4-acceptance.json。按既有托管授权接续P5，root独占39eb内部test实例升级、四见证现场/3100/最终审计，A/B独立开发与Astra独审保持。原批准内容与视觉不重复请批；现场脚本准备不等于P5完成。无main合并、生产迁移、部署或发布。
 
 - 2026-10-18 P4 机器/设计已由 Astra 独审闭合并由主控在 f810f74 冻结，进入实施。A 独占 0018/guard/DB 最小适配、领域 ports/事务/request owner/留存及真实 PG；B 独占 consumer 六视图/PNG、HTTP/source/Cookie/stream、运营/消费者 controller 与薄路由；root 独占 lib/consumer-contract、已冻结 consumer-flow 机器合同、internal-play implementation-* 登记与全量集成/3100。细则见 docs/CONSUMER_P4.md、docs/P4_DATA_DESIGN.md、docs/P4_REVIEW.md。八格纯 SQL owner 与四格文件任务独立，未知实际关闭不按 TTL 释放；同 Key void/claim 双向 DB 保护、Key 页 RR 与返回前新鲜授权必须兑现。该冻结只允许开始实现，不是 P4/P5 通过；同一批准内容视觉不再请批。
