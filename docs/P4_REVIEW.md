@@ -197,3 +197,11 @@ root完整1912单元与新build103/23852/0通过；新构建无observer的原实
 修复仅调整受信测试准备的明确选择：prepare新增可选完整renderer参数，默认old不变，严格Schema和available检查先于副作用；CLI生产E2E固定传rendererV1_1，与运营页一致。父preview renderer、finish/完整graph/清理资格均不改。首版局部变量与父renderer同名被typecheck拒绝，已改selectedConsumerRenderer，错误候选未执行；修正后format/lint/type/gate通过且Astra准确diff复核。下一轮使用全新实例，旧失败证据不改。
 
 另旧Key兼容before的首次浏览器记录失败发生于导航后读取原HTTP response body：B独立真实SSR重现原顺序5/5和提前Promise读取5/5均失去响应资源。root原失败库只读确认新增一枚resume grant，完整原业务图未改；准确私有SQL-only记录器已实际关闭并封存唯一失败grant ledger（e36d3d1d…），不补造旧HTTP/cookie或成功browser观察。单次有界原fetch observer及新版兼容before/after审计仍待执行，原到期时间不改，首款39eb继续停止。
+
+## P4 最终技术出口（2026-10-20）
+
+第十一轮898fbfc完整生产E2E实际259通过/10既有skip/0失败（7.5分钟），八消费者均通过，真实serverExit证明、workersStopped和各fixture清理全部passed，control空，962f正式停止。原十轮失败均保留。新29原图由A/B各全量逐张复核，Astra独立9张；四poster浮层已在真实生产截图关闭，PNG1080×1920完整。第十一有限扫描424文件/22ZIP零所覆盖凭证及CSRF模式，另加兼容安全输出共429文件仍零；扫描器原已审SHA不变。
+
+原完成Key在12:44:31.355Z自然到期；root于实际12:44:53Z后才发新的明确验证，真实browser1case/1POST200、旧193b同session/report/哈希只读且退出证明成立。after SQL审计数据库时间12:45:26.042Z，完整图1/2/2/1/6与seed2＋失败SQL-only1＋实际browser3精确匹配，旧答案/报告不变，无重评分；全部SQL/FD关闭且dfdc正式停止。before12:32:25.661Z证据另行封存。单次原fetch观察器改变交付时序，仅用于身份取证，完整生产E2E另行不使用该观察器；旧失败不补造HTTP/cookie恢复。
+
+针对898 head的PR CI39422702012 checks/database实际success，实际checkout为GitHub生成的merge9efa57fdc0ad8b586fe2135a6d3e32f3b9ce0317（898 head into c837 base），不是声称纯branch checkout。1961单元/496PG/fresh14/4/1/3/build103/23855/0与70740d8d部署main66×3均有准确证据。Astra最终技术出口审查无剩余已知P1/P2；详见P4_ACCEPTANCE及qa/p4-acceptance.json。P5原批准首款现场仍需后续真实执行，当前不合并main、生产迁移、部署或发布。

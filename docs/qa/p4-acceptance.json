@@ -1,0 +1,404 @@
+{
+  "schemaVersion": "quizforge.consumer-p4-acceptance.v1",
+  "date": "2026-10-20",
+  "status": "technical-accepted",
+  "scope": "local-internal-consumer; synthetic-business-data",
+  "runtimeCodeCommit": "144d0b1e7e72843b256e44b1d52ced20dfdaadad",
+  "finalTestCommit": "898fbfcc1c1fdcfc8a028fe4a7bf9b0e11335e8f",
+  "implementation": {
+    "legacy": "193b48c92352d731c9c2e41de05316471a2c46f58d8e2f2596995ee531d974a1",
+    "current": "dc195a2f9bdcd158ab569b01191150b44086b8c3185b8c615c2007a01251308f",
+    "currentImplementation": "beaf4ba62e7c9c8546a3c0914619d83c9b4b738332ed7c6e43d6138262d12a47",
+    "oldSourceAndDescriptorUnchanged": true,
+    "twoExactBindings": true,
+    "sameDocumentAndStaticRenderCounterexamplesClosed": true
+  },
+  "checks": {
+    "format": true,
+    "lint": true,
+    "typecheck": true,
+    "unitFiles": 183,
+    "unitTests": 1961,
+    "postgresFiles": 66,
+    "postgresTests": 496,
+    "driverPriorTests": 46,
+    "freshValidation": 14,
+    "freshNamespace": 4,
+    "freshConsumerFault": 1,
+    "freshMediaUnknown": 3,
+    "buildTraces": 103,
+    "buildPaths": 23855,
+    "privateTraceViolations": 0,
+    "e2ePassed": 259,
+    "e2eExistingSkips": 10,
+    "e2eFailed": 0,
+    "consumerCases": 8,
+    "e2eExitCode": 0,
+    "serverExit": "proven",
+    "workersStopped": true,
+    "allFixtureCleanup": "passed"
+  },
+  "ci": {
+    "head": "898fbfcc1c1fdcfc8a028fe4a7bf9b0e11335e8f",
+    "run": 39422702012,
+    "conclusion": "success",
+    "url": "https://github.com/aning0922/quiz-forge/actions/runs/39422702012",
+    "checkoutKind": "GitHub PR merge checkout",
+    "checkoutSha": "9efa57fdc0ad8b586fe2135a6d3e32f3b9ce0317",
+    "baseSha": "c83788b5ec56eb481f62119479af54bfd1f805b7"
+  },
+  "native": {
+    "deploymentId": "70740d8db64edd9f7d8d541903daf07557cfe5daa665ee941a95b5dca4be22a5",
+    "runtimeBundleHash": "93c09e52334635250597b0ea452ecb4d10a417c2f0171784111544df5634a6ec",
+    "rounds": 3,
+    "casesPerRound": 66,
+    "allPassed": true,
+    "ownedOperationsStopped": true,
+    "controlEmpty": true,
+    "candidateRecordSha256": "944981472ed80500508c72ecb64cd35754d17e2cea1f89311c823df2143928e1"
+  },
+  "legacyCompatibility": {
+    "beforeObservedDatabaseAt": "2026-10-20T12:32:25.661Z",
+    "afterObservedDatabaseAt": "2026-10-20T12:45:26.042Z",
+    "completedKeyOriginalExpiry": "2026-10-20T12:44:31.355Z",
+    "beforeCounts": {
+      "plays": 1,
+      "keys": 2,
+      "sessions": 2,
+      "reports": 1,
+      "grants": 5
+    },
+    "afterCounts": {
+      "plays": 1,
+      "keys": 2,
+      "sessions": 2,
+      "reports": 1,
+      "grants": 6
+    },
+    "oldResumeAndCompletedReportPreserved": true,
+    "completedExpiredKeyReadOnlySameReport": true,
+    "noRescoring": true,
+    "browserBeforeSha256": "6eb0d560058e2b75de47e622f2a863d6077bd808796870931c06236a6c2967fb",
+    "browserAfterSha256": "62c96dc34985b11acd38823eb309c97811d8acb94d1ffd8cabcc2bd5e055058a",
+    "seedSha256": "60ba4ecc3180cfdd8d7ce32e4d340c82209ee9434c31bd8c1510c16c77301309",
+    "failedLedgerSha256": "e36d3d1d17009228a22e0637cbe0f99ed160c4de41945d6878e2d01d84983b26",
+    "failedAttemptBrowserEvidenceRecovered": false,
+    "grantSources": {
+      "originalSeed": 2,
+      "failedSqlOnly": 1,
+      "actualBrowser": 3
+    },
+    "responseObserverQualification": "original fetch and Response; bounded clone/ack changes delivery timing; identity proof only",
+    "actualBrowserServerAndSqlClosed": true,
+    "databaseStopped": true
+  },
+  "privacy": {
+    "files": 429,
+    "fileBytes": 122157591,
+    "zipEntries": 22,
+    "zipMembers": 22,
+    "zipBytes": 12172518,
+    "credentialPatternOccurrences": 0,
+    "csrfPatternOccurrences": 0,
+    "violations": [],
+    "passed": true
+  },
+  "visual": {
+    "browser": "Chromium 156.0.8078.4",
+    "AOriginalsViewed": 29,
+    "BOriginalsViewed": 29,
+    "AstraOriginalsViewed": 9,
+    "rootRepresentativeOriginalsViewed": 3,
+    "unresolvedBlockers": [],
+    "qualification": "agent technical QA for synthetic fixture, not commercial art/content approval",
+    "captureOnlyScrollToOrigin": true,
+    "artifacts": [
+      {
+        "path": ".cache/p4-e2e-eleventh-passed/test-results/consumer-flow-completion-report-lock-consumer-flow/p4-completed-result-320.png",
+        "width": 320,
+        "height": 1026,
+        "bytes": 214319,
+        "sha256": "e7944d5881ca5c66a747bc173a9c67607b2e6e49d105c0522e134378977d8973",
+        "kind": "full-page",
+        "viewportHeightCssPx": 900
+      },
+      {
+        "path": ".cache/p4-e2e-eleventh-passed/test-results/consumer-flow-completion-report-lock-consumer-flow/p4-completed-result-375.png",
+        "width": 375,
+        "height": 998,
+        "bytes": 224192,
+        "sha256": "1b339dd5488dc5128a82eb625f1ffe685d7afef910ce817bc2d835a993097bb0",
+        "kind": "full-page",
+        "viewportHeightCssPx": 900
+      },
+      {
+        "path": ".cache/p4-e2e-eleventh-passed/test-results/consumer-flow-completion-report-lock-consumer-flow/p4-completed-result-390.png",
+        "width": 390,
+        "height": 998,
+        "bytes": 250412,
+        "sha256": "f91f77a2c89e746a83310571900c57284d5eff0ef5500261cacd4f7ffeac7268",
+        "kind": "full-page",
+        "viewportHeightCssPx": 900
+      },
+      {
+        "path": ".cache/p4-e2e-eleventh-passed/test-results/consumer-flow-completion-report-lock-consumer-flow/p4-completed-result-430.png",
+        "width": 430,
+        "height": 968,
+        "bytes": 278033,
+        "sha256": "c665015f51c8e3dbd8ba23b5dd2f241aac2c4794163bb5b188a485a5d2f084a1",
+        "kind": "full-page",
+        "viewportHeightCssPx": 900
+      },
+      {
+        "path": ".cache/p4-e2e-eleventh-passed/test-results/consumer-flow-consumer-exchange-entry-consumer-flow/p4-consumer-cover-320.png",
+        "width": 320,
+        "height": 1140,
+        "bytes": 246868,
+        "sha256": "f9ea937ec26b78b6770a1264802a99107de642158d80e584e7ec32b863fcdae6",
+        "kind": "full-page",
+        "viewportHeightCssPx": 900
+      },
+      {
+        "path": ".cache/p4-e2e-eleventh-passed/test-results/consumer-flow-consumer-exchange-entry-consumer-flow/p4-consumer-cover-375.png",
+        "width": 375,
+        "height": 1099,
+        "bytes": 262607,
+        "sha256": "2689ae23069e10e17b522a9124c9928a26c54b562b337379117818527a69d505",
+        "kind": "full-page",
+        "viewportHeightCssPx": 900
+      },
+      {
+        "path": ".cache/p4-e2e-eleventh-passed/test-results/consumer-flow-consumer-exchange-entry-consumer-flow/p4-consumer-cover-390.png",
+        "width": 390,
+        "height": 1099,
+        "bytes": 256406,
+        "sha256": "836bf037ce35e5190d053c93cfee30f14f8fa54bcc2c25f05dd748fb8b873335",
+        "kind": "full-page",
+        "viewportHeightCssPx": 900
+      },
+      {
+        "path": ".cache/p4-e2e-eleventh-passed/test-results/consumer-flow-consumer-exchange-entry-consumer-flow/p4-consumer-cover-430.png",
+        "width": 430,
+        "height": 1068,
+        "bytes": 281369,
+        "sha256": "d54c7147cf374383dc2185f08ce901ce71cd3cffa3c377a7dc50b5eea20ba437",
+        "kind": "full-page",
+        "viewportHeightCssPx": 900
+      },
+      {
+        "path": ".cache/p4-e2e-eleventh-passed/test-results/consumer-flow-operator-play-key-consumer-flow/p4-operator-key-list-320.png",
+        "width": 320,
+        "height": 3174,
+        "bytes": 231885,
+        "sha256": "0a27bd3aaba43adc2648b3e4c272c63a2a9e656e7210bce30545fb18d974bd70",
+        "kind": "full-page",
+        "viewportHeightCssPx": 900
+      },
+      {
+        "path": ".cache/p4-e2e-eleventh-passed/test-results/consumer-flow-operator-play-key-consumer-flow/p4-operator-key-list-375.png",
+        "width": 375,
+        "height": 3050,
+        "bytes": 230787,
+        "sha256": "e67a1602b5b4f94706df5e5e63c0727e9ce733b77e1a6913272d336da91b979a",
+        "kind": "full-page",
+        "viewportHeightCssPx": 900
+      },
+      {
+        "path": ".cache/p4-e2e-eleventh-passed/test-results/consumer-flow-operator-play-key-consumer-flow/p4-operator-key-list-390.png",
+        "width": 390,
+        "height": 3000,
+        "bytes": 236244,
+        "sha256": "4cd258117557b8c78eeab8824b389ff45a0a0f5785b70c52e0c742295188b7b6",
+        "kind": "full-page",
+        "viewportHeightCssPx": 900
+      },
+      {
+        "path": ".cache/p4-e2e-eleventh-passed/test-results/consumer-flow-operator-play-key-consumer-flow/p4-operator-key-list-430.png",
+        "width": 430,
+        "height": 2903,
+        "bytes": 234956,
+        "sha256": "92f30bfc38e61d1d67ca7cb379d72ff2841f4560fd3c597f718edff14a6e49cc",
+        "kind": "full-page",
+        "viewportHeightCssPx": 900
+      },
+      {
+        "path": ".cache/p4-e2e-eleventh-passed/test-results/consumer-flow-report-resource-png-consumer-flow/p4-readonly-poster-320.png",
+        "width": 320,
+        "height": 1268,
+        "bytes": 122453,
+        "sha256": "56c3f36cbb352459c37765e63ff9d966433c33436e463f9f00f56b98e1d508f6",
+        "kind": "full-page",
+        "viewportHeightCssPx": 900
+      },
+      {
+        "path": ".cache/p4-e2e-eleventh-passed/test-results/consumer-flow-report-resource-png-consumer-flow/p4-readonly-poster-375.png",
+        "width": 375,
+        "height": 1240,
+        "bytes": 204412,
+        "sha256": "2dd2c3864490217947d392ab78875fa2bb35785ed71fb34a22ffb36eb07e8f4d",
+        "kind": "full-page",
+        "viewportHeightCssPx": 900
+      },
+      {
+        "path": ".cache/p4-e2e-eleventh-passed/test-results/consumer-flow-report-resource-png-consumer-flow/p4-readonly-poster-390.png",
+        "width": 390,
+        "height": 1240,
+        "bytes": 223827,
+        "sha256": "0fd42dec3ac8e76675687234665c9a785cd88024eee0b33b68a3e6182f007eca",
+        "kind": "full-page",
+        "viewportHeightCssPx": 900
+      },
+      {
+        "path": ".cache/p4-e2e-eleventh-passed/test-results/consumer-flow-report-resource-png-consumer-flow/p4-readonly-poster-430.png",
+        "width": 430,
+        "height": 1208,
+        "bytes": 233701,
+        "sha256": "c7aeccd2af4fe32c70e3afc1e6047ce384dffea822f2a2b7e65edfe6b750f2ab",
+        "kind": "full-page",
+        "viewportHeightCssPx": 900
+      },
+      {
+        "path": ".cache/p4-e2e-eleventh-passed/test-results/consumer-flow-report-resource-png-consumer-flow/p4-readonly-report-320.png",
+        "width": 320,
+        "height": 1777,
+        "bytes": 123367,
+        "sha256": "ccd11d000603679829f487c069cc5246b5855db32824107e9c2017672df5e0b1",
+        "kind": "full-page",
+        "viewportHeightCssPx": 900
+      },
+      {
+        "path": ".cache/p4-e2e-eleventh-passed/test-results/consumer-flow-report-resource-png-consumer-flow/p4-readonly-report-375.png",
+        "width": 375,
+        "height": 1672,
+        "bytes": 158118,
+        "sha256": "86f3bac857c45534c8ec99a5c51bb4f01e7548d91c829a50cf69b55ab6f9d5f8",
+        "kind": "full-page",
+        "viewportHeightCssPx": 900
+      },
+      {
+        "path": ".cache/p4-e2e-eleventh-passed/test-results/consumer-flow-report-resource-png-consumer-flow/p4-readonly-report-390.png",
+        "width": 390,
+        "height": 1672,
+        "bytes": 151062,
+        "sha256": "21e5335cfc59a3e24d276906239d035cbe2e6d98fd397b0a5d27b75c42bb185d",
+        "kind": "full-page",
+        "viewportHeightCssPx": 900
+      },
+      {
+        "path": ".cache/p4-e2e-eleventh-passed/test-results/consumer-flow-report-resource-png-consumer-flow/p4-readonly-report-430.png",
+        "width": 430,
+        "height": 1612,
+        "bytes": 154297,
+        "sha256": "ae6fbab5b693126491f499dcc9fbab0a052deefeb94a34e66f87db2d7f715542",
+        "kind": "full-page",
+        "viewportHeightCssPx": 900
+      },
+      {
+        "path": ".cache/p4-e2e-eleventh-passed/test-results/consumer-flow-report-resource-png-consumer-flow/p4-report-poster.png",
+        "width": 1080,
+        "height": 1920,
+        "bytes": 1212033,
+        "sha256": "9161c53418360ea841910320c66fc28d6e3322a2262a8cbc641fef5080dea7e9",
+        "kind": "export",
+        "viewportHeightCssPx": null
+      },
+      {
+        "path": ".cache/p4-e2e-eleventh-passed/test-results/consumer-flow-save-resume-recovery-consumer-flow/p4-completion-review-320.png",
+        "width": 320,
+        "height": 900,
+        "bytes": 30744,
+        "sha256": "c6407f01e79fd4fa291065ec4b7d9eadec6fc8913ef5313d74242d85a937889f",
+        "kind": "full-page",
+        "viewportHeightCssPx": 900
+      },
+      {
+        "path": ".cache/p4-e2e-eleventh-passed/test-results/consumer-flow-save-resume-recovery-consumer-flow/p4-completion-review-375.png",
+        "width": 375,
+        "height": 900,
+        "bytes": 30637,
+        "sha256": "e4bdc74340deb0b91fc4dcea53f297ce98cd55822631a87ef265e997b1133a36",
+        "kind": "full-page",
+        "viewportHeightCssPx": 900
+      },
+      {
+        "path": ".cache/p4-e2e-eleventh-passed/test-results/consumer-flow-save-resume-recovery-consumer-flow/p4-completion-review-390.png",
+        "width": 390,
+        "height": 900,
+        "bytes": 30825,
+        "sha256": "e55f1a05fc2beede66a55a7324be4ec2c9cc52c970e483cf1d50f973ab3f7b3e",
+        "kind": "full-page",
+        "viewportHeightCssPx": 900
+      },
+      {
+        "path": ".cache/p4-e2e-eleventh-passed/test-results/consumer-flow-save-resume-recovery-consumer-flow/p4-completion-review-430.png",
+        "width": 430,
+        "height": 900,
+        "bytes": 30656,
+        "sha256": "c04ca1325c9b8be77ddafc54531db3709a42dbaf65d728d5f499e6a96187e7b4",
+        "kind": "full-page",
+        "viewportHeightCssPx": 900
+      },
+      {
+        "path": ".cache/p4-e2e-eleventh-passed/test-results/consumer-flow-save-resume-recovery-consumer-flow/p4-save-unknown-restored-320.png",
+        "width": 320,
+        "height": 1304,
+        "bytes": 68136,
+        "sha256": "7524234e797bc216be39b58a60454edb5931a6e1256b2679df96753cbb2ff54d",
+        "kind": "full-page",
+        "viewportHeightCssPx": 900
+      },
+      {
+        "path": ".cache/p4-e2e-eleventh-passed/test-results/consumer-flow-save-resume-recovery-consumer-flow/p4-save-unknown-restored-375.png",
+        "width": 375,
+        "height": 1120,
+        "bytes": 68290,
+        "sha256": "5951d160d1932eec9ae8e0b51413ed49cdbf10c80d0c1065d751c11354221c20",
+        "kind": "full-page",
+        "viewportHeightCssPx": 900
+      },
+      {
+        "path": ".cache/p4-e2e-eleventh-passed/test-results/consumer-flow-save-resume-recovery-consumer-flow/p4-save-unknown-restored-390.png",
+        "width": 390,
+        "height": 1120,
+        "bytes": 68305,
+        "sha256": "fa6dfbbf7fc1c9ee0df6653aabc617a71ccbc41ffca9f19b3bae0e0c40c148e3",
+        "kind": "full-page",
+        "viewportHeightCssPx": 900
+      },
+      {
+        "path": ".cache/p4-e2e-eleventh-passed/test-results/consumer-flow-save-resume-recovery-consumer-flow/p4-save-unknown-restored-430.png",
+        "width": 430,
+        "height": 1089,
+        "bytes": 67296,
+        "sha256": "6dd0043b2dd5c46c3970f218a1df92643105c55e6dff8d4d91c8fb39884b6f9b",
+        "kind": "full-page",
+        "viewportHeightCssPx": 900
+      }
+    ]
+  },
+  "limits": {
+    "mainMerged": false,
+    "productionMigrated": false,
+    "externallyDeployed": false,
+    "publicationApproved": false,
+    "historicalFailuresPreserved": true,
+    "remainingP1P2": []
+  },
+  "privacyProductionE2E": {
+    "files": 424,
+    "fileBytes": 122150744,
+    "zipEntries": 22,
+    "zipMembers": 22,
+    "zipBytes": 12172518,
+    "credentialPatternOccurrences": 0,
+    "csrfPatternOccurrences": 0,
+    "violations": [],
+    "passed": true
+  },
+  "firstProductAtP4Exit": {
+    "executed": false,
+    "existingInstancePreservedStopped": true,
+    "sameApprovedContentAndVisualBaseline": true,
+    "next": "P5 exact historical four-witness live flow"
+  }
+}

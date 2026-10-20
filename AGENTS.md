@@ -4,6 +4,8 @@
 
 ## 当前阶段与授权
 
+- 2026-10-20 P4已完成技术出口（运行144d0b1、最终测试898fbfc）：259生产E2E/10既有skip、实际退出与全fixture清理、1961单元/496PG、新main66×3、29图A/B全量与Astra9图、准确CI39422702012通过；新dc195入口兼容旧193b会话/报告，原Key自然过期后只读报告已真实验证。详见docs/P4_ACCEPTANCE.md及docs/qa/p4-acceptance.json。按既有托管授权接续P5，root独占39eb内部test实例升级、四见证现场/3100/最终审计，A/B独立开发与Astra独审保持。原批准内容与视觉不重复请批；现场脚本准备不等于P5完成。无main合并、生产迁移、部署或发布。
+
 - 2026-10-18 P4 机器/设计已由 Astra 独审闭合并由主控在 f810f74 冻结，进入实施。A 独占 0018/guard/DB 最小适配、领域 ports/事务/request owner/留存及真实 PG；B 独占 consumer 六视图/PNG、HTTP/source/Cookie/stream、运营/消费者 controller 与薄路由；root 独占 lib/consumer-contract、已冻结 consumer-flow 机器合同、internal-play implementation-* 登记与全量集成/3100。细则见 docs/CONSUMER_P4.md、docs/P4_DATA_DESIGN.md、docs/P4_REVIEW.md。八格纯 SQL owner 与四格文件任务独立，未知实际关闭不按 TTL 释放；同 Key void/claim 双向 DB 保护、Key 页 RR 与返回前新鲜授权必须兑现。该冻结只允许开始实现，不是 P4/P5 通过；同一批准内容视觉不再请批。
 
 - 2026-10-18 P3-E 已完成技术出口（runtime eb7595a、tests f924f23、delivery c83788b，Draft PR #19）：1710 单元、469 PG、最终生产 E2E 241 通过/10 既有 skip、80 原图复核及准确 head 双 CI 通过。首款精确批准包已真实导入/审核/封存，39eb 内测实例停止保留。当前从 c83788b 接续 `codex/consumer-session-report`（Draft PR #20）准备 P4 消费者合同；root 维护共享协议/集成，A 独立数据线、B 独立体验线、Astra 独审保持。严格合同与服务接口完整冻结后才建 0018/业务服务；不得修改旧封存实现或复用未知实例。详见 docs/P3E_ACCEPTANCE.md、docs/CONSUMER_P4.md。下面较早 P3-E“未导入”段落为过程历史。
