@@ -217,6 +217,10 @@ async function consumerPending() {
   });
 }
 test.beforeAll(async ({ browser }) => {
+  // Hook timeouts are independent of the 180s case budget. Prepare's existing
+  // 90s child budget includes a possible 61s auth-window wait; reserve another
+  // finite 90s for fixture verification, two browser contexts and Studio login.
+  test.setTimeout(180_000);
   await consumerFixtureCommand("prepare");
   fixture = await readConsumerE2eFixture();
   observations = {
@@ -250,6 +254,9 @@ test.afterEach(async ({}, info) => {
   completion.observe(info);
 });
 test.afterAll(async () => {
+  // Three final Key reads have 20s native HTTP bounds each, then finish has its
+  // existing 90s child bound. Reserve 90s for observation I/O and context closure.
+  test.setTimeout(240_000);
   try {
     if (completion.canFinish()) {
       for (const key of keys) await latestKey(key);
