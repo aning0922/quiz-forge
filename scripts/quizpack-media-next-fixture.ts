@@ -219,9 +219,14 @@ async function sourceSnapshot(checkout: string) {
     "src/features/quizpack/server/media",
     "src/features/quizpack/server/validation",
     "src/lib/foundation-json.ts",
+    "src/lib/assessment-contract/primitives.ts",
+    "src/lib/assessment-contract/scoring-v1.ts",
+    "src/lib/json/canonical.ts",
+    "src/features/quizpack/content/reference-graph.ts",
     "src/lib/build/media-deployment.ts",
     "package.json",
     "pnpm-lock.yaml",
+    "tsconfig.json",
     "next.config.ts",
   ];
   const git = (args: string[]) => {

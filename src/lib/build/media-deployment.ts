@@ -28,9 +28,14 @@ const SOURCE_DIRECTORIES = [
 ] as const;
 const SOURCE_FIXED_FILES = [
   "src/lib/foundation-json.ts",
+  "src/lib/assessment-contract/primitives.ts",
+  "src/lib/assessment-contract/scoring-v1.ts",
+  "src/lib/json/canonical.ts",
+  "src/features/quizpack/content/reference-graph.ts",
   "src/lib/build/media-deployment.ts",
   "package.json",
   "pnpm-lock.yaml",
+  "tsconfig.json",
   "next.config.ts",
 ] as const;
 const ARTIFACT_FIXED_FILES = [

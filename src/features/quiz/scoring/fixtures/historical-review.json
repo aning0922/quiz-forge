@@ -1,0 +1,2609 @@
+{
+  "schemaVersion": "quiz-authoring-review.v1",
+  "status": "authored-pending",
+  "source": {
+    "commit": "03fdc240c924e2fe7379534176e11d1e6ab3bc58",
+    "path": "docs/FIRST_PRODUCT_CONTENT_DRAFT.md",
+    "sha256": "8c049714ae07c5ed2f10fff334cc041364789781de28bfbbd5442a26d6dc0653"
+  },
+  "definition": {
+    "schemaVersion": "quiz-scoring-definition.v1",
+    "productId": "historical-cabinet",
+    "contentVersion": "1.0.0",
+    "engine": {
+      "id": "archetype",
+      "version": "1.0.0"
+    },
+    "dimensions": [
+      {
+        "id": "exploration",
+        "productId": "historical-cabinet",
+        "version": "1.0.0"
+      },
+      {
+        "id": "expression",
+        "productId": "historical-cabinet",
+        "version": "1.0.0"
+      },
+      {
+        "id": "connection",
+        "productId": "historical-cabinet",
+        "version": "1.0.0"
+      },
+      {
+        "id": "steadiness",
+        "productId": "historical-cabinet",
+        "version": "1.0.0"
+      }
+    ],
+    "questions": [
+      {
+        "ref": {
+          "id": "q01",
+          "productId": "historical-cabinet",
+          "version": "1.0.0"
+        },
+        "options": [
+          {
+            "ref": {
+              "id": "q01-a",
+              "productId": "historical-cabinet",
+              "version": "1.0.0"
+            },
+            "contributions": [
+              {
+                "dimensionRef": {
+                  "id": "exploration",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 4
+              },
+              {
+                "dimensionRef": {
+                  "id": "expression",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 0
+              },
+              {
+                "dimensionRef": {
+                  "id": "connection",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 0
+              },
+              {
+                "dimensionRef": {
+                  "id": "steadiness",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 2
+              }
+            ]
+          },
+          {
+            "ref": {
+              "id": "q01-b",
+              "productId": "historical-cabinet",
+              "version": "1.0.0"
+            },
+            "contributions": [
+              {
+                "dimensionRef": {
+                  "id": "exploration",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 2
+              },
+              {
+                "dimensionRef": {
+                  "id": "expression",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 4
+              },
+              {
+                "dimensionRef": {
+                  "id": "connection",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 0
+              },
+              {
+                "dimensionRef": {
+                  "id": "steadiness",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 0
+              }
+            ]
+          },
+          {
+            "ref": {
+              "id": "q01-c",
+              "productId": "historical-cabinet",
+              "version": "1.0.0"
+            },
+            "contributions": [
+              {
+                "dimensionRef": {
+                  "id": "exploration",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 0
+              },
+              {
+                "dimensionRef": {
+                  "id": "expression",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 0
+              },
+              {
+                "dimensionRef": {
+                  "id": "connection",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 4
+              },
+              {
+                "dimensionRef": {
+                  "id": "steadiness",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 2
+              }
+            ]
+          },
+          {
+            "ref": {
+              "id": "q01-d",
+              "productId": "historical-cabinet",
+              "version": "1.0.0"
+            },
+            "contributions": [
+              {
+                "dimensionRef": {
+                  "id": "exploration",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 0
+              },
+              {
+                "dimensionRef": {
+                  "id": "expression",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 0
+              },
+              {
+                "dimensionRef": {
+                  "id": "connection",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 0
+              },
+              {
+                "dimensionRef": {
+                  "id": "steadiness",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 4
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "ref": {
+          "id": "q02",
+          "productId": "historical-cabinet",
+          "version": "1.0.0"
+        },
+        "options": [
+          {
+            "ref": {
+              "id": "q02-a",
+              "productId": "historical-cabinet",
+              "version": "1.0.0"
+            },
+            "contributions": [
+              {
+                "dimensionRef": {
+                  "id": "exploration",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 1
+              },
+              {
+                "dimensionRef": {
+                  "id": "expression",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 4
+              },
+              {
+                "dimensionRef": {
+                  "id": "connection",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 0
+              },
+              {
+                "dimensionRef": {
+                  "id": "steadiness",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 0
+              }
+            ]
+          },
+          {
+            "ref": {
+              "id": "q02-b",
+              "productId": "historical-cabinet",
+              "version": "1.0.0"
+            },
+            "contributions": [
+              {
+                "dimensionRef": {
+                  "id": "exploration",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 0
+              },
+              {
+                "dimensionRef": {
+                  "id": "expression",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 1
+              },
+              {
+                "dimensionRef": {
+                  "id": "connection",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 4
+              },
+              {
+                "dimensionRef": {
+                  "id": "steadiness",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 0
+              }
+            ]
+          },
+          {
+            "ref": {
+              "id": "q02-c",
+              "productId": "historical-cabinet",
+              "version": "1.0.0"
+            },
+            "contributions": [
+              {
+                "dimensionRef": {
+                  "id": "exploration",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 0
+              },
+              {
+                "dimensionRef": {
+                  "id": "expression",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 0
+              },
+              {
+                "dimensionRef": {
+                  "id": "connection",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 0
+              },
+              {
+                "dimensionRef": {
+                  "id": "steadiness",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 4
+              }
+            ]
+          },
+          {
+            "ref": {
+              "id": "q02-d",
+              "productId": "historical-cabinet",
+              "version": "1.0.0"
+            },
+            "contributions": [
+              {
+                "dimensionRef": {
+                  "id": "exploration",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 4
+              },
+              {
+                "dimensionRef": {
+                  "id": "expression",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 0
+              },
+              {
+                "dimensionRef": {
+                  "id": "connection",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 0
+              },
+              {
+                "dimensionRef": {
+                  "id": "steadiness",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 0
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "ref": {
+          "id": "q03",
+          "productId": "historical-cabinet",
+          "version": "1.0.0"
+        },
+        "options": [
+          {
+            "ref": {
+              "id": "q03-a",
+              "productId": "historical-cabinet",
+              "version": "1.0.0"
+            },
+            "contributions": [
+              {
+                "dimensionRef": {
+                  "id": "exploration",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 1
+              },
+              {
+                "dimensionRef": {
+                  "id": "expression",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 0
+              },
+              {
+                "dimensionRef": {
+                  "id": "connection",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 4
+              },
+              {
+                "dimensionRef": {
+                  "id": "steadiness",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 2
+              }
+            ]
+          },
+          {
+            "ref": {
+              "id": "q03-b",
+              "productId": "historical-cabinet",
+              "version": "1.0.0"
+            },
+            "contributions": [
+              {
+                "dimensionRef": {
+                  "id": "exploration",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 0
+              },
+              {
+                "dimensionRef": {
+                  "id": "expression",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 0
+              },
+              {
+                "dimensionRef": {
+                  "id": "connection",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 0
+              },
+              {
+                "dimensionRef": {
+                  "id": "steadiness",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 4
+              }
+            ]
+          },
+          {
+            "ref": {
+              "id": "q03-c",
+              "productId": "historical-cabinet",
+              "version": "1.0.0"
+            },
+            "contributions": [
+              {
+                "dimensionRef": {
+                  "id": "exploration",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 4
+              },
+              {
+                "dimensionRef": {
+                  "id": "expression",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 0
+              },
+              {
+                "dimensionRef": {
+                  "id": "connection",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 0
+              },
+              {
+                "dimensionRef": {
+                  "id": "steadiness",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 1
+              }
+            ]
+          },
+          {
+            "ref": {
+              "id": "q03-d",
+              "productId": "historical-cabinet",
+              "version": "1.0.0"
+            },
+            "contributions": [
+              {
+                "dimensionRef": {
+                  "id": "exploration",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 3
+              },
+              {
+                "dimensionRef": {
+                  "id": "expression",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 4
+              },
+              {
+                "dimensionRef": {
+                  "id": "connection",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 0
+              },
+              {
+                "dimensionRef": {
+                  "id": "steadiness",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 0
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "ref": {
+          "id": "q04",
+          "productId": "historical-cabinet",
+          "version": "1.0.0"
+        },
+        "options": [
+          {
+            "ref": {
+              "id": "q04-a",
+              "productId": "historical-cabinet",
+              "version": "1.0.0"
+            },
+            "contributions": [
+              {
+                "dimensionRef": {
+                  "id": "exploration",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 0
+              },
+              {
+                "dimensionRef": {
+                  "id": "expression",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 1
+              },
+              {
+                "dimensionRef": {
+                  "id": "connection",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 0
+              },
+              {
+                "dimensionRef": {
+                  "id": "steadiness",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 4
+              }
+            ]
+          },
+          {
+            "ref": {
+              "id": "q04-b",
+              "productId": "historical-cabinet",
+              "version": "1.0.0"
+            },
+            "contributions": [
+              {
+                "dimensionRef": {
+                  "id": "exploration",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 4
+              },
+              {
+                "dimensionRef": {
+                  "id": "expression",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 0
+              },
+              {
+                "dimensionRef": {
+                  "id": "connection",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 0
+              },
+              {
+                "dimensionRef": {
+                  "id": "steadiness",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 1
+              }
+            ]
+          },
+          {
+            "ref": {
+              "id": "q04-c",
+              "productId": "historical-cabinet",
+              "version": "1.0.0"
+            },
+            "contributions": [
+              {
+                "dimensionRef": {
+                  "id": "exploration",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 1
+              },
+              {
+                "dimensionRef": {
+                  "id": "expression",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 4
+              },
+              {
+                "dimensionRef": {
+                  "id": "connection",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 0
+              },
+              {
+                "dimensionRef": {
+                  "id": "steadiness",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 0
+              }
+            ]
+          },
+          {
+            "ref": {
+              "id": "q04-d",
+              "productId": "historical-cabinet",
+              "version": "1.0.0"
+            },
+            "contributions": [
+              {
+                "dimensionRef": {
+                  "id": "exploration",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 0
+              },
+              {
+                "dimensionRef": {
+                  "id": "expression",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 1
+              },
+              {
+                "dimensionRef": {
+                  "id": "connection",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 4
+              },
+              {
+                "dimensionRef": {
+                  "id": "steadiness",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 1
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "ref": {
+          "id": "q05",
+          "productId": "historical-cabinet",
+          "version": "1.0.0"
+        },
+        "options": [
+          {
+            "ref": {
+              "id": "q05-a",
+              "productId": "historical-cabinet",
+              "version": "1.0.0"
+            },
+            "contributions": [
+              {
+                "dimensionRef": {
+                  "id": "exploration",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 4
+              },
+              {
+                "dimensionRef": {
+                  "id": "expression",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 2
+              },
+              {
+                "dimensionRef": {
+                  "id": "connection",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 0
+              },
+              {
+                "dimensionRef": {
+                  "id": "steadiness",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 0
+              }
+            ]
+          },
+          {
+            "ref": {
+              "id": "q05-b",
+              "productId": "historical-cabinet",
+              "version": "1.0.0"
+            },
+            "contributions": [
+              {
+                "dimensionRef": {
+                  "id": "exploration",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 2
+              },
+              {
+                "dimensionRef": {
+                  "id": "expression",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 4
+              },
+              {
+                "dimensionRef": {
+                  "id": "connection",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 0
+              },
+              {
+                "dimensionRef": {
+                  "id": "steadiness",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 0
+              }
+            ]
+          },
+          {
+            "ref": {
+              "id": "q05-c",
+              "productId": "historical-cabinet",
+              "version": "1.0.0"
+            },
+            "contributions": [
+              {
+                "dimensionRef": {
+                  "id": "exploration",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 0
+              },
+              {
+                "dimensionRef": {
+                  "id": "expression",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 1
+              },
+              {
+                "dimensionRef": {
+                  "id": "connection",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 4
+              },
+              {
+                "dimensionRef": {
+                  "id": "steadiness",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 0
+              }
+            ]
+          },
+          {
+            "ref": {
+              "id": "q05-d",
+              "productId": "historical-cabinet",
+              "version": "1.0.0"
+            },
+            "contributions": [
+              {
+                "dimensionRef": {
+                  "id": "exploration",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 0
+              },
+              {
+                "dimensionRef": {
+                  "id": "expression",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 0
+              },
+              {
+                "dimensionRef": {
+                  "id": "connection",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 2
+              },
+              {
+                "dimensionRef": {
+                  "id": "steadiness",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 4
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "ref": {
+          "id": "q06",
+          "productId": "historical-cabinet",
+          "version": "1.0.0"
+        },
+        "options": [
+          {
+            "ref": {
+              "id": "q06-a",
+              "productId": "historical-cabinet",
+              "version": "1.0.0"
+            },
+            "contributions": [
+              {
+                "dimensionRef": {
+                  "id": "exploration",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 3
+              },
+              {
+                "dimensionRef": {
+                  "id": "expression",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 4
+              },
+              {
+                "dimensionRef": {
+                  "id": "connection",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 0
+              },
+              {
+                "dimensionRef": {
+                  "id": "steadiness",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 0
+              }
+            ]
+          },
+          {
+            "ref": {
+              "id": "q06-b",
+              "productId": "historical-cabinet",
+              "version": "1.0.0"
+            },
+            "contributions": [
+              {
+                "dimensionRef": {
+                  "id": "exploration",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 0
+              },
+              {
+                "dimensionRef": {
+                  "id": "expression",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 2
+              },
+              {
+                "dimensionRef": {
+                  "id": "connection",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 4
+              },
+              {
+                "dimensionRef": {
+                  "id": "steadiness",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 1
+              }
+            ]
+          },
+          {
+            "ref": {
+              "id": "q06-c",
+              "productId": "historical-cabinet",
+              "version": "1.0.0"
+            },
+            "contributions": [
+              {
+                "dimensionRef": {
+                  "id": "exploration",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 0
+              },
+              {
+                "dimensionRef": {
+                  "id": "expression",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 0
+              },
+              {
+                "dimensionRef": {
+                  "id": "connection",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 0
+              },
+              {
+                "dimensionRef": {
+                  "id": "steadiness",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 4
+              }
+            ]
+          },
+          {
+            "ref": {
+              "id": "q06-d",
+              "productId": "historical-cabinet",
+              "version": "1.0.0"
+            },
+            "contributions": [
+              {
+                "dimensionRef": {
+                  "id": "exploration",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 4
+              },
+              {
+                "dimensionRef": {
+                  "id": "expression",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 3
+              },
+              {
+                "dimensionRef": {
+                  "id": "connection",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 0
+              },
+              {
+                "dimensionRef": {
+                  "id": "steadiness",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 0
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "ref": {
+          "id": "q07",
+          "productId": "historical-cabinet",
+          "version": "1.0.0"
+        },
+        "options": [
+          {
+            "ref": {
+              "id": "q07-a",
+              "productId": "historical-cabinet",
+              "version": "1.0.0"
+            },
+            "contributions": [
+              {
+                "dimensionRef": {
+                  "id": "exploration",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 0
+              },
+              {
+                "dimensionRef": {
+                  "id": "expression",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 2
+              },
+              {
+                "dimensionRef": {
+                  "id": "connection",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 4
+              },
+              {
+                "dimensionRef": {
+                  "id": "steadiness",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 2
+              }
+            ]
+          },
+          {
+            "ref": {
+              "id": "q07-b",
+              "productId": "historical-cabinet",
+              "version": "1.0.0"
+            },
+            "contributions": [
+              {
+                "dimensionRef": {
+                  "id": "exploration",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 0
+              },
+              {
+                "dimensionRef": {
+                  "id": "expression",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 0
+              },
+              {
+                "dimensionRef": {
+                  "id": "connection",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 1
+              },
+              {
+                "dimensionRef": {
+                  "id": "steadiness",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 4
+              }
+            ]
+          },
+          {
+            "ref": {
+              "id": "q07-c",
+              "productId": "historical-cabinet",
+              "version": "1.0.0"
+            },
+            "contributions": [
+              {
+                "dimensionRef": {
+                  "id": "exploration",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 4
+              },
+              {
+                "dimensionRef": {
+                  "id": "expression",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 1
+              },
+              {
+                "dimensionRef": {
+                  "id": "connection",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 3
+              },
+              {
+                "dimensionRef": {
+                  "id": "steadiness",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 2
+              }
+            ]
+          },
+          {
+            "ref": {
+              "id": "q07-d",
+              "productId": "historical-cabinet",
+              "version": "1.0.0"
+            },
+            "contributions": [
+              {
+                "dimensionRef": {
+                  "id": "exploration",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 2
+              },
+              {
+                "dimensionRef": {
+                  "id": "expression",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 4
+              },
+              {
+                "dimensionRef": {
+                  "id": "connection",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 2
+              },
+              {
+                "dimensionRef": {
+                  "id": "steadiness",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 0
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "ref": {
+          "id": "q08",
+          "productId": "historical-cabinet",
+          "version": "1.0.0"
+        },
+        "options": [
+          {
+            "ref": {
+              "id": "q08-a",
+              "productId": "historical-cabinet",
+              "version": "1.0.0"
+            },
+            "contributions": [
+              {
+                "dimensionRef": {
+                  "id": "exploration",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 0
+              },
+              {
+                "dimensionRef": {
+                  "id": "expression",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 0
+              },
+              {
+                "dimensionRef": {
+                  "id": "connection",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 2
+              },
+              {
+                "dimensionRef": {
+                  "id": "steadiness",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 4
+              }
+            ]
+          },
+          {
+            "ref": {
+              "id": "q08-b",
+              "productId": "historical-cabinet",
+              "version": "1.0.0"
+            },
+            "contributions": [
+              {
+                "dimensionRef": {
+                  "id": "exploration",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 4
+              },
+              {
+                "dimensionRef": {
+                  "id": "expression",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 1
+              },
+              {
+                "dimensionRef": {
+                  "id": "connection",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 2
+              },
+              {
+                "dimensionRef": {
+                  "id": "steadiness",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 1
+              }
+            ]
+          },
+          {
+            "ref": {
+              "id": "q08-c",
+              "productId": "historical-cabinet",
+              "version": "1.0.0"
+            },
+            "contributions": [
+              {
+                "dimensionRef": {
+                  "id": "exploration",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 1
+              },
+              {
+                "dimensionRef": {
+                  "id": "expression",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 4
+              },
+              {
+                "dimensionRef": {
+                  "id": "connection",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 3
+              },
+              {
+                "dimensionRef": {
+                  "id": "steadiness",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 1
+              }
+            ]
+          },
+          {
+            "ref": {
+              "id": "q08-d",
+              "productId": "historical-cabinet",
+              "version": "1.0.0"
+            },
+            "contributions": [
+              {
+                "dimensionRef": {
+                  "id": "exploration",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 0
+              },
+              {
+                "dimensionRef": {
+                  "id": "expression",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 1
+              },
+              {
+                "dimensionRef": {
+                  "id": "connection",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 4
+              },
+              {
+                "dimensionRef": {
+                  "id": "steadiness",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 2
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "ref": {
+          "id": "q09",
+          "productId": "historical-cabinet",
+          "version": "1.0.0"
+        },
+        "options": [
+          {
+            "ref": {
+              "id": "q09-a",
+              "productId": "historical-cabinet",
+              "version": "1.0.0"
+            },
+            "contributions": [
+              {
+                "dimensionRef": {
+                  "id": "exploration",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 4
+              },
+              {
+                "dimensionRef": {
+                  "id": "expression",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 2
+              },
+              {
+                "dimensionRef": {
+                  "id": "connection",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 2
+              },
+              {
+                "dimensionRef": {
+                  "id": "steadiness",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 0
+              }
+            ]
+          },
+          {
+            "ref": {
+              "id": "q09-b",
+              "productId": "historical-cabinet",
+              "version": "1.0.0"
+            },
+            "contributions": [
+              {
+                "dimensionRef": {
+                  "id": "exploration",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 2
+              },
+              {
+                "dimensionRef": {
+                  "id": "expression",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 4
+              },
+              {
+                "dimensionRef": {
+                  "id": "connection",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 1
+              },
+              {
+                "dimensionRef": {
+                  "id": "steadiness",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 0
+              }
+            ]
+          },
+          {
+            "ref": {
+              "id": "q09-c",
+              "productId": "historical-cabinet",
+              "version": "1.0.0"
+            },
+            "contributions": [
+              {
+                "dimensionRef": {
+                  "id": "exploration",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 0
+              },
+              {
+                "dimensionRef": {
+                  "id": "expression",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 2
+              },
+              {
+                "dimensionRef": {
+                  "id": "connection",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 4
+              },
+              {
+                "dimensionRef": {
+                  "id": "steadiness",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 2
+              }
+            ]
+          },
+          {
+            "ref": {
+              "id": "q09-d",
+              "productId": "historical-cabinet",
+              "version": "1.0.0"
+            },
+            "contributions": [
+              {
+                "dimensionRef": {
+                  "id": "exploration",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 0
+              },
+              {
+                "dimensionRef": {
+                  "id": "expression",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 0
+              },
+              {
+                "dimensionRef": {
+                  "id": "connection",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 1
+              },
+              {
+                "dimensionRef": {
+                  "id": "steadiness",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 4
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "ref": {
+          "id": "q10",
+          "productId": "historical-cabinet",
+          "version": "1.0.0"
+        },
+        "options": [
+          {
+            "ref": {
+              "id": "q10-a",
+              "productId": "historical-cabinet",
+              "version": "1.0.0"
+            },
+            "contributions": [
+              {
+                "dimensionRef": {
+                  "id": "exploration",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 2
+              },
+              {
+                "dimensionRef": {
+                  "id": "expression",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 4
+              },
+              {
+                "dimensionRef": {
+                  "id": "connection",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 0
+              },
+              {
+                "dimensionRef": {
+                  "id": "steadiness",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 1
+              }
+            ]
+          },
+          {
+            "ref": {
+              "id": "q10-b",
+              "productId": "historical-cabinet",
+              "version": "1.0.0"
+            },
+            "contributions": [
+              {
+                "dimensionRef": {
+                  "id": "exploration",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 1
+              },
+              {
+                "dimensionRef": {
+                  "id": "expression",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 1
+              },
+              {
+                "dimensionRef": {
+                  "id": "connection",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 4
+              },
+              {
+                "dimensionRef": {
+                  "id": "steadiness",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 2
+              }
+            ]
+          },
+          {
+            "ref": {
+              "id": "q10-c",
+              "productId": "historical-cabinet",
+              "version": "1.0.0"
+            },
+            "contributions": [
+              {
+                "dimensionRef": {
+                  "id": "exploration",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 0
+              },
+              {
+                "dimensionRef": {
+                  "id": "expression",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 0
+              },
+              {
+                "dimensionRef": {
+                  "id": "connection",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 0
+              },
+              {
+                "dimensionRef": {
+                  "id": "steadiness",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 4
+              }
+            ]
+          },
+          {
+            "ref": {
+              "id": "q10-d",
+              "productId": "historical-cabinet",
+              "version": "1.0.0"
+            },
+            "contributions": [
+              {
+                "dimensionRef": {
+                  "id": "exploration",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 4
+              },
+              {
+                "dimensionRef": {
+                  "id": "expression",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 0
+              },
+              {
+                "dimensionRef": {
+                  "id": "connection",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 0
+              },
+              {
+                "dimensionRef": {
+                  "id": "steadiness",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 1
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "ref": {
+          "id": "q11",
+          "productId": "historical-cabinet",
+          "version": "1.0.0"
+        },
+        "options": [
+          {
+            "ref": {
+              "id": "q11-a",
+              "productId": "historical-cabinet",
+              "version": "1.0.0"
+            },
+            "contributions": [
+              {
+                "dimensionRef": {
+                  "id": "exploration",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 0
+              },
+              {
+                "dimensionRef": {
+                  "id": "expression",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 1
+              },
+              {
+                "dimensionRef": {
+                  "id": "connection",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 4
+              },
+              {
+                "dimensionRef": {
+                  "id": "steadiness",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 2
+              }
+            ]
+          },
+          {
+            "ref": {
+              "id": "q11-b",
+              "productId": "historical-cabinet",
+              "version": "1.0.0"
+            },
+            "contributions": [
+              {
+                "dimensionRef": {
+                  "id": "exploration",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 1
+              },
+              {
+                "dimensionRef": {
+                  "id": "expression",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 0
+              },
+              {
+                "dimensionRef": {
+                  "id": "connection",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 0
+              },
+              {
+                "dimensionRef": {
+                  "id": "steadiness",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 4
+              }
+            ]
+          },
+          {
+            "ref": {
+              "id": "q11-c",
+              "productId": "historical-cabinet",
+              "version": "1.0.0"
+            },
+            "contributions": [
+              {
+                "dimensionRef": {
+                  "id": "exploration",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 4
+              },
+              {
+                "dimensionRef": {
+                  "id": "expression",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 0
+              },
+              {
+                "dimensionRef": {
+                  "id": "connection",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 0
+              },
+              {
+                "dimensionRef": {
+                  "id": "steadiness",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 1
+              }
+            ]
+          },
+          {
+            "ref": {
+              "id": "q11-d",
+              "productId": "historical-cabinet",
+              "version": "1.0.0"
+            },
+            "contributions": [
+              {
+                "dimensionRef": {
+                  "id": "exploration",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 2
+              },
+              {
+                "dimensionRef": {
+                  "id": "expression",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 4
+              },
+              {
+                "dimensionRef": {
+                  "id": "connection",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 0
+              },
+              {
+                "dimensionRef": {
+                  "id": "steadiness",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 0
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "ref": {
+          "id": "q12",
+          "productId": "historical-cabinet",
+          "version": "1.0.0"
+        },
+        "options": [
+          {
+            "ref": {
+              "id": "q12-a",
+              "productId": "historical-cabinet",
+              "version": "1.0.0"
+            },
+            "contributions": [
+              {
+                "dimensionRef": {
+                  "id": "exploration",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 0
+              },
+              {
+                "dimensionRef": {
+                  "id": "expression",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 2
+              },
+              {
+                "dimensionRef": {
+                  "id": "connection",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 0
+              },
+              {
+                "dimensionRef": {
+                  "id": "steadiness",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 4
+              }
+            ]
+          },
+          {
+            "ref": {
+              "id": "q12-b",
+              "productId": "historical-cabinet",
+              "version": "1.0.0"
+            },
+            "contributions": [
+              {
+                "dimensionRef": {
+                  "id": "exploration",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 4
+              },
+              {
+                "dimensionRef": {
+                  "id": "expression",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 0
+              },
+              {
+                "dimensionRef": {
+                  "id": "connection",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 0
+              },
+              {
+                "dimensionRef": {
+                  "id": "steadiness",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 2
+              }
+            ]
+          },
+          {
+            "ref": {
+              "id": "q12-c",
+              "productId": "historical-cabinet",
+              "version": "1.0.0"
+            },
+            "contributions": [
+              {
+                "dimensionRef": {
+                  "id": "exploration",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 1
+              },
+              {
+                "dimensionRef": {
+                  "id": "expression",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 4
+              },
+              {
+                "dimensionRef": {
+                  "id": "connection",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 0
+              },
+              {
+                "dimensionRef": {
+                  "id": "steadiness",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 0
+              }
+            ]
+          },
+          {
+            "ref": {
+              "id": "q12-d",
+              "productId": "historical-cabinet",
+              "version": "1.0.0"
+            },
+            "contributions": [
+              {
+                "dimensionRef": {
+                  "id": "exploration",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 0
+              },
+              {
+                "dimensionRef": {
+                  "id": "expression",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 2
+              },
+              {
+                "dimensionRef": {
+                  "id": "connection",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 4
+              },
+              {
+                "dimensionRef": {
+                  "id": "steadiness",
+                  "productId": "historical-cabinet",
+                  "version": "1.0.0"
+                },
+                "value": 1
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "results": [
+      {
+        "id": "li-bai",
+        "productId": "historical-cabinet",
+        "version": "1.0.0"
+      },
+      {
+        "id": "su-shi",
+        "productId": "historical-cabinet",
+        "version": "1.0.0"
+      },
+      {
+        "id": "tao-yuan-ming",
+        "productId": "historical-cabinet",
+        "version": "1.0.0"
+      },
+      {
+        "id": "bai-ju-yi",
+        "productId": "historical-cabinet",
+        "version": "1.0.0"
+      }
+    ],
+    "rules": {
+      "kind": "archetype",
+      "aggregation": "sum",
+      "distance": "squared-euclidean",
+      "tieBreak": "result-order",
+      "resultOrder": [
+        {
+          "id": "li-bai",
+          "productId": "historical-cabinet",
+          "version": "1.0.0"
+        },
+        {
+          "id": "su-shi",
+          "productId": "historical-cabinet",
+          "version": "1.0.0"
+        },
+        {
+          "id": "tao-yuan-ming",
+          "productId": "historical-cabinet",
+          "version": "1.0.0"
+        },
+        {
+          "id": "bai-ju-yi",
+          "productId": "historical-cabinet",
+          "version": "1.0.0"
+        }
+      ],
+      "normalization": {
+        "kind": "linear-to-0-100",
+        "bounds": [
+          {
+            "dimensionRef": {
+              "id": "exploration",
+              "productId": "historical-cabinet",
+              "version": "1.0.0"
+            },
+            "min": 0,
+            "max": 48
+          },
+          {
+            "dimensionRef": {
+              "id": "expression",
+              "productId": "historical-cabinet",
+              "version": "1.0.0"
+            },
+            "min": 0,
+            "max": 48
+          },
+          {
+            "dimensionRef": {
+              "id": "connection",
+              "productId": "historical-cabinet",
+              "version": "1.0.0"
+            },
+            "min": 4,
+            "max": 48
+          },
+          {
+            "dimensionRef": {
+              "id": "steadiness",
+              "productId": "historical-cabinet",
+              "version": "1.0.0"
+            },
+            "min": 2,
+            "max": 48
+          }
+        ]
+      },
+      "profiles": [
+        {
+          "resultRef": {
+            "id": "li-bai",
+            "productId": "historical-cabinet",
+            "version": "1.0.0"
+          },
+          "targets": [
+            {
+              "dimensionRef": {
+                "id": "exploration",
+                "productId": "historical-cabinet",
+                "version": "1.0.0"
+              },
+              "value": 70
+            },
+            {
+              "dimensionRef": {
+                "id": "expression",
+                "productId": "historical-cabinet",
+                "version": "1.0.0"
+              },
+              "value": 60
+            },
+            {
+              "dimensionRef": {
+                "id": "connection",
+                "productId": "historical-cabinet",
+                "version": "1.0.0"
+              },
+              "value": 10
+            },
+            {
+              "dimensionRef": {
+                "id": "steadiness",
+                "productId": "historical-cabinet",
+                "version": "1.0.0"
+              },
+              "value": 15
+            }
+          ]
+        },
+        {
+          "resultRef": {
+            "id": "su-shi",
+            "productId": "historical-cabinet",
+            "version": "1.0.0"
+          },
+          "targets": [
+            {
+              "dimensionRef": {
+                "id": "exploration",
+                "productId": "historical-cabinet",
+                "version": "1.0.0"
+              },
+              "value": 30
+            },
+            {
+              "dimensionRef": {
+                "id": "expression",
+                "productId": "historical-cabinet",
+                "version": "1.0.0"
+              },
+              "value": 65
+            },
+            {
+              "dimensionRef": {
+                "id": "connection",
+                "productId": "historical-cabinet",
+                "version": "1.0.0"
+              },
+              "value": 55
+            },
+            {
+              "dimensionRef": {
+                "id": "steadiness",
+                "productId": "historical-cabinet",
+                "version": "1.0.0"
+              },
+              "value": 10
+            }
+          ]
+        },
+        {
+          "resultRef": {
+            "id": "tao-yuan-ming",
+            "productId": "historical-cabinet",
+            "version": "1.0.0"
+          },
+          "targets": [
+            {
+              "dimensionRef": {
+                "id": "exploration",
+                "productId": "historical-cabinet",
+                "version": "1.0.0"
+              },
+              "value": 50
+            },
+            {
+              "dimensionRef": {
+                "id": "expression",
+                "productId": "historical-cabinet",
+                "version": "1.0.0"
+              },
+              "value": 15
+            },
+            {
+              "dimensionRef": {
+                "id": "connection",
+                "productId": "historical-cabinet",
+                "version": "1.0.0"
+              },
+              "value": 10
+            },
+            {
+              "dimensionRef": {
+                "id": "steadiness",
+                "productId": "historical-cabinet",
+                "version": "1.0.0"
+              },
+              "value": 60
+            }
+          ]
+        },
+        {
+          "resultRef": {
+            "id": "bai-ju-yi",
+            "productId": "historical-cabinet",
+            "version": "1.0.0"
+          },
+          "targets": [
+            {
+              "dimensionRef": {
+                "id": "exploration",
+                "productId": "historical-cabinet",
+                "version": "1.0.0"
+              },
+              "value": 5
+            },
+            {
+              "dimensionRef": {
+                "id": "expression",
+                "productId": "historical-cabinet",
+                "version": "1.0.0"
+              },
+              "value": 25
+            },
+            {
+              "dimensionRef": {
+                "id": "connection",
+                "productId": "historical-cabinet",
+                "version": "1.0.0"
+              },
+              "value": 65
+            },
+            {
+              "dimensionRef": {
+                "id": "steadiness",
+                "productId": "historical-cabinet",
+                "version": "1.0.0"
+              },
+              "value": 55
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "witnesses": {
+    "schemaVersion": "quiz-witness-input.v1",
+    "entries": [
+      {
+        "expectedResultRef": {
+          "id": "li-bai",
+          "productId": "historical-cabinet",
+          "version": "1.0.0"
+        },
+        "answers": [
+          {
+            "questionId": "q01",
+            "optionId": "q01-a"
+          },
+          {
+            "questionId": "q02",
+            "optionId": "q02-a"
+          },
+          {
+            "questionId": "q03",
+            "optionId": "q03-c"
+          },
+          {
+            "questionId": "q04",
+            "optionId": "q04-c"
+          },
+          {
+            "questionId": "q05",
+            "optionId": "q05-a"
+          },
+          {
+            "questionId": "q06",
+            "optionId": "q06-a"
+          },
+          {
+            "questionId": "q07",
+            "optionId": "q07-c"
+          },
+          {
+            "questionId": "q08",
+            "optionId": "q08-c"
+          },
+          {
+            "questionId": "q09",
+            "optionId": "q09-a"
+          },
+          {
+            "questionId": "q10",
+            "optionId": "q10-a"
+          },
+          {
+            "questionId": "q11",
+            "optionId": "q11-c"
+          },
+          {
+            "questionId": "q12",
+            "optionId": "q12-c"
+          }
+        ]
+      },
+      {
+        "expectedResultRef": {
+          "id": "su-shi",
+          "productId": "historical-cabinet",
+          "version": "1.0.0"
+        },
+        "answers": [
+          {
+            "questionId": "q01",
+            "optionId": "q01-b"
+          },
+          {
+            "questionId": "q02",
+            "optionId": "q02-b"
+          },
+          {
+            "questionId": "q03",
+            "optionId": "q03-d"
+          },
+          {
+            "questionId": "q04",
+            "optionId": "q04-d"
+          },
+          {
+            "questionId": "q05",
+            "optionId": "q05-b"
+          },
+          {
+            "questionId": "q06",
+            "optionId": "q06-b"
+          },
+          {
+            "questionId": "q07",
+            "optionId": "q07-d"
+          },
+          {
+            "questionId": "q08",
+            "optionId": "q08-d"
+          },
+          {
+            "questionId": "q09",
+            "optionId": "q09-b"
+          },
+          {
+            "questionId": "q10",
+            "optionId": "q10-b"
+          },
+          {
+            "questionId": "q11",
+            "optionId": "q11-d"
+          },
+          {
+            "questionId": "q12",
+            "optionId": "q12-d"
+          }
+        ]
+      },
+      {
+        "expectedResultRef": {
+          "id": "tao-yuan-ming",
+          "productId": "historical-cabinet",
+          "version": "1.0.0"
+        },
+        "answers": [
+          {
+            "questionId": "q01",
+            "optionId": "q01-a"
+          },
+          {
+            "questionId": "q02",
+            "optionId": "q02-c"
+          },
+          {
+            "questionId": "q03",
+            "optionId": "q03-c"
+          },
+          {
+            "questionId": "q04",
+            "optionId": "q04-a"
+          },
+          {
+            "questionId": "q05",
+            "optionId": "q05-a"
+          },
+          {
+            "questionId": "q06",
+            "optionId": "q06-c"
+          },
+          {
+            "questionId": "q07",
+            "optionId": "q07-c"
+          },
+          {
+            "questionId": "q08",
+            "optionId": "q08-a"
+          },
+          {
+            "questionId": "q09",
+            "optionId": "q09-a"
+          },
+          {
+            "questionId": "q10",
+            "optionId": "q10-c"
+          },
+          {
+            "questionId": "q11",
+            "optionId": "q11-c"
+          },
+          {
+            "questionId": "q12",
+            "optionId": "q12-a"
+          }
+        ]
+      },
+      {
+        "expectedResultRef": {
+          "id": "bai-ju-yi",
+          "productId": "historical-cabinet",
+          "version": "1.0.0"
+        },
+        "answers": [
+          {
+            "questionId": "q01",
+            "optionId": "q01-c"
+          },
+          {
+            "questionId": "q02",
+            "optionId": "q02-b"
+          },
+          {
+            "questionId": "q03",
+            "optionId": "q03-a"
+          },
+          {
+            "questionId": "q04",
+            "optionId": "q04-a"
+          },
+          {
+            "questionId": "q05",
+            "optionId": "q05-c"
+          },
+          {
+            "questionId": "q06",
+            "optionId": "q06-c"
+          },
+          {
+            "questionId": "q07",
+            "optionId": "q07-a"
+          },
+          {
+            "questionId": "q08",
+            "optionId": "q08-d"
+          },
+          {
+            "questionId": "q09",
+            "optionId": "q09-c"
+          },
+          {
+            "questionId": "q10",
+            "optionId": "q10-c"
+          },
+          {
+            "questionId": "q11",
+            "optionId": "q11-a"
+          },
+          {
+            "questionId": "q12",
+            "optionId": "q12-a"
+          }
+        ]
+      }
+    ]
+  },
+  "transcriptionSha256": "01a95213f955f7014a05d37163eed93a0d5dbd4c9662acf3dc3c3d265f9bb7a0"
+}
