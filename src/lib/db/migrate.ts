@@ -123,6 +123,18 @@ export async function migrateDatabase(
       await tx`GRANT EXECUTE ON FUNCTION qf.import_attempts_valid(jsonb,integer,uuid,bigint) TO ${app}`;
       await tx`GRANT SELECT,INSERT ON qf.quizpack_validation,qf.asset_blob,qf.product_asset TO ${app}`;
       await tx`GRANT UPDATE(status,state_revision,updated_at,fence,lease_until,current_attempt_id,attempts_text,storage_condition,last_error_code,reserved_bytes,accounted_bytes,evidence_text,evidence_sha256,report_texts,evidence_metadata_text,pack_id,pack_version,container_schema_version,content_schema_version,content_kind,manifest_sha256,content_sha256,canonical_manifest_text,canonical_manifest_sha256,canonical_content_text,canonical_content_sha256,asset_set_text,asset_set_sha256,candidate_sha256,resource_count,identity_kind,canonical_validation_id,validated_at,ready_at) ON qf.quizpack_validation TO ${app}`;
+      // Permit enum-only staging by the owner; the app's actual schema guard
+      // requires the complete first-draft capability before opening a DB.
+      for (const name of [
+        "product_draft",
+        "draft_revision",
+        "draft_application",
+      ]) {
+        const [available] = await tx<{ present: boolean }[]>`
+          SELECT to_regclass(${`qf.${name}`}) IS NOT NULL AS present`;
+        if (available?.present)
+          await tx`GRANT SELECT,INSERT ON ${tx(`qf.${name}`)} TO ${app}`;
+      }
       for (const signature of [
         "sha256_utf8(text)",
         "validation_attempts_valid(text,integer,uuid,bigint)",
@@ -132,9 +144,13 @@ export async function migrateDatabase(
         "validation_file_stop_protocol()",
         "validation_file_stop_proof_valid(jsonb,uuid,jsonb)",
         "validation_file_stop_controls_valid(text,uuid,text,text)",
+        "draft_application_fingerprint(text,uuid,uuid,integer,text)",
       ]) {
         // Owner can stage the enum-only migration; application capability checks still fail closed.
-        if (signature.startsWith("validation_file_stop_")) {
+        if (
+          signature.startsWith("validation_file_stop_") ||
+          signature.startsWith("draft_application_")
+        ) {
           const [available] = await tx<
             { present: boolean }[]
           >`SELECT to_regprocedure(${`qf.${signature}`}) IS NOT NULL AS present`;

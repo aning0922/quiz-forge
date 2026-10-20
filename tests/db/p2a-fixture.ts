@@ -57,7 +57,10 @@ export async function resetTestDatabase(database: TestDatabase): Promise<void> {
         { occupied: boolean }[]
       >`SELECT EXISTS(SELECT 1 FROM qf.quizpack_validation)
         OR EXISTS(SELECT 1 FROM qf.product_asset)
-        OR EXISTS(SELECT 1 FROM qf.asset_blob) AS occupied`;
+        OR EXISTS(SELECT 1 FROM qf.asset_blob)
+        OR EXISTS(SELECT 1 FROM qf.product_draft)
+        OR EXISTS(SELECT 1 FROM qf.draft_revision)
+        OR EXISTS(SELECT 1 FROM qf.draft_application) AS occupied`;
       if (!validationState || validationState.occupied)
         throw new Error("TEST_VALIDATION_SCOPE_NOT_EMPTY");
       const importFiles = new Map(
@@ -114,7 +117,7 @@ export async function resetTestDatabase(database: TestDatabase): Promise<void> {
       }
       await lock.check();
       await verified.admin
-        .sql`TRUNCATE qf.product_asset,qf.asset_blob,qf.quizpack_validation,qf.quizpack_import,qf.product_tag,qf.product,qf.category,qf.tag,qf.operator_session,qf.audit_event,qf.operator`;
+        .sql`TRUNCATE qf.draft_application,qf.draft_revision,qf.product_draft,qf.product_asset,qf.asset_blob,qf.quizpack_validation,qf.quizpack_import,qf.product_tag,qf.product,qf.category,qf.tag,qf.operator_session,qf.audit_event,qf.operator`;
     } finally {
       dispose();
       await lock.close();

@@ -50,7 +50,10 @@ function privateObject(path: string, directory: boolean) {
 export function ensurePrivateDirectory(path: string, checkoutRoot: string) {
   const root = resolve(checkoutRoot);
   const target = resolve(path);
-  if (!target.startsWith(join(root, ".cache") + sep))
+  // This is a private runtime containment check, not a build asset dependency.
+  if (
+    !target.startsWith(join(/* turbopackIgnore: true */ root, ".cache") + sep)
+  )
     throw new ControlError("ISOLATION_UNAVAILABLE");
   const chain: string[] = [];
   for (let p = target; ; p = dirname(p)) {

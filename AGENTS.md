@@ -4,10 +4,11 @@
 
 ## 当前阶段与授权
 
+- 2026-10-15 作者再次明确选择“恢复独立开发、独立审查聊天”。主线必须采用项目侧栏内独立聊天，不能用主控会话内子代理替代：最多两条GPT-6.1 Sol/high开发聊天、一条GPT-6 Astra/high独立审查聊天；本聊天负责主控和集成。接管登记见docs/MANAGED_DEVELOPMENT.md。原子代理已提交并停止，自有实例已停，保存分支和工作树供独立聊天继承，不重做已验证成果。
 - 2026-10-15 作者明确恢复 QuizForge 托管开发，由新主控接续历史人物首款 P5 端到端内测；常规开发、测试、独立审查、整改、提交推送及 Draft PR 自行推进，内容、素材与发布批准保留人工闸门。继续下文 Sol/high 实施、Astra/high 独审和最多两条实现流的方式。恢复基线为 B2-2B 本地 `fb02afc`，不回退到旧 D1 工作树，不恢复无关项目。仓库 public 的独立授权已执行；它不批准素材商用、main 合并、生产迁移、部署或商业发布。
 - 2026-10-12 作者明确扩大托管范围：按已确认路线推进至 P5 首款端到端内测，在必要人工决策点暂停。下方“仅F1/后续另行授权”属于历史边界，由本条覆盖；P1–P5 的常规工程、测试、审查整改、独立提交/推送和Draft PR由总控连续推进，无需重复阶段启动确认。P6+、恢复旧D1-D聊天、自动合并main、生产迁移/部署/商业发布不在本次范围。
 - 托管目标、进度、依赖、并行所有权和人工闸门见 `docs/MANAGED_DEVELOPMENT.md`。普通开发聊天使用 GPT-6.1 Sol/high，架构决策和独立审查使用 GPT-6 Astra/high；总体架构与集成仍由当前总控负责。
-- F1、P1、P2-A技术验收已完成，PR #6/#7/#8保持Draft；P2-B1也已技术验收，PR #9保持Draft；B2-1原包接收与独立媒体隔离可行性也已技术验收，PR #10/#11保持Draft；准确证据见P2B2_RECEIVE_ACCEPTANCE.md与MEDIA_ISOLATION_ACCEPTANCE.md。B2-2A可信桥接与B2-2B归档后台均已技术验收，PR #12/#13保持Draft，见P2B2A_ACCEPTANCE.md与P2B2B_ACCEPTANCE.md；接续B2-3首个持久草稿。旧STORAGE_PROPOSAL为历史；P1从已审核且CI成功的 `efe29e63839597dde557b791d03885e675c660ba` 建独立工作树，不改F1原交付或旧暂停成果。依赖未合并时采用堆叠分支/PR，不能冒称已进入main。
+- F1、P1、P2-A技术验收已完成，PR #6/#7/#8保持Draft；P2-B1也已技术验收，PR #9保持Draft；B2-1原包接收与独立媒体隔离可行性也已技术验收，PR #10/#11保持Draft；准确证据见P2B2_RECEIVE_ACCEPTANCE.md与MEDIA_ISOLATION_ACCEPTANCE.md。B2-2A可信桥接与B2-2B归档后台均已技术验收，PR #12/#13保持Draft，见P2B2A_ACCEPTANCE.md与P2B2B_ACCEPTANCE.md；B2-3首个持久草稿也已技术验收，PR #14保持Draft，见P2B3_ACCEPTANCE；接续P3-A有限content.v2与纯评分，之后authored/v2准入、固定revision预览、审核及P4/P5。网页内编辑后置，重新导入追加修订在同Product首次返修前单独实现。旧STORAGE_PROPOSAL为历史；P1从已审核且CI成功的 `efe29e63839597dde557b791d03885e675c660ba` 建独立工作树，不改F1原交付或旧暂停成果。依赖未合并时采用堆叠分支/PR，不能冒称已进入main。
 
 - 2026-10-11 作者明确授权当前聊天接管：先更新前后台架构、数据模型、测评资源归属与开发路线，再实现第一批「测评与资源版本底座」F1；其他 QuizForge 开发聊天及其子代理暂停，保留分支、worktree、未提交成果，未经用户恢复不继续。
 - F1 范围与验收以 `docs/FOUNDATION_F1.md` 为准：Product 即独立测评工作区；运行时结构合同、资源归属与引用检查、草稿 revision/内容哈希纯逻辑、三结果合成参考包、JSON 校验入口与失败边界测试。先文档后代码，完成六项工程检查、审查、提交推送及面向 main 的 Draft PR 后停止供阶段验收。
@@ -34,7 +35,7 @@
 - QuizPack 导入先限压缩大小/解压大小/文件数，拒绝路径穿越、符号链接、重复路径、未知/可执行类型和缺授权资源；未通过不能导入正式内容。详细提案见 `docs/QUIZPACK_SPEC.md`。
 - 领域模块不反向依赖 `app`；共享纯函数放 `lib`。跨模块只通过显式接口或应用服务，不任意互查数据库。
 - 禁止在通用组件中按商品 ID 硬编码行为；五个页面状态可以有不同配方，不能退化为单一布局换色。
-- PostgreSQL18.4 + Drizzle已在P2-A建立隔离实例与operator/session/audit，B1追加product/category/tag/product_tag及真实目录界面，最终验收见P2B1_ACCEPTANCE；不是生产环境。草稿/资源/发布持久化与评分仍待后续阶段。固定postgres补丁及失效错误合同见P2B1_DRIVER_PATCH，升级前必须复验；build自动阻断私有路径追踪。
+- PostgreSQL18.4 + Drizzle已在P2-A建立隔离实例与operator/session/audit，B1追加product/category/tag/product_tag及真实目录界面，最终验收见P2B1_ACCEPTANCE；不是生产环境。B2已完成synthetic/content.v1原包接收、资源归档及首个不可变草稿；authored/v2准入、追加修订、发布持久化与评分仍待后续阶段。固定postgres补丁及失效错误合同见P2B1_DRIVER_PATCH，升级前必须复验；build自动阻断私有路径追踪。
 - AI 只生成符合版本化结构 Schema 的草稿。拒绝任意代码、eval、动态执行和从 AI 输出导入模块；正式评分由受测的确定性引擎完成。
 - Key 正式完成依赖数据库事务与唯一约束，前端状态不能授予完成权威。QuizReport 为不可变快照，发布内容不可原地修改。
 - 报告支持 DETERMINISTIC / COMPOSED / AI_ENHANCED，最终结论始终由确定性引擎产生。AI 仅增强已验证摘要的文案，不改分数/原型/结局，不编造经历，不做诊断/命运断言；失败回退完整基线报告。

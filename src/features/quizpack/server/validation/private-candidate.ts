@@ -15,6 +15,7 @@ import {
 } from "./contracts";
 import { EVIDENCE_LIMITS, freezeJson } from "./report";
 import { assertPersistenceUnicode, EvidenceError } from "./unicode";
+import { computeCandidateSha256 } from "./candidate-hash";
 
 export type DeepReadonly<T> = T extends readonly (infer U)[]
   ? readonly DeepReadonly<U>[]
@@ -190,16 +191,13 @@ export function preparePrivateCandidate(
   const canonicalManifestSha256 = hash(canonicalManifestText);
   const canonicalContentSha256 = hash(canonicalContentText);
   const archiveSha256 = sealed.evidence.input.archiveSha256;
-  const candidateSha256 = hash(
-    canonicalP1Json({
-      schemaVersion: "quizpack-candidate-hash.v1",
-      archiveSha256,
-      canonicalManifestSha256,
-      canonicalContentSha256,
-      assetSetSha256,
-      identitySha256: sealed.evidence.identity.value.identitySha256,
-    }),
-  );
+  const candidateSha256 = computeCandidateSha256({
+    archiveSha256,
+    canonicalManifestSha256,
+    canonicalContentSha256,
+    assetSetSha256,
+    identitySha256: sealed.evidence.identity.value.identitySha256,
+  });
   const facts = freezeJson({
     schemaVersion: "quizpack-private-candidate.v1" as const,
     archiveSha256,
