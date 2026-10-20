@@ -1,5 +1,23 @@
 # QuizForge 托管开发
 
+## 2026-10-20 已授权 P5 首款目标完成
+
+历史人物首款《千载同心》已在原39eb内部test实例真实完成四个作者见证的12题答题、持久恢复、唯一报告、原Key只读回看和四张1080×1920PNG。最终精确图1play/4Key/4session/4report/8grant，原内容/八图不变；升级、live、只读audit实际exit0，所有已拥有的服务/句柄关闭，实例停止保留。A/B各完整查看68原图，Astra独立20张，限定71文件隐私扫描通过。见[P5_ACCEPTANCE.md](P5_ACCEPTANCE.md)。
+
+当前P1–P5授权目标已完成本地内测，文档37bb8ca的远端CI39430084373暴露旧`p3e-close-fault`退出观察失败：checks通过、database失败、fresh未运行。A以新库3/3反例修正三个测试文件（32594da→root78939ed），原fd/db加六边界共8/8通过，Astra独立六边界通过；生产保护与首款数据未变。root在本提交推送后核实准确head的完整CI，实际结果另记[PR #20](https://github.com/aning0922/quiz-forge/pull/20)。继续保留主控＋两条独立开发聊天＋Astra独审、分支与全部证据。没有重跑一次性升级或live脚本、启动P6+、合并main或发布的默认授权；后续新范围另行明确。已有内测内容/视觉批准不被解释为商业素材权利或发布批准。
+
+## 2026-10-20 P4 出口与 P5 接续
+
+P4运行144d0b1、测试898fbfc已完成技术出口，见[P4_ACCEPTANCE.md](P4_ACCEPTANCE.md)：259生产E2E/10既有skip、实际退出清理、1961单元/496PG、新main66×3、29图双线复核及准确CI通过。新1.0.1入口与旧1.0.0报告精确绑定兼容、自然过期只读报告已实际验证。现接续已授权的P5历史人物首款四结果现场，原39eb实例及已批准内容/八图保留；root独占升级/3100/最终图审与审计，A/B和Astra独立聊天继续。首款现场未执行前不宣告P5完成；不追加素材/发布授权，不合并main或运行生产迁移。
+
+## 2026-10-18 P4 共享合同与并行归属
+
+机器/设计基线 6ae499a 已独审收口并由主控冻结，允许 A 进入 0018/guard/owner/事务/留存及真实 PG，B 进入 HTTP 与消费者/运营 controller；具体范围见 CONSUMER_P4/P4_DATA_DESIGN。root 继续精确实现登记与集成，3100 独占串行。此为实施启动，未验收实际 P4/P5；已批准同一内容/视觉不重复请批。
+
+主控在 `codex/consumer-session-report` / Draft PR #20，从 c83788b 接续；当前机器接口至 50a35a6。共享基础/codec、领域 DTO/纯视图接口、errors/resolve 已由原 Astra 独审分别通过；entry/service/owner/同事务 ports 正在收口。主控完整 1763 单元及 format/lint/typecheck 已过，尚未验收数据库或消费者端到端。
+
+A（原聊天 01a13f49-bff9-74b0-8f7c-03cd46b346c1，`codex/p4-consumer-data`）负责后续 0018、guard、惰性 owner、数据事务/领域 ports、保留与真实 PG；B（原聊天 01a13f4a-3ac5-7a72-9ae0-70b24ec85f04，`codex/p4-consumer-ui`）负责纯六视图/PNG，冻结后接消费者/Studio host 与 HTTP。root 独占共享基础/应用接口/精确实现登记/全量集成、生产构建与 3100；Astra 原独立聊天负责非实施审查。常规工作沿既有授权推进，同一内容与视觉内测基线不重复请批。详细状态和仍待实现的边界见 [CONSUMER_P4](CONSUMER_P4.md)、[P4_REVIEW](P4_REVIEW.md)。
+
 ## 2026-10-18 P3-E 技术出口完成，接续 P4
 
 生产 eb7595a / 测试 f924f23 已完成精确基线批准和不可变内测版本：1710 单元、469 fresh PG、46 driver、独立 fresh 服务 14/媒体 UNKNOWN 3、完整生产 E2E 241/10 旧 skip 均通过；最终 main 媒体 66×3 封存、80 traces/17204 路径/0 私有违规。准确 f924f23 的 CI 39128057215 与 39128057251 均 success。A/B 分别检查 80 原图，Astra 核完整证据并实际查看 20 状态代表图，无剩余 P1/P2，保留三类非阻断后台排版 P3。详见 [P3E_ACCEPTANCE](P3E_ACCEPTANCE.md)、[P3E_REVIEW](P3E_REVIEW.md)、[P3E_VISUAL_CHECK](P3E_VISUAL_CHECK.md)。

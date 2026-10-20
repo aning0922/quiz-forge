@@ -26,6 +26,9 @@ it("keeps actual selectors in canonical inline form without changing the owned c
   expect(previewE2eArguments(["--project=studio-draft-revisions"])).toEqual([
     "--project=studio-draft-revisions",
   ]);
+  expect(previewE2eArguments(["--project", "consumer-flow"])).toEqual([
+    "--project=consumer-flow",
+  ]);
   expect(
     previewE2eArguments([
       "--project",

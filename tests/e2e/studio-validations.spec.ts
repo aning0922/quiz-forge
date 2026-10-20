@@ -1,5 +1,6 @@
 import { test, expect, type Page, type TestInfo } from "@playwright/test";
 import { constants } from "node:fs";
+import { sampleStudioLayout, assertStudioLayout } from "./studio-layout";
 import { open } from "node:fs/promises";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
@@ -158,26 +159,18 @@ async function signIn(
 async function mobileChecks(page: Page, testInfo: TestInfo, state: string) {
   for (const width of [320, 375, 390, 430]) {
     await page.setViewportSize({ width, height: 900 });
-    expect(
-      await page.evaluate(
-        () => document.documentElement.scrollWidth <= window.innerWidth,
-      ),
-    ).toBe(true);
-    const region = page.getByRole("region", {
-      name: "验证与私有资源归档",
-      exact: true,
-    });
-    expect(
-      await region.evaluate(
-        (element) =>
-          Number.parseFloat(getComputedStyle(element).fontSize) >= 16,
-      ),
-    ).toBe(true);
-    const targets = region.getByRole("button");
-    for (const target of await targets.all()) {
-      const box = await target.boundingBox();
-      if (box) expect(box.height).toBeGreaterThanOrEqual(44);
-    }
+    await expect(
+      page.getByRole("region", { name: "验证与私有资源归档", exact: true }),
+    ).toHaveCount(1);
+    assertStudioLayout(
+      await sampleStudioLayout(page, {
+        fontSelector: 'section[aria-labelledby="validation-heading"]',
+        fontVisibility: "all",
+        buttonRoleWithin: 'section[aria-labelledby="validation-heading"]',
+        appliedReceipts: false,
+      }),
+      { requiredFontCount: 1 },
+    );
     // Only synthetic status pages after the credential field has disappeared.
     // Capture from the top: Chromium fullPage capture from a scrolled viewport
     // can paint an off-screen fixed skip link inside the stitched page image.

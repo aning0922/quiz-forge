@@ -4,6 +4,16 @@
 
 ## 当前阶段与授权
 
+- 2026-10-20 P5本地内测结论保持，交付37bb8ca的CI39430084373曾为checks成功/database失败：旧p3e-close-fault在真实子进程退出后单次查询仍见1条backend记录，fixture按保护未清理，后续级联。A新库3/3复现后仅修三个测试文件，32594da由主控集成为78939ed；原两完整用例加六边界8/8通过，Astra独立六边界通过，原SQL/维护锁/cleanup与生产代码不变。主控在本提交推送后核准确head最终CI并记PR #20；不得把原fresh跳过写成通过，不重跑39eb升级/live或放宽资源保护。详见docs/P5_ACCEPTANCE.md的CI收尾记录。
+
+- 2026-10-20 P5历史人物首款《千载同心》端到端内测已完成：原39eb test实例仅升级0018，原16表/17history/8素材保持；真实UI四个12题见证、三题刷新恢复、原Key只读同报告及4张1080×1920PNG通过，最终只读精确1play/4Key/4session/4report/8grant，所有拥有的进程/SQL/FD关闭且实例停止保留。A/B各68原图、Astra20原图、71安全产物限定隐私扫描通过；见docs/P5_ACCEPTANCE.md及docs/qa/p5-acceptance.json。本次P1–P5托管目标已到交付点，保持独立聊天/分支/证据，不默认启动P6+、重跑一次性升级/live、合并main、生产迁移、部署或发布。原内容视觉批准仍只限内测。
+
+- 2026-10-20 P4已完成技术出口（运行144d0b1、最终测试898fbfc）：259生产E2E/10既有skip、实际退出与全fixture清理、1961单元/496PG、新main66×3、29图A/B全量与Astra9图、准确CI39422702012通过；新dc195入口兼容旧193b会话/报告，原Key自然过期后只读报告已真实验证。详见docs/P4_ACCEPTANCE.md及docs/qa/p4-acceptance.json。按既有托管授权接续P5，root独占39eb内部test实例升级、四见证现场/3100/最终审计，A/B独立开发与Astra独审保持。原批准内容与视觉不重复请批；现场脚本准备不等于P5完成。无main合并、生产迁移、部署或发布。
+
+- 2026-10-18 P4 机器/设计已由 Astra 独审闭合并由主控在 f810f74 冻结，进入实施。A 独占 0018/guard/DB 最小适配、领域 ports/事务/request owner/留存及真实 PG；B 独占 consumer 六视图/PNG、HTTP/source/Cookie/stream、运营/消费者 controller 与薄路由；root 独占 lib/consumer-contract、已冻结 consumer-flow 机器合同、internal-play implementation-* 登记与全量集成/3100。细则见 docs/CONSUMER_P4.md、docs/P4_DATA_DESIGN.md、docs/P4_REVIEW.md。八格纯 SQL owner 与四格文件任务独立，未知实际关闭不按 TTL 释放；同 Key void/claim 双向 DB 保护、Key 页 RR 与返回前新鲜授权必须兑现。该冻结只允许开始实现，不是 P4/P5 通过；同一批准内容视觉不再请批。
+
+- 2026-10-18 P3-E 已完成技术出口（runtime eb7595a、tests f924f23、delivery c83788b，Draft PR #19）：1710 单元、469 PG、最终生产 E2E 241 通过/10 既有 skip、80 原图复核及准确 head 双 CI 通过。首款精确批准包已真实导入/审核/封存，39eb 内测实例停止保留。当前从 c83788b 接续 `codex/consumer-session-report`（Draft PR #20）准备 P4 消费者合同；root 维护共享协议/集成，A 独立数据线、B 独立体验线、Astra 独审保持。严格合同与服务接口完整冻结后才建 0018/业务服务；不得修改旧封存实现或复用未知实例。详见 docs/P3E_ACCEPTANCE.md、docs/CONSUMER_P4.md。下面较早 P3-E“未导入”段落为过程历史。
+
 - 当前P3-E从P3-D a66c456接续codex/internal-version-seal（Draft PR #19）；共享显示及review/version机器合同已Astra前置审查冻结，见docs/INTERNAL_VERSION_P3E.md。B独占现预览解耦及之后HTTP/后台，A独占0017/事务/资源留存；主控单写机器接口、受信registry/实现身份与集成。首款精确规范产物已离线独审，未正式导入/审核/封存；新实际链路仍须工程验收。
 
 - 2026-10-18 P3-D已完成独立技术出口，准确运行/测试c1ca647；追加修订、真实0015→0016升级、235生产E2E、61图双线及双CI通过，Astra无剩余P1/P2。见docs/P3D_ACCEPTANCE.md。接续P3-E精确基线落账与内测版本封存，再接P4/P5；作者已批准的同一内容/视觉不重复请批，常规工程沿既定独立聊天方式继续。

@@ -1,4 +1,6 @@
 import { expect, type Page, type TestInfo } from "@playwright/test";
+import { sampleStudioLayout, assertStudioLayout } from "./studio-layout";
+import { waitForInternalCaptureReady } from "./studio-internal-versions.visual";
 import { internalRevisionScopeSchema } from "../../src/features/product/internal-versions/urls";
 import {
   INTERNAL_PENDING_KEYS,
@@ -89,40 +91,34 @@ export async function captureInternalWidths(
 ) {
   if (!/^[a-z0-9-]{1,80}$/.test(state))
     throw Error("INTERNAL_VERSION_E2E_SCREENSHOT_SCOPE");
+  await waitForInternalCaptureReady(page, state);
   for (const width of [320, 375, 390, 430]) {
+    await page.evaluate(async () => {
+      await document.fonts.ready;
+    });
     await page.setViewportSize({ width, height: 900 });
-    expect(
-      await page.evaluate(
-        () => document.documentElement.scrollWidth <= innerWidth,
-      ),
-    ).toBe(true);
-    for (const target of await page
-      .locator("main button,main a,main select,main summary")
-      .all()) {
-      if (!(await target.isVisible())) continue;
-      const box = await target.boundingBox();
-      if (box) expect(box.height).toBeGreaterThanOrEqual(44);
-    }
-    for (const body of await page.locator("main p,main pre,main dd").all()) {
-      if (!(await body.isVisible())) continue;
-      expect(
-        await body.evaluate((node) =>
-          parseFloat(getComputedStyle(node).fontSize),
-        ),
-      ).toBeGreaterThanOrEqual(16);
-    }
+    assertStudioLayout(
+      await sampleStudioLayout(page, {
+        fontSelector: "main p,main pre,main dd",
+        appliedReceipts: false,
+      }),
+    );
     await page.evaluate(() => scrollTo(0, 0));
     await expect.poll(() => page.evaluate(() => scrollY)).toBe(0);
+    const height = await page.evaluate(() =>
+      Math.max(innerHeight, document.documentElement.scrollHeight),
+    );
     const png = await page.screenshot({
       path: info.outputPath(`p3e-${state}-${width}.png`),
       fullPage: true,
       animations: "disabled",
     });
     expect(png.readUInt32BE(16)).toBe(width);
-    expect(png.readUInt32BE(20)).toBe(
+    expect(
       await page.evaluate(() =>
         Math.max(innerHeight, document.documentElement.scrollHeight),
       ),
-    );
+    ).toBe(height);
+    expect(png.readUInt32BE(20)).toBe(height);
   }
 }

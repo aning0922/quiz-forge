@@ -12,6 +12,7 @@ export default defineConfig({
     {
       name: "mobile-chromium",
       testIgnore: [
+        "**/consumer-flow.spec.ts",
         "**/studio-auth.spec.ts",
         "**/studio-workspace.spec.ts",
         "**/studio-imports.spec.ts",
@@ -30,6 +31,7 @@ export default defineConfig({
     {
       name: "desktop-chromium",
       testIgnore: [
+        "**/consumer-flow.spec.ts",
         "**/studio-auth.spec.ts",
         "**/studio-workspace.spec.ts",
         "**/studio-imports.spec.ts",

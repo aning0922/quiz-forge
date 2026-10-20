@@ -331,8 +331,8 @@ export async function resetDomainDatabase(db: TestDatabase) {
     const [ledgerSchema] = await lock.query(
       () =>
         lock.connection<
-          { reviews: boolean; versions: boolean }[]
-        >`SELECT to_regclass('qf.draft_review') IS NOT NULL AS reviews,to_regclass('qf.product_version') IS NOT NULL AS versions`,
+          { reviews: boolean; versions: boolean; consumer: boolean }[]
+        >`SELECT to_regclass('qf.draft_review') IS NOT NULL AS reviews,to_regclass('qf.product_version') IS NOT NULL AS versions,to_regclass('qf.internal_play_version') IS NOT NULL AS consumer`,
     );
     if (!ledgerSchema || ledgerSchema.reviews !== ledgerSchema.versions)
       throw new Error("TEST_INTERNAL_VERSION_SCHEMA_INCOMPLETE");
@@ -346,6 +346,16 @@ export async function resetDomainDatabase(db: TestDatabase) {
       : [{ occupied: false }];
     if (ledger?.occupied !== false)
       throw new Error("TEST_INTERNAL_VERSION_SCOPE_NOT_EMPTY");
+    if (ledgerSchema.consumer) {
+      const [consumer] = await lock.query(
+        () =>
+          lock.connection<
+            { occupied: boolean }[]
+          >`SELECT EXISTS(SELECT 1 FROM qf.internal_play_version) OR EXISTS(SELECT 1 FROM qf.access_key) OR EXISTS(SELECT 1 FROM qf.consumer_session) OR EXISTS(SELECT 1 FROM qf.consumer_grant) OR EXISTS(SELECT 1 FROM qf.quiz_report) AS occupied`,
+      );
+      if (consumer?.occupied !== false)
+        throw new Error("TEST_CONSUMER_SCOPE_NOT_EMPTY");
+    }
     const uploads = path.dirname(importsDirectory(db.config));
     const roots = await readdir(uploads, { withFileTypes: true }).catch(
       (e: unknown) => {
@@ -391,7 +401,7 @@ export async function resetDomainDatabase(db: TestDatabase) {
     await lock.check();
     await safe(() =>
       db.admin.sql.unsafe(
-        `TRUNCATE ${ledgerSchema.reviews ? "qf.product_version,qf.draft_review," : ""}qf.draft_application,qf.draft_revision,qf.product_draft,qf.product_asset,qf.asset_blob,qf.quizpack_validation,qf.quizpack_import,qf.product_tag,qf.product,qf.category,qf.tag,qf.operator_session,qf.audit_event,qf.operator`,
+        `TRUNCATE ${ledgerSchema.consumer ? "qf.quiz_report,qf.consumer_grant,qf.consumer_session,qf.access_key,qf.internal_play_version," : ""}${ledgerSchema.reviews ? "qf.product_version,qf.draft_review," : ""}qf.draft_application,qf.draft_revision,qf.product_draft,qf.product_asset,qf.asset_blob,qf.quizpack_validation,qf.quizpack_import,qf.product_tag,qf.product,qf.category,qf.tag,qf.operator_session,qf.audit_event,qf.operator`,
       ),
     );
   } finally {

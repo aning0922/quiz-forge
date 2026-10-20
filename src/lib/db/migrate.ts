@@ -5,6 +5,7 @@ import path from "node:path";
 import type postgres from "postgres";
 import { verifyDatabaseIdentity } from "./client";
 import type { P2aRuntimeConfig } from "./runtime";
+import { assertConsumerNamespace } from "./consumer-namespace";
 
 export type Migration = { version: string; source: string };
 export class MigrationError extends Error {
@@ -50,6 +51,8 @@ export async function migrateDatabase(
   try {
     await connection`SELECT pg_advisory_lock(716238419221::bigint)`;
     locked = true;
+    // Reject owner-mediated view/rule privileges before ANY migration or privilege reset.
+    await assertConsumerNamespace(connection);
     await transaction(connection, async (tx) => {
       await tx`CREATE SCHEMA IF NOT EXISTS qf_meta`;
       await tx`REVOKE ALL ON SCHEMA qf_meta FROM PUBLIC`;
@@ -68,6 +71,7 @@ export async function migrateDatabase(
       throw new MigrationError("MIGRATION_HISTORY_MISMATCH");
     const applied: string[] = [];
     for (const migration of definitions) {
+      await assertConsumerNamespace(connection);
       const checksum = createHash("sha256")
         .update(migration.source, "utf8")
         .digest("hex");
@@ -83,6 +87,7 @@ export async function migrateDatabase(
       });
       applied.push(migration.version);
     }
+    await assertConsumerNamespace(connection);
     await transaction(connection, async (tx) => {
       const app = tx(config.database.user);
       await tx`REVOKE ALL ON DATABASE ${tx(config.database.name)} FROM PUBLIC`;
@@ -142,6 +147,38 @@ export async function migrateDatabase(
       >`SELECT EXISTS(SELECT 1 FROM pg_attribute WHERE attrelid=to_regclass('qf.product_draft') AND attname='initial_revision' AND NOT attisdropped) AS present`;
       if (appendSchema?.present)
         await tx`GRANT UPDATE(current_revision) ON qf.product_draft TO ${app}`;
+      const [consumer] = await tx<
+        { present: boolean }[]
+      >`SELECT to_regclass('qf.consumer_exchange_budget') IS NOT NULL AS present`;
+      if (consumer?.present) {
+        for (const name of [
+          "internal_play_version",
+          "access_key",
+          "consumer_session",
+          "consumer_grant",
+          "quiz_report",
+        ])
+          await tx`GRANT SELECT,INSERT ON ${tx(`qf.${name}`)} TO ${app}`;
+        await tx`GRANT SELECT ON qf.consumer_exchange_budget TO ${app}`;
+        await tx`GRANT UPDATE(revoked_at,void_operation_key,void_binding_text,void_binding_sha256,voided_by) ON qf.access_key TO ${app}`;
+        await tx`GRANT UPDATE(state_revision,answers_text,consumer_state_answers_sha256,progress_text,progress_sha256,last_binding_text,last_binding_sha256,last_receipt_text,last_receipt_sha256) ON qf.consumer_session TO ${app}`;
+        await tx`GRANT UPDATE(grant_id,credential_digest,issued_at,expires_at,revoked_at) ON qf.consumer_grant TO ${app}`;
+        await tx`GRANT UPDATE(window_index,used) ON qf.consumer_exchange_budget TO ${app}`;
+        for (const signature of [
+          "consumer_schema(text)",
+          "consumer_canonical(jsonb)",
+          "consumer_json_valid(jsonb,jsonb,integer)",
+          "consumer_body_valid(text,text,integer)",
+          "consumer_moment(timestamp with time zone)",
+          "consumer_play_valid(qf.internal_play_version)",
+          "consumer_key_valid(qf.access_key)",
+          "consumer_session_valid(qf.consumer_session)",
+          "consumer_report_valid(qf.quiz_report)",
+        ])
+          await tx.unsafe(
+            `GRANT EXECUTE ON FUNCTION qf.${signature} TO "${config.database.user}"`,
+          );
+      }
       for (const signature of [
         "sha256_utf8(text)",
         "validation_attempts_valid(text,integer,uuid,bigint)",

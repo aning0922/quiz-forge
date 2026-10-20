@@ -1,6 +1,7 @@
 import { PREVIEW_FONT_ASSET } from "../../src/features/product/preview/descriptor";
-import { test, expect, type Page, type TestInfo } from "@playwright/test";
+import { test, expect, type Page } from "@playwright/test";
 import { constants } from "node:fs";
+import { capturePreviewMobile as mobile } from "./studio-preview.visual";
 import { open, readFile, lstat, realpath } from "node:fs/promises";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
@@ -210,51 +211,6 @@ async function score(page: Page, entry: PreviewEntry): Promise<PreviewReveal> {
     page.getByRole("heading", { name: reveal.result.displayName, exact: true }),
   ).toBeVisible();
   return reveal;
-}
-async function mobile(page: Page, info: TestInfo, state: string) {
-  if (state !== "resume")
-    await expect(page.locator("[data-preview-state] img")).toBeVisible();
-  await page.evaluate(async () => {
-    await document.fonts.ready;
-  });
-  for (const width of [320, 375, 390, 430]) {
-    await page.setViewportSize({ width, height: 900 });
-    if (state === "question") {
-      const badge = await page.locator("[data-preview-approval]").boundingBox();
-      const caption = await page
-        .locator("[data-preview-scene-caption]")
-        .boundingBox();
-      if (!badge || !caption) throw Error("PREVIEW_SCENE_BOUNDS_MISSING");
-      expect(badge.y + badge.height).toBeLessThanOrEqual(caption.y);
-    }
-    expect(
-      await page.evaluate(
-        () => document.documentElement.scrollWidth <= innerWidth,
-      ),
-    ).toBe(true);
-    for (const button of await page.getByRole("button").all()) {
-      const box = await button.boundingBox();
-      if (box) expect(box.height).toBeGreaterThanOrEqual(44);
-    }
-    for (const p of await page.locator("[data-preview-state] p").all()) {
-      if (await p.isVisible())
-        expect(
-          await p.evaluate((e) => parseFloat(getComputedStyle(e).fontSize)),
-        ).toBeGreaterThanOrEqual(16);
-    }
-    await page.evaluate(() => scrollTo(0, 0));
-    await expect.poll(() => page.evaluate(() => scrollY)).toBe(0);
-    const png = await page.screenshot({
-      path: info.outputPath(`preview-${state}-${width}.png`),
-      fullPage: true,
-    });
-    expect(png.readUInt32BE(16)).toBe(width);
-    expect(png.readUInt32BE(20)).toBe(
-      await page.evaluate(() =>
-        Math.max(innerHeight, document.documentElement.scrollHeight),
-      ),
-    );
-  }
 }
 test.beforeAll(async () => {
   // Hook timeouts are independent of the per-test timeout above.

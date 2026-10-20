@@ -30,7 +30,7 @@ afterAll(async () => {
 async function rows() {
   const tables = await db.admin.sql<
     { name: string }[]
-  >`SELECT c.relname AS name FROM pg_class c WHERE c.relnamespace='qf'::regnamespace AND c.relkind='r' AND c.relname NOT IN ('draft_review','product_version') ORDER BY c.relname`;
+  >`SELECT c.relname AS name FROM pg_class c WHERE c.relnamespace='qf'::regnamespace AND c.relkind='r' AND c.relname NOT IN ('draft_review','product_version','internal_play_version','access_key','consumer_session','consumer_grant','quiz_report','consumer_exchange_budget') ORDER BY c.relname`;
   const result: Record<string, string[]> = {};
   for (const { name } of tables) {
     const data = await db.admin.sql<
@@ -159,7 +159,7 @@ it("upgrades a real 0016 r1→r2→r3 lineage without changing a byte; rejects a
     }
     expect(await rows()).toEqual(before);
     expect(await migrateDatabase(db.admin.sql, db.config, definitions)).toEqual(
-      ["0017_internal_versions"],
+      ["0017_internal_versions", "0018_consumer_session_report"],
     );
     expect(await rows()).toEqual(before);
     db.app = await createDatabase(db.config);
