@@ -83,6 +83,21 @@ let fixture: ConsumerFixture,
   play: InternalPlayReceipt,
   entry: ConsumerEntryView,
   sessionId: string;
+type OperatorStage =
+  | "not-started"
+  | "initial-read"
+  | "create-play"
+  | "confirm-play"
+  | "issue-key"
+  | "export-private-link"
+  | "final-list-capture";
+let operatorStage: OperatorStage = "not-started";
+const sessionBoundaries: {
+  endpoint: "session" | "parent-list" | "play-list" | "key-list";
+  status: number;
+  encoding: "none" | "identity" | "gzip" | "deflate" | "br" | "zstd" | "other";
+  jsonContentType: boolean;
+}[] = [];
 const contexts: BrowserContext[] = [],
   keys: AccessKeyDetail[] = [],
   privateLinks: string[] = [];
@@ -102,13 +117,52 @@ function safeCase(
     try {
       await work({ browser }, info);
     } catch {
+      let visibilityEvents: unknown = "unavailable";
+      if (info.title === CASES[0]) {
+        try {
+          visibilityEvents = await operator.evaluate(() => {
+            const value = (
+              window as Window & { __qfStudioBoundaryEvents?: unknown }
+            ).__qfStudioBoundaryEvents;
+            return Array.isArray(value) &&
+              value.length <= 32 &&
+              value.every((v) =>
+                [
+                  "hidden",
+                  "visible",
+                  "pagehide",
+                  "authority-invalidated",
+                ].includes(v),
+              )
+              ? value
+              : "unavailable";
+          });
+        } catch {}
+      }
       for (const context of contexts) {
         try {
           await context.close();
         } catch {}
       }
+      if (info.title === CASES[0]) {
+        // Finite diagnostics only. No URL, headers object, DTO, credentials,
+        // operator/Key identity, original exception or answer DOM is attached.
+        try {
+          await info.attach("consumer-operator-boundary.json", {
+            body: Buffer.from(
+              JSON.stringify({
+                stage: operatorStage,
+                responses: sessionBoundaries,
+                visibilityEvents,
+                issuedKeyCount: keys.length,
+              }),
+            ),
+            contentType: "application/json",
+          });
+        } catch {}
+      }
       throw Error(
-        `CONSUMER_E2E_CASE_FAILED:${CASES.includes(info.title as (typeof CASES)[number]) ? info.title : "unknown"}`,
+        `CONSUMER_E2E_CASE_FAILED:${CASES.includes(info.title as (typeof CASES)[number]) ? info.title : "unknown"}${info.title === CASES[0] ? ":" + operatorStage : ""}`,
       );
     }
   };
@@ -272,11 +326,77 @@ test.afterAll(async () => {
 test(
   CASES[0],
   safeCase(async ({}, info) => {
+    operatorStage = "initial-read";
+    const boundaryPaths = new Map<
+      string,
+      "session" | "parent-list" | "play-list" | "key-list"
+    >([
+      ["/api/studio/auth/session", "session"],
+      [
+        `/api/studio/products/${fixture.productId}/internal-versions`,
+        "parent-list",
+      ],
+      [urls.internalPlaysUrl(fixture.productId), "play-list"],
+      [urls.accessKeysUrl(fixture.productId), "key-list"],
+    ]);
+    operator.on("response", (response) => {
+      if (response.request().method() !== "GET") return;
+      const endpoint = boundaryPaths.get(new URL(response.url()).pathname);
+      if (!endpoint) return;
+      const headers = response.headers(),
+        raw = headers["content-encoding"] ?? "none";
+      const encoding = [
+        "none",
+        "identity",
+        "gzip",
+        "deflate",
+        "br",
+        "zstd",
+      ].includes(raw)
+        ? (raw as "none" | "identity" | "gzip" | "deflate" | "br" | "zstd")
+        : "other";
+      if (sessionBoundaries.length === 32) sessionBoundaries.shift();
+      sessionBoundaries.push({
+        endpoint,
+        status: response.status(),
+        encoding,
+        jsonContentType: /^application\/json(?:\s*;\s*charset=utf-8)?$/i.test(
+          headers["content-type"] ?? "",
+        ),
+      });
+    });
+    await operator.addInitScript(() => {
+      const events: string[] = [];
+      (
+        window as Window & { __qfStudioBoundaryEvents?: string[] }
+      ).__qfStudioBoundaryEvents = events;
+      const probe = {
+        record(event: string) {
+          if (events.length === 32) events.shift();
+          events.push(event);
+        },
+      };
+      document.addEventListener("visibilitychange", () =>
+        probe.record(document.hidden ? "hidden" : "visible"),
+      );
+      window.addEventListener("pagehide", () => probe.record("pagehide"));
+      window.addEventListener("quizforge:studio-authority-invalidated:v1", () =>
+        probe.record("authority-invalidated"),
+      );
+    });
     await operator.bringToFront();
     await operator.goto(studioPage());
-    await operator
-      .getByRole("combobox", { name: "已封存的父版本", exact: true })
-      .selectOption(fixture.parent!.version.id);
+    const parentChoice = operator.getByRole("combobox", {
+      name: "已封存的父版本",
+      exact: true,
+    });
+    // Fresh identity then the joint metadata read each have the existing 15s
+    // request deadline. Fail this semantic boundary before a 180s action wait.
+    await expect(parentChoice).toBeEnabled({
+      timeout: 2 * L.deadlineMs + 5_000,
+    });
+    await parentChoice.selectOption(fixture.parent!.version.id);
+    operatorStage = "create-play";
     await operator
       .getByRole("button", { name: "创建消费者内测版本", exact: true })
       .click();
@@ -300,8 +420,10 @@ test(
         play.binding.parent.versionId === fixture.parent!.version.id,
     ).toBe(true);
     observations.plays.push(play);
+    operatorStage = "confirm-play";
     await finishStudioPending();
     for (let i = 0; i < 3; i++) {
+      operatorStage = "issue-key";
       await operator
         .getByRole("combobox", { name: "固定内测版本", exact: true })
         .selectOption(play.id);
@@ -366,9 +488,11 @@ test(
       if (!issued) throw Error("CONSUMER_E2E_ISSUE_FACT_MISSING");
       keys.push(issued);
       rememberKey(issued);
+      operatorStage = "export-private-link";
       privateLinks.push(await downloadIssuedPrivateLink(operator, issued));
       await finishStudioPending();
     }
+    operatorStage = "final-list-capture";
     await captureConsumerWidths(operator, info, "operator-key-list");
   }),
 );
