@@ -32,6 +32,7 @@ import {
   downloadIssuedPrivateLink,
   openPrivateConsumerLink,
   observeConsumerGrant,
+  waitForConsumerCompletionAdoption,
 } from "./consumer-flow.ui";
 import { signInInternalOperator } from "./studio-internal-versions.ui";
 import * as urls from "../../src/features/fulfillment/consumer-flow/urls";
@@ -542,7 +543,13 @@ test(
       );
       await unknown(route);
     });
-    await buyer.getByRole("radio").first().check();
+    const firstOption = buyer
+      .locator(
+        `input[type="radio"][name="consumer-question-${entry.facts.entry.questions[0]!.id}"]`,
+      )
+      .first();
+    await expect(firstOption).toBeEnabled();
+    await firstOption.check();
     await buyer.getByRole("button", { name: "下一题", exact: true }).click();
     await expect(
       buyer.getByRole("heading", { name: "核对上一次操作", exact: true }),
@@ -573,10 +580,13 @@ test(
     await buyer.getByRole("button", { name: "继续答题", exact: true }).click();
     // The original save advanced to the next fixed question. Finish through actual UI saves.
     for (let i = 1; i < entry.facts.entry.questions.length; i++) {
-      await expect(
-        buyer.locator('[data-consumer-state="question"]'),
-      ).toBeVisible();
-      await buyer.getByRole("radio").first().check();
+      const option = buyer
+        .locator(
+          `input[type="radio"][name="consumer-question-${entry.facts.entry.questions[i]!.id}"]`,
+        )
+        .first();
+      await expect(option).toBeEnabled();
+      await option.check();
       await buyer
         .getByRole("button", {
           name:
@@ -651,7 +661,7 @@ test(
     await buyer
       .getByRole("button", { name: "采用已核对结果", exact: true })
       .click();
-    await expect(buyer.locator('[data-consumer-state="result"]')).toBeVisible();
+    await waitForConsumerCompletionAdoption(buyer, sessionId);
     const reportResponse = await consumerGet(
       buyer,
       urls.consumerReportUrl(sessionId),

@@ -18,6 +18,37 @@ import { consumerGet } from "./consumer-flow.network";
 import { consumerRunId } from "./consumer-flow.fixture";
 
 const unavailable = () => Error("CONSUMER_E2E_PRIVATE_UI_UNAVAILABLE");
+
+/** A reloaded completed report can already be visible before pending adoption. */
+export async function waitForConsumerCompletionAdoption(
+  page: Page,
+  sessionId: string,
+) {
+  await expect
+    .poll(() =>
+      page.evaluate(
+        (id) =>
+          sessionStorage.getItem(`quizforge:p4:consumer-pending:v1:${id}`) ===
+          null,
+        sessionId,
+      ),
+    )
+    .toBe(true);
+  await expect(
+    page.getByRole("heading", { name: "核对上一次操作", exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByText("正在核对并保存，请稍候。", { exact: true }),
+  ).toHaveCount(0);
+  await expect(page.locator('[data-consumer-state="result"]')).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "展开报告", exact: true }),
+  ).toBeEnabled();
+  await expect(
+    page.getByRole("button", { name: "查看海报", exact: true }),
+  ).toBeEnabled();
+}
+
 const privateDirectory = () =>
   path.resolve(".cache/p4-e2e-private", consumerRunId());
 async function verifyPrivateDirectory(directory: string) {

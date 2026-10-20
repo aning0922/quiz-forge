@@ -45,8 +45,12 @@ import {
 
 import { captureConsumerWidths } from "../e2e/consumer-flow.ui";
 import type { TestInfo } from "@playwright/test";
+import { probeConsumerOperationReadiness } from "./consumer-operation-readiness";
 
 /** Actual browser host against a synthetic in-memory HTTP fixture; no business owner/DB/3100. */
+const operationReadinessOnly = process.argv.includes(
+  "--operation-readiness-only",
+);
 const out = path.resolve(".cache/p4-consumer-host", String(Date.now()));
 await mkdir(out, { recursive: true });
 const f = structuredClone(await consumerHostFixtureV1()),
@@ -282,6 +286,21 @@ const server = createServer(async (req, res) => {
       const body = JSON.parse(Buffer.concat(chunks).toString("utf8"));
       requests.push(url.pathname);
       if (url.pathname.endsWith("/complete/resolve")) {
+        if (
+          operationReadinessOnly &&
+          mode === "completed" &&
+          (await consumerCompleteBindingSha256(body)) ===
+            stored.receipt.bindingSha256
+        ) {
+          send({
+            schemaVersion: "quizforge.consumer-complete-resolution.v1",
+            kind: "applied",
+            binding: body,
+            bindingSha256: stored.receipt.bindingSha256,
+            report: stored.receipt,
+          });
+          return;
+        }
         send({
           schemaVersion: "quizforge.consumer-complete-resolution.v1",
           kind: "unresolved",
@@ -375,9 +394,25 @@ async function shot(page: Page, name: string) {
 }
 try {
   browser = await chromium.launch({ headless: true });
+  if (operationReadinessOnly) {
+    observations.push(
+      await probeConsumerOperationReadiness(
+        browser,
+        base,
+        f,
+        stored.receipt,
+        () => {
+          mode = "completed";
+        },
+      ),
+    );
+  }
   let networkAttemptsDuringLoss = 0,
     sameOriginalBindingDuringLoss = true;
-  if (process.argv.includes("--capture-readiness-only")) {
+  if (
+    !operationReadinessOnly &&
+    process.argv.includes("--capture-readiness-only")
+  ) {
     state = f.initial;
     mode = "normal";
     last = null;
@@ -490,6 +525,7 @@ try {
     });
   }
   if (
+    !operationReadinessOnly &&
     !process.argv.includes("--capture-readiness-only") &&
     !process.argv.some((a) =>
       ["--expired-pending-only", "--live-expired-pending-only"].includes(a),
@@ -642,73 +678,77 @@ try {
       await access.close();
     }
   }
-  mode = process.argv.includes("--live-expired-pending-only")
-    ? "expiring-pending"
-    : "expired-pending";
-  const complete = stored.receipt.binding;
-  state = (
-    await consumerAppliedFixtureV1({
-      binding: {
-        schemaVersion: "quizforge.consumer-save.v1",
-        session: f.session,
-        expectedStateRevision: 0,
-        consumerStateAnswersSha256: complete.consumerStateAnswersSha256,
-        progressSha256: complete.progressSha256,
-      },
-      answers: rebuilt.answers,
-      progress: { questionId: null },
-    })
-  ).state;
-  const expired = await browser.newPage({
-    viewport: { width: 320, height: 900 },
-  });
-  expired.on("pageerror", (e) => errors.push(e.message));
-  await expired.addInitScript(
-    ({ id, binding }) =>
-      sessionStorage.setItem(
-        `quizforge:p4:consumer-pending:v1:${id}`,
-        JSON.stringify({
-          schemaVersion: "quizforge.consumer-client-pending.v1",
-          operation: "complete",
-          mayHaveBeenSent: true,
-          binding,
-        }),
-      ),
-    { id: f.session.sessionId, binding: complete },
-  );
-  await expired.goto(`${base}/play/${f.session.sessionId}`);
-  if (mode === "expiring-pending")
+  if (!operationReadinessOnly) {
+    mode = process.argv.includes("--live-expired-pending-only")
+      ? "expiring-pending"
+      : "expired-pending";
+    const complete = stored.receipt.binding;
+    state = (
+      await consumerAppliedFixtureV1({
+        binding: {
+          schemaVersion: "quizforge.consumer-save.v1",
+          session: f.session,
+          expectedStateRevision: 0,
+          consumerStateAnswersSha256: complete.consumerStateAnswersSha256,
+          progressSha256: complete.progressSha256,
+        },
+        answers: rebuilt.answers,
+        progress: { questionId: null },
+      })
+    ).state;
+    const expired = await browser.newPage({
+      viewport: { width: 320, height: 900 },
+    });
+    expired.on("pageerror", (e) => errors.push(e.message));
+    await expired.addInitScript(
+      ({ id, binding }) =>
+        sessionStorage.setItem(
+          `quizforge:p4:consumer-pending:v1:${id}`,
+          JSON.stringify({
+            schemaVersion: "quizforge.consumer-client-pending.v1",
+            operation: "complete",
+            mayHaveBeenSent: true,
+            binding,
+          }),
+        ),
+      { id: f.session.sessionId, binding: complete },
+    );
+    await expired.goto(`${base}/play/${f.session.sessionId}`);
+    if (mode === "expiring-pending")
+      await expect(
+        expired.getByRole("button", { name: "重放原操作" }),
+      ).toBeVisible();
+    await expect(
+      expired.getByText("本次答题期限已到，可查询原提交结果。", {
+        exact: false,
+      }),
+    ).toBeVisible();
     await expect(
       expired.getByRole("button", { name: "重放原操作" }),
+    ).toHaveCount(0);
+    await shot(expired, "expired-complete-pending-320");
+    const beforeResolve = requests.length;
+    await expired.getByRole("button", { name: "核对原操作" }).click();
+    await expect(
+      expired.getByRole("button", { name: "核对原操作" }),
     ).toBeVisible();
-  await expect(
-    expired.getByText("本次答题期限已到，可查询原提交结果。", { exact: false }),
-  ).toBeVisible();
-  await expect(expired.getByRole("button", { name: "重放原操作" })).toHaveCount(
-    0,
-  );
-  await shot(expired, "expired-complete-pending-320");
-  const beforeResolve = requests.length;
-  await expired.getByRole("button", { name: "核对原操作" }).click();
-  await expect(
-    expired.getByRole("button", { name: "核对原操作" }),
-  ).toBeVisible();
-  await expect(expired.getByRole("button", { name: "重放原操作" })).toHaveCount(
-    0,
-  );
-  expect(requests.slice(beforeResolve)).toEqual([
-    `/play/${f.session.sessionId}/api/complete/resolve`,
-  ]);
-  expect(
-    await expired.evaluate(
-      (id) =>
-        sessionStorage.getItem(`quizforge:p4:consumer-pending:v1:${id}`) !==
-        null,
-      f.session.sessionId,
-    ),
-  ).toBe(true);
-  await shot(expired, "expired-complete-unresolved-320");
-  await expired.close();
+    await expect(
+      expired.getByRole("button", { name: "重放原操作" }),
+    ).toHaveCount(0);
+    expect(requests.slice(beforeResolve)).toEqual([
+      `/play/${f.session.sessionId}/api/complete/resolve`,
+    ]);
+    expect(
+      await expired.evaluate(
+        (id) =>
+          sessionStorage.getItem(`quizforge:p4:consumer-pending:v1:${id}`) !==
+          null,
+        f.session.sessionId,
+      ),
+    ).toBe(true);
+    await shot(expired, "expired-complete-unresolved-320");
+    await expired.close();
+  }
   expect(errors).toEqual([]);
   await writeFile(
     path.join(out, "result.json"),
@@ -717,11 +757,19 @@ try {
         scope:
           "synthetic in-memory HTTP + actual host; no business owner/database/native/3100; not P4/P5 acceptance",
         browser: await browser.version(),
-        viewports: screenshots.length <= 5 ? [320] : [320, 375, 390, 430],
+        viewports: operationReadinessOnly
+          ? [390]
+          : screenshots.length <= 5
+            ? [320]
+            : [320, 375, 390, 430],
         actualRegistryIdentity: identity,
         composition:
           "Actual app ConsumerSessionExperienceV1 projects renderer/mapping/font from full host facts",
-        expiryCase: mode === "expiring-pending" ? "live" : "already-expired",
+        expiryCase: operationReadinessOnly
+          ? "not-run"
+          : mode === "expiring-pending"
+            ? "live"
+            : "already-expired",
         screenshots,
         observations,
         savePosts,

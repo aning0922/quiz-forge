@@ -87,3 +87,19 @@ node --conditions=react-server --import tsx tests/browser/consumer-access-open.t
 ```
 
 B's default proof did not occupy 3100. Typecheck, scoped lint/format, the access-fragment unit test and diff check pass; the complete production regression remains root-owned.
+
+## Question identity and completion adoption boundaries
+
+The ninth-run follow-on audit identified two concrete waits that could accept retained content. They are now reproduced against the actual `ConsumerSessionExperienceV1`, frozen renderer/mapping/font, real Chromium and synthetic in-memory HTTP. The bounded probe uses an ephemeral port with no DB/Next/3100:
+
+```sh
+node --conditions=react-server --import tsx tests/browser/consumer-host.ts --operation-readiness-only
+```
+
+For saving, the probe holds the original successful synthetic save response after the host has sent it. The old question remains visible, its first radio is checked and disabled, and the previous generic `.first().check()` returns without waiting. After the response is released, the new question is unselected and its next/final button is disabled. Waiting for the **expected question ID's** radio to be enabled and then checking it enables the correct button. The production E2E loop now uses that exact ID/enabled boundary, including its first save choice; its choice strategy, original save binding, one-write UNKNOWN recovery and final answer-count assertions remain unchanged.
+
+For completion adoption, a completed session reloads with its exact local complete-pending binding. The actual bootstrap displays the persisted result under the pending panel; an exact synthetic applied resolution is then explicitly recovered and adopted. The probe holds the second report response. While held, the old result is visible, local pending is already removed and `展开报告` is already enabled, but the exact busy notice remains. These observations prove that result visibility, storage removal or read-only controls alone cannot establish adoption completion. The shared test-only gate polls the exact session's pending key for null, waits for the exact pending heading and busy notice to disappear, then checks result and both read-only actions. The actual new gate remains pending during the held response and finishes after release. It does not clear storage/UI, issue requests, replay, sleep, raise a timeout or drain unrelated alerts.
+
+Probe evidence is `.cache/p4-consumer-host/1792494335184/result.json` (viewport 390, both counterexamples/new gates, two original saves and one complete resolve; no screenshots or visual approval). Browser/server closure is awaited by the host's finally and the command exits 0. The new fixture resolution applies only to the exact stored synthetic complete binding in completed mode; no durable report/claim, business authority or real UNKNOWN application is asserted. Root retains the complete production eight-case regression and P4/P5 acceptance.
+
+Validation of these two test-only boundary corrections: repository format check, lint, typecheck and full unit suite pass (181 files / 1937 tests; `.cache/p4-operation-readiness-unit.log`), scoped browser proof exits 0, diff check passes, and isolated list-only config enumerates the unchanged eight consumer cases. Root owns production build/native/full E2E. No frozen production source or entry descriptor changed.
