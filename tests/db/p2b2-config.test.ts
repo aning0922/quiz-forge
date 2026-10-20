@@ -211,39 +211,54 @@ it("failed atomic replacement leaves valid prior config and exposes only fixed u
   ).toBe(false);
   expect(await present("imports-config.guard")).toBe(false);
 });
-it("real test DB at migration 0007 refuses enabling until required 0008 is explicitly applied", async () => {
-  const { readMigrations, migrateDatabase } =
-    await import("../../src/lib/db/migrate");
-  const definitions = await readMigrations(),
-    old = definitions.find((m) => m.version === "0007_quizpack_import")!;
-  const start = old.source.indexOf(
-      "CREATE FUNCTION qf.protect_import_update()",
-    ),
-    end = old.source.indexOf(
-      "REVOKE ALL ON FUNCTION qf.protect_import_update()",
-      start,
-    );
-  const previousFunction = old.source
-    .slice(start, end)
-    .replace("CREATE FUNCTION", "CREATE OR REPLACE FUNCTION");
-  await safeTestOperation(() =>
-    db.admin.sql.begin(async (tx) => {
-      await tx.unsafe(previousFunction);
-      await tx`DELETE FROM qf_meta.schema_migrations WHERE version='0008_import_lease_renewal_guard'`;
-    }),
+it("current enable switch requires 0012 migration receipt; missing receipt preserves configuration bytes", async () => {
+  const { migrateDatabase } = await import("../../src/lib/db/migrate");
+  const history = await safeTestOperation(
+    () =>
+      db.admin.sql<{ version: string; checksum: string; applied_at: string }[]>`
+      SELECT version,checksum,applied_at::text FROM qf_meta.schema_migrations ORDER BY version`,
+  );
+  const required = history.at(-1);
+  if (required?.version !== "0012_validation_file_stop_ack")
+    throw new Error("TEST_VALIDATION_MIGRATION_REQUIRED");
+  const runtimeBefore = await readFile(file("runtime.json"));
+  // Current management admission requires 0012. Remove only its latest marker,
+  // leaving a valid history prefix; do not replay older migrations over B2 tables
+  // or replace the import lease guard used by subsequent permission tests.
+  await safeTestOperation(
+    () =>
+      db.admin
+        .sql`DELETE FROM qf_meta.schema_migrations WHERE version=${required.version}`,
   );
   try {
     await expect(configureImports(db.config.instanceId, true)).rejects.toThrow(
       "STUDIO_UNAVAILABLE",
     );
+    expect((await readFile(file("runtime.json"))).equals(runtimeBefore)).toBe(
+      true,
+    );
     expect(
       (await loadManagedInstance(db.config.instanceId)).config.imports.enabled,
     ).toBe(false);
   } finally {
-    expect(await migrateDatabase(db.admin.sql, db.config)).toEqual([
-      "0008_import_lease_renewal_guard",
-    ]);
+    // Preserve checksum and timestamp, including PostgreSQL microseconds. The
+    // text cast prevents the driver from serializing this value as a JS Date.
+    await safeTestOperation(
+      () => db.admin
+        .sql`INSERT INTO qf_meta.schema_migrations(version,checksum,applied_at)
+        VALUES(${required.version},${required.checksum},${required.applied_at}::text::timestamptz)`,
+    );
   }
+  expect(await migrateDatabase(db.admin.sql, db.config)).toEqual([]);
+  expect(
+    await safeTestOperation(
+      () =>
+        db.admin.sql<
+          { version: string; checksum: string; applied_at: string }[]
+        >`
+      SELECT version,checksum,applied_at::text FROM qf_meta.schema_migrations ORDER BY version`,
+    ),
+  ).toEqual(history);
   expect((await configureImports(db.config.instanceId, true)).enabled).toBe(
     true,
   );

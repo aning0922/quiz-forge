@@ -133,6 +133,43 @@ function loweredContentIssues(
   });
   return issues;
 }
+/** Same restricted archive/manifest integrity closure for validation and trusted restoration. */
+export function checkArchiveIntegrity(
+  manifest: Readonly<{
+    files: readonly Readonly<
+      import("./manifest").QuizPackManifest["files"][number]
+    >[];
+  }>,
+  files: ReadonlyMap<string, Uint8Array>,
+): PackIssue[] {
+  const expected = new Set(["manifest.json"]);
+  const integrity: PackIssue[] = [];
+  manifest.files.forEach((file, i) => {
+    if (expected.has(file.path))
+      integrity.push({
+        ...packIssue("DUPLICATE_MANIFEST_PATH"),
+        path: ["files", i],
+      });
+    expected.add(file.path);
+    const bytes = files.get(file.path);
+    if (!bytes)
+      integrity.push({
+        ...packIssue("MANIFEST_FILE_MISSING"),
+        path: ["files", i],
+      });
+    else if (bytes.length !== file.bytes || hashBytes(bytes) !== file.sha256)
+      integrity.push({
+        ...packIssue("FILE_INTEGRITY_MISMATCH"),
+        path: ["files", i],
+      });
+  });
+  if ([...files.keys()].some((path) => !expected.has(path)))
+    integrity.push({
+      ...packIssue("UNDECLARED_ARCHIVE_FILE"),
+      path: ["files"],
+    });
+  return integrity;
+}
 const UNVERIFIED = [
   "deterministic-scoring-and-witness-reachability",
   "resource-license-and-approval-claims",
@@ -240,35 +277,7 @@ export async function validateQuizPackCore(
       execution.checkpoint(signal);
       report.checks.structure = "passed";
       active = "integrity";
-      const expected = new Set(["manifest.json"]);
-      const integrity: PackIssue[] = [];
-      manifest.value.files.forEach((file, i) => {
-        if (expected.has(file.path))
-          integrity.push({
-            ...packIssue("DUPLICATE_MANIFEST_PATH"),
-            path: ["files", i],
-          });
-        expected.add(file.path);
-        const bytes = files.get(file.path);
-        if (!bytes)
-          integrity.push({
-            ...packIssue("MANIFEST_FILE_MISSING"),
-            path: ["files", i],
-          });
-        else if (
-          bytes.length !== file.bytes ||
-          hashBytes(bytes) !== file.sha256
-        )
-          integrity.push({
-            ...packIssue("FILE_INTEGRITY_MISMATCH"),
-            path: ["files", i],
-          });
-      });
-      if ([...files.keys()].some((path) => !expected.has(path)))
-        integrity.push({
-          ...packIssue("UNDECLARED_ARCHIVE_FILE"),
-          path: ["files"],
-        });
+      const integrity = checkArchiveIntegrity(manifest.value, files);
       execution.checkpoint(signal);
       if (integrity.length) {
         report.checks.integrity = "failed";

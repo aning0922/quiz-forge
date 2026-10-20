@@ -28,7 +28,6 @@ import {
 import { createReceiveContext } from "../../src/features/quizpack/import/context";
 import {
   importDirectory,
-  writeStopped,
   ownerExited,
 } from "../../src/features/quizpack/import/storage";
 import type { ImportRow } from "../../src/features/quizpack/import/repository";
@@ -205,37 +204,166 @@ it("test-owned alive PID cannot be recovered; ESRCH after child exit allows new 
 });
 it("pending read and unresolved cancellation never create stopped receipt or release held budget", async () => {
   const created = await create();
-  let resolveRead!: (value: IteratorResult<Uint8Array>) => void;
-  const pending = new Promise<IteratorResult<Uint8Array>>((r) => {
-    resolveRead = r;
-  });
-  const cancel = deferred();
-  const src: ReceiveSource = {
-    chunks: {
-      [Symbol.asyncIterator]() {
-        return { next: () => pending };
-      },
+  const child = spawn(
+    process.execPath,
+    [
+      "--conditions=react-server",
+      "--import",
+      "tsx",
+      "tests/db/p2b2-pending-child.ts",
+    ],
+    {
+      cwd: process.cwd(),
+      env: process.env,
+      stdio: ["ignore", "ignore", "ignore", "ipc"],
     },
-    cancel: () => cancel.promise,
+  );
+  const ready = deferred(),
+    readStarted = deferred(),
+    cancelStarted = deferred(),
+    result = deferred(),
+    drained = deferred(),
+    failed = deferred();
+  type Observation = {
+    kind: string;
+    code?: string;
+    readStarted?: boolean;
+    cancelStarted?: boolean;
+    readPending?: boolean;
+    cancelPending?: boolean;
+    databaseClosed?: boolean;
+    readSettled?: boolean;
+    cancelSettled?: boolean;
   };
-  await expect(
-    receive(created.id, src, importReceiveService, 50),
-  ).rejects.toThrow("RECEIVE_TIMEOUT");
-  const r = await row(created.id);
-  expect(Number(r.reserved_bytes)).toBeGreaterThan(0);
+  let cancellation: Observation | undefined,
+    completion: Observation | undefined,
+    drain: Observation | undefined;
+  child.on("message", (message: Observation) => {
+    if (message.kind === "ready") ready.resolve();
+    if (message.kind === "read-started") readStarted.resolve();
+    if (message.kind === "cancel-started") {
+      cancellation = message;
+      cancelStarted.resolve();
+    }
+    if (message.kind === "result") {
+      completion = message;
+      result.resolve();
+    }
+    if (message.kind === "drained") {
+      drain = message;
+      drained.resolve();
+    }
+    if (message.kind === "failed") failed.resolve();
+  });
+  child.once("error", () => failed.resolve());
+  const exited = new Promise<void>((resolve) =>
+    child.once("exit", () => resolve()),
+  );
+  const closed = new Promise<void>((resolve) =>
+    child.once("close", () => resolve()),
+  );
+  const ended = Promise.all([exited, closed]);
+  const until = async <T>(task: Promise<T>, deadline: number) => {
+    let timer: NodeJS.Timeout | undefined;
+    try {
+      return await Promise.race([
+        task,
+        new Promise<never>((_, reject) => {
+          timer = setTimeout(
+            () => reject(new Error("TEST_PENDING_CHILD_DEADLINE")),
+            Math.max(1, deadline - performance.now()),
+          );
+        }),
+      ]);
+    } finally {
+      clearTimeout(timer);
+    }
+  };
+  const deadline = performance.now() + 15_000;
+  const stage = (task: Promise<void>) =>
+    until(
+      Promise.race([
+        task,
+        failed.promise.then(() => {
+          throw new Error("TEST_PENDING_CHILD_FAILED");
+        }),
+        ended.then(() => {
+          throw new Error("TEST_PENDING_CHILD_EARLY_EXIT");
+        }),
+      ]),
+      deadline,
+    );
+  let snapshot: ImportRow | undefined;
+  try {
+    await stage(ready.promise);
+    child.send({
+      kind: "start",
+      credentials: actor.credentials,
+      productId,
+      importId: created.id,
+    });
+    await stage(readStarted.promise);
+    await stage(cancelStarted.promise);
+    expect(cancellation).toMatchObject({
+      readPending: true,
+      cancelPending: true,
+    });
+    await stage(result.promise);
+    expect(completion).toMatchObject({
+      code: "RECEIVE_TIMEOUT",
+      readStarted: true,
+      cancelStarted: true,
+      readPending: true,
+      cancelPending: true,
+      databaseClosed: true,
+    });
+    snapshot = await row(created.id);
+    expect(snapshot.attempts[0]?.ownerPid).toBe(child.pid);
+    expect(Number(snapshot.reserved_bytes)).toBeGreaterThan(0);
+    expect(
+      (await readdir(importDirectory(db.config, snapshot.id))).some((name) =>
+        name.startsWith("stopped-"),
+      ),
+    ).toBe(false);
+    await expect(recover(snapshot.id)).rejects.toThrow(
+      "RECEIVE_RECOVERY_REQUIRED",
+    );
+  } finally {
+    try {
+      if (child.connected) child.send({ kind: "release" });
+      await until(
+        Promise.all([drained.promise, ended]),
+        performance.now() + 5000,
+      );
+    } catch (error) {
+      // Only this test's child may be killed. Failure to drain remains a failure;
+      // an exit is never presented as successful request/connection observation.
+      if (child.exitCode === null && child.signalCode === null)
+        child.kill("SIGKILL");
+      await until(ended, performance.now() + 5000);
+      throw error;
+    }
+  }
+  expect(drain).toMatchObject({
+    databaseClosed: true,
+    readSettled: true,
+    cancelSettled: true,
+  });
+  expect(child.exitCode).toBe(0);
+  expect(child.signalCode).toBeNull();
+  if (!snapshot) throw new Error("TEST_RECEIVE_RECORD_REQUIRED");
+  expect(ownerExited(snapshot.attempts[0]!.ownerPid)).toBe(true);
+  // Actual owner exit is the existing file-only receive recovery proof. Do not
+  // manufacture a receipt, or extend this fallback to validation/media UNKNOWN.
+  expect((await row(snapshot.id)).reserved_bytes).toBe(snapshot.reserved_bytes);
   expect(
-    (await readdir(importDirectory(db.config, r.id))).some((n) =>
-      n.startsWith("stopped-"),
+    (await readdir(importDirectory(db.config, snapshot.id))).some((name) =>
+      name.startsWith("stopped-"),
     ),
   ).toBe(false);
-  await expect(recover(r.id)).rejects.toThrow("RECEIVE_RECOVERY_REQUIRED");
-  resolveRead({ done: true, value: undefined });
-  await pending;
-  cancel.resolve();
-  await cancel.promise;
-  await writeStopped(db.config, r.id, r.attempts[0]!);
-  await recover(r.id);
-});
+  expect((await recover(snapshot.id)).status).toBe("awaiting-upload");
+  expect(Number((await row(snapshot.id)).reserved_bytes)).toBe(0);
+}, 30_000);
 it("hash mismatch is rejected, cannot be retried and valid stopped cleanup is idempotent", async () => {
   const created = await create({
     ...expected,
@@ -503,8 +631,8 @@ it("current directory reserves four names at 12/+1 existing files before touchin
     for (const file of owned) await unlink(file);
   }
 });
-it("global 8192 entries budget includes attempt's new names; +1 admission does not claim", async () => {
-  const { importsDirectory } =
+it("global 8192 entries budget counts three namespace roots and attempt names; +1 admission does not claim", async () => {
+  const { importsDirectory, scanStorage } =
     await import("../../src/features/quizpack/import/storage");
   const root = importsDirectory(db.config),
     ownedDirs: string[] = [],
@@ -533,17 +661,31 @@ it("global 8192 entries budget includes attempt's new names; +1 admission does n
     }
     const current = importDirectory(db.config, created.id);
     await mkdir(current, { mode: 0o700 });
-    for (let j = 0; j < 10; j++) {
+    // 3 namespace roots + 481*(1 directory + 16 files) + current
+    // directory + 8 files = 8189. Four new receive names would reach 8193.
+    for (let j = 0; j < 8; j++) {
       const file = path.join(current, `attempt-${randomUUID()}.partial`);
       await writeFile(file, "", { mode: 0o600, flag: "wx" });
       ownedFiles.push(file);
     }
+    const entries = async () => {
+      const { context, dispose } = createReceiveContext(
+        new AbortController().signal,
+      );
+      try {
+        return (await scanStorage(db.config, context)).entries;
+      } finally {
+        dispose();
+      }
+    };
+    expect(await entries()).toBe(8189);
     await expect(receive(created.id, input)).rejects.toThrow(
       "RECEIVE_SCAN_LIMIT",
     );
     expect(consumed).toBe(0);
     expect((await row(created.id)).attempts.length).toBe(0);
     await unlink(ownedFiles.pop()!);
+    expect(await entries()).toBe(8188);
     expect((await receive(created.id, input)).status).toBe("received");
     expect(consumed).toBe(1);
   } finally {

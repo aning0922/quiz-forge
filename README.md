@@ -2,7 +2,7 @@
 
 趣味测评商品研发、导入与运营平台。核心模式为 **Codex 精品商品研发 + QuizPack 标准化导入 + QuizForge 统一运行与运营**。面向移动端 H5，强调每个商品独立的视觉身份、确定性评分和一次正式完成后可反复查看的结果报告。后台 AI 为可选辅助，不是运行与发布依赖。
 
-**当前 main 已包含历史人物完整合成体验与真实 PNG 海报导出（D1-C）。** F1、P1包工具和P2-A数据库/运营认证已在堆叠分支完成技术验收，Draft PR #6/#7/#8仍未合并。P2-B1进一步实现真实测评目录工作区与分类标签管理，Draft PR #9已完成技术验收，尚未合并；只用于本机运营内测。本分支从B1最终提交接续B2-1原包接收，已完成原包接收/状态/显式恢复的代码技术验收（612单测、214真实DB、206生产E2E，独立审查与代码CI通过）；received不代表包已验证或资源已归档。作者已授权按路线托管推进至首款端到端内测，其他旧开发聊天保持暂停。导入、评分、AccessKey、消费者完成流程与发布仍待后续阶段。最新事实见[进度](docs/PROGRESS.md)、[B1验收](docs/P2B1_ACCEPTANCE.md)，授权见[托管开发](docs/MANAGED_DEVELOPMENT.md)。
+**当前 main 已包含历史人物完整合成体验与真实 PNG 海报导出（D1-C）。** F1、P1 包工具、P2-A 数据库/认证、B1 目录、B2-1 原包接收、B2-2A 隔离媒体可信验证及 B2-2B 私有资源归档后台已在堆叠分支完成技术验收；PR #6–#13 尚未合并。本分支为 Draft PR #13，完整证据见 [B2-2B验收](docs/P2B2B_ACCEPTANCE.md)，下一批为首个持久草稿。received 仅代表收到原字节，ready 也不代表已创建草稿或可发布。作者于 2026-10-15 恢复历史人物首款端到端内测的托管开发，并明确授权仓库改为 public；正式评分、AccessKey、消费者完成流程和发布仍待后续阶段。最新事实见[进度](docs/PROGRESS.md)，授权与工作方式见[托管开发](docs/MANAGED_DEVELOPMENT.md)。
 
 ## 本地运行
 
@@ -52,7 +52,7 @@ corepack pnpm test:e2e
 | `/themes/animals`    | 动物人格匹配设计简报             |
 | 未知路由/主题        | 404 与返回入口                   |
 
-P2-A新增 `/studio/login`、`/studio` 和 `/api/studio/auth/{preauth,login,session,logout}`，读取真实本机运营身份。P2-B1新增 `/studio/products`、`/studio/products/[productId]`、`/studio/taxonomy` 及对应业务API，支持创建/编辑、筛选、分类标签、归档恢复和冲突核实。没有配置或数据库不可用时明确关闭；B2-1追加每个Product下的imports列表、状态页及意图/原字节/恢复API，已完成代码技术验收。正式消费者答题、验证归档、草稿和发布路由尚未实现。B2-1的验收与限制见[接收验收](docs/P2B2_RECEIVE_ACCEPTANCE.md)。
+P2-A新增 `/studio/login`、`/studio` 和 `/api/studio/auth/{preauth,login,session,logout}`，读取真实本机运营身份。P2-B1新增 `/studio/products`、`/studio/products/[productId]`、`/studio/taxonomy` 及对应业务API，支持创建/编辑、筛选、分类标签、归档恢复和冲突核实。没有配置或数据库不可用时明确关闭；B2-1追加每个Product下的imports列表、状态页及意图/原字节/恢复API，B2-2B追加实际验证、资源归档、详情与恢复API，均已完成技术验收。正式消费者答题、草稿和发布路由尚未实现。验收与限制见[接收验收](docs/P2B2_RECEIVE_ACCEPTANCE.md)及[归档后台验收](docs/P2B2B_ACCEPTANCE.md)。
 
 ## 工程结构
 

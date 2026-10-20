@@ -6,6 +6,22 @@ import { StudioError } from "@/lib/http-security/errors";
 import { remainingReceiveMs } from "./context";
 import type { ReceiveContext } from "./service-contract";
 
+const ownedIo = new WeakMap<postgres.Sql, Set<Promise<unknown>>>();
+function trackIo<T>(client: postgres.Sql, promise: PromiseLike<T>): Promise<T> {
+  const task = Promise.resolve(promise),
+    pending = ownedIo.get(client) ?? new Set<Promise<unknown>>();
+  ownedIo.set(client, pending);
+  pending.add(task);
+  void task.then(
+    () => pending.delete(task),
+    () => pending.delete(task),
+  );
+  return task;
+}
+async function drainIo(client: postgres.Sql) {
+  const pending = ownedIo.get(client);
+  while (pending?.size) await Promise.allSettled([...pending]);
+}
 /** Client wall-clock bound as well as PG statement_timeout. Expiration destroys this pool. */
 async function queryDeadline<T>(
   promise: PromiseLike<T>,
@@ -16,11 +32,11 @@ async function queryDeadline<T>(
   let timer: ReturnType<typeof setTimeout> | undefined;
   try {
     return await Promise.race([
-      promise,
+      trackIo(client, promise),
       new Promise<never>((_, reject) => {
         timer = setTimeout(() => {
           invalidate();
-          void client.end({ timeout: 0 }).catch(() => {});
+          void trackIo(client, client.end({ timeout: 0 })).catch(() => {});
           reject(new StudioError("RECEIVE_LOCK_LOST"));
         }, milliseconds);
       }),
@@ -35,6 +51,7 @@ export class StorageLock {
   private released = false;
   private timer?: ReturnType<typeof setTimeout>;
   private checking: Promise<void> | undefined;
+  private closing: Promise<boolean> | undefined;
   readonly controller = new AbortController();
   private constructor(
     private readonly client: postgres.Sql,
@@ -55,7 +72,12 @@ export class StorageLock {
     let connection: postgres.ReservedSql | undefined;
     try {
       const pinned = await queryDeadline<postgres.ReservedSql>(
-        Promise.resolve().then(() => client.reserve()),
+        Promise.resolve()
+          .then(() => client.reserve())
+          .then((reserved) => {
+            connection = reserved;
+            return reserved;
+          }),
         client,
         () => {},
         budget,
@@ -95,7 +117,11 @@ export class StorageLock {
       return lock;
     } catch (error) {
       connection?.release();
-      await client.end({ timeout: 0 }).catch(() => {});
+      connection = undefined;
+      await trackIo(client, client.end({ timeout: 0 })).catch(() => {});
+      await drainIo(client);
+      const lateConnection = connection as postgres.ReservedSql | undefined;
+      lateConnection?.release();
       if (error instanceof StudioError && error.code !== "RECEIVE_LOCK_LOST")
         throw error;
       throw new StudioError("WRITE_OUTCOME_UNKNOWN");
@@ -150,27 +176,36 @@ export class StorageLock {
     }
     this.assert();
   }
-  async close() {
-    if (this.released) return;
+  async close(): Promise<boolean> {
+    if (this.closing) return this.closing;
     this.released = true;
     clearTimeout(this.timer);
-    await this.checking;
-    try {
-      if (this.valid)
-        await queryDeadline(
-          Promise.resolve().then(
-            () => this.connection`SELECT pg_advisory_unlock(72461,2)`,
-          ),
-          this.client,
-          this.invalidate,
-          2000,
-        );
-    } catch {
-      this.invalidate();
-    } finally {
+    this.closing = (async () => {
+      await this.checking;
+      try {
+        if (this.valid)
+          await queryDeadline(
+            Promise.resolve().then(
+              () => this.connection`SELECT pg_advisory_unlock(72461,2)`,
+            ),
+            this.client,
+            this.invalidate,
+            2000,
+          );
+      } catch {
+        this.invalidate();
+      }
       this.invalidate();
       this.connection.release();
-      await this.client.end({ timeout: 0 }).catch(() => {});
-    }
+      try {
+        await trackIo(this.client, this.client.end({ timeout: 0 }));
+        await drainIo(this.client);
+        return true;
+      } catch {
+        await drainIo(this.client);
+        return false;
+      }
+    })();
+    return this.closing;
   }
 }

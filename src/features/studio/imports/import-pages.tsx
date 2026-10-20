@@ -17,6 +17,7 @@ import { useImportRead } from "./use-read";
 import { CreateReceive } from "./create-receive";
 import { ImportSummary } from "./import-facts";
 import { ReceiveControls } from "./receive-controls";
+import { ValidationOverview, ValidationPanel } from "../validations/panel";
 import { checkImport, checkImportPage, checkSettings } from "./client";
 import { prepareArchiveInput } from "./prepare-archive";
 import styles from "../workspace/workspace.module.css";
@@ -50,8 +51,8 @@ function ImportEnvironment({
       )}
       {readOnly && <ReadOnlyNotice />}
       <p className={styles.note}>
-        配置和权限会由每次写入重新核实。原包接收尚未执行
-        ZIP、Schema、资源、合成内容及授权验证。
+        配置和权限会由每次写入重新核实。原包接收步骤不执行
+        ZIP、Schema、资源、合成内容及授权验证；验证状态请查看独立记录。
       </p>
     </>
   );
@@ -141,7 +142,7 @@ export function ImportList({
       <section className={styles.panel}>
         <h2>接收记录</h2>
         <p className={styles.note}>
-          接收记录只说明原包接收与存储状态；ZIP、内容、资源和授权尚未验证，不能发布。完整事实及失败说明请进入详情。
+          接收记录只说明原包接收与存储事实；独立验证与资源归档分别记录，仍不可发布。完整事实及失败说明请进入详情。
         </p>
         <ReadFeedback {...imports} />
         <button
@@ -161,6 +162,7 @@ export function ImportList({
               {imports.value.items.map((value) => (
                 <li className={styles.card} key={value.id}>
                   <ImportSummary value={value} />
+                  <ValidationOverview value={value} />
                   <Link
                     className={`${styles.link} ${styles.secondary}`}
                     href={`/studio/products/${encodeURIComponent(productId)}/imports/${value.id}`}
@@ -264,6 +266,13 @@ function ExistingReceive({
         archived={!!product.archivedAt}
         file={file}
         onUpdate={setCurrent}
+      />
+      <ValidationPanel
+        key={`${current.productId}/${current.id}`}
+        value={current}
+        settings={settings}
+        archived={!!product.archivedAt}
+        session={session}
       />
     </>
   );

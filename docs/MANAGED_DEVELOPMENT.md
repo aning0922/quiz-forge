@@ -1,5 +1,21 @@
 # QuizForge 托管开发
 
+## 2026-10-15 恢复与新主控
+
+作者在本聊天明确恢复历史人物首款 P5 端到端内测的托管开发，常规工程与测试自行推进，内容、素材或发布批准再提交人工审核。先前暂停由此次明确恢复取代；旧 D1-D 和其他项目不在恢复范围。
+
+已核实正式 origin，并在可达 Git 历史公开检查后将 `aning0922/quiz-forge` 改为 public，GitHub 回读确认 `PUBLIC`。公开检查范围与限制见 [PUBLIC_READINESS.md](PUBLIC_READINESS.md)。没有更改计费、许可证、素材审批或自动合并设置。
+
+新主控工作树为 `/Users/aipuli/.codex/worktrees/quizforge-managed-resume/quiz-forge`，沿用 `codex/quizpack-validation-storage` 和现有 Draft PR #13；恢复提交 `fb02afc6480ee1b7c3fffa3116cd4de988c11271`。它比恢复时远端 `e0e0c2a` 多两项已保存提交：UI 保守状态修复和原请求关闭 observer。未将存在修复视为已通过最终验收。
+
+工作方式保持：总控负责合同、共享配置、依赖与集成；最多两条 GPT-6.1 Sol/high 实现流；GPT-6 Astra/high 负责非实施审查；先固定接口和文件归属，数据库迁移与 3100 生产 E2E 串行；各流独立提交，由总控整合、验证和推送堆叠 Draft PR。
+
+恢复首批仅收口 B2-2B：A 独占测试 fixture/maintenance 与真实 PG/FS 验证，B 独占新增实际 service PG 测试；测试数据库端口分别 55421/55422，总控 55423。新建各自 purpose=test 实例，保留旧失败现场。实际 HTTP/媒体闭环由总控生产构建、绑定、矩阵封存与浏览器验收覆盖；媒体桩的 DB 专项测试只证明相应数据库服务边界。
+
+B2-2B 已于本轮完成技术验收，证据见 [P2B2B_ACCEPTANCE](P2B2B_ACCEPTANCE.md)：1060单元、298普通PG、46驱动、10+3独立服务PG、214生产E2E/10既有跳过、六项检查及两条远端CI通过，24图检查完成。接续 B2-3 首个持久草稿；之后按有限编辑/结构预览、P3 评分与注册预览、P4 Key/会话/锁定报告、P5 内测的既有依赖继续。main 合并、生产迁移/部署和正式发布仍保留原人工批准边界。
+
+## 2026-10-12 历史启动
+
 日期：2026-10-12（Asia/Shanghai）。作者明确选择“按路线推进到首款端到端内测，在必要人工决策点暂停”。这是P1–P5持续工程授权，覆盖依赖设计、隔离实现、测试、独立审查、修复、提交推送和Draft PR。其他旧开发聊天仍暂停。
 
 ## 目标与范围
@@ -132,3 +148,23 @@ B2-1最终文档head `5caef26` 的CI38175221128已核实checks/database均succes
 ## B2-2A 技术退出检查点
 
 运行代码bdd5c51、集成head4793537：873单元/43离线工具、214真实DB/46驱动、206生产E2E及10既有跳过通过；格式/lint/类型/构建、独立登记问题闭合。Mac目标66项连续三轮、Linux31+11及两平台sealed真实Next入口全部通过。4793537普通CI38194638007与媒体CI38194638047实际success，PR #12仍Draft。原失败合成轮保留失败，已核实退出的控制/哨兵现场完整隔离归档；当前control空，自有服务/DB已停。完整边界与证据见P2B2A_ACCEPTANCE。接续B2-2B精确合同冻结和独立工作树实现，不在已交付A分支堆积业务表，不沿用fixture seal。
+
+## B2-2B 合同准备登记
+
+A最终844054c的普通38195851289及媒体38195851290均实际success。总控新工作树codex/quizpack-validation-storage已建立并完成冻结安装；STUDIO_P2B2B和B2B_VALIDATION_ADAPTERS取代旧STORAGE_PROPOSAL，独立前置复验已闭合并冻结，详见P2B2B_REVIEW。新批次以三表、统一存储、prepare→start和显式recover/retry为边界；V可信适配、D数据事务、S存储服务分开，公共类型后接U后台。总控保留共享配置、迁移集成和3100，未创建B业务表/迁移或启动实例。
+
+## B2-2B 实施登记
+
+合同8173107；共享HTTP有限错误654e823已通过20定向测试/类型/lint/格式；D公共接口ad8a116集成为6818942，公共适配集成后66定向测试通过；root早审的ledger大正文查询和key字段污染已修复，资源前缀排序另由30d0bd6→4718097修复并增加用例。Draft PR #13堆叠于#12、已附加。V在codex/validation-storage-adapters，D在codex/validation-data-transactions，S在codex/validation-archive-service，均Sol/high与独立worktree；D持55421、S持55422、root持55423，3100仅root。root已在旧0001–0008基线创建升级验收用独立test实例949a98a25d2720546a5d4005a748d3c6并停止，未运行新迁移。
+
+远端CI38197814487（8173107）、38197842129（654e823）均未启动job步骤而失败；GitHub annotation明确为近期账号付款失败或支出上限需提高。不是代码检查结果，也不代表通过。需仓库账号Billing & plans恢复后再实际运行；独立本地实现/验证继续，不修改计费设置，不绕过阶段验收。
+
+D数据线已完成本批独立交付（最终c838bbd），自身55421及探查实例全停；V可信适配最终8edb9c3已交付且独立复验闭合。root接入修后DDL/客户端与policy，并在旧8实例实际升级及独立跑通26PG，随后停止55423。U已在codex/validation-studio-console启动，b2486a4公共client/pending/http适配集成为18ea20b，46项纯测试通过；生产route等S实际factory，禁止stub按钮。S在codex/validation-archive-service继续应用服务与FS-safe共享fixture；root持有最终build/seal/3100，不将局部测试当阶段退出。
+
+B2-2B独立实现审查发现receipt最终文件提前可读不足以证明publisher close结束，现63ed778修订为candidate+独立ACK+一次互斥complete/interrupt；0011审计enum/0012保护协议及policy v2，由D复用独立分支实施，S实现私有资格/门/服务。Astra确认此修订和两步迁移无架构阻断。U历史/刷新UI已集成，59纯测试通过；两处UI审查修复独立复验中，routes/helper仍待S factory。root0010库保持停止，下一次升级前先验证0010/仅0011不能启用新业务。远端计费阻断不变。
+
+## B2-2B 集成验收检查点
+
+0011/0012已在root独立旧库实际升级，34项domain与13项client PG分别通过，随后停止。ACK、锁生命周期、写结果未知等运行代码审查问题已独立闭合。S真实应用服务与恢复、U实际API和详情/历史页面已集成；最后运行代码修订ddf195f，构建追踪注解e4ce925。该main构建零warning，59trace/11357路径/零私有违规，部署绑定已实际完成；新媒体三轮正在执行，第一次65/66的失败保留，49f4072只修正BUSY用例屏障并通过独立窄审。
+
+剩余工作为S测试夹具实际连接停止和审计归属两项P2、共享fixture的FS安全回收及实际服务PG故障测试；U补8个浏览器场景。root持有native/build/3100并在服务停止后维护测试数据，最后执行全套回归与四宽截图检查。它们不等于已交付或已通过。远端CI仍因已核实的计费限制没有运行步骤，不能把本地结果替代远端成功；阶段退出前需明确保留该限制。

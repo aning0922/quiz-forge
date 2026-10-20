@@ -234,11 +234,11 @@ test("real intent and raw received state remains unvalidated", async ({
   await expect(
     page
       .getByRole("region", { name: "原包状态", exact: true })
-      .getByText("原包已隔离接收，尚未验证", { exact: true }),
+      .getByText("原包已隔离接收", { exact: true }),
   ).toBeVisible();
   const receivedCard = page
     .getByRole("listitem")
-    .filter({ hasText: "原包已隔离接收，尚未验证" });
+    .filter({ hasText: "原包已隔离接收" });
   await expect(receivedCard).toHaveCount(1);
   await expect(
     receivedCard.getByText(String(syntheticFile.buffer.length), {
@@ -247,7 +247,7 @@ test("real intent and raw received state remains unvalidated", async ({
   ).toBeVisible();
   await expect(receivedCard.getByText("已对账", { exact: true })).toBeVisible();
   await expect(
-    receivedCard.getByText("not-run · 不可发布", { exact: true }),
+    receivedCard.getByText("尚无独立验证记录 · 不可发布", { exact: true }),
   ).toBeVisible();
   await expect(
     receivedCard.getByText("声明 SHA-256", { exact: true }),
@@ -262,7 +262,9 @@ test("real intent and raw received state remains unvalidated", async ({
   await expect(
     page
       .getByRole("region", { name: "原包状态", exact: true })
-      .getByText("not-run · 不可发布", { exact: true }),
+      .getByText("接收事实 · 独立验证状态见验证记录 · 不可发布", {
+        exact: true,
+      }),
   ).toBeVisible();
   const detailPanel = page.getByRole("region", {
     name: "原包状态",
@@ -382,7 +384,7 @@ test("a separately observed committed intent survives a lost POST response", asy
   await expect(
     page
       .getByRole("region", { name: "原包状态", exact: true })
-      .getByText("原包已隔离接收，尚未验证", { exact: true }),
+      .getByText("原包已隔离接收", { exact: true }),
   ).toBeVisible();
   expect(puts).toBe(1);
 });
@@ -420,7 +422,7 @@ test("explicit recovery of a stopped claim enables choosing the original file on
   await expect(
     page
       .getByRole("region", { name: "原包状态", exact: true })
-      .getByText("原包已隔离接收，尚未验证", { exact: true }),
+      .getByText("原包已隔离接收", { exact: true }),
   ).toBeVisible();
 });
 

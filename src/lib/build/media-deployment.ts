@@ -676,10 +676,12 @@ async function sharpMapping(
   ).dependencies.sharp;
   if (declaration !== "0.35.5") fail("DEPENDENCY_INVALID");
   for (const name of names) {
+    // The six fixed sharpNames entries are checked against their actual
+    // installed roots below; this is not a build-time checkout-wide glob.
     const entry =
       name === "sharp"
         ? path.join(bound.checkoutRoot, "node_modules/sharp")
-        : path.join(path.dirname(sharpRoot), name);
+        : path.join(/* turbopackIgnore: true */ path.dirname(sharpRoot), name);
     await ancestors(bound.checkoutRoot, entry, ctx);
     const before = await lstat(entry, { bigint: true });
     checkpoint(ctx);
@@ -1097,7 +1099,8 @@ async function manifestDirectory(
 ) {
   let current = root;
   for (const part of [".cache", "quizpack-media-runtime"]) {
-    current = path.join(current, part);
+    // This fixed private runtime manifest directory is never a build asset.
+    current = path.join(/* turbopackIgnore: true */ current, part);
     if (prepare) {
       checkpoint(ctx);
       try {
@@ -1182,7 +1185,8 @@ async function save(
     temporaryExists = false;
     checkpoint(ctx);
     const dir = await open(
-      leaf,
+      // Sync the checked private manifest directory, not traced build content.
+      /* turbopackIgnore: true */ leaf,
       constants.O_RDONLY | constants.O_DIRECTORY | constants.O_NOFOLLOW,
     );
     try {

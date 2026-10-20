@@ -80,3 +80,9 @@ jobs:
       - name: Real PostgreSQL migrations and integration tests
         shell: bash
         run: bash scripts/ci-p2a-service.sh
+      - name: Validation service with a separate fresh database
+        shell: bash
+        run: bash scripts/ci-p2a-service.sh validation
+      - name: Media uncertainty with a separate fresh database
+        shell: bash
+        run: bash scripts/ci-p2a-service.sh media-unknown
