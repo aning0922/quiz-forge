@@ -1,11 +1,55 @@
 import { expect, type Page, type TestInfo } from "@playwright/test";
 
+export async function waitForEmptyDraftSource(page: Page) {
+  // Validation detail mounts these readers independently. The static read-only
+  // notice/link can appear while their loading paragraphs still affect height.
+  const first = page.getByRole("region", {
+    name: "首次草稿应用",
+    exact: true,
+  });
+  await expect(
+    first.getByRole("button", { name: "刷新草稿与工作区状态", exact: true }),
+  ).toBeEnabled();
+  await expect(first.getByRole("status")).toHaveCount(0);
+  await expect(first.getByRole("alert")).toHaveCount(0);
+  const append = page.getByRole("region", {
+    name: "追加草稿修订",
+    exact: true,
+  });
+  await expect(
+    append.getByText("此工作区尚无草稿。请先使用首次草稿应用。", {
+      exact: true,
+    }),
+  ).toBeVisible();
+  await expect(append.getByRole("status")).toHaveCount(0);
+  await expect(append.getByRole("alert")).toHaveCount(0);
+  await expect(
+    append.getByText(
+      "此工作区有原请求待核实，或锚点存储不可用。新准备保持关闭。",
+      { exact: true },
+    ),
+  ).toHaveCount(0);
+  const pending = page.getByRole("region", {
+    name: "追加原请求核实",
+    exact: true,
+  });
+  await expect(
+    pending.getByText("此浏览器会话没有此工作区的待确认追加请求。", {
+      exact: true,
+    }),
+  ).toBeVisible();
+  await expect(pending.getByRole("status")).toHaveCount(0);
+}
+
 export async function captureDraftMobile(
   page: Page,
   info: Pick<TestInfo, "outputPath">,
   state: string,
 ) {
-  if (state === "draft-summary") {
+  if (state === "read-only-empty") await waitForEmptyDraftSource(page);
+  if (
+    ["draft-summary", "archived-receipt", "read-only-unknown"].includes(state)
+  ) {
     // The summary mounts a separate asynchronous history reader. Its first row is
     // part of this complete fixture state, not a later optional enhancement.
     const history = page.getByRole("region", {

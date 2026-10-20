@@ -7,6 +7,9 @@ import { pathToFileURL } from "node:url";
 import { chromium, expect, type Page } from "@playwright/test";
 import { draftSummarySchema } from "@/features/product/drafts/contracts";
 import { captureDraftMobile } from "../e2e/studio-drafts.visual";
+import { validationDtoSchema } from "@/features/quizpack/validation/contracts";
+import { dto } from "@/features/studio/validations/fixtures.test-support";
+import { DRAFT_PENDING_STORAGE_KEY } from "@/features/studio/drafts/pending";
 
 // Actual DraftWorkspacePage + history/read clients, controlled synthetic HTTP only.
 // No DB, native media, credentials, 3100 or production Next server.
@@ -47,6 +50,53 @@ const draft = draftSummarySchema.parse({
 const fromTsx = createRequire(
   createRequire(import.meta.url).resolve("tsx/package.json"),
 );
+const validation = validationDtoSchema.parse({
+  ...dto,
+  productId: draft.productId,
+  importId: id(4),
+  id: id(6),
+  status: "ready",
+  stateRevision: 5,
+  storageCondition: "clean",
+  maintenanceRequired: false,
+  packId: "e2e-drafts-synthetic-0",
+  packVersion: "1.0.0",
+  containerSchemaVersion: "quizpack.v1",
+  contentSchemaVersion: "quizpack-content.v1",
+  identityKind: "canonical",
+  canonicalValidationId: id(6),
+  candidateSha256: "d".repeat(64),
+  assetSetSha256: "b".repeat(64),
+  resourceCount: 4,
+  archivedResourceCount: 4,
+  validatedAt: dto.updatedAt,
+  readyAt: dto.updatedAt,
+});
+const emptyProbe = process.argv.includes("--empty-probe");
+let serveEmpty = emptyProbe;
+let posts = 0;
+let gateTarget = "",
+  draftReads = 0,
+  productReads = 0;
+let failedRead = "";
+let releaseRead: (() => void) | undefined,
+  notifyRead: (() => void) | undefined,
+  readRequested = Promise.resolve();
+function holdRead(target: string) {
+  gateTarget = target;
+  draftReads = productReads = 0;
+  readRequested = new Promise<void>((r) => {
+    notifyRead = r;
+  });
+}
+async function readGate(key: string) {
+  if (key === gateTarget) {
+    notifyRead?.();
+    await new Promise<void>((r) => {
+      releaseRead = r;
+    });
+  }
+}
 await fromTsx("esbuild").build({
   entryPoints: [path.resolve("tests/browser/studio-drafts-capture.client.tsx")],
   outfile: path.join(out, "probe.js"),
@@ -105,6 +155,15 @@ await writeFile(
 const old = (await import(
   pathToFileURL(path.join(out, "old-mobile.ts")).href
 )) as { mobile: typeof captureDraftMobile };
+await writeFile(
+  path.join(out, "before-empty.visual.ts"),
+  execFileSync("git", ["show", "903a462:tests/e2e/studio-drafts.visual.ts"], {
+    encoding: "utf8",
+  }),
+);
+const beforeEmpty = (await import(
+  pathToFileURL(path.join(out, "before-empty.visual.ts")).href
+)) as { captureDraftMobile: typeof captureDraftMobile };
 const files = new Map([
   [
     "/probe.js",
@@ -128,13 +187,38 @@ function hold() {
   });
 }
 const server = createServer(async (req, res) => {
+  if (req.method === "POST") posts++;
   const url = new URL(req.url ?? "/", "http://127.0.0.1");
   const json = (value: unknown, status = 200) => {
     res.writeHead(status, { "content-type": "application/json" });
     res.end(JSON.stringify(value));
   };
   if (url.pathname.endsWith("/draft")) {
-    json({ kind: "draft", draft });
+    const key = "draft-" + ++draftReads;
+    await readGate(key);
+    if (failedRead === key) {
+      json({ code: "STUDIO_UNAVAILABLE", requestId: id(6) }, 503);
+      return;
+    }
+    json(
+      serveEmpty
+        ? { kind: "empty", productId: draft.productId }
+        : { kind: "draft", draft },
+    );
+    return;
+  }
+  if (url.pathname === "/api/studio/products/capture-fixture") {
+    const key = "product-" + ++productReads;
+    await readGate(key);
+    if (failedRead === key) {
+      json({ code: "STUDIO_UNAVAILABLE", requestId: id(6) }, 503);
+      return;
+    }
+    json({ id: draft.productId, archivedAt: null });
+    return;
+  }
+  if (url.pathname.endsWith("/validations/" + id(6))) {
+    json(validation);
     return;
   }
   if (url.pathname.endsWith("/revisions")) {
@@ -166,7 +250,9 @@ const server = createServer(async (req, res) => {
   }
   res.writeHead(200, { "content-type": "text/html; charset=utf-8" });
   res.end(
-    '<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/probe.css"><style>*{box-sizing:border-box}body{margin:0;font-family:Arial,"PingFang SC","Microsoft YaHei",sans-serif}h1,h2,h3,p{margin:0}button,select{font:inherit}</style><div id="root"></div><script src="/probe.js"></script></html>',
+    '<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/probe.css"><style>*{box-sizing:border-box}body{margin:0;font-family:Arial,"PingFang SC","Microsoft YaHei",sans-serif}h1,h2,h3,p{margin:0}button,select{font:inherit}' +
+      (emptyProbe ? "h1,h2,h3{font-size:inherit;font-weight:inherit}" : "") +
+      '</style><div id="root"></div><script src="/probe.js"></script></html>',
   );
 });
 await new Promise<void>((r) => server.listen(0, "127.0.0.1", r));
@@ -180,101 +266,308 @@ const facts: Record<string, unknown> = {
     "actual React workspace/history clients with held synthetic HTTP, no DB/3100/production server",
 };
 try {
-  hold();
-  const page = await browser.newPage({ viewport: { width: 320, height: 900 } });
-  await page.goto(origin);
-  await historyRequested;
-  await expect(
-    page.getByRole("link", { name: "读取固定修订正文", exact: true }),
-  ).toBeVisible();
-  const screenshot = page.screenshot.bind(page);
-  let before = 0,
-    png = 0;
-  page.screenshot = async (...args: Parameters<Page["screenshot"]>) => {
-    before = await page.evaluate(() =>
-      Math.max(innerHeight, document.documentElement.scrollHeight),
+  if (emptyProbe) {
+    const traces = [],
+      fixes = [];
+    for (const target of ["draft-1", "draft-2", "product-1", "product-2"]) {
+      holdRead(target);
+      const p = await browser.newPage({
+        viewport: { width: 320, height: 900 },
+      });
+      await p.goto(origin + "/read-only-empty");
+      await readRequested;
+      await expect(
+        p
+          .getByRole("region", { name: "首次草稿应用", exact: true })
+          .getByText("当前身份为只读", { exact: false }),
+      ).toBeVisible();
+      await expect(p.getByRole("status")).toHaveCount(1);
+      await expect(
+        p.getByText("此浏览器会话没有此工作区的待确认追加请求。", {
+          exact: true,
+        }),
+      ).toBeVisible();
+      await expect(
+        p.getByText(
+          "此工作区有原请求待核实，或锚点存储不可用。新准备保持关闭。",
+          { exact: true },
+        ),
+      ).toHaveCount(0);
+      const measure = () =>
+        p.evaluate(() => ({
+          height: document.documentElement.scrollHeight,
+          innerWidth,
+          clientWidth: document.documentElement.clientWidth,
+          fonts: { status: document.fonts.status, count: document.fonts.size },
+          animations: document.getAnimations().length,
+          sections: [...document.querySelectorAll("section[aria-label]")].map(
+            (e) => ({
+              label: e.getAttribute("aria-label"),
+              height: e.getBoundingClientRect().height,
+              statuses: [...e.querySelectorAll('[role="status"]')].map(
+                (s) => s.textContent,
+              ),
+            }),
+          ),
+        }));
+      const before = await measure();
+      const shot = p.screenshot.bind(p);
+      let heldAfterShot: Awaited<ReturnType<typeof measure>> | undefined,
+        after: Awaited<ReturnType<typeof measure>> | undefined,
+        png = 0;
+      p.screenshot = async (...args: Parameters<Page["screenshot"]>) => {
+        const image = await shot(...args);
+        png = image.readUInt32BE(20);
+        heldAfterShot = await measure();
+        // Complete only the held independent read after PNG capture, before
+        // the old helper's after-height check: the second production failure window.
+        releaseRead?.();
+        await expect(p.getByRole("status")).toHaveCount(0);
+        after = await measure();
+        return image;
+      };
+      let rejected = false;
+      try {
+        await beforeEmpty.captureDraftMobile(
+          p,
+          {
+            outputPath: (name) =>
+              path.join(out, `empty-negative-${target}-${name}`),
+          },
+          "read-only-empty",
+        );
+      } catch {
+        rejected = true;
+      }
+      expect(
+        rejected &&
+          before.height === png &&
+          heldAfterShot?.height === png &&
+          after?.height !== before.height,
+      ).toBe(true);
+      traces.push({ target, before, png, heldAfterShot, after, rejected });
+      await p.close();
+      holdRead(target);
+      const fixed = await browser.newPage({
+        viewport: { width: 320, height: 900 },
+      });
+      await fixed.goto(origin + "/read-only-empty");
+      await readRequested;
+      let captures = 0;
+      const fixedShot = fixed.screenshot.bind(fixed);
+      fixed.screenshot = async (...args: Parameters<Page["screenshot"]>) => {
+        captures++;
+        return fixedShot(...args);
+      };
+      const work = captureDraftMobile(
+        fixed,
+        {
+          outputPath: (name) => path.join(out, `empty-fixed-${target}-${name}`),
+        },
+        "read-only-empty",
+      );
+      await fixed.evaluate(() => document.readyState);
+      expect(captures).toBe(0);
+      releaseRead?.();
+      await work;
+      expect(captures).toBe(4);
+      fixes.push({ target, captures, widths: [320, 375, 390, 430] });
+      await fixed.close();
+    }
+    facts.emptyTraces = traces;
+    facts.emptyFixes = fixes;
+    const errorCases = [];
+    for (const target of ["draft-2", "product-1"]) {
+      holdRead(target);
+      failedRead = target;
+      const p = await browser.newPage({
+        viewport: { width: 320, height: 900 },
+      });
+      await p.goto(origin + "/read-only-empty");
+      await readRequested;
+      releaseRead?.();
+      let captures = 0;
+      const shot = p.screenshot.bind(p);
+      p.screenshot = async (...args: Parameters<Page["screenshot"]>) => {
+        captures++;
+        return shot(...args);
+      };
+      let rejected = false;
+      try {
+        await captureDraftMobile(
+          p,
+          {
+            outputPath: (name) =>
+              path.join(out, `empty-error-${target}-${name}`),
+          },
+          "read-only-empty",
+        );
+      } catch {
+        rejected = true;
+      }
+      expect(rejected && captures === 0).toBe(true);
+      errorCases.push({ target, rejected, captures });
+      await p.close();
+      failedRead = "";
+    }
+    facts.emptyErrors = errorCases;
+    serveEmpty = false;
+    hold();
+    const pendingPage = await browser.newPage({
+      viewport: { width: 320, height: 900 },
+    });
+    const anchor = JSON.stringify({
+      schemaVersion: DRAFT_PENDING_STORAGE_KEY,
+      entries: [
+        {
+          tuple: {
+            productId: draft.productId,
+            sourceImportId: draft.sourceImportId,
+            sourceValidationId: draft.sourceValidationId,
+            idempotencyKey: id(9),
+            expectedValidationStateRevision: 5,
+            expectedCandidateSha256: draft.candidateSha256,
+            target: { kind: "new-draft" },
+          },
+          mayHaveBeenSent: true,
+        },
+      ],
+    });
+    await pendingPage.addInitScript(
+      ({ key, text }) => sessionStorage.setItem(key, text),
+      { key: DRAFT_PENDING_STORAGE_KEY, text: anchor },
+    );
+    await pendingPage.goto(origin + "/?role=read-only");
+    await historyRequested;
+    await expect(
+      pendingPage.getByRole("button", { name: "核对原 key 回执", exact: true }),
+    ).toBeEnabled();
+    const work = captureDraftMobile(
+      pendingPage,
+      { outputPath: (name) => path.join(out, "preserved-pending-" + name) },
+      "read-only-unknown",
     );
     releaseHistory?.();
-    await expect(page.locator('[data-history-revision="1"]')).toBeVisible();
-    const bytes = await screenshot(...args);
-    png = bytes.readUInt32BE(20);
-    return bytes;
-  };
-  let oldRejected = false;
-  try {
-    await old.mobile(
-      page,
-      { outputPath: (file) => path.join(out, "negative-" + file) },
+    await work;
+    const anchorUnchanged = await pendingPage.evaluate(
+      ({ key, text }) => sessionStorage.getItem(key) === text,
+      { key: DRAFT_PENDING_STORAGE_KEY, text: anchor },
+    );
+    expect(anchorUnchanged && posts === 0).toBe(true);
+    await expect(
+      pendingPage.getByRole("button", { name: "核对原 key 回执", exact: true }),
+    ).toBeEnabled();
+    await expect(
+      pendingPage.getByRole("button", {
+        name: "明确按原 key 重放",
+        exact: true,
+      }),
+    ).toHaveCount(0);
+    facts.preservedPending = {
+      anchorUnchanged,
+      posts,
+      widths: [320, 375, 390, 430],
+    };
+    await pendingPage.close();
+  } else {
+    hold();
+    const page = await browser.newPage({
+      viewport: { width: 320, height: 900 },
+    });
+    await page.goto(origin);
+    await historyRequested;
+    await expect(
+      page.getByRole("link", { name: "读取固定修订正文", exact: true }),
+    ).toBeVisible();
+    const screenshot = page.screenshot.bind(page);
+    let before = 0,
+      png = 0;
+    page.screenshot = async (...args: Parameters<Page["screenshot"]>) => {
+      before = await page.evaluate(() =>
+        Math.max(innerHeight, document.documentElement.scrollHeight),
+      );
+      releaseHistory?.();
+      await expect(page.locator('[data-history-revision="1"]')).toBeVisible();
+      const bytes = await screenshot(...args);
+      png = bytes.readUInt32BE(20);
+      return bytes;
+    };
+    let oldRejected = false;
+    try {
+      await old.mobile(
+        page,
+        { outputPath: (file) => path.join(out, "negative-" + file) },
+        "draft-summary",
+      );
+    } catch {
+      oldRejected = true;
+    }
+    expect(oldRejected && png > before).toBe(true);
+    facts.negative = {
+      oldRejected,
+      before,
+      png,
+      historyArrival: "after old height measurement and before actual capture",
+    };
+    await page.close();
+    hold();
+    const fixed = await browser.newPage({
+      viewport: { width: 320, height: 900 },
+    });
+    await fixed.goto(origin);
+    await historyRequested;
+    let captures = 0;
+    const fixedShot = fixed.screenshot.bind(fixed);
+    fixed.screenshot = async (...args: Parameters<Page["screenshot"]>) => {
+      captures++;
+      return fixedShot(...args);
+    };
+    const capture = captureDraftMobile(
+      fixed,
+      { outputPath: (file) => path.join(out, "fixed-" + file) },
       "draft-summary",
     );
-  } catch {
-    oldRejected = true;
+    expect(captures).toBe(0);
+    releaseHistory?.();
+    await capture;
+    expect(captures).toBe(4);
+    facts.fixed = {
+      captures,
+      widths: [320, 375, 390, 430],
+      fullHeightAssertions: "before === after === PNG; width === PNG",
+    };
+    await fixed.close();
+    hold();
+    failure = true;
+    const failed = await browser.newPage({
+      viewport: { width: 320, height: 900 },
+    });
+    await failed.goto(origin);
+    await historyRequested;
+    releaseHistory?.();
+    let failureCaptures = 0;
+    const failedShot = failed.screenshot.bind(failed);
+    failed.screenshot = async (...args: Parameters<Page["screenshot"]>) => {
+      failureCaptures++;
+      return failedShot(...args);
+    };
+    let failureRejected = false;
+    try {
+      await captureDraftMobile(
+        failed,
+        { outputPath: (file) => path.join(out, "error-" + file) },
+        "draft-summary",
+      );
+    } catch {
+      failureRejected = true;
+    }
+    expect(failureRejected && failureCaptures === 0).toBe(true);
+    facts.historyFailure = {
+      rejected: failureRejected,
+      captures: failureCaptures,
+    };
+    await failed.close();
   }
-  expect(oldRejected && png > before).toBe(true);
-  facts.negative = {
-    oldRejected,
-    before,
-    png,
-    historyArrival: "after old height measurement and before actual capture",
-  };
-  await page.close();
-  hold();
-  const fixed = await browser.newPage({
-    viewport: { width: 320, height: 900 },
-  });
-  await fixed.goto(origin);
-  await historyRequested;
-  let captures = 0;
-  const fixedShot = fixed.screenshot.bind(fixed);
-  fixed.screenshot = async (...args: Parameters<Page["screenshot"]>) => {
-    captures++;
-    return fixedShot(...args);
-  };
-  const capture = captureDraftMobile(
-    fixed,
-    { outputPath: (file) => path.join(out, "fixed-" + file) },
-    "draft-summary",
-  );
-  expect(captures).toBe(0);
-  releaseHistory?.();
-  await capture;
-  expect(captures).toBe(4);
-  facts.fixed = {
-    captures,
-    widths: [320, 375, 390, 430],
-    fullHeightAssertions: "before === after === PNG; width === PNG",
-  };
-  await fixed.close();
-  hold();
-  failure = true;
-  const failed = await browser.newPage({
-    viewport: { width: 320, height: 900 },
-  });
-  await failed.goto(origin);
-  await historyRequested;
-  releaseHistory?.();
-  let failureCaptures = 0;
-  const failedShot = failed.screenshot.bind(failed);
-  failed.screenshot = async (...args: Parameters<Page["screenshot"]>) => {
-    failureCaptures++;
-    return failedShot(...args);
-  };
-  let failureRejected = false;
-  try {
-    await captureDraftMobile(
-      failed,
-      { outputPath: (file) => path.join(out, "error-" + file) },
-      "draft-summary",
-    );
-  } catch {
-    failureRejected = true;
-  }
-  expect(failureRejected && failureCaptures === 0).toBe(true);
-  facts.historyFailure = {
-    rejected: failureRejected,
-    captures: failureCaptures,
-  };
-  await failed.close();
   facts.browser = await browser.version();
   await writeFile(
     path.join(out, "result.json"),
@@ -283,13 +576,11 @@ try {
   console.log(
     JSON.stringify({
       out,
-      oldRejected,
-      captures,
-      failureRejected,
-      failureCaptures,
+      emptyProbe,
     }),
   );
 } finally {
+  releaseRead?.();
   releaseHistory?.();
   await browser.close();
   await new Promise<void>((r, reject) =>
