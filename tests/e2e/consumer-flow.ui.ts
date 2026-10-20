@@ -132,15 +132,23 @@ export async function openPrivateConsumerLink(page: Page, file: string) {
     if (
       url.origin !== "http://127.0.0.1:3100" ||
       url.pathname !== "/access" ||
+      url.username ||
+      url.password ||
       url.search ||
+      url.hash !== "#key=" + raw ||
       !parseConsumerToken(raw, "access-key")
     )
       throw unavailable();
-    await page.goto("/access");
-    // Same safe evaluate-only injection pattern as isolated Studio credential login; trace/video are off.
+    // The Access effect consumes the fragment only on mount. Starting from the
+    // same /access document could make replace hash-only and leave that effect
+    // already finished. Always navigate a safe different document first.
+    await page.goto("about:blank");
+    if (page.url() !== "about:blank") throw unavailable();
+    // The validated absolute private link crosses only evaluate; never goto,
+    // fill, APIRequest, expect or logs. Trace/video remain disabled.
     await page.evaluate((value) => {
-      location.replace("/access#key=" + value);
-    }, raw);
+      location.replace(value);
+    }, url.href);
     await expect(
       page.getByRole("button", { name: "验证访问", exact: true }),
     ).toBeEnabled();
@@ -150,7 +158,13 @@ export async function openPrivateConsumerLink(page: Page, file: string) {
           location.pathname === "/access" &&
           location.search === "" &&
           location.hash === "" &&
-          !/qf[kg]_p4_/.test(document.documentElement.outerHTML),
+          !/qf[kg]_p4_/.test(document.documentElement.outerHTML) &&
+          !Object.values(localStorage).some((value) =>
+            /qf[kg]_p4_/.test(value),
+          ) &&
+          !Object.values(sessionStorage).some((value) =>
+            /qf[kg]_p4_/.test(value),
+          ),
       ))
     )
       throw unavailable();

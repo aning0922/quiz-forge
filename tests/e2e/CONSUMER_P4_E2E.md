@@ -71,3 +71,19 @@ node --conditions=react-server --import tsx tests/browser/consumer-interception.
 The default ephemeral mode intentionally continues testing the old raw-header forward as the preserved negative control; it does not relax the actual helper's fixed destination for testing. B has not occupied 3100 or accessed root's DB/failed instances.
 
 Opaque-principal refinement evidence: `.cache/p4-consumer-interception/1792492201234/result.json` uses actual Chromium 156.0.8078.4 with a CSP `sandbox allow-scripts` main document. Its frame URL and `location.origin` still match the HTTP URL, while `globalThis.origin` is exactly `"null"`. The helper therefore evaluates `globalThis.origin`, not `location.origin`, as its principal proof. The added unit negatives reject that opaque result and any incoming/outgoing redirect chain before native HTTP. Explicit bad site/Origin/Host fields are passed unchanged for server rejection; they are never normalized, and wrong Origin/Host suppresses missing-site synthesis. The default probe's real original-forward 403 / browser 200 negative control still passes; browser/server were actually closed and process exit 0. No B execution used 3100.
+
+## Private-link navigation after the ninth production run
+
+Root's ninth run at `1d584…` passed the complete operator case, then failed the consumer entry case before creating a consumer session. The previous helper first loaded empty `/access`, then used a relative hash navigation. Actual Access consumes the fragment only in its mount effect: when the empty effect has already completed, the second navigation stays in the same document and never consumes the Key. Root independently reproduced this on production Next without DB or an exchange (`.cache/p4-access-navigation-probe-result.json`); its owned browser/Next closed with exit 0.
+
+The test-only helper now loads `about:blank`, verifies that safe document, then passes the validated **absolute** fixed-origin private link only through `page.evaluate` to `location.replace`. The existing private-file containment, mode, bounded read, token validation and five-second button assertion remain. URL credentials, search, noncanonical fragment and foreign destination reject. Raw material does not cross goto/fill/expect/log; the helper also checks DOM and both browser stores after Access erases the fragment. Frozen Access and production entry/guard are unchanged. This shared helper also covers reopening the original link and the later void-denial case.
+
+`tests/browser/consumer-access-open.ts` bundles the actual Access component in real Chromium 156.0.8078.4. Its default ephemeral proof records the actual empty mount's History replacement before executing the exact old sequence: same document, no new request, fragment retained, original button assertion rejected, zero automatic exchange. The new sequence passes from blank, settled empty Access, a synthetic play-path document, and Access holding a different synthetic Key. Each new mount clears the fragment with no HTTP URL/header, DOM or storage leak and no automatic POST; only the explicit manual click emits one matching exchange, receiving an honest 503 fixture response. Evidence: `.cache/p4-access-open/1792493870807/result.json`, actual browser/server closed, exit 0. The play-path prior document is a synthetic shell; this is navigation evidence, not a real session/DB/Next acceptance.
+
+Default mode proves the exact navigation sequence without relaxing the helper's fixed destination. Root can exercise the complete actual private-file helper with an explicitly owned plain HTTP 3100 server (synthetic only, no DB/Next):
+
+```sh
+node --conditions=react-server --import tsx tests/browser/consumer-access-open.ts --fixed-3100
+```
+
+B's default proof did not occupy 3100. Typecheck, scoped lint/format, the access-fragment unit test and diff check pass; the complete production regression remains root-owned.
