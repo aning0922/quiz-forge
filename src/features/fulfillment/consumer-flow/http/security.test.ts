@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { NextRequest } from "next/server";
 import {
   createConsumerToken,
   CONSUMER_COOKIE_NAME_V1 as name,
@@ -61,6 +62,176 @@ describe("consumer HTTP source and credential separation", () => {
       "SOURCE_REJECTED",
     );
   });
+  it.each(["GET", "POST"] as const)(
+    "accepts the exact native request origin despite NextRequest's loopback normalization (%s)",
+    (method) => {
+      const request = new NextRequest(config.origin + "/access/exchange", {
+        method,
+        headers: {
+          host: "127.0.0.1:3201",
+          origin: config.origin,
+          "sec-fetch-site": "same-origin",
+          "x-quizforge-consumer-exchange": "1",
+        },
+        ...(method === "POST" ? { body: "{}" } : {}),
+      });
+      // The framework-derived origin loses the wire URL distinction.
+      expect(new URL(request.url).origin).toBe("http://localhost:3201");
+      expect(
+        new URL(Reflect.get(Request.prototype, "url", request)).origin,
+      ).toBe(config.origin);
+      expect(() =>
+        assertConsumerSource(request, config, {
+          post: method === "POST",
+          exchange: method === "POST",
+        }),
+      ).not.toThrow();
+      const clone = request.clone();
+      expect(() =>
+        assertConsumerSource(clone, config, {
+          post: method === "POST",
+          exchange: method === "POST",
+        }),
+      ).not.toThrow();
+      expect(request.bodyUsed).toBe(false);
+      expect(clone.bodyUsed).toBe(false);
+    },
+  );
+  it.each([
+    "http://localhost:3201",
+    "http://127.0.0.2:3201",
+    "http://[::1]:3201",
+    "http://example.invalid:3201",
+    "https://127.0.0.1:3201",
+    "http://127.0.0.1:3202",
+  ])(
+    "rejects an actual non-profile native URL even with otherwise exact headers (%s)",
+    (origin) => {
+      const request = new NextRequest(origin + "/access/exchange", {
+        method: "POST",
+        headers: {
+          host: "127.0.0.1:3201",
+          origin: config.origin,
+          "sec-fetch-site": "same-origin",
+          "x-quizforge-consumer-exchange": "1",
+        },
+        body: "{}",
+      });
+      expect(() =>
+        assertConsumerSource(request, config, { post: true, exchange: true }),
+      ).toThrow("SOURCE_REJECTED");
+    },
+  );
+  it.each([
+    ["host", "localhost:3201"],
+    ["host", "127.0.0.2:3201"],
+    ["host", "127.0.0.1:3202"],
+    ["host", "127.0.0.1:3201, localhost:3201"],
+    ["host", null],
+    ["origin", "http://localhost:3201"],
+    ["origin", "https://127.0.0.1:3201"],
+    ["origin", "http://127.0.0.1:3202"],
+    ["origin", "null"],
+    ["origin", null],
+    ["sec-fetch-site", "same-site"],
+    ["sec-fetch-site", "cross-site"],
+    ["sec-fetch-site", null],
+    ["x-quizforge-consumer-exchange", null],
+  ])(
+    "keeps exact real headers and mandatory metadata under NextRequest (%s=%s)",
+    (name, value) => {
+      const request = new NextRequest(config.origin + "/access/exchange", {
+        method: "POST",
+        headers: {
+          host: "127.0.0.1:3201",
+          origin: config.origin,
+          "sec-fetch-site": "same-origin",
+          "x-quizforge-consumer-exchange": "1",
+        },
+        body: "{}",
+      });
+      if (value === null) request.headers.delete(name!);
+      else request.headers.set(name!, value!);
+      expect(() =>
+        assertConsumerSource(request, config, { post: true, exchange: true }),
+      ).toThrow("SOURCE_REJECTED");
+    },
+  );
+  it.each([null, "same-site", "cross-site"])(
+    "keeps metadata mandatory on actual NextRequest GET (%s)",
+    (site) => {
+      const request = new NextRequest(config.origin + "/api/synthetic", {
+        headers: { host: "127.0.0.1:3201" },
+      });
+      if (site !== null) request.headers.set("sec-fetch-site", site);
+      expect(() =>
+        assertConsumerSource(request, config, { post: false }),
+      ).toThrow("SOURCE_REJECTED");
+    },
+  );
+  it.each([
+    "http://localhost:3201",
+    "http://127.0.0.2:3201",
+    "https://127.0.0.1:3201",
+  ])(
+    "does not trust forwarded headers to repair another native origin (%s)",
+    (origin) => {
+      const request = new NextRequest(origin + "/api/synthetic", {
+        headers: {
+          host: "127.0.0.1:3201",
+          "sec-fetch-site": "same-origin",
+          "x-forwarded-host": "127.0.0.1:3201",
+          "x-forwarded-proto": "http",
+          forwarded: 'host="127.0.0.1:3201";proto=http',
+        },
+      });
+      expect(() =>
+        assertConsumerSource(request, config, { post: false }),
+      ).toThrow("SOURCE_REJECTED");
+    },
+  );
+  it("rejects invalid Request brands instead of falling back to a public url property", () => {
+    const fake = {
+      url: config.origin + "/api/synthetic",
+      headers: new Headers({
+        host: "127.0.0.1:3201",
+        "sec-fetch-site": "same-origin",
+      }),
+    } as Request;
+    expect(() => assertConsumerSource(fake, config, { post: false })).toThrow(
+      "SOURCE_REJECTED",
+    );
+  });
+  it.each(["missing", "throws", "wrong-type", "invalid-url"])(
+    "rejects an unavailable or invalid native getter result (%s)",
+    (fault) => {
+      const descriptor = Object.getOwnPropertyDescriptor(
+        Request.prototype,
+        "url",
+      )!;
+      const request = req();
+      try {
+        if (fault === "missing")
+          Object.defineProperty(Request.prototype, "url", {
+            configurable: true,
+            value: config.origin,
+          });
+        else
+          Object.defineProperty(Request.prototype, "url", {
+            configurable: true,
+            get() {
+              if (fault === "throws") throw Error("SYNTHETIC_GETTER_FAILURE");
+              return fault === "wrong-type" ? {} : "not-an-absolute-url";
+            },
+          });
+        expect(() =>
+          assertConsumerSource(request, config, { post: true }),
+        ).toThrow("SOURCE_REJECTED");
+      } finally {
+        Object.defineProperty(Request.prototype, "url", descriptor);
+      }
+    },
+  );
   it("rejects duplicate/malformed grant cookies and accepts no Studio/access-key substitute", () => {
     const raw = createConsumerToken("grant");
     expect(

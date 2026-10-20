@@ -28,7 +28,21 @@ export function assertConsumerSource(
   } catch {
     throw new ConsumerError("UNAVAILABLE");
   }
-  const url = new URL(request.url);
+  let url: URL;
+  try {
+    // NextRequest's public url normalizes loopback hosts to localhost. The
+    // standard Request getter retains the adapter's native URL, so compare it
+    // exactly without granting localhost or another loopback an origin alias.
+    const getUrl = Object.getOwnPropertyDescriptor(
+      Request.prototype,
+      "url",
+    )?.get;
+    const nativeUrl: unknown = getUrl?.call(request);
+    if (typeof nativeUrl !== "string") throw new Error();
+    url = new URL(nativeUrl);
+  } catch {
+    throw new ConsumerError("SOURCE_REJECTED");
+  }
   if (
     request.headers.get("host") !== host ||
     url.origin !== config.origin ||
