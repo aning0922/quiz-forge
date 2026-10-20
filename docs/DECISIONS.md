@@ -53,3 +53,15 @@ CI 配置按 [checkout](https://github.com/actions/checkout)、[setup-node](http
 - ADR-033 accepted：概念肖像只解析固定项目资源ID；未知不回退李白，缺相似资料不补造。正式人物/肖像绑定、资源审批及未知阻断待后续Schema/发布阶段。
 
 详细决策、揭晓边界与D1-B/C验收计划见 `D1A1_VISUAL_DECISION.md`；本轮不授权答题/恢复或发布。
+
+## F1 测评与资源底座（2026-10-11）
+
+- ADR-034 accepted：Product 是测评工作区的稳定身份，题目、结果、私有资源均按测评/版本归属；类目、标签与视觉主题分离。
+- ADR-035 accepted：可编辑 ProductDraft 带 revision 与内容哈希；验证/审核绑定同一候选，改动失效；发布生成不可变组合，升级/回滚不改变活跃会话和历史报告。
+- ADR-036 accepted：资源按测评管理，以不可变内容版本引用；隔离上传与发布资源分开，DB/文件存储采用可恢复分步提交，拒绝原路径覆盖和跨测评隐式共享。
+- ADR-037 accepted：先交付一款测评端到端，最小认证后台前移到包安全/数据库之后；三主题十五状态目标保留，AI/剧情/渠道后置。用户只授权文档与 F1，后续按阶段验收。
+- ADR-038 accepted：F1 使用固定 zod 4.6.5 定义运行时结构并生成 JSON Schema；交叉引用另行验证。foundation.v1 不冻结完整 QuizPack；valid 不授予发布，导入文件自报的审核/哈希不是可信证据。
+- ADR-039 accepted：本轮从 main b3e30bc 隔离实施，其他开发聊天暂停；保留 D1-D 未提交成果，原主工作区和所有旧研究验收不覆盖。
+
+- ADR-040 accepted：F1草稿省略content或canonical相同为no-op，返回无别名副本但不递增revision；实际变化才使旧证据失效。JSON CLI机器接口统一`pnpm --silent`，真实脚本管理器入口需子进程测试。
+- 依赖核验：Zod 4.6.5 与 tsx 4.23.15 的已安装package均声明MIT；tsx要求Node≥18，本机20.20.1满足。锁文件固定版本，tsx预编译运行已验证，未批准额外依赖安装脚本。
