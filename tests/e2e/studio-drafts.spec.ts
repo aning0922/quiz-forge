@@ -1,6 +1,9 @@
 import { test, expect, type Page } from "@playwright/test";
 import { constants } from "node:fs";
-import { captureDraftMobile as mobile } from "./studio-drafts.visual";
+import {
+  captureDraftMobile as mobile,
+  waitForEmptyDraftSource,
+} from "./studio-drafts.visual";
 import { open } from "node:fs/promises";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
@@ -272,6 +275,8 @@ test("real PG apply loses its response; empty lookup and finite error preserve e
     { times: 1 },
   );
   await page.goto(detail());
+  // Settle the independent initial reads before creating an intentional UNKNOWN.
+  await waitForEmptyDraftSource(page);
   await page
     .getByRole("button", { name: "应用为首次草稿", exact: true })
     .click();
