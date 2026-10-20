@@ -131,3 +131,36 @@ Four ready-state screenshots (`ready-320/375/390/430.png`, each 900 CSS px high)
 The tenth production run produced four poster-page images with the offscreen fixed skip link painted at its document offset. An independent actual frozen-host / compiled-global-CSS Chromium probe reproduced all four widths: after download and resize, scrollY was 368/340/340/308; the active element remained BUTTON, the skip link was not focused, and its computed/viewport top remained -100. Its documentY was 268/240/240/208, matching the unwanted green region in full-page images. This is capture framing evidence, not a product focus defect.
 
 The shared `positionConsumerCaptureAtTop` performs only normal `window.scrollTo(0, 0)` and a strict scrollY=0 wait after the existing ready/layout checks and before each full-page screenshot. It does not hide/remove the accessibility link, change CSS, blur/focus controls, alter state or dispatch business requests. Independent four-width comparison removed the unwanted painted region while preserving full heights 1268/1240/1240/1208, the focused download button, zero POST and actual browser/server closure. New production screenshots still require inspection; the failed tenth-run originals remain preserved. The new private P5 live sibling uses the same exported framing helper; its original reviewed predecessor remains intact.
+
+## Exchange response observation across navigation
+
+Root's separate compat-before run stopped after an actual resume exchange had applied but its browser observation failed. B did not access that DB/3100 or repeat that operation. The independent actual SSR host now has a bounded diagnostic mode, each iteration using a fresh synthetic Key/context and exactly one explicit exchange:
+
+```sh
+node --import tsx tests/browser/consumer-access-v1-1.ts --response-observer-only
+```
+
+The exact original order (`waitForResponse`, await click, await response, check 200, then `response.json()`) loses the response resource after navigation. First evidence `.cache/p4-access-v1-1/1792498001868/result.json` records 5/5 failures for both that order and starting `pending.then(readJSON)` before clicking. The final shared-helper proof `.cache/p4-access-v1-1/1792498896084/result.json` records 0/5 successful late reads, 2/5 successful early-then reads (three remaining resource failures), and **5/5 successful shared-helper DTO observations**. All fifteen HTTP statuses are 200 and all have one POST/one navigation. Failures record only finite Error type and `RESPONSE_BODY_RESOURCE_UNAVAILABLE`, never raw messages, URL, Key or body. Early `.then` therefore remains a race, not the fix.
+
+`tests/e2e/consumer-exchange-observer.ts` exports `observeNextConsumerExchange(page)`. Arm it after the private-link helper has erased the URL, before the explicit click; await its `observation`, require `ok`, use the validated `result`, and always await `dispose()` in finally. Setup errors throw a finite code before the click. The observation is a discriminated success/failure value, so a failure never supplies a DTO or authorizes retry. Example integration shape:
+
+```ts
+const observer = await observeNextConsumerExchange(page);
+try {
+  await page.getByRole("button", { name: "验证访问", exact: true }).click();
+  const observed = await observer.observation;
+  check(observed.ok, "COMPAT_EXCHANGE_OBSERVATION_FAILED");
+  // observed.result is the actual strictly validated exchange DTO.
+  // Retain the existing destination/session/runtime assertions.
+} finally {
+  await observer.dispose();
+}
+```
+
+The observer pins the existing trusted loopback `/access` Page, exact main Frame/origin/path and clean URL. Its one-document wrapper matches only the next same-origin exact `/access/exchange` POST without query/fragment/credentials. It restores fetch **before** dispatch and invokes the captured fetch using the original receiver and rest-argument tuple. No Request body/headers, Key, Cookie or CSRF are inspected, replaced or manufactured; no new request, replay or redirect is issued. It reads only a clone of the actual Response, bounded to the client's existing 4096-byte exchange response allowance. Clone reads and exposed-binding acknowledgement share a page-side 15-second budget; Node observation is separately bounded to the same finite duration. Expiry cancels only the clone reader. HTTP/body/timeout failures remain failures; the original Response is still returned, and original fetch rejection propagates. Client/service deadlines are unchanged.
+
+The response DTO reaches Node before returning the original Response through a per-arm random binding and separate private nonce. Node checks source Page/main Frame/current origin/path, nonce and active single-use state, then strict response Schema. Wrong nonce, other Frame and a second call return false and cannot supply/replace an observation. `dispose()` deactivates Node delivery, clears timers, restores the document fetch if still present and deletes its current-document globals. Playwright retains its binding registration for the Page lifetime; the owning test must still close its BrowserContext, as root's finally already does. No observer result substitutes for the real service/ledger facts.
+
+The final 26-case proof also directly calls this same helper for 503, malformed/oversized JSON, a nonmatching GET (real 405 remains), unused dispose, nonce/frame/repeat rejection, original receiver/one- and two-argument reference/count preservation, original Response identity and unread body, native invalid-receiver rejection and exact synthetic rejection-object propagation. Actual hung clone and hung ack finish with `EXCHANGE_OBSERVER_TIMEOUT` at 15005/15004 ms, one request each, original Response identity/unread body and original signal intact. These timeout transport probes deliberately use a direct caller with explicit caller cleanup, not the product controller's separate deadline. Negative HTTP/body cases preserve the actual consumer error UI and do not navigate. All 23 explicitly permitted POST bodies match; zero automatic POST, raw leakage, hydration/page errors. Actual browser and owned ephemeral HTTP server closed, process exit 0. No raw proof material is recorded.
+
+**Evidence limit:** waiting for clone reading and the Node acknowledgement changes when the application receives the original Response. This is an intentional test-only observation barrier for compatibility/identity evidence; it does not close unhooked production interaction/timing acceptance. The default 20-case lifecycle regression remains separate and does not install this observer; it retains its documented diagnostic timing hooks and is also not a substitute for unhooked production interaction. Production Access/controller/closure bytes are unchanged. Root owns compat private-script integration, the new explicit manual verification/ledger, real old-Key identity evidence and Astra's observer review. B also retained full format/lint/typecheck and 182-file/1956-unit success (`.cache/p4-exchange-observer-unit.log`); no production build or full E2E was run here.
