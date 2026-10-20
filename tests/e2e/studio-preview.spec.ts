@@ -1,7 +1,7 @@
 import { PREVIEW_FONT_ASSET } from "../../src/features/product/preview/descriptor";
-import { test, expect, type Page, type TestInfo } from "@playwright/test";
+import { test, expect, type Page } from "@playwright/test";
 import { constants } from "node:fs";
-import { sampleStudioLayout, assertStudioLayout } from "./studio-layout";
+import { capturePreviewMobile as mobile } from "./studio-preview.visual";
 import { open, readFile, lstat, realpath } from "node:fs/promises";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
@@ -211,39 +211,6 @@ async function score(page: Page, entry: PreviewEntry): Promise<PreviewReveal> {
     page.getByRole("heading", { name: reveal.result.displayName, exact: true }),
   ).toBeVisible();
   return reveal;
-}
-async function mobile(page: Page, info: TestInfo, state: string) {
-  if (state !== "resume")
-    await expect(page.locator("[data-preview-state] img")).toBeVisible();
-  await page.evaluate(async () => {
-    await document.fonts.ready;
-  });
-  for (const width of [320, 375, 390, 430]) {
-    await page.setViewportSize({ width, height: 900 });
-    assertStudioLayout(
-      await sampleStudioLayout(page, {
-        fontSelector: "[data-preview-state] p",
-        buttonRoleWithin: "html",
-        appliedReceipts: false,
-        above:
-          state === "question"
-            ? [["[data-preview-approval]", "[data-preview-scene-caption]"]]
-            : [],
-      }),
-    );
-    await page.evaluate(() => scrollTo(0, 0));
-    await expect.poll(() => page.evaluate(() => scrollY)).toBe(0);
-    const png = await page.screenshot({
-      path: info.outputPath(`preview-${state}-${width}.png`),
-      fullPage: true,
-    });
-    expect(png.readUInt32BE(16)).toBe(width);
-    expect(png.readUInt32BE(20)).toBe(
-      await page.evaluate(() =>
-        Math.max(innerHeight, document.documentElement.scrollHeight),
-      ),
-    );
-  }
 }
 test.beforeAll(async () => {
   // Hook timeouts are independent of the per-test timeout above.
