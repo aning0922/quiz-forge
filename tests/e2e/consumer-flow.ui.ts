@@ -13,6 +13,7 @@ import { consumerSessionUrl } from "../../src/features/fulfillment/consumer-flow
 import type { AccessKeyDetail } from "../../src/features/fulfillment/access/contracts";
 import type { ConsumerFixtureObservations } from "../db/p4-consumer-fixture-contract";
 import { sampleStudioLayout, assertStudioLayout } from "./studio-layout";
+import { waitForConsumerCaptureReady } from "./consumer-flow.visual";
 import { consumerGet } from "./consumer-flow.network";
 import { consumerRunId } from "./consumer-flow.fixture";
 
@@ -204,7 +205,11 @@ export async function captureConsumerWidths(
   state: string,
 ) {
   if (!/^[a-z-]{1,60}$/.test(state)) throw unavailable();
+  await waitForConsumerCaptureReady(page, state);
   for (const width of [320, 375, 390, 430]) {
+    await page.evaluate(async () => {
+      await document.fonts.ready;
+    });
     await page.setViewportSize({ width, height: 900 });
     expect(
       await page.evaluate(

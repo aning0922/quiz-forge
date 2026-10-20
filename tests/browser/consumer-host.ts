@@ -43,6 +43,9 @@ import {
   consumerImplementationIdentity,
 } from "@/features/product/internal-play/implementation-catalog";
 
+import { captureConsumerWidths } from "../e2e/consumer-flow.ui";
+import type { TestInfo } from "@playwright/test";
+
 /** Actual browser host against a synthetic in-memory HTTP fixture; no business owner/DB/3100. */
 const out = path.resolve(".cache/p4-consumer-host", String(Date.now()));
 await mkdir(out, { recursive: true });
@@ -374,7 +377,120 @@ try {
   browser = await chromium.launch({ headless: true });
   let networkAttemptsDuringLoss = 0,
     sameOriginalBindingDuringLoss = true;
+  if (process.argv.includes("--capture-readiness-only")) {
+    state = f.initial;
+    mode = "normal";
+    last = null;
+    const page = await browser.newPage({
+      viewport: { width: 320, height: 900 },
+    });
+    let release!: () => void, requested!: () => void;
+    const gate = new Promise<void>((r) => {
+        release = r;
+      }),
+      resourceRequested = new Promise<void>((r) => {
+        requested = r;
+      });
+    await page.route(/\/api\/resources\?/, async (route) => {
+      requested();
+      await gate;
+      await route.continue();
+    });
+    await page.goto(`${base}/play/${f.session.sessionId}`);
+    await resourceRequested;
+    await expect(
+      page.locator(
+        '[data-consumer-state="cover"] [data-consumer-media="loading"]',
+      ),
+    ).toBeVisible();
+    let captures = 0;
+    const capture = captureConsumerWidths(
+      page,
+      {
+        outputPath: (file) => {
+          captures++;
+          screenshots.push(file);
+          return path.join(out, file);
+        },
+      } as TestInfo,
+      "consumer-cover",
+    );
+    await page.evaluate(() => document.readyState);
+    expect(captures).toBe(0);
+    release();
+    await capture;
+    expect(captures).toBe(4);
+    observations.push({
+      captureReadiness: "held actual VerifiedMedia resource",
+      shots: captures,
+    });
+    await page.unroute(/\/api\/resources\?/);
+    await page.getByRole("button", { name: "开始答题", exact: true }).click();
+    await page.getByRole("radio").first().click();
+    mode = "unknown";
+    await page.getByRole("button", { name: "暂歇，查看进度" }).click();
+    await expect(
+      page.getByRole("heading", { name: "核对上一次操作", exact: true }),
+    ).toBeVisible();
+    await page.reload();
+    await expect(page.locator('[data-consumer-state="resume"]')).toBeVisible();
+    const pendingKey = `quizforge:p4:consumer-pending:v1:${f.session.sessionId}`,
+      anchor = await page.evaluate(
+        (key) => sessionStorage.getItem(key),
+        pendingKey,
+      ),
+      beforePosts = savePosts;
+    expect(anchor).not.toBeNull();
+    await captureConsumerWidths(
+      page,
+      {
+        outputPath: (file) => {
+          screenshots.push(file);
+          return path.join(out, file);
+        },
+      } as TestInfo,
+      "save-unknown-restored",
+    );
+    expect(
+      await page.evaluate((key) => sessionStorage.getItem(key), pendingKey),
+    ).toBe(anchor);
+    expect(savePosts).toBe(beforePosts);
+    observations.push({
+      captureReadiness:
+        "actual UNKNOWN reload restores resume without VerifiedMedia",
+      shots: 4,
+      anchorUnchanged: true,
+      noAdditionalPost: true,
+    });
+    await page.close();
+    mode = "completed";
+    const completed = await browser.newPage({
+      viewport: { width: 320, height: 900 },
+    });
+    await completed.goto(`${base}/play/${f.session.sessionId}`);
+    const info = {
+      outputPath: (file: string) => {
+        screenshots.push(file);
+        return path.join(out, file);
+      },
+    } as TestInfo;
+    await captureConsumerWidths(completed, info, "completed-result");
+    await completed
+      .getByRole("button", { name: "展开报告", exact: true })
+      .click();
+    await captureConsumerWidths(completed, info, "readonly-report");
+    await completed
+      .getByRole("button", { name: "查看海报", exact: true })
+      .click();
+    await captureConsumerWidths(completed, info, "readonly-poster");
+    await completed.close();
+    observations.push({
+      captureReadiness: "actual completed report/result/poster screen media",
+      shots: 12,
+    });
+  }
   if (
+    !process.argv.includes("--capture-readiness-only") &&
     !process.argv.some((a) =>
       ["--expired-pending-only", "--live-expired-pending-only"].includes(a),
     )

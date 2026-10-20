@@ -4,12 +4,20 @@ import { readFile, mkdir, writeFile } from "node:fs/promises";
 import { execFileSync } from "node:child_process";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
-import { chromium, expect, type Page } from "@playwright/test";
+import { chromium, expect, type Page, type TestInfo } from "@playwright/test";
 import { draftSummarySchema } from "@/features/product/drafts/contracts";
 import { captureDraftMobile } from "../e2e/studio-drafts.visual";
 import { validationDtoSchema } from "@/features/quizpack/validation/contracts";
 import { dto } from "@/features/studio/validations/fixtures.test-support";
 import { DRAFT_PENDING_STORAGE_KEY } from "@/features/studio/drafts/pending";
+
+import {
+  captureRevisionWidths,
+  waitForRevisionCaptureReady,
+} from "../e2e/studio-draft-revisions.visual";
+import { REVISION_PENDING_STORAGE_KEY } from "@/features/studio/draft-revisions/pending";
+import { receipt as revisionReceipt } from "@/features/studio/draft-revisions/fixtures.test-support";
+import type { AppendDraftBinding } from "@/features/product/draft-revisions/contracts";
 
 // Actual DraftWorkspacePage + history/read clients, controlled synthetic HTTP only.
 // No DB, native media, credentials, 3100 or production Next server.
@@ -72,6 +80,24 @@ const validation = validationDtoSchema.parse({
   validatedAt: dto.updatedAt,
   readyAt: dto.updatedAt,
 });
+const revisionProbe = process.argv.includes("--revision-probe");
+let validationFailure = 0;
+const revisionTuple: AppendDraftBinding = {
+  productId: draft.productId,
+  sourceImportId: id(4),
+  sourceValidationId: id(6),
+  idempotencyKey: id(7),
+  expectedValidationStateRevision: 5,
+  expectedCandidateSha256: validation.candidateSha256!,
+  target: {
+    kind: "append-revision",
+    draftId: draft.draftId,
+    expectedRevision: 1,
+    expectedCanonicalContentSha256: draft.canonicalContentSha256,
+    expectedAssetSetSha256: draft.assetSetSha256,
+  },
+};
+const application = await revisionReceipt(revisionTuple);
 const emptyProbe = process.argv.includes("--empty-probe");
 let serveEmpty = emptyProbe;
 let posts = 0;
@@ -193,6 +219,15 @@ const server = createServer(async (req, res) => {
     res.writeHead(status, { "content-type": "application/json" });
     res.end(JSON.stringify(value));
   };
+  if (url.pathname.endsWith("/revision-applications/resolve")) {
+    json({
+      kind: "applied",
+      binding: revisionTuple,
+      fingerprint: application.fingerprint,
+      application,
+    });
+    return;
+  }
   if (url.pathname.endsWith("/draft")) {
     const key = "draft-" + ++draftReads;
     await readGate(key);
@@ -218,7 +253,18 @@ const server = createServer(async (req, res) => {
     return;
   }
   if (url.pathname.endsWith("/validations/" + id(6))) {
-    json(validation);
+    if (validationFailure)
+      json(
+        {
+          code:
+            validationFailure === 404
+              ? "VALIDATION_NOT_FOUND"
+              : "STUDIO_UNAVAILABLE",
+          requestId: id(9),
+        },
+        validationFailure,
+      );
+    else json(validation);
     return;
   }
   if (url.pathname.endsWith("/revisions")) {
@@ -251,7 +297,9 @@ const server = createServer(async (req, res) => {
   res.writeHead(200, { "content-type": "text/html; charset=utf-8" });
   res.end(
     '<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/probe.css"><style>*{box-sizing:border-box}body{margin:0;font-family:Arial,"PingFang SC","Microsoft YaHei",sans-serif}h1,h2,h3,p{margin:0}button,select{font:inherit}' +
-      (emptyProbe ? "h1,h2,h3{font-size:inherit;font-weight:inherit}" : "") +
+      (emptyProbe || revisionProbe
+        ? "h1,h2,h3{font-size:inherit;font-weight:inherit}"
+        : "") +
       '</style><div id="root"></div><script src="/probe.js"></script></html>',
   );
 });
@@ -266,7 +314,213 @@ const facts: Record<string, unknown> = {
     "actual React workspace/history clients with held synthetic HTTP, no DB/3100/production server",
 };
 try {
-  if (emptyProbe) {
+  if (revisionProbe) {
+    const oldText = execFileSync(
+      "git",
+      ["show", "8426f13:tests/e2e/studio-draft-revisions.spec.ts"],
+      { encoding: "utf8" },
+    );
+    await writeFile(
+      path.join(out, "old-revision.ts"),
+      'import {expect,type Page,type TestInfo} from "@playwright/test";\nimport {sampleStudioLayout,assertStudioLayout} from ' +
+        JSON.stringify(path.resolve("tests/e2e/studio-layout.ts")) +
+        ";\nexport " +
+        oldText.slice(
+          oldText.indexOf("async function screenshot("),
+          oldText.indexOf("async function openSource("),
+        ),
+    );
+    const oldRevision = (await import(
+      pathToFileURL(path.join(out, "old-revision.ts")).href
+    )) as { screenshot: typeof captureRevisionWidths };
+    const newPage = async () =>
+      browser.newPage({ viewport: { width: 320, height: 900 } });
+    holdRead("draft-2");
+    const p = await newPage();
+    await p.goto(origin + "/read-only-empty");
+    await readRequested;
+    await expect(
+      p.getByRole("heading", {
+        name: "本次读取的当前基准：修订 1",
+        exact: true,
+      }),
+    ).toBeVisible();
+    const measure = () =>
+      p.evaluate(() => ({
+        height: document.documentElement.scrollHeight,
+        sections: [...document.querySelectorAll("section[aria-label]")].map(
+          (e) => ({
+            label: e.getAttribute("aria-label"),
+            height: e.getBoundingClientRect().height,
+            statuses: [...e.querySelectorAll('[role="status"]')].map(
+              (s) => s.textContent,
+            ),
+          }),
+        ),
+        fonts: document.fonts.status,
+        animations: document.getAnimations().length,
+      }));
+    const before = await measure();
+    const shot = p.screenshot.bind(p);
+    let png = 0,
+      after: Awaited<ReturnType<typeof measure>> | undefined;
+    p.screenshot = async (...args: Parameters<Page["screenshot"]>) => {
+      const bytes = await shot(...args);
+      png = bytes.readUInt32BE(20);
+      releaseRead?.();
+      await waitForRevisionCaptureReady(p, "read-only-r1");
+      after = await measure();
+      return bytes;
+    };
+    let oldError = "";
+    try {
+      await oldRevision.screenshot(
+        p,
+        {
+          outputPath: (file) => path.join(out, "revision-negative-" + file),
+        } as TestInfo,
+        "read-only-r1",
+      );
+    } catch (e) {
+      oldError = String(e);
+    }
+    expect(oldError).toContain("Received:");
+    expect(png).toBe(before.height);
+    expect(after!.height).not.toBe(png);
+    facts.revisionNegative = { before, png, after, oldError };
+    await p.close();
+    const fixes = [];
+    for (const target of ["draft-1", "draft-2", "product-1", "product-2"]) {
+      holdRead(target);
+      const fixed = await newPage();
+      await fixed.goto(origin + "/read-only-empty");
+      await readRequested;
+      let shots = 0;
+      const original = fixed.screenshot.bind(fixed);
+      fixed.screenshot = async (...args: Parameters<Page["screenshot"]>) => {
+        shots++;
+        return original(...args);
+      };
+      const work = captureRevisionWidths(
+        fixed,
+        {
+          outputPath: (file) =>
+            path.join(out, `revision-fixed-${target}-${file}`),
+        } as TestInfo,
+        "read-only-r1",
+      );
+      await fixed.evaluate(() => document.readyState);
+      expect(shots).toBe(0);
+      releaseRead?.();
+      await work;
+      expect(shots).toBe(4);
+      fixes.push({ target, shots });
+      await fixed.close();
+    }
+    facts.revisionFixes = fixes;
+    const bad = [];
+    for (const target of ["draft-2", "product-1"]) {
+      holdRead(target);
+      failedRead = target;
+      const failed = await newPage();
+      await failed.goto(origin + "/read-only-empty");
+      await readRequested;
+      releaseRead?.();
+      let shots = 0;
+      let rejected = false;
+      try {
+        await captureRevisionWidths(
+          failed,
+          {
+            outputPath: (file) => {
+              shots++;
+              return path.join(out, "unexpected-" + file);
+            },
+          } as TestInfo,
+          "read-only-r1",
+        );
+      } catch {
+        rejected = true;
+      }
+      expect(rejected && shots === 0).toBe(true);
+      bad.push({ target, rejected, shots });
+      failedRead = "";
+      await failed.close();
+    }
+    facts.revisionReadErrors = bad;
+    gateTarget = "";
+    const sourceErrors = [];
+    for (const status of [503, 404]) {
+      validationFailure = status;
+      const failed = await newPage();
+      const anchor = JSON.stringify({
+        schemaVersion: REVISION_PENDING_STORAGE_KEY,
+        entries: [{ tuple: revisionTuple, mayHaveBeenSent: true }],
+      });
+      await failed.addInitScript(
+        ({ key, text }) => sessionStorage.setItem(key, text),
+        { key: REVISION_PENDING_STORAGE_KEY, text: anchor },
+      );
+      await failed.goto(origin + "/read-only-empty");
+      await failed
+        .getByRole("button", { name: "核实追加原请求", exact: true })
+        .click();
+      await expect(
+        failed.locator('[data-revision-resolution="applied"]'),
+      ).toBeVisible();
+      await captureRevisionWidths(
+        failed,
+        {
+          outputPath: (file) =>
+            path.join(out, `revision-source${status}-${file}`),
+        } as TestInfo,
+        `source${status}-r2-fixed-receipt`,
+      );
+      expect(
+        await failed.evaluate(
+          ({ key, text }) => sessionStorage.getItem(key) === text,
+          { key: REVISION_PENDING_STORAGE_KEY, text: anchor },
+        ),
+      ).toBe(true);
+      sourceErrors.push({
+        status,
+        shots: 4,
+        anchorUnchanged: true,
+        applyPanelAbsent:
+          (await failed
+            .getByRole("region", { name: "首次草稿应用", exact: true })
+            .count()) === 0,
+      });
+      await failed.close();
+    }
+    facts.revisionSourceErrors = sourceErrors;
+    validationFailure = 0;
+    hold();
+    const corrupt = await newPage();
+    await corrupt.addInitScript(
+      (key) => sessionStorage.setItem(key, "{broken"),
+      REVISION_PENDING_STORAGE_KEY,
+    );
+    await corrupt.goto(origin + "/?role=read-only");
+    await historyRequested;
+    const corruptWork = captureRevisionWidths(
+      corrupt,
+      {
+        outputPath: (file) => path.join(out, "revision-corrupt-" + file),
+      } as TestInfo,
+      "corrupt-anchor-history-readable",
+    );
+    releaseHistory?.();
+    await corruptWork;
+    expect(
+      await corrupt.evaluate(
+        (key) => sessionStorage.getItem(key),
+        REVISION_PENDING_STORAGE_KEY,
+      ),
+    ).toBe("{broken");
+    facts.revisionCorrupt = { shots: 4, anchorUnchanged: true };
+    await corrupt.close();
+  } else if (emptyProbe) {
     const traces = [],
       fixes = [];
     for (const target of ["draft-1", "draft-2", "product-1", "product-2"]) {
@@ -585,5 +839,11 @@ try {
   await browser.close();
   await new Promise<void>((r, reject) =>
     server.close((e) => (e ? reject(e) : r())),
+  );
+  facts.browserClosed = true;
+  facts.serverClosed = true;
+  await writeFile(
+    path.join(out, "result.json"),
+    JSON.stringify(facts, null, 2),
   );
 }

@@ -1,6 +1,6 @@
-import { test, expect, type Page, type TestInfo } from "@playwright/test";
+import { test, expect, type Page } from "@playwright/test";
 import { constants } from "node:fs";
-import { sampleStudioLayout, assertStudioLayout } from "./studio-layout";
+import { captureRevisionWidths as screenshot } from "./studio-draft-revisions.visual";
 import { open, lstat, realpath } from "node:fs/promises";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
@@ -246,24 +246,6 @@ async function pending(page: Page) {
     return text ? (JSON.parse(text).entries?.[0] ?? null) : null;
   }, REVISION_PENDING_STORAGE_KEY);
   return value === null ? null : revisionPendingEntrySchema.parse(value);
-}
-async function screenshot(page: Page, info: TestInfo, state: string) {
-  for (const width of [320, 375, 390, 430]) {
-    await page.setViewportSize({ width, height: 900 });
-    assertStudioLayout(await sampleStudioLayout(page));
-    await page.evaluate(() => scrollTo(0, 0));
-    await expect.poll(() => page.evaluate(() => scrollY)).toBe(0);
-    const png = await page.screenshot({
-      path: info.outputPath(`draft-revisions-${state}-${width}.png`),
-      fullPage: true,
-    });
-    expect(png.readUInt32BE(16)).toBe(width);
-    expect(png.readUInt32BE(20)).toBe(
-      await page.evaluate(() =>
-        Math.max(innerHeight, document.documentElement.scrollHeight),
-      ),
-    );
-  }
 }
 async function openSource(page: Page, name: Source["name"], revision: number) {
   await page.goto(detail(name));
