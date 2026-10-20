@@ -151,3 +151,13 @@ root准确5321c99第一次全普通PG失败，407.20s：65文件40failed/25passe
 恢复后确认第二轮8c5已失败而非仍在运行：224pass/1fail/10旧skip/34未运行，readonly-empty状态前高2535/后2510触发helper:56。consumer八case未运行。旧执行session70806已不可恢复，当前3100无监听，25de库已正式stop保留，未构造序列化proof或清理未知图。B另行定位这项25px变化，P4技术出口/P5均未完成。
 
 私有产物scanner v1的漏检反例已保留；v2补actual CSRF header/大小写/转义JSON/HTML实体、受限嵌套ZIP、累计目录及文件entries/解压预算、输入父链与ZIP symlink拒绝。Astra纯函数原反例闭合，root稳定产物扫描第一轮217files/22ZIP成员、第二轮209files/22ZIP成员，所覆盖凭证/CSRF模式均0；仅作这些实际格式的检查，不声称可识别任意编码秘密。第一轮原始和新版记录分别存留，失败截图与DB不删。
+
+## 第三、四轮浏览器失败与测试采样修复
+
+e2f0801（root9986afc）等待空草稿页三个独立读取和本地pending初读完成；独审实际React四种延迟分支×四宽、错误零截图及UNKNOWN原锚点/POST0均通过。第三轮9986全量241通过/1失败/10旧skip/17未运行，旧两个失败场景均已实际通过；新失败为P3-D `r3-confirmed-fixed-receipt` 截图fontSize NaN，不能误记成后续old-history状态。d59e实例已正式停止保留。
+
+089570f（root80bf16a）将字体、按钮、回执间距与上下覆盖测量合并为一次同步浏览器采样，真实detached节点旧反例已重现。独审发现可见性范围回归P2：关闭details中的15px段落和43px按钮被新helper纳入；bb2553b（rootabf6897）恢复native checkVisibility及display:contents可见子节点语义。独审六个原反例/边界通过，原数值断言函数字节未改；字体16、目标44、回执间距16及overlay要求保持。该范围无剩余P1/P2，不代替完整E2E。
+
+第四轮abf6897完整生产E2E为233通过/1失败/10旧skip/25未运行（3.7分钟）。P3-C六状态用例在resume截图的归零断言失败：期望scrollY0、实际344，5秒轮询未通过；cover/question已完成。B负责真实React状态与focus/scroll顺序定位，尚无原因或修复验收结论。消费者八项仍未执行。ecd957库已正式stop保留，3100无监听，失败图不清理；隐私v2扫描240文件/71104887字节、22ZIP成员/6867644解压字节，所覆盖凭证与CSRF模式均0。
+
+abf6897准确普通CI39392661243的checks/database实际success。官方media:build再次确认部署6ce1090b、运行66eb865b身份与7eb构建相同，变动仅测试/文档，未重跑或伪造native验收。P5私有最终只读审计03fb057静态独审通过：精确1/4/4/4/8已观测集合、实际HTTP三锚点、完整持久快照及原parent/source一致，SQL/FD真实关闭后才构造passed；不重评分、不重造ServerExitProof。脚本未执行，39eb仍停止，P4/P5均未技术验收。

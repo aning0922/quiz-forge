@@ -2,7 +2,7 @@
   "schemaVersion": "quizforge.p4-runtime-checkpoint.v1",
   "status": "production-e2e-incomplete",
   "runtimeCommit": "7ebfca5a9119c3808b1f1e39a10fb23c37c9c052",
-  "testCommit": "8c5e9ea7932de59bc3170344f7ad4795fdb30373",
+  "testCommit": "abf68970d639d03d931c12e4b307f52b2803a54a",
   "unit": {
     "files": 181,
     "tests": 1879,
@@ -54,6 +54,12 @@
       "runId": 39154473948,
       "kind": "checks",
       "conclusion": "success"
+    },
+    {
+      "head": "abf68970d639d03d931c12e4b307f52b2803a54a",
+      "runId": 39392661243,
+      "kind": "checks",
+      "conclusion": "success"
     }
   ],
   "productionE2e": [
@@ -72,8 +78,32 @@
       "oldSkipped": 10,
       "notRun": 34,
       "consumerCasesExecuted": 0
+    },
+    {
+      "head": "9986afc",
+      "passed": 241,
+      "failed": 1,
+      "oldSkipped": 10,
+      "notRun": 17,
+      "consumerCasesExecuted": 0
+    },
+    {
+      "head": "abf6897",
+      "passed": 233,
+      "failed": 1,
+      "oldSkipped": 10,
+      "notRun": 25,
+      "consumerCasesExecuted": 0
     }
   ],
   "firstProductP5Completed": false,
-  "publicationApproved": false
+  "publicationApproved": false,
+  "currentFailure": "P3-C resume capture scrollY expected 0 actual 344; diagnosis pending",
+  "fourthArtifactScan": {
+    "files": 240,
+    "zipMembers": 22,
+    "credentialPatternOccurrences": 0,
+    "csrfPatternOccurrences": 0,
+    "passed": true
+  }
 }
