@@ -45,3 +45,13 @@ root 负责本契约、登记/目录/解析器/gate、App 全局 gateway 与新 
 - 历史人物首款只在 P4 技术出口后运行，内容与素材沿原批准 hash；无 main 合并、生产迁移、部署或发布。
 
 标准完整文档导航的测试修复只证明该入口路径，不能冒称旧 Access 已支持同文档换 Key。本阶段完成前，P4/P5 仍未验收。
+
+## 实施登记检查点（2026-10-20）
+
+B 的生产 d7f55fd（root 758a8d8）及浏览器证明 e979250（root 7ae68ca）已集成。新增 entry 为 `dc195a2f9bdcd158ab569b01191150b44086b8c3185b8c615c2007a01251308f`，implementation SHA 为 `beaf4ba62e7c9c8546a3c0914619d83c9b4b738332ed7c6e43d6138262d12a47`，75 个源文件、3 个构建输入、268 条 lock 记录；旧 mapping/font/六视图字节保持。正式 gate 同时验证旧193b与新dc195两个完整实现及实际 App→gateway→新 Access 静态渲染关系。
+
+Astra 独立原两反例、19 项生命周期单测及真实 SSR／hydration／StrictMode 20 场景全部通过，17 次均显式人工 POST 且匹配预期合成输入，无自动交换、页面／水合错误、HTTP URL/header 凭证泄漏；浏览器与独立 HTTP 实际关闭。最初仅统计 JSX 名称的 gate 被 Boolean 包裹反例击穿，现已限定目标 export 的实际唯一 return、直接子组件与纯 binding 元数据；原反例及 App Boolean、shadow、错误表达式均独立拒绝。当前实现范围无未结 P1/P2；此结论不代替实际业务兼容和 P4/P5 验收。
+
+主控完整 format/lint/type、183 文件1961单元及生产构建通过（103 traces、23855 paths、0私有违规）；私有兼容与新 P5 sibling 脚本 typecheck 通过。新部署70740d8d、运行包93c09e52的main媒体66项×3轮实测全部通过，原始候选记录核对完成、操作均停止、control空。24个生成Next cache文件118037098B因超出已有隔离上限被原样移存，2290个非cache条目的bytes/mode/inode保持，未放宽限制。原632d部署与f73c运行证据单独保留。
+
+旧Key真实兼容尚待浏览器和只读audit：root独立55426合成实例通过真实服务生成1play／2Key／2session／1report，已close并正式停库；该seed不是UI发行或gateway证明。新完整消费者八场景、自然到期后旧报告回看及首款39eb实际现场仍待完成，旧失败场景全部保留。原P5脚本未覆盖；新增live-v1-1与audit-v1-1 sibling仅补八次实际gateway采样与精确新tuple核验，静态独审通过，尚未执行。

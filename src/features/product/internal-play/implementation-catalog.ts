@@ -1,4 +1,5 @@
 import rendererV1 from "./implementation-data/consumer-folio-cabinet-v1.json";
+import rendererV1_1 from "./implementation-data/consumer-folio-cabinet-v1-1.json";
 import {
   consumerImplementationEntrySchema,
   type ConsumerImplementationEntry,
@@ -24,6 +25,7 @@ function freeze<T>(value: T): T {
 /** Historical facts remain even if their executable binding is withdrawn. */
 export const CONSUMER_IMPLEMENTATION_DESCRIPTORS = freeze([
   consumerImplementationEntrySchema.parse(rendererV1),
+  consumerImplementationEntrySchema.parse(rendererV1_1),
 ]);
 export function consumerImplementationIdentity(
   entry: ConsumerImplementationEntry,
@@ -54,6 +56,13 @@ export const CONSUMER_IMPLEMENTATION_AVAILABILITY = freeze({
     entrySha256:
       "193b48c92352d731c9c2e41de05316471a2c46f58d8e2f2596995ee531d974a1",
   }),
+  rendererV1_1: consumerRendererIdentitySchema.parse({
+    kind: "consumer-renderer",
+    id: "consumer-folio-cabinet",
+    version: "1.0.1",
+    entrySha256:
+      "dc195a2f9bdcd158ab569b01191150b44086b8c3185b8c615c2007a01251308f",
+  }),
 });
 export function findConsumerImplementationDescriptor(input: unknown) {
   const parsed = consumerRendererIdentitySchema.safeParse(input);
@@ -70,13 +79,15 @@ export function consumerImplementationAvailable(input: unknown) {
   const entry = findConsumerImplementationDescriptor(input);
   if (!entry) return false;
   const d = entry.descriptor;
+  const executable = Object.values(CONSUMER_IMPLEMENTATION_AVAILABILITY).find(
+    (identity) =>
+      consumerImplementationKey(identity) ===
+      consumerImplementationKey(consumerImplementationIdentity(entry)),
+  );
   return (
-    consumerImplementationKey(consumerImplementationIdentity(entry)) ===
-      consumerImplementationKey(
-        CONSUMER_IMPLEMENTATION_AVAILABILITY.rendererV1,
-      ) &&
+    executable !== undefined &&
     d.id === CONSUMER_RENDERER_V1.id &&
-    d.version === CONSUMER_RENDERER_V1.version &&
+    d.version === executable.version &&
     matchesConsumerMappingV1(d.mapping) &&
     sameConsumerFact(
       d.protocols,
