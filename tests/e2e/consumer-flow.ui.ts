@@ -12,6 +12,7 @@ import { verifyConsumerSessionView } from "../../src/features/fulfillment/consum
 import { consumerSessionUrl } from "../../src/features/fulfillment/consumer-flow/urls";
 import type { AccessKeyDetail } from "../../src/features/fulfillment/access/contracts";
 import type { ConsumerFixtureObservations } from "../db/p4-consumer-fixture-contract";
+import { sampleStudioLayout, assertStudioLayout } from "./studio-layout";
 import { consumerGet } from "./consumer-flow.network";
 import { consumerRunId } from "./consumer-flow.fixture";
 
@@ -212,13 +213,14 @@ export async function captureConsumerWidths(
           !/qf[kg]_p4_/.test(document.documentElement.outerHTML),
       ),
     ).toBe(true);
-    for (const element of await page
-      .locator("main button, main a, main select")
-      .all()) {
-      if (!(await element.isVisible())) continue;
-      const box = await element.boundingBox();
-      if (box) expect(box.width >= 44 && box.height >= 44).toBe(true);
-    }
+    assertStudioLayout(
+      await sampleStudioLayout(page, {
+        fontSelector: "",
+        targetSelector: "main button, main a, main select",
+        appliedReceipts: false,
+      }),
+      { minimumTargetWidth: 44 },
+    );
     await page.screenshot({
       path: info.outputPath(`p4-${state}-${width}.png`),
       fullPage: true,
