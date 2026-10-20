@@ -269,13 +269,41 @@ export async function consumerPost(
     throw unavailable();
   }
 }
-export async function consumerRouteFetch(route: Route) {
+/** Chromium interception can precede generated Fetch Metadata. Supply only a
+ * missing site value after proving the trusted main document's real origin;
+ * destination, credentials and explicit header values are never repaired. */
+export async function consumerRouteFetch(route: Route, trustedPage: Page) {
   try {
     const request = route.request();
+    allowed(request.url(), request.method()); // Fixed destination/path allowlist.
+    const frame = request.frame(),
+      headers = await request.allHeaders();
+    if (
+      request.method() !== "POST" ||
+      request.resourceType() !== "fetch" ||
+      request.isNavigationRequest() ||
+      frame !== trustedPage.mainFrame() ||
+      frame.page() !== trustedPage ||
+      new URL(trustedPage.url()).origin !== origin ||
+      new URL(frame.url()).origin !== origin ||
+      (await frame.evaluate(() => location.origin)) !== origin ||
+      new URL(trustedPage.url()).origin !== origin ||
+      new URL(frame.url()).origin !== origin
+    )
+      throw unavailable();
+    if (
+      headers.origin !== origin ||
+      (headers.host !== undefined && headers.host !== new URL(origin).host) ||
+      (headers["sec-fetch-site"] !== undefined &&
+        headers["sec-fetch-site"] !== "same-origin")
+    )
+      throw unavailable();
+    if (headers["sec-fetch-site"] === undefined)
+      headers["sec-fetch-site"] = "same-origin";
     return await controlled(
       request.url(),
       request.method(),
-      await request.allHeaders(),
+      headers,
       request.postDataBuffer() ?? undefined,
     );
   } catch {

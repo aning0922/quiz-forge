@@ -155,7 +155,7 @@ try {
       },
     };
     if (fixedPort) {
-      const actual = await consumerRouteFetch(route);
+      const actual = await consumerRouteFetch(route, page);
       const value = (await actual.json()) as { code?: unknown };
       facts.originalNative = {
         status: actual.status(),
