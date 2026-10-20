@@ -112,3 +112,23 @@ B2-1最终文档head `5caef26` 的CI38175221128已核实checks/database均succes
 代码736d923的普通CI38183239291（checks/database）及真实媒体CI38183239317均success。总控macOS66项矩阵三次通过；Linux31项smoke与11项生命周期全部通过，停止应答丢失实际命中且停止确认；独立登记P1/P2全部关闭。612单测、214真实DB、46驱动、206生产E2E/10既有跳过及其余工程检查通过；测试实例停止、控制目录无活跃记录、3100/55421–55424无监听。详见MEDIA_ISOLATION_ACCEPTANCE/REVIEW，PR #11未合并。
 
 后续先将已验证核心迁入生产模块、建立同字节P1可信桥接（B2-2A），再冻结并实现三表/统一归档/后台（B2-2B）。两条实现流保持Sol/high，Astra做非实施审查；新里程碑使用独立工作树，不继续修改已交付的B2-1或旧D1成果。STUDIO_P2B2_VALIDATION.md当前为合同候选，尚未实施；架构方向和常规开发已在托管授权内，不重复请求阶段启动批准。
+
+## B2-2A 准备登记
+
+总控工作树codex/quizpack-validation-bridge基于预检最终1f6f388。STUDIO_P2B2_VALIDATION.md的A范围已按独立审查冻结：A-R独占生产媒体目录及原shared/macOS/Linux脚本迁移，A-V独占P1内部执行拆分及server/validation；总控负责build/CI/fixture/部署身份与串行真实验收。停止上下文由A-R提供，所有层共享首个收尾期限；未知停止或单图运行失败中断整包，不只转成issue继续解码。父交付head CI核清前只准备，不写运行实现；B2-2B SQL与DTO后冻。
+
+父1f6f388最终普通CI38183785073与平台CI38183785046现已全部success。总控正式放行两条Sol/high实现代理：`media_runtime_migration` 在codex/media-runtime-integration，`trusted_validation_bridge` 在codex/trusted-validation-engine，均从fce1246独立受管worktree开始。先交公共上下文/身份合同与纯候选证据；总控另让Sol小代理在专属忽略目录验证Next fixture定位，禁止改业务/根配置或占3100。隔离probe仅占自有3111，完成关闭，不当正式媒体验收。Astra继续非实施审查；Draft PR #12依赖#11，未合并。
+
+## B2-2A 当前集成检查点
+
+普通媒体入口、P1同字节候选与离线opaque封存器已集成；共享UNKNOWN、owned身份、期限竞态、native依赖映射与构建句柄问题均已独立关闭。中间5d779a7普通CI38188941135及Linux核心CI38188941100实际success；后者31smoke/11生命周期不能替代新target工作树和实际Next封存。Next已实测未封存/取消/过期三项关闭，无媒体启动，3111已释放。准确增量见P2B2A_REVIEW，最终target矩阵与阶段全套仍待完成。
+
+当前并行采用Sol/high的媒体适配和Next fixture专属实现、Astra/high的非实施复验，总控单写共享文档/CI并串行真实setup→build→matrix→seal→服务验收。期间普通服务必须停止，未引入跨流程锁或热封存承诺。B2-2B只有精确提案准备，不建业务表/路由；待A退出后冻结三表与DTO再分流实施。
+
+## B2-2B 精确预研登记
+
+三表、统一存储/计量、claim/evidence/complete、恢复与有限重试、DTO/后台和验收分工已整理为[精确候选](STUDIO_P2B2B_STORAGE_PROPOSAL.md)。总控选择包身份canonical/alias/conflict分列、报告原始canonical text冗余以便SQL核真实字节，以及最多三attempt；validate claim同时记录media未知和完整预留，避免额外intent提交窗口。A-R平台身份查询的preclaim IO由平台guard独立保护，尚未打开原包。A-V后续需交prepare identity/restore candidate/SQL evidence projection三个明确接口。当前仍未冻结或实施B，不绕过A的Mac剩余平台验收。
+
+## B2-2A 技术退出检查点
+
+运行代码bdd5c51、集成head4793537：873单元/43离线工具、214真实DB/46驱动、206生产E2E及10既有跳过通过；格式/lint/类型/构建、独立登记问题闭合。Mac目标66项连续三轮、Linux31+11及两平台sealed真实Next入口全部通过。4793537普通CI38194638007与媒体CI38194638047实际success，PR #12仍Draft。原失败合成轮保留失败，已核实退出的控制/哨兵现场完整隔离归档；当前control空，自有服务/DB已停。完整边界与证据见P2B2A_ACCEPTANCE。接续B2-2B精确合同冻结和独立工作树实现，不在已交付A分支堆积业务表，不沿用fixture seal。
