@@ -1,11 +1,7 @@
 import { expect, type Page, type TestInfo } from "@playwright/test";
 import { sampleStudioLayout, assertStudioLayout } from "./studio-layout";
 
-export async function capturePreviewMobile(
-  page: Page,
-  info: TestInfo,
-  state: string,
-) {
+export async function waitForPreviewCaptureReady(page: Page, state: string) {
   const surface = page.locator(`[data-preview-state="${state}"]`);
   await expect(surface).toHaveCount(1);
   await expect(surface).toBeVisible();
@@ -33,6 +29,14 @@ export async function capturePreviewMobile(
   await page.evaluate(async () => {
     await document.fonts.ready;
   });
+}
+
+export async function capturePreviewMobile(
+  page: Page,
+  info: TestInfo,
+  state: string,
+) {
+  await waitForPreviewCaptureReady(page, state);
   for (const width of [320, 375, 390, 430]) {
     await page.setViewportSize({ width, height: 900 });
     assertStudioLayout(
