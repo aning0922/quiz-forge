@@ -190,6 +190,127 @@ try {
     width43Rejected = true;
   }
   expect(width43Rejected).toBe(true);
+  // Native visibility, rather than CSS+rect alone, excludes closed-details
+  // and content-visibility descendants which can retain nonzero geometry.
+  await page.setContent(
+    '<main><p style="font-size:16px">body</p><details><summary style="height:44px">more</summary><p style="font-size:15px">closed</p><button style="height:43px">closed target</button></details><p hidden style="font-size:15px">hidden</p><div style="content-visibility:hidden"><p style="font-size:15px">skipped</p><button style="height:43px">skipped target</button></div><p style="visibility:hidden;font-size:15px">invisible</p><button style="height:44px">visible target</button></main>',
+  );
+  const oldVisibility = await Promise.all(
+    (await page.locator("main p").all()).map((p) => p.isVisible()),
+  );
+  expect(oldVisibility).toEqual([true, false, false, false, false]);
+  const nativeVisibility = await page
+    .locator("main p")
+    .evaluateAll((ps) =>
+      ps.map((p) => p.checkVisibility({ checkVisibilityCSS: true })),
+    );
+  expect(nativeVisibility).toEqual(oldVisibility);
+  const hiddenScope = await sampleStudioLayout(page);
+  assertStudioLayout(hiddenScope);
+  expect(hiddenScope.paragraphFonts).toEqual([16]);
+  expect(hiddenScope.targetHeights).toEqual([44, 44]);
+  const hiddenRoles = await sampleStudioLayout(page, {
+    buttonRoleWithin: "html",
+    appliedReceipts: false,
+  });
+  assertStudioLayout(hiddenRoles);
+  expect(hiddenRoles.targetHeights).toHaveLength(
+    await page.getByRole("button").count(),
+  );
+  expect(hiddenRoles.targetHeights).toEqual([44]);
+
+  const contentsCases: { name: string; fonts: number[]; rejected: boolean }[] =
+    [];
+  for (const [name, html, fonts, rejected] of [
+    [
+      "direct-visible-15",
+      '<p style="display:contents;font-size:15px">visible text</p>',
+      [15],
+      true,
+    ],
+    [
+      "nested-visible-15",
+      '<p style="display:contents;font-size:15px"><span style="display:contents">visible nested text</span></p>',
+      [15],
+      true,
+    ],
+    [
+      "element-visible-16",
+      '<p style="display:contents;font-size:16px"><span>visible child</span></p>',
+      [16],
+      false,
+    ],
+    [
+      "closed-contents",
+      '<details><summary style="height:44px">more</summary><p style="display:contents;font-size:15px">closed text</p></details>',
+      [],
+      false,
+    ],
+    [
+      "skipped-contents",
+      '<div style="content-visibility:hidden"><p style="display:contents;font-size:15px">skipped text</p></div>',
+      [],
+      false,
+    ],
+    [
+      "hidden-child",
+      '<p style="display:contents;font-size:15px"><span style="visibility:hidden">hidden child</span></p>',
+      [],
+      false,
+    ],
+    [
+      "hidden-text",
+      '<p style="display:contents;visibility:hidden;font-size:15px">hidden text</p>',
+      [],
+      false,
+    ],
+  ] as const) {
+    await page.setContent(`<main>${html}</main>`);
+    const sample = await sampleStudioLayout(page);
+    expect(sample.paragraphFonts).toEqual(fonts);
+    let actualRejected = false;
+    try {
+      assertStudioLayout(sample);
+    } catch {
+      actualRejected = true;
+    }
+    expect(actualRejected).toBe(rejected);
+    contentsCases.push({ name, fonts: sample.paragraphFonts, rejected });
+  }
+  await page.setContent(
+    '<style>button,a,summary{display:block;box-sizing:border-box;height:44px}#clear{margin-top:16px}</style><main><div data-revision-resolution="applied"><a href="#">visible link</a><details><summary>more</summary><a href="#" style="height:43px">closed link</a><button style="height:43px">解除已确认成功的本地锚点</button></details><div style="content-visibility:hidden"><a href="#">skipped link</a><button>解除已确认成功的本地锚点</button></div><button id="clear">解除已确认成功的本地锚点</button></div></main>',
+  );
+  const receiptVisibility = await sampleStudioLayout(page);
+  assertStudioLayout(receiptVisibility);
+  expect(receiptVisibility.appliedReceipts[0]!.clearCount).toBe(1);
+  expect(receiptVisibility.appliedReceipts[0]!.links).toHaveLength(1);
+  await page.locator("#clear").evaluate((e) => e.remove());
+  const hiddenClear = await sampleStudioLayout(page);
+  expect(hiddenClear.appliedReceipts[0]!.clearCount).toBe(0);
+  let hiddenClearRejected = false;
+  try {
+    assertStudioLayout(hiddenClear);
+  } catch {
+    hiddenClearRejected = true;
+  }
+  expect(hiddenClearRejected).toBe(true);
+  await page.setContent(
+    '<details><summary>more</summary><div id="upper" style="height:20px">closed badge</div></details><div id="lower" style="height:20px">caption</div>',
+  );
+  const hiddenOverlay = await sampleStudioLayout(page, {
+    fontSelector: "",
+    targetSelector: "",
+    appliedReceipts: false,
+    above: [["#upper", "#lower"]],
+  });
+  expect(hiddenOverlay.abovePairs[0]!.upper).toBeNull();
+  let hiddenOverlayRejected = false;
+  try {
+    assertStudioLayout(hiddenOverlay);
+  } catch {
+    hiddenOverlayRejected = true;
+  }
+  expect(hiddenOverlayRejected).toBe(true);
   const result = {
     qualification:
       "controlled real Chromium DOM detach and numeric policy checks only; no DB/HTTP/Next/credentials",
@@ -203,6 +324,17 @@ try {
     baseline: { font: 16, target: 44, gap: 16, passed: true },
     badCases,
     nanRejected,
+    visibility: {
+      oldVisibility,
+      nativeVisibility,
+      fonts: hiddenScope.paragraphFonts,
+      nativeTargets: hiddenScope.targetHeights,
+      roleTargets: hiddenRoles.targetHeights,
+      contentsCases,
+      hiddenClearRejected,
+      hiddenOverlayRejected,
+      visibleReceiptLinks: receiptVisibility.appliedReceipts[0]!.links.length,
+    },
     scopes: {
       expectedButtons,
       measuredButtons: roles.targetHeights.length,
