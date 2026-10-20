@@ -438,7 +438,8 @@ test(
               return;
             }
             applications++;
-            const actual = await consumerRouteFetch(route);
+            const actual = await consumerRouteFetch(route, operator);
+            expect(actual.status()).toBe(201);
             issued = await checked(async () => {
               const result = (await actual.json()) as { key: unknown };
               return verifyAccessKeyDetail(result.key);
@@ -534,7 +535,7 @@ test(
           JSON.parse(route.request().postData() ?? "null"),
         ),
       );
-      const actual = await consumerRouteFetch(route);
+      const actual = await consumerRouteFetch(route, buyer);
       expect(actual.status()).toBe(200);
       await checked(async () =>
         verifyConsumerSaveResolution(await actual.json(), input!.binding),
@@ -614,7 +615,7 @@ test(
             JSON.parse(route.request().postData() ?? "null"),
           ),
         );
-        const actual = await consumerRouteFetch(route);
+        const actual = await consumerRouteFetch(route, buyer);
         expect(actual.status()).toBe(200);
         const resolution = await checked(async () =>
           verifyConsumerCompleteResolution(await actual.json(), binding),

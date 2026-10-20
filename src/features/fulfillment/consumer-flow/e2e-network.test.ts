@@ -1,6 +1,6 @@
 import { EventEmitter } from "node:events";
 import { expect, it, vi, beforeEach } from "vitest";
-import type { Page } from "@playwright/test";
+import type { Page, Route } from "@playwright/test";
 import {
   createConsumerToken,
   CONSUMER_COOKIE_NAME_V1,
@@ -10,9 +10,11 @@ vi.mock("node:http", () => ({ request: transport.request }));
 import {
   consumerGet,
   consumerPost,
+  consumerRouteFetch,
 } from "../../../../tests/e2e/consumer-flow.network";
 const id = "00000000-0000-4000-8000-000000000001",
   url = `/play/${id}/api/session`;
+let forwardedBody: Buffer | undefined;
 let cookieCalls = 0,
   cookieUrl = "";
 const token = createConsumerToken("grant");
@@ -32,15 +34,17 @@ beforeEach(() => {
   transport.request.mockReset();
   cookieCalls = 0;
   cookieUrl = "";
+  forwardedBody = undefined;
 });
 function reply(body: Buffer, code = 200, headers: Record<string, string> = {}) {
   transport.request.mockImplementation((_url, _options, receive) => {
     const req = new EventEmitter() as EventEmitter & {
-      end: () => void;
+      end: (body?: Buffer) => void;
       destroy: () => void;
     };
     req.destroy = () => {};
-    req.end = () => {
+    req.end = (requestBody) => {
+      forwardedBody = requestBody;
       queueMicrotask(() => {
         const response = new EventEmitter() as EventEmitter & {
           statusCode: number;
@@ -117,4 +121,157 @@ it("rebuilds native faults without their cause, request credentials or original 
       !error.cause &&
       !String(error.stack).includes(marker),
   ).toBe(true);
+});
+
+function interception() {
+  const origin = "http://127.0.0.1:3100";
+  let pageUrl =
+      origin + "/studio/products/consumer-flow-fixture/consumer-access",
+    frameUrl = pageUrl,
+    principal = origin,
+    main = true,
+    navigation = false,
+    resource = "fetch",
+    method = "POST",
+    target = origin + "/api/studio/products/consumer-flow-fixture/access-keys",
+    correctPage = true,
+    principalError = false;
+  const headers: Record<string, string> = {
+    origin,
+    cookie: "SYNTHETIC_PRIVATE_COOKIE",
+    "x-csrf-token": "SYNTHETIC_PRIVATE_CSRF",
+  };
+  const body = Buffer.from('{"synthetic":"exact-original-operation"}');
+  const trustedPage = {
+    url: () => pageUrl,
+    mainFrame: () => (main ? frame : {}),
+  } as unknown as Page;
+  const frame = {
+    url: () => frameUrl,
+    page: () => (correctPage ? trustedPage : {}),
+    evaluate: async () => {
+      if (principalError) throw Error("SYNTHETIC_PRIVATE_FRAME_FAILURE");
+      return principal;
+    },
+  };
+  const route = {
+    request: () => ({
+      url: () => target,
+      method: () => method,
+      frame: () => frame,
+      isNavigationRequest: () => navigation,
+      resourceType: () => resource,
+      allHeaders: async () => ({ ...headers }),
+      postDataBuffer: () => body,
+    }),
+  } as unknown as Route;
+  return {
+    route,
+    trustedPage,
+    headers,
+    body,
+    change: (fault: string) => {
+      if (fault === "page") pageUrl = "http://invalid.example/";
+      if (fault === "frame") frameUrl = "http://invalid.example/";
+      if (fault === "principal") principal = "http://invalid.example";
+      if (fault === "subframe") main = false;
+      if (fault === "navigation") navigation = true;
+      if (fault === "resource") resource = "xhr";
+      if (fault === "method") method = "GET";
+      if (fault === "destination")
+        target =
+          "http://invalid.example/api/studio/products/consumer-flow-fixture/access-keys";
+      if (fault === "path")
+        target = origin + "/api/studio/products/other/access-keys";
+      if (fault === "page-owner") correctPage = false;
+      if (fault === "principal-error") principalError = true;
+    },
+  };
+}
+it("adds only absent intercepted site metadata after trusted main-frame proof, preserving exact credentials/body", async () => {
+  reply(Buffer.from('{"ok":true}'));
+  const f = interception();
+  const result = await consumerRouteFetch(f.route, f.trustedPage);
+  expect(result.status()).toBe(200);
+  const [url, options] = transport.request.mock.calls[0]!;
+  expect(url.origin).toBe("http://127.0.0.1:3100");
+  expect(options.headers["sec-fetch-site"]).toBe("same-origin");
+  expect(options.headers.origin === f.headers.origin).toBe(true);
+  expect(options.headers.cookie === f.headers.cookie).toBe(true);
+  expect(options.headers["x-csrf-token"] === f.headers["x-csrf-token"]).toBe(
+    true,
+  );
+  expect(forwardedBody?.equals(f.body)).toBe(true);
+  expect(cookieCalls).toBe(0); // No cookie recovery or credential generation.
+});
+it.each([
+  "page",
+  "frame",
+  "principal",
+  "subframe",
+  "navigation",
+  "resource",
+  "method",
+  "destination",
+  "path",
+  "page-owner",
+  "principal-error",
+])(
+  "refuses interception metadata synthesis without trusted provenance (%s)",
+  async (fault) => {
+    const f = interception();
+    f.change(fault);
+    await expect(consumerRouteFetch(f.route, f.trustedPage)).rejects.toThrow(
+      "CONSUMER_E2E_NETWORK_UNAVAILABLE",
+    );
+    expect(transport.request).not.toHaveBeenCalled();
+  },
+);
+it.each([
+  ["sec-fetch-site", ""],
+  ["sec-fetch-site", "cross-site"],
+  ["sec-fetch-site", "same-site"],
+  ["origin", null],
+  ["origin", "http://localhost:3100"],
+  ["origin", "http://invalid.example"],
+  ["host", "localhost:3100"],
+  ["host", "127.0.0.1:3101"],
+])(
+  "never repairs explicit or missing source header failures (%s=%s)",
+  async (name, value) => {
+    const f = interception();
+    if (value === null) delete f.headers[name!];
+    else f.headers[name!] = value!;
+    await expect(consumerRouteFetch(f.route, f.trustedPage)).rejects.toThrow(
+      "CONSUMER_E2E_NETWORK_UNAVAILABLE",
+    );
+    expect(transport.request).not.toHaveBeenCalled();
+  },
+);
+it("preserves explicit negative native source overrides used by the eighth consumer case", async () => {
+  for (const override of [
+    { "sec-fetch-site": "" },
+    { "sec-fetch-site": "cross-site" },
+    { host: "invalid.example" },
+  ]) {
+    reply(Buffer.from('{"code":"SOURCE_REJECTED"}'), 403);
+    const result = await consumerGet(page, url, override);
+    expect(result.status()).toBe(403);
+    const options = transport.request.mock.calls.at(-1)![1];
+    for (const [name, value] of Object.entries(override))
+      expect(options.headers[name]).toBe(value);
+  }
+});
+
+it("does not synthesize missing cookies or CSRF while supplying missing site metadata", async () => {
+  reply(Buffer.from('{"code":"ACCESS_DENIED"}'), 401);
+  const f = interception();
+  delete f.headers.cookie;
+  delete f.headers["x-csrf-token"];
+  const result = await consumerRouteFetch(f.route, f.trustedPage);
+  expect(result.status()).toBe(401);
+  const options = transport.request.mock.calls[0]![1];
+  expect(Object.hasOwn(options.headers, "cookie")).toBe(false);
+  expect(Object.hasOwn(options.headers, "x-csrf-token")).toBe(false);
+  expect(cookieCalls).toBe(0);
 });
