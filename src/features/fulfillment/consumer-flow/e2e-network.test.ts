@@ -135,7 +135,9 @@ function interception() {
     method = "POST",
     target = origin + "/api/studio/products/consumer-flow-fixture/access-keys",
     correctPage = true,
-    principalError = false;
+    principalError = false,
+    redirectFrom = false,
+    redirectTo = false;
   const headers: Record<string, string> = {
     origin,
     cookie: "SYNTHETIC_PRIVATE_COOKIE",
@@ -160,6 +162,8 @@ function interception() {
       method: () => method,
       frame: () => frame,
       isNavigationRequest: () => navigation,
+      redirectedFrom: () => (redirectFrom ? {} : null),
+      redirectedTo: () => (redirectTo ? {} : null),
       resourceType: () => resource,
       allHeaders: async () => ({ ...headers }),
       postDataBuffer: () => body,
@@ -185,6 +189,9 @@ function interception() {
         target = origin + "/api/studio/products/other/access-keys";
       if (fault === "page-owner") correctPage = false;
       if (fault === "principal-error") principalError = true;
+      if (fault === "opaque") principal = "null";
+      if (fault === "redirect-from") redirectFrom = true;
+      if (fault === "redirect-to") redirectTo = true;
     },
   };
 }
@@ -216,6 +223,9 @@ it.each([
   "path",
   "page-owner",
   "principal-error",
+  "opaque",
+  "redirect-from",
+  "redirect-to",
 ])(
   "refuses interception metadata synthesis without trusted provenance (%s)",
   async (fault) => {
@@ -237,17 +247,23 @@ it.each([
   ["host", "localhost:3100"],
   ["host", "127.0.0.1:3101"],
 ])(
-  "never repairs explicit or missing source header failures (%s=%s)",
+  "preserves explicit and missing source header failures for the unchanged server guard (%s=%s)",
   async (name, value) => {
+    reply(Buffer.from('{"code":"SOURCE_REJECTED"}'), 403);
     const f = interception();
     if (value === null) delete f.headers[name!];
     else f.headers[name!] = value!;
-    await expect(consumerRouteFetch(f.route, f.trustedPage)).rejects.toThrow(
-      "CONSUMER_E2E_NETWORK_UNAVAILABLE",
+    const result = await consumerRouteFetch(f.route, f.trustedPage);
+    expect(result.status()).toBe(403);
+    const sent = transport.request.mock.calls[0]![1].headers;
+    if (value === null) expect(Object.hasOwn(sent, name!)).toBe(false);
+    else expect(sent[name!]).toBe(value);
+    expect(Object.hasOwn(sent, "sec-fetch-site")).toBe(
+      name === "sec-fetch-site",
     );
-    expect(transport.request).not.toHaveBeenCalled();
   },
 );
+
 it("preserves explicit negative native source overrides used by the eighth consumer case", async () => {
   for (const override of [
     { "sec-fetch-site": "" },

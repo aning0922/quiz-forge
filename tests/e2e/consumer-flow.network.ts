@@ -282,23 +282,24 @@ export async function consumerRouteFetch(route: Route, trustedPage: Page) {
       request.method() !== "POST" ||
       request.resourceType() !== "fetch" ||
       request.isNavigationRequest() ||
+      request.redirectedFrom() !== null ||
+      request.redirectedTo() !== null ||
       frame !== trustedPage.mainFrame() ||
       frame.page() !== trustedPage ||
       new URL(trustedPage.url()).origin !== origin ||
       new URL(frame.url()).origin !== origin ||
-      (await frame.evaluate(() => location.origin)) !== origin ||
+      (await frame.evaluate(() => globalThis.origin)) !== origin ||
       new URL(trustedPage.url()).origin !== origin ||
       new URL(frame.url()).origin !== origin
     )
       throw unavailable();
+    // Preserve explicit negative headers for the server guard. Only a genuinely
+    // absent site value on an otherwise exact same-origin request is supplied.
     if (
-      headers.origin !== origin ||
-      (headers.host !== undefined && headers.host !== new URL(origin).host) ||
-      (headers["sec-fetch-site"] !== undefined &&
-        headers["sec-fetch-site"] !== "same-origin")
+      headers["sec-fetch-site"] === undefined &&
+      headers.origin === origin &&
+      (headers.host === undefined || headers.host === new URL(origin).host)
     )
-      throw unavailable();
-    if (headers["sec-fetch-site"] === undefined)
       headers["sec-fetch-site"] = "same-origin";
     return await controlled(
       request.url(),

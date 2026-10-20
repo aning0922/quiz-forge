@@ -58,7 +58,12 @@ const server = createServer(async (req, res) => {
     res.end(JSON.stringify({ code }));
     return;
   }
-  res.writeHead(200, { "content-type": "text/html" });
+  res.writeHead(200, {
+    "content-type": "text/html",
+    ...(req.url === "/opaque"
+      ? { "content-security-policy": "sandbox allow-scripts" }
+      : {}),
+  });
   res.end(
     "<!doctype html><html><title>Synthetic interception</title><body>Controlled transport probe</body></html>",
   );
@@ -140,7 +145,7 @@ try {
       frameOriginMatches: new URL(frame.url()).origin === origin,
       pageOriginMatches: new URL(page.url()).origin === origin,
       principalOriginMatches:
-        (await frame.evaluate(() => location.origin)) === origin,
+        (await frame.evaluate(() => globalThis.origin)) === origin,
       headers: {
         hostPresent: headers.host !== undefined,
         hostMatches: headers.host === new URL(origin).host,
@@ -199,6 +204,23 @@ try {
   );
   facts.browserContinued = actual;
   expect(actual).toEqual({ status: 200, code: "OK" });
+  const opaque = await context.newPage();
+  await opaque.goto(origin + "/opaque");
+  const opaqueOrigins = await opaque.evaluate(
+    (expected) => ({
+      urlOriginMatches: new URL(location.href).origin === expected,
+      locationOriginMatches: location.origin === expected,
+      principalOpaque: globalThis.origin === "null",
+    }),
+    origin,
+  );
+  expect(opaqueOrigins).toEqual({
+    urlOriginMatches: true,
+    locationOriginMatches: true,
+    principalOpaque: true,
+  });
+  facts.opaqueOrigins = opaqueOrigins;
+  await opaque.close();
   facts.browser = await browser.version();
 } finally {
   try {
