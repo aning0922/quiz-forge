@@ -1,5 +1,6 @@
 import "server-only";
 import type postgres from "postgres";
+import { StudioError } from "@/lib/http-security/errors";
 import type { DatabaseTime } from "@/lib/auth/internal";
 import type { StudioActor } from "@/lib/auth/capabilities";
 import type { StudioWriteCredentials } from "@/lib/auth/write";
@@ -138,6 +139,8 @@ export function summaryDto(row: DraftRevisionRow): DraftSummaryDto {
   });
 }
 export function applicationDto(row: ApplicationRow): DraftApplicationDto {
+  if (row.target_kind !== "new-draft")
+    throw new StudioError("IDEMPOTENCY_CONFLICT");
   return draftApplicationDtoSchema.parse({
     ...summaryDto(row),
     createdAt: iso(row.application_created_at),

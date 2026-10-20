@@ -20,6 +20,9 @@ it.each([
 });
 it("keeps actual selectors in canonical inline form without changing the owned config", () => {
   expect(previewE2eArguments([])).toEqual([]);
+  expect(previewE2eArguments(["--project=studio-draft-revisions"])).toEqual([
+    "--project=studio-draft-revisions",
+  ]);
   expect(
     previewE2eArguments([
       "--project",

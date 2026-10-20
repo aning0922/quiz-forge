@@ -1,0 +1,249 @@
+{
+  "schemaVersion": "quizforge-p3d-integration-progress.v1",
+  "recordedOn": "2026-10-18",
+  "status": "technical-acceptance-passed",
+  "baselineApprovalCommit": "68ee7f2ef7ec3eee370aab94d5d16dec61160398",
+  "core": {
+    "commit": "99423bdb70cb9e04d9c050cdbbd945f075545f16",
+    "unit": 1558,
+    "format": "passed",
+    "lint": "passed",
+    "typecheck": "passed",
+    "build": {
+      "traceCount": 69,
+      "paths": 14116,
+      "privatePaths": 0
+    },
+    "firstDatabaseRun": {
+      "passed": 429,
+      "failed": 1,
+      "failure": "historical upgrade test pinned latest migration to 0015; failed before DROP",
+      "remoteFailureRun": 39105846002
+    }
+  },
+  "fixedDatabaseRun": {
+    "commit": "5fbce3b150cefbf37a2a77f4309cd3a805dadd46",
+    "passed": 431,
+    "failed": 0,
+    "seconds": 180.22,
+    "instanceStopped": true
+  },
+  "sourceAndFixtureIncrement": {
+    "baseCommit": "567b9a5",
+    "includesOwnedRunnerPatch": true,
+    "databaseTestsPassed": 49,
+    "sourceUnitTestsPassed": 35,
+    "format": "passed",
+    "lint": "passed",
+    "typecheck": "passed",
+    "qualification": "synthetic-db-private-pixels-and-real-node-owner-exit-not-next-e2e"
+  },
+  "realLegacyUpgrade": {
+    "before": {
+      "schemaVersion": "quizforge-p3d-real-upgrade-check.v1",
+      "observedOn": "2026-10-18",
+      "mode": "before",
+      "instanceId": "997cfcdf7e07f21fb236aa51cfccde2e",
+      "snapshotSha256": "f678129ff90ed415c11f1f68f8d45df14fe5756c7e43a4e498ce829bc9dd761d",
+      "migrations": 15,
+      "legacyRowsUnchanged": true,
+      "oldFirstFieldsPreserved": true,
+      "blobsUnchanged": 10,
+      "auditsUnchanged": 2,
+      "applicationGuards": "passed",
+      "qualification": "real-0015-private-pixels-no-native"
+    },
+    "after": {
+      "schemaVersion": "quizforge-p3d-real-upgrade-check.v1",
+      "observedOn": "2026-10-18",
+      "mode": "after",
+      "instanceId": "997cfcdf7e07f21fb236aa51cfccde2e",
+      "snapshotSha256": "f678129ff90ed415c11f1f68f8d45df14fe5756c7e43a4e498ce829bc9dd761d",
+      "migrations": 16,
+      "legacyRowsUnchanged": true,
+      "oldFirstFieldsPreserved": true,
+      "blobsUnchanged": 10,
+      "auditsUnchanged": 2,
+      "applicationGuards": "passed",
+      "qualification": "real-0015-private-pixels-no-native"
+    },
+    "domainReads": {
+      "schemaVersion": "quizforge-p3d-legacy-domain-read.v1",
+      "observedOn": "2026-10-18",
+      "instanceId": "997cfcdf7e07f21fb236aa51cfccde2e",
+      "oldReceiptsReplayed": 2,
+      "oldBodiesExact": 2,
+      "oldFixedPreviewEntries": 2,
+      "oldWitnessesScored": 6,
+      "draftAuditRows": 2,
+      "qualification": "real-upgraded-service-reads-no-browser-no-native"
+    },
+    "appendToOriginalLineage": {
+      "schemaVersion": "quizforge-p3d-real-upgrade-append.v1",
+      "observedOn": "2026-10-18",
+      "instanceId": "997cfcdf7e07f21fb236aa51cfccde2e",
+      "upgrade": "0015-to-0016",
+      "appendedToOriginalDraft": true,
+      "oldRevisionBodyPreserved": true,
+      "oldFirstReceiptPreserved": true,
+      "newBodyDifferent": true,
+      "originalAssetsAndOwnershipPreserved": true,
+      "appendReplayAddedNoAudit": true,
+      "counts": {
+        "current": 2,
+        "revisions": 2,
+        "applications": 2,
+        "audits": 2
+      },
+      "qualification": "real-upgraded-lineage-synthetic-source-no-browser-no-native"
+    },
+    "finalInstanceStopped": true,
+    "privateScripts": [
+      {
+        "file": "p3d-capture-legacy.ts",
+        "sha256": "69895bc20f5ea52ceec706f2fdcbf02336c4387d9e748ea029f04dda5d4e4fb9"
+      },
+      {
+        "file": "p3d-verify-legacy.ts",
+        "sha256": "8820ed0491685188fe2b699bd1460400fee621d198f7cb566a11810d5a58d3e9"
+      },
+      {
+        "file": "p3d-legacy-domain-read.ts",
+        "sha256": "b671463e01b4c72683088b080a936d6df4641e40ec4a03b068380e903d8ff11b"
+      },
+      {
+        "file": "p3d-legacy-append.ts",
+        "sha256": "a991bcce01757bb4354cda38748332eb196f274900779f0fa389c12f2789150d"
+      }
+    ]
+  },
+  "fontPrecheck": {
+    "schemaVersion": "quizforge-first-product-font-precheck.v1",
+    "observedOn": "2026-10-18",
+    "contentReviewSha256": "3b91353938c607a0767fca013fcaebfc92786c975c53964da1d323db7d806261",
+    "coverageSha256": "5e4828a70bb752096bdb008bcc9b02467ee32b4734d9217c182fcdcda2ab030a",
+    "scope": ["product", "dimensions", "questions", "reports"],
+    "visibleCodepoints": 597,
+    "missingCodepoints": [],
+    "isBrowserVisualAcceptance": false
+  },
+  "pending": [],
+  "runtimeCommit": "c1ca647ce04b6f244ce4aacf049fd826aca4dc16",
+  "testCommit": "c1ca647ce04b6f244ce4aacf049fd826aca4dc16",
+  "finalValidation": {
+    "format": "passed",
+    "lint": "passed",
+    "typecheck": "passed",
+    "unit": {
+      "files": 129,
+      "passed": 1560
+    },
+    "driverPassed": 46,
+    "build": {
+      "traceCount": 72,
+      "paths": 15075,
+      "privatePaths": 0
+    },
+    "remoteDatabase": {
+      "files": 48,
+      "passed": 433,
+      "separateFreshValidationServicePassed": 14,
+      "separateFreshMediaUnknownPassed": 3
+    },
+    "ordinaryCi": {
+      "run": 39110069377,
+      "head": "c1ca647ce04b6f244ce4aacf049fd826aca4dc16",
+      "conclusion": "success"
+    },
+    "linuxMediaCi": {
+      "run": 39110065866,
+      "head": "c1ca647ce04b6f244ce4aacf049fd826aca4dc16",
+      "conclusion": "success"
+    },
+    "e2e": {
+      "passed": 235,
+      "existingSkipped": 10,
+      "newRevisionTests": 7,
+      "minutesApprox": 4.6,
+      "serverExit": "proven",
+      "workersStopped": true,
+      "cleanupOrder": ["P3D", "P3C", "B3", "B2"],
+      "cleanup": "passed",
+      "instanceStopped": true
+    }
+  },
+  "finalMediaBinding": {
+    "sourceBundleSha256": "fab5e1ddbf68af9ccd516182b6c906ca8115dd68b04b060772f59d5e38b96e34",
+    "deploymentSha256": "d8b3ecd1faba165793b092d093a04d958760104fd8070a91edfa4a355895e72f",
+    "runtimeBundleSha256": "bb70234055889bccc43115ee2b426731079649da32bf330da62f8aeb5e624e03",
+    "sourceFiles": 1059,
+    "artifactFiles": 822,
+    "mainMatrixPassedPerRun": [66, 66, 66],
+    "sealed": true,
+    "nativeControlEmpty": true,
+    "operationsStopped": true,
+    "residual": 0,
+    "totalBytes": 34220600,
+    "sourceBytes": 26488724,
+    "artifactBytes": 7731876
+  },
+  "visualEvidence": {
+    "manifest": "p3d-2026-10-18/manifest.json",
+    "images": 61,
+    "bytes": 18287407,
+    "browser": "Chromium 156.0.8078.4",
+    "viewports": [320, 375, 390, 430],
+    "pageStates": 15,
+    "actualExport": {
+      "width": 1080,
+      "height": 1920,
+      "bytes": 1271527,
+      "sha256": "a6e5437bb092a0156503c2b3a0c16e97a82678c3de50062fda98eb31f28ccc9c"
+    },
+    "originalAndRetainedR1BytesEqualAtAllFourWidths": true,
+    "qualification": "synthetic-content-and-private-pixels-not-approved-historical-artwork",
+    "agentVisualReview": {
+      "dataChat": "61/61 originals viewed; integrity passed; no remaining P1/P2/P3",
+      "studioChat": "61/61 originals viewed; integrity/decode passed; no remaining P1/P2/P3",
+      "independentReviewer": "all61 integrity;15 representative states plus actualPNG viewed; technical exit passed; no remaining P1/P2"
+    }
+  },
+  "e2eHistory": [
+    {
+      "attempt": 1,
+      "passed": 206,
+      "failed": 1,
+      "existingSkipped": 10,
+      "notRun": 28,
+      "cause": "old validation disclosure exact-text assertion; runtime and authored/v2 facts passed",
+      "instanceStoppedPreserved": true
+    },
+    {
+      "attempt": 2,
+      "runtimeCommit": "f5815143194145d7e500c7b2fcdff24fcf107340",
+      "testCommit": "c2e101b73125b36e4c9c30fceb00fa92cbfd4a71",
+      "passed": 235,
+      "existingSkipped": 10,
+      "cleanup": "passed",
+      "instanceStopped": true,
+      "visualEvidencePreservedBeforeDisplayPolish": true
+    },
+    {
+      "attempt": 3,
+      "runtimeCommit": "c1ca647ce04b6f244ce4aacf049fd826aca4dc16",
+      "passed": 235,
+      "existingSkipped": 10,
+      "cleanup": "passed",
+      "instanceStopped": true,
+      "isFinalEvidence": true
+    }
+  ],
+  "notImplemented": [
+    "exact baseline review ledger",
+    "internal product version seal",
+    "AccessKey and persistent consumer session",
+    "one-time completion and immutable user report",
+    "P5 actual historical product E2E"
+  ],
+  "independentReview": "passed for c1ca647; four P2 and three display P3 closed"
+}

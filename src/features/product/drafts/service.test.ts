@@ -145,6 +145,7 @@ it("same-key replay precedes archived/source checks and produces no insert or se
   const f = await setup();
   f.product.archived_at = f.application.createdAt;
   f.keyRead.mockResolvedValue({
+    target_kind: "new-draft",
     fingerprint: f.fingerprint,
   } as repository.ApplicationRow);
   const result = await f.service.applyReadyValidation(
@@ -162,6 +163,7 @@ it("same-key replay precedes archived/source checks and produces no insert or se
 it("same-key different fingerprint refuses before source IO or new business writes", async () => {
   const f = await setup();
   f.keyRead.mockResolvedValue({
+    target_kind: "new-draft",
     fingerprint: "f".repeat(64),
   } as repository.ApplicationRow);
   await expect(
