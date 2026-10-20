@@ -185,3 +185,15 @@ root完整1912单元与新build103/23852/0通过；新构建无observer的原实
 原helper先载空/access再location.replace同path#key，属于同文档导航。主控真实Next/冻结Access重现空捕获后加入Key，fragment不擦除/无Verify；完整文档对照成功，零exchange/网络URL泄漏、真实关闭。Astra另独立真实组件确认A ready→B→Verify会提交旧A且B残留，构成产品P2。08dfc6b冻结的增量契约获独审可执行，但P2尚未关闭：新增1.0.1 Access和显式全局gateway，保留旧193b descriptor/closure/play/report。认证后的实现始终按原play完整tuple解析，新旧不能混配。无需0018迁移，不增加内容/素材或发布批准。
 
 50e2f6e→root ea5f853将私密文件helper改为先about:blank再evaluate注入已验证绝对私密链接，98a88ea→root c9420df等待精确目标question输入启用及完成采用终态；两条独审继续。root固定3100真实原Access+实际helper合成四入口状态均通过且真实close，严格限定为标准完整导航证明；未冒称旧Access已支持同文档换Key。A准备两枚旧193b真实服务合成记录及自然3600秒过期兼容证明，B实现新版生命周期，root追加登记与实际静态绑定gate，Astra独审保持。P4/P5未完成，首款39eb仍停止。
+
+## 第十轮：消费者业务链已执行，收尾仍因测试版本预期拒绝
+
+144d0b1准确普通CI39419154639实际success：183文件1961单元、66文件496普通PG、fresh14/4/3/1与build103/23855/0通过。新1.0.1登记及生命周期的Astra最终commit核验关闭原两项P2；70740d8d部署／93c09e52运行的main66×3实际通过、操作停止/control0。
+
+第十轮144d生产E2E为258通过/1失败/10既有skip（7.5分钟）。八个消费者业务体已执行：play/三Key、exchange/entry、保存UNKNOWN恢复、完成UNKNOWN核实与报告锁定、实际资源/PNG、隔离/退出、作废和来源/Cookie边界。最终source-cookie-boundary被afterAll的`consumerFixtureCommand("finish")`失败归为失败，不是该业务体断言失败；整轮依然未通过，不能补办成功或cleanup。
+
+真实403b失败实例的RR只读对照证明：原fixture预期仍是193b/1.0.0，实际play及浏览器观察为dc195/1.0.1。原完整图校验拒绝；仅将内存副本中的expected renderer改为明确dc195后，原观察与全部49行真实图验证通过。磁盘fixture/observations原字节不变，仍finished=false/completed=false，未调用finish或cleanup。实际业务计数1play/3Key/2session/1report/3grant；实例已正式停止保留。有限扫描426文件122291850B、22ZIP成员12133498B、所覆盖credential/CSRF均0。28张四宽截图及一张实际1080×1920PNG保留作视觉预审，不冒称完整E2E出口。
+
+修复仅调整受信测试准备的明确选择：prepare新增可选完整renderer参数，默认old不变，严格Schema和available检查先于副作用；CLI生产E2E固定传rendererV1_1，与运营页一致。父preview renderer、finish/完整graph/清理资格均不改。首版局部变量与父renderer同名被typecheck拒绝，已改selectedConsumerRenderer，错误候选未执行；修正后format/lint/type/gate通过且Astra准确diff复核。下一轮使用全新实例，旧失败证据不改。
+
+另旧Key兼容before的首次浏览器记录失败发生于导航后读取原HTTP response body：B独立真实SSR重现原顺序5/5和提前Promise读取5/5均失去响应资源。root原失败库只读确认新增一枚resume grant，完整原业务图未改；准确私有SQL-only记录器已实际关闭并封存唯一失败grant ledger（e36d3d1d…），不补造旧HTTP/cookie或成功browser观察。单次有界原fetch observer及新版兼容before/after审计仍待执行，原到期时间不改，首款39eb继续停止。

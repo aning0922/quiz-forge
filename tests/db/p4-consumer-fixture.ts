@@ -46,7 +46,14 @@ import {
   verifyInternalReviewReceipt,
   verifyInternalVersionDetail,
 } from "@/features/product/internal-versions/integrity";
-import { CONSUMER_IMPLEMENTATION_AVAILABILITY } from "@/features/product/internal-play/implementation-catalog";
+import {
+  CONSUMER_IMPLEMENTATION_AVAILABILITY,
+  consumerImplementationAvailable,
+} from "@/features/product/internal-play/implementation-catalog";
+import {
+  consumerRendererIdentitySchema,
+  type ConsumerRendererIdentity,
+} from "@/lib/consumer-contract/v1/identities";
 import { prepareP4ConsumerSource } from "./p4-source-fixture";
 import { seedReadyP2b3Source } from "./p2b3-fixture";
 import {
@@ -233,8 +240,12 @@ export async function readConsumerFixture(
 export async function prepareConsumerFixture(
   db: TestDatabase,
   runId: string,
+  consumerRenderer: ConsumerRendererIdentity = CONSUMER_IMPLEMENTATION_AVAILABILITY.rendererV1,
 ): Promise<ConsumerFixture> {
   requireTest(db);
+  const selectedConsumerRenderer =
+    consumerRendererIdentitySchema.parse(consumerRenderer);
+  if (!consumerImplementationAvailable(selectedConsumerRenderer)) throw fail();
   z.uuid().parse(runId);
   await absent(fixturePath(db));
   await absent(observationsPath(db));
@@ -339,7 +350,7 @@ export async function prepareConsumerFixture(
   if (!baseline || baseline.descriptor.approval.kind !== "synthetic-test")
     throw fail();
   value.baseline = baseline.identity;
-  value.consumerRenderer = CONSUMER_IMPLEMENTATION_AVAILABILITY.rendererV1;
+  value.consumerRenderer = selectedConsumerRenderer;
   const lock = await StorageLock.acquire(db.config);
   let unconfirmed = false;
   try {
@@ -720,7 +731,11 @@ async function main() {
     const value =
       action === "prepare"
         ? (await waitForPreviewAuthBudget(db),
-          await prepareConsumerFixture(db, runId!))
+          await prepareConsumerFixture(
+            db,
+            runId!,
+            CONSUMER_IMPLEMENTATION_AVAILABILITY.rendererV1_1,
+          ))
         : await finishConsumerFixture(
             db,
             runId!,
