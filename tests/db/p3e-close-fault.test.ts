@@ -22,6 +22,7 @@ import {
   assertPreviewServerRunning,
 } from "../support/p3c-server-owner";
 import type { CloseFaultEvidence } from "../support/p3e-close-fault-child";
+import { observeP3eBackendExit } from "../support/p3e-backend-exit";
 
 async function freePort() {
   return new Promise<number>((resolve, reject) => {
@@ -148,11 +149,20 @@ for (const mode of ["fd", "db"] as const) {
       expect(before).toEqual({ reviews: 1, versions: 1, audits: 2 });
       // No TTL cleanup/unlock or retained resource close. First obtain REAL close + absent process group.
       const proof = await stopAndProveServerExit(child);
-      const [afterExit] = await db.admin.sql<
-        { connections: number; guards: number }[]
-      >`
+      // Observe the server side separately after REAL child exit. Its last
+      // backend can still be visible while PostgreSQL processes socket closure.
+      const afterExit = await observeP3eBackendExit(
+        proof,
+        { cwd: process.cwd(), instanceId: db.config.instanceId, runId },
+        async () => {
+          const [row] = await db.admin.sql<
+            { connections: number; guards: number }[]
+          >`
         SELECT (SELECT count(*)::int FROM pg_stat_activity WHERE pid=ANY(${evidence.retainedBackendPids})) connections,
         (SELECT count(*)::int FROM pg_locks WHERE locktype='advisory' AND classid=72461 AND objid=2 AND objsubid=2 AND granted) guards`;
+          return row;
+        },
+      );
       expect(afterExit).toEqual({ connections: 0, guards: 0 });
       const maintenance = await StorageLock.acquire(db.config);
       expect(await maintenance.close()).toBe(true);
