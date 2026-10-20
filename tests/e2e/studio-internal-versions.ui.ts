@@ -1,4 +1,5 @@
 import { expect, type Page, type TestInfo } from "@playwright/test";
+import { sampleStudioLayout, assertStudioLayout } from "./studio-layout";
 import { internalRevisionScopeSchema } from "../../src/features/product/internal-versions/urls";
 import {
   INTERNAL_PENDING_KEYS,
@@ -91,26 +92,12 @@ export async function captureInternalWidths(
     throw Error("INTERNAL_VERSION_E2E_SCREENSHOT_SCOPE");
   for (const width of [320, 375, 390, 430]) {
     await page.setViewportSize({ width, height: 900 });
-    expect(
-      await page.evaluate(
-        () => document.documentElement.scrollWidth <= innerWidth,
-      ),
-    ).toBe(true);
-    for (const target of await page
-      .locator("main button,main a,main select,main summary")
-      .all()) {
-      if (!(await target.isVisible())) continue;
-      const box = await target.boundingBox();
-      if (box) expect(box.height).toBeGreaterThanOrEqual(44);
-    }
-    for (const body of await page.locator("main p,main pre,main dd").all()) {
-      if (!(await body.isVisible())) continue;
-      expect(
-        await body.evaluate((node) =>
-          parseFloat(getComputedStyle(node).fontSize),
-        ),
-      ).toBeGreaterThanOrEqual(16);
-    }
+    assertStudioLayout(
+      await sampleStudioLayout(page, {
+        fontSelector: "main p,main pre,main dd",
+        appliedReceipts: false,
+      }),
+    );
     await page.evaluate(() => scrollTo(0, 0));
     await expect.poll(() => page.evaluate(() => scrollY)).toBe(0);
     const png = await page.screenshot({

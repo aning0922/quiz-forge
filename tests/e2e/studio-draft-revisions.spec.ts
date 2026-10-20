@@ -1,5 +1,6 @@
 import { test, expect, type Page, type TestInfo } from "@playwright/test";
 import { constants } from "node:fs";
+import { sampleStudioLayout, assertStudioLayout } from "./studio-layout";
 import { open, lstat, realpath } from "node:fs/promises";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
@@ -249,40 +250,7 @@ async function pending(page: Page) {
 async function screenshot(page: Page, info: TestInfo, state: string) {
   for (const width of [320, 375, 390, 430]) {
     await page.setViewportSize({ width, height: 900 });
-    expect(
-      await page.evaluate(
-        () => document.documentElement.scrollWidth <= innerWidth,
-      ),
-    ).toBe(true);
-    for (const target of await page
-      .locator("main button,main a,main select,main summary")
-      .all()) {
-      if (!(await target.isVisible())) continue;
-      const box = await target.boundingBox();
-      if (box) expect(box.height).toBeGreaterThanOrEqual(44);
-    }
-    for (const receipt of await page
-      .locator('[data-revision-resolution="applied"]')
-      .all()) {
-      const clear = await receipt
-        .getByRole("button", {
-          name: "解除已确认成功的本地锚点",
-          exact: true,
-        })
-        .boundingBox();
-      expect(clear).not.toBeNull();
-      for (const link of await receipt.getByRole("link").all()) {
-        const box = await link.boundingBox();
-        expect(box).not.toBeNull();
-        expect(clear!.y - (box!.y + box!.height)).toBeGreaterThanOrEqual(16);
-      }
-    }
-    for (const p of await page.locator("main p").all()) {
-      if (await p.isVisible())
-        expect(
-          await p.evaluate((e) => parseFloat(getComputedStyle(e).fontSize)),
-        ).toBeGreaterThanOrEqual(16);
-    }
+    assertStudioLayout(await sampleStudioLayout(page));
     await page.evaluate(() => scrollTo(0, 0));
     await expect.poll(() => page.evaluate(() => scrollY)).toBe(0);
     const png = await page.screenshot({
@@ -721,6 +689,24 @@ test("another tab appends third to r3; old history anchor and original spare req
       name: "已确认的固定追加回执",
       exact: true,
     }),
+  ).toBeVisible();
+  // The immutable receipt is independent from the asynchronous current-head refresh.
+  await expect(
+    appendPanel(writer).getByRole("heading", {
+      name: "本次读取的当前基准：修订 3",
+      exact: true,
+    }),
+  ).toBeVisible();
+  await expect(
+    appendPanel(writer).getByText("正在核对当前草稿和工作区状态…", {
+      exact: true,
+    }),
+  ).toHaveCount(0);
+  await expect(
+    pendingPanel(writer).getByText(
+      "此浏览器会话没有此工作区的待确认追加请求。",
+      { exact: true },
+    ),
   ).toBeVisible();
   await screenshot(writer, info, "r3-confirmed-fixed-receipt");
   await history

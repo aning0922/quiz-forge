@@ -1,4 +1,5 @@
 import { expect, type Page, type TestInfo } from "@playwright/test";
+import { sampleStudioLayout, assertStudioLayout } from "./studio-layout";
 
 export async function waitForEmptyDraftSource(page: Page) {
   // Validation detail mounts these readers independently. The static read-only
@@ -70,20 +71,15 @@ export async function captureDraftMobile(
     await page.evaluate(async () => {
       await document.fonts.ready;
     });
-    expect(
-      await page.evaluate(
-        () => document.documentElement.scrollWidth <= innerWidth,
-      ),
-    ).toBe(true);
-    expect(
-      await page
-        .locator("main")
-        .evaluate((e) => parseFloat(getComputedStyle(e).fontSize) >= 16),
-    ).toBe(true);
-    for (const button of await page.getByRole("button").all()) {
-      const box = await button.boundingBox();
-      if (box) expect(box.height).toBeGreaterThanOrEqual(44);
-    }
+    assertStudioLayout(
+      await sampleStudioLayout(page, {
+        fontSelector: "main",
+        fontVisibility: "all",
+        buttonRoleWithin: "html",
+        appliedReceipts: false,
+      }),
+      { requiredFontCount: 1 },
+    );
     await page.evaluate(() => scrollTo(0, 0));
     await expect.poll(() => page.evaluate(() => scrollY)).toBe(0);
     const height = await page.evaluate(() =>

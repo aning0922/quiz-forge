@@ -1,6 +1,7 @@
 import { PREVIEW_FONT_ASSET } from "../../src/features/product/preview/descriptor";
 import { test, expect, type Page, type TestInfo } from "@playwright/test";
 import { constants } from "node:fs";
+import { sampleStudioLayout, assertStudioLayout } from "./studio-layout";
 import { open, readFile, lstat, realpath } from "node:fs/promises";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
@@ -219,29 +220,17 @@ async function mobile(page: Page, info: TestInfo, state: string) {
   });
   for (const width of [320, 375, 390, 430]) {
     await page.setViewportSize({ width, height: 900 });
-    if (state === "question") {
-      const badge = await page.locator("[data-preview-approval]").boundingBox();
-      const caption = await page
-        .locator("[data-preview-scene-caption]")
-        .boundingBox();
-      if (!badge || !caption) throw Error("PREVIEW_SCENE_BOUNDS_MISSING");
-      expect(badge.y + badge.height).toBeLessThanOrEqual(caption.y);
-    }
-    expect(
-      await page.evaluate(
-        () => document.documentElement.scrollWidth <= innerWidth,
-      ),
-    ).toBe(true);
-    for (const button of await page.getByRole("button").all()) {
-      const box = await button.boundingBox();
-      if (box) expect(box.height).toBeGreaterThanOrEqual(44);
-    }
-    for (const p of await page.locator("[data-preview-state] p").all()) {
-      if (await p.isVisible())
-        expect(
-          await p.evaluate((e) => parseFloat(getComputedStyle(e).fontSize)),
-        ).toBeGreaterThanOrEqual(16);
-    }
+    assertStudioLayout(
+      await sampleStudioLayout(page, {
+        fontSelector: "[data-preview-state] p",
+        buttonRoleWithin: "html",
+        appliedReceipts: false,
+        above:
+          state === "question"
+            ? [["[data-preview-approval]", "[data-preview-scene-caption]"]]
+            : [],
+      }),
+    );
     await page.evaluate(() => scrollTo(0, 0));
     await expect.poll(() => page.evaluate(() => scrollY)).toBe(0);
     const png = await page.screenshot({
