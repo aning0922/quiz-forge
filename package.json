@@ -9,7 +9,7 @@
   },
   "scripts": {
     "dev": "next dev --hostname 127.0.0.1",
-    "build": "next build && tsx scripts/check-build-traces.ts",
+    "build": "pnpm implementation:check && next build && tsx scripts/check-build-traces.ts",
     "start": "next start --hostname 127.0.0.1",
     "lint": "eslint . --max-warnings=0",
     "typecheck": "next typegen && tsc --noEmit",
@@ -36,7 +36,8 @@
     "media:provision": "TSX_TSCONFIG_PATH=./tsconfig.json node --conditions=react-server --import tsx scripts/quizpack-media-preflight/shared/provision-cli.ts",
     "media:fixture": "TSX_TSCONFIG_PATH=./tsconfig.json node --conditions=react-server --import tsx scripts/quizpack-media-next-fixture.ts",
     "media:setup:macos": "TSX_TSCONFIG_PATH=./tsconfig.json node --conditions=react-server --import tsx scripts/quizpack-media-preflight/macos/setup.ts",
-    "media:setup:linux": "TSX_TSCONFIG_PATH=./tsconfig.json node --conditions=react-server --import tsx scripts/quizpack-media-preflight/linux/setup.mjs"
+    "media:setup:linux": "TSX_TSCONFIG_PATH=./tsconfig.json node --conditions=react-server --import tsx scripts/quizpack-media-preflight/linux/setup.mjs",
+    "implementation:check": "TSX_TSCONFIG_PATH=./tsconfig.json node --conditions=react-server --import tsx scripts/check-internal-implementations.ts"
   },
   "dependencies": {
     "@radix-ui/react-slot": "1.4.0",

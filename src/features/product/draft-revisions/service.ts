@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { StudioError } from "@/lib/http-security/errors";
 import { withStudioWrite } from "@/lib/auth/write";
+import { acquireReferenceWriteLock } from "../internal-versions/storage-lock";
 import type { DatabaseTime } from "@/lib/auth/internal";
 import { read } from "@/features/quizpack/import/repository";
 import {
@@ -122,6 +123,7 @@ export function createProductDraftRevisionService(): ProductDraftRevisionService
             throw new StudioError("DRAFT_BASE_CONFLICT");
           if (observation.observedCurrentRevision >= 100)
             throw new StudioError("DRAFT_REVISION_LIMIT");
+          await acquireReferenceWriteLock(tx);
           const source = await readReadyDraftSource(tx, scope, {
             expectedValidationStateRevision:
               input.expectedValidationStateRevision,

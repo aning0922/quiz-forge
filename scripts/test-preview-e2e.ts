@@ -8,6 +8,7 @@ import path from "node:path";
 import { z } from "zod";
 import { previewE2eArguments } from "./p3c-e2e-arguments";
 import { loadRuntimeConfig, readPrivateJson } from "../src/lib/db/runtime";
+import { configureImports } from "../src/features/quizpack/import/config-management";
 import { openTestDatabase } from "../tests/db/p2a-fixture";
 import {
   cleanupPreviewFixture,
@@ -19,6 +20,11 @@ import {
   readDraftRevisionFixture,
 } from "../tests/db/p3d-draft-revision-fixture";
 import { DRAFT_REVISION_FIXTURE_PRIVATE_NAME } from "../tests/db/p3d-draft-revision-fixture-contract";
+import {
+  cleanupInternalVersionFixture,
+  readInternalVersionFixture,
+} from "../tests/db/p3e-internal-version-fixture";
+import { INTERNAL_VERSION_FIXTURE_PRIVATE_NAME } from "../tests/db/p3e-internal-version-fixture-contract";
 import {
   launchPreviewServer,
   assertPreviewServerRunning,
@@ -198,6 +204,7 @@ async function main() {
   const runId = randomUUID(),
     identity = { cwd, instanceId: config.instanceId, runId };
   for (const name of [
+    INTERNAL_VERSION_FIXTURE_PRIVATE_NAME,
     DRAFT_REVISION_FIXTURE_PRIVATE_NAME,
     PREVIEW_FIXTURE_PRIVATE_NAME,
     "drafts-e2e-fixture.json",
@@ -211,6 +218,7 @@ async function main() {
     QUIZFORGE_P2A_CONFIG: configFile,
     QF_PREVIEW_E2E_RUN_ID: runId,
     QF_DRAFT_REVISION_E2E_RUN_ID: runId,
+    QF_INTERNAL_VERSION_E2E_RUN_ID: runId,
     TSX_TSCONFIG_PATH: path.join(cwd, "tsconfig.json"),
     PLAYWRIGHT_BROWSERS_PATH: path.join(cwd, ".cache", "ms-playwright"),
   };
@@ -241,6 +249,31 @@ async function main() {
   checkpoint();
   if (!passed || !proof) throw Error("MANAGED_E2E_EXIT_UNPROVEN");
   assertServerExitProof(proof, identity);
+  phase = "internal-version-cleanup";
+  const internalFixtureFile = path.join(
+    path.dirname(configFile),
+    INTERNAL_VERSION_FIXTURE_PRIVATE_NAME,
+  );
+  if (await exists(internalFixtureFile)) {
+    const db = await openTestDatabase();
+    try {
+      const fixture = await readInternalVersionFixture(db, runId);
+      if (!fixture.completed)
+        throw Error("INTERNAL_VERSION_FIXTURE_UNKNOWN_PRESERVED");
+      await configureImports(db.config.instanceId, false);
+      await cleanupInternalVersionFixture(db, runId, proof);
+    } finally {
+      await db.close();
+    }
+    process.stdout.write(
+      JSON.stringify({
+        phase: "cleanup",
+        fixture: INTERNAL_VERSION_FIXTURE_PRIVATE_NAME,
+        result: "passed",
+      }) + "\n",
+    );
+  } else if (args.length === 0)
+    throw Error("INTERNAL_VERSION_E2E_NOT_EXECUTED");
   phase = "draft-revision-cleanup";
   const revisionFixtureFile = path.join(
     path.dirname(configFile),

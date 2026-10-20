@@ -1,0 +1,187 @@
+{
+  "schemaVersion": "quizforge.baseline-registry-entry.v1",
+  "kind": "baseline",
+  "id": "internal-version-synthetic-baseline",
+  "version": "1.0.0",
+  "productId": "internal-version-fixture",
+  "purpose": "internal-test",
+  "allowedInstancePurposes": ["test", "ci"],
+  "canonicalContentSha256": "482e06eb50d1a5cd9a9d3048b8e2a7c2fbca6831284f2a2fa0d474bc94b016fd",
+  "assetSetSha256": "d294104cd47e27615a2a3cd1155a8958b11c15aff92f94f0d12576646bed06d3",
+  "canonicalManifestSha256": "6352846a3baa4c52940679da11f14db5b0c63c498473f68b598bcf9a8f619108",
+  "logicHash": "97cb6ba14a3f52a47d6834812641d3a790d26833f5889dd94c16037b002ddddf",
+  "approval": {
+    "kind": "synthetic-test",
+    "fixtureId": "internal-version-fixture-v1",
+    "evidenceSha256": "6fc7a5cd9cd259cc79b00b84b831e14a4a3391cde427047ba143324658759fdb",
+    "scope": "test-evidence-no-author-approval"
+  },
+  "sourceEvidence": {
+    "kind": "synthetic-definition",
+    "definitionSha256": "6fc7a5cd9cd259cc79b00b84b831e14a4a3391cde427047ba143324658759fdb",
+    "qualification": "synthetic-content-private-pixels-no-author-approval"
+  },
+  "engine": {
+    "id": "archetype",
+    "version": "1.0.0"
+  },
+  "components": {
+    "cover": {
+      "id": "folio-cover",
+      "propsSchemaVersion": "1.0.0",
+      "version": "2.0.0"
+    },
+    "poster": {
+      "id": "folio-poster",
+      "propsSchemaVersion": "1.0.0",
+      "version": "2.0.0"
+    },
+    "question": {
+      "id": "folio-question",
+      "propsSchemaVersion": "1.0.0",
+      "version": "2.0.0"
+    },
+    "report": {
+      "id": "folio-report",
+      "propsSchemaVersion": "1.0.0",
+      "version": "2.0.0"
+    },
+    "result": {
+      "id": "cabinet-result",
+      "propsSchemaVersion": "1.0.0",
+      "version": "2.0.0"
+    },
+    "resume": {
+      "id": "folio-resume",
+      "propsSchemaVersion": "1.0.0",
+      "version": "2.0.0"
+    }
+  },
+  "resourceEdges": [
+    {
+      "resourceId": "neutral-cover",
+      "version": "1.0.0",
+      "purpose": "cover",
+      "sha256": "f48056710540c0e02de61fd2b336093c1d08011cd9abcb77047130df4903c8e8",
+      "bytes": 6442,
+      "mediaType": "image/png",
+      "width": 48,
+      "height": 48,
+      "reviewFile": "neutral-cover.png"
+    },
+    {
+      "resourceId": "portrait-1",
+      "version": "1.0.0",
+      "purpose": "portrait",
+      "sha256": "e34319eecc54ad7d0543066221086f60f87d031039e54a3f9a279d870a274b2c",
+      "bytes": 6441,
+      "mediaType": "image/png",
+      "width": 48,
+      "height": 48,
+      "reviewFile": "portrait-1.png"
+    },
+    {
+      "resourceId": "portrait-2",
+      "version": "1.0.0",
+      "purpose": "portrait",
+      "sha256": "ff18e63946e68491b8ec42817aba87e3eaa66591142a0e65d22036104c561183",
+      "bytes": 6440,
+      "mediaType": "image/png",
+      "width": 48,
+      "height": 48,
+      "reviewFile": "portrait-2.png"
+    },
+    {
+      "resourceId": "portrait-3",
+      "version": "1.0.0",
+      "purpose": "portrait",
+      "sha256": "26e040181ea00fa677aac98065c2166a455456a50b074a3b7c5b5a8b62a6740e",
+      "bytes": 6440,
+      "mediaType": "image/png",
+      "width": 48,
+      "height": 48,
+      "reviewFile": "portrait-3.png"
+    },
+    {
+      "resourceId": "neutral-scene",
+      "version": "1.0.0",
+      "purpose": "decoration",
+      "sha256": "e5fc88a6fa14aa29ff614a5d5194b1ee6d1789c691351a3b806dd5795ab76249",
+      "bytes": 6441,
+      "mediaType": "image/png",
+      "width": 48,
+      "height": 48,
+      "reviewFile": "neutral-scene.png"
+    }
+  ],
+  "presentationEdges": {
+    "cover": {
+      "id": "neutral-cover",
+      "productId": "internal-version-fixture",
+      "version": "1.0.0"
+    },
+    "sections": [
+      {
+        "sectionId": "first-hall",
+        "resourceRef": {
+          "id": "neutral-scene",
+          "productId": "internal-version-fixture",
+          "version": "1.0.0"
+        }
+      }
+    ],
+    "results": [
+      {
+        "resultRef": {
+          "id": "low",
+          "productId": "internal-version-fixture",
+          "version": "1.0.0"
+        },
+        "reportTemplateRef": {
+          "id": "report-low",
+          "productId": "internal-version-fixture",
+          "version": "1.0.0"
+        },
+        "portraitRef": {
+          "id": "portrait-1",
+          "productId": "internal-version-fixture",
+          "version": "1.0.0"
+        }
+      },
+      {
+        "resultRef": {
+          "id": "middle",
+          "productId": "internal-version-fixture",
+          "version": "1.0.0"
+        },
+        "reportTemplateRef": {
+          "id": "report-middle",
+          "productId": "internal-version-fixture",
+          "version": "1.0.0"
+        },
+        "portraitRef": {
+          "id": "portrait-2",
+          "productId": "internal-version-fixture",
+          "version": "1.0.0"
+        }
+      },
+      {
+        "resultRef": {
+          "id": "high",
+          "productId": "internal-version-fixture",
+          "version": "1.0.0"
+        },
+        "reportTemplateRef": {
+          "id": "report-high",
+          "productId": "internal-version-fixture",
+          "version": "1.0.0"
+        },
+        "portraitRef": {
+          "id": "portrait-3",
+          "productId": "internal-version-fixture",
+          "version": "1.0.0"
+        }
+      }
+    ]
+  }
+}

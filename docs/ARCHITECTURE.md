@@ -2,6 +2,10 @@
 
 ## 2026-10-18 架构检查点
 
+P3-E 已完成精确基线审核与不可变内测版本：`features/product/internal-versions` 拥有批准匹配、来源/实现身份、事务及物理留存，`features/studio/internal-versions` 负责受控 DTO、原请求恢复和页面，`app` 仅路由组合。版本固定已批准三 hash、source/review、实际 renderer/engine/font/components；旧修订与旧 key 回执保持。共享显示数据已与 Studio 传输解耦，受控实现按精确编译登记选择。技术证据见 [P3E验收](P3E_ACCEPTANCE.md)。
+
+作者批准的真实首款已走 native 准入与固定内部版本封存，能力仍为 `studio-internal-preview`；不等同于消费者答题。P4 独立 play 版本、Key、匿名会话、一次完成与不可变报告仅有前置方案，尚未实现；继续按模块化单体和显式接口接入，不能把旧预览 controller 政名当正式持久化体验。下方保留此前架构检查点。
+
 受管开发分支已完成P3-D不可变修订及P3-C固定修订预览：QuizPack受限接收、真实媒体隔离、验证/私有资源归档、首个持久草稿、content.v1/v2准入、双确定性引擎和六状态预览均有独立验收证据。首款内容/视觉已获作者确认作为内测基线；准确材料见[FIRST_PRODUCT_BASELINE](FIRST_PRODUCT_BASELINE.md)。这些能力仍在堆叠Draft PR中，下面旧阶段的“尚未实现”记录属于对应时期。
 
 P3-D已实现features/product/draft-revisions领域服务与features/studio/draft-revisions适配：追加新版、核实未知提交、读取稳定历史；app仍只组合路由。数据库保存不可变版本和原请求回执，界面状态不授予成功权威，固定预览始终读取指定修订。两独立开发聊天分别实现事务/数据与后台/交互，Astra独审，主控集成。下一依赖为精确审核与内测版本封存，再接消费者Key、会话和一次完成报告；当前尚无P5端到端完成结论。

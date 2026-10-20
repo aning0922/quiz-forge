@@ -1,9 +1,9 @@
 import type { ReactNode } from "react";
 import type {
-  PreviewEntry,
-  PreviewReveal,
-} from "@/features/product/preview/contracts";
-import type { Answers } from "@/features/studio/preview/flow";
+  DisplayEntryBodyV1 as PreviewEntry,
+  ResultDisplaySnapshotV1 as PreviewReveal,
+  DisplayAnswers as Answers,
+} from "@/lib/assessment-contract/display-v1";
 import styles from "./preview.module.css";
 import { PREVIEW_REGISTRY } from "./registry";
 

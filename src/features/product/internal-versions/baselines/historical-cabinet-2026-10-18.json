@@ -1,0 +1,278 @@
+{
+  "schemaVersion": "quizforge.baseline-registry-entry.v1",
+  "kind": "baseline",
+  "id": "historical-cabinet-internal-2026-10-18",
+  "version": "1.0.0",
+  "productId": "historical-cabinet",
+  "purpose": "internal-test",
+  "allowedInstancePurposes": ["test", "ci", "demo"],
+  "canonicalContentSha256": "4ceae81de77fac8e9df9da1255bf21c31d2bb88c00495cfe68da1769fc562904",
+  "assetSetSha256": "0f6511526c401573c0bf8e736eda5fca8e22fb54ab1f8455d82eda341aff6ade",
+  "canonicalManifestSha256": "8e402dacb21d25d5c5ebdb66de6a227a8840469d781871fbee77191cf6f79013",
+  "logicHash": "6e44add1bf8bbcf2e3ccec319bd46fc4c6270c3fa474ea30a1887d6d8f8adb07",
+  "approval": {
+    "kind": "author-baseline",
+    "approvedOn": "2026-10-18",
+    "sourceRecordId": "historical-internal-baseline-2026-10-18",
+    "evidenceSha256": "17c498584f5b696d775eac638eee13887b53ad34c1fb2c27feff1d497fb7a457",
+    "scope": "internal-test-content-and-visual-baseline"
+  },
+  "sourceEvidence": {
+    "kind": "author-mapping",
+    "reviewedDeliveryCommit": "922937fbfd4672e6b15038a99f8b4316aed9cd2c",
+    "contentSourceCommit": "03fdc240c924e2fe7379534176e11d1e6ab3bc58",
+    "contentSourceSha256": "8c049714ae07c5ed2f10fff334cc041364789781de28bfbbd5442a26d6dc0653",
+    "reviewJsonSha256": "3b91353938c607a0767fca013fcaebfc92786c975c53964da1d323db7d806261",
+    "reviewHtmlSha256": "9e8077702c61cf8403f420c28a8b8c9de6a1dbc8db388ead1a225c0c8cf555b6",
+    "provenanceDocumentSha256": "005d55ed8f3306ee4f39bd7001441111de3dd7bbe3a307726164ee7818ad9229",
+    "fieldMappingSha256": "9debacb51555a68d0abedb47f16c34f8fa412caa45865406b5e6b11a9fe3cd7e"
+  },
+  "engine": {
+    "id": "archetype",
+    "version": "1.0.0"
+  },
+  "components": {
+    "cover": {
+      "id": "folio-cover",
+      "propsSchemaVersion": "1.0.0",
+      "version": "2.0.0"
+    },
+    "poster": {
+      "id": "folio-poster",
+      "propsSchemaVersion": "1.0.0",
+      "version": "2.0.0"
+    },
+    "question": {
+      "id": "folio-question",
+      "propsSchemaVersion": "1.0.0",
+      "version": "2.0.0"
+    },
+    "report": {
+      "id": "folio-report",
+      "propsSchemaVersion": "1.0.0",
+      "version": "2.0.0"
+    },
+    "result": {
+      "id": "cabinet-result",
+      "propsSchemaVersion": "1.0.0",
+      "version": "2.0.0"
+    },
+    "resume": {
+      "id": "folio-resume",
+      "propsSchemaVersion": "1.0.0",
+      "version": "2.0.0"
+    }
+  },
+  "resourceEdges": [
+    {
+      "resourceId": "room-1-cover",
+      "version": "1.0.0",
+      "purpose": "cover",
+      "sha256": "ed47a6c4d46a8d8ddf5d9fb232ee9119ffdb4d50cd3f215546a55e841fe42ba7",
+      "bytes": 321752,
+      "mediaType": "image/webp",
+      "width": 1672,
+      "height": 941,
+      "reviewFile": "room-1.webp"
+    },
+    {
+      "resourceId": "room-1",
+      "version": "1.0.0",
+      "purpose": "decoration",
+      "sha256": "ed47a6c4d46a8d8ddf5d9fb232ee9119ffdb4d50cd3f215546a55e841fe42ba7",
+      "bytes": 321752,
+      "mediaType": "image/webp",
+      "width": 1672,
+      "height": 941,
+      "reviewFile": "room-1.webp"
+    },
+    {
+      "resourceId": "room-2",
+      "version": "1.0.0",
+      "purpose": "decoration",
+      "sha256": "b798235e52dfc7ec1e34b426a6157022943ca7552baf662e17f25daffbaf17b5",
+      "bytes": 268732,
+      "mediaType": "image/webp",
+      "width": 1672,
+      "height": 941,
+      "reviewFile": "room-2.webp"
+    },
+    {
+      "resourceId": "room-3",
+      "version": "1.0.0",
+      "purpose": "decoration",
+      "sha256": "d8e8d555e3b0990b43b4a069dea9223b1aa43d507e5140f5da087cad11d043cc",
+      "bytes": 303492,
+      "mediaType": "image/webp",
+      "width": 1672,
+      "height": 941,
+      "reviewFile": "room-3.webp"
+    },
+    {
+      "resourceId": "room-4",
+      "version": "1.0.0",
+      "purpose": "decoration",
+      "sha256": "8773d02d9a94f5e93946b001f326edd7896c159d06b63f04ed2533dae7820bd2",
+      "bytes": 225358,
+      "mediaType": "image/webp",
+      "width": 1672,
+      "height": 941,
+      "reviewFile": "room-4.webp"
+    },
+    {
+      "resourceId": "li-bai",
+      "version": "1.0.0",
+      "purpose": "portrait",
+      "sha256": "3c5696a0aefa78dcec1a309922c7991a201cc347abe9e0295ab4787ce8f437d8",
+      "bytes": 526480,
+      "mediaType": "image/webp",
+      "width": 1024,
+      "height": 1536,
+      "reviewFile": "li-bai.webp"
+    },
+    {
+      "resourceId": "su-shi",
+      "version": "1.0.0",
+      "purpose": "portrait",
+      "sha256": "d29f1c383b088ff50efc28f8a27185f064e2a1c7940bd811cd3966f3716335e6",
+      "bytes": 2948302,
+      "mediaType": "image/png",
+      "width": 1024,
+      "height": 1536,
+      "reviewFile": "su-shi.png"
+    },
+    {
+      "resourceId": "tao-yuan-ming",
+      "version": "1.0.0",
+      "purpose": "portrait",
+      "sha256": "182752e91a7a28b980e474f3ae5afd70be6f8ee5ba9ed85cd5836cb73ad811d7",
+      "bytes": 3034825,
+      "mediaType": "image/png",
+      "width": 1024,
+      "height": 1536,
+      "reviewFile": "tao-yuan-ming.png"
+    },
+    {
+      "resourceId": "bai-ju-yi",
+      "version": "1.0.0",
+      "purpose": "portrait",
+      "sha256": "6c4dc60921ce961705990f70f70a99d52d4b3f71d3137ddacd8d520d4e56d2c9",
+      "bytes": 2862625,
+      "mediaType": "image/png",
+      "width": 1024,
+      "height": 1536,
+      "reviewFile": "bai-ju-yi.png"
+    }
+  ],
+  "presentationEdges": {
+    "cover": {
+      "id": "room-1-cover",
+      "productId": "historical-cabinet",
+      "version": "1.0.0"
+    },
+    "sections": [
+      {
+        "sectionId": "room-1",
+        "resourceRef": {
+          "id": "room-1",
+          "productId": "historical-cabinet",
+          "version": "1.0.0"
+        }
+      },
+      {
+        "sectionId": "room-2",
+        "resourceRef": {
+          "id": "room-2",
+          "productId": "historical-cabinet",
+          "version": "1.0.0"
+        }
+      },
+      {
+        "sectionId": "room-3",
+        "resourceRef": {
+          "id": "room-3",
+          "productId": "historical-cabinet",
+          "version": "1.0.0"
+        }
+      },
+      {
+        "sectionId": "room-4",
+        "resourceRef": {
+          "id": "room-4",
+          "productId": "historical-cabinet",
+          "version": "1.0.0"
+        }
+      }
+    ],
+    "results": [
+      {
+        "resultRef": {
+          "id": "li-bai",
+          "productId": "historical-cabinet",
+          "version": "1.0.0"
+        },
+        "reportTemplateRef": {
+          "id": "report-li-bai",
+          "productId": "historical-cabinet",
+          "version": "1.0.0"
+        },
+        "portraitRef": {
+          "id": "li-bai",
+          "productId": "historical-cabinet",
+          "version": "1.0.0"
+        }
+      },
+      {
+        "resultRef": {
+          "id": "su-shi",
+          "productId": "historical-cabinet",
+          "version": "1.0.0"
+        },
+        "reportTemplateRef": {
+          "id": "report-su-shi",
+          "productId": "historical-cabinet",
+          "version": "1.0.0"
+        },
+        "portraitRef": {
+          "id": "su-shi",
+          "productId": "historical-cabinet",
+          "version": "1.0.0"
+        }
+      },
+      {
+        "resultRef": {
+          "id": "tao-yuan-ming",
+          "productId": "historical-cabinet",
+          "version": "1.0.0"
+        },
+        "reportTemplateRef": {
+          "id": "report-tao-yuan-ming",
+          "productId": "historical-cabinet",
+          "version": "1.0.0"
+        },
+        "portraitRef": {
+          "id": "tao-yuan-ming",
+          "productId": "historical-cabinet",
+          "version": "1.0.0"
+        }
+      },
+      {
+        "resultRef": {
+          "id": "bai-ju-yi",
+          "productId": "historical-cabinet",
+          "version": "1.0.0"
+        },
+        "reportTemplateRef": {
+          "id": "report-bai-ju-yi",
+          "productId": "historical-cabinet",
+          "version": "1.0.0"
+        },
+        "portraitRef": {
+          "id": "bai-ju-yi",
+          "productId": "historical-cabinet",
+          "version": "1.0.0"
+        }
+      }
+    ]
+  }
+}

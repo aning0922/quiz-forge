@@ -1,0 +1,27 @@
+.details {
+  margin-block: 16px;
+  padding: 12px;
+  border: 1px solid #ced7e0;
+  border-radius: 8px;
+}
+.details summary {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.code {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 16px;
+  line-height: 1.6;
+  margin-top: 12px;
+}
+.receipt {
+  padding: 16px;
+  margin-block: 16px;
+  border: 1px solid #7e9aae;
+  border-radius: 10px;
+  background: #f4f8fa;
+}

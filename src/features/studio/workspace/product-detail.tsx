@@ -16,6 +16,11 @@ import { ProductFields, type ProductFormFields } from "./product-fields";
 import { ProductCard } from "./product-list";
 import { WorkspaceNav, ReadOnlyNotice } from "./primitives";
 import { ReconcilePanel } from "./reconcile-panel";
+import {
+  InternalAuthorityProvider,
+  useInternalAuthority,
+} from "../internal-versions/authority";
+import { StableInternalWorkspace } from "../internal-versions/pages";
 import styles from "./workspace.module.css";
 
 function formFields(product: ProductDto): ProductFormFields {
@@ -34,6 +39,7 @@ function ProductEditor({
   initial: ProductDto;
   session: StudioSessionDto;
 }) {
+  const authority = useInternalAuthority();
   const [product, setProduct] = useState(initial);
   const [fields, setFields] = useState(() => formFields(initial));
   const [validation, setValidation] = useState("");
@@ -41,8 +47,11 @@ function ProductEditor({
   const [latest, setLatest] = useState<ProductDto>();
   const [reading, setReading] = useState(false);
   const [readError, setReadError] = useState("");
-  const mutation = useWorkspaceMutation<ProductMutation>(session.csrfToken);
-  const canWrite = session.operator.role === "operator";
+  const mutation = useWorkspaceMutation<ProductMutation>(
+    session.csrfToken,
+    (error) => authority.observe(error),
+  );
+  const canWrite = session.operator.role === "operator" && !authority.isRevoked;
   const endpoint = `/api/studio/products/${encodeURIComponent(product.id)}`;
 
   async function save() {
@@ -104,6 +113,7 @@ function ProductEditor({
     try {
       setLatest(await studioFetch<ProductDto>(endpoint, {}));
     } catch (error) {
+      authority.observe(error);
       setReadError(studioMessage(error));
     } finally {
       setReading(false);
@@ -274,16 +284,18 @@ function ProductEditor({
   );
 }
 
-export function ProductDetail({
+function ProductDetailContent({
   productId,
   session,
 }: {
   productId: string;
   session: StudioSessionDto;
 }) {
-  const read = useWorkspaceRead<ProductDto>(
-    `/api/studio/products/${encodeURIComponent(productId)}`,
-  );
+  const authority = useInternalAuthority(),
+    read = useWorkspaceRead<ProductDto>(
+      `/api/studio/products/${encodeURIComponent(productId)}`,
+      (error) => authority.observe(error),
+    );
   return (
     <div className={styles.workspace}>
       <WorkspaceNav />
@@ -312,6 +324,24 @@ export function ProductDetail({
           session={session}
         />
       )}
+      <StableInternalWorkspace
+        key={productId}
+        productId={productId}
+        session={session}
+      />
     </div>
+  );
+}
+
+export function ProductDetail(
+  props: Parameters<typeof ProductDetailContent>[0],
+) {
+  return (
+    <InternalAuthorityProvider
+      key={props.productId}
+      productId={props.productId}
+    >
+      <ProductDetailContent {...props} />
+    </InternalAuthorityProvider>
   );
 }

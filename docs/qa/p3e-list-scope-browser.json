@@ -1,0 +1,79 @@
+{
+  "schemaVersion": "quizforge-p3e-list-scope-browser.v1",
+  "date": "2026-10-18",
+  "reviewedCommit": "e51436d071b858de497a6733748bb546dbbe3f93",
+  "rootCommit": "eb7595af569e405b1019c0c876d82f05c246b051",
+  "browser": "156.0.8078.4",
+  "qualification": "actual-react-component-interaction-with-controlled-synthetic-http-not-production-next-or-pg",
+  "results": [
+    {
+      "role": "operator",
+      "order": "draft-first",
+      "scenario": "resolve-clear",
+      "originalPendingSurvivedLateGets": true,
+      "actualResolveRequests": ["review", "seal"],
+      "passed": true
+    },
+    {
+      "role": "operator",
+      "order": "draft-first",
+      "scenario": "revoke-before-late-proof",
+      "originalPendingSurvivedLateGets": true,
+      "actualResolveRequests": ["seal"],
+      "passed": true
+    },
+    {
+      "role": "operator",
+      "order": "list-first",
+      "scenario": "resolve-clear",
+      "originalPendingSurvivedLateGets": true,
+      "actualResolveRequests": ["review", "seal"],
+      "passed": true
+    },
+    {
+      "role": "operator",
+      "order": "list-first",
+      "scenario": "revoke-before-late-proof",
+      "originalPendingSurvivedLateGets": true,
+      "actualResolveRequests": ["seal"],
+      "passed": true
+    },
+    {
+      "role": "read-only",
+      "order": "draft-first",
+      "scenario": "resolve-clear",
+      "originalPendingSurvivedLateGets": true,
+      "actualResolveRequests": ["review", "seal"],
+      "passed": true
+    },
+    {
+      "role": "read-only",
+      "order": "draft-first",
+      "scenario": "revoke-before-late-proof",
+      "originalPendingSurvivedLateGets": true,
+      "actualResolveRequests": ["seal"],
+      "passed": true
+    },
+    {
+      "role": "read-only",
+      "order": "list-first",
+      "scenario": "resolve-clear",
+      "originalPendingSurvivedLateGets": true,
+      "actualResolveRequests": ["review", "seal"],
+      "passed": true
+    },
+    {
+      "role": "read-only",
+      "order": "list-first",
+      "scenario": "revoke-before-late-proof",
+      "originalPendingSurvivedLateGets": true,
+      "actualResolveRequests": ["seal"],
+      "passed": true
+    }
+  ],
+  "priorCounterexample": "Full valid draft DTO rejected by strict three-field route helper; delayed successful draft GET unmounted the page for operator and read-only.",
+  "limitations": [
+    "No database or 3100 connection",
+    "Does not replace final production E2E or visual review"
+  ]
+}

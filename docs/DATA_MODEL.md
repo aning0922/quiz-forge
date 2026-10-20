@@ -1,5 +1,7 @@
 # 核心数据模型（已实现基础与B2-2B冻结合同）
 
+2026-10-18 P3-E 技术出口：当前已实现迁移至 0017。不可变 draft_review/product_version、精确来源 FK、文本摘要、100 版本槽位、受限权限和实际审核/封存服务已完成；469 fresh PG、原 0016 现场无损升级、生产浏览器及独立审查均有证据。详见 [P3E验收](P3E_ACCEPTANCE.md)、[合同](INTERNAL_VERSION_P3E.md)、[独审](P3E_REVIEW.md)。真实首款已经内测批准落账并封存，但 AccessKey、消费者 session/grant/最终报告仍未实现。下方检查点与拟议实体属于此前时期，不是当前消费者业务表。
+
 ## 2026-10-18 数据模型检查点
 
 当前受管分支已完成至P3-D，数据库迁移为0016。已落地运营身份/会话/审计、Product目录、原包接收、验证与资源归档，以及product_draft、draft_revision、draft_application三表的首稿闭环；具体证据以[P3C验收](P3C_ACCEPTANCE.md)及各阶段合同为准。下方B2记录保留历史，拟议实体不代表新增业务表已经存在。

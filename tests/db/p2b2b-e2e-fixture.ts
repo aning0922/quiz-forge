@@ -1,3 +1,4 @@
+import { assertNoRetainedInternalReferences } from "@/features/product/internal-versions/retention";
 import { constants } from "node:fs";
 import { open, lstat, opendir, unlink, rmdir } from "node:fs/promises";
 import path from "node:path";
@@ -649,6 +650,18 @@ async function cleanup(
     )
       throw new Error();
     await requireLiveDisabled(op);
+    await assertNoRetainedInternalReferences(lock, {
+      revisions: [],
+      imports: value.imports.map((i) => ({
+        productId: value.productId,
+        id: i.importId,
+      })),
+      validations: validations.map((v) => ({
+        productId: v.product_id,
+        id: v.id,
+      })),
+      blobSha256: [...blobHashes].filter((h) => !shared.has(h)),
+    });
     // Root invokes this only after the managed server has exited, under exclusive synthetic maintenance.
     for (const f of remove)
       await op.fileTask(() => removeOwned(f.file, f.inode));

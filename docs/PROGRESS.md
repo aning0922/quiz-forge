@@ -1,5 +1,29 @@
 # 阶段进度
 
+## 2026-10-18 P3-E 技术出口完成，接续消费者闭环
+
+生产 eb7595a、测试 f924f23 已完成精确基线审核与不可变内测版本：1710 单元、完整 fresh 469 PG、46 driver、另两远端 fresh 库 14 服务/3 媒体 UNKNOWN、format/lint/typecheck/build 均通过。最终构建 80 traces/17204 路径/0 私有违规；macOS main 66×3 封存完成且实际操作停止/control 空。准确 f924f23 的普通 CI 39128057215 与媒体 CI 39128057251 均 completed/success。
+
+第四轮完整生产 E2E 241 通过/10 既有 skip、六新增全部通过，约 6.0 分钟；真实服务/worker 退出后五组精确清理成功，f746 测试库正式停止。20 状态×四宽 80 原图与 test-results/manifest 一致；A/B 各看完 80 图，Astra 实看 20 状态代表图并核全部文件及出口，无剩余 P1/P2。保留三类非阻断后台排版 P3（控件间距、错误条留白、窄屏 select 尾部裁切），详见 [验收](P3E_ACCEPTANCE.md)、[独审](P3E_REVIEW.md)、[图检](P3E_VISUAL_CHECK.md)。前三轮失败与修复、原库/报告均保留，不以后一轮成功抹去过程事实。
+
+已批准首款的原包准入、审核与封存另有真实现场，见下段；39eb 保持禁导入并停库，原内容/八图未新增公开。当前版本能力仍为内部预览，P4/P5 尚未实现。按既有托管授权接续独立 play 版本、Key、匿名持久答题与唯一确定性报告；内容与视觉沿本次批准，技术验收不再重复请求作者批准。Draft PR #19 继续堆叠于 #18，main 未合并、商品未发布。
+
+## 2026-10-18 首款真实包已在本地完成内测版本封存
+
+已批准的历史人物包在独立purpose=test库经实际生产Next浏览器操作完成：10,887,344B原包接收、native验证与9项资源归档、首稿r1、author-baseline批准落账及slot1固定版本封存。content/asset-set/manifest三hash逐项与冻结批准产物一致；完整snapshot已再次经HTTP读取并核SHA。版本ade95bd0-833f-4696-9f3c-33b0db223bdc，snapshot SHA0fc8843a717d6878f995e402d1ac9deaa73b0ac2a07f67544febf01195cef9fb。来源/版本事实见[安全证据](qa/p3e-first-product-live.json)；没有把合成像素夹具替代真实首款。
+
+自有Next已获真实退出证明，39eb实例禁导入并停止保留，凭证/浏览器状态/私有PNG仅在本地私有目录。批准只作internal-test，publicationApproved=false，现renderer仍为studio-internal-preview；消费者Key/持久会话/最终用户报告及P5仍待P4接入。
+
+当前运行4c29c09的1709单元、format/lint/type、生产build80traces/17204paths/0private通过；本机main66×3封存通过且全部操作停止/control为空。跨组件失权P2由独审24实际浏览器场景关闭；测试夹具来源归属P2由A a705真实负例/共享正例修复并独审关闭。新增E2E的Playwright失败HTML日志凭证P2仍由B修复验证，完整生产E2E和最终四宽双线检查未完成。下面保留本阶段此前检查点。
+
+## 2026-10-18 P3-E 共享合同与首款规范产物
+
+受管分支codex/internal-version-seal从P3-D交付a66c456接续，Draft PR #19堆叠于#18。共享显示合同b055c4b已通过127主控/128独审测试和浏览器打包，B已完成已有预览解耦，主控集成2ca7698；Astra 141项相关测试、56种投影对照及三海报新旧字节一致，无剩余P1/P2。审核/版本机器Schema及有限精确登记方案已通过前置独审，A接0017/事务/资源留存。浏览器canonical依赖P2已独立关闭；实际新DB/后台/端到端尚未完成。
+
+首款最终规范content70647B、asset-set2364B、manifest2121B已完成严格解析、引用、规范往返和四真实评分见证，Astra独立逐字段/来源/三hash复核通过；原始八图仍私有或沿已有仓库文件，未新增上传私有PNG，已在本地构建10887344B、11文件的精确ZIP（SHA40b7660697d52c660897e153c7a9ef02163717c92b90f0680ae6558150f5c0c0），完整本地包验证candidateValid通过；仍未走真实后台/native准入、审核落账或封存。使用依据见[FIRST_PRODUCT_ASSET_PROVENANCE](FIRST_PRODUCT_ASSET_PROVENANCE.md)；具体合同和已完成审查见[INTERNAL_VERSION_P3E](INTERNAL_VERSION_P3E.md)、[P3E_REVIEW](P3E_REVIEW.md)。这仍不代表P4/P5完成或发布获批。
+
+精确实现metadata、server/client resolver和只读build门禁已实现，30专项、lint/typecheck及真实Chromium七海报导出通过；实际永久实现正待独审，见[INTERNAL_IMPLEMENTATIONS](INTERNAL_IMPLEMENTATIONS.md)。A的数据底座与谱系升级已集成1b446c5/b2f726b，审计NULL P2修复1633f55经Astra复核关闭；主控另完成原0016现场无损升级17及旧key复读，自有现场已停。完整1612单元、lint/类型通过；完整451PG首次450通过，唯一失败为旧表清单缺两新表，修正后41项定向全过；46驱动通过。B客户端集成159项通过，生产build/E2E仍待新后台接入；B新操作pending/HTTP及后台页面已接线；新route生产构建80traces/17204paths/0private和1704单元通过。独审发现页面与恢复区不共享失权代次P2，B正在修复；14项服务/留存/容量/并发PG通过，实际fixture/最终浏览器验收继续，P3-E整体工程出口未完成。
+
 ## 2026-10-18 P3-D 技术出口完成，接续精确审核与内测版本
 
 作者已确认首款12题、四报告、八图作为内测基线，见[FIRST_PRODUCT_BASELINE](FIRST_PRODUCT_BASELINE.md)。追加不可变修订P3-D最终运行/测试c1ca647完成技术验收：1560单元、本地完整431PG及49增量、最终远端433PG/14服务/3UNKNOWN、46驱动、235生产E2E及10旧skip、main媒体66×3封存、72trace/15075路径/0私有违规。61图由两开发聊天分别逐张复核，Astra无剩余P1/P2，普通39110069377与Linux媒体39110065866均准确head实际success。详见[P3D_ACCEPTANCE](P3D_ACCEPTANCE.md)、[REVIEW](P3D_REVIEW.md)、[VISUAL_CHECK](P3D_VISUAL_CHECK.md)和[QA](qa/p3d-integration-progress.json)。

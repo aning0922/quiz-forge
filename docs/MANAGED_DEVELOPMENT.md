@@ -1,5 +1,13 @@
 # QuizForge 托管开发
 
+## 2026-10-18 P3-E 技术出口完成，接续 P4
+
+生产 eb7595a / 测试 f924f23 已完成精确基线批准和不可变内测版本：1710 单元、469 fresh PG、46 driver、独立 fresh 服务 14/媒体 UNKNOWN 3、完整生产 E2E 241/10 旧 skip 均通过；最终 main 媒体 66×3 封存、80 traces/17204 路径/0 私有违规。准确 f924f23 的 CI 39128057215 与 39128057251 均 success。A/B 分别检查 80 原图，Astra 核完整证据并实际查看 20 状态代表图，无剩余 P1/P2，保留三类非阻断后台排版 P3。详见 [P3E_ACCEPTANCE](P3E_ACCEPTANCE.md)、[P3E_REVIEW](P3E_REVIEW.md)、[P3E_VISUAL_CHECK](P3E_VISUAL_CHECK.md)。
+
+已批准首款的真实原包已实际经 native 准入、首稿、author-baseline 落账及 slot 1 内测版本封存；三 hash 与批准产物一致。39eb 实例禁导入并停库保留，原图及凭证继续私有。原 0016 谱系真实升级到 0017 保留旧行/回执/blob；失败和升级现场分别保存。最终测试实例 f746 已真实退出/精确清理/停库。PR #19 堆叠于 #18，main 未合并，商品未发布。
+
+继续原两条独立 Sol/high 开发聊天（A 数据 01a13f49-bff9-74b0-8f7c-03cd46b346c1、B 界面 01a13f4a-3ac5-7a72-9ae0-70b24ec85f04）与 Astra/high 独审（01a13f4a-c9f8-7cc3-9558-81f86263cad1），由当前主控集成，不改为会话内子代理。下一步先冻结 P4 消费者机器合同，再接独立 play 版本、Key、匿名恢复、服务器答案 CAS 和唯一确定性报告，最后完成首款 P5 现场。P4 目前仅前置协议准备，未实现表或业务。内容/视觉沿作者已批准基线，常规工程连续推进；实质内容、素材变更或发布仍找作者审核。
+
 ## 2026-10-18 P3-D 技术出口完成，接续精确审核与内测版本
 
 作者已确认首款12题、四报告、八图作为内测基线，见[FIRST_PRODUCT_BASELINE](FIRST_PRODUCT_BASELINE.md)。追加不可变修订P3-D最终运行/测试c1ca647完成技术验收：1560单元、本地完整431PG及49增量、最终远端433PG/14服务/3UNKNOWN、46驱动、235生产E2E及10旧skip、main媒体66×3封存、72trace/15075路径/0私有违规。61图由两开发聊天分别逐张复核，Astra无剩余P1/P2，普通39110069377与Linux媒体39110065866均准确head实际success。详见[P3D_ACCEPTANCE](P3D_ACCEPTANCE.md)、[REVIEW](P3D_REVIEW.md)、[VISUAL_CHECK](P3D_VISUAL_CHECK.md)和[QA](qa/p3d-integration-progress.json)。
@@ -101,7 +109,7 @@ P1包工具、P2数据库与最小认证后台、P3确定性引擎与注册预�
 | F1   | 技术交付完成，Draft PR #6待合并     | head efe29e6，185单测/186 E2E，CI 38153151107 success                                |
 | P1   | 技术验收完成，Draft PR #7           | 从F1提交创建codex/quizpack-toolchain；版本化包合同、确定性构建、受限ZIP/真实资源验证 |
 | P2   | 认证/目录/接收/归档/首稿已验收      | 运行事实见B2各验收；后续审核与版本封存仍待实现                                       |
-| P3   | A/B/C已验收，D实施中                | 评分、完整包准入与固定预览已完成；当前追加不可变修订，之后精确审核与内测版本封存     |
+| P3   | A/B/C/D已验收，E实施中              | 评分、准入、固定预览及追加修订已完成；当前精确审核与内测版本封存                     |
 | P4   | 排队                                | 发布组合、Key、服务端revision、一次完成事务、不可变报告                              |
 | P5   | 内容/视觉内测基线已确认，工程待接通 | 完整首款Key闭环、实机验收和内部端到端运行尚未完成                                    |
 

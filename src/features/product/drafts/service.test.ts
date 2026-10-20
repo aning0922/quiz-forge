@@ -90,9 +90,11 @@ async function setup() {
   };
   const tx = vi
     .fn()
-    .mockResolvedValue([
-      { at: application.createdAt },
-    ]) as unknown as postgres.TransactionSql;
+    .mockImplementation(async (strings: TemplateStringsArray) =>
+      strings.join("").includes("pg_try_advisory_xact_lock_shared")
+        ? [{ locked: true }]
+        : [{ at: application.createdAt }],
+    ) as unknown as postgres.TransactionSql;
   const db = {} as P2aDatabase;
   const credentials = {
     sessionToken: null,
@@ -159,6 +161,7 @@ it("same-key replay precedes archived/source checks and produces no insert or se
   expect(f.rootRead).not.toHaveBeenCalled();
   expect(f.insert).not.toHaveBeenCalled();
   expect(f.audit).not.toHaveBeenCalled();
+  expect(f.tx).not.toHaveBeenCalled();
 });
 it("same-key different fingerprint refuses before source IO or new business writes", async () => {
   const f = await setup();

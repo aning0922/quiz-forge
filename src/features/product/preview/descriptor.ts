@@ -19,11 +19,4 @@ export const PREVIEW_FONT_ASSET = Object.freeze({
   licenseFile: font.licenseFile,
 });
 
-export const PREVIEW_COMPONENT_IDS = Object.freeze({
-  cover: "folio-cover",
-  question: "folio-question",
-  resume: "folio-resume",
-  result: "cabinet-result",
-  report: "folio-report",
-  poster: "folio-poster",
-} as const);
+export { DISPLAY_COMPONENT_IDS_V1 as PREVIEW_COMPONENT_IDS } from "@/lib/assessment-contract/display-limits-v1";
