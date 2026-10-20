@@ -1,0 +1,75 @@
+# P3-C 合同与共享底座审查
+
+日期2026-10-16。基线P3-B交付59a83e01f2a99a834a7349ced713ba5fed55b93c，其普通38789883159与媒体38789883025均实际success；运行实现及技术验收分别见P3B_ACCEPTANCE。新分支codex/fixed-revision-preview，主控接续原两条独立Sol/high与Astra/high聊天。
+
+两线只读预研核实：import read的writeCredentials会要求import:create，临时评分须studio:read加独立来源/CSRF；固定revision读取不能重判当前归档策略资格；合法asset alias保留首来源；私有blob读取需真实共享锁及实际任务/FD生命周期，清理只在自有server真实退出后。界面不能复用旧固定李白/分数/年代或不存在的字段，海报明确完整1–4维容量与缺字失败。
+
+Astra两轮草案意见补齐同revision内requestId/答案快照/导出代次，以及最小DTO不是对授权运营员保密的权限含义。正式合同进一步冻结封套预算、响应正文全程持槽、真实close/进程组退出的私有清理proof。最终独审确认可进入共享底座，无架构阻断；productId UUID笔误按现有受限字符串Schema纠正。
+
+[PREVIEW_P3C](PREVIEW_P3C.md)是冻结设计，不是实现证据。主控接续严格机器DTO/错误/预算、纯registry接口、真实字体/覆盖descriptor及边界测试，之后两线实施。不用占位hash联调，不将旧演示或Schema通过当六状态真实预览。
+
+## 首个共享底座准备
+
+主控交严格入口/揭晓/资源/导出DTO、固定绑定与版本descriptor、96KiB专用只读评分JSON reader、八个有限HTTP错误、同源URL编码及纯projection接口。旧4KiB写reader不改。阶段组件运行Schema原本精确，但继承v2 component(id:string)会使TS字段宽化；新增类型断言实际发现后，preview独立as-const六ID机器表恢复编译时精确state类型，不改旧v2行为。
+
+独立导出DTO保留binding/requestId/answersHash/logicHash/selectedResultRef/reportTemplateRef与ready poster，不能仅把原图和卡名送去导出而丢失结果身份。HTTP错误的requestId是服务端观察ID；成功评分回显客户端关联ID，错误依客户端当前请求闭包/代次处理，不能混用两者。
+
+真实Noto Serif SC子集固定Google Fonts commit8b0a1d0f5983c89bc2b93f1b5fb55f9e252744b5，OFL及源hash核验、固定fonttools4.61.1/brotli1.2.0，1097字符cmap缺失0；218976字节woff2，fontSHA ff31970785d40d8ca32980632e6ce68766e79551d22f6617ef83b1853f63e89f。两次独立目录重建的font/manifest逐字节相同，来源/复现见public/assets/fonts/preview-v1/README.md。没有将cmap验证当作新PNG或视觉验收。
+
+最初共享URL往严格scope传入完整binding被拒，定向测试复现；path factory改为显式选择scope字段，resource query仍严格验证完整绑定和Ref。共享底座独立审查进行中，当前没有A/B服务或UI实现。
+
+## 共享底座整改复审通过
+
+独审实际复现两项P2：继承完整content/v2 Schema导致node:util进入浏览器依赖；仅有常量未执行完整响应封套字节上限。主控改为中立标量与独立有限display-shapes，旧v1/v2不改；响应Schema实际校验完整序列化UTF-8。主控53定向、类型/lint/格式及真实platform=browser打包通过，输出1555082未压缩字节（两个入口，非最终页面负载）。根直接import esbuild首次不可用，不当通过；实际通过使用已固定tsx的esbuild0.28.2依赖，没有增加依赖。
+
+Astra以最新副本独立浏览器打包成功、30定向通过（含额外六组中文/引号/换行转义的入口524288与揭晓262144精确上限/+1）、TypeScript组件类型零诊断。独审在自己工作树重建font/manifest逐字节一致，并核实际cmap1097字符、静态600字重和许可证/文件/字表hash。两项P2关闭，确认可交A/B实施；真实服务、评分投影、六状态/PNG及整体验收仍待完成。
+
+## 已集成服务与投影里程碑
+
+A8416069→4c2f921提供固定revision来源、完整正文/asset-set hash/canonical/schema/引用、真实DB归属与只读授权服务。root62定向及类型通过；Astra9repository、原7PG与加入4补充后的11PG通过，验证read-only成功不写session/audit、成功前真实撤权拒绝、HTTP来源/CSRF/过大正文和有限异常。本批仍明确DI合成投影替身，未当实际评分。
+
+B8326aba→f6ab9ae提供真实score驱动的六状态字段投影与private WeakMap，Astra双引擎逐结果与核心决策/答案hash/逻辑hash/报告引用一致，预揭晓不泄漏结果/规则/画像，完整维度保留、海报超限单独不可用，里程碑通过。Aafededc→97f07d5资源读/共享锁/owner/fixture同时集成；root124定向与类型通过。独审原13PG/owner/FS、M1加入真实两引擎13、资源HTTP加入锁断连/迟到FD/外部引用9均通过，但真实并发同identity启动复现两个owner，登记P2，A正在原子登记修复，未先记关闭。
+
+Ae087b57→fdeccc6将E2E纯fixture合同与server-only/FS服务分开；Ae9adeec→74c572b真实三API路由及HTTP/两引擎witness网络探测已集成，独审进行中。A自有3112实际production Next通过2entry/4完整image bytes+SHA/6score/2engines及HEAD/Range/cache检查，已真实停止和proof清理；这是执行方网络证据，不替代root浏览器。A完整382PG、1478单元及构建68trace/13952路径/0private为执行方证据，root最终全量待UI集成。
+
+准确c3fdd8c普通CI38793283272、4c2f921普通38794366475、97f07d5普通38796115166均实际success。这些head未触发媒体workflow，不能写作media CI通过。P3-C运行树已改变，旧P3-B部署/封存仅作历史证据；最终P3-C必须重新build/bind/native封存和生产E2E。
+
+## UI集成与字体联调
+
+B5c734a→c7d1421交六状态UI/真实PNG与6个生产E2E场景，开发方22文件242定向、格式/lint/类型通过，真实浏览器尚待root。主控集成时确认Playwright ESM直接导入JSON descriptor报import attribute错误；改由固定字体生成器同时输出纯TS descriptor，并用实际公开font/coverage/license/hash和manifest一致性测试防漂移。真实Playwright列表现为238项/17文件，列举不是执行通过。
+
+新UI八个缺字“护歇登稍繁绑航营”另建preview-v1-1/字体1.0.1，保留旧1.0.0；同一授权源及固定工具生成1105字符、220972字节，实际cmap缺字0。新fontSHA7b33efc0771d2b0aef14474f66f280eccc7f39996738e497fdf322973bb19a29，coverageSHA5e4828a70bb752096bdb008bcc9b02467ee32b4734d9217c182fcdcda2ab030a。页面CSS与导出descriptor一并改为新路径，字体失败E2E拦截从旧写死URL改为当前descriptor，避免负例失效。root167项定向通过；字体/runner进一步独审与最终全量待完成。
+
+## 受管E2E编排与整改
+
+新test:e2e由root直接持有Next3100 ChildProcess/进程组及A私有退出proof，Playwright使用明确无webServer的配置，原项目后串studio-preview；不复用未知服务器。新预览fixture完成后，必须等真实Playwright workers退出，再停止Next取得proof，精确清P3C→旧B3→B2。失败/未确认不清理。纯nonce只是运行关联，不能充当退出权威。
+
+独审发现原参数黑名单漏-V及--ui-host/--ui-port，可非测试退出仍被误报passed，登记P2。改为只允许现有project和有界grep/grep-invert，归一为--key=value，在配置读取/启动之前执行；root13定向通过，独审加12非法/多项目探针共25/25通过，P2关闭。成功摘要明确full/filtered。初次类型检查因exactOptionalPropertyTypes不允许webServer:undefined失败，改为复制base后实际删除该属性，未降低类型设置。
+
+owner并发P2由A949d932→2e8de54修复并经原独立实际并发probe关闭；Aece2f0c→8f70bc0的合成未provision测试边界也已独审11FS通过，无新增阻断。root最终实现536e8fe上已有124文件1504单元、fresh43文件395PG、零warning生产build69trace/14116路径/0private；新增纯runner参数13项另记录，不冒称当前完整PG已跑408项。driver、重绑定/native及真实238项E2E继续执行。
+
+## 集成回归发现与测试协调
+
+5489fa4的普通CI38799585918在database的两项目录权限负例失败：CI umask077使mkdir0755实际成为0700。A4e247fa→995bfab显式chmod并断言实际mode，独审实际复现旧失败、修复11FS通过；995bfab普通38800898398和媒体38800898255均实际success。生产检查没有放宽。
+
+首轮root生产E2E实际222通过、10旧skip，preview beforeAll失败、后5项未运行。A真实PG复现定位前序B3已占19次preauth窗口，原bootstrap的第二次认证超过20/min；失败aabda354a84bce012a753444d115a7bb已停库保留。Ae7005a3→f4881db仅CLI prepare在首次写fixture前只读等待真实旧窗口清空，61s原起点预算，去掉未使用readOnly bootstrap登录；生产限额/审计不变，浏览器仍真实认证。root将prepare子进程上限同步90s、finish60s不变；新增7项预算边界与类型/格式通过。完整E2E将使用另一全新实例，原失败不清理或重复使用；独审及整轮结果另记。
+
+第二轮e43c16f完整E2E仍为222通过/10旧skip/1失败/5未运行，原因是beforeAll独立使用默认30s，而非已调整90s的prepare子进程超时；顶层test.setTimeout120s不覆盖该hook。修复在beforeAll内部明确120s，afterAll内部90s承接原finish60s，未改生产代码或认证等待规则。第二次c7f780实例没有生成preview fixture，实际prepare/Next均已退出，实例正常停库保留；第三次使用全新a9d48b实例。
+
+主控真实Playwright小探针保留project默认30s、在beforeAll内部设置120s并实际等待31s，1项通过（31.4s），证明修复作用于准备hook。Astra已核本地Playwright1.64.0实际独立计时槽实现，方案窄审通过；实际hunk另交复核。
+
+第三轮87ebb18实际223通过/10旧skip/1失败/后4项未运行：认证、真实答题/评分/报告及前五状态20张四宽图已执行，海报真实返回超完整容量不可导出，正例期望PNG不成立。A9d48b失败实例已停库保留，未清理或重用；独立UI聊天正在核实际fixture与projection原因。未把前五状态当完整六状态/PNG通过。
+
+第三轮海报原因已由B用实际prepareP3cSource→preparePreviewContent→scorePreview复现：两引擎全部witness的Synthetic low/middle/high为13/16/14码点，两个维度标签14/15，分别超既定12/8；完整DTO错误路径仅displayName与dimensions标签。程序有限拒绝正确，A修P3-C正例夹具而不改运行容量/共享旧fixture/评分。主控和A逐图发现question四宽素材待审标签与章名重叠，B另作运行布局修正；其余16图无明显裁切。
+
+87ebb18的普通CI38804441205与媒体38804441140均实际success，普通远端45文件415PG、1504单元、46driver、独立fresh服务14和UNKNOWN3通过。该CI成功没有替代尚失败的生产浏览器或图检，也不能解释e43 image-build旧失败。
+
+B的b44f623→ac69b76移除题厅说明反压到图片的布局，保留待审标签并改善短词组换行。Astra在独立实际组件/CSS Chromium宿主以320/375/390/430/1000验证15组合无溢出，题图badge与caption均有10px间隔；不是含Studio外壳的生产E2E，最终截图仍待root。A48ab6ab→49da513缩短仅P3-C合成正例显示label；root直接实际source两引擎全部witness的2项测试通过。
+
+运行ac69b76重新执行格式/lint/类型、124文件1504单元及生产build，全部通过，构建仍69trace/14116路径/零private且零warning。首次media bind因新Next生成cache内44,919,494及17,596,618字节文件超过16MiB拒绝；未放宽限制。只把19个生成cache文件90,106,743字节移至私有保留目录，1666个非cache条目的身份、字节和元数据逐项相同；随后绑定成功，新deployment3bb131792e84fa0554d8613b63c20fee3de2ef8e58f3a150fc1c5412d6b32e2f。新native封存及下一轮E2E结果另记。
+
+最终ac69b76构建完成新的main66/66连续三轮，全部completed/stopped、残留0、controlEmpty，实际sealed runtimebaa59b03cea1616b1d45bd489772c4584f75fedf437e6bb55bced0ca72b50c95。第四轮fresh d9实例，49da513实际完整228E2E通过/10旧skip，新六项全部通过；owned full摘要确认serverExit proven/workersStopped true，P3-C→B3→B2三夹具cleanup passed，native control empty，随后d9正常stopped。
+
+最终24图与真实1080×1920下载PNG来自该成功轮。PNG为body型Playwright附件，位于HTML reporter data/13011c53a7ff6d5de9e9ac7bb2dc8bb62e7edfc6.png；首次复制脚本在找test-results附件时中止，已向两图检聊天更正目录尚未生成，随后从reporter实际附件定位、核尺寸、复制全部25图并生成manifest。没有另造图片代替本轮导出。当前代码head49da513普通38805921796与媒体38805921596均success（1504单元/417PG/46driver/14服务/3UNKNOWN），图检与最终出口正在独审。
+
+A/B分别逐张25图通过，全部尺寸/字节/hash与manifest及原始截图一致。Astra独立核原始封存、退出/清理日志、最终CI日志、实际部署verifyMediaDeployment成功，并核PNG原附件逐字节一致、实际PNG及7张关键截图。最终结论：P3-C固定修订内部预览技术出口通过，无剩余P1/P2。既有失败保留；真实历史内容/素材/发布与P4/P5未完成，不由本结论授予。归档文档head的CI另核，不覆盖49da513准确代码证据。

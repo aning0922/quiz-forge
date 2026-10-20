@@ -1,0 +1,135 @@
+.preview {
+  width: min(1100px, calc(100vw - 40px));
+  position: relative;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 16px;
+  line-height: 1.7;
+  min-width: 0;
+}
+.navigation {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.navigation a,
+.exportControls a {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  color: #234d73;
+  text-decoration: underline;
+  padding: 8px 4px;
+}
+.binding {
+  padding: 18px 20px;
+  margin-bottom: 24px;
+  background: #e7ede9;
+  border: 1px solid #a9bbae;
+  border-radius: 6px;
+  overflow-wrap: anywhere;
+}
+.binding p {
+  margin: 6px 0 0;
+}
+.failure,
+.loading {
+  padding: 20px;
+  border: 1px solid #bca78b;
+  background: #fff5e7;
+  overflow-wrap: anywhere;
+  margin-bottom: 20px;
+}
+.failure button,
+.exportControls button,
+.mediaStatus button {
+  min-height: 48px;
+  border: 1px solid #36594d;
+  background: #36594d;
+  color: #fff9ec;
+  padding: 10px 16px;
+  font: inherit;
+  cursor: pointer;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+.failure h1 {
+  font-size: 26px;
+  line-height: 1.5;
+}
+.failure button:focus-visible,
+.exportControls button:focus-visible,
+.mediaStatus button:focus-visible,
+.exportControls a:focus-visible,
+.navigation a:focus-visible {
+  outline: 3px solid #b54f39;
+  outline-offset: 3px;
+}
+.exportControls {
+  margin: 24px 0;
+  display: grid;
+  gap: 16px;
+}
+.exportControls button:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
+.png {
+  max-width: 100%;
+  width: 360px;
+  height: auto;
+  border: 1px solid #887044;
+}
+.media {
+  height: 100%;
+  width: 100%;
+  position: relative;
+  min-height: 140px;
+  overflow: hidden;
+}
+.media img {
+  display: block;
+}
+.assetBadge {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  max-width: calc(100% - 20px);
+  font-size: 16px;
+  line-height: 1.5;
+  padding: 4px 8px;
+  background: #142f2eea;
+  color: #fff1c7;
+  border: 1px solid #b8a073;
+  overflow-wrap: anywhere;
+}
+.mediaStatus {
+  padding: 20px;
+  min-height: 140px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  color: #f3ebdd;
+  background: #142f2e;
+  font-size: 16px;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+.mediaStatus button {
+  color: #142f2e;
+  background: #dfc28a;
+  border-color: #dfc28a;
+}
+.mediaStatus p {
+  margin: 0 0 12px;
+}
+@media (max-width: 375px) {
+  .preview {
+    width: 100%;
+  }
+  .binding {
+    padding: 16px;
+  }
+}

@@ -1,5 +1,15 @@
 # 阶段进度
 
+## 2026-10-16 P3-C 技术出口完成，首款内容与素材待作者审核
+
+运行ac69b76、测试49da513完成固定revision/完整资源绑定、真实评分、只读运营预览、六状态和1080×1920 PNG。1504单元、395本地完整PG及增量、最终远端417PG/46driver/14服务/3UNKNOWN、228生产E2E/10旧skip、零warning build、新main媒体66×3、25图双线逐张复核均通过。准确代码head普通38805921796与媒体38805921596实际success，Astra最终无剩余P1/P2。详见[P3C_ACCEPTANCE](P3C_ACCEPTANCE.md)、[REVIEW](P3C_REVIEW.md)、[VISUAL_CHECK](P3C_VISUAL_CHECK.md)和[QA](qa/p3c-integration.json)。
+
+最终浏览器与workers已真实退出，P3-C→B3→B2精确清理成功，自有d9数据库停止；旧失败/未知现场保留。PR #17堆叠Draft、main未合并。主控、两条独立Sol/high实现聊天与Astra/high独审的方式保持，已交付聊天等待下一项协调，不恢复旧D1或改用当前会话子代理。
+
+当前按作者保留的人工闸门提交具体内容与素材审阅：12题/48选项权重、四份完整基线报告、李白/苏轼/陶渊明/白居易和四厅；中性封面复用第一厅，9资源槽位/8张独立图片。新增三幅原图及提示词/来源保存在本会话本地审阅材料中，未进公共Git或正式QuizPack，状态仍pending。作者确认内容和视觉不自动授予商业权利、main合并、生产迁移、部署或发布。
+
+这仍不是历史人物P5端到端内测完成：同Product追加修订、审核/版本封存、AccessKey/消费者会话与恢复、一次完成事务、不可变用户报告和正式历史查看尚待后续。常规工程授权继续有效；在具体内容/素材审核反馈后，主控按既定路线继续协调，发布仍另审。以下为阶段历史。
+
 ## 2026-10-16 P3-B 技术验收完成
 
 最终运行c419aa6、测试修订afaa43e：完整包content.v1/v2×synthetic/authored四组合、可信候选/私有归档与首稿revision1已完成；旧历史只读、原成功key与跨策略canonical归属保留。1363单元、355本地PG及增量、356最终远端PG、46driver、fresh服务14/UNKNOWN3、222生产E2E/10旧skip、零warning build、main与fixture各66×3封存、32张四宽图均通过。准确head普通CI38788800066及媒体38788800035实际success；Astra确认无剩余P1/P2。详见[P3B_ACCEPTANCE](P3B_ACCEPTANCE.md)、[REVIEW](P3B_REVIEW.md)、[VISUAL_CHECK](P3B_VISUAL_CHECK.md)。
