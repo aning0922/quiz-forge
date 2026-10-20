@@ -175,3 +175,13 @@ abf6897准确普通CI39392661243的checks/database实际success。官方media:bu
 root完整1912单元与新build103/23852/0通过；新构建无observer的原实际页面复验四接口200、lost=false、三个select，browser与ownedNext真实退出，ba3d停止保留。24个生成cache文件117574834B被原样移存，2294非cache条目字节/mode/inode不变、cache目录保留。媒体源闭包0f5a9c6d未变，整应用部署身份已变为632d2f23ae986d660250e9c81869f7755099a1d7b4cc3b84fde1bb2ae92e2051，运行包f73ca62c2f2ea732882bd0c3e1a1d2bdf8260aa24c4b486c96af569a2cc4ac54；实际main66×3全过/操作停止/control0。25bf准确普通CI39405139350 success。旧6ce部署/66eb运行证据独立保留，未拿旧验收冒充新部署。
 
 第八轮25bf完整251通过/1失败/10旧skip/7未运行，7.3分钟；实际play创建及前两枚Key/私密下载通过，第3枚lost-response route在consumerRouteFetch返回后核key失败。只读新表计数1/2/0/0/0，失败库2c0b正式停止，原图/两私密链接/业务图保留。有限扫描397文件、22ZIP成员，所覆盖凭证/CSRF模式均0。root用独立诊断库对空绑定POST作原生无业务写实验：Chrome被route拦截的allHeaders中Origin/CSRF/Cookie存在而sec-fetch-site缺失，原helper403 SOURCE_REJECTED；不拦截浏览器直发400 INVALID_REQUEST；仅测试补缺失metadata后也400。证明是拦截转发缺元数据，不能放宽生产guard。测试桥接修复及全八场景仍待完成；P4/P5未技术验收。
+
+## 第九轮及访问入口1.0.1增量契约
+
+第八轮拦截转发缺失Fetch Metadata由d4b1206/1d584f1修正：仅固定同源、真实可信页面/主frame、非导航非重定向且Origin正确的缺失头补same-origin；已有错误metadata/Host/Origin、opaque上下文保持拒绝，不修改生产来源校验。Astra原生counterexample及负例复验通过；root实际Next新helper与浏览器直发均400 INVALID_REQUEST，原403消失，无业务写入，诊断实例和自有进程真实关闭。1d584准确CI39409018116 success。
+
+第九轮1d584生产E2E实际252通过/1失败/10旧skip/6未运行。首operator-play-key在4秒内通过，1play/3Key及三私密下载成立；consumer-exchange-entry在5.1秒失败，session/report/grant仍0。06bef正式停止、失败现场保留；有限扫描401文件117427529B、22ZIP成员11847225B、所覆盖credential/CSRF均0。
+
+原helper先载空/access再location.replace同path#key，属于同文档导航。主控真实Next/冻结Access重现空捕获后加入Key，fragment不擦除/无Verify；完整文档对照成功，零exchange/网络URL泄漏、真实关闭。Astra另独立真实组件确认A ready→B→Verify会提交旧A且B残留，构成产品P2。08dfc6b冻结的增量契约获独审可执行，但P2尚未关闭：新增1.0.1 Access和显式全局gateway，保留旧193b descriptor/closure/play/report。认证后的实现始终按原play完整tuple解析，新旧不能混配。无需0018迁移，不增加内容/素材或发布批准。
+
+50e2f6e→root ea5f853将私密文件helper改为先about:blank再evaluate注入已验证绝对私密链接，98a88ea→root c9420df等待精确目标question输入启用及完成采用终态；两条独审继续。root固定3100真实原Access+实际helper合成四入口状态均通过且真实close，严格限定为标准完整导航证明；未冒称旧Access已支持同文档换Key。A准备两枚旧193b真实服务合成记录及自然3600秒过期兼容证明，B实现新版生命周期，root追加登记与实际静态绑定gate，Astra独审保持。P4/P5未完成，首款39eb仍停止。
