@@ -1,5 +1,13 @@
 # 阶段进度
 
+## 2026-10-21 R1 本地技术验收完成
+
+“运行环境与备份恢复”已完成本地技术验收，保留 [Draft PR #22](https://github.com/aning0922/quiz-forge/pull/22) 供作者验收。正式 CLI 已完成真实非空备份、外置 SHA 校验、两个新根隔离恢复及最终业务演练：HTTP 写入前 23 表/18 迁移/68 行与 8 个文件完整相等；旧报告/图片不变，pending 续答完成、unused 完成、运营新发 Key、实际 1080×1920 PNG 均通过。源以完整协议再次备份后全部数据库/资源证据不变；所有自有测试 PG、浏览器/HTTP、SQL/FD 均关闭并保留现场。
+
+主控 1981 单元、57 恢复工具、502 普通 PG、46 driver、fresh 14/4/3/1、生产构建 103 traces/23855 paths/0 私有违规、main 媒体 66×3、完整生产 E2E 259 passed/10 既有 skip 全部通过。A 的 11 项恢复数据定向检查和 Astra 分组独立反例、五图/PNG/最终完整性复核闭合，无未关闭本地阻断。此前失败与 test-only 下载/CSRF 修复如实保留，见 [R1 验收](R1_ACCEPTANCE.md)、[机器摘要](qa/r1-acceptance.json) 和 [运行手册](RUNTIME_OPERATIONS.md)。准确 6fec9d0 的双 CI 已成功；最终文档交付提交的准确 CI 单独核验并记在 PR，不以中途成功或取消代替。
+
+原 managed-resume 仍为 clean 的 5686ff0，原 39eb 数据库/素材/用户记录保留。独占 3100 的测试结束后，主控用原准确构建恢复原本机入口，/access 实际 200；未读取作者答案/报告、重建原树、迁移或新发 Key。归档 main/tag 未变。当前停在 R1 作者验收点，保留原独立开发/独立审查聊天及工作树；不自动合并 main 或推进第 2 项。
+
 ## 2026-10-21 R1 运行环境与备份恢复启动
 
 作者明确授权第 1 项“运行环境与备份恢复”，要求原独立开发/独立审查聊天托管推进并保留当前内测环境。主控从已归档 main `c6fba4bae3e5fa7e6d765f0d06c9f875d0d78fdc` 建立 `codex/runtime-backup-recovery` / [Draft PR #22](https://github.com/aning0922/quiz-forge/pull/22)，A/B 原独立聊天负责数据与工具，Astra 原聊天使用新的独立审查工作树；旧分支与审查现场保留。

@@ -1,6 +1,6 @@
 # R1 运行环境与备份恢复
 
-2026-10-21。状态：共享合同已冻结，独立开发实施中，尚未完成恢复验收。
+2026-10-21。状态：本地技术验收完成，实际实现、非空恢复和独立审查见 [R1_ACCEPTANCE.md](R1_ACCEPTANCE.md)；最终交付提交的准确 CI 记录在 Draft PR #22。
 
 ## 范围与基线
 
@@ -81,7 +81,7 @@ Astra 已对准确 `083ad8183de90920d59345223f559ccea9e83689` 独立运行 20 �
 
 快照回调只在 lease 有效期间复制与验证有限清单，`dumpTo` 使用已拥有的新私有文件描述符；A 只有在 exporter、全部锁和已发起 IO/子进程真实收尾后返回。B 在此之后完成所有私有文件核验与关闭再封存。恢复只接受 B 验证器实际签发且仍有效的 capability，不能通过 JSON 或类型断言伪造；A 通过 capability 取得 dump 描述符和有限资源安装能力。目标根固定为执行命令的受管仓库根，不接受任意覆盖路径。
 
-首版 CLI 计划提供 `runtime:recovery doctor|backup|verify|restore`。`doctor` 只检查环境/代码，不读取用户数据；`backup` 只接显式源实例 ID；`verify` 与 `restore` 接收私有产物路径和独立保存的 manifest SHA-256，`restore` 另接明确的目标数据库端口与 loopback origin。未通过完整验证不得创建目标数据库；不得从备份载入源运行配置或执行调用者任意 SQL。完整脚本和安全输出以最终实现与验收为准。
+首版 CLI 提供 `runtime:recovery doctor|backup|verify|restore`。`doctor` 只检查环境/代码，不读取用户数据；`backup` 只接显式源实例 ID；`verify` 与 `restore` 接收私有产物路径和独立保存的 manifest SHA-256，`restore` 另接明确的目标数据库端口与 loopback origin。未通过完整验证不得创建目标数据库；不得从备份载入源运行配置或执行调用者任意 SQL。完整脚本和安全输出以最终实现与验收为准。
 
 ### 精确比较与能力认证
 
@@ -108,8 +108,8 @@ A 对完整 catalog 的取证与 Astra 独立比较确认：300 个列、54 条�
 | `draft_revision_content_schema_version_check` | `0015_supported_pack_admission.sql` 对同名约束的原始定义            |
 | `draft_revision_content_kind_check`           | `0015_supported_pack_admission.sql` 对同名约束的原始定义            |
 
-原完整 catalog SHA-256 为 `906ca3748d7991b3a2095cb4a603465c5abb776e2df0213f2ee84ff7b2f98ab6`，准确 PG 18.4 dump/restore 变体为 `a6453c24d23b26941fd461e8f04392575424cf7f7ea5463499f0696cf7186d99`。schema-only 证据文件 SHA-256 为 `add9f0dc60df697fd66632e5e4a44c2dd5e09ad44fed13eaa3d4aa6f86a71728`。这些是 schema 取证，不包含业务行或凭据；当前没有独立的完整 pg_depend 快照，不声称已核全部依赖。
+原完整 catalog SHA-256 为 `906ca3748d7991b3a2095cb4a603465c5abb776e2df0213f2ee84ff7b2f98ab6`，准确 PG 18.4 dump/restore 变体为 `a6453c24d23b26941fd461e8f04392575424cf7f7ea5463499f0696cf7186d99`。schema-only 证据文件 SHA-256 为 `add9f0dc60df697fd66632e5e4a44c2dd5e09ad44fed13eaa3d4aa6f86a71728`。这些是 schema 取证，不包含业务行或凭据；已核六项 CHECK 的属性与列依赖，依赖证据 SHA-256 为 `9f8c5ca7b1c9374eaba76579fd5bec25d7118bc6c0d07df7eb0ee3438cd22e94`，未声称逐项审查全库 pg_depend。
 
-Astra 已接受以下受限方案，实际实现与成功/拒绝/回滚试验仍待验收：仅在本工具新建、尚未开放 HTTP 的目标上，在同一事务中先核完整 catalog 精确匹配上述已知变体，再以仓库固定原表达式 DROP RESTRICT/普通 ADD CHECK 重建六项，并验证完整原 hash 和原有全部 guard。普通 ADD CHECK 必须检查已恢复行，禁止 NOT VALID、CASCADE、IF EXISTS、禁触发器或宽松比较。若已完全等于原 hash，则无需规范化；任何其他 catalog、ACL 或约束变化均在首条修复 DDL 前拒绝。事务失败回滚，目标停止保留失败状态。
+Astra 已接受以下受限方案，实现与真实成功/拒绝/回滚试验现已分别通过开发及独立复验，详见验收记录：仅在本工具新建、尚未开放 HTTP 的目标上，在同一事务中先核完整 catalog 精确匹配上述已知变体，再以仓库固定原表达式 DROP RESTRICT/普通 ADD CHECK 重建六项，并验证完整原 hash 和原有全部 guard。普通 ADD CHECK 必须检查已恢复行，禁止 NOT VALID、CASCADE、IF EXISTS、禁触发器或宽松比较。若已完全等于原 hash，则无需规范化；任何其他 catalog、ACL 或约束变化均在首条修复 DDL 前拒绝。事务失败回滚，目标停止保留失败状态。
 
 这一步还原新目标的原定义，不修改源库、旧迁移 SQL/checksum、迁移账本、业务文本或原 schema guard。完整表指纹/资源闭合校验仍须通过，不能仅用 schema hash 代替数据验证。
