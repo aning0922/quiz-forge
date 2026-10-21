@@ -145,7 +145,6 @@ export async function createRecoveryBackup(
     !/^[a-f0-9]{64}$/.test(input.codeSha256)
   )
     throw new RecoveryError("RECOVERY_ARGUMENTS_INVALID");
-  await createRecoveryDirectory(input.directory, input);
   const backupId = randomUUID();
   const manifest = await withSnapshot(input, async (lease) => {
     await lease.assertValid();
@@ -165,6 +164,8 @@ export async function createRecoveryBackup(
       sourceDirectory.startsWith(input.directory + path.sep)
     )
       throw new RecoveryError("RECOVERY_SOURCE_INVALID");
+    // Reject overlap before the first destination mutation, including a nested source path.
+    await createRecoveryDirectory(input.directory, input);
     const dumpPath = path.join(input.directory, "database.dump");
     const claimed = await withNewRecoveryFile(dumpPath, input, (file) =>
       lease.dumpTo(file),
@@ -382,6 +383,8 @@ export async function verifyRecoveryBundle(
               owned.manifest.source.instanceId,
             ) ||
           targetRoot === owned.manifest.source.root ||
+          targetRoot.startsWith(owned.manifest.source.root + path.sep) ||
+          owned.manifest.source.root.startsWith(targetRoot + path.sep) ||
           instanceDirectory === owned.directory ||
           instanceDirectory.startsWith(owned.directory + path.sep) ||
           owned.directory.startsWith(instanceDirectory + path.sep)

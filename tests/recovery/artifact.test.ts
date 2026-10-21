@@ -126,6 +126,36 @@ describe("private recovery artifact and runtime capability", () => {
     );
   });
 
+  it("rejects a nested backup destination before changing the source directory tree", async () => {
+    const f = await fixture();
+    const uploads = path.join(f.instanceDirectory, "uploads");
+    const before = await readdir(uploads, { recursive: true });
+    await expect(
+      createRecoveryBackup(
+        { ...f.input, directory: path.join(uploads, "new-backup") },
+        f.snapshot,
+      ),
+    ).rejects.toThrow("RECOVERY_SOURCE_INVALID");
+    expect(await readdir(uploads, { recursive: true })).toEqual(before);
+  });
+
+  it("rejects storage installation into a root nested under the source root", async () => {
+    const f = await sealed();
+    const bundle = await f.verify();
+    const target = path.join(
+      f.source.root,
+      "nested",
+      ".cache",
+      "p2a",
+      f.source.instanceId,
+    );
+    await mkdir(target, { recursive: true, mode: 0o700 });
+    await expect(bundle.installStorage(target)).rejects.toThrow(
+      "RECOVERY_SOURCE_INVALID",
+    );
+    expect(await readdir(target)).toEqual([]);
+  });
+
   it.each([
     "extra",
     "missing",
