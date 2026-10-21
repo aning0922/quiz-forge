@@ -1,5 +1,4 @@
 import { randomUUID } from "node:crypto";
-import { createServer } from "node:net";
 import { lstat, mkdir, unlink } from "node:fs/promises";
 import path from "node:path";
 import {
@@ -30,6 +29,8 @@ import {
   writeRecoveryBytes,
 } from "../src/features/runtime-recovery/files";
 import { prepareRecoveryBusinessSource } from "../tests/recovery/business-source-fixture";
+import { parseRecoverySourceOptions } from "../tests/recovery/source-options";
+import { holdRecoverySourceOrigin } from "../tests/recovery/source-origin-hold";
 import {
   launchPreviewServer,
   stopAndProveServerExit,
@@ -38,22 +39,17 @@ import {
 
 /** New synthetic instance only. No argument permits selecting an existing instance or author data. */
 async function main() {
-  if (process.argv.length !== 2)
-    throw new RecoveryError("RECOVERY_ARGUMENTS_INVALID");
+  const options = parseRecoverySourceOptions(process.argv.slice(2));
   const root = process.cwd();
   const budget = {
     deadlineMonotonicMs: performance.now() + RECOVERY_LIMITS.operationMs,
     signal: new AbortController().signal,
   };
   await assertRecoveryEnvironment(root, budget);
-  for (const port of [55422, 55428])
-    await new Promise<void>((resolve, reject) => {
-      const server = createServer();
-      server.once("error", reject);
-      server.listen(port, "127.0.0.1", () =>
-        server.close((error) => (error ? reject(error) : resolve())),
-      );
-    });
+  for (const port of [options.pgPort, options.httpPort]) {
+    const probe = await holdRecoverySourceOrigin(`http://127.0.0.1:${port}`);
+    await probe.close();
+  }
   const base = path.join(root, ".cache", "runtime-recovery-drill");
   await mkdir(path.dirname(base), { recursive: true, mode: 0o700 });
   try {
@@ -70,16 +66,16 @@ async function main() {
     Buffer.from(
       canonicalRecoveryJson({
         runId,
-        sourcePort: 55422,
-        sourceOrigin: "http://127.0.0.1:55428",
+        sourcePort: options.pgPort,
+        sourceOrigin: options.origin,
         qualification: "synthetic-only",
       }),
     ),
     budget,
   );
   const manifest = await initLocalInstance({
-    port: 55422,
-    origin: "http://127.0.0.1:55428",
+    port: options.pgPort,
+    origin: options.origin,
     purpose: "test",
   });
   await writeRecoveryBytes(
@@ -125,7 +121,7 @@ async function main() {
       cwd: root,
       instanceId: manifest.instanceId,
       runId,
-      port: 55428,
+      port: options.httpPort,
       runtimeConfigPath: manifest.runtimeConfigPath,
     });
     let ready = false;
