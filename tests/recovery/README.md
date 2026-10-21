@@ -21,3 +21,11 @@ B 的文件/能力/CLI 边界测试使用 `vitest.recovery-tools.config.ts`；A 
 保留 77ff 的同时，新来源脚本可显式使用独立监听地址，例如 `--pg-port=55430 --origin=http://127.0.0.1:55431`，仅初始化全新随机 ID 的 test 实例；仍须启动前实际核空闲，不复用未知 listener。默认值保持 55422/55428，已占用时拒绝。参数不允许选择已有实例，并预先拒绝 3100、5432、受保护 55423 和恢复保留 55426/55427；监听探测也立即销毁误连 socket 并实际关闭。此参数准备没有启动新来源或更改 77ff。
 
 恢复后 helper 要求一个全新的私有 `evidenceDirectory`。它让 pending 与 unused 均通过实际 HTTP 完成，前后复核备份前旧报告摘要；通过真实报告页“查看海报 → 生成报告海报 → 下载 PNG 海报”取得实际下载文件，验证 PNG 头、1080×1920、完整解码与摘要。有限产物为旧报告/海报、新完成两份报告的 390×844 浏览器完整截图及原始导出 PNG，均以 0600 保存于私有目录。独立 browser contexts 逐一关闭；源 origin hold 立即销毁误连 socket，并等待 listener/socket 实际 close，未知 close 永久拒绝。若调用者显式提供独立保存的合成 operator 凭证，helper 额外走恢复后台正常 preauth/login/issue 链新发一枚 7 天 Key，只返回有限 receipt 摘要，不输出原始凭证。以上 helper 准备不等于这些目标验收已经执行；实际证据另记。这里的“旧报告”指备份前已存在的报告，当前来源仅覆盖 renderer 1.0.1，不冒称已覆盖 renderer 1.0.0 恢复。
+
+2026-10-21 非空 roundtrip 已实际执行，有限安全记录见 [roundtrip-evidence.json](roundtrip-evidence.json)，完整私有材料保留于源工作树 `.cache/runtime-recovery-drill/e5cc1525-855a-4e6c-a560-0801c4b46ebc/`，不提交原包、dump、source/operator 记录或截图。实际生产 code SHA 为 `1e7551cdfd750ba85f4a6d49ab7a0f76c5483eb2cafc79d93bcc9cf2781475b2`，与主控 `6f8950b` 同字节。真实 CLI backup/verify、两个互不覆盖目标根的 restore 均退出 0；干净目标先返回 verified-stopped，再启动 HTTP。
+
+最终 helper 实际完成旧报告/资源读取、pending 进度匹配并完成、原 unused 完成、后台新发 7 日 Key及实际产品 PNG 下载；Chromium 156.0.8078.4，viewport 390×844。PNG 为 1080×1920、1212033 bytes，SHA `9161c53418360ea841910320c66fc28d6e3322a2262a8cbc641fef5080dea7e9`。独立目标 SQL 为 Key 4、session 3、report 3、grant 8，原报告行 SHA 与源备份一致。源在 HTTP 后再次完整 backup/verify，23 表全部证据、18 项迁移和资源清单与原备份完全相等，仍为 68 行；没有以不调用 dump 的只读 callback 绕过完整快照协议。
+
+先前两轮远程 `download.path()` 拒绝和一轮消费者 CSRF 头错误均保留为失败证据：前者改为真正下载流并限 16 MiB、持有创建任务及真实 end/close、迟到清理永久拒绝；后者实际见证 403/CSRF_REJECTED 后，改用已有消费者专用头常量。错误头轮次的 session/report/Key 全表指纹仍与备份相同，pending revision 仍为 1；仅正常交换的 grant/budget 改变。没有改数据、回滚或延长 TTL 重跑；最后证据目录是新的私有目录。
+
+B 逐张检查五张最终原图；报告正文/指标/只读状态完整，三报告图相同来自同一组合成答案，实际 report ID 各异。海报截图有焦点态 skip link 叠于上部图片，记录为非阻断焦点状态，原始导出 PNG 没有该链接；不修改产品或修饰截图。源 3cf/55430、旧 77ff/55422、失败与干净目标 PG，以及本轮 HTTP/浏览器进程和组全部实际关闭并停库保留，三个媒体 control 均为空。原 39eb/55423 与原 3100 未操作。此记录只交付 B 合成恢复见证，不替代主控完整回归、独立验收、商业批准或整体 R1 交付结论。
