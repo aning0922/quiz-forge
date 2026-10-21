@@ -1,5 +1,4 @@
 import { randomUUID } from "node:crypto";
-import { lstat, realpath } from "node:fs/promises";
 import path from "node:path";
 import sharp from "sharp";
 import {
@@ -34,15 +33,14 @@ import {
   recoveryRootSchema,
 } from "@/features/runtime-recovery/contracts";
 import {
-  checkRecoveryBudget,
   createRecoveryDirectory,
-  withRecoveryFile,
   writeRecoveryBytes,
   syncRecoveryDirectory,
 } from "@/features/runtime-recovery/files";
 import type { prepareRecoveryBusinessSource } from "./business-source-fixture";
 import { RECOVERY_SYNTHETIC_BASELINE } from "./synthetic-pack";
 import { holdRecoverySourceOrigin } from "./source-origin-hold";
+import { readRecoveryDownloadBytes } from "./download-bytes";
 import { waitForConsumerCaptureReady } from "../e2e/consumer-flow.visual";
 
 const unknown = new Set<unknown>();
@@ -54,6 +52,22 @@ export async function verifyRestoredRecoveryHttp(input: {
   sourceOrigin: string;
   evidenceDirectory: string;
   operatorCredential?: string;
+  onStage?(
+    stage:
+      | "old-session"
+      | "old-report"
+      | "old-resource"
+      | "old-report-page"
+      | "poster-open"
+      | "poster-generate"
+      | "poster-download"
+      | "poster-read"
+      | "poster-decode"
+      | "pending-complete"
+      | "unused-complete"
+      | "old-report-recheck"
+      | "operator-issue",
+  ): void;
   source: Awaited<ReturnType<typeof prepareRecoveryBusinessSource>>;
 }) {
   if (
@@ -185,6 +199,7 @@ export async function verifyRestoredRecoveryHttp(input: {
     return { sessionId, view };
   };
   try {
+    input.onStage?.("old-session");
     const completedContext = await context();
     const completed = await exchange(
       completedContext,
@@ -195,6 +210,7 @@ export async function verifyRestoredRecoveryHttp(input: {
       completed.view.outcome.kind !== "completed"
     )
       throw failed();
+    input.onStage?.("old-report");
     const oldReport = await verifyPersistedReportView(
       await json(
         await get(completedContext, `/play/${completed.sessionId}/api/report`),
@@ -205,6 +221,7 @@ export async function verifyRestoredRecoveryHttp(input: {
       input.source.completed.viewSha256
     )
       throw failed();
+    input.onStage?.("old-resource");
     const portrait = oldReport.view.display.result.portrait;
     const query = new URLSearchParams({
       resourceId: portrait.resourceRef.id,
@@ -231,6 +248,7 @@ export async function verifyRestoredRecoveryHttp(input: {
         throw error;
       }
     }
+    input.onStage?.("old-report-page");
     const page = await completedContext.newPage();
     await page.goto(`${input.origin}/play/${completed.sessionId}/report`, {
       waitUntil: "networkidle",
@@ -244,8 +262,10 @@ export async function verifyRestoredRecoveryHttp(input: {
     )
       throw failed();
     await capture(page, "readonly-report", "old-report-390.png");
+    input.onStage?.("poster-open");
     await page.getByRole("button", { name: "查看海报", exact: true }).click();
     await waitForConsumerCaptureReady(page, "readonly-poster");
+    input.onStage?.("poster-generate");
     await page
       .getByRole("button", { name: "生成报告海报", exact: true })
       .click();
@@ -254,44 +274,15 @@ export async function verifyRestoredRecoveryHttp(input: {
       exact: true,
     });
     await downloadButton.waitFor({ state: "visible", timeout: 30_000 });
+    input.onStage?.("poster-download");
     const downloadPending = page.waitForEvent("download", { timeout: 15_000 });
     void downloadPending.catch(() => {}); // Context teardown still owns a failed download wait.
     await downloadButton.click();
     const download = await downloadPending;
     if (await download.failure()) throw failed();
-    const temporaryPath = await download.path();
-    if (!temporaryPath) throw failed();
-    const stat = await lstat(temporaryPath);
-    if (
-      !stat.isFile() ||
-      stat.isSymbolicLink() ||
-      stat.nlink !== 1 ||
-      stat.uid !== process.getuid?.()
-    )
-      throw failed();
-    const posterBytes = await withRecoveryFile(
-      await realpath(temporaryPath),
-      budget,
-      16_777_216,
-      async (handle, before) => {
-        const bytes = Buffer.alloc(before.size + 1);
-        let offset = 0;
-        while (offset < bytes.length) {
-          checkRecoveryBudget(budget);
-          const result = await handle.read(
-            bytes,
-            offset,
-            bytes.length - offset,
-            offset,
-          );
-          if (!result.bytesRead) break;
-          offset += result.bytesRead;
-        }
-        if (offset !== before.size) throw failed();
-        return bytes.subarray(0, offset);
-      },
-      false,
-    );
+    input.onStage?.("poster-read");
+    const posterBytes = await readRecoveryDownloadBytes(download, budget);
+    input.onStage?.("poster-decode");
     await savePng("restored-report-poster.png", posterBytes, true);
     await capture(page, "readonly-poster", "old-poster-390.png");
 
@@ -385,16 +376,19 @@ export async function verifyRestoredRecoveryHttp(input: {
       );
       return report.receipt.reportId;
     };
+    input.onStage?.("pending-complete");
     const pendingReportId = await continueSession(
       await context(),
       input.source.pending.raw,
       true,
     );
+    input.onStage?.("unused-complete");
     const newReportId = await continueSession(
       await context(),
       input.source.unused.raw,
       false,
     );
+    input.onStage?.("old-report-recheck");
     const reread = await verifyPersistedReportView(
       await json(
         await get(completedContext, `/play/${completed.sessionId}/api/report`),
@@ -408,6 +402,7 @@ export async function verifyRestoredRecoveryHttp(input: {
       throw failed();
     let operatorNewKey: { keyId: string; receiptSha256: string } | null = null;
     if (input.operatorCredential !== undefined) {
+      input.onStage?.("operator-issue");
       const operatorContext = await context();
       const csrf = (dto: unknown) => {
         if (
