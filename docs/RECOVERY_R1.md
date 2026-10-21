@@ -92,3 +92,24 @@ Astra 已对准确 `083ad8183de90920d59345223f559ccea9e83689` 独立运行 20 �
 B 的 `artifact.ts` 必须导出模块级 `assertVerifiedRecoveryBundle(bundle): void`，基于内部 WeakMap 等不可从 JSON 伪造的状态认证来源、未关闭状态及预算。A 在任何目标创建之前调用此函数，不能仅调用入参自己提供的 `assertValid` 方法。能力暴露的 manifest 必须深度不可变，真实 IO 使用内部保留的清单与身份；关闭或验证失败永久撤销该能力。`pg_restore` 在新空库内由非 superuser 的同名 owner 执行完整 schema/data/post-data，保留 ACL；不使用 `--no-acl`、数据-only 禁触发器或 `session_replication_role` 绕过。支持受信本地自产归档，不能将 TOC 检查和 SHA 校验宣传为任意 SQL 沙箱。
 
 dump 固定为 PostgreSQL 18.4 `pg_dump -Fc` 的 custom archive（`format:"pg18.4-custom"`），字节数至少 1 且不能仅凭 manifest 声明接受：实际持有 FD 必须验证长度、SHA、custom 格式头，随后由 A 以匹配版本 `pg_restore` 核有限 TOC/对象集再开始目标创建。A 新子进程 owner 必须限时/限输出，等待 `close` 与全部管道结束，不把旧 `runPg` 的 `exit` 事件直接当作完整 IO 结束证明。
+
+## PostgreSQL 18.4 目标恢复规范化决策
+
+真实隔离探针确认 RR READ ONLY 允许 SHARE 锁，生产 exporter 使用只读事务，仍须先锁全部表再首次读取/导出快照。实际 `pg_dump -Fc --snapshot` 和非 superuser 的空库完整 `pg_restore` 均已正常 close/exit 0，但直接恢复后的 draft/consumer 精确 schema guard 拒绝，因此命令成功尚不等于恢复成功。
+
+A 对完整 catalog 的取证与 Astra 独立比较确认：300 个列、54 条枚举记录、40 个函数、84 个索引、22 张 qf 表和 173 个触发器完全一致；只有下列六个 CHECK 的数组整体转换与逐元素转换表达形式改变。六项均保持 valid/enforced 为 true、deferrable/deferred 为 false，常量集合和顺序不变。
+
+| 约束                                          | 受信原表达式来源                                                    |
+| --------------------------------------------- | ------------------------------------------------------------------- |
+| `asset_blob_media_type_check`                 | `0010_validation_assets.sql` 的 asset_blob.media_type               |
+| `product_asset_purpose_check`                 | `0010_validation_assets.sql` 的 product_asset.purpose               |
+| `quizpack_validation_last_error_code_check`   | `0010_validation_assets.sql` 的 quizpack_validation.last_error_code |
+| `draft_revision_engine_id_check`              | `0014_product_first_draft.sql` 的 draft_revision.engine_id          |
+| `draft_revision_content_schema_version_check` | `0015_supported_pack_admission.sql` 对同名约束的原始定义            |
+| `draft_revision_content_kind_check`           | `0015_supported_pack_admission.sql` 对同名约束的原始定义            |
+
+原完整 catalog SHA-256 为 `906ca3748d7991b3a2095cb4a603465c5abb776e2df0213f2ee84ff7b2f98ab6`，准确 PG 18.4 dump/restore 变体为 `a6453c24d23b26941fd461e8f04392575424cf7f7ea5463499f0696cf7186d99`。schema-only 证据文件 SHA-256 为 `add9f0dc60df697fd66632e5e4a44c2dd5e09ad44fed13eaa3d4aa6f86a71728`。这些是 schema 取证，不包含业务行或凭据；当前没有独立的完整 pg_depend 快照，不声称已核全部依赖。
+
+Astra 已接受以下受限方案，实际实现与成功/拒绝/回滚试验仍待验收：仅在本工具新建、尚未开放 HTTP 的目标上，在同一事务中先核完整 catalog 精确匹配上述已知变体，再以仓库固定原表达式 DROP RESTRICT/普通 ADD CHECK 重建六项，并验证完整原 hash 和原有全部 guard。普通 ADD CHECK 必须检查已恢复行，禁止 NOT VALID、CASCADE、IF EXISTS、禁触发器或宽松比较。若已完全等于原 hash，则无需规范化；任何其他 catalog、ACL 或约束变化均在首条修复 DDL 前拒绝。事务失败回滚，目标停止保留失败状态。
+
+这一步还原新目标的原定义，不修改源库、旧迁移 SQL/checksum、迁移账本、业务文本或原 schema guard。完整表指纹/资源闭合校验仍须通过，不能仅用 schema hash 代替数据验证。
