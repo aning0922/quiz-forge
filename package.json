@@ -17,6 +17,7 @@
     "format:check": "prettier --check .",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:recovery:tools": "vitest run --config vitest.recovery-tools.config.ts",
     "test:e2e": "TSX_TSCONFIG_PATH=./tsconfig.json node --conditions=react-server --import tsx scripts/test-preview-e2e.ts",
     "test:e2e:install": "PLAYWRIGHT_BROWSERS_PATH=.cache/ms-playwright playwright install chromium",
     "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm build && pnpm test:e2e",
