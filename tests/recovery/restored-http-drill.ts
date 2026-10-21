@@ -1,10 +1,20 @@
-import { createServer } from "node:net";
 import { randomUUID } from "node:crypto";
+import { lstat, realpath } from "node:fs/promises";
+import path from "node:path";
+import sharp from "sharp";
 import {
   CONSUMER_EXCHANGE_HEADER_V1,
   CONSUMER_EXCHANGE_HEADER_VALUE_V1,
+  createConsumerToken,
+  digestConsumerToken,
 } from "@/lib/consumer-contract/v1/credentials";
-import type { APIResponse, Browser, BrowserContext } from "@playwright/test";
+import { issueAccessKeyResultSchema } from "@/features/fulfillment/consumer-flow/operator-resolutions";
+import type {
+  APIResponse,
+  Browser,
+  BrowserContext,
+  Page,
+} from "@playwright/test";
 import {
   consumerExchangeResultSchema,
   verifyConsumerSessionView,
@@ -21,9 +31,19 @@ import {
   recoveryOriginSchema,
   canonicalRecoveryJson,
   recoveryHash,
+  recoveryRootSchema,
 } from "@/features/runtime-recovery/contracts";
+import {
+  checkRecoveryBudget,
+  createRecoveryDirectory,
+  withRecoveryFile,
+  writeRecoveryBytes,
+  syncRecoveryDirectory,
+} from "@/features/runtime-recovery/files";
 import type { prepareRecoveryBusinessSource } from "./business-source-fixture";
 import { RECOVERY_SYNTHETIC_BASELINE } from "./synthetic-pack";
+import { holdRecoverySourceOrigin } from "./source-origin-hold";
+import { waitForConsumerCaptureReady } from "../e2e/consumer-flow.visual";
 
 const unknown = new Set<unknown>();
 const failed = () => Error("RECOVERY_RESTORED_HTTP_DRILL_FAILED");
@@ -32,6 +52,8 @@ export async function verifyRestoredRecoveryHttp(input: {
   browser: Browser;
   origin: string;
   sourceOrigin: string;
+  evidenceDirectory: string;
+  operatorCredential?: string;
   source: Awaited<ReturnType<typeof prepareRecoveryBusinessSource>>;
 }) {
   if (
@@ -39,19 +61,65 @@ export async function verifyRestoredRecoveryHttp(input: {
     input.origin === input.sourceOrigin ||
     !recoveryOriginSchema.safeParse(input.origin).success ||
     !recoveryOriginSchema.safeParse(input.sourceOrigin).success ||
+    !recoveryRootSchema.safeParse(input.evidenceDirectory).success ||
     canonicalRecoveryJson(input.source.source.baseline) !==
       canonicalRecoveryJson(RECOVERY_SYNTHETIC_BASELINE)
   )
     throw failed();
-  const sourceHold = createServer();
-  await new Promise<void>((resolve, reject) => {
-    sourceHold.once("error", reject);
-    sourceHold.listen(
-      Number(new URL(input.sourceOrigin).port),
-      "127.0.0.1",
-      resolve,
+  const budget = {
+    signal: new AbortController().signal,
+    deadlineMonotonicMs: performance.now() + 300_000,
+  };
+  await createRecoveryDirectory(input.evidenceDirectory, budget);
+  const sourceHold = await holdRecoverySourceOrigin(input.sourceOrigin);
+  const evidence: {
+    file: string;
+    bytes: number;
+    sha256: string;
+    width: number;
+    height: number;
+  }[] = [];
+  const signature = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
+  const savePng = async (file: string, bytes: Buffer, poster = false) => {
+    if (
+      bytes.length < 24 ||
+      bytes.length > 16_777_216 ||
+      !bytes.subarray(0, 8).equals(signature)
+    )
+      throw failed();
+    const width = bytes.readUInt32BE(16),
+      height = bytes.readUInt32BE(20);
+    if (
+      poster
+        ? width !== 1080 || height !== 1920
+        : width !== 390 || height < 844 || height > 30_000
+    )
+      throw failed();
+    if (poster)
+      await sharp(bytes, { failOn: "error", limitInputPixels: 1080 * 1920 })
+        .raw()
+        .toBuffer();
+    await writeRecoveryBytes(
+      path.join(input.evidenceDirectory, file),
+      bytes,
+      budget,
     );
-  });
+    evidence.push({
+      file,
+      bytes: bytes.length,
+      sha256: recoveryHash(bytes),
+      width,
+      height,
+    });
+  };
+  const capture = async (page: Page, state: string, file: string) => {
+    await waitForConsumerCaptureReady(page, state);
+    await page.evaluate(() => document.fonts.ready.then(() => undefined));
+    await savePng(
+      file,
+      await page.screenshot({ fullPage: true, animations: "disabled" }),
+    );
+  };
   const contexts: BrowserContext[] = [];
   const context = async () => {
     const owned = await input.browser.newContext({
@@ -175,12 +243,62 @@ export async function verifyRestoredRecoveryHttp(input: {
       ))
     )
       throw failed();
+    await capture(page, "readonly-report", "old-report-390.png");
+    await page.getByRole("button", { name: "查看海报", exact: true }).click();
+    await waitForConsumerCaptureReady(page, "readonly-poster");
+    await page
+      .getByRole("button", { name: "生成报告海报", exact: true })
+      .click();
+    const downloadButton = page.getByRole("button", {
+      name: "下载 PNG 海报",
+      exact: true,
+    });
+    await downloadButton.waitFor({ state: "visible", timeout: 30_000 });
+    const downloadPending = page.waitForEvent("download", { timeout: 15_000 });
+    void downloadPending.catch(() => {}); // Context teardown still owns a failed download wait.
+    await downloadButton.click();
+    const download = await downloadPending;
+    if (await download.failure()) throw failed();
+    const temporaryPath = await download.path();
+    if (!temporaryPath) throw failed();
+    const stat = await lstat(temporaryPath);
+    if (
+      !stat.isFile() ||
+      stat.isSymbolicLink() ||
+      stat.nlink !== 1 ||
+      stat.uid !== process.getuid?.()
+    )
+      throw failed();
+    const posterBytes = await withRecoveryFile(
+      await realpath(temporaryPath),
+      budget,
+      16_777_216,
+      async (handle, before) => {
+        const bytes = Buffer.alloc(before.size + 1);
+        let offset = 0;
+        while (offset < bytes.length) {
+          checkRecoveryBudget(budget);
+          const result = await handle.read(
+            bytes,
+            offset,
+            bytes.length - offset,
+            offset,
+          );
+          if (!result.bytesRead) break;
+          offset += result.bytesRead;
+        }
+        if (offset !== before.size) throw failed();
+        return bytes.subarray(0, offset);
+      },
+      false,
+    );
+    await savePng("restored-report-poster.png", posterBytes, true);
+    await capture(page, "readonly-poster", "old-poster-390.png");
 
     const continueSession = async (
       ctx: BrowserContext,
       raw: string,
       expectedPending: boolean,
-      complete: boolean,
     ) => {
       const session = await exchange(ctx, raw);
       if (session.view.outcome.kind !== "editable") throw failed();
@@ -231,7 +349,6 @@ export async function verifyRestoredRecoveryHttp(input: {
         ),
       );
       if (saved.kind !== "applied-current") throw failed();
-      if (!complete) return null;
       const final = consumerCompleteResolutionSchema.parse(
         await json(
           await post(
@@ -256,28 +373,113 @@ export async function verifyRestoredRecoveryHttp(input: {
       );
       if (report.receipt.reportId === oldReport.receipt.reportId)
         throw failed();
+      const page = await ctx.newPage();
+      await page.goto(`${input.origin}/play/${session.sessionId}/report`, {
+        waitUntil: "networkidle",
+        timeout: 15_000,
+      });
+      await capture(
+        page,
+        "readonly-report",
+        expectedPending ? "pending-report-390.png" : "unused-report-390.png",
+      );
       return report.receipt.reportId;
     };
-    await continueSession(
+    const pendingReportId = await continueSession(
       await context(),
       input.source.pending.raw,
       true,
-      false,
     );
     const newReportId = await continueSession(
       await context(),
       input.source.unused.raw,
       false,
-      true,
     );
+    const reread = await verifyPersistedReportView(
+      await json(
+        await get(completedContext, `/play/${completed.sessionId}/api/report`),
+      ),
+    );
+    if (
+      recoveryHash(canonicalRecoveryJson(reread)) !==
+        input.source.completed.viewSha256 ||
+      pendingReportId === newReportId
+    )
+      throw failed();
+    let operatorNewKey: { keyId: string; receiptSha256: string } | null = null;
+    if (input.operatorCredential !== undefined) {
+      const operatorContext = await context();
+      const csrf = (dto: unknown) => {
+        if (
+          !dto ||
+          typeof dto !== "object" ||
+          !("csrfToken" in dto) ||
+          typeof dto.csrfToken !== "string" ||
+          dto.csrfToken.length > 256
+        )
+          throw failed();
+        return dto.csrfToken;
+      };
+      const preauth = await json(
+        await post(operatorContext, "/api/studio/auth/preauth", {}),
+      );
+      const session = await json(
+        await post(
+          operatorContext,
+          "/api/studio/auth/login",
+          { credential: input.operatorCredential },
+          csrf(preauth),
+        ),
+      );
+      const raw = createConsumerToken("access-key");
+      const digest = await digestConsumerToken(raw, "access-key");
+      if (!digest) throw failed();
+      const keyId = randomUUID();
+      const issued = issueAccessKeyResultSchema.parse(
+        await json(
+          await post(
+            operatorContext,
+            `/api/studio/products/${input.source.source.productId}/access-keys`,
+            {
+              schemaVersion: "quizforge.access-key-issue.v1",
+              operationKey: randomUUID(),
+              keyId,
+              play: {
+                productId: input.source.source.productId,
+                playVersionId: input.source.play.id,
+                playSnapshotSha256: input.source.play.snapshotSha256,
+              },
+              credentialDigest: digest,
+              validForSeconds: 7 * 24 * 60 * 60,
+            },
+            csrf(session),
+          ),
+        ),
+      );
+      if (
+        !issued.created ||
+        issued.key.issue.binding.keyId !== keyId ||
+        issued.key.issue.binding.credentialDigest !== digest
+      )
+        throw failed();
+      operatorNewKey = {
+        keyId,
+        receiptSha256: recoveryHash(canonicalRecoveryJson(issued.key.issue)),
+      };
+    }
+    await syncRecoveryDirectory(input.evidenceDirectory, budget);
     return {
       oldReportStable: true,
       oldResourceShaVerified: true,
       pendingProgressStable: true,
       pendingSaveApplied: true,
+      pendingCompleted: true,
       unusedKeyCompleted: true,
       oldReportId: oldReport.receipt.reportId,
       newReportId,
+      pendingReportId,
+      evidence,
+      operatorNewKey,
       reportViewport: { width: 390, height: 844 },
     };
   } finally {
@@ -293,14 +495,12 @@ export async function verifyRestoredRecoveryHttp(input: {
       }
       if (failure) throw failure;
     } finally {
-      await new Promise<void>((resolve, reject) =>
-        sourceHold.close((error) => {
-          if (error) {
-            unknown.add(sourceHold);
-            reject(error);
-          } else resolve();
-        }),
-      );
+      try {
+        await sourceHold.close();
+      } catch (error) {
+        unknown.add(sourceHold);
+        throw error;
+      }
     }
   }
 }
