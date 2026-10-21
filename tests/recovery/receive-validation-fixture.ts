@@ -6,13 +6,12 @@ import type { StudioWriteCredentials } from "@/lib/auth/write";
 import { workspaceService } from "@/features/product/workspace/service";
 import { importReceiveService } from "@/features/quizpack/import/service";
 import { createReceiveContext } from "@/features/quizpack/import/context";
-import { createValidationContext } from "@/features/quizpack/validation/operation";
-import { createQuizpackValidationService } from "@/features/quizpack/validation/service";
 import {
   digestRecoveryFile,
   assertRecoveryDigest,
 } from "@/features/runtime-recovery/files";
 import { buildRecoverySyntheticPack } from "./synthetic-pack";
+import { validateRecoveryArchiveHttp } from "./native-validation-http";
 
 const unknown = new Set<unknown>();
 const fail = () => Error("RECOVERY_DRILL_SOURCE_NOT_READY");
@@ -101,33 +100,14 @@ export async function receiveAndValidateRecoveryPack(
     received.actualArchiveBytes !== pack.archiveBytes
   )
     throw fail();
-  const validation = createQuizpackValidationService();
-  const makeContext = () =>
-    createValidationContext(new AbortController().signal);
-  const prepared = await request(app.config, makeContext, (db, context) =>
-    validation.prepareValidation(
-      db,
-      credentials,
+  const result = await validateRecoveryArchiveHttp(
+    app.config.origin,
+    credentials,
+    {
       productId,
-      received.id,
-      {
-        expectedImportStateRevision: received.stateRevision,
-      },
-      context,
-    ),
-  );
-  const result = await request(app.config, makeContext, (db, context) =>
-    validation.startValidation(
-      db,
-      credentials,
-      productId,
-      received.id,
-      {
-        expectedImportStateRevision: received.stateRevision,
-        expectedValidationKey: prepared.validationKey,
-      },
-      context,
-    ),
+      importId: received.id,
+      stateRevision: received.stateRevision,
+    },
   );
   if (
     result.outcome !== "record" ||

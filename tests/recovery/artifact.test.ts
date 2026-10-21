@@ -156,6 +156,19 @@ describe("private recovery artifact and runtime capability", () => {
     expect(await readdir(target)).toEqual([]);
   });
 
+  it("refuses a backup beneath source code before creating any directory", async () => {
+    const f = await fixture();
+    const sourceCode = path.join(f.source.root, "src");
+    await mkdir(sourceCode, { mode: 0o700 });
+    await expect(
+      createRecoveryBackup(
+        { ...f.input, directory: path.join(sourceCode, "backup") },
+        f.snapshot,
+      ),
+    ).rejects.toThrow("RECOVERY_SOURCE_INVALID");
+    expect(await readdir(sourceCode)).toEqual([]);
+  });
+
   it.each([
     "extra",
     "missing",
