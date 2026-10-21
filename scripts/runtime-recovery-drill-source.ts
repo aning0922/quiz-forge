@@ -7,6 +7,7 @@ import {
   createOperator,
   instancePaths,
   loadManagedInstance,
+  openManagedDatabase,
 } from "../src/lib/db/management";
 import { createDatabase } from "../src/lib/db/client";
 import { createPreauth, login } from "../src/lib/auth/service";
@@ -45,7 +46,7 @@ async function main() {
     signal: new AbortController().signal,
   };
   await assertRecoveryEnvironment(root, budget);
-  for (const port of [55422, 55423])
+  for (const port of [55422, 55428])
     await new Promise<void>((resolve, reject) => {
       const server = createServer();
       server.once("error", reject);
@@ -70,7 +71,7 @@ async function main() {
       canonicalRecoveryJson({
         runId,
         sourcePort: 55422,
-        sourceOrigin: "http://127.0.0.1:55423",
+        sourceOrigin: "http://127.0.0.1:55428",
         qualification: "synthetic-only",
       }),
     ),
@@ -78,7 +79,7 @@ async function main() {
   );
   const manifest = await initLocalInstance({
     port: 55422,
-    origin: "http://127.0.0.1:55423",
+    origin: "http://127.0.0.1:55428",
     purpose: "test",
   });
   await writeRecoveryBytes(
@@ -124,7 +125,7 @@ async function main() {
       cwd: root,
       instanceId: manifest.instanceId,
       runId,
-      port: 55423,
+      port: 55428,
       runtimeConfigPath: manifest.runtimeConfigPath,
     });
     let ready = false;
@@ -170,12 +171,41 @@ async function main() {
     }
   }
   await configureImports(manifest.instanceId, false);
+  const audit = await openManagedDatabase(manifest.instanceId);
+  const actualCounts: Record<string, number> = {};
+  try {
+    for (const [table, expected] of Object.entries({
+      quizpack_import: 1,
+      quizpack_validation: 1,
+      product_draft: 1,
+      draft_revision: 1,
+      draft_review: 1,
+      product_version: 1,
+      internal_play_version: 1,
+      access_key: 3,
+      consumer_session: 2,
+      quiz_report: 1,
+      asset_blob: 5,
+      product_asset: 5,
+    })) {
+      // Table names come only from this finite source-code allowlist.
+      const [row] = await audit.sql.unsafe<{ count: number }[]>(
+        `SELECT count(*)::int AS count FROM qf.${table}`,
+      );
+      if (row?.count !== expected)
+        throw new RecoveryError("RECOVERY_INTEGRITY_FAILED");
+      actualCounts[table] = row.count;
+    }
+  } finally {
+    await audit.close();
+  }
   const record = Buffer.from(
     canonicalRecoveryJson({
       schemaVersion: "quizforge.synthetic-recovery-drill-source.v1",
       runId,
       instanceId: manifest.instanceId,
       source,
+      actualCounts,
     }),
   );
   if (record.length > 2_097_152)
