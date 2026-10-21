@@ -39,3 +39,50 @@ it("closes an in-progress stream after cancellation", async () => {
   await expect(work).rejects.toThrow("RECOVERY_DOWNLOAD_INTERRUPTED");
   expect(stream.closed).toBe(true);
 });
+
+it("does not grant success when end precedes the deadline but close follows it", async () => {
+  const stream = new Readable({
+    autoDestroy: false,
+    read() {
+      this.push(Buffer.from("x"));
+      this.push(null);
+    },
+  });
+  stream.once("end", () => setTimeout(() => stream.destroy(), 80));
+  await expect(
+    readRecoveryDownloadBytes(
+      { createReadStream: async () => stream },
+      freshBudget(30),
+    ),
+  ).rejects.toThrow();
+  expect(stream.closed).toBe(true);
+});
+
+// Last: unknown creation permanently denies later admission, even after its late stream really closes.
+it("bounds an unresolved creation, owns late cleanup, and never clears its unknown latch", async () => {
+  let resolveCreation!: (stream: Readable) => void;
+  const creation = new Promise<Readable>((resolve) => {
+    resolveCreation = resolve;
+  });
+  const controller = new AbortController();
+  const work = readRecoveryDownloadBytes(
+    { createReadStream: () => creation },
+    { ...freshBudget(), signal: controller.signal },
+  );
+  await Promise.resolve();
+  controller.abort();
+  await expect(work).rejects.toThrow("RECOVERY_DOWNLOAD_INTERRUPTED");
+  const late = Readable.from([Buffer.from("late")]);
+  const closed = new Promise<void>((resolve) =>
+    late.once("close", () => resolve()),
+  );
+  resolveCreation(late);
+  await closed;
+  expect(late.closed).toBe(true);
+  await expect(
+    readRecoveryDownloadBytes(
+      { createReadStream: async () => Readable.from([]) },
+      freshBudget(),
+    ),
+  ).rejects.toThrow("RECOVERY_DOWNLOAD_CLOSE_UNPROVEN");
+});
