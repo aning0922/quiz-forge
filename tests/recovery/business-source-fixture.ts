@@ -190,7 +190,8 @@ export async function prepareRecoveryBusinessSource(
           playSnapshotSha256: play.play.snapshotSha256,
         },
         credentialDigest,
-        validForSeconds: 3600,
+        // Only newly issued synthetic keys; existing source records/TTLs are never updated.
+        validForSeconds: 7 * 24 * 60 * 60,
       }),
     );
     return { raw, key: result.key };

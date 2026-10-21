@@ -14,4 +14,6 @@
 
 B 的文件/能力/CLI 边界测试使用 `vitest.recovery-tools.config.ts`；A 的数据库测试独立位于 `tests/recovery-data/`。原 39eb、原私有资源和 3100 不属于本 fixture。
 
-2026-10-21 B 本地来源前置已实际执行：run `47031d8b-c1e6-4b10-b605-d95c1c5c3d2e`、新 test 实例 `77ff081dd5e79fa80f814fdec4a19ee3`，sourceRecord SHA `fc544097a39db0703274947d848fac9012ee5e78f3c7d31d449341e2275cbb7e`。真实 media main build/setup/provision 已封存，receive/原生验证/应用/审核/版本/play/Key/消费者保存与完成链通过。独立 owner SQL 复核精确 import 1、validation 1、draft 1、revision 1、review 1、version 1、play 1、Key 3、session 2、report 1、blob 5、Product asset 5；SQL 连接实际关闭，HTTP 55428 无监听，源 PG 55422 保留运行且 imports disabled。初选 HTTP 55423 已有未知 PG listener，脚本在新建任何实例前拒绝，未操作该 listener，随后改用确认空闲的 55428。这仅证明来源准备，不是备份、恢复或目标 HTTP 演练通过；完整恢复证据由阶段验收记录。
+2026-10-21 B 本地来源前置已实际执行：run `47031d8b-c1e6-4b10-b605-d95c1c5c3d2e`、新 test 实例 `77ff081dd5e79fa80f814fdec4a19ee3`，sourceRecord SHA `fc544097a39db0703274947d848fac9012ee5e78f3c7d31d449341e2275cbb7e`。真实 media main build/setup/provision 已封存，receive/原生验证/应用/审核/版本/play/Key/消费者保存与完成链通过。独立 owner SQL 复核精确 import 1、validation 1、draft 1、revision 1、review 1、version 1、play 1、Key 3、session 2、report 1、blob 5、Product asset 5；SQL 连接实际关闭，HTTP 55428 无监听，源 PG 55422 保留运行且 imports disabled。初选 HTTP 55423 已有 PG listener，脚本在新建任何实例前拒绝，未操作该 listener，随后改用确认空闲的 55428。主控之后确认 55423 属于需保护的原 39eb，继续保持不操作。这仅证明来源准备，不是备份、恢复或目标 HTTP 演练通过；完整恢复证据由阶段验收记录。
+
+后续运行仅对新发合成 Key 使用正式服务支持的 7 天有效期，供独立审查和完整工程检查后演练。当前 77ff 的原 Key 保留原始 1 小时 TTL，不更新记录、不回拨时间；自然过期后可作为负例，正向演练另建来源或通过正式运营服务新发 Key。
