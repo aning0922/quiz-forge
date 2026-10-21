@@ -8,6 +8,7 @@ import {
   digestConsumerToken,
 } from "@/lib/consumer-contract/v1/credentials";
 import { issueAccessKeyResultSchema } from "@/features/fulfillment/consumer-flow/operator-resolutions";
+import { CONSUMER_CSRF_HEADER_V1 } from "@/features/fulfillment/consumer-flow/http-protocol";
 import type {
   APIResponse,
   Browser,
@@ -184,7 +185,13 @@ export async function verifyRestoredRecoveryHttp(input: {
         ...(route === "/access/exchange"
           ? { [CONSUMER_EXCHANGE_HEADER_V1]: CONSUMER_EXCHANGE_HEADER_VALUE_V1 }
           : {}),
-        ...(csrf ? { "x-csrf-token": csrf } : {}),
+        ...(csrf
+          ? {
+              [route.startsWith("/api/studio/")
+                ? "x-csrf-token"
+                : CONSUMER_CSRF_HEADER_V1]: csrf,
+            }
+          : {}),
       },
     });
   const exchange = async (ctx: BrowserContext, raw: string) => {
