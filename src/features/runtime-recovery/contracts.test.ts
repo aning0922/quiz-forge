@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   RECOVERY_LIMITS,
+  RECOVERY_ROW_FORMAT,
   RECOVERY_TABLES,
   canonicalRecoveryJson,
   recoveryDatabaseEvidenceSchema,
@@ -24,6 +25,7 @@ const directories = [
 ];
 const database = () => {
   const facts = {
+    rowFormat: RECOVERY_ROW_FORMAT,
     migrations: Array.from({ length: 18 }, (_, i) => ({
       version: `${String(i + 1).padStart(4, "0")}_synthetic`,
       checksum: hash,
@@ -53,7 +55,12 @@ const manifest = () => ({
     codeSha256: hash,
   },
   database: database(),
-  dump: { path: "database.dump", bytes: 1, sha256: hash },
+  dump: {
+    path: "database.dump",
+    format: "pg18.4-custom",
+    bytes: 1,
+    sha256: hash,
+  },
   storage: { directories, files: [] },
 });
 
@@ -168,7 +175,11 @@ describe("finite recovery artifact contract", () => {
         ...evidence,
         migrations,
         graphSha256: recoveryHash(
-          canonicalRecoveryJson({ migrations, tables: evidence.tables }),
+          canonicalRecoveryJson({
+            rowFormat: RECOVERY_ROW_FORMAT,
+            migrations,
+            tables: evidence.tables,
+          }),
         ),
       }).success,
     ).toBe(false);
@@ -209,6 +220,21 @@ describe("finite recovery artifact contract", () => {
       status: "pending",
     };
     expect(recoverySealSchema.safeParse(seal).success).toBe(false);
+  });
+  it("rejects an empty dump and an unspecified or unsupported dump format", () => {
+    const value = manifest();
+    for (const change of [
+      { bytes: 0 },
+      { format: "plain-sql" },
+      { format: undefined },
+    ]) {
+      expect(
+        recoveryManifestSchema.safeParse({
+          ...value,
+          dump: { ...value.dump, ...change },
+        }).success,
+      ).toBe(false);
+    }
   });
   it("does not disclose arbitrary error messages or trust a forged error code", () => {
     expect(

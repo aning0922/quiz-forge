@@ -40,6 +40,9 @@ export const RECOVERY_TABLES = [
   "qf_meta.schema_migrations",
 ] as const;
 
+/** UTF-8 to_jsonb(row)::text + LF, verified primary-key order, UTC/ISO/postgres session settings. */
+export const RECOVERY_ROW_FORMAT = "pg18-jsonb-pk-lf.v1" as const;
+
 const sha256 = z.string().regex(/^[a-f0-9]{64}$/);
 const instanceId = z.string().regex(/^[a-f0-9]{32}$/);
 const uuidText = "[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}";
@@ -74,7 +77,7 @@ export const recoveryRootSchema = z
     );
   });
 export const recoveryFileDigestSchema = z.strictObject({
-  bytes: z.number().int().min(0).max(RECOVERY_LIMITS.dumpBytes),
+  bytes: z.number().int().min(1).max(RECOVERY_LIMITS.dumpBytes),
   sha256,
 });
 export type RecoveryFileDigest = z.infer<typeof recoveryFileDigestSchema>;
@@ -148,6 +151,7 @@ export const recoveryTableSchema = z.strictObject({
 });
 export const recoveryDatabaseEvidenceSchema = z
   .strictObject({
+    rowFormat: z.literal(RECOVERY_ROW_FORMAT),
     migrations: z.array(recoveryMigrationSchema).length(18),
     tables: z.array(recoveryTableSchema).length(RECOVERY_TABLES.length),
     graphSha256: sha256,
@@ -168,6 +172,7 @@ export const recoveryDatabaseEvidenceSchema = z
       value.graphSha256 !==
         recoveryHash(
           canonicalRecoveryJson({
+            rowFormat: value.rowFormat,
             migrations: value.migrations,
             tables: value.tables,
           }),
@@ -201,7 +206,10 @@ export const recoveryManifestSchema = z.strictObject({
   mode: z.literal("quiescent-logical"),
   source: recoverySourceSchema,
   database: recoveryDatabaseEvidenceSchema,
-  dump: recoveryFileDigestSchema.extend({ path: z.literal("database.dump") }),
+  dump: recoveryFileDigestSchema.extend({
+    path: z.literal("database.dump"),
+    format: z.literal("pg18.4-custom"),
+  }),
   storage: recoveryStorageSchema,
 });
 export type RecoveryManifest = z.infer<typeof recoveryManifestSchema>;

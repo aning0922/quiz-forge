@@ -82,3 +82,13 @@ Astra 初审确认维护模式可行。必须在取得原迁移锁、storage 排
 快照回调只在 lease 有效期间复制与验证有限清单，`dumpTo` 使用已拥有的新私有文件描述符；A 只有在 exporter、全部锁和已发起 IO/子进程真实收尾后返回。B 在此之后完成所有私有文件核验与关闭再封存。恢复只接受 B 验证器实际签发且仍有效的 capability，不能通过 JSON 或类型断言伪造；A 通过 capability 取得 dump 描述符和有限资源安装能力。目标根固定为执行命令的受管仓库根，不接受任意覆盖路径。
 
 首版 CLI 计划提供 `runtime:recovery doctor|backup|verify|restore`。`doctor` 只检查环境/代码，不读取用户数据；`backup` 只接显式源实例 ID；`verify` 与 `restore` 接收私有产物路径和独立保存的 manifest SHA-256，`restore` 另接明确的目标数据库端口与 loopback origin。未通过完整验证不得创建目标数据库；不得从备份载入源运行配置或执行调用者任意 SQL。完整脚本和安全输出以最终实现与验收为准。
+
+### 精确比较与能力认证
+
+数据库指纹格式固定为 `pg18-jsonb-pk-lf.v1`：23 张表按 `RECOVERY_TABLES` 顺序；会话固定 `TimeZone=UTC`、`DateStyle=ISO`、`IntervalStyle=postgres`，逐行读取 PostgreSQL `to_jsonb(row)::text`，按经 schema 核验的主键列顺序排序（文本键使用 C 排序）。每行直接以 PostgreSQL 返回字符串的 UTF-8 字节追加一个 LF，流式累计 bytes/SHA-256/rows；不经 JavaScript Date 或 JSON 重编码。空表 bytes/rows 为 0、hash 为 SHA-256 空串。`graphSha256` 为规范 JSON `{rowFormat,migrations,tables}` 的 SHA-256。源和目标使用同一算法，原 JSON/text 字段的实际内容差异会改变指纹。
+
+`codeSha256` 为代码文件清单摘要，不是 Git commit SHA。B 的 `code-identity.ts` 单独实现口径：固定根文件 `package.json`、`pnpm-lock.yaml`、`tsconfig.json`、`next.config.ts`、`postcss.config.mjs`、`.npmrc`，以及 `src/`、`scripts/`、`migrations/p2a/`、`patches/`、`public/` 下全部实际文件；逐项检查无符号链接/非常规文件、限定数量与大小，按相对 POSIX 路径排序，生成 `{schemaVersion:"quizforge.recovery-code.v1",files:[{path,bytes,sha256}]}` 的规范 JSON 并取 SHA-256。不含文档、测试报告、Git 元数据、依赖目录、构建产物或任何私有运行目录。源取证前后及目标恢复前必须比较；变动不能沿用原验证资格。运行环境仍须冻结安装和匹配原工具链，代码指纹不冒称依赖目录或未知原生程序可信。
+
+B 的 `artifact.ts` 必须导出模块级 `assertVerifiedRecoveryBundle(bundle): void`，基于内部 WeakMap 等不可从 JSON 伪造的状态认证来源、未关闭状态及预算。A 在任何目标创建之前调用此函数，不能仅调用入参自己提供的 `assertValid` 方法。能力暴露的 manifest 必须深度不可变，真实 IO 使用内部保留的清单与身份；关闭或验证失败永久撤销该能力。`pg_restore` 在新空库内由非 superuser 的同名 owner 执行完整 schema/data/post-data，保留 ACL；不使用 `--no-acl`、数据-only 禁触发器或 `session_replication_role` 绕过。支持受信本地自产归档，不能将 TOC 检查和 SHA 校验宣传为任意 SQL 沙箱。
+
+dump 固定为 PostgreSQL 18.4 `pg_dump -Fc` 的 custom archive（`format:"pg18.4-custom"`），字节数至少 1 且不能仅凭 manifest 声明接受：实际持有 FD 必须验证长度、SHA、custom 格式头，随后由 A 以匹配版本 `pg_restore` 核有限 TOC/对象集再开始目标创建。A 新子进程 owner 必须限时/限输出，等待 `close` 与全部管道结束，不把旧 `runPg` 的 `exit` 事件直接当作完整 IO 结束证明。

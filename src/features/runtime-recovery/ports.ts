@@ -24,7 +24,11 @@ export type RecoverySnapshotLease = Readonly<{
 }>;
 
 declare const verifiedBundle: unique symbol;
-/** Issued and runtime-checked by artifact.ts; JSON/casts do not create a verified capability. */
+/**
+ * Issued and runtime-checked by artifact.ts; JSON/casts do not create a verified capability.
+ * A MUST first call artifact.ts's module-level assertVerifiedRecoveryBundle(bundle): void.
+ * Calling an input object's assertValid method alone does not authenticate its provenance.
+ */
 export type VerifiedRecoveryBundle = Readonly<{
   [verifiedBundle]: true;
   manifest: RecoveryManifest;
