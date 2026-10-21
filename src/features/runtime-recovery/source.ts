@@ -33,9 +33,15 @@ import {
   assertRecoveryProcessesKnown,
 } from "./database-process";
 import { RecoveryError } from "./errors";
+import { assertRecoveryToc } from "./restore-toc";
 
 const unclosed = new Set<object>();
 const notQuiescent = () => new RecoveryError("RECOVERY_SOURCE_NOT_QUIESCENT");
+function freezeEvidence<T extends object>(value: T): T {
+  for (const child of Object.values(value))
+    if (child && typeof child === "object") freezeEvidence(child);
+  return Object.freeze(value);
+}
 
 export const withQuiescentRecoverySnapshot: WithQuiescentRecoverySnapshot =
   async (input, work) => {
@@ -64,7 +70,7 @@ export const withQuiescentRecoverySnapshot: WithQuiescentRecoverySnapshot =
     await assertRecoveryMaintenanceGuardsAbsent(
       instanceDirectory(managed.config),
     );
-    const origin = createServer();
+    const origin = createServer((socket) => socket.destroy());
     try {
       await new Promise<void>((resolve, reject) => {
         origin.once("error", () => reject(notQuiescent()));
@@ -104,6 +110,20 @@ export const withQuiescentRecoverySnapshot: WithQuiescentRecoverySnapshot =
     input.signal.addEventListener("abort", revoke, { once: true });
     let heartbeat: ReturnType<typeof setInterval> | undefined,
       checking: Promise<void> | undefined;
+    let leaseOpen = true,
+      issuedError: unknown;
+    const issued: Promise<unknown>[] = [];
+    const track = <T>(work: () => Promise<T>): Promise<T> => {
+      if (!leaseOpen)
+        return Promise.reject(new RecoveryError("RECOVERY_LOCK_LOST"));
+      const pending = work();
+      issued.push(
+        pending.then(undefined, (error: unknown) => {
+          issuedError ??= error;
+        }),
+      );
+      return pending;
+    };
     try {
       db = await openManagedDatabase(input.instanceId);
       connection = await db.sql.reserve();
@@ -214,72 +234,83 @@ export const withQuiescentRecoverySnapshot: WithQuiescentRecoverySnapshot =
       let dumped = false;
       const result = await work(
         Object.freeze({
-          source,
-          database,
-          storage: files,
+          source: freezeEvidence(source),
+          database: freezeEvidence(database),
+          storage: freezeEvidence(files),
           instanceDirectory: instanceDirectory(managed.config),
-          assertValid,
-          dumpTo: async (file) => {
-            await assertValid();
-            if (dumped || busyDump)
-              throw new RecoveryError("RECOVERY_ARGUMENTS_INVALID");
-            const stat = await file.stat();
-            if (
-              !stat.isFile() ||
-              stat.size !== 0 ||
-              stat.nlink !== 1 ||
-              stat.uid !== process.getuid?.() ||
-              (stat.mode & 0o7777) !== 0o600
-            )
-              throw new RecoveryError("RECOVERY_STORAGE_INVALID");
-            busyDump = true;
-            try {
-              await runRecoveryPg(
-                "pg_dump",
-                [
-                  "-Fc",
-                  `--snapshot=${snapshot.snapshot}`,
-                  "--host=127.0.0.1",
-                  `--port=${managed.config.database.port}`,
-                  `--username=${managed.admin.owner.user}`,
-                  `--dbname=${managed.admin.owner.name}`,
-                  "--no-password",
-                ],
-                input,
-                {
-                  env: {
-                    PGPASSWORD: managed.admin.owner.password,
-                    PGAPPNAME: applicationName,
+          assertValid: () => track(assertValid),
+          dumpTo: (file) =>
+            track(async () => {
+              await assertValid();
+              if (dumped || busyDump)
+                throw new RecoveryError("RECOVERY_ARGUMENTS_INVALID");
+              const stat = await file.stat();
+              if (
+                !stat.isFile() ||
+                stat.size !== 0 ||
+                stat.nlink !== 1 ||
+                stat.uid !== process.getuid?.() ||
+                (stat.mode & 0o7777) !== 0o600
+              )
+                throw new RecoveryError("RECOVERY_STORAGE_INVALID");
+              busyDump = true;
+              try {
+                await runRecoveryPg(
+                  "pg_dump",
+                  [
+                    "-Fc",
+                    `--snapshot=${snapshot.snapshot}`,
+                    "--host=127.0.0.1",
+                    `--port=${managed.config.database.port}`,
+                    `--username=${managed.admin.owner.user}`,
+                    `--dbname=${managed.admin.owner.name}`,
+                    "--no-password",
+                  ],
+                  input,
+                  {
+                    env: {
+                      PGPASSWORD: managed.admin.owner.password,
+                      PGAPPNAME: applicationName,
+                    },
+                    output: file,
                   },
-                  output: file,
-                },
-              );
-              // Client close is not server-backend exit: retain this owned dump admission until observed absent.
-              const backendDeadline = performance.now() + 2000;
-              for (;;) {
-                await connection!`SELECT pg_stat_clear_snapshot()`;
-                const [row] = await connection!<
-                  { present: boolean }[]
-                >`SELECT EXISTS(SELECT 1 FROM pg_stat_activity WHERE datname=current_database() AND usename=${managed.admin.owner.user} AND application_name=${applicationName}) present`;
-                if (row?.present === false) break;
-                if (performance.now() >= backendDeadline) throw notQuiescent();
-                await delay(10);
+                );
+                // Client close is not server-backend exit: retain this owned dump admission until observed absent.
+                const backendDeadline = performance.now() + 2000;
+                for (;;) {
+                  await connection!`SELECT pg_stat_clear_snapshot()`;
+                  const [row] = await connection!<
+                    { present: boolean }[]
+                  >`SELECT EXISTS(SELECT 1 FROM pg_stat_activity WHERE datname=current_database() AND usename=${managed.admin.owner.user} AND application_name=${applicationName}) present`;
+                  if (row?.present === false) break;
+                  if (performance.now() >= backendDeadline)
+                    throw notQuiescent();
+                  await delay(10);
+                }
+                await file.sync();
+                const digest = await digestRecoveryHandle(
+                  file,
+                  input,
+                  RECOVERY_LIMITS.dumpBytes,
+                  Buffer.from("PGDMP"),
+                );
+                assertRecoveryToc(
+                  await runRecoveryPg("pg_restore", ["--list"], input, {
+                    input: file,
+                  }),
+                  input.instanceId,
+                );
+                dumped = true;
+                return digest;
+              } finally {
+                busyDump = false;
               }
-              await file.sync();
-              const digest = await digestRecoveryHandle(
-                file,
-                input,
-                RECOVERY_LIMITS.dumpBytes,
-                Buffer.from("PGDMP"),
-              );
-              dumped = true;
-              return digest;
-            } finally {
-              busyDump = false;
-            }
-          },
+            }),
         }),
       );
+      leaseOpen = false;
+      await Promise.all(issued);
+      if (issuedError) throw issuedError;
       await checking;
       await assertValid();
       if (
@@ -296,11 +327,13 @@ export const withQuiescentRecoverySnapshot: WithQuiescentRecoverySnapshot =
         throw new RecoveryError("RECOVERY_CODE_MISMATCH");
       return result;
     } finally {
+      leaseOpen = false;
       active = false;
       clearInterval(heartbeat);
       clearTimeout(timer);
       input.signal.removeEventListener("abort", revoke);
       await checking;
+      await Promise.all(issued);
       const closes: Promise<unknown>[] = [];
       if (connection)
         closes.push(

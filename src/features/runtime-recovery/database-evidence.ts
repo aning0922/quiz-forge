@@ -22,6 +22,26 @@ export async function readRecoveryDatabaseEvidence(
   budget: RecoveryBudget,
 ): Promise<RecoveryDatabaseEvidence> {
   checkRecoveryBudget(budget);
+  const namespaces = await sql.unsafe<{ name: string }[]>(
+    `SELECT nspname name FROM pg_namespace WHERE nspname NOT LIKE 'pg_%'
+     AND nspname<>'information_schema' ORDER BY nspname COLLATE "C"`,
+  );
+  if (
+    JSON.stringify(namespaces.map((row) => row.name)) !==
+    JSON.stringify(["public", "qf", "qf_meta"])
+  )
+    throw failure();
+  const [extra] = await sql.unsafe<{ present: boolean }[]>(
+    `SELECT EXISTS(SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname IN ('public','qf_meta'))
+     OR EXISTS(SELECT 1 FROM pg_type t JOIN pg_namespace n ON n.oid=t.typnamespace WHERE n.nspname='public' OR (n.nspname='qf_meta' AND t.typname NOT IN ('schema_migrations','_schema_migrations')))
+     OR EXISTS(SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='qf_meta' AND c.relname NOT IN ('schema_migrations','schema_migrations_pkey'))
+     OR EXISTS(SELECT 1 FROM pg_trigger WHERE tgrelid='qf_meta.schema_migrations'::regclass)
+     OR EXISTS(SELECT 1 FROM pg_largeobject_metadata)
+     OR EXISTS(SELECT 1 FROM pg_namespace n CROSS JOIN LATERAL aclexplode(coalesce(n.nspacl,acldefault('n',n.nspowner))) a WHERE n.nspname IN ('public','qf_meta') AND a.grantee<>n.nspowner)
+     OR EXISTS(SELECT 1 FROM pg_class c CROSS JOIN LATERAL aclexplode(coalesce(c.relacl,acldefault('r',c.relowner))) a WHERE c.oid='qf_meta.schema_migrations'::regclass AND a.grantee<>c.relowner)
+     OR EXISTS(SELECT 1 FROM pg_attribute a CROSS JOIN LATERAL aclexplode(a.attacl) x WHERE a.attrelid='qf_meta.schema_migrations'::regclass AND x.grantee<>(SELECT relowner FROM pg_class WHERE oid=a.attrelid)) present`,
+  );
+  if (extra?.present !== false) throw failure();
   const names = await sql.unsafe<{ name: string }[]>(
     `SELECT n.nspname||'.'||c.relname name FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
      WHERE n.nspname NOT LIKE 'pg_%' AND n.nspname<>'information_schema'

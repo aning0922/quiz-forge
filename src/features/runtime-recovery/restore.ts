@@ -7,10 +7,14 @@ import { createDatabase } from "@/lib/db/client";
 import {
   initEmptyRecoveryInstance,
   loadManagedInstance,
-  manageLocalInstance,
   openManagedDatabase,
   writePrivateJson,
 } from "@/lib/db/management";
+import {
+  readPostmaster,
+  stopStartedPostgres,
+  type StartedPostgres,
+} from "@/lib/db/pg-start";
 import { assertVerifiedRecoveryBundle } from "./artifact";
 import { computeRecoveryCodeIdentity } from "./code-identity";
 import {
@@ -50,8 +54,11 @@ export const restoreManagedRecoveryData: RestoreManagedRecoveryData = async (
     source = manifest.source;
   recoveryPortSchema.parse(input.pgPort);
   recoveryOriginSchema.parse(input.origin);
+  const root = process.cwd();
   if (
-    process.cwd() === source.root ||
+    root === source.root ||
+    root.startsWith(source.root + "/") ||
+    source.root.startsWith(root + "/") ||
     input.pgPort === source.pgPort ||
     input.origin === source.origin
   )
@@ -88,7 +95,7 @@ export const restoreManagedRecoveryData: RestoreManagedRecoveryData = async (
       source.instanceId,
     );
   });
-  const origin = createServer();
+  const origin = createServer((socket) => socket.destroy());
   await new Promise<void>((resolve, reject) => {
     origin.once("error", () =>
       reject(new RecoveryError("RECOVERY_DESTINATION_EXISTS")),
@@ -103,6 +110,7 @@ export const restoreManagedRecoveryData: RestoreManagedRecoveryData = async (
     );
   });
   let target: Awaited<ReturnType<typeof initEmptyRecoveryInstance>> | undefined;
+  let started: StartedPostgres | undefined;
   let db: Awaited<ReturnType<typeof openManagedDatabase>> | undefined;
   let connection: postgres.ReservedSql | undefined;
   let stopped = false,
@@ -124,6 +132,12 @@ export const restoreManagedRecoveryData: RestoreManagedRecoveryData = async (
       },
       recoveryPgRunner(input),
     );
+    started = await readPostmaster({
+      instanceId: target.instanceId,
+      pgdata: target.pgdata!,
+      socket: target.socket!,
+      port: target.port,
+    });
     const managed = await loadManagedInstance(source.instanceId);
     db = await openManagedDatabase(source.instanceId);
     const [empty] = await db.sql<
@@ -205,14 +219,13 @@ export const restoreManagedRecoveryData: RestoreManagedRecoveryData = async (
         closeFailed = true;
       }
     }
-    if (target) {
+    if (started) {
       try {
-        await manageLocalInstance(
-          "stop",
-          target.instanceId,
+        stopped = await stopStartedPostgres(
+          started,
           recoveryPgRunner(cleanupBudget()),
         );
-        stopped = true;
+        if (!stopped) closeFailed = true;
       } catch {
         closeFailed = true;
       }
