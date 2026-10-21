@@ -99,7 +99,7 @@ export async function writePrivateJson(
     mode: 0o600,
   });
 }
-async function newInstanceDirectory() {
+async function newInstanceDirectory(recoveryInstanceId?: string) {
   const base = privateRoot();
   await mkdir(base, { recursive: true, mode: 0o700 });
   const stat = await lstat(base);
@@ -111,7 +111,8 @@ async function newInstanceDirectory() {
     (await realpath(base)) !== base
   )
     fail("PRIVATE_DIRECTORY_INVALID");
-  const instanceId = randomBytes(16).toString("hex");
+  const instanceId = recoveryInstanceId ?? randomBytes(16).toString("hex");
+  idSchema.parse(instanceId);
   const paths = instancePaths(instanceId);
   await mkdir(paths.directory, { mode: 0o700 });
   return { instanceId, paths };
@@ -233,6 +234,28 @@ export async function initLocalInstance(
   },
   commands: PgCommandRunner = runPg,
 ) {
+  return initializeLocalInstance(options, commands);
+}
+
+/** Internal recovery bootstrap: new physical cluster, same logical names, no schema migration. */
+export async function initEmptyRecoveryInstance(
+  options: {
+    instanceId: string;
+    port: number;
+    origin: string;
+    purpose: "test" | "demo";
+  },
+  commands: PgCommandRunner,
+) {
+  idSchema.parse(options.instanceId);
+  return initializeLocalInstance(options, commands, options.instanceId);
+}
+
+async function initializeLocalInstance(
+  options: { port: number; origin: string; purpose: "test" | "demo" },
+  commands: PgCommandRunner,
+  recoveryInstanceId?: string,
+) {
   if (
     !isLocalOrigin(options.origin) ||
     !["test", "demo"].includes(options.purpose)
@@ -244,7 +267,16 @@ export async function initLocalInstance(
   )
     fail("PG_VERSION_INVALID");
   await checkPort(options.port);
-  const { instanceId, paths } = await newInstanceDirectory();
+  const { instanceId, paths } = await newInstanceDirectory(recoveryInstanceId);
+  if (recoveryInstanceId)
+    await writePrivateJson(
+      path.join(paths.directory, "recovery-pending.json"),
+      {
+        version: 1,
+        instanceId,
+        status: "unverified",
+      },
+    );
   const password = randomBytes(32).toString("base64url"),
     ownerPassword = randomBytes(32).toString("base64url"),
     appPassword = randomBytes(32).toString("base64url");
@@ -268,7 +300,7 @@ export async function initLocalInstance(
     await mkdir(paths.socket, { mode: 0o700 });
     await writeFile(
       path.join(paths.pgdata, "postgresql.conf"),
-      `\n# quizforge.p2a:${instanceId}\nlisten_addresses = '127.0.0.1'\nport = ${options.port}\nunix_socket_directories = '../socket'\npassword_encryption = 'scram-sha-256'\nlog_min_error_statement = 'panic'\nlog_parameter_max_length_on_error = 0\n`,
+      `\n# quizforge.p2a:${instanceId}\nlisten_addresses = '127.0.0.1'\nport = ${options.port}\nunix_socket_directories = '../socket'\npassword_encryption = 'scram-sha-256'\nlog_min_error_statement = 'panic'\nlog_parameter_max_length_on_error = 0\n${recoveryInstanceId ? "log_error_verbosity = 'terse'\n" : ""}`,
       { flag: "a" },
     );
     // Keep only loopback/socket access; no LAN addresses or trust auth.
@@ -350,7 +382,7 @@ export async function initLocalInstance(
     await writePrivateJson(paths.manifest, manifest);
     const db = await openManagedDatabase(instanceId);
     try {
-      await migrateDatabase(db.sql, config);
+      if (!recoveryInstanceId) await migrateDatabase(db.sql, config);
     } finally {
       await db.close();
     }
@@ -383,6 +415,19 @@ export async function manageLocalInstance(
 ) {
   const managed = await loadManagedInstance(instanceId);
   await assertPgdata(managed.manifest);
+  if (command === "start" || command === "migrate") {
+    try {
+      await lstat(
+        path.join(
+          path.dirname(managed.manifest.runtimeConfigPath),
+          "recovery-pending.json",
+        ),
+      );
+      fail("RECOVERY_TARGET_NOT_VERIFIED");
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+    }
+  }
   if (command === "start") {
     // Existing postmaster/occupied port are refusals before any start attempt or compensating stop.
     try {
