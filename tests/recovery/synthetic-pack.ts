@@ -101,6 +101,7 @@ export async function buildRecoverySyntheticPack(
     archiveSha256: sha(archive),
     archiveBytes: archive.length,
     baseline: fixed,
+    content,
     report,
   };
 }

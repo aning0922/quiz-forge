@@ -155,13 +155,26 @@ export async function createRecoveryBackup(
       "p2a",
       input.instanceId,
     );
+    const protectedSourceDirectories = [
+      ".cache/p2a",
+      "src",
+      "scripts",
+      "migrations",
+      "patches",
+      "public",
+    ].map((relative) => path.join(lease.source.root, relative));
     if (
       lease.source.instanceId !== input.instanceId ||
       lease.source.codeSha256 !== input.codeSha256 ||
       lease.instanceDirectory !== sourceDirectory ||
       input.directory === sourceDirectory ||
       input.directory.startsWith(sourceDirectory + path.sep) ||
-      sourceDirectory.startsWith(input.directory + path.sep)
+      sourceDirectory.startsWith(input.directory + path.sep) ||
+      protectedSourceDirectories.some(
+        (directory) =>
+          input.directory === directory ||
+          input.directory.startsWith(directory + path.sep),
+      )
     )
       throw new RecoveryError("RECOVERY_SOURCE_INVALID");
     // Reject overlap before the first destination mutation, including a nested source path.

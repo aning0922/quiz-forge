@@ -6,7 +6,7 @@
 
 备份/恢复支持 macOS arm64、固定 Homebrew PostgreSQL 18.4 及项目声明的 Node 版本。命令必须从正式 origin 的独立受管仓库根执行，先用冻结锁文件安装依赖。doctor 仅检查仓库、工具链和代码字节，不连接业务数据库、不读取用户资料、不启动服务或配置媒体运行时。包完整性校验不需要启动 PostgreSQL；Linux 工具测试不等于 Linux 恢复支持。
 
-代码摘要包括合同中的六个根配置文件以及 `src/`、`scripts/`、`migrations/p2a/`、`patches/`、`public/`。上限为 16384 个文件/目录项、单文件 32 MiB、总文件字节 256 MiB、摘要清单 4 MiB；超限拒绝。依赖目录、构建、文档、测试和 `.cache` 不参与摘要。摘要不是 Git SHA，也不验证 node_modules 或未登记原生工具。恢复目标需使用同一实际代码字节和相匹配的冻结工具链。
+代码摘要包括合同中的六个根配置文件以及 `src/`、`scripts/`、`migrations/p2a/`、`patches/`、`public/`。上限为 16384 个文件/目录项、单文件 32 MiB、总文件字节 256 MiB、摘要清单 4 MiB；超限拒绝。依赖目录、构建、文档、`tests/` 目录和 `.cache` 不参与摘要；`src/` 内的 `.test.ts` 仍按全部实际文件计入。摘要不是 Git SHA，也不验证 node_modules 或未登记原生工具。恢复目标需使用同一实际代码字节和相匹配的冻结工具链。
 
 产物本身包含敏感数据库记录、凭据摘要、会话与资源。0700/0600 和 SHA 校验不提供加密。备份和独立保管的 manifest SHA 只交给被授权的维护人员；不提交 Git，不通过公开日志、截图、工单或公开 URL 传递。原始运营登录凭证、已发放 Key/私密链接需另行私下保管，无法从数据库摘要恢复。工具不复制源数据库密码、runtime/admin 配置、PGDATA、socket、浏览器状态、原生运行时 capability/control、日志或整个 `.cache`。
 

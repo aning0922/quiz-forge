@@ -5,7 +5,7 @@
 后续实际演练须在 B 独占的新 test 实例运行，不能调用 `prepareP4ConsumerSource` / `seedReadyP2b3Source` 的 no-file 快捷种子：
 
 1. 创建独立 operator 和空 `consumer-flow-fixture` Product；通过真实 `createIntent` 与 `receiveArchive` 接收 helper 产生的完整字节，核原包 SHA、长度和 durable stopped 回执。
-2. 在匹配当前工作树的已配置媒体运行时上调用真实 `prepareValidation` / `startValidation`。不 mock native media，不直接落账 ready，不伪造 fileStopProof。要求 ready、五资源、全部尝试真实停止并释放；真实 apply、审核及版本封存。
+2. 在匹配当前工作树的已配置媒体运行时上，通过真实编译 Next HTTP 路由调用 `prepareValidation` / `startValidation`。原生运行根由 Next 编译固定，不能从 raw TS 导入执行或注入 globals 来替代。`runtime-recovery-drill-source.ts` 只创建新的合成 test 实例，独占 55422/55423，启动自身 HTTP，结束后验证实际退出。不 mock native media，不直接落账 ready，不伪造 fileStopProof。要求 ready、五资源、全部尝试真实停止并释放；真实 apply、审核及版本封存。
 3. 通过业务接口创建一个已完成报告、一个进行中答题和一个未使用 Key。原始合成凭证仅留在自有私有演练状态，不写 Git、截图或公开输出。
 4. 源 HTTP、worker 和请求连接由其 owner 实际关闭；禁用导入并关闭 fixture 连接。调用正式备份工具，由 A 检查数据库和文件完整闭合；不能为演练放宽准入。
 5. 新受管工作树使用相同逻辑 ID、新数据库密码、新端口恢复。先比较完整数据库指纹和文件清单；目标首次恢复结果必须为 verified-stopped。
