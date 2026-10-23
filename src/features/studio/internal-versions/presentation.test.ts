@@ -52,7 +52,7 @@ describe("internal metadata and recovery presentation, server markup only", () =
     const html = renderToStaticMarkup(
       createElement(ProductDetail, { productId: binding.productId, session }),
     );
-    expect(html).toContain("工作区读取未完成");
+    expect(html).toContain("测评信息暂未读取");
     expect(html).toContain('aria-label="审核依据记录操作查询"');
     expect(html).toContain('aria-label="内容版本固定操作查询"');
     expect(html.match(/<details open=""/g)).toHaveLength(2);
