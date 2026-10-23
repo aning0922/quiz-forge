@@ -9,6 +9,7 @@ import {
   encodeInternalPending,
 } from "@/features/studio/internal-versions/storage";
 import { internalReviewResolveUrl } from "@/features/product/internal-versions/urls";
+import { recordBaselineFingerprint } from "@/features/product/internal-versions/contracts";
 
 // A finite actual-component check. Synthetic HTTP only; no DB, Next build,
 // author data, 3100 or 3110. Run only in the primary chat's browser window.
@@ -58,6 +59,12 @@ await fromTsx("esbuild").build({
 });
 const js = await readFile(path.join(out, "probe.js")),
   css = await readFile(path.join(out, "probe.css"));
+const unresolved = {
+  kind: "unresolved",
+  binding,
+  fingerprint: await recordBaselineFingerprint(binding),
+  observedCurrentRevision: binding.target.revision,
+};
 let denied = false,
   resolves = 0,
   unexpectedApi = 0;
@@ -73,12 +80,13 @@ const server = createServer(async (req, res) => {
     req.method === "POST"
   ) {
     resolves++;
-    res.writeHead(denied ? 401 : 503, { "content-type": "application/json" });
+    res.writeHead(denied ? 401 : 200, { "content-type": "application/json" });
     res.end(
-      JSON.stringify({
-        code: denied ? "UNAUTHENTICATED" : "WRITE_OUTCOME_UNKNOWN",
-        requestId: binding.idempotencyKey,
-      }),
+      JSON.stringify(
+        denied
+          ? { code: "UNAUTHENTICATED", requestId: binding.idempotencyKey }
+          : unresolved,
+      ),
     );
   } else if (pathname.startsWith("/api/")) {
     unexpectedApi++;
@@ -195,10 +203,7 @@ try {
     .getByRole("button", { name: "查询审核依据记录结果", exact: true })
     .click();
   await expect(
-    review.getByText(
-      "上次操作结果暂未确认，请先查询处理结果，确认前避免重复提交。",
-      { exact: false },
-    ),
+    review.getByRole("heading", { name: "原操作仍未确认", exact: true }),
   ).toBeVisible();
   expect(
     await page.evaluate(
