@@ -7,7 +7,11 @@ import styles from "./studio.module.css";
 import { invalidateCurrentStudioAuthority } from "./authority-events";
 
 const items = [
-  { href: "/studio/products", label: "工作区", description: "管理测评与访问码" },
+  {
+    href: "/studio/products",
+    label: "工作区",
+    description: "管理测评与访问码",
+  },
   {
     href: "/studio/taxonomy",
     label: "类目与标签",
