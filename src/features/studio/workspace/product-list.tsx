@@ -51,12 +51,12 @@ export function ProductList({ session }: { session: StudioSessionDto }) {
     <div className={styles.workspace}>
       <WorkspaceNav />
       <StudioPageHeader
-        title="测评工作区"
-        description={<p>管理商品，进入各自的导入、草稿与内测流程。</p>}
+        title="测评列表"
+        description={<p>找到需要处理的测评，查看内容、导入更新或编辑信息。</p>}
         actions={
           session.operator.role === "operator" ? (
             <Link className={styles.link} href="/studio/new-product">
-              创建商品
+              创建测评
             </Link>
           ) : undefined
         }
@@ -64,6 +64,7 @@ export function ProductList({ session }: { session: StudioSessionDto }) {
       <section className={styles.panel}>
         {session.operator.role === "read-only" && <ReadOnlyNotice />}
         <FilterBar
+          searchLabel="搜索测评名称或编号"
           busy={read.loading}
           onFilter={(q, status) => {
             setQuery({
@@ -85,7 +86,7 @@ export function ProductList({ session }: { session: StudioSessionDto }) {
                 if (event.target.checked) setCategories([]);
               }}
             />
-            仅未分类工作区
+            仅未分类测评
           </label>
           <TaxonomyPicker
             purpose="filter"
@@ -109,15 +110,15 @@ export function ProductList({ session }: { session: StudioSessionDto }) {
             ? "未归档"
             : query.status === "archived"
               ? "已归档"
-              : "全部商品"}
+              : "全部测评"}
           {query.q && ` · 搜索“${query.q}”`}
-          {query.categoryId && " · 已按主类目筛选"}
+          {query.categoryId && " · 已按分类筛选"}
           {query.tagId && " · 已按标签筛选"}
           {query.unclassified && " · 仅未分类"}
         </p>
         {read.loading && (
           <p className={styles.status} role="status">
-            正在加载工作区…
+            正在加载测评…
           </p>
         )}
         {read.error && (
@@ -128,16 +129,16 @@ export function ProductList({ session }: { session: StudioSessionDto }) {
               type="button"
               onClick={read.refresh}
             >
-              重新读取工作区
+              重新读取测评
             </button>
           </div>
         )}
         {read.value && (
           <>
-            <p className={styles.note}>共 {read.value.total} 个工作区</p>
+            <p className={styles.note}>共 {read.value.total} 个测评</p>
             {!read.value.items.length && (
               <p className={styles.status}>
-                {filtered ? "当前筛选无结果" : "尚无工作区"}
+                {filtered ? "当前筛选无结果" : "尚无测评"}
               </p>
             )}
             <ul className={styles.cards}>

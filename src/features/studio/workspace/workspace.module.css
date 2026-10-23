@@ -276,6 +276,40 @@
   padding-block: 16px;
   border-block: 1px solid #e1e7ee;
 }
+.primaryEditor {
+  border: 0;
+  margin-top: 16px;
+}
+.primaryEditor > summary {
+  padding: 12px 16px;
+  border: 1px solid #b6cbdc;
+  border-radius: 8px;
+  background: #e3edf6;
+  color: #183e60;
+}
+.secondaryOperations {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid #d7dfe7;
+}
+.secondaryOperations > h2 {
+  font-size: 18px;
+  margin-bottom: 0;
+  color: #42536a;
+}
+.pagination {
+  margin-block: 16px;
+}
+.pickerActions {
+  margin-top: 16px;
+}
+.taxonomyTabs .button[aria-pressed="false"] {
+  background: #f1f4f7;
+  color: #234d73;
+}
+.taxonomyTabs .button[aria-pressed="true"] {
+  box-shadow: 0 0 0 2px #c6d9e8;
+}
 @media (min-width: 1100px) {
   .productOverview > .facts:not(.overviewFacts) {
     grid-template-columns: repeat(3, minmax(0, 1fr));
