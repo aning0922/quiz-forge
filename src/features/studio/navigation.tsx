@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import styles from "./studio.module.css";
+import { invalidateCurrentStudioAuthority } from "./authority-events";
 
 const items = [
   { href: "/studio/products", label: "工作区", description: "商品与测评流程" },
@@ -48,6 +49,7 @@ export function StudioNavigation() {
                 aria-label={item.label}
                 aria-current={current ? "page" : undefined}
                 className={styles.navigationLink}
+                onClickCapture={invalidateCurrentStudioAuthority}
                 onClick={() => {
                   if (
                     !window.matchMedia("(min-width: 960px)").matches &&

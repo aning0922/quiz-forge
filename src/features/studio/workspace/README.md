@@ -13,6 +13,17 @@ also revokes its own synthetic session through the real logout API, then follows
 a client-side workspace link without the panel's router refresh and checks the
 login presentation. Ordinary button logout remains covered at the other widths.
 
+Global link activation also emits the existing same-window authority invalidation
+in capture phase, before routing. It does not broadcast a logout to other tabs.
+Menu expansion and empty navigation space do not revoke. The focused real-shell
+synthetic HTTP/browser regression is `tests/browser/studio-consumer.ts
+--navigation-only` (run with the root tsconfig and an installed Playwright browser).
+It retains the old mount while preventing only destination navigation, tests
+pointer/Enter and another live tab, and releases delayed authorization/POST
+responses to prove old work cannot resume or replace the original pending record.
+This is browser/controller evidence with synthetic HTTP, not real DB authorization
+or production E2E. Without that argument the original scenarios still run.
+
 The product list links to `/studio/new-product`, outside the product ID namespace.
 The original create form, POST and exact submitted-ID reconciliation live in
 `product-create.tsx`. Read-only direct visits render the read-only notice.
