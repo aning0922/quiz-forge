@@ -1,4 +1,8 @@
 "use client";
+import { TechnicalDetails } from "../presentation/technical-details";
+import { StudioPageHeader } from "../presentation/page-header";
+import { previewPagePath } from "@/features/product/preview/urls";
+import { StudioWorkflowNav } from "../presentation/workflow-nav";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { StudioSessionDto } from "../contracts";
@@ -54,6 +58,20 @@ export function FixedRevisionPreviewPage({
   const active = read.attempt === attempt;
   return (
     <div className={styles.preview}>
+      <StudioPageHeader
+        title="固定修订内部预览"
+        description={
+          <>
+            固定目标：修订 {scope.revision}
+            。此处用于检查内容与画面，不产生正式消费者报告。
+          </>
+        }
+      />
+      <StudioWorkflowNav
+        productId={scope.productId}
+        current="preview"
+        previewHref={previewPagePath(scope)}
+      />
       <nav className={styles.navigation} aria-label="固定修订导航">
         <Link
           href={draftRevisionPath(
@@ -68,9 +86,11 @@ export function FixedRevisionPreviewPage({
       </nav>
       <div className={styles.binding}>
         <strong>内部预览 · 固定修订 {scope.revision}</strong>
-        <p>
-          {scope.productId} / {scope.draftId}
-        </p>
+        <TechnicalDetails label="预览目标标识">
+          <p>
+            {scope.productId} / {scope.draftId}
+          </p>
+        </TechnicalDetails>
         <p>
           临时答案与结果仅留在本页，刷新后重置。内容、素材与发布仍须人工批准。
         </p>

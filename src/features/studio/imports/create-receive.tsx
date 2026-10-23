@@ -1,4 +1,5 @@
 "use client";
+import { TechnicalDetails } from "../presentation/technical-details";
 
 import Link from "next/link";
 import { useState } from "react";
@@ -121,7 +122,7 @@ export function CreateReceive({
         <h2>选择本地原包</h2>
         <p className={styles.note}>
           上限
-          32MiB；本批仅隔离接收原字节。原包用途为未来新草稿，不会创建空草稿。
+          32MiB。选择文件后先创建接收意图，再明确上传。接收完成后仍需验证归档，草稿由后续步骤创建。
         </p>
         <label className={styles.field}>
           原包文件
@@ -134,20 +135,26 @@ export function CreateReceive({
           />
         </label>
         {pending && (
-          <dl className={styles.facts}>
-            <div>
-              <dt>本次请求标识</dt>
-              <dd>{pending.idempotencyKey}</dd>
-            </div>
-            <div>
-              <dt>字节数</dt>
-              <dd>{pending.input.expectedArchiveBytes}</dd>
-            </div>
-            <div>
-              <dt>SHA-256</dt>
-              <dd>{pending.input.expectedArchiveSha256}</dd>
-            </div>
-          </dl>
+          <>
+            <dl className={styles.facts}>
+              <div>
+                <dt>本次请求标识</dt>
+                <dd>{pending.idempotencyKey}</dd>
+              </div>
+              <div>
+                <dt>字节数</dt>
+                <dd>{pending.input.expectedArchiveBytes}</dd>
+              </div>
+            </dl>
+            <TechnicalDetails label="所选原包校验摘要">
+              <dl className={styles.facts}>
+                <div>
+                  <dt>SHA-256</dt>
+                  <dd>{pending.input.expectedArchiveSha256}</dd>
+                </div>
+              </dl>
+            </TechnicalDetails>
+          </>
         )}
         {unknown && (
           <p className={styles.compare} role="status">

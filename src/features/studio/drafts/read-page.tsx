@@ -1,13 +1,16 @@
 "use client";
+import { TechnicalDetails } from "../presentation/technical-details";
+import { StudioPageHeader } from "../presentation/page-header";
+import { StudioWorkflowNav } from "../presentation/workflow-nav";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
+import { previewPagePath } from "@/features/product/preview/urls";
 import type { AppendDraftApplication } from "@/features/product/draft-revisions/contracts";
 import { RevisionHistoryPanel } from "../draft-revisions/history";
 import { RevisionPendingPanel } from "../draft-revisions/pending-panel";
 import { RevisionLinks } from "../draft-revisions/primitives";
 import type { StudioSessionDto } from "../contracts";
 import { DraftPendingPanel } from "./pending-panel";
-import { WorkspaceNav } from "../workspace/primitives";
 import {
   checkDraftRead,
   checkDraftRevision,
@@ -32,9 +35,18 @@ export function DraftWorkspacePage({
   );
   return (
     <div className={styles.workspace}>
-      <WorkspaceNav />
       <section className={styles.panel}>
-        <h1>工作区草稿</h1>
+        <StudioPageHeader
+          title="工作区草稿"
+          description="先核对当前草稿，再选择固定修订阅读、预览或记录内测基线。历史回执与当前指针分别保留。"
+        />
+        <StudioWorkflowNav
+          productId={productId}
+          current="draft"
+          {...(read.value?.kind === "draft"
+            ? { previewHref: previewPagePath(read.value.draft) }
+            : {})}
+        />
         <div className={styles.actions}>
           <Link
             className={styles.link}
@@ -104,10 +116,12 @@ export function DraftRevisionPage({
   productId,
   draftId,
   revision,
+  navigation,
 }: {
   productId: string;
   draftId: string;
   revision: number;
+  navigation: ReactNode;
 }) {
   const read = useDraftRead(
     draftRevisionEndpoint(productId, draftId, revision),
@@ -116,9 +130,23 @@ export function DraftRevisionPage({
   );
   return (
     <div className={styles.workspace}>
-      <WorkspaceNav />
       <section className={styles.panel}>
-        <h1>草稿固定修订 · 只读</h1>
+        <StudioPageHeader
+          title="草稿固定修订 · 只读"
+          description={
+            <>
+              固定目标：修订 {revision}
+              。正文核验成功后可进入此修订预览或既有基线记录。
+            </>
+          }
+        />
+        <StudioWorkflowNav
+          productId={productId}
+          current="draft"
+          {...(read.value
+            ? { previewHref: previewPagePath(read.value.draft) }
+            : {})}
+        />
         <div className={styles.actions}>
           <Link className={styles.link} href={draftWorkspacePath(productId)}>
             返回服务器草稿
@@ -140,22 +168,25 @@ export function DraftRevisionPage({
         {read.value && (
           <>
             <DraftFacts draft={read.value.draft} />
-            <label className={draftStyles.body}>
-              完整内容正文
-              <textarea
-                aria-label="完整内容正文"
-                readOnly
-                value={read.value.canonicalContentText}
-              />
-            </label>
-            <label className={draftStyles.body}>
-              完整素材集合正文
-              <textarea
-                aria-label="完整素材集合正文"
-                readOnly
-                value={read.value.assetSetText}
-              />
-            </label>
+            <div className={styles.actions}>{navigation}</div>
+            <TechnicalDetails label="固定修订完整正文与素材集合">
+              <label className={draftStyles.body}>
+                完整内容正文
+                <textarea
+                  aria-label="完整内容正文"
+                  readOnly
+                  value={read.value.canonicalContentText}
+                />
+              </label>
+              <label className={draftStyles.body}>
+                完整素材集合正文
+                <textarea
+                  aria-label="完整素材集合正文"
+                  readOnly
+                  value={read.value.assetSetText}
+                />
+              </label>
+            </TechnicalDetails>
           </>
         )}
       </section>

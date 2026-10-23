@@ -1,4 +1,6 @@
 "use client";
+import { StudioPageHeader } from "../presentation/page-header";
+import { StudioWorkflowNav } from "../presentation/workflow-nav";
 import Link from "next/link";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import type { ConsumerRendererIdentity } from "@/lib/consumer-contract/v1/identities";
@@ -289,8 +291,14 @@ export function StudioConsumerAccessPageV1({
   const pendingKey = state.evidence?.value.binding.operationKey ?? "original";
   return (
     <div className={styles.page}>
-      <header className={styles.panel}>
-        <h1>消费者内测与访问 Key</h1>
+      <section className={styles.panel}>
+        <StudioPageHeader
+          title="消费者内测与访问 Key"
+          description="先选择已封存父版本创建固定答题版本，再为该版本发放访问 Key。原请求未确认时先核实。"
+        />
+        <div onClickCapture={controller.revoke}>
+          <StudioWorkflowNav productId={scope.productId} current="keys" />
+        </div>
         <p>
           从已封存的父版本固定消费者体验。内测不等于发布，不包含支付、公开分享或消费者答案查看。
         </p>
@@ -316,7 +324,7 @@ export function StudioConsumerAccessPageV1({
             重新读取与核对身份
           </button>
         </nav>
-      </header>
+      </section>
       {state.phase === "lost" ? (
         <section className={styles.panel}>
           <h2>请重新验证运营身份</h2>
@@ -442,6 +450,9 @@ export function StudioConsumerAccessPageV1({
           </section>
           <section className={styles.panel}>
             <h2>服务器 Key 记录</h2>
+            <p>
+              按服务器最新观察区分未领取、已领取、到期、作废及已完成。完成后的原链接只读查看同一份报告。
+            </p>
             <p>
               此列表只有安全元数据，不含原文、消费者答案或报告正文。空页不证明某次发放未执行。
             </p>

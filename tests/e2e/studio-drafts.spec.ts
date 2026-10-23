@@ -293,6 +293,26 @@ test("real PG apply loses its response; empty lookup and finite error preserve e
   await expect(
     page.getByRole("heading", { name: "原 key 核实", exact: true }),
   ).toBeVisible();
+  const originalPanel = page.getByRole("region", {
+    name: "原 key 核实",
+    exact: true,
+  });
+  const originalChecksum = originalPanel.getByText("原请求校验摘要", {
+    exact: true,
+  });
+  await originalChecksum.click();
+  await originalChecksum.click();
+  await expect(
+    originalPanel.getByRole("button", { name: "核对原 key 回执", exact: true }),
+  ).toBeEnabled();
+  await expect(
+    originalPanel.getByRole("button", {
+      name: "明确按原 key 重放",
+      exact: true,
+    }),
+  ).toBeEnabled();
+  expect((await pending(page))?.tuple).toEqual(original);
+  expect(committed).toBe(1);
   const lookup = `**/api/studio/products/${source().productId}/draft-applications/${original.idempotencyKey}`;
   await page.route(
     lookup,
@@ -389,6 +409,8 @@ test("full escaped historical synthetic content is hash-checked and read-only ac
     .getByRole("link", { name: "读取固定修订正文", exact: true })
     .click();
   const body = page.getByRole("textbox", { name: "完整内容正文", exact: true });
+  await expect(body).toBeHidden();
+  await page.getByText("固定修订完整正文与素材集合", { exact: true }).click();
   await expect(body).toBeVisible();
   const facts = await body.evaluate(async (element) => {
     const text = (element as HTMLTextAreaElement).value,
@@ -409,6 +431,8 @@ test("full escaped historical synthetic content is hash-checked and read-only ac
   await expect(body).toHaveAttribute("readonly", "");
   await mobile(page, info, "revision-body");
   await page.reload();
+  await expect(body).toBeHidden();
+  await page.getByText("固定修订完整正文与素材集合", { exact: true }).click();
   await expect(body).toBeVisible();
 });
 

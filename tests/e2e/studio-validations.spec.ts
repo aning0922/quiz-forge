@@ -575,6 +575,7 @@ test("archived workspace keeps the original unknown request available for reads"
     { key: PENDING_STORAGE_KEY, tuple: beforeFetchTuple },
   );
   await page.goto(`/studio/products/${fixture.productId}`);
+  await page.getByText("编辑商品信息", { exact: true }).click();
   await page.getByRole("button", { name: "归档工作区", exact: true }).click();
   await page
     .getByRole("button", { name: "确认归档工作区", exact: true })

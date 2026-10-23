@@ -202,6 +202,16 @@ test("real intent and raw received state remains unvalidated", async ({
 }, testInfo) => {
   await fixtureCommand("enable");
   await signIn(page);
+  const workflow = page.getByRole("navigation", {
+    name: "商品操作流程",
+    exact: true,
+  });
+  await expect(
+    workflow.getByRole("link", { name: "导入与验证", exact: true }),
+  ).toHaveAttribute("aria-current", "page");
+  await expect(
+    workflow.getByRole("link", { name: "预览 · 先选修订", exact: true }),
+  ).toHaveAttribute("href", "/studio/products/e2e-imports/draft");
   await expect(
     page.getByText("原包接收已启用（只读配置快照）", { exact: true }),
   ).toBeVisible();
@@ -216,6 +226,14 @@ test("real intent and raw received state remains unvalidated", async ({
     page.getByRole("button", { name: "创建原包接收意图", exact: true }),
   ).toBeEnabled();
   await expect(fileInput).toHaveValue(/synthetic\.quizpack$/);
+  const declaration = page.getByText("所选原包校验摘要", { exact: true });
+  await declaration.click();
+  await expect(fileInput).toHaveValue(/synthetic\.quizpack$/);
+  await declaration.click();
+  await expect(fileInput).toHaveValue(/synthetic\.quizpack$/);
+  await expect(
+    page.getByRole("button", { name: "创建原包接收意图", exact: true }),
+  ).toBeEnabled();
   await page.getByRole("button", { name: "重新选择文件", exact: true }).click();
   await expect(fileInput).toHaveValue("");
   await expect(fileInput).toBeEnabled();
@@ -270,6 +288,11 @@ test("real intent and raw received state remains unvalidated", async ({
     name: "原包状态",
     exact: true,
   });
+  const checksum = detailPanel.getByText("原包校验摘要", { exact: true });
+  await expect(
+    detailPanel.getByText("声明 SHA-256", { exact: true }),
+  ).toBeHidden();
+  await checksum.click();
   await expect(
     detailPanel.getByText("声明 SHA-256", { exact: true }),
   ).toBeVisible();

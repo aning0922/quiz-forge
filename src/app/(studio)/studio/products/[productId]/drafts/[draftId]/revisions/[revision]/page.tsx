@@ -28,43 +28,45 @@ export default async function StudioDraftRevisionPage({
     revision,
   });
   return (
-    <>
-      {scope.success && (
-        <p>
-          <Link
-            href={previewPagePath(scope.data)}
-            style={{
-              display: "inline-flex",
-              minHeight: 44,
-              alignItems: "center",
-              textDecoration: "underline",
-            }}
-          >
-            进入此固定修订内部预览
-          </Link>
-        </p>
-      )}
-      {internalScope.success && (
-        <p>
-          <Link
-            href={internalReviewPageUrl(internalScope.data)}
-            style={{
-              display: "inline-flex",
-              minHeight: 44,
-              alignItems: "center",
-              textDecoration: "underline",
-            }}
-          >
-            查看此固定修订既有基线与内测封存
-          </Link>
-        </p>
-      )}
-      <DraftRevisionPage
-        key={`${ids.productId}/${ids.draftId}/${ids.revision}`}
-        productId={ids.productId}
-        draftId={ids.draftId}
-        revision={revision}
-      />
-    </>
+    <DraftRevisionPage
+      key={`${ids.productId}/${ids.draftId}/${ids.revision}`}
+      productId={ids.productId}
+      draftId={ids.draftId}
+      revision={revision}
+      navigation={
+        <>
+          {scope.success && (
+            <p>
+              <Link
+                href={previewPagePath(scope.data)}
+                style={{
+                  display: "inline-flex",
+                  minHeight: 44,
+                  alignItems: "center",
+                  textDecoration: "underline",
+                }}
+              >
+                进入此固定修订内部预览
+              </Link>
+            </p>
+          )}
+          {internalScope.success && (
+            <p>
+              <Link
+                href={internalReviewPageUrl(internalScope.data)}
+                style={{
+                  display: "inline-flex",
+                  minHeight: 44,
+                  alignItems: "center",
+                  textDecoration: "underline",
+                }}
+              >
+                查看此固定修订既有基线与内测封存
+              </Link>
+            </p>
+          )}
+        </>
+      }
+    />
   );
 }

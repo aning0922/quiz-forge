@@ -1,3 +1,4 @@
+import { TechnicalDetails } from "../presentation/technical-details";
 import Link from "next/link";
 import type {
   InternalReviewReceipt,
@@ -16,34 +17,47 @@ import styles from "../workspace/workspace.module.css";
 import local from "./internal-versions.module.css";
 export function TargetFacts({ target }: { target: RevisionTarget }) {
   return (
-    <dl className={styles.facts}>
-      <div>
-        <dt>固定草稿 / 修订</dt>
-        <dd>
-          {target.draftId} / {target.revision}
-        </dd>
-      </div>
-      <div>
-        <dt>内容 SHA-256</dt>
-        <dd>{target.canonicalContentSha256}</dd>
-      </div>
-      <div>
-        <dt>素材集合 SHA-256</dt>
-        <dd>{target.assetSetSha256}</dd>
-      </div>
-      <div>
-        <dt>manifest SHA-256</dt>
-        <dd>{target.canonicalManifestSha256}</dd>
-      </div>
-    </dl>
+    <>
+      <dl className={styles.facts}>
+        <div>
+          <dt>固定草稿 / 修订</dt>
+          <dd>
+            {target.draftId} / {target.revision}
+          </dd>
+        </div>
+      </dl>
+      <TechnicalDetails label="固定目标校验摘要">
+        <dl className={styles.facts}>
+          <div>
+            <dt>内容 SHA-256</dt>
+            <dd>{target.canonicalContentSha256}</dd>
+          </div>
+          <div>
+            <dt>素材集合 SHA-256</dt>
+            <dd>{target.assetSetSha256}</dd>
+          </div>
+          <div>
+            <dt>manifest SHA-256</dt>
+            <dd>{target.canonicalManifestSha256}</dd>
+          </div>
+        </dl>
+      </TechnicalDetails>
+    </>
   );
 }
 export function RequestFacts({ request }: { request: InternalRequest }) {
   return (
-    <details className={local.details}>
-      <summary>原请求完整绑定</summary>
-      <pre className={local.code}>{JSON.stringify(request.tuple, null, 2)}</pre>
-    </details>
+    <>
+      <p>
+        固定草稿 {request.tuple.target.draftId} · 修订{" "}
+        {request.tuple.target.revision}
+      </p>
+      <TechnicalDetails label="原请求完整绑定">
+        <pre className={local.code}>
+          {JSON.stringify(request.tuple, null, 2)}
+        </pre>
+      </TechnicalDetails>
+    </>
   );
 }
 export function ReviewFacts({ review }: { review: InternalReviewReceipt }) {
@@ -101,6 +115,9 @@ export function VersionReceiptFacts({
       <h3>固定内测版本 · 槽位 {version.slot}</h3>
       <p>{INTERNAL_VERSION_DISCLOSURE}</p>
       <p>对外发布批准：未授予</p>
+      <p>
+        下一步：可基于此固定版本创建消费者答题版本；创建与发 Key 仍需明确操作。
+      </p>
       <dl className={styles.facts}>
         <div>
           <dt>版本 ID</dt>
@@ -123,6 +140,12 @@ export function VersionReceiptFacts({
       >
         阅读固定内测版本
       </Link>
+      <Link
+        className={styles.link}
+        href={`/studio/products/${encodeURIComponent(version.binding.productId)}/consumer-access`}
+      >
+        创建答题版本与发码
+      </Link>
     </div>
   );
 }
@@ -139,14 +162,16 @@ export function VersionMetadataFacts({
         槽位 {version.slot} · 来源修订 {version.target.revision}
       </h3>
       <p>{versionRevisionRelation(version.target.revision, currentRevision)}</p>
-      <p>固定快照：{version.snapshotSha256}</p>
-      <p>
-        渲染器：{version.renderer.id} / {version.renderer.version}；能力：仅
-        Studio 内部预览
-      </p>
-      <p>
-        评分引擎：{version.engine.id} / {version.engine.version}
-      </p>
+      <TechnicalDetails label="快照与实现技术信息">
+        <p>固定快照：{version.snapshotSha256}</p>
+        <p>
+          渲染器：{version.renderer.id} / {version.renderer.version}；能力：仅
+          Studio 内部预览
+        </p>
+        <p>
+          评分引擎：{version.engine.id} / {version.engine.version}
+        </p>
+      </TechnicalDetails>
       <p>封存时间：{version.createdAt}；对外发布批准：未授予</p>
       <div className={styles.actions}>
         <Link

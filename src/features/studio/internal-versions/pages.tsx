@@ -1,8 +1,10 @@
 "use client";
+import { TechnicalDetails } from "../presentation/technical-details";
+import { StudioPageHeader } from "../presentation/page-header";
+import { StudioWorkflowNav } from "../presentation/workflow-nav";
 import Link from "next/link";
 import { useState } from "react";
 import type { StudioSessionDto } from "../contracts";
-import { WorkspaceNav } from "../workspace/primitives";
 import {
   internalReviewUrl,
   internalVersionsUrl,
@@ -75,13 +77,11 @@ export function StableInternalWorkspace({
     <>
       <section className={styles.panel} aria-label="稳定工作区内测入口">
         <h2>固定内测版本与恢复</h2>
+        <p>
+          核对草稿后，进入既有基线记录与内测封存；也可直接核实此前保留的原请求。
+        </p>
         <p>{INTERNAL_VERSION_DISCLOSURE}</p>
-        <Link
-          className={styles.link}
-          href={internalVersionsPageUrl(parsed.data)}
-        >
-          固定内测版本与原请求核实
-        </Link>
+        <InternalNav productId={parsed.data} />
       </section>
       <InternalRecoveryPanels
         key={parsed.data}
@@ -112,10 +112,16 @@ function InternalReviewContent({
   }
   return (
     <div className={styles.workspace}>
-      <WorkspaceNav />
-      <InternalNav productId={scope.productId} />
+      <StudioWorkflowNav
+        productId={scope.productId}
+        current="versions"
+        previewHref={previewPagePath(scope)}
+      />
       <section className={styles.panel}>
-        <h1>固定修订 {scope.revision} · 既有内测基线</h1>
+        <StudioPageHeader
+          title={`固定修订 ${scope.revision} · 既有内测基线`}
+          description="核对固定修订与既有批准证据，再明确记录或封存。候选登记不等于基线已记录。"
+        />
         <p>{INTERNAL_VERSION_DISCLOSURE}</p>
         <div className={styles.actions}>
           <button
@@ -208,10 +214,16 @@ function InternalVersionsContent({
   }
   return (
     <div className={styles.workspace}>
-      <WorkspaceNav />
-      <InternalNav productId={productId} />
+      <StudioWorkflowNav
+        productId={productId}
+        current="versions"
+        {...(current ? { previewHref: previewPagePath(current) } : {})}
+      />
       <section className={styles.panel}>
-        <h1>固定内测版本</h1>
+        <StudioPageHeader
+          title="固定内测版本"
+          description="选择当前修订记录基线，或阅读已封存的历史版本。原请求核实不依赖列表读取成功。"
+        />
         <p>{INTERNAL_VERSION_DISCLOSURE}</p>
         <p>
           列表保存固定身份元数据。历史版本不会因当前
@@ -310,10 +322,24 @@ function InternalVersionDetailContent({
   const current = draft.value?.kind === "draft" ? draft.value.draft : undefined;
   return (
     <div className={styles.workspace}>
-      <WorkspaceNav />
-      <InternalNav productId={productId} />
+      <StudioWorkflowNav
+        productId={productId}
+        current="versions"
+        {...(read.value
+          ? {
+              previewHref: previewPagePath({
+                productId,
+                draftId: read.value.snapshot.target.draftId,
+                revision: read.value.snapshot.target.revision,
+              }),
+            }
+          : {})}
+      />
       <section className={styles.panel}>
-        <h1>内测版本快照</h1>
+        <StudioPageHeader
+          title="内测版本快照"
+          description="此页核对已封存的固定快照，不会替换为当前草稿。"
+        />
         <p>{INTERNAL_VERSION_DISCLOSURE}</p>
         <button
           className={styles.button}
@@ -342,12 +368,11 @@ function InternalVersionDetailContent({
               以下为已核对摘要的固定快照；渲染能力仅为 Studio
               内部预览，不表示已实现消费者版本入口。
             </p>
-            <details className={local.details}>
-              <summary>完整固定快照</summary>
+            <TechnicalDetails label="完整固定快照">
               <pre className={local.code}>
                 {JSON.stringify(read.value.snapshot, null, 2)}
               </pre>
-            </details>
+            </TechnicalDetails>
           </>
         )}
         {draft.error && (

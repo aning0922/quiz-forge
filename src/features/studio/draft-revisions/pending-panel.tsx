@@ -1,4 +1,5 @@
 "use client";
+import { TechnicalDetails } from "../presentation/technical-details";
 import { useEffect, useRef, useState } from "react";
 import type { StudioSessionDto } from "../contracts";
 import type {
@@ -187,10 +188,14 @@ export function RevisionPendingPanel({
             此工作区有{entry.mayHaveBeenSent ? "可能已发送" : "尚未发送的准备"}
             请求。原来源、基准与 key 保持不变。
           </p>
-          <details className={local.details}>
-            <summary>查看原请求完整绑定</summary>
+          <p>
+            固定草稿 {entry.tuple.target.draftId} · 基准修订{" "}
+            {entry.tuple.target.expectedRevision} · 来源验证修订{" "}
+            {entry.tuple.expectedValidationStateRevision}
+          </p>
+          <TechnicalDetails label="查看原请求完整绑定">
             <AppendBindingFacts binding={entry.tuple} />
-          </details>
+          </TechnicalDetails>
           <div className={styles.actions}>
             <button
               className={styles.button}
@@ -257,15 +262,14 @@ export function RevisionPendingPanel({
                 的应用成功。
               </p>
               <RevisionLinks draft={result.proof.consumed} />
-              <details className={local.details}>
-                <summary>查看固定消费来源</summary>
+              <TechnicalDetails label="查看固定消费来源">
                 <p>消费 key：{result.proof.consumingIdempotencyKey}</p>
                 <p>
                   来源：{result.proof.consumed.sourceImportId} /{" "}
                   {result.proof.consumed.sourceValidationId}
                 </p>
                 <p>manifest：{result.proof.consumed.canonicalManifestSha256}</p>
-              </details>
+              </TechnicalDetails>
             </>
           )}
           {result.kind !== "unresolved" && (

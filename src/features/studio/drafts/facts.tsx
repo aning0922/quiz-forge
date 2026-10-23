@@ -1,3 +1,4 @@
+import { TechnicalDetails } from "../presentation/technical-details";
 import Link from "next/link";
 import type { DraftSummaryDto } from "@/features/product/drafts/contracts";
 import { draftRevisionPath } from "./client";
@@ -41,18 +42,7 @@ export function DraftFacts({ draft }: { draft: DraftSummaryDto }) {
             / {draft.versions.engine.version}
           </dd>
         </div>
-        <div>
-          <dt>内容 SHA-256</dt>
-          <dd>{draft.canonicalContentSha256}</dd>
-        </div>
-        <div>
-          <dt>素材集合 SHA-256</dt>
-          <dd>{draft.assetSetSha256}</dd>
-        </div>
-        <div>
-          <dt>候选 SHA-256</dt>
-          <dd>{draft.candidateSha256}</dd>
-        </div>
+
         <div>
           <dt>资源数</dt>
           <dd>{draft.resourceCount}</dd>
@@ -62,6 +52,23 @@ export function DraftFacts({ draft }: { draft: DraftSummaryDto }) {
           <dd>{draft.createdAt}</dd>
         </div>
       </dl>
+      <TechnicalDetails label="草稿校验摘要">
+        <dl className={styles.facts}>
+          <div>
+            <dt>内容 SHA-256</dt>
+            <dd>{draft.canonicalContentSha256}</dd>
+          </div>
+          <div>
+            <dt>素材集合 SHA-256</dt>
+            <dd>{draft.assetSetSha256}</dd>
+          </div>
+          <div>
+            <dt>候选 SHA-256</dt>
+            <dd>{draft.candidateSha256}</dd>
+          </div>
+        </dl>
+      </TechnicalDetails>
+      <p>下一步：选择此固定修订阅读正文，再进入预览或内测基线记录。</p>
       <Link
         className={styles.link}
         href={draftRevisionPath(draft.productId, draft.draftId, draft.revision)}

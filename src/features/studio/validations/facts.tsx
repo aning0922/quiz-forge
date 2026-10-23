@@ -1,3 +1,4 @@
+import { TechnicalDetails } from "../presentation/technical-details";
 import type { ValidationDto } from "@/features/quizpack/validation/contracts";
 import { StudioClientError } from "../client";
 import { validationLabels, validationMessage } from "./messages";
@@ -11,10 +12,7 @@ export function ValidationFacts({ value }: { value: ValidationDto }) {
           <dt>验证记录</dt>
           <dd>{value.id}</dd>
         </div>
-        <div>
-          <dt>请求标识（缩略）</dt>
-          <dd>{value.validationKey.slice(0, 12)}…</dd>
-        </div>
+
         <div>
           <dt>验证状态修订</dt>
           <dd>{value.stateRevision}</dd>
@@ -49,11 +47,19 @@ export function ValidationFacts({ value }: { value: ValidationDto }) {
               : "尚未冻结"}
           </dd>
         </div>
-        <div>
-          <dt>最近更新</dt>
-          <dd>{value.updatedAt}</dd>
-        </div>
       </dl>
+      <TechnicalDetails label="验证技术信息">
+        <dl className={styles.facts}>
+          <div>
+            <dt>请求标识（缩略）</dt>
+            <dd>{value.validationKey.slice(0, 12)}…</dd>
+          </div>
+          <div>
+            <dt>最近更新</dt>
+            <dd>{value.updatedAt}</dd>
+          </div>
+        </dl>
+      </TechnicalDetails>
       {value.lastErrorCode && (
         <p className={`${styles.status} ${styles.error}`}>
           {validationMessage(new StudioClientError(value.lastErrorCode))}

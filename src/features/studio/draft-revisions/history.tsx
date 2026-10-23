@@ -1,4 +1,5 @@
 "use client";
+import { TechnicalDetails } from "../presentation/technical-details";
 import { useEffect, useState } from "react";
 import type {
   DraftRevisionHistory,
@@ -157,11 +158,13 @@ export function RevisionHistoryPanel({
                 {item.contentKind === "authored" ? "作者内容" : "合成内容"} ·{" "}
                 {item.contentSchemaVersion} · 包版本 {item.packVersion}
               </p>
-              <p>
-                来源 {item.sourceImportId} / {item.sourceValidationId}
-              </p>
-              <p>内容 {item.canonicalContentSha256}</p>
-              <p>素材集合 {item.assetSetSha256}</p>
+              <TechnicalDetails label={`修订 ${item.revision} 来源与校验摘要`}>
+                <p>
+                  来源 {item.sourceImportId} / {item.sourceValidationId}
+                </p>
+                <p>内容 {item.canonicalContentSha256}</p>
+                <p>素材集合 {item.assetSetSha256}</p>
+              </TechnicalDetails>
               <p>创建于 {item.createdAt}</p>
               <RevisionLinks draft={item} />
             </li>
