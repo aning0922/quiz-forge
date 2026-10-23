@@ -1,4 +1,5 @@
 "use client";
+import { TechnicalDetails } from "../presentation/technical-details";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { z } from "zod";
@@ -205,11 +206,15 @@ export function ApplyDraftPanel({
                 {pending.tuple.expectedValidationStateRevision}
               </dd>
             </div>
-            <div>
-              <dt>原候选 SHA-256</dt>
-              <dd>{pending.tuple.expectedCandidateSha256}</dd>
-            </div>
           </dl>
+          <TechnicalDetails label="原请求校验摘要">
+            <dl className={styles.facts}>
+              <div>
+                <dt>原候选 SHA-256</dt>
+                <dd>{pending.tuple.expectedCandidateSha256}</dd>
+              </div>
+            </dl>
+          </TechnicalDetails>
           <div className={styles.actions}>
             <button
               className={styles.button}

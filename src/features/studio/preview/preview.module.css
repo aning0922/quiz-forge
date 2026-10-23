@@ -1,11 +1,11 @@
 .preview {
-  width: min(1100px, calc(100vw - 40px));
-  position: relative;
-  left: 50%;
-  transform: translateX(-50%);
+  width: 100%;
+  max-width: 1100px;
+  margin-inline: auto;
   font-size: 16px;
   line-height: 1.7;
   min-width: 0;
+  color: #1e334b;
 }
 .navigation {
   display: flex;
@@ -25,8 +25,8 @@
 .binding {
   padding: 18px 20px;
   margin-bottom: 24px;
-  background: #e7ede9;
-  border: 1px solid #a9bbae;
+  background: #edf3f8;
+  border: 1px solid #c9d4e1;
   border-radius: 6px;
   overflow-wrap: anywhere;
 }

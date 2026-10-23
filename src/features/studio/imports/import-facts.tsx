@@ -61,6 +61,7 @@ export function ImportSummary({ value }: { value: ImportDto }) {
   );
 }
 
+import { TechnicalDetails } from "../presentation/technical-details";
 export function ImportFacts({ value }: { value: ImportDto }) {
   return (
     <div>
@@ -82,23 +83,29 @@ export function ImportFacts({ value }: { value: ImportDto }) {
           <dt>声明字节数</dt>
           <dd>{value.expectedArchiveBytes}</dd>
         </div>
-        <div>
-          <dt>声明 SHA-256</dt>
-          <dd>{value.expectedArchiveSha256}</dd>
-        </div>
+
         <div>
           <dt>服务器确认字节数</dt>
           <dd>{value.actualArchiveBytes ?? "尚未冻结"}</dd>
         </div>
-        <div>
-          <dt>服务器确认 SHA-256</dt>
-          <dd>{value.actualArchiveSha256 ?? "尚未冻结"}</dd>
-        </div>
+
         <div>
           <dt>接收与发布</dt>
           <dd>接收事实 · 独立验证状态见验证记录 · 不可发布</dd>
         </div>
       </dl>
+      <TechnicalDetails label="原包校验摘要">
+        <dl className={styles.facts}>
+          <div>
+            <dt>声明 SHA-256</dt>
+            <dd>{value.expectedArchiveSha256}</dd>
+          </div>
+          <div>
+            <dt>服务器确认 SHA-256</dt>
+            <dd>{value.actualArchiveSha256 ?? "尚未冻结"}</dd>
+          </div>
+        </dl>
+      </TechnicalDetails>
       {value.lastErrorCode && (
         <p className={`${styles.status} ${styles.error}`}>
           {importMessage(new StudioClientError(value.lastErrorCode))}

@@ -2,16 +2,16 @@
   display: grid;
   gap: 20px;
   min-width: 0;
-  color: #173432;
+  color: #1e334b;
   font-size: 16px;
   line-height: 1.75;
   overflow-wrap: anywhere;
 }
 .panel {
   padding: clamp(18px, 4vw, 28px);
-  border: 1px solid #c4c6bc;
+  border: 1px solid #c9d4e1;
   border-radius: 8px;
-  background: #fffef9;
+  background: #ffffff;
   min-width: 0;
 }
 .panel h1 {
@@ -39,10 +39,10 @@
   padding: 10px 16px;
   font: inherit;
   font-size: 16px;
-  border: 1px solid #64786f;
+  border: 1px solid #526b82;
   border-radius: 4px;
-  color: #173432;
-  background: #fffef9;
+  color: #1e334b;
+  background: #ffffff;
 }
 .page a {
   display: inline-flex;
@@ -50,6 +50,13 @@
 }
 .page button {
   cursor: pointer;
+}
+.page button:focus-visible,
+.page a:focus-visible,
+.page select:focus-visible,
+.page input:focus-visible {
+  outline: 3px solid #267bc1;
+  outline-offset: 3px;
 }
 .page button:disabled,
 .page fieldset:disabled {
@@ -76,8 +83,8 @@
 .notice {
   margin: 0;
   padding: 16px;
-  border-left: 4px solid #64786f;
-  background: #f3f3e9;
+  border-left: 4px solid #526b82;
+  background: #edf3f8;
 }
 .facts {
   display: grid;
@@ -109,7 +116,7 @@
   display: grid;
   gap: 20px;
   padding: 18px;
-  border: 1px solid #c4c6bc;
+  border: 1px solid #c9d4e1;
   min-width: 0;
 }
 .acknowledgment {

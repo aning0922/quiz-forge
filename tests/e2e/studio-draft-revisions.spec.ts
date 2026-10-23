@@ -837,6 +837,7 @@ test("fixed r1/r2 content, actual scoring and private resources survive two late
   await preview(page, 2, "second");
   await screenshot(page, info, "retained-r2-result");
   await page.goto(draftRevisionPath(fixture.productId, fixture.draftId!, 1));
+  await page.getByText("固定修订完整正文与素材集合", { exact: true }).click();
   await expect(
     page.getByRole("textbox", { name: "完整内容正文", exact: true }),
   ).toHaveValue(original.canonicalContentText);

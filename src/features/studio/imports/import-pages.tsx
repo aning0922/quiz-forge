@@ -1,4 +1,6 @@
 "use client";
+import { StudioPageHeader } from "../presentation/page-header";
+import { StudioWorkflowNav } from "../presentation/workflow-nav";
 import Link from "next/link";
 import { useState } from "react";
 import type {
@@ -8,11 +10,7 @@ import type {
 } from "@/features/quizpack/import/contracts";
 import type { ProductDto } from "@/features/product/workspace/contracts";
 import type { StudioSessionDto } from "../contracts";
-import {
-  WorkspaceNav,
-  Pagination,
-  ReadOnlyNotice,
-} from "../workspace/primitives";
+import { Pagination, ReadOnlyNotice } from "../workspace/primitives";
 import { useImportRead } from "./use-read";
 import { CreateReceive } from "./create-receive";
 import { ImportSummary } from "./import-facts";
@@ -104,9 +102,12 @@ export function ImportList({
   const readOnly = session.operator.role !== "operator";
   return (
     <div className={styles.workspace}>
-      <WorkspaceNav />
       <section className={styles.panel}>
-        <h1>原包接收</h1>
+        <StudioPageHeader
+          title="原包接收"
+          description="先接收原包，再验证结构与资源。接收成功不等于已验证、已创建草稿或已发布。"
+        />
+        <StudioWorkflowNav productId={productId} current="imports" />
         <Link
           className={`${styles.link} ${styles.secondary}`}
           href={`/studio/products/${encodeURIComponent(productId)}`}
@@ -297,9 +298,12 @@ export function ImportDetail({
   );
   return (
     <div className={styles.workspace}>
-      <WorkspaceNav />
       <section className={styles.panel}>
-        <h1>原包接收状态</h1>
+        <StudioPageHeader
+          title="原包接收状态"
+          description="查看本次接收事实，核实未确认操作，再进入验证归档。"
+        />
+        <StudioWorkflowNav productId={productId} current="imports" />
         <Link
           className={`${styles.link} ${styles.secondary}`}
           href={`/studio/products/${encodeURIComponent(productId)}/imports`}

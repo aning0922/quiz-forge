@@ -1,4 +1,5 @@
 "use client";
+import { TechnicalDetails } from "../presentation/technical-details";
 import { useEffect, useState } from "react";
 import { z } from "zod";
 import type { ValidationDto } from "@/features/quizpack/validation/contracts";
@@ -208,8 +209,10 @@ export function AppendRevisionPanel({
           <div className={local.receipt}>
             <h3>本次读取的当前基准：修订 {base.revision}</h3>
             <p>草稿 {base.draftId}</p>
-            <p>内容 {base.canonicalContentSha256}</p>
-            <p>素材集合 {base.assetSetSha256}</p>
+            <TechnicalDetails label="当前基准校验摘要">
+              <p>内容 {base.canonicalContentSha256}</p>
+              <p>素材集合 {base.assetSetSha256}</p>
+            </TechnicalDetails>
             <RevisionLinks draft={base} />
           </div>
         )}

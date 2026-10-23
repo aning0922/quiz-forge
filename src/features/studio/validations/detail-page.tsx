@@ -1,9 +1,10 @@
 "use client";
+import { StudioPageHeader } from "../presentation/page-header";
+import { StudioWorkflowNav } from "../presentation/workflow-nav";
 import Link from "next/link";
 import type { StudioSessionDto } from "../contracts";
 import { ApplyDraftPanel } from "../drafts/apply-panel";
 import { AppendRevisionPanel } from "../draft-revisions/append-panel";
-import { WorkspaceNav } from "../workspace/primitives";
 import { checkValidation, validationEndpoint } from "./client";
 import { ValidationFacts } from "./facts";
 import { useValidationRead } from "./use-read";
@@ -25,9 +26,12 @@ export function ValidationDetailPage({
   );
   return (
     <div className={styles.workspace}>
-      <WorkspaceNav />
       <section className={styles.panel}>
-        <h1>验证归档详情</h1>
+        <StudioPageHeader
+          title="验证归档详情"
+          description="核对归档结论后，明确选择首次草稿或追加修订。待确认原请求在下方独立保留。"
+        />
+        <StudioWorkflowNav productId={productId} current="imports" />
         <Link
           className={`${styles.link} ${styles.secondary}`}
           href={`/studio/products/${encodeURIComponent(productId)}/imports/${encodeURIComponent(importId)}`}
