@@ -316,6 +316,77 @@ try {
       p.getByRole("combobox", { name: "已封存的父版本" }),
     ).toBeEnabled();
     await shot(p, `ready-${width}`);
+    if (width === 320) {
+      const workflow = p.getByRole("navigation", {
+        name: "商品操作流程",
+        exact: true,
+      });
+      await workflow.scrollIntoViewIfNeeded();
+      const gap = await workflow.evaluate((nav) => {
+        const links = [...nav.querySelectorAll("a")];
+        const first = links[0]!.getBoundingClientRect(),
+          second = links[1]!.getBoundingClientRect();
+        const point = {
+          x: (first.right + second.left) / 2,
+          y: Math.max(first.top, second.top) + 4,
+        };
+        const hit = document.elementFromPoint(point.x, point.y);
+        if (!hit || !nav.contains(hit) || hit.closest("a[href]"))
+          throw Error("STUDIO_WORKFLOW_TEST_GAP_REQUIRED");
+        return point;
+      });
+      const beforeNavigationPosts = posts;
+      await p.mouse.click(gap.x, gap.y);
+      await expect(
+        p.getByRole("combobox", { name: "已封存的父版本" }),
+      ).toBeEnabled();
+      await expect(
+        p.getByRole("heading", { name: "请重新验证运营身份", exact: true }),
+      ).toHaveCount(0);
+      expect(posts).toBe(beforeNavigationPosts);
+      // Prevent only destination navigation. The actual link activation still
+      // reaches the React capture handler and must immediately revoke authority.
+      const link = workflow.getByRole("link", {
+        name: "商品概览",
+        exact: true,
+      });
+      await link.evaluate((anchor) => {
+        anchor.addEventListener("click", (event) => event.preventDefault(), {
+          capture: true,
+          once: true,
+        });
+      });
+      await link.focus();
+      await link.press("Enter");
+      await expect(
+        p.getByRole("heading", { name: "请重新验证运营身份", exact: true }),
+      ).toBeVisible();
+      await p.reload();
+      await expect(
+        p.getByRole("combobox", { name: "已封存的父版本" }),
+      ).toBeEnabled();
+      const pointerLink = p
+        .getByRole("navigation", { name: "商品操作流程", exact: true })
+        .getByRole("link", { name: "商品概览", exact: true });
+      await pointerLink.evaluate((anchor) => {
+        anchor.addEventListener("click", (event) => event.preventDefault(), {
+          capture: true,
+          once: true,
+        });
+      });
+      await pointerLink.click();
+      await expect(
+        p.getByRole("heading", { name: "请重新验证运营身份", exact: true }),
+      ).toBeVisible();
+      expect(posts).toBe(beforeNavigationPosts);
+      observations.push({
+        name: "workflow-navigation-authority",
+        gapPreservesAuthority: true,
+        keyboardLinkRevokes: true,
+        pointerLinkRevokes: true,
+        additionalPosts: 0,
+      });
+    }
     await p.close();
   }
   const context = await browser.newContext({

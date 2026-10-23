@@ -296,7 +296,15 @@ export function StudioConsumerAccessPageV1({
           title="消费者内测与访问 Key"
           description="先选择已封存父版本创建固定答题版本，再为该版本发放访问 Key。原请求未确认时先核实。"
         />
-        <div onClickCapture={controller.revoke}>
+        <div
+          onClickCapture={(event) => {
+            const link =
+              event.target instanceof Element
+                ? event.target.closest("a[href]")
+                : null;
+            if (link && event.currentTarget.contains(link)) controller.revoke();
+          }}
+        >
           <StudioWorkflowNav productId={scope.productId} current="keys" />
         </div>
         <p>
