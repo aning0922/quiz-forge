@@ -37,8 +37,8 @@ export function DraftWorkspacePage({
     <div className={styles.workspace}>
       <section className={styles.panel}>
         <StudioPageHeader
-          title="工作区草稿"
-          description="先核对当前草稿，再选择固定修订阅读、预览或记录内测基线。历史回执与当前指针分别保留。"
+          title="内容草稿"
+          description="先核对当前草稿，再选择固定修订阅读、预览或记录内测基线。历史处理结果与当前指针分别保留。"
         />
         <StudioWorkflowNav
           productId={productId}
@@ -59,7 +59,7 @@ export function DraftWorkspacePage({
             disabled={read.loading}
             onClick={read.refresh}
           >
-            读取服务器草稿
+            读取当前草稿
           </button>
         </div>
         {read.loading && <p role="status">正在读取草稿…</p>}
@@ -70,7 +70,7 @@ export function DraftWorkspacePage({
         )}
         {read.value?.kind === "empty" && (
           <p>
-            服务器当前没有草稿。空查询不能证明先前应用请求未执行；请到原验证详情核对待确认回执。
+            服务器当前没有草稿。空查询不能证明先前应用请求未执行；请到原验证详情核对待确认处理结果。
           </p>
         )}
         {read.value?.kind === "draft" && (
@@ -78,9 +78,9 @@ export function DraftWorkspacePage({
         )}
       </section>
       {application && (
-        <section className={styles.panel} aria-label="已核实的固定追加回执">
-          <h2>已核实的固定追加回执：修订 {application.revision}</h2>
-          <p>此回执独立于当前草稿摘要。</p>
+        <section className={styles.panel} aria-label="已核实的固定追加处理结果">
+          <h2>已核实的固定追加处理结果：修订 {application.revision}</h2>
+          <p>此处理结果独立于当前草稿摘要。</p>
           <RevisionLinks draft={application} />
         </section>
       )}
@@ -132,11 +132,11 @@ export function DraftRevisionPage({
     <div className={styles.workspace}>
       <section className={styles.panel}>
         <StudioPageHeader
-          title="草稿固定修订 · 只读"
+          title="草稿历史修订 · 只读"
           description={
             <>
               固定目标：修订 {revision}
-              。正文核验成功后可进入此修订预览或既有基线记录。
+              。正文核验成功后可进入此修订预览或既有审核依据记录。
             </>
           }
         />
@@ -149,7 +149,7 @@ export function DraftRevisionPage({
         />
         <div className={styles.actions}>
           <Link className={styles.link} href={draftWorkspacePath(productId)}>
-            返回服务器草稿
+            返回当前草稿
           </Link>
           <button
             className={styles.button}

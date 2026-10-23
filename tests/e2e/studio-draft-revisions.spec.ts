@@ -175,11 +175,11 @@ const detail = (name: Source["name"]) => {
   return `/studio/products/${s.productId}/imports/${s.sourceImportId}/validations/${s.sourceValidationId}`;
 };
 const appendPanel = (page: Page) =>
-  page.getByRole("region", { name: "追加草稿修订", exact: true });
+  page.getByRole("region", { name: "更新草稿", exact: true });
 const pendingPanel = (page: Page) =>
-  page.getByRole("region", { name: "追加原请求核实", exact: true });
+  page.getByRole("region", { name: "草稿更新操作查询", exact: true });
 const historyPanel = (page: Page) =>
-  page.getByRole("region", { name: "草稿修订历史", exact: true });
+  page.getByRole("region", { name: "草稿历史修订", exact: true });
 function binding(
   s: Source,
   base: DraftSummaryDto,
@@ -251,7 +251,7 @@ async function openSource(page: Page, name: Source["name"], revision: number) {
   await page.goto(detail(name));
   await expect(
     appendPanel(page).getByRole("heading", {
-      name: `本次读取的当前基准：修订 ${revision}`,
+      name: `本次更新所依据的草稿：修订 ${revision}`,
       exact: true,
     }),
   ).toBeVisible();
@@ -262,7 +262,7 @@ async function confirm(page: Page, revision: number) {
     .click();
   await expect(
     appendPanel(page).getByRole("region", {
-      name: "确认追加不可变修订",
+      name: "确认新增草稿修订",
       exact: true,
     }),
   ).toBeVisible();
@@ -281,7 +281,7 @@ async function resolve(page: Page) {
       r.request().method() === "POST",
   );
   await pendingPanel(page)
-    .getByRole("button", { name: "核实追加原请求", exact: true })
+    .getByRole("button", { name: "查询上次草稿更新结果", exact: true })
     .click();
   const result = draftRevisionResolutionSchema.parse(
     await (await response).json(),
@@ -293,7 +293,7 @@ async function resolve(page: Page) {
 }
 async function clearTerminal(page: Page) {
   await pendingPanel(page)
-    .getByRole("button", { name: "移除已失效原请求并重新准备", exact: true })
+    .getByRole("button", { name: "移除已失效原操作并重新准备", exact: true })
     .click();
   await expect.poll(() => pending(page)).toBeNull();
 }
@@ -440,8 +440,8 @@ test("legacy anchors and corrupt revision storage block new preparation while se
   ).toHaveCount(0);
   await screenshot(page, info, "legacy-anchor-blocked");
   await page
-    .getByRole("region", { name: "首次草稿应用", exact: true })
-    .getByRole("button", { name: "核对原 key 回执", exact: true })
+    .getByRole("region", { name: "建立第一版草稿", exact: true })
+    .getByRole("button", { name: "查询上次草稿创建结果", exact: true })
     .click();
   await expect
     .poll(() =>
@@ -468,16 +468,18 @@ test("legacy anchors and corrupt revision storage block new preparation while se
   );
   await page.reload();
   await expect(
-    page.getByRole("region", { name: "首次草稿应用", exact: true }),
+    page.getByRole("region", { name: "建立第一版草稿", exact: true }),
   ).toBeVisible();
   await expect(
     appendPanel(page).getByRole("heading", {
-      name: "本次读取的当前基准：修订 1",
+      name: "本次更新所依据的草稿：修订 1",
       exact: true,
     }),
   ).toBeVisible();
   await expect(
-    pendingPanel(page).getByText("无法可靠核对请求锚点", { exact: false }),
+    pendingPanel(page).getByText("无法可靠核对操作记录", {
+      exact: false,
+    }),
   ).toBeVisible();
   await expect(
     appendPanel(page).getByRole("button", {
@@ -505,11 +507,11 @@ test("legacy anchors and corrupt revision storage block new preparation while se
   await openSource(page, "second", 1);
   await confirm(page, 1);
   await page
-    .getByRole("button", { name: "读取最新验证详情", exact: true })
+    .getByRole("button", { name: "查询最新检查结果", exact: true })
     .click();
   await expect(
     appendPanel(page).getByRole("region", {
-      name: "确认追加不可变修订",
+      name: "确认新增草稿修订",
       exact: true,
     }),
   ).toHaveCount(0);
@@ -539,16 +541,16 @@ test("actual second append survives lost response and source503/404; original ke
     },
   );
   await appendPanel(page)
-    .getByRole("button", { name: "确认追加不可变修订", exact: true })
+    .getByRole("button", { name: "确认新增草稿修订", exact: true })
     .click();
   await expect(
     pendingPanel(page).getByRole("button", {
-      name: "核实追加原请求",
+      name: "查询上次草稿更新结果",
       exact: true,
     }),
   ).toBeVisible();
   await expect(
-    appendPanel(page).getByText("本次提交未收到可确认的成功回执。", {
+    appendPanel(page).getByText("本次提交未收到可确认的成功处理结果。", {
       exact: false,
     }),
   ).toBeVisible();
@@ -571,7 +573,7 @@ test("actual second append survives lost response and source503/404; original ke
   await expect(page.getByRole("alert").first()).toBeVisible();
   await expect(
     pendingPanel(page).getByRole("button", {
-      name: "核实追加原请求",
+      name: "查询上次草稿更新结果",
       exact: true,
     }),
   ).toBeEnabled();
@@ -589,7 +591,7 @@ test("actual second append survives lost response and source503/404; original ke
   ).toHaveCount(0);
   await expect(
     pendingPanel(page).getByRole("button", {
-      name: "核实追加原请求",
+      name: "查询上次草稿更新结果",
       exact: true,
     }),
   ).toBeEnabled();
@@ -601,18 +603,21 @@ test("actual second append survives lost response and source503/404; original ke
   expect(await pending(page)).not.toBeNull();
   await screenshot(page, info, "source404-r2-fixed-receipt");
   await pendingPanel(page)
-    .getByRole("button", { name: "解除已确认成功的本地锚点", exact: true })
+    .getByRole("button", {
+      name: "解除已确认成功的本地操作记录",
+      exact: true,
+    })
     .click();
   await expect.poll(() => pending(page)).toBeNull();
   await expect(
     appendPanel(page).getByRole("region", {
-      name: "已确认的固定追加回执",
+      name: "已确认的固定追加处理结果",
       exact: true,
     }),
   ).toBeVisible();
   await expect(
     appendPanel(page).getByRole("heading", {
-      name: "本次读取的当前基准：修订 2",
+      name: "本次更新所依据的草稿：修订 2",
       exact: true,
     }),
   ).toBeVisible();
@@ -629,11 +634,11 @@ test("another tab appends third to r3; old history anchor and original spare req
     (route) => route.abort("failed"),
   );
   await appendPanel(page)
-    .getByRole("button", { name: "确认追加不可变修订", exact: true })
+    .getByRole("button", { name: "确认新增草稿修订", exact: true })
     .click();
   await expect(
     pendingPanel(page).getByRole("button", {
-      name: "核实追加原请求",
+      name: "查询上次草稿更新结果",
       exact: true,
     }),
   ).toBeVisible();
@@ -660,7 +665,7 @@ test("another tab appends third to r3; old history anchor and original spare req
       r.request().method() === "POST",
   );
   await appendPanel(writer)
-    .getByRole("button", { name: "确认追加不可变修订", exact: true })
+    .getByRole("button", { name: "确认新增草稿修订", exact: true })
     .click();
   const response = await posted;
   expect(response.status()).toBe(201);
@@ -668,14 +673,14 @@ test("another tab appends third to r3; old history anchor and original spare req
   expect(r3.revision).toBe(3);
   await expect(
     appendPanel(writer).getByRole("region", {
-      name: "已确认的固定追加回执",
+      name: "已确认的固定追加处理结果",
       exact: true,
     }),
   ).toBeVisible();
   // The immutable receipt is independent from the asynchronous current-head refresh.
   await expect(
     appendPanel(writer).getByRole("heading", {
-      name: "本次读取的当前基准：修订 3",
+      name: "本次更新所依据的草稿：修订 3",
       exact: true,
     }),
   ).toBeVisible();
@@ -692,7 +697,7 @@ test("another tab appends third to r3; old history anchor and original spare req
   ).toBeVisible();
   await screenshot(writer, info, "r3-confirmed-fixed-receipt");
   await history
-    .getByRole("button", { name: "读取服务器草稿", exact: true })
+    .getByRole("button", { name: "读取当前草稿", exact: true })
     .click();
   await expect(
     historyPanel(history).getByText("当前摘要读到修订 3。", { exact: false }),
@@ -724,7 +729,10 @@ test("another tab appends third to r3; old history anchor and original spare req
       r.request().method() === "POST",
   );
   await pendingPanel(page)
-    .getByRole("button", { name: "明确按原追加请求重放", exact: true })
+    .getByRole("button", {
+      name: "再次发送原草稿更新操作",
+      exact: true,
+    })
     .click();
   const refusal = await replay;
   expect(refusal.status()).toBe(409);
@@ -735,7 +743,7 @@ test("another tab appends third to r3; old history anchor and original spare req
   expect(await pending(page)).not.toBeNull();
   await expect(
     appendPanel(page).getByText(
-      "本次提交未收到可确认的成功回执。请保留原 key 和完整基准，并以原请求核实区的最新证据为准。",
+      "上次操作结果暂未确认，请先查询处理结果，确认前避免重复提交。原内容来源与基准会保留；如需再次发送，须由你明确选择原操作。",
       { exact: true },
     ),
   ).toBeVisible();
@@ -760,14 +768,14 @@ test("both permanent source-used proofs permit explicit local recovery without c
         r.request().method() === "POST",
     );
     await appendPanel(page)
-      .getByRole("button", { name: "确认追加不可变修订", exact: true })
+      .getByRole("button", { name: "确认新增草稿修订", exact: true })
       .click();
     const response = await posted;
     expect(response.status()).toBe(409);
     expect((await response.json()).code).toBe("DRAFT_SOURCE_ALREADY_APPLIED");
     await expect(
       pendingPanel(page).getByRole("button", {
-        name: "核实追加原请求",
+        name: "查询上次草稿更新结果",
         exact: true,
       }),
     ).toBeVisible();
@@ -854,11 +862,11 @@ test("late resolve after navigation cannot replace a newer local anchor, and ide
   await openSource(page, "alias-initial", 3);
   await confirm(page, 3);
   await appendPanel(page)
-    .getByRole("button", { name: "确认追加不可变修订", exact: true })
+    .getByRole("button", { name: "确认新增草稿修订", exact: true })
     .click();
   await expect(
     pendingPanel(page).getByRole("button", {
-      name: "核实追加原请求",
+      name: "查询上次草稿更新结果",
       exact: true,
     }),
   ).toBeVisible();
@@ -884,7 +892,7 @@ test("late resolve after navigation cannot replace a newer local anchor, and ide
     },
   );
   await pendingPanel(page)
-    .getByRole("button", { name: "核实追加原请求", exact: true })
+    .getByRole("button", { name: "查询上次草稿更新结果", exact: true })
     .click();
   await received;
   // Controlled storage change models another local intent while the old component is gone.
@@ -902,7 +910,7 @@ test("late resolve after navigation cannot replace a newer local anchor, and ide
     { key: REVISION_PENDING_STORAGE_KEY, tuple: newer },
   );
   await pendingPanel(page)
-    .getByRole("button", { name: "重新读取追加锚点", exact: true })
+    .getByRole("button", { name: "重新检查本地更新记录", exact: true })
     .click();
   release!();
   await page.unrouteAll({ behavior: "wait" });
@@ -916,12 +924,12 @@ test("late resolve after navigation cannot replace a newer local anchor, and ide
       new URL(r.url()).pathname === resolveRevisionEndpoint(fixture.productId),
   );
   await pendingPanel(page)
-    .getByRole("button", { name: "核实追加原请求", exact: true })
+    .getByRole("button", { name: "查询上次草稿更新结果", exact: true })
     .click();
   expect((await failed).status()).toBe(401);
   await expect(
     pendingPanel(page).getByRole("button", {
-      name: "移除已失效原请求并重新准备",
+      name: "移除已失效原操作并重新准备",
       exact: true,
     }),
   ).toHaveCount(0);

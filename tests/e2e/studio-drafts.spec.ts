@@ -157,15 +157,18 @@ test("synthetic DB eligibility: read-only empty source has no executable apply a
 }, info) => {
   await signIn(page, "readOnly");
   await page.goto(detail());
-  const panel = page.getByRole("region", { name: "首次草稿应用", exact: true });
+  const panel = page.getByRole("region", {
+    name: "建立第一版草稿",
+    exact: true,
+  });
   await expect(
-    panel.getByRole("link", { name: "查看服务器草稿", exact: true }),
+    panel.getByRole("link", { name: "查看当前草稿", exact: true }),
   ).toBeVisible();
   await expect(
     panel.getByText("当前身份为只读", { exact: false }),
   ).toBeVisible();
   await expect(
-    panel.getByRole("button", { name: "应用为首次草稿", exact: true }),
+    panel.getByRole("button", { name: "建立第一版草稿", exact: true }),
   ).toHaveCount(0);
   await mobile(page, info, "read-only-empty");
   await page.goto(workspace());
@@ -192,13 +195,15 @@ test("storage failure produces zero POST and retains an unusable anchor", async 
   });
   await page.goto(detail());
   await page
-    .getByRole("button", { name: "应用为首次草稿", exact: true })
+    .getByRole("button", { name: "建立第一版草稿", exact: true })
     .click();
   await page
-    .getByRole("button", { name: "确认应用为草稿修订 1", exact: true })
+    .getByRole("button", { name: "确认建立草稿修订 1", exact: true })
     .click();
   await expect(
-    page.getByText("本页无法可靠保存或核对请求锚点。", { exact: false }),
+    page.getByText("本页无法可靠保存或核对操作记录。", {
+      exact: false,
+    }),
   ).toBeVisible();
   expect(posts).toBe(0);
 });
@@ -225,19 +230,22 @@ test("authorization denial closes apply and replay controls while preserving the
   );
   await page.goto(detail(1));
   await page
-    .getByRole("button", { name: "应用为首次草稿", exact: true })
+    .getByRole("button", { name: "建立第一版草稿", exact: true })
     .click();
   await page
-    .getByRole("button", { name: "确认应用为草稿修订 1", exact: true })
+    .getByRole("button", { name: "确认建立草稿修订 1", exact: true })
     .click();
   await expect(
     page.getByText("当前会话或写入权限已失效", { exact: false }),
   ).toBeVisible();
   await expect(
-    page.getByRole("button", { name: "明确按原 key 重放", exact: true }),
+    page.getByRole("button", {
+      name: "再次发送原草稿创建操作",
+      exact: true,
+    }),
   ).toHaveCount(0);
   await expect(
-    page.getByRole("button", { name: "应用为首次草稿", exact: true }),
+    page.getByRole("button", { name: "建立第一版草稿", exact: true }),
   ).toHaveCount(0);
   const anchor = await pending(page);
   expect(anchor?.mayHaveBeenSent).toBe(true);
@@ -246,7 +254,10 @@ test("authorization denial closes apply and replay controls while preserving the
     .getByRole("button", { name: "刷新草稿与工作区状态", exact: true })
     .click();
   await expect(
-    page.getByRole("button", { name: "核对原 key 回执", exact: true }),
+    page.getByRole("button", {
+      name: "查询上次草稿创建结果",
+      exact: true,
+    }),
   ).toBeEnabled();
   expect(await pending(page)).toEqual(anchor);
   expect(posts).toBe(1);
@@ -278,10 +289,10 @@ test("real PG apply loses its response; empty lookup and finite error preserve e
   // Settle the independent initial reads before creating an intentional UNKNOWN.
   await waitForEmptyDraftSource(page);
   await page
-    .getByRole("button", { name: "应用为首次草稿", exact: true })
+    .getByRole("button", { name: "建立第一版草稿", exact: true })
     .click();
   await page
-    .getByRole("button", { name: "确认应用为草稿修订 1", exact: true })
+    .getByRole("button", { name: "确认建立草稿修订 1", exact: true })
     .click();
   await expect(
     page.getByRole("heading", { name: "此工作区有待确认请求", exact: true }),
@@ -291,23 +302,26 @@ test("real PG apply loses its response; empty lookup and finite error preserve e
   await mobile(page, info, "unknown");
   await page.goto(workspace());
   await expect(
-    page.getByRole("heading", { name: "原 key 核实", exact: true }),
+    page.getByRole("heading", { name: "草稿创建操作查询", exact: true }),
   ).toBeVisible();
   const originalPanel = page.getByRole("region", {
-    name: "原 key 核实",
+    name: "草稿创建操作查询",
     exact: true,
   });
-  const originalChecksum = originalPanel.getByText("原请求校验摘要", {
+  const originalChecksum = originalPanel.getByText("原操作校验摘要", {
     exact: true,
   });
   await originalChecksum.click();
   await originalChecksum.click();
   await expect(
-    originalPanel.getByRole("button", { name: "核对原 key 回执", exact: true }),
+    originalPanel.getByRole("button", {
+      name: "查询上次草稿创建结果",
+      exact: true,
+    }),
   ).toBeEnabled();
   await expect(
     originalPanel.getByRole("button", {
-      name: "明确按原 key 重放",
+      name: "再次发送原草稿创建操作",
       exact: true,
     }),
   ).toBeEnabled();
@@ -329,10 +343,10 @@ test("real PG apply loses its response; empty lookup and finite error preserve e
     { times: 1 },
   );
   await page
-    .getByRole("button", { name: "核对原 key 回执", exact: true })
+    .getByRole("button", { name: "查询上次草稿创建结果", exact: true })
     .click();
   await expect(
-    page.getByText("尚无匹配回执；原 key 继续保留。", { exact: false }),
+    page.getByText("尚无匹配处理结果；原操作记录继续保留。", { exact: false }),
   ).toBeVisible();
   expect((await pending(page))?.tuple).toEqual(original);
   await page.route(
@@ -349,10 +363,13 @@ test("real PG apply loses its response; empty lookup and finite error preserve e
     { times: 1 },
   );
   await page
-    .getByRole("button", { name: "明确按原 key 重放", exact: true })
+    .getByRole("button", {
+      name: "再次发送原草稿创建操作",
+      exact: true,
+    })
     .click();
   await expect(
-    page.getByText("此工作区已有草稿。请查看服务器草稿", { exact: false }),
+    page.getByText("此工作区已有草稿。请查看当前草稿", { exact: false }),
   ).toBeVisible();
   expect((await pending(page))?.tuple).toEqual(original);
   // A malformed full-tuple success cannot clear a previously unknown request.
@@ -376,7 +393,7 @@ test("real PG apply loses its response; empty lookup and finite error preserve e
     { times: 1 },
   );
   await page
-    .getByRole("button", { name: "核对原 key 回执", exact: true })
+    .getByRole("button", { name: "查询上次草稿创建结果", exact: true })
     .click();
   await expect(
     page.getByText("Studio 暂不可用", { exact: false }),
@@ -386,16 +403,21 @@ test("real PG apply loses its response; empty lookup and finite error preserve e
     (r) => r.request().method() === "POST" && r.url().endsWith("/apply"),
   );
   await page
-    .getByRole("button", { name: "明确按原 key 重放", exact: true })
+    .getByRole("button", {
+      name: "再次发送原草稿创建操作",
+      exact: true,
+    })
     .click();
   expect((await replay).status()).toBe(200);
   await expect.poll(() => pending(page)).toBeNull();
   await expect(
-    page.getByText("服务器已确认原 key 的固定应用回执。", { exact: true }),
+    page.getByText("服务器已确认原操作的固定应用处理结果。", {
+      exact: true,
+    }),
   ).toBeVisible();
   await page.reload();
   await expect(
-    page.getByRole("link", { name: "读取固定修订正文", exact: true }),
+    page.getByRole("link", { name: "查看此修订内容", exact: true }),
   ).toBeVisible();
   await mobile(page, info, "draft-summary");
 });
@@ -405,9 +427,7 @@ test("full escaped historical synthetic content is hash-checked and read-only ac
 }, info) => {
   await signIn(page);
   await page.goto(workspace());
-  await page
-    .getByRole("link", { name: "读取固定修订正文", exact: true })
-    .click();
+  await page.getByRole("link", { name: "查看此修订内容", exact: true }).click();
   const body = page.getByRole("textbox", { name: "完整内容正文", exact: true });
   await expect(body).toBeHidden();
   await page.getByText("固定修订完整正文与素材集合", { exact: true }).click();
@@ -455,21 +475,27 @@ test("archived Product still reconciles the already committed original key; read
   );
   await page.reload();
   await expect(
-    page.getByRole("button", { name: "明确按原 key 重放", exact: true }),
+    page.getByRole("button", {
+      name: "再次发送原草稿创建操作",
+      exact: true,
+    }),
   ).toBeEnabled();
   const response = page.waitForResponse(
     (r) => r.request().method() === "POST" && r.url().endsWith("/apply"),
   );
   await page
-    .getByRole("button", { name: "明确按原 key 重放", exact: true })
+    .getByRole("button", {
+      name: "再次发送原草稿创建操作",
+      exact: true,
+    })
     .click();
   expect((await response).status()).toBe(200);
   await expect.poll(() => pending(page)).toBeNull();
   await expect(
-    page.getByRole("button", { name: "读取服务器草稿", exact: true }),
+    page.getByRole("button", { name: "读取当前草稿", exact: true }),
   ).toBeEnabled();
   await expect(
-    page.getByRole("link", { name: "读取固定修订正文", exact: true }),
+    page.getByRole("link", { name: "查看此修订内容", exact: true }),
   ).toBeVisible();
   await mobile(page, info, "archived-receipt");
 });
@@ -492,15 +518,21 @@ test("read-only archived workspace preserves pending until the exact successful 
   );
   await page.reload();
   await expect(
-    page.getByRole("button", { name: "核对原 key 回执", exact: true }),
+    page.getByRole("button", {
+      name: "查询上次草稿创建结果",
+      exact: true,
+    }),
   ).toBeEnabled();
   await expect(
-    page.getByRole("button", { name: "明确按原 key 重放", exact: true }),
+    page.getByRole("button", {
+      name: "再次发送原草稿创建操作",
+      exact: true,
+    }),
   ).toHaveCount(0);
   expect((await pending(page))?.tuple).toEqual(original);
   await mobile(page, info, "read-only-unknown");
   await page
-    .getByRole("button", { name: "核对原 key 回执", exact: true })
+    .getByRole("button", { name: "查询上次草稿创建结果", exact: true })
     .click();
   await expect.poll(() => pending(page)).toBeNull();
 });

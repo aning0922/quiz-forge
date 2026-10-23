@@ -11,7 +11,7 @@ export async function waitForConsumerCaptureReady(page: Page, state: string) {
   if (state === "operator-key-list") {
     // finishStudioPending already waits the controller's joint read completion.
     await expect(
-      page.getByRole("combobox", { name: "固定内测版本", exact: true }),
+      page.getByRole("combobox", { name: "固定内测内容版本", exact: true }),
     ).toBeEnabled();
     return;
   }

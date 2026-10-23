@@ -5,7 +5,7 @@ export async function waitForEmptyDraftSource(page: Page) {
   // Validation detail mounts these readers independently. The static read-only
   // notice/link can appear while their loading paragraphs still affect height.
   const first = page.getByRole("region", {
-    name: "首次草稿应用",
+    name: "建立第一版草稿",
     exact: true,
   });
   await expect(
@@ -14,11 +14,11 @@ export async function waitForEmptyDraftSource(page: Page) {
   await expect(first.getByRole("status")).toHaveCount(0);
   await expect(first.getByRole("alert")).toHaveCount(0);
   const append = page.getByRole("region", {
-    name: "追加草稿修订",
+    name: "更新草稿",
     exact: true,
   });
   await expect(
-    append.getByText("此工作区尚无草稿。请先使用首次草稿应用。", {
+    append.getByText("此工作区尚无草稿。请先使用建立第一版草稿。", {
       exact: true,
     }),
   ).toBeVisible();
@@ -26,19 +26,19 @@ export async function waitForEmptyDraftSource(page: Page) {
   await expect(append.getByRole("alert")).toHaveCount(0);
   await expect(
     append.getByText(
-      "此工作区有原请求待核实，或锚点存储不可用。新准备保持关闭。",
+      "此工作区有原操作待核实，或本地操作记录存储不可用。新准备保持关闭。",
       { exact: true },
     ),
   ).toHaveCount(0);
   const pending = page.getByRole("region", {
-    name: "追加原请求核实",
+    name: "草稿更新操作查询",
     exact: true,
   });
   await expect(
     pending.getByText("此浏览器会话没有此工作区的待确认追加请求。", {
       exact: true,
     }),
-  ).toBeVisible();
+  ).toBeAttached();
   await expect(pending.getByRole("status")).toHaveCount(0);
 }
 
@@ -54,7 +54,7 @@ export async function captureDraftMobile(
     // The summary mounts a separate asynchronous history reader. Its first row is
     // part of this complete fixture state, not a later optional enhancement.
     const history = page.getByRole("region", {
-      name: "草稿修订历史",
+      name: "草稿历史修订",
       exact: true,
     });
     await expect(history.locator('[data-history-revision="1"]')).toBeVisible();

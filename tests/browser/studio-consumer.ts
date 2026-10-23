@@ -433,7 +433,10 @@ async function globalNavigationRegression(
         );
         await target.goto(origin + "/studio-navigation-probe");
         await expect(
-          target.getByRole("combobox", { name: "已封存的父版本", exact: true }),
+          target.getByRole("combobox", {
+            name: "固定内测内容版本",
+            exact: true,
+          }),
         ).toBeEnabled();
       }
       if (kind === "keyboard") {
@@ -441,7 +444,7 @@ async function globalNavigationRegression(
         await toggle.click();
         await toggle.click();
         await expect(
-          page.getByRole("combobox", { name: "已封存的父版本", exact: true }),
+          page.getByRole("combobox", { name: "固定内测内容版本", exact: true }),
         ).toBeEnabled();
         expect(await navigationInvalidations(page)).toBe(0);
       }
@@ -494,10 +497,10 @@ async function globalNavigationRegression(
       expect(await navigationInvalidations(page)).toBe(1);
       expect(await navigationInvalidations(other)).toBe(0);
       await expect(
-        other.getByRole("combobox", { name: "已封存的父版本", exact: true }),
+        other.getByRole("combobox", { name: "固定内测内容版本", exact: true }),
       ).toBeEnabled();
       await expect(
-        page.getByRole("button", { name: "创建消费者内测版本", exact: true }),
+        page.getByRole("button", { name: "创建答题版本", exact: true }),
       ).toHaveCount(0);
       expect(posts).toBe(before);
       observations.push({
@@ -526,7 +529,7 @@ async function globalNavigationRegression(
     try {
       await page.goto(origin + "/studio-navigation-probe");
       const selector = page.getByRole("combobox", {
-        name: "已封存的父版本",
+        name: "固定内测内容版本",
         exact: true,
       });
       await expect(selector).toBeEnabled();
@@ -545,7 +548,7 @@ async function globalNavigationRegression(
         });
       }
       await page
-        .getByRole("button", { name: "创建消费者内测版本", exact: true })
+        .getByRole("button", { name: "创建答题版本", exact: true })
         .click();
       await bounded(stage === "authorization" ? authReached : playReached);
       const pending = await pendingDigest(page);
@@ -608,11 +611,15 @@ async function runExistingConsumerScenarios(
     );
     await p.goto(origin + "/studio-probe");
     await expect(
-      p.getByRole("button", { name: "创建消费者内测版本", exact: true }),
+      p.getByRole("button", { name: "创建答题版本", exact: true }),
     ).toBeVisible();
-    await expect(p.getByText("当前尚无可选择的已封存父版本。")).toHaveCount(0);
     await expect(
-      p.getByRole("combobox", { name: "已封存的父版本" }),
+      p.getByText(
+        "尚无固定内测内容版本。请先预览草稿、记录已有审核依据，并固定内测内容。",
+      ),
+    ).toHaveCount(0);
+    await expect(
+      p.getByRole("combobox", { name: "固定内测内容版本" }),
     ).toBeEnabled();
     await shot(p, `ready-${width}`);
     if (width === 320) {
@@ -637,7 +644,7 @@ async function runExistingConsumerScenarios(
       const beforeNavigationPosts = posts;
       await p.mouse.click(gap.x, gap.y);
       await expect(
-        p.getByRole("combobox", { name: "已封存的父版本" }),
+        p.getByRole("combobox", { name: "固定内测内容版本" }),
       ).toBeEnabled();
       await expect(
         p.getByRole("heading", { name: "请重新验证运营身份", exact: true }),
@@ -646,7 +653,7 @@ async function runExistingConsumerScenarios(
       // Prevent only destination navigation. The actual link activation still
       // reaches the React capture handler and must immediately revoke authority.
       const link = workflow.getByRole("link", {
-        name: "商品概览",
+        name: "测评概览",
         exact: true,
       });
       await link.evaluate((anchor) => {
@@ -662,11 +669,11 @@ async function runExistingConsumerScenarios(
       ).toBeVisible();
       await p.reload();
       await expect(
-        p.getByRole("combobox", { name: "已封存的父版本" }),
+        p.getByRole("combobox", { name: "固定内测内容版本" }),
       ).toBeEnabled();
       const pointerLink = p
         .getByRole("navigation", { name: "商品操作流程", exact: true })
-        .getByRole("link", { name: "商品概览", exact: true });
+        .getByRole("link", { name: "测评概览", exact: true });
       await pointerLink.evaluate((anchor) => {
         anchor.addEventListener("click", (event) => event.preventDefault(), {
           capture: true,
@@ -714,26 +721,26 @@ async function runExistingConsumerScenarios(
 `);
   await page.goto(origin + "/studio-probe");
   await page
-    .getByRole("combobox", { name: "已封存的父版本" })
+    .getByRole("combobox", { name: "固定内测内容版本" })
     .selectOption(parent.version.id);
-  await page
-    .getByRole("button", { name: "创建消费者内测版本", exact: true })
-    .click();
+  await page.getByRole("button", { name: "创建答题版本", exact: true }).click();
   await expect(
     page.getByRole("heading", { name: "原内测版本已创建", exact: true }),
   ).toBeVisible();
   await shot(page, "created-play-320");
   await page.getByRole("checkbox").check();
-  await page.getByRole("button", { name: "确认结束并清除本标签记录" }).click();
+  await page
+    .getByRole("button", { name: "确认结束并清除当前标签页记录" })
+    .click();
   await expect(
-    page.getByRole("combobox", { name: "固定内测版本", exact: true }),
+    page.getByRole("combobox", { name: "固定内测内容版本", exact: true }),
   ).toBeEnabled();
   await page
-    .getByRole("combobox", { name: "固定内测版本", exact: true })
+    .getByRole("combobox", { name: "固定内测内容版本", exact: true })
     .selectOption(play.id);
-  await page.getByRole("button", { name: "生成并发放一枚访问 Key" }).click();
+  await page.getByRole("button", { name: "生成并发放一枚访问码" }).click();
   await expect(
-    page.getByRole("heading", { name: "原 Key 发放已记录" }),
+    page.getByRole("heading", { name: "上次访问码发放已记录" }),
   ).toBeVisible();
   await shot(page, "issued-key-320");
   const downloadWait = page.waitForEvent("download");
@@ -774,23 +781,29 @@ async function runExistingConsumerScenarios(
     fragment: true,
   });
   await page.getByRole("checkbox").check();
-  await page.getByRole("button", { name: "确认结束并清除本标签记录" }).click();
+  await page
+    .getByRole("button", { name: "确认结束并清除当前标签页记录" })
+    .click();
   await expect(
-    page.getByRole("combobox", { name: "固定内测版本", exact: true }),
+    page.getByRole("combobox", { name: "固定内测内容版本", exact: true }),
   ).toBeEnabled();
   mode = "unknown";
-  await page.getByRole("button", { name: "生成并发放一枚访问 Key" }).click();
-  await expect(page.getByRole("button", { name: "核对原请求" })).toBeVisible();
+  await page.getByRole("button", { name: "生成并发放一枚访问码" }).click();
+  await expect(
+    page.getByRole("button", { name: "查询上次操作结果" }),
+  ).toBeVisible();
   await shot(page, "unknown-issue-320");
   const before = issueBindings.length;
   await page.reload();
-  await expect(page.getByRole("button", { name: "核对原请求" })).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "查询上次操作结果" }),
+  ).toBeVisible();
   expect(issueBindings.length).toBe(before);
   await shot(page, "restored-unknown-320");
   mode = "normal";
-  await page.getByRole("button", { name: "核对原请求" }).click();
+  await page.getByRole("button", { name: "查询上次操作结果" }).click();
   await expect(
-    page.getByRole("heading", { name: "原 Key 发放已记录" }),
+    page.getByRole("heading", { name: "上次访问码发放已记录" }),
   ).toBeVisible();
   await shot(page, "resolved-issue-320");
   authReached = new Promise<void>((resolve) => {
@@ -824,9 +837,9 @@ async function runExistingConsumerScenarios(
   expect(clipboardCalls).toBe(beforeHidden);
   await shot(page, "hidden-pending-disclosure-320");
   await page.getByRole("button", { name: "重新读取与核对身份" }).click();
-  await page.getByRole("button", { name: "核对原请求" }).click();
+  await page.getByRole("button", { name: "查询上次操作结果" }).click();
   await expect(
-    page.getByRole("heading", { name: "原 Key 发放已记录" }),
+    page.getByRole("heading", { name: "上次访问码发放已记录" }),
   ).toBeVisible();
   authReached = new Promise<void>((resolve) => {
     notifyAuth = resolve;
@@ -851,14 +864,14 @@ async function runExistingConsumerScenarios(
   ).toBeUndefined();
   await shot(page, "logout-pending-disclosure-320");
   await page.getByRole("button", { name: "重新读取与核对身份" }).click();
-  await page.getByRole("button", { name: "核对原请求" }).click();
+  await page.getByRole("button", { name: "查询上次操作结果" }).click();
   await expect(
-    page.getByRole("heading", { name: "原 Key 发放已记录" }),
+    page.getByRole("heading", { name: "上次访问码发放已记录" }),
   ).toBeVisible();
   const other = await page.context().newPage();
   await other.goto(origin + "/studio-probe");
   await expect(
-    other.getByRole("button", { name: "创建消费者内测版本", exact: true }),
+    other.getByRole("button", { name: "创建答题版本", exact: true }),
   ).toBeVisible();
   await other.evaluate(() =>
     (
@@ -871,9 +884,9 @@ async function runExistingConsumerScenarios(
   await shot(page, "other-tab-invalidation-320");
   await other.close();
   await page.getByRole("button", { name: "重新读取与核对身份" }).click();
-  await page.getByRole("button", { name: "核对原请求" }).click();
+  await page.getByRole("button", { name: "查询上次操作结果" }).click();
   await expect(
-    page.getByRole("heading", { name: "原 Key 发放已记录" }),
+    page.getByRole("heading", { name: "上次访问码发放已记录" }),
   ).toBeVisible();
   authReached = new Promise<void>((resolve) => {
     notifyAuth = resolve;
@@ -885,10 +898,12 @@ async function runExistingConsumerScenarios(
   await page.getByRole("link", { name: "返回测评工作区", exact: true }).click();
   holdAuth = false;
   releaseAuth?.();
-  await expect(page.getByRole("button", { name: "核对原请求" })).toBeVisible();
-  await page.getByRole("button", { name: "核对原请求" }).click();
   await expect(
-    page.getByRole("heading", { name: "原 Key 发放已记录" }),
+    page.getByRole("button", { name: "查询上次操作结果" }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "查询上次操作结果" }).click();
+  await expect(
+    page.getByRole("heading", { name: "上次访问码发放已记录" }),
   ).toBeVisible();
   expect(clipboardCalls).toBe(beforeNavigation);
   mode = "other-issuer";
@@ -917,12 +932,12 @@ async function runExistingConsumerScenarios(
   await page.reload();
   await expect(
     page.getByText(
-      "原文已不在本标签，不能恢复私密链接或重放发放。仍可核对原请求。",
+      "原文已不在当前标签页，不能恢复私密链接或再次发送原操作发放。仍可查询上次操作结果。",
       { exact: true },
     ),
   ).toBeVisible();
   await expect(
-    page.getByRole("button", { name: "重放原请求", exact: true }),
+    page.getByRole("button", { name: "再次发送原操作", exact: true }),
   ).toHaveCount(0);
   await expect(
     page.getByRole("button", { name: "复制私密访问链接", exact: true }),
@@ -932,9 +947,11 @@ async function runExistingConsumerScenarios(
   ).toHaveCount(0);
   await shot(page, "raw-loss-before-resolve-320");
   const beforeRawLoss = issueBindings.length;
-  await page.getByRole("button", { name: "核对原请求", exact: true }).click();
+  await page
+    .getByRole("button", { name: "查询上次操作结果", exact: true })
+    .click();
   await expect(
-    page.getByRole("heading", { name: "原 Key 发放已记录", exact: true }),
+    page.getByRole("heading", { name: "上次访问码发放已记录", exact: true }),
   ).toBeVisible();
   expect(issueBindings.length).toBe(beforeRawLoss);
   await expect(
@@ -946,7 +963,7 @@ async function runExistingConsumerScenarios(
   await shot(page, "raw-loss-resolved-320");
   await page.getByRole("checkbox").check();
   await page
-    .getByRole("button", { name: "确认结束并清除本标签记录", exact: true })
+    .getByRole("button", { name: "确认结束并清除当前标签页记录", exact: true })
     .click();
   await page.close();
   mode = "readonly";
@@ -956,25 +973,25 @@ async function runExistingConsumerScenarios(
     ro.getByText("当前运营身份为只读", { exact: false }),
   ).toBeVisible();
   await expect(
-    ro.getByRole("combobox", { name: "固定内测版本", exact: true }),
+    ro.getByRole("combobox", { name: "固定内测内容版本", exact: true }),
   ).toBeDisabled();
   await shot(ro, "readonly-320");
   await ro.close();
   mode = "normal";
   const v = await browser.newPage({ viewport: { width: 320, height: 900 } });
   await v.goto(origin + "/studio-probe");
-  await v.getByRole("button", { name: "作废此未领取 Key" }).first().click();
+  await v.getByRole("button", { name: "作废此未领取访问码" }).first().click();
   mode = "claim-before-void";
-  await v.getByRole("button", { name: "确认作废未领取 Key" }).click();
+  await v.getByRole("button", { name: "确认作废未领取访问码" }).click();
   await expect(
-    v.getByRole("heading", { name: "未作废：Key 已领取" }),
+    v.getByRole("heading", { name: "未作废：访问码已领取" }),
   ).toBeVisible();
   await shot(v, "claimed-before-void-320");
   await v.getByRole("checkbox").check();
-  await v.getByRole("button", { name: "确认结束并清除本标签记录" }).click();
-  await v.getByRole("button", { name: "作废此未领取 Key" }).first().click();
+  await v.getByRole("button", { name: "确认结束并清除当前标签页记录" }).click();
+  await v.getByRole("button", { name: "作废此未领取访问码" }).first().click();
   mode = "normal";
-  await v.getByRole("button", { name: "确认作废未领取 Key" }).click();
+  await v.getByRole("button", { name: "确认作废未领取访问码" }).click();
   await expect(
     v.getByRole("heading", { name: "原未领取作废已记录" }),
   ).toBeVisible();

@@ -180,10 +180,10 @@ export function AppendRevisionPanel({
   }
   return (
     <>
-      <section className={styles.panel} aria-label="追加草稿修订">
-        <h2>追加草稿修订</h2>
+      <section className={styles.panel} aria-label="更新草稿">
+        <h2>更新草稿</h2>
         <p className={styles.note}>
-          将此完整候选追加到同一草稿，创建新的不可变修订。旧正文、素材引用和回执保留；此操作不授予审核或发布资格。
+          将此完整候选追加到同一草稿，创建新的不可变修订。旧正文、素材引用和处理结果保留；此操作不授予审核或发布资格。
         </p>
         <button
           className={`${styles.button} ${styles.secondary}`}
@@ -207,7 +207,7 @@ export function AppendRevisionPanel({
         )}
         {base && (
           <div className={local.receipt}>
-            <h3>本次读取的当前基准：修订 {base.revision}</h3>
+            <h3>本次更新所依据的草稿：修订 {base.revision}</h3>
             <p>草稿 {base.draftId}</p>
             <TechnicalDetails label="当前基准校验摘要">
               <p>内容 {base.canonicalContentSha256}</p>
@@ -217,16 +217,18 @@ export function AppendRevisionPanel({
           </div>
         )}
         {current.value?.kind === "empty" && (
-          <p>此工作区尚无草稿。请先使用首次草稿应用。</p>
+          <p>此工作区尚无草稿。请先使用建立第一版草稿。</p>
         )}
         {session.operator.role === "read-only" && (
-          <p>当前为只读身份，可核实原请求和阅读修订，不能追加或重放。</p>
+          <p>
+            当前为只读身份，可核实原操作和阅读修订，不能追加或再次发送原操作。
+          </p>
         )}
         {denied && (
-          <p>当前写入身份或验证已失效，写入口已关闭。原请求锚点仍保留。</p>
+          <p>当前写入身份或验证已失效，写入口已关闭。原操作记录仍保留。</p>
         )}
         {product.value?.archivedAt && (
-          <p>工作区已归档，不能发起新追加。旧修订和原请求仍可核实。</p>
+          <p>工作区已归档，不能发起新追加。旧修订和原操作仍可核实。</p>
         )}
         {full && (
           <p>
@@ -235,11 +237,13 @@ export function AppendRevisionPanel({
           </p>
         )}
         {!storageReady && (
-          <p>此工作区有原请求待核实，或锚点存储不可用。新准备保持关闭。</p>
+          <p>
+            此工作区有原操作待核实，或本地操作记录存储不可用。新准备保持关闭。
+          </p>
         )}
         {!ready && (
           <p>
-            当前来源尚不符合新的追加条件；原请求核实不要求重新满足这些资格。
+            此来源暂不能用于更新草稿；查询上次操作不受当前来源是否可用的影响。
           </p>
         )}
         {confirmation && !confirmed && (
@@ -248,7 +252,7 @@ export function AppendRevisionPanel({
           </p>
         )}
         {confirmed && confirmation ? (
-          <section className={local.receipt} aria-label="确认追加不可变修订">
+          <section className={local.receipt} aria-label="确认新增草稿修订">
             <h3>
               确认基于修订 {confirmation.binding.target.expectedRevision} 追加
             </h3>
@@ -262,7 +266,7 @@ export function AppendRevisionPanel({
                 disabled={!canPrepare}
                 onClick={() => void append()}
               >
-                确认追加不可变修订
+                确认新增草稿修订
               </button>
               <button
                 className={`${styles.button} ${styles.secondary}`}
@@ -281,11 +285,14 @@ export function AppendRevisionPanel({
           )
         )}
         {receipt && (
-          <section className={local.receipt} aria-label="已确认的固定追加回执">
-            <h3>已确认的固定追加回执：修订 {receipt.revision}</h3>
+          <section
+            className={local.receipt}
+            aria-label="已确认的固定追加处理结果"
+          >
+            <h3>已确认的固定追加处理结果：修订 {receipt.revision}</h3>
             <p>
-              原 key {receipt.idempotencyKey}
-              。此固定回执与上方当前摘要分别读取。
+              原操作编号 {receipt.idempotencyKey}
+              。此固定处理结果与上方当前摘要分别读取。
             </p>
             <RevisionLinks draft={receipt} />
           </section>

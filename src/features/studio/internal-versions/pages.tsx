@@ -36,32 +36,10 @@ import {
   draftEndpoint,
   checkDraftRead,
   checkedDraftFetch,
-  draftWorkspacePath,
 } from "../drafts/client";
 import { previewPagePath } from "@/features/product/preview/urls";
 import styles from "../workspace/workspace.module.css";
 import local from "./internal-versions.module.css";
-function InternalNav({ productId }: { productId: string }) {
-  return (
-    <div className={styles.actions}>
-      <Link
-        className={`${styles.link} ${styles.secondary}`}
-        href={`/studio/products/${productId}`}
-      >
-        返回工作区
-      </Link>
-      <Link
-        className={`${styles.link} ${styles.secondary}`}
-        href={draftWorkspacePath(productId)}
-      >
-        服务器草稿与修订历史
-      </Link>
-      <Link className={styles.link} href={internalVersionsPageUrl(productId)}>
-        固定内测版本与原请求核实
-      </Link>
-    </div>
-  );
-}
 /** Mounted by Product identity even if its mutable detail GET fails. */
 export function StableInternalWorkspace({
   productId,
@@ -76,12 +54,16 @@ export function StableInternalWorkspace({
   return (
     <>
       <section className={styles.panel} aria-label="稳定工作区内测入口">
-        <h2>固定内测版本与恢复</h2>
+        <h2>审核依据与内容版本</h2>
         <p>
-          核对草稿后，进入既有基线记录与内测封存；也可直接核实此前保留的原请求。
+          记录已有的内容与素材审核依据，再固定本次内测内容；不代表新增批准或对外发布。
         </p>
-        <p>{INTERNAL_VERSION_DISCLOSURE}</p>
-        <InternalNav productId={parsed.data} />
+        <Link
+          className={styles.link}
+          href={internalVersionsPageUrl(parsed.data)}
+        >
+          查看审核依据与内容版本
+        </Link>
       </section>
       <InternalRecoveryPanels
         key={parsed.data}
@@ -119,7 +101,7 @@ function InternalReviewContent({
       />
       <section className={styles.panel}>
         <StudioPageHeader
-          title={`固定修订 ${scope.revision} · 既有内测基线`}
+          title={`固定修订 ${scope.revision} · 已有审核依据`}
           description="核对固定修订与既有批准证据，再明确记录或封存。候选登记不等于基线已记录。"
         />
         <p>{INTERNAL_VERSION_DISCLOSURE}</p>
@@ -138,10 +120,10 @@ function InternalReviewContent({
             className={`${styles.link} ${styles.secondary}`}
             href={previewPagePath(scope)}
           >
-            体验此固定修订内部预览
+            体验此固定修订内容预览
           </Link>
         </div>
-        {read.loading && <p role="status">正在核对修订与基线记录…</p>}
+        {read.loading && <p role="status">正在核对修订与审核依据记录…</p>}
         {read.error && (
           <p className={styles.error} role="alert">
             {read.error}
@@ -150,14 +132,14 @@ function InternalReviewContent({
         {read.value && (
           <>
             <p>
-              本次读取的当前 head：{read.value.observedCurrentRevision}
+              本次读取的当前修订：{read.value.observedCurrentRevision}
               ；此页固定目标：{read.value.target.revision}。
             </p>
             <TargetFacts target={read.value.target} />
             {read.value.review ? (
               <ReviewFacts review={read.value.review} />
             ) : (
-              <p>此目标尚无基线记录。服务器登记候选不等同于已经记录。</p>
+              <p>此目标尚无审核依据记录。服务器登记候选不等同于已经记录。</p>
             )}
           </>
         )}
@@ -221,13 +203,13 @@ function InternalVersionsContent({
       />
       <section className={styles.panel}>
         <StudioPageHeader
-          title="固定内测版本"
-          description="选择当前修订记录基线，或阅读已封存的历史版本。原请求核实不依赖列表读取成功。"
+          title="固定内测内容版本"
+          description="选择当前修订记录基线，或阅读已封存的历史版本。原操作核实不依赖列表读取成功。"
         />
         <p>{INTERNAL_VERSION_DISCLOSURE}</p>
         <p>
           列表保存固定身份元数据。历史版本不会因当前
-          head、资源或实现可用性变化而改用最新身份；详情与预览仍需分别核验。
+          草稿、素材或预览方式的变化而自动更新；内容详情与预览仍分别核验。
         </p>
         <div className={styles.actions}>
           <button
@@ -260,7 +242,7 @@ function InternalVersionsContent({
         {draft.loading && <p role="status">正在读取当前草稿指针…</p>}
         {draft.error && (
           <p role="alert">
-            当前 head 未可靠读取：{draft.error}。原请求核实仍可使用。
+            当前修订 未可靠读取：{draft.error}。原操作核实仍可使用。
           </p>
         )}
         {draft.value?.kind === "empty" && (
@@ -278,7 +260,7 @@ function InternalVersionsContent({
               已占用固定槽位：{list.value.versions.length} / 100；不可删除。
             </p>
             {!list.value.versions.length && (
-              <p>本次列表没有固定版本。空列表不能作为解除原请求锚点的证据。</p>
+              <p>本次列表没有固定版本。空列表不能作为解除原操作记录的证据。</p>
             )}
             <div className={styles.cards}>
               {list.value.versions.map((version) => (
@@ -337,7 +319,7 @@ function InternalVersionDetailContent({
       />
       <section className={styles.panel}>
         <StudioPageHeader
-          title="内测版本快照"
+          title="固定内容版本详情"
           description="此页核对已封存的固定快照，不会替换为当前草稿。"
         />
         <p>{INTERNAL_VERSION_DISCLOSURE}</p>
@@ -351,7 +333,7 @@ function InternalVersionDetailContent({
         {read.loading && <p role="status">正在读取固定快照并核对 SHA-256…</p>}
         {read.error && (
           <p className={styles.error} role="alert">
-            {read.error} 原请求核实区仍保留。
+            {read.error} 原操作核实区仍保留。
           </p>
         )}
         {read.value && (
@@ -365,8 +347,7 @@ function InternalVersionDetailContent({
             </p>
             <TargetFacts target={read.value.snapshot.target} />
             <p>
-              以下为已核对摘要的固定快照；渲染能力仅为 Studio
-              内部预览，不表示已实现消费者版本入口。
+              此处查看已固定的内容版本。若要让用户答题，请另到“答题版本与访问码”创建答题版本。
             </p>
             <TechnicalDetails label="完整固定快照">
               <pre className={local.code}>
@@ -376,7 +357,7 @@ function InternalVersionDetailContent({
           </>
         )}
         {draft.error && (
-          <p role="alert">当前 head 尚未可靠读取；固定快照没有被替换。</p>
+          <p role="alert">当前修订 尚未可靠读取；固定快照没有被替换。</p>
         )}
       </section>
       <InternalRecoveryPanels
