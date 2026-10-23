@@ -1,5 +1,13 @@
 # QuizForge 托管开发
 
+## 2026-10-23 S1 Studio 体验整理启动
+
+作者已明确授权后台布局与核心操作整理，主控基于已合入R1的main a641b04建立独立 `codex/studio-experience-s1`。合同和文件边界见 [STUDIO_EXPERIENCE_S1.md](STUDIO_EXPERIENCE_S1.md)，目前准备共享接口及独立冻结审查，尚未宣称实现完成。
+
+A `01a13f49-bff9-74b0-8f7c-03cd46b346c1` 接框架与商品管理，B `01a13f4a-3ac5-7a72-9ae0-70b24ec85f04` 接商品内导入到发码的界面；原Astra `01a13f4a-c9f8-7cc3-9558-81f86263cad1` 独审。模型沿原Sol/high实施、Astra/high审查。旧R1工作树及未提交草稿保留，S1使用新受管工作树，不替换成主控内子代理。
+
+主控单写共享展示接口、合同、集成及验收；原作者体验环境不重建、不迁移、不读取答案/凭证，测试使用隔离合成数据。常规工程推进到Draft PR和作者验收，不自动合并或发布。下方为R1及此前历史。
+
 ## 2026-10-21 R1 技术出口与作者验收点
 
 原两条独立开发聊天与 Astra 独立审查完成 R1，本地结果见 [R1_ACCEPTANCE.md](R1_ACCEPTANCE.md) 和 [qa/r1-acceptance.json](qa/r1-acceptance.json)。主控已完成全量工程检查、原环境复核与恢复入口，A/B 实现及实际非空恢复演练完成，Astra 对生命周期、schema 规范化、下载边界、HTTP 协议、图像和最终完整性/停库证据复核后无未关闭阻断。最终准确交付提交 CI 单独记录在 [Draft PR #22](https://github.com/aning0922/quiz-forge/pull/22)。
