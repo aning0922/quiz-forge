@@ -112,28 +112,28 @@ try {
   const page = await browser.newPage({ viewport: { width: 390, height: 900 } });
   const errors: string[] = [];
   page.on("pageerror", () => errors.push("pageerror"));
-  await page.addInitScript(() => {
-    if (!new URLSearchParams(location.search).has("hold")) return;
-    const original = window.setTimeout.bind(window),
-      held: (() => void)[] = [];
-    Object.assign(window, {
-      releaseRecoveryReads: () => {
-        for (const callback of held.splice(0)) callback();
-      },
-      heldRecoveryReads: held,
-    });
-    window.setTimeout = ((
-      callback: TimerHandler,
-      ms?: number,
-      ...args: unknown[]
-    ) =>
-      original(() => {
-        if (typeof callback !== "function")
-          throw Error("FUNCTION_TIMER_REQUIRED");
-        if (ms === 0 && callback.name === "readLocal")
-          held.push(() => callback(...args));
-        else callback(...args);
-      }, ms)) as typeof window.setTimeout;
+  // Explicit JavaScript content must not capture tsx/esbuild's module-local
+  // __name helper when Playwright installs this in a fresh browser realm.
+  await page.addInitScript({
+    content: String.raw`(() => {
+      if (!new URLSearchParams(location.search).has("hold")) return;
+      const original = window.setTimeout.bind(window);
+      const held = [];
+      Object.assign(window, {
+        releaseRecoveryReads: () => {
+          for (const callback of held.splice(0)) callback();
+        },
+        heldRecoveryReads: held,
+      });
+      window.setTimeout = (callback, ms, ...args) =>
+        original(() => {
+          if (typeof callback !== "function")
+            throw Error("FUNCTION_TIMER_REQUIRED");
+          if (ms === 0 && callback.name === "readLocal")
+            held.push(() => callback(...args));
+          else callback(...args);
+        }, ms);
+    })();`,
   });
   await page.goto(`http://127.0.0.1:${address.port}/probe?hold=1`);
   const panels = page.locator('section[aria-label$="操作查询"]');

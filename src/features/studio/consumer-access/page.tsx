@@ -41,6 +41,12 @@ function KeyFacts({ value }: { value: AccessKeyDetail }) {
     <>
       <dl className={styles.facts}>
         <div>
+          <dt>访问码编号</dt>
+          <dd>
+            <code>{value.issue.binding.keyId}</code>
+          </dd>
+        </div>
+        <div>
           <dt>当前记录</dt>
           <dd>{keyStatus(value)}</dd>
         </div>
@@ -53,14 +59,8 @@ function KeyFacts({ value }: { value: AccessKeyDetail }) {
           <dd>{time(value.issue.expiresAt)}</dd>
         </div>
       </dl>
-      <TechnicalDetails label="访问码与答题版本技术标识">
+      <TechnicalDetails label="答题版本技术标识">
         <dl className={styles.facts}>
-          <div>
-            <dt>访问码编号</dt>
-            <dd>
-              <code>{value.issue.binding.keyId}</code>
-            </dd>
-          </div>
           <div>
             <dt>答题版本标识</dt>
             <dd>
