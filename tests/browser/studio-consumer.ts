@@ -56,9 +56,42 @@ const parent = f.parent,
 const fromTsx = createRequire(
   createRequire(import.meta.url).resolve("tsx/package.json"),
 );
+const navigationOnly = process.argv.slice(2).includes("--navigation-only");
 await fromTsx("esbuild").build({
   entryPoints: [path.resolve("tests/browser/studio-consumer.client.tsx")],
   outfile: path.join(out, "probe.js"),
+  bundle: true,
+  platform: "browser",
+  format: "iife",
+  jsx: "automatic",
+  loader: { ".css": "local-css" },
+  define: { "process.env.NODE_ENV": '"production"', "process.env": "{}" },
+  logLevel: "silent",
+});
+// Keep the original domain-only capture unchanged. This second entry uses the
+// actual shell/pathname context from the independent review counterexample.
+await fromTsx("esbuild").build({
+  stdin: {
+    contents: `
+      import { createRoot } from "react-dom/client";
+      import { PathnameContext } from "next/dist/shared/lib/hooks-client-context.shared-runtime";
+      import { StudioShell } from "@/features/studio/shell";
+      import { StudioConsumerAccessPageV1 } from "@/features/studio/consumer-access/page";
+      import { subscribeStudioAuthorityInvalidation } from "@/features/studio/authority-events";
+      const input = JSON.parse(document.getElementById("fixture").textContent);
+      let invalidations = 0;
+      subscribeStudioAuthorityInvalidation(() => { invalidations++; });
+      window.readNavigationInvalidations = () => invalidations;
+      createRoot(document.getElementById("root")).render(
+        <PathnameContext.Provider value={"/studio/products/" + input.scope.productId + "/consumer-access"}>
+          <StudioShell authenticated><StudioConsumerAccessPageV1 {...input} /></StudioShell>
+        </PathnameContext.Provider>);
+    `,
+    resolveDir: process.cwd(),
+    loader: "tsx",
+    sourcefile: "studio-shell-consumer-probe.tsx",
+  },
+  outfile: path.join(out, "shell-probe.js"),
   bundle: true,
   platform: "browser",
   format: "iife",
@@ -80,6 +113,14 @@ const files = new Map([
     { body: await readFile(path.join(out, "probe.css")), type: "text/css" },
   ],
 ]);
+for (const [name, type] of [
+  ["shell-probe.js", "text/javascript"],
+  ["shell-probe.css", "text/css"],
+])
+  files.set(`/${name}`, {
+    body: await readFile(path.join(out, name!)),
+    type: type!,
+  });
 let origin = "",
   mode = "normal",
   play = f.play.play,
@@ -92,6 +133,11 @@ let holdAuth = false,
   releaseAuth: (() => void) | undefined,
   notifyAuth: (() => void) | undefined;
 let authReached = Promise.resolve();
+let holdPlay = false,
+  releasePlay: (() => void) | undefined,
+  notifyPlay: (() => void) | undefined,
+  sentPlays = 0;
+let playReached = Promise.resolve();
 const server = createServer(async (req, res) => {
   const url = new URL(req.url ?? "/", "http://127.0.0.1");
   const send = (v: unknown, status = 200) => {
@@ -137,7 +183,15 @@ const server = createServer(async (req, res) => {
           snapshotSha256: await internalPlaySnapshotSha256(snapshot),
         };
         hasPlay = true;
+        if (holdPlay) {
+          holdPlay = false;
+          notifyPlay?.();
+          await new Promise<void>((resolve) => {
+            releasePlay = resolve;
+          });
+        }
         send({ created: true, play }, 201);
+        sentPlays++;
         return;
       }
       if (url.pathname.endsWith("/access-keys")) {
@@ -251,9 +305,11 @@ const server = createServer(async (req, res) => {
       scope: { origin, instanceId: "a".repeat(32), issuerId, productId },
       renderer: CONSUMER_IMPLEMENTATION_AVAILABILITY.rendererV1,
     };
+    const probe =
+      url.pathname === "/studio-navigation-probe" ? "shell-probe" : "probe";
     res.writeHead(200, { "content-type": "text/html;charset=utf-8" });
     res.end(
-      `<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/probe.css"><style>*{box-sizing:border-box}body{margin:0;font:16px/1.75 system-ui;background:#e9eee9;padding:12px}.synthetic{padding:12px;background:#fff4ce}</style><p class="synthetic">合成 Studio HTTP／实际 UI 验证 · 无数据库、实际运营权限或系统剪贴板</p><div id="root"></div><script id="fixture" type="application/json">${JSON.stringify(data).replaceAll("<", "\\u003c")}</script><script src="/probe.js"></script></html>`,
+      `<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/${probe}.css"><style>*{box-sizing:border-box}body{margin:0;font:16px/1.75 system-ui;background:#e9eee9;padding:12px}.synthetic{padding:12px;background:#fff4ce}</style><p class="synthetic">合成 Studio HTTP／实际 UI 验证 · 无数据库、实际运营权限或系统剪贴板</p><div id="root"></div><script id="fixture" type="application/json">${JSON.stringify(data).replaceAll("<", "\\u003c")}</script><script src="/${probe}.js"></script></html>`,
     );
   } catch {
     if (!res.headersSent) res.writeHead(500);
@@ -292,8 +348,251 @@ async function shot(page: Page, name: string) {
   });
   shots.push(name + ".png");
 }
-try {
-  browser = await chromium.launch({ headless: true });
+async function bounded<T>(work: Promise<T>): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      work,
+      new Promise<never>((_resolve, reject) => {
+        timer = setTimeout(
+          () => reject(Error("NAVIGATION_PROBE_DEADLINE")),
+          5000,
+        );
+      }),
+    ]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+async function navigationInvalidations(page: Page) {
+  return page.evaluate(() => {
+    const read = (
+      window as Window & { readNavigationInvalidations?: () => number }
+    ).readNavigationInvalidations;
+    if (!read) throw Error("NAVIGATION_OBSERVER_MISSING");
+    return read();
+  });
+}
+async function pendingDigest(page: Page) {
+  return page.evaluate(async () => {
+    const values = Object.keys(sessionStorage)
+      .sort()
+      .map((key) => [key, sessionStorage.getItem(key)]);
+    const hash = await crypto.subtle.digest(
+      "SHA-256",
+      new TextEncoder().encode(JSON.stringify(values)),
+    );
+    return {
+      entries: values.length,
+      sha256: [...new Uint8Array(hash)]
+        .map((byte) => byte.toString(16).padStart(2, "0"))
+        .join(""),
+    };
+  });
+}
+async function activateGlobal(page: Page, kind: "pointer" | "keyboard") {
+  const nav = page.getByRole("navigation", {
+    name: "Studio 导航",
+    exact: true,
+  });
+  if (!(await nav.isVisible()))
+    await page.getByText("Studio 导航", { exact: true }).click();
+  const link = nav.getByRole("link", { name: "工作区", exact: true });
+  // Only prevent destination navigation, preserving the real React link events
+  // and mounted consumer controller from the independent review counterexample.
+  await link.evaluate((anchor) =>
+    anchor.addEventListener("click", (event) => event.preventDefault(), {
+      capture: true,
+      once: true,
+    }),
+  );
+  if (kind === "keyboard") {
+    await link.focus();
+    await link.press("Enter");
+  } else await link.click();
+  expect(page.url()).toBe(origin + "/studio-navigation-probe");
+  await expect(
+    page.getByRole("heading", { name: "请重新验证运营身份", exact: true }),
+  ).toBeVisible();
+}
+async function globalNavigationRegression(
+  browser: Awaited<ReturnType<typeof chromium.launch>>,
+) {
+  for (const kind of ["pointer", "keyboard"] as const) {
+    const context = await browser.newContext({
+      viewport: { width: kind === "pointer" ? 1440 : 390, height: 900 },
+    });
+    try {
+      const page = await context.newPage(),
+        other = await context.newPage();
+      for (const target of [page, other]) {
+        target.on("pageerror", (error) =>
+          errors.push(
+            error.message.replace(/qf[kg]_p4_[A-Za-z0-9_-]+/g, "[redacted]"),
+          ),
+        );
+        await target.goto(origin + "/studio-navigation-probe");
+        await expect(
+          target.getByRole("combobox", { name: "已封存的父版本", exact: true }),
+        ).toBeEnabled();
+      }
+      if (kind === "keyboard") {
+        const toggle = page.getByText("Studio 导航", { exact: true });
+        await toggle.click();
+        await toggle.click();
+        await expect(
+          page.getByRole("combobox", { name: "已封存的父版本", exact: true }),
+        ).toBeEnabled();
+        expect(await navigationInvalidations(page)).toBe(0);
+      }
+      const nav = page.getByRole("navigation", {
+        name: "Studio 导航",
+        exact: true,
+      });
+      if (!(await nav.isVisible()))
+        await page.getByText("Studio 导航", { exact: true }).click();
+      const gap = await nav.evaluate((element) => {
+        const links = element.querySelectorAll("a"),
+          first = links[0]!.getBoundingClientRect(),
+          second = links[1]!.getBoundingClientRect();
+        const point = { x: first.left + 4, y: (first.bottom + second.top) / 2 };
+        const hit = document.elementFromPoint(point.x, point.y);
+        if (!hit || !element.contains(hit) || hit.closest("a[href]"))
+          throw Error("GLOBAL_NAVIGATION_GAP_REQUIRED");
+        return point;
+      });
+      await page.mouse.click(gap.x, gap.y);
+      expect(await navigationInvalidations(page)).toBe(0);
+      const before = posts;
+      await other.evaluate(() => {
+        const channel = new BroadcastChannel(
+          "quizforge.navigation-test-barrier.v1",
+        );
+        channel.onmessage = () => channel.postMessage("ack");
+      });
+      await activateGlobal(page, kind);
+      // A real same-origin cross-tab roundtrip drains queued channel delivery;
+      // no sleep or forged visibility event substitutes for the other live tab.
+      await page.evaluate(
+        () =>
+          new Promise<void>((resolve, reject) => {
+            const channel = new BroadcastChannel(
+              "quizforge.navigation-test-barrier.v1",
+            );
+            const timer = setTimeout(() => {
+              channel.close();
+              reject(Error("CHANNEL_BARRIER_DEADLINE"));
+            }, 2000);
+            channel.onmessage = () => {
+              clearTimeout(timer);
+              channel.close();
+              resolve();
+            };
+            channel.postMessage("ping");
+          }),
+      );
+      expect(await navigationInvalidations(page)).toBe(1);
+      expect(await navigationInvalidations(other)).toBe(0);
+      await expect(
+        other.getByRole("combobox", { name: "已封存的父版本", exact: true }),
+      ).toBeEnabled();
+      await expect(
+        page.getByRole("button", { name: "创建消费者内测版本", exact: true }),
+      ).toHaveCount(0);
+      expect(posts).toBe(before);
+      observations.push({
+        name: `global-${kind}`,
+        gapPreservesAuthority: true,
+        ...(kind === "keyboard" ? { menuPreservesAuthority: true } : {}),
+        localRevoked: true,
+        otherTabRevoked: false,
+        additionalPosts: 0,
+      });
+    } finally {
+      await context.close();
+    }
+  }
+  // Pause before the write's fresh authorization resolves, then navigate away.
+  // The old task cannot send a POST when that real HTTP response is released.
+  for (const stage of ["authorization", "response"] as const) {
+    const page = await browser.newPage({
+      viewport: { width: 1440, height: 900 },
+    });
+    page.on("pageerror", (error) =>
+      errors.push(
+        error.message.replace(/qf[kg]_p4_[A-Za-z0-9_-]+/g, "[redacted]"),
+      ),
+    );
+    try {
+      await page.goto(origin + "/studio-navigation-probe");
+      const selector = page.getByRole("combobox", {
+        name: "已封存的父版本",
+        exact: true,
+      });
+      await expect(selector).toBeEnabled();
+      await selector.selectOption(parent.version.id);
+      const before = posts,
+        beforeSent = sentPlays;
+      if (stage === "authorization") {
+        holdAuth = true;
+        authReached = new Promise((resolve) => {
+          notifyAuth = resolve;
+        });
+      } else {
+        holdPlay = true;
+        playReached = new Promise((resolve) => {
+          notifyPlay = resolve;
+        });
+      }
+      await page
+        .getByRole("button", { name: "创建消费者内测版本", exact: true })
+        .click();
+      await bounded(stage === "authorization" ? authReached : playReached);
+      const pending = await pendingDigest(page);
+      if (stage === "response") expect(pending.entries).toBeGreaterThan(0);
+      const atNavigation = posts;
+      await activateGlobal(page, "pointer");
+      if (stage === "authorization") {
+        holdAuth = false;
+        releaseAuth?.();
+      } else {
+        holdPlay = false;
+        releasePlay?.();
+        await expect.poll(() => sentPlays).toBe(beforeSent + 1);
+      }
+      await page.evaluate(
+        () =>
+          new Promise<void>((resolve) =>
+            requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+          ),
+      );
+      await expect(
+        page.getByRole("heading", { name: "请重新验证运营身份", exact: true }),
+      ).toBeVisible();
+      await expect(
+        page.getByRole("heading", { name: "原内测版本已创建", exact: true }),
+      ).toHaveCount(0);
+      expect(posts - before).toBe(stage === "authorization" ? 0 : 1);
+      expect(posts).toBe(atNavigation);
+      expect(await pendingDigest(page)).toEqual(pending);
+      observations.push({
+        name: `global-pending-${stage}`,
+        lateTaskRejected: true,
+        postsIssuedBeforeNavigation: atNavigation - before,
+        postsAfterNavigation: posts - atNavigation,
+        originalPendingUnchanged: true,
+      });
+    } finally {
+      holdAuth = holdPlay = false;
+      releaseAuth?.();
+      releasePlay?.();
+      await page.close();
+    }
+  }
+}
+async function runExistingConsumerScenarios(
+  browser: Awaited<ReturnType<typeof chromium.launch>>,
+) {
   for (const width of [320, 375, 390, 430]) {
     const p = await browser.newPage({ viewport: { width, height: 900 } });
     p.on(
@@ -407,12 +706,12 @@ try {
     ),
   );
   await page.addInitScript(`
-    window.__name = (value) => value;
-    (() => { let count = 0; Object.defineProperty(navigator, "clipboard", { configurable: true, value: {
-      writeText: async (link) => { await window.recordSafeDisclosure(); const u = new URL(link); window.clipboardSafe = { count: ++count, origin: u.origin === location.origin,
-        path: u.pathname === "/access", noQuery: u.search === "", fragment: /^#key=qfk_p4_[A-Za-z0-9_-]{43}$/.test(u.hash) }; }
-    } }); })();
-  `);
+  window.__name = (value) => value;
+  (() => { let count = 0; Object.defineProperty(navigator, "clipboard", { configurable: true, value: {
+    writeText: async (link) => { await window.recordSafeDisclosure(); const u = new URL(link); window.clipboardSafe = { count: ++count, origin: u.origin === location.origin,
+      path: u.pathname === "/access", noQuery: u.search === "", fragment: /^#key=qfk_p4_[A-Za-z0-9_-]{43}$/.test(u.hash) }; }
+  } }); })();
+`);
   await page.goto(origin + "/studio-probe");
   await page
     .getByRole("combobox", { name: "已封存的父版本" })
@@ -683,14 +982,24 @@ try {
   await v.close();
   expect(errors).toEqual([]);
   expect(rawSeenByApi).toBe(false);
+}
+try {
+  browser = await chromium.launch({ headless: true });
+  await globalNavigationRegression(browser);
+  expect(errors).toEqual([]);
+  // Restore the original in-memory starting fixture for the unchanged scenarios.
+  hasPlay = false;
+  play = f.play.play;
+  if (!navigationOnly) await runExistingConsumerScenarios(browser);
   await writeFile(
     path.join(out, "result.json"),
     JSON.stringify(
       {
         scope:
           "synthetic in-memory HTTP/clipboard stub and actual UI only; no DB, real permissions or production E2E",
+        navigationOnly,
         browser: await browser.version(),
-        viewports: [320, 375, 390, 430],
+        viewports: navigationOnly ? [390, 1440] : [320, 375, 390, 430, 1440],
         screenshots: shots,
         observations,
         rawSeenByApi,
