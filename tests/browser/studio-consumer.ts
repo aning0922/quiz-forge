@@ -57,6 +57,7 @@ const fromTsx = createRequire(
   createRequire(import.meta.url).resolve("tsx/package.json"),
 );
 const navigationOnly = process.argv.slice(2).includes("--navigation-only");
+const keyIdentityOnly = process.argv.slice(2).includes("--key-identity-only");
 await fromTsx("esbuild").build({
   entryPoints: [path.resolve("tests/browser/studio-consumer.client.tsx")],
   outfile: path.join(out, "probe.js"),
@@ -736,7 +737,7 @@ async function runExistingConsumerScenarios(
     page.getByRole("combobox", { name: "固定内测内容版本", exact: true }),
   ).toBeEnabled();
   await page
-    .getByRole("combobox", { name: "固定内测内容版本", exact: true })
+    .getByRole("combobox", { name: "答题版本", exact: true })
     .selectOption(play.id);
   await page.getByRole("button", { name: "生成并发放一枚访问码" }).click();
   await expect(
@@ -1000,14 +1001,88 @@ async function runExistingConsumerScenarios(
   expect(errors).toEqual([]);
   expect(rawSeenByApi).toBe(false);
 }
+async function keyIdentityReview(
+  browser: Awaited<ReturnType<typeof chromium.launch>>,
+) {
+  const page = await browser.newPage({ viewport: { width: 320, height: 900 } });
+  page.on("pageerror", () => errors.push("key-identity-page-error"));
+  await page.goto(origin + "/studio-probe");
+  await page
+    .getByRole("combobox", { name: "固定内测内容版本", exact: true })
+    .selectOption(parent.version.id);
+  await page.getByRole("button", { name: "创建答题版本", exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: "原内测版本已创建" }),
+  ).toBeVisible();
+  async function finish() {
+    await page.getByRole("checkbox").check();
+    await page
+      .getByRole("button", { name: "确认结束并清除当前标签页记录" })
+      .click();
+    await expect(
+      page.getByRole("combobox", { name: "答题版本", exact: true }),
+    ).toBeEnabled();
+  }
+  await finish();
+  await page
+    .getByRole("combobox", { name: "答题版本", exact: true })
+    .selectOption(play.id);
+  for (let i = 0; i < 2; i++) {
+    await page.getByRole("button", { name: "生成并发放一枚访问码" }).click();
+    await expect(
+      page.getByRole("heading", { name: "上次访问码发放已记录" }),
+    ).toBeVisible();
+    await finish();
+  }
+  expect(keys).toHaveLength(2);
+  for (const key of keys)
+    await expect(
+      page.getByText(key.issue.binding.keyId, { exact: true }),
+    ).toBeVisible();
+  await shot(page, "business-key-records-320");
+  const targetId = keys[0]!.issue.binding.keyId;
+  const row = page
+    .locator("li")
+    .filter({ has: page.getByText(targetId, { exact: true }) });
+  const before = posts;
+  await row.getByRole("button", { name: "作废此未领取访问码" }).click();
+  await expect(row.getByText(targetId, { exact: true })).toBeVisible();
+  await shot(page, "business-key-confirm-320");
+  await row.getByRole("button", { name: "保留此访问码" }).click();
+  expect(posts).toBe(before);
+  await row.getByRole("button", { name: "作废此未领取访问码" }).click();
+  await row.getByRole("button", { name: "确认作废未领取访问码" }).click();
+  const pending = page.getByRole("region", {
+    name: "答题内测原操作核对",
+    exact: true,
+  });
+  await expect(
+    pending.getByRole("heading", { name: "原未领取作废已记录" }),
+  ).toBeVisible();
+  await expect(pending.getByText(targetId, { exact: true })).toBeVisible();
+  expect(posts).toBe(before + 1);
+  await shot(page, "business-key-result-320");
+  observations.push({
+    name: "business-key-identity",
+    distinctRecords: 2,
+    targetVisibleBeforeAndAfter: true,
+    cancelPosts: 0,
+    confirmPosts: 1,
+  });
+  expect(errors).toEqual([]);
+  expect(rawSeenByApi).toBe(false);
+  await page.close();
+}
 try {
   browser = await chromium.launch({ headless: true });
-  await globalNavigationRegression(browser);
+  if (keyIdentityOnly) await keyIdentityReview(browser);
+  else await globalNavigationRegression(browser);
   expect(errors).toEqual([]);
   // Restore the original in-memory starting fixture for the unchanged scenarios.
   hasPlay = false;
   play = f.play.play;
-  if (!navigationOnly) await runExistingConsumerScenarios(browser);
+  if (!navigationOnly && !keyIdentityOnly)
+    await runExistingConsumerScenarios(browser);
   await writeFile(
     path.join(out, "result.json"),
     JSON.stringify(
@@ -1015,8 +1090,13 @@ try {
         scope:
           "synthetic in-memory HTTP/clipboard stub and actual UI only; no DB, real permissions or production E2E",
         navigationOnly,
+        keyIdentityOnly,
         browser: await browser.version(),
-        viewports: navigationOnly ? [390, 1440] : [320, 375, 390, 430, 1440],
+        viewports: keyIdentityOnly
+          ? [320]
+          : navigationOnly
+            ? [390, 1440]
+            : [320, 375, 390, 430, 1440],
         screenshots: shots,
         observations,
         rawSeenByApi,

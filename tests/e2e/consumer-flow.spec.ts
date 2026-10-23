@@ -426,7 +426,7 @@ test(
     for (let i = 0; i < 3; i++) {
       operatorStage = "issue-key";
       await operator
-        .getByRole("combobox", { name: "固定内测内容版本", exact: true })
+        .getByRole("combobox", { name: "答题版本", exact: true })
         .selectOption(play.id);
       let issued: AccessKeyDetail | undefined,
         applications = 0;
