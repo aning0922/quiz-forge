@@ -2,7 +2,7 @@
 
 ## 2026-10-23 S1 Studio 体验整理启动
 
-作者已明确授权后台布局与核心操作整理，主控基于已合入R1的main a641b04建立独立 `codex/studio-experience-s1`。合同和文件边界见 [STUDIO_EXPERIENCE_S1.md](STUDIO_EXPERIENCE_S1.md)，目前准备共享接口及独立冻结审查，尚未宣称实现完成。
+作者已明确授权后台布局与核心操作整理，主控基于已合入R1的main a641b04建立独立 `codex/studio-experience-s1`。合同和文件边界见 [STUDIO_EXPERIENCE_S1.md](STUDIO_EXPERIENCE_S1.md)，共享接口候选 da4f892 通过格式/lint/typecheck，A/B预检与Astra独立冻结审查已完成，允许实施；尚未宣称实现完成。
 
 A `01a13f49-bff9-74b0-8f7c-03cd46b346c1` 接框架与商品管理，B `01a13f4a-3ac5-7a72-9ae0-70b24ec85f04` 接商品内导入到发码的界面；原Astra `01a13f4a-c9f8-7cc3-9558-81f86263cad1` 独审。模型沿原Sol/high实施、Astra/high审查。旧R1工作树及未提交草稿保留，S1使用新受管工作树，不替换成主控内子代理。
 

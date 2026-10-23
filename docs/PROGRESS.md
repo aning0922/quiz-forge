@@ -4,7 +4,7 @@
 
 R1 已获作者验收并实际合并 PR #22，main 为 `a641b04eb9533056ad5d07f21e336bd3ace87dba`；CI [39964671681](https://github.com/aning0922/quiz-forge/actions/runs/39964671681) checks/database 及准确 checkout 已核成功，原 p5-internal-beta-1 标签未移动。
 
-作者另明确授权开始“后台布局与核心操作整理”。主控在独立 `codex/studio-experience-s1` 准备 [S1 方案](STUDIO_EXPERIENCE_S1.md) 和共享展示接口，A/B 原聊天预检，Astra 独审冻结后实施。目标为桌面/手机导航、商品列表与创建编辑及商品→导入→草稿→预览→版本→发码；当前尚未完成改版/验收，不是消费者视觉升级或发布能力扩展。
+作者另明确授权开始“后台布局与核心操作整理”。主控在独立 `codex/studio-experience-s1` 准备 [S1 方案](STUDIO_EXPERIENCE_S1.md) 和共享展示接口；da4f892 已通过格式、共享组件 lint 与全量 typecheck。A/B 原聊天预检和 Astra 实施前独审均完成，边界已冻结，可按所有权实施。目标为桌面/手机导航、商品列表与创建编辑及商品→导入→草稿→预览→版本→发码；当前尚未完成改版/验收，不是消费者视觉升级或发布能力扩展。
 
 启动时只读确认原 managed-resume 为 clean 的5686ff0，原3100及39eb/55423仍运行；未读作者数据/凭证或改环境。S1使用新树和合成数据，完成后供作者验收，不自动合并/部署。下方为历史。
 

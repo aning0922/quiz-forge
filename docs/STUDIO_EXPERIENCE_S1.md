@@ -1,6 +1,6 @@
 # S1 后台布局与核心操作整理
 
-2026-10-23。状态：方案候选，等待独立审查后冻结实施；尚未完成改版或验收。
+2026-10-23。状态：实施前独审通过，合同冻结，允许按所有权实施；尚未完成改版或验收。候选 da4f892 的共享组件通过格式、定向 lint 与全量 typecheck，A/B 只读预检及 Astra 独审均无剩余合同阻断。
 
 ## 授权与基线
 
@@ -49,6 +49,8 @@
 
 URL 使用已有 helper 或编码后的 productId；导航不推断授权。不新增无实现按钮、假统计、假进度和批量操作。
 
+previewHref 仅由当前 Product 的已验证固定修订 scope 经 previewPagePath 生成，不能使用任意 query 的 href 或推测的最新修订。所有新样式保持 Studio CSS module 范围，src/app/globals.css 也在历史实现冻结闭包内，本批不改。
+
 ## 文件所有权
 
 | 主体  | 独占范围                                                                                                                                                              |
@@ -61,6 +63,8 @@ URL 使用已有 helper 或编码后的 productId；导航不推断授权。不�
 A 保持 B 所依赖的 workspace CSS 类名兼容。B 特有布局用自己的 CSS module 或主控共享组件。`StableInternalWorkspace` 由 B 维护，A 保持其挂载与 authority 关系；冲突先报 root。两线不运行3100、不操作作者实例。
 
 本批保留 `/studio` 的会话落点和“运营会话”标题；全局导航保留“工作区”“类目与标签”“身份与退出”的可访问名称并去重，原 WorkspaceNav 不再同时输出另一组同名链接。编辑入口统一为原生 summary“编辑商品信息”，表单 aria-label 保持“工作区元数据”，B 线涉及归档/编辑的测试先明确展开。B 可整理本域 message(s).ts 的纯展示文案，但不改变错误码、分类或控制流；固定修订 page 路由的纯导航组合也由 B 负责，认证及参数检查不变。
+
+编辑展开只包普通字段与提交表单，不能把整个 ProductEditor 包入 details：其 unknown/CAS 核实和归档恢复区保持在展开区之外。表单展开前后不重建 mutation、authority 或丢弃输入。
 
 ## 视觉与验收
 
