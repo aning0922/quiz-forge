@@ -40,10 +40,10 @@ export function StudioWorkflowNav({
               href={item.href}
               aria-current={current === item.id ? "page" : undefined}
             >
-              <span aria-hidden="true">
+              <span className={styles.stepNumber} aria-hidden="true">
                 {String(index + 1).padStart(2, "0")}
               </span>
-              {item.label}
+              <span className={styles.stepLabel}>{item.label}</span>
             </Link>
           </li>
         ))}

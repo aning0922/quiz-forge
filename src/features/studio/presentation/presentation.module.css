@@ -48,6 +48,7 @@
   align-items: center;
   gap: 10px;
   min-height: 48px;
+  height: 100%;
   padding: 10px 12px;
   border: 1px solid #c9d4e1;
   border-radius: 8px;
@@ -57,9 +58,14 @@
   text-decoration: none;
   overflow-wrap: anywhere;
 }
-.workflow a > span {
+.workflow .stepNumber {
+  flex: 0 0 2ch;
+  white-space: nowrap;
   color: #52667d;
   font-variant-numeric: tabular-nums;
+}
+.stepLabel {
+  min-width: 0;
 }
 .workflow a[aria-current="page"] {
   border-color: #234d73;
