@@ -9,7 +9,10 @@ import {
   encodeInternalPending,
 } from "@/features/studio/internal-versions/storage";
 import { internalReviewResolveUrl } from "@/features/product/internal-versions/urls";
-import { recordBaselineFingerprint } from "@/features/product/internal-versions/contracts";
+import {
+  recordBaselineFingerprint,
+  internalReviewResolutionResponseSchema,
+} from "@/features/product/internal-versions/contracts";
 
 // A finite actual-component check. Synthetic HTTP only; no DB, Next build,
 // author data, 3100 or 3110. Run only in the primary chat's browser window.
@@ -65,6 +68,10 @@ const unresolved = {
   fingerprint: await recordBaselineFingerprint(binding),
   observedCurrentRevision: binding.target.revision,
 };
+const unresolvedResponse = internalReviewResolutionResponseSchema.parse({
+  ok: true,
+  value: unresolved,
+});
 let denied = false,
   resolves = 0,
   unexpectedApi = 0;
@@ -85,7 +92,7 @@ const server = createServer(async (req, res) => {
       JSON.stringify(
         denied
           ? { code: "UNAUTHENTICATED", requestId: binding.idempotencyKey }
-          : unresolved,
+          : unresolvedResponse,
       ),
     );
   } else if (pathname.startsWith("/api/")) {
