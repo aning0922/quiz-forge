@@ -110,7 +110,7 @@ export function StudioLoginForm() {
   }
 
   return (
-    <section className={styles.panel}>
+    <section className={styles.panel} data-studio-entry="login">
       <h1>运营登录</h1>
       <p className={styles.intro}>
         使用本机维护者生成的专属运营凭证。普通买家的测评访问凭证不用于此处。

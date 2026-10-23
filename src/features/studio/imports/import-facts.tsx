@@ -8,14 +8,14 @@ import styles from "../workspace/workspace.module.css";
 import local from "./imports.module.css";
 
 const labels = {
-  "awaiting-upload": "等待上传原包",
+  "awaiting-upload": "等待上传内容包",
   receiving: "接收中 · 尚未确认完成",
-  received: "原包已隔离接收",
+  received: "已收到内容包 · 还需检查",
   "retryable-failed": "本次接收已失败 · 请核实或恢复",
-  rejected: "原包已拒绝 · 不可修改声明重传",
+  rejected: "内容包已拒绝 · 不可修改声明重传",
 };
 const storageLabels = {
-  clean: "已对账",
+  clean: "文件与记录一致",
   "cleanup-required": "需要清理恢复",
   unknown: "文件与账目尚未确认",
 };
@@ -38,12 +38,8 @@ export function ImportSummary({ value }: { value: ImportDto }) {
     <div className={local.summary}>
       <p className={local.summaryStatus}>{labels[value.status]}</p>
       <dl className={`${styles.facts} ${local.summaryFacts}`}>
-        <div className={local.summaryIdentity}>
-          <dt>接收 ID</dt>
-          <dd>{value.id}</dd>
-        </div>
         <div>
-          <dt>声明字节数</dt>
+          <dt>文件大小（字节）</dt>
           <dd>{value.expectedArchiveBytes}</dd>
         </div>
         <div>
@@ -51,7 +47,10 @@ export function ImportSummary({ value }: { value: ImportDto }) {
           <dd>{storageLabels[value.storageCondition]}</dd>
         </div>
       </dl>
-      <p>接收事实 · 不可发布</p>
+      <TechnicalDetails label="接收记录技术标识">
+        <p>{value.id}</p>
+      </TechnicalDetails>
+      <p>收到内容包不表示检查通过，也不会自动创建草稿。</p>
       {value.lastErrorCode && (
         <p className={local.summaryError}>
           上次提示：{errorSummaries[value.lastErrorCode]}。完整说明见详情。
@@ -61,17 +60,14 @@ export function ImportSummary({ value }: { value: ImportDto }) {
   );
 }
 
+import { TechnicalDetails } from "../presentation/technical-details";
 export function ImportFacts({ value }: { value: ImportDto }) {
   return (
     <div>
       <p className={styles.status}>{labels[value.status]}</p>
       <dl className={styles.facts}>
         <div>
-          <dt>接收 ID</dt>
-          <dd>{value.id}</dd>
-        </div>
-        <div>
-          <dt>状态修订</dt>
+          <dt>记录版本</dt>
           <dd>{value.stateRevision}</dd>
         </div>
         <div>
@@ -79,33 +75,47 @@ export function ImportFacts({ value }: { value: ImportDto }) {
           <dd>{storageLabels[value.storageCondition]}</dd>
         </div>
         <div>
-          <dt>声明字节数</dt>
+          <dt>文件大小（字节）</dt>
           <dd>{value.expectedArchiveBytes}</dd>
         </div>
+
         <div>
-          <dt>声明 SHA-256</dt>
-          <dd>{value.expectedArchiveSha256}</dd>
-        </div>
-        <div>
-          <dt>服务器确认字节数</dt>
+          <dt>已接收大小（字节）</dt>
           <dd>{value.actualArchiveBytes ?? "尚未冻结"}</dd>
         </div>
-        <div>
-          <dt>服务器确认 SHA-256</dt>
-          <dd>{value.actualArchiveSha256 ?? "尚未冻结"}</dd>
-        </div>
+
         <div>
           <dt>接收与发布</dt>
           <dd>接收事实 · 独立验证状态见验证记录 · 不可发布</dd>
         </div>
       </dl>
+      <TechnicalDetails label="接收记录技术标识">
+        <dl className={styles.facts}>
+          <div>
+            <dt>接收 ID</dt>
+            <dd>{value.id}</dd>
+          </div>
+        </dl>
+      </TechnicalDetails>
+      <TechnicalDetails label="文件技术信息">
+        <dl className={styles.facts}>
+          <div>
+            <dt>声明 SHA-256</dt>
+            <dd>{value.expectedArchiveSha256}</dd>
+          </div>
+          <div>
+            <dt>服务器确认 SHA-256</dt>
+            <dd>{value.actualArchiveSha256 ?? "尚未冻结"}</dd>
+          </div>
+        </dl>
+      </TechnicalDetails>
       {value.lastErrorCode && (
         <p className={`${styles.status} ${styles.error}`}>
           {importMessage(new StudioClientError(value.lastErrorCode))}
         </p>
       )}
       <p className={styles.note}>
-        原包接收与技术验证、资源归档、草稿应用分别记录。内容与素材的商用授权另行人工审核。
+        内容包接收与技术验证、资源归档、草稿应用分别记录。内容与素材的商用授权另行人工审核。
       </p>
     </div>
   );

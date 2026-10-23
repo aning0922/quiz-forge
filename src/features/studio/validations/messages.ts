@@ -1,11 +1,11 @@
 import type { ValidationStatus } from "@/features/quizpack/validation/contracts";
 import { StudioClientError, studioMessage } from "../client";
 export const validationLabels: Record<ValidationStatus, string> = {
-  validating: "验证中 · 完成情况待核实",
-  validated: "内容已验证 · 资源待归档",
-  archiving: "资源归档中 · 完成情况待核实",
-  ready: "归档完成 · 待后续草稿导入",
-  rejected: "验证已拒绝",
+  validating: "正在检查内容 · 结果待确认",
+  validated: "内容检查通过 · 素材待保存",
+  archiving: "正在保存素材 · 结果待确认",
+  ready: "检查通过 · 内容和素材已保存",
+  rejected: "内容检查未通过",
   "retryable-failed": "本次未完成 · 请先核实状态",
 };
 export function validationMessage(error: unknown): string {
@@ -14,17 +14,17 @@ export function validationMessage(error: unknown): string {
     (error.message === "PENDING_STORAGE_UNAVAILABLE" ||
       error.message === "PENDING_REQUEST_EXISTS")
   )
-    return "本标签的待核实记录不可读取或保存，或已有请求。操作结果需核实，请保留记录并读取服务器历史。";
+    return "当前标签页的待核实记录不可读取或保存，或已有请求。操作结果需核实，请保留记录并读取服务器历史。";
   if (
     error instanceof Error &&
     error.message === "INVALID_NOT_STARTED_RESPONSE"
   )
-    return "本次放弃证明已失效。原请求已保留，请按原记录读取核实。";
+    return "本次放弃证明已失效。原操作已保留，请按原记录读取核实。";
   const code =
     error instanceof StudioClientError ? error.code : "STUDIO_UNAVAILABLE";
   switch (code) {
     case "VALIDATION_REJECTED":
-      return "原包未通过内容或资源验证。请核实独立验证结果；本批不修改原包。";
+      return "内容包未通过内容或资源验证。请核实独立验证结果；本批不修改内容包。";
     case "PACK_IDENTITY_CONFLICT":
       return "包 ID 与版本和已有权威记录冲突，未授予归档结果。";
     case "RESOURCE_DECLARATION_CONFLICT":
@@ -35,7 +35,7 @@ export function validationMessage(error: unknown): string {
     case "VALIDATION_BUSY":
       return "此记录已有操作进行中。请先读取状态核实。";
     case "VALIDATION_IDENTITY_CHANGED":
-      return "验证环境已变化。操作结果需核实，请保留原请求并读取服务器状态。";
+      return "验证环境已变化。操作结果需核实，请保留原操作并读取服务器状态。";
     case "VALIDATION_REVALIDATION_REQUIRED":
       return "原验证环境无法用于归档重试；需要后续重新验证处理。";
     case "VALIDATION_ATTEMPT_LIMIT":
@@ -56,7 +56,7 @@ export function validationMessage(error: unknown): string {
     case "VALIDATION_TIMEOUT":
     case "VALIDATION_CANCELLED":
     case "WRITE_OUTCOME_UNKNOWN":
-      return "这次操作的结果尚未确认。保留原请求，仅按原记录读取核实。";
+      return "这次操作的结果尚未确认。保留原操作，仅按原记录读取核实。";
     case "VALIDATION_NOT_FOUND":
     case "IMPORT_NOT_FOUND":
       return "服务器暂未找到此记录；这不证明未知请求已回滚。";

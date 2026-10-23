@@ -1,4 +1,7 @@
 "use client";
+import { TechnicalDetails } from "../presentation/technical-details";
+import { StudioPageHeader } from "../presentation/page-header";
+import { StudioWorkflowNav } from "../presentation/workflow-nav";
 import Link from "next/link";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import type { ConsumerRendererIdentity } from "@/lib/consumer-contract/v1/identities";
@@ -35,32 +38,38 @@ function keyStatus(key: AccessKeyDetail) {
 }
 function KeyFacts({ value }: { value: AccessKeyDetail }) {
   return (
-    <dl className={styles.facts}>
-      <div>
-        <dt>Key ID</dt>
-        <dd>
-          <code>{value.issue.binding.keyId}</code>
-        </dd>
-      </div>
-      <div>
-        <dt>当前记录</dt>
-        <dd>{keyStatus(value)}</dd>
-      </div>
-      <div>
-        <dt>实际发放时间（UTC+8）</dt>
-        <dd>{time(value.issue.issuedAt)}</dd>
-      </div>
-      <div>
-        <dt>答题期限（UTC+8）</dt>
-        <dd>{time(value.issue.expiresAt)}</dd>
-      </div>
-      <div>
-        <dt>固定内测版本</dt>
-        <dd>
-          <code>{value.issue.binding.play.playVersionId}</code>
-        </dd>
-      </div>
-    </dl>
+    <>
+      <dl className={styles.facts}>
+        <div>
+          <dt>访问码编号</dt>
+          <dd>
+            <code>{value.issue.binding.keyId}</code>
+          </dd>
+        </div>
+        <div>
+          <dt>当前记录</dt>
+          <dd>{keyStatus(value)}</dd>
+        </div>
+        <div>
+          <dt>实际发放时间（UTC+8）</dt>
+          <dd>{time(value.issue.issuedAt)}</dd>
+        </div>
+        <div>
+          <dt>答题期限（UTC+8）</dt>
+          <dd>{time(value.issue.expiresAt)}</dd>
+        </div>
+      </dl>
+      <TechnicalDetails label="答题版本技术标识">
+        <dl className={styles.facts}>
+          <div>
+            <dt>答题版本标识</dt>
+            <dd>
+              <code>{value.issue.binding.play.playVersionId}</code>
+            </dd>
+          </div>
+        </dl>
+      </TechnicalDetails>
+    </>
   );
 }
 function EvidenceFacts({
@@ -71,8 +80,8 @@ function EvidenceFacts({
   if (evidence.value.kind === "unresolved")
     return (
       <>
-        <h3>原请求仍未确认</h3>
-        <p>尚未取得最终事实。原请求继续保留，不能把未查到记录解释为未执行。</p>
+        <h3>原操作仍未确认</h3>
+        <p>尚未取得最终事实。原操作继续保留，不能把未查到记录解释为未执行。</p>
       </>
     );
   if (evidence.kind === "play")
@@ -93,7 +102,7 @@ function EvidenceFacts({
       <>
         <h3>
           {evidence.value.kind === "applied"
-            ? "原 Key 发放已记录"
+            ? "上次访问码发放已记录"
             : "操作标识已绑定另一发放请求"}
         </h3>
         {"key" in evidence.value && <KeyFacts value={evidence.value.key} />}
@@ -105,8 +114,8 @@ function EvidenceFacts({
         {evidence.value.kind === "applied"
           ? "原未领取作废已记录"
           : evidence.value.kind === "claimed"
-            ? "未作废：Key 已领取"
-            : "此 Key 已由另一请求作废"}
+            ? "未作废：访问码已领取"
+            : "此访问码已由另一操作作废"}
       </h3>
       <KeyFacts value={evidence.value.key} />
     </>
@@ -160,21 +169,21 @@ function PendingPanel({
     }, "exported");
   }
   return (
-    <section className={styles.panel} aria-label="消费者内测原请求核对">
-      <h2>本标签保留的原请求</h2>
+    <section className={styles.panel} aria-label="答题内测原操作核对">
+      <h2>当前标签页保留的原操作</h2>
       <p>
         {pending.kind === "play"
           ? "创建内测版本"
           : pending.kind === "issue"
-            ? "发放访问 Key"
+            ? "发放访问码"
             : "未领取作废"}{" "}
         · {pending.mayHaveBeenSent ? "可能已发送" : "发送前已保存"}
       </p>
       {pending.kind === "issue" && (
         <p>
           {pending.hasRaw
-            ? "原文只保管在本标签，核实原发放后可显式复制或下载私密链接。服务器不能恢复原文。"
-            : "原文已不在本标签，不能恢复私密链接或重放发放。仍可核对原请求。"}
+            ? "原文只保管在当前标签页，核实原发放后可显式复制或下载私密链接。服务器不能恢复原文。"
+            : "原文已不在当前标签页，不能恢复私密链接或再次发送原操作发放。仍可查询上次操作结果。"}
         </p>
       )}
       {evidence && <EvidenceFacts evidence={evidence} />}
@@ -185,7 +194,7 @@ function PendingPanel({
             void controller.recover();
           }}
         >
-          核对原请求
+          查询上次操作结果
         </button>
         {!terminal &&
           operator &&
@@ -196,7 +205,7 @@ function PendingPanel({
                 void controller.recover(true);
               }}
             >
-              重放原请求
+              再次发送原操作
             </button>
           )}
         {operator && pending.kind === "issue" && pending.hasRaw && usable && (
@@ -229,7 +238,7 @@ function PendingPanel({
               checked={acknowledged}
               onChange={(e) => setAcknowledged(e.target.checked)}
             />
-            我已核对服务器事实；清除本标签记录不撤销服务器结果。
+            我已核对服务器事实；清除当前标签页记录不撤销服务器结果。
             {pending.hasRaw && "清除后不能再次恢复私密链接，请先妥善保存。"}
           </label>
           <button
@@ -238,7 +247,7 @@ function PendingPanel({
               void controller.finish();
             }}
           >
-            确认结束并清除本标签记录
+            确认结束并清除当前标签页记录
           </button>
         </div>
       )}
@@ -289,23 +298,39 @@ export function StudioConsumerAccessPageV1({
   const pendingKey = state.evidence?.value.binding.operationKey ?? "original";
   return (
     <div className={styles.page}>
-      <header className={styles.panel}>
-        <h1>消费者内测与访问 Key</h1>
+      <section className={styles.panel}>
+        <StudioPageHeader
+          title="答题版本与访问码"
+          description="先选择固定内测内容版本创建答题版本，再发放访问码。上次操作结果未确认时，请先查询，避免重复提交。"
+        />
+        <div
+          onClickCapture={(event) => {
+            const link =
+              event.target instanceof Element
+                ? event.target.closest("a[href]")
+                : null;
+            if (link && event.currentTarget.contains(link)) controller.revoke();
+          }}
+        >
+          <StudioWorkflowNav productId={scope.productId} current="keys" />
+        </div>
         <p>
-          从已封存的父版本固定消费者体验。内测不等于发布，不包含支付、公开分享或消费者答案查看。
+          从固定内测内容版本固定消费者体验。内测不等于发布，不包含支付、公开分享或消费者答案查看。
         </p>
         <nav className={styles.actions}>
           <Link
+            className={styles.actionLink}
             href={`/studio/products/${scope.productId}`}
             onClick={controller.revoke}
           >
             返回测评工作区
           </Link>
           <Link
+            className={styles.actionLink}
             href={`/studio/products/${scope.productId}/internal-versions`}
             onClick={controller.revoke}
           >
-            已封存的父版本
+            固定内测内容版本
           </Link>
           <button
             onClick={() => {
@@ -316,14 +341,18 @@ export function StudioConsumerAccessPageV1({
             重新读取与核对身份
           </button>
         </nav>
-      </header>
+      </section>
       {state.phase === "lost" ? (
         <section className={styles.panel}>
           <h2>请重新验证运营身份</h2>
           <p>
-            页面已停止接纳旧请求、复制或下载。原操作仍保留在原运营员的本标签记录中。
+            页面已停止接纳旧请求、复制或下载。原操作仍保留在原运营员的当前标签页记录中。
           </p>
-          <Link href="/studio/login" onClick={controller.revoke}>
+          <Link
+            className={styles.actionLink}
+            href="/studio/login"
+            onClick={controller.revoke}
+          >
             返回运营登录
           </Link>
         </section>
@@ -336,12 +365,12 @@ export function StudioConsumerAccessPageV1({
           )}
           {state.phase === "working" && (
             <p role="status" className={styles.notice}>
-              正在核对身份与原请求，请稍候。
+              正在核对身份与原操作，请稍候。
             </p>
           )}
           {state.notice === "unavailable" && (
             <p role="alert" className={styles.notice}>
-              暂时无法完成本次操作。已有的本标签记录不会自动清除，请重新读取后核对。
+              暂时无法完成本次操作。已有的当前标签页记录不会自动清除，请重新读取后核对。
             </p>
           )}
           {state.notice === "copied" && (
@@ -356,7 +385,7 @@ export function StudioConsumerAccessPageV1({
           )}
           {state.session?.operator.role === "read-only" && (
             <p className={styles.notice}>
-              当前运营身份为只读，可查看记录与核对原请求，不能创建、发放、作废或复制私密链接。
+              当前运营身份为只读，可查看记录与查询上次操作结果，不能创建、发放、作废或复制私密链接。
             </p>
           )}
           {state.pending && (
@@ -367,18 +396,18 @@ export function StudioConsumerAccessPageV1({
             />
           )}
           <section className={styles.panel}>
-            <h2>创建固定消费者内测版本</h2>
+            <h2>创建答题版本</h2>
             <p>
-              父版本、评分与展示实现固定后不会随草稿变动。请选择具体父版本。
+              答题版本会固定本次使用的内容、评分和画面，不随后续草稿变化。请选择已固定的内测内容版本。
             </p>
             <fieldset disabled={!canWrite || !ready} className={styles.form}>
               <label>
-                已封存的父版本
+                固定内测内容版本
                 <select
                   value={versionId}
                   onChange={(e) => setVersionId(e.target.value)}
                 >
-                  <option value="">请选择父版本</option>
+                  <option value="">请选择固定内测内容版本</option>
                   {state.versions.map((v) => (
                     <option key={v.id} value={v.id}>
                       第 {v.slot} 版 · 草稿修订 {v.target.revision}
@@ -392,29 +421,40 @@ export function StudioConsumerAccessPageV1({
                   void controller.createPlay(versionId);
                 }}
               >
-                创建消费者内测版本
+                创建答题版本
               </button>
             </fieldset>
             {ready && state.versions.length === 0 && (
-              <p>当前尚无可选择的已封存父版本。</p>
+              <div className={styles.notice}>
+                <p>
+                  尚无固定内测内容版本。请先预览草稿、记录已有审核依据，并固定内测内容。
+                </p>
+                <Link
+                  className={styles.actionLink}
+                  href={`/studio/products/${scope.productId}/internal-versions`}
+                  onClick={controller.revoke}
+                >
+                  前往审核依据与内容版本
+                </Link>
+              </div>
             )}
           </section>
           <section className={styles.panel}>
-            <h2>发放访问 Key</h2>
+            <h2>发放访问码</h2>
             <p>
-              原文在浏览器生成，只在本标签保管。服务器只保存独立摘要；期限从实际首次发放起算，重放不续期。
+              私密访问链接只由当前标签页保管，服务器不能找回原文。请及时复制或下载并妥善保存。有效期从首次发放起算，再次发送同一操作不会延长期限。
             </p>
             <fieldset disabled={!canWrite || !ready} className={styles.form}>
               <label>
-                固定内测版本
+                答题版本
                 <select
                   value={playId}
                   onChange={(e) => setPlayId(e.target.value)}
                 >
-                  <option value="">请选择内测版本</option>
+                  <option value="">请选择答题版本</option>
                   {state.plays.map((p) => (
                     <option key={p.id} value={p.id}>
-                      内测第 {p.slot} 版 · {time(p.createdAt)}
+                      答题第 {p.slot} 版 · {time(p.createdAt)}
                     </option>
                   ))}
                 </select>
@@ -436,12 +476,20 @@ export function StudioConsumerAccessPageV1({
                   void controller.issueKey(playId, duration);
                 }}
               >
-                生成并发放一枚访问 Key
+                生成并发放一枚访问码
               </button>
             </fieldset>
+            {ready && state.plays.length === 0 && (
+              <p className={styles.notice}>
+                还没有答题版本。请先在上方选择固定内测内容版本并创建答题版本，再发放访问码。
+              </p>
+            )}
           </section>
           <section className={styles.panel}>
-            <h2>服务器 Key 记录</h2>
+            <h2>访问码记录</h2>
+            <p>
+              按服务器最新观察区分未领取、已领取、到期、作废及已完成。完成后的原链接只读查看同一份报告。
+            </p>
             <p>
               此列表只有安全元数据，不含原文、消费者答案或报告正文。空页不证明某次发放未执行。
             </p>
@@ -457,7 +505,7 @@ export function StudioConsumerAccessPageV1({
                       (voidId === id ? (
                         <div>
                           <p>
-                            仅可作废尚未领取的 Key。服务器将重新核对是否已领取。
+                            作废后，此访问码不能再用于领取答题。仅能作废尚未领取的访问码；服务器会再次确认，已领取的访问码不会被此操作作废。
                           </p>
                           <div className={styles.actions}>
                             <button
@@ -467,26 +515,26 @@ export function StudioConsumerAccessPageV1({
                                 void controller.voidKey(id);
                               }}
                             >
-                              确认作废未领取 Key
+                              确认作废未领取访问码
                             </button>
                             <button
                               disabled={!ready}
                               onClick={() => setVoidId(null)}
                             >
-                              保留此 Key
+                              保留此访问码
                             </button>
                           </div>
                         </div>
                       ) : (
                         <button disabled={!ready} onClick={() => setVoidId(id)}>
-                          作废此未领取 Key
+                          作废此未领取访问码
                         </button>
                       ))}
                   </li>
                 );
               })}
             </ol>
-            {ready && state.keys.length === 0 && <p>此页没有 Key 记录。</p>}
+            {ready && state.keys.length === 0 && <p>此页没有访问码记录。</p>}
             {state.nextCursor && (
               <button
                 disabled={!["ready", "pending"].includes(state.phase)}
@@ -495,7 +543,7 @@ export function StudioConsumerAccessPageV1({
                   void controller.nextKeys();
                 }}
               >
-                读取下一页 Key
+                读取下一页访问码
               </button>
             )}
           </section>

@@ -1,4 +1,5 @@
 "use client";
+import { TechnicalDetails } from "../presentation/technical-details";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { z } from "zod";
@@ -98,11 +99,11 @@ export function ApplyDraftPanel({
         );
         if (result.kind === "empty")
           setMessage(
-            "尚无匹配回执；原 key 继续保留。这不能证明原请求未执行。可稍后再核对，或明确按原 key 重放。",
+            "尚无匹配处理结果；原操作记录继续保留。这不能证明原操作未执行。可稍后再核对，或再次发送原草稿创建操作。",
           );
         else {
           setApplication(result.application);
-          setMessage("服务器已确认原 key 的固定应用回执。");
+          setMessage("服务器已确认原操作的固定应用处理结果。");
           current.refresh();
         }
       } else {
@@ -129,7 +130,7 @@ export function ApplyDraftPanel({
         setMessage(
           result.created
             ? "服务器已确认创建草稿修订 1。"
-            : "服务器已确认原 key 的固定应用回执。",
+            : "服务器已确认原操作的固定应用处理结果。",
         );
         current.refresh();
       }
@@ -148,15 +149,15 @@ export function ApplyDraftPanel({
     }
   }
   return (
-    <section className={styles.panel} aria-label="首次草稿应用">
-      <h2>首次草稿应用</h2>
+    <section className={styles.panel} aria-label="建立第一版草稿">
+      <h2>建立第一版草稿</h2>
       <p className={styles.note}>
         将已归档内容应用为此工作区唯一草稿的不可变修订
         1。平台授权仍未审核，不可发布；此操作不评分、不生成报告。
       </p>
       <div className={styles.actions}>
         <Link className={styles.link} href={draftWorkspacePath(productId)}>
-          查看服务器草稿
+          查看当前草稿
         </Link>
         <button
           className={`${styles.button} ${styles.secondary}`}
@@ -173,11 +174,11 @@ export function ApplyDraftPanel({
       {session.operator.role === "read-only" && <ReadOnlyNotice />}
       {writeDenied && (
         <p>
-          当前会话或写入权限已失效，写操作已关闭。请重新登录核实；原请求锚点仍保留。
+          当前会话或写入权限已失效，写操作已关闭。请重新登录核实；原操作记录仍保留。
         </p>
       )}
       {(current.loading || product.loading || !storageLoaded) && (
-        <p role="status">正在核对工作区与本页请求锚点…</p>
+        <p role="status">正在核对工作区与本页操作记录…</p>
       )}
       {(current.error || product.error) && (
         <p role="alert" className={styles.error}>
@@ -185,38 +186,49 @@ export function ApplyDraftPanel({
         </p>
       )}
       {pending ? (
-        <section className={styles.compare} aria-label="待确认的原 key">
+        <section className={styles.compare} aria-label="待确认的原操作编号">
           <h3>此工作区有待确认请求</h3>
           <p>
-            保留原 key
-            与完整来源绑定。空查询、错误或会话失效均不会清除它。重放仅使用下列原请求，不采用当前页面的新来源。
+            保留原操作编号
+            与完整来源绑定。空查询、错误或会话失效均不会清除它。再次发送原操作仅使用下列原操作，不采用当前页面的新来源。
           </p>
-          <dl className={styles.facts}>
-            <div>
-              <dt>原 key</dt>
-              <dd>{pending.tuple.idempotencyKey}</dd>
-            </div>
-            <div>
-              <dt>原来源</dt>
-              <dd>
-                {pending.tuple.sourceImportId}
-                <br />
-                {pending.tuple.sourceValidationId} / 修订{" "}
-                {pending.tuple.expectedValidationStateRevision}
-              </dd>
-            </div>
-            <div>
-              <dt>原候选 SHA-256</dt>
-              <dd>{pending.tuple.expectedCandidateSha256}</dd>
-            </div>
-          </dl>
+          <p>
+            操作目标：建立草稿修订 1；来源检查版本{" "}
+            {pending.tuple.expectedValidationStateRevision}。
+          </p>
+          <TechnicalDetails label="原操作技术标识">
+            {" "}
+            <dl className={styles.facts}>
+              <div>
+                <dt>原操作编号</dt>
+                <dd>{pending.tuple.idempotencyKey}</dd>
+              </div>
+              <div>
+                <dt>原来源</dt>
+                <dd>
+                  {pending.tuple.sourceImportId}
+                  <br />
+                  {pending.tuple.sourceValidationId} / 修订{" "}
+                  {pending.tuple.expectedValidationStateRevision}
+                </dd>
+              </div>
+            </dl>
+          </TechnicalDetails>
+          <TechnicalDetails label="原操作校验摘要">
+            <dl className={styles.facts}>
+              <div>
+                <dt>原候选 SHA-256</dt>
+                <dd>{pending.tuple.expectedCandidateSha256}</dd>
+              </div>
+            </dl>
+          </TechnicalDetails>
           <div className={styles.actions}>
             <button
               className={styles.button}
               disabled={blocked}
               onClick={() => void perform("read")}
             >
-              核对原 key 回执
+              查询上次草稿创建结果
             </button>
             {operator && (
               <button
@@ -224,7 +236,7 @@ export function ApplyDraftPanel({
                 disabled={blocked}
                 onClick={() => void perform("replay")}
               >
-                明确按原 key 重放
+                再次发送原草稿创建操作
               </button>
             )}
           </div>
@@ -236,9 +248,9 @@ export function ApplyDraftPanel({
       ) : current.value?.kind === "draft" ? (
         <p>此工作区已有草稿，不能建立第二份草稿。</p>
       ) : product.value?.archivedAt ? (
-        <p>工作区已归档，不能发起首次草稿应用。</p>
+        <p>工作区已归档，不能发起建立第一版草稿。</p>
       ) : !ready ? (
-        <p>当前来源尚不符合首次草稿应用条件。请先核实验证归档状态。</p>
+        <p>当前来源尚不符合建立第一版草稿条件。请先核实验证归档状态。</p>
       ) : (
         operator && (
           <>
@@ -247,7 +259,10 @@ export function ApplyDraftPanel({
               {validation.candidateSha256}
             </p>
             {confirm ? (
-              <section className={styles.compare} aria-label="确认首次草稿应用">
+              <section
+                className={styles.compare}
+                aria-label="确认建立第一版草稿"
+              >
                 <p>
                   确认将上述来源应用为此工作区的首份草稿？创建后此批不提供编辑或删除操作。
                 </p>
@@ -257,7 +272,7 @@ export function ApplyDraftPanel({
                     disabled={blocked}
                     onClick={() => void perform("new")}
                   >
-                    确认应用为草稿修订 1
+                    确认建立草稿修订 1
                   </button>
                   <button
                     className={`${styles.button} ${styles.secondary}`}
@@ -274,13 +289,13 @@ export function ApplyDraftPanel({
                 disabled={blocked}
                 onClick={() => setConfirm(true)}
               >
-                应用为首次草稿
+                建立第一版草稿
               </button>
             )}
           </>
         )
       )}
-      {busy && <p role="status">正在核对或提交原请求…</p>}
+      {busy && <p role="status">正在核对或提交原操作…</p>}
       {message && (
         <p role="status" className={styles.status}>
           {message}

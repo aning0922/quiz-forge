@@ -4,8 +4,13 @@
 const eventName = "quizforge:studio-authority-invalidated:v1";
 const channelName = "quizforge.studio-authority.v1";
 
-export function invalidateStudioAuthority() {
+/** Leaving this page invalidates local work without revoking other tabs. */
+export function invalidateCurrentStudioAuthority() {
   window.dispatchEvent(new Event(eventName));
+}
+
+export function invalidateStudioAuthority() {
+  invalidateCurrentStudioAuthority();
   try {
     const channel = new BroadcastChannel(channelName);
     channel.postMessage("invalidate");

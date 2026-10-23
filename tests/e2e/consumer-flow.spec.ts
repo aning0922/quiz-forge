@@ -209,10 +209,10 @@ async function observe(page: Page, id: string) {
 async function finishStudioPending() {
   await operator.getByRole("checkbox").check();
   await operator
-    .getByRole("button", { name: "确认结束并清除本标签记录", exact: true })
+    .getByRole("button", { name: "确认结束并清除当前标签页记录", exact: true })
     .click();
   await expect(
-    operator.getByRole("combobox", { name: "固定内测版本", exact: true }),
+    operator.getByRole("combobox", { name: "固定内测内容版本", exact: true }),
   ).toBeEnabled();
 }
 async function unknown(route: Route) {
@@ -388,7 +388,7 @@ test(
     await operator.bringToFront();
     await operator.goto(studioPage());
     const parentChoice = operator.getByRole("combobox", {
-      name: "已封存的父版本",
+      name: "固定内测内容版本",
       exact: true,
     });
     // Fresh identity then the joint metadata read each have the existing 15s
@@ -399,7 +399,7 @@ test(
     await parentChoice.selectOption(fixture.parent!.version.id);
     operatorStage = "create-play";
     await operator
-      .getByRole("button", { name: "创建消费者内测版本", exact: true })
+      .getByRole("button", { name: "创建答题版本", exact: true })
       .click();
     await expect(
       operator.getByRole("heading", { name: "原内测版本已创建", exact: true }),
@@ -426,7 +426,7 @@ test(
     for (let i = 0; i < 3; i++) {
       operatorStage = "issue-key";
       await operator
-        .getByRole("combobox", { name: "固定内测版本", exact: true })
+        .getByRole("combobox", { name: "答题版本", exact: true })
         .selectOption(play.id);
       let issued: AccessKeyDetail | undefined,
         applications = 0;
@@ -449,25 +449,31 @@ test(
           },
         );
       await operator
-        .getByRole("button", { name: "生成并发放一枚访问 Key", exact: true })
+        .getByRole("button", { name: "生成并发放一枚访问码", exact: true })
         .click();
       if (i === 2) {
         await expect(
-          operator.getByRole("button", { name: "重放原请求", exact: true }),
+          operator.getByRole("button", {
+            name: "再次发送原操作",
+            exact: true,
+          }),
         ).toBeVisible();
         await operator.reload();
         await expect(
-          operator.getByRole("button", { name: "核对原请求", exact: true }),
+          operator.getByRole("button", {
+            name: "查询上次操作结果",
+            exact: true,
+          }),
         ).toBeVisible();
         expect(applications).toBe(1);
         await operator.unroute("**" + urls.accessKeysUrl(fixture.productId));
         await operator
-          .getByRole("button", { name: "核对原请求", exact: true })
+          .getByRole("button", { name: "查询上次操作结果", exact: true })
           .click();
       }
       await expect(
         operator.getByRole("heading", {
-          name: "原 Key 发放已记录",
+          name: "上次访问码发放已记录",
           exact: true,
         }),
       ).toBeVisible();
@@ -572,7 +578,7 @@ test(
     await buyer.unroute("**" + urls.consumerSaveUrl(sessionId));
     await captureConsumerWidths(buyer, info, "save-unknown-restored");
     await buyer
-      .getByRole("button", { name: "核对原操作", exact: true })
+      .getByRole("button", { name: "查询上次操作结果", exact: true })
       .click();
     await buyer
       .getByRole("button", { name: "采用已核对结果", exact: true })
@@ -656,7 +662,7 @@ test(
     ).toBe(true);
     await buyer.unroute("**" + urls.consumerCompleteUrl(sessionId));
     await buyer
-      .getByRole("button", { name: "核对原操作", exact: true })
+      .getByRole("button", { name: "查询上次操作结果", exact: true })
       .click();
     await buyer
       .getByRole("button", { name: "采用已核对结果", exact: true })
@@ -824,10 +830,10 @@ test(
       .locator("li")
       .filter({ has: operator.locator("code", { hasText: unusedId }) });
     await card
-      .getByRole("button", { name: "作废此未领取 Key", exact: true })
+      .getByRole("button", { name: "作废此未领取访问码", exact: true })
       .click();
     await card
-      .getByRole("button", { name: "确认作废未领取 Key", exact: true })
+      .getByRole("button", { name: "确认作废未领取访问码", exact: true })
       .click();
     await expect(
       operator.getByRole("heading", {

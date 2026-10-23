@@ -30,7 +30,7 @@ export function AppendBindingFacts({
   return (
     <dl className={styles.facts}>
       <div>
-        <dt>原 key</dt>
+        <dt>原操作编号</dt>
         <dd>{binding.idempotencyKey}</dd>
       </div>
       <div>

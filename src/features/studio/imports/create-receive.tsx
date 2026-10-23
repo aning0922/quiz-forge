@@ -1,4 +1,5 @@
 "use client";
+import { TechnicalDetails } from "../presentation/technical-details";
 
 import Link from "next/link";
 import { useState } from "react";
@@ -106,7 +107,7 @@ export function CreateReceive({
       } else {
         setQueriedEmpty(true);
         setMessage(
-          "精确查询暂未返回记录。0 条不证明原请求未提交；可以显式用原 key 与完整原输入重提。",
+          "精确查询暂未返回记录。0 条不证明原操作未提交；可以显式用原操作记录与完整原输入重提。",
         );
       }
     } catch (error) {
@@ -118,13 +119,13 @@ export function CreateReceive({
   return (
     <div>
       <section className={styles.panel}>
-        <h2>选择本地原包</h2>
+        <h2>选择内容包文件</h2>
         <p className={styles.note}>
           上限
-          32MiB；本批仅隔离接收原字节。原包用途为未来新草稿，不会创建空草稿。
+          32MiB。选择文件后先创建接收意图，再明确上传。接收完成后仍需验证归档，草稿由后续步骤创建。
         </p>
         <label className={styles.field}>
-          原包文件
+          内容包文件
           <input
             className={`${styles.input} ${local.file}`}
             key={fileInputRevision}
@@ -134,24 +135,30 @@ export function CreateReceive({
           />
         </label>
         {pending && (
-          <dl className={styles.facts}>
-            <div>
-              <dt>本次请求标识</dt>
-              <dd>{pending.idempotencyKey}</dd>
-            </div>
-            <div>
-              <dt>字节数</dt>
-              <dd>{pending.input.expectedArchiveBytes}</dd>
-            </div>
-            <div>
-              <dt>SHA-256</dt>
-              <dd>{pending.input.expectedArchiveSha256}</dd>
-            </div>
-          </dl>
+          <>
+            <dl className={styles.facts}>
+              <div>
+                <dt>本次操作编号</dt>
+                <dd>{pending.idempotencyKey}</dd>
+              </div>
+              <div>
+                <dt>字节数</dt>
+                <dd>{pending.input.expectedArchiveBytes}</dd>
+              </div>
+            </dl>
+            <TechnicalDetails label="所选文件技术信息">
+              <dl className={styles.facts}>
+                <div>
+                  <dt>SHA-256</dt>
+                  <dd>{pending.input.expectedArchiveSha256}</dd>
+                </div>
+              </dl>
+            </TechnicalDetails>
+          </>
         )}
         {unknown && (
           <p className={styles.compare} role="status">
-            意图提交结果尚未确认。原文件、原 key
+            意图提交结果尚未确认。原文件、原操作编号
             与完整输入已保留在此页，请先精确核实。
           </p>
         )}
@@ -172,7 +179,7 @@ export function CreateReceive({
               disabled={busy || (unknown && !queriedEmpty)}
               onClick={() => void submit()}
             >
-              {unknown ? "以原请求标识和原输入重提" : "创建原包接收意图"}
+              {unknown ? "以原操作编号和原输入重提" : "创建内容包接收意图"}
             </button>
           )}
           {pending && !value && (
@@ -181,7 +188,7 @@ export function CreateReceive({
               disabled={busy}
               onClick={() => void reconcile()}
             >
-              按原请求标识精确核实
+              按原操作编号精确核实
             </button>
           )}
           {!unknown && !value && pending && (

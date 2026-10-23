@@ -105,7 +105,7 @@ export function ReceiveControls({
       setUnknown(false);
       setMessage(
         action === "archive"
-          ? "服务器已确认本次原包接收状态。"
+          ? "服务器已确认本次内容包接收状态。"
           : "服务器已确认本次恢复状态。",
       );
     } catch (error) {
@@ -125,7 +125,7 @@ export function ReceiveControls({
     value.status === "retryable-failed" ||
     value.storageCondition !== "clean";
   return (
-    <section className={styles.panel} aria-label="原包状态">
+    <section className={styles.panel} aria-label="内容包状态">
       <h2>接收状态</h2>
       <ImportFacts value={value} />
       {unknown && (
@@ -153,7 +153,7 @@ export function ReceiveControls({
             disabled={busy || mustRead}
             onClick={() => void write("archive")}
           >
-            上传所选原包
+            上传所选内容包
           </button>
         )}
         {canWrite && mayRecover && (

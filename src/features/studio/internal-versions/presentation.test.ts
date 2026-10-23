@@ -52,9 +52,14 @@ describe("internal metadata and recovery presentation, server markup only", () =
     const html = renderToStaticMarkup(
       createElement(ProductDetail, { productId: binding.productId, session }),
     );
-    expect(html).toContain("工作区读取未完成");
-    expect(html).toContain('aria-label="基线记录原请求核实"');
-    expect(html).toContain('aria-label="内测封存原请求核实"');
+    expect(html).toContain("测评信息暂未读取");
+    expect(html).toContain('aria-label="审核依据记录操作查询"');
+    expect(html).toContain('aria-label="内容版本固定操作查询"');
+    expect(html.match(/<details open=""/g)).toHaveLength(2);
+    expect(html).toContain(
+      "正在检查上次操作，请稍候；检查完成前不能继续提交。",
+    );
+    expect(html).not.toContain("暂无待处理操作");
     expect(html).toContain(internalVersionsPageUrl(binding.productId));
   });
   it("keeps both original operations mounted after each review/list/detail GET error", () => {
@@ -80,8 +85,8 @@ describe("internal metadata and recovery presentation, server markup only", () =
     for (const page of pages) {
       const html = renderToStaticMarkup(page);
       expect(html).toContain(reads.error);
-      expect(html).toContain('aria-label="基线记录原请求核实"');
-      expect(html).toContain('aria-label="内测封存原请求核实"');
+      expect(html).toContain('aria-label="审核依据记录操作查询"');
+      expect(html).toContain('aria-label="内容版本固定操作查询"');
       expect(html).not.toContain("确认并发送此固定请求");
       expect(html).toContain("不授予对外发布资格");
     }
@@ -101,8 +106,8 @@ describe("internal metadata and recovery presentation, server markup only", () =
       expect(html).toContain(
         `/studio/products/${binding.productId}/drafts/${summary.draftId}/revisions/${summary.revision}/internal-review`,
       );
-      expect(html).toContain('aria-label="基线记录原请求核实"');
-      expect(html).toContain('aria-label="内测封存原请求核实"');
+      expect(html).toContain('aria-label="审核依据记录操作查询"');
+      expect(html).toContain('aria-label="内容版本固定操作查询"');
     } finally {
       reads.draft = undefined;
     }
@@ -149,8 +154,8 @@ describe("internal metadata and recovery presentation, server markup only", () =
         },
       }),
     );
-    expect(html).toContain("另一请求的回执，不是本原 key 的成功");
-    expect(html).not.toContain("原请求已记录");
+    expect(html).toContain("其他操作的处理结果，不表示本次操作成功");
+    expect(html).not.toContain("原操作已记录");
     html = renderToStaticMarkup(
       createElement(InternalEvidenceFacts, {
         evidence: {
@@ -166,8 +171,8 @@ describe("internal metadata and recovery presentation, server markup only", () =
         },
       }),
     );
-    expect(html).toContain("另一请求的版本，不是本原 key 的成功");
-    expect(html).not.toContain("原请求已封存");
+    expect(html).toContain("其他操作创建的版本，不表示本次操作成功");
+    expect(html).not.toContain("原操作已封存");
   });
   it("unresolved and capacity evidence explain anchor/capacity without rollback or publication authority", async () => {
     const f = await fixture();
@@ -184,7 +189,7 @@ describe("internal metadata and recovery presentation, server markup only", () =
         },
       }),
     );
-    expect(unresolved).toContain("未找到回执不能证明原请求未执行");
+    expect(unresolved).toContain("未找到处理结果不能证明原操作未执行");
     const full = renderToStaticMarkup(
       createElement(InternalEvidenceFacts, {
         evidence: {
@@ -200,7 +205,7 @@ describe("internal metadata and recovery presentation, server markup only", () =
         },
       }),
     );
-    expect(full).toContain("解除本地锚点不会恢复封存容量");
+    expect(full).toContain("解除本地操作记录不会恢复封存容量");
   });
   it("historical metadata uses its fixed version link and distinguishes unknown/current/newer head", async () => {
     const f = await fixture(),

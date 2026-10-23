@@ -56,9 +56,43 @@ const parent = f.parent,
 const fromTsx = createRequire(
   createRequire(import.meta.url).resolve("tsx/package.json"),
 );
+const navigationOnly = process.argv.slice(2).includes("--navigation-only");
+const keyIdentityOnly = process.argv.slice(2).includes("--key-identity-only");
 await fromTsx("esbuild").build({
   entryPoints: [path.resolve("tests/browser/studio-consumer.client.tsx")],
   outfile: path.join(out, "probe.js"),
+  bundle: true,
+  platform: "browser",
+  format: "iife",
+  jsx: "automatic",
+  loader: { ".css": "local-css" },
+  define: { "process.env.NODE_ENV": '"production"', "process.env": "{}" },
+  logLevel: "silent",
+});
+// Keep the original domain-only capture unchanged. This second entry uses the
+// actual shell/pathname context from the independent review counterexample.
+await fromTsx("esbuild").build({
+  stdin: {
+    contents: `
+      import { createRoot } from "react-dom/client";
+      import { PathnameContext } from "next/dist/shared/lib/hooks-client-context.shared-runtime";
+      import { StudioShell } from "@/features/studio/shell";
+      import { StudioConsumerAccessPageV1 } from "@/features/studio/consumer-access/page";
+      import { subscribeStudioAuthorityInvalidation } from "@/features/studio/authority-events";
+      const input = JSON.parse(document.getElementById("fixture").textContent);
+      let invalidations = 0;
+      subscribeStudioAuthorityInvalidation(() => { invalidations++; });
+      window.readNavigationInvalidations = () => invalidations;
+      createRoot(document.getElementById("root")).render(
+        <PathnameContext.Provider value={"/studio/products/" + input.scope.productId + "/consumer-access"}>
+          <StudioShell authenticated><StudioConsumerAccessPageV1 {...input} /></StudioShell>
+        </PathnameContext.Provider>);
+    `,
+    resolveDir: process.cwd(),
+    loader: "tsx",
+    sourcefile: "studio-shell-consumer-probe.tsx",
+  },
+  outfile: path.join(out, "shell-probe.js"),
   bundle: true,
   platform: "browser",
   format: "iife",
@@ -80,6 +114,14 @@ const files = new Map([
     { body: await readFile(path.join(out, "probe.css")), type: "text/css" },
   ],
 ]);
+for (const [name, type] of [
+  ["shell-probe.js", "text/javascript"],
+  ["shell-probe.css", "text/css"],
+])
+  files.set(`/${name}`, {
+    body: await readFile(path.join(out, name!)),
+    type: type!,
+  });
 let origin = "",
   mode = "normal",
   play = f.play.play,
@@ -92,6 +134,11 @@ let holdAuth = false,
   releaseAuth: (() => void) | undefined,
   notifyAuth: (() => void) | undefined;
 let authReached = Promise.resolve();
+let holdPlay = false,
+  releasePlay: (() => void) | undefined,
+  notifyPlay: (() => void) | undefined,
+  sentPlays = 0;
+let playReached = Promise.resolve();
 const server = createServer(async (req, res) => {
   const url = new URL(req.url ?? "/", "http://127.0.0.1");
   const send = (v: unknown, status = 200) => {
@@ -137,7 +184,15 @@ const server = createServer(async (req, res) => {
           snapshotSha256: await internalPlaySnapshotSha256(snapshot),
         };
         hasPlay = true;
+        if (holdPlay) {
+          holdPlay = false;
+          notifyPlay?.();
+          await new Promise<void>((resolve) => {
+            releasePlay = resolve;
+          });
+        }
         send({ created: true, play }, 201);
+        sentPlays++;
         return;
       }
       if (url.pathname.endsWith("/access-keys")) {
@@ -251,9 +306,11 @@ const server = createServer(async (req, res) => {
       scope: { origin, instanceId: "a".repeat(32), issuerId, productId },
       renderer: CONSUMER_IMPLEMENTATION_AVAILABILITY.rendererV1,
     };
+    const probe =
+      url.pathname === "/studio-navigation-probe" ? "shell-probe" : "probe";
     res.writeHead(200, { "content-type": "text/html;charset=utf-8" });
     res.end(
-      `<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/probe.css"><style>*{box-sizing:border-box}body{margin:0;font:16px/1.75 system-ui;background:#e9eee9;padding:12px}.synthetic{padding:12px;background:#fff4ce}</style><p class="synthetic">合成 Studio HTTP／实际 UI 验证 · 无数据库、实际运营权限或系统剪贴板</p><div id="root"></div><script id="fixture" type="application/json">${JSON.stringify(data).replaceAll("<", "\\u003c")}</script><script src="/probe.js"></script></html>`,
+      `<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/${probe}.css"><style>*{box-sizing:border-box}body{margin:0;font:16px/1.75 system-ui;background:#e9eee9;padding:12px}.synthetic{padding:12px;background:#fff4ce}</style><p class="synthetic">合成 Studio HTTP／实际 UI 验证 · 无数据库、实际运营权限或系统剪贴板</p><div id="root"></div><script id="fixture" type="application/json">${JSON.stringify(data).replaceAll("<", "\\u003c")}</script><script src="/${probe}.js"></script></html>`,
     );
   } catch {
     if (!res.headersSent) res.writeHead(500);
@@ -292,8 +349,254 @@ async function shot(page: Page, name: string) {
   });
   shots.push(name + ".png");
 }
-try {
-  browser = await chromium.launch({ headless: true });
+async function bounded<T>(work: Promise<T>): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      work,
+      new Promise<never>((_resolve, reject) => {
+        timer = setTimeout(
+          () => reject(Error("NAVIGATION_PROBE_DEADLINE")),
+          5000,
+        );
+      }),
+    ]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+async function navigationInvalidations(page: Page) {
+  return page.evaluate(() => {
+    const read = (
+      window as Window & { readNavigationInvalidations?: () => number }
+    ).readNavigationInvalidations;
+    if (!read) throw Error("NAVIGATION_OBSERVER_MISSING");
+    return read();
+  });
+}
+async function pendingDigest(page: Page) {
+  return page.evaluate(async () => {
+    const values = Object.keys(sessionStorage)
+      .sort()
+      .map((key) => [key, sessionStorage.getItem(key)]);
+    const hash = await crypto.subtle.digest(
+      "SHA-256",
+      new TextEncoder().encode(JSON.stringify(values)),
+    );
+    return {
+      entries: values.length,
+      sha256: [...new Uint8Array(hash)]
+        .map((byte) => byte.toString(16).padStart(2, "0"))
+        .join(""),
+    };
+  });
+}
+async function activateGlobal(page: Page, kind: "pointer" | "keyboard") {
+  const nav = page.getByRole("navigation", {
+    name: "Studio 导航",
+    exact: true,
+  });
+  if (!(await nav.isVisible()))
+    await page.getByText("Studio 导航", { exact: true }).click();
+  const link = nav.getByRole("link", { name: "工作区", exact: true });
+  // Only prevent destination navigation, preserving the real React link events
+  // and mounted consumer controller from the independent review counterexample.
+  await link.evaluate((anchor) =>
+    anchor.addEventListener("click", (event) => event.preventDefault(), {
+      capture: true,
+      once: true,
+    }),
+  );
+  if (kind === "keyboard") {
+    await link.focus();
+    await link.press("Enter");
+  } else await link.click();
+  expect(page.url()).toBe(origin + "/studio-navigation-probe");
+  await expect(
+    page.getByRole("heading", { name: "请重新验证运营身份", exact: true }),
+  ).toBeVisible();
+}
+async function globalNavigationRegression(
+  browser: Awaited<ReturnType<typeof chromium.launch>>,
+) {
+  for (const kind of ["pointer", "keyboard"] as const) {
+    const context = await browser.newContext({
+      viewport: { width: kind === "pointer" ? 1440 : 390, height: 900 },
+    });
+    try {
+      const page = await context.newPage(),
+        other = await context.newPage();
+      for (const target of [page, other]) {
+        target.on("pageerror", (error) =>
+          errors.push(
+            error.message.replace(/qf[kg]_p4_[A-Za-z0-9_-]+/g, "[redacted]"),
+          ),
+        );
+        await target.goto(origin + "/studio-navigation-probe");
+        await expect(
+          target.getByRole("combobox", {
+            name: "固定内测内容版本",
+            exact: true,
+          }),
+        ).toBeEnabled();
+      }
+      if (kind === "keyboard") {
+        const toggle = page.getByText("Studio 导航", { exact: true });
+        await toggle.click();
+        await toggle.click();
+        await expect(
+          page.getByRole("combobox", { name: "固定内测内容版本", exact: true }),
+        ).toBeEnabled();
+        expect(await navigationInvalidations(page)).toBe(0);
+      }
+      const nav = page.getByRole("navigation", {
+        name: "Studio 导航",
+        exact: true,
+      });
+      if (!(await nav.isVisible()))
+        await page.getByText("Studio 导航", { exact: true }).click();
+      const gap = await nav.evaluate((element) => {
+        const links = element.querySelectorAll("a"),
+          first = links[0]!.getBoundingClientRect(),
+          second = links[1]!.getBoundingClientRect();
+        const point = { x: first.left + 4, y: (first.bottom + second.top) / 2 };
+        const hit = document.elementFromPoint(point.x, point.y);
+        if (!hit || !element.contains(hit) || hit.closest("a[href]"))
+          throw Error("GLOBAL_NAVIGATION_GAP_REQUIRED");
+        return point;
+      });
+      await page.mouse.click(gap.x, gap.y);
+      expect(await navigationInvalidations(page)).toBe(0);
+      const before = posts;
+      await other.evaluate(() => {
+        const channel = new BroadcastChannel(
+          "quizforge.navigation-test-barrier.v1",
+        );
+        channel.onmessage = () => channel.postMessage("ack");
+      });
+      await activateGlobal(page, kind);
+      // A real same-origin cross-tab roundtrip drains queued channel delivery;
+      // no sleep or forged visibility event substitutes for the other live tab.
+      await page.evaluate(
+        () =>
+          new Promise<void>((resolve, reject) => {
+            const channel = new BroadcastChannel(
+              "quizforge.navigation-test-barrier.v1",
+            );
+            const timer = setTimeout(() => {
+              channel.close();
+              reject(Error("CHANNEL_BARRIER_DEADLINE"));
+            }, 2000);
+            channel.onmessage = () => {
+              clearTimeout(timer);
+              channel.close();
+              resolve();
+            };
+            channel.postMessage("ping");
+          }),
+      );
+      expect(await navigationInvalidations(page)).toBe(1);
+      expect(await navigationInvalidations(other)).toBe(0);
+      await expect(
+        other.getByRole("combobox", { name: "固定内测内容版本", exact: true }),
+      ).toBeEnabled();
+      await expect(
+        page.getByRole("button", { name: "创建答题版本", exact: true }),
+      ).toHaveCount(0);
+      expect(posts).toBe(before);
+      observations.push({
+        name: `global-${kind}`,
+        gapPreservesAuthority: true,
+        ...(kind === "keyboard" ? { menuPreservesAuthority: true } : {}),
+        localRevoked: true,
+        otherTabRevoked: false,
+        additionalPosts: 0,
+      });
+    } finally {
+      await context.close();
+    }
+  }
+  // Pause before the write's fresh authorization resolves, then navigate away.
+  // The old task cannot send a POST when that real HTTP response is released.
+  for (const stage of ["authorization", "response"] as const) {
+    const page = await browser.newPage({
+      viewport: { width: 1440, height: 900 },
+    });
+    page.on("pageerror", (error) =>
+      errors.push(
+        error.message.replace(/qf[kg]_p4_[A-Za-z0-9_-]+/g, "[redacted]"),
+      ),
+    );
+    try {
+      await page.goto(origin + "/studio-navigation-probe");
+      const selector = page.getByRole("combobox", {
+        name: "固定内测内容版本",
+        exact: true,
+      });
+      await expect(selector).toBeEnabled();
+      await selector.selectOption(parent.version.id);
+      const before = posts,
+        beforeSent = sentPlays;
+      if (stage === "authorization") {
+        holdAuth = true;
+        authReached = new Promise((resolve) => {
+          notifyAuth = resolve;
+        });
+      } else {
+        holdPlay = true;
+        playReached = new Promise((resolve) => {
+          notifyPlay = resolve;
+        });
+      }
+      await page
+        .getByRole("button", { name: "创建答题版本", exact: true })
+        .click();
+      await bounded(stage === "authorization" ? authReached : playReached);
+      const pending = await pendingDigest(page);
+      if (stage === "response") expect(pending.entries).toBeGreaterThan(0);
+      const atNavigation = posts;
+      await activateGlobal(page, "pointer");
+      if (stage === "authorization") {
+        holdAuth = false;
+        releaseAuth?.();
+      } else {
+        holdPlay = false;
+        releasePlay?.();
+        await expect.poll(() => sentPlays).toBe(beforeSent + 1);
+      }
+      await page.evaluate(
+        () =>
+          new Promise<void>((resolve) =>
+            requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+          ),
+      );
+      await expect(
+        page.getByRole("heading", { name: "请重新验证运营身份", exact: true }),
+      ).toBeVisible();
+      await expect(
+        page.getByRole("heading", { name: "原内测版本已创建", exact: true }),
+      ).toHaveCount(0);
+      expect(posts - before).toBe(stage === "authorization" ? 0 : 1);
+      expect(posts).toBe(atNavigation);
+      expect(await pendingDigest(page)).toEqual(pending);
+      observations.push({
+        name: `global-pending-${stage}`,
+        lateTaskRejected: true,
+        postsIssuedBeforeNavigation: atNavigation - before,
+        postsAfterNavigation: posts - atNavigation,
+        originalPendingUnchanged: true,
+      });
+    } finally {
+      holdAuth = holdPlay = false;
+      releaseAuth?.();
+      releasePlay?.();
+      await page.close();
+    }
+  }
+}
+async function runExistingConsumerScenarios(
+  browser: Awaited<ReturnType<typeof chromium.launch>>,
+) {
   for (const width of [320, 375, 390, 430]) {
     const p = await browser.newPage({ viewport: { width, height: 900 } });
     p.on(
@@ -309,13 +612,88 @@ try {
     );
     await p.goto(origin + "/studio-probe");
     await expect(
-      p.getByRole("button", { name: "创建消费者内测版本", exact: true }),
+      p.getByRole("button", { name: "创建答题版本", exact: true }),
     ).toBeVisible();
-    await expect(p.getByText("当前尚无可选择的已封存父版本。")).toHaveCount(0);
     await expect(
-      p.getByRole("combobox", { name: "已封存的父版本" }),
+      p.getByText(
+        "尚无固定内测内容版本。请先预览草稿、记录已有审核依据，并固定内测内容。",
+      ),
+    ).toHaveCount(0);
+    await expect(
+      p.getByRole("combobox", { name: "固定内测内容版本" }),
     ).toBeEnabled();
     await shot(p, `ready-${width}`);
+    if (width === 320) {
+      const workflow = p.getByRole("navigation", {
+        name: "商品操作流程",
+        exact: true,
+      });
+      await workflow.scrollIntoViewIfNeeded();
+      const gap = await workflow.evaluate((nav) => {
+        const links = [...nav.querySelectorAll("a")];
+        const first = links[0]!.getBoundingClientRect(),
+          second = links[1]!.getBoundingClientRect();
+        const point = {
+          x: (first.right + second.left) / 2,
+          y: Math.max(first.top, second.top) + 4,
+        };
+        const hit = document.elementFromPoint(point.x, point.y);
+        if (!hit || !nav.contains(hit) || hit.closest("a[href]"))
+          throw Error("STUDIO_WORKFLOW_TEST_GAP_REQUIRED");
+        return point;
+      });
+      const beforeNavigationPosts = posts;
+      await p.mouse.click(gap.x, gap.y);
+      await expect(
+        p.getByRole("combobox", { name: "固定内测内容版本" }),
+      ).toBeEnabled();
+      await expect(
+        p.getByRole("heading", { name: "请重新验证运营身份", exact: true }),
+      ).toHaveCount(0);
+      expect(posts).toBe(beforeNavigationPosts);
+      // Prevent only destination navigation. The actual link activation still
+      // reaches the React capture handler and must immediately revoke authority.
+      const link = workflow.getByRole("link", {
+        name: "测评概览",
+        exact: true,
+      });
+      await link.evaluate((anchor) => {
+        anchor.addEventListener("click", (event) => event.preventDefault(), {
+          capture: true,
+          once: true,
+        });
+      });
+      await link.focus();
+      await link.press("Enter");
+      await expect(
+        p.getByRole("heading", { name: "请重新验证运营身份", exact: true }),
+      ).toBeVisible();
+      await p.reload();
+      await expect(
+        p.getByRole("combobox", { name: "固定内测内容版本" }),
+      ).toBeEnabled();
+      const pointerLink = p
+        .getByRole("navigation", { name: "商品操作流程", exact: true })
+        .getByRole("link", { name: "测评概览", exact: true });
+      await pointerLink.evaluate((anchor) => {
+        anchor.addEventListener("click", (event) => event.preventDefault(), {
+          capture: true,
+          once: true,
+        });
+      });
+      await pointerLink.click();
+      await expect(
+        p.getByRole("heading", { name: "请重新验证运营身份", exact: true }),
+      ).toBeVisible();
+      expect(posts).toBe(beforeNavigationPosts);
+      observations.push({
+        name: "workflow-navigation-authority",
+        gapPreservesAuthority: true,
+        keyboardLinkRevokes: true,
+        pointerLinkRevokes: true,
+        additionalPosts: 0,
+      });
+    }
     await p.close();
   }
   const context = await browser.newContext({
@@ -336,34 +714,34 @@ try {
     ),
   );
   await page.addInitScript(`
-    window.__name = (value) => value;
-    (() => { let count = 0; Object.defineProperty(navigator, "clipboard", { configurable: true, value: {
-      writeText: async (link) => { await window.recordSafeDisclosure(); const u = new URL(link); window.clipboardSafe = { count: ++count, origin: u.origin === location.origin,
-        path: u.pathname === "/access", noQuery: u.search === "", fragment: /^#key=qfk_p4_[A-Za-z0-9_-]{43}$/.test(u.hash) }; }
-    } }); })();
-  `);
+  window.__name = (value) => value;
+  (() => { let count = 0; Object.defineProperty(navigator, "clipboard", { configurable: true, value: {
+    writeText: async (link) => { await window.recordSafeDisclosure(); const u = new URL(link); window.clipboardSafe = { count: ++count, origin: u.origin === location.origin,
+      path: u.pathname === "/access", noQuery: u.search === "", fragment: /^#key=qfk_p4_[A-Za-z0-9_-]{43}$/.test(u.hash) }; }
+  } }); })();
+`);
   await page.goto(origin + "/studio-probe");
   await page
-    .getByRole("combobox", { name: "已封存的父版本" })
+    .getByRole("combobox", { name: "固定内测内容版本" })
     .selectOption(parent.version.id);
-  await page
-    .getByRole("button", { name: "创建消费者内测版本", exact: true })
-    .click();
+  await page.getByRole("button", { name: "创建答题版本", exact: true }).click();
   await expect(
     page.getByRole("heading", { name: "原内测版本已创建", exact: true }),
   ).toBeVisible();
   await shot(page, "created-play-320");
   await page.getByRole("checkbox").check();
-  await page.getByRole("button", { name: "确认结束并清除本标签记录" }).click();
+  await page
+    .getByRole("button", { name: "确认结束并清除当前标签页记录" })
+    .click();
   await expect(
-    page.getByRole("combobox", { name: "固定内测版本", exact: true }),
+    page.getByRole("combobox", { name: "固定内测内容版本", exact: true }),
   ).toBeEnabled();
   await page
-    .getByRole("combobox", { name: "固定内测版本", exact: true })
+    .getByRole("combobox", { name: "答题版本", exact: true })
     .selectOption(play.id);
-  await page.getByRole("button", { name: "生成并发放一枚访问 Key" }).click();
+  await page.getByRole("button", { name: "生成并发放一枚访问码" }).click();
   await expect(
-    page.getByRole("heading", { name: "原 Key 发放已记录" }),
+    page.getByRole("heading", { name: "上次访问码发放已记录" }),
   ).toBeVisible();
   await shot(page, "issued-key-320");
   const downloadWait = page.waitForEvent("download");
@@ -404,23 +782,29 @@ try {
     fragment: true,
   });
   await page.getByRole("checkbox").check();
-  await page.getByRole("button", { name: "确认结束并清除本标签记录" }).click();
+  await page
+    .getByRole("button", { name: "确认结束并清除当前标签页记录" })
+    .click();
   await expect(
-    page.getByRole("combobox", { name: "固定内测版本", exact: true }),
+    page.getByRole("combobox", { name: "固定内测内容版本", exact: true }),
   ).toBeEnabled();
   mode = "unknown";
-  await page.getByRole("button", { name: "生成并发放一枚访问 Key" }).click();
-  await expect(page.getByRole("button", { name: "核对原请求" })).toBeVisible();
+  await page.getByRole("button", { name: "生成并发放一枚访问码" }).click();
+  await expect(
+    page.getByRole("button", { name: "查询上次操作结果" }),
+  ).toBeVisible();
   await shot(page, "unknown-issue-320");
   const before = issueBindings.length;
   await page.reload();
-  await expect(page.getByRole("button", { name: "核对原请求" })).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "查询上次操作结果" }),
+  ).toBeVisible();
   expect(issueBindings.length).toBe(before);
   await shot(page, "restored-unknown-320");
   mode = "normal";
-  await page.getByRole("button", { name: "核对原请求" }).click();
+  await page.getByRole("button", { name: "查询上次操作结果" }).click();
   await expect(
-    page.getByRole("heading", { name: "原 Key 发放已记录" }),
+    page.getByRole("heading", { name: "上次访问码发放已记录" }),
   ).toBeVisible();
   await shot(page, "resolved-issue-320");
   authReached = new Promise<void>((resolve) => {
@@ -454,9 +838,9 @@ try {
   expect(clipboardCalls).toBe(beforeHidden);
   await shot(page, "hidden-pending-disclosure-320");
   await page.getByRole("button", { name: "重新读取与核对身份" }).click();
-  await page.getByRole("button", { name: "核对原请求" }).click();
+  await page.getByRole("button", { name: "查询上次操作结果" }).click();
   await expect(
-    page.getByRole("heading", { name: "原 Key 发放已记录" }),
+    page.getByRole("heading", { name: "上次访问码发放已记录" }),
   ).toBeVisible();
   authReached = new Promise<void>((resolve) => {
     notifyAuth = resolve;
@@ -481,14 +865,14 @@ try {
   ).toBeUndefined();
   await shot(page, "logout-pending-disclosure-320");
   await page.getByRole("button", { name: "重新读取与核对身份" }).click();
-  await page.getByRole("button", { name: "核对原请求" }).click();
+  await page.getByRole("button", { name: "查询上次操作结果" }).click();
   await expect(
-    page.getByRole("heading", { name: "原 Key 发放已记录" }),
+    page.getByRole("heading", { name: "上次访问码发放已记录" }),
   ).toBeVisible();
   const other = await page.context().newPage();
   await other.goto(origin + "/studio-probe");
   await expect(
-    other.getByRole("button", { name: "创建消费者内测版本", exact: true }),
+    other.getByRole("button", { name: "创建答题版本", exact: true }),
   ).toBeVisible();
   await other.evaluate(() =>
     (
@@ -501,9 +885,9 @@ try {
   await shot(page, "other-tab-invalidation-320");
   await other.close();
   await page.getByRole("button", { name: "重新读取与核对身份" }).click();
-  await page.getByRole("button", { name: "核对原请求" }).click();
+  await page.getByRole("button", { name: "查询上次操作结果" }).click();
   await expect(
-    page.getByRole("heading", { name: "原 Key 发放已记录" }),
+    page.getByRole("heading", { name: "上次访问码发放已记录" }),
   ).toBeVisible();
   authReached = new Promise<void>((resolve) => {
     notifyAuth = resolve;
@@ -515,10 +899,12 @@ try {
   await page.getByRole("link", { name: "返回测评工作区", exact: true }).click();
   holdAuth = false;
   releaseAuth?.();
-  await expect(page.getByRole("button", { name: "核对原请求" })).toBeVisible();
-  await page.getByRole("button", { name: "核对原请求" }).click();
   await expect(
-    page.getByRole("heading", { name: "原 Key 发放已记录" }),
+    page.getByRole("button", { name: "查询上次操作结果" }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "查询上次操作结果" }).click();
+  await expect(
+    page.getByRole("heading", { name: "上次访问码发放已记录" }),
   ).toBeVisible();
   expect(clipboardCalls).toBe(beforeNavigation);
   mode = "other-issuer";
@@ -547,12 +933,12 @@ try {
   await page.reload();
   await expect(
     page.getByText(
-      "原文已不在本标签，不能恢复私密链接或重放发放。仍可核对原请求。",
+      "原文已不在当前标签页，不能恢复私密链接或再次发送原操作发放。仍可查询上次操作结果。",
       { exact: true },
     ),
   ).toBeVisible();
   await expect(
-    page.getByRole("button", { name: "重放原请求", exact: true }),
+    page.getByRole("button", { name: "再次发送原操作", exact: true }),
   ).toHaveCount(0);
   await expect(
     page.getByRole("button", { name: "复制私密访问链接", exact: true }),
@@ -562,9 +948,11 @@ try {
   ).toHaveCount(0);
   await shot(page, "raw-loss-before-resolve-320");
   const beforeRawLoss = issueBindings.length;
-  await page.getByRole("button", { name: "核对原请求", exact: true }).click();
+  await page
+    .getByRole("button", { name: "查询上次操作结果", exact: true })
+    .click();
   await expect(
-    page.getByRole("heading", { name: "原 Key 发放已记录", exact: true }),
+    page.getByRole("heading", { name: "上次访问码发放已记录", exact: true }),
   ).toBeVisible();
   expect(issueBindings.length).toBe(beforeRawLoss);
   await expect(
@@ -576,7 +964,7 @@ try {
   await shot(page, "raw-loss-resolved-320");
   await page.getByRole("checkbox").check();
   await page
-    .getByRole("button", { name: "确认结束并清除本标签记录", exact: true })
+    .getByRole("button", { name: "确认结束并清除当前标签页记录", exact: true })
     .click();
   await page.close();
   mode = "readonly";
@@ -586,25 +974,25 @@ try {
     ro.getByText("当前运营身份为只读", { exact: false }),
   ).toBeVisible();
   await expect(
-    ro.getByRole("combobox", { name: "固定内测版本", exact: true }),
+    ro.getByRole("combobox", { name: "固定内测内容版本", exact: true }),
   ).toBeDisabled();
   await shot(ro, "readonly-320");
   await ro.close();
   mode = "normal";
   const v = await browser.newPage({ viewport: { width: 320, height: 900 } });
   await v.goto(origin + "/studio-probe");
-  await v.getByRole("button", { name: "作废此未领取 Key" }).first().click();
+  await v.getByRole("button", { name: "作废此未领取访问码" }).first().click();
   mode = "claim-before-void";
-  await v.getByRole("button", { name: "确认作废未领取 Key" }).click();
+  await v.getByRole("button", { name: "确认作废未领取访问码" }).click();
   await expect(
-    v.getByRole("heading", { name: "未作废：Key 已领取" }),
+    v.getByRole("heading", { name: "未作废：访问码已领取" }),
   ).toBeVisible();
   await shot(v, "claimed-before-void-320");
   await v.getByRole("checkbox").check();
-  await v.getByRole("button", { name: "确认结束并清除本标签记录" }).click();
-  await v.getByRole("button", { name: "作废此未领取 Key" }).first().click();
+  await v.getByRole("button", { name: "确认结束并清除当前标签页记录" }).click();
+  await v.getByRole("button", { name: "作废此未领取访问码" }).first().click();
   mode = "normal";
-  await v.getByRole("button", { name: "确认作废未领取 Key" }).click();
+  await v.getByRole("button", { name: "确认作废未领取访问码" }).click();
   await expect(
     v.getByRole("heading", { name: "原未领取作废已记录" }),
   ).toBeVisible();
@@ -612,14 +1000,103 @@ try {
   await v.close();
   expect(errors).toEqual([]);
   expect(rawSeenByApi).toBe(false);
+}
+async function keyIdentityReview(
+  browser: Awaited<ReturnType<typeof chromium.launch>>,
+) {
+  const page = await browser.newPage({ viewport: { width: 320, height: 900 } });
+  page.on("pageerror", () => errors.push("key-identity-page-error"));
+  await page.goto(origin + "/studio-probe");
+  await page
+    .getByRole("combobox", { name: "固定内测内容版本", exact: true })
+    .selectOption(parent.version.id);
+  await page.getByRole("button", { name: "创建答题版本", exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: "原内测版本已创建" }),
+  ).toBeVisible();
+  async function finish() {
+    await page.getByRole("checkbox").check();
+    await page
+      .getByRole("button", { name: "确认结束并清除当前标签页记录" })
+      .click();
+    await expect(
+      page.getByRole("combobox", { name: "答题版本", exact: true }),
+    ).toBeEnabled();
+  }
+  await finish();
+  await page
+    .getByRole("combobox", { name: "答题版本", exact: true })
+    .selectOption(play.id);
+  for (let i = 0; i < 2; i++) {
+    await page.getByRole("button", { name: "生成并发放一枚访问码" }).click();
+    await expect(
+      page.getByRole("heading", { name: "上次访问码发放已记录" }),
+    ).toBeVisible();
+    await finish();
+  }
+  expect(keys).toHaveLength(2);
+  for (const key of keys)
+    await expect(
+      page.getByText(key.issue.binding.keyId, { exact: true }),
+    ).toBeVisible();
+  await shot(page, "business-key-records-320");
+  const targetId = keys[0]!.issue.binding.keyId;
+  const row = page
+    .locator("li")
+    .filter({ has: page.getByText(targetId, { exact: true }) });
+  const before = posts;
+  await row.getByRole("button", { name: "作废此未领取访问码" }).click();
+  await expect(row.getByText(targetId, { exact: true })).toBeVisible();
+  await shot(page, "business-key-confirm-320");
+  await row.getByRole("button", { name: "保留此访问码" }).click();
+  expect(posts).toBe(before);
+  await row.getByRole("button", { name: "作废此未领取访问码" }).click();
+  await row.getByRole("button", { name: "确认作废未领取访问码" }).click();
+  const pending = page.getByRole("region", {
+    name: "答题内测原操作核对",
+    exact: true,
+  });
+  await expect(
+    pending.getByRole("heading", { name: "原未领取作废已记录" }),
+  ).toBeVisible();
+  await expect(pending.getByText(targetId, { exact: true })).toBeVisible();
+  expect(posts).toBe(before + 1);
+  await shot(page, "business-key-result-320");
+  observations.push({
+    name: "business-key-identity",
+    distinctRecords: 2,
+    targetVisibleBeforeAndAfter: true,
+    cancelPosts: 0,
+    confirmPosts: 1,
+  });
+  expect(errors).toEqual([]);
+  expect(rawSeenByApi).toBe(false);
+  await page.close();
+}
+try {
+  browser = await chromium.launch({ headless: true });
+  if (keyIdentityOnly) await keyIdentityReview(browser);
+  else await globalNavigationRegression(browser);
+  expect(errors).toEqual([]);
+  // Restore the original in-memory starting fixture for the unchanged scenarios.
+  hasPlay = false;
+  play = f.play.play;
+  if (!navigationOnly && !keyIdentityOnly)
+    await runExistingConsumerScenarios(browser);
   await writeFile(
     path.join(out, "result.json"),
     JSON.stringify(
       {
         scope:
           "synthetic in-memory HTTP/clipboard stub and actual UI only; no DB, real permissions or production E2E",
+        navigationOnly,
+        keyIdentityOnly,
         browser: await browser.version(),
-        viewports: [320, 375, 390, 430],
+        viewports: keyIdentityOnly
+          ? [320]
+          : navigationOnly
+            ? [390, 1440]
+            : [320, 375, 390, 430, 1440],
         screenshots: shots,
         observations,
         rawSeenByApi,

@@ -1,4 +1,5 @@
 "use client";
+import { TechnicalDetails } from "../presentation/technical-details";
 import { useEffect, useState } from "react";
 import type {
   DraftRevisionHistory,
@@ -86,8 +87,8 @@ export function RevisionHistoryPanel({
     }));
   }
   return (
-    <section className={styles.panel} aria-label="草稿修订历史">
-      <h2>草稿修订历史</h2>
+    <section className={styles.panel} aria-label="草稿历史修订">
+      <h2>草稿历史修订</h2>
       <p className={styles.note}>
         历史按固定上界倒序读取，只列元数据。当前摘要刷新不会把新修订插进本次历史分页。
       </p>
@@ -157,11 +158,13 @@ export function RevisionHistoryPanel({
                 {item.contentKind === "authored" ? "作者内容" : "合成内容"} ·{" "}
                 {item.contentSchemaVersion} · 包版本 {item.packVersion}
               </p>
-              <p>
-                来源 {item.sourceImportId} / {item.sourceValidationId}
-              </p>
-              <p>内容 {item.canonicalContentSha256}</p>
-              <p>素材集合 {item.assetSetSha256}</p>
+              <TechnicalDetails label={`修订 ${item.revision} 来源与校验摘要`}>
+                <p>
+                  来源 {item.sourceImportId} / {item.sourceValidationId}
+                </p>
+                <p>内容 {item.canonicalContentSha256}</p>
+                <p>素材集合 {item.assetSetSha256}</p>
+              </TechnicalDetails>
               <p>创建于 {item.createdAt}</p>
               <RevisionLinks draft={item} />
             </li>

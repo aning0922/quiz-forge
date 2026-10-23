@@ -14,7 +14,8 @@ import type {
 
 export const internalPanel = (page: Page, operation: InternalOperation) =>
   page.getByRole("region", {
-    name: operation === "review" ? "基线记录原请求核实" : "内测封存原请求核实",
+    name:
+      operation === "review" ? "审核依据记录操作查询" : "内容版本固定操作查询",
     exact: true,
   });
 /** No locator.fill(secret), trace, screenshot, credential-bearing exception or request log. */

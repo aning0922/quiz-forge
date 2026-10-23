@@ -1,3 +1,4 @@
+import { TechnicalDetails } from "../presentation/technical-details";
 import type { ValidationDto } from "@/features/quizpack/validation/contracts";
 import { StudioClientError } from "../client";
 import { validationLabels, validationMessage } from "./messages";
@@ -8,15 +9,7 @@ export function ValidationFacts({ value }: { value: ValidationDto }) {
       <h3>{validationLabels[value.status]}</h3>
       <dl className={styles.facts}>
         <div>
-          <dt>验证记录</dt>
-          <dd>{value.id}</dd>
-        </div>
-        <div>
-          <dt>请求标识（缩略）</dt>
-          <dd>{value.validationKey.slice(0, 12)}…</dd>
-        </div>
-        <div>
-          <dt>验证状态修订</dt>
+          <dt>检查记录版本</dt>
           <dd>{value.stateRevision}</dd>
         </div>
         <div>
@@ -26,10 +19,10 @@ export function ValidationFacts({ value }: { value: ValidationDto }) {
           </dd>
         </div>
         <div>
-          <dt>存储核实</dt>
+          <dt>文件保存状态</dt>
           <dd>
             {value.storageCondition === "clean"
-              ? "已对账"
+              ? "文件与记录一致"
               : value.storageCondition === "cleanup-required"
                 ? "需要恢复对账"
                 : "文件与账目尚未确认"}
@@ -41,19 +34,35 @@ export function ValidationFacts({ value }: { value: ValidationDto }) {
             {value.attemptCount} 次 · 剩余 {value.remainingAttempts} 次
           </dd>
         </div>
-        <div>
-          <dt>包身份</dt>
-          <dd>
-            {value.packId
-              ? `${value.packId} / ${value.packVersion}`
-              : "尚未冻结"}
-          </dd>
-        </div>
-        <div>
-          <dt>最近更新</dt>
-          <dd>{value.updatedAt}</dd>
-        </div>
       </dl>
+      <TechnicalDetails label="检查记录技术标识">
+        <dl className={styles.facts}>
+          <div>
+            <dt>验证记录</dt>
+            <dd>{value.id}</dd>
+          </div>
+          <div>
+            <dt>包身份</dt>
+            <dd>
+              {value.packId
+                ? `${value.packId} / ${value.packVersion}`
+                : "尚未冻结"}
+            </dd>
+          </div>
+        </dl>
+      </TechnicalDetails>
+      <TechnicalDetails label="检查技术信息">
+        <dl className={styles.facts}>
+          <div>
+            <dt>操作编号（缩略）</dt>
+            <dd>{value.validationKey.slice(0, 12)}…</dd>
+          </div>
+          <div>
+            <dt>最近更新</dt>
+            <dd>{value.updatedAt}</dd>
+          </div>
+        </dl>
+      </TechnicalDetails>
       {value.lastErrorCode && (
         <p className={`${styles.status} ${styles.error}`}>
           {validationMessage(new StudioClientError(value.lastErrorCode))}
@@ -61,7 +70,7 @@ export function ValidationFacts({ value }: { value: ValidationDto }) {
       )}
       {value.readOnly && (
         <p className={styles.status}>
-          旧策略历史记录只读。请在同一已接收原包上准备新验证；此记录不能恢复、重试或用于新的草稿申请。
+          旧策略历史记录只读。请在同一已接收内容包上准备新验证；此记录不能恢复、重试或用于新的草稿申请。
         </p>
       )}
       {value.maintenanceRequired && (

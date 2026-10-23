@@ -51,15 +51,14 @@ export function StudioSessionPanel({ session }: { session: StudioSessionDto }) {
   return (
     <section className={styles.panel}>
       <h1>运营会话</h1>
-      <p className={styles.intro}>当前身份来自本地数据库中的有效运营会话。</p>
-      <nav aria-label="Studio 导航" className={styles.navigation}>
+      <p className={styles.intro}>
+        当前身份来自本地数据库中的有效运营会话。选择工作区开始整理商品。
+      </p>
+      <div className={styles.sessionActions}>
         <Link className={styles.link} href="/studio/products">
-          工作区
+          打开商品列表
         </Link>
-        <Link className={styles.link} href="/studio/taxonomy">
-          类目与标签
-        </Link>
-      </nav>
+      </div>
       <dl className={styles.facts}>
         <div>
           <dt>运营标识</dt>
@@ -104,7 +103,7 @@ export function StudioSessionPanel({ session }: { session: StudioSessionDto }) {
         </p>
       )}
       <p className={styles.note}>
-        本机运营内测环境。工作区提供运营元数据与可恢复归档，本阶段尚未接入草稿与导入。运营身份独立于消费者测评访问凭证。
+        商品工作区串联原包导入、草稿修订、固定预览、审核版本与内测发码。运营身份独立于消费者测评访问凭证。
       </p>
     </section>
   );

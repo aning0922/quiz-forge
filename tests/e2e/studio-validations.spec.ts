@@ -148,19 +148,19 @@ async function signIn(
     `/studio/products/${fixture.productId}/imports/${item.importId}`,
   );
   await expect(
-    page.getByRole("heading", { name: "验证与私有资源归档", exact: true }),
+    page.getByRole("heading", { name: "检查内容并保存素材", exact: true }),
   ).toBeVisible();
   await expect(
     page
-      .getByRole("region", { name: "原包状态", exact: true })
-      .getByText("原包已隔离接收", { exact: true }),
+      .getByRole("region", { name: "内容包状态", exact: true })
+      .getByText("已收到内容包 · 还需检查", { exact: true }),
   ).toBeVisible();
 }
 async function mobileChecks(page: Page, testInfo: TestInfo, state: string) {
   for (const width of [320, 375, 390, 430]) {
     await page.setViewportSize({ width, height: 900 });
     await expect(
-      page.getByRole("region", { name: "验证与私有资源归档", exact: true }),
+      page.getByRole("region", { name: "检查内容并保存素材", exact: true }),
     ).toHaveCount(1);
     assertStudioLayout(
       await sampleStudioLayout(page, {
@@ -217,7 +217,10 @@ test("real authored v2 validation archives synthetic pixels while receive facts 
   page,
 }, testInfo) => {
   await signIn(page, 0);
-  const start = page.getByRole("button", { name: "验证并归档", exact: true });
+  const start = page.getByRole("button", {
+    name: "检查内容并保存素材",
+    exact: true,
+  });
   await expect(start).toBeEnabled();
   let prepares = 0,
     starts = 0;
@@ -250,7 +253,7 @@ test("real authored v2 validation archives synthetic pixels while receive facts 
   });
   await expect(
     page.getByRole("heading", {
-      name: "归档完成 · 待后续草稿导入",
+      name: "检查通过 · 内容和素材已保存",
       exact: true,
     }),
   ).toBeVisible({ timeout: BUSINESS_RESULT_TIMEOUT });
@@ -265,7 +268,7 @@ test("real authored v2 validation archives synthetic pixels while receive facts 
   ).toBeVisible();
   await expect(
     page
-      .getByRole("region", { name: "原包状态", exact: true })
+      .getByRole("region", { name: "内容包状态", exact: true })
       .getByText("接收事实 · 独立验证状态见验证记录 · 不可发布", {
         exact: true,
       }),
@@ -315,12 +318,14 @@ test("lost acknowledged start response survives reload and empty exact GET witho
       throw new Error("VALIDATIONS_E2E_ACKNOWLEDGED_PROOF_FAILED");
     }
   });
-  await page.getByRole("button", { name: "验证并归档", exact: true }).click();
+  await page
+    .getByRole("button", { name: "检查内容并保存素材", exact: true })
+    .click();
   await expect(
-    page.getByRole("heading", { name: "本标签有待核实请求", exact: true }),
+    page.getByRole("heading", { name: "当前标签页有待核实请求", exact: true }),
   ).toBeVisible({ timeout: BUSINESS_RESULT_TIMEOUT });
   await expect(
-    page.getByRole("button", { name: "读取原请求核实", exact: true }),
+    page.getByRole("button", { name: "读取原操作核实", exact: true }),
   ).toBeEnabled();
   expect(observed).toBe(true);
   const original = await pending(page);
@@ -335,11 +340,11 @@ test("lost acknowledged start response survives reload and empty exact GET witho
   );
   await page.reload();
   await expect(
-    page.getByRole("heading", { name: "本标签有待核实请求", exact: true }),
+    page.getByRole("heading", { name: "当前标签页有待核实请求", exact: true }),
   ).toBeVisible();
   await expect(
     page.getByText(
-      "原请求暂未找到；这不证明已回滚。请保留待核实记录，再次读取原请求。",
+      "原操作暂未找到；这不证明已回滚。请保留待核实记录，再次读取原操作。",
       { exact: true },
     ),
   ).toBeVisible();
@@ -347,20 +352,20 @@ test("lost acknowledged start response survives reload and empty exact GET witho
   expect(starts).toBe(1);
   expect(prepares).toBe(1);
   await expect(
-    page.getByRole("button", { name: "验证并归档", exact: true }),
+    page.getByRole("button", { name: "检查内容并保存素材", exact: true }),
   ).toHaveCount(0);
   await mobileChecks(page, testInfo, "unknown-empty-get");
   await page.unroute(exact);
   await page.unroute(api(1));
   await page
-    .getByRole("button", { name: "读取原请求核实", exact: true })
+    .getByRole("button", { name: "读取原操作核实", exact: true })
     .click();
   await expect(
-    page.getByRole("heading", { name: "本标签有待核实请求", exact: true }),
+    page.getByRole("heading", { name: "当前标签页有待核实请求", exact: true }),
   ).toHaveCount(0);
   await expect(
     page.getByRole("heading", {
-      name: "归档完成 · 待后续草稿导入",
+      name: "检查通过 · 内容和素材已保存",
       exact: true,
     }),
   ).toBeVisible();
@@ -403,9 +408,11 @@ test("persisted true before first fetch survives refresh as read-only unknown", 
       return get.call(this, name);
     };
   }, PENDING_STORAGE_KEY);
-  await page.getByRole("button", { name: "验证并归档", exact: true }).click();
+  await page
+    .getByRole("button", { name: "检查内容并保存素材", exact: true })
+    .click();
   await expect(
-    page.getByRole("heading", { name: "本标签有待核实请求", exact: true }),
+    page.getByRole("heading", { name: "当前标签页有待核实请求", exact: true }),
   ).toBeVisible();
   const original = await pending(page);
   beforeFetchTuple = original;
@@ -414,11 +421,11 @@ test("persisted true before first fetch survives refresh as read-only unknown", 
   expect(prepares).toBe(1);
   await page.reload();
   await expect(
-    page.getByRole("heading", { name: "本标签有待核实请求", exact: true }),
+    page.getByRole("heading", { name: "当前标签页有待核实请求", exact: true }),
   ).toBeVisible();
   await expect(
     page.getByText(
-      "原请求暂未找到；这不证明已回滚。请保留待核实记录，再次读取原请求。",
+      "原操作暂未找到；这不证明已回滚。请保留待核实记录，再次读取原操作。",
       { exact: true },
     ),
   ).toBeVisible();
@@ -426,7 +433,7 @@ test("persisted true before first fetch survives refresh as read-only unknown", 
   expect(starts).toBe(0);
   expect(prepares).toBe(1);
   await expect(
-    page.getByRole("button", { name: "验证并归档", exact: true }),
+    page.getByRole("button", { name: "检查内容并保存素材", exact: true }),
   ).toHaveCount(0);
   await mobileChecks(page, testInfo, "persisted-before-fetch");
 });
@@ -447,17 +454,17 @@ test("corrupt pending storage prevents all new validation writes while history r
   await page.reload();
   await expect(
     page
-      .getByRole("region", { name: "验证与私有资源归档", exact: true })
+      .getByRole("region", { name: "检查内容并保存素材", exact: true })
       .getByRole("alert"),
   ).toHaveText(
-    "本标签的待核实记录不可读取或保存，或已有请求。操作结果需核实，请保留记录并读取服务器历史。",
+    "当前标签页的待核实记录不可读取或保存，或已有请求。操作结果需核实，请保留记录并读取服务器历史。",
   );
   await expect(
-    page.getByRole("button", { name: "验证并归档", exact: true }),
+    page.getByRole("button", { name: "检查内容并保存素材", exact: true }),
   ).toBeDisabled();
   await expect(
     page.getByRole("heading", {
-      name: "归档完成 · 待后续草稿导入",
+      name: "检查通过 · 内容和素材已保存",
       exact: true,
     }),
   ).toBeVisible();
@@ -493,13 +500,13 @@ test("read-only access preserves an unknown anchor and makes no validation write
   });
   await page.reload();
   await expect(
-    page.getByText("当前身份只读，可读取历史与原请求。", { exact: true }),
+    page.getByText("当前身份只读，可读取历史与原操作。", { exact: true }),
   ).toBeVisible();
   await expect(
-    page.getByRole("heading", { name: "本标签有待核实请求", exact: true }),
+    page.getByRole("heading", { name: "当前标签页有待核实请求", exact: true }),
   ).toBeVisible();
   await expect(
-    page.getByRole("button", { name: "读取原请求核实", exact: true }),
+    page.getByRole("button", { name: "读取原操作核实", exact: true }),
   ).toBeEnabled();
   expect(await pending(page)).toEqual(beforeFetchTuple);
   expect(posts).toBe(0);
@@ -531,16 +538,16 @@ test("disabled snapshot retains a prepared tuple and blocks continuation while p
   try {
     await page.reload();
     await expect(
-      page.getByText("验证与归档已关闭，可读取历史与原请求。", { exact: true }),
+      page.getByText("验证与归档已关闭，可读取历史与原操作。", { exact: true }),
     ).toBeVisible();
     await expect(
       page.getByRole("heading", {
-        name: "本标签有尚未发送的准备",
+        name: "当前标签页有尚未发送的准备",
         exact: true,
       }),
     ).toBeVisible();
     await expect(
-      page.getByRole("button", { name: "继续验证并归档", exact: true }),
+      page.getByRole("button", { name: "继续检查内容并保存素材", exact: true }),
     ).toBeDisabled();
     await mobileChecks(page, testInfo, "disabled-prepared");
     await page
@@ -548,7 +555,7 @@ test("disabled snapshot retains a prepared tuple and blocks continuation while p
       .click();
     await expect(
       page.getByRole("heading", {
-        name: "本标签有尚未发送的准备",
+        name: "当前标签页有尚未发送的准备",
         exact: true,
       }),
     ).toHaveCount(0);
@@ -575,33 +582,35 @@ test("archived workspace keeps the original unknown request available for reads"
     { key: PENDING_STORAGE_KEY, tuple: beforeFetchTuple },
   );
   await page.goto(`/studio/products/${fixture.productId}`);
-  await page.getByRole("button", { name: "归档工作区", exact: true }).click();
-  await page
-    .getByRole("button", { name: "确认归档工作区", exact: true })
-    .click();
+  await page.getByText("编辑测评信息", { exact: true }).click();
+  await page.getByRole("button", { name: "归档测评", exact: true }).click();
+  await page.getByRole("button", { name: "确认归档测评", exact: true }).click();
   await expect(
-    page.getByRole("button", { name: "恢复工作区", exact: true }),
+    page.getByRole("button", { name: "恢复测评", exact: true }),
   ).toBeVisible();
   try {
     await page.goto(
       `/studio/products/${fixture.productId}/imports/${fixture.imports[2]!.importId}`,
     );
     await expect(
-      page.getByText("工作区已归档，可读取历史与原请求。", { exact: true }),
+      page.getByText("工作区已归档，可读取历史与原操作。", { exact: true }),
     ).toBeVisible();
     await expect(
-      page.getByRole("heading", { name: "本标签有待核实请求", exact: true }),
+      page.getByRole("heading", {
+        name: "当前标签页有待核实请求",
+        exact: true,
+      }),
     ).toBeVisible();
     await expect(
-      page.getByRole("button", { name: "读取原请求核实", exact: true }),
+      page.getByRole("button", { name: "读取原操作核实", exact: true }),
     ).toBeEnabled();
     expect(await pending(page)).toEqual(beforeFetchTuple);
     await mobileChecks(page, testInfo, "archived-unknown");
   } finally {
     await page.goto(`/studio/products/${fixture.productId}`);
-    await page.getByRole("button", { name: "恢复工作区", exact: true }).click();
+    await page.getByRole("button", { name: "恢复测评", exact: true }).click();
     await expect(
-      page.getByRole("button", { name: "归档工作区", exact: true }),
+      page.getByRole("button", { name: "归档测评", exact: true }),
     ).toBeVisible();
   }
 });
@@ -632,19 +641,22 @@ test("a saved false tuple requires an explicit continuation and never re-prepare
   });
   await page.reload();
   await expect(
-    page.getByRole("heading", { name: "本标签有尚未发送的准备", exact: true }),
+    page.getByRole("heading", {
+      name: "当前标签页有尚未发送的准备",
+      exact: true,
+    }),
   ).toBeVisible();
   await expect(
-    page.getByRole("button", { name: "继续验证并归档", exact: true }),
+    page.getByRole("button", { name: "继续检查内容并保存素材", exact: true }),
   ).toBeEnabled();
   expect(starts).toBe(0);
   expect(prepares).toBe(0);
   await page
-    .getByRole("button", { name: "继续验证并归档", exact: true })
+    .getByRole("button", { name: "继续检查内容并保存素材", exact: true })
     .click();
   await expect(
     page.getByRole("heading", {
-      name: "归档完成 · 待后续草稿导入",
+      name: "检查通过 · 内容和素材已保存",
       exact: true,
     }),
   ).toBeVisible({ timeout: BUSINESS_RESULT_TIMEOUT });

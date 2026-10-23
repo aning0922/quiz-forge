@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { draftWorkspacePath } from "../drafts/client";
 import Link from "next/link";
+import { draftWorkspacePath } from "../drafts/client";
 import {
   productReplaceMetadataSchema,
   type ProductDto,
@@ -13,7 +13,10 @@ import { studioFetch, studioMessage } from "../client";
 import { useWorkspaceRead } from "./use-request";
 import { useWorkspaceMutation } from "./use-mutation";
 import { ProductFields, type ProductFormFields } from "./product-fields";
-import { ProductCard } from "./product-list";
+import { ProductCard } from "./product-card";
+import { StudioWorkflowNav } from "../presentation/workflow-nav";
+import { StudioPageHeader } from "../presentation/page-header";
+import { TechnicalDetails } from "../presentation/technical-details";
 import { WorkspaceNav, ReadOnlyNotice } from "./primitives";
 import { ReconcilePanel } from "./reconcile-panel";
 import {
@@ -63,7 +66,7 @@ function ProductEditor({
       tagIds: fields.tags.map((tag) => tag.id),
     });
     if (!parsed.success) {
-      setValidation("请检查 slug、标题与最多 8 个不重复标签。");
+      setValidation("请检查测评名称、英文标识与最多 8 个不重复标签。");
       return;
     }
     setValidation("");
@@ -78,7 +81,9 @@ function ProductEditor({
       setProduct(result.product);
       setFields(formFields(result.product));
       setValidation(
-        result.changed ? "元数据已保存。" : "内容相同，服务器未增加修订。",
+        result.changed
+          ? "测评信息已保存。"
+          : "内容没有变化，信息版本保持不变。",
       );
     }
   }
@@ -99,9 +104,9 @@ function ProductEditor({
       setValidation(
         result.changed
           ? action === "archive"
-            ? "工作区已归档，可随时恢复。"
-            : "工作区已恢复，目录关联保持原样。"
-          : "服务器已处于目标状态，没有增加修订。",
+            ? "测评已归档，可随时恢复。"
+            : "测评已恢复，分类和标签保持原样。"
+          : "当前已是目标状态，没有重复修改。",
       );
     }
   }
@@ -129,85 +134,115 @@ function ProductEditor({
   }
 
   return (
-    <section className={styles.panel}>
-      <h1>{product.title}</h1>
-      <p className={styles.note}>
-        原包接收、验证归档与草稿分别保留事实。运营元数据不会自动改写包内版本声明。
-      </p>
-      <Link
-        className={`${styles.link} ${styles.secondary}`}
-        href={`/studio/products/${encodeURIComponent(product.id)}/imports`}
-      >
-        原包接收与历史
-      </Link>
-      <Link className={styles.link} href={draftWorkspacePath(product.id)}>
-        查看服务器草稿
-      </Link>
-      <dl className={styles.facts}>
-        <div>
-          <dt>稳定 ID（不可改）</dt>
-          <dd>{product.id}</dd>
-        </div>
-        <div>
-          <dt>元数据修订</dt>
-          <dd>{product.metadataRevision}</dd>
-        </div>
+    <section className={`${styles.panel} ${styles.productOverview}`}>
+      <StudioPageHeader
+        title={product.title}
+        description={
+          <p>
+            编辑测评信息，或继续导入和查看内容。这里的名称与分类不会改写包内内容。
+          </p>
+        }
+      />
+      <div className={styles.actions} aria-label="测评内容操作">
+        <Link
+          className={styles.link}
+          href={`/studio/products/${encodeURIComponent(product.id)}/imports`}
+        >
+          导入内容与查看历史
+        </Link>
+        <Link
+          className={`${styles.link} ${styles.secondary}`}
+          href={draftWorkspacePath(product.id)}
+        >
+          查看内容与修订
+        </Link>
+      </div>
+      <dl className={`${styles.facts} ${styles.overviewFacts}`}>
         <div>
           <dt>状态</dt>
-          <dd>{product.archivedAt ? "已归档 · 元数据只读" : "未归档"}</dd>
+          <dd>{product.archivedAt ? "已归档 · 信息只读" : "未归档"}</dd>
         </div>
-      </dl>
-      {!canWrite && <ReadOnlyNotice />}
-      {canWrite && !product.archivedAt ? (
-        <form
-          aria-label="工作区元数据"
-          className={styles.form}
-          onSubmit={(event) => {
-            event.preventDefault();
-            void save();
-          }}
-        >
-          <ProductFields
-            value={fields}
-            onChange={setFields}
-            disabled={mutation.state.phase === "submitting"}
-          />
-          <button
-            className={styles.button}
-            type="submit"
-            disabled={mutation.blocked}
-          >
-            {mutation.state.phase === "submitting" ? "正在提交…" : "保存元数据"}
-          </button>
-        </form>
-      ) : (
         <div>
-          <p>slug：{product.slug}</p>
-          <p>
-            主类目：
+          <dt>分类</dt>
+          <dd>
             {product.primaryCategory
               ? `${product.primaryCategory.name} · ${product.primaryCategory.slug}${product.primaryCategory.archivedAt ? " · 已归档" : ""}`
               : "未分类"}
-          </p>
-          <p>
-            标签：
+          </dd>
+        </div>
+        <div>
+          <dt>标签</dt>
+          <dd>
             {product.tags.length
               ? product.tags
                   .map(
-                    (tag) =>
-                      `${tag.name} · ${tag.slug}${tag.archivedAt ? " · 已归档" : ""}`,
+                    (tag) => `${tag.name}${tag.archivedAt ? " · 已归档" : ""}`,
                   )
-                  .join("；")
+                  .join("、")
               : "无"}
-          </p>
+          </dd>
         </div>
+      </dl>
+      {authority.isRevoked ? (
+        <p className={`${styles.status} ${styles.error}`} role="alert">
+          当前页面的运营权限已失效。请重新登录并读取服务器状态后继续。
+        </p>
+      ) : !canWrite ? (
+        <ReadOnlyNotice />
+      ) : null}
+      {canWrite && !product.archivedAt ? (
+        <details className={`${styles.editor} ${styles.primaryEditor}`}>
+          <summary>编辑测评信息</summary>
+          <form
+            aria-label="测评信息"
+            className={styles.form}
+            onSubmit={(event) => {
+              event.preventDefault();
+              void save();
+            }}
+          >
+            <div className={styles.fieldGrid}>
+              <ProductFields
+                value={fields}
+                onChange={setFields}
+                disabled={mutation.state.phase === "submitting"}
+              />
+            </div>
+            <button
+              className={styles.button}
+              type="submit"
+              disabled={mutation.blocked}
+            >
+              {mutation.state.phase === "submitting"
+                ? "正在提交…"
+                : "保存测评信息"}
+            </button>
+          </form>
+        </details>
+      ) : null}
+      {(mutation.state.phase === "unknown" ||
+        mutation.state.phase === "conflict") && (
+        <p className={styles.note}>
+          核对测评编号：{product.id} · 本页信息版本：{product.metadataRevision}
+        </p>
       )}
+      <TechnicalDetails label="测评支持信息">
+        <p>测评编号（创建后不可改）：{product.id}</p>
+        <p>英文标识：{product.slug}</p>
+        <p>信息版本：{product.metadataRevision}</p>
+        <p>创建时间：{product.createdAt}</p>
+        <p>最近更新时间：{product.updatedAt}</p>
+      </TechnicalDetails>
       {canWrite && (
-        <div className={styles.form}>
+        <section
+          className={`${styles.form} ${styles.secondaryOperations}`}
+          aria-label="其他操作"
+        >
+          <h2>其他操作</h2>
           {product.archivedAt ? (
             <>
               <p className={styles.note}>
-                恢复不会连带恢复已归档的目录。原有关联仍可保留或移除。
+                恢复测评后可以继续编辑。已归档的分类和标签不会自动恢复，原有关联仍可保留或移除。
               </p>
               <button
                 className={styles.button}
@@ -215,7 +250,7 @@ function ProductEditor({
                 disabled={mutation.blocked}
                 onClick={() => void lifecycle("restore")}
               >
-                恢复工作区
+                恢复测评
               </button>
             </>
           ) : (
@@ -226,13 +261,12 @@ function ProductEditor({
                 disabled={mutation.blocked}
                 onClick={() => setConfirmArchive(true)}
               >
-                归档工作区
+                归档测评
               </button>
               {confirmArchive && (
                 <section className={styles.compare} aria-label="归档说明">
                   <p>
-                    归档后元数据只读，已有目录关联保留，ID 与 slug
-                    不释放。可以通过恢复重新编辑。
+                    归档后测评信息只读，原有分类和标签保留；编号与英文标识不释放。之后可以恢复测评再编辑。
                   </p>
                   <div className={styles.actions}>
                     <button
@@ -241,7 +275,7 @@ function ProductEditor({
                       disabled={mutation.blocked}
                       onClick={() => void lifecycle("archive")}
                     >
-                      确认归档工作区
+                      确认归档测评
                     </button>
                     <button
                       className={`${styles.button} ${styles.secondary}`}
@@ -256,7 +290,7 @@ function ProductEditor({
               )}
             </>
           )}
-        </div>
+        </section>
       )}
       {validation && (
         <p className={styles.status} role="status">
@@ -275,7 +309,7 @@ function ProductEditor({
         state={mutation.state}
         reading={reading}
         readError={readError}
-        snapshot={latest ? <ProductCard product={latest} /> : null}
+        snapshot={latest ? <ProductCard product={latest} showIdentity /> : null}
         onRead={() => void readLatest()}
         onUseServer={() => adoptLatest(false)}
         onKeepInput={() => adoptLatest(true)}
@@ -299,21 +333,22 @@ function ProductDetailContent({
   return (
     <div className={styles.workspace}>
       <WorkspaceNav />
+      <StudioWorkflowNav productId={productId} current="product" />
       {read.loading && (
         <p className={styles.status} role="status">
-          正在读取工作区…
+          正在读取测评…
         </p>
       )}
       {read.error && (
         <section className={`${styles.panel} ${styles.error}`} role="alert">
-          <h1>工作区读取未完成</h1>
+          <h1>测评信息暂未读取</h1>
           <p>{read.error}</p>
           <button
             className={styles.button}
             type="button"
             onClick={read.refresh}
           >
-            重新读取工作区
+            重新读取测评
           </button>
         </section>
       )}
