@@ -61,14 +61,16 @@ export function DraftPendingPanel({
           entry.tuple,
           session.csrfToken,
         );
-        setMessage("服务器已确认原 key 的固定应用回执。");
+        setMessage("服务器已确认原操作的固定应用处理结果。");
         onConfirmed();
       } else {
         const result = await reconcileDraftPending(sessionStorage, entry.tuple);
         if (result.kind === "empty")
-          setMessage("尚无匹配回执；原 key 继续保留。这不能证明原请求未执行。");
+          setMessage(
+            "尚无匹配处理结果；原操作记录继续保留。这不能证明原操作未执行。",
+          );
         else {
-          setMessage("服务器已确认原 key 的固定应用回执。");
+          setMessage("服务器已确认原操作的固定应用处理结果。");
           onConfirmed();
         }
       }
@@ -86,71 +88,99 @@ export function DraftPendingPanel({
       setBusy(false);
     }
   }
+  const needsAttention = !ready || !!entry || busy || writeDenied || !!message;
   return (
-    <section className={styles.panel} aria-label="原 key 核实">
-      <h2>原 key 核实</h2>
-      {!ready && <p>尚未可靠读取本页请求锚点，写操作保持关闭。</p>}
-      {ready && !entry && <p>此浏览器会话未保存此工作区的待确认应用请求。</p>}
-      {entry && (
-        <>
-          <p>
-            此工作区有待确认请求。查询为空、一次错误或当前已有草稿都不会清除原
-            key；只有完整匹配的成功回执才能解除锚点。
-          </p>
-          <dl className={styles.facts}>
-            <div>
-              <dt>原 key</dt>
-              <dd>{entry.tuple.idempotencyKey}</dd>
-            </div>
-            <div>
-              <dt>原来源</dt>
-              <dd>
-                {entry.tuple.sourceImportId}
-                <br />
-                {entry.tuple.sourceValidationId} / 修订{" "}
-                {entry.tuple.expectedValidationStateRevision}
-              </dd>
-            </div>
-          </dl>
-          <TechnicalDetails label="原请求校验摘要">
-            <dl className={styles.facts}>
-              <div>
-                <dt>原候选 SHA-256</dt>
-                <dd>{entry.tuple.expectedCandidateSha256}</dd>
+    <section className={styles.panel} aria-label="草稿创建操作查询">
+      <details
+        open={needsAttention}
+        className={
+          needsAttention
+            ? draftStyles.recoveryAttention
+            : draftStyles.recoveryQuiet
+        }
+      >
+        <summary>
+          {needsAttention
+            ? "建立草稿：上次操作待检查或处理"
+            : "建立草稿：暂无待处理操作 · 查询"}
+        </summary>
+        <div className={draftStyles.recoveryBody}>
+          <h2>草稿创建操作查询</h2>
+          {!ready && (
+            <p>正在检查上次草稿操作，请稍候；检查完成前不能重复提交。</p>
+          )}
+          {ready && !entry && (
+            <p>此浏览器会话未保存此工作区的待确认应用请求。</p>
+          )}
+          {entry && (
+            <>
+              <p>
+                此工作区有待确认请求。查询为空、一次错误或当前已有草稿都不会清除原
+                操作记录；只有完整匹配的成功处理结果才能结束此记录。
+              </p>
+              <p>
+                操作目标：建立草稿修订 1；来源检查版本{" "}
+                {entry.tuple.expectedValidationStateRevision}。
+              </p>
+              <TechnicalDetails label="原操作技术标识">
+                {" "}
+                <dl className={styles.facts}>
+                  <div>
+                    <dt>原操作编号</dt>
+                    <dd>{entry.tuple.idempotencyKey}</dd>
+                  </div>
+                  <div>
+                    <dt>原来源</dt>
+                    <dd>
+                      {entry.tuple.sourceImportId}
+                      <br />
+                      {entry.tuple.sourceValidationId} / 修订{" "}
+                      {entry.tuple.expectedValidationStateRevision}
+                    </dd>
+                  </div>
+                </dl>
+              </TechnicalDetails>
+              <TechnicalDetails label="原操作校验摘要">
+                <dl className={styles.facts}>
+                  <div>
+                    <dt>原候选 SHA-256</dt>
+                    <dd>{entry.tuple.expectedCandidateSha256}</dd>
+                  </div>
+                </dl>
+              </TechnicalDetails>
+              <div className={styles.actions}>
+                <button
+                  className={styles.button}
+                  disabled={!ready || busy || refreshing}
+                  onClick={() => void perform(false)}
+                >
+                  查询上次草稿创建结果
+                </button>
+                {session.operator.role === "operator" && !writeDenied && (
+                  <button
+                    className={`${styles.button} ${styles.secondary}`}
+                    disabled={!ready || busy || refreshing}
+                    onClick={() => void perform(true)}
+                  >
+                    再次发送原草稿创建操作
+                  </button>
+                )}
               </div>
-            </dl>
-          </TechnicalDetails>
-          <div className={styles.actions}>
+            </>
+          )}
+          {busy && <p role="status">正在查询上次操作结果…</p>}
+          {message && <p role="status">{message}</p>}
+          <div className={`${styles.actions} ${draftStyles.separatedActions}`}>
             <button
-              className={styles.button}
-              disabled={!ready || busy || refreshing}
-              onClick={() => void perform(false)}
+              className={`${styles.button} ${styles.secondary}`}
+              disabled={busy || refreshing}
+              onClick={read}
             >
-              核对原 key 回执
+              重新检查本地草稿操作记录
             </button>
-            {session.operator.role === "operator" && !writeDenied && (
-              <button
-                className={`${styles.button} ${styles.secondary}`}
-                disabled={!ready || busy || refreshing}
-                onClick={() => void perform(true)}
-              >
-                明确按原 key 重放
-              </button>
-            )}
           </div>
-        </>
-      )}
-      {busy && <p role="status">正在核对原请求…</p>}
-      {message && <p role="status">{message}</p>}
-      <div className={`${styles.actions} ${draftStyles.separatedActions}`}>
-        <button
-          className={`${styles.button} ${styles.secondary}`}
-          disabled={busy || refreshing}
-          onClick={read}
-        >
-          重新读取本页请求锚点
-        </button>
-      </div>
+        </div>
+      </details>
     </section>
   );
 }

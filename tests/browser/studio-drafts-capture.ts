@@ -341,7 +341,7 @@ try {
     await readRequested;
     await expect(
       p.getByRole("heading", {
-        name: "本次读取的当前基准：修订 1",
+        name: "本次更新所依据的草稿：修订 1",
         exact: true,
       }),
     ).toBeVisible();
@@ -463,7 +463,7 @@ try {
       );
       await failed.goto(origin + "/read-only-empty");
       await failed
-        .getByRole("button", { name: "核实追加原请求", exact: true })
+        .getByRole("button", { name: "查询上次草稿更新结果", exact: true })
         .click();
       await expect(
         failed.locator('[data-revision-resolution="applied"]'),
@@ -488,7 +488,7 @@ try {
         anchorUnchanged: true,
         applyPanelAbsent:
           (await failed
-            .getByRole("region", { name: "首次草稿应用", exact: true })
+            .getByRole("region", { name: "建立第一版草稿", exact: true })
             .count()) === 0,
       });
       await failed.close();
@@ -532,7 +532,7 @@ try {
       await readRequested;
       await expect(
         p
-          .getByRole("region", { name: "首次草稿应用", exact: true })
+          .getByRole("region", { name: "建立第一版草稿", exact: true })
           .getByText("当前身份为只读", { exact: false }),
       ).toBeVisible();
       await expect(p.getByRole("status")).toHaveCount(1);
@@ -540,10 +540,10 @@ try {
         p.getByText("此浏览器会话没有此工作区的待确认追加请求。", {
           exact: true,
         }),
-      ).toBeVisible();
+      ).toBeAttached();
       await expect(
         p.getByText(
-          "此工作区有原请求待核实，或锚点存储不可用。新准备保持关闭。",
+          "此工作区有原操作待核实，或本地操作记录存储不可用。新准备保持关闭。",
           { exact: true },
         ),
       ).toHaveCount(0);
@@ -694,7 +694,10 @@ try {
     await pendingPage.goto(origin + "/?role=read-only");
     await historyRequested;
     await expect(
-      pendingPage.getByRole("button", { name: "核对原 key 回执", exact: true }),
+      pendingPage.getByRole("button", {
+        name: "查询上次草稿创建结果",
+        exact: true,
+      }),
     ).toBeEnabled();
     const work = captureDraftMobile(
       pendingPage,
@@ -709,11 +712,14 @@ try {
     );
     expect(anchorUnchanged && posts === 0).toBe(true);
     await expect(
-      pendingPage.getByRole("button", { name: "核对原 key 回执", exact: true }),
+      pendingPage.getByRole("button", {
+        name: "查询上次草稿创建结果",
+        exact: true,
+      }),
     ).toBeEnabled();
     await expect(
       pendingPage.getByRole("button", {
-        name: "明确按原 key 重放",
+        name: "再次发送原草稿创建操作",
         exact: true,
       }),
     ).toHaveCount(0);
@@ -731,7 +737,7 @@ try {
     await page.goto(origin);
     await historyRequested;
     await expect(
-      page.getByRole("link", { name: "读取固定修订正文", exact: true }),
+      page.getByRole("link", { name: "查看此修订内容", exact: true }),
     ).toBeVisible();
     const screenshot = page.screenshot.bind(page);
     let before = 0,

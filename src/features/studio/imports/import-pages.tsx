@@ -34,8 +34,8 @@ function ImportEnvironment({
     <>
       <p className={styles.status}>
         {settings.enabled
-          ? "原包接收已启用（只读配置快照）"
-          : "原包接收已关闭（只读配置快照）"}
+          ? "内容包接收已启用（只读配置快照）"
+          : "内容包接收已关闭（只读配置快照）"}
       </p>
       {!settings.enabled && (
         <p className={styles.note}>
@@ -49,7 +49,7 @@ function ImportEnvironment({
       )}
       {readOnly && <ReadOnlyNotice />}
       <p className={styles.note}>
-        配置和权限会由每次写入重新核实。接收步骤记录原包大小与哈希；包结构验证、资源归档和草稿应用分别记录，内容与素材授权另行人工审核。
+        配置和权限会由每次写入重新核实。接收步骤记录内容包大小与哈希；包结构验证、资源归档和草稿应用分别记录，内容与素材授权另行人工审核。
       </p>
     </>
   );
@@ -104,8 +104,8 @@ export function ImportList({
     <div className={styles.workspace}>
       <section className={styles.panel}>
         <StudioPageHeader
-          title="原包接收"
-          description="先接收原包，再验证结构与资源。接收成功不等于已验证、已创建草稿或已发布。"
+          title="内容包接收"
+          description="先接收内容包，再验证结构与资源。接收成功不等于已验证、已创建草稿或已发布。"
         />
         <StudioWorkflowNav productId={productId} current="imports" />
         <Link
@@ -142,7 +142,7 @@ export function ImportList({
       <section className={styles.panel}>
         <h2>接收记录</h2>
         <p className={styles.note}>
-          接收记录只说明原包接收与存储事实；独立验证与资源归档分别记录，仍不可发布。完整事实及失败说明请进入详情。
+          接收记录只说明内容包接收与存储事实；独立验证与资源归档分别记录，仍不可发布。完整事实及失败说明请进入详情。
         </p>
         <ReadFeedback {...imports} />
         <button
@@ -168,7 +168,7 @@ export function ImportList({
                     href={`/studio/products/${encodeURIComponent(productId)}/imports/${value.id}`}
                     aria-label={`查看接收记录 ${value.id}`}
                   >
-                    查看接收详情
+                    查看接收与检查结果
                   </Link>
                 </li>
               ))}
@@ -300,7 +300,7 @@ export function ImportDetail({
     <div className={styles.workspace}>
       <section className={styles.panel}>
         <StudioPageHeader
-          title="原包接收状态"
+          title="内容包接收状态"
           description="查看本次接收事实，核实未确认操作，再进入验证归档。"
         />
         <StudioWorkflowNav productId={productId} current="imports" />
@@ -308,7 +308,7 @@ export function ImportDetail({
           className={`${styles.link} ${styles.secondary}`}
           href={`/studio/products/${encodeURIComponent(productId)}/imports`}
         >
-          返回原包列表
+          返回内容包列表
         </Link>
         <ReadFeedback {...product} />
         <ReadFeedback {...settings} />

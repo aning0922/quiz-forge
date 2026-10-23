@@ -297,18 +297,18 @@ test(CASES[2], async ({ page }, info) => {
     await installInternalPending(page, request);
     await page.reload();
     const panel = internalPanel(page, operation),
-      label = operation === "review" ? "基线记录" : "内测封存";
+      label = operation === "review" ? "审核依据记录" : "内容版本固定";
     await expect(
-      panel.getByRole("button", { name: `核实${label}原请求`, exact: true }),
+      panel.getByRole("button", { name: `核实${label}原操作`, exact: true }),
     ).toBeEnabled();
     await expect(
       panel.getByRole("button", {
-        name: `明确按原${label}请求重放`,
+        name: `再次发送原${label}请求再次发送原操作`,
         exact: true,
       }),
     ).toHaveCount(0);
     await panel
-      .getByRole("button", { name: `核实${label}原请求`, exact: true })
+      .getByRole("button", { name: `核实${label}原操作`, exact: true })
       .click();
     await expect(
       panel.locator(
@@ -331,7 +331,10 @@ test(CASES[2], async ({ page }, info) => {
     expect(await denied.json()).toMatchObject({ code: "CAPABILITY_DENIED" });
     await captureInternalWidths(page, info, `readonly-${operation}-resolved`);
     await panel
-      .getByRole("button", { name: "依核实证据解除本原请求锚点", exact: true })
+      .getByRole("button", {
+        name: "确认处理结果并结束此操作记录",
+        exact: true,
+      })
       .click();
     await expect
       .poll(() => internalPending(page, operation, fixture.productId))
@@ -376,9 +379,12 @@ test(CASES[3], async ({ page }, info) => {
   expect(state.review).toBeNull();
   await page.goto(internalReviewPageUrl(r2));
   await expect(
-    page.getByText("此修订没有精确匹配的已登记基线，不能新增作者批准。", {
-      exact: true,
-    }),
+    page.getByText(
+      "此修订尚无匹配的已登记审核依据，暂不能记录。请先完成所需的内容与素材审核；此页面不能代为批准。",
+      {
+        exact: true,
+      },
+    ),
   ).toBeVisible();
   await captureInternalWidths(page, info, "unregistered-r2");
   for (const operation of ["review", "seal"] as const) {
@@ -414,7 +420,9 @@ test(CASES[3], async ({ page }, info) => {
     await panel
       .getByRole("button", {
         name:
-          operation === "review" ? "核实基线记录原请求" : "核实内测封存原请求",
+          operation === "review"
+            ? "查询审核依据记录结果"
+            : "查询内容版本固定结果",
         exact: true,
       })
       .click();
@@ -428,7 +436,10 @@ test(CASES[3], async ({ page }, info) => {
     ).toEqual(absent.tuple);
     await captureInternalWidths(page, info, `${operation}-obsolete`);
     await panel
-      .getByRole("button", { name: "依核实证据解除本原请求锚点", exact: true })
+      .getByRole("button", {
+        name: "确认处理结果并结束此操作记录",
+        exact: true,
+      })
       .click();
     await expect
       .poll(() => internalPending(page, operation, fixture.productId))
@@ -436,7 +447,7 @@ test(CASES[3], async ({ page }, info) => {
   }
   await page.goto(internalVersionsPageUrl(fixture.productId));
   await expect(
-    page.getByText("历史修订的固定内测版本", { exact: true }),
+    page.getByText("历史修订的固定内测内容版本", { exact: true }),
   ).toBeVisible();
   await captureInternalWidths(page, info, "historical-list");
   const detail = await internalGet(
@@ -488,7 +499,7 @@ test(CASES[4], async ({ page }) => {
   try {
     const panel = internalPanel(page, "review");
     await panel
-      .getByRole("button", { name: "核实基线记录原请求", exact: true })
+      .getByRole("button", { name: "查询审核依据记录结果", exact: true })
       .click();
     await expect.poll(() => captured).toBe(true);
     const replacement = {
@@ -499,10 +510,13 @@ test(CASES[4], async ({ page }) => {
     release();
     await expect.poll(() => delivered).toBe(true);
     await expect(
-      panel.getByText("正在核实或处理原请求…", { exact: true }),
+      panel.getByText("正在核实或处理原操作…", { exact: true }),
     ).toHaveCount(0);
     await expect(
-      panel.getByRole("button", { name: "重新读取基线记录锚点", exact: true }),
+      panel.getByRole("button", {
+        name: "重新检查审核依据操作记录",
+        exact: true,
+      }),
     ).toBeEnabled();
     await expect(
       panel.locator('[data-internal-resolution="recorded"]'),
@@ -511,16 +525,22 @@ test(CASES[4], async ({ page }) => {
       (await internalPending(page, "review", fixture.productId))?.tuple,
     ).toEqual(replacement.tuple);
     await panel
-      .getByRole("button", { name: "重新读取基线记录锚点", exact: true })
+      .getByRole("button", {
+        name: "重新检查审核依据操作记录",
+        exact: true,
+      })
       .click();
     await panel
-      .getByRole("button", { name: "核实基线记录原请求", exact: true })
+      .getByRole("button", { name: "查询审核依据记录结果", exact: true })
       .click();
     await expect(
       panel.locator('[data-internal-resolution="not-recorded-obsolete"]'),
     ).toBeVisible();
     await panel
-      .getByRole("button", { name: "依核实证据解除本原请求锚点", exact: true })
+      .getByRole("button", {
+        name: "确认处理结果并结束此操作记录",
+        exact: true,
+      })
       .click();
     await expect
       .poll(() => internalPending(page, "review", fixture.productId))
@@ -569,7 +589,7 @@ test(CASES[5], async ({ page }, info) => {
     );
     try {
       await sealPanel
-        .getByRole("button", { name: "核实内测封存原请求", exact: true })
+        .getByRole("button", { name: "查询内容版本固定结果", exact: true })
         .click();
       await expect.poll(() => captured).toBe(true);
       if (scenario === "other-panel403" || scenario === "csrf403") {
@@ -589,7 +609,7 @@ test(CASES[5], async ({ page }, info) => {
             }),
         );
         await reviewPanel
-          .getByRole("button", { name: "核实基线记录原请求", exact: true })
+          .getByRole("button", { name: "查询审核依据记录结果", exact: true })
           .click();
       } else {
         const readFailure = async (route: import("@playwright/test").Route) => {
@@ -625,7 +645,7 @@ test(CASES[5], async ({ page }, info) => {
       release();
       // Wait until the delayed real200 has actually been processed; absence before arrival is not a regression proof.
       await expect(
-        sealPanel.getByText("正在核实或处理原请求…", { exact: true }),
+        sealPanel.getByText("正在核实或处理原操作…", { exact: true }),
       ).toHaveCount(0);
       if (scenario === "get404") {
         await expect(
@@ -633,20 +653,20 @@ test(CASES[5], async ({ page }, info) => {
         ).toBeVisible();
         await expect(
           sealPanel.getByRole("button", {
-            name: "依核实证据解除本原请求锚点",
+            name: "确认处理结果并结束此操作记录",
             exact: true,
           }),
         ).toBeEnabled();
       } else {
         await expect(
           sealPanel.getByRole("button", {
-            name: "核实内测封存原请求",
+            name: "查询内容版本固定结果",
             exact: true,
           }),
         ).toBeDisabled();
         await expect(
           reviewPanel.getByRole("button", {
-            name: "核实基线记录原请求",
+            name: "查询审核依据记录结果",
             exact: true,
           }),
         ).toBeDisabled();
@@ -655,12 +675,12 @@ test(CASES[5], async ({ page }, info) => {
         ).toHaveCount(0);
         await expect(
           page.getByRole("button", {
-            name: "依核实证据解除本原请求锚点",
+            name: "确认处理结果并结束此操作记录",
             exact: true,
           }),
         ).toHaveCount(0);
         await expect(
-          page.getByRole("button", { name: /明确按原.*请求重放/ }),
+          page.getByRole("button", { name: /再次发送原.*请求再次发送原操作/ }),
         ).toHaveCount(0);
       }
       // The old valid response grants no local delete authority after any other component revokes the page.

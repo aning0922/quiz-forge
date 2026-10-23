@@ -346,7 +346,7 @@ try {
   );
   await error.goto(origin + "/review");
   await error
-    .getByRole("button", { name: "核实基线记录原请求", exact: true })
+    .getByRole("button", { name: "查询审核依据记录结果", exact: true })
     .click();
   await expect(
     error.locator('[data-internal-resolution="recorded"]'),
@@ -395,14 +395,14 @@ try {
   });
   await unknown.goto(origin + "/review");
   await unknown
-    .getByRole("button", { name: "准备记录既有基线", exact: true })
+    .getByRole("button", { name: "准备记录已有审核依据", exact: true })
     .click();
   await unknown
     .getByRole("button", { name: "确认并发送此固定请求", exact: true })
     .click();
   await expect(
     unknown.getByText(
-      "本次提交未收到可确认的成功回执。请保留原 key 和完整目标，以原请求核实区的最新证据为准。",
+      "上次操作结果暂未确认，请先查询处理结果，确认前避免重复提交。原操作记录会保留；如需再次发送，须由你明确选择原操作。",
       { exact: true },
     ),
   ).toBeVisible();

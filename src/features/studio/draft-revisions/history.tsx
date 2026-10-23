@@ -87,8 +87,8 @@ export function RevisionHistoryPanel({
     }));
   }
   return (
-    <section className={styles.panel} aria-label="草稿修订历史">
-      <h2>草稿修订历史</h2>
+    <section className={styles.panel} aria-label="草稿历史修订">
+      <h2>草稿历史修订</h2>
       <p className={styles.note}>
         历史按固定上界倒序读取，只列元数据。当前摘要刷新不会把新修订插进本次历史分页。
       </p>

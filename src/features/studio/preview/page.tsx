@@ -59,7 +59,7 @@ export function FixedRevisionPreviewPage({
   return (
     <div className={styles.preview}>
       <StudioPageHeader
-        title="固定修订内部预览"
+        title="固定修订内容预览"
         description={
           <>
             固定目标：修订 {scope.revision}
@@ -80,7 +80,7 @@ export function FixedRevisionPreviewPage({
             scope.revision,
           )}
         >
-          阅读固定修订原文
+          返回此修订内容
         </Link>
         <Link href="/studio">返回运营空间</Link>
       </nav>

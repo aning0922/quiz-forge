@@ -147,7 +147,7 @@ async function signIn(page: Page, role: "operator" | "readOnly" = "operator") {
   await expect(page.getByRole("heading", { name: "运营会话" })).toBeVisible();
   await page.goto("/studio/products/e2e-imports/imports");
   await expect(
-    page.getByRole("heading", { name: "原包接收", exact: true }),
+    page.getByRole("heading", { name: "内容包接收", exact: true }),
   ).toBeVisible();
 }
 
@@ -182,7 +182,7 @@ test("disabled snapshot, empty history, and read-only mobile state", async ({
 }, testInfo) => {
   await signIn(page, "readOnly");
   await expect(
-    page.getByText("原包接收已关闭（只读配置快照）", { exact: true }),
+    page.getByText("内容包接收已关闭（只读配置快照）", { exact: true }),
   ).toBeVisible();
   await expect(
     page.getByText(
@@ -190,9 +190,9 @@ test("disabled snapshot, empty history, and read-only mobile state", async ({
       { exact: true },
     ),
   ).toBeVisible();
-  await expect(page.getByLabel("原包文件", { exact: true })).toHaveCount(0);
+  await expect(page.getByLabel("内容包文件", { exact: true })).toHaveCount(0);
   await expect(
-    page.getByRole("button", { name: "创建原包接收意图", exact: true }),
+    page.getByRole("button", { name: "创建内容包接收意图", exact: true }),
   ).toHaveCount(0);
   await mobileEvidence(page, testInfo, "disabled-read-only-empty");
 });
@@ -210,12 +210,12 @@ test("real intent and raw received state remains unvalidated", async ({
     workflow.getByRole("link", { name: "导入与验证", exact: true }),
   ).toHaveAttribute("aria-current", "page");
   await expect(
-    workflow.getByRole("link", { name: "预览 · 先选修订", exact: true }),
+    workflow.getByRole("link", { name: "预览 · 先选内容", exact: true }),
   ).toHaveAttribute("href", "/studio/products/e2e-imports/draft");
   await expect(
-    page.getByText("原包接收已启用（只读配置快照）", { exact: true }),
+    page.getByText("内容包接收已启用（只读配置快照）", { exact: true }),
   ).toBeVisible();
-  const fileInput = page.getByLabel("原包文件", { exact: true });
+  const fileInput = page.getByLabel("内容包文件", { exact: true });
   const syntheticFile = {
     name: "synthetic.quizpack",
     mimeType: "application/octet-stream",
@@ -223,47 +223,51 @@ test("real intent and raw received state remains unvalidated", async ({
   };
   await fileInput.setInputFiles(syntheticFile);
   await expect(
-    page.getByRole("button", { name: "创建原包接收意图", exact: true }),
+    page.getByRole("button", { name: "创建内容包接收意图", exact: true }),
   ).toBeEnabled();
   await expect(fileInput).toHaveValue(/synthetic\.quizpack$/);
-  const declaration = page.getByText("所选原包校验摘要", { exact: true });
+  const declaration = page.getByText("所选文件技术信息", { exact: true });
   await declaration.click();
   await expect(fileInput).toHaveValue(/synthetic\.quizpack$/);
   await declaration.click();
   await expect(fileInput).toHaveValue(/synthetic\.quizpack$/);
   await expect(
-    page.getByRole("button", { name: "创建原包接收意图", exact: true }),
+    page.getByRole("button", { name: "创建内容包接收意图", exact: true }),
   ).toBeEnabled();
   await page.getByRole("button", { name: "重新选择文件", exact: true }).click();
   await expect(fileInput).toHaveValue("");
   await expect(fileInput).toBeEnabled();
   await fileInput.setInputFiles(syntheticFile);
   await expect(
-    page.getByRole("button", { name: "创建原包接收意图", exact: true }),
+    page.getByRole("button", { name: "创建内容包接收意图", exact: true }),
   ).toBeEnabled();
   await expect(fileInput).toHaveValue(/synthetic\.quizpack$/);
   await page
-    .getByRole("button", { name: "创建原包接收意图", exact: true })
+    .getByRole("button", { name: "创建内容包接收意图", exact: true })
     .click();
   await expect(
-    page.getByRole("button", { name: "上传所选原包", exact: true }),
+    page.getByRole("button", { name: "上传所选内容包", exact: true }),
   ).toBeEnabled();
-  await page.getByRole("button", { name: "上传所选原包", exact: true }).click();
+  await page
+    .getByRole("button", { name: "上传所选内容包", exact: true })
+    .click();
   await expect(
     page
-      .getByRole("region", { name: "原包状态", exact: true })
-      .getByText("原包已隔离接收", { exact: true }),
+      .getByRole("region", { name: "内容包状态", exact: true })
+      .getByText("已收到内容包 · 还需检查", { exact: true }),
   ).toBeVisible();
   const receivedCard = page
     .getByRole("listitem")
-    .filter({ hasText: "原包已隔离接收" });
+    .filter({ hasText: "已收到内容包 · 还需检查" });
   await expect(receivedCard).toHaveCount(1);
   await expect(
     receivedCard.getByText(String(syntheticFile.buffer.length), {
       exact: true,
     }),
   ).toBeVisible();
-  await expect(receivedCard.getByText("已对账", { exact: true })).toBeVisible();
+  await expect(
+    receivedCard.getByText("文件与记录一致", { exact: true }),
+  ).toBeVisible();
   await expect(
     receivedCard.getByText("尚无独立验证记录 · 不可发布", { exact: true }),
   ).toBeVisible();
@@ -275,20 +279,20 @@ test("real intent and raw received state remains unvalidated", async ({
     /\/studio\/products\/e2e-imports\/imports\/[0-9a-f-]{36}$/,
   );
   await expect(
-    page.getByRole("heading", { name: "原包接收状态", exact: true }),
+    page.getByRole("heading", { name: "内容包接收状态", exact: true }),
   ).toBeVisible();
   await expect(
     page
-      .getByRole("region", { name: "原包状态", exact: true })
+      .getByRole("region", { name: "内容包状态", exact: true })
       .getByText("接收事实 · 独立验证状态见验证记录 · 不可发布", {
         exact: true,
       }),
   ).toBeVisible();
   const detailPanel = page.getByRole("region", {
-    name: "原包状态",
+    name: "内容包状态",
     exact: true,
   });
-  const checksum = detailPanel.getByText("原包校验摘要", { exact: true });
+  const checksum = detailPanel.getByText("文件技术信息", { exact: true });
   await expect(
     detailPanel.getByText("声明 SHA-256", { exact: true }),
   ).toBeHidden();
@@ -300,7 +304,7 @@ test("real intent and raw received state remains unvalidated", async ({
     detailPanel.getByText("服务器确认 SHA-256", { exact: true }),
   ).toBeVisible();
   await expect(
-    page.getByRole("button", { name: /验证原包|应用草稿|发布/ }),
+    page.getByRole("button", { name: /验证内容包|应用草稿|发布/ }),
   ).toHaveCount(0);
   await mobileEvidence(page, testInfo, "received");
 });
@@ -310,25 +314,27 @@ test("actual hash rejection is read before another explicit action", async ({
 }, testInfo) => {
   await signIn(page);
   const expected = Buffer.from("synthetic original declaration bytes");
-  await page.getByLabel("原包文件", { exact: true }).setInputFiles({
+  await page.getByLabel("内容包文件", { exact: true }).setInputFiles({
     name: "rejected.quizpack",
     mimeType: "application/octet-stream",
     buffer: expected,
   });
   await page
-    .getByRole("button", { name: "创建原包接收意图", exact: true })
+    .getByRole("button", { name: "创建内容包接收意图", exact: true })
     .click();
   await expect(
-    page.getByRole("button", { name: "上传所选原包", exact: true }),
+    page.getByRole("button", { name: "上传所选内容包", exact: true }),
   ).toBeEnabled();
   const endpoint = "**/api/studio/products/e2e-imports/imports/*/archive";
   await page.route(endpoint, (route) =>
     route.continue({ postData: Buffer.alloc(expected.length, 120) }),
   );
-  await page.getByRole("button", { name: "上传所选原包", exact: true }).click();
+  await page
+    .getByRole("button", { name: "上传所选内容包", exact: true })
+    .click();
   await expect(
     page
-      .getByRole("region", { name: "原包状态", exact: true })
+      .getByRole("region", { name: "内容包状态", exact: true })
       .getByText("当前操作已暂停，必须读取最新状态后才能再次显式操作。", {
         exact: true,
       }),
@@ -339,11 +345,11 @@ test("actual hash rejection is read before another explicit action", async ({
     .click();
   await expect(
     page
-      .getByRole("region", { name: "原包状态", exact: true })
-      .getByText("原包已拒绝 · 不可修改声明重传", { exact: true }),
+      .getByRole("region", { name: "内容包状态", exact: true })
+      .getByText("内容包已拒绝 · 不可修改声明重传", { exact: true }),
   ).toBeVisible();
   await expect(
-    page.getByRole("button", { name: "上传所选原包", exact: true }),
+    page.getByRole("button", { name: "上传所选内容包", exact: true }),
   ).toHaveCount(0);
   await mobileEvidence(page, testInfo, "rejected");
 });
@@ -377,17 +383,17 @@ test("a separately observed committed intent survives a lost POST response", asy
       throw new Error("IMPORTS_E2E_COMMITTED_RESPONSE_PROOF_FAILED");
     }
   });
-  await page.getByLabel("原包文件", { exact: true }).setInputFiles({
+  await page.getByLabel("内容包文件", { exact: true }).setInputFiles({
     name: "lost.quizpack",
     mimeType: "application/octet-stream",
     buffer: Buffer.from("synthetic lost response bytes"),
   });
   await page
-    .getByRole("button", { name: "创建原包接收意图", exact: true })
+    .getByRole("button", { name: "创建内容包接收意图", exact: true })
     .click();
   await expect(
     page.getByText(
-      "意图提交结果尚未确认。原文件、原 key 与完整输入已保留在此页，请先精确核实。",
+      "意图提交结果尚未确认。原文件、原操作记录与完整输入已保留在此页，请先精确核实。",
       { exact: true },
     ),
   ).toBeVisible();
@@ -395,19 +401,21 @@ test("a separately observed committed intent survives a lost POST response", asy
   expect(puts).toBe(0);
   await mobileEvidence(page, testInfo, "intent-unknown");
   await page
-    .getByRole("button", { name: "按原请求标识精确核实", exact: true })
+    .getByRole("button", { name: "按原操作编号精确核实", exact: true })
     .click();
   await expect(
-    page.getByRole("button", { name: "上传所选原包", exact: true }),
+    page.getByRole("button", { name: "上传所选内容包", exact: true }),
   ).toBeEnabled();
   expect(posts).toBe(1);
   expect(puts).toBe(0);
   await page.unroute(endpoint);
-  await page.getByRole("button", { name: "上传所选原包", exact: true }).click();
+  await page
+    .getByRole("button", { name: "上传所选内容包", exact: true })
+    .click();
   await expect(
     page
-      .getByRole("region", { name: "原包状态", exact: true })
-      .getByText("原包已隔离接收", { exact: true }),
+      .getByRole("region", { name: "内容包状态", exact: true })
+      .getByText("已收到内容包 · 还需检查", { exact: true }),
   ).toBeVisible();
   expect(puts).toBe(1);
 });
@@ -423,7 +431,7 @@ test("explicit recovery of a stopped claim enables choosing the original file on
   await expect(card).toHaveCount(1);
   await card.getByRole("link", { name: /查看接收记录/ }).click();
   await expect(
-    page.getByRole("heading", { name: "原包接收状态", exact: true }),
+    page.getByRole("heading", { name: "内容包接收状态", exact: true }),
   ).toBeVisible();
   await expect(
     page.getByLabel("与原声明一致的文件", { exact: true }),
@@ -439,13 +447,15 @@ test("explicit recovery of a stopped claim enables choosing the original file on
     buffer: Buffer.from("synthetic recover original bytes"),
   });
   await expect(
-    page.getByRole("button", { name: "上传所选原包", exact: true }),
+    page.getByRole("button", { name: "上传所选内容包", exact: true }),
   ).toBeEnabled();
-  await page.getByRole("button", { name: "上传所选原包", exact: true }).click();
+  await page
+    .getByRole("button", { name: "上传所选内容包", exact: true })
+    .click();
   await expect(
     page
-      .getByRole("region", { name: "原包状态", exact: true })
-      .getByText("原包已隔离接收", { exact: true }),
+      .getByRole("region", { name: "内容包状态", exact: true })
+      .getByText("已收到内容包 · 还需检查", { exact: true }),
   ).toBeVisible();
 });
 
@@ -468,37 +478,37 @@ test("empty exact lookup retains unknown and explicit resubmit uses the same ful
     if (attempts.length === 1) await route.abort("failed");
     else await route.continue();
   });
-  await page.getByLabel("原包文件", { exact: true }).setInputFiles({
+  await page.getByLabel("内容包文件", { exact: true }).setInputFiles({
     name: "zero.quizpack",
     mimeType: "application/octet-stream",
     buffer: Buffer.from("synthetic zero lookup bytes"),
   });
   await page
-    .getByRole("button", { name: "创建原包接收意图", exact: true })
+    .getByRole("button", { name: "创建内容包接收意图", exact: true })
     .click();
   const repeat = page.getByRole("button", {
-    name: "以原请求标识和原输入重提",
+    name: "以原操作编号和原输入重提",
     exact: true,
   });
   await expect(repeat).toBeDisabled();
   await page
-    .getByRole("button", { name: "按原请求标识精确核实", exact: true })
+    .getByRole("button", { name: "按原操作编号精确核实", exact: true })
     .click();
   await expect(
     page.getByText(
-      "精确查询暂未返回记录。0 条不证明原请求未提交；可以显式用原 key 与完整原输入重提。",
+      "精确查询暂未返回记录。0 条不证明原操作未提交；可以显式用原操作记录与完整原输入重提。",
       { exact: true },
     ),
   ).toBeVisible();
   await expect(
     page.getByText(
-      "意图提交结果尚未确认。原文件、原 key 与完整输入已保留在此页，请先精确核实。",
+      "意图提交结果尚未确认。原文件、原操作记录与完整输入已保留在此页，请先精确核实。",
       { exact: true },
     ),
   ).toBeVisible();
   await repeat.click();
   await expect(
-    page.getByRole("button", { name: "上传所选原包", exact: true }),
+    page.getByRole("button", { name: "上传所选内容包", exact: true }),
   ).toBeEnabled();
   expect(attempts).toHaveLength(2);
   expect(attempts[1]).toEqual(attempts[0]);
@@ -530,43 +540,43 @@ test("a later CSRF refusal cannot erase an earlier unknown intent", async ({
         },
       });
   });
-  await page.getByLabel("原包文件", { exact: true }).setInputFiles({
+  await page.getByLabel("内容包文件", { exact: true }).setInputFiles({
     name: "uncertain.quizpack",
     mimeType: "application/octet-stream",
     buffer: Buffer.from("synthetic cumulative unknown bytes"),
   });
   await page
-    .getByRole("button", { name: "创建原包接收意图", exact: true })
+    .getByRole("button", { name: "创建内容包接收意图", exact: true })
     .click();
   await page
-    .getByRole("button", { name: "按原请求标识精确核实", exact: true })
+    .getByRole("button", { name: "按原操作编号精确核实", exact: true })
     .click();
   const repeat = page.getByRole("button", {
-    name: "以原请求标识和原输入重提",
+    name: "以原操作编号和原输入重提",
     exact: true,
   });
   await expect(repeat).toBeEnabled();
   await repeat.click();
   await expect(
     page.getByText(
-      "意图提交结果尚未确认。原文件、原 key 与完整输入已保留在此页，请先精确核实。",
+      "意图提交结果尚未确认。原文件、原操作记录与完整输入已保留在此页，请先精确核实。",
       { exact: true },
     ),
   ).toBeVisible();
   await expect(
     page.getByRole("button", { name: "重新选择文件", exact: true }),
   ).toHaveCount(0);
-  await expect(page.getByLabel("原包文件", { exact: true })).toBeDisabled();
+  await expect(page.getByLabel("内容包文件", { exact: true })).toBeDisabled();
   expect(attempts).toHaveLength(2);
   expect(attempts[1]).toEqual(attempts[0]);
   await expect(repeat).toBeDisabled();
   await page.unroute(endpoint);
   await page
-    .getByRole("button", { name: "按原请求标识精确核实", exact: true })
+    .getByRole("button", { name: "按原操作编号精确核实", exact: true })
     .click();
   await repeat.click();
   await expect(
-    page.getByRole("button", { name: "上传所选原包", exact: true }),
+    page.getByRole("button", { name: "上传所选内容包", exact: true }),
   ).toBeEnabled();
 });
 
@@ -592,17 +602,17 @@ test("malformed successful POST and malformed exact read preserve the original p
       throw new Error("IMPORTS_E2E_COMMITTED_RESPONSE_PROOF_FAILED");
     }
   });
-  await page.getByLabel("原包文件", { exact: true }).setInputFiles({
+  await page.getByLabel("内容包文件", { exact: true }).setInputFiles({
     name: "malformed.quizpack",
     mimeType: "application/octet-stream",
     buffer: Buffer.from("synthetic malformed response bytes"),
   });
   await page
-    .getByRole("button", { name: "创建原包接收意图", exact: true })
+    .getByRole("button", { name: "创建内容包接收意图", exact: true })
     .click();
   await expect(
     page.getByText(
-      "意图提交结果尚未确认。原文件、原 key 与完整输入已保留在此页，请先精确核实。",
+      "意图提交结果尚未确认。原文件、原操作记录与完整输入已保留在此页，请先精确核实。",
       { exact: true },
     ),
   ).toBeVisible();
@@ -620,10 +630,10 @@ test("malformed successful POST and malformed exact read preserve the original p
     }),
   );
   await page
-    .getByRole("button", { name: "按原请求标识精确核实", exact: true })
+    .getByRole("button", { name: "按原操作编号精确核实", exact: true })
     .click();
   await expect(
-    page.getByRole("button", { name: "以原请求标识和原输入重提", exact: true }),
+    page.getByRole("button", { name: "以原操作编号和原输入重提", exact: true }),
   ).toBeDisabled();
   await expect(
     page.getByRole("button", { name: "重新选择文件", exact: true }),
@@ -631,9 +641,9 @@ test("malformed successful POST and malformed exact read preserve the original p
   await page.unroute(`${endpoint}?**`);
   await page.unroute(endpoint);
   await page
-    .getByRole("button", { name: "按原请求标识精确核实", exact: true })
+    .getByRole("button", { name: "按原操作编号精确核实", exact: true })
     .click();
   await expect(
-    page.getByRole("button", { name: "上传所选原包", exact: true }),
+    page.getByRole("button", { name: "上传所选内容包", exact: true }),
   ).toBeEnabled();
 });

@@ -28,15 +28,15 @@ export function ValidationDetailPage({
     <div className={styles.workspace}>
       <section className={styles.panel}>
         <StudioPageHeader
-          title="验证归档详情"
-          description="核对归档结论后，明确选择首次草稿或追加修订。待确认原请求在下方独立保留。"
+          title="内容检查结果"
+          description="核对归档结论后，明确选择首次草稿或追加修订。待确认原操作在下方独立保留。"
         />
         <StudioWorkflowNav productId={productId} current="imports" />
         <Link
           className={`${styles.link} ${styles.secondary}`}
           href={`/studio/products/${encodeURIComponent(productId)}/imports/${encodeURIComponent(importId)}`}
         >
-          返回接收事实与验证历史
+          返回接收与检查记录
         </Link>
         <p className={styles.note}>
           此页读取当前权威摘要；符合条件的归档可明确用于首次草稿，或追加到现有草稿。
@@ -46,7 +46,7 @@ export function ValidationDetailPage({
           disabled={record.loading}
           onClick={record.refresh}
         >
-          读取最新验证详情
+          查询最新检查结果
         </button>
         {record.loading && (
           <p className={styles.status} role="status">

@@ -58,7 +58,7 @@ export function ValidationOverview({ value }: { value: ImportDto }) {
           <p>
             最新验证：
             {history.value.items[0].status === "ready"
-              ? "归档完成 · 待后续草稿导入"
+              ? "检查通过 · 内容和素材已保存"
               : "已有验证记录 · 请进入详情核实"}{" "}
             · 不可发布
           </p>
@@ -142,7 +142,7 @@ export function ValidationPanel({
             setPending(undefined);
           } else
             setMessage(
-              "原请求暂未找到；这不证明已回滚。请保留待核实记录，再次读取原请求。",
+              "原操作暂未找到；这不证明已回滚。请保留待核实记录，再次读取原操作。",
             );
         }
       } catch (error) {
@@ -223,7 +223,7 @@ export function ValidationPanel({
       setCurrentId(row.id);
       setRefusal(undefined);
       history.refresh();
-    } else setMessage("原请求暂未找到；这不证明已回滚。待核实记录已保留。");
+    } else setMessage("原操作暂未找到；这不证明已回滚。待核实记录已保留。");
   }
   async function recordAction(
     row: ValidationDto,
@@ -286,18 +286,17 @@ export function ValidationPanel({
     : (history.value?.items ?? []).map((row) => snapshots[row.id] || row);
   return (
     <section className={styles.panel} aria-labelledby="validation-heading">
-      <h2 id="validation-heading">验证与私有资源归档</h2>
+      <h2 id="validation-heading">检查内容并保存素材</h2>
       <p className={styles.note}>
-        本批支持 content.v1／v2 与 synthetic／authored
-        的四种明确组合。作者内容标记不代表内容或素材获得批准。原包接收事实、独立验证结果和资源归档分别记录；本批不发布。
+        检查内容包结构并保存所需素材。检查通过后，仍需明确建立或更新草稿；检查不代表内容、素材已获审核批准，也不会发布商品。
       </p>
       {!writable && (
         <p className={styles.status}>
           {readOnly
-            ? "当前身份只读，可读取历史与原请求。"
+            ? "当前身份只读，可读取历史与原操作。"
             : archived
-              ? "工作区已归档，可读取历史与原请求。"
-              : "验证与归档已关闭，可读取历史与原请求。"}
+              ? "工作区已归档，可读取历史与原操作。"
+              : "验证与归档已关闭，可读取历史与原操作。"}
         </p>
       )}
       {storageError && (
@@ -309,19 +308,19 @@ export function ValidationPanel({
         <div className={styles.compare}>
           <h3>
             {storageError
-              ? "本标签状态待核实"
+              ? "当前标签页状态待核实"
               : pending.mayHaveBeenSent
-                ? "本标签有待核实请求"
+                ? "当前标签页有待核实请求"
                 : busy
                   ? "正在处理验证请求"
-                  : "本标签有尚未发送的准备"}
+                  : "当前标签页有尚未发送的准备"}
           </h3>
-          <p>请求标识：{pending.tuple.expectedValidationKey.slice(0, 12)}…</p>
+          <p>操作编号：{pending.tuple.expectedValidationKey.slice(0, 12)}…</p>
           <p>
             {storageError
-              ? "本标签的记录当前无法读取或保存，发送状态仍待核实。请保留记录并读取服务器历史。"
+              ? "当前标签页的记录当前无法读取或保存，发送状态仍待核实。请保留记录并读取服务器历史。"
               : pending.mayHaveBeenSent
-                ? "请求可能已发送。刷新、超时或暂未找到记录都不能证明回滚；仅按原请求读取核实。"
+                ? "请求可能已发送。刷新、超时或暂未找到记录都不能证明回滚；仅按原操作读取核实。"
                 : busy
                   ? "本次操作尚未结束，结果仍待确认。请等待操作完成。"
                   : "准备已保存。请明确选择继续验证归档或取消本次准备。"}
@@ -333,7 +332,7 @@ export function ValidationPanel({
                 disabled={busy}
                 onClick={() => void run(() => verify(pending.tuple))}
               >
-                读取原请求核实
+                读取原操作核实
               </button>
             ) : (
               <>
@@ -342,7 +341,7 @@ export function ValidationPanel({
                   disabled={busy || !writable || !!storageError}
                   onClick={() => void run(() => start(pending.tuple))}
                 >
-                  继续验证并归档
+                  继续检查内容并保存素材
                 </button>
                 <button
                   className={`${styles.button} ${styles.secondary}`}
@@ -388,12 +387,12 @@ export function ValidationPanel({
           }
           onClick={() => void run(() => start())}
         >
-          验证并归档
+          检查内容并保存素材
         </button>
       )}
       {value.status !== "received" && (
         <p className={styles.note}>
-          请先完成原包接收；当前接收状态尚不能验证。
+          请先完成内容包接收；当前接收状态尚不能验证。
         </p>
       )}
       {busy && (
@@ -406,13 +405,13 @@ export function ValidationPanel({
           {message}
         </p>
       )}
-      <h3>独立验证历史</h3>
+      <h3>内容检查记录</h3>
       <button
         className={`${styles.button} ${styles.secondary}`}
         disabled={busy || history.loading}
         onClick={history.refresh}
       >
-        刷新验证历史
+        刷新检查记录
       </button>
       {history.loading && <p role="status">正在读取验证历史…</p>}
       {history.error && (
@@ -431,7 +430,7 @@ export function ValidationPanel({
             <ValidationFacts value={row} />
             {halted[row.id] && (
               <p className={styles.status}>
-                当前操作已暂停。请读取此验证状态，再明确选择恢复或重试。
+                当前操作已暂停。请查询此次检查结果，再明确选择恢复或重试。
               </p>
             )}
             <div className={styles.actions}>
@@ -440,7 +439,7 @@ export function ValidationPanel({
                 disabled={busy}
                 onClick={() => void run(() => recordAction(row, "read"))}
               >
-                读取此验证状态
+                查询此次检查结果
               </button>
               {!row.readOnly &&
                 (row.maintenanceRequired ||
