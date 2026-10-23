@@ -8,6 +8,10 @@ captures without importing server-only authentication. Each page and API still
 checks its own authority. Navigation is never a write capability.
 Login/unavailable entry markers also suppress retained layout navigation during
 client routing; this is presentation and does not grant or clear session authority.
+Global navigation does not prefetch authenticated pages. The auth browser suite
+also revokes its own synthetic session through the real logout API, then follows
+a client-side workspace link without the panel's router refresh and checks the
+login presentation. Ordinary button logout remains covered at the other widths.
 
 The product list links to `/studio/new-product`, outside the product ID namespace.
 The original create form, POST and exact submitted-ID reconciliation live in
