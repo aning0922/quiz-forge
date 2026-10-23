@@ -1,0 +1,245 @@
+{
+  "schemaVersion": "quizforge.r1-acceptance.v1",
+  "date": "2026-10-21",
+  "status": "local-acceptance-complete-final-delivery-ci-pending",
+  "dataQualification": "independent synthetic fixtures only; no author answers or reports read",
+  "baseline": {
+    "main": "c6fba4bae3e5fa7e6d765f0d06c9f875d0d78fdc",
+    "tag": "p5-internal-beta-1",
+    "tagUnchanged": true
+  },
+  "implementation": {
+    "coreIntegration": "6f8950bb709a9210d5baf3b2d7b81aee51693573",
+    "downloadFixIntegration": "ee733ea380d33e4d5df8544e9fb28654aca5d936",
+    "httpHelperIntegration": "07ab290b3c814db19bbc852a7b75d8d26e76f608",
+    "codeSha256": "1e7551cdfd750ba85f4a6d49ab7a0f76c5483eb2cafc79d93bcc9cf2781475b2",
+    "supportedPlatform": "darwin-arm64",
+    "postgres": "18.4",
+    "nodeObserved": "20.20.1",
+    "pnpmObserved": "10.32.1"
+  },
+  "checks": {
+    "format": "passed",
+    "lint": "passed",
+    "typecheck": "passed",
+    "unit": {
+      "files": 184,
+      "passed": 1981
+    },
+    "recoveryTools": {
+      "files": 9,
+      "passed": 57
+    },
+    "recoveryDataFocused": {
+      "passed": 11,
+      "qualification": "A real PostgreSQL and explicitly mocked process/path boundaries; independently reviewed in separate groups"
+    },
+    "postgres": {
+      "files": 67,
+      "passed": 502,
+      "failed": 0,
+      "skipped": 0
+    },
+    "driver": {
+      "passed": 46
+    },
+    "fresh": {
+      "validation": 14,
+      "namespace": 4,
+      "mediaUnknown": 3,
+      "consumerFaults": 1,
+      "allStopped": true
+    },
+    "build": {
+      "traceCount": 103,
+      "pathCount": 23855,
+      "privateViolations": 0
+    },
+    "media": {
+      "target": "main",
+      "rounds": [66, 66, 66],
+      "deploymentId": "db4cdd6810ad053f66cd8188297584cbce62e24d6e8351ed54ff1afd03945661",
+      "runtimeBundleHash": "2f491e8a7aa70068e3c32867723befe2c101b67d4093edd8e5ab1b4a73b072d0"
+    },
+    "e2e": {
+      "scope": "full",
+      "passed": 259,
+      "failed": 0,
+      "existingSkipped": 10,
+      "serverExit": "proven",
+      "workersStopped": true,
+      "fixtureCleanup": "passed",
+      "databaseStopped": true
+    }
+  },
+  "recoveryBeforeHttp": {
+    "bothRestoreExitCodes": [0, 0],
+    "bothReturnedStatus": "verified-stopped",
+    "codeSha256": "1e7551cdfd750ba85f4a6d49ab7a0f76c5483eb2cafc79d93bcc9cf2781475b2",
+    "dump": {
+      "bytes": 365261,
+      "format": "pg18.4-custom",
+      "path": "database.dump",
+      "sha256": "8468a3428cf6f135eccc893b05557668bc4f8de80f58eb4068711ab650030599"
+    },
+    "graphSha256": "b87646019c1f9e307758950edd59affd492bb15f2264bac965867481245c063e",
+    "manifestSha256": "2814702bb789ab6d8c2da8ad91db54a79ccb76f6fedf6f8c3aaf70487a8f0be6",
+    "migrationCount": 18,
+    "sourceInstance": "3cf3ffacf754c7c2916cbff0e7674b9a",
+    "storageBytes": 82599,
+    "storageDirectories": 6,
+    "storageFiles": 8,
+    "storageSha256": "7f3363416bc25a24e93aebc89cf92f87c577fde5bab767644c336292b57d162c",
+    "tableCount": 23,
+    "totalRows": 68
+  },
+  "recoveryBusiness": {
+    "oldReportStable": true,
+    "oldResourceShaVerified": true,
+    "pendingProgressStable": true,
+    "pendingSaveApplied": true,
+    "pendingCompleted": true,
+    "unusedKeyCompleted": true
+  },
+  "targetAfterHttp": {
+    "accessKeys": 4,
+    "sessions": 3,
+    "reports": 3,
+    "grants": 8,
+    "distinctReportIds": 3,
+    "operatorNewKeyIssued": true
+  },
+  "closure": {
+    "allOwnedSqlFdAndProcessOperationsClosed": true,
+    "allThreeMediaControlEntryCounts": [0, 0, 0],
+    "browserActuallyClosed": true,
+    "browserOwnedGroupAbsent": true,
+    "buildCachesHandledPerDocumentedBudget": true,
+    "clarifiesPriorLifecycleScope": true,
+    "cleanTargetPgStopped": true,
+    "failedTargetPgStopped": true,
+    "noManualBusinessDataOrTtlEdits": true,
+    "original39ebAnd3100Untouched": true,
+    "ownedHttpPortsClosed": true,
+    "protectedInstanceDirectoriesAndPrivateEvidencePreserved": true,
+    "sourceNewPgStopped": true,
+    "sourceOld77ffPgStopped": true,
+    "status": "complete-stopped-preserved",
+    "targetHttpActuallyClosed": true,
+    "scope": "B-owned synthetic recovery drill only; original39ebAnd3100Untouched describes B actions. Root restored the original HTTP service as recorded in originalEnvironment.",
+    "rootIndependentlyObservedAllFourManagedPgStopped": true
+  },
+  "visual": {
+    "browser": "Chromium 156.0.8078.4",
+    "viewport": {
+      "height": 844,
+      "width": 390
+    },
+    "fullPageScreenshots": 4,
+    "actualExportedPng": 1,
+    "images": [
+      {
+        "bytes": 151062,
+        "file": "old-report-390.png",
+        "height": 1672,
+        "sha256": "21e5335cfc59a3e24d276906239d035cbe2e6d98fd397b0a5d27b75c42bb185d",
+        "width": 390
+      },
+      {
+        "bytes": 1212033,
+        "file": "restored-report-poster.png",
+        "height": 1920,
+        "sha256": "9161c53418360ea841910320c66fc28d6e3322a2262a8cbc641fef5080dea7e9",
+        "width": 1080
+      },
+      {
+        "bytes": 221993,
+        "file": "old-poster-390.png",
+        "height": 1240,
+        "sha256": "4e70db4af19ccdda9d5592b1053ad81ce60b7bc0fc83fd35142ea47832300176",
+        "width": 390
+      },
+      {
+        "bytes": 151062,
+        "file": "pending-report-390.png",
+        "height": 1672,
+        "sha256": "21e5335cfc59a3e24d276906239d035cbe2e6d98fd397b0a5d27b75c42bb185d",
+        "width": 390
+      },
+      {
+        "bytes": 151062,
+        "file": "unused-report-390.png",
+        "height": 1672,
+        "sha256": "21e5335cfc59a3e24d276906239d035cbe2e6d98fd397b0a5d27b75c42bb185d",
+        "width": 390
+      }
+    ],
+    "rootViewedAllFive": true,
+    "astraViewedAndDecodedAllFive": true,
+    "limitations": [
+      "The poster page capture includes a focused accessibility skip-link; the exported PNG has no overlay.",
+      "The three same-answer report screenshots have identical pixels; distinct reports are verified separately by HTTP and SQL.",
+      "Synthetic two-question, three-result, five-resource baseline; not a new historical content/material approval.",
+      "Direct restored report renderer is 1.0.1; 1.0.0 compatibility is only covered by the existing full E2E."
+    ]
+  },
+  "originalEnvironment": {
+    "head": "5686ff0fb9040456ec1b5782004cd0ba3fff1069",
+    "trackedClean": true,
+    "database": "running",
+    "originalBuildRetained": true,
+    "originalAccessHttpStatus": 200,
+    "rebuildMigrationOrUserDataRead": false
+  },
+  "remoteCi": {
+    "preDeliveryHead": "6fec9d06b73dd6cea497c97e72cb1909c9ea92f2",
+    "preDeliveryChecksRun": 39583816058,
+    "preDeliveryMediaRun": 39583816051,
+    "preDeliveryBothPassed": true,
+    "deliveryResultLocation": "https://github.com/aning0922/quiz-forge/pull/22",
+    "qualification": "Final documentation/test head is verified separately in the PR; intermediate cancellations are not successes."
+  },
+  "limits": [
+    "Maintenance backup with source HTTP/workers stopped and PostgreSQL running.",
+    "Current fixed code, 18 migrations, 23 tables, managed test/demo only.",
+    "No encryption, scheduled backups, PITR, Linux restore, cloud deployment, business takeover or concurrent second write authority.",
+    "Backup and raw credentials stay private; original credentials and private links are separately retained."
+  ],
+  "releaseAuthority": {
+    "draftPr": 22,
+    "mainMerged": false,
+    "tagMoved": false,
+    "deployed": false,
+    "nextStageStarted": false
+  },
+  "sourceAfterHttp": {
+    "all23TableEvidenceIdentical": true,
+    "graphSha256": "b87646019c1f9e307758950edd59affd492bb15f2264bac965867481245c063e",
+    "migrationCount": 18,
+    "rows": 68,
+    "sourceAfterManifestSha256": "26cc4f234ac6bc2fa145883fc6697306b610e83fc71061c844786db8daf37381",
+    "sourceSqlLocksFdAndDumpChildClosed": true,
+    "sourceUnchanged": true,
+    "storageSha256": "7f3363416bc25a24e93aebc89cf92f87c577fde5bab767644c336292b57d162c",
+    "rootVerifiedBothBundlesWithExternalAnchors": true,
+    "rootComparedAllDatabaseAndStorageEvidence": true
+  },
+  "targetSqlAfterHttp": {
+    "grants": 8,
+    "keys": 4,
+    "oldReportRowSha256": "ced81bc6e791b127b23957d02244891bc8844139cb3bd1a79e7a8573e36601f2",
+    "oldReportRowUnchanged": true,
+    "reports": 3,
+    "sessions": 3,
+    "sqlClosed": true
+  },
+  "evidenceDigests": {
+    "http-before-equality.json": "91259ef28b6dc1797358ef7002a6fb86928832f3f221f1a5decb46db31f6beb4",
+    "target-http-result-final.json": "a0b46e345d02b5316ba48ab51f1e9c679c48a5b933c0f16fa27c3dd3fc841535",
+    "source-after-http-audit.json": "f83e1be73e1f74b87daf58892fbe6e7e077f173caae5ade1c13a073e7c609438",
+    "target-after-http-audit.json": "32e16c4eb565942802ced26538270ba7a59140fb879f5718fc550417f29c602a",
+    "lifecycle-final.json": "42334f964d22fd4c615d247f17f7d04d57fc9ad9a16461dd35e32f5f0b648866",
+    "csrf-protocol-rejection.json": "73f5f25e2a0fb0e72b08aeb1c2d48364dc873717d3d86f455a1b171675aba944"
+  },
+  "statusScope": "Snapshot at documentation commit; final delivery CI results are recorded in the linked PR after this commit."
+}

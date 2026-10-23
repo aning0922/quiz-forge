@@ -1,0 +1,167 @@
+{
+  "schemaVersion": "quizforge.synthetic-recovery-roundtrip-evidence.v1",
+  "date": "2026-10-21",
+  "timezone": "Asia/Taipei",
+  "qualification": "synthetic-test-only-renderer-1.0.1",
+  "sourceInstanceId": "3cf3ffacf754c7c2916cbff0e7674b9a",
+  "runId": "e5cc1525-855a-4e6c-a560-0801c4b46ebc",
+  "candidate": {
+    "equivalentRootProductionCommit": "6f8950b",
+    "backupAndInitialTargetCommit": "09172e61d1a80e713444e65594bba000c14e3678",
+    "cleanTargetCommit": "d973b61",
+    "actualHttpHelperCommit": "c859adb",
+    "codeSha256": "1e7551cdfd750ba85f4a6d49ab7a0f76c5483eb2cafc79d93bcc9cf2781475b2"
+  },
+  "beforeHttp": {
+    "manifestSha256": "2814702bb789ab6d8c2da8ad91db54a79ccb76f6fedf6f8c3aaf70487a8f0be6",
+    "graphSha256": "b87646019c1f9e307758950edd59affd492bb15f2264bac965867481245c063e",
+    "storageSha256": "7f3363416bc25a24e93aebc89cf92f87c577fde5bab767644c336292b57d162c",
+    "tableCount": 23,
+    "migrationCount": 18,
+    "rows": 68,
+    "storageFiles": 8,
+    "storageDirectories": 6,
+    "storageBytes": 82599,
+    "dumpBytes": 365261,
+    "dumpSha256": "8468a3428cf6f135eccc893b05557668bc4f8de80f58eb4068711ab650030599",
+    "backupExitCode": 0,
+    "verifyExitCode": 0,
+    "cleanRestoreExitCode": 0,
+    "cleanRestoreStatus": "verified-stopped"
+  },
+  "http": {
+    "exitCode": 0,
+    "browser": "Chromium 156.0.8078.4",
+    "viewport": {
+      "height": 844,
+      "width": 390
+    },
+    "oldReportStable": true,
+    "oldResourceShaVerified": true,
+    "pendingProgressStable": true,
+    "pendingSaveApplied": true,
+    "pendingCompleted": true,
+    "unusedKeyCompleted": true,
+    "distinctReportIds": [
+      "32203cdb-192d-461f-9564-a54c81509d57",
+      "bef70895-cabc-4cde-a380-ab9dbe099f6b",
+      "fdd65457-ce65-4f77-947f-6c2ddef27ea9"
+    ],
+    "operatorNewKeyIssued": true,
+    "operatorIssueReceiptSha256": "3fb07f5ac28aba6948804ec6adf52f6ad76b54fba3f2e4e7d923d3aeae23e822",
+    "evidence": [
+      {
+        "bytes": 151062,
+        "file": "old-report-390.png",
+        "height": 1672,
+        "sha256": "21e5335cfc59a3e24d276906239d035cbe2e6d98fd397b0a5d27b75c42bb185d",
+        "width": 390
+      },
+      {
+        "bytes": 1212033,
+        "file": "restored-report-poster.png",
+        "height": 1920,
+        "sha256": "9161c53418360ea841910320c66fc28d6e3322a2262a8cbc641fef5080dea7e9",
+        "width": 1080
+      },
+      {
+        "bytes": 221993,
+        "file": "old-poster-390.png",
+        "height": 1240,
+        "sha256": "4e70db4af19ccdda9d5592b1053ad81ce60b7bc0fc83fd35142ea47832300176",
+        "width": 390
+      },
+      {
+        "bytes": 151062,
+        "file": "pending-report-390.png",
+        "height": 1672,
+        "sha256": "21e5335cfc59a3e24d276906239d035cbe2e6d98fd397b0a5d27b75c42bb185d",
+        "width": 390
+      },
+      {
+        "bytes": 151062,
+        "file": "unused-report-390.png",
+        "height": 1672,
+        "sha256": "21e5335cfc59a3e24d276906239d035cbe2e6d98fd397b0a5d27b75c42bb185d",
+        "width": 390
+      }
+    ]
+  },
+  "afterHttp": {
+    "grants": 8,
+    "keys": 4,
+    "oldReportRowSha256": "ced81bc6e791b127b23957d02244891bc8844139cb3bd1a79e7a8573e36601f2",
+    "oldReportRowUnchanged": true,
+    "reports": 3,
+    "sessions": 3,
+    "sqlClosed": true
+  },
+  "sourceAfter": {
+    "all23TableEvidenceIdentical": true,
+    "graphSha256": "b87646019c1f9e307758950edd59affd492bb15f2264bac965867481245c063e",
+    "migrationCount": 18,
+    "rows": 68,
+    "sourceAfterManifestSha256": "26cc4f234ac6bc2fa145883fc6697306b610e83fc71061c844786db8daf37381",
+    "sourceSqlLocksFdAndDumpChildClosed": true,
+    "sourceUnchanged": true,
+    "storageSha256": "7f3363416bc25a24e93aebc89cf92f87c577fde5bab767644c336292b57d162c"
+  },
+  "closure": {
+    "allOwnedSqlFdAndProcessOperationsClosed": true,
+    "allThreeMediaControlEntryCounts": [0, 0, 0],
+    "browserActuallyClosed": true,
+    "browserOwnedGroupAbsent": true,
+    "buildCachesHandledPerDocumentedBudget": true,
+    "clarifiesPriorLifecycleScope": true,
+    "cleanTargetPgStopped": true,
+    "failedTargetPgStopped": true,
+    "noManualBusinessDataOrTtlEdits": true,
+    "original39ebAnd3100Untouched": true,
+    "ownedHttpPortsClosed": true,
+    "protectedInstanceDirectoriesAndPrivateEvidencePreserved": true,
+    "sourceNewPgStopped": true,
+    "sourceOld77ffPgStopped": true,
+    "status": "complete-stopped-preserved",
+    "targetHttpActuallyClosed": true
+  },
+  "visual": {
+    "bInspectedOriginals": 5,
+    "verdict": "no-new-blocking-visual-issue-for-synthetic-recovery",
+    "notes": [
+      "All three report images are equal because the synthetic answers select the same deterministic result; their report IDs are distinct.",
+      "Poster screenshot includes a focus-visible skip link over the portrait. The exported PNG does not include it.",
+      "This is a two-question, three-result, five-resource synthetic fixture and does not qualify commercial product content."
+    ]
+  },
+  "retainedFailures": [
+    {
+      "phase": "remote-download-path",
+      "attempts": 2,
+      "target": "first-restored-root",
+      "result": "failed",
+      "browserAndHttpActuallyClosed": true
+    },
+    {
+      "phase": "consumer-csrf-header",
+      "attempts": 1,
+      "target": "clean-restored-root",
+      "result": "failed-before-business-write",
+      "actualWitness": {
+        "status": 403,
+        "code": "CSRF_REJECTED"
+      },
+      "sessionReportAndAccessKeyFingerprintsUnchanged": true
+    },
+    {
+      "phase": "read-only-use-of-full-snapshot-interface",
+      "result": "correct-contract-rejection-without-required-dump",
+      "sourceFinalUnchanged": true
+    }
+  ],
+  "scopeLimits": [
+    "Not overall R1 acceptance or release approval.",
+    "No renderer 1.0.0 recovery coverage claimed.",
+    "Source and target instances, private bundles, credentials, screenshots and prior failed targets remain outside Git.",
+    "Root retains responsibility for aggregate regression, independent acceptance and Draft PR."
+  ]
+}
