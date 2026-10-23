@@ -46,7 +46,7 @@ export default async function StudioDraftRevisionPage({
                   textDecoration: "underline",
                 }}
               >
-                进入此固定修订内部预览
+                预览这一版内容
               </Link>
             </p>
           )}
@@ -61,7 +61,7 @@ export default async function StudioDraftRevisionPage({
                   textDecoration: "underline",
                 }}
               >
-                查看此固定修订既有基线与内测封存
+                查看审核依据与内测内容版本
               </Link>
             </p>
           )}

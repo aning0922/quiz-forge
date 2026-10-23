@@ -20,16 +20,16 @@ export function StudioWorkflowNav({
     label: string;
     href: string;
   }> = [
-    { id: "product", label: "商品概览", href: base },
+    { id: "product", label: "测评概览", href: base },
     { id: "imports", label: "导入与验证", href: `${base}/imports` },
     { id: "draft", label: "草稿与修订", href: `${base}/draft` },
     {
       id: "preview",
-      label: previewHref ? "固定修订预览" : "预览 · 先选修订",
+      label: previewHref ? "预览当前内容" : "预览 · 先选内容",
       href: previewHref ?? `${base}/draft`,
     },
     { id: "versions", label: "审核与版本", href: `${base}/internal-versions` },
-    { id: "keys", label: "答题版本与发码", href: `${base}/consumer-access` },
+    { id: "keys", label: "答题与访问码", href: `${base}/consumer-access` },
   ];
   return (
     <nav className={styles.workflow} aria-label="商品操作流程">
