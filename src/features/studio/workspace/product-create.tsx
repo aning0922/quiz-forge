@@ -44,7 +44,9 @@ function ProductCreateForm({ session }: { session: StudioSessionDto }) {
       tagIds: fields.tags.map((tag) => tag.id),
     });
     if (!parsed.success) {
-      setValidation("请检查稳定 ID、slug、标题长度与最多 8 个不重复标签。");
+      setValidation(
+        "请检查测评编号、英文标识和名称；每个测评最多选择 8 个不重复标签。",
+      );
       return;
     }
     setValidation("");
@@ -83,13 +85,12 @@ function ProductCreateForm({ session }: { session: StudioSessionDto }) {
   }
   return (
     <section className={styles.panel}>
-      <h2>商品信息</h2>
+      <h2>测评信息</h2>
       <p className={styles.note}>
-        稳定 ID 创建后不能修改。归档记录仍保留 ID 与
-        slug。创建后可进入工作区接收原包、验证归档并查看草稿与内测版本。
+        测评编号必须与准备导入的内容包一致，创建后不能修改。编号和英文标识不能与已有或已归档的测评重复。
       </p>
       <form
-        aria-label="新建工作区"
+        aria-label="新建测评"
         className={styles.form}
         onSubmit={(event) => {
           event.preventDefault();
@@ -97,17 +98,23 @@ function ProductCreateForm({ session }: { session: StudioSessionDto }) {
         }}
       >
         <div className={styles.field}>
-          <label htmlFor="product-id">稳定 ID</label>
+          <label htmlFor="product-id">测评编号（需与内容包一致）</label>
           <input
             className={styles.input}
             id="product-id"
             required
+            aria-describedby="product-id-help"
+            placeholder="例如 qianzai-tongxin"
             pattern="[a-z][a-z0-9]*(?:-[a-z0-9]+)*"
             maxLength={80}
             value={id}
             disabled={mutation.blocked}
             onChange={(event) => setId(event.target.value)}
           />
+          <p id="product-id-help" className={styles.note}>
+            请使用内容包中提供的测评编号，例如
+            qianzai-tongxin；需要全站唯一，请不要根据名称随意填写。
+          </p>
         </div>
         <div className={styles.fieldGrid}>
           <ProductFields
@@ -121,7 +128,7 @@ function ProductCreateForm({ session }: { session: StudioSessionDto }) {
           disabled={mutation.blocked}
           type="submit"
         >
-          {mutation.state.phase === "submitting" ? "正在创建…" : "创建工作区"}
+          {mutation.state.phase === "submitting" ? "正在创建…" : "创建测评"}
         </button>
       </form>
       {validation && (
@@ -136,7 +143,7 @@ function ProductCreateForm({ session }: { session: StudioSessionDto }) {
       )}
       {mutation.state.phase === "unknown" && (
         <section className={styles.compare} aria-label="创建结果核实">
-          <p>按此次提交的稳定 ID {submittedId} 查询服务器，不会重发创建。</p>
+          <p>按此次提交的测评编号 {submittedId} 查询服务器，不会重发创建。</p>
           <button
             className={styles.button}
             type="button"
@@ -153,8 +160,7 @@ function ProductCreateForm({ session }: { session: StudioSessionDto }) {
           {checked?.product && (
             <>
               <p className={styles.note}>
-                服务器当前值已确认，存在此
-                ID。不能仅凭当前值证明原请求确定成功，请查看记录。
+                服务器当前值已确认，存在此编号。不能仅凭当前值证明原请求确定成功，请查看记录。
               </p>
               <ProductCard product={checked.product} showIdentity />
             </>
@@ -162,8 +168,7 @@ function ProductCreateForm({ session }: { session: StudioSessionDto }) {
           {checked?.absent && (
             <>
               <p className={styles.note}>
-                服务器当前查询未找到此
-                ID，仍不能据此保证原请求从未提交。请检查后手动决定是否再次创建。
+                服务器当前查询未找到此编号，仍不能据此保证原请求从未提交。请检查后手动决定是否再次创建。
               </p>
               <button
                 className={`${styles.button} ${styles.secondary}`}
@@ -184,14 +189,16 @@ export function ProductCreatePage({ session }: { session: StudioSessionDto }) {
   return (
     <div className={styles.workspace}>
       <StudioPageHeader
-        title="创建商品"
-        description={<p>先建立测评的稳定工作区，再导入内容并逐步审核。</p>}
+        title="创建测评"
+        description={
+          <p>先填写测评信息，再导入内容包。创建后可继续编辑分类和标签。</p>
+        }
         actions={
           <Link
             className={`${styles.link} ${styles.secondary}`}
             href="/studio/products"
           >
-            返回商品列表
+            返回测评列表
           </Link>
         }
       />

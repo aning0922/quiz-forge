@@ -24,18 +24,18 @@ export function ProductCard({
         </div>
         <p className={styles.note}>
           {product.primaryCategory
-            ? `${product.primaryCategory.name}${product.primaryCategory.archivedAt ? " · 类目已归档" : ""}`
+            ? `${product.primaryCategory.name}${product.primaryCategory.archivedAt ? " · 分类已归档" : ""}`
             : "未分类"}
           {` · ${product.tags.length} 个标签`}
         </p>
         {showIdentity && (
           <p>
-            稳定 ID：{product.id} · 元数据修订：{product.metadataRevision}
+            测评编号：{product.id} · 信息版本：{product.metadataRevision}
           </p>
         )}
-        <TechnicalDetails label="商品标识与标签">
-          <p>稳定 ID：{product.id}</p>
-          <p>slug：{product.slug}</p>
+        <TechnicalDetails label="编号与标签详情">
+          <p>测评编号：{product.id}</p>
+          <p>英文标识：{product.slug}</p>
           <p>
             标签：
             {product.tags.length
@@ -52,9 +52,9 @@ export function ProductCard({
       <Link
         className={`${styles.link} ${styles.secondary}`}
         href={`/studio/products/${encodeURIComponent(product.id)}`}
-        aria-label={`查看工作区 ${product.id}`}
+        aria-label={`查看测评 ${product.title}（编号 ${product.id}）`}
       >
-        打开工作区<span aria-hidden="true"> →</span>
+        查看测评<span aria-hidden="true"> →</span>
       </Link>
     </article>
   );

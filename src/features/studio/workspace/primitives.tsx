@@ -19,7 +19,7 @@ export function Pagination({
   onPage: (page: number) => void;
 }) {
   return (
-    <nav className={styles.actions} aria-label="分页">
+    <nav className={`${styles.actions} ${styles.pagination}`} aria-label="分页">
       <button
         className={`${styles.button} ${styles.secondary}`}
         type="button"
@@ -44,7 +44,7 @@ export function Pagination({
 export function ReadOnlyNotice() {
   return (
     <p className={styles.status}>
-      当前身份为只读，可查看本运营空间全部工作区与目录，不能创建、编辑、归档或恢复。
+      当前身份为只读，可查看测评、分类和标签，不能创建、编辑、归档或恢复。
     </p>
   );
 }

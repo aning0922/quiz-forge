@@ -30,9 +30,10 @@ The original create form, POST and exact submitted-ID reconciliation live in
 
 Product metadata state, mutation and reconciliation stay in `ProductEditor`.
 Only its ordinary fields and submit form are inside the native details element
-with summary “编辑商品信息”. Closing it keeps the form mounted. Current product
-identity/revision/status, unknown/CAS reconciliation and archive/restore controls
-remain outside. `InternalAuthorityProvider` and `StableInternalWorkspace` retain
+with summary “编辑测评信息”. Closing it keeps the form mounted. Product status,
+unknown/CAS reconciliation and archive/restore controls remain outside. Normal
+identity/version support fields are expandable; uncertainty shows the exact
+product identity and local metadata version next to recovery. `InternalAuthorityProvider` and `StableInternalWorkspace` retain
 their original product-keyed relationship; workspace read errors do not unmount
 the independent recovery section. Presentation does not turn a current GET into
 proof that a previous uncertain write succeeded.
@@ -47,3 +48,15 @@ association and cleanup assertions, and adds single responsive navigation,
 keyboard opening, wide-content, form persistence and visible unknown recovery
 checks. These browser assertions and screenshots require the root-owned real
 synthetic environment; authoring/typechecking them is not a browser pass.
+
+The business usability follow-up uses “测评名称/保存测评信息/分类”, highlights
+real import/content links, and keeps archival in a secondary section with its
+original confirmation. Creation still explicitly requires the immutable package
+product ID and a unique slug, now explained as 测评编号/测评英文标识 with examples;
+there is no automatic identity generation or uncertain-write identity change.
+Taxonomy pickers compact only confirmed unfiltered first-page empty options;
+search misses and later empty pages keep recovery/search/navigation. Selected
+and archived associations and the read hook stay mounted. Management opens in a
+separate tab to preserve this form, with an explicit reload control on return.
+Typechecking and representative browser checks are performed once by integration;
+unchanged authority/CAS/unknown semantics reuse the existing S1 evidence.

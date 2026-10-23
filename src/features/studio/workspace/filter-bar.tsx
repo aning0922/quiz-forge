@@ -7,10 +7,12 @@ export function FilterBar({
   busy,
   onFilter,
   children,
+  searchLabel = "搜索名称或英文标识",
 }: {
   busy: boolean;
   onFilter: (q: string, status: string) => void;
   children?: ReactNode;
+  searchLabel?: string;
 }) {
   const [q, setQ] = useState("");
   const [status, setStatus] = useState("active");
@@ -24,7 +26,7 @@ export function FilterBar({
       aria-label="列表筛选"
     >
       <div className={styles.field}>
-        <label htmlFor="workspace-search">搜索标题、名称、ID 或 slug</label>
+        <label htmlFor="workspace-search">{searchLabel}</label>
         <input
           className={styles.input}
           id="workspace-search"
