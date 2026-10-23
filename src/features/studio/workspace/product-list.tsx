@@ -1,224 +1,20 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
-  productCreateSchema,
   type Page,
   type ProductDto,
   type TaxonomySummary,
 } from "@/features/product/workspace/contracts";
 import type { StudioSessionDto } from "../contracts";
-import { StudioClientError, studioFetch, studioMessage } from "../client";
 import { useWorkspaceRead } from "./use-request";
-import { useWorkspaceMutation } from "./use-mutation";
 import { WorkspaceNav, Pagination, ReadOnlyNotice } from "./primitives";
 import { FilterBar } from "./filter-bar";
 import { TaxonomyPicker } from "./taxonomy-picker";
-import { ProductFields, type ProductFormFields } from "./product-fields";
 import styles from "./workspace.module.css";
-
-export function ProductCard({ product }: { product: ProductDto }) {
-  return (
-    <article className={styles.card}>
-      <h2>{product.title}</h2>
-      <p>稳定 ID：{product.id}</p>
-      <p>slug：{product.slug}</p>
-      <p>
-        主类目：
-        {product.primaryCategory
-          ? `${product.primaryCategory.name} · ${product.primaryCategory.slug}${product.primaryCategory.archivedAt ? " · 已归档" : ""}`
-          : "未分类"}
-      </p>
-      <p>
-        标签：
-        {product.tags.length
-          ? product.tags.map((tag) => (
-              <span
-                className={`${styles.badge} ${tag.archivedAt ? styles.archived : ""}`}
-                key={tag.id}
-              >
-                {tag.name} · {tag.slug}
-                {tag.archivedAt ? " · 已归档" : ""}
-              </span>
-            ))
-          : "无"}
-      </p>
-      {product.archivedAt && (
-        <p className={`${styles.badge} ${styles.archived}`}>工作区已归档</p>
-      )}
-      <Link
-        className={styles.link}
-        href={`/studio/products/${encodeURIComponent(product.id)}`}
-      >
-        查看工作区 {product.id}
-      </Link>
-    </article>
-  );
-}
-
-function ProductCreateForm({ session }: { session: StudioSessionDto }) {
-  const router = useRouter();
-  const [id, setId] = useState("");
-  const [fields, setFields] = useState<ProductFormFields>({
-    slug: "",
-    title: "",
-    categories: [],
-    tags: [],
-  });
-  const [validation, setValidation] = useState("");
-  const [submittedId, setSubmittedId] = useState("");
-  const [checking, setChecking] = useState(false);
-  const [checked, setChecked] = useState<{
-    product?: ProductDto;
-    absent?: boolean;
-    error?: string;
-  }>();
-  const mutation = useWorkspaceMutation<ProductDto>(session.csrfToken);
-
-  async function create() {
-    const parsed = productCreateSchema.safeParse({
-      id,
-      slug: fields.slug,
-      title: fields.title,
-      primaryCategoryId: fields.categories[0]?.id ?? null,
-      tagIds: fields.tags.map((tag) => tag.id),
-    });
-    if (!parsed.success) {
-      setValidation("请检查稳定 ID、slug、标题长度与最多 8 个不重复标签。");
-      return;
-    }
-    setValidation("");
-    setChecked(undefined);
-    setSubmittedId(parsed.data.id);
-    const product = await mutation.submit(
-      "/api/studio/products",
-      "POST",
-      parsed.data,
-      "服务器已确认创建。",
-    );
-    if (product) {
-      router.push(`/studio/products/${encodeURIComponent(product.id)}`);
-      router.refresh();
-    }
-  }
-  async function verify() {
-    if (checking) return;
-    setChecking(true);
-    setChecked(undefined);
-    try {
-      const product = await studioFetch<ProductDto>(
-        `/api/studio/products/${encodeURIComponent(submittedId)}`,
-        {},
-      );
-      setChecked({ product });
-    } catch (error) {
-      setChecked(
-        error instanceof StudioClientError && error.code === "PRODUCT_NOT_FOUND"
-          ? { absent: true }
-          : { error: studioMessage(error) },
-      );
-    } finally {
-      setChecking(false);
-    }
-  }
-  return (
-    <section className={styles.panel}>
-      <h2>创建工作区</h2>
-      <p className={styles.note}>
-        稳定 ID 创建后不能修改。归档记录仍保留 ID 与
-        slug。创建后可进入工作区接收原包、验证归档并查看草稿与内测版本。
-      </p>
-      <form
-        aria-label="新建工作区"
-        className={styles.form}
-        onSubmit={(event) => {
-          event.preventDefault();
-          void create();
-        }}
-      >
-        <div className={styles.field}>
-          <label htmlFor="product-id">稳定 ID</label>
-          <input
-            className={styles.input}
-            id="product-id"
-            required
-            pattern="[a-z][a-z0-9]*(?:-[a-z0-9]+)*"
-            maxLength={80}
-            value={id}
-            disabled={mutation.blocked}
-            onChange={(event) => setId(event.target.value)}
-          />
-        </div>
-        <ProductFields
-          value={fields}
-          onChange={setFields}
-          disabled={mutation.state.phase === "submitting"}
-        />
-        <button
-          className={styles.button}
-          disabled={mutation.blocked}
-          type="submit"
-        >
-          {mutation.state.phase === "submitting" ? "正在创建…" : "创建工作区"}
-        </button>
-      </form>
-      {validation && (
-        <p className={`${styles.status} ${styles.error}`} role="alert">
-          {validation}
-        </p>
-      )}
-      {mutation.state.message && (
-        <p className={styles.status} role="status">
-          {mutation.state.message}
-        </p>
-      )}
-      {mutation.state.phase === "unknown" && (
-        <section className={styles.compare} aria-label="创建结果核实">
-          <p>按此次提交的稳定 ID {submittedId} 查询服务器，不会重发创建。</p>
-          <button
-            className={styles.button}
-            type="button"
-            disabled={checking}
-            onClick={() => void verify()}
-          >
-            {checking ? "正在核实…" : "核实创建结果"}
-          </button>
-          {checked?.error && (
-            <p role="alert" className={`${styles.status} ${styles.error}`}>
-              {checked.error}
-            </p>
-          )}
-          {checked?.product && (
-            <>
-              <p className={styles.note}>
-                服务器当前值已确认，存在此
-                ID。不能仅凭当前值证明原请求确定成功，请查看记录。
-              </p>
-              <ProductCard product={checked.product} />
-            </>
-          )}
-          {checked?.absent && (
-            <>
-              <p className={styles.note}>
-                服务器当前查询未找到此
-                ID，仍不能据此保证原请求从未提交。请检查后手动决定是否再次创建。
-              </p>
-              <button
-                className={`${styles.button} ${styles.secondary}`}
-                type="button"
-                onClick={mutation.reconciled}
-              >
-                核实后继续编辑创建表单
-              </button>
-            </>
-          )}
-        </section>
-      )}
-    </section>
-  );
-}
+import { ProductCard } from "./product-card";
+import { StudioPageHeader } from "../presentation/page-header";
 
 export function ProductList({ session }: { session: StudioSessionDto }) {
   const [page, setPage] = useState(1);
@@ -254,11 +50,18 @@ export function ProductList({ session }: { session: StudioSessionDto }) {
   return (
     <div className={styles.workspace}>
       <WorkspaceNav />
+      <StudioPageHeader
+        title="测评工作区"
+        description={<p>管理商品，进入各自的导入、草稿与内测流程。</p>}
+        actions={
+          session.operator.role === "operator" ? (
+            <Link className={styles.link} href="/studio/new-product">
+              创建商品
+            </Link>
+          ) : undefined
+        }
+      />
       <section className={styles.panel}>
-        <h1>测评工作区</h1>
-        <p className={styles.note}>
-          每个工作区是一个测评的稳定归属。这里管理运营标题、目录关联与归档。
-        </p>
         {session.operator.role === "read-only" && <ReadOnlyNotice />}
         <FilterBar
           busy={read.loading}
@@ -300,6 +103,18 @@ export function ProductList({ session }: { session: StudioSessionDto }) {
             onChange={(items) => setTags(items.slice(-1))}
           />
         </FilterBar>
+        <p className={styles.filterSummary} role="status">
+          当前：
+          {query.status === "active"
+            ? "未归档"
+            : query.status === "archived"
+              ? "已归档"
+              : "全部商品"}
+          {query.q && ` · 搜索“${query.q}”`}
+          {query.categoryId && " · 已按主类目筛选"}
+          {query.tagId && " · 已按标签筛选"}
+          {query.unclassified && " · 仅未分类"}
+        </p>
         {read.loading && (
           <p className={styles.status} role="status">
             正在加载工作区…
@@ -348,9 +163,6 @@ export function ProductList({ session }: { session: StudioSessionDto }) {
           </>
         )}
       </section>
-      {session.operator.role === "operator" && (
-        <ProductCreateForm session={session} />
-      )}
     </div>
   );
 }

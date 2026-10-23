@@ -1,28 +1,10 @@
 "use client";
 
-import Link from "next/link";
 import styles from "./workspace.module.css";
 
 export function WorkspaceNav() {
-  return (
-    <nav className={styles.nav} aria-label="Studio 导航">
-      <Link className={`${styles.link} ${styles.secondary}`} href="/studio">
-        身份与退出
-      </Link>
-      <Link
-        className={`${styles.link} ${styles.secondary}`}
-        href="/studio/products"
-      >
-        工作区
-      </Link>
-      <Link
-        className={`${styles.link} ${styles.secondary}`}
-        href="/studio/taxonomy"
-      >
-        类目与标签
-      </Link>
-    </nav>
-  );
+  // Existing consumers retain this export; StudioShell now owns the only nav.
+  return null;
 }
 
 export function Pagination({

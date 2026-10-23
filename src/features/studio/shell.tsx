@@ -1,12 +1,30 @@
 import styles from "./studio.module.css";
+import { StudioNavigation } from "./navigation";
 
-export function StudioShell({ children }: { children: React.ReactNode }) {
+/** Portable frame also used by browser captures; the server layout supplies
+ * authenticated navigation presentation. This prop grants no write authority.
+ */
+export function StudioShell({
+  children,
+  authenticated = false,
+}: {
+  children: React.ReactNode;
+  authenticated?: boolean;
+}) {
   return (
-    <div className={styles.shell}>
+    <div className={`${styles.shell} ${authenticated ? "" : styles.signedOut}`}>
       <header className={styles.header}>
-        <span className={styles.brand}>QuizForge Studio</span>
-        <span className={styles.environment}>本机运营内测 · 目录工作区</span>
+        <div className={styles.brand}>
+          <span className={styles.brandMark} aria-hidden="true">
+            QF
+          </span>
+          <span>
+            QuizForge <span className={styles.brandSuffix}>Studio</span>
+          </span>
+        </div>
+        <span className={styles.environment}>本机运营内测</span>
       </header>
+      {authenticated && <StudioNavigation />}
       <main id="main" className={styles.main}>
         {children}
       </main>
@@ -16,7 +34,7 @@ export function StudioShell({ children }: { children: React.ReactNode }) {
 
 export function StudioUnavailable() {
   return (
-    <section className={styles.panel}>
+    <section className={styles.panel} data-studio-entry="unavailable">
       <h1>Studio 暂不可用</h1>
       <p className={styles.intro}>
         本地运营环境的配置或数据库尚未就绪。本页没有建立登录会话。

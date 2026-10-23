@@ -118,13 +118,39 @@ test.afterAll(async () => {
   if (prepared) await fixtureCommand("cleanup");
 });
 
+async function navigateStudio(
+  page: Page,
+  name: "工作区" | "类目与标签" | "身份与退出",
+) {
+  const link = page.getByRole("link", { name, exact: true });
+  if (!(await link.isVisible()))
+    await page.getByText("Studio 导航", { exact: true }).click();
+  await expect(link).toHaveCount(1);
+  await link.click();
+}
+
+async function openEditor(page: Page) {
+  const form = page.getByRole("form", { name: "工作区元数据", exact: true });
+  if (!(await form.isVisible()))
+    await page.getByText("编辑商品信息", { exact: true }).click();
+  await expect(form).toBeVisible();
+}
+
+async function openCreate(page: Page) {
+  await page.getByRole("link", { name: "创建商品", exact: true }).click();
+  await expect(page).toHaveURL(/\/studio\/new-product$/);
+  await expect(
+    page.getByRole("heading", { name: "创建商品", exact: true }),
+  ).toBeVisible();
+}
+
 async function signIn(page: Page, role: "operator" | "readOnly" = "operator") {
   await page.goto("/studio/login");
   await expect(page.getByLabel("运营凭证")).toBeEnabled();
   await enterCredential(page, fixture[role]);
   await page.getByRole("button", { name: "登录 Studio" }).click();
   await expect(page.getByRole("heading", { name: "运营会话" })).toBeVisible();
-  await page.getByRole("link", { name: "工作区", exact: true }).click();
+  await navigateStudio(page, "工作区");
   await expect(page.getByRole("heading", { name: "测评工作区" })).toBeVisible();
 }
 
@@ -137,8 +163,44 @@ test("empty workspace and responsive read-only navigation", async ({
   await expect(
     page.getByRole("button", { name: "创建工作区", exact: true }),
   ).toHaveCount(0);
-  for (const width of [320, 375, 390, 430]) {
+  for (const width of [1440, 320, 375, 390, 430]) {
     await page.setViewportSize({ width, height: 900 });
+    const navigation = page.getByRole("navigation", {
+      name: "Studio 导航",
+      exact: true,
+    });
+    const toggle = page.getByText("Studio 导航", { exact: true });
+    if (width < 960) {
+      await expect(toggle).toBeVisible();
+      if (await navigation.isVisible()) await toggle.click();
+      await expect(navigation).toBeHidden();
+      await toggle.focus();
+      await page.keyboard.press("Enter");
+    } else {
+      await expect(toggle).toBeHidden();
+      expect(
+        await page
+          .locator("main")
+          .evaluate((element) => element.getBoundingClientRect().width),
+      ).toBeGreaterThan(900);
+    }
+    await expect(navigation).toBeVisible();
+    for (const name of ["工作区", "类目与标签", "身份与退出"]) {
+      const link = navigation.getByRole("link", { name, exact: true });
+      await expect(page.getByRole("link", { name, exact: true })).toHaveCount(
+        1,
+      );
+      expect(
+        await link.evaluate(
+          (element) =>
+            element.getBoundingClientRect().height >= 44 &&
+            element.getBoundingClientRect().width >= 44,
+        ),
+      ).toBe(true);
+    }
+    await expect(
+      navigation.getByRole("link", { name: "工作区", exact: true }),
+    ).toHaveAttribute("aria-current", "page");
     expect(
       await page.evaluate(
         () => document.documentElement.scrollWidth <= window.innerWidth,
@@ -149,7 +211,7 @@ test("empty workspace and responsive read-only navigation", async ({
       fullPage: true,
     });
   }
-  await page.getByRole("link", { name: "身份与退出" }).click();
+  await navigateStudio(page, "身份与退出");
   await page.getByRole("button", { name: "退出登录" }).click();
   await expect(page.getByRole("heading", { name: "运营登录" })).toBeVisible();
 });
@@ -163,6 +225,8 @@ async function openProductDetail(page: Page) {
   await expect(
     page.getByText("稳定 ID（不可改）", { exact: true }),
   ).toBeVisible();
+  if (await page.getByText("编辑商品信息", { exact: true }).count())
+    await openEditor(page);
 }
 
 async function createDirectory(
@@ -200,12 +264,29 @@ test("operator creates taxonomy and product, checks 8 tags, filters and safe mob
   page,
 }, testInfo) => {
   await signIn(page);
-  await page.getByRole("link", { name: "类目与标签", exact: true }).click();
+  await navigateStudio(page, "类目与标签");
   await createDirectory(page, "category", "e2e-category-one", "同名目录");
   await createDirectory(page, "category", "e2e-category-two", "同名目录");
   for (let index = 1; index <= 9; index++)
     await createDirectory(page, "tag", `e2e-tag-${index}`, `合成标签${index}`);
-  await page.getByRole("link", { name: "工作区", exact: true }).click();
+  await navigateStudio(page, "工作区");
+  await expect(
+    page.getByRole("form", { name: "新建工作区", exact: true }),
+  ).toHaveCount(0);
+  await openCreate(page);
+  for (const width of [320, 375, 390, 430, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= window.innerWidth,
+      ),
+    ).toBe(true);
+    await page.screenshot({
+      path: testInfo.outputPath(`workspace-create-${width}.png`),
+      fullPage: true,
+    });
+  }
+  await page.setViewportSize({ width: 390, height: 844 });
   await page.getByLabel("稳定 ID", { exact: true }).fill("e2e-workspace");
   await page.getByLabel("显示标题", { exact: true }).fill(longTitle);
   await page.getByLabel("工作区 slug", { exact: true }).fill("e2e-workspace");
@@ -228,6 +309,10 @@ test("operator creates taxonomy and product, checks 8 tags, filters and safe mob
   await expect(
     page.getByRole("heading", { name: longTitle, exact: true }),
   ).toBeVisible();
+  await expect(
+    page.getByRole("form", { name: "工作区元数据", exact: true }),
+  ).toBeHidden();
+  await openEditor(page);
   for (const width of [320, 375, 390, 430]) {
     await page.setViewportSize({ width, height: 900 });
     expect(
@@ -263,7 +348,31 @@ test("operator creates taxonomy and product, checks 8 tags, filters and safe mob
       fullPage: true,
     });
   }
-  await page.getByRole("link", { name: "工作区", exact: true }).click();
+  await navigateStudio(page, "工作区");
+  await expect(
+    page.getByRole("link", { name: "查看工作区 e2e-workspace", exact: true }),
+  ).toBeVisible();
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.screenshot({
+    path: testInfo.outputPath("workspace-list-1440.png"),
+    fullPage: true,
+  });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.getByText("更多筛选", { exact: true }).click();
+  const unclassified = page.getByRole("checkbox", {
+    name: "仅未分类工作区",
+    exact: true,
+  });
+  await unclassified.check();
+  await page.getByRole("button", { name: "应用筛选", exact: true }).click();
+  await expect(page.getByText("当前筛选无结果", { exact: true })).toBeVisible();
+  await page.getByText("更多筛选", { exact: true }).click();
+  await expect(
+    page.getByRole("status").filter({ hasText: "当前：" }),
+  ).toContainText("仅未分类");
+  await page.getByText("更多筛选", { exact: true }).click();
+  await expect(unclassified).toBeChecked();
+  await unclassified.uncheck();
   await page.getByLabel("搜索标题、名称、ID 或 slug").fill("不存在的合成筛选");
   await page.getByRole("button", { name: "应用筛选", exact: true }).click();
   await expect(page.getByText("当前筛选无结果", { exact: true })).toBeVisible();
@@ -313,7 +422,7 @@ test("creating directory records preserves another row's draft and unknown outco
   page,
 }) => {
   await signIn(page);
-  await page.getByRole("link", { name: "类目与标签", exact: true }).click();
+  await navigateStudio(page, "类目与标签");
   const row = page.getByRole("article", {
     name: "类目 e2e-category-two",
     exact: true,
@@ -416,6 +525,10 @@ test("CAS preserves unsaved input and requires an explicit latest revision resub
   const editor = page.getByRole("form", { name: "工作区元数据", exact: true });
   const title = editor.getByLabel("显示标题", { exact: true });
   await title.fill("我的未保存输入");
+  await page.getByText("编辑商品信息", { exact: true }).click();
+  await expect(editor).toBeHidden();
+  await expect(page.locator('form[aria-label="工作区元数据"]')).toHaveCount(1);
+  await openEditor(page);
   await expect(title).toHaveValue("我的未保存输入");
   expect(await externalTitleChange(page, "第二写者标题")).toBe(200);
   await editor.getByRole("button", { name: "保存元数据", exact: true }).click();
@@ -426,6 +539,11 @@ test("CAS preserves unsaved input and requires an explicit latest revision resub
   await expect(
     editor.getByRole("button", { name: "保存元数据", exact: true }),
   ).toBeDisabled();
+  await page.getByText("编辑商品信息", { exact: true }).click();
+  await expect(page.locator('form[aria-label="工作区元数据"]')).toHaveCount(1);
+  await expect(
+    page.getByRole("heading", { name: "内容发生冲突", exact: true }),
+  ).toBeVisible();
   await page.screenshot({
     path: testInfo.outputPath("workspace-conflict.png"),
     fullPage: true,
@@ -439,6 +557,8 @@ test("CAS preserves unsaved input and requires an explicit latest revision resub
   await page
     .getByRole("button", { name: "保留我的输入，以最新修订重提", exact: true })
     .click();
+  await openEditor(page);
+  await expect(title).toHaveValue("我的未保存输入");
   await editor.getByRole("button", { name: "保存元数据", exact: true }).click();
   await expect(
     page.getByRole("heading", { name: "我的未保存输入", exact: true }),
@@ -475,6 +595,13 @@ test("lost write response is reconciled by reading and archival has a visible re
   await expect(
     page.getByRole("button", { name: "保存元数据", exact: true }),
   ).toBeDisabled();
+  await page.getByText("编辑商品信息", { exact: true }).click();
+  await expect(
+    page.getByRole("form", { name: "工作区元数据", exact: true }),
+  ).toBeHidden();
+  await expect(
+    page.getByRole("heading", { name: "提交结果尚未确认", exact: true }),
+  ).toBeVisible();
   await page
     .getByRole("button", { name: "读取服务器最新内容", exact: true })
     .click();
@@ -499,6 +626,7 @@ test("lost write response is reconciled by reading and archival has a visible re
     fullPage: true,
   });
   await page.getByRole("button", { name: "恢复工作区", exact: true }).click();
+  await openEditor(page);
   await expect(
     page.getByRole("button", { name: "保存元数据", exact: true }),
   ).toBeVisible();
@@ -508,7 +636,7 @@ test("taxonomy archival keeps old association readable and creation uncertainty 
   page,
 }, testInfo) => {
   await signIn(page);
-  await page.getByRole("link", { name: "类目与标签", exact: true }).click();
+  await navigateStudio(page, "类目与标签");
   const category = page.getByRole("article", {
     name: "类目 e2e-category-one",
     exact: true,
@@ -520,7 +648,7 @@ test("taxonomy archival keeps old association readable and creation uncertainty 
   await expect(
     category.getByRole("button", { name: "恢复类目", exact: true }),
   ).toBeVisible();
-  await page.getByRole("link", { name: "工作区", exact: true }).click();
+  await navigateStudio(page, "工作区");
   await openProductDetail(page);
   await expect(
     page.getByText("同名目录 · e2e-category-one · 已归档（可保留或移除）", {
@@ -535,7 +663,7 @@ test("taxonomy archival keeps old association readable and creation uncertainty 
   await expect(
     page.getByRole("heading", { name: "保留归档目录后的标题", exact: true }),
   ).toBeVisible();
-  await page.getByRole("link", { name: "类目与标签", exact: true }).click();
+  await navigateStudio(page, "类目与标签");
   await page.getByRole("button", { name: "管理标签", exact: true }).click();
   let lost = false;
   await page.route("**/api/studio/tags", async (route) => {
@@ -594,7 +722,17 @@ test("read-only can inspect existing products but sees no executable writes", as
   await expect(
     page.getByRole("button", { name: "归档工作区", exact: true }),
   ).toHaveCount(0);
-  await page.getByRole("link", { name: "类目与标签", exact: true }).click();
+  await page.goto("/studio/new-product");
+  await expect(
+    page.getByRole("heading", { name: "创建商品", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("form", { name: "新建工作区", exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: "创建工作区", exact: true }),
+  ).toHaveCount(0);
+  await navigateStudio(page, "类目与标签");
   await expect(
     page.getByRole("button", { name: "创建类目", exact: true }),
   ).toHaveCount(0);
@@ -652,6 +790,7 @@ test("unknown product creation is read by immutable ID without replaying POST", 
   page,
 }) => {
   await signIn(page);
+  await openCreate(page);
   let writes = 0;
   await page.route("**/api/studio/products", async (route) => {
     if (route.request().method() !== "POST") {

@@ -16,7 +16,7 @@ export function FilterBar({
   const [status, setStatus] = useState("active");
   return (
     <form
-      className={styles.form}
+      className={styles.filterBar}
       onSubmit={(event) => {
         event.preventDefault();
         onFilter(q, status);
@@ -45,7 +45,12 @@ export function FilterBar({
           <option value="all">全部</option>
         </select>
       </div>
-      {children}
+      {children && (
+        <details className={styles.expandedFilters}>
+          <summary>更多筛选</summary>
+          <div className={styles.filterChoices}>{children}</div>
+        </details>
+      )}
       <button className={styles.button} type="submit" disabled={busy}>
         应用筛选
       </button>
