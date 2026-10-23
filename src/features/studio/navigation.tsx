@@ -7,11 +7,11 @@ import styles from "./studio.module.css";
 import { invalidateCurrentStudioAuthority } from "./authority-events";
 
 const items = [
-  { href: "/studio/products", label: "工作区", description: "商品与测评流程" },
+  { href: "/studio/products", label: "工作区", description: "管理测评与访问码" },
   {
     href: "/studio/taxonomy",
     label: "类目与标签",
-    description: "整理商品目录",
+    description: "给测评分组，便于查找",
   },
   { href: "/studio", label: "身份与退出", description: "当前运营会话" },
 ] as const;
@@ -65,7 +65,7 @@ export function StudioNavigation() {
           })}
         </nav>
         <p className={styles.navigationNote}>
-          从商品工作区进入导入、草稿、审核版本与发码。
+          选择测评，导入内容、预览审核，再发放访问码。
         </p>
       </details>
     </aside>
