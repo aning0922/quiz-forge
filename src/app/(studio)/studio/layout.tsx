@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { StudioShell } from "@/features/studio/shell";
+import { studioPageState } from "@/features/studio/page-session";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -9,10 +10,15 @@ export const metadata: Metadata = {
   referrer: "no-referrer",
 };
 
-export default function StudioLayout({
+export default async function StudioLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  return <StudioShell>{children}</StudioShell>;
+  const state = await studioPageState();
+  return (
+    <StudioShell authenticated={state.status === "authenticated"}>
+      {children}
+    </StudioShell>
+  );
 }

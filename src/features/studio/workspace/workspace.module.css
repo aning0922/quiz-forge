@@ -187,3 +187,121 @@
     padding: 18px;
   }
 }
+
+/* S1 additions: original class contracts above remain available to other Studio views. */
+.filterBar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(150px, 200px) auto;
+  align-items: end;
+  gap: 16px;
+}
+.filterBar > button {
+  grid-column: 3;
+  grid-row: 1;
+}
+.expandedFilters {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  border-top: 1px solid #d7dfe7;
+}
+.expandedFilters > summary,
+.editor > summary {
+  padding: 12px 0;
+  min-height: 48px;
+  cursor: pointer;
+  font-weight: 650;
+}
+.expandedFilters > summary:focus-visible,
+.editor > summary:focus-visible {
+  outline: 3px solid #267bc1;
+  outline-offset: 3px;
+}
+.filterChoices {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+  padding-block: 12px;
+}
+.filterChoices > label {
+  grid-column: 1 / -1;
+}
+.filterSummary {
+  color: #42536a;
+  padding-block: 12px;
+  margin-bottom: 0;
+  overflow-wrap: anywhere;
+}
+.productCard {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  background: #fff;
+}
+.productCardBody {
+  flex: 1;
+}
+.productCardHeading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px 16px;
+}
+.productCardHeading h2 {
+  flex: 1 1 280px;
+  margin-bottom: 0;
+}
+.productCardHeading .badge {
+  white-space: nowrap;
+}
+.fieldGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: 24px;
+}
+.editor {
+  margin-top: 24px;
+  border-block: 1px solid #d7dfe7;
+}
+.editor > form {
+  margin: 8px 0 24px;
+}
+.editor > form > button {
+  justify-self: start;
+}
+.overviewFacts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  padding-block: 16px;
+  border-block: 1px solid #e1e7ee;
+}
+@media (min-width: 1100px) {
+  .productOverview > .facts:not(.overviewFacts) {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (max-width: 700px) {
+  .filterBar {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+  .filterBar > button {
+    grid-column: auto;
+    grid-row: auto;
+  }
+  .expandedFilters {
+    grid-column: auto;
+    grid-row: auto;
+  }
+  .filterChoices,
+  .fieldGrid,
+  .overviewFacts {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .productCard {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 12px;
+  }
+}

@@ -1,8 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { draftWorkspacePath } from "../drafts/client";
-import Link from "next/link";
 import {
   productReplaceMetadataSchema,
   type ProductDto,
@@ -13,7 +11,10 @@ import { studioFetch, studioMessage } from "../client";
 import { useWorkspaceRead } from "./use-request";
 import { useWorkspaceMutation } from "./use-mutation";
 import { ProductFields, type ProductFormFields } from "./product-fields";
-import { ProductCard } from "./product-list";
+import { ProductCard } from "./product-card";
+import { StudioWorkflowNav } from "../presentation/workflow-nav";
+import { StudioPageHeader } from "../presentation/page-header";
+import { TechnicalDetails } from "../presentation/technical-details";
 import { WorkspaceNav, ReadOnlyNotice } from "./primitives";
 import { ReconcilePanel } from "./reconcile-panel";
 import {
@@ -129,20 +130,11 @@ function ProductEditor({
   }
 
   return (
-    <section className={styles.panel}>
-      <h1>{product.title}</h1>
-      <p className={styles.note}>
-        原包接收、验证归档与草稿分别保留事实。运营元数据不会自动改写包内版本声明。
-      </p>
-      <Link
-        className={`${styles.link} ${styles.secondary}`}
-        href={`/studio/products/${encodeURIComponent(product.id)}/imports`}
-      >
-        原包接收与历史
-      </Link>
-      <Link className={styles.link} href={draftWorkspacePath(product.id)}>
-        查看服务器草稿
-      </Link>
+    <section className={`${styles.panel} ${styles.productOverview}`}>
+      <StudioPageHeader
+        title={product.title}
+        description={<p>商品概览 · 运营元数据与包内声明分别保留。</p>}
+      />
       <dl className={styles.facts}>
         <div>
           <dt>稳定 ID（不可改）</dt>
@@ -157,51 +149,71 @@ function ProductEditor({
           <dd>{product.archivedAt ? "已归档 · 元数据只读" : "未归档"}</dd>
         </div>
       </dl>
-      {!canWrite && <ReadOnlyNotice />}
-      {canWrite && !product.archivedAt ? (
-        <form
-          aria-label="工作区元数据"
-          className={styles.form}
-          onSubmit={(event) => {
-            event.preventDefault();
-            void save();
-          }}
-        >
-          <ProductFields
-            value={fields}
-            onChange={setFields}
-            disabled={mutation.state.phase === "submitting"}
-          />
-          <button
-            className={styles.button}
-            type="submit"
-            disabled={mutation.blocked}
-          >
-            {mutation.state.phase === "submitting" ? "正在提交…" : "保存元数据"}
-          </button>
-        </form>
-      ) : (
+      <dl className={`${styles.facts} ${styles.overviewFacts}`}>
         <div>
-          <p>slug：{product.slug}</p>
-          <p>
-            主类目：
+          <dt>主类目</dt>
+          <dd>
             {product.primaryCategory
               ? `${product.primaryCategory.name} · ${product.primaryCategory.slug}${product.primaryCategory.archivedAt ? " · 已归档" : ""}`
               : "未分类"}
-          </p>
-          <p>
-            标签：
+          </dd>
+        </div>
+        <div>
+          <dt>标签</dt>
+          <dd>
             {product.tags.length
               ? product.tags
                   .map(
-                    (tag) =>
-                      `${tag.name} · ${tag.slug}${tag.archivedAt ? " · 已归档" : ""}`,
+                    (tag) => `${tag.name}${tag.archivedAt ? " · 已归档" : ""}`,
                   )
-                  .join("；")
+                  .join("、")
               : "无"}
-          </p>
+          </dd>
         </div>
-      )}
+      </dl>
+      <TechnicalDetails label="商品支持信息">
+        <p>slug：{product.slug}</p>
+        <p>创建时间：{product.createdAt}</p>
+        <p>最近更新时间：{product.updatedAt}</p>
+      </TechnicalDetails>
+      {authority.isRevoked ? (
+        <p className={`${styles.status} ${styles.error}`} role="alert">
+          当前页面的运营权限已失效。请重新登录并读取服务器状态后继续。
+        </p>
+      ) : !canWrite ? (
+        <ReadOnlyNotice />
+      ) : null}
+      {canWrite && !product.archivedAt ? (
+        <details className={styles.editor}>
+          <summary>编辑商品信息</summary>
+          <form
+            aria-label="工作区元数据"
+            className={styles.form}
+            onSubmit={(event) => {
+              event.preventDefault();
+              void save();
+            }}
+          >
+            <div className={styles.fieldGrid}>
+              <ProductFields
+                value={fields}
+                onChange={setFields}
+                disabled={mutation.state.phase === "submitting"}
+              />
+            </div>
+            <button
+              className={styles.button}
+              type="submit"
+              disabled={mutation.blocked}
+            >
+              {mutation.state.phase === "submitting"
+                ? "正在提交…"
+                : "保存元数据"}
+            </button>
+          </form>
+        </details>
+      ) : null}
+
       {canWrite && (
         <div className={styles.form}>
           {product.archivedAt ? (
@@ -275,7 +287,7 @@ function ProductEditor({
         state={mutation.state}
         reading={reading}
         readError={readError}
-        snapshot={latest ? <ProductCard product={latest} /> : null}
+        snapshot={latest ? <ProductCard product={latest} showIdentity /> : null}
         onRead={() => void readLatest()}
         onUseServer={() => adoptLatest(false)}
         onKeepInput={() => adoptLatest(true)}
@@ -299,6 +311,7 @@ function ProductDetailContent({
   return (
     <div className={styles.workspace}>
       <WorkspaceNav />
+      <StudioWorkflowNav productId={productId} current="product" />
       {read.loading && (
         <p className={styles.status} role="status">
           正在读取工作区…

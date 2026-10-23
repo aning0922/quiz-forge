@@ -124,6 +124,9 @@ test("real operator login/logout and safe mobile UI captures", async ({
     await page.setViewportSize({ width, height: 900 });
     await page.goto("/studio/login");
     await expect(page.getByRole("heading", { name: "运营登录" })).toBeVisible();
+    await expect(
+      page.getByRole("navigation", { name: "Studio 导航", exact: true }),
+    ).toHaveCount(0);
     await expect(page.getByLabel("运营凭证")).toBeEnabled();
     // Only empty input is captured; credentials are never screenshot artifacts.
     await page.screenshot({

@@ -1,0 +1,34 @@
+# Studio workspace presentation (S1)
+
+The authenticated Studio shell owns one responsive navigation. The original
+`WorkspaceNav` export remains as a no-op for existing page imports. The shell
+receives a presentation-only `authenticated` prop from the server layout, which
+uses the existing page-session read. The shell stays portable for browser
+captures without importing server-only authentication. Each page and API still
+checks its own authority. Navigation is never a write capability.
+Login/unavailable entry markers also suppress retained layout navigation during
+client routing; this is presentation and does not grant or clear session authority.
+
+The product list links to `/studio/new-product`, outside the product ID namespace.
+The original create form, POST and exact submitted-ID reconciliation live in
+`product-create.tsx`. Read-only direct visits render the read-only notice.
+
+Product metadata state, mutation and reconciliation stay in `ProductEditor`.
+Only its ordinary fields and submit form are inside the native details element
+with summary “编辑商品信息”. Closing it keeps the form mounted. Current product
+identity/revision/status, unknown/CAS reconciliation and archive/restore controls
+remain outside. `InternalAuthorityProvider` and `StableInternalWorkspace` retain
+their original product-keyed relationship; workspace read errors do not unmount
+the independent recovery section. Presentation does not turn a current GET into
+proof that a previous uncertain write succeeded.
+
+Existing workspace CSS class names remain available to other Studio domains.
+S1 adds layout classes without modifying flow/controller/storage/HTTP, product
+contracts, preview/consumer renderers, or frozen implementation descriptors.
+
+The workspace browser suite now enters the separate create page and explicitly
+expands editing. It retains the original response-loss, CAS, read-only, taxonomy
+association and cleanup assertions, and adds single responsive navigation,
+keyboard opening, wide-content, form persistence and visible unknown recovery
+checks. These browser assertions and screenshots require the root-owned real
+synthetic environment; authoring/typechecking them is not a browser pass.
