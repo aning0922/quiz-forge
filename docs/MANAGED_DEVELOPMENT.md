@@ -1,5 +1,11 @@
 # QuizForge 托管开发
 
+## 2026-10-24 S1 本地技术出口
+
+原 A/B 独立开发聊天与 Astra 独审完成本批实现、导航 P2 整改、有限截图复核。主控集成运行 `6eeb60f`，全量 1981 单元、生产 build、main 媒体 66×3、259 E2E/10 既有 skip 和六组 fixture cleanup 通过，测试实例停库；详见 [S1_ACCEPTANCE.md](S1_ACCEPTANCE.md)。最终文档 head 的准确 CI/独审单独留于 [Draft PR #24](https://github.com/aning0922/quiz-forge/pull/24)。
+
+独立聊天和分支保留；A/B 不启动新实现。原作者 3100 服务已恢复原构建和原库，新增 3110 demo 仅合成数据、供作者验收。当前尚未获 S1 作者体验验收，不自动合并 main、启动消费者视觉升级、生产迁移或发布。下文为启动与历史记录。
+
 ## 2026-10-23 S1 Studio 体验整理启动
 
 作者已明确授权后台布局与核心操作整理，主控基于已合入R1的main a641b04建立独立 `codex/studio-experience-s1`。合同和文件边界见 [STUDIO_EXPERIENCE_S1.md](STUDIO_EXPERIENCE_S1.md)，共享接口候选 da4f892 通过格式/lint/typecheck，A/B预检与Astra独立冻结审查已完成，允许实施；尚未宣称实现完成。

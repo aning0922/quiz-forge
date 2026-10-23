@@ -1,0 +1,191 @@
+{
+  "schemaVersion": "quizforge.studio-s1-visual.v1",
+  "runtimeHead": "6eeb60f730bdb759b8eacbbda57643c35c5431f4",
+  "browser": "Chromium 156.0.8078.4",
+  "screenshots": [
+    {
+      "path": ".cache/studio-s1/demo/list-1440.png",
+      "sha256": "f4eab3dd1193427e311b0048520c3f2e91fcd26e4bb692e9fac58929c1edef2c",
+      "width": 1440,
+      "height": 1000,
+      "state": "desktop-list",
+      "evidence": "actual-demo-ui-synthetic-metadata",
+      "actuallyViewedBy": ["root", "A", "Astra"]
+    },
+    {
+      "path": ".cache/studio-s1/demo/list-390.png",
+      "sha256": "288b56f7649987a9b9916a73a845e3415b677c993851c6d9de0b22b88d617613",
+      "width": 390,
+      "height": 1253,
+      "state": "mobile-list",
+      "evidence": "actual-demo-ui-synthetic-metadata",
+      "actuallyViewedBy": ["A"]
+    },
+    {
+      "path": ".cache/studio-s1/demo/overview-390.png",
+      "sha256": "9474798d00b5ac86941084f8dde73634f30521a85e52b84bf3639c542b4f07a7",
+      "width": 390,
+      "height": 2192,
+      "state": "overview-editor-collapsed",
+      "evidence": "actual-demo-ui-synthetic-metadata",
+      "actuallyViewedBy": ["root", "A", "Astra"]
+    },
+    {
+      "path": ".cache/studio-s1/demo/create-390.png",
+      "sha256": "e739be42564c944ee1de77964510db693e373d78f7cf52d2eaf0061d14201113",
+      "width": 390,
+      "height": 1846,
+      "state": "create-empty-taxonomy",
+      "evidence": "actual-demo-ui-synthetic-metadata",
+      "actuallyViewedBy": ["root", "A"]
+    },
+    {
+      "path": ".cache/studio-s1/demo/imports-empty-1440.png",
+      "sha256": "31793ab7a01e094c06addf66de5a32f5225506fe2c818c940f15f7fa5abcc0b0",
+      "width": 1440,
+      "height": 1000,
+      "state": "loading-not-empty",
+      "evidence": "actual-demo-ui-synthetic-metadata",
+      "actuallyViewedBy": ["B"]
+    },
+    {
+      "path": ".cache/studio-s1/demo/imports-empty-390.png",
+      "sha256": "e68a8e81ca03f6e598bdb102258711f933b21546ac791c940dad52d629e4b07d",
+      "width": 390,
+      "height": 1182,
+      "state": "loading-not-empty",
+      "evidence": "actual-demo-ui-synthetic-metadata",
+      "actuallyViewedBy": ["root", "B", "Astra"]
+    },
+    {
+      "path": ".cache/studio-s1/demo/imports-ready-1440.png",
+      "sha256": "2b68ef287ed732dc183a8221d7904111f907e857a2de71b5512d552702c75eaa",
+      "width": 1440,
+      "height": 1342,
+      "state": "ready-no-receive-records",
+      "evidence": "actual-demo-ui-synthetic-metadata",
+      "actuallyViewedBy": ["root", "B", "Astra"]
+    },
+    {
+      "path": ".cache/studio-s1/demo/imports-ready-390.png",
+      "sha256": "9876dc2742340a6df47645e415edf1b68e9ca0764c3d89593170d6fdffeb8681",
+      "width": 390,
+      "height": 1791,
+      "state": "ready-no-receive-records",
+      "evidence": "actual-demo-ui-synthetic-metadata",
+      "actuallyViewedBy": ["root", "B", "Astra"]
+    },
+    {
+      "path": "test-results/studio-workspace-operator--f4f2f--filters-and-safe-mobile-UI-studio-workspace/workspace-list-1440.png",
+      "sha256": "691f54383552236486ab580d865a144cf7ae075c8210a374a4207f5590e29109",
+      "width": 1440,
+      "height": 1000,
+      "state": "desktop-list",
+      "evidence": "production-build-real-PG-synthetic-fixture",
+      "actuallyViewedBy": ["root"]
+    },
+    {
+      "path": "test-results/studio-workspace-operator--f4f2f--filters-and-safe-mobile-UI-studio-workspace/workspace-detail-390.png",
+      "sha256": "d48338526823155db55b6457817335da75048f4282fe85ca89e2785553762f23",
+      "width": 390,
+      "height": 5030,
+      "state": "expanded-editor-long-content",
+      "evidence": "production-build-real-PG-synthetic-fixture",
+      "actuallyViewedBy": ["root"]
+    },
+    {
+      "path": "test-results/studio-workspace-operator--f4f2f--filters-and-safe-mobile-UI-studio-workspace/workspace-create-320.png",
+      "sha256": "5d50c7fb13d32f33ba42f0274da1a2f66c23c9e7d42c73bbc0f66f80b0014306",
+      "width": 320,
+      "height": 1613,
+      "state": "create-taxonomy-loading",
+      "evidence": "production-build-real-PG-synthetic-fixture",
+      "actuallyViewedBy": ["root"]
+    },
+    {
+      "path": "test-results/studio-workspace-empty-wor-88a94-onsive-read-only-navigation-studio-workspace/workspace-empty-read-only-320.png",
+      "sha256": "5d7b11fb8ccbba23b741332b847d893b2f6bb9a4b75d25b02f0fb7559a8bc3c6",
+      "width": 320,
+      "height": 1479,
+      "state": "readonly-empty-keyboard-navigation",
+      "evidence": "production-build-real-PG-synthetic-fixture",
+      "actuallyViewedBy": ["A"]
+    },
+    {
+      "path": "test-results/studio-workspace-CAS-prese-0fe27-atest-revision-resubmission-studio-workspace/workspace-conflict.png",
+      "sha256": "0ec25b2238be62360a36d38b7e9206210aad2b5739917435ea3ab639a54bb52f",
+      "width": 390,
+      "height": 2763,
+      "state": "collapsed-editor-conflict-recovery-keyboard-skip-focus",
+      "evidence": "production-build-real-PG-synthetic-fixture",
+      "actuallyViewedBy": ["root", "A", "Astra"]
+    },
+    {
+      "path": "test-results/studio-imports-real-intent-d83dc-d-state-remains-unvalidated-studio-imports/imports-received-390.png",
+      "sha256": "b6e5ea1b02d6c7c4f46f7b0916d68a1e4c559a6594e29fd58e710010d416046b",
+      "width": 390,
+      "height": 2485,
+      "state": "received-not-validated",
+      "evidence": "production-build-real-PG-synthetic-fixture",
+      "actuallyViewedBy": ["B"]
+    },
+    {
+      "path": "test-results/studio-drafts-real-PG-appl-64fcb-eplay-returns-fixed-receipt-studio-drafts/drafts-unknown-390.png",
+      "sha256": "6abeb3e722d4fa34570f6ea33a377def3358624152a1f82c5e5f234aa8f0a298",
+      "width": 390,
+      "height": 3077,
+      "state": "draft-write-unknown",
+      "evidence": "production-build-real-PG-synthetic-fixture",
+      "actuallyViewedBy": ["B"]
+    },
+    {
+      "path": "test-results/studio-internal-versions-s-a3b6d--actual-fixed-snapshot-list-studio-internal-versions/p3e-seal-unknown-390.png",
+      "sha256": "3ab6f7df1333aa16cfb93984d238d9e38bcfeb5be9e7599a87fa454d1d77fa3d",
+      "width": 390,
+      "height": 3332,
+      "state": "seal-write-unknown",
+      "evidence": "production-build-real-PG-synthetic-fixture",
+      "actuallyViewedBy": ["root", "B", "Astra"]
+    },
+    {
+      "path": "test-results/consumer-flow-operator-play-key-consumer-flow/p4-operator-key-list-320.png",
+      "sha256": "1ef11275cff7cf94ca5a869478dec43fdc53178295107d13cab72b5f67fb7f7b",
+      "width": 320,
+      "height": 3688,
+      "state": "server-key-records-no-pending",
+      "evidence": "production-build-real-PG-synthetic-fixture",
+      "actuallyViewedBy": ["root", "B", "Astra"]
+    },
+    {
+      "path": "test-results/studio-preview-actual-six--5b515-l-PNG-at-four-mobile-widths-studio-preview/preview-cover-390.png",
+      "sha256": "111e982895a5c02b42f4f17e9a958163d11f82bd2bd940d5167ca57532156b21",
+      "width": 390,
+      "height": 1730,
+      "state": "fixed-preview-cover-synthetic-content",
+      "evidence": "production-build-real-PG-synthetic-fixture",
+      "actuallyViewedBy": ["root"]
+    },
+    {
+      "path": "test-results/studio-preview-actual-six--5b515-l-PNG-at-four-mobile-widths-studio-preview/preview-question-390.png",
+      "sha256": "dd1609abc905bafb29dd0019acb31fafdd7d6614e98a11a7a544284021d51edf",
+      "width": 390,
+      "height": 1945,
+      "state": "fixed-preview-question-synthetic-content",
+      "evidence": "production-build-real-PG-synthetic-fixture",
+      "actuallyViewedBy": ["Astra"]
+    }
+  ],
+  "reviewCounts": {
+    "root": 13,
+    "A": 6,
+    "B": 8,
+    "Astra": 9
+  },
+  "limitations": [
+    "finite static original-image review, not interaction or pixel measurement proof",
+    "synthetic fixture assets are not historical-person consumer visual evidence",
+    "old imports-empty images show loading; imports-ready images show actual empty terminal state",
+    "workspace conflict image includes keyboard skip-link focus overlay",
+    "P3 mobile sequence-number wrapping remains nonblocking"
+  ]
+}
