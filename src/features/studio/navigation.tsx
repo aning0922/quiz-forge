@@ -44,6 +44,7 @@ export function StudioNavigation() {
               <Link
                 key={item.href}
                 href={item.href}
+                prefetch={false}
                 aria-label={item.label}
                 aria-current={current ? "page" : undefined}
                 className={styles.navigationLink}
