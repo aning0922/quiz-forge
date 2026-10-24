@@ -252,7 +252,7 @@ export function ProductOverview() {
           ].map(({ tab, icon: Icon }) => (
             <Link key={tab.id} href={tab.href}>
               <Icon size={18} aria-hidden="true" />
-              <span>{tab.id === "testing" ? "内测记录" : tab.label}</span>
+              <span>{tab.label}</span>
               <ChevronRight size={17} aria-hidden="true" />
             </Link>
           ))}

@@ -15,7 +15,7 @@ export function ProductWorkspaceNav({ productId }: { productId: string }) {
           href={item.href}
           aria-current={active === item.id ? "page" : undefined}
         >
-          {item.id === "testing" ? "内测记录" : item.label}
+          {item.label}
         </Link>
       ))}
     </nav>
