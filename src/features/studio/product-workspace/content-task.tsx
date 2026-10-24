@@ -320,7 +320,17 @@ function ContentRun({
                 <button
                   className={styles.primary}
                   disabled={busy}
-                  onClick={() => onPreview(application)}
+                  onClick={() =>
+                    onPreview({
+                      draftId: application.draftId,
+                      revision: application.revision,
+                      canonicalContentSha256:
+                        application.canonicalContentSha256,
+                      assetSetSha256: application.assetSetSha256,
+                      canonicalManifestSha256:
+                        application.canonicalManifestSha256,
+                    })
+                  }
                 >
                   预览此固定修订
                 </button>
