@@ -86,6 +86,27 @@ function fixture(draft = true): ProductOperations {
   return value;
 }
 describe("shared product presentation", () => {
+  it("prioritizes indeterminate current versions/testing over zero counts and historical records", () => {
+    const value = fixture();
+    value.review.current = { state: "present", value: review };
+    value.versions.current = {
+      state: "indeterminate",
+      reason: "unknown-version",
+    };
+    value.testing.current = {
+      state: "indeterminate",
+      reason: "unknown-testing",
+    };
+    value.testing.historicalCount = 1;
+    const result = productPresentation(value);
+    expect(result.primary.label).toBe("核实当前状态");
+    expect(result.primary.reason).not.toContain("尚无匹配固定版");
+    expect(result.testing).toEqual({
+      label: "内测状态待核实",
+      tone: "warning",
+    });
+    expect(result.historicalNote).toBe("历史内测 1 项");
+  });
   it("selects one content action without a draft and no preview", () => {
     const result = productPresentation(fixture(false));
     expect(result.primary.href).toBe(

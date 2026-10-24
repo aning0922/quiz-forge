@@ -100,6 +100,7 @@ export function productPresentation(
     matches(value.testing.current, target);
   const uncertain =
     (draft.state !== "present" && draft.state !== "none") ||
+    value.versions.current.state === "indeterminate" ||
     (target && value.review.current.state !== "none" && !currentReview) ||
     (target && value.versions.currentCount > 0 && !currentVersion);
   const review = !target
@@ -112,15 +113,16 @@ export function productPresentation(
       : value.review.current.state === "none"
         ? status(`r${target.revision} 待核对审核`, "warning")
         : status("审核待核实", "warning");
-  const testing = currentTesting
-    ? status(`r${target!.revision} 有答题版本`, "success")
-    : currentVersion
-      ? status(`r${target!.revision} 已有固定版`, "info")
-      : value.testing.historicalCount > 0
-        ? status("仅有历史内测", "neutral")
-        : value.testing.current.state === "indeterminate"
-          ? status("内测状态待核实", "warning")
-          : status("尚无当前内测", "neutral");
+  const testing =
+    value.testing.current.state === "indeterminate"
+      ? status("内测状态待核实", "warning")
+      : currentTesting
+        ? status(`r${target!.revision} 有答题版本`, "success")
+        : currentVersion
+          ? status(`r${target!.revision} 已有固定版`, "info")
+          : value.testing.historicalCount > 0
+            ? status("仅有历史内测", "neutral")
+            : status("尚无当前内测", "neutral");
   let primary: ProductPresentation["primary"];
   if (value.directory.archivedAt)
     primary = {
