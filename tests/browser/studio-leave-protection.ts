@@ -91,12 +91,23 @@ await require("esbuild").build({
   ],
 });
 let intent: ImportDto | undefined;
+let deny = false;
 let posts = 0,
   uploads = 0;
 const server = createServer(async (req, res) => {
   const url = new URL(req.url!, "http://localhost");
   if (url.pathname.startsWith("/api/")) {
     res.setHeader("content-type", "application/json");
+    if (deny) {
+      res.statusCode = 401;
+      res.end(
+        JSON.stringify({
+          code: "UNAUTHENTICATED",
+          requestId: "00000000-0000-0000-0000-000000000002",
+        }),
+      );
+      return;
+    }
     if (req.method === "POST") {
       posts++;
       const chunks: Buffer[] = [];
@@ -218,7 +229,7 @@ try {
     "confirm",
   );
   for (let attempt = 0; attempt < 2; attempt++) {
-    await dialog(() => page.goBack().catch(() => null), "beforeunload");
+    await dialog(() => page.evaluate("history.back()"), "beforeunload");
     await expect(page.getByLabel("第二项")).toHaveValue("unsaved two");
   }
   expect(await page.evaluate("window.probe().invalidations")).toBe(0);
@@ -248,7 +259,7 @@ try {
     "confirm",
   );
   await originalRemains(page);
-  await dialog(() => page.goBack().catch(() => null), "beforeunload");
+  await dialog(() => page.evaluate("history.back()"), "beforeunload");
   await originalRemains(page);
   await page
     .getByRole("button", { name: "创建内容包接收意图", exact: true })
@@ -276,6 +287,35 @@ try {
   );
   await originalRemains(page);
   expect(posts).toBe(1);
+  deny = true;
+  await page
+    .getByRole("button", { name: "读取最新接收状态", exact: true })
+    .click();
+  await expect(
+    page.getByText("会话已失效，请重新登录。", { exact: true }),
+  ).toBeVisible();
+  await dialog(
+    () => page.getByRole("link", { name: "测评管理", exact: true }).click(),
+    "alert",
+  );
+  const popupReady = page.waitForEvent("popup");
+  await page
+    .getByRole("link", { name: "在新标签重新登录", exact: true })
+    .click();
+  const popup = await popupReady;
+  await popup.waitForLoadState("domcontentloaded");
+  await originalRemains(page);
+  await expect(
+    page.getByRole("link", { name: "在新标签打开原接收记录", exact: true }),
+  ).toHaveAttribute(
+    "href",
+    "/studio/products/example/imports/00000000-0000-0000-0000-000000000001",
+  );
+  expect(posts).toBe(1);
+  expect(uploads).toBe(0);
+  await popup.close();
+  deny = false;
+  await page.getByRole("button", { name: "收起提示", exact: true }).click();
   await page
     .getByRole("button", { name: "上传所选内容包", exact: true })
     .click();
@@ -287,6 +327,9 @@ try {
   expect(uploads).toBe(1);
   await page.getByRole("link", { name: "测评管理", exact: true }).click();
   await expect(page.getByRole("heading", { name: "目录" })).toBeVisible();
+  observations.push(
+    "expired authority: new-tab login and original-record link preserve File without restoring old authority",
+  );
   observations.push(
     "original File survives canceled Back, UNKNOWN and awaiting-upload; exact original body uploads once after reconciliation; confirmed receive releases protection",
   );

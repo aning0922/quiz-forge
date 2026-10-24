@@ -188,6 +188,22 @@ export function ReceiveControls({
           此页未持有原文件。请在当前页上方选择文件并核实与原声明一致后，再显式上传。
         </p>
       )}
+      {file && (mayUpload || mayRecover || mustRead) && (
+        <div className={styles.note}>
+          <p>
+            若运营身份已失效，可在新标签重新登录，再打开原接收记录 {value.id}{" "}
+            查询状态。原页继续保留文件与现场，但不会因此恢复旧权限；新页上传前仍需重新选择与原声明一致的文件。
+          </p>
+          <a
+            className={`${styles.link} ${styles.secondary}`}
+            href={endpoint.replace("/api/studio/", "/studio/")}
+            target="_blank"
+            rel="noopener"
+          >
+            在新标签打开原接收记录
+          </a>
+        </div>
+      )}
     </section>
   );
 }

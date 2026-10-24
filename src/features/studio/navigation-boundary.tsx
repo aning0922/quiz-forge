@@ -11,6 +11,7 @@ import {
   type ReactNode,
 } from "react";
 import { invalidateCurrentStudioAuthority } from "./authority-events";
+import styles from "./navigation-boundary.module.css";
 
 type Protection = { dirty: boolean; pending: boolean; message?: string };
 type Entry = { current: Protection; saved: boolean };
@@ -88,6 +89,7 @@ export function StudioNavigationBoundary({
   children: ReactNode;
 }) {
   const [entries] = useState(() => new Map<symbol, Entry>());
+  const [recoveryNotice, setRecoveryNotice] = useState(false);
   const permittedUnload = useRef(false);
   function active() {
     return [...entries.values()]
@@ -98,6 +100,7 @@ export function StudioNavigationBoundary({
     const values = active();
     const pending = values.find((value) => value.pending);
     if (pending) {
+      setRecoveryNotice(true);
       window.alert(
         pending.message ??
           "当前操作尚未确认，原输入仍保留在此页。请先完成核实或处理，再离开。",
@@ -185,6 +188,21 @@ export function StudioNavigationBoundary({
           window.location.assign(url.href);
         }}
       >
+        {recoveryNotice && (
+          <aside className={styles.notice} aria-label="保留当前操作并恢复身份">
+            <p>
+              当前操作尚未确认，原文件与输入仍保留在本页。需要重新登录时，请在新标签继续；本页不会自动重发请求。
+            </p>
+            <div>
+              <a href="/studio/login" target="_blank" rel="noopener">
+                在新标签重新登录
+              </a>
+              <button type="button" onClick={() => setRecoveryNotice(false)}>
+                收起提示
+              </button>
+            </div>
+          </aside>
+        )}
         {children}
       </div>
     </ProtectionContext.Provider>
