@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import type { ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import { useProductOperations } from "../operations-ui/read";
 import { AsOf, ObservationValue } from "../operations-ui/summary";
 import { ProductWorkspaceContext } from "./context";
@@ -43,6 +43,16 @@ function WorkspaceFrameContent({
     if (!wasRevoked && authority.isRevoked) invalidateCurrentStudioAuthority();
   });
   const value = read.value;
+  const snapshotDetails = useRef<HTMLDetailsElement>(null);
+  useEffect(() => {
+    const wide = window.matchMedia("(min-width: 601px)");
+    const setDefault = () => {
+      if (snapshotDetails.current) snapshotDetails.current.open = wide.matches;
+    };
+    setDefault();
+    wide.addEventListener("change", setDefault);
+    return () => wide.removeEventListener("change", setDefault);
+  }, []);
   return (
     <ProductWorkspaceContext.Provider value={{ productId, read }}>
       <div className={styles.workspace}>
@@ -74,49 +84,59 @@ function WorkspaceFrameContent({
               摘要读取失败，当前业务状态无法判定。{read.error}
             </p>
           )}
-          {value && (
-            <>
-              <div className={styles.businessFacts}>
-                <div>
-                  <span>当前草稿</span>
-                  <strong>
-                    <ObservationValue
-                      observation={value.content.draft}
-                      absent="暂无"
-                    >
-                      {(draft) => <>r{draft.target.revision}</>}
-                    </ObservationValue>
-                  </strong>
+          <details
+            ref={snapshotDetails}
+            className={styles.snapshotDetails}
+            open
+          >
+            <summary>业务状态与观察时间</summary>
+            {value && (
+              <>
+                <div className={styles.businessFacts}>
+                  <div>
+                    <span>当前草稿</span>
+                    <strong>
+                      <ObservationValue
+                        observation={value.content.draft}
+                        absent="暂无"
+                      >
+                        {(draft) => <>r{draft.target.revision}</>}
+                      </ObservationValue>
+                    </strong>
+                  </div>
+                  <div>
+                    <span>当前匹配审核</span>
+                    <strong>
+                      <ObservationValue
+                        observation={value.review.current}
+                        absent="缺少精确匹配审核"
+                      >
+                        {(review) => <>r{review.target.revision} 的匹配依据</>}
+                      </ObservationValue>
+                    </strong>
+                  </div>
+                  <div>
+                    <span>固定内容版本</span>
+                    <strong>
+                      当前 {value.versions.currentCount} · 历史{" "}
+                      {value.versions.historicalCount}
+                    </strong>
+                  </div>
+                  <div>
+                    <span>试玩版本</span>
+                    <strong>
+                      当前 {value.testing.currentCount} · 历史{" "}
+                      {value.testing.historicalCount}
+                    </strong>
+                  </div>
                 </div>
-                <div>
-                  <span>当前匹配审核</span>
-                  <strong>
-                    <ObservationValue
-                      observation={value.review.current}
-                      absent="缺少精确匹配审核"
-                    >
-                      {(review) => <>r{review.target.revision} 的匹配依据</>}
-                    </ObservationValue>
-                  </strong>
-                </div>
-                <div>
-                  <span>固定内容版本</span>
-                  <strong>
-                    当前 {value.versions.currentCount} · 历史{" "}
-                    {value.versions.historicalCount}
-                  </strong>
-                </div>
-                <div>
-                  <span>试玩版本</span>
-                  <strong>
-                    当前 {value.testing.currentCount} · 历史{" "}
-                    {value.testing.historicalCount}
-                  </strong>
-                </div>
-              </div>
-              <AsOf value={value.asOf} />
-            </>
-          )}
+                <AsOf value={value.asOf} />
+              </>
+            )}
+            <p className={styles.muted}>
+              摘要仅供查看；历史记录、固定预览和未决操作各保留原目标。
+            </p>
+          </details>
           <div className={styles.headerActions}>
             <button
               className={styles.refresh}
@@ -126,9 +146,6 @@ function WorkspaceFrameContent({
             >
               {read.error ? "重新读取摘要" : "刷新业务摘要"}
             </button>
-            <p className={styles.muted}>
-              摘要仅供查看；历史记录、固定预览和未决操作各保留原目标。
-            </p>
           </div>
         </header>
         <ProductWorkspaceNav productId={productId} />
