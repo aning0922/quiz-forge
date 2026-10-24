@@ -1,0 +1,239 @@
+.dialog {
+  margin: auto;
+  padding: 0;
+  width: min(640px, calc(100vw - 36px));
+  max-width: none;
+  max-height: min(92dvh, 900px);
+  border: 0;
+  border-radius: 15px;
+  color: #202a42;
+  background: #fff;
+  box-shadow: 0 25px 100px #121d3950;
+  overflow: hidden;
+  font-size: 16px;
+  line-height: 1.55;
+}
+.dialog[open] {
+  display: flex;
+  flex-direction: column;
+}
+.dialog::backdrop {
+  background: #171e36a8;
+}
+.dialog[data-surface="play"],
+.dialog[data-surface="issue"],
+.dialog[data-surface="void"],
+.dialog[data-surface="archive"] {
+  width: min(490px, calc(100vw - 36px));
+}
+.dialog[data-variant="drawer"] {
+  position: fixed;
+  inset: 0 0 0 auto;
+  margin: 0;
+  width: min(460px, 100vw);
+  height: 100dvh;
+  max-height: none;
+  border-radius: 0;
+  box-shadow: -10px 0 55px #1b25412b;
+}
+.dialog[data-variant="drawer"]::backdrop {
+  background: #1b23385b;
+}
+.dialog[data-variant="preview"] {
+  position: fixed;
+  inset: 0;
+  margin: 0;
+  width: 100vw;
+  height: 100dvh;
+  max-height: none;
+  border-radius: 0;
+  background: #161a2c;
+  color: #fff;
+}
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 24px 25px 18px;
+  border-bottom: 1px solid #e6e9f1;
+  flex-shrink: 0;
+}
+.header h2 {
+  margin: 0;
+  font-size: 21px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+.eyebrow {
+  margin: 6px 0 0;
+  color: #75829a;
+  font-size: 16px;
+}
+.close,
+.returnButton {
+  min-height: 44px;
+  min-width: 44px;
+  border: 1px solid #dfe4ee;
+  border-radius: 8px;
+  background: #fff;
+  color: #3f4e69;
+  font: inherit;
+  font-weight: 650;
+  cursor: pointer;
+}
+.close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-color: transparent;
+  flex-shrink: 0;
+}
+.close:hover,
+.returnButton:hover {
+  background: #f8f7ff;
+}
+.body {
+  padding: 24px 25px;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  flex: 1;
+}
+.boundary {
+  padding: 0;
+  margin: 0;
+  border: 0;
+  min-width: 0;
+}
+.footer {
+  padding: 15px 25px;
+  border-top: 1px solid #e6e9f1;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  background: #fcfcff;
+}
+.returnButton {
+  padding: 9px 15px;
+}
+.actionsHost {
+  display: contents;
+}
+.actionGroup {
+  padding: 0;
+  margin: 0;
+  border: 0;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.actionGroup[hidden] {
+  display: none;
+}
+.actionGroup :is(button, a) {
+  min-height: 44px;
+  font-size: 16px;
+}
+.notice {
+  margin: 14px 25px 0;
+  padding: 13px 14px;
+  background: #fffaf0;
+  color: #805d27;
+  border: 1px solid #f0d9a8;
+  border-radius: 9px;
+  font-size: 16px;
+}
+.notice p {
+  margin: 6px 0;
+}
+.notice a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  text-decoration: underline;
+}
+.dialog :is(button, a, input, select, summary):focus-visible {
+  outline: 3px solid #b9b2ff;
+  outline-offset: 3px;
+}
+.dialog[data-variant="preview"] .header {
+  padding: 13px 23px;
+  border-color: #ffffff23;
+  align-items: center;
+}
+.dialog[data-variant="preview"] .header h2 {
+  font-size: 18px;
+}
+.dialog[data-variant="preview"] .eyebrow {
+  color: #b3b8d3;
+}
+.dialog[data-variant="preview"] .close {
+  color: #fff;
+  background: #ffffff13;
+  border-color: #ffffff33;
+  padding-inline: 12px;
+}
+.dialog[data-variant="preview"] .body {
+  background: radial-gradient(circle at 50% 30%, #34354f, #151a2a 65%);
+  padding: 30px 20px;
+}
+.dialog[data-variant="preview"] .footer {
+  justify-content: center;
+  padding: 10px 24px;
+  border: 0;
+  background: #161a2c;
+}
+.dialog[data-variant="preview"] .returnButton {
+  display: none;
+}
+.previewNote {
+  margin: 0;
+  color: #b4b9d0;
+  font-size: 16px;
+  text-align: center;
+}
+@media (max-width: 570px) {
+  .dialog[data-variant="task"] {
+    position: fixed;
+    inset: auto 0 0;
+    margin: 0;
+    width: 100vw;
+    max-height: 94dvh;
+    border-radius: 14px 14px 0 0;
+  }
+  .header,
+  .body,
+  .footer {
+    padding-inline: 18px;
+  }
+  .header {
+    padding-top: 21px;
+  }
+  .header h2 {
+    font-size: 20px;
+  }
+  .footer,
+  .actionGroup {
+    gap: 8px;
+  }
+  .notice {
+    margin-inline: 18px;
+  }
+  .dialog[data-variant="preview"] .header {
+    padding: 10px 14px;
+  }
+  .dialog[data-variant="preview"] .eyebrow {
+    display: none;
+  }
+  .dialog[data-variant="preview"] .body {
+    padding: 20px 14px;
+  }
+}

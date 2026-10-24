@@ -1,0 +1,239 @@
+.workbench {
+  display: grid;
+  gap: 18px;
+  min-width: 0;
+  font-size: 16px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.heading h2 {
+  margin: 0;
+  font-size: 22px;
+}
+.heading p {
+  margin: 6px 0 0;
+  color: var(--studio-muted, #63718b);
+}
+.panel,
+.record {
+  min-width: 0;
+  padding: 20px;
+  background: #fff;
+  border: 1px solid var(--studio-border, #e1e6f0);
+  border-radius: 12px;
+}
+.panel h3,
+.record h3 {
+  margin: 0 0 10px;
+  font-size: 19px;
+}
+.workbench button {
+  min-height: 44px;
+  padding: 8px 14px;
+  border: 1px solid #dce1ec;
+  border-radius: 8px;
+  font: inherit;
+  color: #5549ad;
+  background: #fff;
+  cursor: pointer;
+}
+.workbench button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+.workbench button:focus-visible {
+  outline: 3px solid #a79eea;
+  outline-offset: 3px;
+}
+.workbench .primary {
+  color: #fff;
+  background: var(--studio-primary, #6358df);
+  border-color: var(--studio-primary, #6358df);
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
+}
+.facts {
+  display: grid;
+  gap: 10px;
+  margin-block: 16px;
+}
+.facts p {
+  margin: 0;
+  padding: 12px;
+  background: #f8f9fc;
+  border-radius: 8px;
+}
+.notice {
+  padding: 14px;
+  border: 1px solid #eed9b8;
+  background: #fff9ef;
+  border-radius: 8px;
+}
+.code {
+  font-size: 16px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 600px) {
+  .panel,
+  .record {
+    padding: 16px;
+  }
+}
+.reviewColumns {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(300px, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+.cardHeading {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+.cardHeading h3 {
+  margin: 0 0 5px;
+}
+.cardHeading p,
+.versionRow p {
+  margin: 3px 0 0;
+  color: var(--studio-muted, #63718b);
+}
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 9px;
+  border-radius: 7px;
+  font-weight: 600;
+  background: #eff2f6;
+  color: #63718b;
+  flex-shrink: 0;
+}
+.successTone {
+  background: #e9f8f0;
+  color: #127555;
+}
+.warningTone {
+  background: #fff3e4;
+  color: #92571c;
+}
+.infoTone {
+  background: #eaf3ff;
+  color: #32649d;
+}
+.conditions {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+.condition {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  padding: 14px;
+  border: 1px solid #e6e9f1;
+  border-radius: 9px;
+}
+.condition p {
+  margin: 5px 0 0;
+  color: var(--studio-muted, #63718b);
+}
+.versionRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 0;
+  border-bottom: 1px solid #e6e9f1;
+}
+.versionRow > div {
+  min-width: 0;
+}
+.boundaryNote,
+.hint {
+  color: var(--studio-muted, #63718b);
+}
+.boundaryNote {
+  margin: 20px 0 0;
+  padding: 14px;
+  border-radius: 8px;
+  background: #f8f9fd;
+}
+.empty {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  padding: 28px 12px;
+  border: 1px dashed #e1e6f0;
+  border-radius: 10px;
+  text-align: center;
+  color: var(--studio-muted, #63718b);
+}
+.empty p,
+.empty h3 {
+  margin: 0;
+}
+.ready {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid #c8e7d6;
+  border-radius: 8px;
+  background: #f0faf5;
+  color: #1b7458;
+}
+.ready p {
+  margin: 0;
+}
+.workbench .quietButton {
+  border-color: transparent;
+  padding-inline: 0;
+  background: transparent;
+  color: var(--studio-muted, #63718b);
+  margin-top: 8px;
+}
+.notice {
+  display: flex;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.notice p {
+  margin: 0;
+  flex: 1 1 200px;
+}
+@media (max-width: 1050px) {
+  .reviewColumns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 600px) {
+  .condition {
+    grid-template-columns: 20px minmax(0, 1fr);
+  }
+  .condition > .badge {
+    grid-column: 2;
+    justify-self: start;
+  }
+  .cardHeading {
+    flex-wrap: wrap;
+  }
+}
+.heading h2 {
+  font-weight: 650;
+}

@@ -1,0 +1,126 @@
+.page {
+  display: grid;
+  gap: 22px;
+  min-width: 0;
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--studio-ink, #202a42);
+}
+.header h1 {
+  margin: 0 0 6px;
+  font-size: 28px;
+  line-height: 1.4;
+  font-weight: 750;
+}
+.header p {
+  margin: 0;
+  color: var(--studio-muted, #75829a);
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+  align-items: stretch;
+}
+.panel {
+  min-width: 0;
+  padding: 22px;
+  border: 1px solid var(--studio-border, #e6e9f1);
+  border-radius: 13px;
+  background: #fff;
+  box-shadow: 0 4px 20px #19234506;
+  overflow-wrap: anywhere;
+}
+.title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+}
+.title h2 {
+  margin: 0;
+  font-size: 19px;
+  font-weight: 650;
+}
+.title span {
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 16px;
+}
+.available {
+  background: #e4f7ee;
+  color: #168064;
+}
+.foundation {
+  background: #e9f2ff;
+  color: #347bbd;
+}
+.future {
+  background: #eef1f6;
+  color: #62708a;
+}
+.panel p {
+  color: var(--studio-muted, #75829a);
+  margin: 16px 0;
+}
+.panel p:last-child {
+  margin-bottom: 0;
+}
+.button,
+.textLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  font: inherit;
+  color: var(--studio-ink, #202a42);
+  text-decoration: none;
+}
+.button {
+  border: 1px solid var(--studio-border, #e6e9f1);
+  border-radius: 8px;
+  padding: 8px 13px;
+  background: #fff;
+}
+.textLink {
+  color: var(--studio-primary, #6358df);
+  margin-top: 10px;
+}
+.button:hover,
+.textLink:hover {
+  background: #faf9ff;
+}
+.button:focus-visible,
+.textLink:focus-visible {
+  outline: 3px solid #aaa0ff;
+  outline-offset: 3px;
+}
+.facts {
+  margin: 16px 0 0;
+  display: grid;
+  gap: 10px;
+}
+.facts div {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr);
+  gap: 10px;
+}
+.facts dt {
+  color: var(--studio-muted, #75829a);
+}
+.facts dd {
+  margin: 0;
+  font-weight: 600;
+}
+@media (max-width: 800px) {
+  .grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .panel {
+    padding: 18px;
+  }
+  .facts div {
+    grid-template-columns: 85px minmax(0, 1fr);
+  }
+}

@@ -1,6 +1,17 @@
 "use client";
 import { TechnicalDetails } from "../presentation/technical-details";
-import { useEffect, useRef, useState } from "react";
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
+import { useStudioLeaveProtection } from "../navigation-boundary";
+import {
+  RetainedTaskActions,
+  type WorkspaceTaskState,
+} from "../product-workspace/task-surfaces";
 import type {
   InternalReviewState,
   InternalVersionList,
@@ -23,7 +34,8 @@ import {
   type InternalEvidence,
 } from "./flow";
 import { InternalEvidenceFacts } from "./pending-panel";
-import { RequestFacts } from "./facts";
+import { RequestFacts, type VersionReceiptActions } from "./facts";
+import local from "./internal-versions.module.css";
 import { useInternalAuthority } from "./authority";
 import { internalVersionMessage } from "./message";
 import styles from "../workspace/workspace.module.css";
@@ -34,13 +46,21 @@ export function InternalWritePanel({
   session,
   nonce,
   onChanged,
+  onTaskState,
+  renderSurface,
+  embedded = false,
+  receiptActions,
 }: {
+  embedded?: boolean;
+  receiptActions?: VersionReceiptActions | undefined;
   productId: string;
   state?: InternalReviewState | undefined;
   versions?: InternalVersionList | undefined;
   session: StudioSessionDto;
   nonce: number;
   onChanged: () => void;
+  onTaskState?: ((state: WorkspaceTaskState) => void) | undefined;
+  renderSurface?: ((content: ReactNode) => ReactNode) | undefined;
 }) {
   const authority = useInternalAuthority(),
     [epoch] = useState(() => new InternalOperationEpoch(productId)),
@@ -49,6 +69,7 @@ export function InternalWritePanel({
     [busy, setBusy] = useState(false),
     [denied, setDenied] = useState(false),
     [available, setAvailable] = useState(false),
+    [preparationChecked, setPreparationChecked] = useState(false),
     [message, setMessage] = useState(""),
     [result, setResult] = useState<InternalEvidence>();
   const active = useRef(true);
@@ -66,6 +87,8 @@ export function InternalWritePanel({
         setAvailable(true);
       } catch {
         setAvailable(false);
+      } finally {
+        setPreparationChecked(true);
       }
     }, 0);
     return () => clearTimeout(timer);
@@ -78,6 +101,23 @@ export function InternalWritePanel({
       matchesInternalConfirmation(confirmation, state, versions),
     capacity =
       versions?.productId === productId && versions.versions.length < 100;
+  const pending = preparationChecked && !available;
+  useStudioLeaveProtection({
+    dirty: !!confirmation || !!renderer,
+    pending: busy || pending,
+  });
+  useLayoutEffect(() => {
+    onTaskState?.({
+      busy,
+      pending,
+      retained: !!confirmation || pending || busy,
+      message: pending
+        ? "审核或封存有原操作待核实，请继续原任务。"
+        : confirmation
+          ? "保留了此固定修订的尚未发送确认。"
+          : "核对与固定内测内容",
+    });
+  }, [busy, pending, confirmation, onTaskState]);
   function prepare(seal: boolean) {
     if (!state || !canWrite || busy || !available) return;
     setMessage("");
@@ -143,7 +183,154 @@ export function InternalWritePanel({
       }
     }
   }
-  return (
+  const compact = (
+    <section
+      className={local.embeddedTask}
+      aria-label="记录审核依据与固定内容版本"
+    >
+      <div className={local.targetCard}>
+        <strong>本次目标：修订 r{state?.target.revision ?? "尚未读取"}</strong>
+        <p>
+          {state?.review
+            ? "将内容、素材、评分与所选预览样式固定为一个内测版本。"
+            : "只登记已经存在的审核依据，不产生新的作者批准。"}
+        </p>
+      </div>
+      {!canWrite && <p role="status">当前写入口关闭，原操作记录保持。</p>}
+      {!state && <p>修订事实尚未可靠读取，新确认不可用。</p>}
+      {state && !head && (
+        <p>
+          此任务绑定历史修订 r{state.target.revision}；不能记录或封存历史目标。
+        </p>
+      )}
+      {state && head && !state.review && (
+        <p>
+          {state.baseline
+            ? "已有匹配的登记基线，提交时仍会核对内容、素材及既有证据。"
+            : "此修订尚无匹配审核依据。请先完成内容与素材审核，此页面不能代为批准。"}
+        </p>
+      )}
+      <div hidden={!!confirmation || !!result}>
+        {state?.review && head && (
+          <>
+            <label className={styles.field}>
+              内测预览样式
+              <select
+                className={styles.select}
+                value={renderer}
+                disabled={!canWrite || busy}
+                onChange={(event) => {
+                  epoch.invalidate();
+                  setConfirmation(undefined);
+                  setRenderer(event.target.value);
+                }}
+              >
+                <option value="">请明确选择</option>
+                {state.rendererChoices.map((choice, index) => (
+                  <option
+                    key={choice.renderer.entrySha256}
+                    value={choice.renderer.entrySha256}
+                  >
+                    样式 {index + 1} · 版本 {choice.renderer.version} ·
+                    仅内测预览
+                  </option>
+                ))}
+              </select>
+            </label>
+            {!versions && <p>版本容量尚未可靠读取，封存准备保持关闭。</p>}
+            {versions && !capacity && <p>100 个固定槽位已满，不能新增。</p>}
+            {!state.engine && <p>没有可用的固定评分引擎身份。</p>}
+          </>
+        )}
+      </div>
+      {confirmation && (
+        <div className={local.targetCard} aria-label="确认固定原操作">
+          <h3>
+            确认
+            {confirmation.request.operation === "review"
+              ? "记录已有审核依据"
+              : "固定内测内容版本"}
+          </h3>
+          <p>确认后先保存完整原请求，再发送；不会改用最新修订。</p>
+          <RequestFacts request={confirmation.request} />
+          {!valid && (
+            <p role="alert">读取已更新或失败，原确认已失效。请重新准备。</p>
+          )}
+        </div>
+      )}
+      {result && !authority.isRevoked && (
+        <>
+          <InternalEvidenceFacts
+            evidence={result}
+            receiptActions={receiptActions}
+          />
+          <p>原操作记录仍保留，请在下方核实区明确结束后继续。</p>
+        </>
+      )}
+      {!available && preparationChecked && !result && (
+        <p role="status">请先核实下方原操作记录，新准备保持关闭。</p>
+      )}
+      {busy && <p role="status">正在发送固定请求，请等待结果…</p>}
+      {message && <p role="status">{message}</p>}
+      <RetainedTaskActions id="review" visible={available && !!state && head}>
+        {result ? (
+          <button
+            className={`${styles.button} ${styles.secondary}`}
+            onClick={() => setResult(undefined)}
+          >
+            返回本修订准备
+          </button>
+        ) : confirmation ? (
+          <>
+            <button
+              className={`${styles.button} ${styles.secondary}`}
+              disabled={busy}
+              onClick={() => {
+                epoch.invalidate();
+                setConfirmation(undefined);
+              }}
+            >
+              取消尚未发送的确认
+            </button>
+            <button
+              className={styles.button}
+              disabled={!valid || !canWrite || !available || busy}
+              onClick={() => void submit()}
+            >
+              确认并发送此固定请求
+            </button>
+          </>
+        ) : state?.review ? (
+          <button
+            className={styles.button}
+            disabled={
+              !canWrite ||
+              busy ||
+              !capacity ||
+              !state.engine ||
+              !state.rendererChoices.some(
+                (c) => c.renderer.entrySha256 === renderer,
+              )
+            }
+            onClick={() => prepare(true)}
+          >
+            准备固定内测内容版本
+          </button>
+        ) : (
+          <button
+            className={styles.button}
+            disabled={!canWrite || busy || !state?.baseline}
+            onClick={() => prepare(false)}
+          >
+            准备记录已有审核依据
+          </button>
+        )}
+      </RetainedTaskActions>
+    </section>
+  );
+  const content = embedded ? (
+    compact
+  ) : (
     <section className={styles.panel} aria-label="记录审核依据与固定内容版本">
       <h2>记录审核依据与固定内容版本</h2>
       <p>{INTERNAL_VERSION_DISCLOSURE}</p>
@@ -285,7 +472,10 @@ export function InternalWritePanel({
         </section>
       )}
       {result && !authority.isRevoked && (
-        <InternalEvidenceFacts evidence={result} />
+        <InternalEvidenceFacts
+          evidence={result}
+          receiptActions={receiptActions}
+        />
       )}
       {result && !authority.isRevoked && (
         <p>
@@ -302,4 +492,5 @@ export function InternalWritePanel({
       )}
     </section>
   );
+  return renderSurface ? renderSurface(content) : content;
 }

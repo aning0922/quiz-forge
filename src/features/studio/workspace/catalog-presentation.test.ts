@@ -133,7 +133,10 @@ describe("compact catalog surfaces", () => {
       }),
     );
     expect((card.match(/href=/g) ?? []).length).toBe(2); // Title opens overview; one explicit primary action.
-    expect(card).toContain('href="/studio/products/compact-test/content"');
+    expect(card).toContain('href="/studio/products/compact-test"');
+    expect(card).toContain("处理内容");
+    expect(card).toContain('href="/studio/products/compact-test?task=content"');
+    expect(html).toContain('href="/studio/products/compact-test?task=review"');
   });
   it("preserves identity, metadata revision and separate-tab reconciliation when operations is absent", () => {
     const html = renderToStaticMarkup(

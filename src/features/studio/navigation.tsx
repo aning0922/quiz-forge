@@ -1,6 +1,6 @@
 "use client";
 
-import { type MouseEvent } from "react";
+import { Fragment, type MouseEvent } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -8,7 +8,6 @@ import {
   ClipboardList,
   Ticket,
   Settings,
-  UserRound,
   X,
 } from "lucide-react";
 import { StudioBrand } from "./brand";
@@ -88,17 +87,23 @@ export function StudioNavigation({
           {STUDIO_SECTIONS.map((item) => {
             const Icon = icons[item.id];
             return (
-              <Link
-                key={item.id}
-                href={item.href}
-                prefetch={false}
-                aria-current={location.section === item.id ? "page" : undefined}
-                className={styles.navigationLink}
-                onClick={followedLink}
-              >
-                <Icon size={20} aria-hidden="true" />
-                <span>{item.label}</span>
-              </Link>
+              <Fragment key={item.id}>
+                {item.id === "settings" && (
+                  <p className={styles.sideLabel}>平台管理</p>
+                )}
+                <Link
+                  href={item.href}
+                  prefetch={false}
+                  aria-current={
+                    location.section === item.id ? "page" : undefined
+                  }
+                  className={styles.navigationLink}
+                  onClick={followedLink}
+                >
+                  <Icon size={20} aria-hidden="true" />
+                  <span>{item.label}</span>
+                </Link>
+              </Fragment>
             );
           })}
         </nav>
@@ -116,7 +121,9 @@ export function StudioNavigation({
             aria-current={pathname === "/studio/session" ? "page" : undefined}
             onClick={followedLink}
           >
-            <UserRound size={23} aria-hidden="true" />
+            <span className={styles.avatar} aria-hidden="true">
+              {Array.from(identity?.label.trim() || "Q")[0]?.toUpperCase()}
+            </span>
             <span>
               {identity ? (
                 <>

@@ -12,6 +12,7 @@ import { useWorkspaceRead } from "./use-request";
 import { Pagination } from "./primitives";
 import { TechnicalDetails } from "../presentation/technical-details";
 import styles from "./workspace.module.css";
+import local from "./taxonomy-picker.module.css";
 
 export function taxonomyPath(kind: TaxonomyKind) {
   return kind === "category" ? "/api/studio/categories" : "/api/studio/tags";
@@ -39,6 +40,8 @@ export function TaxonomyPicker({
   disabled = false,
   purpose = "association",
   selectedId,
+  compact = false,
+  onFailure,
 }: {
   kind: TaxonomyKind;
   selected: TaxonomySummary[];
@@ -46,6 +49,8 @@ export function TaxonomyPicker({
   disabled?: boolean;
   purpose?: "association" | "filter";
   selectedId?: string;
+  compact?: boolean;
+  onFailure?: ((error: unknown) => void) | undefined;
 }) {
   const id = useId();
   const [search, setSearch] = useState("");
@@ -59,9 +64,11 @@ export function TaxonomyPicker({
   });
   const read = useWorkspaceRead<Page<TaxonomyDto>>(
     `${taxonomyPath(kind)}?${query}`,
+    onFailure,
   );
   const label = kind === "category" ? "分类" : "标签";
   const emptyOptions = taxonomyOptionsAreEmpty(read.value, q, page);
+  const Options = compact ? "details" : "div";
   return (
     <section aria-label={`${label}选择`}>
       <p className={styles.legend}>
@@ -117,117 +124,131 @@ export function TaxonomyPicker({
           </li>
         ))}
       </ul>
-      {!emptyOptions && (
-        <div className={styles.field}>
-          <label htmlFor={id}>搜索{label}名称或英文标识</label>
-          <input
-            id={id}
-            className={styles.input}
-            value={search}
-            disabled={disabled}
-            onChange={(event) => setSearch(event.target.value)}
-          />
+      <Options
+        className={compact ? local.options : undefined}
+        open={compact && read.error ? true : undefined}
+      >
+        {compact && (
+          <summary>
+            {read.loading
+              ? `正在读取${label}…`
+              : emptyOptions
+                ? `暂无可选${label}`
+                : `选择或调整${label}`}
+          </summary>
+        )}
+        {!emptyOptions && (
+          <div className={styles.field}>
+            <label htmlFor={id}>搜索{label}名称或英文标识</label>
+            <input
+              id={id}
+              className={styles.input}
+              value={search}
+              disabled={disabled}
+              onChange={(event) => setSearch(event.target.value)}
+            />
+            <button
+              className={`${styles.button} ${styles.secondary}`}
+              type="button"
+              disabled={disabled || read.loading}
+              onClick={() => {
+                setQ(search);
+                setPage(1);
+              }}
+            >
+              搜索{label}
+            </button>
+          </div>
+        )}
+        {read.loading && <p role="status">正在加载{label}…</p>}
+        {read.error && (
+          <div className={`${styles.status} ${styles.error}`} role="alert">
+            <p>{read.error}</p>
+          </div>
+        )}
+        {read.value && (
+          <>
+            {!read.value.items.length && (
+              <p className={styles.note}>
+                {emptyOptions
+                  ? purpose === "filter"
+                    ? `暂无${label}可用于筛选。`
+                    : selected.length
+                      ? `暂无可新增的${label}，已选内容可保留或移除。`
+                      : `暂无可选${label}，可暂不设置。`
+                  : q
+                    ? `没有符合搜索条件的${label}，请更换关键词。`
+                    : `当前页没有可选${label}，请返回上一页。`}
+              </p>
+            )}
+            {read.value.items.length > 0 && (
+              <fieldset className={styles.choices} disabled={disabled}>
+                <legend className={styles.legend}>
+                  可关联{label} · 第 {read.value.page} 页
+                </legend>
+                {read.value.items.map((item) => {
+                  const checked =
+                    purpose === "filter" && selectedId !== undefined
+                      ? selectedId === item.id
+                      : selected.some((value) => value.id === item.id);
+                  return (
+                    <label className={styles.choice} key={item.id}>
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        disabled={
+                          (purpose === "association" &&
+                            Boolean(item.archivedAt)) ||
+                          (kind === "tag" && !checked && selected.length >= 8)
+                        }
+                        onChange={() =>
+                          onChange(
+                            checked
+                              ? selected.filter((value) => value.id !== item.id)
+                              : kind === "category" || purpose === "filter"
+                                ? [item]
+                                : [...selected, item],
+                          )
+                        }
+                      />
+                      <span>
+                        {item.name} · {item.slug}
+                        {item.archivedAt ? " · 已归档" : ""}
+                      </span>
+                    </label>
+                  );
+                })}
+              </fieldset>
+            )}
+            {(page > 1 || read.value.hasNext) && (
+              <Pagination
+                page={page}
+                hasNext={read.value.hasNext}
+                busy={disabled || read.loading}
+                onPage={setPage}
+              />
+            )}
+          </>
+        )}
+        <div className={`${styles.actions} ${styles.pickerActions}`}>
+          <Link
+            className={`${styles.link} ${styles.secondary}`}
+            href={compact ? "/studio/settings" : "/studio/taxonomy"}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            管理分类与标签（新标签页）
+          </Link>
           <button
             className={`${styles.button} ${styles.secondary}`}
             type="button"
             disabled={disabled || read.loading}
-            onClick={() => {
-              setQ(search);
-              setPage(1);
-            }}
+            onClick={read.refresh}
           >
-            搜索{label}
+            重新读取{label}
           </button>
         </div>
-      )}
-      {read.loading && <p role="status">正在加载{label}…</p>}
-      {read.error && (
-        <div className={`${styles.status} ${styles.error}`} role="alert">
-          <p>{read.error}</p>
-        </div>
-      )}
-      {read.value && (
-        <>
-          {!read.value.items.length && (
-            <p className={styles.note}>
-              {emptyOptions
-                ? purpose === "filter"
-                  ? `暂无${label}可用于筛选。`
-                  : selected.length
-                    ? `暂无可新增的${label}，已选内容可保留或移除。`
-                    : `暂无可选${label}，可暂不设置。`
-                : q
-                  ? `没有符合搜索条件的${label}，请更换关键词。`
-                  : `当前页没有可选${label}，请返回上一页。`}
-            </p>
-          )}
-          {read.value.items.length > 0 && (
-            <fieldset className={styles.choices} disabled={disabled}>
-              <legend className={styles.legend}>
-                可关联{label} · 第 {read.value.page} 页
-              </legend>
-              {read.value.items.map((item) => {
-                const checked =
-                  purpose === "filter" && selectedId !== undefined
-                    ? selectedId === item.id
-                    : selected.some((value) => value.id === item.id);
-                return (
-                  <label className={styles.choice} key={item.id}>
-                    <input
-                      type="checkbox"
-                      checked={checked}
-                      disabled={
-                        (purpose === "association" &&
-                          Boolean(item.archivedAt)) ||
-                        (kind === "tag" && !checked && selected.length >= 8)
-                      }
-                      onChange={() =>
-                        onChange(
-                          checked
-                            ? selected.filter((value) => value.id !== item.id)
-                            : kind === "category" || purpose === "filter"
-                              ? [item]
-                              : [...selected, item],
-                        )
-                      }
-                    />
-                    <span>
-                      {item.name} · {item.slug}
-                      {item.archivedAt ? " · 已归档" : ""}
-                    </span>
-                  </label>
-                );
-              })}
-            </fieldset>
-          )}
-          {(page > 1 || read.value.hasNext) && (
-            <Pagination
-              page={page}
-              hasNext={read.value.hasNext}
-              busy={disabled || read.loading}
-              onPage={setPage}
-            />
-          )}
-        </>
-      )}
-      <div className={`${styles.actions} ${styles.pickerActions}`}>
-        <Link
-          className={`${styles.link} ${styles.secondary}`}
-          href="/studio/taxonomy"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          管理分类与标签（新标签页）
-        </Link>
-        <button
-          className={`${styles.button} ${styles.secondary}`}
-          type="button"
-          disabled={disabled || read.loading}
-          onClick={read.refresh}
-        >
-          重新读取{label}
-        </button>
-      </div>
+      </Options>
     </section>
   );
 }

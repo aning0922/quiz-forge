@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useSyncExternalStore } from "react";
 import {
   pushCatalogQuery,
@@ -22,6 +21,8 @@ import {
   type CatalogSearchParams,
 } from "./list-query";
 import styles from "./workspace.module.css";
+import parity from "./catalog-parity.module.css";
+import { ProductCreateTask, ProductCreateAction } from "./product-create-task";
 
 export function ProductList({
   session,
@@ -38,14 +39,14 @@ export function ProductList({
   const result = readCatalogQuery(
     liveSearch === null ? search : new URLSearchParams(liveSearch),
   );
-  return result.ok ? (
-    <CatalogList
-      key={catalogQueryString(result.query)}
-      session={session}
-      query={result.query}
-    />
-  ) : (
-    <InvalidCatalogAddress message={result.message} />
+  return (
+    <ProductCreateTask session={session}>
+      {result.ok ? (
+        <CatalogList session={session} query={result.query} />
+      ) : (
+        <InvalidCatalogAddress message={result.message} />
+      )}
+    </ProductCreateTask>
   );
 }
 
@@ -97,7 +98,7 @@ function CatalogList({
   );
   const go = (value: OperationsQuery) => pushCatalogQuery(value);
   return (
-    <div className={styles.workspace}>
+    <div className={`${styles.workspace} ${parity.page}`}>
       <StudioPageHeader
         title="测评管理"
         description={
@@ -105,15 +106,16 @@ function CatalogList({
         }
         actions={
           session.operator.role === "operator" ? (
-            <Link className={styles.link} href="/studio/new-product">
-              创建测评<span aria-hidden="true"> ＋</span>
-            </Link>
+            <ProductCreateAction />
           ) : undefined
         }
       />
-      <section className={`${styles.panel} ${styles.catalogPanel}`}>
+      <section
+        className={`${styles.panel} ${styles.catalogPanel} ${parity.panel}`}
+      >
         {session.operator.role === "read-only" && <ReadOnlyNotice />}
         <CatalogFilters
+          key={catalogQueryString(query)}
           query={query}
           busy={read.loading}
           onApply={go}

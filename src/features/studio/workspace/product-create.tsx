@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useStudioLeaveProtection } from "../navigation-boundary";
 import Link from "next/link";
 import {
@@ -14,10 +15,32 @@ import { ProductFields, type ProductFormFields } from "./product-fields";
 import { ProductCard } from "./product-card";
 import { ReadOnlyNotice } from "./primitives";
 import { StudioPageHeader } from "../presentation/page-header";
+import { subscribeStudioAuthorityInvalidation } from "../authority-events";
+import { TaxonomyPicker } from "./taxonomy-picker";
 import styles from "./workspace.module.css";
+import task from "./product-create-task.module.css";
 
-function ProductCreateForm({ session }: { session: StudioSessionDto }) {
+export type ProductCreateState = {
+  dirty: boolean;
+  busy: boolean;
+  pending: boolean;
+  revoked: boolean;
+};
+
+export function ProductCreateForm({
+  session,
+  embedded = false,
+  actionsHost,
+  onStateChange,
+}: {
+  session: StudioSessionDto;
+  embedded?: boolean;
+  actionsHost?: HTMLElement | null;
+  onStateChange?: (state: ProductCreateState) => void;
+}) {
+  const formId = useId();
   const [id, setId] = useState("");
+  const [slugEdited, setSlugEdited] = useState(false);
   const [fields, setFields] = useState<ProductFormFields>({
     slug: "",
     title: "",
@@ -32,19 +55,44 @@ function ProductCreateForm({ session }: { session: StudioSessionDto }) {
     absent?: boolean;
     error?: string;
   }>();
-  const mutation = useWorkspaceMutation<ProductDto>(session.csrfToken);
+  const denied = useRef(false);
+  const [revoked, setRevoked] = useState(false);
+  function revoke() {
+    denied.current = true;
+    setRevoked(true);
+  }
+  function observe(error: unknown) {
+    if (
+      error instanceof StudioClientError &&
+      [
+        "UNAUTHENTICATED",
+        "CAPABILITY_DENIED",
+        "CSRF_REJECTED",
+        "ORIGIN_REJECTED",
+      ].includes(error.code)
+    )
+      revoke();
+  }
+  useEffect(() => subscribeStudioAuthorityInvalidation(revoke), []);
+  const mutation = useWorkspaceMutation<ProductDto>(session.csrfToken, observe);
+  const dirty = Boolean(
+    id ||
+    fields.slug ||
+    fields.title ||
+    fields.categories.length ||
+    fields.tags.length,
+  );
+  const busy = mutation.state.phase === "submitting" || checking;
+  useLayoutEffect(() => {
+    onStateChange?.({ dirty, busy, pending: mutation.blocked, revoked });
+  }, [onStateChange, dirty, busy, mutation.blocked, revoked]);
   const { markSaved } = useStudioLeaveProtection({
-    dirty: Boolean(
-      id ||
-      fields.slug ||
-      fields.title ||
-      fields.categories.length ||
-      fields.tags.length,
-    ),
+    dirty,
     pending: mutation.blocked,
   });
 
   async function create() {
+    if (denied.current || mutation.blocked || checking) return;
     const parsed = productCreateSchema.safeParse({
       id,
       slug: fields.slug,
@@ -67,7 +115,7 @@ function ProductCreateForm({ session }: { session: StudioSessionDto }) {
       parsed.data,
       "服务器已确认创建。",
     );
-    if (product) {
+    if (product && !denied.current) {
       markSaved();
       window.location.replace(
         `/studio/products/${encodeURIComponent(product.id)}`,
@@ -75,7 +123,7 @@ function ProductCreateForm({ session }: { session: StudioSessionDto }) {
     }
   }
   async function verify() {
-    if (checking) return;
+    if (checking || denied.current) return;
     setChecking(true);
     setChecked(undefined);
     try {
@@ -83,8 +131,9 @@ function ProductCreateForm({ session }: { session: StudioSessionDto }) {
         `/api/studio/products/${encodeURIComponent(submittedId)}`,
         {},
       );
-      setChecked({ product });
+      if (!denied.current) setChecked({ product });
     } catch (error) {
+      observe(error);
       setChecked(
         error instanceof StudioClientError && error.code === "PRODUCT_NOT_FOUND"
           ? { absent: true }
@@ -94,13 +143,58 @@ function ProductCreateForm({ session }: { session: StudioSessionDto }) {
       setChecking(false);
     }
   }
-  return (
-    <section className={styles.panel}>
-      <h2>测评信息</h2>
-      <p className={styles.note}>
-        测评编号必须与准备导入的内容包一致，创建后不能修改。编号和英文标识不能与已有或已归档的测评重复。
+  const submit = (
+    <button
+      className={embedded ? task.primary : styles.button}
+      disabled={mutation.blocked || checking || revoked}
+      type="submit"
+      form={formId}
+    >
+      {mutation.state.phase === "submitting" ? "正在创建…" : "创建测评"}
+    </button>
+  );
+  const identity = (
+    <div className={styles.field}>
+      <label htmlFor={`${formId}-id`}>测评编号（需与内容包一致）</label>
+      <input
+        className={styles.input}
+        id={`${formId}-id`}
+        required
+        aria-describedby={`${formId}-id-help`}
+        placeholder="例如 qianzai-tongxin"
+        pattern="[a-z][a-z0-9]*(?:-[a-z0-9]+)*"
+        maxLength={80}
+        value={id}
+        disabled={mutation.blocked || revoked}
+        onChange={(event) => {
+          const value = event.target.value;
+          setId(value);
+          if (embedded && !slugEdited)
+            setFields((old) => ({ ...old, slug: value }));
+        }}
+      />
+      <p id={`${formId}-id-help`} className={styles.note}>
+        使用内容包中的编号，创建后不能修改。
       </p>
+    </div>
+  );
+  return (
+    <section className={embedded ? task.formBody : styles.panel}>
+      {!embedded && (
+        <>
+          <h2>测评信息</h2>
+          <p className={styles.note}>
+            测评编号必须与准备导入的内容包一致，创建后不能修改。编号和英文标识不能与已有或已归档的测评重复。
+          </p>
+        </>
+      )}
+      {revoked && (
+        <p className={task.notice} role="alert">
+          当前页面已失去操作权限。原输入和待核实记录保留，请在新标签重新登录后核实；重新打开弹窗不会恢复旧权限。
+        </p>
+      )}
       <form
+        id={formId}
         aria-label="新建测评"
         className={styles.form}
         onSubmit={(event) => {
@@ -108,40 +202,87 @@ function ProductCreateForm({ session }: { session: StudioSessionDto }) {
           void create();
         }}
       >
-        <div className={styles.field}>
-          <label htmlFor="product-id">测评编号（需与内容包一致）</label>
-          <input
-            className={styles.input}
-            id="product-id"
-            required
-            aria-describedby="product-id-help"
-            placeholder="例如 qianzai-tongxin"
-            pattern="[a-z][a-z0-9]*(?:-[a-z0-9]+)*"
-            maxLength={80}
-            value={id}
-            disabled={mutation.blocked}
-            onChange={(event) => setId(event.target.value)}
-          />
-          <p id="product-id-help" className={styles.note}>
-            请使用内容包中提供的测评编号，例如
-            qianzai-tongxin；需要全站唯一，请不要根据名称随意填写。
-          </p>
-        </div>
-        <div className={styles.fieldGrid}>
-          <ProductFields
-            value={fields}
-            onChange={setFields}
-            disabled={mutation.state.phase === "submitting"}
-          />
-        </div>
-        <button
-          className={styles.button}
-          disabled={mutation.blocked}
-          type="submit"
+        <fieldset
+          className={task.fields}
+          disabled={mutation.blocked || revoked || checking}
         >
-          {mutation.state.phase === "submitting" ? "正在创建…" : "创建测评"}
-        </button>
+          {embedded ? (
+            <>
+              <div className={styles.field}>
+                <label htmlFor={`${formId}-title`}>测评名称 *</label>
+                <input
+                  className={styles.input}
+                  id={`${formId}-title`}
+                  required
+                  maxLength={120}
+                  autoFocus
+                  placeholder="例如：月光经过的那条街"
+                  value={fields.title}
+                  onChange={(event) =>
+                    setFields({ ...fields, title: event.target.value })
+                  }
+                />
+              </div>
+              <div className={task.pair}>
+                <TaxonomyPicker
+                  kind="category"
+                  compact
+                  selected={fields.categories}
+                  onChange={(categories) =>
+                    setFields({ ...fields, categories })
+                  }
+                  disabled={mutation.blocked || revoked}
+                  onFailure={observe}
+                />
+                {identity}
+              </div>
+              <div className={styles.field}>
+                <label htmlFor={`${formId}-slug`}>测评英文标识</label>
+                <input
+                  className={styles.input}
+                  id={`${formId}-slug`}
+                  required
+                  pattern="[a-z][a-z0-9]*(?:-[a-z0-9]+)*"
+                  maxLength={80}
+                  value={fields.slug}
+                  onChange={(event) => {
+                    setSlugEdited(true);
+                    setFields({ ...fields, slug: event.target.value });
+                  }}
+                />
+                <p className={styles.note}>
+                  默认与编号相同，可在创建前修改；需保持唯一。
+                </p>
+              </div>
+              <details className={task.optional}>
+                <summary>添加标签（可选）</summary>
+                <TaxonomyPicker
+                  kind="tag"
+                  compact
+                  selected={fields.tags}
+                  onChange={(tags) => setFields({ ...fields, tags })}
+                  disabled={mutation.blocked || revoked}
+                  onFailure={observe}
+                />
+              </details>
+            </>
+          ) : (
+            <>
+              {identity}
+              <div className={styles.fieldGrid}>
+                <ProductFields
+                  value={fields}
+                  onChange={setFields}
+                  disabled={mutation.blocked || revoked}
+                  onReadFailure={observe}
+                />
+              </div>
+            </>
+          )}
+        </fieldset>
+        {!embedded && submit}
       </form>
+      {embedded && actionsHost && createPortal(submit, actionsHost)}
       {validation && (
         <p className={`${styles.status} ${styles.error}`} role="alert">
           {validation}
@@ -158,7 +299,7 @@ function ProductCreateForm({ session }: { session: StudioSessionDto }) {
           <button
             className={styles.button}
             type="button"
-            disabled={checking}
+            disabled={checking || revoked}
             onClick={() => void verify()}
           >
             {checking ? "正在核实…" : "核实创建结果"}
@@ -184,6 +325,7 @@ function ProductCreateForm({ session }: { session: StudioSessionDto }) {
               <button
                 className={`${styles.button} ${styles.secondary}`}
                 type="button"
+                disabled={revoked}
                 onClick={mutation.reconciled}
               >
                 核实后继续编辑创建表单

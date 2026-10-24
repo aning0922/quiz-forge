@@ -13,6 +13,31 @@
   gap: 12px;
   margin-bottom: 20px;
 }
+.embedded {
+  max-width: 410px;
+}
+.embedded .binding {
+  padding: 0 0 16px;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: #c4c9dd;
+}
+.embedded .binding > p {
+  display: none;
+}
+.embedded .binding details {
+  margin-top: 6px;
+  color: #c4c9dd;
+  background: #ffffff0a;
+  border-color: #ffffff22;
+}
+.embedded > div:last-child {
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 24px 100px #0006;
+}
 .navigation a,
 .exportControls a {
   display: inline-flex;

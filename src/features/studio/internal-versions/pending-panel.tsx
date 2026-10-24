@@ -1,5 +1,9 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import {
+  RetainedTaskActions,
+  type WorkspaceTaskState,
+} from "../product-workspace/task-surfaces";
 import type { StudioSessionDto } from "../contracts";
 import { StudioClientError } from "../client";
 import { readInternalPending } from "./pending";
@@ -21,14 +25,21 @@ import {
   useInternalAuthority,
   type InternalAuthorityTicket,
 } from "./authority";
-import { RequestFacts, ReviewFacts, VersionReceiptFacts } from "./facts";
+import {
+  RequestFacts,
+  ReviewFacts,
+  VersionReceiptFacts,
+  type VersionReceiptActions,
+} from "./facts";
 import { internalVersionMessage } from "./message";
 import styles from "../workspace/workspace.module.css";
 import local from "./internal-versions.module.css";
 export function InternalEvidenceFacts({
   evidence,
+  receiptActions,
 }: {
   evidence: InternalEvidence;
+  receiptActions?: VersionReceiptActions | undefined;
 }) {
   const result = evidence.value;
   if (evidence.operation === "review" && evidence.value.kind === "recorded")
@@ -42,7 +53,10 @@ export function InternalEvidenceFacts({
     return (
       <>
         <h3>原操作已封存</h3>
-        <VersionReceiptFacts version={evidence.value.version} />
+        <VersionReceiptFacts
+          version={evidence.value.version}
+          actions={receiptActions}
+        />
       </>
     );
   if (result.kind === "unresolved")
@@ -87,7 +101,10 @@ export function InternalEvidenceFacts({
       <>
         <h3>原操作未封存，固定快照已被另一操作 占用</h3>
         <p>这是其他操作创建的版本，不表示本次操作成功。</p>
-        <VersionReceiptFacts version={evidence.value.consumed} />
+        <VersionReceiptFacts
+          version={evidence.value.consumed}
+          actions={receiptActions}
+        />
       </>
     );
   return (
@@ -105,11 +122,19 @@ export function InternalPendingPanel({
   operation,
   session,
   onChanged,
+  onTaskState,
+  embedded = false,
+  receiptActions,
 }: {
+  embedded?: boolean;
+  receiptActions?: VersionReceiptActions | undefined;
   productId: string;
   operation: InternalOperation;
   session: StudioSessionDto;
   onChanged: () => void;
+  onTaskState?:
+    | ((operation: InternalOperation, state: WorkspaceTaskState) => void)
+    | undefined;
 }) {
   const authority = useInternalAuthority(),
     label = operation === "review" ? "审核依据记录" : "内容版本固定",
@@ -129,6 +154,18 @@ export function InternalPendingPanel({
     }>();
   const active = useRef(true),
     controller = useRef<AbortController | undefined>(undefined);
+  useLayoutEffect(() => {
+    onTaskState?.(operation, {
+      busy,
+      pending: !!entry || !loaded,
+      retained: !!entry || !loaded,
+      message: !loaded
+        ? "原操作记录尚未可靠核实。"
+        : entry
+          ? "保留原审核或封存请求，请核对后明确结束。"
+          : undefined,
+    });
+  }, [operation, busy, entry, loaded, onTaskState]);
   function readLocal() {
     epoch.invalidate();
     controller.current?.abort();
@@ -283,6 +320,88 @@ export function InternalPendingPanel({
     authority.isRevoked ||
     !!evidence ||
     !!message;
+  if (embedded)
+    return (
+      <section
+        className={local.embeddedRecovery}
+        aria-label={`${label}操作查询`}
+      >
+        <details open={needsAttention}>
+          <summary>
+            {needsAttention
+              ? `${label}：原操作待核实`
+              : `${label}：暂无待处理操作 · 查询`}
+          </summary>
+          {!loaded && <p role="status">正在检查原操作，尚不能提交新请求。</p>}
+          {loaded && !entry && <p>当前会话没有此商品的待确认{label}请求。</p>}
+          {entry && (
+            <>
+              <p>
+                {entry.mayHaveBeenSent ? "可能已发送" : "尚未发送的准备"}
+                ，请继续核实此原请求。
+              </p>
+              <RequestFacts request={entry.request} />
+            </>
+          )}
+          {(denied || authority.isRevoked) && (
+            <p role="alert">
+              本页授权已失效，原操作记录保留。请重新登录并重新打开本页。
+            </p>
+          )}
+          {evidence && !authority.isRevoked && (
+            <div data-internal-resolution={evidence.result.value.kind}>
+              <InternalEvidenceFacts
+                evidence={evidence.result}
+                receiptActions={receiptActions}
+              />
+            </div>
+          )}
+          {busy && <p role="status">正在核实或处理原操作…</p>}
+          {message && <p role="status">{message}</p>}
+          {!entry && (
+            <button
+              className={`${styles.button} ${styles.secondary}`}
+              disabled={busy}
+              onClick={readLocal}
+            >
+              重新检查{label}操作记录
+            </button>
+          )}
+        </details>
+        <RetainedTaskActions id="review" visible={!!entry}>
+          {evidence && evidence.result.value.kind !== "unresolved" ? (
+            <button
+              className={styles.button}
+              disabled={busy || denied || authority.isRevoked}
+              onClick={() => void clear()}
+            >
+              确认处理结果并结束此操作记录
+            </button>
+          ) : (
+            <>
+              <button
+                className={styles.button}
+                disabled={busy || !loaded || authority.isRevoked}
+                onClick={() => void perform(false)}
+              >
+                查询{label}结果
+              </button>
+              {session.operator.role === "operator" &&
+                !denied &&
+                !authority.isRevoked && (
+                  <button
+                    className={`${styles.button} ${styles.secondary}`}
+                    disabled={busy || !loaded}
+                    onClick={() => void perform(true)}
+                  >
+                    再次发送原{label}操作
+                  </button>
+                )}
+            </>
+          )}
+        </RetainedTaskActions>
+      </section>
+    );
   return (
     <section className={styles.panel} aria-label={`${label}操作查询`}>
       <details
@@ -345,7 +464,10 @@ export function InternalPendingPanel({
           )}
           {evidence && !authority.isRevoked && (
             <div data-internal-resolution={evidence.result.value.kind}>
-              <InternalEvidenceFacts evidence={evidence.result} />
+              <InternalEvidenceFacts
+                evidence={evidence.result}
+                receiptActions={receiptActions}
+              />
               {evidence.result.value.kind !== "unresolved" && (
                 <button
                   className={`${styles.button} ${styles.secondary}`}
@@ -380,27 +502,41 @@ export function InternalRecoveryPanels({
   session,
   nonce = 0,
   onChanged = () => {},
+  onTaskState,
+  embedded = false,
+  receiptActions,
 }: {
+  embedded?: boolean;
+  receiptActions?: VersionReceiptActions | undefined;
   productId: string;
   session: StudioSessionDto;
   nonce?: number;
   onChanged?: () => void;
+  onTaskState?:
+    | ((operation: InternalOperation, state: WorkspaceTaskState) => void)
+    | undefined;
 }) {
   return (
     <>
       <InternalPendingPanel
         key={`review/${productId}/${nonce}`}
+        embedded={embedded}
+        receiptActions={receiptActions}
         operation="review"
         productId={productId}
         session={session}
         onChanged={onChanged}
+        onTaskState={onTaskState}
       />
       <InternalPendingPanel
         key={`seal/${productId}/${nonce}`}
+        embedded={embedded}
+        receiptActions={receiptActions}
         operation="seal"
         productId={productId}
         session={session}
         onChanged={onChanged}
+        onTaskState={onTaskState}
       />
     </>
   );

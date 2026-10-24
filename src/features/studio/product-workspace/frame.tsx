@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import { RefreshCw, Eye, ArrowRight } from "lucide-react";
 import { useProductOperations } from "../operations-ui/read";
@@ -46,6 +47,13 @@ function WorkspaceFrameContent({
   });
   const value = read.value;
   const presentation = value ? productPresentation(value) : null;
+  const pathname = usePathname();
+  if (pathname === `/studio/products/${encodeURIComponent(productId)}`)
+    return (
+      <ProductWorkspaceContext.Provider value={{ productId, read }}>
+        {children}
+      </ProductWorkspaceContext.Provider>
+    );
   return (
     <ProductWorkspaceContext.Provider value={{ productId, read }}>
       <div className={styles.workspace}>

@@ -1,0 +1,346 @@
+.workspace {
+  display: grid;
+  gap: 20px;
+  color: #202a42;
+  min-width: 0;
+}
+.heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 20px;
+}
+.kicker {
+  color: #756bb2;
+  margin: 0 0 8px;
+  font-size: 16px;
+  font-weight: 700;
+}
+.titleRow {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.titleRow h1 {
+  margin: 0;
+  font-size: 27px;
+  font-weight: 700;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+.subtitle {
+  margin: 6px 0 0;
+  color: #6a7894;
+  font-size: 16px;
+  line-height: 1.55;
+}
+.actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+}
+.workspace :is(button, a) {
+  min-height: 44px;
+  font-size: 16px;
+}
+.actions :is(button, a),
+.observation button,
+.tabs button,
+.retained button,
+.panel :is(button, a),
+.history :is(button, a) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid #dce2ee;
+  padding: 9px 14px;
+  border-radius: 8px;
+  background: #fff;
+  color: #4a5874;
+  cursor: pointer;
+  text-decoration: none;
+}
+.workspace button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+.actions .refresh {
+  padding: 9px;
+  min-width: 44px;
+  color: #75829a;
+  border-color: transparent;
+  background: transparent;
+}
+.observation {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  color: #6a7894;
+}
+.observation p {
+  margin: 0;
+}
+.observation button {
+  color: #6358da;
+  background: transparent;
+  border-color: transparent;
+}
+.tabs {
+  display: flex;
+  gap: 4px;
+  padding: 0 14px;
+  border: 1px solid #e2e6f0;
+  border-radius: 12px 12px 0 0;
+  background: white;
+  overflow-x: auto;
+}
+.tabs button {
+  flex-shrink: 0;
+  min-height: 58px;
+  border: 0;
+  border-radius: 0;
+  border-bottom: 3px solid transparent;
+  background: transparent;
+  font-weight: 650;
+}
+.tabs button[aria-current] {
+  color: #6358da;
+  border-bottom-color: #6358da;
+}
+.panel {
+  padding: 24px;
+  background: #fff;
+  border: 1px solid #e1e6f0;
+  border-radius: 13px;
+  box-shadow:
+    0 7px 24px #25305107,
+    0 1px 2px #2733540a;
+}
+.sectionHeading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+.sectionHeading h2 {
+  margin: 0 0 6px;
+  font-size: 20px;
+  font-weight: 700;
+}
+.sectionHeading p {
+  margin: 0;
+  font-size: 16px;
+  color: #647390;
+}
+.sectionHeading button {
+  border: 1px solid #dce2ee;
+  border-radius: 8px;
+  padding: 8px 14px;
+  background: #fff;
+  color: #6358da;
+  flex-shrink: 0;
+}
+.columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1.58fr) minmax(300px, 0.95fr);
+  gap: 19px;
+  align-items: start;
+}
+.previewChecklist {
+  display: grid;
+  gap: 14px;
+  margin: 20px 0;
+  padding: 0;
+  list-style: none;
+}
+.previewChecklist li {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+}
+.previewChecklist svg {
+  flex-shrink: 0;
+  color: #6358da;
+  background: #f2efff;
+  border-radius: 8px;
+  padding: 4px;
+  width: 32px;
+  height: 32px;
+}
+.previewChecklist p {
+  margin: 5px 0 0;
+}
+.panel h2 {
+  margin: 0 0 12px;
+  font-size: 22px;
+  font-weight: 700;
+}
+.panel h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+}
+.panel p {
+  font-size: 16px;
+  line-height: 1.6;
+  color: #62728e;
+}
+.cardHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+.cardHead p {
+  margin: 5px 0 0;
+}
+.previewDisplay {
+  position: relative;
+  overflow: hidden;
+  min-height: 190px;
+  border-radius: 12px;
+  background:
+    radial-gradient(circle at 80% 10%, #e9cfe4, transparent 37%),
+    linear-gradient(145deg, #e8eefb, #faf6ff 65%, #f2e7ed);
+  border: 1px solid #e8e3f2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 20px;
+  text-align: center;
+  color: #75638c;
+}
+.previewDisplay::before {
+  content: "";
+  position: absolute;
+  width: 180px;
+  height: 180px;
+  border: 1px solid #d8c7da;
+  border-radius: 50%;
+  right: 20px;
+  top: -20px;
+}
+.previewDisplay strong {
+  position: relative;
+  font-size: 25px;
+  font-weight: 700;
+  color: #604c76;
+  overflow-wrap: anywhere;
+}
+.previewDisplay span {
+  position: relative;
+  font-size: 16px;
+}
+.panel > .actions {
+  margin-top: 19px;
+}
+.panel .previewHint {
+  padding-top: 15px;
+  margin: 18px 0 0;
+  border-top: 1px solid #e6e9f1;
+  color: #75829a;
+}
+.panel .primary,
+.primary {
+  background: #6358da;
+  color: #fff;
+  border-color: #6358da;
+}
+.notice,
+.retained {
+  padding: 14px 18px;
+  border: 1px solid #efd7b5;
+  border-radius: 10px;
+  background: #fff8ed;
+  color: #805a26;
+  font-size: 16px;
+}
+.notice p,
+.retained p {
+  margin: 0 0 8px;
+}
+.notice a {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: underline;
+}
+.retained {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+}
+.retained p {
+  margin: 0;
+}
+.retained button {
+  flex-shrink: 0;
+}
+.history {
+  display: grid;
+  gap: 12px;
+  font-size: 16px;
+}
+.history h3,
+.history p {
+  margin: 0;
+  line-height: 1.7;
+}
+.history h3 {
+  margin-top: 10px;
+}
+.record {
+  padding: 16px 0;
+  border-bottom: 1px solid #e1e6f0;
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.workspace :is(button, a):focus-visible {
+  outline: 3px solid #aaa1f5;
+  outline-offset: 3px;
+}
+@media (max-width: 1140px) {
+  .columns {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 800px) {
+  .heading {
+    flex-direction: column;
+  }
+}
+@media (max-width: 570px) {
+  .sectionHeading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .workspace {
+    gap: 16px;
+  }
+  .titleRow h1 {
+    font-size: 24px;
+  }
+  .tabs {
+    padding-inline: 4px;
+  }
+  .tabs button {
+    padding-inline: 12px;
+  }
+  .panel {
+    padding: 18px;
+  }
+  .retained {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}

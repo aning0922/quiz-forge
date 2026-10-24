@@ -111,11 +111,47 @@ export function ReviewFacts({ review }: { review: InternalReviewReceipt }) {
     </div>
   );
 }
+export type VersionReceiptActions = {
+  onOpenVersion: (versionId: string) => void;
+  onGoToTesting?: (() => void) | undefined;
+};
 export function VersionReceiptFacts({
   version,
+  actions,
 }: {
   version: InternalVersionReceipt;
+  actions?: VersionReceiptActions | undefined;
 }) {
+  if (actions)
+    return (
+      <section className={local.receipt} data-internal-version={version.id}>
+        <h3>内测内容版本 #{version.slot} 已固定</h3>
+        <p>
+          来源修订 r{version.binding.target.revision} · 内容不随后续草稿改变。
+        </p>
+        <p>可继续创建答题版本；未授予对外发布批准。</p>
+        <p>固定于 {directoryTime(version.createdAt)}</p>
+        <TechnicalDetails label="固定版本技术标识">
+          <p>{version.id}</p>
+          <p>{version.snapshotSha256}</p>
+        </TechnicalDetails>
+        <div className={styles.actions}>
+          <button
+            className={`${styles.button} ${styles.secondary}`}
+            onClick={() => actions.onOpenVersion(version.id)}
+          >
+            阅读固定内测内容版本
+          </button>
+          <button
+            className={styles.button}
+            disabled={!actions.onGoToTesting}
+            onClick={actions.onGoToTesting}
+          >
+            创建答题版本与发码
+          </button>
+        </div>
+      </section>
+    );
   return (
     <div className={local.receipt} data-internal-version={version.id}>
       <h3>固定内测内容版本 · 槽位 {version.slot}</h3>

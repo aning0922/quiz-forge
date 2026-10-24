@@ -1,8 +1,8 @@
 .shell {
   --studio-primary: #6358df;
-  --studio-ink: #24304b;
-  --studio-muted: #63718b;
-  --studio-border: #e1e6f0;
+  --studio-ink: #202743;
+  --studio-muted: #78839a;
+  --studio-border: #e9ecf3;
   --studio-surface: #fff;
   --studio-canvas: #f5f6fa;
   min-height: 100dvh;
@@ -13,6 +13,9 @@
   color: var(--studio-ink);
   font-size: 16px;
   line-height: 1.6;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei",
+    "Noto Sans CJK SC", system-ui, sans-serif;
 }
 .content,
 .main,
@@ -153,6 +156,31 @@
 .identityLink[aria-current] {
   color: #fff;
   background: #ffffff0c;
+}
+.avatar,
+.topAvatar {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #d4c9ff, #b2e0f7);
+  color: #4a40a3;
+  font-weight: 750;
+}
+.topAvatar {
+  background: #eceafd;
+  color: #5c52ce;
+}
+.topIdentity {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  border-left: 1px solid var(--studio-border);
+  padding-left: 16px;
+  text-decoration: none;
 }
 .topbar {
   position: sticky;
