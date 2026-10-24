@@ -6,6 +6,9 @@ import path from "node:path";
 import { chromium, expect, type Page } from "@playwright/test";
 import type { ImportDto } from "@/features/quizpack/import/contracts";
 
+const mobileNavigationOnly = process.argv.includes("--mobile-navigation-only");
+const mobileOnly =
+  process.argv.includes("--mobile-only") || mobileNavigationOnly;
 const out = path.resolve(".cache/studio-a1-leave", String(Date.now()));
 await mkdir(out, { recursive: true, mode: 0o700 });
 const require = createRequire(
@@ -16,12 +19,15 @@ await require("esbuild").build({
     contents: `
     import {createRoot} from "react-dom/client";
     import {useState} from "react";
+    import {PathnameContext} from "next/dist/shared/lib/hooks-client-context.shared-runtime";
+    import {StudioShell} from "@/features/studio/shell";
     import {StudioNavigationBoundary,useStudioLeaveProtection} from "@/features/studio/navigation-boundary";
     import {subscribeStudioAuthorityInvalidation} from "@/features/studio/authority-events";
     import {CreateReceive} from "@/features/studio/imports/create-receive";
     let invalidations=0;
-    subscribeStudioAuthorityInvalidation(()=>{invalidations++});
+    subscribeStudioAuthorityInvalidation(()=>{invalidations++; if(${mobileOnly})sessionStorage.setItem("mobile-invalidations",String(Number(sessionStorage.getItem("mobile-invalidations")??0)+1))});
     window.probe=()=>({invalidations,uploadSame:window.uploadSame});
+    if(${mobileOnly}) window.addEventListener("beforeunload",()=>sessionStorage.setItem("mobile-beforeunload-revoked",String(invalidations>0)));
     const fetchOriginal=window.fetch;
     window.fetch=(url,init)=>{
       if(init?.method==='PUT') window.uploadSame=init.body===window.originalFile;
@@ -36,8 +42,7 @@ await require("esbuild").build({
       {first&&<Field name="第一项"/>}<Field name="第二项"/>
       <button onClick={()=>setFirst(false)}>卸载第一项</button></>}
     const file=location.pathname.includes('/imports');
-    createRoot(document.getElementById('root')).render(
-      <StudioNavigationBoundary>
+    const content = <>
         <a href="/studio/products">测评管理</a>
         <a href="/studio/new-product">新建测评</a>
         <a href="/studio/products/example/imports">原包接收</a>
@@ -45,7 +50,8 @@ await require("esbuild").build({
         {file?<CreateReceive productId="example" settings={{enabled:true,maxArchiveBytes:33554432,receiveTimeoutMs:60000}}
           session={{operator:{id:'00000000-0000-0000-0000-000000000007',label:'Synthetic',role:'operator'},csrfToken:'A'.repeat(43),idleExpiresAt:'2030-01-01T00:00:00.000Z',absoluteExpiresAt:'2030-01-01T00:00:00.000Z'}} onChanged={()=>{}}/>
           :location.pathname==='/studio/new-product'?<Form/>:<h1>目录</h1>}
-      </StudioNavigationBoundary>);
+      </>;
+    createRoot(document.getElementById("root")).render(${mobileOnly}?<PathnameContext.Provider value={location.pathname}><StudioShell authenticated identity={{id:"00000000-0000-0000-0000-000000000007",label:"Synthetic",role:"operator"}}>{content}</StudioShell></PathnameContext.Provider>:<StudioNavigationBoundary>{content}</StudioNavigationBoundary>);
   `,
     loader: "tsx",
     resolveDir: process.cwd(),
@@ -214,125 +220,249 @@ async function originalRemains(p: Page) {
   ).toBe(true);
 }
 try {
-  await page.goto(origin + "/studio/products");
-  await page.getByRole("link", { name: "新建测评", exact: true }).click();
-  await page.getByLabel("第一项").fill("unsaved one");
-  await page.getByLabel("第二项").fill("unsaved two");
-  await page.getByRole("button", { name: "卸载第一项" }).click();
-  await dialog(
-    () => page.getByRole("link", { name: "测评管理", exact: true }).click(),
-    "confirm",
-  );
-  await expect(page.getByLabel("第二项")).toHaveValue("unsaved two");
-  await dialog(
-    () => page.getByRole("button", { name: "搜索", exact: true }).click(),
-    "confirm",
-  );
-  for (let attempt = 0; attempt < 2; attempt++) {
-    await dialog(() => page.evaluate("history.back()"), "beforeunload");
+  if (mobileOnly) {
+    if (!mobileNavigationOnly) {
+      await page.setViewportSize({ width: 390, height: 900 });
+      await page.goto(origin + "/studio/products/example/imports");
+      const opener = page.getByRole("button", {
+        name: "打开 Studio 导航",
+        exact: true,
+      });
+      const menu = page.getByRole("dialog", { name: "Studio 导航菜单" });
+      await opener.click();
+      await expect(menu).toBeVisible();
+      await page.keyboard.press("Escape");
+      await expect(opener).toBeFocused();
+      await expect(menu).not.toBeVisible();
+      await opener.click();
+      await page.mouse.click(385, 850);
+      await expect(menu).not.toBeVisible();
+      await expect(opener).toBeFocused();
+      await opener.click();
+      await page.setViewportSize({ width: 1440, height: 900 });
+      await expect
+        .poll(() =>
+          page.evaluate(() =>
+            document.querySelector("dialog")?.matches(":modal"),
+          ),
+        )
+        .toBe(false);
+      await expect
+        .poll(() =>
+          page.evaluate(() => document.documentElement.style.overflow),
+        )
+        .not.toBe("hidden");
+      await page.setViewportSize({ width: 390, height: 900 });
+      expect(await page.evaluate("window.probe().invalidations")).toBe(0);
+      observations.push(
+        "actual shell drawer: Escape/backdrop/desktop resize close modal and release scroll without revocation; mobile close restores trigger focus",
+      );
+      await page.getByLabel("内容包文件", { exact: true }).setInputFiles({
+        name: "synthetic.zip",
+        mimeType: "application/zip",
+        buffer: Buffer.from("original synthetic archive"),
+      });
+      await page.evaluate(
+        'window.originalFile=document.querySelector("input[type=file]").files[0];window.originalInput=document.querySelector("input[type=file]")',
+      );
+      const create = page.getByRole("button", {
+        name: "创建内容包接收意图",
+        exact: true,
+      });
+      await expect(create).toBeEnabled();
+      await opener.click();
+      await dialog(
+        () => menu.getByRole("link", { name: "测评管理", exact: true }).click(),
+        "confirm",
+      );
+      await originalRemains(page);
+      expect(
+        await page.evaluate(
+          'document.querySelector("input[type=file]")===window.originalInput',
+        ),
+      ).toBe(true);
+      expect(await page.evaluate("window.probe().invalidations")).toBe(0);
+      await page.keyboard.press("Escape");
+      await create.click();
+      await expect(
+        page.getByText("意图提交结果尚未确认。原文件、原操作编号", {
+          exact: false,
+        }),
+      ).toBeVisible();
+      await opener.click();
+      await dialog(
+        () => menu.getByRole("link", { name: "测评管理", exact: true }).click(),
+        "alert",
+      );
+      await originalRemains(page);
+      expect(
+        await page.evaluate(
+          'document.querySelector("input[type=file]")===window.originalInput',
+        ),
+      ).toBe(true);
+      expect(await page.evaluate("window.probe().invalidations")).toBe(0);
+      expect(posts).toBe(1);
+      expect(uploads).toBe(0);
+      await page.keyboard.press("Escape");
+      await writeFile(
+        path.join(out, "mobile-unknown-state.json"),
+        JSON.stringify(
+          {
+            intent,
+            storage: await page.evaluate(() =>
+              Object.fromEntries(Object.entries(sessionStorage)),
+            ),
+          },
+          null,
+          2,
+        ),
+      );
+      observations.push(
+        "actual CreateReceive inside new shell: canceled drawer navigation and UNKNOWN block preserve exact File/input with one POST and zero uploads",
+      );
+    }
+    const clean = await browser.newPage({
+      viewport: { width: 390, height: 900 },
+    });
+    await clean.goto(origin + "/studio/products");
+    await clean
+      .getByRole("button", { name: "打开 Studio 导航", exact: true })
+      .click();
+    await clean
+      .getByRole("dialog", { name: "Studio 导航菜单" })
+      .getByRole("link", { name: "工作台", exact: true })
+      .click();
+    await expect(clean).toHaveURL(origin + "/studio");
+    expect(
+      await clean.evaluate(() =>
+        sessionStorage.getItem("mobile-beforeunload-revoked"),
+      ),
+    ).toBe("true");
+    await clean.close();
+    observations.push(
+      "accepted real drawer navigation invokes the existing one-window revocation before entering the destination",
+    );
+  } else {
+    await page.goto(origin + "/studio/products");
+    await page.getByRole("link", { name: "新建测评", exact: true }).click();
+    await page.getByLabel("第一项").fill("unsaved one");
+    await page.getByLabel("第二项").fill("unsaved two");
+    await page.getByRole("button", { name: "卸载第一项" }).click();
+    await dialog(
+      () => page.getByRole("link", { name: "测评管理", exact: true }).click(),
+      "confirm",
+    );
     await expect(page.getByLabel("第二项")).toHaveValue("unsaved two");
+    await dialog(
+      () => page.getByRole("button", { name: "搜索", exact: true }).click(),
+      "confirm",
+    );
+    for (let attempt = 0; attempt < 2; attempt++) {
+      await dialog(() => page.evaluate("history.back()"), "beforeunload");
+      await expect(page.getByLabel("第二项")).toHaveValue("unsaved two");
+    }
+    expect(await page.evaluate("window.probe().invalidations")).toBe(0);
+    observations.push(
+      "multi-registration, canceled link/search, native repeated Back retain exact input without revocation",
+    );
+    await dialog(
+      () => page.getByRole("link", { name: "测评管理", exact: true }).click(),
+      "confirm",
+      true,
+    );
+    await expect(page.getByRole("heading", { name: "目录" })).toBeVisible();
+    await page.getByRole("link", { name: "原包接收", exact: true }).click();
+    await page.getByLabel("内容包文件", { exact: true }).setInputFiles({
+      name: "synthetic.zip",
+      mimeType: "application/zip",
+      buffer: Buffer.from("original synthetic archive"),
+    });
+    await page.evaluate(
+      'window.originalFile=document.querySelector("input[type=file]").files[0]',
+    );
+    await expect(
+      page.getByRole("button", { name: "创建内容包接收意图", exact: true }),
+    ).toBeEnabled();
+    await dialog(
+      () => page.getByRole("link", { name: "测评管理", exact: true }).click(),
+      "confirm",
+    );
+    await originalRemains(page);
+    await dialog(() => page.evaluate("history.back()"), "beforeunload");
+    await originalRemains(page);
+    await page
+      .getByRole("button", { name: "创建内容包接收意图", exact: true })
+      .click();
+    await expect(
+      page.getByText("意图提交结果尚未确认。原文件、原操作编号", {
+        exact: false,
+      }),
+    ).toBeVisible();
+    await dialog(
+      () => page.getByRole("link", { name: "测评管理", exact: true }).click(),
+      "alert",
+    );
+    await originalRemains(page);
+    expect(posts).toBe(1);
+    await page
+      .getByRole("button", { name: "按原操作编号精确核实", exact: true })
+      .click();
+    await expect(
+      page.getByRole("button", { name: "上传所选内容包", exact: true }),
+    ).toBeEnabled();
+    await dialog(
+      () => page.getByRole("link", { name: "测评管理", exact: true }).click(),
+      "alert",
+    );
+    await originalRemains(page);
+    expect(posts).toBe(1);
+    deny = true;
+    await page
+      .getByRole("button", { name: "读取最新接收状态", exact: true })
+      .click();
+    await expect(
+      page.getByText("会话已失效，请重新登录。", { exact: true }),
+    ).toBeVisible();
+    await dialog(
+      () => page.getByRole("link", { name: "测评管理", exact: true }).click(),
+      "alert",
+    );
+    const popupReady = page.waitForEvent("popup");
+    await page
+      .getByRole("link", { name: "在新标签重新登录", exact: true })
+      .click();
+    const popup = await popupReady;
+    await popup.waitForLoadState("domcontentloaded");
+    await originalRemains(page);
+    await expect(
+      page.getByRole("link", { name: "在新标签打开原接收记录", exact: true }),
+    ).toHaveAttribute(
+      "href",
+      "/studio/products/example/imports/00000000-0000-0000-0000-000000000001",
+    );
+    expect(posts).toBe(1);
+    expect(uploads).toBe(0);
+    await popup.close();
+    deny = false;
+    await page.getByRole("button", { name: "收起提示", exact: true }).click();
+    await page
+      .getByRole("button", { name: "上传所选内容包", exact: true })
+      .click();
+    await expect(
+      page.getByText("服务器已确认本次内容包接收状态。", { exact: true }),
+    ).toBeVisible();
+    expect(await page.evaluate("window.probe().uploadSame")).toBe(true);
+    expect(posts).toBe(1);
+    expect(uploads).toBe(1);
+    await page.getByRole("link", { name: "测评管理", exact: true }).click();
+    await expect(page.getByRole("heading", { name: "目录" })).toBeVisible();
+    observations.push(
+      "expired authority: new-tab login and original-record link preserve File without restoring old authority",
+    );
+    observations.push(
+      "original File survives canceled Back, UNKNOWN and awaiting-upload; exact original body uploads once after reconciliation; confirmed receive releases protection",
+    );
   }
-  expect(await page.evaluate("window.probe().invalidations")).toBe(0);
-  observations.push(
-    "multi-registration, canceled link/search, native repeated Back retain exact input without revocation",
-  );
-  await dialog(
-    () => page.getByRole("link", { name: "测评管理", exact: true }).click(),
-    "confirm",
-    true,
-  );
-  await expect(page.getByRole("heading", { name: "目录" })).toBeVisible();
-  await page.getByRole("link", { name: "原包接收", exact: true }).click();
-  await page.getByLabel("内容包文件", { exact: true }).setInputFiles({
-    name: "synthetic.zip",
-    mimeType: "application/zip",
-    buffer: Buffer.from("original synthetic archive"),
-  });
-  await page.evaluate(
-    'window.originalFile=document.querySelector("input[type=file]").files[0]',
-  );
-  await expect(
-    page.getByRole("button", { name: "创建内容包接收意图", exact: true }),
-  ).toBeEnabled();
-  await dialog(
-    () => page.getByRole("link", { name: "测评管理", exact: true }).click(),
-    "confirm",
-  );
-  await originalRemains(page);
-  await dialog(() => page.evaluate("history.back()"), "beforeunload");
-  await originalRemains(page);
-  await page
-    .getByRole("button", { name: "创建内容包接收意图", exact: true })
-    .click();
-  await expect(
-    page.getByText("意图提交结果尚未确认。原文件、原操作编号", {
-      exact: false,
-    }),
-  ).toBeVisible();
-  await dialog(
-    () => page.getByRole("link", { name: "测评管理", exact: true }).click(),
-    "alert",
-  );
-  await originalRemains(page);
-  expect(posts).toBe(1);
-  await page
-    .getByRole("button", { name: "按原操作编号精确核实", exact: true })
-    .click();
-  await expect(
-    page.getByRole("button", { name: "上传所选内容包", exact: true }),
-  ).toBeEnabled();
-  await dialog(
-    () => page.getByRole("link", { name: "测评管理", exact: true }).click(),
-    "alert",
-  );
-  await originalRemains(page);
-  expect(posts).toBe(1);
-  deny = true;
-  await page
-    .getByRole("button", { name: "读取最新接收状态", exact: true })
-    .click();
-  await expect(
-    page.getByText("会话已失效，请重新登录。", { exact: true }),
-  ).toBeVisible();
-  await dialog(
-    () => page.getByRole("link", { name: "测评管理", exact: true }).click(),
-    "alert",
-  );
-  const popupReady = page.waitForEvent("popup");
-  await page
-    .getByRole("link", { name: "在新标签重新登录", exact: true })
-    .click();
-  const popup = await popupReady;
-  await popup.waitForLoadState("domcontentloaded");
-  await originalRemains(page);
-  await expect(
-    page.getByRole("link", { name: "在新标签打开原接收记录", exact: true }),
-  ).toHaveAttribute(
-    "href",
-    "/studio/products/example/imports/00000000-0000-0000-0000-000000000001",
-  );
-  expect(posts).toBe(1);
-  expect(uploads).toBe(0);
-  await popup.close();
-  deny = false;
-  await page.getByRole("button", { name: "收起提示", exact: true }).click();
-  await page
-    .getByRole("button", { name: "上传所选内容包", exact: true })
-    .click();
-  await expect(
-    page.getByText("服务器已确认本次内容包接收状态。", { exact: true }),
-  ).toBeVisible();
-  expect(await page.evaluate("window.probe().uploadSame")).toBe(true);
-  expect(posts).toBe(1);
-  expect(uploads).toBe(1);
-  await page.getByRole("link", { name: "测评管理", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "目录" })).toBeVisible();
-  observations.push(
-    "expired authority: new-tab login and original-record link preserve File without restoring old authority",
-  );
-  observations.push(
-    "original File survives canceled Back, UNKNOWN and awaiting-upload; exact original body uploads once after reconciliation; confirmed receive releases protection",
-  );
   expect(errors).toEqual([]);
   await writeFile(
     path.join(out, "result.json"),
