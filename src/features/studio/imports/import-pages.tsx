@@ -3,6 +3,7 @@ import { StudioPageHeader } from "../presentation/page-header";
 import { StudioWorkflowNav } from "../presentation/workflow-nav";
 import Link from "next/link";
 import { useState } from "react";
+import { useStudioLeaveProtection } from "../navigation-boundary";
 import type {
   ImportDto,
   ImportSettingsDto,
@@ -203,6 +204,11 @@ function ExistingReceive({
   const [file, setFile] = useState<Blob>();
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
+  useStudioLeaveProtection({
+    dirty: false,
+    pending: busy,
+    message: "正在核实原文件，请完成本地摘要计算后再离开。",
+  });
   const canSelect =
     session.operator.role === "operator" &&
     settings.enabled &&

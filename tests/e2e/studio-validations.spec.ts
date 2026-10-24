@@ -141,7 +141,7 @@ async function signIn(
     throw new Error("VALIDATIONS_E2E_INPUT_UNAVAILABLE");
   }
   await page.getByRole("button", { name: "登录 Studio" }).click();
-  await expect(page.getByRole("heading", { name: "运营会话" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "工作台" })).toBeVisible();
   const item = fixture.imports[index];
   if (!item) throw new Error("VALIDATIONS_E2E_IMPORT_UNAVAILABLE");
   await page.goto(

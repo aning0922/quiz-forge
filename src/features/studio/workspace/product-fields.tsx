@@ -1,6 +1,9 @@
 "use client";
 
-import type { TaxonomySummary } from "@/features/product/workspace/contracts";
+import type {
+  ProductDto,
+  TaxonomySummary,
+} from "@/features/product/workspace/contracts";
 import { TaxonomyPicker } from "./taxonomy-picker";
 import styles from "./workspace.module.css";
 
@@ -73,5 +76,22 @@ export function ProductFields({
         disabled={disabled}
       />
     </>
+  );
+}
+
+/** Names/labels refreshed on associations do not change the actual metadata IDs. */
+export function productFieldsDirty(
+  value: ProductFormFields,
+  saved: ProductDto,
+): boolean {
+  return (
+    value.title !== saved.title ||
+    value.slug !== saved.slug ||
+    (value.categories[0]?.id ?? null) !== (saved.primaryCategory?.id ?? null) ||
+    value.categories.length > 1 ||
+    value.tags.length !== saved.tags.length ||
+    value.tags.some(
+      (tag) => !saved.tags.some((original) => original.id === tag.id),
+    )
   );
 }

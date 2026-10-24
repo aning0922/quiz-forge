@@ -144,7 +144,7 @@ async function signIn(page: Page, role: "operator" | "readOnly" = "operator") {
   await expect(page.getByLabel("运营凭证")).toBeEnabled();
   await enterCredential(page, fixture[role]);
   await page.getByRole("button", { name: "登录 Studio" }).click();
-  await expect(page.getByRole("heading", { name: "运营会话" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "工作台" })).toBeVisible();
   await page.goto("/studio/products/e2e-imports/imports");
   await expect(
     page.getByRole("heading", { name: "内容包接收", exact: true }),

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useStudioLeaveProtection } from "../navigation-boundary";
 import type {
   ImportDto,
   ImportSettingsDto,
@@ -124,6 +125,12 @@ export function ReceiveControls({
     value.status === "receiving" ||
     value.status === "retryable-failed" ||
     value.storageCondition !== "clean";
+  useStudioLeaveProtection({
+    dirty: false,
+    pending: !!file && (busy || mustRead || mayUpload || mayRecover),
+    message:
+      "当前页仍持有本次接收所需的原文件。请先完成上传与状态核实，再离开；不会自动重传。",
+  });
   return (
     <section className={styles.panel} aria-label="内容包状态">
       <h2>接收状态</h2>
@@ -180,6 +187,22 @@ export function ReceiveControls({
         <p className={styles.note}>
           此页未持有原文件。请在当前页上方选择文件并核实与原声明一致后，再显式上传。
         </p>
+      )}
+      {file && (mayUpload || mayRecover || mustRead) && (
+        <div className={styles.note}>
+          <p>
+            若运营身份已失效，可在新标签重新登录，再打开原接收记录 {value.id}{" "}
+            查询状态。原页继续保留文件与现场，但不会因此恢复旧权限；新页上传前仍需重新选择与原声明一致的文件。
+          </p>
+          <a
+            className={`${styles.link} ${styles.secondary}`}
+            href={endpoint.replace("/api/studio/", "/studio/")}
+            target="_blank"
+            rel="noopener"
+          >
+            在新标签打开原接收记录
+          </a>
+        </div>
       )}
     </section>
   );

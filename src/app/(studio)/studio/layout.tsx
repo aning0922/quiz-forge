@@ -17,7 +17,17 @@ export default async function StudioLayout({
 }) {
   const state = await studioPageState();
   return (
-    <StudioShell authenticated={state.status === "authenticated"}>
+    <StudioShell
+      authenticated={state.status === "authenticated"}
+      identity={
+        state.status === "authenticated"
+          ? {
+              label: state.session.operator.label,
+              role: state.session.operator.role,
+            }
+          : undefined
+      }
+    >
       {children}
     </StudioShell>
   );

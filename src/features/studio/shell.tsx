@@ -1,5 +1,9 @@
 import styles from "./studio.module.css";
 import { StudioNavigation } from "./navigation";
+import { StudioTopbar } from "./topbar";
+import { StudioBrand } from "./brand";
+import { StudioNavigationBoundary } from "./navigation-boundary";
+import type { StudioIdentity } from "./navigation-model";
 
 /** Portable frame also used by browser captures; the server layout supplies
  * authenticated navigation presentation. This prop grants no write authority.
@@ -7,28 +11,29 @@ import { StudioNavigation } from "./navigation";
 export function StudioShell({
   children,
   authenticated = false,
+  identity,
 }: {
   children: React.ReactNode;
   authenticated?: boolean;
+  identity?: StudioIdentity | undefined;
 }) {
   return (
-    <div className={`${styles.shell} ${authenticated ? "" : styles.signedOut}`}>
-      <header className={styles.header}>
-        <div className={styles.brand}>
-          <span className={styles.brandMark} aria-hidden="true">
-            QF
-          </span>
-          <span>
-            QuizForge <span className={styles.brandSuffix}>Studio</span>
-          </span>
+    <StudioNavigationBoundary>
+      <div
+        className={`${styles.shell} ${authenticated ? "" : styles.signedOut}`}
+      >
+        {authenticated && <StudioNavigation identity={identity} />}
+        <div className={styles.content}>
+          <header className={styles.publicHeader}>
+            <StudioBrand />
+          </header>
+          {authenticated && <StudioTopbar identity={identity} />}
+          <main id="main" className={styles.main}>
+            {children}
+          </main>
         </div>
-        <span className={styles.environment}>本机运营内测</span>
-      </header>
-      {authenticated && <StudioNavigation />}
-      <main id="main" className={styles.main}>
-        {children}
-      </main>
-    </div>
+      </div>
+    </StudioNavigationBoundary>
   );
 }
 

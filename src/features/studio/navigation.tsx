@@ -3,26 +3,35 @@
 import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import {
+  LayoutDashboard,
+  ClipboardList,
+  Ticket,
+  Settings,
+  UserRound,
+} from "lucide-react";
+import { StudioBrand } from "./brand";
+import {
+  STUDIO_SECTIONS,
+  studioLocation,
+  type StudioIdentity,
+} from "./navigation-model";
 import styles from "./studio.module.css";
-import { invalidateCurrentStudioAuthority } from "./authority-events";
 
-const items = [
-  {
-    href: "/studio/products",
-    label: "工作区",
-    description: "管理测评与访问码",
-  },
-  {
-    href: "/studio/taxonomy",
-    label: "类目与标签",
-    description: "给测评分组，便于查找",
-  },
-  { href: "/studio", label: "身份与退出", description: "当前运营会话" },
-] as const;
+const icons = {
+  dashboard: LayoutDashboard,
+  products: ClipboardList,
+  testing: Ticket,
+  settings: Settings,
+};
 
-/** One native, keyboard-operable navigation. Opening it grants no authority. */
-export function StudioNavigation() {
-  const pathname = usePathname();
+export function StudioNavigation({
+  identity,
+}: {
+  identity?: StudioIdentity | undefined;
+}) {
+  const pathname = usePathname(),
+    location = studioLocation(pathname);
   const panel = useRef<HTMLDetailsElement>(null);
   useEffect(() => {
     const desktop = window.matchMedia("(min-width: 960px)");
@@ -33,44 +42,64 @@ export function StudioNavigation() {
     desktop.addEventListener("change", showDesktop);
     return () => desktop.removeEventListener("change", showDesktop);
   }, []);
+  const closeMobile = () => {
+    if (!window.matchMedia("(min-width: 960px)").matches && panel.current)
+      panel.current.open = false;
+  };
   return (
     <aside className={styles.sidebar}>
+      <StudioBrand />
       <details ref={panel} className={styles.navigationPanel} open>
         <summary>Studio 导航</summary>
         <nav className={styles.navigation} aria-label="Studio 导航">
-          {items.map((item) => {
-            const current =
-              item.href === "/studio/products"
-                ? pathname === "/studio/new-product" ||
-                  pathname === item.href ||
-                  pathname.startsWith(item.href + "/")
-                : pathname === item.href;
+          <p className={styles.sideLabel}>日常运营</p>
+          {STUDIO_SECTIONS.map((item) => {
+            const Icon = icons[item.id];
             return (
               <Link
-                key={item.href}
+                key={item.id}
                 href={item.href}
                 prefetch={false}
-                aria-label={item.label}
-                aria-current={current ? "page" : undefined}
+                aria-current={location.section === item.id ? "page" : undefined}
                 className={styles.navigationLink}
-                onClickCapture={invalidateCurrentStudioAuthority}
-                onClick={() => {
-                  if (
-                    !window.matchMedia("(min-width: 960px)").matches &&
-                    panel.current
-                  )
-                    panel.current.open = false;
-                }}
+                onClick={closeMobile}
               >
+                <Icon size={21} aria-hidden="true" />
                 <span>{item.label}</span>
-                <small>{item.description}</small>
               </Link>
             );
           })}
         </nav>
-        <p className={styles.navigationNote}>
-          选择测评，导入内容、预览审核，再发放访问码。
-        </p>
+        <div className={styles.sideFooter}>
+          <p className={styles.navigationNote}>
+            内测运营环境
+            <br />
+            按测评管理内容、版本与访问码。
+          </p>
+          <Link
+            className={styles.identityLink}
+            href="/studio/session"
+            prefetch={false}
+            aria-label="身份与退出"
+            aria-current={pathname === "/studio/session" ? "page" : undefined}
+            onClick={closeMobile}
+          >
+            <UserRound size={23} aria-hidden="true" />
+            <span>
+              {identity ? (
+                <>
+                  <strong>{identity.label}</strong>
+                  <small>
+                    {identity.role === "operator" ? "运营者" : "只读身份"} ·
+                    身份与退出
+                  </small>
+                </>
+              ) : (
+                "身份与退出"
+              )}
+            </span>
+          </Link>
+        </div>
       </details>
     </aside>
   );

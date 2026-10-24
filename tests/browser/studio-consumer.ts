@@ -398,7 +398,7 @@ async function activateGlobal(page: Page, kind: "pointer" | "keyboard") {
   });
   if (!(await nav.isVisible()))
     await page.getByText("Studio 导航", { exact: true }).click();
-  const link = nav.getByRole("link", { name: "工作区", exact: true });
+  const link = nav.getByRole("link", { name: "测评管理", exact: true });
   // Only prevent destination navigation, preserving the real React link events
   // and mounted consumer controller from the independent review counterexample.
   await link.evaluate((anchor) =>

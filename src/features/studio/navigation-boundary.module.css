@@ -1,0 +1,42 @@
+.notice {
+  position: fixed;
+  z-index: 50;
+  right: 16px;
+  bottom: 16px;
+  width: min(460px, calc(100vw - 32px));
+  padding: 16px;
+  border: 1px solid #c5bfef;
+  border-radius: 13px;
+  background: #fff;
+  color: #24304b;
+  box-shadow: 0 8px 30px #18223b24;
+  font-size: 16px;
+  line-height: 1.6;
+}
+.notice p {
+  margin: 0 0 12px;
+}
+.notice div {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.notice a,
+.notice button {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 8px 12px;
+  border: 1px solid #d7d2ef;
+  border-radius: 8px;
+  background: #f5f3ff;
+  color: #493fb4;
+  font: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+.notice a:focus-visible,
+.notice button:focus-visible {
+  outline: 3px solid #6358df;
+  outline-offset: 2px;
+}

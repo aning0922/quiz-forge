@@ -1,5 +1,6 @@
 "use client";
 import { TechnicalDetails } from "../presentation/technical-details";
+import { useStudioLeaveProtection } from "../navigation-boundary";
 
 import Link from "next/link";
 import { useState } from "react";
@@ -35,6 +36,12 @@ export function CreateReceive({
   const [message, setMessage] = useState("");
   const [unknown, setUnknown] = useState(false);
   const [queriedEmpty, setQueriedEmpty] = useState(false);
+  useStudioLeaveProtection({
+    dirty: !!pending && !value,
+    pending: busy || unknown,
+    message:
+      "文件正在准备或接收意图尚未确认。请留在此页完成核实，原文件与操作编号将继续保留。",
+  });
   const endpoint = `/api/studio/products/${encodeURIComponent(productId)}/imports`;
   async function select(file?: File) {
     if (pending || busy || !file) return;
@@ -220,7 +227,10 @@ export function CreateReceive({
             settings={settings}
             archived={false}
             file={pending?.file}
-            onUpdate={() => onChanged()}
+            onUpdate={(next) => {
+              setValue(next);
+              onChanged();
+            }}
           />
           <Link
             className={`${styles.link} ${styles.secondary}`}
