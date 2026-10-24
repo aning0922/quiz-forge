@@ -117,12 +117,8 @@
 }
 
 /* The tag picker must not stretch the neighbouring archive select to its height. */
-.additionalChoices {
+.panel .additionalChoices {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   align-items: start;
-}
-.additionalChoices > section > p:first-child {
-  margin-top: 0;
-}
-.additionalChoices > section > ul:empty {
-  display: none;
+  gap: 12px;
 }

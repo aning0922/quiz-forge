@@ -5,6 +5,7 @@ import { type TaxonomySummary } from "@/features/product/workspace/contracts";
 import type { OperationsQuery } from "../operations/contracts";
 import { operationsQuerySchema } from "../operations/query";
 import { TaxonomyPicker } from "./taxonomy-picker";
+import { TagFilter } from "./tag-filter";
 import { Search, RotateCcw } from "lucide-react";
 import styles from "./workspace.module.css";
 import parity from "./catalog-parity.module.css";
@@ -29,7 +30,8 @@ export function CatalogFilters({
     [unclassified, setUnclassified] = useState(query.unclassified),
     [categories, setCategories] = useState<TaxonomySummary[]>([]),
     [tags, setTags] = useState<TaxonomySummary[]>([]),
-    [error, setError] = useState("");
+    [error, setError] = useState(""),
+    [tagOpen, setTagOpen] = useState(false);
   return (
     <form
       className={`${styles.catalogFilters} ${parity.filters}`}
@@ -170,6 +172,7 @@ export function CatalogFilters({
               setCategories([]);
               setTags([]);
               setError("");
+              setTagOpen(false);
               onReset();
             }}
           >
@@ -185,6 +188,9 @@ export function CatalogFilters({
       <details
         className={`${styles.expandedFilters} ${styles.catalogAdditional}`}
         open={Boolean(query.tagId || query.status !== "active")}
+        onToggle={(event) => {
+          if (!event.currentTarget.open) setTagOpen(false);
+        }}
       >
         <summary>
           <span>更多筛选</span>
@@ -206,14 +212,14 @@ export function CatalogFilters({
               <option value="all">全部</option>
             </select>
           </div>
-          <TaxonomyPicker
-            purpose="filter"
-            kind="tag"
-            selected={tags}
-            selectedId={tagId}
-            onChange={(items) => {
-              setTags(items.slice(-1));
-              setTagId(items.at(-1)?.id ?? "");
+          <TagFilter
+            valueId={tagId}
+            value={tags[0]}
+            open={tagOpen}
+            onOpenChange={setTagOpen}
+            onChange={(item) => {
+              setTags(item ? [item] : []);
+              setTagId(item?.id ?? "");
             }}
           />
         </div>
