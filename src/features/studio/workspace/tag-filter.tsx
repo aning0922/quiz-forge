@@ -235,6 +235,7 @@ function TagOptions({
   onObserved: (item: TaxonomySummary) => void;
   onChoose: (item: TaxonomySummary | null) => void;
 }) {
+  const searchInput = useRef<HTMLInputElement>(null);
   const [search, setSearch] = useState("");
   const [q, setQ] = useState("");
   const [page, setPage] = useState(1);
@@ -251,6 +252,10 @@ function TagOptions({
     const item = read.value?.items.find((item) => item.id === valueId);
     if (item) onObserved(item);
   }, [read.value, valueId, onObserved]);
+  const changePage = (delta: number) => {
+    searchInput.current?.focus();
+    setPage((value) => value + delta);
+  };
   const applySearch = () => {
     setQ(search.trim());
     setPage(1);
@@ -259,6 +264,7 @@ function TagOptions({
     <>
       <div className={styles.search}>
         <input
+          ref={searchInput}
           aria-label="搜索标签名称或英文标识"
           placeholder="搜索标签…"
           maxLength={80}
@@ -332,7 +338,7 @@ function TagOptions({
               <button
                 type="button"
                 disabled={page <= 1}
-                onClick={() => setPage((value) => value - 1)}
+                onClick={() => changePage(-1)}
               >
                 上一页
               </button>
@@ -340,7 +346,7 @@ function TagOptions({
               <button
                 type="button"
                 disabled={!read.value.hasNext || page >= 1000}
-                onClick={() => setPage((value) => value + 1)}
+                onClick={() => changePage(1)}
               >
                 下一页
               </button>
