@@ -138,10 +138,7 @@ async function navigateStudio(
 }
 
 async function openProductSettings(page: Page) {
-  await page
-    .getByRole("navigation", { name: "测评业务导航", exact: true })
-    .getByRole("link", { name: "基本设置", exact: true })
-    .click();
+  await page.getByRole("link", { name: "基本设置", exact: true }).click();
   await expect(page).toHaveURL(/\/studio\/products\/e2e-workspace\/settings$/);
   await expect(
     page.getByRole("heading", { name: "基本设置", exact: true }),
@@ -242,7 +239,7 @@ async function openProductSettingsFromCatalog(page: Page) {
     .click();
   await expect(page).toHaveURL(/\/studio\/products\/e2e-workspace$/);
   await expect(
-    page.getByRole("heading", { name: "制作与内测状态", exact: true }),
+    page.getByRole("button", { name: "内容制作", exact: true }),
   ).toBeVisible();
   await expect(
     page.getByRole("form", { name: "测评信息", exact: true }),
@@ -379,7 +376,7 @@ test("operator creates taxonomy and product, checks 8 tags, filters and safe mob
   await page.getByRole("button", { name: "创建测评", exact: true }).click();
   await expect(page).toHaveURL(/\/studio\/products\/e2e-workspace$/);
   await expect(
-    page.getByRole("heading", { name: "制作与内测状态", exact: true }),
+    page.getByRole("button", { name: "内容制作", exact: true }),
   ).toBeVisible();
   await expect(
     page.locator("header").getByText(longTitle, { exact: true }),
