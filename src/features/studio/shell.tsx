@@ -1,5 +1,6 @@
 import styles from "./studio.module.css";
 import { StudioNavigation } from "./navigation";
+import { StudioMobileNavigation } from "./mobile-navigation";
 import { StudioTopbar } from "./topbar";
 import { StudioBrand } from "./brand";
 import { StudioNavigationBoundary } from "./navigation-boundary";
@@ -19,20 +20,22 @@ export function StudioShell({
 }) {
   return (
     <StudioNavigationBoundary>
-      <div
-        className={`${styles.shell} ${authenticated ? "" : styles.signedOut}`}
-      >
-        {authenticated && <StudioNavigation identity={identity} />}
-        <div className={styles.content}>
-          <header className={styles.publicHeader}>
-            <StudioBrand />
-          </header>
-          {authenticated && <StudioTopbar identity={identity} />}
-          <main id="main" className={styles.main}>
-            {children}
-          </main>
+      <StudioMobileNavigation>
+        <div
+          className={`${styles.shell} ${authenticated ? "" : styles.signedOut}`}
+        >
+          {authenticated && <StudioNavigation identity={identity} />}
+          <div className={styles.content}>
+            <header className={styles.publicHeader}>
+              <StudioBrand />
+            </header>
+            {authenticated && <StudioTopbar identity={identity} />}
+            <main id="main" className={styles.main}>
+              {children}
+            </main>
+          </div>
         </div>
-      </div>
+      </StudioMobileNavigation>
     </StudioNavigationBoundary>
   );
 }
