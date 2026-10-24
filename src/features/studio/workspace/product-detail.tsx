@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useStudioLeaveProtection } from "../navigation-boundary";
+import { useProductWorkspaceContext } from "../product-workspace/context";
 import {
   productReplaceMetadataSchema,
   type ProductDto,
@@ -47,6 +48,7 @@ function ProductEditor({
   session: StudioSessionDto;
 }) {
   const authority = useInternalAuthority();
+  const workspace = useProductWorkspaceContext();
   const [product, setProduct] = useState(initial);
   const [fields, setFields] = useState(() => formFields(initial));
   const [validation, setValidation] = useState("");
@@ -94,6 +96,7 @@ function ProductEditor({
           ? "测评信息已保存。"
           : "内容没有变化，信息版本保持不变。",
       );
+      if (workspace?.productId === product.id) workspace.read.refresh();
     }
   }
   async function lifecycle(action: "archive" | "restore") {
@@ -118,6 +121,7 @@ function ProductEditor({
             : "测评已恢复，分类和标签保持原样。"
           : "当前已是目标状态，没有重复修改。",
       );
+      if (workspace?.productId === product.id) workspace.read.refresh();
     }
   }
   async function readLatest() {
