@@ -582,6 +582,16 @@ test("archived workspace keeps the original unknown request available for reads"
     { key: PENDING_STORAGE_KEY, tuple: beforeFetchTuple },
   );
   await page.goto(`/studio/products/${fixture.productId}`);
+  await expect(
+    page.getByRole("heading", { name: "测评概览", exact: true }),
+  ).toBeVisible();
+  await page
+    .getByRole("navigation", { name: "测评业务导航", exact: true })
+    .getByRole("link", { name: "基本设置", exact: true })
+    .click();
+  await expect(page).toHaveURL(
+    new RegExp(`/studio/products/${fixture.productId}/settings$`),
+  );
   await page.getByText("编辑测评信息", { exact: true }).click();
   await page.getByRole("button", { name: "归档测评", exact: true }).click();
   await page.getByRole("button", { name: "确认归档测评", exact: true }).click();
@@ -607,7 +617,10 @@ test("archived workspace keeps the original unknown request available for reads"
     expect(await pending(page)).toEqual(beforeFetchTuple);
     await mobileChecks(page, testInfo, "archived-unknown");
   } finally {
-    await page.goto(`/studio/products/${fixture.productId}`);
+    await page.goto(`/studio/products/${fixture.productId}/settings`);
+    await expect(
+      page.getByRole("heading", { name: "基本设置", exact: true }),
+    ).toBeVisible();
     await page.getByRole("button", { name: "恢复测评", exact: true }).click();
     await expect(
       page.getByRole("button", { name: "归档测评", exact: true }),
