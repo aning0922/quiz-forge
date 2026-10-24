@@ -139,6 +139,29 @@ function EvidenceFacts({
     </>
   );
 }
+function issueDisclosureState(evidence: StudioConsumerStateV1["evidence"]) {
+  const appliedKey =
+    evidence?.kind === "issue" && evidence.value.kind === "applied"
+      ? evidence.value.key
+      : null;
+  const usable =
+    appliedKey !== null &&
+    !appliedKey.current.voidReceipt &&
+    (appliedKey.current.completion !== null ||
+      Date.parse(appliedKey.issue.expiresAt) >
+        Date.parse(appliedKey.current.observedAt));
+  const terminal = evidence !== null && evidence.value.kind !== "unresolved";
+  const unavailableReason = !terminal
+    ? null
+    : usable
+      ? null
+      : appliedKey?.current.voidReceipt
+        ? "已核实此访问码已作废，原协议不允许披露私密链接。请核对后明确结束本地记录。"
+        : appliedKey
+          ? "已核实此访问码已过期且未完成，原协议不允许披露私密链接。请核对后明确结束本地记录。"
+          : "已核实原发放请求存在明确冲突，不能从此原操作披露私密链接。请核对服务器事实后明确结束本地记录。";
+  return { usable, unavailableReason };
+}
 function PendingPanel({
   controller,
   state,
@@ -157,16 +180,8 @@ function PendingPanel({
     active = state.phase === "pending",
     operator = state.session?.operator.role === "operator";
   const terminal = evidence !== null && evidence.value.kind !== "unresolved";
-  const appliedKey =
-    evidence?.kind === "issue" && evidence.value.kind === "applied"
-      ? evidence.value.key
-      : null;
-  const usable =
-    appliedKey !== null &&
-    !appliedKey.current.voidReceipt &&
-    (appliedKey.current.completion !== null ||
-      Date.parse(appliedKey.issue.expiresAt) >
-        Date.parse(appliedKey.current.observedAt));
+  const { usable, unavailableReason } = issueDisclosureState(evidence);
+  const mustSave = requireSecretSave && pending.hasRaw && operator && usable;
   async function copy() {
     await controller.exposeSecret(async (link, current) => {
       if (!current() || !navigator.clipboard?.writeText)
@@ -254,11 +269,24 @@ function PendingPanel({
           </>
         )}
       </div>
-      {requireSecretSave && pending.hasRaw && !disclosed && (
+      {mustSave && !disclosed && (
         <p role="status">
           请先通过本次原操作复制或下载私密链接并妥善保存，再核对结束。
         </p>
       )}
+      {requireSecretSave &&
+        pending.kind === "issue" &&
+        terminal &&
+        unavailableReason && <p role="status">{unavailableReason}</p>}
+      {requireSecretSave &&
+        pending.kind === "issue" &&
+        terminal &&
+        usable &&
+        !operator && (
+          <p role="status">
+            当前身份没有凭证披露权限；请核对服务器事实后明确结束本地记录。
+          </p>
+        )}
       {terminal && (
         <div className={styles.acknowledgment}>
           <label>
@@ -269,14 +297,13 @@ function PendingPanel({
               onChange={(e) => setAcknowledged(e.target.checked)}
             />
             我已核对服务器事实；清除当前标签页记录不撤销服务器结果。
-            {pending.hasRaw && "清除后不能再次恢复私密链接，请先妥善保存。"}
+            {pending.hasRaw &&
+              (mustSave || !requireSecretSave
+                ? "清除后不能再次恢复私密链接，请先妥善保存。"
+                : "清除后会移除当前标签页保管的原文，服务器结果保持不变。")}
           </label>
           <button
-            disabled={
-              !active ||
-              !acknowledged ||
-              (requireSecretSave && pending.hasRaw && !disclosed)
-            }
+            disabled={!active || !acknowledged || (mustSave && !disclosed)}
             onClick={() => {
               void controller.finish().then(() => {
                 if (
@@ -720,6 +747,7 @@ function ConsumerTaskView({
   const [action, setAction] = useState<"play" | "issue" | "void" | null>(null);
   const [keyDetail, setKeyDetail] = useState<AccessKeyDetail>();
   const report = surfaces.report;
+  const { usable, unavailableReason } = issueDisclosureState(state.evidence);
   const kind = state.pending?.kind ?? action;
   const working = state.phase === "working";
   const ready = state.phase === "ready";
@@ -745,11 +773,24 @@ function ConsumerTaskView({
             : undefined,
         blockCloseReason:
           pending && id === "issue" && state.pending?.hasRaw
-            ? "私密链接仍由当前标签页保管。请先核实原发放、复制或下载并妥善保存，再明确结束当前记录。"
+            ? (unavailableReason ??
+              (usable && state.session?.operator.role === "operator"
+                ? "私密链接仍由当前标签页保管。请先复制或下载并妥善保存，再明确结束当前记录。"
+                : "原发码请求仍保留。请先核实服务器事实，再按可用操作明确结束本地记录。"))
             : undefined,
       });
     }
-  }, [report, state.pending, state.phase, working, kind, action]);
+  }, [
+    report,
+    state.pending,
+    state.phase,
+    state.session?.operator.role,
+    working,
+    kind,
+    action,
+    usable,
+    unavailableReason,
+  ]);
   function open(id: "play" | "issue" | "void") {
     if (!surfaces.canSwitch()) return;
     setAction(id);

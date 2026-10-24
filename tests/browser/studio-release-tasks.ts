@@ -168,6 +168,11 @@ const server = createServer(async (req, res) => {
             voidReceipt: null,
           },
         };
+        if (mode === "expired" || mode === "before-expiry")
+          key.current.observedAt = new Date(
+            Date.parse(key.issue.expiresAt) -
+              (mode === "before-expiry" ? 1 : 0),
+          ).toISOString();
         keys.unshift(key);
         if (mode === "held") {
           issueReached();
@@ -291,7 +296,69 @@ const browser = await chromium.launch({ headless: true });
 const errors: string[] = [];
 const results: string[] = [];
 try {
-  if (!process.argv.includes("--review-only")) {
+  if (process.argv.includes("--terminal-only")) {
+    for (const terminalMode of ["expired", "before-expiry"]) {
+      mode = terminalMode;
+      const page = await browser.newPage({
+        viewport: { width: 390, height: 900 },
+      });
+      page.setDefaultTimeout(7000);
+      page.on("pageerror", (error) => errors.push(error.message));
+      await page.goto(origin);
+      await page
+        .getByRole("button", { name: "发放访问码", exact: true })
+        .click();
+      await page
+        .getByRole("dialog")
+        .getByRole("combobox", { name: /^答题版本/ })
+        .selectOption(consumer.play.play.id);
+      await page
+        .getByRole("button", { name: "确认生成并发放一枚访问码" })
+        .click();
+      await expect(
+        page.getByRole("heading", { name: "上次访问码发放已记录" }),
+      ).toBeVisible();
+      await page.getByRole("checkbox").check();
+      const finish = page.getByRole("button", {
+        name: "确认结束并清除当前标签页记录",
+      });
+      if (terminalMode === "expired") {
+        await expect(
+          page.getByText(
+            "已核实此访问码已过期且未完成，原协议不允许披露私密链接。请核对后明确结束本地记录。",
+            { exact: true },
+          ),
+        ).toBeVisible();
+        await expect(
+          page.getByRole("button", { name: "复制私密访问链接" }),
+        ).toHaveCount(0);
+        await expect(
+          page.getByRole("button", { name: "下载私密链接文件" }),
+        ).toHaveCount(0);
+        await page.getByRole("button", { name: "关闭当前浮层" }).click();
+        await expect(page.getByRole("alert")).toContainText("核对后明确结束");
+        await expect(finish).toBeEnabled();
+        await finish.click();
+        await expect(page.getByRole("dialog")).toBeHidden();
+        results.push(
+          "expired-at-exact-boundary applied Key with local raw can explicitly finish without impossible disclosure",
+        );
+      } else {
+        await expect(
+          page.getByRole("button", { name: "复制私密访问链接" }),
+        ).toBeEnabled();
+        await expect(finish).toBeDisabled();
+        results.push(
+          "one millisecond before expiry still requires saving usable raw before finish",
+        );
+      }
+      await page.close();
+    }
+  }
+  if (
+    !process.argv.includes("--review-only") &&
+    !process.argv.includes("--terminal-only")
+  ) {
     const page = await browser.newPage({
       viewport: { width: 1440, height: 900 },
     });
@@ -463,56 +530,65 @@ try {
     results.push("initial shared revocation performs no controller refresh");
     await initial.close();
   }
-  const reviewPage = await browser.newPage();
-  reviewPage.setDefaultTimeout(7000);
-  reviewPage.on("pageerror", (error) => errors.push(error.message));
-  await reviewPage.goto(origin + "/?review");
-  await expect(
-    reviewPage.getByText("此目标已有记录", { exact: false }),
-  ).toBeVisible();
-  await reviewPage.getByRole("button", { name: "核对并固定内测内容" }).click();
-  const rendererSelect = reviewPage
-    .getByRole("dialog")
-    .getByRole("combobox", { name: /^内测预览样式/ });
-  await rendererSelect.selectOption(renderer.entrySha256);
-  await rendererSelect.evaluate((element) => {
-    (window as Window & { rendererSelect?: Element }).rendererSelect = element;
-  });
-  await reviewPage
-    .getByRole("button", { name: "准备固定内测内容版本" })
-    .click();
-  await expect(
-    reviewPage.getByRole("button", { name: "确认并发送此固定请求" }),
-  ).toBeEnabled();
-  await reviewPage.getByRole("button", { name: "关闭当前浮层" }).click();
-  await reviewPage.getByRole("button", { name: "模拟新摘要" }).click();
-  await expect(
-    reviewPage.getByText("后台摘要已是 r3，本任务仍绑定 r2。"),
-  ).toBeVisible();
-  expect(revisionReads).not.toContain(3);
-  await reviewPage.getByRole("button", { name: "核对并固定内测内容" }).click();
-  expect(
-    await rendererSelect.evaluate(
-      (element) =>
-        element ===
-        (window as Window & { rendererSelect?: Element }).rendererSelect,
-    ),
-  ).toBe(true);
-  await expect(
-    reviewPage.getByRole("button", { name: "确认并发送此固定请求" }),
-  ).toBeEnabled();
-  await reviewPage.getByRole("button", { name: "取消尚未发送的确认" }).click();
-  await reviewPage.getByRole("button", { name: "关闭当前浮层" }).click();
-  await reviewPage.getByRole("button", { name: "明确改为核对 r3" }).click();
-  await expect(
-    reviewPage.getByText("没有可直接使用的匹配依据，不能代为批准", {
-      exact: false,
-    }),
-  ).toBeVisible();
-  expect(revisionReads).toContain(3);
-  results.push(
-    "review confirmation/DOM remains r2 across summary r3; only explicit target switch reads r3",
-  );
+  if (!process.argv.includes("--terminal-only")) {
+    const reviewPage = await browser.newPage();
+    reviewPage.setDefaultTimeout(7000);
+    reviewPage.on("pageerror", (error) => errors.push(error.message));
+    await reviewPage.goto(origin + "/?review");
+    await expect(
+      reviewPage.getByText("此目标已有记录", { exact: false }),
+    ).toBeVisible();
+    await reviewPage
+      .getByRole("button", { name: "核对并固定内测内容" })
+      .click();
+    const rendererSelect = reviewPage
+      .getByRole("dialog")
+      .getByRole("combobox", { name: /^内测预览样式/ });
+    await rendererSelect.selectOption(renderer.entrySha256);
+    await rendererSelect.evaluate((element) => {
+      (window as Window & { rendererSelect?: Element }).rendererSelect =
+        element;
+    });
+    await reviewPage
+      .getByRole("button", { name: "准备固定内测内容版本" })
+      .click();
+    await expect(
+      reviewPage.getByRole("button", { name: "确认并发送此固定请求" }),
+    ).toBeEnabled();
+    await reviewPage.getByRole("button", { name: "关闭当前浮层" }).click();
+    await reviewPage.getByRole("button", { name: "模拟新摘要" }).click();
+    await expect(
+      reviewPage.getByText("后台摘要已是 r3，本任务仍绑定 r2。"),
+    ).toBeVisible();
+    expect(revisionReads).not.toContain(3);
+    await reviewPage
+      .getByRole("button", { name: "核对并固定内测内容" })
+      .click();
+    expect(
+      await rendererSelect.evaluate(
+        (element) =>
+          element ===
+          (window as Window & { rendererSelect?: Element }).rendererSelect,
+      ),
+    ).toBe(true);
+    await expect(
+      reviewPage.getByRole("button", { name: "确认并发送此固定请求" }),
+    ).toBeEnabled();
+    await reviewPage
+      .getByRole("button", { name: "取消尚未发送的确认" })
+      .click();
+    await reviewPage.getByRole("button", { name: "关闭当前浮层" }).click();
+    await reviewPage.getByRole("button", { name: "明确改为核对 r3" }).click();
+    await expect(
+      reviewPage.getByText("没有可直接使用的匹配依据，不能代为批准", {
+        exact: false,
+      }),
+    ).toBeVisible();
+    expect(revisionReads).toContain(3);
+    results.push(
+      "review confirmation/DOM remains r2 across summary r3; only explicit target switch reads r3",
+    );
+  }
   expect(rawAtApi).toBe(false);
   expect(errors).toEqual([]);
   await writeFile(
