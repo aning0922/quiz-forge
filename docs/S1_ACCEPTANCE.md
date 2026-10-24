@@ -15,6 +15,33 @@
 
 五项可观察标准：①四主视图按原稿构图，不只同名；②每阶段一个最突出下一步，无待办恢复不占主任务版面，真实异常仍显著；③内容来源→草稿→预览、封存结果→详情→内测、Key详情→作废、设置保存均可在同工作区返回；④任务/抽屉标题与底部动作稳定，不重复旧页面标题与空恢复卡；⑤当前/历史/未决对象准确，普通信息紧凑、技术信息按需查看。正文16px/操作44px是适配边界，不替代原型与操作验收。原型模拟参与量、批准和假素材不冒充真实功能。
 
+### 返修结果与精确输入
+
+运行源码 `76856f9`。共享 footer 与来源/修订/设置浮层为 `1b0d337`、`13fc042`、`64a8a0c`；独立 B 的审核/内测为 `84b7702`；独立 A 的内容主区/任务/来源为 `361d0ff`；设置恢复探针为 `8c108fc`，分类读取失权传播为 `0234e0f`。最终 `76856f9` 只启用历史列表的 `embedded` 适配并提高 embedded 设置单列规则的局部优先级。未新增 API、数据库迁移或修改原业务写入合同。
+
+最终生产构建 `bekKQuqJ0GIwumtIKW3Td`，113 traces / 25698 paths / 0 私有输入违规，严格类型和固定实现检查通过。新路径/构建身份按官方 `media:build --main`、`media:setup:macos --runtime-target=main`、`media:provision --runtime-target=main` 封存，outcome=sealed；deployment `a7880a1a659206faead2238fe3fec55967c416ad49ed2407bfc6ae86060c2016`，runtime bundle `1dae042d7bebb756494ac695afbc79ef7536cd5cb8e4a3143e1857363cb2484e`。后续记录整理不改变运行输入，不重复构建。
+
+### 本批验证与复用
+
+- 修改文件定向 lint/格式、集成 `tsc --noEmit --incremental false` 及最终构建通过。A 的原 File/DOM、隐藏阶段 footer、同字节重选、UNKNOWN 不重放、来源回执隔离、CAS 原基准、确认拒绝和共享失权实际组件反例通过；底层 56+6 项未变纯测试复用，不因集成重复执行。
+- B 的字段保留、busy/私密结果关闭保护、UNKNOWN、单层作废、共享/初始失权、精确期限，以及三种封存回执的本地 callback 反例通过；正常成功、原操作查询成功和其他操作占用结果均不生成旧页面锚点。presentation 8 项与未变底层证据按输入复用。
+- 实际 React + 合成 HTTP 的设置 3 项：关闭重开同 input DOM、外部 footer 准确关联原 form 且只发一次 PATCH；CAS 保留输入/冲突并明确恢复；UNKNOWN 后明确 401 保留原输入与 pending 且不重发。保存的旧成功不能完成新归档任务。逻辑收录为 `tests/browser/studio-settings-tasks.mjs`；另以 `--taxonomy-authority-only` 补 2 项：分类 401 封闭同商品 authority，503 显示读取失败但不误撤权。其他 ProductFields 调用者未改变。
+- 3160 生产构建 + 真实隔离 test PostgreSQL：原文件选择/关开保持同 DOM；实际意图→上传→native 检查→明确首稿 r1；成功回执打开同页固定预览，选答后收起重开保留题目进度；来源、固定版本及原查询回执留在本地抽屉/内测区。真实记录既有 synthetic-test 基线、封存、创建答题版本、发码并下载私密链接后明确结束。匿名消费者完成两题并取得只读报告，后台安全详情显示已完成；真实 PNG 生成就绪，下载自动化探针因定位/超时未完成，本批不将该下载探针记为通过，未变 PNG 下载合同沿用上一批真实下载证据。
+- 真实设置通过新 footer 保存成功；更新包从准确接收来源继续就绪检查，再明确按 r1 基准追加 r2。当前 r2 无匹配批准，历史 r1 审核、固定版、答题版本与完成记录分别表达，没有借用旧依据。底层双写者 CAS 竞争、报告字节不变等未修改合同直接复用上一批真实 PG 证据。
+- 最终构建 Chromium 156.0.8078.4 / Playwright 1.64.0，reducedMotion=reduce：四主区 × 320/375/390/430/1440，设置五宽，历史/修订各一，完整预览三宽，内容任务两宽，共 32 项无页面横向溢出、浮层不越界，受查正文 ≥16px、button/summary ≥44px，0 pageerror。修订历史→准确 r1 内容→完整预览、设置开关、访问码安全详情及全局内测目录→新版 `?task=testing` 均实际操作。主控看图，Astra 限定图检无本批阻断；不等同手机实机或作者视觉批准。
+
+实际页面证据在私有 `.cache/studio-v2-parity/real-workflow-observations.json`、`ui-probe-results.json`、`final-*.png` 与 `demo-guide.html`。对照页 18 张图片均加载且无横向溢出。A/B 原结果保留在各自工作树 `.cache/content-parity/` 与 `.cache/studio-release-tasks/`；独审共享结果，没有重新运行一套。旧 workspace E2E 保留明确 `/settings` 深链接用于既有元数据/恢复场景，新抽屉另有上述定向覆盖，未把旧场景当新 UX 证据。
+
+### 失败边界、演示与停止点
+
+首次媒体封存的 crash 演练在“parent crash leaves persisted worker identity and restart blocked”失败，记录 `88ac13ea-ae53-4415-a01b-ce75d40ed030` 保留，未猜测具体失败子断言。官方 native identity 工具两次确认该 owner/worker 已不存在；仅将本次自有、已确认的 active/guard 原文件归档。下一次启动因遗留 fixture 目录在断言前失败（0 项），核实自有固定合成文件、硬链接/符号链接及停止证明后原样归档，再沿官方入口成功封存。失败记录不删除、不计通过，不改媒体安全代码或超时。
+
+固定 Next 16.4.0 的既有安全提示中断首次构建，同命令重试通过，未修改依赖或关闭保护。浏览器探针中错误控件名称、就绪断言和下载等待曾失败/超时；根据真实控件继续，未重发未知写请求。两次探针重置后，沿准确原来源读取检查结果再继续。最终新构建只补受影响历史/设置与布局，没有重走未变化业务全套。未本地执行全量单元、全 PG/driver、全消费者 E2E 或一次性 P5。
+
+新演示 `http://127.0.0.1:3160/studio/login`，test 实例 `c6bcbd375e2a9d6e522cb897eac87481` / PG 55438。保留空白上传、已接收待检查、精确匹配既有基线的待审核 r1，以及当前 r2/历史 r1 并存四个合成样例。凭证、配套包和私密链接只在本机文件中，不进 Git、截图或 PR；合成噪声素材不代表历史人物正式美术。原 3150 实例和 3100–3140、main、PR #24–#27 及作者六份未提交文件保持。
+
+既有 Draft PR #28 以普通快进更新，base 保持 `codex/studio-v2-design-refine`；不切换或改动旧运行工作树。旧 head `01e3d95` 的 CI 40100533241 已 success，仅证明旧输入；新 head 的自动 CI 单独按 GitHub 记录报告。完成后停止，等待作者实际体验，不合并、生产部署或扩展其他阶段。
+
 ## 2026-10-24 V2 内页真实操作交付
 
 本轮从 Draft PR #27 的准确 `afe5921e559c7c1682074bc21db4db5dcddcb598` 建立独立 `codex/studio-v2-inner-workflow`，按新的内页任务书先分析后实施。保留原 Sol/high 独立开发 A/B 与 Astra/high 独审，主控负责共享浮层、集成和实际运行验收。原型确定任务结构，服务合同决定真实动作；原型中的模拟数据、批准与完成标记没有直接进入实现。
