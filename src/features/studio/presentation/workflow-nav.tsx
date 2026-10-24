@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { useProductWorkspaceContext } from "../product-workspace/context";
 import styles from "./presentation.module.css";
 
 export type StudioWorkflowStep =
@@ -14,6 +17,8 @@ export function StudioWorkflowNav({
   current: StudioWorkflowStep;
   previewHref?: string;
 }) {
+  const workspace = useProductWorkspaceContext();
+  if (workspace?.productId === productId) return null;
   const base = `/studio/products/${encodeURIComponent(productId)}`;
   const items: ReadonlyArray<{
     id: StudioWorkflowStep;

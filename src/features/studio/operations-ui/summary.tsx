@@ -86,9 +86,11 @@ function Target({ value }: { value: RevisionTarget }) {
 export function OperationsSummary({
   value,
   compact = false,
+  showActions = true,
 }: {
   value: ProductOperations;
   compact?: boolean;
+  showActions?: boolean;
 }) {
   const { content, review, versions, testing } = value;
   return (
@@ -269,7 +271,7 @@ export function OperationsSummary({
         </p>
       )}
       <AsOf value={value.asOf} />
-      {value.nextActions.length > 0 && (
+      {showActions && value.nextActions.length > 0 && (
         <nav
           className={styles.actions}
           aria-label={`测评 ${value.directory.title} 的下一步`}
