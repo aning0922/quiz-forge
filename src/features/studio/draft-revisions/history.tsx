@@ -1,6 +1,7 @@
 "use client";
 import { TechnicalDetails } from "../presentation/technical-details";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import type { RevisionTarget } from "@/features/product/internal-versions/identity-contracts";
 import type {
   DraftRevisionHistory,
   DraftRevisionHistoryQuery,
@@ -21,11 +22,19 @@ export function RevisionHistoryPanel({
   productId,
   draftId,
   currentRevision,
+  onSelect,
+  onFailure,
 }: {
   productId: string;
   draftId: string;
   currentRevision: number;
+  onSelect?: (target: RevisionTarget) => void;
+  onFailure?: (error: unknown) => void;
 }) {
+  const failure = useRef(onFailure);
+  useEffect(() => {
+    failure.current = onFailure;
+  });
   const [request, setRequest] = useState<RequestState>({
     generation: 0,
     query: { pageSize: DRAFT_REVISION_LIMITS.historyDefaultPageSize },
@@ -61,11 +70,13 @@ export function RevisionHistoryPanel({
         }
       },
       (error) => {
-        if (current)
+        if (current) {
+          failure.current?.(error);
           setResult({
             generation: request.generation,
             error: revisionMessage(error),
           });
+        }
       },
     );
     return () => {
@@ -166,7 +177,24 @@ export function RevisionHistoryPanel({
                 <p>素材集合 {item.assetSetSha256}</p>
               </TechnicalDetails>
               <p>创建于 {item.createdAt}</p>
-              <RevisionLinks draft={item} />
+              {onSelect ? (
+                <button
+                  className={styles.button}
+                  onClick={() =>
+                    onSelect({
+                      draftId: item.draftId,
+                      revision: item.revision,
+                      canonicalContentSha256: item.canonicalContentSha256,
+                      assetSetSha256: item.assetSetSha256,
+                      canonicalManifestSha256: item.canonicalManifestSha256,
+                    })
+                  }
+                >
+                  选择 r{item.revision} 供预览
+                </button>
+              ) : (
+                <RevisionLinks draft={item} />
+              )}
             </li>
           ))}
       </ol>

@@ -12,8 +12,16 @@ import {
   RefreshCw,
 } from "lucide-react";
 import type { StudioSessionDto } from "../contracts";
-import type { RevisionTarget } from "@/features/product/internal-versions/identity-contracts";
-import { previewPagePath } from "@/features/product/preview/urls";
+import {
+  revisionTargetSchema,
+  sameRevisionTarget,
+  type RevisionTarget,
+} from "@/features/product/internal-versions/identity-contracts";
+import type { PreviewScope } from "@/features/product/preview/contracts";
+import { FixedRevisionPreviewPage } from "../preview/page";
+import { RevisionHistoryPanel } from "../draft-revisions/history";
+import { invalidateCurrentStudioAuthority } from "../authority-events";
+import { previewSelectionStatus } from "./preview-hub";
 import { useInternalAuthority } from "../internal-versions/authority";
 import { productPresentation } from "../operations-ui/presentation";
 import { StatusBadge } from "../operations-ui/status-badge";
@@ -36,6 +44,11 @@ const tabs = [
   { id: "testing", label: "内测发放", icon: Ticket },
 ] as const;
 type TaskTab = (typeof tabs)[number]["id"];
+type PreviewLaunch = {
+  target: RevisionTarget;
+  scope: PreviewScope;
+  key: string;
+};
 
 export function ProductTaskWorkspace({
   session,
@@ -55,6 +68,9 @@ function Workspace({ session }: { session: StudioSessionDto }) {
   const surfaces = useWorkspaceSurfaces();
   const [tab, setTab] = useState<TaskTab>("content");
   const [selection, setSelection] = useState<RevisionTarget>();
+  const [launched, setLaunched] = useState<PreviewLaunch>();
+  const [switchPreview, setSwitchPreview] = useState<RevisionTarget>();
+  const [historyScope, setHistoryScope] = useState<RevisionTarget>();
   const [contentSource, setContentSource] = useState<string>();
   const [contentRun, setContentRun] = useState(0);
   const report = surfaces.report;
@@ -71,7 +87,7 @@ function Workspace({ session }: { session: StudioSessionDto }) {
     value?.content.draft.state === "present"
       ? value.content.draft.value.target
       : undefined;
-  const selected = selection ?? current;
+  const selected = selection ?? launched?.target ?? current;
   function switchTab(next: TaskTab) {
     if (!surfaces.canSwitch()) return;
     if (surfaces.active && !surfaces.close()) return;
@@ -79,8 +95,44 @@ function Workspace({ session }: { session: StudioSessionDto }) {
   }
   function choosePreview(target: RevisionTarget) {
     if (!surfaces.canSwitch()) return;
-    setSelection(target);
+    setSelection(revisionTargetSchema.parse(target));
+    setSwitchPreview(undefined);
     switchTab("preview");
+  }
+  function launchPreview(target: RevisionTarget, confirmedSwitch = false) {
+    if (authority.isRevoked || !surfaces.canSwitch()) return;
+    const exact = revisionTargetSchema.parse(target);
+    if (
+      launched &&
+      !sameRevisionTarget(launched.target, exact) &&
+      !confirmedSwitch
+    ) {
+      setSwitchPreview(exact);
+      choosePreview(exact);
+      setSwitchPreview(exact);
+      return;
+    }
+    if (!launched || !sameRevisionTarget(launched.target, exact)) {
+      setLaunched({
+        target: exact,
+        scope: { productId, draftId: exact.draftId, revision: exact.revision },
+        key: JSON.stringify([productId, exact]),
+      });
+    }
+    setSelection(exact);
+    setSwitchPreview(undefined);
+    surfaces.open("preview");
+  }
+  function openRevisions() {
+    if (!surfaces.canSwitch()) return;
+    const target = current ?? selected;
+    if (!historyScope && target) setHistoryScope(target);
+    surfaces.open("revisions");
+  }
+  function observeHistoryFailure(error: unknown) {
+    const wasRevoked = authority.isRevoked;
+    authority.observe(error);
+    if (!wasRevoked && authority.isRevoked) invalidateCurrentStudioAuthority();
   }
   function continueSource(importId: string) {
     if (!surfaces.canSwitch()) return;
@@ -184,31 +236,94 @@ function Workspace({ session }: { session: StudioSessionDto }) {
           readOnly={session.operator.role !== "operator" || authority.isRevoked}
           onOpenTask={() => surfaces.open("content")}
           onOpenHistory={() => surfaces.open("history")}
-          onPreview={choosePreview}
+          onPreview={launchPreview}
         />
       </div>
-      <div hidden={tab !== "preview"} className={styles.panel}>
-        <h2>预览体验</h2>
-        {selected ? (
-          <>
-            <p>
-              当前选择固定修订 r{selected.revision}，开始后不会随最新草稿变化。
-            </p>
-            <Link
-              className={styles.primary}
-              href={previewPagePath({ productId, ...selected })}
-              target="_blank"
-              rel="noopener"
-            >
-              打开 r{selected.revision} 完整预览
-            </Link>
-          </>
-        ) : (
-          <>
-            <p>还没有可预览的内容。</p>
-            <button onClick={() => switchTab("content")}>去处理内容</button>
-          </>
-        )}
+      <div hidden={tab !== "preview"}>
+        <div className={styles.sectionHeading}>
+          <div>
+            <h2>预览体验</h2>
+            <p>默认体验当前草稿，历史修订按需选择；开始后固定本次目标。</p>
+          </div>
+          <button onClick={openRevisions}>历史修订</button>
+        </div>
+        <div className={styles.columns}>
+          <section className={styles.panel}>
+            {selected ? (
+              <>
+                <h2>固定修订 r{selected.revision}</h2>
+                <StatusBadge
+                  status={previewSelectionStatus(
+                    { productId, target: selected },
+                    productId,
+                    value,
+                  )}
+                />
+                <p>
+                  在大视图中打开真实封面、题目、结果与报告，收起后保留本页的临时体验进度。
+                </p>
+                <div className={styles.actions}>
+                  <button
+                    className={styles.primary}
+                    disabled={authority.isRevoked}
+                    onClick={() => launchPreview(selected)}
+                  >
+                    体验 r{selected.revision} 完整流程
+                  </button>
+                  <button onClick={openRevisions}>选择其他修订</button>
+                </div>
+                {switchPreview && (
+                  <section className={styles.notice} role="status">
+                    <p>
+                      将从 r{launched?.target.revision} 切换到 r
+                      {switchPreview.revision}
+                      ，旧预览的临时答案与结果会重置。内容导入任务和历史记录保持。
+                    </p>
+                    <div className={styles.actions}>
+                      <button
+                        onClick={() => launchPreview(switchPreview, true)}
+                      >
+                        确认切换并开始 r{switchPreview.revision}
+                      </button>
+                      <button onClick={() => setSwitchPreview(undefined)}>
+                        保留原预览
+                      </button>
+                    </div>
+                  </section>
+                )}
+                {current && !sameRevisionTarget(selected, current) && (
+                  <button onClick={() => choosePreview(current)}>
+                    选择当前 r{current.revision}
+                  </button>
+                )}
+              </>
+            ) : (
+              <>
+                <h2>还没有可预览的内容</h2>
+                <p>先完成内容包接收、检查并形成首稿。</p>
+                <button onClick={() => switchTab("content")}>去处理内容</button>
+              </>
+            )}
+          </section>
+          <aside className={styles.panel}>
+            <h2>体验中核对什么</h2>
+            <ul className={styles.previewChecklist}>
+              <li>
+                <strong>封面与答题</strong>
+                <p>查看实际内容、素材与操作反馈。</p>
+              </li>
+              <li>
+                <strong>结果与报告</strong>
+                <p>由原固定修订预览服务生成，保持同一目标。</p>
+              </li>
+              <li>
+                <strong>海报</strong>
+                <p>沿用已有预览导出能力；不产生正式消费者报告。</p>
+              </li>
+            </ul>
+            <p>预览不会自动登记人工验收或授予批准。</p>
+          </aside>
+        </div>
       </div>
       <div hidden={tab !== "review"} className={styles.panel}>
         <h2>审核与版本</h2>
@@ -228,7 +343,7 @@ function Workspace({ session }: { session: StudioSessionDto }) {
           initialImportId={contentSource}
           onChanged={read.refresh}
           onState={reportContent}
-          onPreview={choosePreview}
+          onPreview={launchPreview}
         />
       </RetainedTaskSurface>
       <RetainedTaskSurface id="history">
@@ -236,11 +351,7 @@ function Workspace({ session }: { session: StudioSessionDto }) {
           <p>记录属于各自固定对象，不以最近时间把不同来源拼为同一任务。</p>
           <h3>当前草稿</h3>
           <p>{current ? `r${current.revision}` : "暂无可确认的草稿"}</p>
-          {current && (
-            <button onClick={() => choosePreview(current)}>
-              选择当前修订预览
-            </button>
-          )}
+          {current && <button onClick={openRevisions}>查看内容修订记录</button>}
           <h3>接收与检查</h3>
           <button onClick={() => surfaces.open("imports")}>
             查看接收与检查记录
@@ -254,6 +365,30 @@ function Workspace({ session }: { session: StudioSessionDto }) {
       </RetainedTaskSurface>
       <RetainedTaskSurface id="imports">
         <ContentRecords productId={productId} onContinue={continueSource} />
+      </RetainedTaskSurface>
+      <RetainedTaskSurface id="revisions">
+        {historyScope ? (
+          <RevisionHistoryPanel
+            productId={productId}
+            draftId={historyScope.draftId}
+            currentRevision={current?.revision ?? historyScope.revision}
+            onSelect={choosePreview}
+            onFailure={observeHistoryFailure}
+          />
+        ) : (
+          <p>尚无可读取的草稿修订。</p>
+        )}
+      </RetainedTaskSurface>
+      <RetainedTaskSurface id="preview">
+        {launched && (
+          <FixedRevisionPreviewPage
+            key={launched.key}
+            scope={launched.scope}
+            session={session}
+            authority={authority}
+            embedded
+          />
+        )}
       </RetainedTaskSurface>
     </div>
   );
