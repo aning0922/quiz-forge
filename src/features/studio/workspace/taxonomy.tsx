@@ -9,6 +9,10 @@ import {
   type TaxonomyKind,
   type TaxonomyMutation,
 } from "@/features/product/workspace/contracts";
+import Link from "next/link";
+import { ArrowLeft, Plus } from "lucide-react";
+import { TechnicalDetails } from "../presentation/technical-details";
+import local from "./taxonomy.module.css";
 import { useStudioLeaveProtection } from "../navigation-boundary";
 import type { StudioSessionDto } from "../contracts";
 import { studioFetch, studioMessage } from "../client";
@@ -186,11 +190,25 @@ function TaxonomyRow({
     mutation.reconciled();
   }
   return (
-    <article className={styles.card} aria-label={`${label} ${item.slug}`}>
-      <h3>{item.name}</h3>
-      {summary(item)}
+    <article
+      className={`${styles.card} ${local.row}`}
+      aria-label={`${label} ${item.slug}`}
+    >
+      <div className={local.rowHeading}>
+        <div>
+          <h3>{item.name}</h3>
+          <p>{item.slug}</p>
+        </div>
+        <span className={local.count}>
+          关联测评 <strong>{item.assignedProductCount}</strong>
+          <small>含归档</small>
+        </span>
+        <span className={item.archivedAt ? local.archived : local.active}>
+          {item.archivedAt ? "已归档" : "未归档"}
+        </span>
+      </div>
       {session.operator.role === "operator" && (
-        <>
+        <div className={local.rowControls}>
           {!item.archivedAt && (
             <form
               className={styles.form}
@@ -231,7 +249,7 @@ function TaxonomyRow({
               </button>
             </form>
           )}
-          <div className={styles.form}>
+          <div className={local.lifecycle}>
             {item.archivedAt ? (
               <button
                 className={styles.button}
@@ -278,7 +296,7 @@ function TaxonomyRow({
               </section>
             )}
           </div>
-        </>
+        </div>
       )}
       {validation && (
         <p className={styles.status} role="status">
@@ -290,6 +308,7 @@ function TaxonomyRow({
           {mutation.state.message}
         </p>
       )}
+      <TechnicalDetails label="目录技术信息">{summary(item)}</TechnicalDetails>
       <ReconcilePanel
         state={mutation.state}
         reading={reading}
@@ -381,7 +400,10 @@ function TaxonomyCreateForm({
     }
   }
   return (
-    <section className={styles.panel}>
+    <section
+      className={`${styles.panel} ${local.createPanel}`}
+      id="taxonomy-create"
+    >
       <h2>创建{label}</h2>
       <p className={styles.note}>
         英文标识创建后固定，归档不释放，例如
@@ -570,8 +592,10 @@ function TaxonomyList({
     read.refresh();
   }
   return (
-    <>
-      <section className={styles.panel}>
+    <div
+      className={`${local.directoryLayout} ${session.operator.role === "read-only" ? local.readOnly : ""}`}
+    >
+      <section className={`${styles.panel} ${local.listPanel}`}>
         <h2>{label}目录</h2>
         <FilterBar
           busy={read.loading}
@@ -655,7 +679,7 @@ function TaxonomyList({
                   : `尚无${label}`}
               </p>
             )}
-            <ul className={styles.cards}>
+            <ul className={`${styles.cards} ${local.rows}`}>
               {read.value.items.map((item) => (
                 <li key={item.id}>
                   <TaxonomyRow
@@ -691,7 +715,7 @@ function TaxonomyList({
           onProtectionChange={updateCreationProtection}
         />
       )}
-    </>
+    </div>
   );
 }
 
@@ -699,39 +723,46 @@ export function TaxonomyWorkspace({ session }: { session: StudioSessionDto }) {
   const [kind, setKind] = useState<TaxonomyKind>("category");
   const [protectedState, setProtectedState] = useState(false);
   return (
-    <div className={styles.workspace}>
+    <div className={`${styles.workspace} ${local.workspace}`}>
       <WorkspaceNav />
-      <section className={styles.panel}>
-        <h1>分类与标签</h1>
-        <p className={styles.note}>
-          每个测评可选一个分类和最多 8
-          个标签。分类或标签归档后可以恢复，原有关联不会被删除。
-        </p>
-        {session.operator.role === "read-only" && <ReadOnlyNotice />}
-        <div
-          className={`${styles.actions} ${styles.taxonomyTabs}`}
-          aria-label="目录类型"
-        >
-          <button
-            className={styles.button}
-            type="button"
-            aria-pressed={kind === "category"}
-            disabled={protectedState && kind !== "category"}
-            onClick={() => setKind("category")}
-          >
-            管理分类
-          </button>
-          <button
-            className={styles.button}
-            type="button"
-            aria-pressed={kind === "tag"}
-            disabled={protectedState && kind !== "tag"}
-            onClick={() => setKind("tag")}
-          >
-            管理标签
-          </button>
+      <header className={local.pageHeader}>
+        <div>
+          <Link className={local.back} href="/studio/settings">
+            <ArrowLeft size={16} aria-hidden="true" />
+            系统设置
+          </Link>
+          <h1>分类与标签</h1>
+          <p>
+            每个测评可选一个分类和最多 8
+            个标签。归档保留原有关联，可在目录中恢复。
+          </p>
         </div>
-      </section>
+        {session.operator.role === "operator" && (
+          <a className={local.primary} href="#taxonomy-create">
+            <Plus size={18} aria-hidden="true" />
+            创建{kind === "category" ? "分类" : "标签"}
+          </a>
+        )}
+      </header>
+      {session.operator.role === "read-only" && <ReadOnlyNotice />}
+      <div className={local.tabs} aria-label="目录类型">
+        <button
+          type="button"
+          aria-pressed={kind === "category"}
+          disabled={protectedState && kind !== "category"}
+          onClick={() => setKind("category")}
+        >
+          管理分类
+        </button>
+        <button
+          type="button"
+          aria-pressed={kind === "tag"}
+          disabled={protectedState && kind !== "tag"}
+          onClick={() => setKind("tag")}
+        >
+          管理标签
+        </button>
+      </div>
       <TaxonomyList
         key={kind}
         kind={kind}

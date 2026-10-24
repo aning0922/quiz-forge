@@ -1,62 +1,74 @@
 import Link from "next/link";
+import { ExternalLink, ArrowRight } from "lucide-react";
 import type { StudioIdentity } from "./navigation-model";
-import ui from "./studio.module.css";
-import styles from "./platform.module.css";
+import styles from "./settings.module.css";
 
 export function StudioSettings({ identity }: { identity: StudioIdentity }) {
   return (
     <div className={styles.page}>
-      <header className={styles.pageHeader}>
-        <div>
-          <h1>系统设置</h1>
-          <p>维护分类标签，核对运营身份。低频技术维护由本机维护者处理。</p>
-        </div>
+      <header className={styles.header}>
+        <h1>系统设置</h1>
+        <p>集中维护分类标签及基础运营环境，低频技术配置不干扰日常工作。</p>
       </header>
-      <div className={styles.settingsGrid}>
+      <div className={styles.grid}>
         <section className={styles.panel}>
-          <h2>分类与标签</h2>
+          <div className={styles.title}>
+            <h2>分类与标签</h2>
+            <span className={styles.available}>现有能力</span>
+          </div>
           <p>
-            沿用现有分类和标签管理，支持创建、改名、归档和恢复。归档不删除已有测评关联。
+            支持分类、标签的创建、改名、归档和恢复。归档保留已有测评关联，可在原目录中恢复。
           </p>
-          <Link
-            className={`${ui.link} ${ui.secondary}`}
-            href="/studio/taxonomy"
-          >
+          <Link className={styles.button} href="/studio/taxonomy">
+            <ExternalLink size={16} aria-hidden="true" />
             打开分类与标签管理
           </Link>
         </section>
         <section className={styles.panel}>
-          <h2>运营身份与权限</h2>
-          <dl className={ui.facts}>
+          <div className={styles.title}>
+            <h2>运营身份与权限</h2>
+            <span className={styles.foundation}>现有基础</span>
+          </div>
+          <dl className={styles.facts}>
             <div>
               <dt>当前身份</dt>
               <dd>{identity.label}</dd>
             </div>
             <div>
-              <dt>角色</dt>
-              <dd>{identity.role === "operator" ? "运营者" : "只读"}</dd>
+              <dt>角色范围</dt>
+              <dd>
+                {identity.role === "operator"
+                  ? "运营者（operator）"
+                  : "只读（read-only）"}
+              </dd>
+            </div>
+            <div>
+              <dt>权限策略</dt>
+              <dd>以服务端授权为最终依据</dd>
             </div>
           </dl>
-          <p>每个页面和操作都由服务器重新核验权限。</p>
-          <Link className={`${ui.link} ${ui.secondary}`} href="/studio/session">
+          <Link className={styles.textLink} href="/studio/session">
             查看会话与退出登录
+            <ArrowRight size={16} aria-hidden="true" />
           </Link>
         </section>
         <section className={styles.panel}>
-          <h2>维护与恢复</h2>
-          <p>备份校验、隔离恢复和运行环境维护由本机维护者使用受管工具执行。</p>
+          <div className={styles.title}>
+            <h2>未来站点运营</h2>
+            <span className={styles.future}>后续独立接入</span>
+          </div>
           <p>
-            此页不执行命令，也不覆盖现有环境。需要维护时，请联系本机维护者。
+            作品正式上线、首页推荐、专题、展示排序和公告尚未接入。固定内测版本不代表公开发布。
           </p>
         </section>
         <section className={styles.panel}>
-          <h2>当前能力</h2>
+          <div className={styles.title}>
+            <h2>维护与恢复</h2>
+            <span className={styles.future}>技术维护</span>
+          </div>
           <p>
-            后台用于管理测评内容与内测。正式公开发布、推荐位和业务分析尚未接入，不将内测版本视为公开发布。
+            备份校验、隔离恢复与运行环境维护由本机维护者使用受管工具执行。普通运营页面不提供维护命令入口。
           </p>
-          <Link className={styles.textLink} href="/studio/products">
-            返回测评管理 →
-          </Link>
         </section>
       </div>
     </div>
