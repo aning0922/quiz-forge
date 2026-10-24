@@ -66,11 +66,10 @@ export function CatalogProducts({
                 <td>
                   <Link
                     className={styles.catalogAction}
-                    href={facts.primary.href}
-                    title={facts.primary.reason}
-                    aria-label={`${facts.primary.label} ${product.title}`}
+                    href={`/studio/products/${encodeURIComponent(product.id)}`}
+                    aria-label={`进入工作区 ${product.title}`}
                   >
-                    {facts.primary.label}
+                    进入工作区
                     <span aria-hidden="true"> →</span>
                   </Link>
                 </td>

@@ -159,7 +159,7 @@ export function StudioDashboard({ canCreate }: { canCreate: boolean }) {
                         </div>
                         <Link
                           className={styles.compactButton}
-                          href={facts.primary.href}
+                          href={`/studio/products/${encodeURIComponent(operations.directory.id)}?task=review`}
                           title={facts.primary.reason}
                           aria-label={`${facts.primary.label} ${operations.directory.title}`}
                         >

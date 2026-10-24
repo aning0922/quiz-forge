@@ -43,7 +43,14 @@ const tabs = [
   { id: "review", label: "审核与版本", icon: ShieldCheck },
   { id: "testing", label: "内测发放", icon: Ticket },
 ] as const;
-type TaskTab = (typeof tabs)[number]["id"];
+export type TaskTab = (typeof tabs)[number]["id"];
+const taskLabels: Record<string, string> = {
+  content: "内容制作",
+  review: "审核与版本",
+  play: "创建答题版本",
+  issue: "发放访问码",
+  void: "作废访问码",
+};
 type PreviewLaunch = {
   target: RevisionTarget;
   scope: PreviewScope;
@@ -52,21 +59,29 @@ type PreviewLaunch = {
 
 export function ProductTaskWorkspace({
   session,
+  initialTask = "content",
 }: {
   session: StudioSessionDto;
+  initialTask?: TaskTab;
 }) {
   return (
     <ProductTaskSurfaces>
-      <Workspace session={session} />
+      <Workspace session={session} initialTask={initialTask} />
     </ProductTaskSurfaces>
   );
 }
 
-function Workspace({ session }: { session: StudioSessionDto }) {
+function Workspace({
+  session,
+  initialTask,
+}: {
+  session: StudioSessionDto;
+  initialTask: TaskTab;
+}) {
   const workspace = useProductWorkspaceContext();
   const authority = useInternalAuthority();
   const surfaces = useWorkspaceSurfaces();
-  const [tab, setTab] = useState<TaskTab>("content");
+  const [tab, setTab] = useState<TaskTab>(initialTask);
   const [selection, setSelection] = useState<RevisionTarget>();
   const [launched, setLaunched] = useState<PreviewLaunch>();
   const [switchPreview, setSwitchPreview] = useState<RevisionTarget>();
@@ -217,13 +232,14 @@ function Workspace({ session }: { session: StudioSessionDto }) {
         .map(([id, state]) => (
           <section key={id} className={styles.retained} role="status">
             <p>
+              <strong>{taskLabels[id] ?? "保留的任务"} · </strong>
               {state?.message ||
                 "本页保留着尚未结束的任务，关闭浮层不会丢失原输入。"}
             </p>
             <button
               onClick={() => surfaces.open(id as keyof typeof surfaces.states)}
             >
-              继续原任务
+              继续{taskLabels[id] ?? "原任务"}
             </button>
           </section>
         ))}
