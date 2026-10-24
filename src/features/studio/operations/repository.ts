@@ -110,13 +110,14 @@ export async function projectOperationsRows(
     jsonb_build_object('id',rv.id,'target',${targetJson(tx, "rv")},'reviewSha256',rv.review_sha256,'sourceImportId',rv.source_import_id,'sourceValidationId',rv.source_validation_id,'sourceValidationStateRevision',rv.source_validation_state_revision,'baseline',rv.facts_text::jsonb->'baseline','approval',rv.facts_text::jsonb->'approval','recordedAt',rv.recorded_at) value
     FROM qf.draft_review rv LEFT JOIN qf.draft_revision r ON r.product_id=rv.product_id AND ${targetEquals(tx, "rv", "r")}
     WHERE rv.product_id IN ${tx(ids)} ORDER BY rv.recorded_at DESC,rv.id ASC LIMIT 5001`;
+  // CHECK constraints and immutable triggers seal snapshot hashes; list reads use only metadata.
   const versions = await tx<Meta<VersionEvidence>[]>`SELECT pv.product_id,
-    (rv.id IS NOT NULL AND pv.purpose='internal-test' AND pv.publication_approved=false AND pv.snapshot_sha256=qf.sha256_utf8(pv.snapshot_text)) valid,
+    (rv.id IS NOT NULL AND pv.purpose='internal-test' AND pv.publication_approved=false) valid,
     jsonb_build_object('id',pv.id,'target',${targetJson(tx, "pv")},'reviewId',pv.review_id,'reviewSha256',pv.review_sha256,'snapshotSha256',pv.snapshot_sha256,'createdAt',pv.created_at) value
     FROM qf.product_version pv LEFT JOIN qf.draft_review rv ON rv.product_id=pv.product_id AND rv.id=pv.review_id AND rv.review_sha256=pv.review_sha256 AND ${targetEquals(tx, "pv", "rv")}
     WHERE pv.product_id IN ${tx(ids)} ORDER BY pv.created_at DESC,pv.id ASC LIMIT 5001`;
   const testing = await tx<Meta<TestingEvidence>[]>`SELECT play.product_id,
-    (pv.id IS NOT NULL AND play.snapshot_sha256=qf.sha256_utf8(play.snapshot_text)) valid,
+    (pv.id IS NOT NULL) valid,
     jsonb_build_object('id',play.id,'parentVersionId',play.parent_version_id,'parentSnapshotSha256',play.parent_snapshot_sha256,'snapshotSha256',play.snapshot_sha256,'target',${targetJson(tx, "pv")},'createdAt',play.created_at) value
     FROM qf.internal_play_version play LEFT JOIN qf.product_version pv ON pv.product_id=play.product_id AND pv.id=play.parent_version_id AND pv.snapshot_sha256=play.parent_snapshot_sha256
     WHERE play.product_id IN ${tx(ids)} ORDER BY play.created_at DESC,play.id ASC LIMIT 5001`;
