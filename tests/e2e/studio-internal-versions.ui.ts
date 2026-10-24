@@ -39,7 +39,7 @@ export async function signInInternalOperator(page: Page, secret: string) {
   }
   await page.getByRole("button", { name: "登录 Studio", exact: true }).click();
   await expect(
-    page.getByRole("heading", { name: "运营会话", exact: true }),
+    page.getByRole("heading", { name: "工作台", exact: true }),
   ).toBeVisible();
 }
 export {
