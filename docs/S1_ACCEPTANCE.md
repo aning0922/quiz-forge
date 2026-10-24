@@ -1,5 +1,24 @@
 # Studio S1 / V2-A 验收记录
 
+## 2026-10-25 紧凑标签下拉
+
+作者要求展开区贴近原型，不再铺开标签搜索、列表和管理入口。本轮从 PR #28 `d6c4c07108bffaa616d7becfe58501679620e4ad` 接续，独立根 `quizforge-studio-tag-filter/quiz-forge`、分支 `codex/studio-tag-filter-control`。仅改目录的 `catalog-filters.tsx`、`catalog-parity.module.css`，新增专用 `tag-filter.tsx` 与 CSS；共享 TaxonomyPicker、查询 API、数据库、权限及创建任务 owner 不变。
+
+展开区只呈现两个 44px 控件。标签采用有标题的非模态浮层，按视口定位/向上展开，最高 360px；搜索、每页十项、翻页和清除只在其中出现。选择关闭并回焦，搜索 Enter 不提交目录，外部点击保留外部焦点，折叠“更多筛选”同时关闭浮层。既有“应用筛选”明确提交 URL，保留归档/pageSize，重置目录页码；不自动写业务数据。
+
+集成提交：`93e9f1c` 下拉组件、`4230f07` 关闭态名称恢复、`95ee044` 分页焦点、`401c8f9` 减少动效下的可见性修复。最终运行源码 `401c8f9bac1ad5366e613a8c4bcc51ebf8505e28`，BUILD_ID `Nki5bNXEg_KZpqsoHOrg7`。最终生产构建通过，113 traces / 25700 paths / 0 私有路径违规。新构建身份按官方 media build/setup/provision 完成封存，deployment `91c8600bf5a6e7746c46f2d9185e049533b4214a1a7ed223ac78cdc9aaf9927e`、runtime bundle `2788755b8414c15d4545034427123e940e12050d024a079307c19ab0e5321cf4`；不是重做未变业务验收。
+
+- A 的实际 React + 合成 HTTP 验证覆盖五宽、键盘/分页、延迟旧响应隔离、准确 URL/前进后退、已归档标签、清除、无匹配时保留所选 ID，以及关闭态首屏名称读取/取消。定向 lint、格式、类型与 diff 检查通过；既有创建/UNKNOWN/CAS/失权证据复用。私有证据在 A 工作树 `.cache/catalog-tag-dropdown/`。
+- 实际生产构建页面 + 独立 test PG：1440/320/375/390/430 两控件均为 44px，展开区约 146px，浮层不增加展开区或文档高度且不越界；390×360 可翻页。实际首屏标签应用/刷新恢复名称，第二页归档标签准确命中合成测评；搜索 Enter、长标签、清除保留归档、重置、外部点击与收起通过。相关请求仅 GET，0 pageerror。
+- 最后六行 CSS 仅禁止该浮层及后代的过渡。真实构建在 reduced-motion 下曾首次聚焦失败：全局 0.01ms duration 与默认 all 使 inline visibility 已 visible 时，computed visibility 仍 hidden。主控跟踪实际 focus 调用确认，A 按同全局规则复现并定向通过；最终构建仅补鼠标/ArrowDown 首次打开及代表图，不重跑上述未变查询和全套矩阵。
+- Astra 按 diff、实际原图及共享证据独审，无本批阻断，未重复运行开发验证。浏览器为 Chromium 156.0.8078.4 / Playwright 1.64.0；截图与 `runtime-results.json`、`runtime-geometry.json`、`runtime-focus-final.json` 在本工作树私有 `.cache/tag-filter/`。工程图检不冒充作者视觉或手机实机验收。
+
+必要边界：现有标签接口只支持分页读取。关闭态只补读首屏十项；若 URL 所选 ID 不在首屏，显示“已选标签（名称未读取）”，准确 ID 继续生效，打开搜索/分页读到后恢复名称。不新增 ID 读取 API，不扫描全库，不默认为“全部标签”。长标签在控件内省略、title 与展开候选保留全名。
+
+构建曾被固定 Next 16.4.0 的安全提示中断，保留失败日志；最后 CSS 修复后的同命令重试成功，未改变依赖或保护。一个真实行核验探针最初命中手机布局中隐藏的桌面链接，改用可见角色定位后确认同一结果，未改业务。局部 CSS 诊断先仅作用父节点仍失败，扩至本浮层后代定位成功；临时样式已撤除，最终证据来自提交后的构建。失败不计通过。
+
+新演示 `http://127.0.0.1:3190/studio/products`，test 实例 `57bf92430df20dda5c096f7600c19f3d` / PG 55441，六个合成目录、十四个标签包含长名与归档项。原基线 r1 与待检查来源仅用于保持可体验操作，非重新批准或完整业务回归；凭证、配套包与数据库不入 Git。未运行全量单元、全 PG/driver、消费者 E2E 或一次性 P5。原 3180、3170 与更早实例、main、作者未提交文件保持；普通快进更新既有 Draft PR #28 后停止等待反馈，不合并或生产部署。旧 `d6c4c07` CI 40114237394 success 只证明旧输入，新 head CI 单独按当前 GitHub 状态报告。
+
 ## 2026-10-25 “更多筛选”展开修复
 
 从 PR #28 准确 `21e2ed2142c678c776b5f82b12bdfdd9b0876ba9` 接续。上一批主要图检未覆盖这个展开异常，本轮实际复现“归档状态”select 在桌面被拉高到约 262px。根因为外层两列 Grid 默认 stretch，与左侧字段自身 Grid 叠加；右侧标签区高度影响左侧 select。
