@@ -4,7 +4,24 @@ import { TechnicalDetails } from "../presentation/technical-details";
 import { StudioPageHeader } from "../presentation/page-header";
 import { StudioWorkflowNav } from "../presentation/workflow-nav";
 import Link from "next/link";
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type Dispatch,
+  type SetStateAction,
+} from "react";
+import {
+  RetainedTaskSurface,
+  useWorkspaceSurfaces,
+} from "../product-workspace/task-surfaces";
+import { useStudioLeaveProtection } from "../navigation-boundary";
+import {
+  useInternalAuthority,
+  type InternalProductAuthority,
+} from "../internal-versions/authority";
 import type { ConsumerRendererIdentity } from "@/lib/consumer-contract/v1/identities";
 import type { AccessKeyDetail } from "@/features/fulfillment/access/contracts";
 import {
@@ -125,11 +142,16 @@ function EvidenceFacts({
 function PendingPanel({
   controller,
   state,
+  onFinished,
+  requireSecretSave = false,
 }: {
   controller: StudioConsumerControllerV1;
   state: StudioConsumerStateV1;
+  onFinished?: (() => void) | undefined;
+  requireSecretSave?: boolean;
 }) {
   const [acknowledged, setAcknowledged] = useState(false);
+  const [disclosed, setDisclosed] = useState(false);
   const pending = state.pending!,
     evidence = state.evidence,
     active = state.phase === "pending",
@@ -151,6 +173,7 @@ function PendingPanel({
         throw Error("clipboard unavailable");
       await navigator.clipboard.writeText(link);
     }, "copied");
+    if (controller.getSnapshot().notice === "copied") setDisclosed(true);
   }
   async function download() {
     await controller.exposeSecret(async (link, current) => {
@@ -168,6 +191,7 @@ function PendingPanel({
         setTimeout(() => URL.revokeObjectURL(url), 0);
       }
     }, "exported");
+    if (controller.getSnapshot().notice === "exported") setDisclosed(true);
   }
   return (
     <section className={styles.panel} aria-label="答题内测原操作核对">
@@ -230,6 +254,11 @@ function PendingPanel({
           </>
         )}
       </div>
+      {requireSecretSave && pending.hasRaw && !disclosed && (
+        <p role="status">
+          请先通过本次原操作复制或下载私密链接并妥善保存，再核对结束。
+        </p>
+      )}
       {terminal && (
         <div className={styles.acknowledgment}>
           <label>
@@ -243,9 +272,19 @@ function PendingPanel({
             {pending.hasRaw && "清除后不能再次恢复私密链接，请先妥善保存。"}
           </label>
           <button
-            disabled={!active || !acknowledged}
+            disabled={
+              !active ||
+              !acknowledged ||
+              (requireSecretSave && pending.hasRaw && !disclosed)
+            }
             onClick={() => {
-              void controller.finish();
+              void controller.finish().then(() => {
+                if (
+                  controller.getSnapshot().phase === "ready" &&
+                  !controller.getSnapshot().pending
+                )
+                  onFinished?.();
+              });
             }}
           >
             确认结束并清除当前标签页记录
@@ -258,9 +297,17 @@ function PendingPanel({
 export function StudioConsumerAccessPageV1({
   scope,
   renderer,
+  embedded = false,
+  visible = true,
+  onChanged,
+  workspaceAuthority,
 }: {
   scope: StudioConsumerScopeV1;
   renderer: ConsumerRendererIdentity;
+  embedded?: boolean;
+  visible?: boolean;
+  onChanged?: (() => void) | undefined;
+  workspaceAuthority?: InternalProductAuthority | undefined;
 }) {
   const [controller] = useState(
     () =>
@@ -281,19 +328,34 @@ export function StudioConsumerAccessPageV1({
     [voidId, setVoidId] = useState<string | null>(null);
   useEffect(() => {
     const unsubscribe = subscribeStudioAuthorityInvalidation(controller.revoke);
+    const observeWorkspace = () => {
+      if (
+        workspaceAuthority?.isRevoked ||
+        (workspaceAuthority && workspaceAuthority.productId !== scope.productId)
+      )
+        controller.revoke();
+    };
+    const unsubscribeWorkspace =
+      workspaceAuthority?.subscribe(observeWorkspace);
     const visibility = () => {
       if (document.hidden) controller.revoke();
     };
     document.addEventListener("visibilitychange", visibility);
     window.addEventListener("pagehide", controller.revoke);
-    void controller.refresh();
+    if (
+      workspaceAuthority?.isRevoked ||
+      (workspaceAuthority && workspaceAuthority.productId !== scope.productId)
+    )
+      controller.revoke();
+    else void controller.refresh();
     return () => {
       unsubscribe();
+      unsubscribeWorkspace?.();
       document.removeEventListener("visibilitychange", visibility);
       window.removeEventListener("pagehide", controller.revoke);
       controller.dispose();
     };
-  }, [controller]);
+  }, [controller, workspaceAuthority, scope.productId]);
   const createTask = useRef<HTMLDetailsElement>(null);
   const issueTask = useRef<HTMLDetailsElement>(null);
   useEffect(() => {
@@ -305,6 +367,32 @@ export function StudioConsumerAccessPageV1({
   const canWrite = state.session?.operator.role === "operator",
     ready = state.phase === "ready";
   const pendingKey = state.evidence?.value.binding.operationKey ?? "original";
+  const notified = useRef<string | undefined>(undefined);
+  useEffect(() => {
+    const evidence = state.evidence;
+    if (!embedded || !evidence || evidence.value.kind !== "applied") return;
+    const key = evidence.value.binding.operationKey;
+    if (notified.current !== key) {
+      notified.current = key;
+      onChanged?.();
+    }
+  }, [embedded, state.evidence, onChanged]);
+  if (embedded)
+    return (
+      <ConsumerTaskView
+        controller={controller}
+        state={state}
+        visible={visible}
+        versionId={versionId}
+        setVersionId={setVersionId}
+        playId={playId}
+        setPlayId={setPlayId}
+        duration={duration}
+        setDuration={setDuration}
+        voidId={voidId}
+        setVoidId={setVoidId}
+      />
+    );
   return (
     <div className={styles.page}>
       <header className={styles.pageHeading}>
@@ -597,5 +685,364 @@ export function StudioConsumerAccessPageV1({
         </>
       )}
     </div>
+  );
+}
+
+type ConsumerTaskProps = {
+  controller: StudioConsumerControllerV1;
+  state: StudioConsumerStateV1;
+  visible: boolean;
+  versionId: string;
+  setVersionId: Dispatch<SetStateAction<string>>;
+  playId: string;
+  setPlayId: Dispatch<SetStateAction<string>>;
+  duration: number;
+  setDuration: Dispatch<SetStateAction<number>>;
+  voidId: string | null;
+  setVoidId: Dispatch<SetStateAction<string | null>>;
+};
+/** The controller and all form selections live outside retained portal surfaces. */
+function ConsumerTaskView({
+  controller,
+  state,
+  visible,
+  versionId,
+  setVersionId,
+  playId,
+  setPlayId,
+  duration,
+  setDuration,
+  voidId,
+  setVoidId,
+}: ConsumerTaskProps) {
+  const surfaces = useWorkspaceSurfaces();
+  const authority = useInternalAuthority();
+  const [action, setAction] = useState<"play" | "issue" | "void" | null>(null);
+  const [keyDetail, setKeyDetail] = useState<AccessKeyDetail>();
+  const report = surfaces.report;
+  const kind = state.pending?.kind ?? action;
+  const working = state.phase === "working";
+  const ready = state.phase === "ready";
+  const canWrite =
+    state.session?.operator.role === "operator" && !authority.isRevoked;
+  useStudioLeaveProtection({
+    dirty: !!versionId || !!playId || !!voidId,
+    pending: working || !!state.pending,
+  });
+  useLayoutEffect(() => {
+    for (const id of ["play", "issue", "void"] as const) {
+      const pending = state.pending?.kind === id;
+      report(id, {
+        busy: working && kind === id,
+        pending,
+        retained: pending || (state.phase === "lost" && action === id),
+        message: pending
+          ? id === "issue"
+            ? "原发码请求及当前标签页凭证仍保留，请核实并妥善保存后明确结束。"
+            : "原内测操作仍保留，请查询原请求并明确结束。"
+          : state.phase === "lost"
+            ? "权限已失效，原请求仍保留，不能继续旧披露。"
+            : undefined,
+        blockCloseReason:
+          pending && id === "issue" && state.pending?.hasRaw
+            ? "私密链接仍由当前标签页保管。请先核实原发放、复制或下载并妥善保存，再明确结束当前记录。"
+            : undefined,
+      });
+    }
+  }, [report, state.pending, state.phase, working, kind, action]);
+  function open(id: "play" | "issue" | "void") {
+    if (!surfaces.canSwitch()) return;
+    setAction(id);
+    surfaces.open(id);
+  }
+  function inspect(key: AccessKeyDetail) {
+    if (!surfaces.canSwitch()) return;
+    setKeyDetail(key);
+    surfaces.open("key");
+  }
+  const original = (id: "play" | "issue" | "void") =>
+    state.pending?.kind === id ? (
+      <PendingPanel
+        key={state.evidence?.value.binding.operationKey ?? "original"}
+        controller={controller}
+        state={state}
+        requireSecretSave
+        onFinished={() => {
+          const latest = controller.getSnapshot();
+          if (latest.phase !== "ready" || latest.pending) return;
+          if (id === "play") setVersionId("");
+          if (id === "issue") setPlayId("");
+          if (id === "void") setVoidId(null);
+          setAction(null);
+          report(id, { busy: false, pending: false, retained: false });
+          surfaces.close();
+        }}
+      />
+    ) : null;
+  const lost = state.phase === "lost" || authority.isRevoked;
+  return (
+    <>
+      <div hidden={!visible} className={styles.page}>
+        <div className={styles.embeddedHeading}>
+          <div>
+            <h2>内测发放</h2>
+            <p>先查看已有答题版本和安全记录，短操作在任务中完成。</p>
+          </div>
+          <div className={styles.actions}>
+            <button disabled={!canWrite || !ready} onClick={() => open("play")}>
+              创建答题版本
+            </button>
+            <button
+              disabled={!canWrite || !ready || !state.plays.length}
+              onClick={() => open("issue")}
+            >
+              发放访问码
+            </button>
+          </div>
+        </div>
+        {lost && (
+          <div className={styles.notice} role="alert">
+            <h3>请重新验证运营身份</h3>
+            <p>
+              已停止旧请求与凭证披露，原标签页请求保持。重新登录不自动重放。
+            </p>
+            <a href="/studio/login" target="_blank" rel="noopener">
+              在新标签重新登录
+            </a>
+          </div>
+        )}
+        {state.phase === "loading" && (
+          <p role="status">正在读取身份与安全记录…</p>
+        )}
+        {working && <p role="status">正在处理同一原操作，请等待…</p>}
+        {state.notice === "unavailable" && (
+          <p className={styles.notice} role="alert">
+            本次读取或操作未完成，原请求保留，请继续原任务核实。
+          </p>
+        )}
+        {state.session?.operator.role === "read-only" && (
+          <p>
+            当前只读，可查看安全记录及查询原请求，不能创建、发放、作废或复制私密链接。
+          </p>
+        )}
+        <section className={styles.panel}>
+          <div className={styles.embeddedHeading}>
+            <h3>访问码安全记录</h3>
+            <button
+              disabled={working || !!state.pending}
+              onClick={() => void controller.refresh()}
+            >
+              重新读取与核对身份
+            </button>
+          </div>
+          <p>
+            此页为有界安全记录，不含原始私密链接；空页不能证明某次发放未执行。
+          </p>
+          <ul className={styles.recordList}>
+            {state.keys.map((key) => (
+              <li key={key.issue.binding.keyId}>
+                <div>
+                  <strong>{keyStatus(key)}</strong>
+                  <p>安全编号：{key.issue.binding.keyId}</p>
+                  <time dateTime={key.issue.issuedAt}>
+                    发放于 {time(key.issue.issuedAt)}
+                  </time>
+                </div>
+                <button onClick={() => inspect(key)}>查看安全详情</button>
+              </li>
+            ))}
+          </ul>
+          {ready && !state.keys.length && <p>此次读取没有访问码记录。</p>}
+          {state.nextCursor && (
+            <button
+              disabled={!["ready", "pending"].includes(state.phase) || working}
+              onClick={() => void controller.nextKeys()}
+            >
+              读取下一页访问码
+            </button>
+          )}
+        </section>
+        <section className={styles.panel}>
+          <h3>已有答题版本</h3>
+          <ul className={styles.recordList}>
+            {state.plays.map((play) => {
+              const parent = state.versions.find(
+                (version) =>
+                  version.id === play.binding.parent.versionId &&
+                  version.snapshotSha256 === play.binding.parent.snapshotSha256,
+              );
+              return (
+                <li key={play.id}>
+                  <div>
+                    <strong>答题第 {play.slot} 版</strong>
+                    <p>
+                      {parent
+                        ? `来源修订 r${parent.target.revision} · 固定内容第 ${parent.slot} 版`
+                        : "来源版本需核实"}
+                    </p>
+                    <time dateTime={play.createdAt}>
+                      {time(play.createdAt)}
+                    </time>
+                  </div>
+                  <button
+                    disabled={!canWrite || !ready}
+                    onClick={() => {
+                      if (!surfaces.canSwitch()) return;
+                      setPlayId(play.id);
+                      open("issue");
+                    }}
+                  >
+                    为此版本发码
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+          {ready && !state.plays.length && (
+            <p>尚无答题版本。固定内容版本不会自动变为答题版本。</p>
+          )}
+        </section>
+      </div>
+      <RetainedTaskSurface id="play">
+        <div className={styles.page}>
+          <h3>创建真实答题版本</h3>
+          <p>明确选择已固定的内容，新答题版本不随后续草稿变化。</p>
+          <fieldset className={styles.form} disabled={!canWrite || !ready}>
+            <label>
+              固定内测内容版本
+              <select
+                value={versionId}
+                onChange={(event) => setVersionId(event.target.value)}
+              >
+                <option value="">请选择固定内测内容版本</option>
+                {state.versions.map((version) => (
+                  <option value={version.id} key={version.id}>
+                    第 {version.slot} 版 · 来源修订 r{version.target.revision}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <button
+              disabled={
+                !state.versions.some((version) => version.id === versionId)
+              }
+              onClick={() => {
+                setAction("play");
+                void controller.createPlay(versionId);
+              }}
+            >
+              确认创建答题版本
+            </button>
+          </fieldset>
+          {!state.versions.length && (
+            <p>
+              没有可靠读取的固定内容版本，不能创建。请先核对已有审核依据与封存条件。
+            </p>
+          )}
+          {original("play")}
+        </div>
+      </RetainedTaskSurface>
+      <RetainedTaskSurface id="issue">
+        <div className={styles.page}>
+          <h3>发放一枚内测访问码</h3>
+          <p>
+            原始私密链接只由当前标签页保管，不能从服务器记录中找回。有效期由首次真实发放起算。
+          </p>
+          <fieldset className={styles.form} disabled={!canWrite || !ready}>
+            <label>
+              答题版本
+              <select
+                value={playId}
+                onChange={(event) => setPlayId(event.target.value)}
+              >
+                <option value="">请选择答题版本</option>
+                {state.plays.map((play) => (
+                  <option value={play.id} key={play.id}>
+                    答题第 {play.slot} 版 · {time(play.createdAt)}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              答题有效期
+              <select
+                value={duration}
+                onChange={(event) => setDuration(Number(event.target.value))}
+              >
+                <option value={86400}>1 天</option>
+                <option value={604800}>7 天</option>
+                <option value={2592000}>30 天</option>
+              </select>
+            </label>
+            <button
+              disabled={!state.plays.some((play) => play.id === playId)}
+              onClick={() => {
+                setAction("issue");
+                void controller.issueKey(playId, duration);
+              }}
+            >
+              确认生成并发放一枚访问码
+            </button>
+          </fieldset>
+          {original("issue")}
+          {state.notice === "copied" && (
+            <p role="status">私密链接已复制，请妥善保存。</p>
+          )}
+          {state.notice === "exported" && (
+            <p role="status">已触发下载，请确认文件已妥善保存。</p>
+          )}
+        </div>
+      </RetainedTaskSurface>
+      <RetainedTaskSurface id="key">
+        <div className={styles.page}>
+          {keyDetail && (
+            <>
+              <h3>访问码安全详情</h3>
+              <KeyFacts value={keyDetail} />
+              <p>
+                状态观察于 {time(keyDetail.current.observedAt)}
+                ，提交时仍会重新核对。这里不含原始私密链接。
+              </p>
+              {canWrite &&
+                !keyDetail.current.claim &&
+                !keyDetail.current.voidReceipt && (
+                  <button
+                    onClick={() => {
+                      if (!surfaces.canSwitch()) return;
+                      setVoidId(keyDetail.issue.binding.keyId);
+                      open("void");
+                    }}
+                  >
+                    作废此未领取访问码
+                  </button>
+                )}
+            </>
+          )}
+        </div>
+      </RetainedTaskSurface>
+      <RetainedTaskSurface id="void">
+        <div className={styles.page}>
+          <h3>确认未领取作废</h3>
+          <p>目标安全编号：{voidId ?? "未选择"}</p>
+          <p>
+            作废后无法再领取答题；服务器会在提交时再次检查，已领取或已完成的记录不能按未领取作废。
+          </p>
+          <div className={styles.actions}>
+            <button
+              disabled={!canWrite || !ready || !voidId}
+              onClick={() => {
+                if (!voidId) return;
+                setAction("void");
+                void controller.voidKey(voidId);
+              }}
+            >
+              确认作废未领取访问码
+            </button>
+            <button onClick={() => surfaces.close()}>保留此访问码</button>
+          </div>
+          {original("void")}
+        </div>
+      </RetainedTaskSurface>
+    </>
   );
 }

@@ -1,5 +1,6 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import type { WorkspaceTaskState } from "../product-workspace/task-surfaces";
 import type { StudioSessionDto } from "../contracts";
 import { StudioClientError } from "../client";
 import { readInternalPending } from "./pending";
@@ -105,11 +106,15 @@ export function InternalPendingPanel({
   operation,
   session,
   onChanged,
+  onTaskState,
 }: {
   productId: string;
   operation: InternalOperation;
   session: StudioSessionDto;
   onChanged: () => void;
+  onTaskState?:
+    | ((operation: InternalOperation, state: WorkspaceTaskState) => void)
+    | undefined;
 }) {
   const authority = useInternalAuthority(),
     label = operation === "review" ? "审核依据记录" : "内容版本固定",
@@ -129,6 +134,18 @@ export function InternalPendingPanel({
     }>();
   const active = useRef(true),
     controller = useRef<AbortController | undefined>(undefined);
+  useLayoutEffect(() => {
+    onTaskState?.(operation, {
+      busy,
+      pending: !!entry || !loaded,
+      retained: !!entry || !loaded,
+      message: !loaded
+        ? "原操作记录尚未可靠核实。"
+        : entry
+          ? "保留原审核或封存请求，请核对后明确结束。"
+          : undefined,
+    });
+  }, [operation, busy, entry, loaded, onTaskState]);
   function readLocal() {
     epoch.invalidate();
     controller.current?.abort();
@@ -380,11 +397,15 @@ export function InternalRecoveryPanels({
   session,
   nonce = 0,
   onChanged = () => {},
+  onTaskState,
 }: {
   productId: string;
   session: StudioSessionDto;
   nonce?: number;
   onChanged?: () => void;
+  onTaskState?:
+    | ((operation: InternalOperation, state: WorkspaceTaskState) => void)
+    | undefined;
 }) {
   return (
     <>
@@ -394,6 +415,7 @@ export function InternalRecoveryPanels({
         productId={productId}
         session={session}
         onChanged={onChanged}
+        onTaskState={onTaskState}
       />
       <InternalPendingPanel
         key={`seal/${productId}/${nonce}`}
@@ -401,6 +423,7 @@ export function InternalRecoveryPanels({
         productId={productId}
         session={session}
         onChanged={onChanged}
+        onTaskState={onTaskState}
       />
     </>
   );

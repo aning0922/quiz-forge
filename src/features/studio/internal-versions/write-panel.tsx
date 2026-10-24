@@ -1,6 +1,14 @@
 "use client";
 import { TechnicalDetails } from "../presentation/technical-details";
-import { useEffect, useRef, useState } from "react";
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
+import { useStudioLeaveProtection } from "../navigation-boundary";
+import type { WorkspaceTaskState } from "../product-workspace/task-surfaces";
 import type {
   InternalReviewState,
   InternalVersionList,
@@ -34,6 +42,8 @@ export function InternalWritePanel({
   session,
   nonce,
   onChanged,
+  onTaskState,
+  renderSurface,
 }: {
   productId: string;
   state?: InternalReviewState | undefined;
@@ -41,6 +51,8 @@ export function InternalWritePanel({
   session: StudioSessionDto;
   nonce: number;
   onChanged: () => void;
+  onTaskState?: ((state: WorkspaceTaskState) => void) | undefined;
+  renderSurface?: ((content: ReactNode) => ReactNode) | undefined;
 }) {
   const authority = useInternalAuthority(),
     [epoch] = useState(() => new InternalOperationEpoch(productId)),
@@ -49,6 +61,7 @@ export function InternalWritePanel({
     [busy, setBusy] = useState(false),
     [denied, setDenied] = useState(false),
     [available, setAvailable] = useState(false),
+    [preparationChecked, setPreparationChecked] = useState(false),
     [message, setMessage] = useState(""),
     [result, setResult] = useState<InternalEvidence>();
   const active = useRef(true);
@@ -66,6 +79,8 @@ export function InternalWritePanel({
         setAvailable(true);
       } catch {
         setAvailable(false);
+      } finally {
+        setPreparationChecked(true);
       }
     }, 0);
     return () => clearTimeout(timer);
@@ -78,6 +93,23 @@ export function InternalWritePanel({
       matchesInternalConfirmation(confirmation, state, versions),
     capacity =
       versions?.productId === productId && versions.versions.length < 100;
+  const pending = preparationChecked && !available;
+  useStudioLeaveProtection({
+    dirty: !!confirmation || !!renderer,
+    pending: busy || pending,
+  });
+  useLayoutEffect(() => {
+    onTaskState?.({
+      busy,
+      pending,
+      retained: !!confirmation || pending || busy,
+      message: pending
+        ? "审核或封存有原操作待核实，请继续原任务。"
+        : confirmation
+          ? "保留了此固定修订的尚未发送确认。"
+          : "核对与固定内测内容",
+    });
+  }, [busy, pending, confirmation, onTaskState]);
   function prepare(seal: boolean) {
     if (!state || !canWrite || busy || !available) return;
     setMessage("");
@@ -143,7 +175,7 @@ export function InternalWritePanel({
       }
     }
   }
-  return (
+  const content = (
     <section className={styles.panel} aria-label="记录审核依据与固定内容版本">
       <h2>记录审核依据与固定内容版本</h2>
       <p>{INTERNAL_VERSION_DISCLOSURE}</p>
@@ -302,4 +334,5 @@ export function InternalWritePanel({
       )}
     </section>
   );
+  return renderSurface ? renderSurface(content) : content;
 }
