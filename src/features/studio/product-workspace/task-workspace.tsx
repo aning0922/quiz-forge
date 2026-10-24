@@ -517,6 +517,7 @@ function Workspace({
       <RetainedTaskSurface id="revisions">
         {historyScope ? (
           <RevisionHistoryPanel
+            embedded
             productId={productId}
             draftId={historyScope.draftId}
             currentRevision={current?.revision ?? historyScope.revision}

@@ -61,7 +61,7 @@
 .embedded .columns {
   display: block;
 }
-.singleFields {
+.embedded .singleFields {
   grid-template-columns: minmax(0, 1fr);
 }
 .embedded .formPanel,
