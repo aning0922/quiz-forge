@@ -1,7 +1,9 @@
 import Link from "next/link";
 import type { ProductOperations } from "../operations/contracts";
-import { OperationsSummary } from "../operations-ui/summary";
+import { productPresentation } from "../operations-ui/presentation";
+import { StatusBadge } from "../operations-ui/status-badge";
 import { ProductCard } from "./product-card";
+import { directoryTime } from "./directory-time";
 import styles from "./workspace.module.css";
 
 export function CatalogProducts({
@@ -17,62 +19,59 @@ export function CatalogProducts({
         </caption>
         <thead>
           <tr>
-            <th scope="col">测评名称</th>
-            <th scope="col">分类与标签</th>
-            <th scope="col">目录状态</th>
-            <th scope="col">运营摘要</th>
+            <th scope="col">测评名称 / 分类</th>
+            <th scope="col">当前内容与审核</th>
+            <th scope="col">内测状态</th>
+            <th scope="col">目录更新时间</th>
             <th scope="col">操作</th>
           </tr>
         </thead>
         <tbody>
           {products.map((operations) => {
             const product = operations.directory;
+            const facts = productPresentation(operations);
             return (
               <tr key={product.id}>
                 <th scope="row">
-                  <span className={styles.catalogTitle}>{product.title}</span>
-                  <span className={styles.catalogIdentity}>
-                    编号：{product.id}
-                    <br />
-                    英文标识：{product.slug}
-                  </span>
-                </th>
-                <td>
-                  <p className={styles.categoryName}>
-                    {product.primaryCategory
-                      ? `${product.primaryCategory.name}${product.primaryCategory.archivedAt ? "（已归档）" : ""}`
-                      : "未分类"}
-                  </p>
-                  <div className={styles.tagList}>
-                    {product.tags.length ? (
-                      product.tags.map((tag) => (
-                        <span className={styles.tag} key={tag.id}>
-                          {tag.name}
-                          {tag.archivedAt ? "（已归档）" : ""}
-                        </span>
-                      ))
-                    ) : (
-                      <span className={styles.catalogIdentity}>暂无标签</span>
-                    )}
-                  </div>
-                </td>
-                <td>
-                  <span
-                    className={`${styles.badge} ${product.archivedAt ? styles.archived : styles.activeBadge}`}
-                  >
-                    {product.archivedAt ? "已归档" : "未归档"}
-                  </span>
-                </td>
-                <td>
-                  <OperationsSummary value={operations} compact />
-                </td>
-                <td>
                   <Link
-                    className={`${styles.link} ${styles.secondary}`}
+                    className={styles.catalogTitle}
                     href={`/studio/products/${encodeURIComponent(product.id)}`}
                     aria-label={`查看测评 ${product.title}（编号 ${product.id}）`}
                   >
-                    查看测评<span aria-hidden="true"> →</span>
+                    {product.title}
+                  </Link>
+                  <span className={styles.catalogCategory}>
+                    {product.primaryCategory
+                      ? `${product.primaryCategory.name}${product.primaryCategory.archivedAt ? "（分类已归档）" : ""}`
+                      : "未分类"}
+                    {product.archivedAt ? " · 已归档" : ""}
+                  </span>
+                </th>
+                <td>
+                  <div className={styles.catalogStates}>
+                    <StatusBadge status={facts.content} />
+                    <StatusBadge status={facts.review} />
+                  </div>
+                </td>
+                <td>
+                  <span title={facts.historicalNote ?? undefined}>
+                    <StatusBadge status={facts.testing} />
+                  </span>
+                </td>
+                <td>
+                  <time dateTime={product.updatedAt}>
+                    {directoryTime(product.updatedAt)}
+                  </time>
+                </td>
+                <td>
+                  <Link
+                    className={styles.catalogAction}
+                    href={facts.primary.href}
+                    title={facts.primary.reason}
+                    aria-label={`${facts.primary.label} ${product.title}`}
+                  >
+                    {facts.primary.label}
+                    <span aria-hidden="true"> →</span>
                   </Link>
                 </td>
               </tr>
@@ -84,14 +83,14 @@ export function CatalogProducts({
         className={`${styles.cards} ${styles.catalogMobile}`}
         aria-label="测评目录"
       >
-        {products.map((operations) => {
-          const product = operations.directory;
-          return (
-            <li key={product.id}>
-              <ProductCard product={product} operations={operations} />
-            </li>
-          );
-        })}
+        {products.map((operations) => (
+          <li key={operations.directory.id}>
+            <ProductCard
+              product={operations.directory}
+              operations={operations}
+            />
+          </li>
+        ))}
       </ul>
     </>
   );

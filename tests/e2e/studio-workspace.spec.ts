@@ -443,7 +443,7 @@ test("operator creates taxonomy and product, checks 8 tags, filters and safe mob
     fullPage: true,
   });
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.getByText("更多筛选", { exact: true }).click();
+  await page.getByText("全部分类", { exact: true }).click();
   const unclassified = page.getByRole("checkbox", {
     name: "仅未分类测评",
     exact: true,
@@ -451,11 +451,10 @@ test("operator creates taxonomy and product, checks 8 tags, filters and safe mob
   await unclassified.check();
   await page.getByRole("button", { name: "应用筛选", exact: true }).click();
   await expect(page.getByText("当前筛选无结果", { exact: true })).toBeVisible();
-  await page.getByText("更多筛选", { exact: true }).click();
   await expect(
     page.getByRole("status").filter({ hasText: "当前：" }),
   ).toContainText("仅未分类");
-  await page.getByText("更多筛选", { exact: true }).click();
+  await page.getByText("仅未分类", { exact: true }).click();
   await expect(unclassified).toBeChecked();
   await unclassified.uncheck();
   await page
@@ -485,6 +484,7 @@ test("catalog filters restore through URL reload and Back/Forward, while invalid
     .getByRole("form", { name: "列表筛选", exact: true })
     .getByLabel("搜索测评名称或编号")
     .fill("e2e-workspace");
+  await page.getByText("更多筛选", { exact: true }).click();
   await page.getByLabel("归档状态", { exact: true }).selectOption("all");
   await page.getByRole("button", { name: "应用筛选", exact: true }).click();
   await expect

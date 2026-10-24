@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ProductOperations } from "../operations/contracts";
-import { OperationsSummary } from "../operations-ui/summary";
+import { productPresentation } from "../operations-ui/presentation";
+import { StatusBadge } from "../operations-ui/status-badge";
 import type { ProductDto } from "@/features/product/workspace/contracts";
 import { directoryTime } from "./directory-time";
 import { TechnicalDetails } from "../presentation/technical-details";
@@ -18,6 +19,50 @@ export function ProductCard({
   newTab?: boolean;
   operations?: ProductOperations;
 }) {
+  if (operations) {
+    const facts = productPresentation(operations);
+    return (
+      <article className={styles.catalogCard}>
+        <h2>
+          <Link
+            className={styles.catalogTitle}
+            href={`/studio/products/${encodeURIComponent(product.id)}`}
+            aria-label={`查看测评 ${product.title}（编号 ${product.id}）`}
+          >
+            {product.title}
+          </Link>
+        </h2>
+        <p className={styles.catalogCategory}>
+          {product.primaryCategory
+            ? `${product.primaryCategory.name}${product.primaryCategory.archivedAt ? "（分类已归档）" : ""}`
+            : "未分类"}
+          {product.archivedAt ? " · 已归档" : ""}
+        </p>
+        <div className={styles.catalogStates}>
+          <StatusBadge status={facts.content} />
+          <StatusBadge status={facts.review} />
+          <StatusBadge status={facts.testing} />
+        </div>
+        <div className={styles.catalogCardFooter}>
+          <p>
+            目录更新{" "}
+            <time dateTime={product.updatedAt}>
+              {directoryTime(product.updatedAt)}
+            </time>
+          </p>
+          <Link
+            className={styles.catalogAction}
+            href={facts.primary.href}
+            title={facts.primary.reason}
+            aria-label={`${facts.primary.label} ${product.title}`}
+          >
+            {facts.primary.label}
+            <span aria-hidden="true"> →</span>
+          </Link>
+        </div>
+      </article>
+    );
+  }
   return (
     <article className={`${styles.card} ${styles.productCard}`}>
       <div className={styles.productCardBody}>
@@ -72,7 +117,6 @@ export function ProductCard({
           </p>
         </TechnicalDetails>
       </div>
-      {operations && <OperationsSummary value={operations} compact />}
       <Link
         className={`${styles.link} ${styles.secondary}`}
         href={`/studio/products/${encodeURIComponent(product.id)}`}
