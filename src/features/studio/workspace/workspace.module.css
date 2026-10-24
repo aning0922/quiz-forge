@@ -459,19 +459,19 @@
   background: #f8f9fd;
 }
 .catalogTable th:nth-child(1) {
-  width: 30%;
+  width: 29%;
 }
 .catalogTable th:nth-child(2) {
-  width: 26%;
+  width: 25%;
 }
 .catalogTable th:nth-child(3) {
-  width: 14%;
+  width: 13%;
 }
 .catalogTable th:nth-child(4) {
-  width: 16%;
+  width: auto;
 }
 .catalogTable th:nth-child(5) {
-  width: 14%;
+  width: 180px;
 }
 .catalogTitle {
   display: flex;
@@ -519,6 +519,7 @@
   text-decoration: none;
   font-size: 16px;
   line-height: 1.4;
+  white-space: nowrap;
 }
 .catalogAction:hover {
   background: #f7f5ff;
