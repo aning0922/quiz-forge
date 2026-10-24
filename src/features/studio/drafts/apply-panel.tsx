@@ -2,6 +2,7 @@
 import { TechnicalDetails } from "../presentation/technical-details";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { previewPagePath } from "@/features/product/preview/urls";
 import { z } from "zod";
 import type { ValidationDto } from "@/features/quizpack/validation/contracts";
 import type { DraftApplicationDto } from "@/features/product/drafts/contracts";
@@ -9,7 +10,12 @@ import type { StudioSessionDto } from "../contracts";
 import { StudioClientError } from "../client";
 import { ReadOnlyNotice } from "../workspace/primitives";
 import { useDraftRead } from "./use-read";
-import { checkDraftRead, draftEndpoint, draftWorkspacePath } from "./client";
+import {
+  checkDraftRead,
+  draftEndpoint,
+  draftWorkspacePath,
+  draftRevisionPath,
+} from "./client";
 import {
   applyFirstDraft,
   reconcileDraftPending,
@@ -296,6 +302,32 @@ export function ApplyDraftPanel({
         )
       )}
       {busy && <p role="status">正在核对或提交原操作…</p>}
+      {application && !busy && !writeDenied && (
+        <section className={styles.compare} aria-label="继续处理已确认草稿">
+          <h3>继续处理修订 {application.revision}</h3>
+          <p>
+            以下入口固定到本次已确认的修订，原操作记录继续保留，后续不会自动提交。
+          </p>
+          <div className={styles.actions}>
+            <Link
+              className={styles.link}
+              href={draftRevisionPath(
+                productId,
+                application.draftId,
+                application.revision,
+              )}
+            >
+              查看刚创建的内容与素材
+            </Link>
+            <Link
+              className={`${styles.link} ${styles.secondary}`}
+              href={previewPagePath(application)}
+            >
+              预览此固定修订
+            </Link>
+          </div>
+        </section>
+      )}
       {message && (
         <p role="status" className={styles.status}>
           {message}

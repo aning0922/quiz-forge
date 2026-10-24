@@ -1,4 +1,6 @@
 import Link from "next/link";
+import type { ProductOperations } from "../operations/contracts";
+import { OperationsSummary } from "../operations-ui/summary";
 import type { ProductDto } from "@/features/product/workspace/contracts";
 import { directoryTime } from "./directory-time";
 import { TechnicalDetails } from "../presentation/technical-details";
@@ -9,10 +11,12 @@ export function ProductCard({
   product,
   showIdentity = false,
   newTab = false,
+  operations,
 }: {
   product: ProductDto;
   showIdentity?: boolean;
   newTab?: boolean;
+  operations?: ProductOperations;
 }) {
   return (
     <article className={`${styles.card} ${styles.productCard}`}>
@@ -68,6 +72,7 @@ export function ProductCard({
           </p>
         </TechnicalDetails>
       </div>
+      {operations && <OperationsSummary value={operations} compact />}
       <Link
         className={`${styles.link} ${styles.secondary}`}
         href={`/studio/products/${encodeURIComponent(product.id)}`}

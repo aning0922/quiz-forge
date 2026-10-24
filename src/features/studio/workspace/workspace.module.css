@@ -394,16 +394,16 @@
   background: #f8f9fd;
 }
 .catalogTable th:nth-child(1) {
-  width: 29%;
+  width: 21%;
 }
 .catalogTable th:nth-child(2) {
-  width: 23%;
+  width: 17%;
 }
 .catalogTable th:nth-child(3) {
-  width: 13%;
+  width: 12%;
 }
 .catalogTable th:nth-child(4) {
-  width: 19%;
+  width: 34%;
 }
 .catalogTable th:nth-child(5) {
   width: 16%;

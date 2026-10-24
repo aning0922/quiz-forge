@@ -20,6 +20,7 @@ import {
 } from "./client";
 import { useDraftRead } from "./use-read";
 import { DraftFacts } from "./facts";
+import { FixedContentInspector } from "./content-inspector";
 import styles from "../workspace/workspace.module.css";
 import draftStyles from "./drafts.module.css";
 export function DraftWorkspacePage({
@@ -169,6 +170,10 @@ export function DraftRevisionPage({
           <>
             <DraftFacts draft={read.value.draft} />
             <div className={styles.actions}>{navigation}</div>
+            <FixedContentInspector
+              productId={productId}
+              canonicalContentText={read.value.canonicalContentText}
+            />
             <TechnicalDetails label="固定修订完整正文与素材集合">
               <label className={draftStyles.body}>
                 完整内容正文

@@ -11,7 +11,14 @@ describe("catalog URL uses the existing server query contract", () => {
   it("starts with actual active-page defaults and no inferred business stage", () => {
     expect(readCatalogQuery({})).toEqual({
       ok: true,
-      query: { page: 1, pageSize: 20, status: "active", unclassified: false },
+      query: {
+        page: 1,
+        pageSize: 20,
+        status: "active",
+        unclassified: false,
+        draft: "any",
+        review: "any",
+      },
     });
   });
   it("restores all filters and pagination across an address round trip without inventing taxonomy names", () => {
@@ -22,6 +29,8 @@ describe("catalog URL uses the existing server query contract", () => {
       q: " e\u0301 & story ",
       categoryId,
       tagId,
+      draft: "present",
+      review: "missing",
     });
     expect(result.ok).toBe(true);
     if (!result.ok) throw Error("QUERY_REQUIRED");
@@ -34,6 +43,8 @@ describe("catalog URL uses the existing server query contract", () => {
     expect(readCatalogQuery(url.searchParams)).toEqual(result);
     expect(result.query.categoryId).toBe(categoryId);
     expect(result.query.tagId).toBe(tagId);
+    expect(result.query.draft).toBe("present");
+    expect(result.query.review).toBe("missing");
   });
   it("preserves a syntactically valid filter ID even when its name is not loaded", () => {
     const result = readCatalogQuery({ categoryId });
@@ -45,6 +56,10 @@ describe("catalog URL uses the existing server query contract", () => {
     { page: "1001" },
     { pageSize: "51" },
     { status: "published" },
+    { draft: "ready" },
+    { review: "approved" },
+    { draft: ["any", "absent"] },
+    { review: ["missing", "current"] },
     { unclassified: "True" },
     { categoryId: "not-an-id" },
     { categoryId, unclassified: "true" },
@@ -70,6 +85,8 @@ describe("catalog URL uses the existing server query contract", () => {
       unclassified: "true",
       q: "name",
       pageSize: "1",
+      draft: "absent",
+      review: "current",
     });
     if (!result.ok) throw Error("QUERY_REQUIRED");
     const next = new URLSearchParams(
@@ -79,5 +96,7 @@ describe("catalog URL uses the existing server query contract", () => {
     expect(next.get("q")).toBe("name");
     expect(next.get("pageSize")).toBe("1");
     expect(next.get("page")).toBe("2");
+    expect(next.get("draft")).toBe("absent");
+    expect(next.get("review")).toBe("current");
   });
 });

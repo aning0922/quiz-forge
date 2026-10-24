@@ -67,6 +67,7 @@ function ProductEditor({
   const endpoint = `/api/studio/products/${encodeURIComponent(product.id)}`;
 
   async function save() {
+    if (authority.isRevoked) return;
     const parsed = productReplaceMetadataSchema.safeParse({
       expectedMetadataRevision: product.metadataRevision,
       slug: fields.slug,
@@ -97,6 +98,7 @@ function ProductEditor({
     }
   }
   async function lifecycle(action: "archive" | "restore") {
+    if (authority.isRevoked) return;
     setLatest(undefined);
     setValidation("");
     const result = await mutation.submit(
@@ -145,11 +147,9 @@ function ProductEditor({
   return (
     <section className={`${styles.panel} ${styles.productOverview}`}>
       <StudioPageHeader
-        title={product.title}
+        title="基本设置"
         description={
-          <p>
-            编辑测评信息，或继续导入和查看内容。这里的名称与分类不会改写包内内容。
-          </p>
+          <p>编辑测评目录中的名称、分类与标签。这里的设置不会改写包内内容。</p>
         }
       />
       <div className={styles.actions} aria-label="测评内容操作">
@@ -199,7 +199,7 @@ function ProductEditor({
       ) : !canWrite ? (
         <ReadOnlyNotice />
       ) : null}
-      {canWrite && !product.archivedAt ? (
+      {session.operator.role === "operator" && !product.archivedAt ? (
         <details className={`${styles.editor} ${styles.primaryEditor}`}>
           <summary>编辑测评信息</summary>
           <form
@@ -214,13 +214,15 @@ function ProductEditor({
               <ProductFields
                 value={fields}
                 onChange={setFields}
-                disabled={mutation.state.phase === "submitting"}
+                disabled={
+                  authority.isRevoked || mutation.state.phase === "submitting"
+                }
               />
             </div>
             <button
               className={styles.button}
               type="submit"
-              disabled={mutation.blocked}
+              disabled={authority.isRevoked || mutation.blocked}
             >
               {mutation.state.phase === "submitting"
                 ? "正在提交…"
