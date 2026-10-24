@@ -241,7 +241,7 @@ describe("internal metadata and recovery presentation, server markup only", () =
       expect(html).toContain(
         internalVersionPageUrl(binding.productId, version.id),
       );
-      expect(html).toContain("对外发布批准：未授予");
+      expect(html).toContain("未授予对外发布批准");
       expect(html).toContain("仅 Studio 内部预览");
     }
   });
