@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { ProductOperationsSummary } from "../operations-ui/product-summary";
 import { useStudioLeaveProtection } from "../navigation-boundary";
 import Link from "next/link";
 import { draftWorkspacePath } from "../drafts/client";
@@ -368,6 +369,7 @@ function ProductDetailContent({
           session={session}
         />
       )}
+      <ProductOperationsSummary productId={productId} />
       <StableInternalWorkspace
         key={productId}
         productId={productId}

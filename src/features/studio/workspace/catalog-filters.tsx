@@ -1,11 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import {
-  productListQuerySchema,
-  type ProductListQuery,
-  type TaxonomySummary,
-} from "@/features/product/workspace/contracts";
+import { type TaxonomySummary } from "@/features/product/workspace/contracts";
+import type { OperationsQuery } from "../operations/contracts";
+import { operationsQuerySchema } from "../operations/query";
 import { TaxonomyPicker } from "./taxonomy-picker";
 import styles from "./workspace.module.css";
 
@@ -15,13 +13,15 @@ export function CatalogFilters({
   onApply,
   onReset,
 }: {
-  query: ProductListQuery;
+  query: OperationsQuery;
   busy: boolean;
-  onApply: (query: ProductListQuery) => void;
+  onApply: (query: OperationsQuery) => void;
   onReset: () => void;
 }) {
   const [q, setQ] = useState(query.q ?? ""),
     [status, setStatus] = useState(query.status),
+    [draft, setDraft] = useState(query.draft),
+    [review, setReview] = useState(query.review),
     [categoryId, setCategoryId] = useState(query.categoryId ?? ""),
     [tagId, setTagId] = useState(query.tagId ?? ""),
     [unclassified, setUnclassified] = useState(query.unclassified),
@@ -34,10 +34,12 @@ export function CatalogFilters({
       aria-label="列表筛选"
       onSubmit={(event) => {
         event.preventDefault();
-        const parsed = productListQuerySchema.safeParse({
+        const parsed = operationsQuerySchema.safeParse({
           page: 1,
           pageSize: query.pageSize,
           status,
+          draft,
+          review,
           q,
           unclassified,
           ...(categoryId ? { categoryId } : {}),
@@ -69,7 +71,7 @@ export function CatalogFilters({
           className={styles.select}
           value={status}
           onChange={(event) =>
-            setStatus(event.target.value as ProductListQuery["status"])
+            setStatus(event.target.value as OperationsQuery["status"])
           }
         >
           <option value="active">未归档</option>
@@ -88,6 +90,8 @@ export function CatalogFilters({
           onClick={() => {
             setQ("");
             setStatus("active");
+            setDraft("any");
+            setReview("any");
             setCategoryId("");
             setTagId("");
             setUnclassified(false);
@@ -107,13 +111,55 @@ export function CatalogFilters({
       )}
       <details
         className={styles.expandedFilters}
-        open={Boolean(query.categoryId || query.tagId || query.unclassified)}
+        open={Boolean(
+          query.categoryId ||
+          query.tagId ||
+          query.unclassified ||
+          query.draft !== "any" ||
+          query.review !== "any",
+        )}
       >
         <summary>
           <span>更多筛选</span>
-          {categoryId || tagId || unclassified ? " · 已选分类或标签条件" : ""}
+          {categoryId ||
+          tagId ||
+          unclassified ||
+          draft !== "any" ||
+          review !== "any"
+            ? " · 已选更多条件"
+            : ""}
         </summary>
         <div className={styles.filterChoices}>
+          <div className={styles.field}>
+            <label htmlFor="operations-draft">当前草稿</label>
+            <select
+              id="operations-draft"
+              className={styles.select}
+              value={draft}
+              onChange={(event) =>
+                setDraft(event.target.value as OperationsQuery["draft"])
+              }
+            >
+              <option value="any">不限草稿</option>
+              <option value="present">有当前草稿</option>
+              <option value="absent">无当前草稿</option>
+            </select>
+          </div>
+          <div className={styles.field}>
+            <label htmlFor="operations-review">当前草稿审核</label>
+            <select
+              id="operations-review"
+              className={styles.select}
+              value={review}
+              onChange={(event) =>
+                setReview(event.target.value as OperationsQuery["review"])
+              }
+            >
+              <option value="any">不限审核</option>
+              <option value="current">有精确匹配审核</option>
+              <option value="missing">有草稿但缺匹配审核</option>
+            </select>
+          </div>
           <label className={styles.choice}>
             <input
               type="checkbox"

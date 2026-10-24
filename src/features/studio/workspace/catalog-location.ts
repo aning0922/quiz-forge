@@ -1,9 +1,9 @@
-import type { ProductListQuery } from "@/features/product/workspace/contracts";
+import type { OperationsQuery } from "../operations/contracts";
 import { catalogPageHref } from "./list-query";
 const eventName = "quizforge:catalog-query";
 
 /** Only this read-only list's query is pushed; no global routing is intercepted. */
-export function pushCatalogQuery(query: ProductListQuery | null) {
+export function pushCatalogQuery(query: OperationsQuery | null) {
   window.history.pushState(
     null,
     "",

@@ -8,14 +8,11 @@ import {
   catalogQuerySnapshot,
   catalogServerSnapshot,
 } from "./catalog-location";
-import type {
-  Page,
-  ProductDto,
-  ProductListQuery,
-} from "@/features/product/workspace/contracts";
+import type { OperationsQuery } from "../operations/contracts";
+import { AsOf } from "../operations-ui/summary";
 import type { StudioSessionDto } from "../contracts";
 import { StudioPageHeader } from "../presentation/page-header";
-import { useWorkspaceRead } from "./use-request";
+import { useOperationsProducts } from "../operations-ui/read";
 import { Pagination, ReadOnlyNotice } from "./primitives";
 import { CatalogFilters } from "./catalog-filters";
 import { CatalogProducts } from "./catalog-products";
@@ -86,19 +83,19 @@ function CatalogList({
   query,
 }: {
   session: StudioSessionDto;
-  query: ProductListQuery;
+  query: OperationsQuery;
 }) {
-  const read = useWorkspaceRead<Page<ProductDto>>(
-    `/api/studio/products?${catalogQueryString(query)}`,
-  );
+  const read = useOperationsProducts(query);
   const filtered = Boolean(
     query.q ||
     query.categoryId ||
     query.tagId ||
     query.unclassified ||
-    query.status !== "active",
+    query.status !== "active" ||
+    query.draft !== "any" ||
+    query.review !== "any",
   );
-  const go = (value: ProductListQuery) => pushCatalogQuery(value);
+  const go = (value: OperationsQuery) => pushCatalogQuery(value);
   return (
     <div className={styles.workspace}>
       <StudioPageHeader
@@ -130,7 +127,14 @@ function CatalogList({
           {query.q && ` · 搜索“${query.q}”`}
           {query.categoryId && " · 已按分类筛选"}
           {query.tagId && " · 已按标签筛选"}
-          {query.unclassified && " · 仅未分类"} · 按创建时间从新到旧
+          {query.unclassified && " · 仅未分类"}
+          {query.draft !== "any" &&
+            (query.draft === "present" ? " · 有当前草稿" : " · 无当前草稿")}
+          {query.review !== "any" &&
+            (query.review === "current"
+              ? " · 有精确匹配审核"
+              : " · 有草稿但缺匹配审核")}{" "}
+          · 按创建时间从新到旧
         </p>
         {read.loading && (
           <p className={styles.status} role="status">
@@ -189,6 +193,7 @@ function CatalogList({
             ) : (
               <CatalogProducts products={read.value.items} />
             )}
+            <AsOf value={read.value.asOf} />
             <footer className={styles.catalogFooter}>
               <p>
                 共 {read.value.total} 个测评 · 每页 {query.pageSize} 个
@@ -211,7 +216,7 @@ function CatalogList({
         )}
       </section>
       <p className={styles.note}>
-        这里只显示测评目录信息。内容检查、审核依据和内测进度请进入具体测评查看。
+        摘要仅反映读取时的服务器记录；历史版本不表示当前草稿已审核，浏览器内未决操作需在原工作区恢复。
       </p>
     </div>
   );
