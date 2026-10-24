@@ -9,6 +9,7 @@ import {
   type TaxonomyKind,
   type TaxonomyMutation,
 } from "@/features/product/workspace/contracts";
+import { useStudioLeaveProtection } from "../navigation-boundary";
 import type { StudioSessionDto } from "../contracts";
 import { studioFetch, studioMessage } from "../client";
 import { useWorkspaceRead } from "./use-request";
@@ -72,6 +73,10 @@ function TaxonomyRow({
   const [reading, setReading] = useState(false);
   const [readError, setReadError] = useState("");
   const mutation = useWorkspaceMutation<TaxonomyMutation>(session.csrfToken);
+  useStudioLeaveProtection({
+    dirty: name !== item.name,
+    pending: mutation.blocked,
+  });
   const endpoint = `${taxonomyPath(kind)}/${item.id}`;
   const label = kind === "category" ? "分类" : "标签";
   const protection = rowProtection(name, item.name, mutation.state.phase);
@@ -320,9 +325,13 @@ function TaxonomyCreateForm({
     error?: string;
   }>();
   const mutation = useWorkspaceMutation<TaxonomyDto>(session.csrfToken);
+  useStudioLeaveProtection({
+    dirty: Boolean(name || slug),
+    pending: mutation.blocked,
+  });
   useEffect(() => {
-    onProtectionChange(mutation.blocked);
-  }, [mutation.blocked, onProtectionChange]);
+    onProtectionChange(mutation.blocked || Boolean(name || slug));
+  }, [mutation.blocked, name, slug, onProtectionChange]);
   useEffect(() => () => onProtectionChange(false), [onProtectionChange]);
   const label = kind === "category" ? "分类" : "标签";
   async function create() {

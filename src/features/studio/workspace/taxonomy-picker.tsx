@@ -10,6 +10,7 @@ import type {
 } from "@/features/product/workspace/contracts";
 import { useWorkspaceRead } from "./use-request";
 import { Pagination } from "./primitives";
+import { TechnicalDetails } from "../presentation/technical-details";
 import styles from "./workspace.module.css";
 
 export function taxonomyPath(kind: TaxonomyKind) {
@@ -37,12 +38,14 @@ export function TaxonomyPicker({
   onChange,
   disabled = false,
   purpose = "association",
+  selectedId,
 }: {
   kind: TaxonomyKind;
   selected: TaxonomySummary[];
   onChange: (items: TaxonomySummary[]) => void;
   disabled?: boolean;
   purpose?: "association" | "filter";
+  selectedId?: string;
 }) {
   const id = useId();
   const [search, setSearch] = useState("");
@@ -67,6 +70,28 @@ export function TaxonomyPicker({
           ? `（${selected.length}/8）`
           : "（最多一个）"}
       </p>
+      {purpose === "filter" &&
+        selectedId &&
+        !selected.some((item) => item.id === selectedId) && (
+          <div className={styles.selectedFilter}>
+            <p>
+              当前{label}：
+              {read.value?.items.find((item) => item.id === selectedId)?.name ??
+                "已按指定编号选择，名称尚未读取"}
+            </p>
+            <button
+              className={`${styles.button} ${styles.secondary}`}
+              type="button"
+              disabled={disabled}
+              onClick={() => onChange([])}
+            >
+              清除{label}筛选
+            </button>
+            <TechnicalDetails label={`${label}筛选编号`}>
+              <p>{selectedId}</p>
+            </TechnicalDetails>
+          </div>
+        )}
       <ul className={styles.cards}>
         {selected.map((item) => (
           <li key={item.id} className={styles.choice}>
@@ -142,7 +167,10 @@ export function TaxonomyPicker({
                 可关联{label} · 第 {read.value.page} 页
               </legend>
               {read.value.items.map((item) => {
-                const checked = selected.some((value) => value.id === item.id);
+                const checked =
+                  purpose === "filter" && selectedId !== undefined
+                    ? selectedId === item.id
+                    : selected.some((value) => value.id === item.id);
                 return (
                   <label className={styles.choice} key={item.id}>
                     <input

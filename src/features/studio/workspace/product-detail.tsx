@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useStudioLeaveProtection } from "../navigation-boundary";
 import Link from "next/link";
 import { draftWorkspacePath } from "../drafts/client";
 import {
@@ -12,7 +13,11 @@ import type { StudioSessionDto } from "../contracts";
 import { studioFetch, studioMessage } from "../client";
 import { useWorkspaceRead } from "./use-request";
 import { useWorkspaceMutation } from "./use-mutation";
-import { ProductFields, type ProductFormFields } from "./product-fields";
+import {
+  ProductFields,
+  productFieldsDirty,
+  type ProductFormFields,
+} from "./product-fields";
 import { ProductCard } from "./product-card";
 import { StudioWorkflowNav } from "../presentation/workflow-nav";
 import { StudioPageHeader } from "../presentation/page-header";
@@ -54,6 +59,10 @@ function ProductEditor({
     session.csrfToken,
     (error) => authority.observe(error),
   );
+  useStudioLeaveProtection({
+    dirty: productFieldsDirty(fields, product),
+    pending: mutation.blocked,
+  });
   const canWrite = session.operator.role === "operator" && !authority.isRevoked;
   const endpoint = `/api/studio/products/${encodeURIComponent(product.id)}`;
 

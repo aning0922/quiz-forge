@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ProductDto } from "@/features/product/workspace/contracts";
+import { directoryTime } from "./directory-time";
 import { TechnicalDetails } from "../presentation/technical-details";
 import styles from "./workspace.module.css";
 
@@ -7,9 +8,11 @@ import styles from "./workspace.module.css";
 export function ProductCard({
   product,
   showIdentity = false,
+  newTab = false,
 }: {
   product: ProductDto;
   showIdentity?: boolean;
+  newTab?: boolean;
 }) {
   return (
     <article className={`${styles.card} ${styles.productCard}`}>
@@ -33,6 +36,22 @@ export function ProductCard({
             测评编号：{product.id} · 信息版本：{product.metadataRevision}
           </p>
         )}
+        {product.tags.length > 0 && (
+          <div className={styles.tagList}>
+            {product.tags.map((tag) => (
+              <span key={tag.id} className={styles.tag}>
+                {tag.name}
+                {tag.archivedAt ? "（已归档）" : ""}
+              </span>
+            ))}
+          </div>
+        )}
+        <p className={styles.note}>
+          目录更新：
+          <time dateTime={product.updatedAt}>
+            {directoryTime(product.updatedAt)}
+          </time>
+        </p>
         <TechnicalDetails label="编号与标签详情">
           <p>测评编号：{product.id}</p>
           <p>英文标识：{product.slug}</p>
@@ -52,9 +71,12 @@ export function ProductCard({
       <Link
         className={`${styles.link} ${styles.secondary}`}
         href={`/studio/products/${encodeURIComponent(product.id)}`}
-        aria-label={`查看测评 ${product.title}（编号 ${product.id}）`}
+        target={newTab ? "_blank" : undefined}
+        rel={newTab ? "noopener noreferrer" : undefined}
+        aria-label={`${newTab ? "在新标签查看服务器记录" : "查看测评"} ${product.title}（编号 ${product.id}）`}
       >
-        查看测评<span aria-hidden="true"> →</span>
+        {newTab ? "在新标签查看服务器记录" : "查看测评"}
+        <span aria-hidden="true"> →</span>
       </Link>
     </article>
   );

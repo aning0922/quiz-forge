@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useStudioLeaveProtection } from "../navigation-boundary";
 import Link from "next/link";
 import {
   productCreateSchema,
@@ -17,7 +17,6 @@ import { StudioPageHeader } from "../presentation/page-header";
 import styles from "./workspace.module.css";
 
 function ProductCreateForm({ session }: { session: StudioSessionDto }) {
-  const router = useRouter();
   const [id, setId] = useState("");
   const [fields, setFields] = useState<ProductFormFields>({
     slug: "",
@@ -34,6 +33,16 @@ function ProductCreateForm({ session }: { session: StudioSessionDto }) {
     error?: string;
   }>();
   const mutation = useWorkspaceMutation<ProductDto>(session.csrfToken);
+  const { markSaved } = useStudioLeaveProtection({
+    dirty: Boolean(
+      id ||
+      fields.slug ||
+      fields.title ||
+      fields.categories.length ||
+      fields.tags.length,
+    ),
+    pending: mutation.blocked,
+  });
 
   async function create() {
     const parsed = productCreateSchema.safeParse({
@@ -59,8 +68,10 @@ function ProductCreateForm({ session }: { session: StudioSessionDto }) {
       "服务器已确认创建。",
     );
     if (product) {
-      router.push(`/studio/products/${encodeURIComponent(product.id)}`);
-      router.refresh();
+      markSaved();
+      window.location.replace(
+        `/studio/products/${encodeURIComponent(product.id)}`,
+      );
     }
   }
   async function verify() {
@@ -162,7 +173,7 @@ function ProductCreateForm({ session }: { session: StudioSessionDto }) {
               <p className={styles.note}>
                 服务器当前值已确认，存在此编号。不能仅凭当前值证明原请求确定成功，请查看记录。
               </p>
-              <ProductCard product={checked.product} showIdentity />
+              <ProductCard product={checked.product} showIdentity newTab />
             </>
           )}
           {checked?.absent && (
