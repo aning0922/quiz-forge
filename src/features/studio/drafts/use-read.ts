@@ -2,11 +2,13 @@
 import { useEffect, useRef, useState } from "react";
 import { checkedDraftFetch } from "./client";
 import { draftMessage } from "./message";
+import { useContentAuthority } from "../product-workspace/content-authority";
 export function useDraftRead<T>(
   path: string,
   check: (value: unknown) => T | Promise<T>,
   revision = false,
 ) {
+  const authority = useContentAuthority();
   const [generation, setGeneration] = useState(0),
     [state, setState] = useState<{
       path: string;
@@ -40,7 +42,8 @@ export function useDraftRead<T>(
           });
       },
       (error) => {
-        if (current)
+        if (current) {
+          authority.observe(error);
           setState((previous) => ({
             path,
             generation,
@@ -50,13 +53,14 @@ export function useDraftRead<T>(
               ? { lastValue: previous.lastValue }
               : {}),
           }));
+        }
       },
     );
     return () => {
       current = false;
       controller.abort();
     };
-  }, [path, generation, revision]);
+  }, [path, generation, revision, authority]);
   const active = state.path === path && state.generation === generation;
   return {
     loading: !active || state.loading,

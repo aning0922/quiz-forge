@@ -20,6 +20,7 @@ import { StatusBadge } from "../operations-ui/status-badge";
 import { useProductWorkspaceContext } from "./context";
 import { ContentTask } from "./content-task";
 import { ContentWorkbench } from "./content-workbench";
+import { ContentRecords } from "./content-records";
 import {
   ProductTaskSurfaces,
   RetainedTaskSurface,
@@ -54,6 +55,8 @@ function Workspace({ session }: { session: StudioSessionDto }) {
   const surfaces = useWorkspaceSurfaces();
   const [tab, setTab] = useState<TaskTab>("content");
   const [selection, setSelection] = useState<RevisionTarget>();
+  const [contentSource, setContentSource] = useState<string>();
+  const [contentRun, setContentRun] = useState(0);
   const report = surfaces.report;
   const reportContent = useCallback(
     (state: WorkspaceTaskState) => report("content", state),
@@ -78,6 +81,15 @@ function Workspace({ session }: { session: StudioSessionDto }) {
     if (!surfaces.canSwitch()) return;
     setSelection(target);
     switchTab("preview");
+  }
+  function continueSource(importId: string) {
+    if (!surfaces.canSwitch()) return;
+    const state = surfaces.states.content;
+    if (!state?.retained && !state?.pending && !state?.busy) {
+      setContentSource(importId);
+      setContentRun((n) => n + 1);
+    }
+    surfaces.open("content");
   }
   return (
     <div className={styles.workspace}>
@@ -210,8 +222,10 @@ function Workspace({ session }: { session: StudioSessionDto }) {
       </div>
       <RetainedTaskSurface id="content">
         <ContentTask
+          key={contentRun}
           productId={productId}
           session={session}
+          initialImportId={contentSource}
           onChanged={read.refresh}
           onState={reportContent}
           onPreview={choosePreview}
@@ -228,13 +242,18 @@ function Workspace({ session }: { session: StudioSessionDto }) {
             </button>
           )}
           <h3>接收与检查</h3>
-          <Link href={`${base}/imports`}>查看完整接收记录与原请求恢复</Link>
+          <button onClick={() => surfaces.open("imports")}>
+            查看接收与检查记录
+          </button>
           <h3>历史固定版本</h3>
           <p>
             {presentation?.historicalNote || "当前摘要没有历史固定版本代表项。"}
           </p>
           <Link href={`${base}/internal-versions`}>查看完整版本记录</Link>
         </div>
+      </RetainedTaskSurface>
+      <RetainedTaskSurface id="imports">
+        <ContentRecords productId={productId} onContinue={continueSource} />
       </RetainedTaskSurface>
     </div>
   );

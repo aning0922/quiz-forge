@@ -3,8 +3,10 @@ import { useEffect, useRef, useState } from "react";
 import { studioFetch } from "../client";
 import { checkedImportFetch } from "./client";
 import { importMessage } from "./messages";
+import { useContentAuthority } from "../product-workspace/content-authority";
 
 export function useImportRead<T>(path: string, check?: (value: unknown) => T) {
+  const authority = useContentAuthority();
   const decoder = useRef(check);
   useEffect(() => {
     decoder.current = check;
@@ -29,12 +31,14 @@ export function useImportRead<T>(path: string, check?: (value: unknown) => T) {
         if (!controller.signal.aborted) setResult({ path, value });
       },
       (error) => {
-        if (!controller.signal.aborted)
+        if (!controller.signal.aborted) {
+          authority.observe(error);
           setResult({ path, error: importMessage(error) });
+        }
       },
     );
     return () => controller.abort();
-  }, [path, revision]);
+  }, [path, revision, authority]);
   return {
     value: result.path === path ? result.value : undefined,
     error: result.path === path ? result.error : undefined,

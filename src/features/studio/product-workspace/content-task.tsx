@@ -21,7 +21,10 @@ import { ApplyDraftPanel } from "../drafts/apply-panel";
 import { AppendRevisionPanel } from "../draft-revisions/append-panel";
 import { checkDraftRead, draftEndpoint } from "../drafts/client";
 import { useDraftRead } from "../drafts/use-read";
-import { subscribeStudioAuthorityInvalidation } from "../authority-events";
+import {
+  invalidateCurrentStudioAuthority,
+  subscribeStudioAuthorityInvalidation,
+} from "../authority-events";
 import { useStudioLeaveProtection } from "../navigation-boundary";
 import {
   useContentTaskState,
@@ -57,7 +60,12 @@ export function ContentTask(props: ContentTaskProps) {
   const scope = useMemo(
     () => ({
       canWrite: () => !authority.isRevoked,
-      observe: (error: unknown) => authority.observe(error),
+      observe: (error: unknown) => {
+        const wasRevoked = authority.isRevoked;
+        authority.observe(error);
+        if (!wasRevoked && authority.isRevoked)
+          invalidateCurrentStudioAuthority();
+      },
     }),
     [authority],
   );

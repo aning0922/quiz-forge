@@ -166,6 +166,14 @@
 .history h3 {
   margin-top: 10px;
 }
+.record {
+  padding: 16px 0;
+  border-bottom: 1px solid #e1e6f0;
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
 .workspace :is(button, a):focus-visible {
   outline: 3px solid #aaa1f5;
   outline-offset: 3px;
