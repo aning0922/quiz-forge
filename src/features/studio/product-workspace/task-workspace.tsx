@@ -12,6 +12,10 @@ import {
   RefreshCw,
 } from "lucide-react";
 import type { StudioSessionDto } from "../contracts";
+import type { StudioConsumerScopeV1 } from "../consumer-access/pending";
+import type { ConsumerRendererIdentity } from "@/lib/consumer-contract/v1/identities";
+import { StudioConsumerAccessPageV1 } from "../consumer-access/page";
+import { ReviewWorkbench } from "./review-workbench";
 import {
   revisionTargetSchema,
   sameRevisionTarget,
@@ -60,13 +64,22 @@ type PreviewLaunch = {
 export function ProductTaskWorkspace({
   session,
   initialTask = "content",
+  consumerScope,
+  consumerRenderer,
 }: {
   session: StudioSessionDto;
   initialTask?: TaskTab;
+  consumerScope: StudioConsumerScopeV1;
+  consumerRenderer: ConsumerRendererIdentity;
 }) {
   return (
     <ProductTaskSurfaces>
-      <Workspace session={session} initialTask={initialTask} />
+      <Workspace
+        session={session}
+        initialTask={initialTask}
+        consumerScope={consumerScope}
+        consumerRenderer={consumerRenderer}
+      />
     </ProductTaskSurfaces>
   );
 }
@@ -74,14 +87,21 @@ export function ProductTaskWorkspace({
 function Workspace({
   session,
   initialTask,
+  consumerScope,
+  consumerRenderer,
 }: {
   session: StudioSessionDto;
   initialTask: TaskTab;
+  consumerScope: StudioConsumerScopeV1;
+  consumerRenderer: ConsumerRendererIdentity;
 }) {
   const workspace = useProductWorkspaceContext();
   const authority = useInternalAuthority();
   const surfaces = useWorkspaceSurfaces();
   const [tab, setTab] = useState<TaskTab>(initialTask);
+  const [visitedTabs, setVisitedTabs] = useState<ReadonlySet<TaskTab>>(
+    () => new Set([initialTask]),
+  );
   const [selection, setSelection] = useState<RevisionTarget>();
   const [launched, setLaunched] = useState<PreviewLaunch>();
   const [switchPreview, setSwitchPreview] = useState<RevisionTarget>();
@@ -106,6 +126,7 @@ function Workspace({
   function switchTab(next: TaskTab) {
     if (!surfaces.canSwitch()) return;
     if (surfaces.active && !surfaces.close()) return;
+    setVisitedTabs((old) => new Set([...old, next]));
     setTab(next);
   }
   function choosePreview(target: RevisionTarget) {
@@ -249,9 +270,11 @@ function Workspace({
           loading={read.loading}
           error={read.error}
           taskState={surfaces.states.content}
+          previewBlocked={authority.isRevoked}
           readOnly={session.operator.role !== "operator" || authority.isRevoked}
           onOpenTask={() => surfaces.open("content")}
-          onOpenHistory={() => surfaces.open("history")}
+          onOpenHistory={openRevisions}
+          onOpenImports={() => surfaces.open("imports")}
           onPreview={launchPreview}
         />
       </div>
@@ -341,16 +364,26 @@ function Workspace({
           </aside>
         </div>
       </div>
-      <div hidden={tab !== "review"} className={styles.panel}>
-        <h2>审核与版本</h2>
-        <p>审核记录必须与准确修订匹配，历史批准不会沿用到新的草稿。</p>
-        <Link href={`${base}/internal-versions`}>进入现有审核与版本操作</Link>
-      </div>
-      <div hidden={tab !== "testing"} className={styles.panel}>
-        <h2>内测发放</h2>
-        <p>基于真实固定版本创建答题版本，再明确发放访问码。</p>
-        <Link href={`${base}/consumer-access`}>进入现有内测记录</Link>
-      </div>
+      {visitedTabs.has("review") && (
+        <ReviewWorkbench
+          productId={productId}
+          session={session}
+          currentTarget={current}
+          visible={tab === "review"}
+          onChanged={read.refresh}
+        />
+      )}
+      {visitedTabs.has("testing") && (
+        <StudioConsumerAccessPageV1
+          key={`${consumerScope.instanceId}:${consumerScope.issuerId}:${consumerScope.productId}`}
+          scope={consumerScope}
+          renderer={consumerRenderer}
+          workspaceAuthority={authority}
+          embedded
+          visible={tab === "testing"}
+          onChanged={read.refresh}
+        />
+      )}
       <RetainedTaskSurface id="content">
         <ContentTask
           key={contentRun}
@@ -376,7 +409,7 @@ function Workspace({
           <p>
             {presentation?.historicalNote || "当前摘要没有历史固定版本代表项。"}
           </p>
-          <Link href={`${base}/internal-versions`}>查看完整版本记录</Link>
+          <button onClick={() => switchTab("review")}>进入审核与版本</button>
         </div>
       </RetainedTaskSurface>
       <RetainedTaskSurface id="imports">

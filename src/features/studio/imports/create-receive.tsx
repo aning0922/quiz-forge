@@ -169,8 +169,9 @@ export function CreateReceive({
       <section className={styles.panel}>
         <h2>选择内容包文件</h2>
         <p className={styles.note}>
-          上限
-          32MiB。选择文件后先创建接收意图，再明确上传。接收完成后仍需验证归档，草稿由后续步骤创建。
+          {embedded
+            ? "上限 32MiB。先登记本次文件，再明确上传原文件。"
+            : "上限 32MiB。选择文件后先创建接收意图，再明确上传。接收完成后仍需验证归档，草稿由后续步骤创建。"}
         </p>
         <label className={styles.field}>
           内容包文件
@@ -187,7 +188,9 @@ export function CreateReceive({
           <>
             <p>
               已选择：
-              {pending.file instanceof File ? pending.file.name : "内容包文件"}{" "}
+              {pending.file instanceof File
+                ? pending.file.name
+                : "内容包文件"}{" "}
               · {pending.input.expectedArchiveBytes.toLocaleString()} 字节
             </p>
             <TechnicalDetails label="本次接收声明">
@@ -200,16 +203,24 @@ export function CreateReceive({
                   <dt>字节数</dt>
                   <dd>{pending.input.expectedArchiveBytes}</dd>
                 </div>
+                {embedded && (
+                  <div>
+                    <dt>SHA-256</dt>
+                    <dd>{pending.input.expectedArchiveSha256}</dd>
+                  </div>
+                )}
               </dl>
             </TechnicalDetails>
-            <TechnicalDetails label="所选文件技术信息">
-              <dl className={styles.facts}>
-                <div>
-                  <dt>SHA-256</dt>
-                  <dd>{pending.input.expectedArchiveSha256}</dd>
-                </div>
-              </dl>
-            </TechnicalDetails>
+            {!embedded && (
+              <TechnicalDetails label="所选文件技术信息">
+                <dl className={styles.facts}>
+                  <div>
+                    <dt>SHA-256</dt>
+                    <dd>{pending.input.expectedArchiveSha256}</dd>
+                  </div>
+                </dl>
+              </TechnicalDetails>
+            )}
           </>
         )}
         {unknown && (
@@ -241,10 +252,14 @@ export function CreateReceive({
               }
               onClick={() => void submit()}
             >
-              {unknown ? "以原操作编号和原输入重提" : "创建内容包接收意图"}
+              {unknown
+                ? "以原操作编号和原输入重提"
+                : embedded
+                  ? "登记本次文件"
+                  : "创建内容包接收意图"}
             </button>
           )}
-          {pending && !value && (
+          {pending && !value && (!embedded || unknown || !!message) && (
             <button
               className={`${styles.button} ${styles.secondary}`}
               disabled={busy}
@@ -267,10 +282,12 @@ export function CreateReceive({
             </button>
           )}
         </div>
-        <p className={styles.note}>
-          文件与请求信息仅保留在当前页内存。操作期间请勿关闭或刷新页面；已有接收
-          ID 可从列表继续读取和恢复。
-        </p>
+        {!embedded && (
+          <p className={styles.note}>
+            文件与请求信息仅保留在当前页内存。操作期间请勿关闭或刷新页面；已有接收
+            ID 可从列表继续读取和恢复。
+          </p>
+        )}
       </section>
       {value && (
         <div className={local.stack}>
