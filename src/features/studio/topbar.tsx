@@ -1,5 +1,6 @@
 "use client";
 import { ChevronRight, Search, Menu } from "lucide-react";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { studioLocation, type StudioIdentity } from "./navigation-model";
 import styles from "./studio.module.css";
@@ -44,22 +45,33 @@ export function StudioTopbar({
             data-studio-navigation-form
             aria-label="搜索测评"
           >
+            <button type="submit" aria-label="搜索测评">
+              <Search size={19} aria-hidden="true" />
+            </button>
             <input
               type="search"
               name="q"
               aria-label="搜索测评名称或编号"
-              placeholder="输入名称或编号"
+              placeholder="输入名称或编号，回车搜索"
               maxLength={80}
             />
-            <button type="submit" aria-label="搜索测评">
-              <Search size={20} aria-hidden="true" />
-            </button>
           </form>
         )}
         {identity && (
-          <span className={styles.roleBadge}>
-            {identity.role === "operator" ? "运营者" : "只读"}
-          </span>
+          <Link
+            href="/studio/session"
+            prefetch={false}
+            className={styles.topIdentity}
+            aria-label="查看当前运营身份"
+            title={identity.label}
+          >
+            <span className={styles.roleBadge}>
+              {identity.role === "operator" ? "运营者" : "只读"}
+            </span>
+            <span className={styles.topAvatar} aria-hidden="true">
+              {Array.from(identity.label.trim() || "Q")[0]?.toUpperCase()}
+            </span>
+          </Link>
         )}
       </div>
     </header>

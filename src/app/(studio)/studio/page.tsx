@@ -8,6 +8,9 @@ export default async function StudioPage() {
   if (state.status === "unavailable") return <StudioUnavailable />;
   if (state.status === "unauthenticated") redirect("/studio/login");
   return (
-    <StudioDashboard canCreate={state.session.operator.role === "operator"} />
+    <StudioDashboard
+      canCreate={state.session.operator.role === "operator"}
+      session={state.session}
+    />
   );
 }
