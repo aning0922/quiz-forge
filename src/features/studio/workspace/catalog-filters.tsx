@@ -190,7 +190,7 @@ export function CatalogFilters({
           <span>更多筛选</span>
           {tagId || status !== "active" ? " · 已选归档或标签条件" : ""}
         </summary>
-        <div className={styles.filterChoices}>
+        <div className={`${styles.filterChoices} ${parity.additionalChoices}`}>
           <div className={styles.field}>
             <label htmlFor="workspace-status">归档状态</label>
             <select
