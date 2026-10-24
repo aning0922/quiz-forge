@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { ProductOperationsSummary } from "../operations-ui/product-summary";
 import { useStudioLeaveProtection } from "../navigation-boundary";
 import Link from "next/link";
 import { draftWorkspacePath } from "../drafts/client";
@@ -146,11 +145,9 @@ function ProductEditor({
   return (
     <section className={`${styles.panel} ${styles.productOverview}`}>
       <StudioPageHeader
-        title={product.title}
+        title="基本设置"
         description={
-          <p>
-            编辑测评信息，或继续导入和查看内容。这里的名称与分类不会改写包内内容。
-          </p>
+          <p>编辑测评目录中的名称、分类与标签。这里的设置不会改写包内内容。</p>
         }
       />
       <div className={styles.actions} aria-label="测评内容操作">
@@ -369,7 +366,6 @@ function ProductDetailContent({
           session={session}
         />
       )}
-      <ProductOperationsSummary productId={productId} />
       <StableInternalWorkspace
         key={productId}
         productId={productId}

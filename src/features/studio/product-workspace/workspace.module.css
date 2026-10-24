@@ -1,0 +1,248 @@
+.workspace {
+  min-width: 0;
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--studio-text, #24304b);
+}
+.identity {
+  padding: 26px 30px 20px;
+  border: 1px solid var(--studio-border, #e1e6f0);
+  border-radius: 18px 18px 0 0;
+  background: linear-gradient(120deg, #fff 40%, #f5f3ff);
+}
+.back {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  color: #526085;
+  text-decoration: none;
+}
+.identityRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  align-items: flex-start;
+  margin-top: 12px;
+}
+.identityRow > div {
+  min-width: 0;
+}
+.eyebrow {
+  margin: 0 0 6px;
+  color: #6959a7;
+  font-weight: 600;
+}
+.productName {
+  margin: 0;
+  font-size: clamp(24px, 3vw, 30px);
+  font-weight: 700;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+.muted {
+  margin: 8px 0;
+  color: var(--studio-muted, #63718b);
+  overflow-wrap: anywhere;
+}
+.badge,
+.archived {
+  display: inline-flex;
+  flex-shrink: 0;
+  padding: 5px 12px;
+  border-radius: 20px;
+  background: #ece9ff;
+  color: #594ca0;
+}
+.archived {
+  background: #edf0f4;
+  color: #59657b;
+}
+.businessFacts {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin: 24px 0 12px;
+  gap: 12px;
+}
+.businessFacts > div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  padding: 12px 16px;
+  border: 1px solid #e9e8f2;
+  background: #ffffffb3;
+  border-radius: 10px;
+  overflow-wrap: anywhere;
+}
+.businessFacts span {
+  color: #63718b;
+}
+.businessFacts strong span {
+  color: inherit;
+}
+.headerActions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px 20px;
+}
+.refresh {
+  min-height: 44px;
+  padding: 8px 12px;
+  border: 1px solid #dcddea;
+  border-radius: 8px;
+  background: #fff;
+  color: #526085;
+  font: inherit;
+  cursor: pointer;
+}
+.refresh:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 8px 18px 0;
+  border: 1px solid var(--studio-border, #e1e6f0);
+  border-top: 0;
+  border-radius: 0 0 14px 14px;
+  background: #fff;
+}
+.tabs a {
+  display: inline-flex;
+  min-height: 48px;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 16px;
+  border-bottom: 3px solid transparent;
+  color: #63718b;
+  text-decoration: none;
+  font-weight: 600;
+}
+.tabs a[aria-current="page"] {
+  color: #6751b4;
+  border-color: #8065ce;
+  background: #f7f4ff;
+  border-radius: 8px 8px 0 0;
+}
+.tabs a:hover,
+.back:hover,
+.standaloneLink:hover {
+  color: #493585;
+  background: #f7f4ff;
+}
+.body {
+  min-width: 0;
+  margin-top: 26px;
+}
+.pageHeading {
+  margin-bottom: 24px;
+}
+.pageHeading h1 {
+  font-size: 26px;
+  margin: 0 0 8px;
+}
+.pageHeading p {
+  margin: 0;
+  color: #63718b;
+}
+.overview {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(270px, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+.panel {
+  min-width: 0;
+  padding: 24px;
+  border: 1px solid var(--studio-border, #e1e6f0);
+  border-radius: 14px;
+  background: #fff;
+  overflow-wrap: anywhere;
+}
+.panel h2 {
+  margin: 0 0 12px;
+  font-size: 20px;
+}
+.aside {
+  display: grid;
+  min-width: 0;
+  gap: 20px;
+}
+.nextActions {
+  display: grid;
+  gap: 12px;
+  margin: 18px 0;
+}
+.nextActions a {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-height: 44px;
+  padding: 14px 16px;
+  border: 1px solid #e6e2f3;
+  border-radius: 10px;
+  color: #594994;
+  text-decoration: none;
+  background: #faf8ff;
+}
+.nextActions span {
+  color: #63718b;
+  font-weight: 400;
+}
+.standaloneLink {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  margin-top: 8px;
+  color: #594994;
+  text-decoration: none;
+}
+.directoryFacts dt {
+  font-weight: 600;
+  margin-top: 12px;
+}
+.directoryFacts dd {
+  margin: 4px 0 0;
+  color: #63718b;
+}
+.error {
+  color: #9b3535;
+  padding: 12px;
+  border: 1px solid #e8c8c8;
+  border-radius: 8px;
+  background: #fff7f7;
+}
+@media (max-width: 1050px) {
+  .businessFacts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .overview {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 600px) {
+  .identity {
+    padding: 16px;
+  }
+  .identityRow {
+    flex-direction: column;
+    gap: 8px;
+  }
+  .businessFacts {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+  }
+  .tabs {
+    padding: 8px;
+  }
+  .tabs a {
+    flex: 1 1 calc(50% - 8px);
+    padding: 10px 8px;
+  }
+  .panel {
+    padding: 18px 16px;
+  }
+}
