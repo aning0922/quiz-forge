@@ -20,11 +20,13 @@ export function ProductFields({
   onChange,
   disabled,
   compact = false,
+  onReadFailure,
 }: {
   value: ProductFormFields;
   onChange: (value: ProductFormFields) => void;
   disabled: boolean;
   compact?: boolean;
+  onReadFailure?: ((error: unknown) => void) | undefined;
 }) {
   return (
     <>
@@ -72,6 +74,7 @@ export function ProductFields({
       <TaxonomyPicker
         kind="category"
         compact={compact}
+        onFailure={onReadFailure}
         selected={value.categories}
         onChange={(categories) => onChange({ ...value, categories })}
         disabled={disabled}
@@ -79,6 +82,7 @@ export function ProductFields({
       <TaxonomyPicker
         kind="tag"
         compact={compact}
+        onFailure={onReadFailure}
         selected={value.tags}
         onChange={(tags) => onChange({ ...value, tags })}
         disabled={disabled}

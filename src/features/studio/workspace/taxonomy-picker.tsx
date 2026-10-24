@@ -41,6 +41,7 @@ export function TaxonomyPicker({
   purpose = "association",
   selectedId,
   compact = false,
+  onFailure,
 }: {
   kind: TaxonomyKind;
   selected: TaxonomySummary[];
@@ -49,6 +50,7 @@ export function TaxonomyPicker({
   purpose?: "association" | "filter";
   selectedId?: string;
   compact?: boolean;
+  onFailure?: ((error: unknown) => void) | undefined;
 }) {
   const id = useId();
   const [search, setSearch] = useState("");
@@ -62,6 +64,7 @@ export function TaxonomyPicker({
   });
   const read = useWorkspaceRead<Page<TaxonomyDto>>(
     `${taxonomyPath(kind)}?${query}`,
+    onFailure,
   );
   const label = kind === "category" ? "分类" : "标签";
   const emptyOptions = taxonomyOptionsAreEmpty(read.value, q, page);

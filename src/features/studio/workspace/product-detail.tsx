@@ -271,6 +271,9 @@ function ProductEditor({
                 >
                   <ProductFields
                     compact={embedded}
+                    onReadFailure={
+                      embedded ? (error) => authority.observe(error) : undefined
+                    }
                     value={fields}
                     onChange={setFields}
                     disabled={

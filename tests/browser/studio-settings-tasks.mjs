@@ -7,6 +7,7 @@ const require = createRequire(path.resolve("package.json"));
 const { chromium, expect } = require("@playwright/test");
 const esbuild = createRequire(require.resolve("tsx/package.json"))("esbuild");
 const out = path.resolve(".cache/studio-settings-tasks", String(Date.now()));
+const taxonomyOnly = process.argv.includes("--taxonomy-authority-only");
 await mkdir(out, { recursive: true, mode: 0o700 });
 await esbuild.build({
   stdin: {
@@ -84,6 +85,22 @@ const server = createServer(async (req, res) => {
     if (url.pathname.startsWith("/api/")) {
       res.setHeader("content-type", "application/json");
       if (req.method === "GET") {
+        if (
+          url.pathname === "/api/studio/categories" &&
+          mode.startsWith("taxonomy-")
+        ) {
+          res.statusCode = mode === "taxonomy-deny" ? 401 : 503;
+          res.end(
+            JSON.stringify({
+              code:
+                mode === "taxonomy-deny"
+                  ? "UNAUTHENTICATED"
+                  : "STUDIO_UNAVAILABLE",
+              requestId: "synthetic-taxonomy-read",
+            }),
+          );
+          return;
+        }
         if (
           mode === "deny" &&
           url.pathname === "/api/studio/products/parity-settings"
@@ -178,118 +195,156 @@ async function open() {
   return p;
 }
 try {
-  let p = await open();
-  await p.getByLabel("测评名称", { exact: true }).fill("保留的未保存输入");
-  await p.evaluate(
-    () => (window.original = document.querySelector("#product-title")),
-  );
-  await p.getByRole("button", { name: "关闭当前浮层", exact: true }).click();
-  await expect(p.locator("dialog:modal")).toHaveCount(0);
-  await p.getByRole("button", { name: "打开设置", exact: true }).click();
-  expect(
+  if (!taxonomyOnly) {
+    let p = await open();
+    await p.getByLabel("测评名称", { exact: true }).fill("保留的未保存输入");
     await p.evaluate(
-      () => window.original === document.querySelector("#product-title"),
-    ),
-  ).toBe(true);
-  await expect(p.getByLabel("测评名称", { exact: true })).toHaveValue(
-    "保留的未保存输入",
-  );
-  await p.getByRole("button", { name: "保存测评信息", exact: true }).click();
-  await expect(p.getByText("测评信息已保存。", { exact: true })).toBeVisible();
-  expect(writes.length).toBe(1);
-  expect(writes[0].input.expectedMetadataRevision).toBe(1);
-  await p.getByText("标识、状态与归档", { exact: true }).click();
-  await p.getByRole("button", { name: "归档测评", exact: true }).click();
-  await expect(
-    p.getByRole("button", { name: "确认归档测评", exact: true }),
-  ).toBeEnabled();
-  expect(writes.length).toBe(1);
-  await p.getByRole("button", { name: "确认归档测评", exact: true }).click();
-  await expect(
-    p.getByRole("button", { name: "返回基本设置", exact: true }),
-  ).toBeEnabled();
-  expect(writes.length).toBe(2);
-  expect(writes[1].path.endsWith("/archive")).toBe(true);
-  await p.getByRole("button", { name: "返回基本设置", exact: true }).click();
-  await expect(
-    p.getByRole("button", { name: "恢复测评", exact: true }),
-  ).toBeVisible();
-  await p.getByRole("button", { name: "恢复测评", exact: true }).click();
-  await expect(
-    p.getByRole("button", { name: "确认恢复测评", exact: true }),
-  ).toBeVisible();
-  expect(writes.length).toBe(2);
-  results.push(
-    "retained input DOM; external footer form submits once; previous save/archive success cannot complete a newly opened lifecycle task",
-  );
-  await p.close();
-  product = initial();
-  writes = [];
-  mode = "ok";
-  p = await open();
-  await p.getByLabel("测评名称", { exact: true }).fill("冲突后保留输入");
-  product = { ...product, title: "另一写者内容", metadataRevision: 2 };
-  mode = "conflict";
-  await p.getByRole("button", { name: "保存测评信息", exact: true }).click();
-  await expect(
-    p.getByRole("heading", { name: "内容发生冲突", exact: true }),
-  ).toBeVisible();
-  await p.getByRole("button", { name: "关闭当前浮层", exact: true }).click();
-  await p.getByRole("button", { name: "打开设置", exact: true }).click();
-  await expect(p.getByLabel("测评名称", { exact: true })).toHaveValue(
-    "冲突后保留输入",
-  );
-  await expect(
-    p.getByRole("button", { name: "保存测评信息", exact: true }),
-  ).toBeDisabled();
-  await p
-    .getByRole("button", { name: "读取服务器最新内容", exact: true })
-    .click();
-  await p
-    .getByRole("button", { name: "保留我的输入，以最新修订重提", exact: true })
-    .click();
-  mode = "ok";
-  await p.getByRole("button", { name: "保存测评信息", exact: true }).click();
-  await expect(p.getByText("测评信息已保存。", { exact: true })).toBeVisible();
-  expect(writes.length).toBe(2);
-  expect(writes[1].input.expectedMetadataRevision).toBe(2);
-  results.push(
-    "CAS conflict remains in same drawer; explicit read/adopt preserves input and only then submits new revision",
-  );
-  await p.close();
-  product = initial();
-  writes = [];
-  mode = "unknown";
-  p = await open();
-  await p.getByLabel("测评名称", { exact: true }).fill("未知结果仍保留");
-  await p.evaluate(
-    () => (window.original = document.querySelector("#product-title")),
-  );
-  await p.getByRole("button", { name: "保存测评信息", exact: true }).click();
-  await expect(
-    p.getByRole("heading", { name: "提交结果尚未确认", exact: true }),
-  ).toBeVisible();
-  await p.getByRole("button", { name: "关闭当前浮层", exact: true }).click();
-  await expect(p.locator("#retained-state")).toHaveText("pending");
-  await p.getByRole("button", { name: "打开设置", exact: true }).click();
-  mode = "deny";
-  await p
-    .getByRole("button", { name: "读取服务器最新内容", exact: true })
-    .click();
-  await expect(p.getByLabel("测评名称", { exact: true })).toBeDisabled();
-  expect(
+      () => (window.original = document.querySelector("#product-title")),
+    );
+    await p.getByRole("button", { name: "关闭当前浮层", exact: true }).click();
+    await expect(p.locator("dialog:modal")).toHaveCount(0);
+    await p.getByRole("button", { name: "打开设置", exact: true }).click();
+    expect(
+      await p.evaluate(
+        () => window.original === document.querySelector("#product-title"),
+      ),
+    ).toBe(true);
+    await expect(p.getByLabel("测评名称", { exact: true })).toHaveValue(
+      "保留的未保存输入",
+    );
+    await p.getByRole("button", { name: "保存测评信息", exact: true }).click();
+    await expect(
+      p.getByText("测评信息已保存。", { exact: true }),
+    ).toBeVisible();
+    expect(writes.length).toBe(1);
+    expect(writes[0].input.expectedMetadataRevision).toBe(1);
+    await p.getByText("标识、状态与归档", { exact: true }).click();
+    await p.getByRole("button", { name: "归档测评", exact: true }).click();
+    await expect(
+      p.getByRole("button", { name: "确认归档测评", exact: true }),
+    ).toBeEnabled();
+    expect(writes.length).toBe(1);
+    await p.getByRole("button", { name: "确认归档测评", exact: true }).click();
+    await expect(
+      p.getByRole("button", { name: "返回基本设置", exact: true }),
+    ).toBeEnabled();
+    expect(writes.length).toBe(2);
+    expect(writes[1].path.endsWith("/archive")).toBe(true);
+    await p.getByRole("button", { name: "返回基本设置", exact: true }).click();
+    await expect(
+      p.getByRole("button", { name: "恢复测评", exact: true }),
+    ).toBeVisible();
+    await p.getByRole("button", { name: "恢复测评", exact: true }).click();
+    await expect(
+      p.getByRole("button", { name: "确认恢复测评", exact: true }),
+    ).toBeVisible();
+    expect(writes.length).toBe(2);
+    results.push(
+      "retained input DOM; external footer form submits once; previous save/archive success cannot complete a newly opened lifecycle task",
+    );
+    await p.close();
+    product = initial();
+    writes = [];
+    mode = "ok";
+    p = await open();
+    await p.getByLabel("测评名称", { exact: true }).fill("冲突后保留输入");
+    product = { ...product, title: "另一写者内容", metadataRevision: 2 };
+    mode = "conflict";
+    await p.getByRole("button", { name: "保存测评信息", exact: true }).click();
+    await expect(
+      p.getByRole("heading", { name: "内容发生冲突", exact: true }),
+    ).toBeVisible();
+    await p.getByRole("button", { name: "关闭当前浮层", exact: true }).click();
+    await p.getByRole("button", { name: "打开设置", exact: true }).click();
+    await expect(p.getByLabel("测评名称", { exact: true })).toHaveValue(
+      "冲突后保留输入",
+    );
+    await expect(
+      p.getByRole("button", { name: "保存测评信息", exact: true }),
+    ).toBeDisabled();
+    await p
+      .getByRole("button", { name: "读取服务器最新内容", exact: true })
+      .click();
+    await p
+      .getByRole("button", {
+        name: "保留我的输入，以最新修订重提",
+        exact: true,
+      })
+      .click();
+    mode = "ok";
+    await p.getByRole("button", { name: "保存测评信息", exact: true }).click();
+    await expect(
+      p.getByText("测评信息已保存。", { exact: true }),
+    ).toBeVisible();
+    expect(writes.length).toBe(2);
+    expect(writes[1].input.expectedMetadataRevision).toBe(2);
+    results.push(
+      "CAS conflict remains in same drawer; explicit read/adopt preserves input and only then submits new revision",
+    );
+    await p.close();
+    product = initial();
+    writes = [];
+    mode = "unknown";
+    p = await open();
+    await p.getByLabel("测评名称", { exact: true }).fill("未知结果仍保留");
     await p.evaluate(
-      () => window.original === document.querySelector("#product-title"),
-    ),
-  ).toBe(true);
-  await expect(p.getByLabel("测评名称", { exact: true })).toHaveValue(
-    "未知结果仍保留",
-  );
-  expect(writes.length).toBe(1);
-  results.push(
-    "UNKNOWN retains same input/DOM and pending marker; shared revocation disables footer without replay",
-  );
-  await p.close();
+      () => (window.original = document.querySelector("#product-title")),
+    );
+    await p.getByRole("button", { name: "保存测评信息", exact: true }).click();
+    await expect(
+      p.getByRole("heading", { name: "提交结果尚未确认", exact: true }),
+    ).toBeVisible();
+    await p.getByRole("button", { name: "关闭当前浮层", exact: true }).click();
+    await expect(p.locator("#retained-state")).toHaveText("pending");
+    await p.getByRole("button", { name: "打开设置", exact: true }).click();
+    mode = "deny";
+    await p
+      .getByRole("button", { name: "读取服务器最新内容", exact: true })
+      .click();
+    await expect(p.getByLabel("测评名称", { exact: true })).toBeDisabled();
+    expect(
+      await p.evaluate(
+        () => window.original === document.querySelector("#product-title"),
+      ),
+    ).toBe(true);
+    await expect(p.getByLabel("测评名称", { exact: true })).toHaveValue(
+      "未知结果仍保留",
+    );
+    expect(writes.length).toBe(1);
+    results.push(
+      "UNKNOWN retains same input/DOM and pending marker; shared revocation disables footer without replay",
+    );
+    await p.close();
+  }
+  for (const taxonomyMode of ["taxonomy-unavailable", "taxonomy-deny"]) {
+    product = initial();
+    writes = [];
+    mode = taxonomyMode;
+    const p = await open();
+    await expect(p.getByRole("alert").first()).toBeVisible();
+    if (taxonomyMode === "taxonomy-deny") {
+      await expect(p.getByLabel("测评名称", { exact: true })).toBeDisabled();
+      await expect(
+        p.getByRole("button", { name: "保存测评信息", exact: true }),
+      ).toBeDisabled();
+      await expect(p.getByLabel("测评名称", { exact: true })).toHaveValue(
+        "设置合成样例",
+      );
+      results.push(
+        "taxonomy 401 after product read revokes the same authority and disables settings footer without clearing fields",
+      );
+    } else {
+      await expect(p.getByLabel("测评名称", { exact: true })).toBeEnabled();
+      await expect(
+        p.getByRole("button", { name: "保存测评信息", exact: true }),
+      ).toBeEnabled();
+      results.push(
+        "taxonomy 503 remains a read error and does not revoke product authority",
+      );
+    }
+    expect(writes.length).toBe(0);
+    await p.close();
+  }
   expect(errors).toEqual([]);
   await writeFile(
     path.join(out, "settings-results.json"),
