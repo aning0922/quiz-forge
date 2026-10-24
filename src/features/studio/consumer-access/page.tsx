@@ -15,6 +15,7 @@ import {
 } from "react";
 import {
   RetainedTaskSurface,
+  RetainedTaskActions,
   useWorkspaceSurfaces,
 } from "../product-workspace/task-surfaces";
 import { useStudioLeaveProtection } from "../navigation-boundary";
@@ -54,7 +55,27 @@ function keyStatus(key: AccessKeyDetail) {
       ? "未领取 · 已到期"
       : "未领取";
 }
-function KeyFacts({ value }: { value: AccessKeyDetail }) {
+function KeyFacts({
+  value,
+  compact = false,
+}: {
+  value: AccessKeyDetail;
+  compact?: boolean;
+}) {
+  if (compact)
+    return (
+      <>
+        <div className={styles.detailIdentity}>
+          <strong>安全编号 …{value.issue.binding.keyId.slice(-8)}</strong>
+          <span>{keyStatus(value)}</span>
+        </div>
+        <p>有效至 {time(value.issue.expiresAt)}</p>
+        <TechnicalDetails label="原操作安全记录技术标识">
+          <p>访问码编号：{value.issue.binding.keyId}</p>
+          <p>答题版本：{value.issue.binding.play.playVersionId}</p>
+        </TechnicalDetails>
+      </>
+    );
   return (
     <>
       <dl className={styles.facts}>
@@ -92,8 +113,10 @@ function KeyFacts({ value }: { value: AccessKeyDetail }) {
 }
 function EvidenceFacts({
   evidence,
+  compact = false,
 }: {
   evidence: NonNullable<StudioConsumerStateV1["evidence"]>;
+  compact?: boolean;
 }) {
   if (evidence.value.kind === "unresolved")
     return (
@@ -123,7 +146,9 @@ function EvidenceFacts({
             ? "上次访问码发放已记录"
             : "操作标识已绑定另一发放请求"}
         </h3>
-        {"key" in evidence.value && <KeyFacts value={evidence.value.key} />}
+        {"key" in evidence.value && (
+          <KeyFacts value={evidence.value.key} compact={compact} />
+        )}
       </>
     );
   return (
@@ -135,7 +160,7 @@ function EvidenceFacts({
             ? "未作废：访问码已领取"
             : "此访问码已由另一操作作废"}
       </h3>
-      <KeyFacts value={evidence.value.key} />
+      <KeyFacts value={evidence.value.key} compact={compact} />
     </>
   );
 }
@@ -167,11 +192,13 @@ function PendingPanel({
   state,
   onFinished,
   requireSecretSave = false,
+  surfaceId,
 }: {
   controller: StudioConsumerControllerV1;
   state: StudioConsumerStateV1;
   onFinished?: (() => void) | undefined;
   requireSecretSave?: boolean;
+  surfaceId?: "play" | "issue" | "void";
 }) {
   const [acknowledged, setAcknowledged] = useState(false);
   const [disclosed, setDisclosed] = useState(false);
@@ -208,34 +235,36 @@ function PendingPanel({
     }, "exported");
     if (controller.getSnapshot().notice === "exported") setDisclosed(true);
   }
-  return (
-    <section className={styles.panel} aria-label="答题内测原操作核对">
-      <h2>当前标签页保留的原操作</h2>
-      <p>
-        {pending.kind === "play"
-          ? "创建内测版本"
-          : pending.kind === "issue"
-            ? "发放访问码"
-            : "未领取作废"}{" "}
-        · {pending.mayHaveBeenSent ? "可能已发送" : "发送前已保存"}
-      </p>
-      {pending.kind === "issue" && (
-        <p>
-          {pending.hasRaw
-            ? "原文只保管在当前标签页，核实原发放后可显式复制或下载私密链接。服务器不能恢复原文。"
-            : "原文已不在当前标签页，不能恢复私密链接或再次发送原操作发放。仍可查询上次操作结果。"}
-        </p>
-      )}
-      {evidence && <EvidenceFacts evidence={evidence} />}
-      <div className={styles.actions}>
-        <button
-          disabled={!active}
-          onClick={() => {
-            void controller.recover();
-          }}
-        >
-          查询上次操作结果
-        </button>
+  const finishAction = (
+    <button
+      className={surfaceId ? styles.primaryButton : undefined}
+      disabled={!active || !acknowledged || (mustSave && !disclosed)}
+      onClick={() => {
+        void controller.finish().then(() => {
+          if (
+            controller.getSnapshot().phase === "ready" &&
+            !controller.getSnapshot().pending
+          )
+            onFinished?.();
+        });
+      }}
+    >
+      确认结束并清除当前标签页记录
+    </button>
+  );
+  const resultActions = (
+    <>
+      <div className={`${styles.page} ${styles.footerActions}`}>
+        {(!surfaceId || !terminal) && (
+          <button
+            disabled={!active}
+            onClick={() => {
+              void controller.recover();
+            }}
+          >
+            查询上次操作结果
+          </button>
+        )}
         {!terminal &&
           operator &&
           (pending.kind !== "issue" || pending.hasRaw) && (
@@ -269,7 +298,44 @@ function PendingPanel({
           </>
         )}
       </div>
-      {mustSave && !disclosed && (
+      {surfaceId && terminal && finishAction}
+    </>
+  );
+  return (
+    <section
+      className={surfaceId ? styles.resultStage : styles.panel}
+      aria-label="答题内测原操作核对"
+    >
+      {!surfaceId && <h2>当前标签页保留的原操作</h2>}
+      <p>
+        {pending.kind === "play"
+          ? "创建内测版本"
+          : pending.kind === "issue"
+            ? "发放访问码"
+            : "未领取作废"}{" "}
+        ·{" "}
+        {terminal
+          ? "已取得服务器处理结果"
+          : pending.mayHaveBeenSent
+            ? "可能已发送"
+            : "发送前已保存"}
+      </p>
+      {pending.kind === "issue" && (!surfaceId || !terminal) && (
+        <p>
+          {pending.hasRaw
+            ? "原文只保管在当前标签页，核实原发放后可显式复制或下载私密链接。服务器不能恢复原文。"
+            : "原文已不在当前标签页，不能恢复私密链接或再次发送原操作发放。仍可查询上次操作结果。"}
+        </p>
+      )}
+      {evidence && <EvidenceFacts evidence={evidence} compact={!!surfaceId} />}
+      {surfaceId ? (
+        <RetainedTaskActions id={surfaceId}>
+          {resultActions}
+        </RetainedTaskActions>
+      ) : (
+        resultActions
+      )}
+      {mustSave && !disclosed && !surfaceId && (
         <p role="status">
           请先通过本次原操作复制或下载私密链接并妥善保存，再核对结束。
         </p>
@@ -302,20 +368,7 @@ function PendingPanel({
                 ? "清除后不能再次恢复私密链接，请先妥善保存。"
                 : "清除后会移除当前标签页保管的原文，服务器结果保持不变。")}
           </label>
-          <button
-            disabled={!active || !acknowledged || (mustSave && !disclosed)}
-            onClick={() => {
-              void controller.finish().then(() => {
-                if (
-                  controller.getSnapshot().phase === "ready" &&
-                  !controller.getSnapshot().pending
-                )
-                  onFinished?.();
-              });
-            }}
-          >
-            确认结束并清除当前标签页记录
-          </button>
+          {!surfaceId && finishAction}
         </div>
       )}
     </section>
@@ -328,6 +381,7 @@ export function StudioConsumerAccessPageV1({
   visible = true,
   onChanged,
   workspaceAuthority,
+  onGoToReview,
 }: {
   scope: StudioConsumerScopeV1;
   renderer: ConsumerRendererIdentity;
@@ -335,6 +389,7 @@ export function StudioConsumerAccessPageV1({
   visible?: boolean;
   onChanged?: (() => void) | undefined;
   workspaceAuthority?: InternalProductAuthority | undefined;
+  onGoToReview?: (() => void) | undefined;
 }) {
   const [controller] = useState(
     () =>
@@ -418,6 +473,7 @@ export function StudioConsumerAccessPageV1({
         setDuration={setDuration}
         voidId={voidId}
         setVoidId={setVoidId}
+        onGoToReview={onGoToReview}
       />
     );
   return (
@@ -727,6 +783,7 @@ type ConsumerTaskProps = {
   setDuration: Dispatch<SetStateAction<number>>;
   voidId: string | null;
   setVoidId: Dispatch<SetStateAction<string | null>>;
+  onGoToReview?: (() => void) | undefined;
 };
 /** The controller and all form selections live outside retained portal surfaces. */
 function ConsumerTaskView({
@@ -741,6 +798,7 @@ function ConsumerTaskView({
   setDuration,
   voidId,
   setVoidId,
+  onGoToReview,
 }: ConsumerTaskProps) {
   const surfaces = useWorkspaceSurfaces();
   const authority = useInternalAuthority();
@@ -808,6 +866,7 @@ function ConsumerTaskView({
         controller={controller}
         state={state}
         requireSecretSave
+        surfaceId={id}
         onFinished={() => {
           const latest = controller.getSnapshot();
           if (latest.phase !== "ready" || latest.pending) return;
@@ -834,6 +893,7 @@ function ConsumerTaskView({
               创建答题版本
             </button>
             <button
+              className={styles.primaryButton}
               disabled={!canWrite || !ready || !state.plays.length}
               onClick={() => open("issue")}
             >
@@ -866,34 +926,130 @@ function ConsumerTaskView({
             当前只读，可查看安全记录及查询原请求，不能创建、发放、作废或复制私密链接。
           </p>
         )}
+        {(ready ||
+          (state.phase === "pending" && state.notice !== "unavailable")) && (
+          <div className={styles.readStats} aria-label="本次读取范围">
+            <div>
+              <span>已读答题版本</span>
+              <strong>{state.plays.length}</strong>
+            </div>
+            <div>
+              <span>本页访问码记录</span>
+              <strong>{state.keys.length}</strong>
+            </div>
+            <div>
+              <span>本页已完成记录</span>
+              <strong>
+                {
+                  state.keys.filter((key) => key.current.completion !== null)
+                    .length
+                }
+              </strong>
+            </div>
+          </div>
+        )}
         <section className={styles.panel}>
           <div className={styles.embeddedHeading}>
-            <h3>访问码安全记录</h3>
+            <div>
+              <h3>已发放访问码</h3>
+              <p>只显示安全元数据，不能从历史记录恢复私密原链接。</p>
+            </div>
             <button
               disabled={working || !!state.pending}
               onClick={() => void controller.refresh()}
             >
-              重新读取与核对身份
+              刷新记录
             </button>
           </div>
-          <p>
-            此页为有界安全记录，不含原始私密链接；空页不能证明某次发放未执行。
-          </p>
-          <ul className={styles.recordList}>
-            {state.keys.map((key) => (
-              <li key={key.issue.binding.keyId}>
-                <div>
-                  <strong>{keyStatus(key)}</strong>
-                  <p>安全编号：{key.issue.binding.keyId}</p>
-                  <time dateTime={key.issue.issuedAt}>
-                    发放于 {time(key.issue.issuedAt)}
-                  </time>
-                </div>
-                <button onClick={() => inspect(key)}>查看安全详情</button>
-              </li>
-            ))}
+          <div className={styles.safeTableWrap}>
+            <table className={styles.safeTable}>
+              <caption>本次读取的访问码记录，不代表全量统计</caption>
+              <thead>
+                <tr>
+                  <th>安全编号</th>
+                  <th>答题版本</th>
+                  <th>使用状态</th>
+                  <th>发放时间</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                {state.keys.map((key) => {
+                  const play = state.plays.find(
+                    (play) => play.id === key.issue.binding.play.playVersionId,
+                  );
+                  return (
+                    <tr key={key.issue.binding.keyId}>
+                      <td>
+                        <span
+                          className={styles.safeId}
+                          title={key.issue.binding.keyId}
+                        >
+                          …{key.issue.binding.keyId.slice(-8)}
+                        </span>
+                      </td>
+                      <td>{play ? `答题版本 #${play.slot}` : "版本需核实"}</td>
+                      <td>
+                        <span
+                          className={`${styles.statusTag} ${key.current.completion ? styles.completeTag : key.current.voidReceipt ? styles.voidTag : key.current.claim ? styles.claimedTag : ""}`}
+                        >
+                          {keyStatus(key)}
+                        </span>
+                      </td>
+                      <td>
+                        <time dateTime={key.issue.issuedAt}>
+                          {time(key.issue.issuedAt)}
+                        </time>
+                      </td>
+                      <td>
+                        <button onClick={() => inspect(key)}>查看详情</button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          <ul className={styles.mobileKeys}>
+            {state.keys.map((key) => {
+              const play = state.plays.find(
+                (play) => play.id === key.issue.binding.play.playVersionId,
+              );
+              return (
+                <li key={key.issue.binding.keyId}>
+                  <div className={styles.embeddedHeading}>
+                    <strong>
+                      安全编号 …{key.issue.binding.keyId.slice(-8)}
+                    </strong>
+                    <span className={styles.statusTag}>{keyStatus(key)}</span>
+                  </div>
+                  <p>
+                    {play ? `答题版本 #${play.slot}` : "版本需核实"} ·{" "}
+                    {time(key.issue.issuedAt)}
+                  </p>
+                  <button onClick={() => inspect(key)}>查看详情</button>
+                </li>
+              );
+            })}
           </ul>
-          {ready && !state.keys.length && <p>此次读取没有访问码记录。</p>}
+          {ready && !state.keys.length && (
+            <div className={styles.empty}>
+              <h3>还没有本次可见的访问码记录</h3>
+              <p>
+                {state.plays.length
+                  ? "可基于已有答题版本明确发放一枚测试码。"
+                  : "先选择固定内测内容，创建答题版本后再发码。"}
+              </p>
+              {canWrite && (
+                <button
+                  className={styles.primaryButton}
+                  onClick={() => open(state.plays.length ? "issue" : "play")}
+                >
+                  {state.plays.length ? "开始发放访问码" : "开始创建答题版本"}
+                </button>
+              )}
+            </div>
+          )}
           {state.nextCursor && (
             <button
               disabled={!["ready", "pending"].includes(state.phase) || working}
@@ -902,129 +1058,143 @@ function ConsumerTaskView({
               读取下一页访问码
             </button>
           )}
-        </section>
-        <section className={styles.panel}>
-          <h3>已有答题版本</h3>
-          <ul className={styles.recordList}>
-            {state.plays.map((play) => {
-              const parent = state.versions.find(
-                (version) =>
-                  version.id === play.binding.parent.versionId &&
-                  version.snapshotSha256 === play.binding.parent.snapshotSha256,
-              );
-              return (
-                <li key={play.id}>
-                  <div>
-                    <strong>答题第 {play.slot} 版</strong>
-                    <p>
-                      {parent
-                        ? `来源修订 r${parent.target.revision} · 固定内容第 ${parent.slot} 版`
-                        : "来源版本需核实"}
-                    </p>
-                    <time dateTime={play.createdAt}>
-                      {time(play.createdAt)}
-                    </time>
-                  </div>
-                  <button
-                    disabled={!canWrite || !ready}
-                    onClick={() => {
-                      if (!surfaces.canSwitch()) return;
-                      setPlayId(play.id);
-                      open("issue");
-                    }}
-                  >
-                    为此版本发码
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-          {ready && !state.plays.length && (
-            <p>尚无答题版本。固定内容版本不会自动变为答题版本。</p>
-          )}
+          <p className={styles.rangeNote}>
+            本页 {state.keys.length} 条 ·
+            完成数仅来自本页返回记录，不是全量参与统计。
+          </p>
+          <section className={styles.playSection}>
+            <h3>已有答题版本</h3>
+            <ul className={styles.recordList}>
+              {state.plays.map((play) => {
+                const parent = state.versions.find(
+                  (version) =>
+                    version.id === play.binding.parent.versionId &&
+                    version.snapshotSha256 ===
+                      play.binding.parent.snapshotSha256,
+                );
+                return (
+                  <li key={play.id}>
+                    <div>
+                      <strong>答题第 {play.slot} 版</strong>
+                      <p>
+                        {parent
+                          ? `来源修订 r${parent.target.revision} · 固定内容第 ${parent.slot} 版`
+                          : "来源版本需核实"}
+                      </p>
+                      <time dateTime={play.createdAt}>
+                        {time(play.createdAt)}
+                      </time>
+                    </div>
+                    <button
+                      disabled={!canWrite || !ready}
+                      onClick={() => {
+                        if (!surfaces.canSwitch()) return;
+                        setPlayId(play.id);
+                        open("issue");
+                      }}
+                    >
+                      为此版本发码
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+            {ready && !state.plays.length && (
+              <p>尚无答题版本。固定内容版本不会自动变为答题版本。</p>
+            )}
+          </section>
         </section>
       </div>
       <RetainedTaskSurface id="play">
         <div className={styles.page}>
-          <h3>创建真实答题版本</h3>
-          <p>明确选择已固定的内容，新答题版本不随后续草稿变化。</p>
-          <fieldset className={styles.form} disabled={!canWrite || !ready}>
-            <label>
-              固定内测内容版本
-              <select
-                value={versionId}
-                onChange={(event) => setVersionId(event.target.value)}
-              >
-                <option value="">请选择固定内测内容版本</option>
-                {state.versions.map((version) => (
-                  <option value={version.id} key={version.id}>
-                    第 {version.slot} 版 · 来源修订 r{version.target.revision}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <button
-              disabled={
-                !state.versions.some((version) => version.id === versionId)
-              }
-              onClick={() => {
-                setAction("play");
-                void controller.createPlay(versionId);
-              }}
-            >
-              确认创建答题版本
-            </button>
-          </fieldset>
-          {!state.versions.length && (
-            <p>
-              没有可靠读取的固定内容版本，不能创建。请先核对已有审核依据与封存条件。
+          <div hidden={state.pending?.kind === "play"}>
+            <p className={styles.taskIntro}>
+              选择已固定的内容，生成独立的答题版本。后续草稿不会改变它。
             </p>
-          )}
+            <fieldset className={styles.form} disabled={!canWrite || !ready}>
+              <label>
+                固定内测内容版本
+                <select
+                  value={versionId}
+                  onChange={(event) => setVersionId(event.target.value)}
+                >
+                  <option value="">请选择固定内测内容版本</option>
+                  {state.versions.map((version) => (
+                    <option value={version.id} key={version.id}>
+                      第 {version.slot} 版 · 来源修订 r{version.target.revision}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </fieldset>
+            {!state.versions.length && (
+              <div className={styles.notice}>
+                <p>尚无可靠读取的固定内容版本。请先核对审核依据与固定条件。</p>
+                {onGoToReview && (
+                  <button
+                    onClick={() => {
+                      if (surfaces.canSwitch()) onGoToReview();
+                    }}
+                  >
+                    前往审核与版本
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
           {original("play")}
         </div>
+        <RetainedTaskActions id="play" visible={!state.pending}>
+          <button
+            className={styles.primaryButton}
+            disabled={
+              !canWrite ||
+              !ready ||
+              !state.versions.some((version) => version.id === versionId)
+            }
+            onClick={() => {
+              setAction("play");
+              void controller.createPlay(versionId);
+            }}
+          >
+            确认创建答题版本
+          </button>
+        </RetainedTaskActions>
       </RetainedTaskSurface>
       <RetainedTaskSurface id="issue">
         <div className={styles.page}>
-          <h3>发放一枚内测访问码</h3>
-          <p>
-            原始私密链接只由当前标签页保管，不能从服务器记录中找回。有效期由首次真实发放起算。
-          </p>
-          <fieldset className={styles.form} disabled={!canWrite || !ready}>
-            <label>
-              答题版本
-              <select
-                value={playId}
-                onChange={(event) => setPlayId(event.target.value)}
-              >
-                <option value="">请选择答题版本</option>
-                {state.plays.map((play) => (
-                  <option value={play.id} key={play.id}>
-                    答题第 {play.slot} 版 · {time(play.createdAt)}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              答题有效期
-              <select
-                value={duration}
-                onChange={(event) => setDuration(Number(event.target.value))}
-              >
-                <option value={86400}>1 天</option>
-                <option value={604800}>7 天</option>
-                <option value={2592000}>30 天</option>
-              </select>
-            </label>
-            <button
-              disabled={!state.plays.some((play) => play.id === playId)}
-              onClick={() => {
-                setAction("issue");
-                void controller.issueKey(playId, duration);
-              }}
-            >
-              确认生成并发放一枚访问码
-            </button>
-          </fieldset>
+          <div hidden={state.pending?.kind === "issue"}>
+            <fieldset className={styles.form} disabled={!canWrite || !ready}>
+              <label>
+                答题版本
+                <select
+                  value={playId}
+                  onChange={(event) => setPlayId(event.target.value)}
+                >
+                  <option value="">请选择答题版本</option>
+                  {state.plays.map((play) => (
+                    <option value={play.id} key={play.id}>
+                      答题第 {play.slot} 版 · {time(play.createdAt)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                答题有效期
+                <select
+                  value={duration}
+                  onChange={(event) => setDuration(Number(event.target.value))}
+                >
+                  <option value={86400}>1 天</option>
+                  <option value={604800}>7 天</option>
+                  <option value={2592000}>30 天</option>
+                </select>
+              </label>
+            </fieldset>
+            <p className={styles.notice}>
+              一次发放一枚访问码。私密链接只由当前标签页保管；发放后请复制或下载保存，服务器不能找回。
+            </p>
+          </div>
           {original("issue")}
           {state.notice === "copied" && (
             <p role="status">私密链接已复制，请妥善保存。</p>
@@ -1033,21 +1203,94 @@ function ConsumerTaskView({
             <p role="status">已触发下载，请确认文件已妥善保存。</p>
           )}
         </div>
+        <RetainedTaskActions id="issue" visible={!state.pending}>
+          <button
+            className={styles.primaryButton}
+            disabled={
+              !canWrite ||
+              !ready ||
+              !state.plays.some((play) => play.id === playId)
+            }
+            onClick={() => {
+              setAction("issue");
+              void controller.issueKey(playId, duration);
+            }}
+          >
+            确认生成并发放一枚访问码
+          </button>
+        </RetainedTaskActions>
       </RetainedTaskSurface>
       <RetainedTaskSurface id="key">
         <div className={styles.page}>
           {keyDetail && (
             <>
-              <h3>访问码安全详情</h3>
-              <KeyFacts value={keyDetail} />
-              <p>
-                状态观察于 {time(keyDetail.current.observedAt)}
-                ，提交时仍会重新核对。这里不含原始私密链接。
-              </p>
+              <div className={styles.detailIdentity}>
+                <strong>
+                  安全编号 …{keyDetail.issue.binding.keyId.slice(-8)}
+                </strong>
+                <span className={styles.statusTag}>{keyStatus(keyDetail)}</span>
+              </div>
+              <section className={styles.detailSection}>
+                <h3>所属答题内容</h3>
+                <p>
+                  {(() => {
+                    const play = state.plays.find(
+                      (item) =>
+                        item.id === keyDetail.issue.binding.play.playVersionId,
+                    );
+                    const parent =
+                      play &&
+                      state.versions.find(
+                        (version) =>
+                          version.id === play.binding.parent.versionId &&
+                          version.snapshotSha256 ===
+                            play.binding.parent.snapshotSha256,
+                      );
+                    return play
+                      ? `答题版本 #${play.slot}${parent ? ` · 来源修订 r${parent.target.revision}` : " · 来源版本需核实"}`
+                      : "此页未读取到对应答题版本，完整绑定可在下方核对。";
+                  })()}
+                </p>
+              </section>
+              <section className={styles.detailSection}>
+                <h3>发放与期限</h3>
+                <dl className={styles.facts}>
+                  <div>
+                    <dt>发放时间</dt>
+                    <dd>{time(keyDetail.issue.issuedAt)}</dd>
+                  </div>
+                  <div>
+                    <dt>答题期限</dt>
+                    <dd>{time(keyDetail.issue.expiresAt)}</dd>
+                  </div>
+                </dl>
+              </section>
+              <section className={styles.detailSection}>
+                <h3>当前可用情况</h3>
+                <p>
+                  {keyDetail.current.completion
+                    ? "已完成，原私密链接只读同一份报告。"
+                    : keyDetail.current.voidReceipt
+                      ? "已作废，不能再领取。"
+                      : keyDetail.current.claim
+                        ? "已领取，不能按未领取作废。"
+                        : "尚未领取，提交作废时服务器会再次核对。"}
+                </p>
+                <p className={styles.boundary}>
+                  观察于 {time(keyDetail.current.observedAt)}
+                  ；此安全详情不含私密链接原文。
+                </p>
+              </section>
+              <TechnicalDetails label="安全记录完整技术标识">
+                <p>访问码编号：{keyDetail.issue.binding.keyId}</p>
+                <p>商品：{keyDetail.issue.binding.play.productId}</p>
+                <p>答题版本：{keyDetail.issue.binding.play.playVersionId}</p>
+              </TechnicalDetails>
               {canWrite &&
                 !keyDetail.current.claim &&
                 !keyDetail.current.voidReceipt && (
                   <button
+                    className={styles.dangerButton}
                     onClick={() => {
                       if (!surfaces.canSwitch()) return;
                       setVoidId(keyDetail.issue.binding.keyId);
@@ -1063,26 +1306,32 @@ function ConsumerTaskView({
       </RetainedTaskSurface>
       <RetainedTaskSurface id="void">
         <div className={styles.page}>
-          <h3>确认未领取作废</h3>
-          <p>目标安全编号：{voidId ?? "未选择"}</p>
-          <p>
-            作废后无法再领取答题；服务器会在提交时再次检查，已领取或已完成的记录不能按未领取作废。
-          </p>
-          <div className={styles.actions}>
-            <button
-              disabled={!canWrite || !ready || !voidId}
-              onClick={() => {
-                if (!voidId) return;
-                setAction("void");
-                void controller.voidKey(voidId);
-              }}
-            >
-              确认作废未领取访问码
-            </button>
-            <button onClick={() => surfaces.close()}>保留此访问码</button>
+          <div hidden={state.pending?.kind === "void"}>
+            <div className={styles.notice}>
+              <strong>安全编号 …{voidId?.slice(-8) ?? "未选择"}</strong>
+              <p>
+                作废后无法再领取答题。服务器会再次检查；已领取或已完成的记录不能按未领取作废。
+              </p>
+              <TechnicalDetails label="目标安全记录完整编号">
+                <p>{voidId ?? "未选择"}</p>
+              </TechnicalDetails>
+            </div>
           </div>
           {original("void")}
         </div>
+        <RetainedTaskActions id="void" visible={!state.pending}>
+          <button
+            className={styles.dangerButton}
+            disabled={!canWrite || !ready || !voidId}
+            onClick={() => {
+              if (!voidId) return;
+              setAction("void");
+              void controller.voidKey(voidId);
+            }}
+          >
+            确认作废未领取访问码
+          </button>
+        </RetainedTaskActions>
       </RetainedTaskSurface>
     </>
   );

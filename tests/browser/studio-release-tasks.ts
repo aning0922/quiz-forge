@@ -27,6 +27,8 @@ const out = path.resolve(".cache/studio-release-tasks", String(Date.now()));
 await mkdir(out, { recursive: true, mode: 0o700 });
 const consumer = await internalPlayFixture();
 const review = await fixture();
+const parity = process.argv.includes("--parity-main");
+const receiptsOnly = process.argv.includes("--receipts-only");
 const productId = consumer.content.product.productId;
 const issuerId = testUuid(7);
 const session = {
@@ -64,11 +66,14 @@ import {InternalAuthorityProvider,useInternalAuthority} from '@/features/studio/
 import {ProductTaskSurfaces,useWorkspaceSurfaces} from '@/features/studio/product-workspace/task-surfaces';
 import {ReviewWorkbench} from '@/features/studio/product-workspace/review-workbench';
 import {StudioClientError} from '@/features/studio/client';
+import {VersionReceiptFacts} from '@/features/studio/internal-versions/facts';
+import {InternalEvidenceFacts} from '@/features/studio/internal-versions/pending-panel';
 const input=JSON.parse(document.querySelector('#fixture').textContent);
 function Body(){const authority=useInternalAuthority();const surfaces=useWorkspaceSurfaces();const [current,setCurrent]=useState(input.target);const [visible,setVisible]=useState(true);
+if(input.receipts){const actions={onOpenVersion:id=>{document.querySelector('#result').textContent='version:'+id},onGoToTesting:()=>{document.querySelector('#result').textContent='testing'}};return <><output id="result"/>{input.receipts.map((item,index)=><section data-receipt-case={index} key={index}>{index===0?<VersionReceiptFacts version={item} actions={actions}/>:<InternalEvidenceFacts evidence={item} receiptActions={actions}/>}</section>)}</>}
 window.revokeWorkspace=()=>authority.observe(new StudioClientError('UNAUTHENTICATED'));
 if(input.revoked&&!authority.isRevoked) window.revokeWorkspace();
-return <><button onClick={()=>{if(surfaces.canSwitch())setVisible(!visible)}}>切换主区域</button><button onClick={()=>setCurrent(input.nextTarget)}>模拟新摘要</button>
+return <><div hidden={input.parity}><button onClick={()=>{if(surfaces.canSwitch())setVisible(!visible)}}>切换主区域</button><button onClick={()=>setCurrent(input.nextTarget)}>模拟新摘要</button></div>
 {input.review?<ReviewWorkbench productId={input.productId} session={input.session} currentTarget={current} visible={visible} onChanged={()=>{}}/>:<StudioConsumerAccessPageV1 scope={input.scope} renderer={input.renderer} embedded visible={visible} workspaceAuthority={authority}/>}</>}
 createRoot(document.getElementById('root')).render(<InternalAuthorityProvider productId={input.productId}><ProductTaskSurfaces><Body/></ProductTaskSurfaces></InternalAuthorityProvider>);
 `,
@@ -121,6 +126,56 @@ let origin = "",
   releaseIssue: (() => void) | undefined;
 let issueReached = () => {};
 const keys: AccessKeyDetail[] = [];
+if (parity) {
+  for (const index of [0, 1]) {
+    const issueBinding = issueAccessKeyBindingSchema.parse({
+      schemaVersion: "quizforge.access-key-issue.v1",
+      operationKey: testUuid(200 + index),
+      keyId: testUuid(300 + index),
+      play: {
+        productId,
+        playVersionId: consumer.play.play.id,
+        playSnapshotSha256: consumer.play.play.snapshotSha256,
+      },
+      credentialDigest: "a".repeat(64),
+      validForSeconds: 604800,
+    });
+    keys.push({
+      issue: {
+        schemaVersion: "quizforge.access-key-issue-receipt.v1",
+        binding: issueBinding,
+        bindingSha256: await issueAccessKeyBindingSha256(issueBinding),
+        issuedBy: issuerId,
+        issuedAt: testMoment,
+        expiresAt: new Date(Date.parse(testMoment) + 604800000).toISOString(),
+      },
+      current: {
+        observedAt: testMoment,
+        claim: index
+          ? { sessionId: testUuid(400), claimedAt: testMoment }
+          : null,
+        completion: null,
+        voidReceipt: null,
+      },
+    });
+  }
+}
+const reviewVersion = {
+  id: review.version.id,
+  productId: binding.productId,
+  slot: review.version.slot,
+  target: review.snapshot.target,
+  reviewId: review.snapshot.reviewId,
+  reviewSha256: review.snapshot.reviewSha256,
+  snapshotSha256: review.version.snapshotSha256,
+  renderer: review.snapshot.renderer,
+  rendererCapability: review.snapshot.rendererCapability,
+  engine: review.snapshot.engine,
+  purpose: review.version.purpose,
+  publicationApproved: review.version.publicationApproved,
+  createdAt: review.version.createdAt,
+  createdBy: review.version.createdBy,
+};
 const revisionReads: number[] = [];
 const nextTarget = {
   ...target,
@@ -235,7 +290,11 @@ const server = createServer(async (req, res) => {
           productId: url.pathname.includes(binding.productId)
             ? binding.productId
             : productId,
-          versions: url.pathname.includes(binding.productId) ? [] : [version],
+          versions: url.pathname.includes(binding.productId)
+            ? parity
+              ? [reviewVersion]
+              : []
+            : [version],
         },
       });
       return;
@@ -273,15 +332,32 @@ const server = createServer(async (req, res) => {
       review: isReview,
       revoked: url.searchParams.has("revoked"),
       productId: isReview ? binding.productId : productId,
-      target,
+      target: parity && isReview ? nextTarget : target,
       nextTarget,
+      parity,
+      receipts: url.searchParams.has("receipts")
+        ? [
+            review.version,
+            {
+              operation: "seal",
+              value: { kind: "sealed", version: review.version },
+            },
+            {
+              operation: "seal",
+              value: {
+                kind: "not-sealed-target-used",
+                consumed: review.version,
+              },
+            },
+          ]
+        : undefined,
       session,
       scope: { origin, instanceId: "a".repeat(32), issuerId, productId },
       renderer: CONSUMER_IMPLEMENTATION_AVAILABILITY.rendererV1,
     };
     res.writeHead(200, { "content-type": "text/html;charset=utf-8" });
     res.end(
-      `<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/probe.css"><style>*{box-sizing:border-box}body{font:16px/1.6 system-ui;margin:16px;background:#f5f6fa}button{font:inherit;min-height:44px}</style><div id="root"></div><script id="fixture" type="application/json">${JSON.stringify(input).replaceAll("<", "\\u003c")}</script><script src="/probe.js"></script>`,
+      `<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/probe.css"><style>*{box-sizing:border-box}body{font:16px/1.6 system-ui;margin:16px auto;max-width:1160px;padding:0 12px;background:#f5f6fa}button{font:inherit;min-height:44px}</style><div id="root"></div><script id="fixture" type="application/json">${JSON.stringify(input).replaceAll("<", "\\u003c")}</script><script src="/probe.js"></script>`,
     );
   } catch {
     res.writeHead(500);
@@ -356,6 +432,8 @@ try {
     }
   }
   if (
+    !parity &&
+    !receiptsOnly &&
     !process.argv.includes("--review-only") &&
     !process.argv.includes("--terminal-only")
   ) {
@@ -403,10 +481,24 @@ try {
       .getByRole("dialog")
       .getByRole("combobox", { name: /^答题版本/ })
       .selectOption(consumer.play.play.id);
+    await page.screenshot({
+      path: path.join(out, "issue-form-1440.png"),
+      fullPage: true,
+    });
+    await page.setViewportSize({ width: 390, height: 900 });
+    await page.screenshot({
+      path: path.join(out, "issue-form-390.png"),
+      fullPage: true,
+    });
+    await page.setViewportSize({ width: 1440, height: 900 });
     await page
       .getByRole("button", { name: "确认生成并发放一枚访问码" })
       .click();
     await reached;
+    await page.screenshot({
+      path: path.join(out, "issue-busy-1440.png"),
+      fullPage: true,
+    });
     await page.getByRole("button", { name: "关闭当前浮层" }).click();
     await expect(page.getByRole("dialog")).toBeVisible();
     releaseIssue?.();
@@ -415,6 +507,16 @@ try {
     ).toBeEnabled();
     await page.getByRole("button", { name: "关闭当前浮层" }).click();
     await expect(page.getByRole("dialog")).toBeVisible();
+    await page.screenshot({
+      path: path.join(out, "issue-result-1440.png"),
+      fullPage: true,
+    });
+    await page.setViewportSize({ width: 390, height: 900 });
+    await page.screenshot({
+      path: path.join(out, "issue-result-390.png"),
+      fullPage: true,
+    });
+    await page.setViewportSize({ width: 1440, height: 900 });
     await page.getByRole("checkbox").check();
     await expect(
       page.getByRole("button", { name: "确认结束并清除当前标签页记录" }),
@@ -470,7 +572,10 @@ try {
       "UNKNOWN unresolved preserves original issue and never sends replacement",
     );
     await page.setViewportSize({ width: 390, height: 900 });
-    await page.getByRole("button", { name: "查看安全详情" }).first().click();
+    await page
+      .getByRole("button", { name: "查看详情", exact: true })
+      .first()
+      .click();
     expect(
       await page.evaluate(
         () => document.documentElement.scrollWidth <= innerWidth,
@@ -483,7 +588,25 @@ try {
       path: path.join(out, "safe-key-390.png"),
       fullPage: true,
     });
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.screenshot({
+      path: path.join(out, "safe-key-1440.png"),
+      fullPage: true,
+    });
+    await page.getByRole("button", { name: "作废此未领取访问码" }).click();
+    await expect(page.getByRole("dialog")).toHaveCount(1);
+    await expect(
+      page.getByRole("button", { name: "确认作废未领取访问码", exact: true }),
+    ).toBeEnabled();
+    await page.setViewportSize({ width: 390, height: 900 });
+    await page.screenshot({
+      path: path.join(out, "void-task-390.png"),
+      fullPage: true,
+    });
     await page.getByRole("button", { name: "关闭当前浮层" }).click();
+    results.push(
+      "safe Key drawer switches to a single void task with no nested dialog",
+    );
     const late = await browser.newPage();
     late.on("pageerror", (error) => errors.push(error.message));
     await late.goto(origin);
@@ -530,21 +653,38 @@ try {
     results.push("initial shared revocation performs no controller refresh");
     await initial.close();
   }
-  if (!process.argv.includes("--terminal-only")) {
+  if (
+    !parity &&
+    !receiptsOnly &&
+    !process.argv.includes("--consumer-only") &&
+    !process.argv.includes("--terminal-only")
+  ) {
     const reviewPage = await browser.newPage();
     reviewPage.setDefaultTimeout(7000);
     reviewPage.on("pageerror", (error) => errors.push(error.message));
     await reviewPage.goto(origin + "/?review");
     await expect(
-      reviewPage.getByText("此目标已有记录", { exact: false }),
+      reviewPage.getByText("精确匹配的合成测试依据，不表示作者批准。", {
+        exact: true,
+      }),
     ).toBeVisible();
     await reviewPage
-      .getByRole("button", { name: "核对并固定内测内容" })
+      .getByRole("button", { name: "固定内测内容版本", exact: true })
       .click();
-    const rendererSelect = reviewPage
-      .getByRole("dialog")
-      .getByRole("combobox", { name: /^内测预览样式/ });
+    const rendererSelect = reviewPage.locator(
+      '[data-task-surface="review"] select',
+    );
     await rendererSelect.selectOption(renderer.entrySha256);
+    await reviewPage.screenshot({
+      path: path.join(out, "review-task-1440.png"),
+      fullPage: true,
+    });
+    await reviewPage.setViewportSize({ width: 390, height: 900 });
+    await reviewPage.screenshot({
+      path: path.join(out, "review-task-390.png"),
+      fullPage: true,
+    });
+    await reviewPage.setViewportSize({ width: 1280, height: 720 });
     await rendererSelect.evaluate((element) => {
       (window as Window & { rendererSelect?: Element }).rendererSelect =
         element;
@@ -562,7 +702,7 @@ try {
     ).toBeVisible();
     expect(revisionReads).not.toContain(3);
     await reviewPage
-      .getByRole("button", { name: "核对并固定内测内容" })
+      .getByRole("button", { name: "继续原审核与封存任务", exact: true })
       .click();
     expect(
       await rendererSelect.evaluate(
@@ -580,7 +720,7 @@ try {
     await reviewPage.getByRole("button", { name: "关闭当前浮层" }).click();
     await reviewPage.getByRole("button", { name: "明确改为核对 r3" }).click();
     await expect(
-      reviewPage.getByText("没有可直接使用的匹配依据，不能代为批准", {
+      reviewPage.getByText("r3 没有可直接使用的匹配依据，历史批准不能沿用。", {
         exact: false,
       }),
     ).toBeVisible();
@@ -588,6 +728,58 @@ try {
     results.push(
       "review confirmation/DOM remains r2 across summary r3; only explicit target switch reads r3",
     );
+  }
+  if (receiptsOnly) {
+    const page = await browser.newPage();
+    page.on("pageerror", (error) => errors.push(error.message));
+    await page.goto(origin + "/?receipts");
+    for (let index = 0; index < 3; index++) {
+      const card = page.locator(`[data-receipt-case="${index}"]`);
+      await expect(card.locator("a")).toHaveCount(0);
+      await card.getByRole("button", { name: "阅读固定内测内容版本" }).click();
+      await expect(page.locator("#result")).toHaveText(
+        "version:" + review.version.id,
+      );
+      await card.getByRole("button", { name: "创建答题版本与发码" }).click();
+      await expect(page.locator("#result")).toHaveText("testing");
+    }
+    results.push(
+      "new seal / resolved seal / target-used receipt buttons invoke local version and testing callbacks with no legacy anchors",
+    );
+    await page.close();
+  }
+  if (parity) {
+    for (const view of ["review", "testing"]) {
+      const page = await browser.newPage({
+        viewport: { width: 1440, height: 1000 },
+      });
+      page.on("pageerror", (error) => errors.push(error.message));
+      await page.goto(origin + (view === "review" ? "/?review" : "/"));
+      await expect(
+        page.getByRole("button", {
+          name: view === "review" ? "历史固定版本" : "发放访问码",
+          exact: true,
+        }),
+      ).toBeEnabled();
+      if (view === "review")
+        await expect(
+          page.getByText("内测内容版本 #1", { exact: true }),
+        ).toBeVisible();
+      else await expect(page.getByRole("table")).toBeVisible();
+      await page.screenshot({
+        path: path.join(out, view + "-main-1440.png"),
+        fullPage: true,
+      });
+      await page.setViewportSize({ width: 390, height: 900 });
+      await page.screenshot({
+        path: path.join(out, view + "-main-390.png"),
+        fullPage: true,
+      });
+      results.push(
+        view + " actual main components captured at desktop and mobile",
+      );
+      await page.close();
+    }
   }
   expect(rawAtApi).toBe(false);
   expect(errors).toEqual([]);
