@@ -99,7 +99,9 @@ export function FixedContentInspector({
               </span>
               <span className={styles.note}>
                 包内审核声明：
-                {resource.approval === "pending" ? "待审核" : resource.approval}{" "}
+                {resource.approval === "pending"
+                  ? "待审核"
+                  : resource.approval}{" "}
                 · 版本 {resource.version}
               </span>
               <span className={styles.path}>{resource.path}</span>
