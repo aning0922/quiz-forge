@@ -1,5 +1,21 @@
 # Studio S1 / V2-A 验收记录
 
+## 2026-10-25 “更多筛选”展开修复
+
+从 PR #28 准确 `21e2ed2142c678c776b5f82b12bdfdd9b0876ba9` 接续。上一批主要图检未覆盖这个展开异常，本轮实际复现“归档状态”select 在桌面被拉高到约 262px。根因为外层两列 Grid 默认 stretch，与左侧字段自身 Grid 叠加；右侧标签区高度影响左侧 select。
+
+独立 A 的 `cb4b2f1208ecfbdfacc13755dfe62cb18a5d709c` 集成为 `1398378eb869bfff000e04e0aa1f99b0d907691a`。仅改 `catalog-filters.tsx` 的附加 class 和 `catalog-parity.module.css` 三条局部规则：顶部对齐、标签标题上间距、空已选列表隐藏。没有改共享 TaxonomyPicker、数据库、查询、权限、状态恢复或创建任务 owner。
+
+A 使用实际 ProductList/CatalogFilters/TaxonomyPicker 与合成 HTTP：默认/展开/长标签、URL 归档+标签恢复、收起重开、应用时保留归档/pageSize并回到第一页、前进后退、标签搜索不改变目录 query、清除标签及重置全部通过；只有 GET。1440 与 320/375/390/430 代表展开状态下 select 均为 44px，无横向溢出。修改文件 ESLint/格式与 diff 检查通过，既有创建 owner 证据直接复用。前后图及 `behavior-results.json` 保留在 A 工作树 `.cache/catalog-filter-fix/`。主控查看前后图，Astra 限定源码/图检/记录审查通过，未重复运行测试。
+
+新独立根 `quizforge-studio-catalog-filter-fix/quiz-forge`、分支 `codex/studio-catalog-filter-control`。为可打开的修复预览执行必要生产构建（含类型/固定实现检查），113 traces / 25700 paths / 0 私有路径违规，BUILD_ID `0w0CKGW13on8bzzj10x1X`。固定 Next 16.4.0 的既有提示中断首次构建，同命令重试通过；未改依赖或关闭保护。仅因新运行身份沿官方 media build/setup/provision 封存，outcome=sealed；deployment `18245a36fcd584471d7bdcfddff7e33bf134ed3c48aa36b8273d96a39bcc9582`，runtime bundle `323a6d18dfbe28de5f49260fb8bfcc4d4c456d07b451a2fef01ca15ca12d97bf`。
+
+生产构建+真实隔离 PG 的实际面板复核已过：1440/320/375/390/430 展开均为 44px，无页面横向溢出；桌面两侧字段顶部相同；归档 all+长标签真实查询只返回对应测评，刷新后恢复准确标签与归档，390长标签可读；清除标签保留归档，重置恢复默认折叠。共 8 项局部记录，相关请求只有 GET，0 pageerror。主控实际查看桌面与手机原图，记录和截图在本工作树 `.cache/catalog-filter-fix/runtime-results.json`、`runtime-expanded-1440.png`、`runtime-restored-390.png`。独审没有重新运行主控检查。
+
+修复预览 `http://127.0.0.1:3180/studio/products`，专属 test 实例 `fa8414c0d81b08d7db61f29e6c9be73c` / PG 55440。合成目录包括归档项和长标签；原基线 r1 与待检查来源仅用于保留演示可用性，不计作重跑完整业务验收。凭证在本机独立文件中，不进入 Git。旧 head `21e2ed2` CI 40112682707 已 success，新 head CI 单独按 GitHub 状态报告。沿 Draft PR #28 普通快进同步后停止，等待本次反馈验收。
+
+未执行全量单测、全 PG/driver、消费者 E2E 或一次性 P5，不重做其他页面验收。原 3170 及更早受管工作树、构建、数据库和作者未提交文件保持；不合并、不生产部署、不扩展其他功能。
+
 ## 2026-10-25 V2-A 整体平台还原交付
 
 按作者“V2A 可交互原型也要尽可能还原”的明确反馈实施。当前 Downloads HTML 与已解压 `03_V2A_整体后台原型.html` SHA-256 均为 `dee3dbc7432e79e6615afa88d96447bdf444d3263a7b7adc29ba6ccd839d7c99`；重读整体设计说明并实际查看工作台、目录、内测三页签、系统设置与新建弹窗。原型演示数据/未来能力不是实现事实，旧“先分析”文字不覆盖本轮实施授权。
