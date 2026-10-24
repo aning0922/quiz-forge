@@ -69,6 +69,11 @@ export function ProductTaskSurfaces({ children }: { children: ReactNode }) {
   const [states, setStates] = useState<SurfaceContextValue["states"]>({});
   const [notice, setNotice] = useState("");
   const dialog = useRef<HTMLDialogElement>(null);
+  const bodyRef = useRef<HTMLDivElement | null>(null);
+  const bindHost = useCallback((element: HTMLDivElement | null) => {
+    bodyRef.current = element;
+    setHost(element);
+  }, []);
   const opener = useRef<HTMLElement | null>(null);
   const activeRef = useRef(active);
   const statesRef = useRef(states);
@@ -132,6 +137,8 @@ export function ProductTaskSurfaces({ children }: { children: ReactNode }) {
   );
   useLayoutEffect(() => {
     const element = dialog.current;
+    const body = bodyRef.current;
+    const scrollPositions = positions.current;
     if (!element) return;
     // The dialog body and every portal target survive close and surface changes.
     // Close the previous modality before opening the next presentation.
@@ -143,9 +150,9 @@ export function ProductTaskSurfaces({ children }: { children: ReactNode }) {
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     element.showModal();
-    if (host) host.scrollTop = positions.current[active] ?? 0;
+    if (body) body.scrollTop = scrollPositions[active] ?? 0;
     return () => {
-      if (host) positions.current[active] = host.scrollTop;
+      if (body) scrollPositions[active] = body.scrollTop;
       if (element.open) element.close();
       document.body.style.overflow = previousOverflow;
     };
@@ -215,7 +222,7 @@ export function ProductTaskSurfaces({ children }: { children: ReactNode }) {
             <p>登录不会恢复本页旧权限，请保留原记录并在新工作区核实。</p>
           </div>
         )}
-        <div className={styles.body} ref={setHost} />
+        <div className={styles.body} ref={bindHost} />
         <footer className={styles.footer}>
           <p>收起后保留本页任务；完整刷新仍可能丢失内存文件与临时预览。</p>
           <button type="button" onClick={close}>
