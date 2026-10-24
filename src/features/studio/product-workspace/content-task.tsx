@@ -1,6 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
+import { Check } from "lucide-react";
 import type { ImportDto } from "@/features/quizpack/import/contracts";
 import type { ValidationDto } from "@/features/quizpack/validation/contracts";
 import type { DraftApplicationDto } from "@/features/product/drafts/contracts";
@@ -36,6 +43,7 @@ import {
   isRejectedContentSource,
   matchesContentCompletion,
 } from "./content-task-guards";
+import { RetainedTaskActions } from "./task-surfaces";
 import styles from "./content-workbench.module.css";
 
 export type ContentApplication = DraftApplicationDto | AppendDraftApplication;
@@ -48,6 +56,8 @@ export type ContentTaskProps = {
   onCompleted?: ((application: ContentApplication) => void) | undefined;
   onState?: ContentStateObserver | undefined;
   onPreview?: ((target: RevisionTarget) => void) | undefined;
+  onInspectSource?: ((importId: string) => void) | undefined;
+  onInspectRevision?: ((target: RevisionTarget) => void) | undefined;
 };
 const idle: ContentTaskState = { busy: false, pending: false, retained: false };
 
@@ -94,6 +104,8 @@ function ContentRun({
   onCompleted,
   onState,
   onPreview,
+  onInspectSource,
+  onInspectRevision,
   onNext,
 }: ContentTaskProps & { onNext: () => void }) {
   const settings = useImportRead(
@@ -170,31 +182,69 @@ function ContentRun({
       );
     }
   }
+  const stageActions = (index: number) =>
+    function renderStageActions(actions: ReactNode) {
+      return (
+        <RetainedTaskActions
+          id="content"
+          visible={
+            step === index &&
+            !application &&
+            !(confirmedRejection && !busy && !pending)
+          }
+        >
+          {actions}
+        </RetainedTaskActions>
+      );
+    };
+  const acceptReception = useCallback((next: ImportDto) => {
+    setReceived(next);
+    if (next.status === "received" && next.storageCondition === "clean")
+      setStep((previous) => (previous === 0 ? 1 : previous));
+  }, []);
   const cleanReceived =
     received?.status === "received" && received.storageCondition === "clean";
   return (
     <div className={styles.task}>
-      <p className={styles.intro}>
-        每一步都需明确确认。接收文件、检查就绪和形成草稿是三个独立结果。
-      </p>
       <ol className={styles.steps} aria-label="内容处理进度">
-        {["接收文件", "检查内容与素材", "形成草稿修订"].map((label, index) => (
-          <li key={label}>
-            <button
-              type="button"
-              aria-current={step === index ? "step" : undefined}
-              disabled={
-                busy ||
-                (index === 1 && !received) ||
-                (index === 2 && !validation)
-              }
-              onClick={() => setStep(index)}
-            >
-              <span aria-hidden="true">{index + 1}</span>
-              {label}
-            </button>
-          </li>
-        ))}
+        {["选择与接收", "结构和素材检查", "确认形成草稿"].map(
+          (label, index) => (
+            <li key={label}>
+              <button
+                type="button"
+                aria-current={step === index ? "step" : undefined}
+                data-complete={
+                  index === 0
+                    ? cleanReceived
+                    : index === 1
+                      ? !!validation
+                      : !!application
+                }
+                disabled={
+                  busy ||
+                  (index === 1 && !received) ||
+                  (index === 2 && !validation)
+                }
+                onClick={() => setStep(index)}
+              >
+                <span aria-hidden="true">
+                  {(
+                    index === 0
+                      ? cleanReceived
+                      : index === 1
+                        ? !!validation
+                        : !!application
+                  ) ? (
+                    <Check size={15} />
+                  ) : (
+                    index + 1
+                  )}
+                </span>
+                {label}
+              </button>
+            </li>
+          ),
+        )}
       </ol>
       {revoked && (
         <p className={styles.warning} role="status">
@@ -217,8 +267,10 @@ function ContentRun({
             importId={sourceId}
             settings={settings.value}
             session={retainedSession}
-            onConfirmed={setReceived}
+            onConfirmed={acceptReception}
             onState={setReceiveState}
+            renderActions={stageActions(0)}
+            onInspectSource={onInspectSource}
           />
         )}
         {settings.value && !sourceId && (
@@ -228,18 +280,25 @@ function ContentRun({
             settings={settings.value}
             embedded
             onChanged={onChanged}
-            onConfirmed={setReceived}
+            onConfirmed={acceptReception}
             onState={setReceiveState}
+            renderActions={stageActions(0)}
+            onInspectSource={onInspectSource}
           />
         )}
         {cleanReceived && (
-          <button
-            className={styles.primary}
-            disabled={busy || pending}
-            onClick={() => setStep(1)}
+          <RetainedTaskActions
+            id="content"
+            visible={step === 0 && !application}
           >
-            文件已接收，继续检查内容与素材
-          </button>
+            <button
+              className={styles.primary}
+              disabled={busy || pending}
+              onClick={() => setStep(1)}
+            >
+              继续检查步骤
+            </button>
+          </RetainedTaskActions>
         )}
       </div>
       <div hidden={step !== 1}>
@@ -252,9 +311,17 @@ function ContentRun({
             embedded
             onState={setValidationState}
             onRejected={setRejectedValidation}
+            renderActions={stageActions(1)}
+            onInspectSource={onInspectSource}
             onSelect={(next) => {
+              if (validation) {
+                setStep(2);
+                return;
+              }
               if (!validation) {
                 setValidation(next);
+                if (draft.value && !draft.loading && !draft.error)
+                  setMode(draft.value.kind === "draft" ? "append" : "first");
                 setStep(2);
               }
             }}
@@ -276,10 +343,6 @@ function ContentRun({
       <div hidden={step !== 2}>
         {validation && (
           <>
-            <h2>确认形成草稿修订</h2>
-            <p>
-              仅使用刚才明确选择的就绪检查；不会自动提交，不会修改已有历史修订。
-            </p>
             {!mode && (
               <>
                 {draft.loading && <p role="status">正在核对是否已有草稿…</p>}
@@ -316,27 +379,37 @@ function ContentRun({
                 )}
               </>
             )}
-            {mode === "first" && (
-              <ApplyDraftPanel
-                validation={validation}
-                session={retainedSession}
-                refreshing={false}
-                embedded
-                onConfirmed={completed}
-                onState={setDraftState}
-              />
-            )}
-            {mode === "append" && (
-              <AppendRevisionPanel
-                productId={productId}
-                validation={validation}
-                session={retainedSession}
-                refreshing={false}
-                embedded
-                onConfirmed={completed}
-                onState={setDraftState}
-              />
-            )}
+            <div hidden={!!application}>
+              {mode === "first" && (
+                <ApplyDraftPanel
+                  validation={validation}
+                  session={retainedSession}
+                  refreshing={false}
+                  embedded
+                  onConfirmed={completed}
+                  onState={setDraftState}
+                  renderActions={stageActions(2)}
+                  onInspectSource={onInspectSource}
+                  onInspectRevision={onInspectRevision}
+                  onPreview={onPreview}
+                />
+              )}
+              {mode === "append" && (
+                <AppendRevisionPanel
+                  productId={productId}
+                  validation={validation}
+                  session={retainedSession}
+                  refreshing={false}
+                  embedded
+                  onConfirmed={completed}
+                  onState={setDraftState}
+                  renderActions={stageActions(2)}
+                  onInspectSource={onInspectSource}
+                  onInspectRevision={onInspectRevision}
+                  onPreview={onPreview}
+                />
+              )}
+            </div>
           </>
         )}
         {application && (
@@ -345,34 +418,36 @@ function ContentRun({
             <p>
               服务器已确认本次处理结果。审核、内测封存和对外发布资格仍各自独立。
             </p>
-            <div className={styles.actions}>
-              {onPreview && (
+            <RetainedTaskActions id="content" visible={step === 2}>
+              <div className={styles.actions}>
+                {onPreview && (
+                  <button
+                    className={styles.primary}
+                    disabled={busy}
+                    onClick={() =>
+                      onPreview({
+                        draftId: application.draftId,
+                        revision: application.revision,
+                        canonicalContentSha256:
+                          application.canonicalContentSha256,
+                        assetSetSha256: application.assetSetSha256,
+                        canonicalManifestSha256:
+                          application.canonicalManifestSha256,
+                      })
+                    }
+                  >
+                    预览此固定修订
+                  </button>
+                )}
                 <button
-                  className={styles.primary}
-                  disabled={busy}
-                  onClick={() =>
-                    onPreview({
-                      draftId: application.draftId,
-                      revision: application.revision,
-                      canonicalContentSha256:
-                        application.canonicalContentSha256,
-                      assetSetSha256: application.assetSetSha256,
-                      canonicalManifestSha256:
-                        application.canonicalManifestSha256,
-                    })
-                  }
+                  className={styles.secondary}
+                  disabled={busy || pending}
+                  onClick={onNext}
                 >
-                  预览此固定修订
+                  开始下一次内容更新
                 </button>
-              )}
-              <button
-                className={styles.secondary}
-                disabled={busy || pending}
-                onClick={onNext}
-              >
-                开始下一次内容更新
-              </button>
-            </div>
+              </div>
+            </RetainedTaskActions>
           </section>
         )}
       </div>
@@ -387,18 +462,18 @@ function ContentRun({
           <p>
             此拒绝结果与原记录会继续保留。结束当前任务后可以选择新的内容；不会重提原请求或删除待核实记录。
           </p>
-          <button
-            className={styles.secondary}
-            disabled={busy || pending}
-            onClick={endRejectedTask}
-          >
-            结束已确认拒绝的任务，重新选择内容
-          </button>
+          <RetainedTaskActions id="content" visible={!busy && !pending}>
+            {" "}
+            <button
+              className={styles.primary}
+              disabled={busy || pending}
+              onClick={endRejectedTask}
+            >
+              结束已确认拒绝的任务，重新选择内容
+            </button>
+          </RetainedTaskActions>
         </section>
       )}
-      <p className={styles.footnote}>
-        可以暂时隐藏此任务再继续。原文件仅在当前文档内存中保留；刷新或关闭文档后需重新选择同一文件并核对原声明，不能据此认定原请求失败。
-      </p>
     </div>
   );
 }
@@ -411,6 +486,8 @@ function ExistingReceive({
   session,
   onConfirmed,
   onState,
+  renderActions,
+  onInspectSource,
 }: {
   productId: string;
   importId: string;
@@ -418,6 +495,8 @@ function ExistingReceive({
   session: StudioSessionDto;
   onConfirmed: (value: ImportDto) => void;
   onState: ContentStateObserver;
+  renderActions?: ((actions: ReactNode) => ReactNode) | undefined;
+  onInspectSource?: ((importId: string) => void) | undefined;
 }) {
   const read = useImportRead(
     `/api/studio/products/${encodeURIComponent(productId)}/imports/${encodeURIComponent(importId)}`,
@@ -428,7 +507,6 @@ function ExistingReceive({
   }, [read.value, onConfirmed]);
   return (
     <>
-      <h2>继续原内容来源</h2>
       {read.loading && <p role="status">正在读取所选接收记录…</p>}
       {read.error && (
         <p className={styles.warning} role="alert">
@@ -448,20 +526,9 @@ function ExistingReceive({
           embedded
           onUpdate={onConfirmed}
           onState={onState}
+          renderActions={renderActions}
+          onInspectSource={onInspectSource}
         />
-      )}
-      {read.value && read.value.status !== "received" && (
-        <p className={styles.warning}>
-          当前文档未持有原文件。若需重新选择同字节文件上传，请
-          <a
-            href={`/studio/products/${encodeURIComponent(productId)}/imports/${encodeURIComponent(importId)}`}
-            target="_blank"
-            rel="noopener"
-          >
-            打开原接收记录
-          </a>
-          核实原声明；此处不创建新的接收意图。
-        </p>
       )}
     </>
   );

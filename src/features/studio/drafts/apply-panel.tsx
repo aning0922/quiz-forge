@@ -1,7 +1,7 @@
 "use client";
 import { useContentAuthority } from "../product-workspace/content-authority";
 import { TechnicalDetails } from "../presentation/technical-details";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { previewPagePath } from "@/features/product/preview/urls";
 import { z } from "zod";
@@ -28,6 +28,9 @@ import {
   useContentTaskState,
   type ContentStateObserver,
 } from "../product-workspace/content-task-state";
+import { RevisionLinks } from "../draft-revisions/primitives";
+import type { RevisionTarget } from "@/features/product/internal-versions/identity-contracts";
+import compact from "../product-workspace/content-workbench.module.css";
 import styles from "../workspace/workspace.module.css";
 const productState = z.object({
   id: z.string(),
@@ -40,6 +43,10 @@ export function ApplyDraftPanel({
   embedded = false,
   onConfirmed,
   onState,
+  renderActions,
+  onPreview,
+  onInspectRevision,
+  onInspectSource,
 }: {
   validation: ValidationDto;
   session: StudioSessionDto;
@@ -47,6 +54,10 @@ export function ApplyDraftPanel({
   embedded?: boolean;
   onConfirmed?: (value: DraftApplicationDto) => void;
   onState?: ContentStateObserver | undefined;
+  renderActions?: ((actions: ReactNode) => ReactNode) | undefined;
+  onPreview?: ((target: RevisionTarget) => void) | undefined;
+  onInspectRevision?: ((target: RevisionTarget) => void) | undefined;
+  onInspectSource?: ((importId: string) => void) | undefined;
 }) {
   const authority = useContentAuthority();
   const productId = validation.productId;
@@ -181,6 +192,121 @@ export function ApplyDraftPanel({
       loadPending();
       setBusy(false);
     }
+  }
+  if (embedded) {
+    const actions = (
+      <div className={compact.footerActions}>
+        {pending ? (
+          <>
+            <button
+              className={compact.primary}
+              disabled={blocked}
+              onClick={() => void perform("read")}
+            >
+              查询原草稿创建结果
+            </button>
+            {operator && (
+              <button
+                className={compact.secondary}
+                disabled={blocked}
+                onClick={() => void perform("replay")}
+              >
+                以原操作和原输入重提
+              </button>
+            )}
+          </>
+        ) : !application &&
+          current.value?.kind === "empty" &&
+          ready &&
+          !product.value?.archivedAt &&
+          operator ? (
+          <button
+            className={compact.primary}
+            disabled={blocked}
+            onClick={() => void perform("new")}
+          >
+            确认创建草稿 r1
+          </button>
+        ) : null}
+      </div>
+    );
+    return (
+      <div className={compact.stage}>
+        {pending ? (
+          <div className={compact.pending} role="status">
+            <strong>原草稿创建结果待核实</strong>
+            <p>
+              按保留的原来源与原操作编号查询；不会用本次新来源替换它，空查询不表示未执行。
+            </p>
+            <TechnicalDetails label="查看原操作完整来源">
+              <p>
+                {pending.tuple.sourceImportId} /{" "}
+                {pending.tuple.sourceValidationId}
+              </p>
+              <p>原操作：{pending.tuple.idempotencyKey}</p>
+            </TechnicalDetails>
+          </div>
+        ) : application ? (
+          <>
+            <p className={compact.success}>
+              已核实固定处理结果：r{application.revision}。
+            </p>
+            <RevisionLinks
+              draft={application}
+              embedded
+              onPreview={onPreview}
+              onInspectRevision={onInspectRevision}
+              onInspectSource={onInspectSource}
+            />
+          </>
+        ) : (
+          <>
+            <h3>确认创建第一版草稿</h3>
+            <dl className={compact.checkCard}>
+              <div>
+                <dt>来源内容</dt>
+                <dd>
+                  {validation.packId ?? "已就绪来源"} /{" "}
+                  {validation.packVersion ?? "固定检查"}
+                </dd>
+              </div>
+              <div>
+                <dt>检查状态</dt>
+                <dd>{ready ? "就绪" : "尚不能用于草稿"}</dd>
+              </div>
+              <div>
+                <dt>草稿动作</dt>
+                <dd>创建不可变修订 r1</dd>
+              </div>
+            </dl>
+            <p className={compact.notice}>
+              确认后形成独立草稿，不授予人工审核或对外发布资格。
+            </p>
+          </>
+        )}
+        {(current.loading || product.loading || !storageLoaded) && (
+          <p role="status">正在核对当前草稿与原操作…</p>
+        )}
+        {(current.error || product.error || message) && (
+          <p className={compact.warning} role="status">
+            {current.error || product.error || message}
+          </p>
+        )}
+        {(writeDenied || !operator) && (
+          <p className={compact.warning}>当前不能写入，原操作仍可查询核实。</p>
+        )}
+        {product.value?.archivedAt && (
+          <p className={compact.warning}>工作区已归档，不能创建草稿。</p>
+        )}
+        {!application && !pending && current.value?.kind === "draft" && (
+          <p className={compact.warning}>
+            已存在草稿，不能再建立第一份草稿。请保留来源并核实当前状态。
+          </p>
+        )}
+        {busy && <p role="status">正在核对或提交原操作…</p>}
+        {renderActions ? renderActions(actions) : actions}
+      </div>
+    );
   }
   return (
     <section className={styles.panel} aria-label="建立第一版草稿">

@@ -1,7 +1,7 @@
 "use client";
 import { useContentAuthority } from "../product-workspace/content-authority";
 import { TechnicalDetails } from "../presentation/technical-details";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { StudioSessionDto } from "../contracts";
 import type {
   AppendDraftApplication,
@@ -22,6 +22,8 @@ import {
 } from "./flow";
 import { revisionMessage } from "./message";
 import { AppendBindingFacts, RevisionLinks } from "./primitives";
+import type { RevisionTarget } from "@/features/product/internal-versions/identity-contracts";
+import compact from "../product-workspace/content-workbench.module.css";
 import styles from "../workspace/workspace.module.css";
 import local from "./revisions.module.css";
 import {
@@ -35,6 +37,11 @@ export function RevisionPendingPanel({
   writeBlocked = false,
   onChanged,
   onState,
+  embedded = false,
+  onPreview,
+  onInspectRevision,
+  onInspectSource,
+  renderActions,
 }: {
   productId: string;
   session: StudioSessionDto;
@@ -42,6 +49,11 @@ export function RevisionPendingPanel({
   writeBlocked?: boolean;
   onChanged: (application?: AppendDraftApplication) => void;
   onState?: ContentStateObserver | undefined;
+  embedded?: boolean;
+  renderActions?: ((actions: ReactNode) => ReactNode) | undefined;
+  onPreview?: ((target: RevisionTarget) => void) | undefined;
+  onInspectRevision?: ((target: RevisionTarget) => void) | undefined;
+  onInspectSource?: ((importId: string) => void) | undefined;
 }) {
   const authority = useContentAuthority();
   const [epoch] = useState(() => new RevisionEpoch(productId)),
@@ -202,8 +214,36 @@ export function RevisionPendingPanel({
     writeBlocked ||
     !!evidence ||
     !!message;
+  const entryActions = (
+    <div className={embedded ? compact.footerActions : styles.actions}>
+      <button
+        className={embedded ? compact.primary : styles.button}
+        disabled={!loaded || busy || refreshing}
+        onClick={() => void perform(false)}
+      >
+        {embedded ? "核实原操作" : "查询上次草稿更新结果"}
+      </button>
+      {session.operator.role === "operator" && !denied && !writeBlocked && (
+        <button
+          className={
+            embedded
+              ? compact.secondary
+              : `${styles.button} ${styles.secondary}`
+          }
+          disabled={!loaded || busy || refreshing}
+          onClick={() => void perform(true)}
+        >
+          {embedded ? "按原参数重提" : "再次发送原草稿更新操作"}
+        </button>
+      )}
+    </div>
+  );
+  if (embedded && !needsAttention) return null;
   return (
-    <section className={styles.panel} aria-label="草稿更新操作查询">
+    <section
+      className={embedded ? undefined : styles.panel}
+      aria-label="草稿更新操作查询"
+    >
       <details
         open={needsAttention}
         className={
@@ -216,7 +256,7 @@ export function RevisionPendingPanel({
             : "更新草稿：暂无待处理操作 · 查询"}
         </summary>
         <div className={local.recoveryBody}>
-          <h2>草稿更新操作查询</h2>
+          {!embedded && <h2>草稿更新操作查询</h2>}
           <p className={styles.note}>
             查询不会更新草稿。未找到结果或当前已有其他修订，都不能据此判断上次操作是否成功；请以原操作的处理结果为准。
           </p>
@@ -242,26 +282,9 @@ export function RevisionPendingPanel({
               <TechnicalDetails label="查看原操作完整绑定">
                 <AppendBindingFacts binding={entry.tuple} />
               </TechnicalDetails>
-              <div className={styles.actions}>
-                <button
-                  className={styles.button}
-                  disabled={!loaded || busy || refreshing}
-                  onClick={() => void perform(false)}
-                >
-                  查询上次草稿更新结果
-                </button>
-                {session.operator.role === "operator" &&
-                  !denied &&
-                  !writeBlocked && (
-                    <button
-                      className={`${styles.button} ${styles.secondary}`}
-                      disabled={!loaded || busy || refreshing}
-                      onClick={() => void perform(true)}
-                    >
-                      再次发送原草稿更新操作
-                    </button>
-                  )}
-              </div>
+              {embedded && renderActions
+                ? renderActions(entryActions)
+                : entryActions}
             </>
           )}
           {denied && (
@@ -281,7 +304,13 @@ export function RevisionPendingPanel({
                     固定处理结果为修订 {result.application.revision}
                     。此处理结果不表示它仍是当前修订。
                   </p>
-                  <RevisionLinks draft={result.application} />
+                  <RevisionLinks
+                    draft={result.application}
+                    embedded={embedded}
+                    onPreview={onPreview}
+                    onInspectRevision={onInspectRevision}
+                    onInspectSource={onInspectSource}
+                  />
                 </>
               ) : result.kind === "unresolved" ? (
                 <>
@@ -310,7 +339,13 @@ export function RevisionPendingPanel({
                     消费修订为 {result.proof.consumed.revision}
                     ；这不是本次操作的应用成功。
                   </p>
-                  <RevisionLinks draft={result.proof.consumed} />
+                  <RevisionLinks
+                    draft={result.proof.consumed}
+                    embedded={embedded}
+                    onPreview={onPreview}
+                    onInspectRevision={onInspectRevision}
+                    onInspectSource={onInspectSource}
+                  />
                   <TechnicalDetails label="查看固定消费来源">
                     <p>
                       来源使用操作编号：{result.proof.consumingIdempotencyKey}

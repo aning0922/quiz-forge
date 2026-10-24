@@ -1,10 +1,61 @@
+import type { RevisionTarget } from "@/features/product/internal-versions/identity-contracts";
+import compact from "../product-workspace/content-workbench.module.css";
 import Link from "next/link";
 import type { DraftSummaryDto } from "@/features/product/drafts/contracts";
 import type { AppendDraftBinding } from "@/features/product/draft-revisions/contracts";
 import { draftRevisionPath } from "../drafts/client";
 import { previewPagePath } from "@/features/product/preview/urls";
 import styles from "../workspace/workspace.module.css";
-export function RevisionLinks({ draft }: { draft: DraftSummaryDto }) {
+export function RevisionLinks({
+  draft,
+  embedded = false,
+  onPreview,
+  onInspectRevision,
+  onInspectSource,
+}: {
+  draft: DraftSummaryDto;
+  embedded?: boolean;
+  onPreview?: ((target: RevisionTarget) => void) | undefined;
+  onInspectRevision?: ((target: RevisionTarget) => void) | undefined;
+  onInspectSource?: ((importId: string) => void) | undefined;
+}) {
+  if (embedded) {
+    const target = {
+      draftId: draft.draftId,
+      revision: draft.revision,
+      canonicalContentSha256: draft.canonicalContentSha256,
+      assetSetSha256: draft.assetSetSha256,
+      canonicalManifestSha256: draft.canonicalManifestSha256,
+    };
+    return (
+      <div className={compact.actions}>
+        {onInspectRevision && (
+          <button
+            className={compact.secondary}
+            onClick={() => onInspectRevision(target)}
+          >
+            查看修订 r{draft.revision}
+          </button>
+        )}
+        {onPreview && (
+          <button
+            className={compact.secondary}
+            onClick={() => onPreview(target)}
+          >
+            预览 r{draft.revision}
+          </button>
+        )}
+        {onInspectSource && (
+          <button
+            className={compact.textButton}
+            onClick={() => onInspectSource(draft.sourceImportId)}
+          >
+            查看原来源
+          </button>
+        )}
+      </div>
+    );
+  }
   return (
     <div className={styles.actions}>
       <Link

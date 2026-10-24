@@ -8,7 +8,7 @@ import { useInternalAuthority } from "../internal-versions/authority";
 import { invalidateCurrentStudioAuthority } from "../authority-events";
 import { TechnicalDetails } from "../presentation/technical-details";
 import { directoryTime } from "../workspace/directory-time";
-import styles from "./task-workspace.module.css";
+import styles from "./content-workbench.module.css";
 
 const labels: Record<ImportDto["status"], string> = {
   "awaiting-upload": "等待原文件上传",
@@ -20,9 +20,11 @@ const labels: Record<ImportDto["status"], string> = {
 export function ContentRecords({
   productId,
   onContinue,
+  onInspect,
 }: {
   productId: string;
   onContinue: (importId: string) => void;
+  onInspect?: ((importId: string) => void) | undefined;
 }) {
   const authority = useInternalAuthority();
   const [page, setPage] = useState(1);
@@ -55,51 +57,71 @@ export function ContentRecords({
     return () => controller.abort();
   }, [productId, page, attempt, key, authority]);
   return (
-    <div className={styles.history}>
-      <p>先选择需要继续处理的接收记录，再进入任务。接收成功不代表检查通过。</p>
-      <button disabled={loading} onClick={() => setAttempt((n) => n + 1)}>
-        重新读取记录
-      </button>
+    <div className={styles.source}>
+      <p className={styles.intro}>
+        按准确来源查看接收与检查，继续处理不会创建新的接收记录。
+      </p>
       {loading ? (
-        <p role="status">正在读取本测评的接收记录…</p>
+        <p role="status">正在读取来源记录…</p>
       ) : result?.error ? (
-        <p role="alert">{result.error}</p>
+        <p className={styles.warning} role="alert">
+          {result.error}
+        </p>
       ) : (
         result?.value && (
           <>
-            {!result.value.items.length && <p>本页暂无接收记录。</p>}
-            {result.value.items.map((item) => (
-              <section className={styles.record} key={item.id}>
-                <h3>{labels[item.status]}</h3>
-                <p>
-                  {directoryTime(item.createdAt)} ·{" "}
-                  {Math.ceil(item.expectedArchiveBytes / 1024)} KB
-                </p>
-                {item.storageCondition !== "clean" && (
-                  <p>存储状态待核实，不能直接开始下一步。</p>
-                )}
-                {item.status === "received" &&
-                item.storageCondition === "clean" ? (
-                  <button onClick={() => onContinue(item.id)}>
-                    选择此来源并继续
-                  </button>
-                ) : (
-                  <a
-                    href={`/studio/products/${encodeURIComponent(productId)}/imports/${encodeURIComponent(item.id)}`}
-                    target="_blank"
-                    rel="noopener"
-                  >
-                    查看原接收记录与恢复条件
-                  </a>
-                )}
-                <TechnicalDetails label="来源记录标识">
-                  <p>接收编号：{item.id}</p>
-                  <p>原声明 SHA-256：{item.expectedArchiveSha256}</p>
-                </TechnicalDetails>
-              </section>
-            ))}
+            {!result.value.items.length && (
+              <p>尚无已读取的接收记录；空列表不证明未知请求未提交。</p>
+            )}
+            <ol className={styles.recordList}>
+              {result.value.items.map((item) => (
+                <li className={styles.compactRow} key={item.id}>
+                  <div className={styles.rowHeading}>
+                    <div>
+                      <strong>{labels[item.status]}</strong>
+                      <p className={styles.caption}>
+                        {directoryTime(item.createdAt)} ·{" "}
+                        {Math.ceil(item.expectedArchiveBytes / 1024)} KB
+                      </p>
+                    </div>
+                    {onInspect && (
+                      <button
+                        className={styles.secondary}
+                        onClick={() => onInspect(item.id)}
+                      >
+                        查看来源
+                      </button>
+                    )}
+                  </div>
+                  {item.storageCondition !== "clean" && (
+                    <p className={styles.warning}>
+                      存储状态待核实，不能直接开始下一步。
+                    </p>
+                  )}
+                  {!(
+                    item.status === "rejected" &&
+                    item.storageCondition === "clean"
+                  ) && (
+                    <button
+                      className={styles.textButton}
+                      onClick={() => onContinue(item.id)}
+                    >
+                      {item.status === "received" &&
+                      item.storageCondition === "clean"
+                        ? "继续处理此来源"
+                        : "核实原接收任务"}
+                    </button>
+                  )}
+                  <TechnicalDetails label="来源身份与文件声明">
+                    <p>接收编号：{item.id}</p>
+                    <p>SHA-256：{item.expectedArchiveSha256}</p>
+                  </TechnicalDetails>
+                </li>
+              ))}
+            </ol>
             <div className={styles.actions}>
               <button
+                className={styles.secondary}
                 disabled={page <= 1}
                 onClick={() => setPage((p) => p - 1)}
               >
@@ -107,6 +129,7 @@ export function ContentRecords({
               </button>
               <span>第 {page} 页</span>
               <button
+                className={styles.secondary}
                 disabled={!result.value.hasNext}
                 onClick={() => setPage((p) => p + 1)}
               >
@@ -116,6 +139,13 @@ export function ContentRecords({
           </>
         )
       )}
+      <button
+        className={styles.textButton}
+        disabled={loading}
+        onClick={() => setAttempt((n) => n + 1)}
+      >
+        重新读取记录
+      </button>
     </div>
   );
 }

@@ -4,7 +4,8 @@ import { TechnicalDetails } from "../presentation/technical-details";
 import { useStudioLeaveProtection } from "../navigation-boundary";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
+import compact from "../product-workspace/content-workbench.module.css";
 import {
   useContentTaskState,
   type ContentTaskState,
@@ -32,6 +33,8 @@ export function CreateReceive({
   embedded = false,
   onConfirmed,
   onState,
+  renderActions,
+  onInspectSource,
 }: {
   productId: string;
   settings: ImportSettingsDto;
@@ -40,6 +43,8 @@ export function CreateReceive({
   embedded?: boolean;
   onConfirmed?: (value: ImportDto) => void;
   onState?: ContentStateObserver | undefined;
+  renderActions?: ((actions: ReactNode) => ReactNode) | undefined;
+  onInspectSource?: ((importId: string) => void) | undefined;
 }) {
   const authority = useContentAuthority();
   const [pending, setPending] = useState<PendingArchive>();
@@ -163,6 +168,135 @@ export function CreateReceive({
     } finally {
       setBusy(false);
     }
+  }
+  if (embedded) {
+    const actions = (
+      <div className={compact.footerActions}>
+        {pending && !value && (
+          <>
+            <button
+              className={compact.primary}
+              disabled={
+                !authority.canWrite() ||
+                session.operator.role !== "operator" ||
+                !settings.enabled ||
+                busy ||
+                (unknown && !queriedEmpty)
+              }
+              onClick={() => void submit()}
+            >
+              {unknown ? "以原操作和原输入重提" : "建立本次接收记录"}
+            </button>
+            {!unknown && (
+              <button
+                className={compact.secondary}
+                disabled={busy}
+                onClick={() => {
+                  setPending(undefined);
+                  setFileInputRevision((n) => n + 1);
+                  setMessage("");
+                }}
+              >
+                重新选择
+              </button>
+            )}
+            {(unknown || message) && (
+              <button
+                className={compact.secondary}
+                disabled={busy}
+                onClick={() => void reconcile()}
+              >
+                按原操作核实
+              </button>
+            )}
+          </>
+        )}
+      </div>
+    );
+    return (
+      <div className={compact.stage}>
+        {!value && (
+          <>
+            <h3>选择内容包文件</h3>
+            <p className={compact.intro}>
+              选择已制作好的 QuizPack。先建立接收记录，再明确上传原文件。
+            </p>
+            <label className={compact.fileField}>
+              QuizPack 文件
+              <input
+                key={fileInputRevision}
+                type="file"
+                accept=".quizpack"
+                disabled={busy || !!pending}
+                onChange={(event) => void select(event.target.files?.[0])}
+              />
+            </label>
+            <p className={compact.caption}>
+              文件上限
+              32MiB，仅在当前文档内存中保留；刷新或关闭文档后需重新选择。
+            </p>
+            {pending && (
+              <dl className={compact.checkCard}>
+                <div>
+                  <dt>当前已选</dt>
+                  <dd>
+                    {pending.file instanceof File
+                      ? pending.file.name
+                      : "内容包文件"}
+                  </dd>
+                </div>
+                <div>
+                  <dt>文件大小</dt>
+                  <dd>
+                    {Math.ceil(pending.input.expectedArchiveBytes / 1024)} KB
+                  </dd>
+                </div>
+              </dl>
+            )}
+            {unknown && (
+              <div className={compact.pending} role="status">
+                <strong>接收记录提交结果待核实</strong>
+                <p>
+                  原文件、原操作编号及完整输入已保留。空查询不表示未提交，请先按原操作核实。
+                </p>
+              </div>
+            )}
+            {message && (
+              <p className={compact.warning} role="status">
+                {message}
+              </p>
+            )}
+            {busy && <p role="status">正在准备或核实本次文件…</p>}
+            {pending && (
+              <TechnicalDetails label="查看本次文件与操作标识">
+                <p>操作编号：{pending.idempotencyKey}</p>
+                <p>SHA-256：{pending.input.expectedArchiveSha256}</p>
+              </TechnicalDetails>
+            )}
+            {pending && (renderActions ? renderActions(actions) : actions)}
+          </>
+        )}
+        {value && (
+          <ReceiveControls
+            key={value.id}
+            initial={value}
+            productId={productId}
+            session={session}
+            settings={settings}
+            archived={false}
+            file={pending?.file}
+            embedded
+            onState={setReceiveState}
+            onInspectSource={onInspectSource}
+            renderActions={renderActions}
+            onUpdate={(next) => {
+              adopt(next);
+              onChanged();
+            }}
+          />
+        )}
+      </div>
+    );
   }
   return (
     <div>

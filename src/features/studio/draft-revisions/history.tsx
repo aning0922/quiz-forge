@@ -11,6 +11,7 @@ import { readRevisionHistory } from "./client";
 import { joinRevisionHistory } from "./view-state";
 import { RevisionLinks } from "./primitives";
 import { revisionMessage } from "./message";
+import compact from "../product-workspace/content-workbench.module.css";
 import styles from "../workspace/workspace.module.css";
 import local from "./revisions.module.css";
 type RequestState = {
@@ -24,12 +25,18 @@ export function RevisionHistoryPanel({
   currentRevision,
   onSelect,
   onFailure,
+  embedded = false,
+  onInspectSource,
+  onInspectRevision,
 }: {
   productId: string;
   draftId: string;
   currentRevision: number;
   onSelect?: (target: RevisionTarget) => void;
   onFailure?: (error: unknown) => void;
+  embedded?: boolean;
+  onInspectSource?: ((importId: string) => void) | undefined;
+  onInspectRevision?: ((target: RevisionTarget) => void) | undefined;
 }) {
   const failure = useRef(onFailure);
   useEffect(() => {
@@ -97,6 +104,112 @@ export function RevisionHistoryPanel({
       previous: [],
     }));
   }
+  if (embedded)
+    return (
+      <div className={compact.source}>
+        <p className={compact.intro}>
+          按准确修订查看历史。选择供预览不会改变当前草稿，或启动预览。
+        </p>
+        {loading && <p role="status">正在读取修订记录…</p>}
+        {error && (
+          <p className={compact.warning} role="alert">
+            {error}
+          </p>
+        )}
+        <ol className={compact.recordList}>
+          {pages
+            .flatMap((p) => p.items)
+            .map((item) => {
+              const target = {
+                draftId: item.draftId,
+                revision: item.revision,
+                canonicalContentSha256: item.canonicalContentSha256,
+                assetSetSha256: item.assetSetSha256,
+                canonicalManifestSha256: item.canonicalManifestSha256,
+              };
+              return (
+                <li
+                  className={compact.compactRow}
+                  key={`${item.draftId}/${item.revision}`}
+                >
+                  <div className={compact.rowHeading}>
+                    <div>
+                      <strong>修订 r{item.revision}</strong>
+                      <p className={compact.caption}>
+                        {item.revision === currentRevision
+                          ? "当前草稿"
+                          : "历史修订"}{" "}
+                        · {new Date(item.createdAt).toLocaleString("zh-CN")}
+                      </p>
+                    </div>
+                    {onSelect && (
+                      <button
+                        className={compact.secondary}
+                        onClick={() => onSelect(target)}
+                      >
+                        选择预览
+                      </button>
+                    )}
+                  </div>
+                  <div className={compact.actions}>
+                    {onInspectRevision && (
+                      <button
+                        className={compact.textButton}
+                        onClick={() => onInspectRevision(target)}
+                      >
+                        查看此修订
+                      </button>
+                    )}
+                    {onInspectSource && (
+                      <button
+                        className={compact.textButton}
+                        onClick={() => onInspectSource(item.sourceImportId)}
+                      >
+                        查看准确来源
+                      </button>
+                    )}
+                  </div>
+                  <TechnicalDetails label={`修订 r${item.revision} 技术标识`}>
+                    <p>
+                      来源：{item.sourceImportId} / {item.sourceValidationId}
+                    </p>
+                    <p>内容：{item.canonicalContentSha256}</p>
+                    <p>素材：{item.assetSetSha256}</p>
+                    <p>manifest：{item.canonicalManifestSha256}</p>
+                  </TechnicalDetails>
+                </li>
+              );
+            })}
+        </ol>
+        <div className={compact.actions}>
+          <button
+            className={compact.secondary}
+            disabled={loading}
+            onClick={refresh}
+          >
+            重新读取记录
+          </button>
+          {!loading && last?.nextBeforeRevision && (
+            <button
+              className={compact.secondary}
+              onClick={() =>
+                setRequest((r) => ({
+                  generation: r.generation + 1,
+                  query: {
+                    pageSize: last.pageSize,
+                    anchorRevision: last.anchorRevision,
+                    beforeRevision: last.nextBeforeRevision!,
+                  },
+                  previous: pages,
+                }))
+              }
+            >
+              加载更早修订
+            </button>
+          )}
+        </div>
+      </div>
+    );
   return (
     <section className={styles.panel} aria-label="草稿历史修订">
       <h2>草稿历史修订</h2>

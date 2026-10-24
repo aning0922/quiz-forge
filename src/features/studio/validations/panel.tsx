@@ -1,7 +1,7 @@
 "use client";
 import { useContentAuthority } from "../product-workspace/content-authority";
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import type {
   ImportDto,
   ImportSettingsDto,
@@ -33,6 +33,7 @@ import {
   type PendingStorage,
   type PendingTuple,
 } from "./pending";
+import { StudioClientError } from "../client";
 import { validationMessage } from "./messages";
 import { ValidationFacts } from "./facts";
 import { useValidationRead } from "./use-read";
@@ -42,6 +43,7 @@ import {
   type ContentStateObserver,
 } from "../product-workspace/content-task-state";
 import { TechnicalDetails } from "../presentation/technical-details";
+import compact from "../product-workspace/content-workbench.module.css";
 import styles from "../workspace/workspace.module.css";
 const storage: PendingStorage = {
   getItem: (key) => window.sessionStorage.getItem(key),
@@ -83,6 +85,8 @@ export function ValidationPanel({
   onSelect,
   onRejected,
   onState,
+  renderActions,
+  onInspectSource,
 }: {
   value: ImportDto;
   settings: ImportSettingsDto;
@@ -92,6 +96,8 @@ export function ValidationPanel({
   onSelect?: (value: ValidationDto) => void;
   onRejected?: ((value: ValidationDto | undefined) => void) | undefined;
   onState?: ContentStateObserver | undefined;
+  renderActions?: ((actions: ReactNode) => ReactNode) | undefined;
+  onInspectSource?: ((importId: string) => void) | undefined;
 }) {
   const authority = useContentAuthority();
   const pair = { productId: value.productId, importId: value.id };
@@ -316,6 +322,243 @@ export function ValidationPanel({
           .map((row) => snapshots[row.id] || row),
       ]
     : (history.value?.items ?? []).map((row) => snapshots[row.id] || row);
+  if (embedded) {
+    const row = current ?? rows[0];
+    const usable =
+      row?.status === "ready" &&
+      !row.readOnly &&
+      !row.maintenanceRequired &&
+      row.storageCondition === "clean" &&
+      row.candidateSha256 !== null;
+    const blocked =
+      busy ||
+      !writable ||
+      !!pending ||
+      !!storageError ||
+      history.loading ||
+      !!history.error;
+    const actions = (
+      <div className={compact.footerActions}>
+        {pending ? (
+          pending.mayHaveBeenSent ? (
+            <button
+              className={compact.primary}
+              disabled={busy}
+              onClick={() => void run(() => verify(pending.tuple))}
+            >
+              按原操作核实检查结果
+            </button>
+          ) : (
+            <>
+              <button
+                className={compact.primary}
+                disabled={busy || !writable || !!storageError}
+                onClick={() => void run(() => start(pending.tuple))}
+              >
+                继续原检查操作
+              </button>
+              <button
+                className={compact.secondary}
+                disabled={busy || !!storageError}
+                onClick={() =>
+                  void run(async () => {
+                    cancelPrepared(storage, pending.tuple);
+                  })
+                }
+              >
+                取消尚未发送的准备
+              </button>
+            </>
+          )
+        ) : usable && row && onSelect ? (
+          <button
+            className={compact.primary}
+            disabled={busy || !!storageError || !!halted[row.id]}
+            onClick={() => onSelect(row)}
+          >
+            继续形成草稿
+          </button>
+        ) : row?.status === "rejected" ? (
+          <button
+            className={compact.primary}
+            disabled={busy || !!pending || !!storageError}
+            onClick={() => void run(() => recordAction(row, "read"))}
+          >
+            核实此拒绝结果
+          </button>
+        ) : !row || row.readOnly ? (
+          <button
+            className={compact.primary}
+            disabled={
+              blocked ||
+              value.status !== "received" ||
+              value.storageCondition !== "clean"
+            }
+            onClick={() => void run(() => start())}
+          >
+            开始检查内容
+          </button>
+        ) : (
+          <>
+            <button
+              className={compact.secondary}
+              disabled={busy}
+              onClick={() => void run(() => recordAction(row, "read"))}
+            >
+              查询此次检查结果
+            </button>
+            {!row.readOnly &&
+              (row.maintenanceRequired ||
+                row.storageCondition !== "clean" ||
+                row.status === "validating" ||
+                row.status === "archiving") && (
+                <button
+                  className={compact.primary}
+                  disabled={blocked || !!halted[row.id]}
+                  onClick={() => void run(() => recordAction(row, "recover"))}
+                >
+                  核实并恢复本次检查
+                </button>
+              )}
+            {!row.readOnly &&
+              (row.status === "validated" ||
+                row.status === "retryable-failed") && (
+                <button
+                  className={compact.primary}
+                  disabled={
+                    blocked ||
+                    !!halted[row.id] ||
+                    row.maintenanceRequired ||
+                    row.storageCondition !== "clean" ||
+                    row.remainingAttempts === 0
+                  }
+                  onClick={() => void run(() => recordAction(row, "retry"))}
+                >
+                  明确重试本次检查
+                </button>
+              )}
+          </>
+        )}
+        {refusal && (
+          <button
+            className={compact.secondary}
+            disabled={busy || !!storageError}
+            onClick={() =>
+              void run(async () => {
+                abandonNotStarted(storage, refusal.tuple, refusal.result);
+                setRefusal(undefined);
+              })
+            }
+          >
+            放弃已确认未开始的准备
+          </button>
+        )}
+      </div>
+    );
+    return (
+      <div className={compact.stage}>
+        <h3>{usable ? "内容和素材已就绪" : "检查内容与素材"}</h3>
+        <p className={usable ? compact.success : compact.intro}>
+          {usable
+            ? "此来源检查已就绪，下一步明确确认创建或追加草稿。"
+            : "独立检查结构、规则与资源。检查不会自动形成草稿。"}
+        </p>
+        <dl className={compact.checkCard}>
+          <div>
+            <dt>来源内容包</dt>
+            <dd>
+              {row?.packId
+                ? `${row.packId} / ${row.packVersion}`
+                : "本次接收的固定文件"}
+            </dd>
+          </div>
+          <div>
+            <dt>检查状态</dt>
+            <dd>
+              {row
+                ? row.status === "ready"
+                  ? "就绪"
+                  : row.status === "rejected"
+                    ? "未通过"
+                    : "尚需核实或继续处理"
+                : "尚未检查"}
+            </dd>
+          </div>
+          {row && (
+            <div>
+              <dt>素材保存</dt>
+              <dd>
+                {row.archivedResourceCount} / {row.resourceCount ?? "待确定"}
+              </dd>
+            </div>
+          )}
+          <div>
+            <dt>草稿动作</dt>
+            <dd>检查就绪后仍需明确确认</dd>
+          </div>
+        </dl>
+        {pending && (
+          <div className={compact.pending} role="status">
+            <strong>
+              {pending.mayHaveBeenSent
+                ? "原检查请求结果待核实"
+                : "本次准备尚未发送或正在处理"}
+            </strong>
+            <p>
+              原操作编号：{pending.tuple.expectedValidationKey.slice(0, 12)}
+              …。原输入保持，空查询不能证明未提交。
+            </p>
+          </div>
+        )}
+        {(storageError || history.error) && (
+          <p className={compact.warning} role="alert">
+            {storageError || history.error}
+          </p>
+        )}
+        {message && (
+          <p className={compact.warning} role="status">
+            {message}
+          </p>
+        )}
+        {busy && <p role="status">正在处理本次检查…</p>}
+        {row?.lastErrorCode && (
+          <p className={compact.warning}>
+            {validationMessage(new StudioClientError(row.lastErrorCode))}
+          </p>
+        )}
+        {row?.maintenanceRequired && (
+          <p className={compact.warning}>
+            归档文件与停止情况仍需维护核实，不能继续形成草稿。
+          </p>
+        )}
+        {row?.readOnly && (
+          <p className={compact.warning}>
+            此历史检查只读，不能用于新草稿。可对原文件明确发起新检查。
+          </p>
+        )}
+        {row && halted[row.id] && (
+          <p className={compact.warning}>
+            操作已暂停，请先读取此次检查结果，再明确恢复或重试。
+          </p>
+        )}
+        {!writable && (
+          <p className={compact.warning}>
+            当前不能发起检查写入，原操作仍可读取核实。
+          </p>
+        )}
+        {onInspectSource && (
+          <button
+            className={compact.textButton}
+            disabled={busy}
+            onClick={() => onInspectSource(value.id)}
+          >
+            查看此来源与检查记录
+          </button>
+        )}
+        {renderActions ? renderActions(actions) : actions}
+      </div>
+    );
+  }
   return (
     <section className={styles.panel} aria-labelledby="validation-heading">
       <h2 id="validation-heading">检查内容并保存素材</h2>

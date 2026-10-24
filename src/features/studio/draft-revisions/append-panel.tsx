@@ -1,7 +1,7 @@
 "use client";
 import { useContentAuthority } from "../product-workspace/content-authority";
 import { TechnicalDetails } from "../presentation/technical-details";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { z } from "zod";
 import type { ValidationDto } from "@/features/quizpack/validation/contracts";
 import type {
@@ -20,6 +20,8 @@ import { matchesAppendSelection } from "./view-state";
 import { AppendBindingFacts, RevisionLinks } from "./primitives";
 import { RevisionPendingPanel } from "./pending-panel";
 import { revisionMessage } from "./message";
+import type { RevisionTarget } from "@/features/product/internal-versions/identity-contracts";
+import compact from "../product-workspace/content-workbench.module.css";
 import styles from "../workspace/workspace.module.css";
 import local from "./revisions.module.css";
 import {
@@ -39,6 +41,10 @@ export function AppendRevisionPanel({
   embedded = false,
   onConfirmed,
   onState,
+  renderActions,
+  onPreview,
+  onInspectRevision,
+  onInspectSource,
 }: {
   productId: string;
   validation: ValidationDto | undefined;
@@ -47,6 +53,10 @@ export function AppendRevisionPanel({
   embedded?: boolean;
   onConfirmed?: (value: AppendDraftApplication) => void;
   onState?: ContentStateObserver | undefined;
+  renderActions?: ((actions: ReactNode) => ReactNode) | undefined;
+  onPreview?: ((target: RevisionTarget) => void) | undefined;
+  onInspectRevision?: ((target: RevisionTarget) => void) | undefined;
+  onInspectSource?: ((importId: string) => void) | undefined;
 }) {
   const authority = useContentAuthority();
   const current = useDraftRead(draftEndpoint(productId), (v) =>
@@ -209,6 +219,148 @@ export function AppendRevisionPanel({
       setPendingRefresh((n) => n + 1);
       setBusy(false);
     }
+  }
+  if (embedded) {
+    const actions = (
+      <div className={compact.footerActions}>
+        {!receipt &&
+          !pendingState.pending &&
+          (confirmed && confirmation ? (
+            <>
+              <button
+                className={compact.primary}
+                disabled={!canPrepare}
+                onClick={() => void append()}
+              >
+                确认追加新修订 r
+                {confirmation.binding.target.expectedRevision + 1}
+              </button>
+              <button
+                className={compact.secondary}
+                disabled={busy}
+                onClick={() => setConfirmation(undefined)}
+              >
+                取消未发送确认
+              </button>
+            </>
+          ) : (
+            <button
+              className={compact.primary}
+              disabled={!canPrepare}
+              onClick={prepare}
+            >
+              核对并准备追加修订
+            </button>
+          ))}
+      </div>
+    );
+    return (
+      <div className={compact.stage}>
+        {receipt ? (
+          <>
+            <p className={compact.success}>
+              已核实固定追加结果：r{receipt.revision}。
+            </p>
+            <RevisionLinks
+              draft={receipt}
+              embedded
+              onPreview={onPreview}
+              onInspectRevision={onInspectRevision}
+              onInspectSource={onInspectSource}
+            />
+          </>
+        ) : (
+          <>
+            <h3>{confirmed ? "确认追加新修订" : "核对本次草稿更新"}</h3>
+            <dl className={compact.checkCard}>
+              <div>
+                <dt>来源内容</dt>
+                <dd>
+                  {validation?.packId ?? "所选固定来源"} /{" "}
+                  {validation?.packVersion ?? "待核实"}
+                </dd>
+              </div>
+              <div>
+                <dt>检查状态</dt>
+                <dd>{ready ? "就绪" : "尚不能用于草稿"}</dd>
+              </div>
+              <div>
+                <dt>原草稿基准</dt>
+                <dd>
+                  {base
+                    ? `r${confirmation?.binding.target.expectedRevision ?? base.revision}`
+                    : "尚未取得"}
+                </dd>
+              </div>
+              <div>
+                <dt>草稿动作</dt>
+                <dd>
+                  {base
+                    ? `追加不可变新修订 r${(confirmation?.binding.target.expectedRevision ?? base.revision) + 1}`
+                    : "待核实基准"}
+                </dd>
+              </div>
+            </dl>
+            <p className={compact.notice}>
+              仅按此固定来源与基准提交。旧修订保持；基准变化时拒绝，不自动采用最新版。
+            </p>
+          </>
+        )}
+        {(current.loading || product.loading) && (
+          <p role="status">正在核对草稿与工作区…</p>
+        )}
+        {(current.error || product.error || message) && (
+          <p className={compact.warning} role="status">
+            {current.error || product.error || message}
+          </p>
+        )}
+        {denied && (
+          <p className={compact.warning}>当前写入权限已失效，原操作保持。</p>
+        )}
+        {product.value?.archivedAt && (
+          <p className={compact.warning}>工作区已归档，不能追加。</p>
+        )}
+        {full && <p className={compact.warning}>已达到草稿修订容量上限。</p>}
+        {confirmation && !confirmed && (
+          <p className={compact.warning}>
+            来源或基准已变化，之前的未发送确认已失效，请重新核对。
+          </p>
+        )}
+        {!storageReady && (
+          <p className={compact.warning}>
+            有原操作待核实，或本地记录不可用。新准备保持关闭。
+          </p>
+        )}
+        {busy && <p role="status">正在提交固定来源与基准…</p>}
+        <button
+          className={compact.textButton}
+          disabled={busy || refreshing}
+          onClick={() => {
+            setConfirmation(undefined);
+            availability();
+            current.refresh();
+            product.refresh();
+          }}
+        >
+          重新核对当前基准
+        </button>
+        {renderActions ? renderActions(actions) : actions}
+        <RevisionPendingPanel
+          key={`${productId}/${pendingRefresh}`}
+          productId={productId}
+          session={session}
+          refreshing={busy}
+          writeBlocked={denied}
+          onChanged={changed}
+          onState={setPendingState}
+          embedded
+          onPreview={onPreview}
+          onInspectRevision={onInspectRevision}
+          onInspectSource={onInspectSource}
+          renderActions={renderActions}
+        />
+      </div>
+    );
   }
   return (
     <>
