@@ -150,13 +150,22 @@ export function ProductTaskSurfaces({ children }: { children: ReactNode }) {
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     element.showModal();
+    // Portals bubble React events through their owner, outside this dialog.
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      event.stopPropagation();
+      close();
+    };
+    element.addEventListener("keydown", onKeyDown);
     if (body) body.scrollTop = scrollPositions[active] ?? 0;
     return () => {
+      element.removeEventListener("keydown", onKeyDown);
       if (body) scrollPositions[active] = body.scrollTop;
       if (element.open) element.close();
       document.body.style.overflow = previousOverflow;
     };
-  }, [active, host]);
+  }, [active, host, close]);
 
   return (
     <SurfaceContext.Provider
@@ -168,12 +177,6 @@ export function ProductTaskSurfaces({ children }: { children: ReactNode }) {
         className={styles.dialog}
         data-variant={active ? surfaces[active].kind : "task"}
         aria-labelledby="product-task-title"
-        onKeyDown={(event) => {
-          if (event.key !== "Escape") return;
-          event.preventDefault();
-          event.stopPropagation();
-          close();
-        }}
         onCancel={(event) => {
           event.preventDefault();
           close();
