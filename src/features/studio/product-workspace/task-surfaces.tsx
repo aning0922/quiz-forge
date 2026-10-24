@@ -168,6 +168,12 @@ export function ProductTaskSurfaces({ children }: { children: ReactNode }) {
         className={styles.dialog}
         data-variant={active ? surfaces[active].kind : "task"}
         aria-labelledby="product-task-title"
+        onKeyDown={(event) => {
+          if (event.key !== "Escape") return;
+          event.preventDefault();
+          event.stopPropagation();
+          close();
+        }}
         onCancel={(event) => {
           event.preventDefault();
           close();
