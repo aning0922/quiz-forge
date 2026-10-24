@@ -1,15 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { ClipboardList, Plus, ArrowRight } from "lucide-react";
-import type { Page, ProductDto } from "@/features/product/workspace/contracts";
-import { useWorkspaceRead } from "./workspace/use-request";
-import { DASHBOARD_PRODUCTS_PATH } from "./platform-queries";
+import { Plus } from "lucide-react";
+import { AsOf, OperationsSummary } from "./operations-ui/summary";
+import operationsStyles from "./operations-ui/summary.module.css";
+import { useOperationsDashboard } from "./operations-ui/read";
 import ui from "./studio.module.css";
 import styles from "./platform.module.css";
 
 export function StudioDashboard({ canCreate }: { canCreate: boolean }) {
-  const read = useWorkspaceRead<Page<ProductDto>>(DASHBOARD_PRODUCTS_PATH);
+  const read = useOperationsDashboard();
   return (
     <div className={styles.page}>
       <header className={styles.pageHeader}>
@@ -29,38 +29,54 @@ export function StudioDashboard({ canCreate }: { canCreate: boolean }) {
           当前身份为只读，可浏览测评目录和已有记录，不能创建或修改测评。
         </p>
       )}
-      <div className={styles.summary}>
-        <section className={styles.panel} aria-label="目录测评总量">
-          <div className={styles.panelTitle}>
-            <span>目录测评总量</span>
-            <ClipboardList size={22} aria-hidden="true" />
+      {read.loading && (
+        <p className={ui.status} role="status">
+          正在读取工作台摘要…
+        </p>
+      )}
+      {read.error && (
+        <div className={`${ui.status} ${ui.error}`} role="alert">
+          <p>工作台摘要读取失败，当前不显示数量。{read.error}</p>
+          <button className={ui.button} type="button" onClick={read.refresh}>
+            重新读取工作台摘要
+          </button>
+        </div>
+      )}
+      {read.value && (
+        <>
+          <AsOf value={read.value.asOf} />
+          <div className={operationsStyles.metrics}>
+            {(
+              [
+                [
+                  "目录测评总量",
+                  read.value.directoryTotal,
+                  "包含未归档和已归档的测评。",
+                ],
+                [
+                  "有当前草稿",
+                  read.value.activeDrafts,
+                  "仅统计未归档且有当前草稿的测评。",
+                ],
+                [
+                  "当前草稿缺匹配审核",
+                  read.value.activeMissingReview,
+                  "仅统计未归档、有当前草稿且缺少完整目标匹配审核的测评。",
+                ],
+              ] as const
+            ).map(([label, metric, description]) => (
+              <section key={label} className={styles.panel} aria-label={label}>
+                <h2>{label}</h2>
+                <div className={styles.metric}>{metric.count}</div>
+                <p>{description}</p>
+                <Link className={ui.link} href={metric.href}>
+                  查看对应测评 →
+                </Link>
+              </section>
+            ))}
           </div>
-          <div className={styles.metric}>
-            {read.value ? read.value.total : "—"}
-          </div>
-          <p>包含未归档和已归档的测评。</p>
-          {read.loading && <p role="status">正在读取目录…</p>}
-          {read.error && <p role="alert">目录暂未读取成功，当前不显示数量。</p>}
-        </section>
-        <section className={styles.panel}>
-          <h2>开始运营</h2>
-          <p>
-            先找到测评，再处理内容、审核版本或发放访问码。每项操作仍在所属测评中完成。
-          </p>
-          <div className={styles.actions}>
-            <Link className={ui.link} href="/studio/products">
-              管理测评
-              <ArrowRight size={18} aria-hidden="true" />
-            </Link>
-            <Link
-              className={`${ui.link} ${ui.secondary}`}
-              href="/studio/testing"
-            >
-              选择测评查看内测
-            </Link>
-          </div>
-        </section>
-      </div>
+        </>
+      )}
       <div className={styles.columns}>
         <section className={styles.panel}>
           <div className={styles.sectionHeading}>
@@ -73,54 +89,45 @@ export function StudioDashboard({ canCreate }: { canCreate: boolean }) {
             按创建时间倒序显示最多 5
             项，含归档测评；这不是最近业务更新或内容进度。
           </p>
-          {read.loading && <p role="status">正在读取最近创建的测评…</p>}
-          {read.error && (
-            <div className={`${ui.status} ${ui.error}`} role="alert">
-              <p>{read.error}</p>
-              <button
-                className={ui.button}
-                type="button"
-                onClick={read.refresh}
-              >
-                重新读取目录
-              </button>
-            </div>
-          )}
           {read.value &&
-            (read.value.items.length ? (
+            (read.value.recentCreated.length ? (
               <ul className={styles.recent}>
-                {read.value.items.map((product) => (
-                  <li key={product.id}>
-                    <div className={styles.row}>
-                      <div>
-                        <h3>
-                          {product.title}
-                          <span className={styles.badge}>
-                            {product.archivedAt ? "已归档" : "未归档"}
-                          </span>
-                        </h3>
-                        <p>编号：{product.id}</p>
-                        <p>
-                          创建于{" "}
-                          <time dateTime={product.createdAt}>
-                            {new Intl.DateTimeFormat("zh-CN", {
-                              timeZone: "Asia/Taipei",
-                              dateStyle: "medium",
-                              timeStyle: "short",
-                            }).format(new Date(product.createdAt))}
-                          </time>
-                        </p>
+                {read.value.recentCreated.map((operations) => {
+                  const product = operations.directory;
+                  return (
+                    <li key={product.id}>
+                      <div className={styles.row}>
+                        <div>
+                          <h3>
+                            {product.title}
+                            <span className={styles.badge}>
+                              {product.archivedAt ? "已归档" : "未归档"}
+                            </span>
+                          </h3>
+                          <p>编号：{product.id}</p>
+                          <p>
+                            创建于{" "}
+                            <time dateTime={product.createdAt}>
+                              {new Intl.DateTimeFormat("zh-CN", {
+                                timeZone: "Asia/Taipei",
+                                dateStyle: "medium",
+                                timeStyle: "short",
+                              }).format(new Date(product.createdAt))}
+                            </time>
+                          </p>
+                        </div>
+                        <Link
+                          className={styles.textLink}
+                          href={`/studio/products/${encodeURIComponent(product.id)}`}
+                          aria-label={`打开测评 ${product.title}`}
+                        >
+                          打开测评 →
+                        </Link>
                       </div>
-                      <Link
-                        className={styles.textLink}
-                        href={`/studio/products/${encodeURIComponent(product.id)}`}
-                        aria-label={`打开测评 ${product.title}`}
-                      >
-                        打开测评 →
-                      </Link>
-                    </div>
-                  </li>
-                ))}
+                      <OperationsSummary value={operations} compact />
+                    </li>
+                  );
+                })}
               </ul>
             ) : (
               <p className={ui.status}>
@@ -137,7 +144,7 @@ export function StudioDashboard({ canCreate }: { canCreate: boolean }) {
                 type="button"
                 onClick={read.refresh}
               >
-                刷新目录摘要
+                刷新工作台摘要
               </button>
             </div>
           )}
@@ -159,7 +166,7 @@ export function StudioDashboard({ canCreate }: { canCreate: boolean }) {
             </li>
           </ul>
           <p className={ui.note}>
-            当前工作台不汇总审核待办、参与量或完成率。查看内测记录时，请先选择具体测评。
+            审核缺口按当前草稿完整目标匹配，历史审核不会计作当前审核。查看内测记录时，请先选择具体测评。
           </p>
         </section>
       </div>

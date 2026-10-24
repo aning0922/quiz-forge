@@ -1,12 +1,9 @@
-import {
-  parseWorkspaceQuery,
-  productListQuerySchema,
-  type ProductListQuery,
-} from "@/features/product/workspace/contracts";
+import type { OperationsQuery } from "../operations/contracts";
+import { parseOperationsQuery, operationsListHref } from "../operations/query";
 
 export type CatalogSearchParams = Record<string, string | string[] | undefined>;
 export type CatalogQueryResult =
-  { ok: true; query: ProductListQuery } | { ok: false; message: string };
+  { ok: true; query: OperationsQuery } | { ok: false; message: string };
 
 /** Use exactly the existing API grammar, including duplicate/conflicting filters. */
 export function readCatalogQuery(
@@ -24,7 +21,7 @@ export function readCatalogQuery(
       params.append(name, item);
   }
   try {
-    return { ok: true, query: parseWorkspaceQuery(params, "product") };
+    return { ok: true, query: parseOperationsQuery(params) };
   } catch {
     return {
       ok: false,
@@ -34,20 +31,8 @@ export function readCatalogQuery(
   }
 }
 
-export function catalogQueryString(input: ProductListQuery): string {
-  const query = productListQuerySchema.parse(input);
-  const params = new URLSearchParams({
-    page: String(query.page),
-    pageSize: String(query.pageSize),
-    status: query.status,
-  });
-  if (query.q) params.set("q", query.q);
-  if (query.categoryId) params.set("categoryId", query.categoryId);
-  if (query.tagId) params.set("tagId", query.tagId);
-  if (query.unclassified) params.set("unclassified", "true");
-  return params.toString();
+export function catalogQueryString(query: OperationsQuery): string {
+  return operationsListHref(query).split("?")[1];
 }
 
-export function catalogPageHref(query: ProductListQuery): string {
-  return `/studio/products?${catalogQueryString(query)}`;
-}
+export const catalogPageHref = operationsListHref;
