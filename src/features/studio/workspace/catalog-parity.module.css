@@ -1,0 +1,117 @@
+.page {
+  gap: 20px;
+}
+.page > header {
+  margin-bottom: 0;
+}
+.page > header h1 {
+  font-size: 28px;
+}
+.page > header p {
+  margin: 0;
+}
+.panel .filters {
+  padding: 16px 19px 0;
+  border-bottom: 1px solid var(--studio-border, #e1e6f0);
+}
+.panel .commonFilters {
+  grid-template-columns:
+    minmax(180px, 1.3fr) minmax(120px, 0.8fr) minmax(135px, 0.8fr)
+    minmax(145px, 0.9fr) auto;
+  align-items: start;
+}
+.searchField {
+  position: relative;
+}
+.searchField > svg {
+  position: absolute;
+  top: 13px;
+  left: 11px;
+  color: var(--studio-muted, #63718b);
+  pointer-events: none;
+}
+.panel .searchField > input {
+  padding-left: 36px;
+  width: 100%;
+}
+.panel .table th:nth-child(1) {
+  width: 26%;
+}
+.panel .table th:nth-child(2) {
+  width: 11%;
+}
+.panel .table th:nth-child(3) {
+  width: 21%;
+}
+.panel .table th:nth-child(4) {
+  width: 15%;
+}
+.panel .table th:nth-child(5) {
+  width: 13%;
+}
+.panel .table th:nth-child(6) {
+  width: 14%;
+}
+.table th:last-child,
+.table td:last-child {
+  text-align: right;
+}
+.table td:last-child a {
+  white-space: normal;
+  text-align: center;
+}
+.identifier {
+  display: block;
+  margin-top: 5px;
+  color: var(--studio-muted, #63718b);
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+.category {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: #f3f4fa;
+  color: var(--studio-muted, #63718b);
+  font-size: 16px;
+  line-height: 1.45;
+}
+.contentState {
+  display: grid;
+  justify-items: start;
+  gap: 7px;
+}
+.reviewState {
+  color: var(--studio-muted, #63718b);
+  font-size: 16px;
+  line-height: 1.5;
+}
+.mobileCard {
+  box-shadow: 0 2px 8px #24304b04;
+}
+@media (max-width: 1350px) {
+  .panel .commonFilters {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .panel .commonFilters > div:first-child {
+    grid-column: 1 / 3;
+  }
+  .panel .commonFilters > div:last-child {
+    grid-column: 2 / 4;
+  }
+}
+@media (max-width: 600px) {
+  .panel .filters {
+    padding: 12px 12px 0;
+  }
+  .panel .commonFilters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .panel .commonFilters > div:first-child,
+  .panel .commonFilters > div:nth-child(4),
+  .panel .commonFilters > div:last-child {
+    grid-column: 1 / -1;
+  }
+}

@@ -5,7 +5,9 @@ import { type TaxonomySummary } from "@/features/product/workspace/contracts";
 import type { OperationsQuery } from "../operations/contracts";
 import { operationsQuerySchema } from "../operations/query";
 import { TaxonomyPicker } from "./taxonomy-picker";
+import { Search, RotateCcw } from "lucide-react";
 import styles from "./workspace.module.css";
+import parity from "./catalog-parity.module.css";
 
 export function CatalogFilters({
   query,
@@ -30,7 +32,7 @@ export function CatalogFilters({
     [error, setError] = useState("");
   return (
     <form
-      className={styles.catalogFilters}
+      className={`${styles.catalogFilters} ${parity.filters}`}
       aria-label="列表筛选"
       onSubmit={(event) => {
         event.preventDefault();
@@ -53,7 +55,7 @@ export function CatalogFilters({
         onApply(parsed.data);
       }}
     >
-      <div className={styles.catalogCommonFilters}>
+      <div className={`${styles.catalogCommonFilters} ${parity.commonFilters}`}>
         <div className={styles.field}>
           <label
             className={styles.catalogFilterLabel}
@@ -61,14 +63,17 @@ export function CatalogFilters({
           >
             搜索测评名称或编号
           </label>
-          <input
-            id="workspace-search"
-            className={styles.input}
-            value={q}
-            maxLength={160}
-            placeholder="搜索名称、编号或英文标识"
-            onChange={(event) => setQ(event.target.value)}
-          />
+          <div className={parity.searchField}>
+            <Search size={18} aria-hidden="true" />
+            <input
+              id="workspace-search"
+              className={styles.input}
+              value={q}
+              maxLength={160}
+              placeholder="搜索名称、编号或英文标识"
+              onChange={(event) => setQ(event.target.value)}
+            />
+          </div>
         </div>
         <details className={styles.catalogCategoryFilter}>
           <summary>
@@ -168,7 +173,7 @@ export function CatalogFilters({
               onReset();
             }}
           >
-            重置筛选
+            <RotateCcw size={16} aria-hidden="true" /> 重置
           </button>
         </div>
       </div>

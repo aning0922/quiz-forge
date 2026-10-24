@@ -6,6 +6,23 @@ import type { ProductDto } from "@/features/product/workspace/contracts";
 import { directoryTime } from "./directory-time";
 import { TechnicalDetails } from "../presentation/technical-details";
 import styles from "./workspace.module.css";
+import parity from "./catalog-parity.module.css";
+
+/** Keep existing fact-based choice, but open the matching task in the V2 workspace. */
+export function catalogPrimaryAction(operations: ProductOperations) {
+  const primary = productPresentation(operations).primary;
+  const base = `/studio/products/${encodeURIComponent(operations.directory.id)}`;
+  const route = primary.href.slice(base.length);
+  const task =
+    route === "/content"
+      ? "content"
+      : route === "/consumer-access"
+        ? "testing"
+        : route === "/internal-versions" || route.endsWith("/internal-review")
+          ? "review"
+          : null;
+  return { ...primary, href: task ? `${base}?task=${task}` : base };
+}
 
 /** The same current-value card is used by explicit reconciliation, never as a receipt. */
 export function ProductCard({
@@ -21,8 +38,9 @@ export function ProductCard({
 }) {
   if (operations) {
     const facts = productPresentation(operations);
+    const action = catalogPrimaryAction(operations);
     return (
-      <article className={styles.catalogCard}>
+      <article className={`${styles.catalogCard} ${parity.mobileCard}`}>
         <h2>
           <Link
             className={styles.catalogTitle}
@@ -32,6 +50,7 @@ export function ProductCard({
             {product.title}
           </Link>
         </h2>
+        <p className={parity.identifier}>{product.slug}</p>
         <p className={styles.catalogCategory}>
           {product.primaryCategory
             ? `${product.primaryCategory.name}${product.primaryCategory.archivedAt ? "（分类已归档）" : ""}`
@@ -52,10 +71,11 @@ export function ProductCard({
           </p>
           <Link
             className={styles.catalogAction}
-            href={`/studio/products/${encodeURIComponent(product.id)}`}
-            aria-label={`进入工作区 ${product.title}`}
+            href={action.href}
+            title={action.reason}
+            aria-label={`${action.label} ${product.title}`}
           >
-            进入工作区
+            {action.label}
             <span aria-hidden="true"> →</span>
           </Link>
         </div>
