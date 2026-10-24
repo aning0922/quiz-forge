@@ -1,7 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
-import Link from "next/link";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   FileText,
   Eye,
@@ -10,6 +9,7 @@ import {
   History,
   Settings,
   RefreshCw,
+  CheckCircle2,
 } from "lucide-react";
 import type { StudioSessionDto } from "../contracts";
 import type { StudioConsumerScopeV1 } from "../consumer-access/pending";
@@ -33,6 +33,10 @@ import { useProductWorkspaceContext } from "./context";
 import { ContentTask } from "./content-task";
 import { ContentWorkbench } from "./content-workbench";
 import { ContentRecords } from "./content-records";
+import { ContentSourceDetails } from "./content-source-details";
+import { RevisionDetails } from "./revision-details";
+import { ProductDetail } from "../workspace/product-detail";
+import { ContentAuthorityContext } from "./content-authority";
 import {
   ProductTaskSurfaces,
   RetainedTaskSurface,
@@ -54,6 +58,7 @@ const taskLabels: Record<string, string> = {
   play: "创建答题版本",
   issue: "发放访问码",
   void: "作废访问码",
+  settings: "基本设置",
 };
 type PreviewLaunch = {
   target: RevisionTarget;
@@ -72,15 +77,31 @@ export function ProductTaskWorkspace({
   consumerScope: StudioConsumerScopeV1;
   consumerRenderer: ConsumerRendererIdentity;
 }) {
+  const authority = useInternalAuthority();
+  const contentAuthority = useMemo(
+    () => ({
+      canWrite: () =>
+        session.operator.role === "operator" && !authority.isRevoked,
+      observe: (error: unknown) => {
+        const wasRevoked = authority.isRevoked;
+        authority.observe(error);
+        if (!wasRevoked && authority.isRevoked)
+          invalidateCurrentStudioAuthority();
+      },
+    }),
+    [authority, session.operator.role],
+  );
   return (
-    <ProductTaskSurfaces>
-      <Workspace
-        session={session}
-        initialTask={initialTask}
-        consumerScope={consumerScope}
-        consumerRenderer={consumerRenderer}
-      />
-    </ProductTaskSurfaces>
+    <ContentAuthorityContext.Provider value={contentAuthority}>
+      <ProductTaskSurfaces>
+        <Workspace
+          session={session}
+          initialTask={initialTask}
+          consumerScope={consumerScope}
+          consumerRenderer={consumerRenderer}
+        />
+      </ProductTaskSurfaces>
+    </ContentAuthorityContext.Provider>
   );
 }
 
@@ -108,6 +129,30 @@ function Workspace({
   const [historyScope, setHistoryScope] = useState<RevisionTarget>();
   const [contentSource, setContentSource] = useState<string>();
   const [contentRun, setContentRun] = useState(0);
+  const [sourceDetail, setSourceDetail] = useState<string>();
+  const [revisionDetail, setRevisionDetail] = useState<RevisionTarget>();
+  const tabBar = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const element = tabBar.current;
+    if (!element) return;
+    const revealSelected = () => {
+      const button = element.querySelector<HTMLElement>(
+        '[aria-current="page"]',
+      );
+      if (!button || element.scrollWidth <= element.clientWidth) return;
+      const offset = button.offsetLeft - element.offsetLeft;
+      if (offset < element.scrollLeft) element.scrollLeft = offset;
+      else if (
+        offset + button.offsetWidth >
+        element.scrollLeft + element.clientWidth
+      )
+        element.scrollLeft = offset + button.offsetWidth - element.clientWidth;
+    };
+    revealSelected();
+    const observer = new ResizeObserver(revealSelected);
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [tab]);
   const report = surfaces.report;
   const reportContent = useCallback(
     (state: WorkspaceTaskState) => report("content", state),
@@ -115,7 +160,6 @@ function Workspace({
   );
   if (!workspace) return <p role="alert">请从测评管理重新进入工作区。</p>;
   const { productId, read } = workspace;
-  const base = `/studio/products/${encodeURIComponent(productId)}`;
   const value = read.value;
   const presentation = value ? productPresentation(value) : undefined;
   const current =
@@ -176,14 +220,34 @@ function Workspace({
     if (!state?.retained && !state?.pending && !state?.busy) {
       setContentSource(importId);
       setContentRun((n) => n + 1);
+      surfaces.open("content");
+      return;
     }
     surfaces.open("content");
+    surfaces.announce(
+      "本页已有保留的内容任务。请先完成或明确结束原任务，再选择其他来源；原文件与操作记录未被替换。",
+    );
+  }
+  function inspectSource(importId: string) {
+    if (!surfaces.canSwitch()) return;
+    setSourceDetail(importId);
+    surfaces.open("source");
+  }
+  function inspectRevision(target: RevisionTarget) {
+    if (!surfaces.canSwitch()) return;
+    setRevisionDetail(revisionTargetSchema.parse(target));
+    surfaces.open("revision");
+  }
+  function openVersions() {
+    if (!surfaces.canSwitch()) return;
+    switchTab("review");
+    surfaces.open("versions");
   }
   return (
     <div className={styles.workspace}>
       <header className={styles.heading}>
         <div>
-          <p className={styles.kicker}>测评工作区 / 内容制作与内测</p>
+          <p className={styles.kicker}>测评工作区 / 内容生产与内测</p>
           <div className={styles.titleRow}>
             <h1>{value?.directory.title ?? "正在读取测评"}</h1>
             {presentation && <StatusBadge status={presentation.review} />}
@@ -198,6 +262,10 @@ function Workspace({
             {presentation?.historicalNote && (
               <> · {presentation.historicalNote}</>
             )}
+            {" · "}
+            {session.operator.role === "read-only"
+              ? "只读身份"
+              : "仅限内部测试"}
           </p>
         </div>
         <div className={styles.actions}>
@@ -205,23 +273,21 @@ function Workspace({
             <History size={18} aria-hidden="true" />
             记录与历史
           </button>
-          <Link href={`${base}/settings`}>
+          <button onClick={() => surfaces.open("settings")}>
             <Settings size={18} aria-hidden="true" />
             基本设置
-          </Link>
+          </button>
+          <button
+            className={styles.refresh}
+            onClick={read.refresh}
+            disabled={read.loading}
+            aria-label="刷新当前状态"
+            title="刷新当前状态"
+          >
+            <RefreshCw size={18} aria-hidden="true" />
+          </button>
         </div>
       </header>
-      <div className={styles.observation}>
-        <p>
-          {session.operator.role === "read-only"
-            ? "当前为只读身份"
-            : "当前仅用于内部测试"}
-        </p>
-        <button onClick={read.refresh} disabled={read.loading}>
-          <RefreshCw size={16} aria-hidden="true" />
-          {read.loading ? "正在读取…" : "刷新当前状态"}
-        </button>
-      </div>
       {read.error && (
         <p role="alert" className={styles.notice}>
           当前状态读取失败，已保留任务不会被替换。{read.error}
@@ -236,7 +302,7 @@ function Workspace({
           <p>重新登录不会恢复本页旧权限，请保留原记录在新工作区核实。</p>
         </section>
       )}
-      <nav className={styles.tabs} aria-label="测评内部任务">
+      <nav ref={tabBar} className={styles.tabs} aria-label="测评内部任务">
         {tabs.map(({ id, label, icon: Icon }) => (
           <button
             key={id}
@@ -275,6 +341,8 @@ function Workspace({
           onOpenTask={() => surfaces.open("content")}
           onOpenHistory={openRevisions}
           onOpenImports={() => surfaces.open("imports")}
+          onOpenVersions={openVersions}
+          onInspectSource={inspectSource}
           onPreview={launchPreview}
         />
       </div>
@@ -282,7 +350,7 @@ function Workspace({
         <div className={styles.sectionHeading}>
           <div>
             <h2>预览体验</h2>
-            <p>默认体验当前草稿，历史修订按需选择；开始后固定本次目标。</p>
+            <p>日常体验默认指向当前草稿；历史内容按需选择。</p>
           </div>
           <button onClick={openRevisions}>历史修订</button>
         </div>
@@ -290,27 +358,45 @@ function Workspace({
           <section className={styles.panel}>
             {selected ? (
               <>
-                <h2>固定修订 r{selected.revision}</h2>
-                <StatusBadge
-                  status={previewSelectionStatus(
-                    { productId, target: selected },
-                    productId,
-                    value,
-                  )}
-                />
-                <p>
-                  在大视图中打开真实封面、题目、结果与报告，收起后保留本页的临时体验进度。
-                </p>
+                <div className={styles.cardHead}>
+                  <div>
+                    <h3>
+                      {current && sameRevisionTarget(selected, current)
+                        ? "当前草稿预览"
+                        : "历史修订预览"}
+                    </h3>
+                    <p>选择目标：r{selected.revision} · 固定修订</p>
+                  </div>
+                  <StatusBadge
+                    status={previewSelectionStatus(
+                      { productId, target: selected },
+                      productId,
+                      value,
+                    )}
+                  />
+                </div>
+                <div
+                  className={styles.previewDisplay}
+                  aria-label="固定修订预览入口"
+                >
+                  <Eye size={28} aria-hidden="true" />
+                  <strong>{value?.directory.title ?? "测评内容"}</strong>
+                  <span>r{selected.revision} · 打开后查看真实封面与内容</span>
+                </div>
                 <div className={styles.actions}>
                   <button
                     className={styles.primary}
                     disabled={authority.isRevoked}
                     onClick={() => launchPreview(selected)}
                   >
+                    <Eye size={18} aria-hidden="true" />
                     体验 r{selected.revision} 完整流程
                   </button>
                   <button onClick={openRevisions}>选择其他修订</button>
                 </div>
+                <p className={styles.previewHint}>
+                  打开预览不会自动登记人工体验，也不会替代审核依据。
+                </p>
                 {switchPreview && (
                   <section className={styles.notice} role="status">
                     <p>
@@ -345,22 +431,25 @@ function Workspace({
             )}
           </section>
           <aside className={styles.panel}>
-            <h2>体验中核对什么</h2>
+            <h3>预览什么？</h3>
             <ul className={styles.previewChecklist}>
-              <li>
-                <strong>封面与答题</strong>
-                <p>查看实际内容、素材与操作反馈。</p>
-              </li>
-              <li>
-                <strong>结果与报告</strong>
-                <p>由原固定修订预览服务生成，保持同一目标。</p>
-              </li>
-              <li>
-                <strong>海报</strong>
-                <p>沿用已有预览导出能力；不产生正式消费者报告。</p>
-              </li>
+              {[
+                ["封面与答题", "检查视觉布局和阅读体验"],
+                ["结果揭晓", "检查对应结果与内容表现"],
+                ["完整报告与海报", "核对展示及导出入口"],
+              ].map(([title, description]) => (
+                <li key={title}>
+                  <CheckCircle2 size={24} aria-hidden="true" />
+                  <div>
+                    <strong>{title}</strong>
+                    <p>{description}</p>
+                  </div>
+                </li>
+              ))}
             </ul>
-            <p>预览不会自动登记人工验收或授予批准。</p>
+            <p className={styles.previewHint}>
+              新修订产生时，已打开的预览仍保持原目标和本页进度。
+            </p>
           </aside>
         </div>
       </div>
@@ -371,6 +460,9 @@ function Workspace({
           currentTarget={current}
           visible={tab === "review"}
           onChanged={read.refresh}
+          onGoToTesting={() => switchTab("testing")}
+          onPreviewTarget={launchPreview}
+          onInspectRevision={inspectRevision}
         />
       )}
       {visitedTabs.has("testing") && (
@@ -382,6 +474,7 @@ function Workspace({
           embedded
           visible={tab === "testing"}
           onChanged={read.refresh}
+          onGoToReview={() => switchTab("review")}
         />
       )}
       <RetainedTaskSurface id="content">
@@ -393,6 +486,8 @@ function Workspace({
           onChanged={read.refresh}
           onState={reportContent}
           onPreview={launchPreview}
+          onInspectSource={inspectSource}
+          onInspectRevision={inspectRevision}
         />
       </RetainedTaskSurface>
       <RetainedTaskSurface id="history">
@@ -409,11 +504,15 @@ function Workspace({
           <p>
             {presentation?.historicalNote || "当前摘要没有历史固定版本代表项。"}
           </p>
-          <button onClick={() => switchTab("review")}>进入审核与版本</button>
+          <button onClick={openVersions}>查看历史固定版本</button>
         </div>
       </RetainedTaskSurface>
       <RetainedTaskSurface id="imports">
-        <ContentRecords productId={productId} onContinue={continueSource} />
+        <ContentRecords
+          productId={productId}
+          onContinue={continueSource}
+          onInspect={inspectSource}
+        />
       </RetainedTaskSurface>
       <RetainedTaskSurface id="revisions">
         {historyScope ? (
@@ -423,10 +522,37 @@ function Workspace({
             currentRevision={current?.revision ?? historyScope.revision}
             onSelect={choosePreview}
             onFailure={observeHistoryFailure}
+            onInspectSource={inspectSource}
+            onInspectRevision={inspectRevision}
           />
         ) : (
           <p>尚无可读取的草稿修订。</p>
         )}
+      </RetainedTaskSurface>
+      <RetainedTaskSurface id="source">
+        {sourceDetail && (
+          <ContentSourceDetails
+            key={sourceDetail}
+            productId={productId}
+            sourceId={sourceDetail}
+            session={session}
+            onContinue={continueSource}
+          />
+        )}
+      </RetainedTaskSurface>
+      <RetainedTaskSurface id="revision">
+        {revisionDetail && (
+          <RevisionDetails
+            key={JSON.stringify(revisionDetail)}
+            productId={productId}
+            target={revisionDetail}
+            onPreview={launchPreview}
+            onInspectSource={inspectSource}
+          />
+        )}
+      </RetainedTaskSurface>
+      <RetainedTaskSurface id="settings">
+        <ProductDetail productId={productId} session={session} embedded />
       </RetainedTaskSurface>
       <RetainedTaskSurface id="preview">
         {launched && (

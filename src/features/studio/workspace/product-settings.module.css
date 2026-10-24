@@ -53,6 +53,84 @@
   border-color: #d8b9b9;
   background: #fff;
 }
+.embedded {
+  gap: 16px;
+  color: #202a42;
+  font-size: 16px;
+}
+.embedded .columns {
+  display: block;
+}
+.singleFields {
+  grid-template-columns: minmax(0, 1fr);
+}
+.embedded .formPanel,
+.embedded .identityPanel,
+.embedded .lifecycle {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  margin: 0 0 20px;
+}
+.embedded .formPanel h2 {
+  display: none;
+}
+.embedded .side {
+  display: block;
+  border-top: 1px solid #e6e9f1;
+  padding-top: 14px;
+}
+.embedded summary {
+  min-height: 44px;
+  padding-block: 10px;
+  color: #4a5873;
+  font-weight: 650;
+  cursor: pointer;
+}
+.embedded .identityPanel,
+.embedded .lifecycle {
+  margin-top: 18px;
+}
+.embedded .identityPanel h2,
+.embedded .lifecycle h2 {
+  font-size: 17px;
+  font-weight: 700;
+}
+.primary {
+  min-height: 44px;
+  padding: 9px 15px;
+  border: 1px solid #6358da;
+  border-radius: 8px;
+  color: #fff;
+  background: #6358da;
+  font: inherit;
+  font-weight: 650;
+  cursor: pointer;
+}
+.primary:disabled {
+  opacity: 0.46;
+  cursor: not-allowed;
+}
+.archiveTask {
+  display: grid;
+  gap: 16px;
+  font-size: 16px;
+  color: #202a42;
+}
+.archiveTask h3 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+}
+.archiveTask p {
+  margin: 0;
+}
+.target {
+  padding: 14px;
+  border: 1px solid #e6e9f1;
+  border-radius: 9px;
+  font-weight: 650;
+}
 @media (max-width: 1050px) {
   .columns {
     grid-template-columns: minmax(0, 1fr);

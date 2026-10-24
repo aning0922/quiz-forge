@@ -1,18 +1,21 @@
 .shell {
-  --studio-primary: #6358df;
-  --studio-ink: #24304b;
-  --studio-muted: #63718b;
-  --studio-border: #e1e6f0;
+  --studio-primary: #6358da;
+  --studio-ink: #202a42;
+  --studio-muted: #75829a;
+  --studio-border: #e6e9f1;
   --studio-surface: #fff;
-  --studio-canvas: #f5f6fa;
+  --studio-canvas: #f5f6fb;
   min-height: 100dvh;
   display: grid;
-  grid-template-columns: 232px minmax(0, 1fr);
+  grid-template-columns: 222px minmax(0, 1fr);
   align-items: start;
   background: var(--studio-canvas);
   color: var(--studio-ink);
   font-size: 16px;
   line-height: 1.6;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei",
+    "Noto Sans CJK SC", system-ui, sans-serif;
 }
 .content,
 .main,

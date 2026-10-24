@@ -10,7 +10,9 @@ export function StudioTopbar({
 }: {
   identity?: StudioIdentity | undefined;
 }) {
-  const location = studioLocation(usePathname());
+  const pathname = usePathname();
+  const location = studioLocation(pathname);
+  const productWorkspace = /^\/studio\/products\/[^/]+$/.test(pathname);
   const { registerTrigger, id, expanded, open } = useStudioMobileNavigation();
   return (
     <header className={styles.topbar}>
@@ -34,24 +36,26 @@ export function StudioTopbar({
         </div>
       </div>
       <div className={styles.topbarActions}>
-        <form
-          className={styles.topSearch}
-          action="/studio/products"
-          method="GET"
-          data-studio-navigation-form
-          aria-label="搜索测评"
-        >
-          <input
-            type="search"
-            name="q"
-            aria-label="搜索测评名称或编号"
-            placeholder="输入名称或编号"
-            maxLength={80}
-          />
-          <button type="submit" aria-label="搜索测评">
-            <Search size={20} aria-hidden="true" />
-          </button>
-        </form>
+        {!productWorkspace && (
+          <form
+            className={styles.topSearch}
+            action="/studio/products"
+            method="GET"
+            data-studio-navigation-form
+            aria-label="搜索测评"
+          >
+            <input
+              type="search"
+              name="q"
+              aria-label="搜索测评名称或编号"
+              placeholder="输入名称或编号"
+              maxLength={80}
+            />
+            <button type="submit" aria-label="搜索测评">
+              <Search size={20} aria-hidden="true" />
+            </button>
+          </form>
+        )}
         {identity && (
           <span className={styles.roleBadge}>
             {identity.role === "operator" ? "运营者" : "只读"}

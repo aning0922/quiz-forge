@@ -97,7 +97,7 @@ export function StudioTesting({ readOnly }: { readOnly: boolean }) {
                     </div>
                     <Link
                       className={`${ui.link} ${ui.secondary}`}
-                      href={`/studio/products/${encodeURIComponent(product.id)}/consumer-access`}
+                      href={`/studio/products/${encodeURIComponent(product.id)}?task=testing`}
                       aria-label={`查看 ${product.title} 的内测`}
                     >
                       查看此测评内测

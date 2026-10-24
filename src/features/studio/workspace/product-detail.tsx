@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useStudioLeaveProtection } from "../navigation-boundary";
 import { useProductWorkspaceContext } from "../product-workspace/context";
 import {
@@ -30,6 +30,11 @@ import {
 import { StableInternalWorkspace } from "../internal-versions/pages";
 import styles from "./workspace.module.css";
 import settings from "./product-settings.module.css";
+import {
+  RetainedTaskActions,
+  RetainedTaskSurface,
+  useOptionalWorkspaceSurfaces,
+} from "../product-workspace/task-surfaces";
 
 function formFields(product: ProductDto): ProductFormFields {
   return {
@@ -43,9 +48,11 @@ function formFields(product: ProductDto): ProductFormFields {
 function ProductEditor({
   initial,
   session,
+  embedded = false,
 }: {
   initial: ProductDto;
   session: StudioSessionDto;
+  embedded?: boolean;
 }) {
   const authority = useInternalAuthority();
   const workspace = useProductWorkspaceContext();
@@ -53,6 +60,12 @@ function ProductEditor({
   const [fields, setFields] = useState(() => formFields(initial));
   const [validation, setValidation] = useState("");
   const [confirmArchive, setConfirmArchive] = useState(false);
+  const [archiveMode, setArchiveMode] = useState<"archive" | "restore">(
+    "archive",
+  );
+  const [lifecycleResult, setLifecycleResult] = useState<
+    "idle" | "pending" | "complete"
+  >("idle");
   const [latest, setLatest] = useState<ProductDto>();
   const [reading, setReading] = useState(false);
   const [readError, setReadError] = useState("");
@@ -65,6 +78,36 @@ function ProductEditor({
     pending: mutation.blocked,
   });
   const canWrite = session.operator.role === "operator" && !authority.isRevoked;
+  const surfaces = useOptionalWorkspaceSurfaces();
+  const reportTask = surfaces?.report;
+  const dirty = productFieldsDirty(fields, product);
+  const busy = mutation.state.phase === "submitting" || reading;
+  const pending =
+    mutation.state.phase === "unknown" || mutation.state.phase === "conflict";
+  useEffect(() => {
+    if (!embedded || !reportTask) return;
+    reportTask("settings", {
+      busy,
+      pending,
+      retained: dirty,
+      message: pending
+        ? "设置操作需要核实原结果，输入已保留。"
+        : dirty
+          ? "基本资料有未保存输入，收起后可继续。"
+          : undefined,
+    });
+    reportTask("archive", { busy, pending: false, retained: false });
+  }, [embedded, reportTask, busy, pending, dirty]);
+  useEffect(
+    () => () => {
+      if (!embedded || !reportTask) return;
+      reportTask("settings", { busy: false, pending: false, retained: false });
+      reportTask("archive", { busy: false, pending: false, retained: false });
+    },
+    [embedded, reportTask],
+  );
+  const formId = `product-settings-form-${product.id}`;
+  const Secondary = embedded ? "details" : "aside";
   const endpoint = `/api/studio/products/${encodeURIComponent(product.id)}`;
 
   async function save() {
@@ -101,6 +144,7 @@ function ProductEditor({
   }
   async function lifecycle(action: "archive" | "restore") {
     if (authority.isRevoked) return;
+    setLifecycleResult("pending");
     setLatest(undefined);
     setValidation("");
     const result = await mutation.submit(
@@ -113,6 +157,7 @@ function ProductEditor({
     );
     if (result) {
       setProduct(result.product);
+      setLifecycleResult("complete");
       setConfirmArchive(false);
       setValidation(
         result.changed
@@ -148,13 +193,19 @@ function ProductEditor({
   }
 
   return (
-    <section className={settings.settings}>
-      <StudioPageHeader
-        title="基本设置"
-        description={
-          <p>编辑测评目录中的名称、分类与标签。这里的设置不会改写包内内容。</p>
-        }
-      />
+    <section
+      className={`${settings.settings} ${embedded ? settings.embedded : ""}`}
+    >
+      {!embedded && (
+        <StudioPageHeader
+          title="基本设置"
+          description={
+            <p>
+              编辑测评目录中的名称、分类与标签。这里的设置不会改写包内内容。
+            </p>
+          }
+        />
+      )}
       {authority.isRevoked ? (
         <p className={`${styles.status} ${styles.error}`} role="alert">
           当前页面的运营权限已失效。请重新登录并读取服务器状态后继续。
@@ -185,7 +236,18 @@ function ProductEditor({
         state={mutation.state}
         reading={reading}
         readError={readError}
-        snapshot={latest ? <ProductCard product={latest} showIdentity /> : null}
+        snapshot={
+          latest ? (
+            embedded ? (
+              <p>
+                服务器当前名称：{latest.title} · 信息修订{" "}
+                {latest.metadataRevision}
+              </p>
+            ) : (
+              <ProductCard product={latest} showIdentity />
+            )
+          ) : null
+        }
         onRead={() => void readLatest()}
         onUseServer={() => adoptLatest(false)}
         onKeepInput={() => adoptLatest(true)}
@@ -196,6 +258,7 @@ function ProductEditor({
             <section className={settings.formPanel}>
               <h2>测评信息</h2>
               <form
+                id={formId}
                 aria-label="测评信息"
                 className={styles.form}
                 onSubmit={(event) => {
@@ -203,8 +266,11 @@ function ProductEditor({
                   void save();
                 }}
               >
-                <div className={styles.fieldGrid}>
+                <div
+                  className={`${styles.fieldGrid} ${embedded ? settings.singleFields : ""}`}
+                >
                   <ProductFields
+                    compact={embedded}
                     value={fields}
                     onChange={setFields}
                     disabled={
@@ -213,16 +279,32 @@ function ProductEditor({
                     }
                   />
                 </div>
-                <button
-                  className={styles.button}
-                  type="submit"
-                  disabled={authority.isRevoked || mutation.blocked}
-                >
-                  {mutation.state.phase === "submitting"
-                    ? "正在提交…"
-                    : "保存测评信息"}
-                </button>
+                {!embedded && (
+                  <button
+                    className={styles.button}
+                    type="submit"
+                    disabled={authority.isRevoked || mutation.blocked}
+                  >
+                    {mutation.state.phase === "submitting"
+                      ? "正在提交…"
+                      : "保存测评信息"}
+                  </button>
+                )}
               </form>
+              {embedded && (
+                <RetainedTaskActions id="settings">
+                  <button
+                    className={settings.primary}
+                    type="submit"
+                    form={formId}
+                    disabled={authority.isRevoked || mutation.blocked}
+                  >
+                    {mutation.state.phase === "submitting"
+                      ? "正在保存…"
+                      : "保存测评信息"}
+                  </button>
+                </RetainedTaskActions>
+              )}
             </section>
           ) : null}
           {(session.operator.role !== "operator" || product.archivedAt) && (
@@ -260,7 +342,8 @@ function ProductEditor({
             </section>
           )}
         </div>
-        <aside className={settings.side} aria-label="低频与技术设置">
+        <Secondary className={settings.side} aria-label="低频与技术设置">
+          {embedded && <summary>标识、状态与归档</summary>}
           <section className={settings.identityPanel}>
             <h2>目录状态与技术身份</h2>
             <p>{product.archivedAt ? "已归档 · 信息只读" : "未归档"}</p>
@@ -287,7 +370,15 @@ function ProductEditor({
                     className={styles.button}
                     type="button"
                     disabled={mutation.blocked}
-                    onClick={() => void lifecycle("restore")}
+                    onClick={() => {
+                      if (!embedded) {
+                        void lifecycle("restore");
+                        return;
+                      }
+                      setArchiveMode("restore");
+                      setLifecycleResult("idle");
+                      surfaces?.open("archive");
+                    }}
                   >
                     恢复测评
                   </button>
@@ -298,11 +389,18 @@ function ProductEditor({
                     className={`${styles.button} ${styles.secondary}`}
                     type="button"
                     disabled={mutation.blocked}
-                    onClick={() => setConfirmArchive(true)}
+                    onClick={() => {
+                      setConfirmArchive(true);
+                      if (embedded) {
+                        setArchiveMode("archive");
+                        setLifecycleResult("idle");
+                        surfaces?.open("archive");
+                      }
+                    }}
                   >
                     归档测评
                   </button>
-                  {confirmArchive && (
+                  {confirmArchive && !embedded && (
                     <section className={styles.compare} aria-label="归档说明">
                       <p>
                         归档后测评信息只读，原有分类和标签保留；编号与英文标识不释放。之后可以恢复测评再编辑。
@@ -331,8 +429,67 @@ function ProductEditor({
               )}
             </section>
           )}
-        </aside>
+        </Secondary>
       </div>
+      {embedded && (
+        <RetainedTaskSurface id="archive">
+          <div className={settings.archiveTask}>
+            <h3>
+              {archiveMode === "archive" ? "归档这款测评" : "恢复这款测评"}
+            </h3>
+            <p className={settings.target}>{product.title}</p>
+            <p>
+              {archiveMode === "archive"
+                ? "归档后目录资料只读，已有内容、内测版本和报告保留。之后仍可恢复。"
+                : "恢复后可以继续编辑目录资料；原有内容和分类关联保留。"}
+            </p>
+            {lifecycleResult !== "idle" && mutation.state.message && (
+              <p role="status">{mutation.state.message}</p>
+            )}
+            {lifecycleResult !== "idle" && validation && (
+              <p role="status">{validation}</p>
+            )}
+            <ReconcilePanel
+              state={mutation.state}
+              reading={reading}
+              readError={readError}
+              snapshot={
+                latest ? (
+                  <p>
+                    服务器状态：{latest.archivedAt ? "已归档" : "未归档"} ·
+                    信息修订 {latest.metadataRevision}
+                  </p>
+                ) : null
+              }
+              onRead={() => void readLatest()}
+              onUseServer={() => adoptLatest(false)}
+              onKeepInput={() => adoptLatest(true)}
+            />
+            <RetainedTaskActions id="archive">
+              {lifecycleResult === "complete" ? (
+                <button
+                  className={settings.primary}
+                  onClick={() => surfaces?.open("settings")}
+                >
+                  返回基本设置
+                </button>
+              ) : (
+                <button
+                  className={settings.primary}
+                  disabled={authority.isRevoked || mutation.blocked}
+                  onClick={() => void lifecycle(archiveMode)}
+                >
+                  {busy
+                    ? "正在提交…"
+                    : archiveMode === "archive"
+                      ? "确认归档测评"
+                      : "确认恢复测评"}
+                </button>
+              )}
+            </RetainedTaskActions>
+          </div>
+        </RetainedTaskSurface>
+      )}
     </section>
   );
 }
@@ -340,9 +497,11 @@ function ProductEditor({
 function ProductDetailContent({
   productId,
   session,
+  embedded = false,
 }: {
   productId: string;
   session: StudioSessionDto;
+  embedded?: boolean;
 }) {
   const authority = useInternalAuthority(),
     read = useWorkspaceRead<ProductDto>(
@@ -351,8 +510,12 @@ function ProductDetailContent({
     );
   return (
     <div className={styles.workspace}>
-      <WorkspaceNav />
-      <StudioWorkflowNav productId={productId} current="product" />
+      {!embedded && (
+        <>
+          <WorkspaceNav />
+          <StudioWorkflowNav productId={productId} current="product" />
+        </>
+      )}
       {read.loading && (
         <p className={styles.status} role="status">
           正在读取测评…
@@ -376,14 +539,17 @@ function ProductDetailContent({
           key={read.value.id}
           initial={read.value}
           session={session}
+          embedded={embedded}
         />
       )}
-      <StableInternalWorkspace
-        key={productId}
-        productId={productId}
-        session={session}
-        showEntry={false}
-      />
+      {!embedded && (
+        <StableInternalWorkspace
+          key={productId}
+          productId={productId}
+          session={session}
+          showEntry={false}
+        />
+      )}
     </div>
   );
 }

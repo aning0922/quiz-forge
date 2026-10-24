@@ -19,10 +19,12 @@ export function ProductFields({
   value,
   onChange,
   disabled,
+  compact = false,
 }: {
   value: ProductFormFields;
   onChange: (value: ProductFormFields) => void;
   disabled: boolean;
+  compact?: boolean;
 }) {
   return (
     <>
@@ -43,38 +45,65 @@ export function ProductFields({
           填写运营时容易识别的名称，例如“千载同心”，最多 120 个字符。
         </p>
       </div>
-      <div className={styles.field}>
-        <label htmlFor="product-slug">测评英文标识</label>
-        <input
-          className={styles.input}
-          id="product-slug"
-          aria-describedby="product-slug-help"
-          placeholder="例如 qianzai-tongxin"
-          value={value.slug}
-          required
-          pattern="[a-z][a-z0-9]*(?:-[a-z0-9]+)*"
-          maxLength={80}
-          disabled={disabled}
-          onChange={(event) => onChange({ ...value, slug: event.target.value })}
-        />
-        <p id="product-slug-help" className={styles.note}>
-          用于区分测评，例如
-          qianzai-tongxin。可与测评编号相同；使用小写字母、数字和连字符，最多 80
-          字符，不能与其他测评重复。
-        </p>
-      </div>
+      {!compact && (
+        <div className={styles.field}>
+          <label htmlFor="product-slug">测评英文标识</label>
+          <input
+            className={styles.input}
+            id="product-slug"
+            aria-describedby="product-slug-help"
+            placeholder="例如 qianzai-tongxin"
+            value={value.slug}
+            required
+            pattern="[a-z][a-z0-9]*(?:-[a-z0-9]+)*"
+            maxLength={80}
+            disabled={disabled}
+            onChange={(event) =>
+              onChange({ ...value, slug: event.target.value })
+            }
+          />
+          <p id="product-slug-help" className={styles.note}>
+            用于区分测评，例如
+            qianzai-tongxin。可与测评编号相同；使用小写字母、数字和连字符，最多
+            80 字符，不能与其他测评重复。
+          </p>
+        </div>
+      )}
       <TaxonomyPicker
         kind="category"
+        compact={compact}
         selected={value.categories}
         onChange={(categories) => onChange({ ...value, categories })}
         disabled={disabled}
       />
       <TaxonomyPicker
         kind="tag"
+        compact={compact}
         selected={value.tags}
         onChange={(tags) => onChange({ ...value, tags })}
         disabled={disabled}
       />
+      {compact && (
+        <details className={styles.field}>
+          <summary>英文标识</summary>
+          <label htmlFor="product-slug">测评英文标识</label>
+          <input
+            className={styles.input}
+            id="product-slug"
+            value={value.slug}
+            required
+            pattern="[a-z][a-z0-9]*(?:-[a-z0-9]+)*"
+            maxLength={80}
+            disabled={disabled}
+            onChange={(event) =>
+              onChange({ ...value, slug: event.target.value })
+            }
+          />
+          <p className={styles.note}>
+            用于区分测评，仅限小写字母、数字和连字符。
+          </p>
+        </details>
+      )}
     </>
   );
 }

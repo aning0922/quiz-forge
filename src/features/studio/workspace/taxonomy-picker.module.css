@@ -1,0 +1,20 @@
+.options {
+  border: 1px solid #dbe1ed;
+  border-radius: 8px;
+  background: #fff;
+  padding: 0 12px;
+}
+.options > summary {
+  min-height: 46px;
+  padding: 10px 0;
+  color: #4a5873;
+  cursor: pointer;
+  font-weight: 400;
+}
+.options[open] {
+  padding-bottom: 12px;
+}
+.options[open] > summary {
+  border-bottom: 1px solid #e6e9f1;
+  margin-bottom: 12px;
+}

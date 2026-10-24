@@ -1,7 +1,7 @@
 .workspace {
   display: grid;
   gap: 20px;
-  color: #24314e;
+  color: #202a42;
   min-width: 0;
 }
 .heading {
@@ -14,6 +14,7 @@
   color: #756bb2;
   margin: 0 0 8px;
   font-size: 16px;
+  font-weight: 700;
 }
 .titleRow {
   display: flex;
@@ -23,15 +24,16 @@
 }
 .titleRow h1 {
   margin: 0;
-  font-size: 28px;
-  line-height: 1.4;
+  font-size: 27px;
+  font-weight: 700;
+  line-height: 1.35;
   overflow-wrap: anywhere;
 }
 .subtitle {
-  margin: 10px 0 0;
+  margin: 6px 0 0;
   color: #6a7894;
   font-size: 16px;
-  line-height: 1.7;
+  line-height: 1.55;
 }
 .actions {
   display: flex;
@@ -65,6 +67,13 @@
   cursor: not-allowed;
   opacity: 0.6;
 }
+.actions .refresh {
+  padding: 9px;
+  min-width: 44px;
+  color: #75829a;
+  border-color: transparent;
+  background: transparent;
+}
 .observation {
   display: flex;
   align-items: center;
@@ -85,7 +94,7 @@
   gap: 4px;
   padding: 0 14px;
   border: 1px solid #e2e6f0;
-  border-radius: 12px;
+  border-radius: 12px 12px 0 0;
   background: white;
   overflow-x: auto;
 }
@@ -107,6 +116,9 @@
   background: #fff;
   border: 1px solid #e1e6f0;
   border-radius: 13px;
+  box-shadow:
+    0 7px 24px #25305107,
+    0 1px 2px #2733540a;
 }
 .sectionHeading {
   display: flex;
@@ -117,7 +129,8 @@
 }
 .sectionHeading h2 {
   margin: 0 0 6px;
-  font-size: 22px;
+  font-size: 20px;
+  font-weight: 700;
 }
 .sectionHeading p {
   margin: 0;
@@ -134,15 +147,30 @@
 }
 .columns {
   display: grid;
-  grid-template-columns: minmax(0, 1.6fr) minmax(280px, 1fr);
-  gap: 20px;
+  grid-template-columns: minmax(0, 1.58fr) minmax(300px, 0.95fr);
+  gap: 19px;
   align-items: start;
 }
 .previewChecklist {
   display: grid;
   gap: 14px;
   margin: 20px 0;
-  padding-left: 22px;
+  padding: 0;
+  list-style: none;
+}
+.previewChecklist li {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+}
+.previewChecklist svg {
+  flex-shrink: 0;
+  color: #6358da;
+  background: #f2efff;
+  border-radius: 8px;
+  padding: 4px;
+  width: 32px;
+  height: 32px;
 }
 .previewChecklist p {
   margin: 5px 0 0;
@@ -150,11 +178,75 @@
 .panel h2 {
   margin: 0 0 12px;
   font-size: 22px;
+  font-weight: 700;
+}
+.panel h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
 }
 .panel p {
   font-size: 16px;
-  line-height: 1.75;
+  line-height: 1.6;
   color: #62728e;
+}
+.cardHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+.cardHead p {
+  margin: 5px 0 0;
+}
+.previewDisplay {
+  position: relative;
+  overflow: hidden;
+  min-height: 190px;
+  border-radius: 12px;
+  background:
+    radial-gradient(circle at 80% 10%, #e9cfe4, transparent 37%),
+    linear-gradient(145deg, #e8eefb, #faf6ff 65%, #f2e7ed);
+  border: 1px solid #e8e3f2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 20px;
+  text-align: center;
+  color: #75638c;
+}
+.previewDisplay::before {
+  content: "";
+  position: absolute;
+  width: 180px;
+  height: 180px;
+  border: 1px solid #d8c7da;
+  border-radius: 50%;
+  right: 20px;
+  top: -20px;
+}
+.previewDisplay strong {
+  position: relative;
+  font-size: 25px;
+  font-weight: 700;
+  color: #604c76;
+  overflow-wrap: anywhere;
+}
+.previewDisplay span {
+  position: relative;
+  font-size: 16px;
+}
+.panel > .actions {
+  margin-top: 19px;
+}
+.panel .previewHint {
+  padding-top: 15px;
+  margin: 18px 0 0;
+  border-top: 1px solid #e6e9f1;
+  color: #75829a;
 }
 .panel .primary,
 .primary {
@@ -217,10 +309,12 @@
   outline: 3px solid #aaa1f5;
   outline-offset: 3px;
 }
-@media (max-width: 900px) {
+@media (max-width: 1140px) {
   .columns {
     grid-template-columns: 1fr;
   }
+}
+@media (max-width: 800px) {
   .heading {
     flex-direction: column;
   }

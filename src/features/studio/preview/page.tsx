@@ -90,7 +90,7 @@ export function FixedRevisionPreviewPage({
   }, [scope, attempt, authority]);
   const active = read.attempt === attempt;
   return (
-    <div className={styles.preview}>
+    <div className={`${styles.preview} ${embedded ? styles.embedded : ""}`}>
       {!embedded && (
         <>
           <StudioPageHeader

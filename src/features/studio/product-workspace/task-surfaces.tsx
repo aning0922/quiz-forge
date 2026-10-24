@@ -53,9 +53,14 @@ type SurfaceContextValue = {
   open: (id: WorkspaceSurfaceId) => boolean;
   close: () => boolean;
   canSwitch: () => boolean;
+  announce: (message: string) => void;
   report: (id: WorkspaceSurfaceId, state: WorkspaceTaskState) => void;
 };
 const SurfaceContext = createContext<SurfaceContextValue | null>(null);
+
+export function useOptionalWorkspaceSurfaces() {
+  return useContext(SurfaceContext);
+}
 
 export function useWorkspaceSurfaces() {
   const value = useContext(SurfaceContext);
@@ -184,6 +189,7 @@ export function ProductTaskSurfaces({ children }: { children: ReactNode }) {
         open,
         close,
         canSwitch,
+        announce: setNotice,
         report,
       }}
     >
