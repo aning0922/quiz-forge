@@ -13,6 +13,7 @@ import { createStudioRequestBudget } from "@/lib/http-security/request-budget";
 import { runConsumerSqlPhase } from "@/features/fulfillment/consumer-flow/sql-owner";
 import { parseOperationsQuery } from "./query";
 import type { OperationsService } from "./service";
+import type { OperationsQuery } from "./contracts";
 import {
   OPERATIONS_RESPONSE_BYTES,
   parseProductOperations,
@@ -41,7 +42,7 @@ export async function handleOperationsHttp(
     const params = new URL(request.url).searchParams;
     if (endpoint.action !== "list" && params.size)
       throw new StudioError("INVALID_REQUEST");
-    let query;
+    let query: OperationsQuery | undefined;
     try {
       if (endpoint.action === "list") query = parseOperationsQuery(params);
     } catch {

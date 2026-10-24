@@ -16,7 +16,7 @@ export async function readProductOperations(
 ) {
   const input = await studioFetch<unknown>(
     `/api/studio/operations/products/${encodeURIComponent(productId)}`,
-    { signal },
+    { ...(signal ? { signal } : {}) },
   );
   return parseProductOperations(input, productId);
 }
@@ -27,13 +27,15 @@ export async function readOperationsProducts(
   const search = operationsListHref(query).split("?")[1];
   const input = await studioFetch<unknown>(
     `/api/studio/operations/products?${search}`,
-    { signal },
+    { ...(signal ? { signal } : {}) },
   );
   return parseProductOperationsPage(input, query);
 }
 export async function readOperationsDashboard(signal?: AbortSignal) {
   return parseOperationsDashboard(
-    await studioFetch<unknown>("/api/studio/operations/dashboard", { signal }),
+    await studioFetch<unknown>("/api/studio/operations/dashboard", {
+      ...(signal ? { signal } : {}),
+    }),
   );
 }
 

@@ -32,7 +32,7 @@ export function readCatalogQuery(
 }
 
 export function catalogQueryString(query: OperationsQuery): string {
-  return operationsListHref(query).split("?")[1];
+  return operationsListHref(query).split("?")[1]!;
 }
 
 export const catalogPageHref = operationsListHref;

@@ -70,7 +70,9 @@ export function InternalAuthorityProvider({
   productId: string;
   children: ReactNode;
 }) {
-  const [authority] = useState(() => new InternalProductAuthority(productId));
+  const inherited = useContext(Context);
+  const [owned] = useState(() => new InternalProductAuthority(productId));
+  const authority = inherited ?? owned;
   if (authority.productId !== productId)
     throw Error("INTERNAL_PRODUCT_AUTHORITY_SCOPE_CHANGED");
   return <Context.Provider value={authority}>{children}</Context.Provider>;

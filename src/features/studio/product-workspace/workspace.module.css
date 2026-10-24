@@ -4,6 +4,12 @@
   line-height: 1.6;
   color: var(--studio-text, #24304b);
 }
+.operationBoundary {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
 .identity {
   padding: 26px 30px 20px;
   border: 1px solid var(--studio-border, #e1e6f0);

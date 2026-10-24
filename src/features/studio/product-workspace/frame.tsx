@@ -6,6 +6,11 @@ import { useProductOperations } from "../operations-ui/read";
 import { AsOf, ObservationValue } from "../operations-ui/summary";
 import { ProductWorkspaceContext } from "./context";
 import { ProductWorkspaceNav } from "./nav";
+import {
+  InternalAuthorityProvider,
+  useInternalAuthority,
+} from "../internal-versions/authority";
+import { invalidateCurrentStudioAuthority } from "../authority-events";
 import styles from "./workspace.module.css";
 
 export function ProductWorkspaceFrame({
@@ -15,7 +20,28 @@ export function ProductWorkspaceFrame({
   productId: string;
   children: ReactNode;
 }) {
-  const read = useProductOperations(productId);
+  return (
+    <InternalAuthorityProvider productId={productId}>
+      <WorkspaceFrameContent productId={productId}>
+        {children}
+      </WorkspaceFrameContent>
+    </InternalAuthorityProvider>
+  );
+}
+
+function WorkspaceFrameContent({
+  productId,
+  children,
+}: {
+  productId: string;
+  children: ReactNode;
+}) {
+  const authority = useInternalAuthority();
+  const read = useProductOperations(productId, (error) => {
+    const wasRevoked = authority.isRevoked;
+    authority.observe(error);
+    if (!wasRevoked && authority.isRevoked) invalidateCurrentStudioAuthority();
+  });
   const value = read.value;
   return (
     <ProductWorkspaceContext.Provider value={{ productId, read }}>
@@ -106,7 +132,25 @@ export function ProductWorkspaceFrame({
           </div>
         </header>
         <ProductWorkspaceNav productId={productId} />
-        <div className={styles.body}>{children}</div>
+        {authority.isRevoked && (
+          <section className={styles.error} role="alert">
+            <p>
+              当前页的运营权限已失效。输入、文件和原操作记录仍保留，本页已停止接受新的操作。
+            </p>
+            <a href="/studio/login" target="_blank" rel="noopener">
+              在新标签重新登录
+            </a>
+            <p>
+              重新登录后请重新打开对应工作区核实原记录；刷新摘要不会恢复本页旧权限。
+            </p>
+          </section>
+        )}
+        <fieldset
+          disabled={authority.isRevoked}
+          className={styles.operationBoundary}
+        >
+          <div className={styles.body}>{children}</div>
+        </fieldset>
       </div>
     </ProductWorkspaceContext.Provider>
   );
