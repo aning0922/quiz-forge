@@ -78,9 +78,20 @@ export function ContentRecords({
                 {item.storageCondition !== "clean" && (
                   <p>存储状态待核实，不能直接开始下一步。</p>
                 )}
-                <button onClick={() => onContinue(item.id)}>
-                  选择此来源并继续
-                </button>
+                {item.status === "received" &&
+                item.storageCondition === "clean" ? (
+                  <button onClick={() => onContinue(item.id)}>
+                    选择此来源并继续
+                  </button>
+                ) : (
+                  <a
+                    href={`/studio/products/${encodeURIComponent(productId)}/imports/${encodeURIComponent(item.id)}`}
+                    target="_blank"
+                    rel="noopener"
+                  >
+                    查看原接收记录与恢复条件
+                  </a>
+                )}
                 <TechnicalDetails label="来源记录标识">
                   <p>接收编号：{item.id}</p>
                   <p>原声明 SHA-256：{item.expectedArchiveSha256}</p>
