@@ -436,10 +436,16 @@ test("operator creates taxonomy and product, checks 8 tags, filters and safe mob
   await page.getByText("更多筛选", { exact: true }).click();
   await expect(unclassified).toBeChecked();
   await unclassified.uncheck();
-  await page.getByLabel("搜索测评名称或编号").fill("不存在的合成筛选");
+  await page
+    .getByRole("form", { name: "列表筛选", exact: true })
+    .getByLabel("搜索测评名称或编号")
+    .fill("不存在的合成筛选");
   await page.getByRole("button", { name: "应用筛选", exact: true }).click();
   await expect(page.getByText("当前筛选无结果", { exact: true })).toBeVisible();
-  await page.getByLabel("搜索测评名称或编号").fill("e2e-workspace");
+  await page
+    .getByRole("form", { name: "列表筛选", exact: true })
+    .getByLabel("搜索测评名称或编号")
+    .fill("e2e-workspace");
   await page.getByRole("button", { name: "应用筛选", exact: true }).click();
   await expect(
     page.getByRole("link", {
@@ -453,7 +459,10 @@ test("catalog filters restore through URL reload and Back/Forward, while invalid
   page,
 }) => {
   await signIn(page);
-  await page.getByLabel("搜索测评名称或编号").fill("e2e-workspace");
+  await page
+    .getByRole("form", { name: "列表筛选", exact: true })
+    .getByLabel("搜索测评名称或编号")
+    .fill("e2e-workspace");
   await page.getByLabel("归档状态", { exact: true }).selectOption("all");
   await page.getByRole("button", { name: "应用筛选", exact: true }).click();
   await expect
@@ -463,27 +472,36 @@ test("catalog filters restore through URL reload and Back/Forward, while invalid
     .poll(() => new URL(page.url()).searchParams.get("status"))
     .toBe("all");
   await page.reload();
-  await expect(page.getByLabel("搜索测评名称或编号")).toHaveValue(
-    "e2e-workspace",
-  );
+  await expect(
+    page
+      .getByRole("form", { name: "列表筛选", exact: true })
+      .getByLabel("搜索测评名称或编号"),
+  ).toHaveValue("e2e-workspace");
   await expect(page.getByLabel("归档状态", { exact: true })).toHaveValue("all");
   await expect(
     page.getByRole("link", { name: /^查看测评 .*（编号 e2e-workspace）$/ }),
   ).toBeVisible();
-  await page.getByLabel("搜索测评名称或编号").fill("不存在的合成URL筛选");
+  await page
+    .getByRole("form", { name: "列表筛选", exact: true })
+    .getByLabel("搜索测评名称或编号")
+    .fill("不存在的合成URL筛选");
   await page.getByRole("button", { name: "应用筛选", exact: true }).click();
   await expect(page.getByText("当前筛选无结果", { exact: true })).toBeVisible();
   await page.goBack();
-  await expect(page.getByLabel("搜索测评名称或编号")).toHaveValue(
-    "e2e-workspace",
-  );
+  await expect(
+    page
+      .getByRole("form", { name: "列表筛选", exact: true })
+      .getByLabel("搜索测评名称或编号"),
+  ).toHaveValue("e2e-workspace");
   await expect(
     page.getByRole("link", { name: /^查看测评 .*（编号 e2e-workspace）$/ }),
   ).toBeVisible();
   await page.goForward();
-  await expect(page.getByLabel("搜索测评名称或编号")).toHaveValue(
-    "不存在的合成URL筛选",
-  );
+  await expect(
+    page
+      .getByRole("form", { name: "列表筛选", exact: true })
+      .getByLabel("搜索测评名称或编号"),
+  ).toHaveValue("不存在的合成URL筛选");
   await expect(page.getByText("当前筛选无结果", { exact: true })).toBeVisible();
   let productReads = 0;
   const countRead = (request: import("@playwright/test").Request) => {
@@ -504,7 +522,11 @@ test("catalog filters restore through URL reload and Back/Forward, while invalid
     .getByRole("button", { name: "重置筛选并查看测评", exact: true })
     .click();
   await expect(page).toHaveURL(/\/studio\/products$/);
-  await expect(page.getByLabel("搜索测评名称或编号")).toHaveValue("");
+  await expect(
+    page
+      .getByRole("form", { name: "列表筛选", exact: true })
+      .getByLabel("搜索测评名称或编号"),
+  ).toHaveValue("");
   page.off("request", countRead);
 });
 
