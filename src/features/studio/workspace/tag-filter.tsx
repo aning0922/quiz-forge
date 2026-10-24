@@ -36,6 +36,14 @@ export function TagFilter({
   const trigger = useRef<HTMLButtonElement>(null);
   const popup = useRef<HTMLDivElement>(null);
   const [observed, setObserved] = useState<TaxonomySummary>();
+  const [resolvedId, setResolvedId] = useState("");
+  const resolveName = useCallback(
+    (tagId: string, item: TaxonomySummary | undefined) => {
+      setResolvedId(tagId);
+      if (item) setObserved(item);
+    },
+    [],
+  );
   const remember = useCallback(
     (item: TaxonomySummary) => setObserved(item),
     [],
@@ -119,6 +127,9 @@ export function TagFilter({
   }, [open, close]);
   return (
     <div className={styles.field}>
+      {!open && valueId && !known && resolvedId !== valueId && (
+        <SelectedTagName valueId={valueId} onResolved={resolveName} />
+      )}
       <label id={`${id}-label`} htmlFor={`${id}-trigger`}>
         标签
       </label>
@@ -190,6 +201,27 @@ export function TagFilter({
         )}
     </div>
   );
+}
+
+/** One bounded first-page read; unmount/abort before the open popup owns its reads. */
+function SelectedTagName({
+  valueId,
+  onResolved,
+}: {
+  valueId: string;
+  onResolved: (tagId: string, value: TaxonomySummary | undefined) => void;
+}) {
+  const read = useWorkspaceRead<Page<TaxonomyDto>>(
+    "/api/studio/tags?q=&page=1&pageSize=10&status=all",
+  );
+  useEffect(() => {
+    if (read.value || read.error)
+      onResolved(
+        valueId,
+        read.value?.items.slice(0, 10).find((item) => item.id === valueId),
+      );
+  }, [read.value, read.error, valueId, onResolved]);
+  return null;
 }
 
 function TagOptions({
