@@ -1,4 +1,5 @@
 "use client";
+import { studioSameTabLink } from "../navigation-boundary";
 import { TechnicalDetails } from "../presentation/technical-details";
 import { StudioPageHeader } from "../presentation/page-header";
 import { StudioWorkflowNav } from "../presentation/workflow-nav";
@@ -305,11 +306,7 @@ export function StudioConsumerAccessPageV1({
         />
         <div
           onClickCapture={(event) => {
-            const link =
-              event.target instanceof Element
-                ? event.target.closest("a[href]")
-                : null;
-            if (link && event.currentTarget.contains(link)) controller.revoke();
+            if (studioSameTabLink(event)) controller.revoke();
           }}
         >
           <StudioWorkflowNav productId={scope.productId} current="keys" />
@@ -321,14 +318,18 @@ export function StudioConsumerAccessPageV1({
           <Link
             className={styles.actionLink}
             href={`/studio/products/${scope.productId}`}
-            onClick={controller.revoke}
+            onClick={(event) => {
+              if (studioSameTabLink(event)) controller.revoke();
+            }}
           >
             返回测评工作区
           </Link>
           <Link
             className={styles.actionLink}
             href={`/studio/products/${scope.productId}/internal-versions`}
-            onClick={controller.revoke}
+            onClick={(event) => {
+              if (studioSameTabLink(event)) controller.revoke();
+            }}
           >
             固定内测内容版本
           </Link>
@@ -351,7 +352,9 @@ export function StudioConsumerAccessPageV1({
           <Link
             className={styles.actionLink}
             href="/studio/login"
-            onClick={controller.revoke}
+            onClick={(event) => {
+              if (studioSameTabLink(event)) controller.revoke();
+            }}
           >
             返回运营登录
           </Link>
@@ -432,7 +435,9 @@ export function StudioConsumerAccessPageV1({
                 <Link
                   className={styles.actionLink}
                   href={`/studio/products/${scope.productId}/internal-versions`}
-                  onClick={controller.revoke}
+                  onClick={(event) => {
+                    if (studioSameTabLink(event)) controller.revoke();
+                  }}
                 >
                   前往审核依据与内容版本
                 </Link>

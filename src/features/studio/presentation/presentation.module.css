@@ -18,7 +18,7 @@
 .description {
   max-width: 72ch;
   margin-top: 10px;
-  color: #42536a;
+  color: var(--studio-muted, #42536a);
   font-size: 16px;
   line-height: 1.65;
 }
@@ -68,14 +68,14 @@
   min-width: 0;
 }
 .workflow a[aria-current="page"] {
-  border-color: #234d73;
-  background: #e7f0f8;
-  color: #173e60;
+  border-color: var(--studio-primary, #6358df);
+  background: #eeedfc;
+  color: #493fb4;
   font-weight: 600;
 }
 .workflow a:focus-visible,
 .technical summary:focus-visible {
-  outline: 3px solid #267bc1;
+  outline: 3px solid var(--studio-primary, #6358df);
   outline-offset: 3px;
 }
 .technical {

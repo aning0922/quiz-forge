@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useStudioLeaveProtection } from "../navigation-boundary";
 import type {
   ImportDto,
   ImportSettingsDto,
@@ -124,6 +125,12 @@ export function ReceiveControls({
     value.status === "receiving" ||
     value.status === "retryable-failed" ||
     value.storageCondition !== "clean";
+  useStudioLeaveProtection({
+    dirty: false,
+    pending: !!file && (busy || mustRead || mayUpload || mayRecover),
+    message:
+      "当前页仍持有本次接收所需的原文件。请先完成上传与状态核实，再离开；不会自动重传。",
+  });
   return (
     <section className={styles.panel} aria-label="内容包状态">
       <h2>接收状态</h2>
