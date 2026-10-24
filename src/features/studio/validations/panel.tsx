@@ -1,4 +1,5 @@
 "use client";
+import { useContentAuthority } from "../product-workspace/content-authority";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import type {
@@ -36,6 +37,11 @@ import { validationMessage } from "./messages";
 import { ValidationFacts } from "./facts";
 import { useValidationRead } from "./use-read";
 import { mergeValidationSnapshots } from "./snapshots";
+import {
+  useContentTaskState,
+  type ContentStateObserver,
+} from "../product-workspace/content-task-state";
+import { TechnicalDetails } from "../presentation/technical-details";
 import styles from "../workspace/workspace.module.css";
 const storage: PendingStorage = {
   getItem: (key) => window.sessionStorage.getItem(key),
@@ -73,12 +79,19 @@ export function ValidationPanel({
   settings,
   archived,
   session,
+  embedded = false,
+  onSelect,
+  onState,
 }: {
   value: ImportDto;
   settings: ImportSettingsDto;
   archived: boolean;
   session: StudioSessionDto;
+  embedded?: boolean;
+  onSelect?: (value: ValidationDto) => void;
+  onState?: ContentStateObserver | undefined;
 }) {
+  const authority = useContentAuthority();
   const pair = { productId: value.productId, importId: value.id };
   const [page, setPage] = useState(1);
   const endpoint = validationEndpoint(pair);
@@ -104,7 +117,8 @@ export function ValidationPanel({
   const busyRef = useRef(false);
   const generation = useRef(0);
   const readOnly = session.operator.role !== "operator";
-  const writable = !readOnly && settings.enabled && !archived;
+  const writable =
+    authority.canWrite() && !readOnly && settings.enabled && !archived;
   const reloadPending = () => {
     try {
       setPending(
@@ -116,6 +130,7 @@ export function ValidationPanel({
       );
       setStorageError("");
     } catch (error) {
+      authority.observe(error);
       setStorageError(validationMessage(error));
     }
   };
@@ -146,6 +161,7 @@ export function ValidationPanel({
             );
         }
       } catch (error) {
+        authority.observe(error);
         if (active.current && captured === generation.current) {
           setMessage(validationMessage(error));
           if (!entry) setStorageError(validationMessage(error));
@@ -156,7 +172,7 @@ export function ValidationPanel({
       active.current = false;
       generation.current = captured + 1;
     };
-  }, [value.productId, value.id]);
+  }, [value.productId, value.id, authority]);
   async function run(work: () => Promise<void>) {
     if (busyRef.current) return;
     busyRef.current = true;
@@ -166,6 +182,7 @@ export function ValidationPanel({
     try {
       await work();
     } catch (error) {
+      authority.observe(error);
       if (active.current && captured === generation.current)
         setMessage(validationMessage(error));
     } finally {
@@ -177,6 +194,7 @@ export function ValidationPanel({
     }
   }
   async function start(tuple?: PendingTuple) {
+    if (!authority.canWrite() || !writable) return;
     const captured = generation.current;
     const result = tuple
       ? await continuePrepared(storage, tuple, session.csrfToken)
@@ -229,6 +247,7 @@ export function ValidationPanel({
     row: ValidationDto,
     action: "read" | "recover" | "retry",
   ) {
+    if (action !== "read" && (!authority.canWrite() || !writable)) return;
     const captured = generation.current;
     const release = action === "read" ? undefined : acquirePair(pair);
     if (action !== "read")
@@ -275,6 +294,14 @@ export function ValidationPanel({
     setHalted((states) => ({ ...states, [row.id]: false }));
     history.refresh();
   }
+  useContentTaskState(onState, {
+    busy,
+    pending: !!pending || !!storageError || Object.values(halted).some(Boolean),
+    retained: !!pending || !!currentId,
+    message: pending?.mayHaveBeenSent
+      ? "检查结果待核实，请按原操作读取。"
+      : storageError || undefined,
+  });
   const current = currentId ? snapshots[currentId] : undefined;
   const rows = current
     ? [
@@ -427,7 +454,20 @@ export function ValidationPanel({
       <ul className={styles.cards}>
         {rows.map((row) => (
           <li className={styles.card} key={row.id}>
-            <ValidationFacts value={row} />
+            {embedded ? (
+              <>
+                <h3>
+                  {row.status === "ready"
+                    ? "内容与素材已就绪"
+                    : "检查结果仍需处理"}
+                </h3>
+                <TechnicalDetails label="检查记录与技术依据">
+                  <ValidationFacts value={row} />
+                </TechnicalDetails>
+              </>
+            ) : (
+              <ValidationFacts value={row} />
+            )}
             {halted[row.id] && (
               <p className={styles.status}>
                 当前操作已暂停。请查询此次检查结果，再明确选择恢复或重试。
@@ -484,12 +524,33 @@ export function ValidationPanel({
                     明确重试验证或归档
                   </button>
                 )}
-              <Link
-                className={`${styles.link} ${styles.secondary}`}
-                href={`/studio/products/${encodeURIComponent(pair.productId)}/imports/${pair.importId}/validations/${row.id}`}
-              >
-                查看验证详情
-              </Link>
+              {onSelect && (
+                <button
+                  className={styles.button}
+                  disabled={
+                    busy ||
+                    !!pending ||
+                    !!storageError ||
+                    !!halted[row.id] ||
+                    row.status !== "ready" ||
+                    row.readOnly ||
+                    row.maintenanceRequired ||
+                    row.storageCondition !== "clean" ||
+                    row.candidateSha256 === null
+                  }
+                  onClick={() => onSelect(row)}
+                >
+                  使用此检查结果形成草稿
+                </button>
+              )}
+              {!embedded && (
+                <Link
+                  className={`${styles.link} ${styles.secondary}`}
+                  href={`/studio/products/${encodeURIComponent(pair.productId)}/imports/${pair.importId}/validations/${row.id}`}
+                >
+                  查看验证详情
+                </Link>
+              )}
             </div>
           </li>
         ))}

@@ -1,6 +1,12 @@
 "use client";
+import { useContentAuthority } from "../product-workspace/content-authority";
 
 import { useState } from "react";
+import { TechnicalDetails } from "../presentation/technical-details";
+import {
+  useContentTaskState,
+  type ContentStateObserver,
+} from "../product-workspace/content-task-state";
 import { useStudioLeaveProtection } from "../navigation-boundary";
 import type {
   ImportDto,
@@ -20,6 +26,8 @@ export function ReceiveControls({
   archived,
   file,
   onUpdate,
+  embedded = false,
+  onState,
 }: {
   initial: ImportDto;
   productId: string;
@@ -28,7 +36,10 @@ export function ReceiveControls({
   archived: boolean;
   file?: Blob | undefined;
   onUpdate?: (value: ImportDto) => void;
+  embedded?: boolean;
+  onState?: ContentStateObserver | undefined;
 }) {
+  const authority = useContentAuthority();
   const [value, setValue] = useState(initial);
   const [busy, setBusy] = useState(false);
   const [mustRead, setMustRead] = useState(false);
@@ -36,7 +47,10 @@ export function ReceiveControls({
   const [message, setMessage] = useState("");
   const endpoint = `/api/studio/products/${encodeURIComponent(productId)}/imports/${value.id}`;
   const canWrite =
-    session.operator.role === "operator" && settings.enabled && !archived;
+    authority.canWrite() &&
+    session.operator.role === "operator" &&
+    settings.enabled &&
+    !archived;
   function adopt(next: ImportDto) {
     setValue(next);
     onUpdate?.(next);
@@ -63,13 +77,20 @@ export function ReceiveControls({
       setUnknown(false);
       setMessage("已读取服务器当前状态。新的接收与恢复仍需显式操作。");
     } catch (error) {
+      authority.observe(error);
       setMessage(importMessage(error));
     } finally {
       setBusy(false);
     }
   }
   async function write(action: "archive" | "recover") {
-    if (busy || mustRead || !canWrite || (action === "archive" && !file))
+    if (
+      !authority.canWrite() ||
+      busy ||
+      mustRead ||
+      !canWrite ||
+      (action === "archive" && !file)
+    )
       return;
     setBusy(true);
     setMessage("");
@@ -110,6 +131,7 @@ export function ReceiveControls({
           : "服务器已确认本次恢复状态。",
       );
     } catch (error) {
+      authority.observe(error);
       setMessage(importMessage(error));
       setMustRead(true);
       setUnknown(isUnknownWrite(error));
@@ -125,6 +147,15 @@ export function ReceiveControls({
     value.status === "receiving" ||
     value.status === "retryable-failed" ||
     value.storageCondition !== "clean";
+  useContentTaskState(onState, {
+    busy,
+    pending: mustRead || unknown || mayUpload || mayRecover,
+    retained: true,
+    message:
+      unknown || mustRead
+        ? "上传结果待核实；原文件和接收记录继续保留。"
+        : undefined,
+  });
   useStudioLeaveProtection({
     dirty: false,
     pending: !!file && (busy || mustRead || mayUpload || mayRecover),
@@ -134,7 +165,20 @@ export function ReceiveControls({
   return (
     <section className={styles.panel} aria-label="内容包状态">
       <h2>接收状态</h2>
-      <ImportFacts value={value} />
+      {embedded ? (
+        <>
+          <p>
+            {value.status === "received" && value.storageCondition === "clean"
+              ? "文件已接收。下一步需独立检查内容与素材。"
+              : "本次文件仍需完成上传或核实接收状态。"}
+          </p>
+          <TechnicalDetails label="本次接收记录">
+            <ImportFacts value={value} />
+          </TechnicalDetails>
+        </>
+      ) : (
+        <ImportFacts value={value} />
+      )}
       {unknown && (
         <p className={styles.compare} role="status">
           提交结果尚未确认。已保留接收

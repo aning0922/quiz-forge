@@ -1,4 +1,5 @@
 "use client";
+import { useContentAuthority } from "../product-workspace/content-authority";
 import { TechnicalDetails } from "../presentation/technical-details";
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -23,6 +24,10 @@ import {
 } from "./flow";
 import { readDraftPending, type DraftPendingEntry } from "./pending";
 import { draftMessage } from "./message";
+import {
+  useContentTaskState,
+  type ContentStateObserver,
+} from "../product-workspace/content-task-state";
 import styles from "../workspace/workspace.module.css";
 const productState = z.object({
   id: z.string(),
@@ -32,11 +37,18 @@ export function ApplyDraftPanel({
   validation,
   session,
   refreshing,
+  embedded = false,
+  onConfirmed,
+  onState,
 }: {
   validation: ValidationDto;
   session: StudioSessionDto;
   refreshing: boolean;
+  embedded?: boolean;
+  onConfirmed?: (value: DraftApplicationDto) => void;
+  onState?: ContentStateObserver | undefined;
 }) {
+  const authority = useContentAuthority();
   const productId = validation.productId;
   const current = useDraftRead(draftEndpoint(productId), (value) =>
     checkDraftRead(value, productId),
@@ -66,6 +78,7 @@ export function ApplyDraftPanel({
       );
       setStorageReady(true);
     } catch (error) {
+      authority.observe(error);
       setStorageReady(false);
       setMessage(draftMessage(error));
     } finally {
@@ -78,7 +91,10 @@ export function ApplyDraftPanel({
       clearTimeout(timer); /* Component is keyed by the source tuple. */
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [productId]);
-  const operator = session.operator.role === "operator" && !writeDenied;
+  const operator =
+    authority.canWrite() &&
+    session.operator.role === "operator" &&
+    !writeDenied;
   const blocked =
     busy ||
     refreshing ||
@@ -91,8 +107,19 @@ export function ApplyDraftPanel({
     !validation.readOnly &&
     !validation.maintenanceRequired &&
     validation.candidateSha256 !== null;
+  useContentTaskState(onState, {
+    busy,
+    pending: !!pending || confirm || !storageLoaded || !storageReady,
+    retained: !!pending || confirm || !!application,
+    message: pending ? "草稿创建原操作已保留，请先核实。" : undefined,
+  });
+  function adopt(next: DraftApplicationDto) {
+    setApplication(next);
+    if (authority.canWrite()) onConfirmed?.(next);
+  }
   async function perform(action: "new" | "read" | "replay") {
-    if (blocked || (!operator && action !== "read")) return;
+    if (blocked || (action !== "read" && (!operator || !authority.canWrite())))
+      return;
     setBusy(true);
     setMessage("");
     setConfirm(false);
@@ -108,7 +135,7 @@ export function ApplyDraftPanel({
             "尚无匹配处理结果；原操作记录继续保留。这不能证明原操作未执行。可稍后再核对，或再次发送原草稿创建操作。",
           );
         else {
-          setApplication(result.application);
+          adopt(result.application);
           setMessage("服务器已确认原操作的固定应用处理结果。");
           current.refresh();
         }
@@ -132,7 +159,7 @@ export function ApplyDraftPanel({
           action === "replay"
             ? await retryOriginalDraft(sessionStorage, tuple, session.csrfToken)
             : await applyFirstDraft(sessionStorage, tuple, session.csrfToken);
-        setApplication(result.application);
+        adopt(result.application);
         setMessage(
           result.created
             ? "服务器已确认创建草稿修订 1。"
@@ -141,6 +168,7 @@ export function ApplyDraftPanel({
         current.refresh();
       }
     } catch (error) {
+      authority.observe(error);
       if (
         error instanceof StudioClientError &&
         ["CAPABILITY_DENIED", "UNAUTHENTICATED", "CSRF_REJECTED"].includes(
@@ -162,9 +190,11 @@ export function ApplyDraftPanel({
         1。平台授权仍未审核，不可发布；此操作不评分、不生成报告。
       </p>
       <div className={styles.actions}>
-        <Link className={styles.link} href={draftWorkspacePath(productId)}>
-          查看当前草稿
-        </Link>
+        {!embedded && (
+          <Link className={styles.link} href={draftWorkspacePath(productId)}>
+            查看当前草稿
+          </Link>
+        )}
         <button
           className={`${styles.button} ${styles.secondary}`}
           disabled={busy || refreshing || current.loading || product.loading}
@@ -308,24 +338,26 @@ export function ApplyDraftPanel({
           <p>
             以下入口固定到本次已确认的修订，原操作记录继续保留，后续不会自动提交。
           </p>
-          <div className={styles.actions}>
-            <Link
-              className={styles.link}
-              href={draftRevisionPath(
-                productId,
-                application.draftId,
-                application.revision,
-              )}
-            >
-              查看刚创建的内容与素材
-            </Link>
-            <Link
-              className={`${styles.link} ${styles.secondary}`}
-              href={previewPagePath(application)}
-            >
-              预览此固定修订
-            </Link>
-          </div>
+          {!embedded && (
+            <div className={styles.actions}>
+              <Link
+                className={styles.link}
+                href={draftRevisionPath(
+                  productId,
+                  application.draftId,
+                  application.revision,
+                )}
+              >
+                查看刚创建的内容与素材
+              </Link>
+              <Link
+                className={`${styles.link} ${styles.secondary}`}
+                href={previewPagePath(application)}
+              >
+                预览此固定修订
+              </Link>
+            </div>
+          )}
         </section>
       )}
       {message && (

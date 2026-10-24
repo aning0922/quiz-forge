@@ -1,9 +1,15 @@
 "use client";
+import { useContentAuthority } from "../product-workspace/content-authority";
 import { TechnicalDetails } from "../presentation/technical-details";
 import { useStudioLeaveProtection } from "../navigation-boundary";
 
 import Link from "next/link";
 import { useState } from "react";
+import {
+  useContentTaskState,
+  type ContentTaskState,
+  type ContentStateObserver,
+} from "../product-workspace/content-task-state";
 import type {
   ImportDto,
   ImportSettingsDto,
@@ -23,12 +29,19 @@ export function CreateReceive({
   settings,
   session,
   onChanged,
+  embedded = false,
+  onConfirmed,
+  onState,
 }: {
   productId: string;
   settings: ImportSettingsDto;
   session: StudioSessionDto;
   onChanged: () => void;
+  embedded?: boolean;
+  onConfirmed?: (value: ImportDto) => void;
+  onState?: ContentStateObserver | undefined;
 }) {
+  const authority = useContentAuthority();
   const [pending, setPending] = useState<PendingArchive>();
   const [fileInputRevision, setFileInputRevision] = useState(0);
   const [value, setValue] = useState<ImportDto>();
@@ -42,6 +55,23 @@ export function CreateReceive({
     message:
       "文件正在准备或接收意图尚未确认。请留在此页完成核实，原文件与操作编号将继续保留。",
   });
+  const [receiveState, setReceiveState] = useState<ContentTaskState>({
+    busy: false,
+    pending: false,
+    retained: false,
+  });
+  useContentTaskState(onState, {
+    busy: busy || receiveState.busy,
+    pending: unknown || (!!pending && !value) || receiveState.pending,
+    retained: !!pending || !!value,
+    message: unknown
+      ? "接收意图结果待核实，原文件与操作编号已保留。"
+      : receiveState.message,
+  });
+  function adopt(next: ImportDto) {
+    setValue(next);
+    onConfirmed?.(next);
+  }
   const endpoint = `/api/studio/products/${encodeURIComponent(productId)}/imports`;
   async function select(file?: File) {
     if (pending || busy || !file) return;
@@ -58,12 +88,21 @@ export function CreateReceive({
     }
   }
   async function submit() {
-    if (!pending || busy || value || (unknown && !queriedEmpty)) return;
+    if (
+      !authority.canWrite() ||
+      session.operator.role !== "operator" ||
+      !settings.enabled ||
+      !pending ||
+      busy ||
+      value ||
+      (unknown && !queriedEmpty)
+    )
+      return;
     setBusy(true);
     setMessage("");
     setQueriedEmpty(false);
     try {
-      setValue(
+      adopt(
         await checkedImportFetch<ImportDto>(
           endpoint,
           {
@@ -83,6 +122,7 @@ export function CreateReceive({
       setUnknown(false);
       onChanged();
     } catch (error) {
+      authority.observe(error);
       setMessage(importMessage(error));
       setUnknown((previous) => previous || isUnknownWrite(error));
     } finally {
@@ -108,7 +148,7 @@ export function CreateReceive({
           }),
       );
       if (result.items[0]) {
-        setValue(result.items[0]);
+        adopt(result.items[0]);
         setUnknown(false);
         onChanged();
       } else {
@@ -118,6 +158,7 @@ export function CreateReceive({
         );
       }
     } catch (error) {
+      authority.observe(error);
       setMessage(importMessage(error));
     } finally {
       setBusy(false);
@@ -137,22 +178,29 @@ export function CreateReceive({
             className={`${styles.input} ${local.file}`}
             key={fileInputRevision}
             type="file"
+            accept={embedded ? ".quizpack" : undefined}
             disabled={busy || !!pending}
             onChange={(event) => void select(event.target.files?.[0])}
           />
         </label>
         {pending && (
           <>
-            <dl className={styles.facts}>
-              <div>
-                <dt>本次操作编号</dt>
-                <dd>{pending.idempotencyKey}</dd>
-              </div>
-              <div>
-                <dt>字节数</dt>
-                <dd>{pending.input.expectedArchiveBytes}</dd>
-              </div>
-            </dl>
+            <p>
+              已选择：{pending.file instanceof File ? pending.file.name : "内容包文件"} ·{" "}
+              {pending.input.expectedArchiveBytes.toLocaleString()} 字节
+            </p>
+            <TechnicalDetails label="本次接收声明">
+              <dl className={styles.facts}>
+                <div>
+                  <dt>本次操作编号</dt>
+                  <dd>{pending.idempotencyKey}</dd>
+                </div>
+                <div>
+                  <dt>字节数</dt>
+                  <dd>{pending.input.expectedArchiveBytes}</dd>
+                </div>
+              </dl>
+            </TechnicalDetails>
             <TechnicalDetails label="所选文件技术信息">
               <dl className={styles.facts}>
                 <div>
@@ -183,7 +231,13 @@ export function CreateReceive({
           {pending && !value && (
             <button
               className={styles.button}
-              disabled={busy || (unknown && !queriedEmpty)}
+              disabled={
+                !authority.canWrite() ||
+                session.operator.role !== "operator" ||
+                !settings.enabled ||
+                busy ||
+                (unknown && !queriedEmpty)
+              }
               onClick={() => void submit()}
             >
               {unknown ? "以原操作编号和原输入重提" : "创建内容包接收意图"}
@@ -227,17 +281,21 @@ export function CreateReceive({
             settings={settings}
             archived={false}
             file={pending?.file}
+            embedded={embedded}
+            onState={setReceiveState}
             onUpdate={(next) => {
-              setValue(next);
+              adopt(next);
               onChanged();
             }}
           />
-          <Link
-            className={`${styles.link} ${styles.secondary}`}
-            href={`/studio/products/${encodeURIComponent(productId)}/imports/${value.id}`}
-          >
-            打开接收状态页
-          </Link>
+          {!embedded && (
+            <Link
+              className={`${styles.link} ${styles.secondary}`}
+              href={`/studio/products/${encodeURIComponent(productId)}/imports/${value.id}`}
+            >
+              打开接收状态页
+            </Link>
+          )}
         </div>
       )}
     </div>

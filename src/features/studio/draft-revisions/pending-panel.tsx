@@ -1,4 +1,5 @@
 "use client";
+import { useContentAuthority } from "../product-workspace/content-authority";
 import { TechnicalDetails } from "../presentation/technical-details";
 import { useEffect, useRef, useState } from "react";
 import type { StudioSessionDto } from "../contracts";
@@ -23,19 +24,26 @@ import { revisionMessage } from "./message";
 import { AppendBindingFacts, RevisionLinks } from "./primitives";
 import styles from "../workspace/workspace.module.css";
 import local from "./revisions.module.css";
+import {
+  useContentTaskState,
+  type ContentStateObserver,
+} from "../product-workspace/content-task-state";
 export function RevisionPendingPanel({
   productId,
   session,
   refreshing,
   writeBlocked = false,
   onChanged,
+  onState,
 }: {
   productId: string;
   session: StudioSessionDto;
   refreshing: boolean;
   writeBlocked?: boolean;
   onChanged: (application?: AppendDraftApplication) => void;
+  onState?: ContentStateObserver | undefined;
 }) {
+  const authority = useContentAuthority();
   const [epoch] = useState(() => new RevisionEpoch(productId)),
     [entry, setEntry] = useState<RevisionPendingEntry>(),
     [loaded, setLoaded] = useState(false),
@@ -60,6 +68,7 @@ export function RevisionPendingPanel({
       );
       setLoaded(true);
     } catch (error) {
+      authority.observe(error);
       setLoaded(false);
       setMessage(revisionMessage(error));
     }
@@ -77,6 +86,7 @@ export function RevisionPendingPanel({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [epoch, productId]);
   function reject(error: unknown) {
+    authority.observe(error);
     if (
       error instanceof StudioClientError &&
       ["CAPABILITY_DENIED", "UNAUTHENTICATED", "CSRF_REJECTED"].includes(
@@ -96,7 +106,10 @@ export function RevisionPendingPanel({
       busy ||
       refreshing ||
       (replay &&
-        (session.operator.role !== "operator" || denied || writeBlocked))
+        (!authority.canWrite() ||
+          session.operator.role !== "operator" ||
+          denied ||
+          writeBlocked))
     )
       return;
     const ticket = epoch.begin(entry.tuple),
@@ -135,6 +148,7 @@ export function RevisionPendingPanel({
           setEvidence({ ticket, result });
       }
     } catch (error) {
+      authority.observe(error);
       if (active.current && epoch.accepts(ticket)) reject(error);
     } finally {
       if (active.current) setBusy(false);
@@ -167,11 +181,18 @@ export function RevisionPendingPanel({
         onChanged(result.kind === "applied" ? result.application : undefined);
       }
     } catch (error) {
+      authority.observe(error);
       if (active.current) reject(error);
     } finally {
       if (active.current) setBusy(false);
     }
   }
+  useContentTaskState(onState, {
+    busy,
+    pending: !loaded || !!entry,
+    retained: !!entry || !!evidence,
+    message: entry ? "草稿追加原操作已保留，请按原记录核实。" : undefined,
+  });
   const result = evidence?.result;
   const needsAttention =
     !loaded ||

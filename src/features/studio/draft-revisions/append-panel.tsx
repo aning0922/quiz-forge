@@ -1,4 +1,5 @@
 "use client";
+import { useContentAuthority } from "../product-workspace/content-authority";
 import { TechnicalDetails } from "../presentation/technical-details";
 import { useEffect, useState } from "react";
 import { z } from "zod";
@@ -21,6 +22,11 @@ import { RevisionPendingPanel } from "./pending-panel";
 import { revisionMessage } from "./message";
 import styles from "../workspace/workspace.module.css";
 import local from "./revisions.module.css";
+import {
+  useContentTaskState,
+  type ContentTaskState,
+  type ContentStateObserver,
+} from "../product-workspace/content-task-state";
 const productSchema = z.object({
   id: z.string(),
   archivedAt: z.string().nullable(),
@@ -30,12 +36,19 @@ export function AppendRevisionPanel({
   validation,
   session,
   refreshing,
+  embedded = false,
+  onConfirmed,
+  onState,
 }: {
   productId: string;
   validation: ValidationDto | undefined;
   session: StudioSessionDto;
   refreshing: boolean;
+  embedded?: boolean;
+  onConfirmed?: (value: AppendDraftApplication) => void;
+  onState?: ContentStateObserver | undefined;
 }) {
+  const authority = useContentAuthority();
   const current = useDraftRead(draftEndpoint(productId), (v) =>
       checkDraftRead(v, productId),
     ),
@@ -58,6 +71,21 @@ export function AppendRevisionPanel({
     [message, setMessage] = useState(""),
     [storageReady, setStorageReady] = useState(false),
     [pendingRefresh, setPendingRefresh] = useState(0);
+  const [pendingState, setPendingState] = useState<ContentTaskState>({
+    busy: false,
+    pending: true,
+    retained: false,
+  });
+  useContentTaskState(onState, {
+    busy: busy || pendingState.busy,
+    pending: !!confirmation || pendingState.pending || !storageReady,
+    retained: !!confirmation || !!receipt || pendingState.retained,
+    message: pendingState.message,
+  });
+  function adopt(next: AppendDraftApplication) {
+    setReceipt(next);
+    if (authority.canWrite()) onConfirmed?.(next);
+  }
   function availability() {
     try {
       inspectRevisionPreparation(sessionStorage, productId);
@@ -88,7 +116,8 @@ export function AppendRevisionPanel({
       current.loading ||
       product.loading ||
       Boolean(current.error || product.error),
-    operator = session.operator.role === "operator" && !denied,
+    operator =
+      authority.canWrite() && session.operator.role === "operator" && !denied,
     full = Boolean(
       base && base.revision >= DRAFT_REVISION_LIMITS.maximumRevision,
     );
@@ -111,7 +140,7 @@ export function AppendRevisionPanel({
     ready &&
     !product.value?.archivedAt;
   function prepare() {
-    if (!canPrepare || !base || !validation) return;
+    if (!authority.canWrite() || !canPrepare || !base || !validation) return;
     try {
       inspectRevisionPreparation(sessionStorage, productId);
       setConfirmation({
@@ -135,19 +164,21 @@ export function AppendRevisionPanel({
       });
       setMessage("");
     } catch (error) {
+      authority.observe(error);
       setStorageReady(false);
       setMessage(revisionMessage(error));
     }
   }
   function changed(application?: AppendDraftApplication) {
     setConfirmation(undefined);
-    if (application) setReceipt(application);
+    if (application) adopt(application);
     availability();
     current.refresh();
     product.refresh();
   }
   async function append() {
-    if (!canPrepare || !confirmed || !confirmation) return;
+    if (!authority.canWrite() || !canPrepare || !confirmed || !confirmation)
+      return;
     const tuple = confirmation.binding;
     setBusy(true);
     setMessage("");
@@ -158,12 +189,13 @@ export function AppendRevisionPanel({
         tuple,
         session.csrfToken,
       );
-      setReceipt(result.application);
+      adopt(result.application);
       setMessage(
         `服务器已确认固定修订 ${result.application.revision}。当前摘要需单独刷新。`,
       );
       current.refresh();
     } catch (error) {
+      authority.observe(error);
       if (
         error instanceof StudioClientError &&
         ["CAPABILITY_DENIED", "UNAUTHENTICATED", "CSRF_REJECTED"].includes(
@@ -213,7 +245,7 @@ export function AppendRevisionPanel({
               <p>内容 {base.canonicalContentSha256}</p>
               <p>素材集合 {base.assetSetSha256}</p>
             </TechnicalDetails>
-            <RevisionLinks draft={base} />
+            {!embedded && <RevisionLinks draft={base} />}
           </div>
         )}
         {current.value?.kind === "empty" && (
@@ -294,7 +326,7 @@ export function AppendRevisionPanel({
               原操作编号 {receipt.idempotencyKey}
               。此固定处理结果与上方当前摘要分别读取。
             </p>
-            <RevisionLinks draft={receipt} />
+            {!embedded && <RevisionLinks draft={receipt} />}
           </section>
         )}
         {busy && <p role="status">正在提交固定追加请求…</p>}
@@ -311,6 +343,7 @@ export function AppendRevisionPanel({
         refreshing={busy}
         writeBlocked={denied}
         onChanged={changed}
+        onState={setPendingState}
       />
     </>
   );
