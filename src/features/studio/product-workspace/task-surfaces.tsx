@@ -29,6 +29,10 @@ const surfaces = {
   versions: { title: "固定内测内容版本", kind: "drawer" },
   version: { title: "固定版本详情", kind: "drawer" },
   key: { title: "访问码安全详情", kind: "drawer" },
+  source: { title: "内容来源与检查", kind: "drawer" },
+  revision: { title: "固定修订内容", kind: "drawer" },
+  settings: { title: "基本设置", kind: "drawer" },
+  archive: { title: "归档与恢复", kind: "task" },
   preview: { title: "固定修订完整预览", kind: "preview" },
 } as const;
 
@@ -44,6 +48,7 @@ type SurfaceContextValue = {
   active: WorkspaceSurfaceId | null;
   visited: ReadonlySet<WorkspaceSurfaceId>;
   host: HTMLDivElement | null;
+  actionsHost: HTMLDivElement | null;
   states: Partial<Record<WorkspaceSurfaceId, WorkspaceTaskState>>;
   open: (id: WorkspaceSurfaceId) => boolean;
   close: () => boolean;
@@ -66,6 +71,7 @@ export function ProductTaskSurfaces({ children }: { children: ReactNode }) {
     () => new Set(),
   );
   const [host, setHost] = useState<HTMLDivElement | null>(null);
+  const [actionsHost, setActionsHost] = useState<HTMLDivElement | null>(null);
   const [states, setStates] = useState<SurfaceContextValue["states"]>({});
   const [notice, setNotice] = useState("");
   const dialog = useRef<HTMLDialogElement>(null);
@@ -169,13 +175,24 @@ export function ProductTaskSurfaces({ children }: { children: ReactNode }) {
 
   return (
     <SurfaceContext.Provider
-      value={{ active, visited, host, states, open, close, canSwitch, report }}
+      value={{
+        active,
+        visited,
+        host,
+        actionsHost,
+        states,
+        open,
+        close,
+        canSwitch,
+        report,
+      }}
     >
       {children}
       <dialog
         ref={dialog}
         className={styles.dialog}
         data-variant={active ? surfaces[active].kind : "task"}
+        data-surface={active ?? undefined}
         aria-labelledby="product-task-title"
         onCancel={(event) => {
           event.preventDefault();
@@ -195,16 +212,20 @@ export function ProductTaskSurfaces({ children }: { children: ReactNode }) {
       >
         <header className={styles.header}>
           <div>
-            <p className={styles.eyebrow}>
-              {active && surfaces[active].kind === "drawer"
-                ? "只读记录 · 不改变当前内容"
-                : active === "preview"
-                  ? "真实固定修订 · 临时体验"
-                  : "当前测评 · 明确操作"}
-            </p>
             <h2 id="product-task-title">
               {active ? surfaces[active].title : "测评任务"}
             </h2>
+            <p className={styles.eyebrow}>
+              {active === "content"
+                ? "在同一任务中完成接收、检查与形成修订"
+                : active === "settings"
+                  ? "目录资料与管理设置，收起后保留未保存输入"
+                  : active && surfaces[active].kind === "drawer"
+                    ? "查看准确对象，关闭后回到当前工作区"
+                    : active === "preview"
+                      ? "真实固定修订 · 临时体验，不记录审核状态"
+                      : "核对本次对象后明确确认"}
+            </p>
           </div>
           <button
             type="button"
@@ -233,10 +254,14 @@ export function ProductTaskSurfaces({ children }: { children: ReactNode }) {
         )}
         <div className={styles.body} ref={bindHost} />
         <footer className={styles.footer}>
-          <p>收起后保留本页任务；完整刷新仍可能丢失内存文件与临时预览。</p>
-          <button type="button" onClick={close}>
-            {active === "preview" ? "返回工作区" : "先返回工作区"}
+          <button className={styles.returnButton} type="button" onClick={close}>
+            {active === "preview"
+              ? "返回工作区"
+              : active && surfaces[active].kind === "drawer"
+                ? "关闭详情"
+                : "先返回"}
           </button>
+          <div className={styles.actionsHost} ref={setActionsHost} />
         </footer>
       </dialog>
     </SurfaceContext.Provider>
@@ -261,6 +286,33 @@ export function RetainedTaskSurface({
       </fieldset>
     </div>,
     host,
+    id,
+  );
+}
+
+/** Presentation slot only; handlers and business state remain with their original owner. */
+export function RetainedTaskActions({
+  id,
+  visible = true,
+  children,
+}: {
+  id: WorkspaceSurfaceId;
+  visible?: boolean;
+  children: ReactNode;
+}) {
+  const { active, visited, actionsHost } = useWorkspaceSurfaces();
+  const authority = useInternalAuthority();
+  if (!visited.has(id) || !actionsHost) return null;
+  return createPortal(
+    <fieldset
+      hidden={active !== id || !visible}
+      disabled={authority.isRevoked}
+      data-task-actions={id}
+      className={styles.actionGroup}
+    >
+      {children}
+    </fieldset>,
+    actionsHost,
     id,
   );
 }
