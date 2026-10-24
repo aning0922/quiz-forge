@@ -81,6 +81,7 @@ export function ValidationPanel({
   session,
   embedded = false,
   onSelect,
+  onRejected,
   onState,
 }: {
   value: ImportDto;
@@ -89,6 +90,7 @@ export function ValidationPanel({
   session: StudioSessionDto;
   embedded?: boolean;
   onSelect?: (value: ValidationDto) => void;
+  onRejected?: ((value: ValidationDto | undefined) => void) | undefined;
   onState?: ContentStateObserver | undefined;
 }) {
   const authority = useContentAuthority();
@@ -303,6 +305,9 @@ export function ValidationPanel({
       : storageError || undefined,
   });
   const current = currentId ? snapshots[currentId] : undefined;
+  useEffect(() => {
+    onRejected?.(current?.status === "rejected" ? current : undefined);
+  }, [current, onRejected]);
   const rows = current
     ? [
         current,

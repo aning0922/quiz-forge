@@ -31,6 +31,11 @@ import {
   type ContentTaskState,
   type ContentStateObserver,
 } from "./content-task-state";
+import {
+  assertNoContentPending,
+  isRejectedContentSource,
+  matchesContentCompletion,
+} from "./content-task-guards";
 import styles from "./content-workbench.module.css";
 
 export type ContentApplication = DraftApplicationDto | AppendDraftApplication;
@@ -102,6 +107,8 @@ function ContentRun({
   const [step, setStep] = useState(0);
   const [received, setReceived] = useState<ImportDto>();
   const [validation, setValidation] = useState<ValidationDto>();
+  const [rejectedValidation, setRejectedValidation] = useState<ValidationDto>();
+  const [recoveryMessage, setRecoveryMessage] = useState("");
   const [mode, setMode] = useState<"first" | "append">();
   const [application, setApplication] = useState<ContentApplication>();
   const [receiveState, setReceiveState] = useState(idle);
@@ -135,12 +142,34 @@ function ContentRun({
   });
   const completed = useCallback(
     (next: ContentApplication) => {
+      onChanged();
+      if (!matchesContentCompletion(productId, validation, next)) {
+        setRecoveryMessage(
+          "已核实其他来源或声明的历史处理结果，结果保留在原恢复区域。本次所选来源尚未完成，不能据此开始下一次更新。",
+        );
+        return;
+      }
+      setRecoveryMessage("");
       setApplication(next);
       onCompleted?.(next);
-      onChanged();
     },
-    [onCompleted, onChanged],
+    [productId, validation, onCompleted, onChanged],
   );
+  const confirmedRejection =
+    !validation &&
+    !application &&
+    isRejectedContentSource(received, rejectedValidation);
+  function endRejectedTask() {
+    if (!confirmedRejection || busy || pending) return;
+    try {
+      assertNoContentPending(sessionStorage, productId);
+      onNext();
+    } catch {
+      setRecoveryMessage(
+        "原操作仍待核实，或本地记录无法读取。任务已保留，不能结束或重新选择来源。",
+      );
+    }
+  }
   const cleanReceived =
     received?.status === "received" && received.storageCondition === "clean";
   return (
@@ -222,6 +251,7 @@ function ContentRun({
             session={retainedSession}
             embedded
             onState={setValidationState}
+            onRejected={setRejectedValidation}
             onSelect={(next) => {
               if (!validation) {
                 setValidation(next);
@@ -346,6 +376,26 @@ function ContentRun({
           </section>
         )}
       </div>
+      {recoveryMessage && (
+        <p className={styles.warning} role="status">
+          {recoveryMessage}
+        </p>
+      )}
+      {confirmedRejection && (
+        <section className={styles.notice} aria-label="已确认拒绝的内容任务">
+          <h2>本次内容已确认被拒绝</h2>
+          <p>
+            此拒绝结果与原记录会继续保留。结束当前任务后可以选择新的内容；不会重提原请求或删除待核实记录。
+          </p>
+          <button
+            className={styles.secondary}
+            disabled={busy || pending}
+            onClick={endRejectedTask}
+          >
+            结束已确认拒绝的任务，重新选择内容
+          </button>
+        </section>
+      )}
       <p className={styles.footnote}>
         可以暂时隐藏此任务再继续。原文件仅在当前文档内存中保留；刷新或关闭文档后需重新选择同一文件并核对原声明，不能据此认定原请求失败。
       </p>
