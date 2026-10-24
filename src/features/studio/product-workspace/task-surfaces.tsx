@@ -234,6 +234,7 @@ export function ProductTaskSurfaces({ children }: { children: ReactNode }) {
             onClick={close}
           >
             <X size={22} aria-hidden="true" />
+            {active === "preview" && <span>退出预览</span>}
           </button>
         </header>
         {notice && (
@@ -254,6 +255,11 @@ export function ProductTaskSurfaces({ children }: { children: ReactNode }) {
         )}
         <div className={styles.body} ref={bindHost} />
         <footer className={styles.footer}>
+          {active === "preview" && (
+            <p className={styles.previewNote}>
+              临时体验不会记录人工审核；收起后保留本页进度。
+            </p>
+          )}
           <button className={styles.returnButton} type="button" onClick={close}>
             {active === "preview"
               ? "返回工作区"
