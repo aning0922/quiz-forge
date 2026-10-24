@@ -38,6 +38,7 @@ import {
   parseOperationsDashboard,
 } from "@/features/studio/operations/response";
 import { handleOperationsHttp } from "@/features/studio/operations/http";
+import { read } from "@/features/quizpack/import/repository";
 import type { ProductOperationsPage } from "@/features/studio/operations/contracts";
 
 let db: TestDatabase,
@@ -201,6 +202,61 @@ describe.sequential("A2a real isolated read-only operations", () => {
       value.testing.historical.state === "present" &&
         value.testing.historical.value.parentVersionId,
     ).toBe(fixture.parent!.version.id);
+  });
+  it("reads sealed version/play metadata without selecting or hashing snapshot bodies", async () => {
+    const statements: string[] = [];
+    const values = await read(db.app, operator.session.raw, async (tx) => {
+      // Record template text only; no query arguments, credentials, or snapshot payloads.
+      const metadataTx = new Proxy(tx, {
+        apply(target, receiver, args: unknown[]) {
+          const parts = args[0];
+          if (Array.isArray(parts) && "raw" in parts)
+            statements.push(parts.join("?"));
+          return Reflect.apply(target, receiver, args);
+        },
+      });
+      const rows = await repository.operationsRows(
+        tx,
+        query("status=all&q=consumer-flow-fixture"),
+      );
+      return repository.projectOperationsRows(
+        metadataTx,
+        rows,
+        await repository.observationTime(tx),
+      );
+    });
+    const versions = statements.filter((text) =>
+      /FROM qf\.(product_version|internal_play_version)\b/.test(text),
+    );
+    expect(versions).toHaveLength(2);
+    for (const statement of versions) {
+      expect(statement).not.toMatch(
+        /snapshot_text|sha256_utf8|internal_version_valid|consumer_play_valid/,
+      );
+      expect(statement).toContain("snapshot_sha256");
+    }
+    expect(versions[0]).toContain(
+      "rv.product_id=pv.product_id AND rv.id=pv.review_id AND rv.review_sha256=pv.review_sha256",
+    );
+    expect(versions[1]).toContain(
+      "pv.product_id=play.product_id AND pv.id=play.parent_version_id AND pv.snapshot_sha256=play.parent_snapshot_sha256",
+    );
+    const value = parseProductOperations(values[0], "consumer-flow-fixture");
+    const version =
+      value.versions.current.state === "present"
+        ? value.versions.current
+        : value.versions.historical;
+    const play =
+      value.testing.current.state === "present"
+        ? value.testing.current
+        : value.testing.historical;
+    expect(version.state).toBe("present");
+    expect(play.state).toBe("present");
+    if (version.state !== "present" || play.state !== "present")
+      throw Error("SEALED_RELATION_REQUIRED");
+    expect(play.value.parentVersionId).toBe(version.value.id);
+    expect(play.value.parentSnapshotSha256).toBe(version.value.snapshotSha256);
+    expect(play.value.target).toEqual(version.value.target);
   });
   it("filters before pagination, keeps AND semantics and dashboard drill-down counts", async () => {
     const source = await seedReadyP2b3Source(
