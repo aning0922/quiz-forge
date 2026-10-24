@@ -137,6 +137,17 @@ async function navigateStudio(
   await link.click();
 }
 
+async function openProductSettings(page: Page) {
+  await page
+    .getByRole("navigation", { name: "测评业务导航", exact: true })
+    .getByRole("link", { name: "基本设置", exact: true })
+    .click();
+  await expect(page).toHaveURL(/\/studio\/products\/e2e-workspace\/settings$/);
+  await expect(
+    page.getByRole("heading", { name: "基本设置", exact: true }),
+  ).toBeVisible();
+}
+
 async function openEditor(page: Page) {
   const form = page.getByRole("form", { name: "测评信息", exact: true });
   if (!(await form.isVisible()))
@@ -224,7 +235,7 @@ test("empty workspace and responsive read-only navigation", async ({
   await expect(page.getByRole("heading", { name: "运营登录" })).toBeVisible();
 });
 
-async function openProductDetail(page: Page) {
+async function openProductSettingsFromCatalog(page: Page) {
   await page
     .getByRole("link", {
       name: /^查看测评 .*（编号 e2e-workspace）$/,
@@ -232,10 +243,13 @@ async function openProductDetail(page: Page) {
     })
     .click();
   await expect(page).toHaveURL(/\/studio\/products\/e2e-workspace$/);
-  // Wait for the actual overview instead of requiring collapsed support fields.
   await expect(
-    page.getByRole("link", { name: "查看内容与修订", exact: true }),
+    page.getByRole("heading", { name: "测评概览", exact: true }),
   ).toBeVisible();
+  await expect(
+    page.getByRole("form", { name: "测评信息", exact: true }),
+  ).toHaveCount(0);
+  await openProductSettings(page);
   if (await page.getByText("编辑测评信息", { exact: true }).count())
     await openEditor(page);
 }
@@ -367,12 +381,20 @@ test("operator creates taxonomy and product, checks 8 tags, filters and safe mob
   await page.getByRole("button", { name: "创建测评", exact: true }).click();
   await expect(page).toHaveURL(/\/studio\/products\/e2e-workspace$/);
   await expect(
-    page.getByRole("heading", { name: longTitle, exact: true }),
+    page.getByRole("heading", { name: "测评概览", exact: true }),
   ).toBeVisible();
+  await expect(page.getByText(longTitle, { exact: true })).toBeVisible();
+  await expect(
+    page.getByRole("form", { name: "测评信息", exact: true }),
+  ).toHaveCount(0);
+  await openProductSettings(page);
   await expect(
     page.getByRole("form", { name: "测评信息", exact: true }),
   ).toBeHidden();
   await openEditor(page);
+  await expect(page.getByLabel("测评名称", { exact: true })).toHaveValue(
+    longTitle,
+  );
   for (const width of [320, 375, 390, 430]) {
     await page.setViewportSize({ width, height: 900 });
     expect(
@@ -505,7 +527,7 @@ test("catalog filters restore through URL reload and Back/Forward, while invalid
   await expect(page.getByText("当前筛选无结果", { exact: true })).toBeVisible();
   let productReads = 0;
   const countRead = (request: import("@playwright/test").Request) => {
-    if (new URL(request.url()).pathname === "/api/studio/products")
+    if (new URL(request.url()).pathname === "/api/studio/operations/products")
       productReads++;
   };
   page.on("request", countRead);
@@ -666,7 +688,7 @@ test("CAS preserves unsaved input and requires an explicit latest revision resub
   page,
 }, testInfo) => {
   await signIn(page);
-  await openProductDetail(page);
+  await openProductSettingsFromCatalog(page);
   const editor = page.getByRole("form", { name: "测评信息", exact: true });
   const title = editor.getByLabel("测评名称", { exact: true });
   await title.fill("我的未保存输入");
@@ -710,15 +732,16 @@ test("CAS preserves unsaved input and requires an explicit latest revision resub
     .getByRole("button", { name: "保存测评信息", exact: true })
     .click();
   await expect(
-    page.getByRole("heading", { name: "我的未保存输入", exact: true }),
+    page.getByText("测评信息已保存。", { exact: true }),
   ).toBeVisible();
+  await expect(title).toHaveValue("我的未保存输入");
 });
 
 test("lost write response is reconciled by reading and archival has a visible restore path", async ({
   page,
 }, testInfo) => {
   await signIn(page);
-  await openProductDetail(page);
+  await openProductSettingsFromCatalog(page);
   let lost = false;
   await page.route("**/api/studio/products/e2e-workspace", async (route) => {
     if (route.request().method() !== "PATCH" || lost) {
@@ -796,7 +819,7 @@ test("taxonomy archival keeps old association readable and creation uncertainty 
     category.getByRole("button", { name: "恢复分类", exact: true }),
   ).toBeVisible();
   await navigateStudio(page, "工作区");
-  await openProductDetail(page);
+  await openProductSettingsFromCatalog(page);
   await expect(
     page.getByText("同名目录 · e2e-category-one · 已归档（可保留或移除）", {
       exact: true,
@@ -808,8 +831,13 @@ test("taxonomy archival keeps old association readable and creation uncertainty 
     .fill("保留归档目录后的标题");
   await page.getByRole("button", { name: "保存测评信息", exact: true }).click();
   await expect(
-    page.getByRole("heading", { name: "保留归档目录后的标题", exact: true }),
+    page.getByText("测评信息已保存。", { exact: true }),
   ).toBeVisible();
+  await expect(
+    page
+      .getByRole("form", { name: "测评信息", exact: true })
+      .getByLabel("测评名称", { exact: true }),
+  ).toHaveValue("保留归档目录后的标题");
   await navigateStudio(page, "类目与标签");
   await page.getByRole("button", { name: "管理标签", exact: true }).click();
   let lost = false;
@@ -855,9 +883,9 @@ test("read-only can inspect existing products but sees no executable writes", as
   page,
 }) => {
   await signIn(page, "readOnly");
-  await openProductDetail(page);
+  await openProductSettingsFromCatalog(page);
   await expect(
-    page.getByRole("heading", { name: "保留归档目录后的标题", exact: true }),
+    page.getByText("保留归档目录后的标题", { exact: true }),
   ).toBeVisible();
   await expect(
     page.getByRole("button", { name: "保存测评信息", exact: true }),
@@ -896,7 +924,7 @@ test("list loading and read failure have distinct safe states and an explicit re
     release = resolve;
   });
   let reject = true;
-  await page.route("**/api/studio/products?*", async (route) => {
+  await page.route("**/api/studio/operations/products?*", async (route) => {
     await paused;
     if (reject) await route.abort("failed");
     else await route.continue();
