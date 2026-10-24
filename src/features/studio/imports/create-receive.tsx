@@ -186,8 +186,9 @@ export function CreateReceive({
         {pending && (
           <>
             <p>
-              已选择：{pending.file instanceof File ? pending.file.name : "内容包文件"} ·{" "}
-              {pending.input.expectedArchiveBytes.toLocaleString()} 字节
+              已选择：
+              {pending.file instanceof File ? pending.file.name : "内容包文件"}{" "}
+              · {pending.input.expectedArchiveBytes.toLocaleString()} 字节
             </p>
             <TechnicalDetails label="本次接收声明">
               <dl className={styles.facts}>
