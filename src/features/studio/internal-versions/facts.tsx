@@ -1,3 +1,4 @@
+import { directoryTime } from "../workspace/directory-time";
 import { TechnicalDetails } from "../presentation/technical-details";
 import Link from "next/link";
 import type {
@@ -168,12 +169,13 @@ export function VersionMetadataFacts({
   currentRevision?: number | undefined;
 }) {
   return (
-    <article className={styles.card}>
+    <article className={local.versionCard}>
       <h3>
         槽位 {version.slot} · 来源修订 {version.target.revision}
       </h3>
       <p>{versionRevisionRelation(version.target.revision, currentRevision)}</p>
       <TechnicalDetails label="快照与实现技术信息">
+        <p>版本编号：{version.id}</p>
         <p>固定快照：{version.snapshotSha256}</p>
         <p>
           渲染器：{version.renderer.id} / {version.renderer.version}；能力：仅
@@ -183,23 +185,31 @@ export function VersionMetadataFacts({
           评分引擎：{version.engine.id} / {version.engine.version}
         </p>
       </TechnicalDetails>
-      <p>封存时间：{version.createdAt}；对外发布批准：未授予</p>
-      <div className={styles.actions}>
+      <p className={local.hint}>
+        封存于{" "}
+        <time dateTime={version.createdAt}>
+          {directoryTime(version.createdAt)}
+        </time>{" "}
+        · 未授予对外发布批准
+      </p>
+      <div className={local.versionActions}>
         <Link
-          className={styles.link}
+          className={local.readButton}
+          aria-label="阅读固定内测内容版本"
           href={internalVersionPageUrl(version.productId, version.id)}
         >
-          阅读固定内测内容版本
+          查看固定版本 →
         </Link>
         <Link
-          className={`${styles.link} ${styles.secondary}`}
+          className={local.textLink}
+          aria-label="阅读来源修订审核依据记录"
           href={internalReviewPageUrl({
             productId: version.productId,
             draftId: version.target.draftId,
             revision: version.target.revision,
           })}
         >
-          阅读来源修订审核依据记录
+          查看来源审核 →
         </Link>
       </div>
     </article>

@@ -8,7 +8,7 @@ export function productWorkspaceTabs(productId: string) {
     { id: "content", label: "内容与素材", href: `${base}/content` },
     { id: "preview", label: "体验预览", href: `${base}/preview` },
     { id: "versions", label: "审核与版本", href: `${base}/internal-versions` },
-    { id: "testing", label: "内部测试", href: `${base}/consumer-access` },
+    { id: "testing", label: "内测记录", href: `${base}/consumer-access` },
     { id: "settings", label: "基本设置", href: `${base}/settings` },
   ] as const;
 }

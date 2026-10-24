@@ -1,8 +1,9 @@
 "use client";
-import { ChevronRight, Search } from "lucide-react";
+import { ChevronRight, Search, Menu } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { studioLocation, type StudioIdentity } from "./navigation-model";
 import styles from "./studio.module.css";
+import { useStudioMobileNavigation } from "./mobile-navigation";
 
 export function StudioTopbar({
   identity,
@@ -10,12 +11,27 @@ export function StudioTopbar({
   identity?: StudioIdentity | undefined;
 }) {
   const location = studioLocation(usePathname());
+  const { registerTrigger, id, expanded, open } = useStudioMobileNavigation();
   return (
     <header className={styles.topbar}>
-      <div className={styles.breadcrumb} aria-label="当前位置">
-        <span>运营管理</span>
-        <ChevronRight size={17} aria-hidden="true" />
-        <strong>{location.title}</strong>
+      <div className={styles.topbarLocation}>
+        <button
+          ref={registerTrigger}
+          className={styles.menuButton}
+          type="button"
+          aria-label="打开 Studio 导航"
+          aria-haspopup="dialog"
+          aria-controls={id}
+          aria-expanded={expanded}
+          onClick={open}
+        >
+          <Menu size={22} aria-hidden="true" />
+        </button>
+        <div className={styles.breadcrumb} aria-label="当前位置">
+          <span>运营管理</span>
+          <ChevronRight size={17} aria-hidden="true" />
+          <strong>{location.title}</strong>
+        </div>
       </div>
       <div className={styles.topbarActions}>
         <form

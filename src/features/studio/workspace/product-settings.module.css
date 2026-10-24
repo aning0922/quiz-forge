@@ -1,0 +1,67 @@
+.settings {
+  display: grid;
+  gap: 20px;
+  min-width: 0;
+}
+.columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(280px, 1fr);
+  align-items: start;
+  gap: 20px;
+}
+.main,
+.side {
+  min-width: 0;
+}
+.side {
+  display: grid;
+  gap: 20px;
+}
+.formPanel,
+.identityPanel,
+.lifecycle {
+  min-width: 0;
+  padding: 20px;
+  border: 1px solid var(--studio-border, #e1e6f0);
+  border-radius: 13px;
+  background: var(--studio-surface, #fff);
+  overflow-wrap: anywhere;
+}
+.formPanel h2,
+.identityPanel h2,
+.lifecycle h2 {
+  margin: 0 0 12px;
+  font-size: 20px;
+}
+.formPanel form {
+  margin-top: 0;
+}
+.formPanel :is(input, select, button),
+.lifecycle button {
+  min-height: 44px;
+  font-size: 16px;
+}
+.formPanel p {
+  margin-block: 6px 12px;
+  font-size: 16px;
+}
+.lifecycle {
+  border-color: #e7d4d4;
+}
+.lifecycle > button {
+  color: #8d4242;
+  border-color: #d8b9b9;
+  background: #fff;
+}
+@media (max-width: 1050px) {
+  .columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 600px) {
+  .formPanel,
+  .identityPanel,
+  .lifecycle {
+    padding: 16px;
+  }
+}

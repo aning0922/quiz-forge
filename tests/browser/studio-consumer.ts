@@ -56,6 +56,7 @@ const parent = f.parent,
 const fromTsx = createRequire(
   createRequire(import.meta.url).resolve("tsx/package.json"),
 );
+const disclosureOnly = process.argv.slice(2).includes("--disclosure-only");
 const navigationOnly = process.argv.slice(2).includes("--navigation-only");
 const keyIdentityOnly = process.argv.slice(2).includes("--key-identity-only");
 await fromTsx("esbuild").build({
@@ -334,7 +335,12 @@ async function shot(page: Page, name: string) {
       ...document.querySelectorAll("button,a,select,input"),
     ].filter((e) => {
       const r = e.getBoundingClientRect();
-      return r.width > 0 && r.height > 0 && (r.width < 44 || r.height < 44);
+      return (
+        e.checkVisibility({ checkVisibilityCSS: true }) &&
+        r.width > 0 &&
+        r.height > 0 &&
+        (r.width < 44 || r.height < 44)
+      );
     }).length,
   }));
   expect(metrics).toEqual({
@@ -391,13 +397,46 @@ async function pendingDigest(page: Page) {
     };
   });
 }
+async function openConsumerTasks(page: Page) {
+  await expect
+    .poll(
+      async () =>
+        (await page
+          .locator("summary")
+          .filter({ hasText: /^创建答题版本$/ })
+          .count()) +
+        (await page
+          .getByRole("heading", { name: "请重新验证运营身份", exact: true })
+          .count()),
+    )
+    .toBeGreaterThan(0);
+  for (const name of ["创建答题版本", "发放访问码"]) {
+    const summary = page
+      .locator("summary")
+      .filter({ hasText: new RegExp(`^${name}$`) });
+    if (
+      (await summary.count()) &&
+      !((await summary.locator("..").getAttribute("open")) !== null)
+    )
+      await summary.click();
+  }
+}
+async function closeMobileMenu(page: Page) {
+  const close = page.getByRole("button", {
+    name: "关闭 Studio 导航",
+    exact: true,
+  });
+  if (await close.isVisible()) await close.click();
+}
 async function activateGlobal(page: Page, kind: "pointer" | "keyboard") {
   const nav = page.getByRole("navigation", {
     name: "Studio 导航",
     exact: true,
   });
   if (!(await nav.isVisible()))
-    await page.getByText("Studio 导航", { exact: true }).click();
+    await page
+      .getByRole("button", { name: "打开 Studio 导航", exact: true })
+      .click();
   const link = nav.getByRole("link", { name: "测评管理", exact: true });
   // Only prevent destination navigation, preserving the real React link events
   // and mounted consumer controller from the independent review counterexample.
@@ -411,6 +450,7 @@ async function activateGlobal(page: Page, kind: "pointer" | "keyboard") {
     await link.focus();
     await link.press("Enter");
   } else await link.click();
+  await closeMobileMenu(page);
   expect(page.url()).toBe(origin + "/studio-navigation-probe");
   await expect(
     page.getByRole("heading", { name: "请重新验证运营身份", exact: true }),
@@ -433,6 +473,7 @@ async function globalNavigationRegression(
           ),
         );
         await target.goto(origin + "/studio-navigation-probe");
+        await openConsumerTasks(target);
         await expect(
           target.getByRole("combobox", {
             name: "固定内测内容版本",
@@ -441,9 +482,10 @@ async function globalNavigationRegression(
         ).toBeEnabled();
       }
       if (kind === "keyboard") {
-        const toggle = page.getByText("Studio 导航", { exact: true });
-        await toggle.click();
-        await toggle.click();
+        await page
+          .getByRole("button", { name: "打开 Studio 导航", exact: true })
+          .click();
+        await closeMobileMenu(page);
         await expect(
           page.getByRole("combobox", { name: "固定内测内容版本", exact: true }),
         ).toBeEnabled();
@@ -454,7 +496,9 @@ async function globalNavigationRegression(
         exact: true,
       });
       if (!(await nav.isVisible()))
-        await page.getByText("Studio 导航", { exact: true }).click();
+        await page
+          .getByRole("button", { name: "打开 Studio 导航", exact: true })
+          .click();
       const gap = await nav.evaluate((element) => {
         const links = element.querySelectorAll("a"),
           first = links[0]!.getBoundingClientRect(),
@@ -529,6 +573,7 @@ async function globalNavigationRegression(
     );
     try {
       await page.goto(origin + "/studio-navigation-probe");
+      await openConsumerTasks(page);
       const selector = page.getByRole("combobox", {
         name: "固定内测内容版本",
         exact: true,
@@ -611,6 +656,7 @@ async function runExistingConsumerScenarios(
       ),
     );
     await p.goto(origin + "/studio-probe");
+    await openConsumerTasks(p);
     await expect(
       p.getByRole("button", { name: "创建答题版本", exact: true }),
     ).toBeVisible();
@@ -669,6 +715,7 @@ async function runExistingConsumerScenarios(
         p.getByRole("heading", { name: "请重新验证运营身份", exact: true }),
       ).toBeVisible();
       await p.reload();
+      await openConsumerTasks(p);
       await expect(
         p.getByRole("combobox", { name: "固定内测内容版本" }),
       ).toBeEnabled();
@@ -721,6 +768,7 @@ async function runExistingConsumerScenarios(
   } }); })();
 `);
   await page.goto(origin + "/studio-probe");
+  await openConsumerTasks(page);
   await page
     .getByRole("combobox", { name: "固定内测内容版本" })
     .selectOption(parent.version.id);
@@ -796,6 +844,7 @@ async function runExistingConsumerScenarios(
   await shot(page, "unknown-issue-320");
   const before = issueBindings.length;
   await page.reload();
+  await openConsumerTasks(page);
   await expect(
     page.getByRole("button", { name: "查询上次操作结果" }),
   ).toBeVisible();
@@ -871,6 +920,7 @@ async function runExistingConsumerScenarios(
   ).toBeVisible();
   const other = await page.context().newPage();
   await other.goto(origin + "/studio-probe");
+  await openConsumerTasks(other);
   await expect(
     other.getByRole("button", { name: "创建答题版本", exact: true }),
   ).toBeVisible();
@@ -931,6 +981,7 @@ async function runExistingConsumerScenarios(
     }
   });
   await page.reload();
+  await openConsumerTasks(page);
   await expect(
     page.getByText(
       "原文已不在当前标签页，不能恢复私密链接或再次发送原操作发放。仍可查询上次操作结果。",
@@ -970,6 +1021,7 @@ async function runExistingConsumerScenarios(
   mode = "readonly";
   const ro = await browser.newPage({ viewport: { width: 320, height: 900 } });
   await ro.goto(origin + "/studio-probe");
+  await openConsumerTasks(ro);
   await expect(
     ro.getByText("当前运营身份为只读", { exact: false }),
   ).toBeVisible();
@@ -981,6 +1033,7 @@ async function runExistingConsumerScenarios(
   mode = "normal";
   const v = await browser.newPage({ viewport: { width: 320, height: 900 } });
   await v.goto(origin + "/studio-probe");
+  await openConsumerTasks(v);
   await v.getByRole("button", { name: "作废此未领取访问码" }).first().click();
   mode = "claim-before-void";
   await v.getByRole("button", { name: "确认作废未领取访问码" }).click();
@@ -1007,6 +1060,7 @@ async function keyIdentityReview(
   const page = await browser.newPage({ viewport: { width: 320, height: 900 } });
   page.on("pageerror", () => errors.push("key-identity-page-error"));
   await page.goto(origin + "/studio-probe");
+  await openConsumerTasks(page);
   await page
     .getByRole("combobox", { name: "固定内测内容版本", exact: true })
     .selectOption(parent.version.id);
@@ -1073,15 +1127,105 @@ async function keyIdentityReview(
   expect(rawSeenByApi).toBe(false);
   await page.close();
 }
+async function disclosureReview(
+  browser: Awaited<ReturnType<typeof chromium.launch>>,
+) {
+  hasPlay = true;
+  mode = "normal";
+  const page = await browser.newPage({ viewport: { width: 390, height: 900 } });
+  page.on("pageerror", (error) =>
+    errors.push(
+      error.message.replace(/qf[kg]_p4_[A-Za-z0-9_-]+/g, "[redacted]"),
+    ),
+  );
+  await page.goto(origin + "/studio-probe");
+  const create = page.locator("summary").filter({ hasText: /^创建答题版本$/ });
+  const issue = page.locator("summary").filter({ hasText: /^发放访问码$/ });
+  await expect(create).toBeVisible();
+  await expect(issue).toBeVisible();
+  await expect(create.locator("..")).not.toHaveAttribute("open");
+  await expect(issue.locator("..")).not.toHaveAttribute("open");
+  await expect(
+    page.getByRole("heading", { name: "访问码记录", exact: true }),
+  ).toBeVisible();
+  await create.click();
+  const parentChoice = page.getByRole("combobox", {
+    name: "固定内测内容版本",
+    exact: true,
+  });
+  await expect(parentChoice).toBeEnabled();
+  await parentChoice.selectOption(parent.version.id);
+  await parentChoice.evaluate((e) => {
+    (window as Window & { originalParent?: Element }).originalParent = e;
+  });
+  await create.click();
+  await create.click();
+  expect(
+    await parentChoice.evaluate(
+      (e) =>
+        e === (window as Window & { originalParent?: Element }).originalParent,
+    ),
+  ).toBe(true);
+  await expect(parentChoice).toHaveValue(parent.version.id);
+  await issue.click();
+  const playChoice = page.getByRole("combobox", {
+    name: "答题版本",
+    exact: true,
+  });
+  await playChoice.selectOption(play.id);
+  await playChoice.evaluate((e) => {
+    (window as Window & { originalPlay?: Element }).originalPlay = e;
+  });
+  await issue.click();
+  await issue.click();
+  await expect(playChoice).toHaveValue(play.id);
+  expect(
+    await playChoice.evaluate(
+      (e) => e === (window as Window & { originalPlay?: Element }).originalPlay,
+    ),
+  ).toBe(true);
+  expect(posts).toBe(0);
+  mode = "unknown";
+  await page
+    .getByRole("button", { name: "生成并发放一枚访问码", exact: true })
+    .click();
+  const pendingPanel = page.getByRole("region", { name: "答题内测原操作核对" });
+  await expect(pendingPanel).toBeVisible();
+  const original = await pendingDigest(page);
+  expect(original.entries).toBeGreaterThan(0);
+  await issue.click();
+  await expect(pendingPanel).toBeVisible();
+  expect(await pendingDigest(page)).toEqual(original);
+  await issue.click();
+  expect(
+    await playChoice.evaluate(
+      (e) => e === (window as Window & { originalPlay?: Element }).originalPlay,
+    ),
+  ).toBe(true);
+  await expect(playChoice).toHaveValue(play.id);
+  expect(posts).toBe(1);
+  expect(rawSeenByApi).toBe(false);
+  await shot(page, "disclosure-unknown-390");
+  observations.push({
+    name: "record-first-disclosures",
+    defaultFormsCollapsed: true,
+    originalSelectsRetained: true,
+    unknownOutsideDisclosure: true,
+    originalPendingUnchanged: true,
+    posts: 1,
+  });
+  await page.close();
+}
 try {
   browser = await chromium.launch({ headless: true });
-  if (keyIdentityOnly) await keyIdentityReview(browser);
+  if (disclosureOnly) await disclosureReview(browser);
+  else if (keyIdentityOnly) await keyIdentityReview(browser);
   else await globalNavigationRegression(browser);
   expect(errors).toEqual([]);
   // Restore the original in-memory starting fixture for the unchanged scenarios.
   hasPlay = false;
   play = f.play.play;
-  if (!navigationOnly && !keyIdentityOnly)
+  if (!navigationOnly && !keyIdentityOnly && !disclosureOnly)
     await runExistingConsumerScenarios(browser);
   await writeFile(
     path.join(out, "result.json"),
@@ -1089,14 +1233,17 @@ try {
       {
         scope:
           "synthetic in-memory HTTP/clipboard stub and actual UI only; no DB, real permissions or production E2E",
+        disclosureOnly,
         navigationOnly,
         keyIdentityOnly,
         browser: await browser.version(),
-        viewports: keyIdentityOnly
-          ? [320]
-          : navigationOnly
-            ? [390, 1440]
-            : [320, 375, 390, 430, 1440],
+        viewports: disclosureOnly
+          ? [390]
+          : keyIdentityOnly
+            ? [320]
+            : navigationOnly
+              ? [390, 1440]
+              : [320, 375, 390, 430, 1440],
         screenshots: shots,
         observations,
         rawSeenByApi,

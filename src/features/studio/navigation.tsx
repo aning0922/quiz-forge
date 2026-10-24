@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { type MouseEvent } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -9,6 +9,7 @@ import {
   Ticket,
   Settings,
   UserRound,
+  X,
 } from "lucide-react";
 import { StudioBrand } from "./brand";
 import {
@@ -16,6 +17,7 @@ import {
   studioLocation,
   type StudioIdentity,
 } from "./navigation-model";
+import { useStudioMobileNavigation } from "./mobile-navigation";
 import styles from "./studio.module.css";
 
 const icons = {
@@ -32,25 +34,55 @@ export function StudioNavigation({
 }) {
   const pathname = usePathname(),
     location = studioLocation(pathname);
-  const panel = useRef<HTMLDetailsElement>(null);
-  useEffect(() => {
-    const desktop = window.matchMedia("(min-width: 960px)");
-    if (panel.current) panel.current.open = desktop.matches;
-    const showDesktop = () => {
-      if (desktop.matches && panel.current) panel.current.open = true;
-    };
-    desktop.addEventListener("change", showDesktop);
-    return () => desktop.removeEventListener("change", showDesktop);
-  }, []);
-  const closeMobile = () => {
-    if (!window.matchMedia("(min-width: 960px)").matches && panel.current)
-      panel.current.open = false;
-  };
+  const { registerDialog, id, close, closed } = useStudioMobileNavigation();
+  function followedLink(event: MouseEvent<HTMLAnchorElement>) {
+    if (
+      !event.defaultPrevented &&
+      event.button === 0 &&
+      !event.metaKey &&
+      !event.ctrlKey &&
+      !event.shiftKey &&
+      !event.altKey
+    )
+      close();
+  }
   return (
     <aside className={styles.sidebar}>
-      <StudioBrand />
-      <details ref={panel} className={styles.navigationPanel} open>
-        <summary>Studio 导航</summary>
+      <dialog
+        ref={registerDialog}
+        id={id}
+        className={styles.navigationDialog}
+        open
+        aria-label="Studio 导航菜单"
+        onClose={closed}
+        onClick={(event) => {
+          if (
+            event.target !== event.currentTarget ||
+            !event.currentTarget.matches(":modal")
+          )
+            return;
+          const bounds = event.currentTarget.getBoundingClientRect();
+          if (
+            event.clientX < bounds.left ||
+            event.clientX > bounds.right ||
+            event.clientY < bounds.top ||
+            event.clientY > bounds.bottom
+          )
+            close();
+        }}
+      >
+        <div className={styles.drawerHeading}>
+          <StudioBrand />
+          <button
+            className={styles.drawerClose}
+            type="button"
+            data-navigation-close
+            onClick={close}
+            aria-label="关闭 Studio 导航"
+          >
+            <X size={22} aria-hidden="true" />
+          </button>
+        </div>
         <nav className={styles.navigation} aria-label="Studio 导航">
           <p className={styles.sideLabel}>日常运营</p>
           {STUDIO_SECTIONS.map((item) => {
@@ -62,9 +94,9 @@ export function StudioNavigation({
                 prefetch={false}
                 aria-current={location.section === item.id ? "page" : undefined}
                 className={styles.navigationLink}
-                onClick={closeMobile}
+                onClick={followedLink}
               >
-                <Icon size={21} aria-hidden="true" />
+                <Icon size={20} aria-hidden="true" />
                 <span>{item.label}</span>
               </Link>
             );
@@ -74,7 +106,7 @@ export function StudioNavigation({
           <p className={styles.navigationNote}>
             内测运营环境
             <br />
-            按测评管理内容、版本与访问码。
+            内容、版本与访问码按测评管理。
           </p>
           <Link
             className={styles.identityLink}
@@ -82,7 +114,7 @@ export function StudioNavigation({
             prefetch={false}
             aria-label="身份与退出"
             aria-current={pathname === "/studio/session" ? "page" : undefined}
-            onClick={closeMobile}
+            onClick={followedLink}
           >
             <UserRound size={23} aria-hidden="true" />
             <span>
@@ -100,7 +132,7 @@ export function StudioNavigation({
             </span>
           </Link>
         </div>
-      </details>
+      </dialog>
     </aside>
   );
 }

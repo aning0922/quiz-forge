@@ -1,0 +1,26 @@
+.badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 6px;
+  padding: 3px 8px;
+  font-size: 16px;
+  line-height: 1.5;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.neutral {
+  background: #f0f2f6;
+  color: #56647e;
+}
+.info {
+  background: #eaf2ff;
+  color: #32649d;
+}
+.success {
+  background: #e5f7ec;
+  color: #126c51;
+}
+.warning {
+  background: #fff1e0;
+  color: #91531c;
+}

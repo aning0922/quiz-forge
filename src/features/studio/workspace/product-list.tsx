@@ -100,7 +100,9 @@ function CatalogList({
     <div className={styles.workspace}>
       <StudioPageHeader
         title="测评管理"
-        description={<p>查找测评、整理分类与标签，进入目录详情继续制作。</p>}
+        description={
+          <p>查找测评，识别当前内容与内测状态，再进入具体工作区继续。</p>
+        }
         actions={
           session.operator.role === "operator" ? (
             <Link className={styles.link} href="/studio/new-product">
@@ -193,7 +195,9 @@ function CatalogList({
             ) : (
               <CatalogProducts products={read.value.items} />
             )}
-            <AsOf value={read.value.asOf} />
+            <div className={styles.catalogObservation}>
+              <AsOf value={read.value.asOf} />
+            </div>
             <footer className={styles.catalogFooter}>
               <p>
                 共 {read.value.total} 个测评 · 每页 {query.pageSize} 个
@@ -216,7 +220,7 @@ function CatalogList({
         )}
       </section>
       <p className={styles.note}>
-        摘要仅反映读取时的服务器记录；历史版本不表示当前草稿已审核，浏览器内未决操作需在原工作区恢复。
+        历史版本不代表当前草稿已审核；完整依据与未决操作请进入对应工作区查看。
       </p>
     </div>
   );

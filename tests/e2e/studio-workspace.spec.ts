@@ -150,8 +150,6 @@ async function openProductSettings(page: Page) {
 
 async function openEditor(page: Page) {
   const form = page.getByRole("form", { name: "测评信息", exact: true });
-  if (!(await form.isVisible()))
-    await page.getByText("编辑测评信息", { exact: true }).click();
   await expect(form).toBeVisible();
 }
 
@@ -244,13 +242,13 @@ async function openProductSettingsFromCatalog(page: Page) {
     .click();
   await expect(page).toHaveURL(/\/studio\/products\/e2e-workspace$/);
   await expect(
-    page.getByRole("heading", { name: "测评概览", exact: true }),
+    page.getByRole("heading", { name: "制作与内测状态", exact: true }),
   ).toBeVisible();
   await expect(
     page.getByRole("form", { name: "测评信息", exact: true }),
   ).toHaveCount(0);
   await openProductSettings(page);
-  if (await page.getByText("编辑测评信息", { exact: true }).count())
+  if (await page.getByRole("form", { name: "测评信息", exact: true }).count())
     await openEditor(page);
 }
 
@@ -381,16 +379,18 @@ test("operator creates taxonomy and product, checks 8 tags, filters and safe mob
   await page.getByRole("button", { name: "创建测评", exact: true }).click();
   await expect(page).toHaveURL(/\/studio\/products\/e2e-workspace$/);
   await expect(
-    page.getByRole("heading", { name: "测评概览", exact: true }),
+    page.getByRole("heading", { name: "制作与内测状态", exact: true }),
   ).toBeVisible();
-  await expect(page.getByText(longTitle, { exact: true })).toBeVisible();
+  await expect(
+    page.locator("header").getByText(longTitle, { exact: true }),
+  ).toBeVisible();
   await expect(
     page.getByRole("form", { name: "测评信息", exact: true }),
   ).toHaveCount(0);
   await openProductSettings(page);
   await expect(
     page.getByRole("form", { name: "测评信息", exact: true }),
-  ).toBeHidden();
+  ).toBeVisible();
   await openEditor(page);
   await expect(page.getByLabel("测评名称", { exact: true })).toHaveValue(
     longTitle,
@@ -443,7 +443,7 @@ test("operator creates taxonomy and product, checks 8 tags, filters and safe mob
     fullPage: true,
   });
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.getByText("更多筛选", { exact: true }).click();
+  await page.getByText("全部分类", { exact: true }).click();
   const unclassified = page.getByRole("checkbox", {
     name: "仅未分类测评",
     exact: true,
@@ -451,11 +451,10 @@ test("operator creates taxonomy and product, checks 8 tags, filters and safe mob
   await unclassified.check();
   await page.getByRole("button", { name: "应用筛选", exact: true }).click();
   await expect(page.getByText("当前筛选无结果", { exact: true })).toBeVisible();
-  await page.getByText("更多筛选", { exact: true }).click();
   await expect(
     page.getByRole("status").filter({ hasText: "当前：" }),
   ).toContainText("仅未分类");
-  await page.getByText("更多筛选", { exact: true }).click();
+  await page.getByText("仅未分类", { exact: true }).click();
   await expect(unclassified).toBeChecked();
   await unclassified.uncheck();
   await page
@@ -485,6 +484,7 @@ test("catalog filters restore through URL reload and Back/Forward, while invalid
     .getByRole("form", { name: "列表筛选", exact: true })
     .getByLabel("搜索测评名称或编号")
     .fill("e2e-workspace");
+  await page.getByText("更多筛选", { exact: true }).click();
   await page.getByLabel("归档状态", { exact: true }).selectOption("all");
   await page.getByRole("button", { name: "应用筛选", exact: true }).click();
   await expect
@@ -692,8 +692,8 @@ test("CAS preserves unsaved input and requires an explicit latest revision resub
   const editor = page.getByRole("form", { name: "测评信息", exact: true });
   const title = editor.getByLabel("测评名称", { exact: true });
   await title.fill("我的未保存输入");
-  await page.getByText("编辑测评信息", { exact: true }).click();
-  await expect(editor).toBeHidden();
+  await page.getByRole("button", { name: "刷新摘要", exact: true }).click();
+  await expect(editor).toBeVisible();
   await expect(page.locator('form[aria-label="测评信息"]')).toHaveCount(1);
   await openEditor(page);
   await expect(title).toHaveValue("我的未保存输入");
@@ -708,7 +708,7 @@ test("CAS preserves unsaved input and requires an explicit latest revision resub
   await expect(
     editor.getByRole("button", { name: "保存测评信息", exact: true }),
   ).toBeDisabled();
-  await page.getByText("编辑测评信息", { exact: true }).click();
+  await page.getByRole("button", { name: "刷新摘要", exact: true }).click();
   await expect(page.locator('form[aria-label="测评信息"]')).toHaveCount(1);
   await expect(
     page.getByRole("heading", { name: "内容发生冲突", exact: true }),
@@ -767,10 +767,10 @@ test("lost write response is reconciled by reading and archival has a visible re
   await expect(
     page.getByRole("button", { name: "保存测评信息", exact: true }),
   ).toBeDisabled();
-  await page.getByText("编辑测评信息", { exact: true }).click();
+  await page.getByRole("button", { name: "刷新摘要", exact: true }).click();
   await expect(
     page.getByRole("form", { name: "测评信息", exact: true }),
-  ).toBeHidden();
+  ).toBeVisible();
   await expect(
     page.getByRole("heading", { name: "提交结果尚未确认", exact: true }),
   ).toBeVisible();
@@ -885,7 +885,7 @@ test("read-only can inspect existing products but sees no executable writes", as
   await signIn(page, "readOnly");
   await openProductSettingsFromCatalog(page);
   await expect(
-    page.getByText("保留归档目录后的标题", { exact: true }),
+    page.locator("header").getByText("保留归档目录后的标题", { exact: true }),
   ).toBeVisible();
   await expect(
     page.getByRole("button", { name: "保存测评信息", exact: true }),

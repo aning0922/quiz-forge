@@ -1,9 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, type ReactNode } from "react";
+import type { ReactNode } from "react";
+import { RefreshCw, Eye, ArrowRight } from "lucide-react";
 import { useProductOperations } from "../operations-ui/read";
-import { AsOf, ObservationValue } from "../operations-ui/summary";
+import { productPresentation } from "../operations-ui/presentation";
+import { StatusBadge } from "../operations-ui/status-badge";
+import { directoryTime } from "../workspace/directory-time";
 import { ProductWorkspaceContext } from "./context";
 import { ProductWorkspaceNav } from "./nav";
 import {
@@ -28,7 +31,6 @@ export function ProductWorkspaceFrame({
     </InternalAuthorityProvider>
   );
 }
-
 function WorkspaceFrameContent({
   productId,
   children,
@@ -43,110 +45,94 @@ function WorkspaceFrameContent({
     if (!wasRevoked && authority.isRevoked) invalidateCurrentStudioAuthority();
   });
   const value = read.value;
-  const snapshotDetails = useRef<HTMLDetailsElement>(null);
-  useEffect(() => {
-    const wide = window.matchMedia("(min-width: 601px)");
-    const setDefault = () => {
-      if (snapshotDetails.current) snapshotDetails.current.open = wide.matches;
-    };
-    setDefault();
-    wide.addEventListener("change", setDefault);
-    return () => wide.removeEventListener("change", setDefault);
-  }, []);
+  const presentation = value ? productPresentation(value) : null;
   return (
     <ProductWorkspaceContext.Provider value={{ productId, read }}>
       <div className={styles.workspace}>
+        <Link className={styles.back} href="/studio/products">
+          测评管理 <span aria-hidden="true">/</span>{" "}
+          <span>{value?.directory.title ?? "测评工作区"}</span>
+        </Link>
         <header className={styles.identity}>
-          <Link className={styles.back} href="/studio/products">
-            ← 测评管理
-          </Link>
           <div className={styles.identityRow}>
-            <div>
-              <p className={styles.eyebrow}>测评工作区</p>
+            <div className={styles.identityMain}>
+              {value && presentation && (
+                <div className={styles.statuses}>
+                  {value.directory.archivedAt && (
+                    <StatusBadge
+                      status={{ label: "已归档", tone: "neutral" }}
+                    />
+                  )}
+                  {value.directory.primaryCategory && (
+                    <StatusBadge
+                      status={{
+                        label: value.directory.primaryCategory.name,
+                        tone: "neutral",
+                      }}
+                    />
+                  )}
+                  <StatusBadge status={presentation.content} />
+                  <StatusBadge status={presentation.review} />
+                </div>
+              )}
               <p className={styles.productName}>
                 {value?.directory.title ?? "测评信息待读取"}
               </p>
-              <p className={styles.muted}>编号：{productId}</p>
+              {presentation?.historicalNote && (
+                <p className={styles.historyNote}>
+                  {presentation.historicalNote}
+                </p>
+              )}
             </div>
-            {value && (
-              <span
-                className={
-                  value.directory.archivedAt ? styles.archived : styles.badge
-                }
-              >
-                {value.directory.archivedAt ? "已归档" : "未归档"}
-              </span>
+            {presentation && !authority.isRevoked && (
+              <div className={styles.headerActions}>
+                {presentation.previewHref && (
+                  <Link
+                    className={styles.secondary}
+                    href={presentation.previewHref}
+                  >
+                    <Eye size={18} aria-hidden="true" />
+                    体验预览
+                  </Link>
+                )}
+                <Link
+                  className={styles.primary}
+                  href={presentation.primary.href}
+                  title={presentation.primary.reason}
+                >
+                  {presentation.primary.label}
+                  <ArrowRight size={18} aria-hidden="true" />
+                </Link>
+              </div>
             )}
           </div>
-          {read.loading && <p role="status">正在读取测评摘要，旧摘要已撤下…</p>}
-          {read.error && (
-            <p className={styles.error} role="alert">
-              摘要读取失败，当前业务状态无法判定。{read.error}
-            </p>
-          )}
-          <details
-            ref={snapshotDetails}
-            className={styles.snapshotDetails}
-            open
-          >
-            <summary>业务状态与观察时间</summary>
+          <div className={styles.identityMeta}>
             {value && (
-              <>
-                <div className={styles.businessFacts}>
-                  <div>
-                    <span>当前草稿</span>
-                    <strong>
-                      <ObservationValue
-                        observation={value.content.draft}
-                        absent="暂无"
-                      >
-                        {(draft) => <>r{draft.target.revision}</>}
-                      </ObservationValue>
-                    </strong>
-                  </div>
-                  <div>
-                    <span>当前匹配审核</span>
-                    <strong>
-                      <ObservationValue
-                        observation={value.review.current}
-                        absent="缺少精确匹配审核"
-                      >
-                        {(review) => <>r{review.target.revision} 的匹配依据</>}
-                      </ObservationValue>
-                    </strong>
-                  </div>
-                  <div>
-                    <span>固定内容版本</span>
-                    <strong>
-                      当前 {value.versions.currentCount} · 历史{" "}
-                      {value.versions.historicalCount}
-                    </strong>
-                  </div>
-                  <div>
-                    <span>试玩版本</span>
-                    <strong>
-                      当前 {value.testing.currentCount} · 历史{" "}
-                      {value.testing.historicalCount}
-                    </strong>
-                  </div>
-                </div>
-                <AsOf value={value.asOf} />
-              </>
+              <span>
+                摘要观察{" "}
+                <time dateTime={value.asOf}>{directoryTime(value.asOf)}</time>
+              </span>
             )}
-            <p className={styles.muted}>
-              摘要仅供查看；历史记录、固定预览和未决操作各保留原目标。
-            </p>
-          </details>
-          <div className={styles.headerActions}>
             <button
               className={styles.refresh}
               type="button"
               disabled={read.loading}
               onClick={read.refresh}
             >
-              {read.error ? "重新读取摘要" : "刷新业务摘要"}
+              <RefreshCw size={16} aria-hidden="true" />
+              {read.error ? "重新读取摘要" : "刷新摘要"}
             </button>
           </div>
+          {read.loading && (
+            <p role="status" className={styles.muted}>
+              正在读取测评摘要…
+            </p>
+          )}
+          {read.error && (
+            <p className={styles.error} role="alert">
+              摘要读取失败，当前业务状态无法判定。{read.error}
+            </p>
+          )}
         </header>
         <ProductWorkspaceNav productId={productId} />
         {authority.isRevoked && (

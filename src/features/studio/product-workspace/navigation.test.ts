@@ -11,7 +11,7 @@ describe("product business navigation", () => {
       "内容与素材",
       "体验预览",
       "审核与版本",
-      "内部测试",
+      "内测记录",
       "基本设置",
     ]);
     expect(tabs.map((tab) => tab.href)).toEqual([

@@ -44,27 +44,31 @@ import local from "./internal-versions.module.css";
 export function StableInternalWorkspace({
   productId,
   session,
+  showEntry = true,
 }: {
   productId: string;
   session: StudioSessionDto;
+  showEntry?: boolean;
 }) {
   const parsed =
     internalRevisionScopeSchema.shape.productId.safeParse(productId);
   if (!parsed.success) return null;
   return (
     <>
-      <section className={styles.panel} aria-label="稳定工作区内测入口">
-        <h2>审核依据与内容版本</h2>
-        <p>
-          记录已有的内容与素材审核依据，再固定本次内测内容；不代表新增批准或对外发布。
-        </p>
-        <Link
-          className={styles.link}
-          href={internalVersionsPageUrl(parsed.data)}
-        >
-          查看审核依据与内容版本
-        </Link>
-      </section>
+      {showEntry && (
+        <section className={styles.panel} aria-label="稳定工作区内测入口">
+          <h2>审核依据与内容版本</h2>
+          <p>
+            记录已有的内容与素材审核依据，再固定本次内测内容；不代表新增批准或对外发布。
+          </p>
+          <Link
+            className={styles.link}
+            href={internalVersionsPageUrl(parsed.data)}
+          >
+            查看审核依据与内容版本
+          </Link>
+        </section>
+      )}
       <InternalRecoveryPanels
         key={parsed.data}
         productId={parsed.data}
@@ -201,79 +205,132 @@ function InternalVersionsContent({
         current="versions"
         {...(current ? { previewHref: previewPagePath(current) } : {})}
       />
-      <section className={styles.panel}>
-        <StudioPageHeader
-          title="固定内测内容版本"
-          description="选择当前修订记录基线，或阅读已封存的历史版本。原操作核实不依赖列表读取成功。"
-        />
-        <p>{INTERNAL_VERSION_DISCLOSURE}</p>
-        <p>
-          列表保存固定身份元数据。历史版本不会因当前
-          草稿、素材或预览方式的变化而自动更新；内容详情与预览仍分别核验。
-        </p>
-        <div className={styles.actions}>
+      <StudioPageHeader
+        title="审核与版本"
+        description="核对当前修订的内容、既有依据与封存条件；已有固定版本分别保留。"
+      />
+      <div className={local.versionColumns}>
+        <section className={local.currentPanel} aria-label="当前修订核对">
+          <div className={local.sectionHeading}>
+            <h2>当前修订核对</h2>
+            {current && (
+              <span className={local.currentLabel}>
+                当前草稿 r{current.revision}
+              </span>
+            )}
+          </div>
+          <p className={local.hint}>
+            审核依据来自已有准确证据，记录与封存仍需在固定修订页面明确操作。
+          </p>
+          <ol className={local.reviewSteps}>
+            <li>
+              <span aria-hidden="true">1</span>
+              <div>
+                <h3>核对当前草稿内容与素材</h3>
+                <p>
+                  查看指定修订的题目、评分与预览；预览入口不表示已经人工体验。
+                </p>
+              </div>
+            </li>
+            <li>
+              <span aria-hidden="true">2</span>
+              <div>
+                <h3>核对已有审核依据</h3>
+                <p>
+                  在固定修订页面逐项核对批准证据与完整目标，不沿用其他修订的审核资格。
+                </p>
+              </div>
+            </li>
+            <li>
+              <span aria-hidden="true">3</span>
+              <div>
+                <h3>封存不可变内测内容版本</h3>
+                <p>
+                  满足原服务条件后明确封存，历史版本和用户报告不会被新草稿覆盖。
+                </p>
+              </div>
+            </li>
+          </ol>
+          {draft.loading && <p role="status">正在读取当前草稿指针…</p>}
+          {draft.error && (
+            <p className={styles.error} role="alert">
+              当前修订 未可靠读取：{draft.error}。原操作核实仍可使用。
+            </p>
+          )}
+          {draft.value?.kind === "empty" && (
+            <p className={local.empty}>
+              本次读取没有当前草稿；这不能证明旧请求未执行。
+            </p>
+          )}
+          {current && (
+            <div className={local.currentActions}>
+              <Link
+                className={styles.link}
+                href={internalReviewPageUrl({
+                  productId: current.productId,
+                  draftId: current.draftId,
+                  revision: current.revision,
+                })}
+              >
+                当前修订 {current.revision} 的基线与封存
+              </Link>
+              <Link className={local.textLink} href={previewPagePath(current)}>
+                体验此固定修订内容预览 →
+              </Link>
+            </div>
+          )}
           <button
-            className={styles.button}
-            disabled={list.loading}
-            onClick={list.refresh}
-          >
-            重新读取固定版本列表
-          </button>
-          <button
-            className={`${styles.button} ${styles.secondary}`}
+            className={local.readButton}
             disabled={draft.loading}
             onClick={draft.refresh}
           >
             读取当前草稿指针
           </button>
-          {current && (
-            <Link
-              className={styles.link}
-              href={internalReviewPageUrl({
-                productId: current.productId,
-                draftId: current.draftId,
-                revision: current.revision,
-              })}
+          <p className={local.hint}>{INTERNAL_VERSION_DISCLOSURE}</p>
+        </section>
+        <section className={local.historyPanel} aria-label="已有固定版本">
+          <div className={local.sectionHeading}>
+            <h2>已有固定版本</h2>
+            <button
+              className={local.readButton}
+              disabled={list.loading}
+              onClick={list.refresh}
             >
-              当前修订 {current.revision} 的基线与封存
-            </Link>
-          )}
-        </div>
-        {draft.loading && <p role="status">正在读取当前草稿指针…</p>}
-        {draft.error && (
-          <p role="alert">
-            当前修订 未可靠读取：{draft.error}。原操作核实仍可使用。
+              重新读取固定版本列表
+            </button>
+          </div>
+          <p className={local.hint}>
+            按服务器固定槽位倒序排列；来源修订与当前草稿分别标示，旧版本不会自动更新。
           </p>
-        )}
-        {draft.value?.kind === "empty" && (
-          <p>本次读取没有当前草稿；这不能证明旧请求未执行。</p>
-        )}
-        {list.loading && <p role="status">正在读取固定版本元数据…</p>}
-        {list.error && (
-          <p className={styles.error} role="alert">
-            {list.error}
-          </p>
-        )}
-        {list.value && (
-          <>
-            <p>
-              已占用固定槽位：{list.value.versions.length} / 100；不可删除。
+          {list.loading && <p role="status">正在读取固定版本元数据…</p>}
+          {list.error && (
+            <p className={styles.error} role="alert">
+              {list.error}
             </p>
-            {!list.value.versions.length && (
-              <p>本次列表没有固定版本。空列表不能作为解除原操作记录的证据。</p>
-            )}
-            <div className={styles.cards}>
-              {list.value.versions.map((version) => (
-                <VersionMetadataFacts
-                  key={version.id}
-                  version={version}
-                  currentRevision={current?.revision}
-                />
-              ))}
-            </div>
-          </>
-        )}
-      </section>
+          )}
+          {list.value && (
+            <>
+              <p className={local.capacity}>
+                已占用固定槽位：{list.value.versions.length} / 100；不可删除。
+              </p>
+              {!list.value.versions.length && (
+                <p className={local.empty}>
+                  本次列表没有固定版本。空列表不能作为解除原操作记录的证据。
+                </p>
+              )}
+              <div className={local.versionList}>
+                {list.value.versions.map((version) => (
+                  <VersionMetadataFacts
+                    key={version.id}
+                    version={version}
+                    currentRevision={current?.revision}
+                  />
+                ))}
+              </div>
+            </>
+          )}
+        </section>
+      </div>
       <InternalRecoveryPanels
         productId={productId}
         session={session}

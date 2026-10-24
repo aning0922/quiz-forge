@@ -4,7 +4,7 @@ import { TechnicalDetails } from "../presentation/technical-details";
 import { StudioPageHeader } from "../presentation/page-header";
 import { StudioWorkflowNav } from "../presentation/workflow-nav";
 import Link from "next/link";
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import type { ConsumerRendererIdentity } from "@/lib/consumer-contract/v1/identities";
 import type { AccessKeyDetail } from "@/features/fulfillment/access/contracts";
 import {
@@ -294,15 +294,23 @@ export function StudioConsumerAccessPageV1({
       controller.dispose();
     };
   }, [controller]);
+  const createTask = useRef<HTMLDetailsElement>(null);
+  const issueTask = useRef<HTMLDetailsElement>(null);
+  useEffect(() => {
+    if (state.pending?.kind === "play" && createTask.current)
+      createTask.current.open = true;
+    if (state.pending?.kind === "issue" && issueTask.current)
+      issueTask.current.open = true;
+  }, [state.pending?.kind]);
   const canWrite = state.session?.operator.role === "operator",
     ready = state.phase === "ready";
   const pendingKey = state.evidence?.value.binding.operationKey ?? "original";
   return (
     <div className={styles.page}>
-      <section className={styles.panel}>
+      <header className={styles.pageHeading}>
         <StudioPageHeader
-          title="答题版本与访问码"
-          description="先选择固定内测内容版本创建答题版本，再发放访问码。上次操作结果未确认时，请先查询，避免重复提交。"
+          title="内测记录"
+          description="查看这款测评的答题版本与访问码，按需继续内测操作。"
         />
         <div
           onClickCapture={(event) => {
@@ -311,38 +319,15 @@ export function StudioConsumerAccessPageV1({
         >
           <StudioWorkflowNav productId={scope.productId} current="keys" />
         </div>
-        <p>
-          从固定内测内容版本固定消费者体验。内测不等于发布，不包含支付、公开分享或消费者答案查看。
-        </p>
-        <nav className={styles.actions}>
-          <Link
-            className={styles.actionLink}
-            href={`/studio/products/${scope.productId}`}
-            onClick={(event) => {
-              if (studioSameTabLink(event)) controller.revoke();
-            }}
-          >
-            返回测评工作区
-          </Link>
-          <Link
-            className={styles.actionLink}
-            href={`/studio/products/${scope.productId}/internal-versions`}
-            onClick={(event) => {
-              if (studioSameTabLink(event)) controller.revoke();
-            }}
-          >
-            固定内测内容版本
-          </Link>
-          <button
-            onClick={() => {
-              setVoidId(null);
-              void controller.refresh();
-            }}
-          >
-            重新读取与核对身份
-          </button>
-        </nav>
-      </section>
+        <button
+          onClick={() => {
+            setVoidId(null);
+            void controller.refresh();
+          }}
+        >
+          重新读取与核对身份
+        </button>
+      </header>
       {state.phase === "lost" ? (
         <section className={styles.panel}>
           <h2>请重新验证运营身份</h2>
@@ -398,40 +383,100 @@ export function StudioConsumerAccessPageV1({
               state={state}
             />
           )}
-          <section className={styles.panel}>
-            <h2>创建答题版本</h2>
-            <p>
-              答题版本会固定本次使用的内容、评分和画面，不随后续草稿变化。请选择已固定的内测内容版本。
-            </p>
-            <fieldset disabled={!canWrite || !ready} className={styles.form}>
-              <label>
-                固定内测内容版本
-                <select
-                  value={versionId}
-                  onChange={(e) => setVersionId(e.target.value)}
+          <div className={styles.recordsGrid}>
+            <section className={styles.panel}>
+              <h2>访问码记录</h2>
+              <p className={styles.intro}>
+                当前页显示安全编号与使用状态；空页不证明某次发放未执行。
+              </p>
+              <ol className={styles.keys}>
+                {state.keys.map((key) => {
+                  const id = key.issue.binding.keyId;
+                  return (
+                    <li key={id}>
+                      <KeyFacts value={key} />
+                      {canWrite &&
+                        !key.current.claim &&
+                        !key.current.voidReceipt &&
+                        (voidId === id ? (
+                          <div>
+                            <p>
+                              作废后，此访问码不能再用于领取答题。仅能作废尚未领取的访问码；服务器会再次确认，已领取的访问码不会被此操作作废。
+                            </p>
+                            <div className={styles.actions}>
+                              <button
+                                disabled={!ready}
+                                onClick={() => {
+                                  setVoidId(null);
+                                  void controller.voidKey(id);
+                                }}
+                              >
+                                确认作废未领取访问码
+                              </button>
+                              <button
+                                disabled={!ready}
+                                onClick={() => setVoidId(null)}
+                              >
+                                保留此访问码
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <button
+                            disabled={!ready}
+                            onClick={() => setVoidId(id)}
+                          >
+                            作废此未领取访问码
+                          </button>
+                        ))}
+                    </li>
+                  );
+                })}
+              </ol>
+              {ready && state.keys.length === 0 && <p>此页没有访问码记录。</p>}
+              {state.nextCursor && (
+                <button
+                  disabled={!["ready", "pending"].includes(state.phase)}
+                  onClick={() => {
+                    setVoidId(null);
+                    void controller.nextKeys();
+                  }}
                 >
-                  <option value="">请选择固定内测内容版本</option>
-                  {state.versions.map((v) => (
-                    <option key={v.id} value={v.id}>
-                      第 {v.slot} 版 · 草稿修订 {v.target.revision}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <button
-                disabled={!versionId}
-                onClick={() => {
-                  void controller.createPlay(versionId);
-                }}
-              >
-                创建答题版本
-              </button>
-            </fieldset>
-            {ready && state.versions.length === 0 && (
-              <div className={styles.notice}>
-                <p>
-                  尚无固定内测内容版本。请先预览草稿、记录已有审核依据，并固定内测内容。
-                </p>
+                  读取下一页访问码
+                </button>
+              )}
+            </section>
+            <aside className={styles.sideTasks}>
+              <section className={styles.panel}>
+                <h2>已有答题版本</h2>
+                <ul className={styles.playList}>
+                  {state.plays.map((play) => {
+                    const parent = state.versions.find(
+                      (version) =>
+                        version.id === play.binding.parent.versionId &&
+                        version.snapshotSha256 ===
+                          play.binding.parent.snapshotSha256,
+                    );
+                    return (
+                      <li key={play.id}>
+                        <strong>答题第 {play.slot} 版</strong>
+                        <span>
+                          {parent
+                            ? `来源修订 r${parent.target.revision} · 固定内容第 ${parent.slot} 版`
+                            : "来源版本请核实"}
+                        </span>
+                        <time dateTime={play.createdAt}>
+                          {time(play.createdAt)}
+                        </time>
+                      </li>
+                    );
+                  })}
+                </ul>
+                {ready && state.plays.length === 0 && (
+                  <p className={styles.intro}>
+                    尚无答题版本，可从已固定的内测内容开始创建。
+                  </p>
+                )}
                 <Link
                   className={styles.actionLink}
                   href={`/studio/products/${scope.productId}/internal-versions`}
@@ -439,119 +484,116 @@ export function StudioConsumerAccessPageV1({
                     if (studioSameTabLink(event)) controller.revoke();
                   }}
                 >
-                  前往审核依据与内容版本
+                  查看固定内容版本
                 </Link>
-              </div>
-            )}
-          </section>
-          <section className={styles.panel}>
-            <h2>发放访问码</h2>
-            <p>
-              私密访问链接只由当前标签页保管，服务器不能找回原文。请及时复制或下载并妥善保存。有效期从首次发放起算，再次发送同一操作不会延长期限。
-            </p>
-            <fieldset disabled={!canWrite || !ready} className={styles.form}>
-              <label>
-                答题版本
-                <select
-                  value={playId}
-                  onChange={(e) => setPlayId(e.target.value)}
-                >
-                  <option value="">请选择答题版本</option>
-                  {state.plays.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      答题第 {p.slot} 版 · {time(p.createdAt)}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                答题有效期
-                <select
-                  value={duration}
-                  onChange={(e) => setDuration(Number(e.target.value))}
-                >
-                  <option value={86400}>1 天</option>
-                  <option value={604800}>7 天</option>
-                  <option value={2592000}>30 天</option>
-                </select>
-              </label>
-              <button
-                disabled={!playId}
-                onClick={() => {
-                  void controller.issueKey(playId, duration);
-                }}
-              >
-                生成并发放一枚访问码
-              </button>
-            </fieldset>
-            {ready && state.plays.length === 0 && (
-              <p className={styles.notice}>
-                还没有答题版本。请先在上方选择固定内测内容版本并创建答题版本，再发放访问码。
+              </section>
+              <details ref={issueTask} className={styles.primaryTask}>
+                <summary>发放访问码</summary>
+                <div className={styles.taskBody}>
+                  <p>
+                    私密访问链接只由当前标签页保管，服务器不能找回原文。请及时复制或下载并妥善保存。有效期从首次发放起算，再次发送同一操作不会延长期限。
+                  </p>
+                  <fieldset
+                    disabled={!canWrite || !ready}
+                    className={styles.form}
+                  >
+                    <label>
+                      答题版本
+                      <select
+                        value={playId}
+                        onChange={(e) => setPlayId(e.target.value)}
+                      >
+                        <option value="">请选择答题版本</option>
+                        {state.plays.map((p) => (
+                          <option key={p.id} value={p.id}>
+                            答题第 {p.slot} 版 · {time(p.createdAt)}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <label>
+                      答题有效期
+                      <select
+                        value={duration}
+                        onChange={(e) => setDuration(Number(e.target.value))}
+                      >
+                        <option value={86400}>1 天</option>
+                        <option value={604800}>7 天</option>
+                        <option value={2592000}>30 天</option>
+                      </select>
+                    </label>
+                    <button
+                      disabled={!playId}
+                      onClick={() => {
+                        void controller.issueKey(playId, duration);
+                      }}
+                    >
+                      生成并发放一枚访问码
+                    </button>
+                  </fieldset>
+                  {ready && state.plays.length === 0 && (
+                    <p className={styles.notice}>
+                      还没有答题版本。请先展开“创建答题版本”，选择固定内测内容版本，再发放访问码。
+                    </p>
+                  )}
+                </div>
+              </details>
+              <details ref={createTask} className={styles.task}>
+                <summary>创建答题版本</summary>
+                <div className={styles.taskBody}>
+                  <p>
+                    答题版本会固定本次使用的内容、评分和画面，不随后续草稿变化。请选择已固定的内测内容版本。
+                  </p>
+                  <fieldset
+                    disabled={!canWrite || !ready}
+                    className={styles.form}
+                  >
+                    <label>
+                      固定内测内容版本
+                      <select
+                        value={versionId}
+                        onChange={(e) => setVersionId(e.target.value)}
+                      >
+                        <option value="">请选择固定内测内容版本</option>
+                        {state.versions.map((v) => (
+                          <option key={v.id} value={v.id}>
+                            第 {v.slot} 版 · 草稿修订 {v.target.revision}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <button
+                      disabled={!versionId}
+                      onClick={() => {
+                        void controller.createPlay(versionId);
+                      }}
+                    >
+                      创建答题版本
+                    </button>
+                  </fieldset>
+                  {ready && state.versions.length === 0 && (
+                    <div className={styles.notice}>
+                      <p>
+                        尚无固定内测内容版本。请先预览草稿、记录已有审核依据，并固定内测内容。
+                      </p>
+                      <Link
+                        className={styles.actionLink}
+                        href={`/studio/products/${scope.productId}/internal-versions`}
+                        onClick={(event) => {
+                          if (studioSameTabLink(event)) controller.revoke();
+                        }}
+                      >
+                        前往审核依据与内容版本
+                      </Link>
+                    </div>
+                  )}
+                </div>
+              </details>
+              <p className={styles.boundary}>
+                仅限内部测试；私密访问链接需在发放后妥善保存，无法从记录中找回。
               </p>
-            )}
-          </section>
-          <section className={styles.panel}>
-            <h2>访问码记录</h2>
-            <p>
-              按服务器最新观察区分未领取、已领取、到期、作废及已完成。完成后的原链接只读查看同一份报告。
-            </p>
-            <p>
-              此列表只有安全元数据，不含原文、消费者答案或报告正文。空页不证明某次发放未执行。
-            </p>
-            <ol className={styles.keys}>
-              {state.keys.map((key) => {
-                const id = key.issue.binding.keyId;
-                return (
-                  <li key={id}>
-                    <KeyFacts value={key} />
-                    {canWrite &&
-                      !key.current.claim &&
-                      !key.current.voidReceipt &&
-                      (voidId === id ? (
-                        <div>
-                          <p>
-                            作废后，此访问码不能再用于领取答题。仅能作废尚未领取的访问码；服务器会再次确认，已领取的访问码不会被此操作作废。
-                          </p>
-                          <div className={styles.actions}>
-                            <button
-                              disabled={!ready}
-                              onClick={() => {
-                                setVoidId(null);
-                                void controller.voidKey(id);
-                              }}
-                            >
-                              确认作废未领取访问码
-                            </button>
-                            <button
-                              disabled={!ready}
-                              onClick={() => setVoidId(null)}
-                            >
-                              保留此访问码
-                            </button>
-                          </div>
-                        </div>
-                      ) : (
-                        <button disabled={!ready} onClick={() => setVoidId(id)}>
-                          作废此未领取访问码
-                        </button>
-                      ))}
-                  </li>
-                );
-              })}
-            </ol>
-            {ready && state.keys.length === 0 && <p>此页没有访问码记录。</p>}
-            {state.nextCursor && (
-              <button
-                disabled={!["ready", "pending"].includes(state.phase)}
-                onClick={() => {
-                  setVoidId(null);
-                  void controller.nextKeys();
-                }}
-              >
-                读取下一页访问码
-              </button>
-            )}
-          </section>
+            </aside>
+          </div>
         </>
       )}
     </div>

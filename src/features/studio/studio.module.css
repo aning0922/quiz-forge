@@ -27,10 +27,42 @@
   position: sticky;
   top: 0;
   height: 100dvh;
-  overflow-y: auto;
-  padding: 24px 12px 16px;
+  min-width: 0;
   background: #171e32;
   color: #c4cde0;
+}
+.navigationDialog {
+  overflow-y: auto;
+  position: static;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: 24px 12px 16px;
+  border: 0;
+  background: #171e32;
+  color: inherit;
+}
+.navigationDialog[open] {
+  display: flex;
+  flex-direction: column;
+}
+.navigationDialog:not([open]) {
+  display: none;
+}
+.drawerHeading {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+.drawerHeading .brand {
+  min-width: 0;
+  flex: 1;
+}
+.drawerClose,
+.menuButton {
+  display: none;
 }
 .brand {
   display: flex;
@@ -58,14 +90,6 @@
   display: block;
   font-size: 16px;
   color: #a4b1cb;
-}
-.navigationPanel {
-  min-height: calc(100dvh - 108px);
-  display: flex;
-  flex-direction: column;
-}
-.navigationPanel > summary {
-  display: none;
 }
 .navigation {
   display: grid;
@@ -95,7 +119,8 @@
   color: #fff;
 }
 .sideFooter {
-  margin-top: 32px;
+  margin-top: auto;
+  padding-top: 24px;
 }
 .navigationNote {
   padding: 16px 12px;
@@ -141,6 +166,11 @@
   padding: 10px 32px;
   border-bottom: 1px solid var(--studio-border);
   background: var(--studio-surface);
+}
+.topbarLocation {
+  display: flex;
+  align-items: center;
+  min-width: 0;
 }
 .breadcrumb {
   display: flex;
@@ -301,7 +331,8 @@
 }
 .navigationLink:focus-visible,
 .identityLink:focus-visible,
-.navigationPanel > summary:focus-visible,
+.drawerClose:focus-visible,
+.menuButton:focus-visible,
 .button:focus-visible,
 .link:focus-visible,
 .input:focus-visible,
@@ -354,59 +385,75 @@
     grid-template-columns: minmax(0, 1fr);
   }
   .sidebar {
-    position: static;
-    height: auto;
-    overflow: visible;
-    padding: 16px;
+    position: absolute;
+    width: 0;
+    height: 0;
   }
-  .brand {
-    padding: 0 4px 12px;
+  .navigationDialog {
+    position: fixed;
+    inset: 0 auto 0 0;
+    width: min(300px, calc(100vw - 44px));
+    height: 100dvh;
+    color: #c4cde0;
+    padding: 20px 12px 16px;
   }
-  .brand > div {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0 12px;
+  .navigationDialog[open]:not(:modal) {
+    display: none;
   }
-  .navigationPanel {
-    display: block;
-    min-height: 0;
+  .navigationDialog::backdrop {
+    background: #171e3280;
   }
-  .navigationPanel > summary {
-    display: list-item;
-    min-height: 44px;
-    padding: 10px 12px;
-    border: 1px solid #ffffff30;
+  .drawerHeading {
+    align-items: flex-start;
+  }
+  .drawerHeading .brand {
+    padding-inline: 6px;
+    padding-bottom: 16px;
+  }
+  .drawerClose,
+  .menuButton {
+    display: inline-grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    flex-shrink: 0;
+    border: 0;
     border-radius: 8px;
     cursor: pointer;
-    font-weight: 600;
+  }
+  .drawerClose {
+    background: #ffffff0c;
+    color: #fff;
+  }
+  .menuButton {
+    background: transparent;
+    color: var(--studio-muted);
+  }
+  .topbar {
+    min-height: 58px;
+    padding: 6px 14px;
+    gap: 12px;
+  }
+  .topbarLocation {
+    gap: 8px;
+  }
+  .topSearch {
+    display: none;
+  }
+  .topbarActions {
+    gap: 0;
   }
   .sideLabel {
-    margin-top: 16px;
-  }
-  .sideFooter {
-    margin-top: 16px;
+    margin-top: 12px;
   }
   .navigationNote {
-    margin-block: 12px;
+    padding: 12px;
   }
   .identityLink {
     padding-block: 12px;
   }
-  .topbar {
-    position: static;
-    flex-wrap: wrap;
-    gap: 10px;
-    padding: 12px 20px;
-  }
-  .topbarActions {
-    flex: 1 1 100%;
-  }
-  .topSearch {
-    flex: 1;
-    width: auto;
-  }
   .main {
-    padding: 24px 20px 48px;
+    padding: 18px 16px 48px;
   }
 }
 @media (max-width: 560px) {
@@ -414,10 +461,7 @@
     grid-template-columns: minmax(0, 1fr);
   }
   .main {
-    padding-inline: 16px;
-  }
-  .topbar {
-    padding-inline: 16px;
+    padding-inline: 14px;
   }
   .panel {
     padding: 20px;

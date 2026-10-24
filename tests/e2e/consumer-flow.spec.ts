@@ -387,6 +387,14 @@ test(
     });
     await operator.bringToFront();
     await operator.goto(studioPage());
+    for (const name of ["创建答题版本", "发放访问码"]) {
+      const summary = operator
+        .locator("summary")
+        .filter({ hasText: new RegExp(`^${name}$`) });
+      await expect(summary).toBeVisible();
+      if ((await summary.locator("..").getAttribute("open")) === null)
+        await summary.click();
+    }
     const parentChoice = operator.getByRole("combobox", {
       name: "固定内测内容版本",
       exact: true,
@@ -825,6 +833,14 @@ test(
   safeCase(async ({ browser }) => {
     await operator.bringToFront();
     await operator.goto(studioPage());
+    for (const name of ["创建答题版本", "发放访问码"]) {
+      const summary = operator
+        .locator("summary")
+        .filter({ hasText: new RegExp(`^${name}$`) });
+      await expect(summary).toBeVisible();
+      if ((await summary.locator("..").getAttribute("open")) === null)
+        await summary.click();
+    }
     const unusedId = keys[1]!.issue.binding.keyId;
     const card = operator
       .locator("li")

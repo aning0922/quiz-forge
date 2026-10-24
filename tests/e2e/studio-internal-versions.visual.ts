@@ -46,13 +46,19 @@ export async function waitForInternalCaptureReady(page: Page, state: string) {
     await expect(
       page.getByRole("button", { name: "读取当前草稿指针", exact: true }),
     ).toBeEnabled();
-    const list = page.locator("section").filter({
-      has: page.getByRole("heading", { name: "固定内测内容版本", exact: true }),
+    const list = page.getByRole("region", {
+      name: "已有固定版本",
+      exact: true,
+    });
+    const current = page.getByRole("region", {
+      name: "当前修订核对",
+      exact: true,
     });
     await expect(list.getByRole("alert")).toHaveCount(0);
+    await expect(current.getByRole("alert")).toHaveCount(0);
     await expect(list.getByText(/^已占用固定槽位：/)).toBeVisible();
     await expect(
-      list.getByRole("link", { name: /^当前修订 \d+ 的基线与封存$/ }),
+      current.getByRole("link", { name: /^当前修订 \d+ 的基线与封存$/ }),
     ).toBeVisible();
   } else if (reviewStates.includes(state)) {
     const read = page.locator("section").filter({
