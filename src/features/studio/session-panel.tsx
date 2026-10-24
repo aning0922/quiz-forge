@@ -52,11 +52,17 @@ export function StudioSessionPanel({ session }: { session: StudioSessionDto }) {
     <section className={styles.panel}>
       <h1>运营会话</h1>
       <p className={styles.intro}>
-        当前身份来自本地数据库中的有效运营会话。选择工作区开始整理商品。
+        核对当前运营身份和有效期限。退出后，需要重新登录才能继续访问后台。
       </p>
       <div className={styles.sessionActions}>
-        <Link className={styles.link} href="/studio/products">
-          打开商品列表
+        <Link className={styles.link} href="/studio">
+          返回工作台
+        </Link>
+        <Link
+          className={`${styles.link} ${styles.secondary}`}
+          href="/studio/products"
+        >
+          前往测评管理
         </Link>
       </div>
       <dl className={styles.facts}>
