@@ -41,7 +41,11 @@ const known = new Set<StudioErrorCode>([
 ]);
 export async function accountCall<T>(
   db: P2aDatabase,
-  fn: "account_command" | "account_password" | "account_local",
+  fn:
+    | "account_command"
+    | "account_password"
+    | "account_local"
+    | "account_directory_read",
   mode: string,
   digest: string | null,
   p: Record<string, unknown>,
@@ -65,9 +69,13 @@ export async function accountCall<T>(
               ? await tx<
                   { value: T }[]
                 >`SELECT qf.account_password(${mode},${digest},${JSON.stringify(p)}::text::jsonb) AS value`
-              : await tx<
-                  { value: T }[]
-                >`SELECT qf.account_command(${mode},${digest},${JSON.stringify(p)}::text::jsonb) AS value`;
+              : fn === "account_directory_read"
+                ? await tx<
+                    { value: T }[]
+                  >`SELECT qf.account_directory_read(${mode},${digest},${JSON.stringify(p)}::text::jsonb) AS value`
+                : await tx<
+                    { value: T }[]
+                  >`SELECT qf.account_command(${mode},${digest},${JSON.stringify(p)}::text::jsonb) AS value`;
         if (!row) throw new StudioError("STUDIO_UNAVAILABLE");
         ready = true;
         return row.value;
@@ -151,7 +159,7 @@ export function listAccounts(
 ) {
   return accountCall<AccountListDto>(
     db,
-    "account_command",
+    "account_directory_read",
     "list",
     accountSessionDigest(raw),
     p,
@@ -164,7 +172,7 @@ export function readAccountAudit(
 ) {
   return accountCall<AccountAuditListDto>(
     db,
-    "account_command",
+    "account_directory_read",
     "audit",
     accountSessionDigest(raw),
     p,

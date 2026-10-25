@@ -209,6 +209,7 @@ it("refuses old17 plus writable view before any DDL/ACL reset, then clean17 upgr
     "0019_account_enums",
     "0020_accounts",
     "0021_account_datetime_projection",
+    "0022_account_directory_read",
   ]);
   const after = await snapshot();
   for (const [table, rows] of Object.entries(before.rows)) {

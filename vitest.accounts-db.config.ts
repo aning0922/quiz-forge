@@ -6,7 +6,8 @@ if (
   suite !== "accounts" &&
   suite !== "retention" &&
   suite !== "authority" &&
-  suite !== "projection"
+  suite !== "projection" &&
+  suite !== "directory"
 )
   throw new Error("EXPLICIT_ACCOUNTS_DATABASE_SUITE_REQUIRED");
 
@@ -23,7 +24,9 @@ export default defineConfig({
           ? "tests/accounts-db/studio-accounts-retention.test.ts"
           : suite === "authority"
             ? "tests/accounts-db/studio-accounts-authority.test.ts"
-            : "tests/accounts-db/studio-accounts-projection.test.ts",
+            : suite === "projection"
+              ? "tests/accounts-db/studio-accounts-projection.test.ts"
+              : "tests/accounts-db/studio-account-directory.test.ts",
     ],
     exclude: [],
   },

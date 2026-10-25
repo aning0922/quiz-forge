@@ -61,10 +61,40 @@ export const passwordChangeInput = z.strictObject({
 export const listInput = z.strictObject({
   offset: z.coerce.number().int().min(0).max(1000000).default(0),
   limit: z.coerce.number().int().min(1).max(50).default(25),
-  q: z.string().max(80).default(""),
+  q: z
+    .string()
+    .max(80)
+    .regex(/^[^\u0000-\u001f\u007f-\u009f]*$/u)
+    .trim()
+    .default(""),
+  role: z.enum(["all", ...studioRoles]).default("all"),
   status: z.enum(["all", "active", "pending", "disabled"]).default("all"),
 });
 export const auditInput = z.strictObject({
   offset: z.coerce.number().int().min(0).max(1000000).default(0),
   limit: z.coerce.number().int().min(1).max(50).default(25),
+  q: z
+    .string()
+    .max(80)
+    .regex(/^[^\u0000-\u001f\u007f-\u009f]*$/u)
+    .trim()
+    .default(""),
+  action: z
+    .enum([
+      "all",
+      "create",
+      "display-name",
+      "role",
+      "disable",
+      "restore",
+      "issue-setup",
+      "issue-reset",
+      "password-setup",
+      "password-change",
+      "logout-all",
+      "revoke-sessions",
+      "bootstrap-admin",
+      "admin-recovery",
+    ])
+    .default("all"),
 });

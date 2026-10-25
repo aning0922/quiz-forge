@@ -129,3 +129,6 @@ jobs:
       - name: Account datetime projection with a separate fresh database
         shell: bash
         run: bash scripts/ci-p2a-service.sh accounts-projection
+      - name: Account directory read projections with a separate fresh database
+        shell: bash
+        run: bash scripts/ci-p2a-service.sh accounts-directory
