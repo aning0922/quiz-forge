@@ -581,6 +581,18 @@ export async function disableOperator(instanceId: string, id: string) {
   if (!z.uuid().safeParse(id).success) fail("OPERATOR_ARGUMENTS_INVALID");
   const db = await openManagedDatabase(instanceId);
   try {
+    const [accountSchema] = await db.sql<
+      { present: boolean }[]
+    >`SELECT to_regprocedure('qf.account_local(jsonb)') IS NOT NULL AS present`;
+    if (accountSchema?.present) {
+      return await db.sql.begin(async (tx) => {
+        const [row] = await tx<
+          { value: { error?: string; changed?: boolean } }[]
+        >`SELECT qf.account_local(${JSON.stringify({ operationId: randomUUID(), targetId: id, action: "disable" })}::text::jsonb) value`;
+        if (row?.value.error) fail(row.value.error);
+        return { id, changed: row?.value.changed ?? true };
+      });
+    }
     return await db.sql.begin(async (tx) => {
       await acquireAuthWriteLock(tx);
       // Preserve PG microseconds through both SELECT and Bind. Force OID25 before timestamptz
@@ -596,7 +608,14 @@ export async function disableOperator(instanceId: string, id: string) {
       await tx`INSERT INTO qf.audit_event(id,occurred_at,action,outcome,reason_code,actor_id,request_id) VALUES(${randomUUID()},${moment.at}::text::timestamptz,'operator_disabled','success','MANUAL',${id},${randomUUID()})`;
       return { id, changed: true };
     });
-  } catch {
+  } catch (error) {
+    if (
+      error &&
+      typeof error === "object" &&
+      "message" in error &&
+      error.message === "LAST_ACTIVE_ADMIN"
+    )
+      fail("LAST_ACTIVE_ADMIN");
     return fail("DISABLE_FAILED_OUTCOME_REQUIRES_RECHECK");
   } finally {
     await db.close();

@@ -77,23 +77,24 @@ async function capacity<T>(work: () => Promise<T>): Promise<T> {
     else running--;
   }
 }
-export function hashPassword(value: string): Promise<string> {
+const DUMMY =
+  "$argon2id$v=19$m=65536,t=3,p=1$UUZkdW1teVNhbHQyMDI2ISE$kyHtcG/XB2DBf+SfUWWQyzq98qhOQSMcvAxl/4kHyIg";
+export function withPasswordCapacity<T>(
+  work: (kdf: {
+    hash: (value: string) => Promise<string>;
+    verify: (value: string, phc: string | null) => Promise<boolean>;
+  }) => Promise<T>,
+): Promise<T> {
   return capacity(() =>
-    argon2.hash(value, { ...PASSWORD_OPTIONS, salt: randomBytes(16) }),
+    work({
+      hash: (value) =>
+        argon2.hash(value, { ...PASSWORD_OPTIONS, salt: randomBytes(16) }),
+      verify: async (value, phc) => {
+        if (phc !== null && !validPasswordHash(phc))
+          throw new StudioError("STUDIO_UNAVAILABLE");
+        const matched = await argon2.verify(phc ?? DUMMY, value);
+        return phc !== null && matched;
+      },
+    }),
   );
-}
-// Public dummy PHC, not an account password. Its cost is identical to the accepted account policy.
-let dummy: Promise<string> | undefined;
-export async function verifyPassword(
-  value: string,
-  phc: string | null,
-): Promise<boolean> {
-  if (phc !== null && !validPasswordHash(phc))
-    throw new StudioError("STUDIO_UNAVAILABLE");
-  if (!phc) dummy ??= hashPassword("synthetic dummy verifier passphrase 2026");
-  const hash = phc ?? (await dummy!);
-  const matched = await capacity(() =>
-    argon2.verify(hash, value, { type: argon2.argon2id }),
-  );
-  return phc !== null && matched;
 }

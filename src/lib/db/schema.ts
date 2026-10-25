@@ -20,7 +20,11 @@ import {
 } from "drizzle-orm/pg-core";
 
 export const qf = pgSchema("qf");
-export const operatorRole = qf.enum("operator_role", ["operator", "read-only"]);
+export const operatorRole = qf.enum("operator_role", [
+  "operator",
+  "read-only",
+  "admin",
+]);
 export const operatorStatus = qf.enum("operator_status", [
   "active",
   "disabled",
@@ -31,6 +35,7 @@ export const sessionKind = qf.enum("session_kind", [
 ]);
 export const auditAction = qf.enum("audit_action", [
   "bootstrap",
+  "account_operation",
   "operator_disabled",
   "preauth_created",
   "login_succeeded",
@@ -88,9 +93,11 @@ export const operators = qf.table(
   {
     id: uuid("id").primaryKey(),
     label: varchar("label", { length: 64 }).notNull().unique(),
-    credentialDigest: char("credential_digest", { length: 64 })
-      .notNull()
-      .unique(),
+    credentialDigest: char("credential_digest", { length: 64 }).unique(),
+    loginName: varchar("login_name", { length: 64 }).unique(),
+    displayName: varchar("display_name", { length: 320 }),
+    passwordHash: varchar("password_hash", { length: 256 }),
+    accountRevision: integer("account_revision").notNull().default(1),
     role: operatorRole("role").notNull(),
     status: operatorStatus("status").notNull(),
     createdAt: time("created_at").notNull().defaultNow(),
@@ -121,6 +128,7 @@ export const operatorSessions = qf.table(
     absoluteExpiresAt: time("absolute_expires_at").notNull(),
     revokedAt: time("revoked_at"),
     failedAttempts: smallint("failed_attempts").notNull().default(0),
+    passwordAttemptId: uuid("password_attempt_id"),
   },
   (t) => [
     index("session_operator_revoked").on(t.operatorId, t.revokedAt),
@@ -794,3 +802,51 @@ export const consumerExchangeBudgets = qf.table(
     ),
   ],
 );
+
+// The account SQL migration owns fixed-function ACLs and complete constraints.
+export const operatorPasswordTokens = qf.table("operator_password_token", {
+  id: uuid("id").primaryKey(),
+  operatorId: uuid("operator_id")
+    .notNull()
+    .references(() => operators.id),
+  purpose: text("purpose").notNull(),
+  tokenDigest: char("token_digest", { length: 64 }).notNull().unique(),
+  issuedBy: uuid("issued_by").references(() => operators.id),
+  operationId: uuid("operation_id").notNull().unique(),
+  issuedAt: time("issued_at").notNull(),
+  expiresAt: time("expires_at").notNull(),
+  consumedAt: time("consumed_at"),
+  revokedAt: time("revoked_at"),
+  attemptId: uuid("attempt_id"),
+});
+export const operatorAccountOperations = qf.table(
+  "operator_account_operation",
+  {
+    operationId: uuid("operation_id").primaryKey(),
+    actorId: uuid("actor_id").references(() => operators.id),
+    targetId: uuid("target_id")
+      .notNull()
+      .references(() => operators.id),
+    action: text("action").notNull(),
+    binding: jsonb("binding").notNull(),
+    status: text("status").notNull(),
+    errorCode: varchar("error_code", { length: 64 }),
+    tokenId: uuid("token_id").references(() => operatorPasswordTokens.id),
+    createdAt: time("created_at")
+      .notNull()
+      .default(sql`clock_timestamp()`),
+  },
+);
+export const operatorKdfAttempts = qf.table("operator_kdf_attempt", {
+  id: uuid("id").primaryKey(),
+  cost: integer("cost").notNull(),
+  kind: text("kind").notNull(),
+  operatorId: uuid("operator_id").references(() => operators.id),
+  sessionId: uuid("session_id").references(() => operatorSessions.id),
+  tokenId: uuid("token_id").references(() => operatorPasswordTokens.id),
+  operationId: uuid("operation_id"),
+  accountRevision: integer("account_revision"),
+  createdAt: time("created_at").notNull(),
+  expiresAt: time("expires_at").notNull(),
+  finishedAt: time("finished_at"),
+});
