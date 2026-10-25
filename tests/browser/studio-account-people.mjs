@@ -235,13 +235,79 @@ try {
     await person("合成停用");
     await expect(button("恢复账号")).toBeVisible();
     await expect(button("停用账号")).toHaveCount(0);
-    await expect(button("发送密码重置链接")).toHaveCount(0);
+    await expect(button("生成密码重置入口")).toHaveCount(0);
     await expect(button("撤销全部登录")).toHaveCount(0);
     await button("完成").click();
     await person("合成待开通");
-    await expect(button("重新发送设置链接")).toBeVisible();
-    await expect(button("发送密码重置链接")).toHaveCount(0);
+    await expect(button("生成设置入口")).toBeVisible();
+    await expect(button("生成密码重置入口")).toHaveCount(0);
     await expect(button("撤销全部登录")).toHaveCount(0);
+  });
+  await run("inline-action-replacement", async () => {
+    await person();
+    const management = page.getByRole("region", {
+      name: "账号管理",
+      exact: true,
+    });
+    await expect(management.getByRole("button")).toHaveCount(5);
+    await button("调整角色").click();
+    const form = management.getByRole("form", {
+      name: "调整角色",
+      exact: true,
+    });
+    await expect(form).toBeVisible();
+    await expect(button("编辑显示名称")).toHaveCount(0);
+    await expect(button("生成密码重置入口")).toHaveCount(0);
+    await expect(management.getByRole("button")).toHaveCount(2);
+    const gap = await management.evaluate((node) => {
+      const title = node.querySelector("h3").getBoundingClientRect();
+      return (
+        node.querySelector("form").getBoundingClientRect().top - title.bottom
+      );
+    });
+    expect(gap).toBeLessThanOrEqual(20);
+    await form.getByLabel("角色", { exact: true }).selectOption("read-only");
+    const input = await form
+      .getByLabel("角色", { exact: true })
+      .elementHandle();
+    await button("收起").click();
+    await button("查询").click();
+    await expect(
+      page.getByText("共 26 位人员，显示 1–25 位", { exact: true }),
+    ).toBeVisible();
+    await button("继续未提交账号任务").click();
+    expect(
+      await form
+        .getByLabel("角色", { exact: true })
+        .evaluate((node, original) => node === original, input),
+    ).toBe(true);
+    await expect(form.getByLabel("角色", { exact: true })).toHaveValue(
+      "read-only",
+    );
+    await form.scrollIntoViewIfNeeded();
+    await page.screenshot({
+      path: path.join(out, "inline-action-replacement-1440.png"),
+    });
+    page.once("dialog", (dialog) => dialog.accept());
+    await button("取消修改").click();
+    await expect(management.getByRole("form")).toHaveCount(0);
+    await expect(management.getByRole("button")).toHaveCount(5);
+    await expect(button("编辑显示名称")).toBeVisible();
+    await button("生成密码重置入口").click();
+    await expect(
+      management.getByRole("form", { name: "生成密码重置入口", exact: true }),
+    ).toContainText("管理员手动保存并私下交付本人");
+    await button("取消修改").click();
+    await expect(management.getByRole("button")).toHaveCount(5);
+    await button("完成").click();
+    await person("合成待开通");
+    await button("生成设置入口").click();
+    await expect(
+      page.getByRole("form", { name: "生成设置入口", exact: true }),
+    ).toContainText("管理员手动保存并私下交付本人");
+    await button("取消修改").click();
+    await expect(button("生成设置入口")).toBeVisible();
+    expect(await page.evaluate(() => window.writes.length)).toBe(0);
   });
   await run("empty-dirty-retain", async () => {
     await create(false);
@@ -372,10 +438,10 @@ try {
     expect(await page.evaluate(() => window.writes.length)).toBe(1);
     await button("明确结束本次记录").click();
     await person("合成待开通");
-    await button("重新发送设置链接").click();
-    await page.getByLabel("我已了解影响，确认重新发送设置链接").check();
+    await button("生成设置入口").click();
+    await page.getByLabel("我已了解影响，确认生成设置入口").check();
     await page.evaluate(() => (window.mode = "success"));
-    await button("确认重新发送设置链接").click();
+    await button("确认生成设置入口").click();
     await expect(page.getByLabel("密码设置链接")).toBeVisible();
     expect(await page.evaluate(() => window.writes.length)).toBe(2);
     expect(

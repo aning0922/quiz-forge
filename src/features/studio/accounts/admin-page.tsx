@@ -52,8 +52,8 @@ const actionLabels: Record<PersonAction, string> = {
   role: "调整角色",
   disable: "停用账号",
   restore: "恢复账号",
-  "issue-setup": "重新发送设置链接",
-  "issue-reset": "发送密码重置链接",
+  "issue-setup": "生成设置入口",
+  "issue-reset": "生成密码重置入口",
   "revoke-sessions": "撤销全部登录",
 };
 const actionIcons = {
@@ -84,9 +84,9 @@ const actionDescriptions: Partial<Record<PersonAction, string>> = {
   disable: "停用后该账号无法登录，已有登录也会退出。恢复后可重新使用账号。",
   restore: "恢复账号的使用资格。若尚未完成密码设置，仍需本人设置密码后登录。",
   "issue-setup":
-    "生成新的设置链接，以前的设置链接将失效。链接只显示一次，请私下交付本人。",
+    "生成新的设置入口，以前的设置链接将失效。链接只显示一次，请由管理员手动保存并私下交付本人。",
   "issue-reset":
-    "生成新的密码重置链接，以前的设置链接将失效。本人改好密码后会退出全部登录。",
+    "生成新的密码重置入口，以前的设置链接将失效。请由管理员手动保存并私下交付本人；本人改好密码后会退出全部登录。",
   "revoke-sessions":
     "退出该账号当前的全部登录。账号仍可使用，继续操作时需重新登录。",
 };
@@ -585,108 +585,111 @@ export function AccountsPage({
                     ))}
                   </ul>
                 </section>
-                <section>
+                <section aria-label="账号管理">
                   <h3 className={styles.groupTitle}>账号管理</h3>
-                  <div className={styles.actionList}>
-                    {personActions(selected).map((action) => {
-                      const Icon = actionIcons[action];
-                      return (
-                        <button
-                          key={action}
-                          className={
-                            action === "disable" || action === "revoke-sessions"
-                              ? styles.danger
-                              : undefined
-                          }
-                          disabled={disabled}
-                          aria-expanded={mode === action}
-                          onClick={() => chooseAction(action)}
-                        >
-                          <Icon size={18} aria-hidden="true" />
-                          {actionLabels[action]}
-                          <ChevronRight size={16} aria-hidden="true" />
-                        </button>
-                      );
-                    })}
-                  </div>
-                </section>
-                {mode && (
-                  <form
-                    className={styles.actionForm}
-                    aria-label={actionLabels[mode]}
-                    onSubmit={(event) => {
-                      event.preventDefault();
-                      void submit();
-                    }}
-                  >
-                    <h3 className={local.actionHeading}>
-                      {actionLabels[mode]}
-                    </h3>
-                    <p className={local.actionDescription}>
-                      操作对象：{selected.displayName} ·{" "}
-                      {selected.loginName ?? "尚未配置登录账号"}
-                    </p>
-                    {mode === "display-name" && (
-                      <div className={styles.field}>
-                        <label htmlFor="person-display-name">显示名称</label>
-                        <input
-                          id="person-display-name"
-                          required
-                          value={displayName}
-                          disabled={disabled}
-                          onChange={(event) =>
-                            setDisplayName(event.target.value)
-                          }
-                        />
-                      </div>
-                    )}
-                    {mode === "role" && roleField}
-                    {actionDescriptions[mode] && (
-                      <p
-                        className={`${styles.hint} ${mode === "disable" || mode === "revoke-sessions" ? styles.warn : ""}`}
-                      >
-                        {actionDescriptions[mode]}
-                      </p>
-                    )}
-                    {mode !== "display-name" && mode !== "restore" && (
-                      <label className={styles.checkboxRow}>
-                        <input
-                          type="checkbox"
-                          checked={confirmation}
-                          disabled={disabled}
-                          onChange={(event) =>
-                            setConfirmation(event.target.checked)
-                          }
-                        />
-                        我已了解影响，确认{actionLabels[mode]}
-                      </label>
-                    )}
-                    <div className={styles.formActions}>
-                      <button
-                        className={
-                          mode === "disable" || mode === "revoke-sessions"
-                            ? styles.danger
-                            : styles.primary
-                        }
-                        disabled={
-                          disabled ||
-                          (mode !== "display-name" &&
-                            mode !== "restore" &&
-                            !confirmation)
-                        }
-                      >
-                        确认{actionLabels[mode]}
-                      </button>
-                      <button
-                        type="button"
-                        disabled={pending || operation.busy}
-                        onClick={discard}
-                      >
-                        取消修改
-                      </button>
+                  {!mode && (
+                    <div className={styles.actionList}>
+                      {personActions(selected).map((action) => {
+                        const Icon = actionIcons[action];
+                        return (
+                          <button
+                            key={action}
+                            className={
+                              action === "disable" ||
+                              action === "revoke-sessions"
+                                ? styles.danger
+                                : undefined
+                            }
+                            disabled={disabled}
+                            aria-expanded={mode === action}
+                            onClick={() => chooseAction(action)}
+                          >
+                            <Icon size={18} aria-hidden="true" />
+                            {actionLabels[action]}
+                            <ChevronRight size={16} aria-hidden="true" />
+                          </button>
+                        );
+                      })}
                     </div>
-                  </form>
-                )}
+                  )}
+                  {mode && (
+                    <form
+                      className={styles.actionForm}
+                      aria-label={actionLabels[mode]}
+                      onSubmit={(event) => {
+                        event.preventDefault();
+                        void submit();
+                      }}
+                    >
+                      <h3 className={local.actionHeading}>
+                        {actionLabels[mode]}
+                      </h3>
+                      <p className={local.actionDescription}>
+                        操作对象：{selected.displayName} ·{" "}
+                        {selected.loginName ?? "尚未配置登录账号"}
+                      </p>
+                      {mode === "display-name" && (
+                        <div className={styles.field}>
+                          <label htmlFor="person-display-name">显示名称</label>
+                          <input
+                            id="person-display-name"
+                            required
+                            value={displayName}
+                            disabled={disabled}
+                            onChange={(event) =>
+                              setDisplayName(event.target.value)
+                            }
+                          />
+                        </div>
+                      )}
+                      {mode === "role" && roleField}
+                      {actionDescriptions[mode] && (
+                        <p
+                          className={`${styles.hint} ${mode === "disable" || mode === "revoke-sessions" ? styles.warn : ""}`}
+                        >
+                          {actionDescriptions[mode]}
+                        </p>
+                      )}
+                      {mode !== "display-name" && mode !== "restore" && (
+                        <label className={styles.checkboxRow}>
+                          <input
+                            type="checkbox"
+                            checked={confirmation}
+                            disabled={disabled}
+                            onChange={(event) =>
+                              setConfirmation(event.target.checked)
+                            }
+                          />
+                          我已了解影响，确认{actionLabels[mode]}
+                        </label>
+                      )}
+                      <div className={styles.formActions}>
+                        <button
+                          className={
+                            mode === "disable" || mode === "revoke-sessions"
+                              ? styles.danger
+                              : styles.primary
+                          }
+                          disabled={
+                            disabled ||
+                            (mode !== "display-name" &&
+                              mode !== "restore" &&
+                              !confirmation)
+                          }
+                        >
+                          确认{actionLabels[mode]}
+                        </button>
+                        <button
+                          type="button"
+                          disabled={pending || operation.busy}
+                          onClick={discard}
+                        >
+                          取消修改
+                        </button>
+                      </div>
+                    </form>
+                  )}
+                </section>
               </>
             )}
           </div>
