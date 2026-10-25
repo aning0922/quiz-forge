@@ -6,6 +6,8 @@ import path from "node:path";
 const require = createRequire(path.resolve("package.json"));
 const { chromium, expect } = require("@playwright/test");
 const esbuild = createRequire(require.resolve("tsx/package.json"))("esbuild");
+const postcss = createRequire(require.resolve("next/package.json"))("postcss");
+const tailwind = require("@tailwindcss/postcss");
 const out = path.resolve(".cache/studio-create-task", String(Date.now()));
 const only = process.argv.find((arg) => arg.startsWith("--only="))?.slice(7);
 await mkdir(out, { recursive: true });
@@ -14,10 +16,13 @@ await esbuild.build({
     contents: `
 import {useState} from 'react';
 import {createRoot} from 'react-dom/client';
-import {StudioNavigationBoundary} from '@/features/studio/navigation-boundary';
+import {StudioShell} from '@/features/studio/shell';
+import {invalidateCurrentStudioAuthority} from '@/features/studio/authority-events';
+import {ProductCreatePage} from '@/features/studio/workspace/product-create';
+window.revokeCreate=invalidateCurrentStudioAuthority;
 import {ProductCreateTask, ProductCreateAction} from '@/features/studio/workspace/product-create-task';
 const session={operator:{id:'00000000-0000-0000-0000-000000000007',label:'Synthetic',role:'operator'},csrfToken:'A'.repeat(43),idleExpiresAt:'2030-01-01T00:00:00.000Z',absoluteExpiresAt:'2030-01-01T00:00:00.000Z'};
-function App(){const [query,setQuery]=useState('initial');window.changeCatalogQuery=setQuery;return <StudioNavigationBoundary><ProductCreateTask session={session}>{query==='invalid'?<main><h1>无法使用此列表地址</h1></main>:<main key={query}><h1>测评管理</h1><ProductCreateAction /></main>}<a href='/outside'>离开目录</a></ProductCreateTask></StudioNavigationBoundary>}
+function App(){const [query,setQuery]=useState('initial');window.changeCatalogQuery=setQuery;return <StudioShell authenticated identity={session.operator} session={session}>{location.search.includes('deep=1')?<ProductCreatePage session={session}/>:<ProductCreateTask session={session}>{query==='invalid'?<main><h1>无法使用此列表地址</h1></main>:<main key={query}><h1>测评管理</h1><ProductCreateAction /></main>}<a href='/outside'>离开目录</a></ProductCreateTask>}</StudioShell>}
 createRoot(document.getElementById('root')).render(<App/>);`,
     loader: "tsx",
     resolveDir: process.cwd(),
@@ -35,6 +40,14 @@ createRoot(document.getElementById('root')).render(<App/>);`,
     {
       name: "unexecuted-node-policy",
       setup(b) {
+        b.onResolve({ filter: /^next\/navigation$/ }, () => ({
+          path: "navigation",
+          namespace: "route",
+        }));
+        b.onLoad({ filter: /.*/, namespace: "route" }, () => ({
+          contents: "export const usePathname=()=>location.pathname",
+          loader: "js",
+        }));
         b.onResolve({ filter: /^node:util$/ }, () => ({
           path: "node:util",
           namespace: "policy",
@@ -48,6 +61,15 @@ createRoot(document.getElementById('root')).render(<App/>);`,
     },
   ],
 });
+const globalsPath = path.resolve("src/app/globals.css");
+const globals = await postcss([tailwind({ base: process.cwd() })]).process(
+  await readFile(globalsPath, "utf8"),
+  { from: globalsPath },
+);
+await writeFile(
+  path.join(out, "probe.css"),
+  globals.css + "\n" + (await readFile(path.join(out, "probe.css"), "utf8")),
+);
 let mode = "normal",
   writes = [],
   reads = [],
@@ -113,8 +135,21 @@ const server = createServer(async (req, res) => {
           return;
         }
         json(res, 200, {
-          items: [],
-          total: 0,
+          items: [
+            {
+              id: url.pathname.endsWith("categories")
+                ? "00000000-0000-4000-8000-000000000101"
+                : "00000000-0000-4000-8000-000000000102",
+              name: url.pathname.endsWith("categories") ? "古风" : "合成标签",
+              slug: "synthetic-choice",
+              revision: 1,
+              archivedAt: null,
+              createdAt: "2026-10-25T00:00:00.000Z",
+              updatedAt: "2026-10-25T00:00:00.000Z",
+              assignedProductCount: 0,
+            },
+          ],
+          total: 1,
           page: 1,
           pageSize: 10,
           hasNext: false,
@@ -138,7 +173,7 @@ const server = createServer(async (req, res) => {
       return;
     }
     res.end(
-      '<!doctype html><meta charset="utf-8"><link rel="stylesheet" href="/probe.css"><style>body{margin:0;padding:24px;background:#f5f6fa;color:#202743;font:16px/1.55 system-ui}button,input,select{font:inherit}main{min-height:200px}</style><div id="root"></div><script src="/probe.js"></script>',
+      '<!doctype html><meta charset="utf-8"><link rel="stylesheet" href="/probe.css"><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0}main>h1{font-size:28px;font-weight:700;margin-bottom:20px}</style><div id="root"></div><script src="/probe.js"></script>',
     );
   } catch (error) {
     json(res, 500, { code: error.name });
@@ -149,7 +184,7 @@ const origin = `http://127.0.0.1:${server.address().port}`;
 const browser = await chromium.launch({ headless: true });
 const results = [],
   errors = [];
-async function setup(nextMode) {
+async function setup(nextMode, fill = true, deep = false) {
   mode = nextMode;
   writes = [];
   reads = [];
@@ -160,8 +195,14 @@ async function setup(nextMode) {
   const page = await context.newPage();
   page.setDefaultTimeout(5000);
   page.on("pageerror", (e) => errors.push(e.name));
-  await page.goto(origin);
-  await page.getByRole("button", { name: "新建测评", exact: true }).click();
+  page.on("console", (message) => {
+    if (message.type() === "error" && message.text().includes("not focusable"))
+      errors.push("invalid-hidden-control");
+  });
+  await page.goto(origin + (deep ? "/?deep=1" : "/"));
+  if (!deep)
+    await page.getByRole("button", { name: "新建测评", exact: true }).click();
+  if (!fill) return { context, page };
   await page
     .getByRole("textbox", { name: "测评名称 *", exact: true })
     .fill("创建合成样例");
@@ -171,7 +212,7 @@ async function setup(nextMode) {
   return { context, page };
 }
 async function run(name, body) {
-  if (only && only !== name) return;
+  if (only && !only.split(",").includes(name)) return;
   await body();
   results.push({
     name,
@@ -185,12 +226,181 @@ async function run(name, body) {
   );
 }
 try {
+  await run("empty-close", async () => {
+    const { context, page } = await setup("normal", false);
+    await page.getByRole("button", { name: "取消", exact: true }).click();
+    await expect(page.locator('form[aria-label="新建测评"]')).toHaveCount(0);
+    await expect(
+      page.getByRole("button", { name: "继续新建测评", exact: true }),
+    ).toHaveCount(0);
+    await page.getByRole("button", { name: "新建测评", exact: true }).click();
+    await page.evaluate(() => window.revokeCreate());
+    await expect(
+      page.getByRole("textbox", { name: "测评名称 *", exact: true }),
+    ).toBeDisabled();
+    await page.getByRole("button", { name: "取消", exact: true }).click();
+    await expect(page.locator('form[aria-label="新建测评"]')).toHaveCount(0);
+    await expect(
+      page.getByRole("button", { name: "继续新建测评", exact: true }),
+    ).toHaveCount(0);
+    await page.getByRole("button", { name: "新建测评", exact: true }).click();
+    await expect(
+      page.getByRole("textbox", { name: "测评名称 *", exact: true }),
+    ).toBeDisabled();
+    await expect(
+      page.getByRole("button", { name: "创建测评", exact: true }),
+    ).toBeDisabled();
+    expect(writes).toHaveLength(0);
+    await context.close();
+  });
+  await run("discard-input", async () => {
+    const { context, page } = await setup("normal");
+    await page.getByRole("button", { name: "收起", exact: true }).click();
+    await page
+      .getByRole("button", { name: "继续新建测评", exact: true })
+      .first()
+      .click();
+    page.once("dialog", (dialog) => dialog.dismiss());
+    await page.getByRole("button", { name: "放弃输入", exact: true }).click();
+    await expect(
+      page.getByRole("textbox", { name: "测评名称 *", exact: true }),
+    ).toHaveValue("创建合成样例");
+    page.once("dialog", (dialog) => dialog.accept());
+    await page.getByRole("button", { name: "放弃输入", exact: true }).click();
+    await expect(page.locator('form[aria-label="新建测评"]')).toHaveCount(0);
+    await page.getByRole("button", { name: "新建测评", exact: true }).click();
+    await expect(
+      page.getByRole("textbox", { name: "测评名称 *", exact: true }),
+    ).toHaveValue("");
+    expect(writes).toHaveLength(0);
+    await context.close();
+  });
+  await run("layout-and-choices", async () => {
+    const { context, page } = await setup("normal", false);
+    await expect(
+      page.getByRole("textbox", { name: "测评英文标识", exact: true }),
+    ).toBeHidden();
+    expect(reads).toHaveLength(0);
+    for (const width of [1440, 390, 320, 375, 430]) {
+      await page.setViewportSize({ width, height: 1000 });
+      const dialog = page.locator("dialog:modal");
+      await expect
+        .poll(() =>
+          dialog.evaluate((node) => node.scrollWidth <= node.clientWidth),
+        )
+        .toBe(true);
+      await expect
+        .poll(() =>
+          page.evaluate(
+            () => document.documentElement.scrollWidth <= innerWidth,
+          ),
+        )
+        .toBe(true);
+      const controls = await dialog.evaluate((node) =>
+        [...node.querySelectorAll("input,button,summary")]
+          .filter((item) => item.getClientRects().length > 0)
+          .map((item) => ({
+            height: item.getBoundingClientRect().height,
+            width: item.getBoundingClientRect().width,
+            font: parseFloat(getComputedStyle(item).fontSize),
+          })),
+      );
+      expect(
+        controls.every(
+          (item) => item.height >= 44 && item.width >= 44 && item.font >= 16,
+        ),
+      ).toBe(true);
+      await page.screenshot({ path: path.join(out, `create-${width}.png`) });
+    }
+    await page.setViewportSize({ width: 1440, height: 1000 });
+    await expect
+      .poll(() =>
+        page
+          .locator("dialog:modal")
+          .evaluate((node) => Math.round(node.getBoundingClientRect().width)),
+      )
+      .toBe(540);
+    await page
+      .locator("details > summary")
+      .filter({ hasText: "选择分类" })
+      .click();
+    await page.getByRole("button", { name: "古风", exact: true }).click();
+    await expect(
+      page.locator("details > summary").filter({ hasText: "古风" }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("textbox", { name: "搜索分类", exact: true }),
+    ).toBeHidden();
+    await page
+      .getByRole("textbox", { name: "测评编号（需与内容包一致）", exact: true })
+      .fill("create-probe");
+    await page.getByText("更多设置", { exact: false }).click();
+    await expect(
+      page.getByRole("textbox", { name: "测评英文标识", exact: true }),
+    ).toHaveValue("create-probe");
+    await page
+      .getByRole("textbox", { name: "测评英文标识", exact: true })
+      .fill("custom-slug");
+    await page
+      .getByRole("textbox", { name: "测评编号（需与内容包一致）", exact: true })
+      .fill("other-probe");
+    await expect(
+      page.getByRole("textbox", { name: "测评英文标识", exact: true }),
+    ).toHaveValue("custom-slug");
+    expect(writes).toHaveLength(0);
+    await context.close();
+  });
+  await run("deep-link-form", async () => {
+    const { context, page } = await setup("normal", false, true);
+    await page
+      .getByRole("textbox", { name: "测评编号（需与内容包一致）", exact: true })
+      .fill("create-probe");
+    await page.getByText("更多设置", { exact: false }).click();
+    await expect(
+      page.getByRole("textbox", { name: "测评英文标识", exact: true }),
+    ).toHaveValue("create-probe");
+    await expect(
+      page.getByRole("textbox", { name: "测评名称 *", exact: true }),
+    ).toBeVisible();
+    expect(writes).toHaveLength(0);
+    await context.close();
+  });
+  await run("hidden-slug", async () => {
+    for (const invalid of ["", "Invalid Value"]) {
+      const { context, page } = await setup("normal");
+      const more = page
+        .locator("details")
+        .filter({
+          has: page.locator("summary").filter({ hasText: "更多设置" }),
+        })
+        .first();
+      await page.getByText("更多设置", { exact: false }).click();
+      const slug = page.getByRole("textbox", {
+        name: "测评英文标识",
+        exact: true,
+      });
+      await slug.fill(invalid);
+      await page.getByText("更多设置", { exact: false }).click();
+      await expect(slug).toBeHidden();
+      await page.getByRole("button", { name: "创建测评", exact: true }).click();
+      await expect(more).toHaveAttribute("open", "");
+      await expect(slug).toBeVisible();
+      await expect(slug).toBeFocused();
+      await expect(
+        page.getByText("请填写有效的英文标识：使用小写字母、数字和连字符。", {
+          exact: true,
+        }),
+      ).toBeVisible();
+      expect(writes).toHaveLength(0);
+      await context.close();
+    }
+  });
   await run("retained-query", async () => {
     const { context, page } = await setup("normal");
     const input = await page
       .getByRole("textbox", { name: "测评名称 *", exact: true })
       .elementHandle();
-    await page.getByRole("button", { name: "先返回", exact: true }).click();
+    await page.getByRole("button", { name: "收起", exact: true }).click();
     await page.evaluate(() => window.changeCatalogQuery("filtered"));
     await page
       .getByRole("button", { name: "继续新建测评", exact: true })
@@ -214,9 +424,11 @@ try {
         .getByRole("textbox", { name: "测评名称 *", exact: true })
         .evaluate((n, old) => n === old, input),
     ).toBe(true);
+    await page.getByText("更多设置", { exact: false }).click();
     await expect(
       page.getByRole("textbox", { name: "测评英文标识", exact: true }),
     ).toHaveValue("create-probe");
+    await page.getByText("更多设置", { exact: false }).click();
     await page.screenshot({ path: path.join(out, "create-1440.png") });
     await page.setViewportSize({ width: 320, height: 900 });
     await page.screenshot({ path: path.join(out, "create-320.png") });
@@ -231,14 +443,17 @@ try {
     await page.getByRole("button", { name: "创建测评", exact: true }).click();
     await expect.poll(() => Boolean(heldWrite)).toBe(true);
     await page.keyboard.press("Escape");
-    await page.getByRole("button", { name: "先返回", exact: true }).click();
+    await page.getByRole("button", { name: "收起", exact: true }).click();
     await expect(page.locator("dialog:modal")).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "放弃输入", exact: true }),
+    ).toHaveCount(0);
     json(heldWrite, 503, { code: "WRITE_OUTCOME_UNKNOWN" });
     heldWrite = undefined;
     await page
       .getByRole("button", { name: "核实创建结果", exact: true })
       .waitFor();
-    await page.getByRole("button", { name: "先返回", exact: true }).click();
+    await page.getByRole("button", { name: "收起", exact: true }).click();
     await page
       .getByRole("button", { name: "继续新建测评", exact: true })
       .first()
@@ -251,6 +466,9 @@ try {
     await expect(
       page.getByRole("button", { name: "创建测评", exact: true }),
     ).toBeDisabled();
+    await expect(
+      page.getByRole("button", { name: "放弃输入", exact: true }),
+    ).toHaveCount(0);
     mode = "held-read";
     await page
       .getByRole("button", { name: "核实创建结果", exact: true })
@@ -298,7 +516,7 @@ try {
         new Event("quizforge:studio-authority-invalidated:v1"),
       ),
     );
-    await page.getByRole("button", { name: "先返回", exact: true }).click();
+    await page.getByRole("button", { name: "收起", exact: true }).click();
     await page
       .getByRole("button", { name: "继续新建测评", exact: true })
       .first()
@@ -326,6 +544,10 @@ try {
       page.setDefaultTimeout(5000);
       await page.goto(origin);
       await page.getByRole("button", { name: "新建测评", exact: true }).click();
+      await page
+        .locator("details > summary")
+        .filter({ hasText: "选择分类" })
+        .click();
       if (nextMode === "taxonomy-deny")
         await expect(
           page.getByRole("textbox", { name: "测评名称 *", exact: true }),
@@ -346,6 +568,31 @@ try {
   });
   await run("confirmed-success", async () => {
     const { context, page } = await setup("success");
+    await page
+      .locator("details > summary")
+      .filter({ hasText: "选择分类" })
+      .click();
+    await page
+      .getByRole("textbox", { name: "搜索分类", exact: true })
+      .fill("古风");
+    await page
+      .getByRole("textbox", { name: "搜索分类", exact: true })
+      .press("Enter");
+    expect(writes).toHaveLength(0);
+    await page.getByRole("button", { name: "古风", exact: true }).click();
+    await page.getByText("更多设置", { exact: false }).click();
+    await page
+      .locator("details > summary")
+      .filter({ hasText: "选择标签" })
+      .click();
+    await page
+      .getByRole("textbox", { name: "搜索标签", exact: true })
+      .fill("合成");
+    await page
+      .getByRole("textbox", { name: "搜索标签", exact: true })
+      .press("Enter");
+    await page.getByRole("button", { name: "合成标签", exact: true }).click();
+    expect(writes).toHaveLength(0);
     await page.getByRole("button", { name: "创建测评", exact: true }).click();
     await page.waitForURL("**/studio/products/create-probe");
     expect(writes).toHaveLength(1);
@@ -353,6 +600,8 @@ try {
       id: "create-probe",
       slug: "create-probe",
       title: "创建合成样例",
+      primaryCategoryId: "00000000-0000-4000-8000-000000000101",
+      tagIds: ["00000000-0000-4000-8000-000000000102"],
     });
     await context.close();
   });

@@ -1,6 +1,7 @@
 "use client";
 import {
   useOwnedStudioSession,
+  useStudioAccountOwner,
   useStudioRecoveryReset,
 } from "../accounts/session-owner";
 import { roleHasCapability } from "@/lib/auth/role-policy";
@@ -16,12 +17,12 @@ import {
 import type { StudioSessionDto } from "../contracts";
 import { StudioClientError, studioFetch, studioMessage } from "../client";
 import { useWorkspaceMutation } from "./use-mutation";
-import { ProductFields, type ProductFormFields } from "./product-fields";
+import { type ProductFormFields } from "./product-fields";
 import { ProductCard } from "./product-card";
 import { ReadOnlyNotice } from "./primitives";
 import { StudioPageHeader } from "../presentation/page-header";
 import { subscribeStudioAuthorityInvalidation } from "../authority-events";
-import { TaxonomyPicker } from "./taxonomy-picker";
+import { ProductCreateTaxonomy } from "./product-create-taxonomy";
 import styles from "./workspace.module.css";
 import task from "./product-create-task.module.css";
 
@@ -45,6 +46,7 @@ export function ProductCreateForm({
 }) {
   const session = useOwnedStudioSession(initialSession);
   const formId = useId();
+  const moreSettings = useRef<HTMLDetailsElement>(null);
   const [id, setId] = useState("");
   const [slugEdited, setSlugEdited] = useState(false);
   const [fields, setFields] = useState<ProductFormFields>({
@@ -62,7 +64,9 @@ export function ProductCreateForm({
     error?: string;
   }>();
   const denied = useRef(false);
-  const [revoked, setRevoked] = useState(false);
+  const [deniedState, setRevoked] = useState(false);
+  const owner = useStudioAccountOwner();
+  const revoked = deniedState || Boolean(owner?.revoked);
   useStudioRecoveryReset(() => {
     denied.current = false;
     setRevoked(false);
@@ -93,13 +97,14 @@ export function ProductCreateForm({
     fields.categories.length ||
     fields.tags.length,
   );
+  const pending = mutation.pending;
   const busy = mutation.state.phase === "submitting" || checking;
   useLayoutEffect(() => {
-    onStateChange?.({ dirty, busy, pending: mutation.blocked, revoked });
-  }, [onStateChange, dirty, busy, mutation.blocked, revoked]);
+    onStateChange?.({ dirty, busy, pending, revoked });
+  }, [onStateChange, dirty, busy, pending, revoked]);
   const { markSaved } = useStudioLeaveProtection({
     dirty,
-    pending: mutation.blocked,
+    pending,
   });
 
   async function create() {
@@ -156,7 +161,7 @@ export function ProductCreateForm({
   }
   const submit = (
     <button
-      className={embedded ? task.primary : styles.button}
+      className={task.primary}
       disabled={mutation.blocked || checking || revoked}
       type="submit"
       form={formId}
@@ -165,7 +170,7 @@ export function ProductCreateForm({
     </button>
   );
   const identity = (
-    <div className={styles.field}>
+    <div className={task.field}>
       <label htmlFor={`${formId}-id`}>测评编号（需与内容包一致）</label>
       <input
         className={styles.input}
@@ -180,25 +185,16 @@ export function ProductCreateForm({
         onChange={(event) => {
           const value = event.target.value;
           setId(value);
-          if (embedded && !slugEdited)
-            setFields((old) => ({ ...old, slug: value }));
+          if (!slugEdited) setFields((old) => ({ ...old, slug: value }));
         }}
       />
-      <p id={`${formId}-id-help`} className={styles.note}>
+      <p id={`${formId}-id-help`} className={task.help}>
         使用内容包中的编号，创建后不能修改。
       </p>
     </div>
   );
   return (
-    <section className={embedded ? task.formBody : styles.panel}>
-      {!embedded && (
-        <>
-          <h2>测评信息</h2>
-          <p className={styles.note}>
-            测评编号必须与准备导入的内容包一致，创建后不能修改。编号和英文标识不能与已有或已归档的测评重复。
-          </p>
-        </>
-      )}
+    <section className={`${task.formBody} ${embedded ? "" : task.standalone}`}>
       {revoked && (
         <p className={task.notice} role="alert">
           当前页面已失去操作权限。原输入和待核实记录保留，请在新标签重新登录后核实；重新打开弹窗不会恢复旧权限。
@@ -217,41 +213,47 @@ export function ProductCreateForm({
           className={task.fields}
           disabled={mutation.blocked || revoked || checking}
         >
-          {embedded ? (
-            <>
-              <div className={styles.field}>
-                <label htmlFor={`${formId}-title`}>测评名称 *</label>
-                <input
-                  className={styles.input}
-                  id={`${formId}-title`}
-                  required
-                  maxLength={120}
-                  autoFocus
-                  placeholder="例如：月光经过的那条街"
-                  value={fields.title}
-                  onChange={(event) =>
-                    setFields({ ...fields, title: event.target.value })
-                  }
-                />
-              </div>
-              <div className={task.pair}>
-                <TaxonomyPicker
-                  kind="category"
-                  compact
-                  selected={fields.categories}
-                  onChange={(categories) =>
-                    setFields({ ...fields, categories })
-                  }
-                  disabled={mutation.blocked || revoked}
-                  onFailure={observe}
-                />
-                {identity}
-              </div>
-              <div className={styles.field}>
+          <div className={task.field}>
+            <label htmlFor={`${formId}-title`}>测评名称 *</label>
+            <input
+              className={styles.input}
+              id={`${formId}-title`}
+              required
+              maxLength={120}
+              autoFocus
+              placeholder="例如：月光经过的那条街"
+              value={fields.title}
+              onChange={(event) =>
+                setFields({ ...fields, title: event.target.value })
+              }
+            />
+          </div>
+          <div className={task.pair}>
+            <ProductCreateTaxonomy
+              kind="category"
+              selected={fields.categories}
+              onChange={(categories) => setFields({ ...fields, categories })}
+              disabled={Boolean(mutation.blocked || revoked)}
+              onFailure={observe}
+            />
+            {identity}
+          </div>
+          <details ref={moreSettings} className={task.optional}>
+            <summary>
+              更多设置 <span>英文标识、标签</span>
+            </summary>
+            <div className={task.moreFields}>
+              <div className={task.field}>
                 <label htmlFor={`${formId}-slug`}>测评英文标识</label>
                 <input
                   className={styles.input}
                   id={`${formId}-slug`}
+                  onInvalidCapture={() => {
+                    if (moreSettings.current) moreSettings.current.open = true;
+                    setValidation(
+                      "请填写有效的英文标识：使用小写字母、数字和连字符。",
+                    );
+                  }}
                   required
                   pattern="[a-z][a-z0-9]*(?:-[a-z0-9]+)*"
                   maxLength={80}
@@ -261,37 +263,21 @@ export function ProductCreateForm({
                     setFields({ ...fields, slug: event.target.value });
                   }}
                 />
-                <p className={styles.note}>
-                  默认与编号相同，可在创建前修改；需保持唯一。
+                <p className={task.help}>
+                  默认与测评编号相同，可在创建前修改。
                 </p>
               </div>
-              <details className={task.optional}>
-                <summary>添加标签（可选）</summary>
-                <TaxonomyPicker
-                  kind="tag"
-                  compact
-                  selected={fields.tags}
-                  onChange={(tags) => setFields({ ...fields, tags })}
-                  disabled={mutation.blocked || revoked}
-                  onFailure={observe}
-                />
-              </details>
-            </>
-          ) : (
-            <>
-              {identity}
-              <div className={styles.fieldGrid}>
-                <ProductFields
-                  value={fields}
-                  onChange={setFields}
-                  disabled={mutation.blocked || revoked}
-                  onReadFailure={observe}
-                />
-              </div>
-            </>
-          )}
+              <ProductCreateTaxonomy
+                kind="tag"
+                selected={fields.tags}
+                onChange={(tags) => setFields({ ...fields, tags })}
+                disabled={Boolean(mutation.blocked || revoked)}
+                onFailure={observe}
+              />
+            </div>
+          </details>
         </fieldset>
-        {!embedded && submit}
+        {!embedded && <div className={task.inlineActions}>{submit}</div>}
       </form>
       {embedded && actionsHost && createPortal(submit, actionsHost)}
       {validation && (
@@ -304,7 +290,7 @@ export function ProductCreateForm({
           {mutation.state.message}
         </p>
       )}
-      {mutation.state.phase === "unknown" && (
+      {["unknown", "conflict"].includes(mutation.state.phase) && (
         <section className={styles.compare} aria-label="创建结果核实">
           <p>按此次提交的测评编号 {submittedId} 查询服务器，不会重发创建。</p>
           <button
@@ -358,7 +344,7 @@ export function ProductCreatePage({
   return (
     <div className={styles.workspace}>
       <StudioPageHeader
-        title="创建测评"
+        title="新建测评"
         description={
           <p>先填写测评信息，再导入内容包。创建后可继续编辑分类和标签。</p>
         }
