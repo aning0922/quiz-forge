@@ -1,3 +1,5 @@
+"use client";
+import { usePathname } from "next/navigation";
 import { StudioAccountOwner } from "./accounts/session-owner";
 import type { StudioSessionDto } from "./contracts";
 import styles from "./studio.module.css";
@@ -22,11 +24,25 @@ export function StudioShell({
   identity?: StudioIdentity | undefined;
   session?: StudioSessionDto | undefined;
 }) {
+  const pathname = usePathname();
+  const entry =
+    pathname === "/studio/login" || pathname === "/studio/set-password";
+  const account =
+    pathname === "/studio/accounts" ||
+    pathname === "/studio/accounts/audit" ||
+    pathname === "/studio/session" ||
+    pathname === "/studio/settings";
+  if (entry)
+    return (
+      <StudioNavigationBoundary>
+        <main className={styles.entryRoot}>{children}</main>
+      </StudioNavigationBoundary>
+    );
   return (
     <StudioNavigationBoundary>
       <StudioMobileNavigation>
         <div
-          className={`${styles.shell} ${authenticated ? "" : styles.signedOut}`}
+          className={`${styles.shell} ${authenticated ? "" : styles.signedOut} ${account ? styles.accountShell : ""}`}
         >
           {authenticated && <StudioNavigation identity={identity} />}
           <div className={styles.content}>

@@ -1,8 +1,9 @@
 "use client";
 import { useStudioAccountOwner } from "./session-owner";
 import { useState } from "react";
+import { accountActionLabel } from "./presentation";
 import type { useAccountOperation } from "./use-operation";
-import styles from "./accounts.module.css";
+import styles from "./experience.module.css";
 export function AccountOperationPanel({
   operation,
   onFinished,
@@ -27,7 +28,11 @@ export function AccountOperationPanel({
           className={`${styles.panel} ${styles.recovery}`}
           aria-label="原账号操作"
         >
-          <p>原操作编号：{operation.pending.operationId}</p>
+          <h3>
+            {link
+              ? "一次性设置入口已生成"
+              : accountActionLabel(operation.pending.action)}
+          </h3>
           {operation.receipt && (
             <p>
               处理结果：
@@ -40,7 +45,8 @@ export function AccountOperationPanel({
           {link && (
             <div className={styles.secret} data-private-setup-link>
               <p>
-                设置链接只显示一次。请妥善保存并私下发送给本人，勿公开分享或截图。
+                请保存并私下交付给账号本人。该入口仅本次签发时可见，30
+                分钟内有效，只能使用一次。
               </p>
               <input
                 aria-label="密码设置链接"
@@ -59,16 +65,15 @@ export function AccountOperationPanel({
                 </button>
                 <button
                   type="button"
-                  onClick={() =>
-                    void navigator.clipboard
-                      .writeText(link.url)
-                      .then(() =>
-                        setCopyMessage("已复制，请妥善交付并确认保存。"),
-                      )
-                      .catch(() =>
-                        setCopyMessage("复制失败，请显示链接后手动保存。"),
-                      )
-                  }
+                  onClick={async () => {
+                    try {
+                      if (!navigator.clipboard?.writeText) throw Error();
+                      await navigator.clipboard.writeText(link.url);
+                      setCopyMessage("已复制，请妥善交付并确认保存。");
+                    } catch {
+                      setCopyMessage("复制失败，请显示链接后手动保存。");
+                    }
+                  }}
                 >
                   复制设置链接
                 </button>
@@ -76,7 +81,7 @@ export function AccountOperationPanel({
               {copyMessage && <p role="status">{copyMessage}</p>}
               <p>
                 有效至 {new Date(link.expiresAt).toLocaleString("zh-CN")}
-                。本人改好密码后会退出全部登录。如需立即停止使用账号，请先停用账号或撤销全部登录。
+                。本人完成设置后，原有登录会话失效。
               </p>
               <label>
                 <input
@@ -115,6 +120,10 @@ export function AccountOperationPanel({
               明确结束本次记录
             </button>
           </div>
+          <details className={styles.technical}>
+            <summary>操作记录与技术信息</summary>
+            <p>原操作编号：{operation.pending.operationId}</p>
+          </details>
           {!link &&
             operation.receipt?.status === "completed" &&
             ["create", "issue-setup", "issue-reset"].includes(

@@ -17,6 +17,81 @@
     -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei",
     "Noto Sans CJK SC", system-ui, sans-serif;
 }
+.entryRoot {
+  min-height: 100dvh;
+  margin: 0;
+  padding: 0;
+}
+.accountShell {
+  --studio-primary: #6554dd;
+  --studio-ink: #22283d;
+  --studio-canvas: #f6f7fb;
+  grid-template-columns: 238px minmax(0, 1fr);
+}
+.accountShell .main {
+  max-width: 1510px;
+  padding: 30px 37px 75px;
+}
+.accountShell .topbar {
+  min-height: 71px;
+  padding-inline: 35px;
+}
+.accountNavigationLink {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 12px 14px 12px 20px;
+  min-height: 47px;
+  border-radius: 10px;
+  color: #bbc5d8;
+  text-decoration: none;
+}
+.accountNavigationLink:hover,
+.accountNavigationActive {
+  color: #fff;
+  background: #ffffff12;
+}
+.accountEnvironment {
+  color: #6a5bc8;
+  border: 1px solid #dbd6fc;
+  background: #f5f3ff;
+  border-radius: 99px;
+  padding: 5px 12px;
+  white-space: nowrap;
+}
+@media (max-width: 1200px) {
+  .accountShell .main {
+    padding: 28px 25px 60px;
+  }
+  .accountShell .topbar {
+    padding-inline: 24px;
+  }
+}
+@media (max-width: 959px) {
+  .accountShell {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .accountShell .main {
+    padding: 24px 19px 60px;
+  }
+  .accountShell .topbar {
+    padding-inline: 19px;
+  }
+  .accountEnvironment {
+    display: none;
+  }
+}
+@media (max-width: 630px) {
+  .accountShell .main {
+    padding: 19px 14px 45px;
+  }
+  .accountShell .topbar {
+    padding-inline: 14px;
+  }
+  .accountShell .roleBadge {
+    display: none;
+  }
+}
 .content,
 .main,
 .sidebar,

@@ -15,6 +15,12 @@ export function StudioTopbar({
   const pathname = usePathname();
   const location = studioLocation(pathname);
   const productWorkspace = /^\/studio\/products\/[^/]+$/.test(pathname);
+  const account = [
+    "/studio/accounts",
+    "/studio/accounts/audit",
+    "/studio/session",
+    "/studio/settings",
+  ].includes(pathname);
   const { registerTrigger, id, expanded, open } = useStudioMobileNavigation();
   return (
     <header className={styles.topbar}>
@@ -32,13 +38,13 @@ export function StudioTopbar({
           <Menu size={22} aria-hidden="true" />
         </button>
         <div className={styles.breadcrumb} aria-label="当前位置">
-          <span>运营管理</span>
+          <span>{account ? "平台管理" : "运营管理"}</span>
           <ChevronRight size={17} aria-hidden="true" />
           <strong>{location.title}</strong>
         </div>
       </div>
       <div className={styles.topbarActions}>
-        {!productWorkspace && (
+        {!productWorkspace && !account && (
           <form
             className={styles.topSearch}
             action="/studio/products"
@@ -58,6 +64,7 @@ export function StudioTopbar({
             />
           </form>
         )}
+        {account && <span className={styles.accountEnvironment}>内测环境</span>}
         {identity && (
           <Link
             href="/studio/session"
@@ -66,7 +73,9 @@ export function StudioTopbar({
             aria-label="查看当前运营身份"
             title={identity.label}
           >
-            <span className={styles.roleBadge}>{roleLabel(identity.role)}</span>
+            <span className={styles.roleBadge}>
+              {account ? identity.label : roleLabel(identity.role)}
+            </span>
             <span className={styles.topAvatar} aria-hidden="true">
               {Array.from(identity.label.trim() || "Q")[0]?.toUpperCase()}
             </span>

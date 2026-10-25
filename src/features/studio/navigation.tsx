@@ -1,5 +1,6 @@
 "use client";
 import { roleLabel } from "./accounts/presentation";
+import { roleHasCapability } from "@/lib/auth/role-policy";
 
 import { Fragment, type MouseEvent } from "react";
 import Link from "next/link";
@@ -10,6 +11,8 @@ import {
   Ticket,
   Settings,
   X,
+  Users,
+  History,
 } from "lucide-react";
 import { StudioBrand } from "./brand";
 import {
@@ -107,6 +110,34 @@ export function StudioNavigation({
               </Fragment>
             );
           })}
+          {roleHasCapability(identity?.role, "account:manage") && (
+            <Link
+              href="/studio/accounts"
+              prefetch={false}
+              className={`${styles.accountNavigationLink} ${pathname === "/studio/accounts" ? styles.accountNavigationActive : ""}`}
+              aria-current={
+                pathname === "/studio/accounts" ? "page" : undefined
+              }
+              onClick={followedLink}
+            >
+              <Users size={19} aria-hidden="true" />
+              <span>账号与权限</span>
+            </Link>
+          )}
+          {roleHasCapability(identity?.role, "account:audit") && (
+            <Link
+              href="/studio/accounts/audit"
+              prefetch={false}
+              className={`${styles.accountNavigationLink} ${pathname === "/studio/accounts/audit" ? styles.accountNavigationActive : ""}`}
+              aria-current={
+                pathname === "/studio/accounts/audit" ? "page" : undefined
+              }
+              onClick={followedLink}
+            >
+              <History size={19} aria-hidden="true" />
+              <span>账号操作记录</span>
+            </Link>
+          )}
         </nav>
         <div className={styles.sideFooter}>
           <p className={styles.navigationNote}>
