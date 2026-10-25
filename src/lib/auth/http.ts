@@ -4,20 +4,14 @@ import { NextResponse } from "next/server";
 import { createDatabase, type P2aDatabase } from "@/lib/db/client";
 import { loadRuntimeConfig } from "@/lib/db/runtime";
 import { assertStudioSource } from "@/lib/http-security/source";
-import { emptyDto, loginDto, readStudioJson } from "@/lib/http-security/json";
+import { emptyDto, readStudioJson } from "@/lib/http-security/json";
 import {
   errorResponse,
   privateHeaders,
   StudioError,
 } from "@/lib/http-security/errors";
 import { verifyCsrf } from "@/lib/security/p2a-tokens";
-import {
-  createPreauth,
-  login,
-  logout,
-  readSession,
-  sessionDto,
-} from "./service";
+import { createPreauth, logout, readSession, sessionDto } from "./service";
 import {
   cookieOptions,
   cookieToken,
@@ -25,7 +19,7 @@ import {
   SESSION_COOKIE,
 } from "./cookies";
 
-export type StudioAuthEndpoint = "preauth" | "login" | "session" | "logout";
+export type StudioAuthEndpoint = "preauth" | "session" | "logout";
 
 /** HTTP boundary: only these Handlers set/delete cookies, after DB commit. */
 export async function handleStudioAuth(
@@ -40,26 +34,12 @@ export async function handleStudioAuth(
       write: endpoint !== "session",
       api: true,
     });
-    let credential = "";
-    if (endpoint !== "session") {
-      const body = await readStudioJson(request);
-      if (endpoint === "login") credential = loginDto(body).credential;
-      else emptyDto(body);
-    }
+    if (endpoint !== "session") emptyDto(await readStudioJson(request));
     const sessionRaw = cookieToken(request.headers, "session");
-    const preauthRaw =
-      endpoint === "login" ? cookieToken(request.headers, "preauth") : null;
     const csrf = request.headers.get("x-csrf-token");
-    if (endpoint === "login" || endpoint === "logout") {
-      const raw = endpoint === "login" ? preauthRaw : sessionRaw;
-      if (!raw)
-        throw new StudioError(
-          endpoint === "login" ? "AUTHENTICATION_FAILED" : "UNAUTHENTICATED",
-        );
-      if (
-        !csrf ||
-        !verifyCsrf(raw, endpoint === "login" ? "preauth" : "session", csrf)
-      )
+    if (endpoint === "logout") {
+      if (!sessionRaw) throw new StudioError("UNAUTHENTICATED");
+      if (!csrf || !verifyCsrf(sessionRaw, "session", csrf))
         throw new StudioError("CSRF_REJECTED");
     }
     database = await createDatabase(config);
@@ -73,28 +53,6 @@ export async function handleStudioAuth(
         response.cookies.set(PREAUTH_COOKIE, created.raw, {
           ...cookieOptions,
           maxAge: 300,
-        });
-        return response;
-      }
-      case "login": {
-        const authenticated = await login(
-          database,
-          preauthRaw,
-          csrf,
-          credential,
-          requestId,
-        );
-        const response = NextResponse.json(authenticated.dto, {
-          headers: privateHeaders,
-        });
-        response.cookies.set(SESSION_COOKIE, authenticated.raw, {
-          ...cookieOptions,
-          maxAge: 28800,
-        });
-        response.cookies.set(PREAUTH_COOKIE, "", {
-          ...cookieOptions,
-          maxAge: 0,
-          expires: new Date(0),
         });
         return response;
       }

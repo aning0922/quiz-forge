@@ -10,7 +10,7 @@ import { beforeAll, afterAll, describe, it, expect } from "vitest";
 import { loadRuntimeConfig } from "@/lib/db/runtime";
 import { openManagedDatabase, disableOperator } from "@/lib/db/management";
 import { createDatabase, type P2aDatabase } from "@/lib/db/client";
-import { createPreauth, login, readSession } from "@/lib/auth/service";
+import { createPreauth, readSession } from "@/lib/auth/service";
 import {
   issueToken,
   csrfForToken,
@@ -19,7 +19,6 @@ import {
 import {
   accountCall,
   mutateAccount,
-  issuePasswordToken,
   passwordTokenDigest,
   completePasswordSetup,
   passwordLogin,
@@ -100,46 +99,64 @@ afterAll(async () => {
   await owner?.close();
 });
 describe("accounts on a pristine isolated PG; no shared reset or deletion", () => {
-  it("bootstraps the explicitly selected legacy identity only on successful setup, preserves IDs and then revokes old credentials/sessions", async () => {
+  it("bootstraps a fresh explicit UUID through the owner CLI and grants admin only after password setup and login", async () => {
     rootId = op();
-    const legacy = issueToken("credential");
-    await owner.sql`INSERT INTO qf.operator(id,label,credential_digest,role,status) VALUES(${rootId},'synthetic-legacy',${legacy.digest},'operator','active')`;
-    const pre = await createPreauth(db, null, op());
-    const old = await login(db, pre.raw, pre.dto.csrfToken, legacy.raw, op());
-    const token = issuePasswordToken();
-    await accountCall(
-      owner as unknown as P2aDatabase,
-      "account_local",
-      "",
-      null,
-      {
-        action: "bootstrap-admin",
-        targetId: rootId,
-        operationId: op(),
-        loginName: "synthetic-admin",
-        displayName: "合成管理员",
-        tokenId: token.id,
-        tokenDigest: token.digest,
-      },
-      true,
-    );
-    expect((await readSession(db, old.raw)).role).toBe("operator");
-    const setupId = op();
-    await completePasswordSetup(db, token.digest, setupId, password);
-    expect((await setupResult(db, token.digest, setupId)).status).toBe("found");
-    await expect(readSession(db, old.raw)).rejects.toMatchObject({
-      code: "UNAUTHENTICATED",
-    });
-    const [row] =
-      await owner.sql`SELECT id,label,credential_digest IS NULL cleared,role FROM qf.operator WHERE id=${rootId}`;
-    expect(row).toMatchObject({
+    const execute = promisify(execFile),
+      operationId = op(),
+      setupFile = path.join(
+        path.dirname(process.env.QUIZFORGE_P2A_CONFIG!),
+        "account-setup-" + operationId + ".json",
+      );
+    const { stdout } = await execute(process.execPath, [
+      "--conditions=react-server",
+      "--import",
+      "tsx",
+      "scripts/studio-accounts.ts",
+      "bootstrap-admin",
+      "--instance",
+      instanceId,
+      "--operator-id",
+      rootId,
+      "--operation-id",
+      operationId,
+      "--setup-file",
+      setupFile,
+      "--login-name",
+      "synthetic-admin",
+      "--display-name",
+      "合成管理员",
+    ]);
+    expect(JSON.parse(stdout)).toMatchObject({
       id: rootId,
-      label: "synthetic-legacy",
-      cleared: true,
-      role: "admin",
+      operationId,
+      setupFile,
     });
+    expect(stdout).not.toContain("#token=");
+    expect((await stat(setupFile)).mode & 0o777).toBe(0o600);
+    const file = JSON.parse(await readFile(setupFile, "utf8")),
+      params = new URLSearchParams(new URL(file.url).hash.slice(1)),
+      raw = params.get("token")!;
+    expect(params.get("tokenId")).toMatch(/^[0-9a-f-]{36}$/);
+    const [pending] =
+      await owner.sql`SELECT id,role,password_hash IS NULL pending FROM qf.operator WHERE id=${rootId}`;
+    expect(pending).toMatchObject({
+      id: rootId,
+      role: "operator",
+      pending: true,
+    });
+    const tokenDigest = passwordTokenDigest(raw),
+      setupId = op();
+    await completePasswordSetup(db, tokenDigest, setupId, password);
+    expect((await setupResult(db, tokenDigest, setupId)).status).toBe("found");
     root = await signIn("synthetic-admin");
-    expect((await readAccount(db, root.sessionToken)).id).toBe(rootId);
+    const account = await readAccount(db, root.sessionToken);
+    expect(account).toMatchObject({
+      id: rootId,
+      role: "admin",
+      status: "active",
+      loginName: "synthetic-admin",
+    });
+    expect(account).not.toHaveProperty("legacyCredentialActive");
   });
   it("uses minimal DB grants and real granular role guards, with pending admin excluded from last-admin protection", async () => {
     await expect(
@@ -522,6 +539,15 @@ describe("accounts on a pristine isolated PG; no shared reset or deletion", () =
       status: "found",
       operation: { operationId: setup },
     });
+    expect(
+      (
+        await post(
+          "password-login",
+          { credential: "synthetic-obsolete-input" },
+          null,
+        )
+      ).status,
+    ).toBe(400);
     const pre = await createPreauth(db, null, op());
     const logged = await post(
       "password-login",
@@ -585,58 +611,20 @@ describe("accounts on a pristine isolated PG; no shared reset or deletion", () =
       await owner.sql`SELECT count(*)::int n FROM qf.operator WHERE id=${operationId}`;
     expect(r!.n).toBe(1);
   });
-  it("runs owner CLI enrollment and recovery with private files and preserves legacy identity and live sessions until consumption", async () => {
+  it("runs active-admin recovery through the owner CLI, consumes a private link and revokes the previous sessions", async () => {
     const execute = promisify(execFile),
-      legacy = op(),
-      credential = issueToken("credential"),
-      operationId = op();
-    await owner.sql`INSERT INTO qf.operator(id,label,credential_digest,role,status) VALUES(${legacy},'synthetic-cli',${credential.digest},'read-only','active')`;
-    const folder = path.dirname(process.env.QUIZFORGE_P2A_CONFIG!),
-      setupFile = path.join(folder, "account-setup-" + operationId + ".json");
-    const args = [
-      "--conditions=react-server",
-      "--import",
-      "tsx",
-      "scripts/studio-accounts.ts",
-    ];
+      recovery = op(),
+      recoveryFile = path.join(
+        path.dirname(process.env.QUIZFORGE_P2A_CONFIG!),
+        "account-setup-" + recovery + ".json",
+      ),
+      args = [
+        "--conditions=react-server",
+        "--import",
+        "tsx",
+        "scripts/studio-accounts.ts",
+      ];
     const { stdout } = await execute(process.execPath, [
-      ...args,
-      "enroll",
-      "--instance",
-      instanceId,
-      "--operator-id",
-      legacy,
-      "--operation-id",
-      operationId,
-      "--setup-file",
-      setupFile,
-      "--login-name",
-      "synthetic-cli",
-      "--display-name",
-      "合成 CLI",
-    ]);
-    expect(JSON.parse(stdout)).toMatchObject({
-      id: legacy,
-      operationId,
-      setupFile,
-    });
-    expect(stdout).not.toContain("#token=");
-    expect((await stat(setupFile)).mode & 0o777).toBe(0o600);
-    const file = JSON.parse(await readFile(setupFile, "utf8")),
-      params = new URLSearchParams(new URL(file.url).hash.slice(1));
-    expect(params.get("tokenId")).toMatch(/^[0-9a-f-]{36}$/);
-    const [r] =
-      await owner.sql`SELECT id,label,role,credential_digest=${credential.digest} intact,password_hash IS NULL pending FROM qf.operator WHERE id=${legacy}`;
-    expect(r).toMatchObject({
-      id: legacy,
-      label: "synthetic-cli",
-      role: "read-only",
-      intact: true,
-      pending: true,
-    });
-    const recovery = op(),
-      recoveryFile = path.join(folder, "account-setup-" + recovery + ".json");
-    await execute(process.execPath, [
       ...args,
       "recover-admin",
       "--instance",
@@ -648,8 +636,52 @@ describe("accounts on a pristine isolated PG; no shared reset or deletion", () =
       "--setup-file",
       recoveryFile,
     ]);
+    expect(JSON.parse(stdout)).toMatchObject({
+      id: rootId,
+      operationId: recovery,
+      setupFile: recoveryFile,
+    });
+    expect(stdout).not.toContain("#token=");
     expect((await readSession(db, root.sessionToken)).role).toBe("admin");
     expect((await stat(recoveryFile)).mode & 0o777).toBe(0o600);
+    const file = JSON.parse(await readFile(recoveryFile, "utf8")),
+      raw = new URLSearchParams(new URL(file.url).hash.slice(1)).get("token")!;
+    const recoverySetup = op();
+    await completePasswordSetup(
+      db,
+      passwordTokenDigest(raw),
+      recoverySetup,
+      nextPassword,
+    );
+    await expect(readSession(db, root.sessionToken)).rejects.toMatchObject({
+      code: "UNAUTHENTICATED",
+    });
+    root = await signIn("synthetic-admin", nextPassword);
+    expect((await readAccount(db, root.sessionToken)).role).toBe("admin");
+    await expect(
+      execute(process.execPath, [...args, "enroll"]),
+    ).rejects.toMatchObject({ code: 1, stdout: "" });
+    const member = await actor("operator");
+    await expect(
+      accountCall(
+        owner as unknown as P2aDatabase,
+        "account_local",
+        "",
+        null,
+        { action: "admin-recovery", targetId: member.id, operationId: op() },
+        true,
+      ),
+    ).rejects.toMatchObject({ code: "ACCOUNT_CONFLICT" });
+    await expect(
+      accountCall(
+        owner as unknown as P2aDatabase,
+        "account_local",
+        "",
+        null,
+        { action: "enroll", targetId: member.id, operationId: op() },
+        true,
+      ),
+    ).rejects.toMatchObject({ code: "INVALID_REQUEST" });
   });
   it("serializes two admins attempting mutual demotion and protects the survivor through both web and local maintenance", async () => {
     const other = await actor("admin");

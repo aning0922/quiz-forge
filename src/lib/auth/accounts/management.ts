@@ -13,7 +13,7 @@ import { accountCall, issuePasswordToken } from "./service";
 import { displayName, loginName } from "./input";
 export async function prepareLocalAccount(
   instanceId: string,
-  action: "bootstrap-admin" | "enroll" | "admin-recovery",
+  action: "bootstrap-admin" | "admin-recovery",
   options: {
     operatorId: string;
     operationId: string;

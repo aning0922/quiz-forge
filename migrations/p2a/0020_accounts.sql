@@ -59,7 +59,7 @@ CREATE TABLE qf.operator_account_operation(
  token_id uuid REFERENCES qf.operator_password_token(id) ON DELETE RESTRICT,
  created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
  CHECK((status='completed' AND error_code IS NULL) OR(status='rejected' AND error_code IS NOT NULL)),
- CHECK(action IN ('create','display-name','role','disable','restore','issue-setup','issue-reset','password-setup','password-change','logout-all','revoke-sessions','bootstrap-admin','enroll','admin-recovery'))
+ CHECK(action IN ('create','display-name','role','disable','restore','issue-setup','issue-reset','password-setup','password-change','logout-all','revoke-sessions','bootstrap-admin','admin-recovery'))
 );
 CREATE INDEX operator_account_operation_actor ON qf.operator_account_operation(actor_id,created_at DESC,operation_id);
 CREATE TABLE qf.operator_kdf_attempt(
@@ -82,7 +82,7 @@ DO $$ DECLARE old text; BEGIN
  EXECUTE 'ALTER TABLE qf.audit_event ADD CONSTRAINT audit_target CHECK ((('||substr(old,8,length(old)-8)||') OR (action=''account_operation'' AND target_kind=''operator'' AND target_id ~ ''^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'' AND target_revision BETWEEN 1 AND 2147483647)) IS TRUE)';
 END $$;
 CREATE FUNCTION qf.account_dto(o qf.operator) RETURNS jsonb LANGUAGE sql STABLE SET search_path=pg_catalog AS $$
- SELECT jsonb_build_object('id',o.id,'label',o.label,'loginName',o.login_name,'displayName',coalesce(o.display_name,o.label),'role',o.role,'status',CASE WHEN o.status='disabled' THEN 'disabled' WHEN o.password_hash IS NULL OR o.login_name IS NULL THEN 'pending' ELSE 'active' END,'revision',o.account_revision,'legacyCredentialActive',o.credential_digest IS NOT NULL,'createdAt',qf.consumer_moment(o.created_at),'disabledAt',CASE WHEN o.disabled_at IS NULL THEN NULL ELSE qf.consumer_moment(o.disabled_at) END)
+ SELECT jsonb_build_object('id',o.id,'label',o.label,'loginName',o.login_name,'displayName',coalesce(o.display_name,o.label),'role',o.role,'status',CASE WHEN o.status='disabled' THEN 'disabled' WHEN o.password_hash IS NULL OR o.login_name IS NULL THEN 'pending' ELSE 'active' END,'revision',o.account_revision,'createdAt',qf.consumer_moment(o.created_at),'disabledAt',CASE WHEN o.disabled_at IS NULL THEN NULL ELSE qf.consumer_moment(o.disabled_at) END)
 $$;
 CREATE FUNCTION qf.account_operation_dto(o qf.operator_account_operation) RETURNS jsonb LANGUAGE sql STABLE SET search_path=pg_catalog AS $$
  SELECT jsonb_build_object('operationId',o.operation_id,'action',o.action,'actorId',o.actor_id,'targetId',o.target_id,'status',o.status,'errorCode',o.error_code,'createdAt',qf.consumer_moment(o.created_at))
@@ -273,7 +273,7 @@ BEGIN
  answer:=qf.account_record(op,CASE WHEN mode='finish-change' THEN o.id ELSE NULL END,o.id,CASE WHEN mode='finish-change' THEN 'password-change' ELSE 'password-setup' END,jsonb_build_object('action',CASE WHEN mode='finish-change' THEN 'password-change' ELSE 'password-setup' END,'targetId',o.id),t.id);
  RETURN answer->'operation';
 END $$;
--- Owner-only explicit bootstrap/enroll/recovery. Never granted to the web role.
+-- Owner-only explicit bootstrap/recovery. Never granted to the web role.
 CREATE FUNCTION qf.account_local(p jsonb) RETURNS jsonb LANGUAGE plpgsql SET search_path=pg_catalog AS $$
 DECLARE o qf.operator;old qf.operator_account_operation;op uuid:=(p->>'operationId')::uuid;target uuid:=(p->>'targetId')::uuid;action_name text:=p->>'action';binding_value jsonb:=p-ARRAY['tokenId','tokenDigest'];link jsonb;answer jsonb;
 BEGIN
@@ -287,9 +287,8 @@ BEGIN
  SELECT * INTO o FROM qf.operator WHERE id=target FOR UPDATE;
  IF action_name='bootstrap-admin' THEN
   IF EXISTS(SELECT 1 FROM qf.operator WHERE role='admin') OR EXISTS(SELECT 1 FROM qf.operator_password_token WHERE purpose='bootstrap-admin' AND operator_id<>target AND consumed_at IS NULL AND revoked_at IS NULL AND expires_at>clock_timestamp()) THEN RAISE EXCEPTION 'ACCOUNT_CONFLICT'; END IF;
-  IF o.id IS NULL THEN INSERT INTO qf.operator(id,label,role,status) VALUES(target,'account-'||target::text,'operator','active') RETURNING * INTO o; END IF;
- ELSIF action_name='enroll' THEN
-  IF o.id IS NULL OR o.credential_digest IS NULL OR o.password_hash IS NOT NULL THEN RAISE EXCEPTION 'ACCOUNT_CONFLICT'; END IF;
+  IF o.id IS NOT NULL THEN RAISE EXCEPTION 'ACCOUNT_CONFLICT'; END IF;
+  INSERT INTO qf.operator(id,label,role,status) VALUES(target,'account-'||target::text,'operator','active') RETURNING * INTO o;
  ELSIF action_name='disable' THEN
   IF o.id IS NULL THEN RAISE EXCEPTION 'INVALID_REQUEST'; END IF;
   IF o.status='disabled' THEN RETURN jsonb_build_object('account',qf.account_dto(o),'first',false,'changed',false); END IF;
@@ -304,10 +303,9 @@ BEGIN
  ELSE RAISE EXCEPTION 'INVALID_REQUEST'; END IF;
  IF o.status<>'active' THEN RAISE EXCEPTION 'ACCOUNT_CONFLICT'; END IF;
  IF action_name<>'admin-recovery' THEN
-  IF o.login_name IS NOT NULL AND o.login_name<>p->>'loginName' THEN RAISE EXCEPTION 'ACCOUNT_CONFLICT'; END IF;
   UPDATE qf.operator SET login_name=p->>'loginName',display_name=p->>'displayName',account_revision=account_revision+1 WHERE id=target;
  ELSE UPDATE qf.operator SET account_revision=account_revision+1 WHERE id=target; END IF;
- link:=qf.account_issue(target,CASE action_name WHEN 'enroll' THEN 'setup' ELSE action_name END,p->>'tokenDigest',(p->>'tokenId')::uuid,NULL,op);
+ link:=qf.account_issue(target,action_name,p->>'tokenDigest',(p->>'tokenId')::uuid,NULL,op);
  answer:=qf.account_record(op,NULL,target,action_name,binding_value);
  SELECT * INTO o FROM qf.operator WHERE id=target;
  RETURN answer||jsonb_build_object('account',qf.account_dto(o),'passwordSetup',link,'first',true);

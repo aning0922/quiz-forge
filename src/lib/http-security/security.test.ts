@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { performance } from "node:perf_hooks";
-import { emptyDto, loginDto, readStudioJson } from "./json";
+import { emptyDto, readStudioJson } from "./json";
 import { assertStudioSource, configuredHost } from "./source";
 import { errorResponse, StudioError } from "./errors";
 
@@ -212,18 +212,6 @@ describe("actual bounded JSON and strict DTOs", () => {
     expect(() => emptyDto({})).not.toThrow();
     for (const value of [null, [], "", { role: "operator" }])
       expect(() => emptyDto(value)).toThrow("INVALID_REQUEST");
-    expect(loginDto({ credential: "synthetic-input" })).toEqual({
-      credential: "synthetic-input",
-    });
-    for (const value of [
-      { credential: "x", role: "operator" },
-      { credential: "x", id: "id" },
-      { credential: "x", expiresAt: "later" },
-      { credential: "" },
-      { credential: 3 },
-      [],
-    ])
-      expect(() => loginDto(value)).toThrow("INVALID_REQUEST");
   });
   it("never serializes raw exceptions and always prevents caching", async () => {
     const response = errorResponse(
