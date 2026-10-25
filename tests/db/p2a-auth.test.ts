@@ -6,7 +6,7 @@ import { acquireAuthWriteLock } from "@/lib/db/auth-lock";
 import { createPreauth, login, logout, readSession } from "@/lib/auth/service";
 import { handleStudioAuth } from "@/lib/auth/http";
 import { requireCapability } from "@/lib/auth/capabilities";
-import { PREAUTH_COOKIE, SESSION_COOKIE } from "@/lib/auth/cookies";
+import { SESSION_COOKIE } from "@/lib/auth/cookies";
 import {
   csrfForToken,
   digestToken,
