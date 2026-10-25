@@ -569,11 +569,6 @@ export function AccountsPage({
           )}
         {surface === "person" && selected && (
           <div className={local.details}>
-            {surface === "create" && (
-              <div className={styles.hint}>
-                账号已创建，请将下方密码设置链接交付本人。
-              </div>
-            )}
             <div className={local.identity}>
               <AccountPerson account={selected} />
             </div>
