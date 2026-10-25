@@ -44,9 +44,10 @@ describe("B1 database constraints and least privilege", () => {
       primaryCategoryId: null,
       tagIds: [],
     });
+    const admin = await authenticateTestOperator(fixture, "admin");
     const cat = await createTaxonomy(
       fixture.app,
-      auth.credentials,
+      admin.credentials,
       "category",
       { slug: "synthetic", name: "Synthetic" },
     );
@@ -109,11 +110,12 @@ describe("B1 database constraints and least privilege", () => {
   );
   it("product_tag permits relation removal but denies UPDATE/TRUNCATE and caps slots", async () => {
     const auth = await authenticateTestOperator(fixture);
+    const admin = await authenticateTestOperator(fixture, "admin");
     const ids: string[] = [];
     for (let i = 0; i < 9; i++)
       ids.push(
         (
-          await createTaxonomy(fixture.app, auth.credentials, "tag", {
+          await createTaxonomy(fixture.app, admin.credentials, "tag", {
             slug: `tag-${i}`,
             name: "Synthetic",
           })
@@ -187,7 +189,7 @@ describe("B1 database constraints and least privilege", () => {
                 .sql`INSERT INTO ${fixture.app.sql(`qf.${kind}`)}(id,slug,name,created_at,updated_at) SELECT ${randomUUID()},'synthetic',${name},at,at FROM (SELECT clock_timestamp() at) m`,
           ),
         ).toBe("23514");
-      const auth = await authenticateTestOperator(fixture);
+      const auth = await authenticateTestOperator(fixture, "admin");
       const dto = await createTaxonomy(fixture.app, auth.credentials, kind, {
         slug: "synthetic",
         name: "中文😀".repeat(10),
