@@ -229,7 +229,7 @@ export async function inspectLocalAccountOperation(
         SELECT qf.account_operation_dto(r) AS operation,
           (r.actor_id IS NULL AND r.target_id=${targetId}::uuid AND r.action=${action} AND r.binding=${JSON.stringify(binding)}::text::jsonb) AS receipt_matches,
           coalesce(t.id=${tokenId}::uuid AND t.token_digest=${tokenDigest} AND t.operator_id=${targetId}::uuid AND t.purpose=${action} AND t.issued_by IS NULL,false) AS token_matches,
-          t.id AS token_id,qf.consumer_moment(t.expires_at) AS expires_at,
+          t.id AS token_id,qf.consumer_moment(date_trunc('milliseconds',t.expires_at)) AS expires_at,
           CASE WHEN t.id IS NULL THEN 'missing' WHEN t.consumed_at IS NOT NULL THEN 'consumed' WHEN t.revoked_at IS NOT NULL THEN 'revoked' WHEN t.expires_at<=clock_timestamp() THEN 'expired' ELSE 'active' END AS token_state
         FROM qf.operator_account_operation r LEFT JOIN qf.operator_password_token t ON t.operation_id=r.operation_id
         WHERE r.operation_id=${operationId}::uuid`;
