@@ -1,4 +1,4 @@
-/** Targeted account regressions only: loop, late, downgrade, task, account429, setup429.
+/** Targeted account regressions only: loop, late, downgrade, task, account429, setup429, query.
  * Select a subset with QUIZFORGE_ACCOUNT_REGRESSION_CASES (comma-separated).
  * Real React components and synthetic HTTP; no application/DB service or screenshot matrix.
  * The optional QUIZFORGE_PASSWORD_TOKEN_MODULE is the exact B-owned helper during branch integration.
@@ -34,7 +34,7 @@ const session={operator:{id,label:'合成原身份',loginName:'synthetic.admin',
 const account={id,label:'合成原身份',loginName:'synthetic.admin',displayName:'合成管理员',role:'admin',status:'active',revision:1,createdAt:now,disabledAt:null};
 const scenario=new URLSearchParams(location.search).get('case');
 window.calls=[];window.operationIds=[];window.currentSession=session;window.revoke=invalidateCurrentStudioAuthority;
-window.metadataReads=0;window.deniedReads=0;window.revokedOwners=new Set();
+window.metadataReads=0;window.deniedReads=0;window.revokedOwners=new Set();window.directoryQueries=[];
 window.fetch=async(raw,init={})=>{
  const path=new URL(raw,location.href).pathname,method=init.method||'GET';window.calls.push({path,method});
  if(path==='/synthetic/denied'){
@@ -48,7 +48,14 @@ window.fetch=async(raw,init={})=>{
    return Response.json({code:'UNAUTHENTICATED'},{status:401});
  }
  if(path.endsWith('/auth/session'))return Response.json(window.currentSession);
- if(path.endsWith('/accounts')&&method==='GET')return Response.json({items:[account,{...account,id:other,displayName:'合成其他运营',loginName:'synthetic.other',role:'operator'}],offset:0,limit:25,hasMore:false});
+ if(path.endsWith('/accounts')&&method==='GET'){
+   window.directoryQueries.push(new URL(raw,location.href).search);
+   return Response.json({items:[account,{...account,id:other,displayName:'合成其他运营',loginName:'synthetic.other',role:'operator',...(scenario==='query'?{status:window.directoryStatus||'pending',revision:window.directoryRevision||1}:{})}],offset:0,limit:25,hasMore:false});
+ }
+ if(path.endsWith('/accounts/'+other)&&method==='PATCH'){
+   const body=JSON.parse(init.body);window.patchRevision=body.expectedRevision;
+   return Response.json({account:{...account,id:other,displayName:body.displayName,revision:3},operation:{operationId:body.operationId,action:'display-name',actorId:id,targetId:other,status:'completed',errorCode:null,createdAt:now}});
+ }
  if(path.endsWith('/accounts')&&method==='POST'){
    const body=JSON.parse(init.body);window.operationIds.push(body.operationId);
    if(window.postStatus)return Response.json({code:'RATE_LIMITED'},{status:window.postStatus});
@@ -444,6 +451,46 @@ try {
     expect(await page.evaluate(() => window.operationIds.length)).toBe(2);
     results.push(
       "P2-setup-explicit-429-finish-no-autoreplay-503-with-same-code-remains-unknown",
+    );
+  }
+  if (selected("query")) {
+    await open("query");
+    const target = page
+      .locator("article")
+      .filter({
+        has: page.getByRole("heading", { name: "合成其他运营", exact: true }),
+      });
+    await expect(
+      target.getByText("运营者 · 待本人设置密码", { exact: true }),
+    ).toBeVisible();
+    await expect(
+      target.getByRole("button", { name: "重新发送设置链接", exact: true }),
+    ).toBeVisible();
+    await page.evaluate(() => {
+      window.directoryStatus = "active";
+      window.directoryRevision = 2;
+    });
+    await page.getByRole("button", { name: "查询账号", exact: true }).click();
+    await expect(
+      target.getByText("运营者 · 可登录", { exact: true }),
+    ).toBeVisible();
+    await expect(
+      target.getByRole("button", { name: "发送密码重置链接", exact: true }),
+    ).toBeVisible();
+    expect(await page.evaluate(() => window.directoryQueries.length)).toBe(2);
+    expect(
+      await page.evaluate(() => new Set(window.directoryQueries).size),
+    ).toBe(1);
+    await target
+      .getByRole("button", { name: "修改显示名称", exact: true })
+      .click();
+    await page.getByLabel("显示名称", { exact: true }).fill("合成已刷新运营");
+    await page
+      .getByRole("button", { name: "确认修改显示名称", exact: true })
+      .click();
+    await expect.poll(() => page.evaluate(() => window.patchRevision)).toBe(2);
+    results.push(
+      "account-identical-query-refreshes-status-and-latest-cas-revision",
     );
   }
   expect(errors).toEqual([]);

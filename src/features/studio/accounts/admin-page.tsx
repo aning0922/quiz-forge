@@ -234,6 +234,7 @@ export function AccountsPage({
             event.preventDefault();
             setQ(search);
             setOffset(0);
+            read.refresh();
           }}
         >
           <div className={styles.field}>
