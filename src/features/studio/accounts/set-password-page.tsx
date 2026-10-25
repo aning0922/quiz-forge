@@ -1,6 +1,5 @@
 "use client";
 import { useLayoutEffect, useRef, useState } from "react";
-import Link from "next/link";
 import { useStudioLeaveProtection } from "../navigation-boundary";
 import { StudioClientError, studioMessage } from "../client";
 import { PasswordField } from "./password-field";
@@ -10,7 +9,10 @@ import type {
   PasswordSetupInspectionDto,
   AccountOperationDto,
 } from "./contracts";
-import styles from "./accounts.module.css";
+import { CheckCircle2, ArrowRight } from "lucide-react";
+import { EntryScene } from "./entry-scene";
+import { AccountAvatar } from "./account-ui";
+import styles from "./entry.module.css";
 export function SetPasswordPage() {
   const token = useRef<string | null>(null),
     initialized = useRef(false),
@@ -24,7 +26,7 @@ export function SetPasswordPage() {
     [receipt, setReceipt] = useState<AccountOperationDto>(),
     [originalId, setOriginalId] = useState(""),
     [definite, setDefinite] = useState(false);
-  useStudioLeaveProtection({
+  const protection = useStudioLeaveProtection({
     dirty: Boolean(password || confirm),
     pending: Boolean(operationId && !receipt),
   });
@@ -212,66 +214,141 @@ export function SetPasswordPage() {
       setBusy(false);
     }
   }
+  function endCompleted() {
+    if (
+      busy ||
+      receipt?.status !== "completed" ||
+      receipt.operationId !== operationId
+    )
+      return;
+    if (inspection) {
+      const key = `quizforge.studio.password-setup.v1:${inspection.tokenId}`;
+      try {
+        const raw = sessionStorage.getItem(key);
+        if (raw) {
+          const index = JSON.parse(raw) as {
+            tokenId: string;
+            operationId: string;
+          };
+          if (
+            Object.keys(index).length !== 2 ||
+            index.tokenId !== inspection.tokenId ||
+            index.operationId !== receipt.operationId
+          )
+            throw Error();
+          sessionStorage.removeItem(key);
+          if (sessionStorage.getItem(key) !== null) throw Error();
+        }
+      } catch {
+        setMessage("暂时无法结束本次记录，请保留此页并联系管理员。");
+        return;
+      }
+    }
+    // A recovered receipt can outlive strict inspection. Never erase an index using an untrusted URL hint.
+    protection.markSaved();
+    token.current = null;
+    // Re-enter the authentication boundary as a document after confirming this local operation.
+    window.location.assign(
+      new URL("/studio/login", window.location.origin).href,
+    );
+  }
+  const completed = receipt?.status === "completed";
+  const reset =
+    inspection && !["setup", "bootstrap-admin"].includes(inspection.purpose);
   return (
-    <div className={styles.page}>
-      <section className={styles.panel}>
-        <h1>本人设置密码</h1>
-        <p>请本人为下方账号设置密码。完成后，使用登录账号和新密码登录后台。</p>
-        {inspection && (
-          <>
-            <h2>{inspection.displayName}</h2>
-            <p>登录账号：{inspection.loginName}</p>
+    <EntryScene
+      kind="setup"
+      eyebrow={
+        completed
+          ? "账号安全 · 设置完成"
+          : reset
+            ? "账号安全 · 重置密码"
+            : "首次开通 · 设置密码"
+      }
+      title={
+        completed ? "密码设置成功" : reset ? "重置账号密码" : "为账号设置密码"
+      }
+      description="完成设置后，再使用登录账号和新密码登录。"
+    >
+      {completed ? (
+        <div className={styles.success} role="status">
+          <CheckCircle2 size={32} aria-hidden="true" />
+          <h2>新密码已生效</h2>
+          <p>这个账号的旧登录已失效，请使用新密码登录。</p>
+        </div>
+      ) : (
+        inspection && (
+          <section className={styles.identity} aria-label="设置目标账号">
+            <div className={styles.identityHeader}>
+              <AccountAvatar name={inspection.displayName} />
+              <div>
+                <h2>{inspection.displayName}</h2>
+                <p>登录账号：{inspection.loginName}</p>
+              </div>
+            </div>
             <p>
-              设置链接有效至{" "}
+              设置入口有效至{" "}
               {new Date(inspection.expiresAt).toLocaleString("zh-CN")}
+              ，仅能使用一次。
             </p>
-          </>
-        )}
-        <p role="status" className={styles.notice}>
-          {message}
-        </p>
-        {inspection && !receipt && (
-          <form
-            className={styles.form}
-            onSubmit={(event) => {
-              event.preventDefault();
-              void submit();
-            }}
+          </section>
+        )
+      )}
+      <p
+        role="status"
+        aria-live="polite"
+        className={`${styles.status} ${!busy && !inspection && !operationId && !receipt ? styles.error : ""}`}
+      >
+        {message}
+      </p>
+      {inspection && !receipt && !operationId && (
+        <form
+          className={styles.form}
+          onSubmit={(event) => {
+            event.preventDefault();
+            void submit();
+          }}
+        >
+          <input
+            name="username"
+            autoComplete="username"
+            value={inspection.loginName}
+            readOnly
+            hidden
+          />
+          <PasswordField
+            label="新密码"
+            value={password}
+            onChange={setPassword}
+            autoComplete="new-password"
+            disabled={busy || Boolean(operationId)}
+          />
+          <PasswordField
+            label="确认新密码"
+            value={confirm}
+            onChange={setConfirm}
+            autoComplete="new-password"
+            disabled={busy || Boolean(operationId)}
+          />
+          <p className={styles.prompt}>
+            15–256 个字符，允许空格，支持粘贴和密码管理器，不自动裁剪。
+          </p>
+          <button
+            className={`${styles.button} ${styles.primary}`}
+            disabled={busy || Boolean(operationId)}
           >
-            <input
-              name="username"
-              autoComplete="username"
-              value={inspection.loginName}
-              readOnly
-              hidden
-            />
-            <PasswordField
-              label="新密码"
-              value={password}
-              onChange={setPassword}
-              autoComplete="new-password"
-              disabled={busy || Boolean(operationId)}
-            />
-            <PasswordField
-              label="确认新密码"
-              value={confirm}
-              onChange={setConfirm}
-              autoComplete="new-password"
-              disabled={busy || Boolean(operationId)}
-            />
-            <p>
-              使用15–256个字符，可包含空格，支持粘贴和密码管理器。改好后，该账号会退出全部登录。
-            </p>
-            <button disabled={busy || Boolean(operationId)}>
-              确认设置密码
-            </button>
-          </form>
-        )}
-        {!operationId && !busy && (
+            {busy ? "正在设置…" : "确认设置密码"}
+            <ArrowRight size={18} aria-hidden="true" />
+          </button>
+        </form>
+      )}
+      {!operationId && !busy && !completed && (
+        <details className={styles.recovery}>
+          <summary>核实上次设置结果</summary>
+          <p>
+            如果上次设置结果待确认，请打开原完整设置链接，并选择原操作编号核实。请勿直接重复提交。
+          </p>
           <div className={styles.form}>
-            <p>
-              如果上次设置的结果待确认，请重新打开原设置链接，并用原操作编号核实。即使链接已过期，也不要直接重复提交。
-            </p>
             <label className={styles.field}>
               原设置操作编号
               <input
@@ -281,6 +358,7 @@ export function SetPasswordPage() {
               />
             </label>
             <button
+              className={styles.button}
               type="button"
               disabled={
                 !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
@@ -301,36 +379,52 @@ export function SetPasswordPage() {
               选择原编号以核实
             </button>
           </div>
-        )}
-        {operationId && (
-          <div className={styles.actions}>
-            <button
-              disabled={busy || operationId === "unavailable"}
-              onClick={() => void resolve()}
-            >
-              核实原设置结果
-            </button>
-            <span>原操作编号：{operationId}</span>
-          </div>
-        )}
-        {inspection && (definite || receipt?.status === "rejected") && (
+        </details>
+      )}
+      {operationId && !completed && (
+        <section className={styles.operation} aria-label="原密码设置操作">
+          <p>原操作已保留，核实前不能再次设置密码。</p>
+          <code>原操作编号：{operationId}</code>
           <button
+            className={styles.button}
+            disabled={busy || operationId === "unavailable"}
+            onClick={() => void resolve()}
+          >
+            {busy ? "正在核实…" : "核实原设置结果"}
+          </button>
+        </section>
+      )}
+      {inspection && (definite || receipt?.status === "rejected") && (
+        <button
+          className={styles.button}
+          type="button"
+          disabled={busy}
+          onClick={() => void endRejected()}
+        >
+          结束本次记录并重新设置
+        </button>
+      )}
+      {completed && (
+        <>
+          <button
+            className={`${styles.button} ${styles.primary}`}
             type="button"
             disabled={busy}
-            onClick={() => void endRejected()}
+            onClick={endCompleted}
           >
-            结束本次记录并重新设置
+            完成并返回登录
+            <ArrowRight size={18} aria-hidden="true" />
           </button>
-        )}
-        {receipt?.status === "completed" && (
-          <p>
-            <Link href="/studio/login" target="_blank" rel="noopener">
-              在新标签使用账号密码登录
-            </Link>
-            ；如当前浏览器仍登录其他账号，请使用独立窗口。
+          <p className={styles.prompt}>
+            如当前浏览器仍登录其他账号，请使用独立窗口登录。此操作不会退出其他账号。
           </p>
-        )}
-      </section>
-    </div>
+        </>
+      )}
+      {!inspection && !busy && !operationId && !completed && (
+        <p className={styles.prompt}>
+          入口失效或未收到完整链接？请联系管理员核对并获取设置入口。
+        </p>
+      )}
+    </EntryScene>
   );
 }

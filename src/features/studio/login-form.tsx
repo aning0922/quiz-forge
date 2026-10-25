@@ -4,9 +4,10 @@ import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { StudioClientError, studioFetch, studioMessage } from "./client";
 import type { StudioPreauthDto, StudioSessionDto } from "./contracts";
-import styles from "./studio.module.css";
+import { ArrowRight } from "lucide-react";
+import { EntryScene } from "./accounts/entry-scene";
+import styles from "./accounts/entry.module.css";
 import { PasswordField } from "./accounts/password-field";
-import accountStyles from "./accounts/accounts.module.css";
 import { invalidateStudioAuthority } from "./authority-events";
 
 export function StudioLoginForm() {
@@ -113,29 +114,29 @@ export function StudioLoginForm() {
   }
 
   return (
-    <section
-      className={`${styles.panel} ${accountStyles.page}`}
-      data-studio-entry="login"
+    <EntryScene
+      kind="login"
+      eyebrow="欢迎回来"
+      title="登录运营后台"
+      description="请使用管理员开通的登录账号访问 Studio。"
     >
-      <h1>后台账号登录</h1>
-      <p className={styles.intro}>
-        登录账号与显示名称不同。请使用管理员开通的唯一账号登录。
-      </p>
       <form className={styles.form} onSubmit={submit}>
-        <label htmlFor="studio-login-name">登录账号</label>
-        <input
-          id="studio-login-name"
-          name="username"
-          className={styles.input}
-          autoComplete="username"
-          autoCapitalize="none"
-          spellCheck={false}
-          required
-          maxLength={64}
-          value={loginName}
-          disabled={busy || !preauth}
-          onChange={(event) => setLoginName(event.target.value)}
-        />
+        <label className={styles.field} htmlFor="studio-login-name">
+          登录账号
+          <input
+            id="studio-login-name"
+            name="username"
+            autoComplete="username"
+            autoCapitalize="none"
+            spellCheck={false}
+            required
+            maxLength={64}
+            placeholder="例如 admin.qf"
+            value={loginName}
+            disabled={busy || !preauth}
+            onChange={(event) => setLoginName(event.target.value)}
+          />
+        </label>
         <PasswordField
           label="密码"
           value={password}
@@ -144,11 +145,12 @@ export function StudioLoginForm() {
           disabled={busy || !preauth}
         />
         <button
-          className={styles.button}
+          className={`${styles.button} ${styles.primary}`}
           disabled={busy || !preauth || !password || !loginName.trim()}
           type="submit"
         >
           {busy ? "请稍候…" : "登录 Studio"}
+          <ArrowRight size={18} aria-hidden="true" />
         </button>
       </form>
       <p
@@ -169,9 +171,9 @@ export function StudioLoginForm() {
           重新准备登录
         </button>
       )}
-      <p className={styles.note}>
-        登录页面停留过久时，请重新准备登录后再试。登录后空闲30分钟或满8小时需重新登录。
+      <p className={styles.prompt}>
+        忘记密码？请联系管理员获取一次性重置入口。
       </p>
-    </section>
+    </EntryScene>
   );
 }
