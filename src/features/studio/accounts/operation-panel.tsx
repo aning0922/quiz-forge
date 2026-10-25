@@ -74,7 +74,7 @@ export function AccountOperationPanel({
               {copyMessage && <p role="status">{copyMessage}</p>}
               <p>
                 有效至 {new Date(link.expiresAt).toLocaleString("zh-CN")}
-                。本人完成设置后旧登录才全部失效；立即阻断访问请使用停用或撤销会话。
+                。本人完成设置后已有登录才全部失效；立即阻断访问请使用停用或撤销会话。
               </p>
               <label>
                 <input

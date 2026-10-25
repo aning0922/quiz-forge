@@ -269,7 +269,7 @@ export function SetPasswordPage() {
               disabled={busy || Boolean(operationId)}
             />
             <p>
-              15–256字符长口令，保留空格，允许粘贴和密码管理器。成功后该账号旧登录全部失效。
+              15–256字符长口令，保留空格，允许粘贴和密码管理器。成功后该账号已有登录全部失效。
             </p>
             <button disabled={busy || Boolean(operationId)}>
               确认设置密码

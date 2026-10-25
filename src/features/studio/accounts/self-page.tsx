@@ -133,11 +133,6 @@ export function MyAccountPage({
             </dd>
           </div>
         </dl>
-        {read.value?.legacyCredentialActive && (
-          <p className={styles.notice}>
-            旧登录仍有效。完成本人设置密码后才切换为账号密码，不会因页面显示“待设置”自动撤销。
-          </p>
-        )}
         {read.error && <p role="alert">{read.error}</p>}
       </section>
       {left ? (

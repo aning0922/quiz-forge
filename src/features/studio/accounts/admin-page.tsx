@@ -237,11 +237,6 @@ export function AccountsPage({
                     {roleLabel(account.role)} · {statusLabel[account.status]}
                   </span>
                 </header>
-                {account.legacyCredentialActive && (
-                  <p className={styles.notice}>
-                    旧登录仍有效；本人完成设置密码后才切换。
-                  </p>
-                )}
                 <div className={styles.actions}>
                   {actions
                     .filter((action) =>
@@ -390,7 +385,7 @@ export function AccountsPage({
                   onChange={(event) => setConfirmation(event.target.checked)}
                 />
                 {mode === "issue-reset" || mode === "issue-setup"
-                  ? "确认重新签发：旧入口作废，本人完成设置后旧登录才全部失效。"
+                  ? "确认重新签发：旧入口作废，本人完成设置后已有登录才全部失效。"
                   : "确认影响当前账号权限或登录；服务端将再次校验最后管理员和当前版本。"}
               </label>
             )}

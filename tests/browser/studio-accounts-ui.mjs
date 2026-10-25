@@ -25,7 +25,7 @@ import {invalidateCurrentStudioAuthority} from '@/features/studio/authority-even
 const now='2026-10-25T00:00:00.000Z', id='00000000-0000-4000-8000-000000000001';
 const params=new URLSearchParams(location.search), role=params.get('role')||'admin';
 const session={operator:{id,label:'synthetic-stable-label',displayName:'合成管理员',loginName:'synthetic.admin',role,accountRevision:1},csrfToken:'A'.repeat(43),idleExpiresAt:'2030-01-01T00:00:00.000Z',absoluteExpiresAt:'2030-01-01T00:00:00.000Z'};
-const account={id,label:'synthetic-stable-label',displayName:'合成管理员',loginName:'synthetic.admin',role,status:'active',revision:1,legacyCredentialActive:false,createdAt:now,disabledAt:null};
+const account={id,label:'synthetic-stable-label',displayName:'合成管理员',loginName:'synthetic.admin',role,status:'active',revision:1,createdAt:now,disabledAt:null};
 const token='qfa_setup_v1_'+'A'.repeat(43);
 window.calls=[];window.currentSession=session;window.revoke=invalidateCurrentStudioAuthority;
 const operation=(operationId,action,actorId=id)=>({operationId,action,actorId,targetId:id,status:'completed',errorCode:null,createdAt:now});
@@ -46,7 +46,7 @@ window.fetch=async(raw,init={})=>{
  if(url.pathname.includes('/accounts/operations/')){
   const operationId=url.pathname.split('/').pop();return Response.json(window.resultFound?{status:'found',operation:operation(operationId,'create')}:{status:'unknown',operationId});
  }
- if(url.pathname.endsWith('/accounts') && method==='GET')return Response.json({items:[account,{...account,id:'00000000-0000-4000-8000-000000000003',displayName:'合成待设置运营',loginName:'synthetic.operator',role:'operator',status:'pending',legacyCredentialActive:true}],offset:0,limit:25,hasMore:false});
+ if(url.pathname.endsWith('/accounts') && method==='GET')return Response.json({items:[account,{...account,id:'00000000-0000-4000-8000-000000000003',displayName:'合成待设置运营',loginName:'synthetic.operator',role:'operator',status:'pending'}],offset:0,limit:25,hasMore:false});
  if(url.pathname.endsWith('/accounts') && method==='POST'){
   if(params.has('unknown'))throw Error('synthetic acknowledgement loss');
   return Response.json({account,operation:operation(body.operationId,'create'),passwordSetup:{tokenId:id,purpose:'setup',url:location.origin+'/studio/set-password#token='+token,expiresAt:'2030-01-01T00:00:00Z'}}, {status:201});
