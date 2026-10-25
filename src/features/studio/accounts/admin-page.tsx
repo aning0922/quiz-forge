@@ -210,7 +210,12 @@ export function AccountsPage({
   }
   function finished() {
     read.refresh();
-    if (surface === "person" && selected) {
+    if (
+      surface === "person" &&
+      selected &&
+      operation.mutation?.account &&
+      operation.mutation.operation.status === "completed"
+    ) {
       setMode(null);
       setConfirmation(false);
     } else {

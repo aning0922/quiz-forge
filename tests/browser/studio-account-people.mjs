@@ -17,7 +17,7 @@ import {invalidateCurrentStudioAuthority} from '@/features/studio/authority-even
 const id='00000000-0000-4000-8000-000000000001', now='2026-10-26T00:00:00.000Z';
 const session={operator:{id,label:'合成管理员',loginName:'synthetic.admin',displayName:'合成管理员',role:'admin',accountRevision:1},csrfToken:'A'.repeat(43),idleExpiresAt:'2030-01-01T00:00:00.000Z',absoluteExpiresAt:'2030-01-01T00:00:00.000Z'};
 const accounts=Array.from({length:26},(_,i)=>({id:'00000000-0000-4000-8000-'+String(i+1).padStart(12,'0'),label:'合成人员',displayName:['合成管理员','合成运营','合成待开通','合成停用'][i]||'合成人员'+(i+1),loginName:'synthetic.'+(i+1),role:i===0?'admin':i===3?'read-only':'operator',status:i===2?'pending':i===3?'disabled':'active',revision:4,createdAt:now,disabledAt:i===3?now:null}));
-window.mode='unknown';window.writes=[];window.reads=[];window.revoke=invalidateCurrentStudioAuthority;
+window.mode='unknown';window.writes=[];window.reads=[];window.revoke=invalidateCurrentStudioAuthority;window.setDirectoryRevision=revision=>{accounts[1].revision=revision;};
 function result(body,target,action){return {account:{...target,revision:target.revision+1,...(action==='display-name'?{displayName:body.displayName}:{}),...(action==='role'?{role:body.role}:{})},operation:{operationId:body.operationId,actorId:id,targetId:target.id,action,status:'completed',errorCode:null,createdAt:now},...((action==='create'||action.startsWith('issue-'))?{passwordSetup:{tokenId:target.id,purpose:'setup',url:location.origin+'/studio/set-password#synthetic-private-link',expiresAt:'2030-01-01T00:00:00.000Z'}}:{})}}
 window.fetch=async(raw,init={})=>{
  const url=new URL(raw,location.href),method=init.method||'GET',path=url.pathname;
@@ -387,6 +387,39 @@ try {
       "/api/studio/accounts/operations/" + state.write.body.operationId,
     );
     await button("明确结束本次记录").click();
+    await expect(page.locator("dialog:modal")).toHaveCount(0);
+  });
+  await run("unknown-finish-fresh-revision", async () => {
+    await person();
+    await button("编辑显示名称").click();
+    await page.getByLabel("显示名称", { exact: true }).fill("合成第一次修改");
+    await button("确认编辑显示名称").click();
+    await expect(button("核实原操作")).toBeEnabled();
+    const original = await page.evaluate(() => window.writes[0].body);
+    expect(original.expectedRevision).toBe(4);
+    await page.evaluate(() => window.setDirectoryRevision(9));
+    await button("核实原操作").click();
+    await expect(
+      page.getByText("处理结果：已完成", { exact: true }),
+    ).toBeVisible();
+    expect(await page.evaluate(() => window.writes.length)).toBe(1);
+    await button("明确结束本次记录").click();
+    await expect(page.locator("dialog:modal")).toHaveCount(0);
+    await expect(button("继续未提交账号任务")).toHaveCount(0);
+    await expect(button("查看与管理 合成运营")).toBeVisible();
+    await person();
+    await button("编辑显示名称").click();
+    await page.getByLabel("显示名称", { exact: true }).fill("合成第二次修改");
+    await page.evaluate(() => (window.mode = "success"));
+    await button("确认编辑显示名称").click();
+    await expect(button("明确结束本次记录")).toBeEnabled();
+    const writes = await page.evaluate(() => window.writes);
+    expect(writes).toHaveLength(2);
+    expect(writes[1].body.expectedRevision).toBe(9);
+    expect(writes[1].body.operationId).not.toBe(original.operationId);
+    expect(writes[1].path).toBe(writes[0].path);
+    await button("明确结束本次记录").click();
+    await expect(page.locator("dialog:modal")).toBeVisible();
     await expect(button("编辑显示名称")).toBeEnabled();
   });
   await run("one-off-link", async () => {
