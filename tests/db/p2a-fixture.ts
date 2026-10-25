@@ -151,13 +151,15 @@ export async function resetTestDatabase(database: TestDatabase): Promise<void> {
             throw new Error("TEST_UPLOAD_FILE_UNPROVEN");
         }
       }
-      // Verify all ownership/stopping before deleting a single file or truncating any business row.
-      for (const [id, files] of importFiles) {
-        for (const file of files) await removeOwned(file.file, file.inode);
-        await rmdir(importDirectory(verified.config, id));
-      }
       await lock.check();
       await withEmptyAccountFixtureScope(verified, async (tx, accounts) => {
+        // Account locks remain held from the emptiness check through every destructive step.
+        // Refusal must leave both import files and DB rows intact.
+        for (const [id, files] of importFiles) {
+          for (const file of files) await removeOwned(file.file, file.inode);
+          await rmdir(importDirectory(verified.config, id));
+        }
+        await lock.check();
         await tx.unsafe(
           `TRUNCATE ${accounts ? "qf.operator_account_operation,qf.operator_password_token,qf.operator_kdf_attempt," : ""}qf.quiz_report,qf.consumer_grant,qf.consumer_session,qf.access_key,qf.internal_play_version,qf.product_version,qf.draft_review,qf.draft_application,qf.draft_revision,qf.product_draft,qf.product_asset,qf.asset_blob,qf.quizpack_validation,qf.quizpack_import,qf.product_tag,qf.product,qf.category,qf.tag,qf.operator_session,qf.audit_event,qf.operator`,
         );
