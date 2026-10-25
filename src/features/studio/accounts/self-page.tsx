@@ -10,7 +10,10 @@ import {
 import type { StudioSessionDto } from "../contracts";
 import { useWorkspaceRead } from "../workspace/use-request";
 import { studioFetch, studioMessage } from "../client";
-import { invalidateStudioAuthority } from "../authority-events";
+import {
+  invalidateCurrentStudioAuthority,
+  invalidateStudioAuthority,
+} from "../authority-events";
 import { useStudioLeaveProtection } from "../navigation-boundary";
 import { PasswordField } from "./password-field";
 import { passwordProblem, operatorName, roleLabel } from "./presentation";
@@ -116,7 +119,9 @@ export function MyAccountPage({
     setConfirm("");
     setLoggingOut(true);
     setMessage("");
-    invalidateStudioAuthority();
+    // Revoke this page immediately; broadcasting before the response would
+    // invalidate our own request epoch through the owner's channel.
+    invalidateCurrentStudioAuthority();
     try {
       await studioFetch<void>("/api/studio/auth/logout", {
         method: "POST",
@@ -128,6 +133,9 @@ export function MyAccountPage({
       });
       leave();
     } catch (error) {
+      // The request has settled. Notify other tabs while keeping this page
+      // revoked and the error visible; never replay the logout automatically.
+      invalidateStudioAuthority();
       setMessage(studioMessage(error));
     } finally {
       logoutLock.current = false;

@@ -31,7 +31,10 @@ window.fetch=async(raw,init={})=>{
  window.calls.push({path:url.pathname,search:url.search,method,operationId:body.operationId});
  if(url.pathname.endsWith('/auth/preauth'))return Response.json({csrfToken:'A'.repeat(43),expiresAt:expiry});
  if(url.pathname.endsWith('/auth/password-login'))return Response.json(session);
- if(url.pathname.endsWith('/auth/logout'))return new Response(null,{status:204});
+ if(url.pathname.endsWith('/auth/logout')){
+  if(scenario==='logout-broadcast')return await new Promise(resolve=>{window.releaseLogout=()=>resolve(new Response(null,{status:204}));window.logoutWaiting=true;});
+  return new Response(null,{status:204});
+ }
  if(url.pathname.endsWith('/auth/session'))return Response.json(window.currentSession);
  if(url.pathname.endsWith('/accounts/me'))return Response.json(account);
  if(url.pathname.endsWith('/accounts/me/password')||url.pathname.endsWith('/accounts/me/logout-all')){
@@ -452,6 +455,92 @@ try {
     await expect(page).toHaveURL(origin + "/studio/login");
     results.push(
       "current/all logout have separate explicit confirmation and scope",
+    );
+  }
+  if (selected.has("logoutbroadcast")) {
+    async function holdLogout() {
+      await open("/studio/session", "logout-broadcast");
+      await page.evaluate(() => {
+        window.broadcasts = [];
+        window.logoutObserver = new BroadcastChannel(
+          "quizforge.studio-authority.v1",
+        );
+        window.logoutObserver.onmessage = (event) =>
+          window.broadcasts.push(event.data);
+      });
+      await page
+        .getByRole("button", { name: "退出当前登录", exact: true })
+        .click();
+      await page
+        .getByRole("button", { name: "确认退出当前登录", exact: true })
+        .click();
+      await expect
+        .poll(() => page.evaluate(() => window.logoutWaiting))
+        .toBe(true);
+      // A real channel task must run before releasing HTTP, exposing the old
+      // pre-request broadcast race rather than relying on immediate mock fetch.
+      await page.evaluate(
+        () =>
+          new Promise((resolve) => {
+            const sender = new BroadcastChannel(
+              "quizforge.studio-authority.v1",
+            );
+            const marker = crypto.randomUUID();
+            window.logoutObserver.addEventListener(
+              "message",
+              function observed(event) {
+                if (event.data !== marker) return;
+                window.logoutObserver.removeEventListener("message", observed);
+                sender.close();
+                resolve();
+              },
+            );
+            sender.postMessage(marker);
+          }),
+      );
+      expect(await posts("/api/studio/auth/logout")).toBe(1);
+    }
+    await holdLogout();
+    const beforeReceipt = await page.evaluate(
+      () => window.broadcasts.filter((v) => v === "invalidate").length,
+    );
+    await page.evaluate(() => window.releaseLogout());
+    await expect(page).toHaveURL(origin + "/studio/login");
+    expect(beforeReceipt).toBe(0);
+    results.push(
+      "delayed current logout 204 navigates after real BroadcastChannel task without self-invalidating its receipt",
+    );
+
+    await holdLogout();
+    await page.evaluate(
+      () =>
+        new Promise((resolve) => {
+          const sender = new BroadcastChannel("quizforge.studio-authority.v1");
+          window.logoutObserver.addEventListener(
+            "message",
+            function observed(event) {
+              if (event.data !== "invalidate") return;
+              window.logoutObserver.removeEventListener("message", observed);
+              sender.close();
+              resolve();
+            },
+          );
+          sender.postMessage("invalidate");
+        }),
+    );
+    await page.evaluate(() => window.releaseLogout());
+    await expect(
+      page
+        .getByRole("dialog", { name: "退出当前登录", exact: true })
+        .getByRole("alert"),
+    ).toHaveText("Studio 暂不可用，请由本机维护者检查配置与数据库。");
+    await expect(
+      page.getByRole("button", { name: "确认退出当前登录", exact: true }),
+    ).toBeDisabled();
+    expect(page.url()).toContain("/studio/session");
+    expect(await posts("/api/studio/auth/logout")).toBe(1);
+    results.push(
+      "independent channel invalidation still rejects the old logout receipt and keeps writes disabled without retry",
     );
   }
   if (selected.has("setup")) {
