@@ -1,5 +1,22 @@
 # Studio S1 / V2-A 验收记录
 
+## 2026-10-25 分类与标签紧凑下拉统一
+
+从 PR #28 准确 `9c19361878784ac7af0afab405de8b300dfc9949` 建立独立 `codex/studio-category-filter-control`。原 Sol/high 独立 A 开发、Astra/high 独审继续；A 提交 `5789f3ed198e09f784c0dd1dffdb170970ec8376` 集成为运行源码 `4c95c7d154dd365e574bccfe032be986370aa036`。仅修改 `catalog-filters.tsx`、`tag-filter.tsx`、`tag-filter.module.css`；将已有浮层收口为目录专用 CatalogTaxonomyFilter，没有复制组件或修改共享 TaxonomyPicker。
+
+分类保持原顶栏位置及 44px 高度；选择具体分类取消“仅未分类”，选择“仅未分类”清除具体分类，选择“全部分类”同时清除两者，均自动关闭并回焦。分类与标签的打开状态互斥，选中值及名称缓存各自独立；搜索、分页及候选只在限高浮层中显示，没有管理链接。选择仅改待应用条件，Apply 保留其他筛选与 pageSize 并回到第一页；标签、创建 owner、API、数据库及业务写入合同保持。
+
+- A 的实际 ProductList/CatalogFilters/CatalogTaxonomyFilter、production React + 合成 HTTP，包含真实全局 reduce 样式：分类三态、Apply/URL 前后退及参数保留、首屏名称恢复、未知 ID/失权读取保留、搜索分页与共享标签冒烟通过。1440 与 320/375/390/430（高 900）触发器均 44px，浮层不越界、不撑高文档，长名省略可读。类型、定向 ESLint、三文件格式及 diff 通过；目录展示仅选相关 3 项，2 项未选。私有记录及图在 A 工作树 `.cache/catalog-category-dropdown/`。已过标签 stale/焦点/安全证据按未变输入复用。
+- 最终 `pnpm build` 通过（含严格类型/固定实现及 113 traces、25700 paths、0 私有输入违规），BUILD_ID `iVevQLPakvHVrvBAZDrzh`。首次受固定 Next 16.4.0 安全提示中断，原日志保留，同命令重试通过；未改依赖或关闭保护。仅因新运行身份沿官方 media build/setup/provision 封存，deployment `542d7413605a30311f2cb7668ee66b74cda6f19b38aaa99a67146c3d32440948`，runtime bundle `1de15d5c89a78ae5c4145a3eea56b3ee271792b514fc5c924188a28124568ee6`。
+- 最终生产构建 + 真实隔离 test PG（Chromium 156.0.8078.4 / Playwright 1.64.0、reduce）：五宽 44px、浮层不撑高表单/文档且不越界；具体分类命中对应产品，未分类返回两款，全部分类恢复六款；tag/q/归档/pageSize 保留。首屏名称刷新恢复、归档搜索 Enter 不提交目录、长名、选择后关闭/回焦、两浮层互斥、外部点击及重置已核对。四组实际记录、相关请求仅 GET、0 pageerror。记录、截图与边界保留于主控工作树私有 `.cache/category-filter/`。
+- Astra 限定 diff、实际组件原图和共享结果独审无阻断，未重跑开发检查。主控实际查看最终桌面与手机图；工程图检不是作者视觉或手机实机批准。没有重跑全量单元、全 PG/driver、消费者 E2E、原 File/UNKNOWN/CAS 底层或一次性 P5。
+
+实际探针边界：一次连续快速切宽后的 390px Escape 回焦断言失败，未记作通过；同宽独立 focus 调用跟踪及截图/关闭随后均正常，原因未确定，未改源码或重跑整组。计数探针已按唯一测评而非归档卡片重复链接核对；浮层计数排除桌面导航 dialog；手机被浮层遮盖的控件未使用强制点击，切换在可见桌面控件验证。失败及定位记录在 `probe-observations.json`。
+
+名称恢复仍使用现有分页 GET：关闭态只读首屏十项，页外准确 ID 保留并显示“名称未读取”，打开搜索/分页后可恢复名称。不扫描全库，不新增只读 API。长名称在触发器中省略，title 及候选保留全名。
+
+新演示 `http://127.0.0.1:3200/studio/products`，独立 test 实例 `2afffa5839d63ac10e5e6ea27429f25e` / PG 55442，六个合成测评、十四个分类及十四个标签含未分类/长名/归档场景。原合成基线 r1 与待检查来源只为保持演示可操作性，不计为重跑业务验收。凭证与样例包私有保留，不入 Git。原 3190 及更早环境、main、作者未提交文件不变。旧 `9c19361` CI 40118444227 success 仅证明旧输入，新 head CI 按 GitHub 当前状态单独报告。更新现有 Draft PR #28 后停止等待反馈，不合并、不生产部署、不扩展功能阶段。
+
 ## 2026-10-25 紧凑标签下拉
 
 作者要求展开区贴近原型，不再铺开标签搜索、列表和管理入口。本轮从 PR #28 `d6c4c07108bffaa616d7becfe58501679620e4ad` 接续，独立根 `quizforge-studio-tag-filter/quiz-forge`、分支 `codex/studio-tag-filter-control`。仅改目录的 `catalog-filters.tsx`、`catalog-parity.module.css`，新增专用 `tag-filter.tsx` 与 CSS；共享 TaxonomyPicker、查询 API、数据库、权限及创建任务 owner 不变。
