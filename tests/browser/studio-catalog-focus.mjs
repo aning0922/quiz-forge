@@ -129,6 +129,33 @@ try {
   const trigger = page.locator('[data-kind="category"] > button');
   const popup = page.getByRole("dialog", { name: "选择分类筛选", exact: true });
   const search = popup.getByRole("textbox", { name: "搜索分类名称或英文标识" });
+  async function requireActivePopup(stage) {
+    const state = await page.evaluate((stage) => {
+      window.record(stage);
+      const node = document.querySelector(
+        '[role="dialog"][aria-label="选择分类筛选"]',
+      );
+      return {
+        stage,
+        ownerVisible: Boolean(
+          node?.isConnected &&
+          node.getClientRects().length &&
+          getComputedStyle(node).visibility === "visible",
+        ),
+        searchFocused: Boolean(
+          node?.querySelector("input") === document.activeElement,
+        ),
+        active:
+          document.activeElement?.getAttribute("aria-label") ||
+          document.activeElement?.tagName,
+        width: innerWidth,
+        height: innerHeight,
+      };
+    }, stage);
+    if (!state.ownerVisible || !state.searchFocused) {
+      throw new Error(`POPUP_PRECONDITION_LOST: ${JSON.stringify(state)}`);
+    }
+  }
   await trigger.waitFor();
   await page.getByText("共 4 个测评 · 每页 20 个", { exact: true }).waitFor();
   await page.evaluate(() => document.fonts.ready);
@@ -160,14 +187,14 @@ try {
       .getByRole("button", { name: "合成分类", exact: true })
       .waitFor();
     await expect(search).toBeFocused();
+    await requireActivePopup("before-viewport-capture");
     if (width === 1440 || width === 390)
       await page.screenshot({
         path: path.join(out, `open-${width}.png`),
         fullPage: false,
       });
     // A screenshot must not silently consume the owner before the Escape assertion.
-    await expect(popup).toBeVisible();
-    await expect(search).toBeFocused();
+    await requireActivePopup("before-Escape");
     await page.keyboard.press("Escape");
     await expect(trigger).toBeFocused();
     await expect(popup).toHaveCount(0);
@@ -196,8 +223,7 @@ try {
     popup.getByRole("button", { name: "合成分类", exact: true }),
   ).toHaveCount(0);
   await expect(popup.getByRole("status")).toHaveText("正在读取分类…");
-  await expect(popup).toBeVisible();
-  await expect(search).toBeFocused();
+  await requireActivePopup("loading-before-Escape");
   await page.keyboard.press("Escape");
   await expect(trigger).toBeFocused();
   await expect(popup).toHaveCount(0);
