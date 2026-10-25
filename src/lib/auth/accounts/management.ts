@@ -64,7 +64,12 @@ export async function prepareLocalAccount(
         JSON.stringify({
           instanceId,
           ...binding,
-          url: db.config.origin + "/studio/set-password#token=" + token.raw,
+          url:
+            db.config.origin +
+            "/studio/set-password#token=" +
+            token.raw +
+            "&tokenId=" +
+            token.id,
         }) + "\n",
       );
       await file.sync();

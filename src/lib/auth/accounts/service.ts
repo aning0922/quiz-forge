@@ -210,7 +210,12 @@ export async function mutateAccount(
       ? {
           passwordSetup: {
             ...passwordSetup,
-            url: db.config.origin + "/studio/set-password#token=" + token.raw,
+            url:
+              db.config.origin +
+              "/studio/set-password#token=" +
+              token.raw +
+              "&tokenId=" +
+              passwordSetup.tokenId,
           },
         }
       : {}),
@@ -223,7 +228,7 @@ export async function passwordLogin(
   loginName: string,
   passwordInput: string,
 ) {
-  return withPasswordCapacity(async ({ hash, verify }) => {
+  return withPasswordCapacity(async ({ verify }) => {
     if (!preauth || !csrf || !verifyCsrf(preauth, "preauth", csrf))
       throw new StudioError("CSRF_REJECTED");
     const digest = digestToken(preauth, "preauth");
@@ -290,7 +295,7 @@ export async function completePasswordSetup(
   operationId: string,
   passwordInput: string,
 ) {
-  return withPasswordCapacity(async ({ hash, verify }) => {
+  return withPasswordCapacity(async ({ hash }) => {
     const password = normalizePassword(passwordInput),
       attemptId = randomUUID();
     await accountCall(

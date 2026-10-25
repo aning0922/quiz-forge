@@ -78,7 +78,7 @@ async function capacity<T>(work: () => Promise<T>): Promise<T> {
   }
 }
 const DUMMY =
-  "$argon2id$v=19$m=65536,t=3,p=1$UUZkdW1teVNhbHQyMDI2ISE$kyHtcG/XB2DBf+SfUWWQyzq98qhOQSMcvAxl/4kHyIg";
+  "$argon2id$v=19$m=65536,t=3,p=1$UUZkdW1teVNhbHQyMDI2IQ$fGpqbFbTGxjRomU2ZZN7MN8Hjh9hl2kfYWcPKXIaMPY";
 export function withPasswordCapacity<T>(
   work: (kdf: {
     hash: (value: string) => Promise<string>;

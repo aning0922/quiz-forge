@@ -1,4 +1,11 @@
 import { randomUUID } from "node:crypto";
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
+import { readFile, stat } from "node:fs/promises";
+import path from "node:path";
+import { handleAccounts } from "@/lib/auth/accounts/http";
+import { passwordSetupCsrf } from "@/features/studio/accounts/password-token";
+import { SESSION_COOKIE, PREAUTH_COOKIE } from "@/lib/auth/cookies";
 import { beforeAll, afterAll, describe, it, expect } from "vitest";
 import { loadRuntimeConfig } from "@/lib/db/runtime";
 import { openManagedDatabase, disableOperator } from "@/lib/db/management";
@@ -73,7 +80,9 @@ const mutate = (c: StudioWriteCredentials, p: Record<string, unknown>) =>
   mutateAccount(db, c, { operationId: op(), ...p });
 function tokenOf(result: AccountMutationDto) {
   if (!result.passwordSetup) throw Error("SETUP_LINK_REQUIRED");
-  return new URL(result.passwordSetup.url).hash.slice("#token=".length);
+  return new URLSearchParams(
+    new URL(result.passwordSetup.url).hash.slice(1),
+  ).get("token")!;
 }
 beforeAll(async () => {
   const config = await loadRuntimeConfig();
@@ -251,7 +260,7 @@ describe("accounts on a pristine isolated PG; no shared reset or deletion", () =
     expect((await readAccount(db, newLogin.sessionToken)).role).toBe(
       "operator",
     );
-    await owner.sql`UPDATE qf.operator_password_token SET issued_at=clock_timestamp()-interval '26 hours',expires_at=clock_timestamp()-interval '26 hours'+interval '30 minutes',consumed_at=clock_timestamp()-interval '25 hours',revoked_at=clock_timestamp()-interval '25 hours' WHERE id=${reset.passwordSetup!.tokenId}`;
+    await owner.sql`WITH t AS(SELECT clock_timestamp() at) UPDATE qf.operator_password_token SET issued_at=t.at-interval '26 hours',expires_at=t.at-interval '26 hours'+interval '30 minutes',consumed_at=t.at,revoked_at=t.at FROM t WHERE id=${reset.passwordSetup!.tokenId}`;
     expect(
       (await setupResult(db, passwordTokenDigest(tokenOf(reset)), resetId))
         .status,
@@ -328,6 +337,318 @@ describe("accounts on a pristine isolated PG; no shared reset or deletion", () =
     });
     expect(audit.items.some((x) => x.operationId === change)).toBe(true);
     expect(JSON.stringify(audit).includes("$argon2")).toBe(false);
+  });
+  it("persists bound rejection receipts when current-password verification fails or authority/token is revoked during KDF", async () => {
+    const member = await actor("operator"),
+      rejected = op();
+    await expect(
+      changeOwnPassword(
+        db,
+        member.c,
+        rejected,
+        "synthetic incorrect phrase 2026",
+        nextPassword,
+      ),
+    ).rejects.toMatchObject({ code: "PASSWORD_CONFIRMATION_FAILED" });
+    expect(
+      await accountResult(db, member.c.sessionToken, rejected),
+    ).toMatchObject({
+      status: "found",
+      operation: {
+        status: "rejected",
+        errorCode: "PASSWORD_CONFIRMATION_FAILED",
+      },
+    });
+    const change = op(),
+      attemptId = op(),
+      digest = digestToken(member.c.sessionToken!, "session");
+    await accountCall(
+      db,
+      "account_password",
+      "reserve-change",
+      digest,
+      { operationId: change, attemptId },
+      true,
+    );
+    await mutate(root, {
+      action: "revoke-sessions",
+      targetId: member.id,
+      expectedRevision: await revision(member.id),
+    });
+    await expect(
+      accountCall(
+        db,
+        "account_password",
+        "finish-change",
+        digest,
+        {
+          operationId: change,
+          attemptId,
+          verified: true,
+          passwordHash: fixtureHash,
+        },
+        true,
+      ),
+    ).rejects.toMatchObject({ code: "UNAUTHENTICATED" });
+    expect(await accountResult(db, root.sessionToken, change)).toMatchObject({
+      status: "found",
+      operation: { status: "rejected", errorCode: "UNAUTHENTICATED" },
+    });
+    const pending = await mutate(root, {
+      action: "create",
+      loginName: "synthetic-race",
+      displayName: "合成撤销",
+      role: "operator",
+    });
+    const raw = tokenOf(pending),
+      setupDigest = passwordTokenDigest(raw),
+      setup = op(),
+      setupAttempt = op();
+    await accountCall(
+      db,
+      "account_password",
+      "reserve-setup",
+      setupDigest,
+      { operationId: setup, attemptId: setupAttempt },
+      true,
+    );
+    await mutate(root, {
+      action: "issue-setup",
+      targetId: pending.account.id,
+      expectedRevision: pending.account.revision,
+    });
+    await expect(
+      accountCall(
+        db,
+        "account_password",
+        "finish-setup",
+        setupDigest,
+        {
+          operationId: setup,
+          attemptId: setupAttempt,
+          passwordHash: fixtureHash,
+        },
+        true,
+      ),
+    ).rejects.toMatchObject({ code: "PASSWORD_TOKEN_INVALID" });
+    expect(await setupResult(db, setupDigest, setup)).toMatchObject({
+      status: "found",
+      operation: { status: "rejected", errorCode: "PASSWORD_TOKEN_INVALID" },
+    });
+    const [row] =
+      await owner.sql`SELECT password_hash IS NULL pending FROM qf.operator WHERE id=${pending.account.id}`;
+    expect(row!.pending).toBe(true);
+  });
+  it("enforces real HTTP source/schema/CSRF checks, bearer-only setup and session cookie lifecycle", async () => {
+    const origin = db.config.origin;
+    const post = (
+      endpoint: Parameters<typeof handleAccounts>[1],
+      body: unknown,
+      csrf: string | null,
+      cookie = "",
+      extra: Record<string, string> = {},
+    ) =>
+      handleAccounts(
+        new Request(origin + "/api/studio/auth/test", {
+          method: "POST",
+          headers: {
+            host: new URL(origin).host,
+            origin,
+            "content-type": "application/json",
+            ...(csrf ? { "x-csrf-token": csrf } : {}),
+            cookie,
+            ...extra,
+          },
+          body: JSON.stringify(body),
+        }),
+        endpoint,
+      );
+    const pending = await mutate(root, {
+      action: "create",
+      loginName: "synthetic-http",
+      displayName: "合成 HTTP",
+      role: "operator",
+    });
+    const raw = tokenOf(pending),
+      csrf = await passwordSetupCsrf(raw),
+      setup = op();
+    expect(
+      new URLSearchParams(
+        new URL(pending.passwordSetup!.url).hash.slice(1),
+      ).get("tokenId"),
+    ).toBe(pending.passwordSetup!.tokenId);
+    expect(
+      (
+        await post("setup-inspect", { token: raw }, csrf, "", {
+          origin: "http://evil.invalid",
+        })
+      ).status,
+    ).toBe(403);
+    expect((await post("setup-inspect", { token: raw }, null)).status).toBe(
+      403,
+    );
+    expect(
+      (await post("setup-inspect", { token: raw, unexpected: true }, csrf))
+        .status,
+    ).toBe(400);
+    const unrelated = SESSION_COOKIE + "=" + root.sessionToken;
+    const inspected = await post(
+      "setup-inspect",
+      { token: raw },
+      csrf,
+      unrelated,
+    );
+    expect(inspected.status).toBe(200);
+    expect(inspected.headers.get("cache-control")).toContain("no-store");
+    const completed = await post(
+      "setup",
+      { token: raw, operationId: setup, password },
+      csrf,
+      unrelated,
+    );
+    expect(completed.status).toBe(200);
+    expect(completed.headers.get("set-cookie")).toBeNull();
+    expect((await readSession(db, root.sessionToken)).id).toBe(rootId);
+    expect((await post("setup-inspect", { token: raw }, csrf)).status).toBe(
+      400,
+    );
+    const result = await post(
+      "setup-result",
+      { token: raw, operationId: setup },
+      csrf,
+    );
+    expect(await result.json()).toMatchObject({
+      status: "found",
+      operation: { operationId: setup },
+    });
+    const pre = await createPreauth(db, null, op());
+    const logged = await post(
+      "password-login",
+      { loginName: "synthetic-http", password },
+      pre.dto.csrfToken,
+      PREAUTH_COOKIE + "=" + pre.raw,
+    );
+    expect(logged.status).toBe(200);
+    const setCookie = logged.headers.get("set-cookie")!;
+    expect(setCookie).toContain("HttpOnly");
+    expect(setCookie).toContain("SameSite=strict");
+    const session = setCookie.match(
+      new RegExp(SESSION_COOKIE + "=([^;]+)"),
+    )![1]!;
+    const dto = await logged.json();
+    const logout = await post(
+      "logout-all",
+      { operationId: op() },
+      dto.csrfToken,
+      SESSION_COOKIE + "=" + session,
+    );
+    expect(logout.status).toBe(200);
+    expect(logout.headers.get("set-cookie")).toContain("Max-Age=0");
+    await expect(readSession(db, session)).rejects.toMatchObject({
+      code: "UNAUTHENTICATED",
+    });
+  });
+  it("keeps the original durable receipt after an injected lost commit acknowledgement", async () => {
+    const operationId = op();
+    const faulty = {
+      ...db,
+      sql: new Proxy(db.sql, {
+        get(target, key, receiver) {
+          if (key === "begin")
+            return async (work: (tx: unknown) => Promise<unknown>) => {
+              await target.begin(async (tx) => work(tx));
+              throw Object.assign(new Error("synthetic lost acknowledgement"), {
+                code: "ECONNRESET",
+              });
+            };
+          return Reflect.get(target, key, receiver);
+        },
+      }),
+    } as P2aDatabase;
+    await expect(
+      mutateAccount(faulty, root, {
+        operationId,
+        action: "create",
+        loginName: "synthetic-unknown",
+        displayName: "合成未知回执",
+        role: "read-only",
+      }),
+    ).rejects.toMatchObject({ code: "WRITE_OUTCOME_UNKNOWN" });
+    expect(
+      await accountResult(db, root.sessionToken, operationId),
+    ).toMatchObject({
+      status: "found",
+      operation: { operationId, status: "completed" },
+    });
+    const [r] =
+      await owner.sql`SELECT count(*)::int n FROM qf.operator WHERE id=${operationId}`;
+    expect(r!.n).toBe(1);
+  });
+  it("runs owner CLI enrollment and recovery with private files and preserves legacy identity and live sessions until consumption", async () => {
+    const execute = promisify(execFile),
+      legacy = op(),
+      credential = issueToken("credential"),
+      operationId = op();
+    await owner.sql`INSERT INTO qf.operator(id,label,credential_digest,role,status) VALUES(${legacy},'synthetic-cli',${credential.digest},'read-only','active')`;
+    const folder = path.dirname(process.env.QUIZFORGE_P2A_CONFIG!),
+      setupFile = path.join(folder, "account-setup-" + operationId + ".json");
+    const args = [
+      "--conditions=react-server",
+      "--import",
+      "tsx",
+      "scripts/studio-accounts.ts",
+    ];
+    const { stdout } = await execute(process.execPath, [
+      ...args,
+      "enroll",
+      "--instance",
+      instanceId,
+      "--operator-id",
+      legacy,
+      "--operation-id",
+      operationId,
+      "--setup-file",
+      setupFile,
+      "--login-name",
+      "synthetic-cli",
+      "--display-name",
+      "合成 CLI",
+    ]);
+    expect(JSON.parse(stdout)).toMatchObject({
+      id: legacy,
+      operationId,
+      setupFile,
+    });
+    expect(stdout).not.toContain("#token=");
+    expect((await stat(setupFile)).mode & 0o777).toBe(0o600);
+    const file = JSON.parse(await readFile(setupFile, "utf8")),
+      params = new URLSearchParams(new URL(file.url).hash.slice(1));
+    expect(params.get("tokenId")).toMatch(/^[0-9a-f-]{36}$/);
+    const [r] =
+      await owner.sql`SELECT id,label,role,credential_digest=${credential.digest} intact,password_hash IS NULL pending FROM qf.operator WHERE id=${legacy}`;
+    expect(r).toMatchObject({
+      id: legacy,
+      label: "synthetic-cli",
+      role: "read-only",
+      intact: true,
+      pending: true,
+    });
+    const recovery = op(),
+      recoveryFile = path.join(folder, "account-setup-" + recovery + ".json");
+    await execute(process.execPath, [
+      ...args,
+      "recover-admin",
+      "--instance",
+      instanceId,
+      "--operator-id",
+      rootId,
+      "--operation-id",
+      recovery,
+      "--setup-file",
+      recoveryFile,
+    ]);
+    expect((await readSession(db, root.sessionToken)).role).toBe("admin");
+    expect((await stat(recoveryFile)).mode & 0o777).toBe(0o600);
   });
   it("serializes two admins attempting mutual demotion and protects the survivor through both web and local maintenance", async () => {
     const other = await actor("admin");
