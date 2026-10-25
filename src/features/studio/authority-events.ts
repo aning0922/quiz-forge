@@ -3,9 +3,14 @@
 // Only an invalidation signal crosses tabs. No identity, credential or operation payload.
 const eventName = "quizforge:studio-authority-invalidated:v1";
 const channelName = "quizforge.studio-authority.v1";
+let requestEpoch = 0;
+export const advanceStudioRequestEpoch = () => ++requestEpoch;
+export const captureStudioEpoch = () => requestEpoch;
+export const acceptsStudioEpoch = (epoch: number) => requestEpoch === epoch;
 
 /** Leaving this page invalidates local work without revoking other tabs. */
 export function invalidateCurrentStudioAuthority() {
+  requestEpoch++;
   window.dispatchEvent(new Event(eventName));
 }
 
@@ -26,7 +31,10 @@ export function subscribeStudioAuthorityInvalidation(revoke: () => void) {
   try {
     channel = new BroadcastChannel(channelName);
     channel.onmessage = (event: MessageEvent<unknown>) => {
-      if (event.data === "invalidate") revoke();
+      if (event.data === "invalidate") {
+        requestEpoch++;
+        revoke();
+      }
     };
   } catch {
     // Same-tab invalidation and each action's fresh authorization still apply.

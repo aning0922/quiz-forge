@@ -1,4 +1,5 @@
 "use client";
+import { useOwnedStudioSession } from "../accounts/session-owner";
 import { TechnicalDetails } from "../presentation/technical-details";
 import { StudioPageHeader } from "../presentation/page-header";
 import { StudioWorkflowNav } from "../presentation/workflow-nav";
@@ -43,13 +44,14 @@ import local from "./internal-versions.module.css";
 /** Mounted by Product identity even if its mutable detail GET fails. */
 export function StableInternalWorkspace({
   productId,
-  session,
+  session: initialSession,
   showEntry = true,
 }: {
   productId: string;
   session: StudioSessionDto;
   showEntry?: boolean;
 }) {
+  const session = useOwnedStudioSession(initialSession);
   const parsed =
     internalRevisionScopeSchema.shape.productId.safeParse(productId);
   if (!parsed.success) return null;
@@ -79,11 +81,12 @@ export function StableInternalWorkspace({
 }
 function InternalReviewContent({
   scope,
-  session,
+  session: initialSession,
 }: {
   scope: InternalRevisionScope;
   session: StudioSessionDto;
 }) {
+  const session = useOwnedStudioSession(initialSession);
   const [nonce, setNonce] = useState(0),
     read = useInternalRead(internalReviewUrl(scope), (signal) =>
       readInternalReviewState(scope, signal),
@@ -178,11 +181,12 @@ function InternalReviewContent({
 }
 function InternalVersionsContent({
   productId,
-  session,
+  session: initialSession,
 }: {
   productId: string;
   session: StudioSessionDto;
 }) {
+  const session = useOwnedStudioSession(initialSession);
   const [nonce, setNonce] = useState(0),
     list = useInternalRead(internalVersionsUrl(productId), (signal) =>
       readInternalVersions(productId, signal),
@@ -343,12 +347,13 @@ function InternalVersionsContent({
 function InternalVersionDetailContent({
   productId,
   versionId,
-  session,
+  session: initialSession,
 }: {
   productId: string;
   versionId: string;
   session: StudioSessionDto;
 }) {
+  const session = useOwnedStudioSession(initialSession);
   const [nonce, setNonce] = useState(0),
     read = useInternalRead(internalVersionUrl(productId, versionId), (signal) =>
       readInternalVersion(productId, versionId, signal),

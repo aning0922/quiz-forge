@@ -1,4 +1,5 @@
 "use client";
+import { roleLabel } from "./accounts/presentation";
 import { ChevronRight, Search, Menu } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -65,9 +66,7 @@ export function StudioTopbar({
             aria-label="查看当前运营身份"
             title={identity.label}
           >
-            <span className={styles.roleBadge}>
-              {identity.role === "operator" ? "运营者" : "只读"}
-            </span>
+            <span className={styles.roleBadge}>{roleLabel(identity.role)}</span>
             <span className={styles.topAvatar} aria-hidden="true">
               {Array.from(identity.label.trim() || "Q")[0]?.toUpperCase()}
             </span>

@@ -1,4 +1,6 @@
 "use client";
+import { useOwnedStudioSession } from "../accounts/session-owner";
+import { roleHasCapability } from "@/lib/auth/role-policy";
 
 import {
   createContext,
@@ -31,12 +33,13 @@ const Context = createContext<{
 
 /** One creation owner per page, outside catalog query/loading/error branches. */
 export function ProductCreateTask({
-  session,
+  session: initialSession,
   children,
 }: {
   session?: StudioSessionDto | undefined;
   children: ReactNode;
 }) {
+  const session = useOwnedStudioSession(initialSession);
   const id = useId();
   const dialog = useRef<HTMLDialogElement>(null);
   const trigger = useRef<HTMLButtonElement | null>(null);
@@ -98,7 +101,10 @@ export function ProductCreateTask({
       document.documentElement.style.overflow = previous;
     };
   }, [open]);
-  const available = session?.operator.role === "operator";
+  const available = roleHasCapability(
+    session?.operator.role,
+    "workspace:write",
+  );
   return (
     <Context.Provider
       value={

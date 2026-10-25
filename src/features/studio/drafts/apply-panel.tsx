@@ -1,4 +1,10 @@
 "use client";
+import {
+  useOwnedStudioSession,
+  useStudioRecoveryReset,
+} from "../accounts/session-owner";
+import { ownedPendingStorage } from "../accounts/owned-storage";
+import { roleHasCapability } from "@/lib/auth/role-policy";
 import { useContentAuthority } from "../product-workspace/content-authority";
 import { TechnicalDetails } from "../presentation/technical-details";
 import { useEffect, useState, type ReactNode } from "react";
@@ -38,7 +44,7 @@ const productState = z.object({
 });
 export function ApplyDraftPanel({
   validation,
-  session,
+  session: initialSession,
   refreshing,
   embedded = false,
   onConfirmed,
@@ -59,6 +65,7 @@ export function ApplyDraftPanel({
   onInspectRevision?: ((target: RevisionTarget) => void) | undefined;
   onInspectSource?: ((importId: string) => void) | undefined;
 }) {
+  const session = useOwnedStudioSession(initialSession);
   const authority = useContentAuthority();
   const productId = validation.productId;
   const current = useDraftRead(draftEndpoint(productId), (value) =>
@@ -79,13 +86,19 @@ export function ApplyDraftPanel({
     [busy, setBusy] = useState(false),
     [message, setMessage] = useState(""),
     [confirm, setConfirm] = useState(false),
-    [application, setApplication] = useState<DraftApplicationDto>();
+    [application, setApplication] = useState<DraftApplicationDto>(),
+    [readVerified, setReadVerified] = useState(false);
+  useStudioRecoveryReset(() => {
+    setWriteDenied(false);
+    setConfirm(false);
+    setReadVerified(false);
+  });
   function loadPending() {
     try {
       setPending(
-        readDraftPending(sessionStorage).find(
-          (entry) => entry.tuple.productId === productId,
-        ),
+        readDraftPending(
+          ownedPendingStorage(sessionStorage, session.operator.id),
+        ).find((entry) => entry.tuple.productId === productId),
       );
       setStorageReady(true);
     } catch (error) {
@@ -104,7 +117,7 @@ export function ApplyDraftPanel({
   }, [productId]);
   const operator =
     authority.canWrite() &&
-    session.operator.role === "operator" &&
+    roleHasCapability(session.operator.role, "draft:write") &&
     !writeDenied;
   const blocked =
     busy ||
@@ -129,7 +142,11 @@ export function ApplyDraftPanel({
     if (authority.canWrite()) onConfirmed?.(next);
   }
   async function perform(action: "new" | "read" | "replay") {
-    if (blocked || (action !== "read" && (!operator || !authority.canWrite())))
+    if (
+      (action === "replay" && !readVerified) ||
+      blocked ||
+      (action !== "read" && (!operator || !authority.canWrite()))
+    )
       return;
     setBusy(true);
     setMessage("");
@@ -138,9 +155,10 @@ export function ApplyDraftPanel({
       if (action === "read") {
         if (!pending) return;
         const result = await reconcileDraftPending(
-          sessionStorage,
+          ownedPendingStorage(sessionStorage, session.operator.id),
           pending.tuple,
         );
+        setReadVerified(true);
         if (result.kind === "empty")
           setMessage(
             "尚无匹配处理结果；原操作记录继续保留。这不能证明原操作未执行。可稍后再核对，或再次发送原草稿创建操作。",
@@ -168,8 +186,16 @@ export function ApplyDraftPanel({
         if (!tuple) return;
         const result =
           action === "replay"
-            ? await retryOriginalDraft(sessionStorage, tuple, session.csrfToken)
-            : await applyFirstDraft(sessionStorage, tuple, session.csrfToken);
+            ? await retryOriginalDraft(
+                ownedPendingStorage(sessionStorage, session.operator.id),
+                tuple,
+                session.csrfToken,
+              )
+            : await applyFirstDraft(
+                ownedPendingStorage(sessionStorage, session.operator.id),
+                tuple,
+                session.csrfToken,
+              );
         adopt(result.application);
         setMessage(
           result.created
@@ -208,7 +234,7 @@ export function ApplyDraftPanel({
             {operator && (
               <button
                 className={compact.secondary}
-                disabled={blocked}
+                disabled={blocked || !readVerified}
                 onClick={() => void perform("replay")}
               >
                 以原操作和原输入重提
@@ -395,7 +421,7 @@ export function ApplyDraftPanel({
             {operator && (
               <button
                 className={`${styles.button} ${styles.secondary}`}
-                disabled={blocked}
+                disabled={blocked || !readVerified}
                 onClick={() => void perform("replay")}
               >
                 再次发送原草稿创建操作

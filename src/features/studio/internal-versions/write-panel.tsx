@@ -1,4 +1,10 @@
 "use client";
+import {
+  useOwnedStudioSession,
+  useStudioRecoveryReset,
+} from "../accounts/session-owner";
+import { ownedPendingStorage } from "../accounts/owned-storage";
+import { roleHasCapability } from "@/lib/auth/role-policy";
 import { TechnicalDetails } from "../presentation/technical-details";
 import {
   useEffect,
@@ -43,7 +49,7 @@ export function InternalWritePanel({
   productId,
   state,
   versions,
-  session,
+  session: initialSession,
   nonce,
   onChanged,
   onTaskState,
@@ -62,6 +68,7 @@ export function InternalWritePanel({
   onTaskState?: ((state: WorkspaceTaskState) => void) | undefined;
   renderSurface?: ((content: ReactNode) => ReactNode) | undefined;
 }) {
+  const session = useOwnedStudioSession(initialSession);
   const authority = useInternalAuthority(),
     [epoch] = useState(() => new InternalOperationEpoch(productId)),
     [confirmation, setConfirmation] = useState<InternalConfirmation>(),
@@ -73,6 +80,12 @@ export function InternalWritePanel({
     [message, setMessage] = useState(""),
     [result, setResult] = useState<InternalEvidence>();
   const active = useRef(true);
+  useStudioRecoveryReset(() => {
+    setDenied(false);
+    setConfirmation(undefined);
+    setResult(undefined);
+    epoch.invalidate();
+  });
   useEffect(() => {
     active.current = true;
     return () => {
@@ -83,7 +96,10 @@ export function InternalWritePanel({
   useEffect(() => {
     const timer = setTimeout(() => {
       try {
-        inspectInternalPreparation(sessionStorage, productId);
+        inspectInternalPreparation(
+          ownedPendingStorage(sessionStorage, session.operator.id),
+          productId,
+        );
         setAvailable(true);
       } catch {
         setAvailable(false);
@@ -92,9 +108,11 @@ export function InternalWritePanel({
       }
     }, 0);
     return () => clearTimeout(timer);
-  }, [productId, nonce]);
+  }, [productId, nonce, session.operator.id]);
   const canWrite =
-      session.operator.role === "operator" && !denied && !authority.isRevoked,
+      roleHasCapability(session.operator.role, "review:record-baseline") &&
+      !denied &&
+      !authority.isRevoked,
     head = !!state && state.target.revision === state.observedCurrentRevision,
     valid =
       !!confirmation &&
@@ -124,7 +142,10 @@ export function InternalWritePanel({
     setResult(undefined);
     epoch.invalidate();
     try {
-      inspectInternalPreparation(sessionStorage, productId);
+      inspectInternalPreparation(
+        ownedPendingStorage(sessionStorage, session.operator.id),
+        productId,
+      );
       const choice = state.rendererChoices.find(
         (c) => c.renderer.entrySha256 === renderer,
       )?.renderer;
@@ -153,7 +174,7 @@ export function InternalWritePanel({
     setResult(undefined);
     try {
       const value = await applyInternalOperation(
-        sessionStorage,
+        ownedPendingStorage(sessionStorage, session.operator.id),
         ticket.request,
         session.csrfToken,
         current,

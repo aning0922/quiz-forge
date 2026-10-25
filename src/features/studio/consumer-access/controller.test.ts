@@ -24,7 +24,7 @@ const json = (v: unknown, status = 200) =>
     headers: { "content-type": "application/json" },
   });
 async function fixture() {
-  const { play } = await internalPlayFixture();
+  const { play, parent } = await internalPlayFixture();
   const scope = {
     origin: "http://127.0.0.1:3201",
     instanceId: "a".repeat(32),
@@ -136,7 +136,27 @@ async function fixture() {
     play.snapshot.renderer,
     storage,
     fetcher,
-    async () => ({ productId: scope.productId, versions: [] }),
+    async () => ({
+      productId: scope.productId,
+      versions: [
+        {
+          id: parent.version.id,
+          productId: parent.version.binding.productId,
+          slot: parent.version.slot,
+          target: parent.version.binding.target,
+          reviewId: parent.version.binding.reviewId,
+          reviewSha256: parent.version.binding.reviewSha256,
+          snapshotSha256: parent.version.snapshotSha256,
+          renderer: parent.version.binding.renderer,
+          rendererCapability: "studio-internal-preview" as const,
+          engine: parent.version.binding.engine,
+          purpose: parent.version.purpose,
+          publicationApproved: parent.version.publicationApproved,
+          createdAt: parent.version.createdAt,
+          createdBy: parent.version.createdBy,
+        },
+      ],
+    }),
   );
   return {
     c,
@@ -460,5 +480,45 @@ it("disclosure guard remains bound to the exact anchor while the copy/download c
     } finally {
       f.c.dispose();
     }
+  }
+});
+
+it("accepts the complete admin session DTO and retains access-key issue capability", async () => {
+  const f = await fixture();
+  try {
+    f.setActor({
+      ...f.session,
+      operator: {
+        ...f.session.operator,
+        role: "admin",
+        loginName: "synthetic.admin",
+        displayName: "合成管理员",
+        accountRevision: 2,
+      },
+    });
+    await f.c.refresh();
+    expect(f.c.getSnapshot().session?.operator.role).toBe("admin");
+    await f.c.issueKey(f.play.play.id, 604800);
+    expect(f.posts).toHaveLength(1);
+  } finally {
+    f.c.dispose();
+  }
+});
+it("operator cannot create a play and a revoked controller cannot revive via refresh", async () => {
+  const f = await fixture();
+  try {
+    await f.c.refresh();
+    await f.c.createPlay(f.play.snapshot.parent.versionId);
+    expect(f.posts).toHaveLength(0);
+    expect(f.c.getSnapshot().phase).toBe("lost");
+    f.setActor({
+      ...f.session,
+      operator: { ...f.session.operator, role: "admin" },
+    });
+    await f.c.refresh();
+    expect(f.c.getSnapshot().phase).toBe("lost");
+    expect(f.posts).toHaveLength(0);
+  } finally {
+    f.c.dispose();
   }
 });

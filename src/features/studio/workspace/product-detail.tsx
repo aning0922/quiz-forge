@@ -1,4 +1,6 @@
 "use client";
+import { useOwnedStudioSession } from "../accounts/session-owner";
+import { roleHasCapability } from "@/lib/auth/role-policy";
 
 import { useEffect, useState } from "react";
 import { useStudioLeaveProtection } from "../navigation-boundary";
@@ -47,13 +49,14 @@ function formFields(product: ProductDto): ProductFormFields {
 
 function ProductEditor({
   initial,
-  session,
+  session: initialSession,
   embedded = false,
 }: {
   initial: ProductDto;
   session: StudioSessionDto;
   embedded?: boolean;
 }) {
+  const session = useOwnedStudioSession(initialSession);
   const authority = useInternalAuthority();
   const workspace = useProductWorkspaceContext();
   const [product, setProduct] = useState(initial);
@@ -77,7 +80,9 @@ function ProductEditor({
     dirty: productFieldsDirty(fields, product),
     pending: mutation.blocked,
   });
-  const canWrite = session.operator.role === "operator" && !authority.isRevoked;
+  const canWrite =
+    roleHasCapability(session.operator.role, "workspace:write") &&
+    !authority.isRevoked;
   const surfaces = useOptionalWorkspaceSurfaces();
   const reportTask = surfaces?.report;
   const dirty = productFieldsDirty(fields, product);
@@ -143,6 +148,7 @@ function ProductEditor({
     }
   }
   async function lifecycle(action: "archive" | "restore") {
+    if (!roleHasCapability(session.operator.role, "workspace:archive")) return;
     if (authority.isRevoked) return;
     setLifecycleResult("pending");
     setLatest(undefined);
@@ -254,7 +260,8 @@ function ProductEditor({
       />
       <div className={settings.columns}>
         <div className={settings.main}>
-          {session.operator.role === "operator" && !product.archivedAt ? (
+          {roleHasCapability(session.operator.role, "workspace:write") &&
+          !product.archivedAt ? (
             <section className={settings.formPanel}>
               <h2>测评信息</h2>
               <form
@@ -310,7 +317,8 @@ function ProductEditor({
               )}
             </section>
           ) : null}
-          {(session.operator.role !== "operator" || product.archivedAt) && (
+          {(!roleHasCapability(session.operator.role, "workspace:write") ||
+            product.archivedAt) && (
             <section className={settings.formPanel}>
               <h2>测评信息</h2>
               <p>名称：{product.title}</p>
@@ -361,77 +369,78 @@ function ProductEditor({
               <p>最近更新时间：{product.updatedAt}</p>
             </TechnicalDetails>
           </section>
-          {canWrite && (
-            <section className={settings.lifecycle} aria-label="其他操作">
-              <h2>归档与恢复</h2>
-              {product.archivedAt ? (
-                <>
-                  <p className={styles.note}>
-                    恢复测评后可以继续编辑。已归档的分类和标签不会自动恢复，原有关联仍可保留或移除。
-                  </p>
-                  <button
-                    className={styles.button}
-                    type="button"
-                    disabled={mutation.blocked}
-                    onClick={() => {
-                      if (!embedded) {
-                        void lifecycle("restore");
-                        return;
-                      }
-                      setArchiveMode("restore");
-                      setLifecycleResult("idle");
-                      surfaces?.open("archive");
-                    }}
-                  >
-                    恢复测评
-                  </button>
-                </>
-              ) : (
-                <>
-                  <button
-                    className={`${styles.button} ${styles.secondary}`}
-                    type="button"
-                    disabled={mutation.blocked}
-                    onClick={() => {
-                      setConfirmArchive(true);
-                      if (embedded) {
-                        setArchiveMode("archive");
+          {canWrite &&
+            roleHasCapability(session.operator.role, "workspace:archive") && (
+              <section className={settings.lifecycle} aria-label="其他操作">
+                <h2>归档与恢复</h2>
+                {product.archivedAt ? (
+                  <>
+                    <p className={styles.note}>
+                      恢复测评后可以继续编辑。已归档的分类和标签不会自动恢复，原有关联仍可保留或移除。
+                    </p>
+                    <button
+                      className={styles.button}
+                      type="button"
+                      disabled={mutation.blocked}
+                      onClick={() => {
+                        if (!embedded) {
+                          void lifecycle("restore");
+                          return;
+                        }
+                        setArchiveMode("restore");
                         setLifecycleResult("idle");
                         surfaces?.open("archive");
-                      }
-                    }}
-                  >
-                    归档测评
-                  </button>
-                  {confirmArchive && !embedded && (
-                    <section className={styles.compare} aria-label="归档说明">
-                      <p>
-                        归档后测评信息只读，原有分类和标签保留；编号与英文标识不释放。之后可以恢复测评再编辑。
-                      </p>
-                      <div className={styles.actions}>
-                        <button
-                          className={styles.button}
-                          type="button"
-                          disabled={mutation.blocked}
-                          onClick={() => void lifecycle("archive")}
-                        >
-                          确认归档测评
-                        </button>
-                        <button
-                          className={`${styles.button} ${styles.secondary}`}
-                          type="button"
-                          disabled={mutation.blocked}
-                          onClick={() => setConfirmArchive(false)}
-                        >
-                          取消归档
-                        </button>
-                      </div>
-                    </section>
-                  )}
-                </>
-              )}
-            </section>
-          )}
+                      }}
+                    >
+                      恢复测评
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      className={`${styles.button} ${styles.secondary}`}
+                      type="button"
+                      disabled={mutation.blocked}
+                      onClick={() => {
+                        setConfirmArchive(true);
+                        if (embedded) {
+                          setArchiveMode("archive");
+                          setLifecycleResult("idle");
+                          surfaces?.open("archive");
+                        }
+                      }}
+                    >
+                      归档测评
+                    </button>
+                    {confirmArchive && !embedded && (
+                      <section className={styles.compare} aria-label="归档说明">
+                        <p>
+                          归档后测评信息只读，原有分类和标签保留；编号与英文标识不释放。之后可以恢复测评再编辑。
+                        </p>
+                        <div className={styles.actions}>
+                          <button
+                            className={styles.button}
+                            type="button"
+                            disabled={mutation.blocked}
+                            onClick={() => void lifecycle("archive")}
+                          >
+                            确认归档测评
+                          </button>
+                          <button
+                            className={`${styles.button} ${styles.secondary}`}
+                            type="button"
+                            disabled={mutation.blocked}
+                            onClick={() => setConfirmArchive(false)}
+                          >
+                            取消归档
+                          </button>
+                        </div>
+                      </section>
+                    )}
+                  </>
+                )}
+              </section>
+            )}
         </Secondary>
       </div>
       {embedded && (
@@ -499,13 +508,14 @@ function ProductEditor({
 
 function ProductDetailContent({
   productId,
-  session,
+  session: initialSession,
   embedded = false,
 }: {
   productId: string;
   session: StudioSessionDto;
   embedded?: boolean;
 }) {
+  const session = useOwnedStudioSession(initialSession);
   const authority = useInternalAuthority(),
     read = useWorkspaceRead<ProductDto>(
       `/api/studio/products/${encodeURIComponent(productId)}`,

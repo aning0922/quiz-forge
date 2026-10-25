@@ -1,4 +1,6 @@
 "use client";
+import { useOwnedStudioSession } from "../accounts/session-owner";
+import { roleHasCapability } from "@/lib/auth/role-policy";
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
@@ -61,7 +63,7 @@ function rowProtection(
 function TaxonomyRow({
   initial,
   kind,
-  session,
+  session: initialSession,
   onProtectionChange,
 }: {
   initial: TaxonomyDto;
@@ -69,6 +71,7 @@ function TaxonomyRow({
   session: StudioSessionDto;
   onProtectionChange: (id: string, protection: RowProtection) => void;
 }) {
+  const session = useOwnedStudioSession(initialSession);
   const [item, setItem] = useState(initial);
   const [name, setName] = useState(initial.name);
   const [validation, setValidation] = useState("");
@@ -207,7 +210,7 @@ function TaxonomyRow({
           {item.archivedAt ? "已归档" : "未归档"}
         </span>
       </div>
-      {session.operator.role === "operator" && (
+      {roleHasCapability(session.operator.role, "taxonomy:manage") && (
         <div className={local.rowControls}>
           {!item.archivedAt && (
             <form
@@ -324,7 +327,7 @@ function TaxonomyRow({
 
 function TaxonomyCreateForm({
   kind,
-  session,
+  session: initialSession,
   onCreated,
   onProtectionChange,
 }: {
@@ -333,6 +336,7 @@ function TaxonomyCreateForm({
   onCreated: () => void;
   onProtectionChange: (protectedState: boolean) => void;
 }) {
+  const session = useOwnedStudioSession(initialSession);
   const [slug, setSlug] = useState("");
   const [name, setName] = useState("");
   const [validation, setValidation] = useState("");
@@ -517,13 +521,14 @@ function TaxonomyCreateForm({
 
 function TaxonomyList({
   kind,
-  session,
+  session: initialSession,
   onProtectionChange,
 }: {
   kind: TaxonomyKind;
   session: StudioSessionDto;
   onProtectionChange: (protectedState: boolean) => void;
 }) {
+  const session = useOwnedStudioSession(initialSession);
   const protectedRows = useRef(new Map<string, Exclude<RowProtection, null>>());
   const creationProtected = useRef(false);
   const [guards, setGuards] = useState({ rows: false, submitting: false });
@@ -707,7 +712,7 @@ function TaxonomyList({
           </>
         )}
       </section>
-      {session.operator.role === "operator" && (
+      {roleHasCapability(session.operator.role, "taxonomy:manage") && (
         <TaxonomyCreateForm
           kind={kind}
           session={session}
@@ -719,7 +724,12 @@ function TaxonomyList({
   );
 }
 
-export function TaxonomyWorkspace({ session }: { session: StudioSessionDto }) {
+export function TaxonomyWorkspace({
+  session: initialSession,
+}: {
+  session: StudioSessionDto;
+}) {
+  const session = useOwnedStudioSession(initialSession);
   const [kind, setKind] = useState<TaxonomyKind>("category");
   const [protectedState, setProtectedState] = useState(false);
   return (
@@ -737,7 +747,7 @@ export function TaxonomyWorkspace({ session }: { session: StudioSessionDto }) {
             个标签。归档保留原有关联，可在目录中恢复。
           </p>
         </div>
-        {session.operator.role === "operator" && (
+        {roleHasCapability(session.operator.role, "taxonomy:manage") && (
           <a className={local.primary} href="#taxonomy-create">
             <Plus size={18} aria-hidden="true" />
             创建{kind === "category" ? "分类" : "标签"}

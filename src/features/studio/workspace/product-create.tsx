@@ -1,4 +1,9 @@
 "use client";
+import {
+  useOwnedStudioSession,
+  useStudioRecoveryReset,
+} from "../accounts/session-owner";
+import { roleHasCapability } from "@/lib/auth/role-policy";
 
 import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
@@ -28,7 +33,7 @@ export type ProductCreateState = {
 };
 
 export function ProductCreateForm({
-  session,
+  session: initialSession,
   embedded = false,
   actionsHost,
   onStateChange,
@@ -38,6 +43,7 @@ export function ProductCreateForm({
   actionsHost?: HTMLElement | null;
   onStateChange?: (state: ProductCreateState) => void;
 }) {
+  const session = useOwnedStudioSession(initialSession);
   const formId = useId();
   const [id, setId] = useState("");
   const [slugEdited, setSlugEdited] = useState(false);
@@ -57,6 +63,11 @@ export function ProductCreateForm({
   }>();
   const denied = useRef(false);
   const [revoked, setRevoked] = useState(false);
+  useStudioRecoveryReset(() => {
+    denied.current = false;
+    setRevoked(false);
+    setChecked(undefined);
+  });
   function revoke() {
     denied.current = true;
     setRevoked(true);
@@ -338,7 +349,12 @@ export function ProductCreateForm({
   );
 }
 
-export function ProductCreatePage({ session }: { session: StudioSessionDto }) {
+export function ProductCreatePage({
+  session: initialSession,
+}: {
+  session: StudioSessionDto;
+}) {
+  const session = useOwnedStudioSession(initialSession);
   return (
     <div className={styles.workspace}>
       <StudioPageHeader
@@ -355,7 +371,7 @@ export function ProductCreatePage({ session }: { session: StudioSessionDto }) {
           </Link>
         }
       />
-      {session.operator.role === "operator" ? (
+      {roleHasCapability(session.operator.role, "workspace:write") ? (
         <ProductCreateForm session={session} />
       ) : (
         <section className={styles.panel}>

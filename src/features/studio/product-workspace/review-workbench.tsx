@@ -1,4 +1,5 @@
 "use client";
+import { useOwnedStudioSession } from "../accounts/session-owner";
 
 import {
   Check,
@@ -45,7 +46,7 @@ const quiet: WorkspaceTaskState = {
 };
 export function ReviewWorkbench({
   productId,
-  session,
+  session: initialSession,
   currentTarget,
   visible,
   onChanged,
@@ -62,6 +63,7 @@ export function ReviewWorkbench({
   onPreviewTarget?: ((target: RevisionTarget) => void) | undefined;
   onInspectRevision?: ((target: RevisionTarget) => void) | undefined;
 }) {
+  const session = useOwnedStudioSession(initialSession);
   const surfaces = useWorkspaceSurfaces();
   const [selection, setSelection] = useState<RevisionTarget | undefined>(
     currentTarget,

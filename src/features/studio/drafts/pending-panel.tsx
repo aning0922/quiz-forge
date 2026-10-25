@@ -1,4 +1,10 @@
 "use client";
+import {
+  useOwnedStudioSession,
+  useStudioRecoveryReset,
+} from "../accounts/session-owner";
+import { ownedPendingStorage } from "../accounts/owned-storage";
+import { roleHasCapability } from "@/lib/auth/role-policy";
 import { TechnicalDetails } from "../presentation/technical-details";
 import { useEffect, useState } from "react";
 import type { StudioSessionDto } from "../contracts";
@@ -11,7 +17,7 @@ import draftStyles from "./drafts.module.css";
 /** The Product workspace can reconcile the original tuple even when its source page changed. */
 export function DraftPendingPanel({
   productId,
-  session,
+  session: initialSession,
   refreshing,
   onConfirmed,
 }: {
@@ -20,17 +26,23 @@ export function DraftPendingPanel({
   refreshing: boolean;
   onConfirmed: () => void;
 }) {
+  const session = useOwnedStudioSession(initialSession);
   const [entry, setEntry] = useState<DraftPendingEntry>(),
     [ready, setReady] = useState(false),
     [busy, setBusy] = useState(false),
     [writeDenied, setWriteDenied] = useState(false),
     [message, setMessage] = useState("");
+  const [readVerified, setReadVerified] = useState(false);
+  useStudioRecoveryReset(() => {
+    setWriteDenied(false);
+    setReadVerified(false);
+  });
   function read() {
     try {
       setEntry(
-        readDraftPending(sessionStorage).find(
-          (item) => item.tuple.productId === productId,
-        ),
+        readDraftPending(
+          ownedPendingStorage(sessionStorage, session.operator.id),
+        ).find((item) => item.tuple.productId === productId),
       );
       setReady(true);
     } catch (error) {
@@ -49,7 +61,10 @@ export function DraftPendingPanel({
       !ready ||
       busy ||
       refreshing ||
-      (replay && (session.operator.role !== "operator" || writeDenied))
+      (replay &&
+        (!readVerified ||
+          !roleHasCapability(session.operator.role, "draft:write") ||
+          writeDenied))
     )
       return;
     setBusy(true);
@@ -57,14 +72,18 @@ export function DraftPendingPanel({
     try {
       if (replay) {
         await retryOriginalDraft(
-          sessionStorage,
+          ownedPendingStorage(sessionStorage, session.operator.id),
           entry.tuple,
           session.csrfToken,
         );
         setMessage("服务器已确认原操作的固定应用处理结果。");
         onConfirmed();
       } else {
-        const result = await reconcileDraftPending(sessionStorage, entry.tuple);
+        const result = await reconcileDraftPending(
+          ownedPendingStorage(sessionStorage, session.operator.id),
+          entry.tuple,
+        );
+        setReadVerified(true);
         if (result.kind === "empty")
           setMessage(
             "尚无匹配处理结果；原操作记录继续保留。这不能证明原操作未执行。",
@@ -156,15 +175,16 @@ export function DraftPendingPanel({
                 >
                   查询上次草稿创建结果
                 </button>
-                {session.operator.role === "operator" && !writeDenied && (
-                  <button
-                    className={`${styles.button} ${styles.secondary}`}
-                    disabled={!ready || busy || refreshing}
-                    onClick={() => void perform(true)}
-                  >
-                    再次发送原草稿创建操作
-                  </button>
-                )}
+                {roleHasCapability(session.operator.role, "draft:write") &&
+                  !writeDenied && (
+                    <button
+                      className={`${styles.button} ${styles.secondary}`}
+                      disabled={!ready || busy || refreshing || !readVerified}
+                      onClick={() => void perform(true)}
+                    >
+                      再次发送原草稿创建操作
+                    </button>
+                  )}
               </div>
             </>
           )}

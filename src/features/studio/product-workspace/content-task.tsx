@@ -1,4 +1,6 @@
 "use client";
+import { useOwnedStudioSession } from "../accounts/session-owner";
+import { roleHasCapability } from "@/lib/auth/role-policy";
 
 import {
   useCallback,
@@ -99,7 +101,7 @@ export function ContentTask(props: ContentTaskProps) {
 function ContentRun({
   productId,
   initialImportId,
-  session,
+  session: initialSession,
   onChanged,
   onCompleted,
   onState,
@@ -108,6 +110,7 @@ function ContentRun({
   onInspectRevision,
   onNext,
 }: ContentTaskProps & { onNext: () => void }) {
+  const session = useOwnedStudioSession(initialSession);
   const settings = useImportRead(
     `/api/studio/products/${encodeURIComponent(productId)}/imports/settings`,
     checkSettings,
@@ -364,7 +367,7 @@ function ContentRun({
                       busy ||
                       pending ||
                       revoked ||
-                      session.operator.role !== "operator"
+                      !roleHasCapability(session.operator.role, "import:create")
                     }
                     onClick={() =>
                       setMode(
@@ -483,7 +486,7 @@ function ExistingReceive({
   productId,
   importId,
   settings,
-  session,
+  session: initialSession,
   onConfirmed,
   onState,
   renderActions,
@@ -498,6 +501,7 @@ function ExistingReceive({
   renderActions?: ((actions: ReactNode) => ReactNode) | undefined;
   onInspectSource?: ((importId: string) => void) | undefined;
 }) {
+  const session = useOwnedStudioSession(initialSession);
   const read = useImportRead(
     `/api/studio/products/${encodeURIComponent(productId)}/imports/${encodeURIComponent(importId)}`,
     (value) => checkImport(value, { productId, importId }),

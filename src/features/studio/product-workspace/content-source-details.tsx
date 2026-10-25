@@ -1,4 +1,6 @@
 "use client";
+import { useOwnedStudioSession } from "../accounts/session-owner";
+import { roleHasCapability } from "@/lib/auth/role-policy";
 
 import { useMemo } from "react";
 import { useInternalAuthority } from "../internal-versions/authority";
@@ -46,9 +48,10 @@ export function ContentSourceDetails(props: SourceDetailsProps) {
 function SourceDetailsRead({
   productId,
   sourceId,
-  session,
+  session: initialSession,
   onContinue,
 }: SourceDetailsProps) {
+  const session = useOwnedStudioSession(initialSession);
   const read = useImportRead(
     `/api/studio/products/${encodeURIComponent(productId)}/imports/${encodeURIComponent(sourceId)}`,
     (value) => checkImport(value, { productId, importId: sourceId }),
@@ -81,13 +84,14 @@ function SourceDetailsRead({
 }
 function SourceRecord({
   value,
-  session,
+  session: initialSession,
   onContinue,
 }: {
   value: ImportDto;
   session: StudioSessionDto;
   onContinue: (importId: string) => void;
 }) {
+  const session = useOwnedStudioSession(initialSession);
   const pair = { productId: value.productId, importId: value.id };
   const checks = useValidationRead(
     `${validationEndpoint(pair)}?page=1&pageSize=20`,
@@ -157,7 +161,7 @@ function SourceRecord({
           className={styles.secondary}
           onClick={() => onContinue(value.id)}
         >
-          {session.operator.role === "operator"
+          {roleHasCapability(session.operator.role, "import:create")
             ? "返回任务继续处理此来源"
             : "查看原任务并核实结果"}
         </button>

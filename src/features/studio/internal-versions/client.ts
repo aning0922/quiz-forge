@@ -1,3 +1,4 @@
+import { captureStudioEpoch, acceptsStudioEpoch } from "../authority-events";
 import {
   INTERNAL_VERSION_LIMITS as L,
   INTERNAL_VERSION_HTTP_STATUSES,
@@ -76,7 +77,10 @@ export async function checkedInternalFetch<T>(
   external?.addEventListener("abort", abort, { once: true });
   if (external?.aborted) controller.abort();
   const timer = setTimeout(abort, L.operationDeadlineMs);
+  const requestEpoch = captureStudioEpoch();
   const checkpoint = () => {
+    if (!acceptsStudioEpoch(requestEpoch))
+      throw new StudioClientError("STUDIO_REQUEST_STALE");
     if (controller.signal.aborted || performance.now() >= deadline)
       throw new StudioClientError(fallback);
   };

@@ -1,3 +1,7 @@
+import {
+  roleHasCapability,
+  type StudioCapability,
+} from "@/lib/auth/role-policy";
 import { z } from "zod";
 import type { StudioSessionDto } from "../contracts";
 import type { InternalVersionList } from "@/features/product/internal-versions/contracts";
@@ -43,19 +47,40 @@ import {
   type StudioConsumerScopeV1,
 } from "./pending";
 
-const sessionSchema = z.strictObject({
-  operator: z.strictObject({
-    id: consumerUuidSchema,
-    label: z.string().min(1).max(160),
-    role: z.enum(["operator", "read-only"]),
-  }),
-  csrfToken: z
-    .string()
-    .length(43)
-    .regex(/^[A-Za-z0-9_-]{43}$/),
-  idleExpiresAt: consumerMomentSchema,
-  absoluteExpiresAt: consumerMomentSchema,
-});
+const sessionSchema = z
+  .strictObject({
+    operator: z.strictObject({
+      id: consumerUuidSchema,
+      label: z.string().min(1).max(160),
+      role: z.enum(["admin", "operator", "read-only"]),
+      loginName: z.string().nullable().optional(),
+      displayName: z.string().optional(),
+      accountRevision: z.number().int().positive().optional(),
+    }),
+    csrfToken: z
+      .string()
+      .length(43)
+      .regex(/^[A-Za-z0-9_-]{43}$/),
+    idleExpiresAt: consumerMomentSchema,
+    absoluteExpiresAt: consumerMomentSchema,
+  })
+  .transform(({ operator, ...rest }): StudioSessionDto => ({
+    ...rest,
+    operator: {
+      id: operator.id,
+      label: operator.label,
+      role: operator.role,
+      ...(operator.loginName === undefined
+        ? {}
+        : { loginName: operator.loginName }),
+      ...(operator.displayName === undefined
+        ? {}
+        : { displayName: operator.displayName }),
+      ...(operator.accountRevision === undefined
+        ? {}
+        : { accountRevision: operator.accountRevision }),
+    },
+  }));
 type Evidence =
   | { kind: "play"; value: InternalPlayResolution }
   | { kind: "issue"; value: IssueAccessKeyResolution }
@@ -93,6 +118,7 @@ export class StudioConsumerControllerV1 {
   });
   #listeners = new Set<() => void>();
   #epoch = 0;
+  #revoked = false;
   #abort = new AbortController();
   #pending: StudioConsumerPendingV1 | null = null;
   constructor(
@@ -129,6 +155,7 @@ export class StudioConsumerControllerV1 {
     this.#listeners.clear();
   }
   revoke = () => {
+    this.#revoked = true;
     this.#invalidate();
     this.#pending = null;
     this.#publish({
@@ -146,7 +173,10 @@ export class StudioConsumerControllerV1 {
   #task(): Task {
     const epoch = this.#epoch,
       signal = this.#abort.signal;
-    return { signal, current: () => epoch === this.#epoch && !signal.aborted };
+    return {
+      signal,
+      current: () => !this.#revoked && epoch === this.#epoch && !signal.aborted,
+    };
   }
   #context(task: Task, session: StudioSessionDto): api.StudioConsumerContextV1 {
     return {
@@ -168,7 +198,7 @@ export class StudioConsumerControllerV1 {
         })
       : null;
   }
-  async #fresh(task: Task, write: boolean) {
+  async #fresh(task: Task, capability: StudioCapability | false) {
     try {
       const session = await requestConsumerJson(
         "/api/studio/auth/session",
@@ -184,7 +214,7 @@ export class StudioConsumerControllerV1 {
       if (!task.current()) throw new ConsumerClientError("ACCESS_DENIED");
       if (
         session.operator.id !== this.scope.issuerId ||
-        (write && session.operator.role !== "operator")
+        (capability && !roleHasCapability(session.operator.role, capability))
       )
         throw new ConsumerClientError("OPERATOR_REQUIRED");
       this.#publish({ session });
@@ -214,6 +244,7 @@ export class StudioConsumerControllerV1 {
     });
   }
   async refresh() {
+    if (this.#revoked) return;
     this.#invalidate();
     const task = this.#task();
     this.#publish({ phase: "loading", evidence: null, notice: "none" });
@@ -292,7 +323,7 @@ export class StudioConsumerControllerV1 {
     const task = this.#task();
     this.#publish({ phase: "working", notice: "none" });
     try {
-      await this.#fresh(task, true);
+      await this.#fresh(task, "access-key:issue");
       const operation = await newStudioIssueV1(
         {
           productId: this.scope.productId,
@@ -325,7 +356,14 @@ export class StudioConsumerControllerV1 {
     const task = this.#task();
     this.#publish({ phase: "working", notice: "none" });
     try {
-      await this.#fresh(task, true);
+      await this.#fresh(
+        task,
+        operation.kind === "play"
+          ? "version:seal-internal"
+          : operation.kind === "void"
+            ? "access-key:void"
+            : "access-key:issue",
+      );
       if (task.current()) await this.#prepareAndSend(operation, task);
     } catch (error) {
       this.#failure(task, error);
@@ -348,7 +386,16 @@ export class StudioConsumerControllerV1 {
     const task = this.#task();
     this.#publish({ phase: "working", evidence: null, notice: "none" });
     try {
-      await this.#fresh(task, replay);
+      await this.#fresh(
+        task,
+        replay
+          ? this.#pending.operation.kind === "play"
+            ? "version:seal-internal"
+            : this.#pending.operation.kind === "void"
+              ? "access-key:void"
+              : "access-key:issue"
+          : false,
+      );
       if (task.current()) await this.#send(task, !replay);
     } catch (error) {
       this.#failure(task, error);
@@ -479,7 +526,7 @@ export class StudioConsumerControllerV1 {
       task.current();
     this.#publish({ phase: "working", notice: "none" });
     try {
-      const session = await this.#fresh(task, true),
+      const session = await this.#fresh(task, "access-key:issue"),
         key = await api.readStudioKeyV1(
           this.scope.productId,
           pending.operation.binding.keyId,
@@ -499,7 +546,7 @@ export class StudioConsumerControllerV1 {
           Date.parse(key.issue.expiresAt) <= Date.parse(key.current.observedAt))
       )
         throw new ConsumerClientError("UNAVAILABLE");
-      await this.#fresh(task, true);
+      await this.#fresh(task, "access-key:issue");
       // Final issuer verification is the last await before the synchronous exact-anchor gate.
       if (!current()) throw new ConsumerClientError("UNAVAILABLE");
       const link = new URL("/access", this.scope.origin);

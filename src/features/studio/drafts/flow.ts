@@ -1,3 +1,5 @@
+import { captureStudioEpoch, acceptsStudioEpoch } from "../authority-events";
+import { StudioClientError } from "../client";
 import {
   applyReadyValidationSchema,
   type DraftApplicationBinding,
@@ -48,12 +50,15 @@ export async function applyFirstDraft(
   input: DraftApplicationBinding,
   csrf: string,
 ) {
+  const authorityEpoch = captureStudioEpoch();
   const tuple = freezeDraftBinding(input),
     release = acquireDraftProduct(tuple.productId);
   try {
     assertNoRevisionPending(storage, tuple.productId);
     addDraftPrepared(storage, tuple);
     const result = await send(storage, tuple, csrf, false);
+    if (!acceptsStudioEpoch(authorityEpoch))
+      throw new StudioClientError("WRITE_OUTCOME_UNKNOWN");
     removeExactDraftPending(storage, tuple);
     return result;
   } finally {
@@ -66,10 +71,13 @@ export async function retryOriginalDraft(
   input: DraftApplicationBinding,
   csrf: string,
 ) {
+  const authorityEpoch = captureStudioEpoch();
   const tuple = freezeDraftBinding(input),
     release = acquireDraftProduct(tuple.productId);
   try {
     const result = await send(storage, tuple, csrf, true);
+    if (!acceptsStudioEpoch(authorityEpoch))
+      throw new StudioClientError("WRITE_OUTCOME_UNKNOWN");
     removeExactDraftPending(storage, tuple);
     return result;
   } finally {
@@ -80,6 +88,7 @@ export async function reconcileDraftPending(
   storage: DraftPendingStorage,
   input: DraftApplicationBinding,
 ) {
+  const authorityEpoch = captureStudioEpoch();
   const tuple = freezeDraftBinding(input),
     release = acquireDraftProduct(tuple.productId);
   try {
@@ -88,6 +97,8 @@ export async function reconcileDraftPending(
       {},
       (value) => checkDraftApplication(value, tuple),
     );
+    if (!acceptsStudioEpoch(authorityEpoch))
+      throw new StudioClientError("WRITE_OUTCOME_UNKNOWN");
     if (result.kind === "applied") removeExactDraftPending(storage, tuple);
     return result;
   } finally {

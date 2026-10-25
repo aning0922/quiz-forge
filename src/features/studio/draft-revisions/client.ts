@@ -1,3 +1,4 @@
+import { captureStudioEpoch, acceptsStudioEpoch } from "../authority-events";
 import { z } from "zod";
 import {
   DRAFT_REVISION_LIMITS,
@@ -80,8 +81,11 @@ export async function checkedRevisionFetch<T>(
     external = options.signal;
   external?.addEventListener("abort", abort, { once: true });
   if (external?.aborted) abort();
+  const requestEpoch = captureStudioEpoch();
   const timer = setTimeout(abort, 15000),
     checkpoint = () => {
+      if (!acceptsStudioEpoch(requestEpoch))
+        throw new StudioClientError("STUDIO_REQUEST_STALE");
       if (controller.signal.aborted || performance.now() >= deadline)
         throw new StudioClientError(fallback);
     };

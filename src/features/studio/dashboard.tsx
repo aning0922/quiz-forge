@@ -1,4 +1,5 @@
 "use client";
+import { useOwnedStudioSession } from "./accounts/session-owner";
 
 import Link from "next/link";
 import {
@@ -36,11 +37,12 @@ const reviewQuery = operationsQuerySchema.parse({
 
 export function StudioDashboard({
   canCreate,
-  session,
+  session: initialSession,
 }: {
   canCreate: boolean;
   session?: StudioSessionDto;
 }) {
+  const session = useOwnedStudioSession(initialSession);
   const read = useOperationsDashboard();
   const waiting = useOperationsProducts(reviewQuery);
   return (

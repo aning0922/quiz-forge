@@ -1,3 +1,5 @@
+import { captureStudioEpoch, acceptsStudioEpoch } from "../authority-events";
+import { StudioClientError } from "../client";
 import {
   type AppendDraftBinding,
   type DraftRevisionResolution,
@@ -23,12 +25,15 @@ export async function applyAppendRevision(
   input: AppendDraftBinding,
   csrf: string,
 ) {
+  const authorityEpoch = captureStudioEpoch();
   const tuple = freezeAppendBinding(input),
     send = prepareAppendRequest(tuple, csrf);
   return withRevisionProduct(tuple.productId, async (lease) => {
     prepareRevisionPending(lease, storage, tuple);
     markRevisionBeforeSend(lease, storage, tuple, false);
     const result = await send();
+    if (!acceptsStudioEpoch(authorityEpoch))
+      throw new StudioClientError("WRITE_OUTCOME_UNKNOWN");
     removeExactRevisionPending(lease, storage, tuple);
     return result;
   });
@@ -38,11 +43,14 @@ export async function retryAppendRevision(
   input: AppendDraftBinding,
   csrf: string,
 ) {
+  const authorityEpoch = captureStudioEpoch();
   const tuple = freezeAppendBinding(input),
     send = prepareAppendRequest(tuple, csrf);
   return withRevisionProduct(tuple.productId, async (lease) => {
     markRevisionBeforeSend(lease, storage, tuple, true);
     const result = await send();
+    if (!acceptsStudioEpoch(authorityEpoch))
+      throw new StudioClientError("WRITE_OUTCOME_UNKNOWN");
     removeExactRevisionPending(lease, storage, tuple);
     return result;
   });
@@ -54,11 +62,15 @@ export async function resolvePendingRevision(
   csrf: string,
   signal: AbortSignal,
 ) {
+  const authorityEpoch = captureStudioEpoch();
   const tuple = freezeAppendBinding(input);
   if (!hasExactRevisionPending(storage, tuple))
     throw new RevisionPendingError();
   const result = await resolveRevision(tuple, csrf, signal);
-  if (!hasExactRevisionPending(storage, tuple))
+  if (
+    !acceptsStudioEpoch(authorityEpoch) ||
+    !hasExactRevisionPending(storage, tuple)
+  )
     throw new RevisionPendingError();
   return result;
 }
@@ -69,11 +81,13 @@ export async function clearResolvedRevision(
   resolution: DraftRevisionResolution,
   current: () => boolean,
 ) {
+  const authorityEpoch = captureStudioEpoch();
   const tuple = freezeAppendBinding(input);
   return withRevisionProduct(tuple.productId, async (lease) => {
     if (!current()) throw new RevisionPendingError();
     const checked = await checkRevisionResolution(resolution, tuple);
     if (
+      !acceptsStudioEpoch(authorityEpoch) ||
       checked.kind === "unresolved" ||
       !current() ||
       !hasExactRevisionPending(storage, tuple)

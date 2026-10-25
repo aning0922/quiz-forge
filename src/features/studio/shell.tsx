@@ -1,3 +1,5 @@
+import { StudioAccountOwner } from "./accounts/session-owner";
+import type { StudioSessionDto } from "./contracts";
 import styles from "./studio.module.css";
 import { StudioNavigation } from "./navigation";
 import { StudioMobileNavigation } from "./mobile-navigation";
@@ -13,10 +15,12 @@ export function StudioShell({
   children,
   authenticated = false,
   identity,
+  session,
 }: {
   children: React.ReactNode;
   authenticated?: boolean;
   identity?: StudioIdentity | undefined;
+  session?: StudioSessionDto | undefined;
 }) {
   return (
     <StudioNavigationBoundary>
@@ -31,7 +35,13 @@ export function StudioShell({
             </header>
             {authenticated && <StudioTopbar identity={identity} />}
             <main id="main" className={styles.main}>
-              {children}
+              {session ? (
+                <StudioAccountOwner initialSession={session}>
+                  {children}
+                </StudioAccountOwner>
+              ) : (
+                children
+              )}
             </main>
           </div>
         </div>

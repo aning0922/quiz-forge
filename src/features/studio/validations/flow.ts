@@ -1,3 +1,5 @@
+import { captureStudioEpoch, acceptsStudioEpoch } from "../authority-events";
+import { StudioClientError } from "../client";
 import {
   preparedValidationDtoSchema,
   type StartValidationResult,
@@ -43,7 +45,11 @@ export function preparedTuple(
     expectedValidationKey: value.validationKey,
   });
 }
-type Invocation = { tuple: PendingTuple; token: object };
+type Invocation = {
+  tuple: PendingTuple;
+  token: object;
+  authorityEpoch: number;
+};
 const notStartedInvocations = new WeakMap<object, Invocation>();
 const currentInvocations = new Map<string, Invocation>();
 const invocationPair = (tuple: PendingTuple) =>
@@ -59,8 +65,9 @@ async function sendPrepared(
   tuple: PendingTuple,
   csrf: string,
 ): Promise<StartValidationResult> {
+  const authorityEpoch = captureStudioEpoch();
   // Persistence, complete readback, and first fetch are one synchronous turn.
-  const invocation = { tuple, token: Object.freeze({}) };
+  const invocation = { tuple, token: Object.freeze({}), authorityEpoch };
   // Revoke any earlier proof even if persistence succeeds but its readback fails.
   currentInvocations.set(invocationPair(tuple), invocation);
   markBeforeStart(storage, tuple);
@@ -76,6 +83,8 @@ async function sendPrepared(
   );
   if (result.outcome === "record") {
     retireInvocation(tuple);
+    if (!acceptsStudioEpoch(authorityEpoch))
+      throw new StudioClientError("WRITE_OUTCOME_UNKNOWN");
     removeExact(storage, tuple, true);
   } else if (
     currentInvocations.get(invocationPair(tuple))?.token === invocation.token
@@ -90,6 +99,7 @@ export async function prepareAndStart(
   csrf: string,
   onPrepared?: (tuple: PendingTuple) => void,
 ): Promise<StartValidationResult> {
+  const authorityEpoch = captureStudioEpoch();
   const release = acquirePair(expected);
   try {
     if (
@@ -110,6 +120,8 @@ export async function prepareAndStart(
       }),
       (value) => checkPrepared(value, expected),
     );
+    if (!acceptsStudioEpoch(authorityEpoch))
+      throw new StudioClientError("STUDIO_REQUEST_STALE");
     const tuple = Object.freeze(preparedTuple(dto));
     addPrepared(storage, tuple);
     onPrepared?.(tuple);
@@ -135,6 +147,7 @@ export async function reconcilePending(
   storage: PendingStorage,
   input: PendingTuple,
 ): Promise<ValidationDto | null> {
+  const authorityEpoch = captureStudioEpoch();
   const tuple = Object.freeze(pendingTupleSchema.parse(input));
   const page = await checkedValidationFetch(
     `${validationEndpoint(tuple)}?${exactValidationQuery(tuple.expectedValidationKey)}`,
@@ -145,6 +158,8 @@ export async function reconcilePending(
   const row = page.items[0];
   if (!row) return null;
   retireInvocation(tuple);
+  if (!acceptsStudioEpoch(authorityEpoch))
+    throw new StudioClientError("WRITE_OUTCOME_UNKNOWN");
   removeExact(storage, tuple, true);
   return row;
 }
@@ -157,6 +172,7 @@ export function abandonNotStarted(
   const proof = notStartedInvocations.get(result);
   if (
     !proof ||
+    !acceptsStudioEpoch(proof.authorityEpoch) ||
     currentInvocations.get(invocationPair(tuple))?.token !== proof.token ||
     !sameTuple(proof.tuple, tuple) ||
     checkStart(result, 200, tuple).outcome !== "not-started"

@@ -246,3 +246,28 @@ describe("draft original-key pending flow", () => {
     expect(readDraftPending(storage)).toHaveLength(16);
   });
 });
+
+it("an old generation's late successful receipt cannot remove the original pending anchor", async () => {
+  const { advanceStudioRequestEpoch } = await import("../authority-events");
+  const storage = memoryStorage(),
+    application = await receipt();
+  let release!: () => void, entered!: () => void;
+  const reached = new Promise<void>((resolve) => {
+    entered = resolve;
+  });
+  vi.stubGlobal("fetch", async () => {
+    entered();
+    await new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    return Response.json({ created: true, application }, { status: 201 });
+  });
+  const request = applyFirstDraft(storage, tuple, "synthetic-csrf");
+  await reached;
+  const bytes = storage.getItem(DRAFT_PENDING_STORAGE_KEY);
+  advanceStudioRequestEpoch();
+  release();
+  await expect(request).rejects.toThrow();
+  expect(storage.getItem(DRAFT_PENDING_STORAGE_KEY)).toBe(bytes);
+  expect(readDraftPending(storage)[0]?.mayHaveBeenSent).toBe(true);
+});

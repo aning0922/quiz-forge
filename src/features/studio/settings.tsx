@@ -1,3 +1,5 @@
+import { roleHasCapability } from "@/lib/auth/role-policy";
+import { roleLabel } from "./accounts/presentation";
 import Link from "next/link";
 import { ExternalLink, ArrowRight } from "lucide-react";
 import type { StudioIdentity } from "./navigation-model";
@@ -36,17 +38,27 @@ export function StudioSettings({ identity }: { identity: StudioIdentity }) {
             </div>
             <div>
               <dt>角色范围</dt>
-              <dd>
-                {identity.role === "operator"
-                  ? "运营者（operator）"
-                  : "只读（read-only）"}
-              </dd>
+              <dd>{roleLabel(identity.role)}</dd>
             </div>
             <div>
               <dt>权限策略</dt>
               <dd>以服务端授权为最终依据</dd>
             </div>
           </dl>
+          {roleHasCapability(identity.role, "account:manage") && (
+            <p>
+              <Link className={styles.textLink} href="/studio/accounts">
+                管理账号与权限 →
+              </Link>
+            </p>
+          )}
+          {roleHasCapability(identity.role, "account:audit") && (
+            <p>
+              <Link className={styles.textLink} href="/studio/accounts/audit">
+                查看账号操作记录 →
+              </Link>
+            </p>
+          )}
           <Link className={styles.textLink} href="/studio/session">
             查看会话与退出登录
             <ArrowRight size={16} aria-hidden="true" />

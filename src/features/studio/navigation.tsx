@@ -1,4 +1,5 @@
 "use client";
+import { roleLabel } from "./accounts/presentation";
 
 import { Fragment, type MouseEvent } from "react";
 import Link from "next/link";
@@ -117,7 +118,7 @@ export function StudioNavigation({
             className={styles.identityLink}
             href="/studio/session"
             prefetch={false}
-            aria-label="身份与退出"
+            aria-label="我的账号"
             aria-current={pathname === "/studio/session" ? "page" : undefined}
             onClick={followedLink}
           >
@@ -128,13 +129,10 @@ export function StudioNavigation({
               {identity ? (
                 <>
                   <strong>{identity.label}</strong>
-                  <small>
-                    {identity.role === "operator" ? "运营者" : "只读身份"} ·
-                    身份与退出
-                  </small>
+                  <small>{roleLabel(identity.role)} · 我的账号</small>
                 </>
               ) : (
-                "身份与退出"
+                "我的账号"
               )}
             </span>
           </Link>

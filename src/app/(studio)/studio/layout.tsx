@@ -19,10 +19,13 @@ export default async function StudioLayout({
   return (
     <StudioShell
       authenticated={state.status === "authenticated"}
+      session={state.status === "authenticated" ? state.session : undefined}
       identity={
         state.status === "authenticated"
           ? {
-              label: state.session.operator.label,
+              label:
+                state.session.operator.displayName ??
+                state.session.operator.label,
               role: state.session.operator.role,
             }
           : undefined

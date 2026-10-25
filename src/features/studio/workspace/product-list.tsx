@@ -1,4 +1,6 @@
 "use client";
+import { useOwnedStudioSession } from "../accounts/session-owner";
+import { roleHasCapability } from "@/lib/auth/role-policy";
 
 import { useSyncExternalStore } from "react";
 import {
@@ -25,12 +27,13 @@ import parity from "./catalog-parity.module.css";
 import { ProductCreateTask, ProductCreateAction } from "./product-create-task";
 
 export function ProductList({
-  session,
+  session: initialSession,
   search = {},
 }: {
   session: StudioSessionDto;
   search?: CatalogSearchParams;
 }) {
+  const session = useOwnedStudioSession(initialSession);
   const liveSearch = useSyncExternalStore<string | null>(
     subscribeCatalogQuery,
     catalogQuerySnapshot,
@@ -80,12 +83,13 @@ function InvalidCatalogAddress({ message }: { message: string }) {
 }
 
 function CatalogList({
-  session,
+  session: initialSession,
   query,
 }: {
   session: StudioSessionDto;
   query: OperationsQuery;
 }) {
+  const session = useOwnedStudioSession(initialSession);
   const read = useOperationsProducts(query);
   const filtered = Boolean(
     query.q ||
@@ -105,7 +109,7 @@ function CatalogList({
           <p>查找测评，识别当前内容与内测状态，再进入具体工作区继续。</p>
         }
         actions={
-          session.operator.role === "operator" ? (
+          roleHasCapability(session.operator.role, "workspace:write") ? (
             <ProductCreateAction />
           ) : undefined
         }

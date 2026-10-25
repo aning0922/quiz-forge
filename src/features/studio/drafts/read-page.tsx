@@ -1,4 +1,5 @@
 "use client";
+import { useOwnedStudioSession } from "../accounts/session-owner";
 import { TechnicalDetails } from "../presentation/technical-details";
 import { StudioPageHeader } from "../presentation/page-header";
 import { StudioWorkflowNav } from "../presentation/workflow-nav";
@@ -25,11 +26,12 @@ import styles from "../workspace/workspace.module.css";
 import draftStyles from "./drafts.module.css";
 export function DraftWorkspacePage({
   productId,
-  session,
+  session: initialSession,
 }: {
   productId: string;
   session: StudioSessionDto;
 }) {
+  const session = useOwnedStudioSession(initialSession);
   const [application, setApplication] = useState<AppendDraftApplication>();
   const read = useDraftRead(draftEndpoint(productId), (value) =>
     checkDraftRead(value, productId),
