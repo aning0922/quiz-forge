@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 import Link from "next/link";
 import {
   ChevronRight,
@@ -108,6 +108,7 @@ export function AccountsPage({
   session: StudioSessionDto;
 }) {
   const session = useOwnedStudioSession(initialSession);
+  const createFormId = useId();
   const canManage = roleHasCapability(session.operator.role, "account:manage");
   const [search, setSearch] = useState("");
   const [filterRole, setFilterRole] = useState("all"),
@@ -489,12 +490,23 @@ export function AccountsPage({
                   ? "取消"
                   : "完成"}
             </button>
+            {surface === "create" && !pending && (
+              <button
+                className={styles.primary}
+                type="submit"
+                form={createFormId}
+                disabled={disabled}
+              >
+                开通并生成设置入口
+              </button>
+            )}
           </div>
         }
       >
         {surface === "create" && (
           <div hidden={Boolean(operation.mutation?.account)}>
             <form
+              id={createFormId}
               aria-label="开通账号"
               className={styles.formRow}
               onSubmit={(event) => {
@@ -539,15 +551,23 @@ export function AccountsPage({
               <div className={styles.hint}>
                 创建后生成一次性密码设置链接，由本人设置密码。请私下交付链接。
               </div>
-              <div className={styles.formActions}>
-                <button className={styles.primary} disabled={disabled}>
-                  创建账号并生成设置链接
-                </button>
-              </div>
             </form>
           </div>
         )}
-        {selected && (
+        {surface === "create" &&
+          selected &&
+          operation.receipt?.status === "completed" && (
+            <section className={styles.hint} aria-label="已开通的账号">
+              <div>
+                <h3>账号已开通，等待本人设置密码</h3>
+                <p>
+                  {selected.displayName} · {selected.loginName} ·{" "}
+                  {roleLabel(selected.role)}
+                </p>
+              </div>
+            </section>
+          )}
+        {surface === "person" && selected && (
           <div className={local.details}>
             {surface === "create" && (
               <div className={styles.hint}>

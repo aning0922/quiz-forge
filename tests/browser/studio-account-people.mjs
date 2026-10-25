@@ -425,7 +425,7 @@ try {
   await run("one-off-link", async () => {
     await page.evaluate(() => (window.mode = "success"));
     await create();
-    await button("创建账号并生成设置链接").click();
+    await button("开通并生成设置入口").click();
     await expect(page.getByLabel("密码设置链接")).toBeVisible();
     await expect(page.getByLabel("密码设置链接")).toHaveAttribute(
       "type",
@@ -458,7 +458,7 @@ try {
   });
   await run("unknown-create-reissue", async () => {
     await create();
-    await button("创建账号并生成设置链接").click();
+    await button("开通并生成设置入口").click();
     await expect(button("核实原操作")).toBeEnabled();
     await button("核实原操作").click();
     await expect(

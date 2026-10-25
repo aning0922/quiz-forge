@@ -17,7 +17,7 @@ export function accountDate(value: string) {
 export function AccountSummary({
   summary,
 }: {
-  summary?: AccountListDto["summary"];
+  summary: AccountListDto["summary"] | undefined;
 }) {
   const stats = [
     { key: "total", label: "全部账号", detail: "当前组织成员", Icon: Users },
