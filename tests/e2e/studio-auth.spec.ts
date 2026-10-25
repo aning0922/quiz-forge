@@ -108,6 +108,19 @@ async function enterCredential(page: Page, credential: string): Promise<void> {
   }
 }
 
+async function openSession(page: Page): Promise<void> {
+  await expect(
+    page.getByRole("heading", { name: "工作台", exact: true }),
+  ).toBeVisible();
+  const identity = page.getByRole("link", { name: "身份与退出", exact: true });
+  if (!(await identity.isVisible()))
+    await page.getByText("Studio 导航", { exact: true }).click();
+  await identity.click();
+  await expect(
+    page.getByRole("heading", { name: "运营会话", exact: true }),
+  ).toBeVisible();
+}
+
 test.beforeAll(async () => {
   await fixtureCommand("prepare");
   prepared = true;
@@ -124,6 +137,9 @@ test("real operator login/logout and safe mobile UI captures", async ({
     await page.setViewportSize({ width, height: 900 });
     await page.goto("/studio/login");
     await expect(page.getByRole("heading", { name: "运营登录" })).toBeVisible();
+    await expect(
+      page.getByRole("navigation", { name: "Studio 导航", exact: true }),
+    ).toHaveCount(0);
     await expect(page.getByLabel("运营凭证")).toBeEnabled();
     // Only empty input is captured; credentials are never screenshot artifacts.
     await page.screenshot({
@@ -146,8 +162,14 @@ test("real operator login/logout and safe mobile UI captures", async ({
     ).toBe(true);
     await enterCredential(page, fixture.operator);
     await page.getByRole("button", { name: "登录 Studio" }).click();
-    await expect(page.getByRole("heading", { name: "运营会话" })).toBeVisible();
-    await expect(page.getByText("e2e-operator", { exact: true })).toBeVisible();
+    await openSession(page);
+    await expect(page.locator('nav[aria-label="Studio 导航"]')).toHaveCount(1);
+    const session = page.locator("section").filter({
+      has: page.getByRole("heading", { name: "运营会话", exact: true }),
+    });
+    await expect(
+      session.getByText("e2e-operator", { exact: true }),
+    ).toBeVisible();
     await expect(
       page.getByText("运营者（operator）", { exact: true }),
     ).toBeVisible();
@@ -165,8 +187,42 @@ test("real operator login/logout and safe mobile UI captures", async ({
       path: testInfo.outputPath(`studio-session-${width}.png`),
       fullPage: true,
     });
-    await page.getByRole("button", { name: "退出登录" }).click();
+    if (width === 320) {
+      // Revoke this synthetic session without the local panel's router.refresh.
+      // The next real client navigation must show login even if its layout is retained.
+      // Return only a status code; no session/CSRF value enters assertions or output.
+      const status = await page.evaluate(async () => {
+        try {
+          const current = await fetch("/api/studio/auth/session", {
+            cache: "no-store",
+          });
+          if (!current.ok) return 0;
+          const session = await current.json();
+          const response = await fetch("/api/studio/auth/logout", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-CSRF-Token": session.csrfToken,
+            },
+            body: "{}",
+          });
+          return response.status;
+        } catch {
+          return 0;
+        }
+      });
+      expect(status).toBe(204);
+      const link = page.getByRole("link", { name: "测评管理", exact: true });
+      if (!(await link.isVisible()))
+        await page.getByText("Studio 导航", { exact: true }).click();
+      await link.click();
+    } else {
+      await page.getByRole("button", { name: "退出登录" }).click();
+    }
     await expect(page.getByRole("heading", { name: "运营登录" })).toBeVisible();
+    await expect(
+      page.getByRole("navigation", { name: "Studio 导航", exact: true }),
+    ).toHaveCount(0);
     await page.goto("/studio");
     await expect(page.getByRole("heading", { name: "运营登录" })).toBeVisible();
   }
@@ -177,7 +233,13 @@ test("real read-only role is shown and can logout", async ({ page }) => {
   await expect(page.getByLabel("运营凭证")).toBeEnabled();
   await enterCredential(page, fixture.readOnly);
   await page.getByRole("button", { name: "登录 Studio" }).click();
-  await expect(page.getByText("e2e-read-only", { exact: true })).toBeVisible();
+  await openSession(page);
+  const session = page.locator("section").filter({
+    has: page.getByRole("heading", { name: "运营会话", exact: true }),
+  });
+  await expect(
+    session.getByText("e2e-read-only", { exact: true }),
+  ).toBeVisible();
   await expect(
     page.getByText("只读（read-only）", { exact: true }),
   ).toBeVisible();

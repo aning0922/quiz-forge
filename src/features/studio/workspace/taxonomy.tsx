@@ -9,6 +9,11 @@ import {
   type TaxonomyKind,
   type TaxonomyMutation,
 } from "@/features/product/workspace/contracts";
+import Link from "next/link";
+import { ArrowLeft, Plus } from "lucide-react";
+import { TechnicalDetails } from "../presentation/technical-details";
+import local from "./taxonomy.module.css";
+import { useStudioLeaveProtection } from "../navigation-boundary";
 import type { StudioSessionDto } from "../contracts";
 import { studioFetch, studioMessage } from "../client";
 import { useWorkspaceRead } from "./use-request";
@@ -23,19 +28,19 @@ function summary(item: TaxonomyDto) {
   return (
     <dl className={styles.facts}>
       <div>
-        <dt>名称与稳定 slug</dt>
+        <dt>名称与英文标识</dt>
         <dd>
           {item.name} · {item.slug}
         </dd>
       </div>
       <div>
-        <dt>修订与状态</dt>
+        <dt>信息版本与状态</dt>
         <dd>
           {item.revision} · {item.archivedAt ? "已归档" : "未归档"}
         </dd>
       </div>
       <div>
-        <dt>关联工作区（含归档）</dt>
+        <dt>关联测评（含归档）</dt>
         <dd>{item.assignedProductCount}</dd>
       </div>
     </dl>
@@ -72,8 +77,12 @@ function TaxonomyRow({
   const [reading, setReading] = useState(false);
   const [readError, setReadError] = useState("");
   const mutation = useWorkspaceMutation<TaxonomyMutation>(session.csrfToken);
+  useStudioLeaveProtection({
+    dirty: name !== item.name,
+    pending: mutation.blocked,
+  });
   const endpoint = `${taxonomyPath(kind)}/${item.id}`;
-  const label = kind === "category" ? "类目" : "标签";
+  const label = kind === "category" ? "分类" : "标签";
   const protection = rowProtection(name, item.name, mutation.state.phase);
   useEffect(() => {
     onProtectionChange(item.id, protection);
@@ -109,7 +118,7 @@ function TaxonomyRow({
       setName(result.item.name);
       setValidation(
         result.changed
-          ? "名称已保存，slug 保持不变。"
+          ? "名称已保存，英文标识保持不变。"
           : "名称相同，服务器未增加修订。",
       );
     }
@@ -181,11 +190,25 @@ function TaxonomyRow({
     mutation.reconciled();
   }
   return (
-    <article className={styles.card} aria-label={`${label} ${item.slug}`}>
-      <h3>{item.name}</h3>
-      {summary(item)}
+    <article
+      className={`${styles.card} ${local.row}`}
+      aria-label={`${label} ${item.slug}`}
+    >
+      <div className={local.rowHeading}>
+        <div>
+          <h3>{item.name}</h3>
+          <p>{item.slug}</p>
+        </div>
+        <span className={local.count}>
+          关联测评 <strong>{item.assignedProductCount}</strong>
+          <small>含归档</small>
+        </span>
+        <span className={item.archivedAt ? local.archived : local.active}>
+          {item.archivedAt ? "已归档" : "未归档"}
+        </span>
+      </div>
       {session.operator.role === "operator" && (
-        <>
+        <div className={local.rowControls}>
           {!item.archivedAt && (
             <form
               className={styles.form}
@@ -226,7 +249,7 @@ function TaxonomyRow({
               </button>
             </form>
           )}
-          <div className={styles.form}>
+          <div className={local.lifecycle}>
             {item.archivedAt ? (
               <button
                 className={styles.button}
@@ -250,7 +273,7 @@ function TaxonomyRow({
               <section className={styles.compare} aria-label="目录归档说明">
                 <p>
                   当前关联 {item.assignedProductCount}{" "}
-                  个工作区（含归档）。归档后旧关联仍可保留或移除，不能新增分配；恢复后可再次分配。此数量只用于说明，不决定写权限。
+                  个测评（含归档）。归档后旧关联仍可保留或移除，不能新增分配；恢复后可再次分配。此数量只用于说明，不决定写权限。
                 </p>
                 <div className={styles.actions}>
                   <button
@@ -273,7 +296,7 @@ function TaxonomyRow({
               </section>
             )}
           </div>
-        </>
+        </div>
       )}
       {validation && (
         <p className={styles.status} role="status">
@@ -285,6 +308,7 @@ function TaxonomyRow({
           {mutation.state.message}
         </p>
       )}
+      <TechnicalDetails label="目录技术信息">{summary(item)}</TechnicalDetails>
       <ReconcilePanel
         state={mutation.state}
         reading={reading}
@@ -320,16 +344,20 @@ function TaxonomyCreateForm({
     error?: string;
   }>();
   const mutation = useWorkspaceMutation<TaxonomyDto>(session.csrfToken);
+  useStudioLeaveProtection({
+    dirty: Boolean(name || slug),
+    pending: mutation.blocked,
+  });
   useEffect(() => {
-    onProtectionChange(mutation.blocked);
-  }, [mutation.blocked, onProtectionChange]);
+    onProtectionChange(mutation.blocked || Boolean(name || slug));
+  }, [mutation.blocked, name, slug, onProtectionChange]);
   useEffect(() => () => onProtectionChange(false), [onProtectionChange]);
-  const label = kind === "category" ? "类目" : "标签";
+  const label = kind === "category" ? "分类" : "标签";
   async function create() {
     if (mutation.blocked) return;
     const parsed = taxonomyCreateSchema.safeParse({ slug, name });
     if (!parsed.success) {
-      setValidation("请检查名称（1–40 字符）和稳定 slug（最多 80 字符）。");
+      setValidation("请检查名称（1–40 字符）和英文标识（最多 80 字符）。");
       return;
     }
     setValidation("");
@@ -372,10 +400,14 @@ function TaxonomyCreateForm({
     }
   }
   return (
-    <section className={styles.panel}>
+    <section
+      className={`${styles.panel} ${local.createPanel}`}
+      id="taxonomy-create"
+    >
       <h2>创建{label}</h2>
       <p className={styles.note}>
-        slug 创建后固定，归档不释放。显示名称允许重复，选择时以 slug 区分。
+        英文标识创建后固定，归档不释放，例如
+        historical。名称允许重复，选择时可用英文标识区分。
       </p>
       <form
         className={styles.form}
@@ -385,7 +417,7 @@ function TaxonomyCreateForm({
         }}
       >
         <div className={styles.field}>
-          <label htmlFor="taxonomy-create-name">目录显示名称</label>
+          <label htmlFor="taxonomy-create-name">名称</label>
           <input
             className={styles.input}
             id="taxonomy-create-name"
@@ -396,7 +428,7 @@ function TaxonomyCreateForm({
           />
         </div>
         <div className={styles.field}>
-          <label htmlFor="taxonomy-create-slug">目录稳定 slug</label>
+          <label htmlFor="taxonomy-create-slug">英文标识</label>
           <input
             className={styles.input}
             id="taxonomy-create-slug"
@@ -428,9 +460,7 @@ function TaxonomyCreateForm({
       )}
       {mutation.state.phase === "unknown" && (
         <section className={styles.compare} aria-label="目录创建核实">
-          <p>
-            按稳定 slug {submittedSlug} 精确读取全部归档状态，不会重发创建。
-          </p>
+          <p>按英文标识 {submittedSlug} 精确读取全部归档状态，不会重发创建。</p>
           <button
             className={styles.button}
             type="button"
@@ -447,8 +477,7 @@ function TaxonomyCreateForm({
           {checked?.item && (
             <>
               <p className={styles.note}>
-                服务器当前值已确认，存在此
-                slug。这不能证明原请求确定成功，请核对记录。
+                服务器当前值已确认，存在此英文标识。这不能证明原请求确定成功，请核对记录。
               </p>
               {summary(checked.item)}
               <button
@@ -469,8 +498,7 @@ function TaxonomyCreateForm({
           {checked?.absent && (
             <>
               <p className={styles.note}>
-                精确查询当前未找到此
-                slug，不能保证原请求从未提交。请检查后手动决定下一次提交。
+                精确查询当前未找到此英文标识，不能保证原请求从未提交。请检查后手动决定下一次提交。
               </p>
               <button
                 className={styles.button}
@@ -535,7 +563,7 @@ function TaxonomyList({
   const read = useWorkspaceRead<Page<TaxonomyDto>>(
     `${taxonomyPath(kind)}?${params}`,
   );
-  const label = kind === "category" ? "类目" : "标签";
+  const label = kind === "category" ? "分类" : "标签";
   function replaceList(change: () => void) {
     if (protectedRows.current.size) {
       setRefreshNotice(
@@ -564,8 +592,10 @@ function TaxonomyList({
     read.refresh();
   }
   return (
-    <>
-      <section className={styles.panel}>
+    <div
+      className={`${local.directoryLayout} ${session.operator.role === "read-only" ? local.readOnly : ""}`}
+    >
+      <section className={`${styles.panel} ${local.listPanel}`}>
         <h2>{label}目录</h2>
         <FilterBar
           busy={read.loading}
@@ -649,7 +679,7 @@ function TaxonomyList({
                   : `尚无${label}`}
               </p>
             )}
-            <ul className={styles.cards}>
+            <ul className={`${styles.cards} ${local.rows}`}>
               {read.value.items.map((item) => (
                 <li key={item.id}>
                   <TaxonomyRow
@@ -685,7 +715,7 @@ function TaxonomyList({
           onProtectionChange={updateCreationProtection}
         />
       )}
-    </>
+    </div>
   );
 }
 
@@ -693,36 +723,46 @@ export function TaxonomyWorkspace({ session }: { session: StudioSessionDto }) {
   const [kind, setKind] = useState<TaxonomyKind>("category");
   const [protectedState, setProtectedState] = useState(false);
   return (
-    <div className={styles.workspace}>
+    <div className={`${styles.workspace} ${local.workspace}`}>
       <WorkspaceNav />
-      <section className={styles.panel}>
-        <h1>类目与标签</h1>
-        <p className={styles.note}>
-          工作区使用单一主类目和最多 8
-          个运营标签。目录归档可恢复，原有关联不会被删除。
-        </p>
-        {session.operator.role === "read-only" && <ReadOnlyNotice />}
-        <div className={styles.actions} aria-label="目录类型">
-          <button
-            className={styles.button}
-            type="button"
-            aria-pressed={kind === "category"}
-            disabled={protectedState && kind !== "category"}
-            onClick={() => setKind("category")}
-          >
-            管理类目
-          </button>
-          <button
-            className={styles.button}
-            type="button"
-            aria-pressed={kind === "tag"}
-            disabled={protectedState && kind !== "tag"}
-            onClick={() => setKind("tag")}
-          >
-            管理标签
-          </button>
+      <header className={local.pageHeader}>
+        <div>
+          <Link className={local.back} href="/studio/settings">
+            <ArrowLeft size={16} aria-hidden="true" />
+            系统设置
+          </Link>
+          <h1>分类与标签</h1>
+          <p>
+            每个测评可选一个分类和最多 8
+            个标签。归档保留原有关联，可在目录中恢复。
+          </p>
         </div>
-      </section>
+        {session.operator.role === "operator" && (
+          <a className={local.primary} href="#taxonomy-create">
+            <Plus size={18} aria-hidden="true" />
+            创建{kind === "category" ? "分类" : "标签"}
+          </a>
+        )}
+      </header>
+      {session.operator.role === "read-only" && <ReadOnlyNotice />}
+      <div className={local.tabs} aria-label="目录类型">
+        <button
+          type="button"
+          aria-pressed={kind === "category"}
+          disabled={protectedState && kind !== "category"}
+          onClick={() => setKind("category")}
+        >
+          管理分类
+        </button>
+        <button
+          type="button"
+          aria-pressed={kind === "tag"}
+          disabled={protectedState && kind !== "tag"}
+          onClick={() => setKind("tag")}
+        >
+          管理标签
+        </button>
+      </div>
       <TaxonomyList
         key={kind}
         kind={kind}

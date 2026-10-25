@@ -31,7 +31,7 @@ export async function waitForInternalCaptureReady(page: Page, state: string) {
       page.getByRole("button", { name: "重新读取并核对完整快照", exact: true }),
     ).toBeEnabled();
     const detail = page.locator("section").filter({
-      has: page.getByRole("heading", { name: "内测版本快照", exact: true }),
+      has: page.getByRole("heading", { name: "固定内容版本详情", exact: true }),
     });
     await expect(detail.getByRole("alert")).toHaveCount(0);
     // Snapshot visibility proves only one read; this relation proves the
@@ -46,18 +46,24 @@ export async function waitForInternalCaptureReady(page: Page, state: string) {
     await expect(
       page.getByRole("button", { name: "读取当前草稿指针", exact: true }),
     ).toBeEnabled();
-    const list = page.locator("section").filter({
-      has: page.getByRole("heading", { name: "固定内测版本", exact: true }),
+    const list = page.getByRole("region", {
+      name: "已有固定版本",
+      exact: true,
+    });
+    const current = page.getByRole("region", {
+      name: "当前修订核对",
+      exact: true,
     });
     await expect(list.getByRole("alert")).toHaveCount(0);
+    await expect(current.getByRole("alert")).toHaveCount(0);
     await expect(list.getByText(/^已占用固定槽位：/)).toBeVisible();
     await expect(
-      list.getByRole("link", { name: /^当前修订 \d+ 的基线与封存$/ }),
+      current.getByRole("link", { name: /^当前修订 \d+ 的基线与封存$/ }),
     ).toBeVisible();
   } else if (reviewStates.includes(state)) {
     const read = page.locator("section").filter({
       has: page.getByRole("heading", {
-        name: /^固定修订 \d+ · 既有内测基线$/,
+        name: /^固定修订 \d+ · 已有审核依据$/,
       }),
     });
     // Disabled until BOTH independent revision/capacity reads settle, including
@@ -69,7 +75,7 @@ export async function waitForInternalCaptureReady(page: Page, state: string) {
       }),
     ).toBeEnabled();
     await expect(
-      read.getByText("正在核对修订与基线记录…", { exact: true }),
+      read.getByText("正在核对修订与审核依据记录…", { exact: true }),
     ).toHaveCount(0);
     const twoErrors = ["authority-get401", "authority-get404"].includes(state);
     const readError = state.endsWith("-resolved-detail-error");
@@ -80,15 +86,15 @@ export async function waitForInternalCaptureReady(page: Page, state: string) {
       await expect(read.getByText(/^已占用固定槽位：/)).toBeVisible();
       if (!readError)
         await expect(
-          read.getByText("本次读取的当前 head：", { exact: false }),
+          read.getByText("本次读取的当前修订：", { exact: false }),
         ).toBeVisible();
     }
     const write = page.getByRole("region", {
-      name: "记录与封存准备",
+      name: "记录审核依据与固定内容版本",
       exact: true,
     });
     const unavailable = write.getByText(
-      "尚未可靠确认四类请求均无待确认锚点，新准备保持关闭。请先处理对应原请求核实区。",
+      "尚未可靠确认四类请求均无待确认本地操作记录，新准备保持关闭。请先处理对应原操作核实区。",
       { exact: true },
     );
     if (
@@ -102,24 +108,24 @@ export async function waitForInternalCaptureReady(page: Page, state: string) {
       await expect(unavailable).toHaveCount(0);
     else await expect(unavailable).toBeVisible();
     await expect(
-      write.getByText("正在发送固定请求；请等待或保留原锚点核实…", {
+      write.getByText("正在发送固定请求；请等待或保留原操作记录核实…", {
         exact: true,
       }),
     ).toHaveCount(0);
   } else throw Error("INTERNAL_CAPTURE_STATE_UNRECOGNIZED");
-  for (const label of ["基线记录", "内测封存"]) {
+  for (const label of ["审核依据记录", "内容版本固定"]) {
     const pending = page.getByRole("region", {
-      name: `${label}原请求核实`,
+      name: `${label}操作查询`,
       exact: true,
     });
     await expect(pending).toHaveCount(1);
     await expect(
-      pending.getByText("尚未可靠读取此原请求桶；新准备保持关闭。", {
+      pending.getByText("正在检查上次操作，请稍候；检查完成前不能继续提交。", {
         exact: true,
       }),
     ).toHaveCount(0);
     await expect(
-      pending.getByText("正在核实或处理原请求…", { exact: true }),
+      pending.getByText("正在核实或处理原操作…", { exact: true }),
     ).toHaveCount(0);
   }
 }

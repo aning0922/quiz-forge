@@ -36,7 +36,7 @@ async function preparedRequest(
   operation: InternalOperation,
 ): Promise<InternalRequest> {
   const text = await page
-    .getByRole("region", { name: "确认固定原请求", exact: true })
+    .getByRole("region", { name: "确认固定原操作", exact: true })
     .locator("pre")
     .textContent();
   if (!text) throw Error("INTERNAL_VERSION_E2E_CONFIRMATION_MISSING");
@@ -59,12 +59,14 @@ export async function exerciseInternalWriteUnknown(
 ): Promise<InternalEvidence> {
   await page.goto(internalReviewPageUrl(scope));
   const write = page.getByRole("region", {
-      name: "记录与封存准备",
+      name: "记录审核依据与固定内容版本",
       exact: true,
     }),
     prepare = write.getByRole("button", {
       name:
-        operation === "review" ? "准备记录既有基线" : "准备封存固定内测版本",
+        operation === "review"
+          ? "准备记录已有审核依据"
+          : "准备固定内测内容版本",
       exact: true,
     }),
     refresh = page.getByRole("button", {
@@ -143,7 +145,7 @@ export async function exerciseInternalWriteUnknown(
       .toEqual({ tuple: original.tuple, mayHaveBeenSent: true });
     await expect(
       write.getByText(
-        "本次提交未收到可确认的成功回执。请保留原 key 和完整目标，以原请求核实区的最新证据为准。",
+        "上次操作结果暂未确认，请先查询处理结果，确认前避免重复提交。原操作记录会保留；如需再次发送，须由你明确选择原操作。",
         { exact: true },
       ),
     ).toBeVisible();
@@ -155,7 +157,7 @@ export async function exerciseInternalWriteUnknown(
   }
   // Explicit exact replay is a real second POST returning200, not another new write.
   const replayPanel = internalPanel(page, operation),
-    label = operation === "review" ? "基线记录" : "内测封存";
+    label = operation === "review" ? "审核依据记录" : "内容版本固定";
   let replayPosts = 0;
   const replay = async (route: Route) => {
     if (route.request().method() !== "POST") {
@@ -176,7 +178,10 @@ export async function exerciseInternalWriteUnknown(
   await page.route(`**${path}`, replay);
   try {
     await replayPanel
-      .getByRole("button", { name: `明确按原${label}请求重放`, exact: true })
+      .getByRole("button", {
+        name: `再次发送原${label}请求再次发送原操作`,
+        exact: true,
+      })
       .click();
     await expect(
       replayPanel.locator(
@@ -216,14 +221,18 @@ export async function exerciseInternalWriteUnknown(
     await expect(
       pending.getByRole("button", {
         name:
-          operation === "review" ? "核实基线记录原请求" : "核实内测封存原请求",
+          operation === "review"
+            ? "查询审核依据记录结果"
+            : "查询内容版本固定结果",
         exact: true,
       }),
     ).toBeEnabled();
     await pending
       .getByRole("button", {
         name:
-          operation === "review" ? "核实基线记录原请求" : "核实内测封存原请求",
+          operation === "review"
+            ? "查询审核依据记录结果"
+            : "查询内容版本固定结果",
         exact: true,
       })
       .click();
@@ -240,7 +249,10 @@ export async function exerciseInternalWriteUnknown(
       `${operation}-resolved-detail-error`,
     );
     await pending
-      .getByRole("button", { name: "依核实证据解除本原请求锚点", exact: true })
+      .getByRole("button", {
+        name: "确认处理结果并结束此操作记录",
+        exact: true,
+      })
       .click();
     await expect
       .poll(() => internalPending(page, operation, scope.productId))

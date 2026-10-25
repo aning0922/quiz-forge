@@ -1,4 +1,8 @@
 "use client";
+import { TechnicalDetails } from "../presentation/technical-details";
+import { StudioPageHeader } from "../presentation/page-header";
+import { previewPagePath } from "@/features/product/preview/urls";
+import { StudioWorkflowNav } from "../presentation/workflow-nav";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { StudioSessionDto } from "../contracts";
@@ -21,13 +25,40 @@ import { PREVIEW_VIEW_REGISTRY } from "@/features/theme/preview/components";
 import type { PreviewState } from "@/features/theme/preview/registry";
 import { exportPreviewPoster } from "./export";
 import styles from "./preview.module.css";
+import type { InternalProductAuthority } from "../internal-versions/authority";
+import { StudioClientError } from "../client";
+import { invalidateCurrentStudioAuthority } from "../authority-events";
+
+function observePreviewAuthority(
+  authority: InternalProductAuthority | undefined,
+  error: unknown,
+) {
+  if (
+    !authority ||
+    !(error instanceof PreviewClientError) ||
+    ![
+      "UNAUTHENTICATED",
+      "CAPABILITY_DENIED",
+      "CSRF_REJECTED",
+      "ORIGIN_REJECTED",
+    ].includes(error.code)
+  )
+    return;
+  const wasRevoked = authority.isRevoked;
+  authority.observe(new StudioClientError(error.code));
+  if (!wasRevoked && authority.isRevoked) invalidateCurrentStudioAuthority();
+}
 
 export function FixedRevisionPreviewPage({
   scope,
   session,
+  embedded = false,
+  authority,
 }: {
   scope: PreviewScope;
   session: StudioSessionDto;
+  embedded?: boolean;
+  authority?: InternalProductAuthority;
 }) {
   const [attempt, setAttempt] = useState(0),
     [read, setRead] = useState<{
@@ -36,41 +67,67 @@ export function FixedRevisionPreviewPage({
       error?: string;
     }>({ attempt: 0 });
   useEffect(() => {
+    if (authority?.isRevoked) return;
     const controller = new AbortController();
     let current = true;
+    const ticket = authority?.capture();
     void fetchPreviewEntry(scope, controller.signal).then(
       (entry) => {
-        if (current) setRead({ attempt, entry });
+        if (current && (!authority || (ticket && authority.accepts(ticket))))
+          setRead({ attempt, entry });
       },
       (error) => {
-        if (current) setRead({ attempt, error: previewMessage(error) });
+        if (current) {
+          observePreviewAuthority(authority, error);
+          setRead({ attempt, error: previewMessage(error) });
+        }
       },
     );
     return () => {
       current = false;
       controller.abort();
     };
-  }, [scope, attempt]);
+  }, [scope, attempt, authority]);
   const active = read.attempt === attempt;
   return (
-    <div className={styles.preview}>
-      <nav className={styles.navigation} aria-label="固定修订导航">
-        <Link
-          href={draftRevisionPath(
-            scope.productId,
-            scope.draftId,
-            scope.revision,
-          )}
-        >
-          阅读固定修订原文
-        </Link>
-        <Link href="/studio">返回运营空间</Link>
-      </nav>
+    <div className={`${styles.preview} ${embedded ? styles.embedded : ""}`}>
+      {!embedded && (
+        <>
+          <StudioPageHeader
+            title="固定修订内容预览"
+            description={
+              <>
+                固定目标：修订 {scope.revision}
+                。此处用于检查内容与画面，不产生正式消费者报告。
+              </>
+            }
+          />
+          <StudioWorkflowNav
+            productId={scope.productId}
+            current="preview"
+            previewHref={previewPagePath(scope)}
+          />
+          <nav className={styles.navigation} aria-label="固定修订导航">
+            <Link
+              href={draftRevisionPath(
+                scope.productId,
+                scope.draftId,
+                scope.revision,
+              )}
+            >
+              返回此修订内容
+            </Link>
+            <Link href="/studio">返回运营空间</Link>
+          </nav>
+        </>
+      )}
       <div className={styles.binding}>
         <strong>内部预览 · 固定修订 {scope.revision}</strong>
-        <p>
-          {scope.productId} / {scope.draftId}
-        </p>
+        <TechnicalDetails label="预览目标标识">
+          <p>
+            {scope.productId} / {scope.draftId}
+          </p>
+        </TechnicalDetails>
         <p>
           临时答案与结果仅留在本页，刷新后重置。内容、素材与发布仍须人工批准。
         </p>
@@ -80,15 +137,23 @@ export function FixedRevisionPreviewPage({
           key={`${attempt}/${read.entry.binding.canonicalContentSha256}`}
           entry={read.entry}
           session={session}
+          authority={authority}
         />
       ) : active && read.error ? (
         <section className={styles.failure} role="alert">
           <h1>此固定修订暂不可预览</h1>
           <p>{read.error}</p>
-          <button onClick={() => setAttempt((n) => n + 1)}>
+          <button
+            disabled={authority?.isRevoked}
+            onClick={() => setAttempt((n) => n + 1)}
+          >
             重新读取固定修订
           </button>
         </section>
+      ) : authority?.isRevoked ? (
+        <p role="alert" className={styles.failure}>
+          当前预览权限已失效。原目标保持，请在新登录的工作区重新核实。
+        </p>
       ) : (
         <p className={styles.loading} role="status">
           正在读取并核验固定修订预览…
@@ -100,9 +165,11 @@ export function FixedRevisionPreviewPage({
 function PreviewExperience({
   entry,
   session,
+  authority,
 }: {
   entry: PreviewEntry;
   session: StudioSessionDto;
+  authority?: InternalProductAuthority | undefined;
 }) {
   const [flow] = useState(() => new PreviewFlow(entry)),
     [screen, setScreen] = useState<PreviewState>("cover"),
@@ -156,8 +223,21 @@ function PreviewExperience({
     setReveal(undefined);
     revokePng();
   }, [flow, revokePng]);
+  useEffect(
+    () =>
+      authority?.subscribe(() => {
+        if (authority.isRevoked) {
+          invalidate();
+          setError(
+            "当前工作区权限已失效，原临时答案保留；请在新登录的工作区重新核实。 ",
+          );
+        }
+      }),
+    [authority, invalidate],
+  );
   const failure = useCallback(
     (error: unknown) => {
+      observePreviewAuthority(authority, error);
       if (
         error instanceof PreviewClientError &&
         [
@@ -172,9 +252,10 @@ function PreviewExperience({
         setError(previewMessage(error));
       }
     },
-    [invalidate],
+    [invalidate, authority],
   );
   const choose = (q: string, o: string) => {
+    if (authority?.isRevoked) return;
     invalidate();
     flow.edit(q, o);
     setGeneration(flow.version);
@@ -182,6 +263,7 @@ function PreviewExperience({
     setError(undefined);
   };
   const score = async () => {
+    if (authority?.isRevoked) return;
     scoring.current?.abort();
     revokePng();
     setReveal(undefined);
@@ -197,7 +279,11 @@ function PreviewExperience({
         session.csrfToken,
         controller.signal,
       );
-      if (mounted.current && flow.accepts(ticket, value)) {
+      if (
+        mounted.current &&
+        !authority?.isRevoked &&
+        flow.accepts(ticket, value)
+      ) {
         setReveal(value);
         setScreen("result");
         setBusy(false);
@@ -211,11 +297,13 @@ function PreviewExperience({
     }
   };
   const navigate = (next: PreviewState) => {
+    if (authority?.isRevoked) return;
     if (busy) invalidate();
     revokePng();
     setScreen(next);
   };
   const generate = async () => {
+    if (authority?.isRevoked) return;
     revokePng();
     if (!reveal || reveal.poster.kind !== "ready") return;
     const value: PreviewPosterExport = {
@@ -233,6 +321,7 @@ function PreviewExperience({
     setExporting(true);
     const current = () =>
       mounted.current &&
+      !authority?.isRevoked &&
       !controller.signal.aborted &&
       flow.isCurrent(version) &&
       encoding.current === controller;
@@ -277,14 +366,15 @@ function PreviewExperience({
     : ["result", "report", "poster"].includes(screen)
       ? reveal?.result.portrait
       : undefined;
-  const media = asset ? (
-    <PreviewImage
-      key={`${screen}/${index}/${generation}/${asset.resourceRef.id}@${asset.resourceRef.version}`}
-      binding={entry.binding}
-      asset={asset}
-      onFailure={failure}
-    />
-  ) : null;
+  const media =
+    asset && !authority?.isRevoked ? (
+      <PreviewImage
+        key={`${screen}/${index}/${generation}/${asset.resourceRef.id}@${asset.resourceRef.version}`}
+        binding={entry.binding}
+        asset={asset}
+        onFailure={failure}
+      />
+    ) : null;
   const shared = { entry, media };
   const Cover = PREVIEW_VIEW_REGISTRY.components["folio-cover"],
     Question = PREVIEW_VIEW_REGISTRY.components["folio-question"],

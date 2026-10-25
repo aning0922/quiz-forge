@@ -1,7 +1,16 @@
 "use client";
+import { useContentAuthority } from "../product-workspace/content-authority";
+import { TechnicalDetails } from "../presentation/technical-details";
+import { useStudioLeaveProtection } from "../navigation-boundary";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
+import compact from "../product-workspace/content-workbench.module.css";
+import {
+  useContentTaskState,
+  type ContentTaskState,
+  type ContentStateObserver,
+} from "../product-workspace/content-task-state";
 import type {
   ImportDto,
   ImportSettingsDto,
@@ -21,12 +30,23 @@ export function CreateReceive({
   settings,
   session,
   onChanged,
+  embedded = false,
+  onConfirmed,
+  onState,
+  renderActions,
+  onInspectSource,
 }: {
   productId: string;
   settings: ImportSettingsDto;
   session: StudioSessionDto;
   onChanged: () => void;
+  embedded?: boolean;
+  onConfirmed?: (value: ImportDto) => void;
+  onState?: ContentStateObserver | undefined;
+  renderActions?: ((actions: ReactNode) => ReactNode) | undefined;
+  onInspectSource?: ((importId: string) => void) | undefined;
 }) {
+  const authority = useContentAuthority();
   const [pending, setPending] = useState<PendingArchive>();
   const [fileInputRevision, setFileInputRevision] = useState(0);
   const [value, setValue] = useState<ImportDto>();
@@ -34,6 +54,29 @@ export function CreateReceive({
   const [message, setMessage] = useState("");
   const [unknown, setUnknown] = useState(false);
   const [queriedEmpty, setQueriedEmpty] = useState(false);
+  useStudioLeaveProtection({
+    dirty: !!pending && !value,
+    pending: busy || unknown,
+    message:
+      "文件正在准备或接收意图尚未确认。请留在此页完成核实，原文件与操作编号将继续保留。",
+  });
+  const [receiveState, setReceiveState] = useState<ContentTaskState>({
+    busy: false,
+    pending: false,
+    retained: false,
+  });
+  useContentTaskState(onState, {
+    busy: busy || receiveState.busy,
+    pending: unknown || (!!pending && !value) || receiveState.pending,
+    retained: !!pending || !!value,
+    message: unknown
+      ? "接收意图结果待核实，原文件与操作编号已保留。"
+      : receiveState.message,
+  });
+  function adopt(next: ImportDto) {
+    setValue(next);
+    onConfirmed?.(next);
+  }
   const endpoint = `/api/studio/products/${encodeURIComponent(productId)}/imports`;
   async function select(file?: File) {
     if (pending || busy || !file) return;
@@ -50,12 +93,21 @@ export function CreateReceive({
     }
   }
   async function submit() {
-    if (!pending || busy || value || (unknown && !queriedEmpty)) return;
+    if (
+      !authority.canWrite() ||
+      session.operator.role !== "operator" ||
+      !settings.enabled ||
+      !pending ||
+      busy ||
+      value ||
+      (unknown && !queriedEmpty)
+    )
+      return;
     setBusy(true);
     setMessage("");
     setQueriedEmpty(false);
     try {
-      setValue(
+      adopt(
         await checkedImportFetch<ImportDto>(
           endpoint,
           {
@@ -75,6 +127,7 @@ export function CreateReceive({
       setUnknown(false);
       onChanged();
     } catch (error) {
+      authority.observe(error);
       setMessage(importMessage(error));
       setUnknown((previous) => previous || isUnknownWrite(error));
     } finally {
@@ -100,58 +153,213 @@ export function CreateReceive({
           }),
       );
       if (result.items[0]) {
-        setValue(result.items[0]);
+        adopt(result.items[0]);
         setUnknown(false);
         onChanged();
       } else {
         setQueriedEmpty(true);
         setMessage(
-          "精确查询暂未返回记录。0 条不证明原请求未提交；可以显式用原 key 与完整原输入重提。",
+          "精确查询暂未返回记录。0 条不证明原操作未提交；可以显式用原操作记录与完整原输入重提。",
         );
       }
     } catch (error) {
+      authority.observe(error);
       setMessage(importMessage(error));
     } finally {
       setBusy(false);
     }
   }
+  if (embedded) {
+    const actions = (
+      <div className={compact.footerActions}>
+        {pending && !value && (
+          <>
+            <button
+              className={compact.primary}
+              disabled={
+                !authority.canWrite() ||
+                session.operator.role !== "operator" ||
+                !settings.enabled ||
+                busy ||
+                (unknown && !queriedEmpty)
+              }
+              onClick={() => void submit()}
+            >
+              {unknown ? "以原操作和原输入重提" : "建立本次接收记录"}
+            </button>
+            {!unknown && (
+              <button
+                className={compact.secondary}
+                disabled={busy}
+                onClick={() => {
+                  setPending(undefined);
+                  setFileInputRevision((n) => n + 1);
+                  setMessage("");
+                }}
+              >
+                重新选择
+              </button>
+            )}
+            {(unknown || message) && (
+              <button
+                className={compact.secondary}
+                disabled={busy}
+                onClick={() => void reconcile()}
+              >
+                按原操作核实
+              </button>
+            )}
+          </>
+        )}
+      </div>
+    );
+    return (
+      <div className={compact.stage}>
+        {!value && (
+          <>
+            <h3>选择内容包文件</h3>
+            <p className={compact.intro}>
+              选择已制作好的 QuizPack。先建立接收记录，再明确上传原文件。
+            </p>
+            <label className={compact.fileField}>
+              QuizPack 文件
+              <input
+                key={fileInputRevision}
+                type="file"
+                accept=".quizpack"
+                disabled={busy || !!pending}
+                onChange={(event) => void select(event.target.files?.[0])}
+              />
+            </label>
+            <p className={compact.caption}>
+              文件上限
+              32MiB，仅在当前文档内存中保留；刷新或关闭文档后需重新选择。
+            </p>
+            {pending && (
+              <dl className={compact.checkCard}>
+                <div>
+                  <dt>当前已选</dt>
+                  <dd>
+                    {pending.file instanceof File
+                      ? pending.file.name
+                      : "内容包文件"}
+                  </dd>
+                </div>
+                <div>
+                  <dt>文件大小</dt>
+                  <dd>
+                    {Math.ceil(pending.input.expectedArchiveBytes / 1024)} KB
+                  </dd>
+                </div>
+              </dl>
+            )}
+            {unknown && (
+              <div className={compact.pending} role="status">
+                <strong>接收记录提交结果待核实</strong>
+                <p>
+                  原文件、原操作编号及完整输入已保留。空查询不表示未提交，请先按原操作核实。
+                </p>
+              </div>
+            )}
+            {message && (
+              <p className={compact.warning} role="status">
+                {message}
+              </p>
+            )}
+            {busy && <p role="status">正在准备或核实本次文件…</p>}
+            {pending && (
+              <TechnicalDetails label="查看本次文件与操作标识">
+                <p>操作编号：{pending.idempotencyKey}</p>
+                <p>SHA-256：{pending.input.expectedArchiveSha256}</p>
+              </TechnicalDetails>
+            )}
+            {pending && (renderActions ? renderActions(actions) : actions)}
+          </>
+        )}
+        {value && (
+          <ReceiveControls
+            key={value.id}
+            initial={value}
+            productId={productId}
+            session={session}
+            settings={settings}
+            archived={false}
+            file={pending?.file}
+            embedded
+            onState={setReceiveState}
+            onInspectSource={onInspectSource}
+            renderActions={renderActions}
+            onUpdate={(next) => {
+              adopt(next);
+              onChanged();
+            }}
+          />
+        )}
+      </div>
+    );
+  }
   return (
     <div>
       <section className={styles.panel}>
-        <h2>选择本地原包</h2>
+        <h2>选择内容包文件</h2>
         <p className={styles.note}>
-          上限
-          32MiB；本批仅隔离接收原字节。原包用途为未来新草稿，不会创建空草稿。
+          {embedded
+            ? "上限 32MiB。先登记本次文件，再明确上传原文件。"
+            : "上限 32MiB。选择文件后先创建接收意图，再明确上传。接收完成后仍需验证归档，草稿由后续步骤创建。"}
         </p>
         <label className={styles.field}>
-          原包文件
+          内容包文件
           <input
             className={`${styles.input} ${local.file}`}
             key={fileInputRevision}
             type="file"
+            accept={embedded ? ".quizpack" : undefined}
             disabled={busy || !!pending}
             onChange={(event) => void select(event.target.files?.[0])}
           />
         </label>
         {pending && (
-          <dl className={styles.facts}>
-            <div>
-              <dt>本次请求标识</dt>
-              <dd>{pending.idempotencyKey}</dd>
-            </div>
-            <div>
-              <dt>字节数</dt>
-              <dd>{pending.input.expectedArchiveBytes}</dd>
-            </div>
-            <div>
-              <dt>SHA-256</dt>
-              <dd>{pending.input.expectedArchiveSha256}</dd>
-            </div>
-          </dl>
+          <>
+            <p>
+              已选择：
+              {pending.file instanceof File
+                ? pending.file.name
+                : "内容包文件"}{" "}
+              · {pending.input.expectedArchiveBytes.toLocaleString()} 字节
+            </p>
+            <TechnicalDetails label="本次接收声明">
+              <dl className={styles.facts}>
+                <div>
+                  <dt>本次操作编号</dt>
+                  <dd>{pending.idempotencyKey}</dd>
+                </div>
+                <div>
+                  <dt>字节数</dt>
+                  <dd>{pending.input.expectedArchiveBytes}</dd>
+                </div>
+                {embedded && (
+                  <div>
+                    <dt>SHA-256</dt>
+                    <dd>{pending.input.expectedArchiveSha256}</dd>
+                  </div>
+                )}
+              </dl>
+            </TechnicalDetails>
+            {!embedded && (
+              <TechnicalDetails label="所选文件技术信息">
+                <dl className={styles.facts}>
+                  <div>
+                    <dt>SHA-256</dt>
+                    <dd>{pending.input.expectedArchiveSha256}</dd>
+                  </div>
+                </dl>
+              </TechnicalDetails>
+            )}
+          </>
         )}
         {unknown && (
           <p className={styles.compare} role="status">
-            意图提交结果尚未确认。原文件、原 key
+            意图提交结果尚未确认。原文件、原操作编号
             与完整输入已保留在此页，请先精确核实。
           </p>
         )}
@@ -169,19 +377,29 @@ export function CreateReceive({
           {pending && !value && (
             <button
               className={styles.button}
-              disabled={busy || (unknown && !queriedEmpty)}
+              disabled={
+                !authority.canWrite() ||
+                session.operator.role !== "operator" ||
+                !settings.enabled ||
+                busy ||
+                (unknown && !queriedEmpty)
+              }
               onClick={() => void submit()}
             >
-              {unknown ? "以原请求标识和原输入重提" : "创建原包接收意图"}
+              {unknown
+                ? "以原操作编号和原输入重提"
+                : embedded
+                  ? "登记本次文件"
+                  : "创建内容包接收意图"}
             </button>
           )}
-          {pending && !value && (
+          {pending && !value && (!embedded || unknown || !!message) && (
             <button
               className={`${styles.button} ${styles.secondary}`}
               disabled={busy}
               onClick={() => void reconcile()}
             >
-              按原请求标识精确核实
+              按原操作编号精确核实
             </button>
           )}
           {!unknown && !value && pending && (
@@ -198,10 +416,12 @@ export function CreateReceive({
             </button>
           )}
         </div>
-        <p className={styles.note}>
-          文件与请求信息仅保留在当前页内存。操作期间请勿关闭或刷新页面；已有接收
-          ID 可从列表继续读取和恢复。
-        </p>
+        {!embedded && (
+          <p className={styles.note}>
+            文件与请求信息仅保留在当前页内存。操作期间请勿关闭或刷新页面；已有接收
+            ID 可从列表继续读取和恢复。
+          </p>
+        )}
       </section>
       {value && (
         <div className={local.stack}>
@@ -213,14 +433,21 @@ export function CreateReceive({
             settings={settings}
             archived={false}
             file={pending?.file}
-            onUpdate={() => onChanged()}
+            embedded={embedded}
+            onState={setReceiveState}
+            onUpdate={(next) => {
+              adopt(next);
+              onChanged();
+            }}
           />
-          <Link
-            className={`${styles.link} ${styles.secondary}`}
-            href={`/studio/products/${encodeURIComponent(productId)}/imports/${value.id}`}
-          >
-            打开接收状态页
-          </Link>
+          {!embedded && (
+            <Link
+              className={`${styles.link} ${styles.secondary}`}
+              href={`/studio/products/${encodeURIComponent(productId)}/imports/${value.id}`}
+            >
+              打开接收状态页
+            </Link>
+          )}
         </div>
       )}
     </div>

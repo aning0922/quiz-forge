@@ -1,5 +1,7 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useContentAuthority } from "../product-workspace/content-authority";
+import { TechnicalDetails } from "../presentation/technical-details";
+import { useEffect, useState, type ReactNode } from "react";
 import { z } from "zod";
 import type { ValidationDto } from "@/features/quizpack/validation/contracts";
 import type {
@@ -18,8 +20,15 @@ import { matchesAppendSelection } from "./view-state";
 import { AppendBindingFacts, RevisionLinks } from "./primitives";
 import { RevisionPendingPanel } from "./pending-panel";
 import { revisionMessage } from "./message";
+import type { RevisionTarget } from "@/features/product/internal-versions/identity-contracts";
+import compact from "../product-workspace/content-workbench.module.css";
 import styles from "../workspace/workspace.module.css";
 import local from "./revisions.module.css";
+import {
+  useContentTaskState,
+  type ContentTaskState,
+  type ContentStateObserver,
+} from "../product-workspace/content-task-state";
 const productSchema = z.object({
   id: z.string(),
   archivedAt: z.string().nullable(),
@@ -29,12 +38,27 @@ export function AppendRevisionPanel({
   validation,
   session,
   refreshing,
+  embedded = false,
+  onConfirmed,
+  onState,
+  renderActions,
+  onPreview,
+  onInspectRevision,
+  onInspectSource,
 }: {
   productId: string;
   validation: ValidationDto | undefined;
   session: StudioSessionDto;
   refreshing: boolean;
+  embedded?: boolean;
+  onConfirmed?: (value: AppendDraftApplication) => void;
+  onState?: ContentStateObserver | undefined;
+  renderActions?: ((actions: ReactNode) => ReactNode) | undefined;
+  onPreview?: ((target: RevisionTarget) => void) | undefined;
+  onInspectRevision?: ((target: RevisionTarget) => void) | undefined;
+  onInspectSource?: ((importId: string) => void) | undefined;
 }) {
+  const authority = useContentAuthority();
   const current = useDraftRead(draftEndpoint(productId), (v) =>
       checkDraftRead(v, productId),
     ),
@@ -57,6 +81,21 @@ export function AppendRevisionPanel({
     [message, setMessage] = useState(""),
     [storageReady, setStorageReady] = useState(false),
     [pendingRefresh, setPendingRefresh] = useState(0);
+  const [pendingState, setPendingState] = useState<ContentTaskState>({
+    busy: false,
+    pending: true,
+    retained: false,
+  });
+  useContentTaskState(onState, {
+    busy: busy || pendingState.busy,
+    pending: !!confirmation || pendingState.pending || !storageReady,
+    retained: !!confirmation || !!receipt || pendingState.retained,
+    message: pendingState.message,
+  });
+  function adopt(next: AppendDraftApplication) {
+    setReceipt(next);
+    if (authority.canWrite()) onConfirmed?.(next);
+  }
   function availability() {
     try {
       inspectRevisionPreparation(sessionStorage, productId);
@@ -87,7 +126,8 @@ export function AppendRevisionPanel({
       current.loading ||
       product.loading ||
       Boolean(current.error || product.error),
-    operator = session.operator.role === "operator" && !denied,
+    operator =
+      authority.canWrite() && session.operator.role === "operator" && !denied,
     full = Boolean(
       base && base.revision >= DRAFT_REVISION_LIMITS.maximumRevision,
     );
@@ -110,7 +150,7 @@ export function AppendRevisionPanel({
     ready &&
     !product.value?.archivedAt;
   function prepare() {
-    if (!canPrepare || !base || !validation) return;
+    if (!authority.canWrite() || !canPrepare || !base || !validation) return;
     try {
       inspectRevisionPreparation(sessionStorage, productId);
       setConfirmation({
@@ -134,19 +174,21 @@ export function AppendRevisionPanel({
       });
       setMessage("");
     } catch (error) {
+      authority.observe(error);
       setStorageReady(false);
       setMessage(revisionMessage(error));
     }
   }
   function changed(application?: AppendDraftApplication) {
     setConfirmation(undefined);
-    if (application) setReceipt(application);
+    if (application) adopt(application);
     availability();
     current.refresh();
     product.refresh();
   }
   async function append() {
-    if (!canPrepare || !confirmed || !confirmation) return;
+    if (!authority.canWrite() || !canPrepare || !confirmed || !confirmation)
+      return;
     const tuple = confirmation.binding;
     setBusy(true);
     setMessage("");
@@ -157,12 +199,13 @@ export function AppendRevisionPanel({
         tuple,
         session.csrfToken,
       );
-      setReceipt(result.application);
+      adopt(result.application);
       setMessage(
         `服务器已确认固定修订 ${result.application.revision}。当前摘要需单独刷新。`,
       );
       current.refresh();
     } catch (error) {
+      authority.observe(error);
       if (
         error instanceof StudioClientError &&
         ["CAPABILITY_DENIED", "UNAUTHENTICATED", "CSRF_REJECTED"].includes(
@@ -177,12 +220,154 @@ export function AppendRevisionPanel({
       setBusy(false);
     }
   }
+  if (embedded) {
+    const actions = (
+      <div className={compact.footerActions}>
+        {!receipt &&
+          !pendingState.pending &&
+          (confirmed && confirmation ? (
+            <>
+              <button
+                className={compact.primary}
+                disabled={!canPrepare}
+                onClick={() => void append()}
+              >
+                确认追加新修订 r
+                {confirmation.binding.target.expectedRevision + 1}
+              </button>
+              <button
+                className={compact.secondary}
+                disabled={busy}
+                onClick={() => setConfirmation(undefined)}
+              >
+                取消未发送确认
+              </button>
+            </>
+          ) : (
+            <button
+              className={compact.primary}
+              disabled={!canPrepare}
+              onClick={prepare}
+            >
+              核对并准备追加修订
+            </button>
+          ))}
+      </div>
+    );
+    return (
+      <div className={compact.stage}>
+        {receipt ? (
+          <>
+            <p className={compact.success}>
+              已核实固定追加结果：r{receipt.revision}。
+            </p>
+            <RevisionLinks
+              draft={receipt}
+              embedded
+              onPreview={onPreview}
+              onInspectRevision={onInspectRevision}
+              onInspectSource={onInspectSource}
+            />
+          </>
+        ) : (
+          <>
+            <h3>{confirmed ? "确认追加新修订" : "核对本次草稿更新"}</h3>
+            <dl className={compact.checkCard}>
+              <div>
+                <dt>来源内容</dt>
+                <dd>
+                  {validation?.packId ?? "所选固定来源"} /{" "}
+                  {validation?.packVersion ?? "待核实"}
+                </dd>
+              </div>
+              <div>
+                <dt>检查状态</dt>
+                <dd>{ready ? "就绪" : "尚不能用于草稿"}</dd>
+              </div>
+              <div>
+                <dt>原草稿基准</dt>
+                <dd>
+                  {base
+                    ? `r${confirmation?.binding.target.expectedRevision ?? base.revision}`
+                    : "尚未取得"}
+                </dd>
+              </div>
+              <div>
+                <dt>草稿动作</dt>
+                <dd>
+                  {base
+                    ? `追加不可变新修订 r${(confirmation?.binding.target.expectedRevision ?? base.revision) + 1}`
+                    : "待核实基准"}
+                </dd>
+              </div>
+            </dl>
+            <p className={compact.notice}>
+              仅按此固定来源与基准提交。旧修订保持；基准变化时拒绝，不自动采用最新版。
+            </p>
+          </>
+        )}
+        {(current.loading || product.loading) && (
+          <p role="status">正在核对草稿与工作区…</p>
+        )}
+        {(current.error || product.error || message) && (
+          <p className={compact.warning} role="status">
+            {current.error || product.error || message}
+          </p>
+        )}
+        {denied && (
+          <p className={compact.warning}>当前写入权限已失效，原操作保持。</p>
+        )}
+        {product.value?.archivedAt && (
+          <p className={compact.warning}>工作区已归档，不能追加。</p>
+        )}
+        {full && <p className={compact.warning}>已达到草稿修订容量上限。</p>}
+        {confirmation && !confirmed && (
+          <p className={compact.warning}>
+            来源或基准已变化，之前的未发送确认已失效，请重新核对。
+          </p>
+        )}
+        {!storageReady && (
+          <p className={compact.warning}>
+            有原操作待核实，或本地记录不可用。新准备保持关闭。
+          </p>
+        )}
+        {busy && <p role="status">正在提交固定来源与基准…</p>}
+        <button
+          className={compact.textButton}
+          disabled={busy || refreshing}
+          onClick={() => {
+            setConfirmation(undefined);
+            availability();
+            current.refresh();
+            product.refresh();
+          }}
+        >
+          重新核对当前基准
+        </button>
+        {renderActions ? renderActions(actions) : actions}
+        <RevisionPendingPanel
+          key={`${productId}/${pendingRefresh}`}
+          productId={productId}
+          session={session}
+          refreshing={busy}
+          writeBlocked={denied}
+          onChanged={changed}
+          onState={setPendingState}
+          embedded
+          onPreview={onPreview}
+          onInspectRevision={onInspectRevision}
+          onInspectSource={onInspectSource}
+          renderActions={renderActions}
+        />
+      </div>
+    );
+  }
   return (
     <>
-      <section className={styles.panel} aria-label="追加草稿修订">
-        <h2>追加草稿修订</h2>
+      <section className={styles.panel} aria-label="更新草稿">
+        <h2>更新草稿</h2>
         <p className={styles.note}>
-          将此完整候选追加到同一草稿，创建新的不可变修订。旧正文、素材引用和回执保留；此操作不授予审核或发布资格。
+          将此完整候选追加到同一草稿，创建新的不可变修订。旧正文、素材引用和处理结果保留；此操作不授予审核或发布资格。
         </p>
         <button
           className={`${styles.button} ${styles.secondary}`}
@@ -206,24 +391,28 @@ export function AppendRevisionPanel({
         )}
         {base && (
           <div className={local.receipt}>
-            <h3>本次读取的当前基准：修订 {base.revision}</h3>
+            <h3>本次更新所依据的草稿：修订 {base.revision}</h3>
             <p>草稿 {base.draftId}</p>
-            <p>内容 {base.canonicalContentSha256}</p>
-            <p>素材集合 {base.assetSetSha256}</p>
-            <RevisionLinks draft={base} />
+            <TechnicalDetails label="当前基准校验摘要">
+              <p>内容 {base.canonicalContentSha256}</p>
+              <p>素材集合 {base.assetSetSha256}</p>
+            </TechnicalDetails>
+            {!embedded && <RevisionLinks draft={base} />}
           </div>
         )}
         {current.value?.kind === "empty" && (
-          <p>此工作区尚无草稿。请先使用首次草稿应用。</p>
+          <p>此工作区尚无草稿。请先使用建立第一版草稿。</p>
         )}
         {session.operator.role === "read-only" && (
-          <p>当前为只读身份，可核实原请求和阅读修订，不能追加或重放。</p>
+          <p>
+            当前为只读身份，可核实原操作和阅读修订，不能追加或再次发送原操作。
+          </p>
         )}
         {denied && (
-          <p>当前写入身份或验证已失效，写入口已关闭。原请求锚点仍保留。</p>
+          <p>当前写入身份或验证已失效，写入口已关闭。原操作记录仍保留。</p>
         )}
         {product.value?.archivedAt && (
-          <p>工作区已归档，不能发起新追加。旧修订和原请求仍可核实。</p>
+          <p>工作区已归档，不能发起新追加。旧修订和原操作仍可核实。</p>
         )}
         {full && (
           <p>
@@ -232,11 +421,13 @@ export function AppendRevisionPanel({
           </p>
         )}
         {!storageReady && (
-          <p>此工作区有原请求待核实，或锚点存储不可用。新准备保持关闭。</p>
+          <p>
+            此工作区有原操作待核实，或本地操作记录存储不可用。新准备保持关闭。
+          </p>
         )}
         {!ready && (
           <p>
-            当前来源尚不符合新的追加条件；原请求核实不要求重新满足这些资格。
+            此来源暂不能用于更新草稿；查询上次操作不受当前来源是否可用的影响。
           </p>
         )}
         {confirmation && !confirmed && (
@@ -245,7 +436,7 @@ export function AppendRevisionPanel({
           </p>
         )}
         {confirmed && confirmation ? (
-          <section className={local.receipt} aria-label="确认追加不可变修订">
+          <section className={local.receipt} aria-label="确认新增草稿修订">
             <h3>
               确认基于修订 {confirmation.binding.target.expectedRevision} 追加
             </h3>
@@ -259,7 +450,7 @@ export function AppendRevisionPanel({
                 disabled={!canPrepare}
                 onClick={() => void append()}
               >
-                确认追加不可变修订
+                确认新增草稿修订
               </button>
               <button
                 className={`${styles.button} ${styles.secondary}`}
@@ -278,13 +469,16 @@ export function AppendRevisionPanel({
           )
         )}
         {receipt && (
-          <section className={local.receipt} aria-label="已确认的固定追加回执">
-            <h3>已确认的固定追加回执：修订 {receipt.revision}</h3>
+          <section
+            className={local.receipt}
+            aria-label="已确认的固定追加处理结果"
+          >
+            <h3>已确认的固定追加处理结果：修订 {receipt.revision}</h3>
             <p>
-              原 key {receipt.idempotencyKey}
-              。此固定回执与上方当前摘要分别读取。
+              原操作编号 {receipt.idempotencyKey}
+              。此固定处理结果与上方当前摘要分别读取。
             </p>
-            <RevisionLinks draft={receipt} />
+            {!embedded && <RevisionLinks draft={receipt} />}
           </section>
         )}
         {busy && <p role="status">正在提交固定追加请求…</p>}
@@ -301,6 +495,7 @@ export function AppendRevisionPanel({
         refreshing={busy}
         writeBlocked={denied}
         onChanged={changed}
+        onState={setPendingState}
       />
     </>
   );

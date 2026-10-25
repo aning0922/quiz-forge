@@ -1,308 +1,148 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
+import { useSyncExternalStore } from "react";
 import {
-  productCreateSchema,
-  type Page,
-  type ProductDto,
-  type TaxonomySummary,
-} from "@/features/product/workspace/contracts";
+  pushCatalogQuery,
+  subscribeCatalogQuery,
+  catalogQuerySnapshot,
+  catalogServerSnapshot,
+} from "./catalog-location";
+import type { OperationsQuery } from "../operations/contracts";
+import { AsOf } from "../operations-ui/summary";
 import type { StudioSessionDto } from "../contracts";
-import { StudioClientError, studioFetch, studioMessage } from "../client";
-import { useWorkspaceRead } from "./use-request";
-import { useWorkspaceMutation } from "./use-mutation";
-import { WorkspaceNav, Pagination, ReadOnlyNotice } from "./primitives";
-import { FilterBar } from "./filter-bar";
-import { TaxonomyPicker } from "./taxonomy-picker";
-import { ProductFields, type ProductFormFields } from "./product-fields";
+import { StudioPageHeader } from "../presentation/page-header";
+import { useOperationsProducts } from "../operations-ui/read";
+import { Pagination, ReadOnlyNotice } from "./primitives";
+import { CatalogFilters } from "./catalog-filters";
+import { CatalogProducts } from "./catalog-products";
+import {
+  readCatalogQuery,
+  catalogQueryString,
+  type CatalogSearchParams,
+} from "./list-query";
 import styles from "./workspace.module.css";
+import parity from "./catalog-parity.module.css";
+import { ProductCreateTask, ProductCreateAction } from "./product-create-task";
 
-export function ProductCard({ product }: { product: ProductDto }) {
+export function ProductList({
+  session,
+  search = {},
+}: {
+  session: StudioSessionDto;
+  search?: CatalogSearchParams;
+}) {
+  const liveSearch = useSyncExternalStore<string | null>(
+    subscribeCatalogQuery,
+    catalogQuerySnapshot,
+    catalogServerSnapshot,
+  );
+  const result = readCatalogQuery(
+    liveSearch === null ? search : new URLSearchParams(liveSearch),
+  );
   return (
-    <article className={styles.card}>
-      <h2>{product.title}</h2>
-      <p>稳定 ID：{product.id}</p>
-      <p>slug：{product.slug}</p>
-      <p>
-        主类目：
-        {product.primaryCategory
-          ? `${product.primaryCategory.name} · ${product.primaryCategory.slug}${product.primaryCategory.archivedAt ? " · 已归档" : ""}`
-          : "未分类"}
-      </p>
-      <p>
-        标签：
-        {product.tags.length
-          ? product.tags.map((tag) => (
-              <span
-                className={`${styles.badge} ${tag.archivedAt ? styles.archived : ""}`}
-                key={tag.id}
-              >
-                {tag.name} · {tag.slug}
-                {tag.archivedAt ? " · 已归档" : ""}
-              </span>
-            ))
-          : "无"}
-      </p>
-      {product.archivedAt && (
-        <p className={`${styles.badge} ${styles.archived}`}>工作区已归档</p>
+    <ProductCreateTask session={session}>
+      {result.ok ? (
+        <CatalogList session={session} query={result.query} />
+      ) : (
+        <InvalidCatalogAddress message={result.message} />
       )}
-      <Link
-        className={styles.link}
-        href={`/studio/products/${encodeURIComponent(product.id)}`}
-      >
-        查看工作区 {product.id}
-      </Link>
-    </article>
+    </ProductCreateTask>
   );
 }
 
-function ProductCreateForm({ session }: { session: StudioSessionDto }) {
-  const router = useRouter();
-  const [id, setId] = useState("");
-  const [fields, setFields] = useState<ProductFormFields>({
-    slug: "",
-    title: "",
-    categories: [],
-    tags: [],
-  });
-  const [validation, setValidation] = useState("");
-  const [submittedId, setSubmittedId] = useState("");
-  const [checking, setChecking] = useState(false);
-  const [checked, setChecked] = useState<{
-    product?: ProductDto;
-    absent?: boolean;
-    error?: string;
-  }>();
-  const mutation = useWorkspaceMutation<ProductDto>(session.csrfToken);
-
-  async function create() {
-    const parsed = productCreateSchema.safeParse({
-      id,
-      slug: fields.slug,
-      title: fields.title,
-      primaryCategoryId: fields.categories[0]?.id ?? null,
-      tagIds: fields.tags.map((tag) => tag.id),
-    });
-    if (!parsed.success) {
-      setValidation("请检查稳定 ID、slug、标题长度与最多 8 个不重复标签。");
-      return;
-    }
-    setValidation("");
-    setChecked(undefined);
-    setSubmittedId(parsed.data.id);
-    const product = await mutation.submit(
-      "/api/studio/products",
-      "POST",
-      parsed.data,
-      "服务器已确认创建。",
-    );
-    if (product) {
-      router.push(`/studio/products/${encodeURIComponent(product.id)}`);
-      router.refresh();
-    }
-  }
-  async function verify() {
-    if (checking) return;
-    setChecking(true);
-    setChecked(undefined);
-    try {
-      const product = await studioFetch<ProductDto>(
-        `/api/studio/products/${encodeURIComponent(submittedId)}`,
-        {},
-      );
-      setChecked({ product });
-    } catch (error) {
-      setChecked(
-        error instanceof StudioClientError && error.code === "PRODUCT_NOT_FOUND"
-          ? { absent: true }
-          : { error: studioMessage(error) },
-      );
-    } finally {
-      setChecking(false);
-    }
-  }
+function InvalidCatalogAddress({ message }: { message: string }) {
   return (
-    <section className={styles.panel}>
-      <h2>创建工作区</h2>
-      <p className={styles.note}>
-        稳定 ID 创建后不能修改。归档记录仍保留 ID 与
-        slug。创建后可进入工作区接收原包、验证归档并查看草稿与内测版本。
-      </p>
-      <form
-        aria-label="新建工作区"
-        className={styles.form}
-        onSubmit={(event) => {
-          event.preventDefault();
-          void create();
-        }}
-      >
-        <div className={styles.field}>
-          <label htmlFor="product-id">稳定 ID</label>
-          <input
-            className={styles.input}
-            id="product-id"
-            required
-            pattern="[a-z][a-z0-9]*(?:-[a-z0-9]+)*"
-            maxLength={80}
-            value={id}
-            disabled={mutation.blocked}
-            onChange={(event) => setId(event.target.value)}
-          />
-        </div>
-        <ProductFields
-          value={fields}
-          onChange={setFields}
-          disabled={mutation.state.phase === "submitting"}
-        />
-        <button
-          className={styles.button}
-          disabled={mutation.blocked}
-          type="submit"
-        >
-          {mutation.state.phase === "submitting" ? "正在创建…" : "创建工作区"}
-        </button>
-      </form>
-      {validation && (
+    <div className={styles.workspace}>
+      <StudioPageHeader title="测评管理" />
+      <section className={styles.panel}>
+        <h2>无法使用此列表地址</h2>
         <p className={`${styles.status} ${styles.error}`} role="alert">
-          {validation}
+          {message}
         </p>
-      )}
-      {mutation.state.message && (
-        <p className={styles.status} role="status">
-          {mutation.state.message}
-        </p>
-      )}
-      {mutation.state.phase === "unknown" && (
-        <section className={styles.compare} aria-label="创建结果核实">
-          <p>按此次提交的稳定 ID {submittedId} 查询服务器，不会重发创建。</p>
+        <div className={styles.actions}>
           <button
             className={styles.button}
             type="button"
-            disabled={checking}
-            onClick={() => void verify()}
+            onClick={() => pushCatalogQuery(null)}
           >
-            {checking ? "正在核实…" : "核实创建结果"}
+            重置筛选并查看测评
           </button>
-          {checked?.error && (
-            <p role="alert" className={`${styles.status} ${styles.error}`}>
-              {checked.error}
-            </p>
-          )}
-          {checked?.product && (
-            <>
-              <p className={styles.note}>
-                服务器当前值已确认，存在此
-                ID。不能仅凭当前值证明原请求确定成功，请查看记录。
-              </p>
-              <ProductCard product={checked.product} />
-            </>
-          )}
-          {checked?.absent && (
-            <>
-              <p className={styles.note}>
-                服务器当前查询未找到此
-                ID，仍不能据此保证原请求从未提交。请检查后手动决定是否再次创建。
-              </p>
-              <button
-                className={`${styles.button} ${styles.secondary}`}
-                type="button"
-                onClick={mutation.reconciled}
-              >
-                核实后继续编辑创建表单
-              </button>
-            </>
-          )}
-        </section>
-      )}
-    </section>
+          <button
+            className={`${styles.button} ${styles.secondary}`}
+            onClick={() => window.history.back()}
+          >
+            返回上一页
+          </button>
+        </div>
+      </section>
+    </div>
   );
 }
 
-export function ProductList({ session }: { session: StudioSessionDto }) {
-  const [page, setPage] = useState(1);
-  const [query, setQuery] = useState({
-    q: "",
-    status: "active",
-    categoryId: "",
-    tagId: "",
-    unclassified: false,
-  });
-  const [categories, setCategories] = useState<TaxonomySummary[]>([]);
-  const [tags, setTags] = useState<TaxonomySummary[]>([]);
-  const [unclassified, setUnclassified] = useState(false);
-  const params = new URLSearchParams({
-    page: String(page),
-    pageSize: "20",
-    status: query.status,
-    q: query.q,
-    unclassified: String(query.unclassified),
-  });
-  if (query.categoryId) params.set("categoryId", query.categoryId);
-  if (query.tagId) params.set("tagId", query.tagId);
-  const read = useWorkspaceRead<Page<ProductDto>>(
-    `/api/studio/products?${params}`,
-  );
+function CatalogList({
+  session,
+  query,
+}: {
+  session: StudioSessionDto;
+  query: OperationsQuery;
+}) {
+  const read = useOperationsProducts(query);
   const filtered = Boolean(
     query.q ||
     query.categoryId ||
     query.tagId ||
     query.unclassified ||
-    query.status !== "active",
+    query.status !== "active" ||
+    query.draft !== "any" ||
+    query.review !== "any",
   );
+  const go = (value: OperationsQuery) => pushCatalogQuery(value);
   return (
-    <div className={styles.workspace}>
-      <WorkspaceNav />
-      <section className={styles.panel}>
-        <h1>测评工作区</h1>
-        <p className={styles.note}>
-          每个工作区是一个测评的稳定归属。这里管理运营标题、目录关联与归档。
-        </p>
+    <div className={`${styles.workspace} ${parity.page}`}>
+      <StudioPageHeader
+        title="测评管理"
+        description={
+          <p>查找测评，识别当前内容与内测状态，再进入具体工作区继续。</p>
+        }
+        actions={
+          session.operator.role === "operator" ? (
+            <ProductCreateAction />
+          ) : undefined
+        }
+      />
+      <section
+        className={`${styles.panel} ${styles.catalogPanel} ${parity.panel}`}
+      >
         {session.operator.role === "read-only" && <ReadOnlyNotice />}
-        <FilterBar
+        <CatalogFilters
+          key={catalogQueryString(query)}
+          query={query}
           busy={read.loading}
-          onFilter={(q, status) => {
-            setQuery({
-              q,
-              status,
-              categoryId: categories[0]?.id ?? "",
-              tagId: tags[0]?.id ?? "",
-              unclassified,
-            });
-            setPage(1);
-          }}
-        >
-          <label className={styles.choice}>
-            <input
-              type="checkbox"
-              checked={unclassified}
-              onChange={(event) => {
-                setUnclassified(event.target.checked);
-                if (event.target.checked) setCategories([]);
-              }}
-            />
-            仅未分类工作区
-          </label>
-          <TaxonomyPicker
-            purpose="filter"
-            kind="category"
-            selected={categories}
-            onChange={(items) => {
-              setCategories(items);
-              if (items.length) setUnclassified(false);
-            }}
-          />
-          <TaxonomyPicker
-            purpose="filter"
-            kind="tag"
-            selected={tags}
-            onChange={(items) => setTags(items.slice(-1))}
-          />
-        </FilterBar>
+          onApply={go}
+          onReset={() => pushCatalogQuery(null)}
+        />
+        <p className={styles.filterSummary} role="status">
+          当前：
+          {query.status === "active"
+            ? "未归档"
+            : query.status === "archived"
+              ? "已归档"
+              : "全部测评"}
+          {query.q && ` · 搜索“${query.q}”`}
+          {query.categoryId && " · 已按分类筛选"}
+          {query.tagId && " · 已按标签筛选"}
+          {query.unclassified && " · 仅未分类"}
+          {query.draft !== "any" &&
+            (query.draft === "present" ? " · 有当前草稿" : " · 无当前草稿")}
+          {query.review !== "any" &&
+            (query.review === "current"
+              ? " · 有精确匹配审核"
+              : " · 有草稿但缺匹配审核")}{" "}
+          · 按创建时间从新到旧
+        </p>
         {read.loading && (
           <p className={styles.status} role="status">
-            正在加载工作区…
+            正在加载测评…
           </p>
         )}
         {read.error && (
@@ -313,44 +153,77 @@ export function ProductList({ session }: { session: StudioSessionDto }) {
               type="button"
               onClick={read.refresh}
             >
-              重新读取工作区
+              重新读取测评
             </button>
           </div>
         )}
         {read.value && (
           <>
-            <p className={styles.note}>共 {read.value.total} 个工作区</p>
-            {!read.value.items.length && (
-              <p className={styles.status}>
-                {filtered ? "当前筛选无结果" : "尚无工作区"}
-              </p>
+            {!read.value.items.length ? (
+              <div className={styles.emptyCatalog}>
+                <h2>
+                  {query.page > 1
+                    ? "当前页没有测评"
+                    : filtered
+                      ? "当前筛选无结果"
+                      : "尚无测评"}
+                </h2>
+                <p>
+                  {query.page > 1
+                    ? "该页没有记录。返回第一页保留筛选条件，或调整筛选。"
+                    : filtered
+                      ? "试试其他名称、归档状态、分类或标签。"
+                      : "当前未归档目录还没有测评。可先创建测评，也可以切换归档状态。"}
+                </p>
+                <div className={styles.actions}>
+                  {query.page > 1 && (
+                    <button
+                      className={styles.button}
+                      onClick={() => go({ ...query, page: 1 })}
+                    >
+                      返回第一页
+                    </button>
+                  )}
+                  {filtered && (
+                    <button
+                      className={`${styles.button} ${styles.secondary}`}
+                      onClick={() => pushCatalogQuery(null)}
+                    >
+                      清除当前筛选
+                    </button>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <CatalogProducts products={read.value.items} />
             )}
-            <ul className={styles.cards}>
-              {read.value.items.map((product) => (
-                <li key={product.id}>
-                  <ProductCard product={product} />
-                </li>
-              ))}
-            </ul>
-            <Pagination
-              page={page}
-              hasNext={read.value.hasNext}
-              busy={read.loading}
-              onPage={setPage}
-            />
-            <button
-              className={`${styles.button} ${styles.secondary}`}
-              type="button"
-              onClick={read.refresh}
-            >
-              刷新列表
-            </button>
+            <div className={styles.catalogObservation}>
+              <AsOf value={read.value.asOf} />
+            </div>
+            <footer className={styles.catalogFooter}>
+              <p>
+                共 {read.value.total} 个测评 · 每页 {query.pageSize} 个
+              </p>
+              <Pagination
+                page={query.page}
+                hasNext={read.value.hasNext}
+                busy={read.loading}
+                onPage={(page) => go({ ...query, page })}
+              />
+              <button
+                className={`${styles.button} ${styles.secondary}`}
+                type="button"
+                onClick={read.refresh}
+              >
+                刷新列表
+              </button>
+            </footer>
           </>
         )}
       </section>
-      {session.operator.role === "operator" && (
-        <ProductCreateForm session={session} />
-      )}
+      <p className={styles.note}>
+        历史版本不代表当前草稿已审核；完整依据与未决操作请进入对应工作区查看。
+      </p>
     </div>
   );
 }

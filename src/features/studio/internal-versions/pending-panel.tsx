@@ -1,5 +1,9 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import {
+  RetainedTaskActions,
+  type WorkspaceTaskState,
+} from "../product-workspace/task-surfaces";
 import type { StudioSessionDto } from "../contracts";
 import { StudioClientError } from "../client";
 import { readInternalPending } from "./pending";
@@ -21,36 +25,47 @@ import {
   useInternalAuthority,
   type InternalAuthorityTicket,
 } from "./authority";
-import { RequestFacts, ReviewFacts, VersionReceiptFacts } from "./facts";
+import {
+  RequestFacts,
+  ReviewFacts,
+  VersionReceiptFacts,
+  type VersionReceiptActions,
+} from "./facts";
 import { internalVersionMessage } from "./message";
 import styles from "../workspace/workspace.module.css";
+import local from "./internal-versions.module.css";
 export function InternalEvidenceFacts({
   evidence,
+  receiptActions,
 }: {
   evidence: InternalEvidence;
+  receiptActions?: VersionReceiptActions | undefined;
 }) {
   const result = evidence.value;
   if (evidence.operation === "review" && evidence.value.kind === "recorded")
     return (
       <>
-        <h3>原请求已记录</h3>
+        <h3>原操作已记录</h3>
         <ReviewFacts review={evidence.value.review} />
       </>
     );
   if (evidence.operation === "seal" && evidence.value.kind === "sealed")
     return (
       <>
-        <h3>原请求已封存</h3>
-        <VersionReceiptFacts version={evidence.value.version} />
+        <h3>原操作已封存</h3>
+        <VersionReceiptFacts
+          version={evidence.value.version}
+          actions={receiptActions}
+        />
       </>
     );
   if (result.kind === "unresolved")
     return (
       <>
-        <h3>原请求仍未确认</h3>
+        <h3>原操作仍未确认</h3>
         <p>
           本次核实时当前修订为 {result.observedCurrentRevision}
-          。未找到回执不能证明原请求未执行；锚点继续保留。
+          。未找到处理结果不能证明原操作未执行；本地操作记录继续保留。
         </p>
       </>
     );
@@ -60,10 +75,10 @@ export function InternalEvidenceFacts({
   )
     return (
       <>
-        <h3>原请求未生效，目标已过期</h3>
+        <h3>原操作未生效，目标已过期</h3>
         <p>
           服务器严格核实当前修订 {result.observedCurrentRevision} 高于原目标{" "}
-          {result.binding.target.revision}，原 key 没有固定回执。
+          {result.binding.target.revision}，原操作没有固定处理结果。
         </p>
       </>
     );
@@ -73,8 +88,8 @@ export function InternalEvidenceFacts({
   )
     return (
       <>
-        <h3>原请求未记录，固定目标已被另一 key 记录</h3>
-        <p>以下为另一请求的回执，不是本原 key 的成功。</p>
+        <h3>原操作未记录，固定目标已被另一操作 记录</h3>
+        <p>这是其他操作的处理结果，不表示本次操作成功。</p>
         <ReviewFacts review={evidence.value.consumed} />
       </>
     );
@@ -84,17 +99,20 @@ export function InternalEvidenceFacts({
   )
     return (
       <>
-        <h3>原请求未封存，固定快照已被另一 key 占用</h3>
-        <p>以下为另一请求的版本，不是本原 key 的成功。</p>
-        <VersionReceiptFacts version={evidence.value.consumed} />
+        <h3>原操作未封存，固定快照已被另一操作 占用</h3>
+        <p>这是其他操作创建的版本，不表示本次操作成功。</p>
+        <VersionReceiptFacts
+          version={evidence.value.consumed}
+          actions={receiptActions}
+        />
       </>
     );
   return (
     <>
-      <h3>原请求未封存，100 个固定槽位已满</h3>
+      <h3>原操作未封存，100 个固定槽位已满</h3>
       <p>
-        这是服务器核实原 key
-        不存在且容量已永久占满的严格证据。解除本地锚点不会恢复封存容量。
+        这是服务器核实原操作编号
+        不存在且容量已永久占满的严格证据。解除本地操作记录不会恢复封存容量。
       </p>
     </>
   );
@@ -104,14 +122,22 @@ export function InternalPendingPanel({
   operation,
   session,
   onChanged,
+  onTaskState,
+  embedded = false,
+  receiptActions,
 }: {
+  embedded?: boolean;
+  receiptActions?: VersionReceiptActions | undefined;
   productId: string;
   operation: InternalOperation;
   session: StudioSessionDto;
   onChanged: () => void;
+  onTaskState?:
+    | ((operation: InternalOperation, state: WorkspaceTaskState) => void)
+    | undefined;
 }) {
   const authority = useInternalAuthority(),
-    label = operation === "review" ? "基线记录" : "内测封存",
+    label = operation === "review" ? "审核依据记录" : "内容版本固定",
     [epoch] = useState(() => new InternalOperationEpoch(productId)),
     [entry, setEntry] = useState<{
       request: InternalRequest;
@@ -128,6 +154,18 @@ export function InternalPendingPanel({
     }>();
   const active = useRef(true),
     controller = useRef<AbortController | undefined>(undefined);
+  useLayoutEffect(() => {
+    onTaskState?.(operation, {
+      busy,
+      pending: !!entry || !loaded,
+      retained: !!entry || !loaded,
+      message: !loaded
+        ? "原操作记录尚未可靠核实。"
+        : entry
+          ? "保留原审核或封存请求，请核对后明确结束。"
+          : undefined,
+    });
+  }, [operation, busy, entry, loaded, onTaskState]);
   function readLocal() {
     epoch.invalidate();
     controller.current?.abort();
@@ -262,7 +300,7 @@ export function InternalPendingPanel({
       if (current()) {
         readLocal();
         setMessage(
-          "已精确解除本原请求锚点。请重新读取服务器事实，重新确认并生成新 key；不会自动发送下一请求。",
+          "已精确解除本原操作记录。请重新读取服务器事实，重新确认下一次操作；不会自动提交。",
         );
         onChanged();
       }
@@ -274,76 +312,188 @@ export function InternalPendingPanel({
       if (active.current) setBusy(false);
     }
   }
-  return (
-    <section className={styles.panel} aria-label={`${label}原请求核实`}>
-      <h2>{label}原请求核实</h2>
-      <p className={styles.note}>
-        此区域只依赖稳定工作区 ID
-        与本浏览器原请求。详情读取失败也可只读核实；普通错误和空查询都不能清除锚点。
-      </p>
-      {!loaded && <p role="status">尚未可靠读取此原请求桶；新准备保持关闭。</p>}
-      {loaded && !entry && <p>此浏览器会话没有此工作区的待确认{label}请求。</p>}
-      {entry && (
-        <>
-          <p>
-            {entry.mayHaveBeenSent ? "可能已发送" : "尚未发送的准备"}；原
-            key、目标和依赖保持不变。
-          </p>
-          <RequestFacts request={entry.request} />
-          <div className={styles.actions}>
-            <button
-              className={styles.button}
-              disabled={busy || !loaded || authority.isRevoked}
-              onClick={() => void perform(false)}
-            >
-              核实{label}原请求
-            </button>
-            {session.operator.role === "operator" &&
-              !denied &&
-              !authority.isRevoked && (
-                <button
-                  className={`${styles.button} ${styles.secondary}`}
-                  disabled={busy || !loaded || authority.isRevoked}
-                  onClick={() => void perform(true)}
-                >
-                  明确按原{label}请求重放
-                </button>
-              )}
-          </div>
-        </>
-      )}
-      {(denied || authority.isRevoked) && (
-        <p role="alert">
-          本页授权已失效。写入、核实与清理入口已关闭；原锚点保留，请重新登录并重新打开本页。
-        </p>
-      )}
-      {evidence && !authority.isRevoked && (
-        <div data-internal-resolution={evidence.result.value.kind}>
-          <InternalEvidenceFacts evidence={evidence.result} />
-          {evidence.result.value.kind !== "unresolved" && (
+  const needsAttention =
+    !loaded ||
+    !!entry ||
+    busy ||
+    denied ||
+    authority.isRevoked ||
+    !!evidence ||
+    !!message;
+  if (embedded)
+    return (
+      <section
+        className={local.embeddedRecovery}
+        aria-label={`${label}操作查询`}
+      >
+        <details open={needsAttention}>
+          <summary>
+            {needsAttention
+              ? `${label}：原操作待核实`
+              : `${label}：暂无待处理操作 · 查询`}
+          </summary>
+          {!loaded && <p role="status">正在检查原操作，尚不能提交新请求。</p>}
+          {loaded && !entry && <p>当前会话没有此商品的待确认{label}请求。</p>}
+          {entry && (
+            <>
+              <p>
+                {entry.mayHaveBeenSent ? "可能已发送" : "尚未发送的准备"}
+                ，请继续核实此原请求。
+              </p>
+              <RequestFacts request={entry.request} />
+            </>
+          )}
+          {(denied || authority.isRevoked) && (
+            <p role="alert">
+              本页授权已失效，原操作记录保留。请重新登录并重新打开本页。
+            </p>
+          )}
+          {evidence && !authority.isRevoked && (
+            <div data-internal-resolution={evidence.result.value.kind}>
+              <InternalEvidenceFacts
+                evidence={evidence.result}
+                receiptActions={receiptActions}
+              />
+            </div>
+          )}
+          {busy && <p role="status">正在核实或处理原操作…</p>}
+          {message && <p role="status">{message}</p>}
+          {!entry && (
             <button
               className={`${styles.button} ${styles.secondary}`}
+              disabled={busy}
+              onClick={readLocal}
+            >
+              重新检查{label}操作记录
+            </button>
+          )}
+        </details>
+        <RetainedTaskActions id="review" visible={!!entry}>
+          {evidence && evidence.result.value.kind !== "unresolved" ? (
+            <button
+              className={styles.button}
               disabled={busy || denied || authority.isRevoked}
               onClick={() => void clear()}
             >
-              依核实证据解除本原请求锚点
+              确认处理结果并结束此操作记录
             </button>
+          ) : (
+            <>
+              <button
+                className={styles.button}
+                disabled={busy || !loaded || authority.isRevoked}
+                onClick={() => void perform(false)}
+              >
+                查询{label}结果
+              </button>
+              {session.operator.role === "operator" &&
+                !denied &&
+                !authority.isRevoked && (
+                  <button
+                    className={`${styles.button} ${styles.secondary}`}
+                    disabled={busy || !loaded}
+                    onClick={() => void perform(true)}
+                  >
+                    再次发送原{label}操作
+                  </button>
+                )}
+            </>
           )}
-        </div>
-      )}
-      {busy && <p role="status">正在核实或处理原请求…</p>}
-      {message && (
-        <p className={styles.status} role="status">
-          {message}
-        </p>
-      )}
-      <button
-        className={`${styles.button} ${styles.secondary}`}
-        disabled={busy}
-        onClick={readLocal}
+        </RetainedTaskActions>
+      </section>
+    );
+  return (
+    <section className={styles.panel} aria-label={`${label}操作查询`}>
+      <details
+        open={needsAttention}
+        className={
+          needsAttention ? local.recoveryAttention : local.recoveryQuiet
+        }
       >
-        重新读取{label}锚点
-      </button>
+        <summary>
+          {needsAttention
+            ? `${label}：上次操作待检查或处理`
+            : `${label}：暂无待处理操作 · 查询`}
+        </summary>
+        <div className={local.recoveryBody}>
+          <h2>{label}操作查询</h2>
+          <p className={styles.note}>
+            这里查询本商品保留的上次操作。商品详情暂时不可用时仍可查询；查询失败或未找到结果时，原操作记录继续保留。
+          </p>
+          {!loaded && (
+            <p role="status">
+              正在检查上次操作，请稍候；检查完成前不能继续提交。
+            </p>
+          )}
+          {loaded && !entry && (
+            <p>此浏览器会话没有此工作区的待确认{label}请求。</p>
+          )}
+          {entry && (
+            <>
+              <p>
+                {entry.mayHaveBeenSent ? "可能已发送" : "尚未发送的准备"}
+                ；原操作、内容目标和依赖保持不变。
+              </p>
+              <RequestFacts request={entry.request} />
+              <div className={styles.actions}>
+                <button
+                  className={styles.button}
+                  disabled={busy || !loaded || authority.isRevoked}
+                  onClick={() => void perform(false)}
+                >
+                  查询{label}结果
+                </button>
+                {session.operator.role === "operator" &&
+                  !denied &&
+                  !authority.isRevoked && (
+                    <button
+                      className={`${styles.button} ${styles.secondary}`}
+                      disabled={busy || !loaded || authority.isRevoked}
+                      onClick={() => void perform(true)}
+                    >
+                      再次发送原{label}操作
+                    </button>
+                  )}
+              </div>
+            </>
+          )}
+          {(denied || authority.isRevoked) && (
+            <p role="alert">
+              本页授权已失效。写入、核实与清理入口已关闭；原操作记录保留，请重新登录并重新打开本页。
+            </p>
+          )}
+          {evidence && !authority.isRevoked && (
+            <div data-internal-resolution={evidence.result.value.kind}>
+              <InternalEvidenceFacts
+                evidence={evidence.result}
+                receiptActions={receiptActions}
+              />
+              {evidence.result.value.kind !== "unresolved" && (
+                <button
+                  className={`${styles.button} ${styles.secondary}`}
+                  disabled={busy || denied || authority.isRevoked}
+                  onClick={() => void clear()}
+                >
+                  确认处理结果并结束此操作记录
+                </button>
+              )}
+            </div>
+          )}
+          {busy && <p role="status">正在核实或处理原操作…</p>}
+          {message && (
+            <p className={styles.status} role="status">
+              {message}
+            </p>
+          )}
+          <button
+            className={`${styles.button} ${styles.secondary}`}
+            disabled={busy}
+            onClick={readLocal}
+          >
+            重新检查{label}操作记录
+          </button>
+        </div>
+      </details>
     </section>
   );
 }
@@ -352,27 +502,41 @@ export function InternalRecoveryPanels({
   session,
   nonce = 0,
   onChanged = () => {},
+  onTaskState,
+  embedded = false,
+  receiptActions,
 }: {
+  embedded?: boolean;
+  receiptActions?: VersionReceiptActions | undefined;
   productId: string;
   session: StudioSessionDto;
   nonce?: number;
   onChanged?: () => void;
+  onTaskState?:
+    | ((operation: InternalOperation, state: WorkspaceTaskState) => void)
+    | undefined;
 }) {
   return (
     <>
       <InternalPendingPanel
         key={`review/${productId}/${nonce}`}
+        embedded={embedded}
+        receiptActions={receiptActions}
         operation="review"
         productId={productId}
         session={session}
         onChanged={onChanged}
+        onTaskState={onTaskState}
       />
       <InternalPendingPanel
         key={`seal/${productId}/${nonce}`}
+        embedded={embedded}
+        receiptActions={receiptActions}
         operation="seal"
         productId={productId}
         session={session}
         onChanged={onChanged}
+        onTaskState={onTaskState}
       />
     </>
   );

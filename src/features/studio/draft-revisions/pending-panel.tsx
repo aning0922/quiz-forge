@@ -1,5 +1,7 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useContentAuthority } from "../product-workspace/content-authority";
+import { TechnicalDetails } from "../presentation/technical-details";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { StudioSessionDto } from "../contracts";
 import type {
   AppendDraftApplication,
@@ -20,21 +22,40 @@ import {
 } from "./flow";
 import { revisionMessage } from "./message";
 import { AppendBindingFacts, RevisionLinks } from "./primitives";
+import type { RevisionTarget } from "@/features/product/internal-versions/identity-contracts";
+import compact from "../product-workspace/content-workbench.module.css";
 import styles from "../workspace/workspace.module.css";
 import local from "./revisions.module.css";
+import {
+  useContentTaskState,
+  type ContentStateObserver,
+} from "../product-workspace/content-task-state";
 export function RevisionPendingPanel({
   productId,
   session,
   refreshing,
   writeBlocked = false,
   onChanged,
+  onState,
+  embedded = false,
+  onPreview,
+  onInspectRevision,
+  onInspectSource,
+  renderActions,
 }: {
   productId: string;
   session: StudioSessionDto;
   refreshing: boolean;
   writeBlocked?: boolean;
   onChanged: (application?: AppendDraftApplication) => void;
+  onState?: ContentStateObserver | undefined;
+  embedded?: boolean;
+  renderActions?: ((actions: ReactNode) => ReactNode) | undefined;
+  onPreview?: ((target: RevisionTarget) => void) | undefined;
+  onInspectRevision?: ((target: RevisionTarget) => void) | undefined;
+  onInspectSource?: ((importId: string) => void) | undefined;
 }) {
+  const authority = useContentAuthority();
   const [epoch] = useState(() => new RevisionEpoch(productId)),
     [entry, setEntry] = useState<RevisionPendingEntry>(),
     [loaded, setLoaded] = useState(false),
@@ -59,6 +80,7 @@ export function RevisionPendingPanel({
       );
       setLoaded(true);
     } catch (error) {
+      authority.observe(error);
       setLoaded(false);
       setMessage(revisionMessage(error));
     }
@@ -76,6 +98,7 @@ export function RevisionPendingPanel({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [epoch, productId]);
   function reject(error: unknown) {
+    authority.observe(error);
     if (
       error instanceof StudioClientError &&
       ["CAPABILITY_DENIED", "UNAUTHENTICATED", "CSRF_REJECTED"].includes(
@@ -95,7 +118,10 @@ export function RevisionPendingPanel({
       busy ||
       refreshing ||
       (replay &&
-        (session.operator.role !== "operator" || denied || writeBlocked))
+        (!authority.canWrite() ||
+          session.operator.role !== "operator" ||
+          denied ||
+          writeBlocked))
     )
       return;
     const ticket = epoch.begin(entry.tuple),
@@ -114,7 +140,7 @@ export function RevisionPendingPanel({
         );
         if (active.current && epoch.accepts(ticket)) {
           setMessage(
-            `服务器已确认原 key 的固定回执：修订 ${result.application.revision}。`,
+            `服务器已确认原操作的固定处理结果：修订 ${result.application.revision}。`,
           );
           readLocal();
           onChanged(result.application);
@@ -134,6 +160,7 @@ export function RevisionPendingPanel({
           setEvidence({ ticket, result });
       }
     } catch (error) {
+      authority.observe(error);
       if (active.current && epoch.accepts(ticket)) reject(error);
     } finally {
       if (active.current) setBusy(false);
@@ -161,147 +188,214 @@ export function RevisionPendingPanel({
       if (active.current) {
         readLocal();
         setMessage(
-          "已精确解除本页原请求锚点。请重新读取来源和当前基准，再明确确认新的请求。",
+          "已精确解除本页原操作记录。请重新读取来源和当前基准，再明确确认新的请求。",
         );
         onChanged(result.kind === "applied" ? result.application : undefined);
       }
     } catch (error) {
+      authority.observe(error);
       if (active.current) reject(error);
     } finally {
       if (active.current) setBusy(false);
     }
   }
+  useContentTaskState(onState, {
+    busy,
+    pending: !loaded || !!entry,
+    retained: !!entry || !!evidence,
+    message: entry ? "草稿追加原操作已保留，请按原记录核实。" : undefined,
+  });
   const result = evidence?.result;
+  const needsAttention =
+    !loaded ||
+    !!entry ||
+    busy ||
+    denied ||
+    writeBlocked ||
+    !!evidence ||
+    !!message;
+  const entryActions = (
+    <div className={embedded ? compact.footerActions : styles.actions}>
+      <button
+        className={embedded ? compact.primary : styles.button}
+        disabled={!loaded || busy || refreshing}
+        onClick={() => void perform(false)}
+      >
+        {embedded ? "核实原操作" : "查询上次草稿更新结果"}
+      </button>
+      {session.operator.role === "operator" && !denied && !writeBlocked && (
+        <button
+          className={
+            embedded
+              ? compact.secondary
+              : `${styles.button} ${styles.secondary}`
+          }
+          disabled={!loaded || busy || refreshing}
+          onClick={() => void perform(true)}
+        >
+          {embedded ? "按原参数重提" : "再次发送原草稿更新操作"}
+        </button>
+      )}
+    </div>
+  );
+  if (embedded && !needsAttention) return null;
   return (
-    <section className={styles.panel} aria-label="追加原请求核实">
-      <h2>追加原请求核实</h2>
-      <p className={styles.note}>
-        核实不会追加修订。普通错误、空查询和当前已有新修订，都不能替代原 key
-        的固定回执或严格拒绝证据。
-      </p>
-      {!loaded && <p role="status">尚未可靠读取追加锚点；新准备保持关闭。</p>}
-      {loaded && !entry && <p>此浏览器会话没有此工作区的待确认追加请求。</p>}
-      {entry && (
-        <>
-          <p>
-            此工作区有{entry.mayHaveBeenSent ? "可能已发送" : "尚未发送的准备"}
-            请求。原来源、基准与 key 保持不变。
+    <section
+      className={embedded ? undefined : styles.panel}
+      aria-label="草稿更新操作查询"
+    >
+      <details
+        open={needsAttention}
+        className={
+          needsAttention ? local.recoveryAttention : local.recoveryQuiet
+        }
+      >
+        <summary>
+          {needsAttention
+            ? "更新草稿：上次操作待检查或处理"
+            : "更新草稿：暂无待处理操作 · 查询"}
+        </summary>
+        <div className={local.recoveryBody}>
+          {!embedded && <h2>草稿更新操作查询</h2>}
+          <p className={styles.note}>
+            查询不会更新草稿。未找到结果或当前已有其他修订，都不能据此判断上次操作是否成功；请以原操作的处理结果为准。
           </p>
-          <details className={local.details}>
-            <summary>查看原请求完整绑定</summary>
-            <AppendBindingFacts binding={entry.tuple} />
-          </details>
-          <div className={styles.actions}>
-            <button
-              className={styles.button}
-              disabled={!loaded || busy || refreshing}
-              onClick={() => void perform(false)}
-            >
-              核实追加原请求
-            </button>
-            {session.operator.role === "operator" &&
-              !denied &&
-              !writeBlocked && (
-                <button
-                  className={`${styles.button} ${styles.secondary}`}
-                  disabled={!loaded || busy || refreshing}
-                  onClick={() => void perform(true)}
-                >
-                  明确按原追加请求重放
-                </button>
-              )}
-          </div>
-        </>
-      )}
-      {denied && (
-        <p className={styles.note}>
-          当前身份或写入验证失效。写入口已关闭，原锚点继续保留。
-        </p>
-      )}
-      {result && (
-        <div className={local.receipt} data-revision-resolution={result.kind}>
-          {result.kind === "applied" ? (
+          {!loaded && (
+            <p role="status">
+              正在检查上次更新操作，请稍候；检查完成前不能重复提交。
+            </p>
+          )}
+          {loaded && !entry && (
+            <p>此浏览器会话没有此工作区的待确认追加请求。</p>
+          )}
+          {entry && (
             <>
-              <h3>原请求已应用</h3>
               <p>
-                固定回执为修订 {result.application.revision}
-                。此回执不表示它仍是当前修订。
+                此工作区有
+                {entry.mayHaveBeenSent ? "可能已发送" : "尚未发送的准备"}
+                操作。原内容来源与基准保持不变。
               </p>
-              <RevisionLinks draft={result.application} />
-            </>
-          ) : result.kind === "unresolved" ? (
-            <>
-              <h3>原请求仍未确认</h3>
               <p>
-                核实时当前修订仍为 {result.observedCurrentRevision}
-                。未找到回执不能证明原请求未执行，锚点继续保留。
+                操作目标：基于草稿修订 {entry.tuple.target.expectedRevision}{" "}
+                更新；来源检查版本 {entry.tuple.expectedValidationStateRevision}
               </p>
-            </>
-          ) : result.kind === "not-applied-obsolete" ? (
-            <>
-              <h3>原请求未应用，原基准已过期</h3>
-              <p>
-                核实时观察到修订 {result.observedCurrentRevision}
-                ，严格高于原基准 {result.base.revision}
-                。此原请求不能再按旧基准提交。
-              </p>
-            </>
-          ) : (
-            <>
-              <h3>原请求未应用，来源已被消费</h3>
-              <p>
-                {result.proof.reason === "source-import"
-                  ? "同一来源已被不可变回执消费。"
-                  : "已核验的同一 manifest 已被不可变修订消费。"}
-                消费修订为 {result.proof.consumed.revision}；这不是本原 key
-                的应用成功。
-              </p>
-              <RevisionLinks draft={result.proof.consumed} />
-              <details className={local.details}>
-                <summary>查看固定消费来源</summary>
-                <p>消费 key：{result.proof.consumingIdempotencyKey}</p>
-                <p>
-                  来源：{result.proof.consumed.sourceImportId} /{" "}
-                  {result.proof.consumed.sourceValidationId}
-                </p>
-                <p>manifest：{result.proof.consumed.canonicalManifestSha256}</p>
-              </details>
+              <TechnicalDetails label="查看原操作完整绑定">
+                <AppendBindingFacts binding={entry.tuple} />
+              </TechnicalDetails>
+              {embedded && renderActions
+                ? renderActions(entryActions)
+                : entryActions}
             </>
           )}
-          {result.kind !== "unresolved" && (
+          {denied && (
+            <p className={styles.note}>
+              当前身份或写入验证失效。写入口已关闭，原操作记录继续保留。
+            </p>
+          )}
+          {result && (
             <div
-              className={
-                result.kind === "applied" ? local.receiptActions : undefined
-              }
+              className={local.receipt}
+              data-revision-resolution={result.kind}
             >
-              <button
-                className={`${styles.button} ${styles.secondary}`}
-                disabled={busy || refreshing}
-                onClick={() => void clear()}
-              >
-                {result.kind === "applied"
-                  ? "解除已确认成功的本地锚点"
-                  : "移除已失效原请求并重新准备"}
-              </button>
+              {result.kind === "applied" ? (
+                <>
+                  <h3>原操作已应用</h3>
+                  <p>
+                    固定处理结果为修订 {result.application.revision}
+                    。此处理结果不表示它仍是当前修订。
+                  </p>
+                  <RevisionLinks
+                    draft={result.application}
+                    embedded={embedded}
+                    onPreview={onPreview}
+                    onInspectRevision={onInspectRevision}
+                    onInspectSource={onInspectSource}
+                  />
+                </>
+              ) : result.kind === "unresolved" ? (
+                <>
+                  <h3>原操作仍未确认</h3>
+                  <p>
+                    核实时当前修订仍为 {result.observedCurrentRevision}
+                    。未找到处理结果不能证明原操作未执行，本地操作记录继续保留。
+                  </p>
+                </>
+              ) : result.kind === "not-applied-obsolete" ? (
+                <>
+                  <h3>原操作未应用，原基准已过期</h3>
+                  <p>
+                    核实时观察到修订 {result.observedCurrentRevision}
+                    ，严格高于原基准 {result.base.revision}
+                    。此原操作不能再按旧基准提交。
+                  </p>
+                </>
+              ) : (
+                <>
+                  <h3>原操作未应用，来源已被消费</h3>
+                  <p>
+                    {result.proof.reason === "source-import"
+                      ? "同一来源已被不可变处理结果消费。"
+                      : "已核验的同一 manifest 已被不可变修订消费。"}
+                    消费修订为 {result.proof.consumed.revision}
+                    ；这不是本次操作的应用成功。
+                  </p>
+                  <RevisionLinks
+                    draft={result.proof.consumed}
+                    embedded={embedded}
+                    onPreview={onPreview}
+                    onInspectRevision={onInspectRevision}
+                    onInspectSource={onInspectSource}
+                  />
+                  <TechnicalDetails label="查看固定消费来源">
+                    <p>
+                      来源使用操作编号：{result.proof.consumingIdempotencyKey}
+                    </p>
+                    <p>
+                      来源：{result.proof.consumed.sourceImportId} /{" "}
+                      {result.proof.consumed.sourceValidationId}
+                    </p>
+                    <p>
+                      manifest：{result.proof.consumed.canonicalManifestSha256}
+                    </p>
+                  </TechnicalDetails>
+                </>
+              )}
+              {result.kind !== "unresolved" && (
+                <div
+                  className={
+                    result.kind === "applied" ? local.receiptActions : undefined
+                  }
+                >
+                  <button
+                    className={`${styles.button} ${styles.secondary}`}
+                    disabled={busy || refreshing}
+                    onClick={() => void clear()}
+                  >
+                    {result.kind === "applied"
+                      ? "解除已确认成功的本地操作记录"
+                      : "移除已失效原操作并重新准备"}
+                  </button>
+                </div>
+              )}
             </div>
           )}
+          {busy && <p role="status">正在核实或处理原操作…</p>}
+          {message && (
+            <p className={styles.status} role="status">
+              {message}
+            </p>
+          )}
+          <div className={styles.actions}>
+            <button
+              className={`${styles.button} ${styles.secondary}`}
+              disabled={busy || refreshing}
+              onClick={readLocal}
+            >
+              重新检查本地更新记录
+            </button>
+          </div>
         </div>
-      )}
-      {busy && <p role="status">正在核实或处理原请求…</p>}
-      {message && (
-        <p className={styles.status} role="status">
-          {message}
-        </p>
-      )}
-      <div className={styles.actions}>
-        <button
-          className={`${styles.button} ${styles.secondary}`}
-          disabled={busy || refreshing}
-          onClick={readLocal}
-        >
-          重新读取追加锚点
-        </button>
-      </div>
+      </details>
     </section>
   );
 }

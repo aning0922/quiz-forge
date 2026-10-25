@@ -1,6 +1,7 @@
 "use client";
+import { useContentAuthority } from "../product-workspace/content-authority";
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import type {
   ImportDto,
   ImportSettingsDto,
@@ -32,10 +33,17 @@ import {
   type PendingStorage,
   type PendingTuple,
 } from "./pending";
+import { StudioClientError } from "../client";
 import { validationMessage } from "./messages";
 import { ValidationFacts } from "./facts";
 import { useValidationRead } from "./use-read";
 import { mergeValidationSnapshots } from "./snapshots";
+import {
+  useContentTaskState,
+  type ContentStateObserver,
+} from "../product-workspace/content-task-state";
+import { TechnicalDetails } from "../presentation/technical-details";
+import compact from "../product-workspace/content-workbench.module.css";
 import styles from "../workspace/workspace.module.css";
 const storage: PendingStorage = {
   getItem: (key) => window.sessionStorage.getItem(key),
@@ -58,7 +66,7 @@ export function ValidationOverview({ value }: { value: ImportDto }) {
           <p>
             最新验证：
             {history.value.items[0].status === "ready"
-              ? "归档完成 · 待后续草稿导入"
+              ? "检查通过 · 内容和素材已保存"
               : "已有验证记录 · 请进入详情核实"}{" "}
             · 不可发布
           </p>
@@ -73,12 +81,25 @@ export function ValidationPanel({
   settings,
   archived,
   session,
+  embedded = false,
+  onSelect,
+  onRejected,
+  onState,
+  renderActions,
+  onInspectSource,
 }: {
   value: ImportDto;
   settings: ImportSettingsDto;
   archived: boolean;
   session: StudioSessionDto;
+  embedded?: boolean;
+  onSelect?: (value: ValidationDto) => void;
+  onRejected?: ((value: ValidationDto | undefined) => void) | undefined;
+  onState?: ContentStateObserver | undefined;
+  renderActions?: ((actions: ReactNode) => ReactNode) | undefined;
+  onInspectSource?: ((importId: string) => void) | undefined;
 }) {
+  const authority = useContentAuthority();
   const pair = { productId: value.productId, importId: value.id };
   const [page, setPage] = useState(1);
   const endpoint = validationEndpoint(pair);
@@ -104,7 +125,8 @@ export function ValidationPanel({
   const busyRef = useRef(false);
   const generation = useRef(0);
   const readOnly = session.operator.role !== "operator";
-  const writable = !readOnly && settings.enabled && !archived;
+  const writable =
+    authority.canWrite() && !readOnly && settings.enabled && !archived;
   const reloadPending = () => {
     try {
       setPending(
@@ -116,6 +138,7 @@ export function ValidationPanel({
       );
       setStorageError("");
     } catch (error) {
+      authority.observe(error);
       setStorageError(validationMessage(error));
     }
   };
@@ -142,10 +165,11 @@ export function ValidationPanel({
             setPending(undefined);
           } else
             setMessage(
-              "原请求暂未找到；这不证明已回滚。请保留待核实记录，再次读取原请求。",
+              "原操作暂未找到；这不证明已回滚。请保留待核实记录，再次读取原操作。",
             );
         }
       } catch (error) {
+        authority.observe(error);
         if (active.current && captured === generation.current) {
           setMessage(validationMessage(error));
           if (!entry) setStorageError(validationMessage(error));
@@ -156,7 +180,7 @@ export function ValidationPanel({
       active.current = false;
       generation.current = captured + 1;
     };
-  }, [value.productId, value.id]);
+  }, [value.productId, value.id, authority]);
   async function run(work: () => Promise<void>) {
     if (busyRef.current) return;
     busyRef.current = true;
@@ -166,6 +190,7 @@ export function ValidationPanel({
     try {
       await work();
     } catch (error) {
+      authority.observe(error);
       if (active.current && captured === generation.current)
         setMessage(validationMessage(error));
     } finally {
@@ -177,6 +202,7 @@ export function ValidationPanel({
     }
   }
   async function start(tuple?: PendingTuple) {
+    if (!authority.canWrite() || !writable) return;
     const captured = generation.current;
     const result = tuple
       ? await continuePrepared(storage, tuple, session.csrfToken)
@@ -223,12 +249,13 @@ export function ValidationPanel({
       setCurrentId(row.id);
       setRefusal(undefined);
       history.refresh();
-    } else setMessage("原请求暂未找到；这不证明已回滚。待核实记录已保留。");
+    } else setMessage("原操作暂未找到；这不证明已回滚。待核实记录已保留。");
   }
   async function recordAction(
     row: ValidationDto,
     action: "read" | "recover" | "retry",
   ) {
+    if (action !== "read" && (!authority.canWrite() || !writable)) return;
     const captured = generation.current;
     const release = action === "read" ? undefined : acquirePair(pair);
     if (action !== "read")
@@ -275,7 +302,18 @@ export function ValidationPanel({
     setHalted((states) => ({ ...states, [row.id]: false }));
     history.refresh();
   }
+  useContentTaskState(onState, {
+    busy,
+    pending: !!pending || !!storageError || Object.values(halted).some(Boolean),
+    retained: !!pending || !!currentId,
+    message: pending?.mayHaveBeenSent
+      ? "检查结果待核实，请按原操作读取。"
+      : storageError || undefined,
+  });
   const current = currentId ? snapshots[currentId] : undefined;
+  useEffect(() => {
+    onRejected?.(current?.status === "rejected" ? current : undefined);
+  }, [current, onRejected]);
   const rows = current
     ? [
         current,
@@ -284,20 +322,256 @@ export function ValidationPanel({
           .map((row) => snapshots[row.id] || row),
       ]
     : (history.value?.items ?? []).map((row) => snapshots[row.id] || row);
+  if (embedded) {
+    const row = current ?? rows[0];
+    const usable =
+      row?.status === "ready" &&
+      !row.readOnly &&
+      !row.maintenanceRequired &&
+      row.storageCondition === "clean" &&
+      row.candidateSha256 !== null;
+    const blocked =
+      busy ||
+      !writable ||
+      !!pending ||
+      !!storageError ||
+      history.loading ||
+      !!history.error;
+    const actions = (
+      <div className={compact.footerActions}>
+        {pending ? (
+          pending.mayHaveBeenSent ? (
+            <button
+              className={compact.primary}
+              disabled={busy}
+              onClick={() => void run(() => verify(pending.tuple))}
+            >
+              按原操作核实检查结果
+            </button>
+          ) : (
+            <>
+              <button
+                className={compact.primary}
+                disabled={busy || !writable || !!storageError}
+                onClick={() => void run(() => start(pending.tuple))}
+              >
+                继续原检查操作
+              </button>
+              <button
+                className={compact.secondary}
+                disabled={busy || !!storageError}
+                onClick={() =>
+                  void run(async () => {
+                    cancelPrepared(storage, pending.tuple);
+                  })
+                }
+              >
+                取消尚未发送的准备
+              </button>
+            </>
+          )
+        ) : usable && row && onSelect ? (
+          <button
+            className={compact.primary}
+            disabled={busy || !!storageError || !!halted[row.id]}
+            onClick={() => onSelect(row)}
+          >
+            继续形成草稿
+          </button>
+        ) : row?.status === "rejected" ? (
+          <button
+            className={compact.primary}
+            disabled={busy || !!pending || !!storageError}
+            onClick={() => void run(() => recordAction(row, "read"))}
+          >
+            核实此拒绝结果
+          </button>
+        ) : !row || row.readOnly ? (
+          <button
+            className={compact.primary}
+            disabled={
+              blocked ||
+              value.status !== "received" ||
+              value.storageCondition !== "clean"
+            }
+            onClick={() => void run(() => start())}
+          >
+            开始检查内容
+          </button>
+        ) : (
+          <>
+            <button
+              className={compact.secondary}
+              disabled={busy}
+              onClick={() => void run(() => recordAction(row, "read"))}
+            >
+              查询此次检查结果
+            </button>
+            {!row.readOnly &&
+              (row.maintenanceRequired ||
+                row.storageCondition !== "clean" ||
+                row.status === "validating" ||
+                row.status === "archiving") && (
+                <button
+                  className={compact.primary}
+                  disabled={blocked || !!halted[row.id]}
+                  onClick={() => void run(() => recordAction(row, "recover"))}
+                >
+                  核实并恢复本次检查
+                </button>
+              )}
+            {!row.readOnly &&
+              (row.status === "validated" ||
+                row.status === "retryable-failed") && (
+                <button
+                  className={compact.primary}
+                  disabled={
+                    blocked ||
+                    !!halted[row.id] ||
+                    row.maintenanceRequired ||
+                    row.storageCondition !== "clean" ||
+                    row.remainingAttempts === 0
+                  }
+                  onClick={() => void run(() => recordAction(row, "retry"))}
+                >
+                  明确重试本次检查
+                </button>
+              )}
+          </>
+        )}
+        {refusal && (
+          <button
+            className={compact.secondary}
+            disabled={busy || !!storageError}
+            onClick={() =>
+              void run(async () => {
+                abandonNotStarted(storage, refusal.tuple, refusal.result);
+                setRefusal(undefined);
+              })
+            }
+          >
+            放弃已确认未开始的准备
+          </button>
+        )}
+      </div>
+    );
+    return (
+      <div className={compact.stage}>
+        <h3>{usable ? "内容和素材已就绪" : "检查内容与素材"}</h3>
+        <p className={usable ? compact.success : compact.intro}>
+          {usable
+            ? "此来源检查已就绪，下一步明确确认创建或追加草稿。"
+            : "独立检查结构、规则与资源。检查不会自动形成草稿。"}
+        </p>
+        <dl className={compact.checkCard}>
+          <div>
+            <dt>来源内容包</dt>
+            <dd>
+              {row?.packId
+                ? `${row.packId} / ${row.packVersion}`
+                : "本次接收的固定文件"}
+            </dd>
+          </div>
+          <div>
+            <dt>检查状态</dt>
+            <dd>
+              {row
+                ? row.status === "ready"
+                  ? "就绪"
+                  : row.status === "rejected"
+                    ? "未通过"
+                    : "尚需核实或继续处理"
+                : "尚未检查"}
+            </dd>
+          </div>
+          {row && (
+            <div>
+              <dt>素材保存</dt>
+              <dd>
+                {row.archivedResourceCount} / {row.resourceCount ?? "待确定"}
+              </dd>
+            </div>
+          )}
+          <div>
+            <dt>草稿动作</dt>
+            <dd>检查就绪后仍需明确确认</dd>
+          </div>
+        </dl>
+        {pending && (
+          <div className={compact.pending} role="status">
+            <strong>
+              {pending.mayHaveBeenSent
+                ? "原检查请求结果待核实"
+                : "本次准备尚未发送或正在处理"}
+            </strong>
+            <p>
+              原操作编号：{pending.tuple.expectedValidationKey.slice(0, 12)}
+              …。原输入保持，空查询不能证明未提交。
+            </p>
+          </div>
+        )}
+        {(storageError || history.error) && (
+          <p className={compact.warning} role="alert">
+            {storageError || history.error}
+          </p>
+        )}
+        {message && (
+          <p className={compact.warning} role="status">
+            {message}
+          </p>
+        )}
+        {busy && <p role="status">正在处理本次检查…</p>}
+        {row?.lastErrorCode && (
+          <p className={compact.warning}>
+            {validationMessage(new StudioClientError(row.lastErrorCode))}
+          </p>
+        )}
+        {row?.maintenanceRequired && (
+          <p className={compact.warning}>
+            归档文件与停止情况仍需维护核实，不能继续形成草稿。
+          </p>
+        )}
+        {row?.readOnly && (
+          <p className={compact.warning}>
+            此历史检查只读，不能用于新草稿。可对原文件明确发起新检查。
+          </p>
+        )}
+        {row && halted[row.id] && (
+          <p className={compact.warning}>
+            操作已暂停，请先读取此次检查结果，再明确恢复或重试。
+          </p>
+        )}
+        {!writable && (
+          <p className={compact.warning}>
+            当前不能发起检查写入，原操作仍可读取核实。
+          </p>
+        )}
+        {onInspectSource && (
+          <button
+            className={compact.textButton}
+            disabled={busy}
+            onClick={() => onInspectSource(value.id)}
+          >
+            查看此来源与检查记录
+          </button>
+        )}
+        {renderActions ? renderActions(actions) : actions}
+      </div>
+    );
+  }
   return (
     <section className={styles.panel} aria-labelledby="validation-heading">
-      <h2 id="validation-heading">验证与私有资源归档</h2>
+      <h2 id="validation-heading">检查内容并保存素材</h2>
       <p className={styles.note}>
-        本批支持 content.v1／v2 与 synthetic／authored
-        的四种明确组合。作者内容标记不代表内容或素材获得批准。原包接收事实、独立验证结果和资源归档分别记录；本批不发布。
+        检查内容包结构并保存所需素材。检查通过后，仍需明确建立或更新草稿；检查不代表内容、素材已获审核批准，也不会发布商品。
       </p>
       {!writable && (
         <p className={styles.status}>
           {readOnly
-            ? "当前身份只读，可读取历史与原请求。"
+            ? "当前身份只读，可读取历史与原操作。"
             : archived
-              ? "工作区已归档，可读取历史与原请求。"
-              : "验证与归档已关闭，可读取历史与原请求。"}
+              ? "工作区已归档，可读取历史与原操作。"
+              : "验证与归档已关闭，可读取历史与原操作。"}
         </p>
       )}
       {storageError && (
@@ -309,19 +583,19 @@ export function ValidationPanel({
         <div className={styles.compare}>
           <h3>
             {storageError
-              ? "本标签状态待核实"
+              ? "当前标签页状态待核实"
               : pending.mayHaveBeenSent
-                ? "本标签有待核实请求"
+                ? "当前标签页有待核实请求"
                 : busy
                   ? "正在处理验证请求"
-                  : "本标签有尚未发送的准备"}
+                  : "当前标签页有尚未发送的准备"}
           </h3>
-          <p>请求标识：{pending.tuple.expectedValidationKey.slice(0, 12)}…</p>
+          <p>操作编号：{pending.tuple.expectedValidationKey.slice(0, 12)}…</p>
           <p>
             {storageError
-              ? "本标签的记录当前无法读取或保存，发送状态仍待核实。请保留记录并读取服务器历史。"
+              ? "当前标签页的记录当前无法读取或保存，发送状态仍待核实。请保留记录并读取服务器历史。"
               : pending.mayHaveBeenSent
-                ? "请求可能已发送。刷新、超时或暂未找到记录都不能证明回滚；仅按原请求读取核实。"
+                ? "请求可能已发送。刷新、超时或暂未找到记录都不能证明回滚；仅按原操作读取核实。"
                 : busy
                   ? "本次操作尚未结束，结果仍待确认。请等待操作完成。"
                   : "准备已保存。请明确选择继续验证归档或取消本次准备。"}
@@ -333,7 +607,7 @@ export function ValidationPanel({
                 disabled={busy}
                 onClick={() => void run(() => verify(pending.tuple))}
               >
-                读取原请求核实
+                读取原操作核实
               </button>
             ) : (
               <>
@@ -342,7 +616,7 @@ export function ValidationPanel({
                   disabled={busy || !writable || !!storageError}
                   onClick={() => void run(() => start(pending.tuple))}
                 >
-                  继续验证并归档
+                  继续检查内容并保存素材
                 </button>
                 <button
                   className={`${styles.button} ${styles.secondary}`}
@@ -388,12 +662,12 @@ export function ValidationPanel({
           }
           onClick={() => void run(() => start())}
         >
-          验证并归档
+          检查内容并保存素材
         </button>
       )}
       {value.status !== "received" && (
         <p className={styles.note}>
-          请先完成原包接收；当前接收状态尚不能验证。
+          请先完成内容包接收；当前接收状态尚不能验证。
         </p>
       )}
       {busy && (
@@ -406,13 +680,13 @@ export function ValidationPanel({
           {message}
         </p>
       )}
-      <h3>独立验证历史</h3>
+      <h3>内容检查记录</h3>
       <button
         className={`${styles.button} ${styles.secondary}`}
         disabled={busy || history.loading}
         onClick={history.refresh}
       >
-        刷新验证历史
+        刷新检查记录
       </button>
       {history.loading && <p role="status">正在读取验证历史…</p>}
       {history.error && (
@@ -428,10 +702,23 @@ export function ValidationPanel({
       <ul className={styles.cards}>
         {rows.map((row) => (
           <li className={styles.card} key={row.id}>
-            <ValidationFacts value={row} />
+            {embedded ? (
+              <>
+                <h3>
+                  {row.status === "ready"
+                    ? "内容与素材已就绪"
+                    : "检查结果仍需处理"}
+                </h3>
+                <TechnicalDetails label="检查记录与技术依据">
+                  <ValidationFacts value={row} />
+                </TechnicalDetails>
+              </>
+            ) : (
+              <ValidationFacts value={row} />
+            )}
             {halted[row.id] && (
               <p className={styles.status}>
-                当前操作已暂停。请读取此验证状态，再明确选择恢复或重试。
+                当前操作已暂停。请查询此次检查结果，再明确选择恢复或重试。
               </p>
             )}
             <div className={styles.actions}>
@@ -440,7 +727,7 @@ export function ValidationPanel({
                 disabled={busy}
                 onClick={() => void run(() => recordAction(row, "read"))}
               >
-                读取此验证状态
+                查询此次检查结果
               </button>
               {!row.readOnly &&
                 (row.maintenanceRequired ||
@@ -485,12 +772,33 @@ export function ValidationPanel({
                     明确重试验证或归档
                   </button>
                 )}
-              <Link
-                className={`${styles.link} ${styles.secondary}`}
-                href={`/studio/products/${encodeURIComponent(pair.productId)}/imports/${pair.importId}/validations/${row.id}`}
-              >
-                查看验证详情
-              </Link>
+              {onSelect && (
+                <button
+                  className={styles.button}
+                  disabled={
+                    busy ||
+                    !!pending ||
+                    !!storageError ||
+                    !!halted[row.id] ||
+                    row.status !== "ready" ||
+                    row.readOnly ||
+                    row.maintenanceRequired ||
+                    row.storageCondition !== "clean" ||
+                    row.candidateSha256 === null
+                  }
+                  onClick={() => onSelect(row)}
+                >
+                  使用此检查结果形成草稿
+                </button>
+              )}
+              {!embedded && (
+                <Link
+                  className={`${styles.link} ${styles.secondary}`}
+                  href={`/studio/products/${encodeURIComponent(pair.productId)}/imports/${pair.importId}/validations/${row.id}`}
+                >
+                  查看验证详情
+                </Link>
+              )}
             </div>
           </li>
         ))}

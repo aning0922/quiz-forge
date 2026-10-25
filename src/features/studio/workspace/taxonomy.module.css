@@ -1,0 +1,239 @@
+.workspace {
+  gap: 20px;
+}
+.pageHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.pageHeader h1 {
+  font-size: 28px;
+  line-height: 1.4;
+  font-weight: 750;
+  margin: 0 0 6px;
+}
+.pageHeader p {
+  color: var(--studio-muted, #75829a);
+  margin: 0;
+}
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--studio-muted, #75829a);
+  text-decoration: none;
+  min-height: 44px;
+}
+.primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 8px 14px;
+  background: var(--studio-primary, #6358df);
+  color: #fff;
+  border-radius: 8px;
+  text-decoration: none;
+  flex-shrink: 0;
+}
+.tabs {
+  display: flex;
+  border-bottom: 1px solid var(--studio-border, #e6e9f1);
+}
+.tabs button {
+  min-height: 48px;
+  padding: 12px 18px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--studio-muted, #75829a);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.tabs button[aria-pressed="true"] {
+  color: var(--studio-primary, #6358df);
+  border-color: var(--studio-primary, #6358df);
+}
+.tabs button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.tabs button:focus-visible,
+.primary:focus-visible,
+.back:focus-visible {
+  outline: 3px solid #aaa0ff;
+  outline-offset: 3px;
+}
+.directoryLayout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 330px);
+  gap: 20px;
+  align-items: start;
+}
+.readOnly {
+  grid-template-columns: minmax(0, 1fr);
+}
+.workspace .listPanel,
+.workspace .createPanel {
+  padding: 20px;
+  border-radius: 13px;
+}
+.workspace .listPanel h2,
+.workspace .createPanel h2 {
+  font-size: 19px;
+  font-weight: 650;
+  margin: 0 0 14px;
+}
+.listPanel > form {
+  grid-template-columns: minmax(0, 1fr) minmax(120px, 160px) auto;
+  gap: 12px;
+  margin: 0;
+}
+.workspace .rows {
+  gap: 0;
+  margin: 14px -20px 0;
+}
+.workspace .row {
+  border: 0;
+  border-top: 1px solid var(--studio-border, #e6e9f1);
+  border-radius: 0;
+  padding: 18px 20px;
+  display: grid;
+  gap: 14px;
+}
+.rowHeading {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 16px;
+}
+.row .rowHeading h3 {
+  font-size: 17px;
+  font-weight: 650;
+  margin: 0;
+}
+.row .rowHeading p {
+  margin: 2px 0 0;
+  color: var(--studio-muted, #75829a);
+}
+.count {
+  color: var(--studio-muted, #75829a);
+}
+.count strong {
+  color: var(--studio-ink, #202a42);
+}
+.count small {
+  display: block;
+  font-size: 16px;
+}
+.active,
+.archived {
+  border-radius: 6px;
+  background: #edf1f7;
+  color: #62708a;
+  padding: 3px 8px;
+}
+.archived {
+  background: #fff3e1;
+  color: #9f5d17;
+}
+.rowControls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 12px;
+}
+.rowControls > form {
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: end;
+  margin: 0;
+}
+.rowControls > form button {
+  white-space: nowrap;
+}
+.lifecycle {
+  display: contents;
+}
+.lifecycle > section {
+  grid-column: 1/-1;
+}
+.row > details {
+  margin: 0;
+}
+.row > details summary {
+  min-height: 44px;
+}
+.row > [role="status"] {
+  margin: 0;
+}
+.createPanel > p {
+  margin: 0 0 12px;
+}
+.createPanel form {
+  margin-top: 12px;
+}
+@media (max-width: 1200px) {
+  .directoryLayout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .createPanel {
+    max-width: none;
+  }
+  .createPanel form {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+    align-items: end;
+  }
+}
+@media (max-width: 700px) {
+  .pageHeader {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+  .workspace .listPanel,
+  .workspace .createPanel {
+    padding: 16px;
+  }
+  .listPanel > form {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .workspace .rows {
+    margin-inline: -16px;
+  }
+  .workspace .row {
+    padding: 18px 16px;
+  }
+  .rowHeading {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px;
+  }
+  .count {
+    grid-column: 1/-1;
+    grid-row: 2;
+  }
+  .count small {
+    display: inline;
+    margin-left: 6px;
+  }
+  .active,
+  .archived {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  .rowControls {
+    grid-template-columns: minmax(0, 1fr);
+    align-items: start;
+  }
+  .rowControls > form {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .lifecycle > button {
+    justify-self: start;
+  }
+  .createPanel form {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

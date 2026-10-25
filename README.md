@@ -106,21 +106,23 @@ corepack pnpm dev
 
 所有命令从当前仓库或受管 worktree 的根目录执行，先核对 `git status` 与 `git remote -v`。
 
-| 命令                             | 用途                                        |
-| -------------------------------- | ------------------------------------------- |
-| `corepack pnpm dev`              | 启动本地开发服务                            |
-| `corepack pnpm format:check`     | 检查格式                                    |
-| `corepack pnpm lint`             | ESLint 检查，警告视为失败                   |
-| `corepack pnpm typecheck`        | 生成路由类型并执行 TypeScript 检查          |
-| `corepack pnpm test`             | 单元测试                                    |
-| `corepack pnpm build`            | 实现登记校验、生产构建与私有路径 trace 审计 |
-| `corepack pnpm test:e2e:install` | 首次安装项目内 Chromium                     |
-| `corepack pnpm test:e2e`         | 生产构建上的受管端到端测试                  |
-| `corepack pnpm check`            | 顺序执行格式、lint、类型、单测、构建、E2E   |
+验证范围统一按 [AGENTS.md](AGENTS.md) 的风险分级选择。以下是工具入口，不是每次交付都要运行的清单：文档和低风险展示改动不触发全量测试；相关验证输入未变化时复用已有成功结果。修复后先验证原失败点及直接影响，达到本批验收条件即收口，不为覆盖率或检查数量扩大范围。
+
+| 命令                             | 用途                                         |
+| -------------------------------- | -------------------------------------------- |
+| `corepack pnpm dev`              | 启动本地开发服务                             |
+| `corepack pnpm format:check`     | 检查格式                                     |
+| `corepack pnpm lint`             | ESLint 检查，警告视为失败                    |
+| `corepack pnpm typecheck`        | 生成路由类型并执行 TypeScript 检查           |
+| `corepack pnpm test`             | 单元测试                                     |
+| `corepack pnpm build`            | 实现登记校验、生产构建与私有路径 trace 审计  |
+| `corepack pnpm test:e2e:install` | 首次安装项目内 Chromium                      |
+| `corepack pnpm test:e2e`         | 生产构建上的受管端到端测试                   |
+| `corepack pnpm check`            | 确需全量时顺序执行六项检查，不作日常默认入口 |
 
 **完整 E2E 需要专属 `test` / `ci` 数据库、私有运行配置及就绪的媒体环境，并独占端口 3100。** 不能复用正在运行的作者体验服务，也不能把未配置环境造成的跳过或失败记为通过。环境与执行证据见 [P4 验收](docs/P4_ACCEPTANCE.md)。
 
-GitHub Actions 在 `main` 推送、PR 和手工触发时执行冻结安装与工程检查，并用隔离数据库运行迁移、集成和故障测试。具体提交的远端结果以 [Actions](https://github.com/aning0922/quiz-forge/actions) 为准；本地成功、远端成功和人工视觉验收分别记录。
+GitHub Actions 在 `main` 推送、PR 和手工触发时执行冻结安装与工程检查，并用隔离数据库运行迁移、集成和故障测试。现有通用 workflow 未按文档或局部 UI 改动裁剪；这不要求本地预先重复同一套检查，也不应手动重复触发已成功的工作流。具体提交的远端结果以 [Actions](https://github.com/aning0922/quiz-forge/actions) 为准；本地成功、远端成功和人工视觉验收分别记录。
 
 <details>
 <summary><strong>本机运营与数据库</strong></summary>

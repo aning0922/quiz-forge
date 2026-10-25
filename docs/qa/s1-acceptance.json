@@ -1,0 +1,135 @@
+{
+  "schemaVersion": "quizforge.studio-s1-acceptance.v1",
+  "date": "2026-10-24",
+  "status": "local-technical-acceptance-complete-author-review-pending",
+  "baseline": "a641b04eb9533056ad5d07f21e336bd3ace87dba",
+  "contractFreeze": "1d2162bcef0cfb414f64e62b4cc9bc4db976a415",
+  "runtimeHead": "6eeb60f730bdb759b8eacbbda57643c35c5431f4",
+  "draftPr": "https://github.com/aning0922/quiz-forge/pull/24",
+  "finalDeliveryCi": "verify exact documentation head after push; receipt in PR",
+  "runtimeCi": {
+    "runId": 39984872117,
+    "checks": "success",
+    "database": "success"
+  },
+  "localChecks": {
+    "format": "passed",
+    "lint": "passed",
+    "typecheck": "passed",
+    "unit": { "files": 184, "passed": 1981 },
+    "build": {
+      "passed": true,
+      "traces": 104,
+      "paths": 24048,
+      "privateViolations": 0
+    },
+    "media": {
+      "target": "main",
+      "cases": 66,
+      "rounds": 3,
+      "outcome": "sealed",
+      "deploymentId": "efc7b0eb00cfef048f0cbf39e079fb9d7c852ae73ccc8218960798ab0a3f9656",
+      "runtimeBundleHash": "c786d6953ebc489855ed426af34c7217ae76f64bea3bf85fbd9f9fe64a09f18d"
+    },
+    "productionE2e": {
+      "passed": 259,
+      "existingSkipped": 10,
+      "failed": 0,
+      "minutes": 7.6,
+      "serverExit": "proven",
+      "workersStopped": true,
+      "cleanup": "passed",
+      "fixtureCleanup": [
+        "consumer-p4",
+        "internal-version-p3e",
+        "draft-revisions-p3d",
+        "preview-p3c",
+        "drafts",
+        "validations"
+      ],
+      "log": ".cache/studio-s1/production-window-1792772194/e2e.log"
+    },
+    "separateLocalPgDriverMatrix": "not repeated; production E2E used real PG; exact delivery CI runs PG/driver/fresh"
+  },
+  "closedP2": {
+    "issue": "global navigation did not revoke current Key controller immediately while destination navigation was delayed",
+    "fix": "same-window existing authority event on actual global-link activation; no broadcast for navigation",
+    "code": "6eeb60f",
+    "independentProof": "A and Astra each ran four real-component synthetic-HTTP browser groups",
+    "resultSha256": "02a0378cf3c76854c623c0ec1c37c9e91627a55ca148f226d3df796c91708233",
+    "databaseEvidence": false
+  },
+  "visual": {
+    "manifest": "s1-visual-manifest.json",
+    "uniqueOriginals": 19,
+    "viewed": { "root": 13, "A": 6, "B": 8, "Astra": 9 },
+    "browser": "Chromium 156.0.8078.4",
+    "automaticMobileWidths": [320, 375, 390, 430],
+    "representativeDesktopWidth": 1440,
+    "remainingP1P2": 0,
+    "loadingEvidenceCorrectedWithReadyCaptures": true,
+    "authorAcceptance": false,
+    "consumerHistoricalPersonVisualApproval": false
+  },
+  "boundedPrivacyScan": {
+    "files": 440,
+    "fileBytes": 125508584,
+    "zipEntries": 22,
+    "zipMembers": 22,
+    "zipBytes": 12488157,
+    "credentialPatternOccurrences": 0,
+    "csrfPatternOccurrences": 0,
+    "violations": [],
+    "passed": true,
+    "ocr": false,
+    "evidence": ".cache/studio-s1/artifact-privacy-final.json"
+  },
+  "environments": {
+    "original": {
+      "head": "5686ff0fb9040456ec1b5782004cd0ba3fff1069",
+      "clean": true,
+      "instance": "39eb7bb10c4d809012767a415f9d379c",
+      "pgPort": 55423,
+      "httpPort": 3100,
+      "buildIdSha256": "e18a9ad9070a08f9c65d91e7d8faee325ad65f502b364941e19407b14dc60e4f",
+      "accessStatus": 200,
+      "state": "running; original build restored after E2E window; no author answers credentials or reports read"
+    },
+    "test": {
+      "instance": "21dc7826e926cdf0f354c7db85372c0f",
+      "pgPort": 55431,
+      "purpose": "test",
+      "state": "stopped"
+    },
+    "reviewDemo": {
+      "instance": "5270a4e617010f6b326693da2c5a3942",
+      "pgPort": 55432,
+      "httpPort": 3110,
+      "purpose": "demo",
+      "state": "intentionally-running-for-author-review",
+      "productId": "studio-s1-demo",
+      "content": "synthetic metadata only; no authored pack or sealed version copied"
+    }
+  },
+  "preservedIntermediateFailures": [
+    "initial Next upstream security build nudge followed by successful same-command retry",
+    "generated Turbopack cache exceeded existing media hardening file limit; preserved cache and verified 2318 non-cache entries unchanged before official successful media build"
+  ],
+  "knownLimitations": [
+    "P3 narrow workflow sequence numbers wrap",
+    "P3 pagination spacing and long empty taxonomy form",
+    "P3 unknown seal recovery requires scrolling",
+    "dependency audit Next 16.4.0: 2 critical and 1 high range matches; no exploit test; separate upgrade compatibility work needed",
+    "no author S1 acceptance, main merge, production migration, deployment, release or consumer redesign"
+  ],
+  "unchanged": [
+    "database migrations",
+    "scoring",
+    "business controller storage HTTP",
+    "consumer access session report snapshot and PNG contracts",
+    "theme and preview implementations",
+    "package and lockfile",
+    "global styles",
+    "P5 archive tag"
+  ]
+}

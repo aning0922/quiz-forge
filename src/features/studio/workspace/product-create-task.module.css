@@ -1,0 +1,214 @@
+.dialog {
+  width: min(540px, calc(100vw - 36px));
+  max-width: none;
+  max-height: min(92dvh, 920px);
+  margin: auto;
+  padding: 0;
+  border: 0;
+  border-radius: 15px;
+  background: #fff;
+  color: #202743;
+  font-size: 16px;
+  line-height: 1.55;
+  overflow: hidden;
+  box-shadow: 0 25px 100px #121d3950;
+}
+.dialog[open] {
+  display: flex;
+  flex-direction: column;
+}
+.dialog:not([open]) {
+  display: none;
+}
+.dialog::backdrop {
+  background: #171e36a8;
+}
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 23px 25px 19px;
+  border-bottom: 1px solid #e9ecf3;
+  flex-shrink: 0;
+}
+.header h2 {
+  font-size: 22px;
+  line-height: 1.35;
+  margin: 0;
+  font-weight: 700;
+}
+.header p {
+  margin: 6px 0 0;
+  color: #78839a;
+}
+.body {
+  min-height: 0;
+  flex: 1;
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: 23px 25px;
+}
+.footer {
+  padding: 15px 25px;
+  border-top: 1px solid #e9ecf3;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  flex-shrink: 0;
+  background: #fcfcff;
+}
+.actions {
+  display: contents;
+}
+.fields {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+  display: grid;
+  gap: 18px;
+}
+.formBody {
+  min-width: 0;
+}
+.formBody form {
+  margin-top: 0;
+}
+.formBody p {
+  font-size: 16px;
+}
+.formBody input {
+  width: 100%;
+  min-width: 0;
+  min-height: 46px;
+  font-size: 16px;
+}
+.pair {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+  gap: 18px;
+  align-items: start;
+}
+.pair > * {
+  min-width: 0;
+}
+.pair p:first-child {
+  margin-top: 0;
+}
+.optional {
+  border-top: 1px solid #e9ecf3;
+  padding-top: 5px;
+}
+.optional > summary {
+  min-height: 44px;
+  padding: 10px 0;
+  color: #65718b;
+  font-weight: 600;
+  cursor: pointer;
+}
+.primary,
+.secondary,
+.close {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  min-width: 44px;
+  padding: 9px 15px;
+  border: 1px solid #dfe4ee;
+  border-radius: 8px;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 600;
+  color: #45506a;
+  background: #fff;
+  cursor: pointer;
+  text-decoration: none;
+}
+.primary {
+  background: #6358df;
+  border-color: #6358df;
+  color: #fff;
+}
+.primary:hover {
+  background: #5146cc;
+}
+.primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.close {
+  flex-shrink: 0;
+  border-color: transparent;
+  padding: 9px;
+}
+.close:hover,
+.secondary:hover {
+  background: #f5f4ff;
+}
+.notice {
+  margin: 15px 25px 0;
+  padding: 12px 14px;
+  border: 1px solid #eed9b9;
+  border-radius: 9px;
+  color: #805d27;
+  background: #fffaf0;
+}
+.formBody > .notice {
+  margin: 0 0 18px;
+}
+.launcher {
+  display: grid;
+  justify-items: end;
+  gap: 7px;
+}
+.retained {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 14px 18px;
+  border: 1px solid #ead7ba;
+  border-radius: 10px;
+  background: #fffaf0;
+  margin-bottom: 20px;
+  color: #805d27;
+}
+.retained p {
+  margin: 0;
+}
+.launcher p {
+  margin: 0;
+  max-width: 300px;
+  color: #8a642f;
+  font-size: 16px;
+}
+.dialog :is(button, a, input, select, summary):focus-visible {
+  outline: 3px solid #b9b2ff;
+  outline-offset: 3px;
+}
+@media (max-width: 570px) {
+  .dialog {
+    position: fixed;
+    inset: auto 0 0;
+    margin: 0;
+    width: 100vw;
+    max-height: 94dvh;
+    border-radius: 14px 14px 0 0;
+  }
+  .header,
+  .body,
+  .footer {
+    padding-inline: 18px;
+  }
+  .pair {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .launcher {
+    justify-items: start;
+  }
+}

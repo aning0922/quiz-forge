@@ -1,6 +1,9 @@
 "use client";
 
-import type { TaxonomySummary } from "@/features/product/workspace/contracts";
+import type {
+  ProductDto,
+  TaxonomySummary,
+} from "@/features/product/workspace/contracts";
 import { TaxonomyPicker } from "./taxonomy-picker";
 import styles from "./workspace.module.css";
 
@@ -16,18 +19,23 @@ export function ProductFields({
   value,
   onChange,
   disabled,
+  compact = false,
+  onReadFailure,
 }: {
   value: ProductFormFields;
   onChange: (value: ProductFormFields) => void;
   disabled: boolean;
+  compact?: boolean;
+  onReadFailure?: ((error: unknown) => void) | undefined;
 }) {
   return (
     <>
       <div className={styles.field}>
-        <label htmlFor="product-title">显示标题</label>
+        <label htmlFor="product-title">测评名称</label>
         <input
           className={styles.input}
           id="product-title"
+          aria-describedby="product-title-help"
           value={value.title}
           required
           disabled={disabled}
@@ -35,36 +43,88 @@ export function ProductFields({
             onChange({ ...value, title: event.target.value })
           }
         />
-        <p className={styles.note}>1–120 个字符，作为纯文本显示。</p>
-      </div>
-      <div className={styles.field}>
-        <label htmlFor="product-slug">工作区 slug</label>
-        <input
-          className={styles.input}
-          id="product-slug"
-          value={value.slug}
-          required
-          pattern="[a-z][a-z0-9]*(?:-[a-z0-9]+)*"
-          maxLength={80}
-          disabled={disabled}
-          onChange={(event) => onChange({ ...value, slug: event.target.value })}
-        />
-        <p className={styles.note}>
-          小写字母开头，可含数字与单个连字符分段，最多 80 字符。
+        <p id="product-title-help" className={styles.note}>
+          填写运营时容易识别的名称，例如“千载同心”，最多 120 个字符。
         </p>
       </div>
+      {!compact && (
+        <div className={styles.field}>
+          <label htmlFor="product-slug">测评英文标识</label>
+          <input
+            className={styles.input}
+            id="product-slug"
+            aria-describedby="product-slug-help"
+            placeholder="例如 qianzai-tongxin"
+            value={value.slug}
+            required
+            pattern="[a-z][a-z0-9]*(?:-[a-z0-9]+)*"
+            maxLength={80}
+            disabled={disabled}
+            onChange={(event) =>
+              onChange({ ...value, slug: event.target.value })
+            }
+          />
+          <p id="product-slug-help" className={styles.note}>
+            用于区分测评，例如
+            qianzai-tongxin。可与测评编号相同；使用小写字母、数字和连字符，最多
+            80 字符，不能与其他测评重复。
+          </p>
+        </div>
+      )}
       <TaxonomyPicker
         kind="category"
+        compact={compact}
+        onFailure={onReadFailure}
         selected={value.categories}
         onChange={(categories) => onChange({ ...value, categories })}
         disabled={disabled}
       />
       <TaxonomyPicker
         kind="tag"
+        compact={compact}
+        onFailure={onReadFailure}
         selected={value.tags}
         onChange={(tags) => onChange({ ...value, tags })}
         disabled={disabled}
       />
+      {compact && (
+        <details className={styles.field}>
+          <summary>英文标识</summary>
+          <label htmlFor="product-slug">测评英文标识</label>
+          <input
+            className={styles.input}
+            id="product-slug"
+            value={value.slug}
+            required
+            pattern="[a-z][a-z0-9]*(?:-[a-z0-9]+)*"
+            maxLength={80}
+            disabled={disabled}
+            onChange={(event) =>
+              onChange({ ...value, slug: event.target.value })
+            }
+          />
+          <p className={styles.note}>
+            用于区分测评，仅限小写字母、数字和连字符。
+          </p>
+        </details>
+      )}
     </>
+  );
+}
+
+/** Names/labels refreshed on associations do not change the actual metadata IDs. */
+export function productFieldsDirty(
+  value: ProductFormFields,
+  saved: ProductDto,
+): boolean {
+  return (
+    value.title !== saved.title ||
+    value.slug !== saved.slug ||
+    (value.categories[0]?.id ?? null) !== (saved.primaryCategory?.id ?? null) ||
+    value.categories.length > 1 ||
+    value.tags.length !== saved.tags.length ||
+    value.tags.some(
+      (tag) => !saved.tags.some((original) => original.id === tag.id),
+    )
   );
 }

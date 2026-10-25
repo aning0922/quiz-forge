@@ -1,28 +1,10 @@
 "use client";
 
-import Link from "next/link";
 import styles from "./workspace.module.css";
 
 export function WorkspaceNav() {
-  return (
-    <nav className={styles.nav} aria-label="Studio 导航">
-      <Link className={`${styles.link} ${styles.secondary}`} href="/studio">
-        身份与退出
-      </Link>
-      <Link
-        className={`${styles.link} ${styles.secondary}`}
-        href="/studio/products"
-      >
-        工作区
-      </Link>
-      <Link
-        className={`${styles.link} ${styles.secondary}`}
-        href="/studio/taxonomy"
-      >
-        类目与标签
-      </Link>
-    </nav>
-  );
+  // Existing consumers retain this export; StudioShell now owns the only nav.
+  return null;
 }
 
 export function Pagination({
@@ -37,7 +19,7 @@ export function Pagination({
   onPage: (page: number) => void;
 }) {
   return (
-    <nav className={styles.actions} aria-label="分页">
+    <nav className={`${styles.actions} ${styles.pagination}`} aria-label="分页">
       <button
         className={`${styles.button} ${styles.secondary}`}
         type="button"
@@ -62,7 +44,7 @@ export function Pagination({
 export function ReadOnlyNotice() {
   return (
     <p className={styles.status}>
-      当前身份为只读，可查看本运营空间全部工作区与目录，不能创建、编辑、归档或恢复。
+      当前身份为只读，可查看测评、分类和标签，不能创建、编辑、归档或恢复。
     </p>
   );
 }

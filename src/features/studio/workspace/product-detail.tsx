@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import { draftWorkspacePath } from "../drafts/client";
-import Link from "next/link";
+import { useEffect, useState } from "react";
+import { useStudioLeaveProtection } from "../navigation-boundary";
+import { useProductWorkspaceContext } from "../product-workspace/context";
 import {
   productReplaceMetadataSchema,
   type ProductDto,
@@ -12,8 +12,15 @@ import type { StudioSessionDto } from "../contracts";
 import { studioFetch, studioMessage } from "../client";
 import { useWorkspaceRead } from "./use-request";
 import { useWorkspaceMutation } from "./use-mutation";
-import { ProductFields, type ProductFormFields } from "./product-fields";
-import { ProductCard } from "./product-list";
+import {
+  ProductFields,
+  productFieldsDirty,
+  type ProductFormFields,
+} from "./product-fields";
+import { ProductCard } from "./product-card";
+import { StudioWorkflowNav } from "../presentation/workflow-nav";
+import { StudioPageHeader } from "../presentation/page-header";
+import { TechnicalDetails } from "../presentation/technical-details";
 import { WorkspaceNav, ReadOnlyNotice } from "./primitives";
 import { ReconcilePanel } from "./reconcile-panel";
 import {
@@ -22,6 +29,12 @@ import {
 } from "../internal-versions/authority";
 import { StableInternalWorkspace } from "../internal-versions/pages";
 import styles from "./workspace.module.css";
+import settings from "./product-settings.module.css";
+import {
+  RetainedTaskActions,
+  RetainedTaskSurface,
+  useOptionalWorkspaceSurfaces,
+} from "../product-workspace/task-surfaces";
 
 function formFields(product: ProductDto): ProductFormFields {
   return {
@@ -35,15 +48,24 @@ function formFields(product: ProductDto): ProductFormFields {
 function ProductEditor({
   initial,
   session,
+  embedded = false,
 }: {
   initial: ProductDto;
   session: StudioSessionDto;
+  embedded?: boolean;
 }) {
   const authority = useInternalAuthority();
+  const workspace = useProductWorkspaceContext();
   const [product, setProduct] = useState(initial);
   const [fields, setFields] = useState(() => formFields(initial));
   const [validation, setValidation] = useState("");
   const [confirmArchive, setConfirmArchive] = useState(false);
+  const [archiveMode, setArchiveMode] = useState<"archive" | "restore">(
+    "archive",
+  );
+  const [lifecycleResult, setLifecycleResult] = useState<
+    "idle" | "pending" | "complete"
+  >("idle");
   const [latest, setLatest] = useState<ProductDto>();
   const [reading, setReading] = useState(false);
   const [readError, setReadError] = useState("");
@@ -51,10 +73,45 @@ function ProductEditor({
     session.csrfToken,
     (error) => authority.observe(error),
   );
+  useStudioLeaveProtection({
+    dirty: productFieldsDirty(fields, product),
+    pending: mutation.blocked,
+  });
   const canWrite = session.operator.role === "operator" && !authority.isRevoked;
+  const surfaces = useOptionalWorkspaceSurfaces();
+  const reportTask = surfaces?.report;
+  const dirty = productFieldsDirty(fields, product);
+  const busy = mutation.state.phase === "submitting" || reading;
+  const pending =
+    mutation.state.phase === "unknown" || mutation.state.phase === "conflict";
+  useEffect(() => {
+    if (!embedded || !reportTask) return;
+    reportTask("settings", {
+      busy,
+      pending,
+      retained: dirty,
+      message: pending
+        ? "设置操作需要核实原结果，输入已保留。"
+        : dirty
+          ? "基本资料有未保存输入，收起后可继续。"
+          : undefined,
+    });
+    reportTask("archive", { busy, pending: false, retained: false });
+  }, [embedded, reportTask, busy, pending, dirty]);
+  useEffect(
+    () => () => {
+      if (!embedded || !reportTask) return;
+      reportTask("settings", { busy: false, pending: false, retained: false });
+      reportTask("archive", { busy: false, pending: false, retained: false });
+    },
+    [embedded, reportTask],
+  );
+  const formId = `product-settings-form-${product.id}`;
+  const Secondary = embedded ? "details" : "aside";
   const endpoint = `/api/studio/products/${encodeURIComponent(product.id)}`;
 
   async function save() {
+    if (authority.isRevoked) return;
     const parsed = productReplaceMetadataSchema.safeParse({
       expectedMetadataRevision: product.metadataRevision,
       slug: fields.slug,
@@ -63,7 +120,7 @@ function ProductEditor({
       tagIds: fields.tags.map((tag) => tag.id),
     });
     if (!parsed.success) {
-      setValidation("请检查 slug、标题与最多 8 个不重复标签。");
+      setValidation("请检查测评名称、英文标识与最多 8 个不重复标签。");
       return;
     }
     setValidation("");
@@ -78,11 +135,16 @@ function ProductEditor({
       setProduct(result.product);
       setFields(formFields(result.product));
       setValidation(
-        result.changed ? "元数据已保存。" : "内容相同，服务器未增加修订。",
+        result.changed
+          ? "测评信息已保存。"
+          : "内容没有变化，信息版本保持不变。",
       );
+      if (workspace?.productId === product.id) workspace.read.refresh();
     }
   }
   async function lifecycle(action: "archive" | "restore") {
+    if (authority.isRevoked) return;
+    setLifecycleResult("pending");
     setLatest(undefined);
     setValidation("");
     const result = await mutation.submit(
@@ -95,14 +157,16 @@ function ProductEditor({
     );
     if (result) {
       setProduct(result.product);
+      setLifecycleResult("complete");
       setConfirmArchive(false);
       setValidation(
         result.changed
           ? action === "archive"
-            ? "工作区已归档，可随时恢复。"
-            : "工作区已恢复，目录关联保持原样。"
-          : "服务器已处于目标状态，没有增加修订。",
+            ? "测评已归档，可随时恢复。"
+            : "测评已恢复，分类和标签保持原样。"
+          : "当前已是目标状态，没有重复修改。",
       );
+      if (workspace?.productId === product.id) workspace.read.refresh();
     }
   }
   async function readLatest() {
@@ -129,134 +193,31 @@ function ProductEditor({
   }
 
   return (
-    <section className={styles.panel}>
-      <h1>{product.title}</h1>
-      <p className={styles.note}>
-        原包接收、验证归档与草稿分别保留事实。运营元数据不会自动改写包内版本声明。
-      </p>
-      <Link
-        className={`${styles.link} ${styles.secondary}`}
-        href={`/studio/products/${encodeURIComponent(product.id)}/imports`}
-      >
-        原包接收与历史
-      </Link>
-      <Link className={styles.link} href={draftWorkspacePath(product.id)}>
-        查看服务器草稿
-      </Link>
-      <dl className={styles.facts}>
-        <div>
-          <dt>稳定 ID（不可改）</dt>
-          <dd>{product.id}</dd>
-        </div>
-        <div>
-          <dt>元数据修订</dt>
-          <dd>{product.metadataRevision}</dd>
-        </div>
-        <div>
-          <dt>状态</dt>
-          <dd>{product.archivedAt ? "已归档 · 元数据只读" : "未归档"}</dd>
-        </div>
-      </dl>
-      {!canWrite && <ReadOnlyNotice />}
-      {canWrite && !product.archivedAt ? (
-        <form
-          aria-label="工作区元数据"
-          className={styles.form}
-          onSubmit={(event) => {
-            event.preventDefault();
-            void save();
-          }}
-        >
-          <ProductFields
-            value={fields}
-            onChange={setFields}
-            disabled={mutation.state.phase === "submitting"}
-          />
-          <button
-            className={styles.button}
-            type="submit"
-            disabled={mutation.blocked}
-          >
-            {mutation.state.phase === "submitting" ? "正在提交…" : "保存元数据"}
-          </button>
-        </form>
-      ) : (
-        <div>
-          <p>slug：{product.slug}</p>
-          <p>
-            主类目：
-            {product.primaryCategory
-              ? `${product.primaryCategory.name} · ${product.primaryCategory.slug}${product.primaryCategory.archivedAt ? " · 已归档" : ""}`
-              : "未分类"}
-          </p>
-          <p>
-            标签：
-            {product.tags.length
-              ? product.tags
-                  .map(
-                    (tag) =>
-                      `${tag.name} · ${tag.slug}${tag.archivedAt ? " · 已归档" : ""}`,
-                  )
-                  .join("；")
-              : "无"}
-          </p>
-        </div>
+    <section
+      className={`${settings.settings} ${embedded ? settings.embedded : ""}`}
+    >
+      {!embedded && (
+        <StudioPageHeader
+          title="基本设置"
+          description={
+            <p>
+              编辑测评目录中的名称、分类与标签。这里的设置不会改写包内内容。
+            </p>
+          }
+        />
       )}
-      {canWrite && (
-        <div className={styles.form}>
-          {product.archivedAt ? (
-            <>
-              <p className={styles.note}>
-                恢复不会连带恢复已归档的目录。原有关联仍可保留或移除。
-              </p>
-              <button
-                className={styles.button}
-                type="button"
-                disabled={mutation.blocked}
-                onClick={() => void lifecycle("restore")}
-              >
-                恢复工作区
-              </button>
-            </>
-          ) : (
-            <>
-              <button
-                className={`${styles.button} ${styles.secondary}`}
-                type="button"
-                disabled={mutation.blocked}
-                onClick={() => setConfirmArchive(true)}
-              >
-                归档工作区
-              </button>
-              {confirmArchive && (
-                <section className={styles.compare} aria-label="归档说明">
-                  <p>
-                    归档后元数据只读，已有目录关联保留，ID 与 slug
-                    不释放。可以通过恢复重新编辑。
-                  </p>
-                  <div className={styles.actions}>
-                    <button
-                      className={styles.button}
-                      type="button"
-                      disabled={mutation.blocked}
-                      onClick={() => void lifecycle("archive")}
-                    >
-                      确认归档工作区
-                    </button>
-                    <button
-                      className={`${styles.button} ${styles.secondary}`}
-                      type="button"
-                      disabled={mutation.blocked}
-                      onClick={() => setConfirmArchive(false)}
-                    >
-                      取消归档
-                    </button>
-                  </div>
-                </section>
-              )}
-            </>
-          )}
-        </div>
+      {authority.isRevoked ? (
+        <p className={`${styles.status} ${styles.error}`} role="alert">
+          当前页面的运营权限已失效。请重新登录并读取服务器状态后继续。
+        </p>
+      ) : !canWrite ? (
+        <ReadOnlyNotice />
+      ) : null}
+      {(mutation.state.phase === "unknown" ||
+        mutation.state.phase === "conflict") && (
+        <p className={styles.note}>
+          核对测评编号：{product.id} · 本页信息版本：{product.metadataRevision}
+        </p>
       )}
       {validation && (
         <p className={styles.status} role="status">
@@ -275,11 +236,263 @@ function ProductEditor({
         state={mutation.state}
         reading={reading}
         readError={readError}
-        snapshot={latest ? <ProductCard product={latest} /> : null}
+        snapshot={
+          latest ? (
+            embedded ? (
+              <p>
+                服务器当前名称：{latest.title} · 信息修订{" "}
+                {latest.metadataRevision}
+              </p>
+            ) : (
+              <ProductCard product={latest} showIdentity />
+            )
+          ) : null
+        }
         onRead={() => void readLatest()}
         onUseServer={() => adoptLatest(false)}
         onKeepInput={() => adoptLatest(true)}
       />
+      <div className={settings.columns}>
+        <div className={settings.main}>
+          {session.operator.role === "operator" && !product.archivedAt ? (
+            <section className={settings.formPanel}>
+              <h2>测评信息</h2>
+              <form
+                id={formId}
+                aria-label="测评信息"
+                className={styles.form}
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  void save();
+                }}
+              >
+                <div
+                  className={`${styles.fieldGrid} ${embedded ? settings.singleFields : ""}`}
+                >
+                  <ProductFields
+                    compact={embedded}
+                    onReadFailure={
+                      embedded ? (error) => authority.observe(error) : undefined
+                    }
+                    value={fields}
+                    onChange={setFields}
+                    disabled={
+                      authority.isRevoked ||
+                      mutation.state.phase === "submitting"
+                    }
+                  />
+                </div>
+                {!embedded && (
+                  <button
+                    className={styles.button}
+                    type="submit"
+                    disabled={authority.isRevoked || mutation.blocked}
+                  >
+                    {mutation.state.phase === "submitting"
+                      ? "正在提交…"
+                      : "保存测评信息"}
+                  </button>
+                )}
+              </form>
+              {embedded && (
+                <RetainedTaskActions id="settings">
+                  <button
+                    className={settings.primary}
+                    type="submit"
+                    form={formId}
+                    disabled={authority.isRevoked || mutation.blocked}
+                  >
+                    {mutation.state.phase === "submitting"
+                      ? "正在保存…"
+                      : "保存测评信息"}
+                  </button>
+                </RetainedTaskActions>
+              )}
+            </section>
+          ) : null}
+          {(session.operator.role !== "operator" || product.archivedAt) && (
+            <section className={settings.formPanel}>
+              <h2>测评信息</h2>
+              <p>名称：{product.title}</p>
+              <p>英文标识：{product.slug}</p>
+              <dl className={`${styles.facts} ${styles.overviewFacts}`}>
+                <div>
+                  <dt>状态</dt>
+                  <dd>{product.archivedAt ? "已归档 · 信息只读" : "未归档"}</dd>
+                </div>
+                <div>
+                  <dt>分类</dt>
+                  <dd>
+                    {product.primaryCategory
+                      ? `${product.primaryCategory.name} · ${product.primaryCategory.slug}${product.primaryCategory.archivedAt ? " · 已归档" : ""}`
+                      : "未分类"}
+                  </dd>
+                </div>
+                <div>
+                  <dt>标签</dt>
+                  <dd>
+                    {product.tags.length
+                      ? product.tags
+                          .map(
+                            (tag) =>
+                              `${tag.name}${tag.archivedAt ? " · 已归档" : ""}`,
+                          )
+                          .join("、")
+                      : "无"}
+                  </dd>
+                </div>
+              </dl>
+            </section>
+          )}
+        </div>
+        <Secondary className={settings.side} aria-label="低频与技术设置">
+          {embedded && <summary>标识、状态与归档</summary>}
+          <section className={settings.identityPanel}>
+            <h2>目录状态与技术身份</h2>
+            <p>{product.archivedAt ? "已归档 · 信息只读" : "未归档"}</p>
+            <p className={styles.note}>
+              测评编号与已有记录保持关联；设置不会改写题目、评分或历史报告。
+            </p>
+            <TechnicalDetails label="测评支持信息">
+              <p>测评编号（创建后不可改）：{product.id}</p>
+              <p>英文标识：{product.slug}</p>
+              <p>信息版本：{product.metadataRevision}</p>
+              <p>创建时间：{product.createdAt}</p>
+              <p>最近更新时间：{product.updatedAt}</p>
+            </TechnicalDetails>
+          </section>
+          {canWrite && (
+            <section className={settings.lifecycle} aria-label="其他操作">
+              <h2>归档与恢复</h2>
+              {product.archivedAt ? (
+                <>
+                  <p className={styles.note}>
+                    恢复测评后可以继续编辑。已归档的分类和标签不会自动恢复，原有关联仍可保留或移除。
+                  </p>
+                  <button
+                    className={styles.button}
+                    type="button"
+                    disabled={mutation.blocked}
+                    onClick={() => {
+                      if (!embedded) {
+                        void lifecycle("restore");
+                        return;
+                      }
+                      setArchiveMode("restore");
+                      setLifecycleResult("idle");
+                      surfaces?.open("archive");
+                    }}
+                  >
+                    恢复测评
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    className={`${styles.button} ${styles.secondary}`}
+                    type="button"
+                    disabled={mutation.blocked}
+                    onClick={() => {
+                      setConfirmArchive(true);
+                      if (embedded) {
+                        setArchiveMode("archive");
+                        setLifecycleResult("idle");
+                        surfaces?.open("archive");
+                      }
+                    }}
+                  >
+                    归档测评
+                  </button>
+                  {confirmArchive && !embedded && (
+                    <section className={styles.compare} aria-label="归档说明">
+                      <p>
+                        归档后测评信息只读，原有分类和标签保留；编号与英文标识不释放。之后可以恢复测评再编辑。
+                      </p>
+                      <div className={styles.actions}>
+                        <button
+                          className={styles.button}
+                          type="button"
+                          disabled={mutation.blocked}
+                          onClick={() => void lifecycle("archive")}
+                        >
+                          确认归档测评
+                        </button>
+                        <button
+                          className={`${styles.button} ${styles.secondary}`}
+                          type="button"
+                          disabled={mutation.blocked}
+                          onClick={() => setConfirmArchive(false)}
+                        >
+                          取消归档
+                        </button>
+                      </div>
+                    </section>
+                  )}
+                </>
+              )}
+            </section>
+          )}
+        </Secondary>
+      </div>
+      {embedded && (
+        <RetainedTaskSurface id="archive">
+          <div className={settings.archiveTask}>
+            <h3>
+              {archiveMode === "archive" ? "归档这款测评" : "恢复这款测评"}
+            </h3>
+            <p className={settings.target}>{product.title}</p>
+            <p>
+              {archiveMode === "archive"
+                ? "归档后目录资料只读，已有内容、内测版本和报告保留。之后仍可恢复。"
+                : "恢复后可以继续编辑目录资料；原有内容和分类关联保留。"}
+            </p>
+            {lifecycleResult !== "idle" && mutation.state.message && (
+              <p role="status">{mutation.state.message}</p>
+            )}
+            {lifecycleResult !== "idle" && validation && (
+              <p role="status">{validation}</p>
+            )}
+            <ReconcilePanel
+              state={mutation.state}
+              reading={reading}
+              readError={readError}
+              snapshot={
+                latest ? (
+                  <p>
+                    服务器状态：{latest.archivedAt ? "已归档" : "未归档"} ·
+                    信息修订 {latest.metadataRevision}
+                  </p>
+                ) : null
+              }
+              onRead={() => void readLatest()}
+              onUseServer={() => adoptLatest(false)}
+              onKeepInput={() => adoptLatest(true)}
+            />
+            <RetainedTaskActions id="archive">
+              {lifecycleResult === "complete" ? (
+                <button
+                  className={settings.primary}
+                  onClick={() => surfaces?.open("settings")}
+                >
+                  返回基本设置
+                </button>
+              ) : (
+                <button
+                  className={settings.primary}
+                  disabled={authority.isRevoked || mutation.blocked}
+                  onClick={() => void lifecycle(archiveMode)}
+                >
+                  {busy
+                    ? "正在提交…"
+                    : archiveMode === "archive"
+                      ? "确认归档测评"
+                      : "确认恢复测评"}
+                </button>
+              )}
+            </RetainedTaskActions>
+          </div>
+        </RetainedTaskSurface>
+      )}
     </section>
   );
 }
@@ -287,9 +500,11 @@ function ProductEditor({
 function ProductDetailContent({
   productId,
   session,
+  embedded = false,
 }: {
   productId: string;
   session: StudioSessionDto;
+  embedded?: boolean;
 }) {
   const authority = useInternalAuthority(),
     read = useWorkspaceRead<ProductDto>(
@@ -298,22 +513,27 @@ function ProductDetailContent({
     );
   return (
     <div className={styles.workspace}>
-      <WorkspaceNav />
+      {!embedded && (
+        <>
+          <WorkspaceNav />
+          <StudioWorkflowNav productId={productId} current="product" />
+        </>
+      )}
       {read.loading && (
         <p className={styles.status} role="status">
-          正在读取工作区…
+          正在读取测评…
         </p>
       )}
       {read.error && (
         <section className={`${styles.panel} ${styles.error}`} role="alert">
-          <h1>工作区读取未完成</h1>
+          <h1>测评信息暂未读取</h1>
           <p>{read.error}</p>
           <button
             className={styles.button}
             type="button"
             onClick={read.refresh}
           >
-            重新读取工作区
+            重新读取测评
           </button>
         </section>
       )}
@@ -322,13 +542,17 @@ function ProductDetailContent({
           key={read.value.id}
           initial={read.value}
           session={session}
+          embedded={embedded}
         />
       )}
-      <StableInternalWorkspace
-        key={productId}
-        productId={productId}
-        session={session}
-      />
+      {!embedded && (
+        <StableInternalWorkspace
+          key={productId}
+          productId={productId}
+          session={session}
+          showEntry={false}
+        />
+      )}
     </div>
   );
 }

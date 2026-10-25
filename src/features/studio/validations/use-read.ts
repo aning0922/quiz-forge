@@ -2,11 +2,13 @@
 import { useEffect, useRef, useState } from "react";
 import { checkedValidationFetch } from "./client";
 import { validationMessage } from "./messages";
+import { useContentAuthority } from "../product-workspace/content-authority";
 export function useValidationRead<T>(
   path: string,
   check: (value: unknown) => T,
   onValue?: (value: T) => void,
 ) {
+  const authority = useContentAuthority();
   const decoder = useRef(check);
   const receive = useRef(onValue);
   useEffect(() => {
@@ -34,12 +36,14 @@ export function useValidationRead<T>(
         }
       },
       (error) => {
-        if (!controller.signal.aborted)
+        if (!controller.signal.aborted) {
+          authority.observe(error);
           setResult({ path, error: validationMessage(error) });
+        }
       },
     );
     return () => controller.abort();
-  }, [path, revision]);
+  }, [path, revision, authority]);
   return {
     value: result.path === path ? result.value : undefined,
     error: result.path === path ? result.error : undefined,
