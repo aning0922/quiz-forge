@@ -1,6 +1,9 @@
 import rendererV1 from "./implementation-data/renderer-folio-preview-v1.json";
 import archetypeV1 from "./implementation-data/engine-archetype-v1.json";
 import dimensionsV1 from "./implementation-data/engine-dimensions-v1.json";
+import rendererCurrent from "./implementation-data/renderer-folio-preview-v1-1.json";
+import archetypeCurrent from "./implementation-data/engine-archetype-v1-security.json";
+import dimensionsCurrent from "./implementation-data/engine-dimensions-v1-security.json";
 import {
   rendererIdentitySchema,
   engineIdentitySchema,
@@ -21,8 +24,13 @@ function freeze<T>(v: T): T {
 }
 /** Immutable historical descriptors. Removing executable availability must never delete these facts. */
 export const IMPLEMENTATION_DESCRIPTORS = freeze({
-  renderers: [rendererImplementationEntrySchema.parse(rendererV1)],
+  renderers: [
+    rendererImplementationEntrySchema.parse(rendererCurrent),
+    rendererImplementationEntrySchema.parse(rendererV1),
+  ],
   engines: [
+    engineImplementationEntrySchema.parse(archetypeCurrent),
+    engineImplementationEntrySchema.parse(dimensionsCurrent),
     engineImplementationEntrySchema.parse(archetypeV1),
     engineImplementationEntrySchema.parse(dimensionsV1),
   ],

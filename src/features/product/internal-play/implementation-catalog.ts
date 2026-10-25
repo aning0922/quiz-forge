@@ -1,5 +1,6 @@
 import rendererV1 from "./implementation-data/consumer-folio-cabinet-v1.json";
 import rendererV1_1 from "./implementation-data/consumer-folio-cabinet-v1-1.json";
+import rendererV1_2 from "./implementation-data/consumer-folio-cabinet-v1-2.json";
 import {
   consumerImplementationEntrySchema,
   type ConsumerImplementationEntry,
@@ -24,6 +25,7 @@ function freeze<T>(value: T): T {
 }
 /** Historical facts remain even if their executable binding is withdrawn. */
 export const CONSUMER_IMPLEMENTATION_DESCRIPTORS = freeze([
+  consumerImplementationEntrySchema.parse(rendererV1_2),
   consumerImplementationEntrySchema.parse(rendererV1),
   consumerImplementationEntrySchema.parse(rendererV1_1),
 ]);
@@ -49,21 +51,15 @@ export const consumerImplementationKey = (identity: ConsumerRendererIdentity) =>
   ]);
 /** Explicit compiled identity, independent of supplied or historical descriptor metadata. */
 export const CONSUMER_IMPLEMENTATION_AVAILABILITY = freeze({
-  rendererV1: consumerRendererIdentitySchema.parse({
+  rendererV1_2: consumerRendererIdentitySchema.parse({
     kind: "consumer-renderer",
     id: "consumer-folio-cabinet",
-    version: "1.0.0",
+    version: "1.0.2",
     entrySha256:
-      "193b48c92352d731c9c2e41de05316471a2c46f58d8e2f2596995ee531d974a1",
-  }),
-  rendererV1_1: consumerRendererIdentitySchema.parse({
-    kind: "consumer-renderer",
-    id: "consumer-folio-cabinet",
-    version: "1.0.1",
-    entrySha256:
-      "dc195a2f9bdcd158ab569b01191150b44086b8c3185b8c615c2007a01251308f",
+      "1d310170ff1c86d8090b41502b89c03d10f6730c9d1aedd31c73c665bdb3e8a5",
   }),
 });
+
 export function findConsumerImplementationDescriptor(input: unknown) {
   const parsed = consumerRendererIdentitySchema.safeParse(input);
   if (!parsed.success) return null;

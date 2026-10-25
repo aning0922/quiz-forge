@@ -40,7 +40,7 @@ export default async function StudioProductPage({
       session={state.session}
       initialTask={initialTask}
       consumerScope={consumerScope}
-      consumerRenderer={CONSUMER_IMPLEMENTATION_AVAILABILITY.rendererV1_1}
+      consumerRenderer={CONSUMER_IMPLEMENTATION_AVAILABILITY.rendererV1_2}
     />
   );
 }

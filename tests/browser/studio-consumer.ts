@@ -305,7 +305,7 @@ const server = createServer(async (req, res) => {
     }
     const data = {
       scope: { origin, instanceId: "a".repeat(32), issuerId, productId },
-      renderer: CONSUMER_IMPLEMENTATION_AVAILABILITY.rendererV1,
+      renderer: CONSUMER_IMPLEMENTATION_AVAILABILITY.rendererV1_2,
     };
     const probe =
       url.pathname === "/studio-navigation-probe" ? "shell-probe" : "probe";

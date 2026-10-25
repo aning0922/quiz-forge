@@ -132,3 +132,11 @@ Account DTO 至少含 id、原 label、loginName|null、displayName、role、sta
 必要验证：真实隔离 PG 的完整初始化、最小 grant、跨角色服务端拒绝、停用/角色/撤销与登录及业务写竞争、两个 admin 并发保护、pending admin 排除、token 到期/重签/并发单次消费、改密撤销及 UNKNOWN 原回执；相关密码/HTTP/DTO和浏览器角色/显隐/恢复路径。不追加历史兼容和旧备份恢复验证；评分/媒体/报告/消费者完整流程不重复全套。一次管理员独立完成全部工作、以及 admin→开通人员→本人设密→按角色操作→改密/reset→角色/停用失效→审计为交付体验链。
 
 依据：[NIST SP800-63B-4](https://pages.nist.gov/800-63-4/sp800-63b.html)、[OWASP Password Storage](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html)、[OWASP Forgot Password](https://cheatsheetseries.owasp.org/cheatsheets/Forgot_Password_Cheat_Sheet.html)、[node-argon2 0.44.0](https://github.com/ranisalt/node-argon2/tree/v0.44.0)。采用后的依赖版本、实际平台证据和具体接口冻结点追加于本文，不扩大本批范围。
+
+### 当前 demo 的依赖修补与实现登记
+
+独立集成构建发现 Next 16.4.0 的已公布安全缺陷，固定升级 Next / eslint-config-next 16.4.3、Zod 4.6.6；不升级 React、数据库驱动或系统工具。依据最终安装和锁文件登记预览渲染 1.0.1、消费者渲染 1.0.2；两个评分引擎的算法声明仍为 1.0.0，以新的精确 entry SHA 表示依赖修补，评分代码和内容合同未改。
+
+原有五份实现描述文件保持原字节，仅当前新身份可执行。旧身份仍可查询事实，执行明确拒绝，不自动改绑固定版本或报告。新 demo 使用全新隔离库；作者既有服务、构建、数据库继续由原工作树运行。本批不建设旧依赖执行兼容层。
+
+对应验证：登记检查通过；依赖修补影响的实现解析、评分/内容 schema、密码及请求边界 102 个用例通过（首轮 100 通过、两个 gateway 用例因测试辅助参数误插失败；修正后仅重跑该文件四例通过）；最终真实隔离库的 fixture 保护五例通过；生产构建与 trace 检查通过。构建失败记录原样保留，不计为成功。浏览器和演示结果另在下方最终交付中记录。

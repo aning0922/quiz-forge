@@ -31,7 +31,7 @@ const rendererIdentity = () =>
   implementationIdentity(IMPLEMENTATION_DESCRIPTORS.renderers[0]!);
 const engineIdentity = () =>
   implementationIdentity(IMPLEMENTATION_DESCRIPTORS.engines[0]!);
-it("retains the initial immutable renderer identity and binds both client and server to it", () => {
+it("retains the historical renderer facts without execution, and binds the current exact identity", () => {
   const original = {
     kind: "renderer",
     id: "folio-cabinet-preview",
@@ -40,8 +40,16 @@ it("retains the initial immutable renderer identity and binds both client and se
       "35a1f8c7c6ce06c1afe09d7c3920f50a13a8fbbd674b7b6609890ae7dc1ed4f2",
   };
   expect(findRendererImplementationDescriptor(original)).not.toBeNull();
-  const client = resolveRendererClient(original),
-    server = resolveRendererServer(original);
+  expect(resolveRendererClient(original)).toBeNull();
+  expect(resolveRendererServer(original)).toBeNull();
+  for (const historical of IMPLEMENTATION_DESCRIPTORS.engines.slice(2)) {
+    const identity = implementationIdentity(historical);
+    expect(findEngineImplementationDescriptor(identity)).not.toBeNull();
+    expect(resolveEngineImplementation(identity)).toBeNull();
+  }
+  const current = rendererIdentity();
+  const client = resolveRendererClient(current),
+    server = resolveRendererServer(current);
   expect(client).not.toBeNull();
   expect(server).not.toBeNull();
   expect(client?.descriptor).toBe(server?.descriptor);
@@ -57,7 +65,7 @@ it("retains the initial immutable renderer identity and binds both client and se
   expect(Object.isFrozen(client!.descriptor.font)).toBe(true);
   for (const field of ["entrySha256", "id", "version", "kind"]) {
     const wrong = {
-      ...original,
+      ...current,
       [field]: field === "entrySha256" ? "0".repeat(64) : "unavailable",
     };
     expect(resolveRendererClient(wrong)).toBeNull();
@@ -188,7 +196,7 @@ describe("read-only implementation build gate", () => {
   );
   it("rejects a changed selected dependency and lock setting", async () => {
     for (const [from, to] of [
-      ["specifier: 4.6.5", "specifier: 4.6.6"],
+      ["specifier: 4.6.6", "specifier: 4.6.7"],
       ["autoInstallPeers: true", "autoInstallPeers: false"],
     ])
       await expect(
@@ -250,9 +258,9 @@ describe("read-only implementation build gate", () => {
     const text = await readFile("pnpm-lock.yaml", "utf8");
     for (const changed of [
       text + "\npackages:\n",
-      text + "\n  zod@4.6.5: {}\n",
-      text + "\n  'zod@4.6.5': {}\n",
-      text + '\n  "zod@4.6.5": {}\n',
+      text + "\n  zod@4.6.6: {}\n",
+      text + "\n  'zod@4.6.6': {}\n",
+      text + '\n  "zod@4.6.6": {}\n',
       text + '\n"packages":\n',
     ])
       expect(() => readImplementationLock(changed)).toThrow();

@@ -8,6 +8,7 @@ import { ConsumerAccessGateway } from "./access-gateway";
 import {
   CONSUMER_IMPLEMENTATION_AVAILABILITY,
   CONSUMER_IMPLEMENTATION_DESCRIPTORS,
+  consumerImplementationIdentity,
 } from "./implementation-catalog";
 import { consumerImplementationDescriptorSha256 } from "./implementation-schema";
 
@@ -27,7 +28,7 @@ describe("explicit unauthenticated consumer gateway binding", () => {
   it("verifies the selected browser entry and actual static App render without importing browser code in the gate", async () => {
     await expect(verify()).resolves.toEqual(CONSUMER_ACCESS_GATEWAY);
     const markup = renderToStaticMarkup(createElement(ConsumerAccessGateway));
-    expect(markup).toContain('data-consumer-access-version="1.0.1"');
+    expect(markup).toContain('data-consumer-access-version="1.0.2"');
     expect(markup).toContain(
       `data-consumer-access-entry="${CONSUMER_ACCESS_GATEWAY.renderer.entrySha256}"`,
     );
@@ -39,13 +40,19 @@ describe("explicit unauthenticated consumer gateway binding", () => {
   it("rejects old renderer selection, mixed identity, unknown protocol/module/export and supplied extra selection fields", async () => {
     const binding = CONSUMER_ACCESS_GATEWAY;
     for (const changed of [
-      { ...binding, renderer: CONSUMER_IMPLEMENTATION_AVAILABILITY.rendererV1 },
+      {
+        ...binding,
+        renderer: consumerImplementationIdentity(
+          CONSUMER_IMPLEMENTATION_DESCRIPTORS[1]!,
+        ),
+      },
       {
         ...binding,
         renderer: {
           ...binding.renderer,
-          entrySha256:
-            CONSUMER_IMPLEMENTATION_AVAILABILITY.rendererV1.entrySha256,
+          entrySha256: consumerImplementationIdentity(
+            CONSUMER_IMPLEMENTATION_DESCRIPTORS[1]!,
+          ).entrySha256,
         },
       },
       { ...binding, sourcePath: "src/features/theme/consumer-v1/access.tsx" },
@@ -59,7 +66,7 @@ describe("explicit unauthenticated consumer gateway binding", () => {
   it("rejects a valid new descriptor whose Access is not a browser entry, independently of its metadata checksum", async () => {
     const entry = structuredClone(
       CONSUMER_IMPLEMENTATION_DESCRIPTORS.find(
-        (e) => e.descriptor.version === "1.0.1",
+        (e) => e.descriptor.version === "1.0.2",
       )!,
     );
     const access = entry.descriptor.closure.entrypoints.find(
@@ -86,7 +93,7 @@ describe("explicit unauthenticated consumer gateway binding", () => {
       ),
     ).rejects.toThrow("CONSUMER_GATEWAY_ENTRYPOINT_MISMATCH");
   });
-  it("rejects a stale static import or JSX render even when all public gateway metadata still says 1.0.1", async () => {
+  it("rejects a stale static import or JSX render even when all public gateway metadata still says 1.0.2", async () => {
     for (const [path, from, to] of [
       [
         "src/features/product/internal-play/access-gateway.tsx",

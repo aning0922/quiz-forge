@@ -15,7 +15,7 @@ import {
 } from "./implementation-client";
 import { verifyConsumerImplementations } from "../../../../scripts/verify-consumer-implementations";
 const entry = CONSUMER_IMPLEMENTATION_DESCRIPTORS[0]!;
-const identity = CONSUMER_IMPLEMENTATION_AVAILABILITY.rendererV1;
+const identity = CONSUMER_IMPLEMENTATION_AVAILABILITY.rendererV1_2;
 function runtimeFacts(selectedEntry = entry, selectedIdentity = identity) {
   const font = selectedEntry.descriptor.font;
   return {
@@ -102,7 +102,7 @@ describe("registered exact consumer implementation", () => {
       [identity],
     );
     expect(report.available).toBe(1);
-    expect(report.descriptors).toBe(2);
+    expect(report.descriptors).toBe(3);
     for (const changed of [
       "src/features/theme/consumer-v1/host.tsx",
       "src/features/theme/consumer-v1/controller.ts",
@@ -129,42 +129,38 @@ describe("registered exact consumer implementation", () => {
       ).rejects.toThrow("IMPLEMENTATION_FILE_CHANGED:" + changed);
     }
   });
-  it("preserves both exact renderer identities while rejecting version/SHA mixing and unknown successors", async () => {
-    const old = CONSUMER_IMPLEMENTATION_AVAILABILITY.rendererV1;
-    const current = CONSUMER_IMPLEMENTATION_AVAILABILITY.rendererV1_1;
-    expect(old.entrySha256).toBe(
-      "193b48c92352d731c9c2e41de05316471a2c46f58d8e2f2596995ee531d974a1",
-    );
-    expect(current.entrySha256).not.toBe(old.entrySha256);
-    for (const selected of [old, current]) {
-      const registered = findConsumerImplementationDescriptor(selected)!;
-      const server = resolveConsumerImplementation(selected)!;
-      const client = resolveConsumerExperienceRuntime(
-        runtimeFacts(registered, selected),
-      )!;
-      expect(server.identity).toEqual(selected);
-      expect(client.identity).toEqual(selected);
-      expect(client.descriptor.mapping).toEqual(entry.descriptor.mapping);
-      expect(client.descriptor.font).toEqual(entry.descriptor.font);
-      expect(server.projectEntry).toBeTypeOf("function");
-      expect(client.exportPoster).toBeTypeOf("function");
+  it("retains old identities as facts, refuses their execution, and selects only the patched identity", async () => {
+    const current = CONSUMER_IMPLEMENTATION_AVAILABILITY.rendererV1_2;
+    for (const historical of CONSUMER_IMPLEMENTATION_DESCRIPTORS.slice(1)) {
+      const old = consumerImplementationIdentity(historical);
+      expect(findConsumerImplementationDescriptor(old)).toEqual(historical);
+      expect(consumerImplementationAvailable(old)).toBe(false);
+      expect(resolveConsumerImplementation(old)).toBeNull();
+      expect(resolveConsumerRendererClient(old)).toBeNull();
+      expect(
+        resolveConsumerExperienceRuntime(runtimeFacts(historical, old)),
+      ).toBeNull();
+      expect(
+        consumerImplementationAvailable({
+          ...current,
+          entrySha256: old.entrySha256,
+        }),
+      ).toBe(false);
+      expect(
+        consumerImplementationAvailable({
+          ...old,
+          entrySha256: current.entrySha256,
+        }),
+      ).toBe(false);
     }
-    for (const mixed of [
-      { ...old, entrySha256: current.entrySha256 },
-      { ...current, entrySha256: old.entrySha256 },
-      { ...current, version: "1.0.2" },
-      { ...current, version: "2.0.0" },
-    ]) {
-      expect(consumerImplementationAvailable(mixed)).toBe(false);
-      expect(resolveConsumerImplementation(mixed)).toBeNull();
-      expect(resolveConsumerRendererClient(mixed)).toBeNull();
-    }
+    expect(resolveConsumerImplementation(current)?.identity).toEqual(current);
+    expect(resolveConsumerRendererClient(current)?.identity).toEqual(current);
     const report = await verifyConsumerImplementations(
       process.cwd(),
       CONSUMER_IMPLEMENTATION_DESCRIPTORS,
-      [old, current],
+      [current],
     );
-    expect(report.available).toBe(2);
-    expect(report.descriptors).toBe(2);
+    expect(report.available).toBe(1);
+    expect(report.descriptors).toBe(3);
   });
 });

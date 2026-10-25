@@ -573,11 +573,11 @@ async function prepare(checkout: string, fixture: string, deadline: number) {
       private: true,
       type: "module",
       dependencies: {
-        next: "16.4.0",
+        next: "16.4.3",
         react: "19.3.0",
         "react-dom": "19.3.0",
         sharp: "0.35.5",
-        zod: "4.6.5",
+        zod: "4.6.6",
         "buffer-crc32": "1.0.0",
       },
     }),
@@ -1185,7 +1185,7 @@ async function main() {
   const fixture = path.join(checkout, FIXTURE);
   const require = createRequire(path.join(checkout, "package.json"));
   if (
-    require("next/package.json").version !== "16.4.0" ||
+    require("next/package.json").version !== "16.4.3" ||
     require("react/package.json").version !== "19.3.0"
   )
     fail("FIXTURE_DEPENDENCY_VERSION_UNSUPPORTED");

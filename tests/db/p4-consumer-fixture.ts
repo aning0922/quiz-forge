@@ -240,7 +240,7 @@ export async function readConsumerFixture(
 export async function prepareConsumerFixture(
   db: TestDatabase,
   runId: string,
-  consumerRenderer: ConsumerRendererIdentity = CONSUMER_IMPLEMENTATION_AVAILABILITY.rendererV1,
+  consumerRenderer: ConsumerRendererIdentity = CONSUMER_IMPLEMENTATION_AVAILABILITY.rendererV1_2,
 ): Promise<ConsumerFixture> {
   requireTest(db);
   const selectedConsumerRenderer =
@@ -734,7 +734,7 @@ async function main() {
           await prepareConsumerFixture(
             db,
             runId!,
-            CONSUMER_IMPLEMENTATION_AVAILABILITY.rendererV1_1,
+            CONSUMER_IMPLEMENTATION_AVAILABILITY.rendererV1_2,
           ))
         : await finishConsumerFixture(
             db,
