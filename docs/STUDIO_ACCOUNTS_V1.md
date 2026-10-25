@@ -158,3 +158,5 @@ Account DTO 至少含 id、原 label、loginName|null、displayName、role、sta
 限制：只适用于本机隔离 demo；设置/重置链接手工私下交付，无邮件、短信、公开注册、SSO、多租户或支付。无完整泄漏密码库，未做生产容量承诺或移动实机验收。新账号数据库不宣称兼容旧 R1 恢复工具；旧作者环境继续保留在原工作树。当前新登记拒绝旧实现执行，不批量改写历史固定版本或报告。等待作者体验后再决定下一步，本 PR 不自动合并、对外部署或创建 Release。
 
 最终连接保护补验：`0473772` 的 checks 与 Linux media 已实际成功，baseline DB 中的旧角色/受保护列读取差异另由 `158c743` 及后续测试提交修正。消费者 expiry 曾在 CI 的清理连接检查拒绝未知连接，日志不能证明连接来源。调查中尝试的 `backend_type='client backend'` 过滤被真实外部 app 连接反例否定（owner 视角字段为 NULL），该尝试未提交，已完全撤回；原“所有外来 PID 均拒绝”规则保持。新鲜隔离 test 实例上，原规则的 expiry 与外部连接/关闭未知隔离两例均通过，`.cache/accounts-v1/ci-original-connection-guard.log`，75.50 秒；没有忽略 NULL、减少断言或清除失败现场。最终自动 CI 以 PR 上最新 head 的实际结果为准。
+
+最后一个故障注入子进程 `tests/support/p3e-close-fault-child.ts` 同步改用上述当前密码登录 helper；未改故障注入、原键核实、关闭未知或停止证明。对应 FD/DB 关闭拒绝两例通过（45.56 秒），日志 `.cache/accounts-v1/ci-close-fault-password-fixture.log`。`3d05060` 的常规检查与媒体检查成功，原连接保护的 expiry/quarantine 亦在该次 CI 通过；其数据库整批因这一旧登录调用失败产生的后续清理拒绝仍记为失败，不能用定向结果冒充整批成功。

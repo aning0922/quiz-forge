@@ -4,7 +4,7 @@ import { syncBuiltinESMExports } from "node:module";
 import { randomUUID } from "node:crypto";
 import path from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
-import { createPreauth, login } from "@/lib/auth/service";
+import { loginVersionFixtureAccount } from "../db/version-account-fixture";
 import { createDatabase, type P2aDatabase } from "@/lib/db/client";
 import { StudioError } from "@/lib/http-security/errors";
 import { createStudioRequestBudget } from "@/lib/http-security/request-budget";
@@ -123,14 +123,7 @@ try {
   const { prepareInternalVersionFixture, finishInternalVersionFixture } =
     await import("../db/p3e-internal-version-fixture");
   const fixture = await prepareInternalVersionFixture(db, runId);
-  const pre = await createPreauth(db.app, null, randomUUID());
-  const session = await login(
-    db.app,
-    pre.raw,
-    pre.dto.csrfToken,
-    fixture.operator.secret,
-    randomUUID(),
-  );
+  const session = await loginVersionFixtureAccount(db, fixture.operator);
   const credentials = {
     sessionToken: session.raw,
     csrfToken: session.dto.csrfToken,
