@@ -5,8 +5,10 @@ import type { useAccountOperation } from "./use-operation";
 import styles from "./accounts.module.css";
 export function AccountOperationPanel({
   operation,
+  onFinished,
 }: {
   operation: ReturnType<typeof useAccountOperation>;
+  onFinished?: () => void;
 }) {
   const [saved, setSaved] = useState(false),
     [revealed, setRevealed] = useState(false),
@@ -103,7 +105,8 @@ export function AccountOperationPanel({
                 Boolean(link && !saved)
               }
               onClick={() => {
-                operation.finish();
+                if (!operation.finish()) return;
+                onFinished?.();
                 setSaved(false);
                 setRevealed(false);
                 setCopyMessage("");

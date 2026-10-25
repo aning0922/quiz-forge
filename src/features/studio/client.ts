@@ -9,6 +9,7 @@ export class StudioClientError extends Error {
   constructor(
     readonly code: string,
     readonly currentRevision?: number,
+    readonly httpStatus?: number,
   ) {
     super(code);
   }
@@ -23,7 +24,7 @@ export async function studioFetch<T>(
   const checkpoint = () => {
     if (!acceptsStudioEpoch(epoch))
       throw new StudioClientError(
-        uncertainWrite ? "WRITE_OUTCOME_UNKNOWN" : "UNAUTHENTICATED",
+        uncertainWrite ? "WRITE_OUTCOME_UNKNOWN" : "STUDIO_REQUEST_STALE",
       );
   };
   let response: Response;
@@ -35,6 +36,7 @@ export async function studioFetch<T>(
       redirect: "error",
     });
   } catch {
+    checkpoint();
     throw new StudioClientError(
       uncertainWrite ? "WRITE_OUTCOME_UNKNOWN" : "STUDIO_UNAVAILABLE",
     );
@@ -76,20 +78,22 @@ export async function studioFetch<T>(
       ].includes(code)
     )
       invalidateCurrentStudioAuthority();
-    throw new StudioClientError(code, currentRevision);
+    throw new StudioClientError(code, currentRevision, response.status);
   }
+  let value: T;
   try {
-    const value =
+    value =
       response.status === 204
         ? (undefined as T)
         : ((await response.json()) as T);
-    checkpoint();
-    return value;
   } catch {
+    checkpoint();
     throw new StudioClientError(
       uncertainWrite ? "WRITE_OUTCOME_UNKNOWN" : "STUDIO_UNAVAILABLE",
     );
   }
+  checkpoint();
+  return value;
 }
 
 export function studioMessage(error: unknown): string {

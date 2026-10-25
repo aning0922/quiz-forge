@@ -141,14 +141,15 @@ export function useAccountOperation(session: StudioSessionDto, scope: string) {
     } catch (error) {
       setDefinite(
         error instanceof StudioClientError &&
-          [
-            "ACCOUNT_CONFLICT",
-            "LOGIN_NAME_TAKEN",
-            "LAST_ACTIVE_ADMIN",
-            "PASSWORD_POLICY_REJECTED",
-            "PASSWORD_CONFIRMATION_FAILED",
-            "INVALID_REQUEST",
-          ].includes(error.code),
+          ((error.code === "RATE_LIMITED" && error.httpStatus === 429) ||
+            [
+              "ACCOUNT_CONFLICT",
+              "LOGIN_NAME_TAKEN",
+              "LAST_ACTIVE_ADMIN",
+              "PASSWORD_POLICY_REJECTED",
+              "PASSWORD_CONFIRMATION_FAILED",
+              "INVALID_REQUEST",
+            ].includes(error.code)),
       );
       setMessage(studioMessage(error));
     } finally {
@@ -208,6 +209,7 @@ export function useAccountOperation(session: StudioSessionDto, scope: string) {
     setMutation(undefined);
     setDefinite(false);
     setMessage("");
+    return true;
   }
   return {
     ready,

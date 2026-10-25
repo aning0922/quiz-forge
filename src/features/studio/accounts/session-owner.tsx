@@ -77,7 +77,7 @@ export function StudioAccountOwner({
     [confirmed, setConfirmed] = useState(false),
     [legacy, setLegacy] = useState(false);
   const revoke = useCallback(() => {
-    setState((old) => ({ ...old, revoked: true }));
+    setState((old) => (old.revoked ? old : { ...old, revoked: true }));
     setCandidate(undefined);
     setConfirmed(false);
   }, []);

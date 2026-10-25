@@ -155,7 +155,10 @@ export function SetPasswordPage() {
     } catch (error) {
       setDefinite(
         error instanceof StudioClientError &&
-          ["PASSWORD_POLICY_REJECTED", "INVALID_REQUEST"].includes(error.code),
+          ((error.code === "RATE_LIMITED" && error.httpStatus === 429) ||
+            ["PASSWORD_POLICY_REJECTED", "INVALID_REQUEST"].includes(
+              error.code,
+            )),
       );
       setMessage(studioMessage(error));
     } finally {

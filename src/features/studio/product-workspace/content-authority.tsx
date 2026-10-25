@@ -14,10 +14,10 @@ export const ContentAuthorityContext = createContext<{
 /** Embedded tasks inherit the same revocation epoch as the Product workspace. */
 export function useContentAuthority() {
   const inherited = useContext(ContentAuthorityContext);
-  const owner = useStudioAccountOwner();
+  const revoked = useStudioAccountOwner()?.revoked ?? false;
   return useMemo(
     () => ({
-      canWrite: () => !owner?.revoked && inherited.canWrite(),
+      canWrite: () => !revoked && inherited.canWrite(),
       observe(error: unknown) {
         inherited.observe(error);
         if (
@@ -32,6 +32,6 @@ export function useContentAuthority() {
           invalidateCurrentStudioAuthority();
       },
     }),
-    [inherited, owner],
+    [inherited, revoked],
   );
 }

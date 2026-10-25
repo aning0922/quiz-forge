@@ -17,24 +17,26 @@ export function passwordProblem(value: string): string | null {
   return null;
 }
 
+const accountActionLabels: Partial<
+  Record<import("./contracts").AccountAction, string>
+> = {
+  create: "开通账号",
+  "display-name": "修改显示名",
+  role: "调整角色",
+  disable: "停用账号",
+  restore: "恢复账号",
+  "issue-setup": "签发设置入口",
+  "issue-reset": "签发重置入口",
+  "password-setup": "本人设置密码",
+  "password-change": "本人修改密码",
+  "logout-all": "本人退出全部登录",
+  "revoke-sessions": "撤销账号全部登录",
+  "bootstrap-admin": "初始化管理员",
+  "admin-recovery": "恢复管理员",
+};
 export const accountActionLabel = (
   action: import("./contracts").AccountAction,
-) =>
-  ({
-    create: "开通账号",
-    "display-name": "修改显示名",
-    role: "调整角色",
-    disable: "停用账号",
-    restore: "恢复账号",
-    "issue-setup": "签发设置入口",
-    "issue-reset": "签发重置入口",
-    "password-setup": "本人设置密码",
-    "password-change": "本人修改密码",
-    "logout-all": "本人退出全部登录",
-    "revoke-sessions": "撤销账号全部登录",
-    "bootstrap-admin": "初始化管理员",
-    "admin-recovery": "恢复管理员",
-  })[action];
+) => accountActionLabels[action] ?? "账号操作";
 
 /** A typed JSON assertion is not a final receipt; keep UNKNOWN on malformed proof. */
 export function isSetupReceipt(

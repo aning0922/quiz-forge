@@ -46,31 +46,44 @@ export function AccountsPage({
   session: StudioSessionDto;
 }) {
   const session = useOwnedStudioSession(initialSession);
+  const canManage = roleHasCapability(session.operator.role, "account:manage");
   const [search, setSearch] = useState(""),
     [q, setQ] = useState(""),
     [status, setStatus] = useState("all"),
     [offset, setOffset] = useState(0);
   const read = useWorkspaceRead<AccountListDto>(
-    `/api/studio/accounts?${new URLSearchParams({ q, status, offset: String(offset), limit: "25" })}`,
+    canManage
+      ? `/api/studio/accounts?${new URLSearchParams({ q, status, offset: String(offset), limit: "25" })}`
+      : null,
   );
   const operation = useAccountOperation(session, "management");
   const [selected, setSelected] = useState<AccountDto>(),
     [mode, setMode] = useState<AccountAction>("create"),
-    [open, setOpen] = useState(false);
+    [open, setOpen] = useState(false),
+    [taskActive, setTaskActive] = useState(false);
   const [loginName, setLoginName] = useState(""),
     [displayName, setDisplayName] = useState(""),
     [role, setRole] = useState<StudioRole>("operator"),
     [confirmation, setConfirmation] = useState(false);
   const dialog = useRef<HTMLDialogElement>(null),
     opener = useRef<HTMLElement | null>(null);
+  const dirty =
+    taskActive &&
+    (mode === "create"
+      ? Boolean(loginName || displayName || role !== "operator")
+      : mode === "display-name"
+        ? displayName !== selected?.displayName
+        : mode === "role"
+          ? role !== selected?.role || confirmation
+          : confirmation);
   useStudioLeaveProtection({
-    dirty: open && Boolean(loginName || displayName),
+    dirty,
     pending: operation.busy || Boolean(operation.pending),
   });
   useEffect(() => {
     if (open && !dialog.current?.open) dialog.current?.showModal();
     if (!open && dialog.current?.open) dialog.current.close();
-  }, [open]);
+  }, [open, canManage]);
   function close() {
     if (!operation.busy) {
       setOpen(false);
@@ -79,15 +92,46 @@ export function AccountsPage({
   }
   function launch(action: AccountAction, account?: AccountDto) {
     opener.current = document.activeElement as HTMLElement;
-    if (!operation.pending) {
-      setMode(action);
-      setSelected(account);
-      setLoginName("");
-      setDisplayName(account?.displayName ?? "");
-      setRole(account?.role ?? "operator");
-      setConfirmation(false);
+    if (
+      operation.pending ||
+      (taskActive && mode === action && selected?.id === account?.id)
+    ) {
+      setOpen(true);
+      return;
     }
+    if (
+      taskActive &&
+      !window.confirm(
+        "放弃当前未提交的账号任务并开始新任务？当前输入将被清除。",
+      )
+    )
+      return;
+    setMode(action);
+    setSelected(account);
+    setLoginName("");
+    setDisplayName(account?.displayName ?? "");
+    setRole(account?.role ?? "operator");
+    setConfirmation(false);
+    setTaskActive(true);
     setOpen(true);
+  }
+  function finishTask() {
+    setTaskActive(false);
+    close();
+  }
+  function discard() {
+    if (
+      operation.pending ||
+      operation.busy ||
+      !window.confirm("放弃本次未提交任务？当前输入将被清除。")
+    )
+      return;
+    setTaskActive(false);
+    setLoginName("");
+    setDisplayName("");
+    setRole("operator");
+    setConfirmation(false);
+    close();
   }
   async function submit() {
     if (
@@ -150,11 +194,14 @@ export function AccountsPage({
         invalidateStudioAuthority();
     }
   }
-  if (!roleHasCapability(session.operator.role, "account:manage"))
+  if (!canManage)
     return (
-      <p role="alert">
-        当前身份不能管理账号。<Link href="/studio/session">前往我的账号</Link>
-      </p>
+      <div className={styles.page}>
+        <p role="alert">
+          当前身份不能管理账号。<Link href="/studio/session">前往我的账号</Link>
+        </p>
+        <AccountOperationPanel operation={operation} onFinished={finishTask} />
+      </div>
     );
   return (
     <div className={styles.page}>
@@ -170,10 +217,16 @@ export function AccountsPage({
           <button onClick={() => launch("create")}>开通账号</button>
         </div>
       </header>
-      {operation.pending && !open && (
+      {(operation.pending || taskActive) && !open && (
         <section className={styles.notice}>
-          <p>原账号操作仍保留，请先核实或明确结束。</p>
-          <button onClick={() => setOpen(true)}>继续原账号操作</button>
+          <p>
+            {operation.pending
+              ? "原账号操作仍保留，请先核实或明确结束。"
+              : "未提交的账号任务和输入仍保留。"}
+          </p>
+          <button onClick={() => setOpen(true)}>
+            {operation.pending ? "继续原账号操作" : "继续未提交账号任务"}
+          </button>
         </section>
       )}
       <section className={styles.panel}>
@@ -393,7 +446,20 @@ export function AccountsPage({
               确认{actionLabel[mode]}
             </button>
           </form>
-          <AccountOperationPanel operation={operation} />
+          {!operation.pending && taskActive && (
+            <button
+              type="button"
+              className={styles.secondary}
+              disabled={operation.busy}
+              onClick={discard}
+            >
+              放弃本次未提交任务
+            </button>
+          )}
+          <AccountOperationPanel
+            operation={operation}
+            onFinished={finishTask}
+          />
         </section>
       </dialog>
     </div>
