@@ -65,6 +65,9 @@ export type AccountListDto = {
   offset: number;
   limit: number;
   hasMore: boolean;
+  total: number;
+  summary: { total: number; active: number; pending: number; disabled: number };
+  snapshotAt: string;
 };
 
 export type AccountAuditDto = AccountOperationDto & {
@@ -77,6 +80,8 @@ export type AccountAuditListDto = {
   offset: number;
   limit: number;
   hasMore: boolean;
+  total: number;
+  snapshotAt: string;
 };
 
 export type PasswordSetupInspectionDto = {

@@ -1,7 +1,7 @@
 import type { StudioRole } from "@/lib/auth/role-policy";
 import type { StudioOperatorDto } from "../contracts";
 export const roleLabel = (role: StudioRole) =>
-  ({ admin: "管理员", operator: "运营者", "read-only": "只读" })[role];
+  ({ admin: "管理员", operator: "运营人员", "read-only": "只读人员" })[role];
 export const operatorName = (operator: StudioOperatorDto) =>
   operator.displayName ?? operator.label;
 export function passwordProblem(value: string): string | null {
