@@ -72,11 +72,15 @@ async function addView() {
   await admin.sql`CREATE VIEW qf.namespace_write_probe AS SELECT id,credential_digest FROM qf.operator`;
   await admin.sql`GRANT SELECT,UPDATE(credential_digest) ON qf.namespace_write_probe TO ${role}`;
 }
-it("opens clean existing 18 without rewriting its immutable migration", async () => {
+it("opens current catalog without rewriting immutable migration 0018", async () => {
   const definitions = await readMigrations();
-  expect(
-    createHash("sha256").update(definitions.at(-1)!.source).digest("hex"),
-  ).toBe("a723d409df2dc1225f4504ff14bc13b18824c93adac28b7f10058c3e586c060a");
+  const immutable18 = definitions.find(
+    (migration) => migration.version === "0018_consumer_session_report",
+  );
+  expect(immutable18).toBeDefined();
+  expect(createHash("sha256").update(immutable18!.source).digest("hex")).toBe(
+    "a723d409df2dc1225f4504ff14bc13b18824c93adac28b7f10058c3e586c060a",
+  );
   expect(await catalog()).toBe(consumerSchemaFacts.sha256);
   const before = await snapshot();
   expect(await migrateDatabase(admin.sql, admin.config)).toEqual([]);
@@ -171,7 +175,7 @@ it("rejects relation/type/rule/policy/schema/default-ACL and other unsupported n
 it("refuses old17 plus writable view before any DDL/ACL reset, then clean17 upgrades with all old rows/history unchanged", async () => {
   await app.close();
   const empty = await snapshot();
-  expect(Object.keys(empty.rows)).toHaveLength(22);
+  expect(Object.keys(empty.rows)).toHaveLength(25);
   for (const [table, rows] of Object.entries(empty.rows))
     expect(rows, table).toHaveLength(
       table === "consumer_exchange_budget" ? 1 : 0,
@@ -202,10 +206,32 @@ it("refuses old17 plus writable view before any DDL/ACL reset, then clean17 upgr
   const before = await snapshot();
   expect(await migrateDatabase(admin.sql, admin.config)).toEqual([
     "0018_consumer_session_report",
+    "0019_account_enums",
+    "0020_accounts",
+    "0021_account_datetime_projection",
   ]);
   const after = await snapshot();
-  for (const [table, rows] of Object.entries(before.rows))
-    expect(after.rows[table], table).toEqual(rows);
+  for (const [table, rows] of Object.entries(before.rows)) {
+    if (table === "operator") {
+      const current = new Map(
+        after.rows[table]!.map((text) => {
+          const row = JSON.parse(text) as Record<string, unknown>;
+          return [row.id, row] as const;
+        }),
+      );
+      expect(after.rows[table]).toHaveLength(rows.length);
+      for (const text of rows) {
+        const original = JSON.parse(text) as Record<string, unknown>;
+        expect(current.has(original.id)).toBe(true);
+        // Preserve every original value exactly; new account columns are checked by the current catalog.
+        for (const [column, value] of Object.entries(original))
+          expect(
+            current.get(original.id)?.[column],
+            `operator.${column}`,
+          ).toEqual(value);
+      }
+    } else expect(after.rows[table], table).toEqual(rows);
+  }
   expect(after.history.slice(0, 17)).toEqual(before.history);
   app = await createDatabase(admin.config);
   expect(await catalog()).toBe(consumerSchemaFacts.sha256);
