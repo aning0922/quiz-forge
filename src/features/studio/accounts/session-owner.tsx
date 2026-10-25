@@ -162,7 +162,7 @@ export function StudioAccountOwner({
           aria-label="核对原账号并恢复任务"
         >
           <p>
-            当前任务已暂停。文件、输入和待确认操作仍保留，请重新登录后核对并继续。
+            登录或权限状态已变化，请检查后继续。未保存内容会保留，已提交的操作不会自动重试。
           </p>
           <div className={styles.actions}>
             <a href="/studio/login" target="_blank" rel="noopener">
@@ -173,7 +173,7 @@ export function StudioAccountOwner({
               disabled={checking}
               onClick={() => void inspect()}
             >
-              {checking ? "正在核对…" : "核对当前登录与账号状态"}
+              {checking ? "正在检查…" : "检查登录状态"}
             </button>
           </div>
           {message && <p role="status">{message}</p>}

@@ -89,14 +89,16 @@ export function useWorkspaceMutation<T>(
     });
   }
 
+  // Permission loss blocks new writes, but is not evidence that a write was sent.
+  const pending =
+    state.phase === "submitting" ||
+    state.phase === "unknown" ||
+    state.phase === "conflict";
   return {
     state,
     submit,
     reconciled,
-    blocked:
-      owner?.revoked ||
-      state.phase === "submitting" ||
-      state.phase === "unknown" ||
-      state.phase === "conflict",
+    pending,
+    blocked: owner?.revoked || pending,
   };
 }

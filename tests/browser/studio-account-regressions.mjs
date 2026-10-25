@@ -159,7 +159,7 @@ try {
     });
   }
   async function recover() {
-    await page.getByRole("button", { name: "核对当前登录与账号状态" }).click();
+    await page.getByRole("button", { name: "检查登录状态" }).click();
     await page
       .getByRole("checkbox", {
         name: "我已核对账号与操作状态，继续后先核实待确认结果",
