@@ -1,5 +1,30 @@
 # Studio S1 / V2-A 验收记录
 
+## 2026-10-25 分类回焦异常归因与探针修正
+
+本轮按作者要求定位原快速切宽后的回焦观察。PR #28 基线 `a61e23fb94628ea4472de02271d106d13ca13b60`；主控使用独立 `codex/studio-focus-audit`，原独立 A 实现相关探针、Astra 做因果与补丁限定审查。产品 `src/`、数据库合同和现有演示均未修改。
+
+### 归因证据
+
+主控只读复制 3200 的现有 `.next`，BUILD_ID 仍为 `iVevQLPakvHVrvBAZDrzh`，在独立 3210 / test PG 55443（实例 `b75bb72d9558c7fa2cae2ed709544905`）用合成目录重放。没有重建或运行媒体、导入、消费者业务回归，也未读取作者记录。三个预设 case 各走同一五宽序列，没有失败后循环重跑凑绿：
+
+- 原始 fullPage 序列在 1440px 重现一次失败，标准模式 CSS1Compat、0 pageerror。484.3ms 开始打开态截图，516.4ms 页面收到短暂 1×1 resize，521.3ms 浮层已卸载且焦点在 body，602.9ms 才发送 Escape；发送前浮层数量为零。7 条 1×1 事件记录属于同一次扰动，不是七次复现。
+- 候选明确就绪的 fullPage、viewport 两组五宽均保留了 Escape 前的浮层并正确回焦。它们支持探针修正方向，不证明 fullPage 永远无扰动。
+- 原 `last([data-filter-choice])` 能在只有两个静态选项时成立，不能代表候选读取完成。单独加强等待也不能替代对交互状态的检查。
+- 源码 `tag-filter.tsx` 的“锚点离开视口即收起”分支与视口扰动、卸载顺序吻合，A 的受控瞬时小视口对照也得到同样关闭链。导航 dialog.close 前后焦点仍在搜索框，不能将导航关闭本身误写为焦点丢失原因。
+
+因此，本次可重现异常是截图扰动页面状态后，探针对已经不存在的浮层执行 Escape 回焦断言；没有证据要求修改产品 Escape 策略或增加延迟/魔数。最初 390px 单次没有完整事件轨迹，本轮 1440px 是同类失败的干净重现，不冒充那次历史现场的直接证明。早期静态页面的 BackCompat 与记录器错误轨迹只作机制线索，最终归因以真实 Next hydration/标准模式/无记录器错误的轨迹为依据。
+
+主控私有证据在 `.cache/focus-audit/production-replay.mjs`、`production-summary.json`、`original-fullpage.json`、`ready-fullpage.json`、`ready-viewport.json`；原失败未删除或改记通过。
+
+### 最小修正与验证
+
+新增 `tests/browser/studio-catalog-focus.mjs`，独立 A 提交 `90026b1 / a9102f7` 集成为 `fc006eb / 755fe6c`。探针使用标准 HTML 模式、真实 StudioShell/ProductList、production React 和当前全局减少动效样式，HTTP 为隔离合成读取，固定路由适配只替换 Next 上下文。交互截图使用 viewport；截图前后及 Escape 前明确核对浮层和搜索焦点。前置失败直接保留 failure.json，不自动重开、不强制 focus、不靠 sleep 或重试掩盖。
+
+`node tests/browser/studio-catalog-focus.mjs` 通过：五宽候选就绪场景，以及独立 390px loading-Escape + 迟到读取不抢焦点，共六条定向结果；仅 GET，0 pageerror。定向 ESLint、格式及差异检查通过。Astra 共享这些记录及真实生产轨迹完成限定独审，未重跑。主控不因集成重复同输入检查；未运行全量单测、全量 E2E 或数据库回归，产品类型与构建输入未变，也未重跑这两项。
+
+当前 3200 原进程 PID 29391、构建与工作树保持；临时 3210 HTTP 与本批 test PG 已按自有实例协议停止，证据与合成数据保留。沿现有 Draft PR #28 普通快进更新后停止，不合并、不生产部署。新提交的 CI 按 GitHub 当前状态单独报告。
+
 ## 2026-10-25 分类与标签紧凑下拉统一
 
 从 PR #28 准确 `9c19361878784ac7af0afab405de8b300dfc9949` 建立独立 `codex/studio-category-filter-control`。原 Sol/high 独立 A 开发、Astra/high 独审继续；A 提交 `5789f3ed198e09f784c0dd1dffdb170970ec8376` 集成为运行源码 `4c95c7d154dd365e574bccfe032be986370aa036`。仅修改 `catalog-filters.tsx`、`tag-filter.tsx`、`tag-filter.module.css`；将已有浮层收口为目录专用 CatalogTaxonomyFilter，没有复制组件或修改共享 TaxonomyPicker。
@@ -12,6 +37,8 @@
 - Astra 限定 diff、实际组件原图和共享结果独审无阻断，未重跑开发检查。主控实际查看最终桌面与手机图；工程图检不是作者视觉或手机实机批准。没有重跑全量单元、全 PG/driver、消费者 E2E、原 File/UNKNOWN/CAS 底层或一次性 P5。
 
 实际探针边界：一次连续快速切宽后的 390px Escape 回焦断言失败，未记作通过；同宽独立 focus 调用跟踪及截图/关闭随后均正常，原因未确定，未改源码或重跑整组。计数探针已按唯一测评而非归档卡片重复链接核对；浮层计数排除桌面导航 dialog；手机被浮层遮盖的控件未使用强制点击，切换在可见桌面控件验证。失败及定位记录在 `probe-observations.json`。
+
+上述回焦观察已由本页“分类回焦异常归因与探针修正”继续调查，捕获同类失败的真实生产轨迹并修正探针前置条件；这里保留当时的原始失败与未知边界。
 
 名称恢复仍使用现有分页 GET：关闭态只读首屏十项，页外准确 ID 保留并显示“名称未读取”，打开搜索/分页后可恢复名称。不扫描全库，不新增只读 API。长名称在触发器中省略，title 及候选保留全名。
 
