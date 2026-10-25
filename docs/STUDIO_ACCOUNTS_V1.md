@@ -166,3 +166,23 @@ Account DTO 至少含 id、原 label、loginName|null、displayName、role、sta
 命名空间专项保持纯 SQL 升级验证：按准确版本查找并核对原 0018 checksum，当前 25 张表及 17→18/19/20/21 的预期已更新；旧 operator 每个原有列、其他旧表完整行、旧 history 及 view/ACL/namespace 拒绝且不修复的断言保留。独立新鲜 PostgreSQL 四例全部通过（2.07 秒），没有引入旧应用运行适配。
 
 CI 将已有四个账号专项步骤移至独立 `accounts` job，命令和逐项新鲜隔离库保持，不增加测试内容，避免被其他业务套件前置失败阻挡。当前基线 500 例与验证服务 14 例在 `8a6e8e2` 的工作流已通过；该次 namespace 旧预期失败原记录保留。该次 Linux 媒体工作流 `40202071049` 的 fault-oom 返回 WORKER_FAILED、stopped=confirmed，未通过；此前 `bbdf6dd` 工作流 `40200953539` 同源包成功，sourceBundleHash 同为 `3dd872949a984f8b2f5be68292aa27c7f681d011d123122cdde69e91efe8cc9c`，但 deploymentId 不同，不能拿旧 seal 宣称新部署通过。未手工重跑媒体矩阵、降低断言或据此授权 Linux 发布。最终各 job 状态以 PR 最新实际结果说明。
+
+## 新建测评反馈修复（2026-10-25）
+
+本批从 PR #29 `2790b814bd6b0f0bf24bdf51cd89128aa86c68ea` 接续，仅修复作者反馈的错误恢复提示与新建操作体验。主控工作树为 `quizforge-studio-create-ux/quiz-forge`，独立 A 为 `quizforge-studio-create-ux-ui/quiz-forge`；原账号演示目录未修改。提交 `61c05ae` 修复导航/真实 pending 区分，`82de743` 完成新建 UI 与任务留存。Astra 对准确 `2790b81..82de743` 限定审查无阻断，已有账号底层合同证据复用。
+
+“检查登录状态”只在真实登录/权限失效后核对原账号及当前权限，保持明确恢复和不自动重发。普通 SPA 导航只推进旧异步请求的 epoch；同 URL 点击不导航、不撤销 owner。完整文档导航、pagehide、BFCache、服务端失权与跨标签账号变化沿用原保护。`pending` 只代表 submitting/unknown/conflict；`blocked` 仍包含 owner 失权，不能通过关闭重开获得写权限。
+
+未填写且没有待确认请求的空窗口关闭即卸载，不显示继续新建、不阻止离开；实际输入收起后保留同一 DOM，只有未提交且没有待确认操作时可明确放弃。表单按 V2-A 原型保留 540px 弹窗，主要字段为名称、分类和编号，分类/标签紧凑选择；英文标识默认与编号相同，更多设置可修改。编号仍需与内容包一致且创建后不可改。分类/标签搜索 Enter 不提交整单；收起的英文标识无效时保留原生校验并展开定位，不添加假数据或额外写入。
+
+必要检查与证据：
+
+- 修改文件 ESLint、Prettier 与 diff 检查通过。`vitest run src/features/studio/client.test.ts` 7 项通过；`tests/browser/studio-navigation-recovery.mjs` 5 项通过。原同 URL 探针曾复现 owner 从 false 变 true，修复后通过，证据 `.cache/studio-navigation-recovery/1792941770154/results.json`。
+- A 的 `tests/browser/studio-create-task.mjs` 共 10 个定向组件场景分批通过；证据位于 A 工作树 `.cache/studio-create-task/1792941990915`（8 项）、`1792942217451`（隐藏英文标识及最终创建 payload）、`1792942281854`（最终布局/选择）。覆盖空白关闭、输入放弃、深链接、保留 DOM、忙碌/UNKNOWN/失权、搜索 Enter、字段校验与 1440/320/375/390/430 布局。组件 HTTP 为合成数据，不冒充真实数据库。
+- `pnpm build` 一次通过，含实现登记、TypeScript、生产构建与 trace；BUILD_ID `12gfvjvRuXBNh7ItJhd0s`。运行源码准确为 `82de74362aee9ea7f9ecdc508c3fa873f7db0b73`；随后文档收尾不改变运行输入。
+- 真实浏览器为 Chromium 156.0.8078.4，生产服务 3122，专用 test 实例 `37179a58dbd42a8715bb1f0c5589d1c8`/PG 55450。`.cache/create-ux/live-1792942505739/result.json` 的空白关闭、正常导航、实际输入同 DOM 留存/放弃通过；随后 320px 立即测量仍读到上一帧 540px，运行中断。`inspect-resize.json` 记录视口已 320px、两次布局帧后弹窗为 288px，属于探针就绪条件，产品源码未改。
+- `.cache/create-ux/live-1792942621791/result.json` 的五宽布局、16px 输入、44px 操作目标和无溢出通过；其后搜索定位同时命中输入与按钮，探针停止。改用 textbox 角色后仅续跑创建段，`.cache/create-ux/live-1792942677645/result.json` 确认分类搜索 Enter 无 POST、选择后收起、201 创建仅一次、进入工作区后刷新持久、深链接使用同一表单，0 页面错误。两次中断不记为整轮成功，已通过的前段不重复执行。
+
+独立 demo 实例 `53d0a0448c18b995af571a6ac822a2e5`/PG 55449、服务 `http://127.0.0.1:3230/studio` 已启动，使用相同构建。`.cache/create-ux/demo-seed.json` 记录真实合成管理员首次设密、登录、两个分类及一个标签；密码只在 `.cache/create-ux/demo-login.txt`（0600）。`.cache/create-ux/demo-view.json` 已验证该实例登录、目录就绪、新建空窗关闭无提醒且无创建 POST，桌面 1440×1000 与手机 390×844 截图分别为 `demo-create-1440.png`、`demo-create-390.png`。请用独立浏览器会话，避免与其他 127.0.0.1 演示共用登录 Cookie。
+
+3122 测试服务按 owner 协议确认退出，专用 test PG 已停止并保留证据；3230 demo 继续运行。原 3220/3200/3100 保持，未改 API、数据库迁移、权限服务、QuizPack、评分或消费者合同；未重复全量数据库、账号事务、媒体、消费者 E2E，不以助手图检冒充作者体验认可。Draft PR #29 保留，最新自动 CI 状态另以该 PR 的当前 head 为准；本批没有合并或生产部署授权。
