@@ -162,3 +162,7 @@ Account DTO 至少含 id、原 label、loginName|null、displayName、role、sta
 最后一个故障注入子进程 `tests/support/p3e-close-fault-child.ts` 同步改用上述当前密码登录 helper；未改故障注入、原键核实、关闭未知或停止证明。对应 FD/DB 关闭拒绝两例通过（45.56 秒），日志 `.cache/accounts-v1/ci-close-fault-password-fixture.log`。`3d05060` 的常规检查与媒体检查成功，原连接保护的 expiry/quarantine 亦在该次 CI 通过；其数据库整批因这一旧登录调用失败产生的后续清理拒绝仍记为失败，不能用定向结果冒充整批成功。
 
 按作者已明确的 fresh-demo 范围，当前默认数据库 suite 不再运行三项“退回旧 schema 后运行应用”的历史场景：`p2b2b-domain-upgrade.test.ts`、`p3e-upgrade.test.ts`、`p4-upgrade.test.ts`。测试文件及原断言原样保留；它们分别在 schema 10/16/17 调用当前应用/账号 fixture，本批不为此建设旧账号、旧表探测或旧登录适配。`bbdf6dd` 的该轮结果仍为 500 passed / 3 failed，不追记成功。历史基线 `6c30b8c` 的 CI 只证明当时历史范围；本次不宣称旧 schema 阶段的应用运行或旧数据迁移兼容已验收。0018 及以前迁移文件均未改，当前 21 次迁移 fresh 初始化、checksum/replay、完整目录/权限、所有当前业务与账号专用真实数据库验证继续执行。未来如授权旧环境升级，应以届时明确目标另做验证，不把历史代码维护混入本次 demo。
+
+命名空间专项保持纯 SQL 升级验证：按准确版本查找并核对原 0018 checksum，当前 25 张表及 17→18/19/20/21 的预期已更新；旧 operator 每个原有列、其他旧表完整行、旧 history 及 view/ACL/namespace 拒绝且不修复的断言保留。独立新鲜 PostgreSQL 四例全部通过（2.07 秒），没有引入旧应用运行适配。
+
+CI 将已有四个账号专项步骤移至独立 `accounts` job，命令和逐项新鲜隔离库保持，不增加测试内容，避免被其他业务套件前置失败阻挡。当前基线 500 例与验证服务 14 例在 `8a6e8e2` 的工作流已通过；该次 namespace 旧预期失败原记录保留。该次 Linux 媒体工作流 `40202071049` 的 fault-oom 返回 WORKER_FAILED、stopped=confirmed，未通过；此前 `bbdf6dd` 工作流 `40200953539` 同源包成功，sourceBundleHash 同为 `3dd872949a984f8b2f5be68292aa27c7f681d011d123122cdde69e91efe8cc9c`，但 deploymentId 不同，不能拿旧 seal 宣称新部署通过。未手工重跑媒体矩阵、降低断言或据此授权 Linux 发布。最终各 job 状态以 PR 最新实际结果说明。
