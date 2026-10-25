@@ -6,7 +6,7 @@ import { readFile } from "node:fs/promises";
 import { setTimeout as delay } from "node:timers/promises";
 import path from "node:path";
 import { expect, it, vi } from "vitest";
-import { createPreauth, login } from "@/lib/auth/service";
+import { loginVersionFixtureAccount } from "./version-account-fixture";
 import { createStudioRequestBudget } from "@/lib/http-security/request-budget";
 import { createConsumerRequestOwner } from "@/features/fulfillment/consumer-flow/request-owner";
 import { createConsumerFlowService } from "@/features/fulfillment/consumer-flow/service";
@@ -88,14 +88,7 @@ it("actual DB-clock deadlines crossed during post-authorization hashes prevent b
       },
     );
     const fixture = await readConsumerFixture(db, runId),
-      pre = await createPreauth(db.app, null, randomUUID()),
-      operator = await login(
-        db.app,
-        pre.raw,
-        pre.dto.csrfToken,
-        fixture.operator.secret,
-        randomUUID(),
-      ),
+      operator = await loginVersionFixtureAccount(db, fixture.operator),
       credentials = {
         sessionToken: operator.raw,
         csrfToken: operator.dto.csrfToken,
