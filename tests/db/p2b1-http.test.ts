@@ -30,7 +30,7 @@ async function safe<T>(work: () => PromiseLike<T>): Promise<T> {
     );
   }
 }
-async function session(role: "operator" | "read-only" = "operator") {
+async function session(role: "admin" | "operator" | "read-only" = "admin") {
   return (await safe(() => authenticateTestOperator(fixture, role))).session;
 }
 type Session = Awaited<ReturnType<typeof session>>;

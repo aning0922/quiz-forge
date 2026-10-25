@@ -90,7 +90,7 @@ export async function p4Fixture(
 ) {
   if (createPlay && appendRevision) throw Error("P4_TEST_HEAD_SETUP_INVALID");
   await resetDomainDatabase(db);
-  const auth = await authenticateTestOperator(db);
+  const auth = await authenticateTestOperator(db, "admin");
   const source = await seedReadyP2b3Source(
     db,
     auth,

@@ -33,7 +33,6 @@ export const accountActionLabel = (
     "logout-all": "本人退出全部登录",
     "revoke-sessions": "撤销账号全部登录",
     "bootstrap-admin": "初始化管理员",
-    enroll: "登记旧账号",
     "admin-recovery": "恢复管理员",
   })[action];
 

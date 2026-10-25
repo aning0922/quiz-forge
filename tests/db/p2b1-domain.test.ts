@@ -21,7 +21,7 @@ beforeAll(async () => {
 });
 beforeEach(async () => {
   await safe(() => resetTestDatabase(fixture));
-  auth = await authenticateTestOperator(fixture);
+  auth = await authenticateTestOperator(fixture, "admin");
 });
 afterAll(async () => {
   await fixture?.close();

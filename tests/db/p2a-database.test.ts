@@ -52,7 +52,14 @@ describe("real P2-A database", () => {
   it("uses PostgreSQL18.4, the correct marker and typed qualified schema", async () => {
     await verifyDatabaseIdentity(database.app.sql, database.config);
     const id = await operator();
-    const rows = await database.app.db.select().from(operators);
+    const rows = await database.app.db
+      .select({
+        id: operators.id,
+        label: operators.label,
+        role: operators.role,
+        status: operators.status,
+      })
+      .from(operators);
     expect(
       rows.map((r) => ({
         id: r.id,
@@ -78,6 +85,9 @@ describe("real P2-A database", () => {
       "draft_revision",
       "internal_play_version",
       "operator",
+      "operator_account_operation",
+      "operator_kdf_attempt",
+      "operator_password_token",
       "operator_session",
       "product",
       "product_asset",
@@ -114,7 +124,9 @@ describe("real P2-A database", () => {
   });
   it("keeps Drizzle Date fields distinct from raw SQL timestamp strings", async () => {
     const id = await operator();
-    const rows = await database.app.db.select().from(operators);
+    const rows = await database.app.db
+      .select({ createdAt: operators.createdAt })
+      .from(operators);
     const [raw] = await database.app
       .sql`SELECT created_at FROM qf.operator WHERE id=${id}`;
     expect(rows[0]?.createdAt).toBeInstanceOf(Date);

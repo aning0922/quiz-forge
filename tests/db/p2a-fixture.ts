@@ -159,33 +159,41 @@ export async function resetTestDatabase(database: TestDatabase): Promise<void> {
   }
 }
 
-/** Synthetic sessions for B1 domain/HTTP tests; raw values stay inside test process. */
+let fixturePasswordHash: Promise<string> | undefined;
+/** Current account rows and synthetic sessions for domain tests; password login has its own real suite. */
 export async function authenticateTestOperator(
   database: TestDatabase,
-  role: "operator" | "read-only" = "operator",
+  role: "admin" | "operator" | "read-only" = "operator",
 ) {
+  if (database.config.purpose !== "test" && database.config.purpose !== "ci")
+    throw new Error("P2A_TEST_DATABASE_REQUIRED");
   const { randomUUID } = await import("node:crypto");
   const { issueToken } = await import("../../src/lib/security/p2a-tokens");
-  const { createPreauth, login } = await import("../../src/lib/auth/service");
-  const credential = issueToken("credential");
+  const { readSession, sessionDto } =
+    await import("../../src/lib/auth/service");
+  const { withPasswordCapacity } =
+    await import("../../src/lib/auth/accounts/password");
+  fixturePasswordHash ??= withPasswordCapacity(({ hash }) =>
+    hash("synthetic domain fixture password 2026"),
+  );
+  const passwordHash = await fixturePasswordHash;
+  const token = issueToken("session");
   const id = randomUUID();
   await safeTestOperation(
     () =>
       database.admin
-        .sql`INSERT INTO qf.operator(id,label,credential_digest,role,status) VALUES(${id},${`test-${id}`},${credential.digest},${role},'active')`,
+        .sql`INSERT INTO qf.operator(id,label,login_name,display_name,password_hash,role,status) VALUES(${id},${`test-${id}`},${`test-${id}`},'合成领域测试账号',${passwordHash},${role},'active')`,
   );
-  const preauth = await safeTestOperation(() =>
-    createPreauth(database.app, null, randomUUID()),
+  await safeTestOperation(
+    () => database.admin.sql`
+    WITH moment AS(SELECT clock_timestamp() at)
+    INSERT INTO qf.operator_session(id,token_digest,kind,operator_id,created_at,last_seen_at,idle_expires_at,absolute_expires_at)
+    SELECT ${randomUUID()},${token.digest},'authenticated',${id},at,at,at+interval '30 minutes',at+interval '8 hours' FROM moment`,
   );
-  const session = await safeTestOperation(() =>
-    login(
-      database.app,
-      preauth.raw,
-      preauth.dto.csrfToken,
-      credential.raw,
-      randomUUID(),
-    ),
+  const actor = await safeTestOperation(() =>
+    readSession(database.app, token.raw),
   );
+  const session = { raw: token.raw, dto: sessionDto(actor, token.raw) };
   return {
     id,
     session,

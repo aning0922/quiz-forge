@@ -85,7 +85,7 @@ beforeEach(async () => {
   reviewIds.clear();
   versionIds.clear();
   await resetDomainDatabase(db);
-  auth = await authenticateTestOperator(db);
+  auth = await authenticateTestOperator(db, "admin");
   const prepared = await prepareP3eSource(randomUUID());
   source = await seedReadyP2b3Source(db, auth, prepared);
   initial = await createProductDraftService().applyReadyValidation(

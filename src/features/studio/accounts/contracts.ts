@@ -30,7 +30,6 @@ export type AccountAction =
   | "logout-all"
   | "revoke-sessions"
   | "bootstrap-admin"
-  | "enroll"
   | "admin-recovery";
 
 export type AccountOperationDto = {
