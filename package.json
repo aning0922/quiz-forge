@@ -43,6 +43,7 @@
   },
   "dependencies": {
     "@radix-ui/react-slot": "1.4.0",
+    "argon2": "0.44.0",
     "buffer-crc32": "1.0.0",
     "class-variance-authority": "0.7.1",
     "clsx": "2.1.1",
