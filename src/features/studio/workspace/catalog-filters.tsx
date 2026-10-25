@@ -1,11 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { type TaxonomySummary } from "@/features/product/workspace/contracts";
 import type { OperationsQuery } from "../operations/contracts";
 import { operationsQuerySchema } from "../operations/query";
-import { TaxonomyPicker } from "./taxonomy-picker";
-import { TagFilter } from "./tag-filter";
+import { CatalogTaxonomyFilter } from "./tag-filter";
 import { Search, RotateCcw } from "lucide-react";
 import styles from "./workspace.module.css";
 import parity from "./catalog-parity.module.css";
@@ -31,7 +30,21 @@ export function CatalogFilters({
     [categories, setCategories] = useState<TaxonomySummary[]>([]),
     [tags, setTags] = useState<TaxonomySummary[]>([]),
     [error, setError] = useState(""),
-    [tagOpen, setTagOpen] = useState(false);
+    [openFilter, setOpenFilter] = useState<"category" | "tag" | null>(null);
+  const setCategoryOpen = useCallback(
+    (open: boolean) =>
+      setOpenFilter((current) =>
+        open ? "category" : current === "category" ? null : current,
+      ),
+    [],
+  );
+  const setTagOpen = useCallback(
+    (open: boolean) =>
+      setOpenFilter((current) =>
+        open ? "tag" : current === "tag" ? null : current,
+      ),
+    [],
+  );
   return (
     <form
       className={`${styles.catalogFilters} ${parity.filters}`}
@@ -77,42 +90,24 @@ export function CatalogFilters({
             />
           </div>
         </div>
-        <details className={styles.catalogCategoryFilter}>
-          <summary>
-            {unclassified
-              ? "仅未分类"
-              : categoryId
-                ? (categories[0]?.name ?? "已选分类")
-                : "全部分类"}
-          </summary>
-          <div className={styles.catalogCategoryChoices}>
-            <label className={styles.choice}>
-              <input
-                type="checkbox"
-                checked={unclassified}
-                onChange={(event) => {
-                  setUnclassified(event.target.checked);
-                  if (event.target.checked) {
-                    setCategoryId("");
-                    setCategories([]);
-                  }
-                }}
-              />
-              仅未分类测评
-            </label>
-            <TaxonomyPicker
-              purpose="filter"
-              kind="category"
-              selected={categories}
-              selectedId={categoryId}
-              onChange={(items) => {
-                setCategories(items);
-                setCategoryId(items[0]?.id ?? "");
-                if (items.length) setUnclassified(false);
-              }}
-            />
-          </div>
-        </details>
+        <CatalogTaxonomyFilter
+          kind="category"
+          valueId={categoryId}
+          value={categories[0]}
+          unclassified={unclassified}
+          open={openFilter === "category"}
+          onOpenChange={setCategoryOpen}
+          onChange={(item) => {
+            setCategories(item ? [item] : []);
+            setCategoryId(item?.id ?? "");
+            setUnclassified(false);
+          }}
+          onUnclassified={() => {
+            setUnclassified(true);
+            setCategoryId("");
+            setCategories([]);
+          }}
+        />
         <div className={styles.field}>
           <label
             className={styles.catalogFilterLabel}
@@ -172,7 +167,7 @@ export function CatalogFilters({
               setCategories([]);
               setTags([]);
               setError("");
-              setTagOpen(false);
+              setOpenFilter(null);
               onReset();
             }}
           >
@@ -212,10 +207,11 @@ export function CatalogFilters({
               <option value="all">全部</option>
             </select>
           </div>
-          <TagFilter
+          <CatalogTaxonomyFilter
+            kind="tag"
             valueId={tagId}
             value={tags[0]}
-            open={tagOpen}
+            open={openFilter === "tag"}
             onOpenChange={setTagOpen}
             onChange={(item) => {
               setTags(item ? [item] : []);

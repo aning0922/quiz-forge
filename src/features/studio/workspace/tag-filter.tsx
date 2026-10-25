@@ -19,13 +19,19 @@ import { useWorkspaceRead } from "./use-request";
 import styles from "./tag-filter.module.css";
 
 /** Directory-only read filter. The selected ID survives missing names and filtered pages. */
-export function TagFilter({
+export function CatalogTaxonomyFilter({
+  kind,
+  unclassified = false,
+  onUnclassified,
   valueId,
   value,
   onChange,
   open,
   onOpenChange,
 }: {
+  kind: "category" | "tag";
+  unclassified?: boolean;
+  onUnclassified?: () => void;
   valueId: string;
   value: TaxonomySummary | undefined;
   onChange: (value: TaxonomySummary | null) => void;
@@ -54,11 +60,14 @@ export function TagFilter({
       : observed?.id === valueId
         ? observed
         : undefined;
-  const label = !valueId
-    ? "全部标签"
-    : known
-      ? `${known.name}${known.archivedAt ? "（已归档）" : ""}`
-      : "已选标签（名称未读取）";
+  const noun = kind === "category" ? "分类" : "标签";
+  const label = unclassified
+    ? "仅未分类"
+    : !valueId
+      ? `全部${noun}`
+      : known
+        ? `${known.name}${known.archivedAt ? "（已归档）" : ""}`
+        : `已选${noun}（名称未读取）`;
   const close = useCallback(
     (focus: boolean) => {
       onOpenChange(false);
@@ -126,12 +135,16 @@ export function TagFilter({
     };
   }, [open, close]);
   return (
-    <div className={styles.field}>
+    <div className={styles.field} data-kind={kind}>
       {!open && valueId && !known && resolvedId !== valueId && (
-        <SelectedTagName valueId={valueId} onResolved={resolveName} />
+        <SelectedFilterName
+          kind={kind}
+          valueId={valueId}
+          onResolved={resolveName}
+        />
       )}
       <label id={`${id}-label`} htmlFor={`${id}-trigger`}>
-        标签
+        {noun}
       </label>
       <button
         ref={trigger}
@@ -160,13 +173,13 @@ export function TagFilter({
             ref={popup}
             id={`${id}-popup`}
             role="dialog"
-            aria-label="选择标签筛选"
+            aria-label={`选择${noun}筛选`}
             className={styles.popup}
             onKeyDown={(event) => {
               if (["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) {
                 const choices = Array.from(
                   popup.current?.querySelectorAll<HTMLButtonElement>(
-                    "[data-tag-choice]",
+                    "[data-filter-choice]",
                   ) ?? [],
                 );
                 const index = choices.indexOf(
@@ -187,7 +200,13 @@ export function TagFilter({
               }
             }}
           >
-            <TagOptions
+            <FilterOptions
+              kind={kind}
+              unclassified={unclassified}
+              onUnclassified={() => {
+                onUnclassified?.();
+                close(true);
+              }}
               valueId={valueId}
               unknown={Boolean(valueId && !known)}
               onObserved={remember}
@@ -204,15 +223,17 @@ export function TagFilter({
 }
 
 /** One bounded first-page read; unmount/abort before the open popup owns its reads. */
-function SelectedTagName({
+function SelectedFilterName({
+  kind,
   valueId,
   onResolved,
 }: {
+  kind: "category" | "tag";
   valueId: string;
   onResolved: (tagId: string, value: TaxonomySummary | undefined) => void;
 }) {
   const read = useWorkspaceRead<Page<TaxonomyDto>>(
-    "/api/studio/tags?q=&page=1&pageSize=10&status=all",
+    `/api/studio/${kind === "category" ? "categories" : "tags"}?q=&page=1&pageSize=10&status=all`,
   );
   useEffect(() => {
     if (read.value || read.error)
@@ -224,17 +245,24 @@ function SelectedTagName({
   return null;
 }
 
-function TagOptions({
+function FilterOptions({
+  kind,
+  unclassified,
+  onUnclassified,
   valueId,
   unknown,
   onObserved,
   onChoose,
 }: {
+  kind: "category" | "tag";
+  unclassified: boolean;
+  onUnclassified: () => void;
   valueId: string;
   unknown: boolean;
   onObserved: (item: TaxonomySummary) => void;
   onChoose: (item: TaxonomySummary | null) => void;
 }) {
+  const noun = kind === "category" ? "分类" : "标签";
   const searchInput = useRef<HTMLInputElement>(null);
   const [search, setSearch] = useState("");
   const [q, setQ] = useState("");
@@ -246,7 +274,7 @@ function TagOptions({
     status: "all",
   });
   const read = useWorkspaceRead<Page<TaxonomyDto>>(
-    `/api/studio/tags?${params}`,
+    `/api/studio/${kind === "category" ? "categories" : "tags"}?${params}`,
   );
   useEffect(() => {
     const item = read.value?.items.find((item) => item.id === valueId);
@@ -265,8 +293,8 @@ function TagOptions({
       <div className={styles.search}>
         <input
           ref={searchInput}
-          aria-label="搜索标签名称或英文标识"
-          placeholder="搜索标签…"
+          aria-label={`搜索${noun}名称或英文标识`}
+          placeholder={`搜索${noun}…`}
           maxLength={80}
           value={search}
           onChange={(event) => setSearch(event.target.value)}
@@ -278,16 +306,35 @@ function TagOptions({
             }
           }}
         />
-        <button type="button" onClick={applySearch} aria-label="搜索标签">
+        <button type="button" onClick={applySearch} aria-label={`搜索${noun}`}>
           <Search size={18} aria-hidden="true" />
         </button>
       </div>
       {unknown && (
         <p className={styles.notice}>
-          已保留所选标签，名称尚未读取。可继续查找或清除筛选。
+          已保留所选{noun}，名称尚未读取。可继续查找或清除筛选。
         </p>
       )}
-      {valueId && (
+      {kind === "category" ? (
+        <div className={styles.categoryChoices}>
+          <button
+            type="button"
+            data-filter-choice
+            aria-pressed={!valueId && !unclassified}
+            onClick={() => onChoose(null)}
+          >
+            全部分类
+          </button>
+          <button
+            type="button"
+            data-filter-choice
+            aria-pressed={unclassified}
+            onClick={onUnclassified}
+          >
+            仅未分类
+          </button>
+        </div>
+      ) : valueId ? (
         <button
           className={styles.clear}
           type="button"
@@ -295,13 +342,13 @@ function TagOptions({
         >
           清除标签筛选
         </button>
-      )}
-      {read.loading && <p role="status">正在读取标签…</p>}
+      ) : null}
+      {read.loading && <p role="status">正在读取{noun}…</p>}
       {read.error && (
         <div role="alert">
           <p>{read.error}</p>
           <button type="button" onClick={read.refresh}>
-            重新读取标签
+            重新读取{noun}
           </button>
         </div>
       )}
@@ -310,18 +357,18 @@ function TagOptions({
           {!read.value.items.length && (
             <p role="status">
               {q
-                ? "没有匹配的标签，请更换搜索词。"
+                ? `没有匹配的${noun}，请更换搜索词。`
                 : page > 1
-                  ? "本页没有标签，请返回上一页。"
-                  : "暂无标签可用于筛选。"}
+                  ? `本页没有${noun}，请返回上一页。`
+                  : `暂无${noun}可用于筛选。`}
             </p>
           )}
-          <ul className={styles.options} aria-label="标签候选">
+          <ul className={styles.options} aria-label={`${noun}候选`}>
             {read.value.items.slice(0, 10).map((item) => (
               <li key={item.id}>
                 <button
                   type="button"
-                  data-tag-choice
+                  data-filter-choice
                   aria-pressed={item.id === valueId}
                   onClick={() => onChoose(item)}
                 >
@@ -334,7 +381,7 @@ function TagOptions({
             ))}
           </ul>
           {(page > 1 || read.value.hasNext) && (
-            <nav className={styles.pagination} aria-label="标签分页">
+            <nav className={styles.pagination} aria-label={`${noun}分页`}>
               <button
                 type="button"
                 disabled={page <= 1}
