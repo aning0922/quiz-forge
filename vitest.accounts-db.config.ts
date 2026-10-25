@@ -2,7 +2,7 @@ import { defineConfig } from "vitest/config";
 import database from "./vitest.db.config";
 
 const suite = process.env.QUIZFORGE_ACCOUNTS_DB_SUITE;
-if (suite !== "accounts" && suite !== "retention")
+if (suite !== "accounts" && suite !== "retention" && suite !== "authority")
   throw new Error("EXPLICIT_ACCOUNTS_DATABASE_SUITE_REQUIRED");
 
 // Account suites retain UNKNOWN attempts and receipts. Run with an explicitly
@@ -14,7 +14,9 @@ export default defineConfig({
     include: [
       suite === "accounts"
         ? "tests/accounts-db/studio-accounts.test.ts"
-        : "tests/accounts-db/studio-accounts-retention.test.ts",
+        : suite === "retention"
+          ? "tests/accounts-db/studio-accounts-retention.test.ts"
+          : "tests/accounts-db/studio-accounts-authority.test.ts",
     ],
     exclude: [],
   },
