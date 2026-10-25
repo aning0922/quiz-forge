@@ -19,7 +19,7 @@ export function SetPasswordPage() {
     [password, setPassword] = useState(""),
     [confirm, setConfirm] = useState("");
   const [busy, setBusy] = useState(true),
-    [message, setMessage] = useState("正在核对一次性入口…"),
+    [message, setMessage] = useState("正在核对设置链接…"),
     [operationId, setOperationId] = useState<string>(),
     [receipt, setReceipt] = useState<AccountOperationDto>(),
     [originalId, setOriginalId] = useState(""),
@@ -43,7 +43,7 @@ export function SetPasswordPage() {
       if (!token.current) {
         setBusy(false);
         setMessage(
-          "本页没有一次性入口。请使用本人收到的完整链接；刷新不会从存储恢复入口。",
+          "请重新打开收到的完整设置链接。若链接已过期，请联系管理员重新发送。",
         );
         return;
       }
@@ -79,7 +79,7 @@ export function SetPasswordPage() {
         } catch {
           setOperationId("unavailable");
           setBusy(false);
-          setMessage("入口安全索引无法核实，已保留原记录；请联系维护者。");
+          setMessage("暂时无法核实之前的操作。请保留此页并联系管理员。");
           return;
         }
       }
@@ -90,24 +90,17 @@ export function SetPasswordPage() {
             if (hint !== null && hint !== value.tokenId) {
               setOperationId("unavailable");
               setMessage(
-                "入口索引与服务器核实的目标不一致，已停止操作并保留原记录。",
+                "设置链接与账号信息不一致，已停止操作。请联系管理员核实。",
               );
               return;
             }
             setInspection(value);
             try {
               if (readIndex(value.tokenId)) {
-                setMessage(
-                  "已保留原设置操作，请核实原结果，不会再次提交密码。",
-                );
-              } else
-                setMessage(
-                  "入口已核实。请本人设置密码；完成后需使用账号密码登录。",
-                );
+                setMessage("上次设置的结果待确认，请先核实，勿重复提交。");
+              } else setMessage("请本人设置新密码，完成后使用账号密码登录。");
             } catch {
-              setMessage(
-                "原设置操作索引无法安全读取，请保留当前入口并联系维护者。",
-              );
+              setMessage("暂时无法读取上次设置记录，请保留此页并联系管理员。");
               setOperationId("unavailable");
             }
           },
@@ -134,7 +127,7 @@ export function SetPasswordPage() {
       sessionStorage.setItem(key, text);
       if (sessionStorage.getItem(key) !== text) throw Error();
     } catch {
-      setMessage("无法保存无秘密的原操作索引，未发送设置请求。");
+      setMessage("无法保留本次操作记录，尚未提交。请保留此页并联系管理员。");
       return;
     }
     const secret = password;
@@ -149,8 +142,8 @@ export function SetPasswordPage() {
       setReceipt(value);
       setMessage(
         value.status === "completed"
-          ? "本人密码设置已完成。请使用账号密码登录。"
-          : "原设置请求已被拒绝，请核对入口及密码策略。",
+          ? "密码设置成功，请使用账号密码登录。"
+          : "密码设置未完成，请检查设置链接和密码要求。",
       );
     } catch (error) {
       setDefinite(
@@ -179,11 +172,10 @@ export function SetPasswordPage() {
         setReceipt(result.operation);
         setMessage(
           result.operation.status === "completed"
-            ? "原操作回执确认设置完成。"
-            : "原操作回执确认设置被拒绝。",
+            ? "已核实上次操作：密码设置成功。"
+            : "已核实上次操作：未完成密码设置。",
         );
-      } else
-        setMessage("原结果尚未确定，继续保留 UNKNOWN；不重新提交或签发入口。");
+      } else setMessage("结果待确认，请先核实，勿重复提交。");
     } catch (error) {
       setMessage(studioMessage(error));
     } finally {
@@ -203,7 +195,7 @@ export function SetPasswordPage() {
       sessionStorage.removeItem(key);
       if (sessionStorage.getItem(key) !== null) throw Error();
     } catch {
-      setMessage("无法确认原索引已移除，请保留现场。");
+      setMessage("暂时无法结束本次记录，请保留此页并联系管理员。");
       return;
     }
     setOperationId(undefined);
@@ -213,9 +205,7 @@ export function SetPasswordPage() {
     setBusy(true);
     try {
       setInspection(await setupAdapter.inspect(token.current));
-      setMessage(
-        "已结束确认被拒绝的记录，入口已重新只读核实。请重新输入并明确提交。",
-      );
+      setMessage("本次记录已结束。请重新输入密码并确认设置。");
     } catch (error) {
       setMessage(studioMessage(error));
     } finally {
@@ -226,15 +216,13 @@ export function SetPasswordPage() {
     <div className={styles.page}>
       <section className={styles.panel}>
         <h1>本人设置密码</h1>
-        <p>
-          一次性入口已从地址栏移除，仅在当前页面内存中保留。此入口不授予后台权限，也不会登录或切换浏览器中的其他账号。
-        </p>
+        <p>请本人为下方账号设置密码。完成后，使用登录账号和新密码登录后台。</p>
         {inspection && (
           <>
             <h2>{inspection.displayName}</h2>
             <p>登录账号：{inspection.loginName}</p>
             <p>
-              入口有效至{" "}
+              设置链接有效至{" "}
               {new Date(inspection.expiresAt).toLocaleString("zh-CN")}
             </p>
           </>
@@ -272,7 +260,7 @@ export function SetPasswordPage() {
               disabled={busy || Boolean(operationId)}
             />
             <p>
-              15–256字符长口令，保留空格，允许粘贴和密码管理器。成功后该账号已有登录全部失效。
+              使用15–256个字符，可包含空格，支持粘贴和密码管理器。改好后，该账号会退出全部登录。
             </p>
             <button disabled={busy || Boolean(operationId)}>
               确认设置密码
@@ -282,7 +270,7 @@ export function SetPasswordPage() {
         {!operationId && !busy && (
           <div className={styles.form}>
             <p>
-              如曾提交而结果未知，请从原安全记录取得操作编号，重新打开原完整入口后核实。入口的写权限失效，也不能据此推断原操作失败。
+              如果上次设置的结果待确认，请重新打开原设置链接，并用原操作编号核实。即使链接已过期，也不要直接重复提交。
             </p>
             <label className={styles.field}>
               原设置操作编号
@@ -302,12 +290,12 @@ export function SetPasswordPage() {
               onClick={() => {
                 if (!token.current) {
                   setMessage(
-                    "入口只保存在内存，请重新打开原完整链接；不要在此粘贴入口秘密。",
+                    "请重新打开原完整设置链接，再核实上次操作；这里仅填写操作编号。",
                   );
                   return;
                 }
                 setOperationId(originalId);
-                setMessage("原操作编号已选定。请核实，结果未知时不开放重提。");
+                setMessage("已选定原操作编号，请先核实，勿重复提交。");
               }}
             >
               选择原编号以核实
@@ -331,7 +319,7 @@ export function SetPasswordPage() {
             disabled={busy}
             onClick={() => void endRejected()}
           >
-            明确结束已拒绝记录并重新核对入口
+            结束本次记录并重新设置
           </button>
         )}
         {receipt?.status === "completed" && (

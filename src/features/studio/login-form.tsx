@@ -15,7 +15,7 @@ export function StudioLoginForm() {
   const [loginName, setLoginName] = useState("");
   const [preauth, setPreauth] = useState<StudioPreauthDto | null>(null);
   const [busy, setBusy] = useState(true);
-  const [message, setMessage] = useState("正在准备登录验证…");
+  const [message, setMessage] = useState("正在准备登录…");
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
@@ -28,7 +28,7 @@ export function StudioLoginForm() {
       .then((value) => {
         if (active) {
           setPreauth(value);
-          setMessage("登录验证已准备，请输入登录账号和密码。");
+          setMessage("请输入登录账号和密码。");
         }
       })
       .catch((error) => {
@@ -57,7 +57,7 @@ export function StudioLoginForm() {
     setFailed(false);
     setPassword("");
     setPreauth(null);
-    setMessage("正在准备登录验证…");
+    setMessage("正在准备登录…");
     try {
       const value = await studioFetch<StudioPreauthDto>(
         "/api/studio/auth/preauth",
@@ -68,7 +68,7 @@ export function StudioLoginForm() {
         },
       );
       setPreauth(value);
-      setMessage("登录验证已准备，请输入登录账号和密码。");
+      setMessage("请输入登录账号和密码。");
     } catch (error) {
       if (
         error instanceof StudioClientError &&
@@ -90,7 +90,7 @@ export function StudioLoginForm() {
     invalidateStudioAuthority();
     setBusy(true);
     setFailed(false);
-    setMessage("正在验证运营身份…");
+    setMessage("正在登录…");
     const input = password;
     setPassword("");
     try {
@@ -166,12 +166,11 @@ export function StudioLoginForm() {
           onClick={prepare}
           type="button"
         >
-          重新准备登录验证
+          重新准备登录
         </button>
       )}
       <p className={styles.note}>
-        仅用于本机 HTTP 内测。登录验证 5 分钟有效；会话空闲 30 分钟或登录满 8
-        小时后失效。
+        登录页面停留过久时，请重新准备登录后再试。登录后空闲30分钟或满8小时需重新登录。
       </p>
     </section>
   );

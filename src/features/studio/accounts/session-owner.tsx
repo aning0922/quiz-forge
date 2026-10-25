@@ -115,7 +115,7 @@ export function StudioAccountOwner({
         throw Error();
       if (fresh.operator.id !== ownerId) {
         setMessage(
-          "当前浏览器登录的是其他账号。原文件、输入和操作继续由原账号保留，不会迁给新账号；请返回原身份登录。",
+          "当前登录的是其他账号。文件、输入和待确认操作已保留，请使用原账号重新登录后继续。",
         );
         return;
       }
@@ -127,7 +127,7 @@ export function StudioAccountOwner({
       if (!acceptsStudioEpoch(epoch)) return;
       setCandidate(fresh);
       setMessage(
-        `已只读核实原账号 ${operatorName(fresh.operator)}（${roleLabel(fresh.operator.role)}）及当前服务器状态。恢复后请先核实原未决请求，再明确选择动作。`,
+        `已核对账号 ${operatorName(fresh.operator)}（${roleLabel(fresh.operator.role)}）。继续任务后，请先核实之前待确认的操作。`,
       );
     } catch (error) {
       setMessage(studioMessage(error));
@@ -152,7 +152,7 @@ export function StudioAccountOwner({
       {legacy && (
         <aside className={`${styles.page} ${styles.notice}`} role="status">
           <p>
-            此标签页仍有未注明账号归属的历史操作记录，已原样保留。不会自动认领、删除或迁给当前账号；请按原身份核对来源。
+            此页有无法确认所属账号的操作记录。记录已保留，请联系管理员核对；请勿重复提交。
           </p>
         </aside>
       )}
@@ -162,8 +162,7 @@ export function StudioAccountOwner({
           aria-label="核对原账号并恢复任务"
         >
           <p>
-            当前页面权限已失效。原文件、输入和 UNKNOWN
-            仍保留；重新登录不会自动重发。
+            当前任务已暂停。文件、输入和待确认操作仍保留，请重新登录后核对并继续。
           </p>
           <div className={styles.actions}>
             <a href="/studio/login" target="_blank" rel="noopener">
@@ -174,7 +173,7 @@ export function StudioAccountOwner({
               disabled={checking}
               onClick={() => void inspect()}
             >
-              {checking ? "正在只读核实…" : "核对当前登录与服务器状态"}
+              {checking ? "正在核对…" : "核对当前登录与账号状态"}
             </button>
           </div>
           {message && <p role="status">{message}</p>}
@@ -186,14 +185,14 @@ export function StudioAccountOwner({
                   checked={confirmed}
                   onChange={(event) => setConfirmed(event.target.checked)}
                 />
-                我已核对原账号和当前状态；恢复后先读取原操作结果，不自动重发
+                我已核对账号与操作状态，继续后先核实待确认结果
               </label>
               <button
                 type="button"
                 disabled={!confirmed || checking}
                 onClick={recover}
               >
-                明确恢复原任务
+                继续原任务
               </button>
             </>
           )}

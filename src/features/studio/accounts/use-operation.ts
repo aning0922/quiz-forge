@@ -44,12 +44,12 @@ export function useAccountOperation(session: StudioSessionDto, scope: string) {
           )
             throw Error();
           setPending(item);
-          setMessage("本页保留了原账号操作。请先核实原操作，不会自动重发。");
+          setMessage("上次操作的结果待确认，请先核实，勿重复提交。");
         }
         setReady(true);
       } catch {
         setMessage(
-          "原操作索引无法安全读取，暂时不能提交；请保留本页并联系维护者。",
+          "无法读取之前的操作记录，暂时不能提交。请保留此页并联系管理员。",
         );
       }
     });
@@ -103,7 +103,7 @@ export function useAccountOperation(session: StudioSessionDto, scope: string) {
       if (sessionStorage.getItem(key) !== raw) throw Error();
     } catch {
       setReady(false);
-      setMessage("无法保存原操作索引，未发送请求。");
+      setMessage("无法保留本次操作记录，尚未提交。请保留此页并联系管理员。");
       return;
     }
     locked.current = true;
@@ -112,7 +112,7 @@ export function useAccountOperation(session: StudioSessionDto, scope: string) {
     setDefinite(false);
     setReceipt(undefined);
     setMutation(undefined);
-    setMessage("正在提交，请等待原操作结果…");
+    setMessage("正在提交，请等待结果…");
     try {
       const value = await studioFetch<AccountMutationDto | AccountOperationDto>(
         path,
@@ -134,8 +134,8 @@ export function useAccountOperation(session: StudioSessionDto, scope: string) {
       if ("operation" in value) setMutation(value);
       setMessage(
         operation.status === "completed"
-          ? "服务器已确认原操作完成。"
-          : "服务器已确认原操作被拒绝。",
+          ? "操作已完成。"
+          : "操作未完成，请检查提示后再处理。",
       );
       return value;
     } catch (error) {
@@ -168,7 +168,7 @@ export function useAccountOperation(session: StudioSessionDto, scope: string) {
     const epoch = captureStudioEpoch();
     locked.current = true;
     setBusy(true);
-    setMessage("正在查询原操作，不会重发…");
+    setMessage("正在核实上次操作，请稍候…");
     try {
       const result = await studioFetch<AccountOperationResultDto>(
         `/api/studio/accounts/operations/${encodeURIComponent(pending.operationId)}`,
@@ -178,14 +178,14 @@ export function useAccountOperation(session: StudioSessionDto, scope: string) {
       if (result.status === "found") {
         matches(result.operation, pending);
         setReceipt(result.operation);
-        setMessage("已取得原操作回执。原始设置链接不能从回执重新取得。");
+        setMessage("已核实原操作，请查看处理结果。");
       } else {
         if (
           result.status !== "unknown" ||
           result.operationId !== pending.operationId
         )
           throw Error();
-        setMessage("尚未取得原操作回执，继续保留 UNKNOWN，不推断未执行。");
+        setMessage("结果待确认，请先核实，勿重复提交。");
       }
     } catch (error) {
       setMessage(studioMessage(error));
@@ -201,7 +201,7 @@ export function useAccountOperation(session: StudioSessionDto, scope: string) {
       if (sessionStorage.getItem(key) !== null) throw Error();
     } catch {
       setReady(false);
-      setMessage("无法确认原索引已移除，请保留现场。");
+      setMessage("暂时无法结束本次记录，请保留此页并联系管理员。");
       return;
     }
     setPending(undefined);

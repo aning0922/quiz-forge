@@ -30,7 +30,7 @@ export function AccountOperationPanel({
           <p>原操作编号：{operation.pending.operationId}</p>
           {operation.receipt && (
             <p>
-              原回执：
+              处理结果：
               {operation.receipt.status === "completed" ? "已完成" : "已拒绝"}
               {operation.receipt.errorCode
                 ? ` · ${operation.receipt.errorCode}`
@@ -40,10 +40,10 @@ export function AccountOperationPanel({
           {link && (
             <div className={styles.secret} data-private-setup-link>
               <p>
-                一次性设置入口仅在本次确认响应中提供。请私下交给本人，不要保存到公开文档或截图。
+                设置链接只显示一次。请妥善保存并私下发送给本人，勿公开分享或截图。
               </p>
               <input
-                aria-label="一次性设置入口"
+                aria-label="密码设置链接"
                 readOnly
                 type={revealed ? "text" : "password"}
                 value={link.url}
@@ -55,7 +55,7 @@ export function AccountOperationPanel({
                   className={styles.secondary}
                   onClick={() => setRevealed((v) => !v)}
                 >
-                  {revealed ? "隐藏入口" : "显示入口"}
+                  {revealed ? "隐藏链接" : "显示链接"}
                 </button>
                 <button
                   type="button"
@@ -66,17 +66,17 @@ export function AccountOperationPanel({
                         setCopyMessage("已复制，请妥善交付并确认保存。"),
                       )
                       .catch(() =>
-                        setCopyMessage("复制失败，请显示入口后手动保存。"),
+                        setCopyMessage("复制失败，请显示链接后手动保存。"),
                       )
                   }
                 >
-                  复制一次性入口
+                  复制设置链接
                 </button>
               </div>
               {copyMessage && <p role="status">{copyMessage}</p>}
               <p>
                 有效至 {new Date(link.expiresAt).toLocaleString("zh-CN")}
-                。本人完成设置后已有登录才全部失效；立即阻断访问请使用停用或撤销会话。
+                。本人改好密码后会退出全部登录。如需立即停止使用账号，请先停用账号或撤销全部登录。
               </p>
               <label>
                 <input
@@ -84,7 +84,7 @@ export function AccountOperationPanel({
                   checked={saved}
                   onChange={(event) => setSaved(event.target.checked)}
                 />
-                我已妥善保存或交付该入口
+                我已妥善保存或发送设置链接
               </label>
             </div>
           )}
@@ -121,7 +121,7 @@ export function AccountOperationPanel({
               operation.receipt.action,
             ) && (
               <p>
-                已确认签发，但原始入口不在本页。结束原记录后，可明确重新签发；旧入口届时作废。
+                原操作已完成，但本页无法再次显示设置链接。结束本次记录后，可重新发送；以前的设置链接将失效。
               </p>
             )}
         </section>

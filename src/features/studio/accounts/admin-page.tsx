@@ -36,8 +36,8 @@ const actionLabel: Record<string, string> = {
   role: "修改角色",
   disable: "停用账号",
   restore: "恢复账号",
-  "issue-setup": "重新签发设置入口",
-  "issue-reset": "签发重置入口",
+  "issue-setup": "重新发送设置链接",
+  "issue-reset": "发送密码重置链接",
   "revoke-sessions": "撤销全部登录",
 };
 export function AccountsPage({
@@ -208,9 +208,7 @@ export function AccountsPage({
       <header className={styles.header}>
         <div>
           <h1>账号与权限</h1>
-          <p>
-            登录账号固定，显示名称可修改。待设置的管理员不能替代已可登录管理员。
-          </p>
+          <p>开通人员账号、分配角色、停用账号或帮助恢复密码。</p>
         </div>
         <div className={styles.actions}>
           <Link href="/studio/accounts/audit">账号操作记录</Link>
@@ -362,8 +360,7 @@ export function AccountsPage({
           {selected && (
             <p>
               目标：{selected.displayName} ·{" "}
-              {selected.loginName ?? "尚未配置登录账号"} · 信息版本{" "}
-              {selected.revision}
+              {selected.loginName ?? "尚未配置登录账号"}
             </p>
           )}
           <form
@@ -438,8 +435,12 @@ export function AccountsPage({
                   onChange={(event) => setConfirmation(event.target.checked)}
                 />
                 {mode === "issue-reset" || mode === "issue-setup"
-                  ? "确认重新签发：旧入口作废，本人完成设置后已有登录才全部失效。"
-                  : "确认影响当前账号权限或登录；服务端将再次校验最后管理员和当前版本。"}
+                  ? "确认重新发送设置链接：以前的设置链接将失效，本人改完密码后会退出全部登录。"
+                  : mode === "role"
+                    ? "确认调整角色：修改后需重新登录，至少保留一位可登录管理员。"
+                    : mode === "disable"
+                      ? "确认停用账号：该账号将无法登录，已登录人员也会退出。"
+                      : "确认退出该账号的全部登录：继续使用时需重新登录。"}
               </label>
             )}
             <button disabled={operation.blocked}>

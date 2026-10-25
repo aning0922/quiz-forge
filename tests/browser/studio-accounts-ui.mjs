@@ -142,9 +142,7 @@ try {
     results.push(name);
   }
   await open("login");
-  await expect(
-    page.getByText("登录验证已准备，请输入登录账号和密码。"),
-  ).toBeVisible();
+  await expect(page.getByText("请输入登录账号和密码。")).toBeVisible();
   const password = page.getByLabel("密码", { exact: true });
   await expect(password).toHaveAttribute("autocomplete", "current-password");
   await password.fill("synthetic long passphrase");
@@ -178,7 +176,7 @@ try {
   await page.getByLabel("登录账号（创建后不可修改）").fill("synthetic.new");
   await page.getByLabel("显示名称", { exact: true }).fill("合成新运营");
   await page.getByRole("button", { name: "确认开通账号", exact: true }).click();
-  await expect(page.getByLabel("一次性设置入口")).toBeVisible();
+  await expect(page.getByLabel("密码设置链接")).toBeVisible();
   expect(
     await page.evaluate(() =>
       Object.keys(sessionStorage)
@@ -189,9 +187,9 @@ try {
   await expect(
     page.getByRole("button", { name: "明确结束本次记录" }),
   ).toBeDisabled();
-  await page.getByText("我已妥善保存或交付该入口").click();
+  await page.getByText("我已妥善保存或发送设置链接").click();
   await page.getByRole("button", { name: "明确结束本次记录" }).click();
-  await expect(page.getByLabel("一次性设置入口")).toHaveCount(0);
+  await expect(page.getByLabel("密码设置链接")).toHaveCount(0);
   results.push("one-off-link-never-persisted");
   await open("accounts", "&unknown=1");
   await page.getByRole("button", { name: "开通账号", exact: true }).click();
@@ -204,7 +202,7 @@ try {
   ).toBeDisabled();
   await page.getByRole("button", { name: "核实原操作", exact: true }).click();
   await expect(
-    page.getByText("尚未取得原操作回执，继续保留 UNKNOWN，不推断未执行。"),
+    page.getByText("结果待确认，请先核实，勿重复提交。"),
   ).toBeVisible();
   expect(
     await page.evaluate(
@@ -218,10 +216,8 @@ try {
     window.resultFound = true;
   });
   await page.getByRole("button", { name: "核实原操作", exact: true }).click();
-  await expect(
-    page.getByText("已取得原操作回执。原始设置链接不能从回执重新取得。"),
-  ).toBeVisible();
-  await expect(page.getByLabel("一次性设置入口")).toHaveCount(0);
+  await expect(page.getByText("已核实原操作，请查看处理结果。")).toBeVisible();
+  await expect(page.getByLabel("密码设置链接")).toHaveCount(0);
   await page.getByRole("button", { name: "明确结束本次记录" }).click();
   results.push("unknown-original-only-no-replay");
   await open("self", "&role=read-only");
@@ -264,13 +260,11 @@ try {
       },
     };
   });
-  await page.getByRole("button", { name: "核对当前登录与服务器状态" }).click();
+  await page.getByRole("button", { name: "核对当前登录与账号状态" }).click();
   await expect(
-    page.getByText("当前浏览器登录的是其他账号。", { exact: false }),
+    page.getByText("当前登录的是其他账号。", { exact: false }),
   ).toBeVisible();
-  await expect(
-    page.getByRole("button", { name: "明确恢复原任务" }),
-  ).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "继续原任务" })).toHaveCount(0);
   await page.evaluate(() => {
     window.currentSession = {
       ...window.currentSession,
@@ -281,13 +275,13 @@ try {
       },
     };
   });
-  await page.getByRole("button", { name: "核对当前登录与服务器状态" }).click();
+  await page.getByRole("button", { name: "核对当前登录与账号状态" }).click();
   await page
     .getByRole("checkbox", {
-      name: "我已核对原账号和当前状态；恢复后先读取原操作结果，不自动重发",
+      name: "我已核对账号与操作状态，继续后先核实待确认结果",
     })
     .check();
-  await page.getByRole("button", { name: "明确恢复原任务" }).click();
+  await page.getByRole("button", { name: "继续原任务" }).click();
   await expect
     .poll(() =>
       page.evaluate(
@@ -352,7 +346,7 @@ try {
   await page
     .getByRole("button", { name: "核实原设置结果", exact: true })
     .click();
-  await expect(page.getByText("原操作回执确认设置完成。")).toBeVisible();
+  await expect(page.getByText("已核实上次操作：密码设置成功。")).toBeVisible();
   expect(
     await page.evaluate(() =>
       window.calls.some(
@@ -372,9 +366,7 @@ try {
       "&tokenId=00000000-0000-4000-8000-000000000099",
   );
   await expect(
-    page.getByText(
-      "入口索引与服务器核实的目标不一致，已停止操作并保留原记录。",
-    ),
+    page.getByText("设置链接与账号信息不一致，已停止操作。请联系管理员核实。"),
   ).toBeVisible();
   await expect(
     page.getByRole("button", { name: "确认设置密码", exact: true }),

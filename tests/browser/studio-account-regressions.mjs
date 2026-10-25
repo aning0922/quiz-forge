@@ -151,15 +151,13 @@ try {
     });
   }
   async function recover() {
-    await page
-      .getByRole("button", { name: "核对当前登录与服务器状态" })
-      .click();
+    await page.getByRole("button", { name: "核对当前登录与账号状态" }).click();
     await page
       .getByRole("checkbox", {
-        name: "我已核对原账号和当前状态；恢复后先读取原操作结果，不自动重发",
+        name: "我已核对账号与操作状态，继续后先核实待确认结果",
       })
       .check();
-    await page.getByRole("button", { name: "明确恢复原任务" }).click();
+    await page.getByRole("button", { name: "继续原任务" }).click();
     await expect(page.getByTestId("owner")).toHaveAttribute(
       "data-revoked",
       "false",
@@ -275,7 +273,7 @@ try {
     ).toBeVisible();
     await page.getByRole("button", { name: "核实原操作", exact: true }).click();
     await expect(
-      page.getByText("已取得原操作回执。原始设置链接不能从回执重新取得。"),
+      page.getByText("已核实原操作，请查看处理结果。"),
     ).toBeVisible();
     await page.getByRole("button", { name: "明确结束本次记录" }).click();
     expect(
@@ -418,12 +416,10 @@ try {
     }
     await setPassword();
     await expect(
-      page.getByRole("button", { name: "明确结束已拒绝记录并重新核对入口" }),
+      page.getByRole("button", { name: "结束本次记录并重新设置" }),
     ).toBeVisible();
     expect(await page.evaluate(() => window.operationIds.length)).toBe(1);
-    await page
-      .getByRole("button", { name: "明确结束已拒绝记录并重新核对入口" })
-      .click();
+    await page.getByRole("button", { name: "结束本次记录并重新设置" }).click();
     await expect(
       page.getByRole("button", { name: "确认设置密码", exact: true }),
     ).toBeEnabled();
@@ -443,7 +439,7 @@ try {
       page.getByText("原操作编号：", { exact: false }),
     ).toBeVisible();
     await expect(
-      page.getByRole("button", { name: "明确结束已拒绝记录并重新核对入口" }),
+      page.getByRole("button", { name: "结束本次记录并重新设置" }),
     ).toHaveCount(0);
     expect(await page.evaluate(() => window.operationIds.length)).toBe(2);
     results.push(
