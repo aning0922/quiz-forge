@@ -4,6 +4,7 @@ import type {
   AccountOperationDto,
   AccountOperationResultDto,
   PasswordSetupInspectionDto,
+  PasswordSetupInput,
 } from "./contracts";
 async function setupPost<T>(
   path: string,
@@ -30,7 +31,10 @@ export const setupAdapter = {
     setupPost<AccountOperationDto>(
       "",
       token,
-      { operationId, newPassword },
+      { operationId, password: newPassword } satisfies Omit<
+        PasswordSetupInput,
+        "token"
+      >,
       true,
     ),
   result: (token: string, operationId: string) =>

@@ -32,6 +32,7 @@
     "test:db:media-unknown": "QUIZFORGE_DB_SERVICE_SUITE=media-unknown vitest run --config vitest.service-db.config.ts",
     "p2a:db": "node --conditions=react-server --import tsx scripts/p2a-db.ts",
     "p2a:operator": "node --conditions=react-server --import tsx scripts/p2a-operator.ts",
+    "studio:accounts": "TSX_TSCONFIG_PATH=./tsconfig.json node --conditions=react-server --import tsx scripts/studio-accounts.ts",
     "p2a:db:ci": "node --conditions=react-server --import tsx scripts/p2a-db-ci.ts",
     "test:driver": "node --conditions=react-server --import tsx scripts/test-postgres-disconnect.ts",
     "media:build": "TSX_TSCONFIG_PATH=./tsconfig.json node --conditions=react-server --import tsx scripts/quizpack-media-build.ts",

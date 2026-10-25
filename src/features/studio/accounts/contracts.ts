@@ -97,6 +97,12 @@ export type CreateAccountInput = {
   role: StudioRole;
 };
 
+export type PasswordSetupInput = {
+  token: string;
+  operationId: string;
+  password: string;
+};
+
 export type AccountChangeInput = {
   operationId: string;
   expectedRevision: number;
