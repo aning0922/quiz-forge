@@ -455,7 +455,7 @@ export async function p4Fixture(
       }
       // Full graph proof precedes the FIRST delete, including fixture-owned ledgers. Unknown rows are retained.
       if (
-        JSON.stringify(await readP4OldGraph(lock.connection)) !==
+        JSON.stringify(await lock.query(() => readP4OldGraph(db.admin.sql))) !==
         JSON.stringify(expectedOldGraph)
       )
         throw Error("P4_TEST_OLD_GRAPH_CHANGED");
