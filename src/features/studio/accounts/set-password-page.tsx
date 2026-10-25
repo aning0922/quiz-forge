@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useStudioLeaveProtection } from "../navigation-boundary";
 import { StudioClientError, studioMessage } from "../client";
 import { PasswordField } from "./password-field";
-import { passwordProblem } from "./presentation";
+import { isSetupReceipt, passwordProblem } from "./presentation";
 import { setupAdapter } from "./setup-adapter";
 import type {
   PasswordSetupInspectionDto,
@@ -145,8 +145,7 @@ export function SetPasswordPage() {
     lock.current = true;
     try {
       const value = await setupAdapter.submit(token.current, id, secret);
-      if (value.operationId !== id || value.action !== "password-setup")
-        throw Error();
+      if (!isSetupReceipt(value, id)) throw Error();
       setReceipt(value);
       setMessage(
         value.status === "completed"
@@ -172,8 +171,7 @@ export function SetPasswordPage() {
       const result = await setupAdapter.result(token.current, operationId);
       if (
         result.status === "found" &&
-        result.operation.operationId === operationId &&
-        result.operation.action === "password-setup"
+        isSetupReceipt(result.operation, operationId)
       ) {
         setReceipt(result.operation);
         setMessage(

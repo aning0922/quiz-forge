@@ -36,3 +36,29 @@ export const accountActionLabel = (
     enroll: "登记旧账号",
     "admin-recovery": "恢复管理员",
   })[action];
+
+/** A typed JSON assertion is not a final receipt; keep UNKNOWN on malformed proof. */
+export function isSetupReceipt(
+  value: unknown,
+  operationId: string,
+): value is import("./contracts").AccountOperationDto {
+  if (!value || typeof value !== "object") return false;
+  const item = value as Record<string, unknown>;
+  return (
+    item.operationId === operationId &&
+    item.action === "password-setup" &&
+    (item.actorId === null ||
+      (typeof item.actorId === "string" &&
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+          item.actorId,
+        ))) &&
+    typeof item.targetId === "string" &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+      item.targetId,
+    ) &&
+    (item.status === "completed" || item.status === "rejected") &&
+    (item.errorCode === null || typeof item.errorCode === "string") &&
+    typeof item.createdAt === "string" &&
+    Number.isFinite(Date.parse(item.createdAt))
+  );
+}

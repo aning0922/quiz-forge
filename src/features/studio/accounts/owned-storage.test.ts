@@ -4,7 +4,7 @@ import {
   hasUnownedPending,
   legacyPendingKeys,
 } from "./owned-storage";
-import { passwordProblem } from "./presentation";
+import { isSetupReceipt, passwordProblem } from "./presentation";
 
 describe("account-owned pending records", () => {
   it("retains exact tuple bytes and never adopts/deletes legacy or another account's bucket", () => {
@@ -52,4 +52,26 @@ it("checks NFC code points and byte bounds without trimming or truncation", () =
   expect(passwordProblem("😀".repeat(257))).not.toBeNull();
   expect(passwordProblem("x".repeat(14))).not.toBeNull();
   expect(passwordProblem("x".repeat(14) + "\ud800")).not.toBeNull();
+});
+
+it("only a finite matching bearer setup receipt may end UNKNOWN", () => {
+  const id = "00000000-0000-4000-8000-000000000001";
+  const receipt = {
+    operationId: id,
+    action: "password-setup",
+    actorId: null,
+    targetId: id,
+    status: "completed",
+    errorCode: null,
+    createdAt: "2026-10-25T00:00:00.000Z",
+  };
+  expect(isSetupReceipt(receipt, id)).toBe(true);
+  for (const changed of [
+    { status: "unknown" },
+    { actorId: "invalid" },
+    { operationId: "different" },
+    { targetId: "" },
+    { createdAt: "invalid" },
+  ])
+    expect(isSetupReceipt({ ...receipt, ...changed }, id)).toBe(false);
 });
