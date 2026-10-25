@@ -44,6 +44,7 @@ export type RecoveryAuthenticationRevocation = Readonly<{
   accounts: number;
   sessions: number;
   passwordTokens: number;
+  kdfAttempts: number;
 }>;
 
 export type RecoveryRestoreResult = Readonly<{

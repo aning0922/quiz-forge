@@ -34,7 +34,12 @@ function service() {
       manifestSha256: sha,
       sourceDatabaseGraphSha256: sha,
       databaseGraphSha256: sha,
-      authenticationRevocation: { accounts: 1, sessions: 2, passwordTokens: 1 },
+      authenticationRevocation: {
+        accounts: 1,
+        sessions: 2,
+        passwordTokens: 1,
+        kdfAttempts: 1,
+      },
       storageSha256: sha,
       status: "verified-stopped",
     }),

@@ -222,6 +222,7 @@ export const restoreManagedRecoveryData: RestoreManagedRecoveryData = async (
       "qf.operator",
       "qf.operator_session",
       "qf.operator_password_token",
+      "qf.operator_kdf_attempt",
     ]);
     if (
       finalDatabase.tables.some(

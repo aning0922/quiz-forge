@@ -58,13 +58,13 @@ KDF 在数据库锁外运行；每进程最多 2 个执行、8 个排队，排�
 
 成功消费 token 的同一事务：核对当前 token/预约/目标状态与版本 → 存储新 PHC → 首次切换时清空旧 credential_digest（bootstrap-admin 此时才升为 admin）→ 递增 revision → 消费/撤销 token → 撤销目标全部旧 session → 写审计及原操作回执。不自动登录，随后使用账号密码登录。不能因超时、过期或 UNKNOWN 猜测切换已完成。
 
-设置入口 `/studio/set-password#token=...`；token 只经 fragment 进入客户端，读取后从地址栏移除并只留在当前内存，不能写 localStorage/sessionStorage、日志或截图。该页及接口 no-store、no-referrer，不嵌入第三方资源。
+新设置入口 `/studio/set-password#token=...&tokenId=...`；tokenId 仅为不可信的非敏感恢复索引，不参与授权。客户端可在 inspect 拒绝已消费 token 时，用该精确索引恢复原 operationId 并调用只读 result；首次 inspect 成功时核对该索引一致。旧无 tokenId 链接仍支持首次正常 inspect。token 只经 fragment 进入客户端，读取后从地址栏移除并只留在当前内存，不能写 localStorage/sessionStorage、日志或截图。该页及接口 no-store、no-referrer，不嵌入第三方资源。
 
 设置/重置接口以一次性 token 为限定 bearer 权限，忽略当前正常 session 作为授权来源；仍执行严格来源、JSON 大小/期限检查，CSRF 值从该专用 token 按独立域派生。不得将该能力转成普通后台身份。它不要求退出当前浏览器的其他账号，也不清除无关账号 Cookie；成功后给出重新登录/使用独立窗口的明确指引。
 
 本人修改密码必须验证当前密码；PHC 计算在锁外，最终锁内复核账号/session/预约和 revision。成功撤销全部登录并要求重新登录。密码值、快速密码摘要、PHC 都不能进入浏览器 pending storage、操作回执或审计。
 
-所有 KDF 入口（密码登录、setup/reset/bootstrap/recovery、本人改密）共享数据库 20 次预约/滚动 60 秒预算，先取得有界本地容量、再在认证锁内计入预约后才计算；既有登录失败 10 次/60 秒限额保留。本人当前密码验证另按目标账号最多 5 次预约/60 秒计费，包含在途和失败，不能以多 session 绕过。token 同时只能有一个未到期计算预约。所有预约均为 30 秒，绑定 attemptId、用途、目标 revision，以及该入口的 preauth/session/token 身份；写入类还绑定 operationId。锁外计算结束后只允许原预约在当前时间和版本下完成；过期、重签、撤销、角色/状态变化后不得复用计算结果。预算及拒绝记录有界，不能只依赖进程内 semaphore。
+所有 KDF 入口（密码登录、setup/reset/bootstrap/recovery、本人改密）通过独立 `operator_kdf_attempt` 表共享数据库 20 个计算单位/滚动 60 秒预算；改密占两个单位，其他占一个，先取得有界本地容量、再在认证锁内计入预约后才计算；既有登录失败 10 次/60 秒限额保留。本人当前密码验证另按目标账号最多 5 次预约/60 秒计费，包含在途和失败，不能以多 session 绕过。token 同时只能有一个未到期计算预约。所有预约均为 30 秒，绑定 attemptId、用途、目标 revision，以及该入口的 preauth/session/token 身份；写入类还绑定 operationId。锁外计算结束后只允许原预约在当前时间和版本下完成；过期、重签、撤销、角色/状态变化后不得复用计算结果。预算及拒绝记录有界，不能只依赖进程内 semaphore。
 
 ## 5. 管理操作、UNKNOWN 与审计
 
@@ -82,15 +82,15 @@ token 的写校验与结果读取分开：写入口始终拒绝已消费、撤�
 
 ## 6. 最小数据库权限与迁移
 
-0019 仅增加 admin/必要审计枚举，提交后 0020 增加账号列、token/operation 表、约束和有限函数。旧迁移 checksum 不变。保留旧 operator ID/label/记录，既有 credential 值和 session 不在迁移时批量撤销；部分迁移状态 fail closed。
+0019 仅增加 admin/必要审计枚举，提交后 0020 增加账号列、token/operation/KDF 预约三表、约束和有限函数。旧迁移 checksum 不变。保留旧 operator ID/label/记录，既有 credential 值和 session 不在迁移时批量撤销；部分迁移状态 fail closed。
 
-app 不获得 operator/token/operation 表直接 INSERT/UPDATE/DELETE，也不使用 maintenance 连接。采用固定动作、字段白名单的有限 SECURITY DEFINER 函数：固定 owner、`search_path=pg_catalog`、完整限定对象名、撤销 PUBLIC EXECUTE、仅显式授权所需函数。函数以 session/preauth/token 摘要验证数据库中的当前主体，不接受调用方自报角色或 actor ID 作为授权。密码读取经有限验证预约函数，不将 PHC 加入安全 DTO。
+app 不获得 operator/token/operation/KDF 预约表直接 INSERT/UPDATE/DELETE，也不使用 maintenance 连接。采用固定动作、字段白名单的有限 SECURITY DEFINER 函数：固定 owner、`search_path=pg_catalog`、完整限定对象名、撤销 PUBLIC EXECUTE、仅显式授权所需函数。函数以 session/preauth/token 摘要验证数据库中的当前主体，不接受调用方自报角色或 actor ID 作为授权。密码读取经有限验证预约函数，不将 PHC 加入安全 DTO。
 
 新增函数、列、类型和 ACL 纳入精确 catalog/schema 校验；不笼统允许任意 definer 或放宽旧断言。旧数据服务/消费者合同校验保留。
 
-R1 的封闭迁移/表/TOC/catalog 清单必须包含新账号 schema，不能漏掉 token/回执或假称旧恢复证据覆盖新 schema。主控负责有限适配与一个受影响的隔离恢复证明。manifest 的 v1 外框保留，数据库描述只读识别旧 18 迁移/23 表、新 20 迁移/25 表两个准确组合，混搭或部分迁移拒绝；旧备份可核完整性，但恢复仍要求 source.codeSha256 与运行工具准确相同，必须使用其原匹配工具，不自动跨版本恢复或升级真实环境。
+R1 的封闭迁移/表/TOC/catalog 清单必须包含新账号 schema，不能漏掉 token/回执或假称旧恢复证据覆盖新 schema。主控负责有限适配与一个受影响的隔离恢复证明。manifest 的 v1 外框保留，数据库描述只读识别旧 18 迁移/23 表、新 20 迁移/26 表两个准确组合，混搭或部分迁移拒绝；旧备份可核完整性，但恢复仍要求 source.codeSha256 与运行工具准确相同，必须使用其原匹配工具，不自动跨版本恢复或升级真实环境。
 
-新目标先与源备份做完整表/资源等值验证，再在认证锁事务中递增全部账号 revision，撤销所有 Studio session（包括 preauth）和未消费 token；保留密码 PHC、账号 ID、历史归属及消费者记录。明确提交后重新读取目标证据，逐表核对除上述三表外的所有数据仍不变。结果与私有回执分别记录 sourceDatabaseGraphSha256、撤销后的 databaseGraphSha256 和实际撤销计数。提交不明、重读失败或进程关闭未证明均保留 recovery-pending，不重试、不启动；只有全部完成才写 verified-stopped。该有限顺序已于 2026-10-25 独审放行，实现证据另行验收。
+新目标先与源备份做完整表/资源等值验证，再在认证锁事务中递增全部账号 revision，撤销所有 Studio session（包括 preauth）和未消费 token，并结束旧 KDF 预约；保留密码 PHC、账号 ID、历史归属及消费者记录。明确提交后重新读取目标证据，逐表核对除上述四表外的所有数据仍不变。结果与私有回执分别记录 sourceDatabaseGraphSha256、撤销后的 databaseGraphSha256 和实际撤销计数。提交不明、重读失败或进程关闭未证明均保留 recovery-pending，不重试、不启动；只有全部完成才写 verified-stopped。该有限顺序已于 2026-10-25 独审放行，实现证据另行验收。
 
 ## 7. 最小接口与页面接线
 

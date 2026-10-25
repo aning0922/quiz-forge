@@ -47,6 +47,7 @@ export const RECOVERY_TABLES = [
     (name) => name < "qf.operator_account_operation",
   ),
   "qf.operator_account_operation",
+  "qf.operator_kdf_attempt",
   "qf.operator_password_token",
   ...LEGACY_RECOVERY_TABLES.filter(
     (name) => name >= "qf.operator_account_operation",

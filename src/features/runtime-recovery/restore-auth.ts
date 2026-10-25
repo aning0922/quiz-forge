@@ -23,12 +23,22 @@ export async function invalidateRestoredStudioAuthority(
   const tokens = await sql`
     UPDATE qf.operator_password_token SET revoked_at=clock_timestamp()
     WHERE revoked_at IS NULL AND consumed_at IS NULL`;
-  const [remaining] = await sql<{ sessions: number; tokens: number }[]>`
+  const attempts = await sql`
+    UPDATE qf.operator_kdf_attempt SET finished_at=clock_timestamp()
+    WHERE finished_at IS NULL`;
+  const [remaining] = await sql<
+    { sessions: number; tokens: number; attempts: number }[]
+  >`
     SELECT
       (SELECT count(*)::int FROM qf.operator_session WHERE revoked_at IS NULL) sessions,
       (SELECT count(*)::int FROM qf.operator_password_token
-        WHERE revoked_at IS NULL AND consumed_at IS NULL) tokens`;
-  if (remaining?.sessions !== 0 || remaining.tokens !== 0)
+        WHERE revoked_at IS NULL AND consumed_at IS NULL) tokens,
+      (SELECT count(*)::int FROM qf.operator_kdf_attempt WHERE finished_at IS NULL) attempts`;
+  if (
+    remaining?.sessions !== 0 ||
+    remaining.tokens !== 0 ||
+    remaining.attempts !== 0
+  )
     throw new RecoveryError("RECOVERY_INTEGRITY_FAILED");
   checkRecoveryBudget(budget);
   // No retry: a failed/unknown COMMIT leaves the caller's recovery-pending guard intact.
@@ -37,5 +47,6 @@ export async function invalidateRestoredStudioAuthority(
     accounts: accounts.count,
     sessions: sessions.count,
     passwordTokens: tokens.count,
+    kdfAttempts: attempts.count,
   };
 }

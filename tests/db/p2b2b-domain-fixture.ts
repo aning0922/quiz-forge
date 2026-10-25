@@ -35,6 +35,7 @@ import type {
 } from "@/features/quizpack/validation/transactions-contract";
 import {
   authenticateTestOperator,
+  withEmptyAccountFixtureScope,
   safeTestOperation as safe,
   type TestDatabase,
 } from "./p2a-fixture";
@@ -400,9 +401,11 @@ export async function resetDomainDatabase(db: TestDatabase) {
       throw new Error("TEST_DOMAIN_SYNTHETIC_OWNER_REQUIRED");
     await lock.check();
     await safe(() =>
-      db.admin.sql.unsafe(
-        `TRUNCATE ${ledgerSchema.consumer ? "qf.quiz_report,qf.consumer_grant,qf.consumer_session,qf.access_key,qf.internal_play_version," : ""}${ledgerSchema.reviews ? "qf.product_version,qf.draft_review," : ""}qf.draft_application,qf.draft_revision,qf.product_draft,qf.product_asset,qf.asset_blob,qf.quizpack_validation,qf.quizpack_import,qf.product_tag,qf.product,qf.category,qf.tag,qf.operator_session,qf.audit_event,qf.operator`,
-      ),
+      withEmptyAccountFixtureScope(db, async (tx, accounts) => {
+        await tx.unsafe(
+          `TRUNCATE ${accounts ? "qf.operator_account_operation,qf.operator_password_token,qf.operator_kdf_attempt," : ""}${ledgerSchema.consumer ? "qf.quiz_report,qf.consumer_grant,qf.consumer_session,qf.access_key,qf.internal_play_version," : ""}${ledgerSchema.reviews ? "qf.product_version,qf.draft_review," : ""}qf.draft_application,qf.draft_revision,qf.product_draft,qf.product_asset,qf.asset_blob,qf.quizpack_validation,qf.quizpack_import,qf.product_tag,qf.product,qf.category,qf.tag,qf.operator_session,qf.audit_event,qf.operator`,
+        );
+      }),
     );
   } finally {
     await lock.close();

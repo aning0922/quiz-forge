@@ -2,7 +2,7 @@
 
 2026-10-21。状态：本地技术验收完成，实际实现、非空恢复和独立审查见 [R1_ACCEPTANCE.md](R1_ACCEPTANCE.md)；最终交付提交的准确 CI 记录在 Draft PR #22。
 
-2026-10-25 账号首版适配：下文 18 迁移/23 表、catalog 指纹和验收矩阵保留为原 R1 历史合同；新 20 迁移/25 表的精确清单、恢复后 Studio 会话/token 撤销、双 graph 回执及有限兼容规则见 [STUDIO_ACCOUNTS_V1.md](STUDIO_ACCOUNTS_V1.md)。新工具不自动升级旧备份或真实环境，也不复用旧证据宣称新 schema 已验收。
+2026-10-25 账号首版适配：下文 18 迁移/23 表、catalog 指纹和验收矩阵保留为原 R1 历史合同；新 20 迁移/26 表的精确清单、恢复后 Studio 会话/token 撤销、双 graph 回执及有限兼容规则见 [STUDIO_ACCOUNTS_V1.md](STUDIO_ACCOUNTS_V1.md)。新工具不自动升级旧备份或真实环境，也不复用旧证据宣称新 schema 已验收。
 
 ## 范围与基线
 
