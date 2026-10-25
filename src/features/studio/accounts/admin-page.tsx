@@ -1,7 +1,18 @@
 "use client";
-import { useOwnedStudioSession } from "./session-owner";
-import { useEffect, useRef, useState } from "react";
+
+import { useState } from "react";
 import Link from "next/link";
+import {
+  ChevronRight,
+  KeyRound,
+  LockKeyhole,
+  LogOut,
+  Pencil,
+  Plus,
+  Search,
+  ShieldCheck,
+  UserRoundCheck,
+} from "lucide-react";
 import type { StudioSessionDto } from "../contracts";
 import {
   roleHasCapability,
@@ -12,34 +23,85 @@ import { useWorkspaceRead } from "../workspace/use-request";
 import { useStudioLeaveProtection } from "../navigation-boundary";
 import { invalidateStudioAuthority } from "../authority-events";
 import type { AccountDto, AccountListDto, AccountAction } from "./contracts";
+import { useOwnedStudioSession } from "./session-owner";
 import { useAccountOperation } from "./use-operation";
 import { AccountOperationPanel } from "./operation-panel";
+import { AccountOverlay, RoleBadge, StatusBadge } from "./account-ui";
+import {
+  AccountSummary,
+  AccountPerson,
+  PeopleList,
+  accountDate,
+} from "./people-list";
 import { roleLabel } from "./presentation";
-import styles from "./accounts.module.css";
-const statusLabel = {
-  pending: "待本人设置密码",
-  active: "可登录",
-  disabled: "已停用",
-};
-const actions = [
-  "display-name",
-  "role",
-  "disable",
-  "restore",
-  "issue-setup",
-  "issue-reset",
-  "revoke-sessions",
-] as const;
-const actionLabel: Record<string, string> = {
-  create: "开通账号",
-  "display-name": "修改显示名称",
-  role: "修改角色",
+import styles from "./experience.module.css";
+import local from "./people.module.css";
+
+type PersonAction = Extract<
+  AccountAction,
+  | "display-name"
+  | "role"
+  | "disable"
+  | "restore"
+  | "issue-setup"
+  | "issue-reset"
+  | "revoke-sessions"
+>;
+const actionLabels: Record<PersonAction, string> = {
+  "display-name": "编辑显示名称",
+  role: "调整角色",
   disable: "停用账号",
   restore: "恢复账号",
   "issue-setup": "重新发送设置链接",
   "issue-reset": "发送密码重置链接",
   "revoke-sessions": "撤销全部登录",
 };
+const actionIcons = {
+  "display-name": Pencil,
+  role: ShieldCheck,
+  disable: LockKeyhole,
+  restore: UserRoundCheck,
+  "issue-setup": KeyRound,
+  "issue-reset": KeyRound,
+  "revoke-sessions": LogOut,
+};
+const permissions: Record<StudioRole, string[]> = {
+  admin: [
+    "创建、编辑与导入测评，管理分类和标签",
+    "审核草稿、记录基线与封存内测版本",
+    "管理人员、角色与账号操作记录",
+    "发放与作废已有答题版本的访问码",
+  ],
+  operator: [
+    "创建、编辑与导入测评",
+    "管理草稿修订及内容",
+    "发放与作废已有答题版本的访问码",
+  ],
+  "read-only": ["查看已授权的测评、预览与版本", "管理自己的密码与登录状态"],
+};
+const actionDescriptions: Partial<Record<PersonAction, string>> = {
+  role: "修改角色后需重新登录。系统会检查并保留至少一位可登录管理员。",
+  disable: "停用后该账号无法登录，已有登录也会退出。恢复后可重新使用账号。",
+  restore: "恢复账号的使用资格。若尚未完成密码设置，仍需本人设置密码后登录。",
+  "issue-setup":
+    "生成新的设置链接，以前的设置链接将失效。链接只显示一次，请私下交付本人。",
+  "issue-reset":
+    "生成新的密码重置链接，以前的设置链接将失效。本人改好密码后会退出全部登录。",
+  "revoke-sessions":
+    "退出该账号当前的全部登录。账号仍可使用，继续操作时需重新登录。",
+};
+function personActions(account: AccountDto): PersonAction[] {
+  return [
+    "display-name",
+    "role",
+    ...(account.status === "disabled"
+      ? ["restore"]
+      : account.status === "pending"
+        ? ["issue-setup", "disable"]
+        : ["issue-reset", "revoke-sessions", "disable"]),
+  ] as PersonAction[];
+}
+
 export function AccountsPage({
   session: initialSession,
 }: {
@@ -47,107 +109,139 @@ export function AccountsPage({
 }) {
   const session = useOwnedStudioSession(initialSession);
   const canManage = roleHasCapability(session.operator.role, "account:manage");
-  const [search, setSearch] = useState(""),
-    [q, setQ] = useState(""),
-    [status, setStatus] = useState("all"),
-    [offset, setOffset] = useState(0);
+  const [search, setSearch] = useState("");
+  const [filterRole, setFilterRole] = useState("all"),
+    [filterStatus, setFilterStatus] = useState("all");
+  const [query, setQuery] = useState({
+    q: "",
+    role: "all",
+    status: "all",
+    offset: 0,
+  });
   const read = useWorkspaceRead<AccountListDto>(
     canManage
-      ? `/api/studio/accounts?${new URLSearchParams({ q, status, offset: String(offset), limit: "25" })}`
+      ? `/api/studio/accounts?${new URLSearchParams({ ...query, offset: String(query.offset), limit: "25" })}`
       : null,
   );
   const operation = useAccountOperation(session, "management");
-  const [selected, setSelected] = useState<AccountDto>(),
-    [mode, setMode] = useState<AccountAction>("create"),
-    [open, setOpen] = useState(false),
-    [taskActive, setTaskActive] = useState(false);
+  const [surface, setSurface] = useState<"create" | "person" | null>(null),
+    [open, setOpen] = useState(false);
+  const [selected, setSelected] = useState<AccountDto>();
+  const [mode, setMode] = useState<PersonAction | null>(null);
   const [loginName, setLoginName] = useState(""),
-    [displayName, setDisplayName] = useState(""),
-    [role, setRole] = useState<StudioRole>("operator"),
+    [displayName, setDisplayName] = useState("");
+  const [role, setRole] = useState<StudioRole>("operator"),
     [confirmation, setConfirmation] = useState(false);
-  const dialog = useRef<HTMLDialogElement>(null),
-    opener = useRef<HTMLElement | null>(null);
   const dirty =
-    taskActive &&
-    (mode === "create"
+    surface === "create"
       ? Boolean(loginName || displayName || role !== "operator")
       : mode === "display-name"
         ? displayName !== selected?.displayName
         : mode === "role"
           ? role !== selected?.role || confirmation
-          : confirmation);
-  useStudioLeaveProtection({
-    dirty,
-    pending: operation.busy || Boolean(operation.pending),
-  });
-  useEffect(() => {
-    if (open && !dialog.current?.open) dialog.current?.showModal();
-    if (!open && dialog.current?.open) dialog.current.close();
-  }, [open, canManage]);
-  function close() {
-    if (!operation.busy) {
-      setOpen(false);
-      opener.current?.focus();
-    }
+          : Boolean(mode && confirmation);
+  const pending = Boolean(operation.pending);
+  const link = operation.mutation?.passwordSetup;
+  const canClose = !operation.busy && !link;
+  useStudioLeaveProtection({ dirty, pending: operation.busy || pending });
+
+  function reset() {
+    setSurface(null);
+    setSelected(undefined);
+    setMode(null);
+    setLoginName("");
+    setDisplayName("");
+    setRole("operator");
+    setConfirmation(false);
   }
-  function launch(action: AccountAction, account?: AccountDto) {
-    opener.current = document.activeElement as HTMLElement;
+  function close() {
+    if (!canClose) return;
+    setOpen(false);
+    if (!pending && !dirty) reset();
+  }
+  function launch(next: "create" | "person", account?: AccountDto) {
+    if (pending || operation.busy) {
+      setOpen(true);
+      return;
+    }
     if (
-      operation.pending ||
-      (taskActive && mode === action && selected?.id === account?.id)
+      surface === next &&
+      (next === "create" || selected?.id === account?.id)
     ) {
       setOpen(true);
       return;
     }
     if (
-      taskActive &&
+      dirty &&
       !window.confirm(
         "放弃当前未提交的账号任务并开始新任务？当前输入将被清除。",
       )
     )
       return;
-    setMode(action);
+    reset();
+    setSurface(next);
     setSelected(account);
-    setLoginName("");
-    setDisplayName(account?.displayName ?? "");
-    setRole(account?.role ?? "operator");
-    setConfirmation(false);
-    setTaskActive(true);
     setOpen(true);
   }
-  function finishTask() {
-    setTaskActive(false);
-    close();
+  function chooseAction(action: PersonAction) {
+    if (operation.blocked || !selected || !canManage) return;
+    if (mode === action) return;
+    if (dirty && !window.confirm("放弃当前未提交的修改？当前输入将被清除。"))
+      return;
+    setMode(action);
+    setDisplayName(selected.displayName);
+    setRole(selected.role);
+    setConfirmation(false);
   }
   function discard() {
     if (
-      operation.pending ||
+      pending ||
       operation.busy ||
-      !window.confirm("放弃本次未提交任务？当前输入将被清除。")
+      (dirty && !window.confirm("放弃本次未提交任务？当前输入将被清除。"))
     )
       return;
-    setTaskActive(false);
-    setLoginName("");
-    setDisplayName("");
-    setRole("operator");
-    setConfirmation(false);
-    close();
+    if (surface === "person") {
+      setMode(null);
+      setConfirmation(false);
+    } else {
+      setOpen(false);
+      reset();
+    }
+  }
+  function finished() {
+    read.refresh();
+    if (surface === "person" && selected) {
+      setMode(null);
+      setConfirmation(false);
+    } else {
+      setOpen(false);
+      reset();
+    }
+  }
+  function applyQuery(
+    next = {
+      q: search.trim(),
+      role: filterRole,
+      status: filterStatus,
+      offset: 0,
+    },
+  ) {
+    if (JSON.stringify(query) === JSON.stringify(next)) read.refresh();
+    else setQuery(next);
   }
   async function submit() {
+    if (!canManage || operation.blocked) return;
     if (
-      !confirmation &&
-      [
-        "role",
-        "disable",
-        "issue-setup",
-        "issue-reset",
-        "revoke-sessions",
-      ].includes(mode)
+      surface !== "create" &&
+      (!selected ||
+        !mode ||
+        (mode !== "display-name" && mode !== "restore" && !confirmation))
     )
       return;
     const base = "/api/studio/accounts";
+    const action = surface === "create" ? "create" : mode!;
     const value =
-      mode === "create"
+      action === "create"
         ? await operation.submit(base, "POST", "create", null, {
             loginName,
             displayName,
@@ -155,223 +249,266 @@ export function AccountsPage({
           })
         : selected
           ? await operation.submit(
-              mode === "issue-setup" || mode === "issue-reset"
+              action === "issue-setup" || action === "issue-reset"
                 ? `${base}/${encodeURIComponent(selected.id)}/password-token`
-                : mode === "revoke-sessions"
+                : action === "revoke-sessions"
                   ? `${base}/${encodeURIComponent(selected.id)}/revoke-sessions`
                   : `${base}/${encodeURIComponent(selected.id)}`,
-              mode === "issue-setup" ||
-                mode === "issue-reset" ||
-                mode === "revoke-sessions"
+              action === "issue-setup" ||
+                action === "issue-reset" ||
+                action === "revoke-sessions"
                 ? "POST"
                 : "PATCH",
-              mode,
+              action,
               selected.id,
               {
                 expectedRevision: selected.revision,
-                ...(mode === "display-name"
-                  ? { action: mode, displayName }
-                  : mode === "role"
-                    ? { action: mode, role }
-                    : mode === "disable" || mode === "restore"
-                      ? { action: mode }
-                      : mode === "issue-setup" || mode === "issue-reset"
+                ...(action === "display-name"
+                  ? { action, displayName }
+                  : action === "role"
+                    ? { action, role }
+                    : action === "disable" || action === "restore"
+                      ? { action }
+                      : action === "issue-setup" || action === "issue-reset"
                         ? {
-                            purpose: mode === "issue-setup" ? "setup" : "reset",
+                            purpose:
+                              action === "issue-setup" ? "setup" : "reset",
                           }
                         : {}),
               },
             )
           : undefined;
-    if (value) {
-      read.refresh();
-      const op = "operation" in value ? value.operation : value;
-      if (
-        op.status === "completed" &&
-        op.targetId === session.operator.id &&
-        ["role", "disable", "revoke-sessions"].includes(mode)
-      )
-        invalidateStudioAuthority();
-    }
+    if (!value) return;
+    if ("account" in value) setSelected(value.account);
+    read.refresh();
+    const receipt = "operation" in value ? value.operation : value;
+    if (
+      receipt.status === "completed" &&
+      receipt.targetId === session.operator.id &&
+      ["role", "disable", "revoke-sessions"].includes(action)
+    )
+      invalidateStudioAuthority();
   }
-  if (!canManage)
-    return (
-      <div className={styles.page}>
-        <p role="alert">
-          当前身份不能管理账号。<Link href="/studio/session">前往我的账号</Link>
-        </p>
-        <AccountOperationPanel operation={operation} onFinished={finishTask} />
-      </div>
-    );
+  const disabled = operation.blocked || !canManage;
+  const roleField = (
+    <div className={styles.field}>
+      <label htmlFor="account-role">
+        {surface === "create" ? "初始角色" : "角色"}
+      </label>
+      <select
+        id="account-role"
+        value={role}
+        disabled={disabled}
+        onChange={(event) => setRole(event.target.value as StudioRole)}
+      >
+        {studioRoles.map((value) => (
+          <option key={value} value={value}>
+            {roleLabel(value)}
+            {value === "operator" && surface === "create" ? "（推荐）" : ""}
+          </option>
+        ))}
+      </select>
+      <p className={local.roleHelp}>
+        {role === "admin"
+          ? "可管理测评、审核、人员与账号权限。"
+          : role === "operator"
+            ? "可管理测评内容与访问码，无人员管理权限。"
+            : "可查看授权内容，无编辑与人员管理权限。"}
+      </p>
+    </div>
+  );
   return (
     <div className={styles.page}>
-      <header className={styles.header}>
-        <div>
-          <h1>账号与权限</h1>
-          <p>开通人员账号、分配角色、停用账号或帮助恢复密码。</p>
-        </div>
-        <div className={styles.actions}>
-          <Link href="/studio/accounts/audit">账号操作记录</Link>
-          <button onClick={() => launch("create")}>开通账号</button>
-        </div>
-      </header>
-      {(operation.pending || taskActive) && !open && (
-        <section className={styles.notice}>
-          <p>
-            {operation.pending
-              ? "原账号操作仍保留，请先核实或明确结束。"
-              : "未提交的账号任务和输入仍保留。"}
-          </p>
-          <button onClick={() => setOpen(true)}>
-            {operation.pending ? "继续原账号操作" : "继续未提交账号任务"}
-          </button>
-        </section>
-      )}
-      <section className={styles.panel}>
-        <form
-          className={styles.filters}
-          onSubmit={(event) => {
-            event.preventDefault();
-            setQ(search);
-            setOffset(0);
-            read.refresh();
-          }}
-        >
-          <div className={styles.field}>
-            <label htmlFor="account-search">搜索账号或显示名称</label>
-            <input
-              id="account-search"
-              value={search}
-              maxLength={80}
-              onChange={(event) => setSearch(event.target.value)}
-            />
-          </div>
-          <div className={styles.field}>
-            <label htmlFor="account-status">账号状态</label>
-            <select
-              id="account-status"
-              value={status}
-              onChange={(event) => {
-                setStatus(event.target.value);
-                setOffset(0);
-              }}
-            >
-              <option value="all">全部</option>
-              <option value="active">可登录</option>
-              <option value="pending">待设置密码</option>
-              <option value="disabled">已停用</option>
-            </select>
-          </div>
-          <button>查询账号</button>
-        </form>
-      </section>
-      {read.loading && <p role="status">正在读取账号…</p>}
-      {read.error && (
-        <section role="alert" className={styles.error}>
-          <p>{read.error}</p>
-          <button onClick={read.refresh}>重新读取账号</button>
-        </section>
-      )}
-      {read.value && (
+      {canManage ? (
         <>
-          <div className={styles.cards}>
-            {read.value.items.map((account) => (
-              <article
-                className={`${styles.panel} ${styles.card}`}
-                key={account.id}
-              >
-                <header className={styles.header}>
-                  <div>
-                    <h2>{account.displayName}</h2>
-                    <p>登录账号：{account.loginName ?? "尚未配置"}</p>
-                  </div>
-                  <span className={styles.badge}>
-                    {roleLabel(account.role)} · {statusLabel[account.status]}
-                  </span>
-                </header>
-                <div className={styles.actions}>
-                  {actions
-                    .filter((action) =>
-                      action === "restore"
-                        ? account.status === "disabled"
-                        : action === "disable"
-                          ? account.status !== "disabled"
-                          : action === "issue-setup"
-                            ? account.status === "pending"
-                            : action === "issue-reset"
-                              ? account.status === "active"
-                              : true,
-                    )
-                    .map((action) => (
-                      <button
-                        key={action}
-                        className={styles.secondary}
-                        disabled={Boolean(operation.pending)}
-                        onClick={() => launch(action, account)}
-                      >
-                        {actionLabel[action]}
-                      </button>
-                    ))}
-                </div>
-              </article>
-            ))}
-          </div>
-          {!read.value.items.length && (
-            <p className={styles.empty}>当前查询没有账号。</p>
-          )}
-          <nav className={styles.pagination} aria-label="账号分页">
-            <button
-              className={styles.secondary}
-              disabled={!offset || read.loading}
-              onClick={() => setOffset((value) => Math.max(0, value - 25))}
-            >
-              上一页
-            </button>
-            <span>第 {Math.floor(offset / 25) + 1} 页</span>
-            <button
-              className={styles.secondary}
-              disabled={!read.value.hasMore || read.loading}
-              onClick={() => setOffset((value) => value + 25)}
-            >
-              下一页
-            </button>
-          </nav>
-        </>
-      )}
-      <dialog
-        ref={dialog}
-        className={styles.dialog}
-        aria-label="账号操作"
-        onCancel={(event) => {
-          event.preventDefault();
-          close();
-        }}
-      >
-        <section className={`${styles.page} ${styles.panel}`}>
-          <header className={styles.header}>
-            <h2>{operation.pending ? "原账号操作" : actionLabel[mode]}</h2>
-            <button
-              className={styles.secondary}
-              disabled={operation.busy}
-              onClick={close}
-            >
-              收起
+          <header className={styles.heading}>
+            <div>
+              <h1>账号与权限</h1>
+              <p>
+                管理运营成员、账号状态与权限分配。敏感操作在人员详情中完成。
+              </p>
+            </div>
+            <button className={styles.primary} onClick={() => launch("create")}>
+              <Plus size={18} aria-hidden="true" />
+              开通账号
             </button>
           </header>
-          {selected && (
-            <p>
-              目标：{selected.displayName} ·{" "}
-              {selected.loginName ?? "尚未配置登录账号"}
+          <AccountSummary summary={read.value?.summary} />
+          {read.value?.snapshotAt && (
+            <p className={local.summaryTime}>
+              账号概览截至 {accountDate(read.value.snapshotAt)}
             </p>
           )}
-          <form
-            className={styles.form}
-            onSubmit={(event) => {
-              event.preventDefault();
-              void submit();
-            }}
-          >
-            {mode === "create" && (
+          {(pending || surface) && !open && (
+            <section className={styles.hint}>
+              <p>
+                {pending
+                  ? "原账号操作仍保留，请先核实或明确结束。"
+                  : "未提交的账号任务和输入仍保留。"}
+              </p>
+              <button onClick={() => setOpen(true)}>
+                {pending ? "继续原账号操作" : "继续未提交账号任务"}
+              </button>
+            </section>
+          )}
+          <section className={styles.card} aria-label="人员列表">
+            <form
+              className={styles.controls}
+              onSubmit={(event) => {
+                event.preventDefault();
+                applyQuery();
+              }}
+            >
+              <div className={`${styles.field} ${styles.searchField}`}>
+                <label htmlFor="account-search">搜索人员</label>
+                <input
+                  id="account-search"
+                  placeholder="姓名或登录账号"
+                  value={search}
+                  maxLength={80}
+                  onChange={(event) => setSearch(event.target.value)}
+                />
+              </div>
+              <div className={`${styles.field} ${styles.filterSelect}`}>
+                <label htmlFor="account-filter-role">角色</label>
+                <select
+                  id="account-filter-role"
+                  value={filterRole}
+                  onChange={(event) => setFilterRole(event.target.value)}
+                >
+                  <option value="all">全部角色</option>
+                  {studioRoles.map((value) => (
+                    <option value={value} key={value}>
+                      {roleLabel(value)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className={`${styles.field} ${styles.filterSelect}`}>
+                <label htmlFor="account-status">账号状态</label>
+                <select
+                  id="account-status"
+                  value={filterStatus}
+                  onChange={(event) => setFilterStatus(event.target.value)}
+                >
+                  <option value="all">全部状态</option>
+                  <option value="active">可登录</option>
+                  <option value="pending">待设置密码</option>
+                  <option value="disabled">已停用</option>
+                </select>
+              </div>
+              <button>
+                <Search size={17} aria-hidden="true" />
+                查询
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setSearch("");
+                  setFilterRole("all");
+                  setFilterStatus("all");
+                  applyQuery({ q: "", role: "all", status: "all", offset: 0 });
+                }}
+              >
+                重置
+              </button>
+            </form>
+            {read.loading && (
+              <p className={styles.empty} role="status">
+                正在读取账号…
+              </p>
+            )}
+            {read.error && (
+              <div className={styles.error} role="alert">
+                <p>{read.error}</p>
+                <button onClick={read.refresh}>重新读取账号</button>
+              </div>
+            )}
+            {read.value && (
+              <PeopleList
+                value={read.value}
+                loading={read.loading}
+                onOpen={(account) => launch("person", account)}
+                onPage={(offset) => setQuery((value) => ({ ...value, offset }))}
+              />
+            )}
+          </section>
+          <div className={styles.actions}>
+            <Link className={styles.button} href="/studio/accounts/audit">
+              查看账号操作记录
+              <ChevronRight size={16} aria-hidden="true" />
+            </Link>
+          </div>
+        </>
+      ) : (
+        <section className={styles.hint}>
+          <p role="alert">
+            当前身份不能管理账号。
+            <Link href="/studio/session">前往我的账号</Link>
+          </p>
+          {pending && (
+            <button onClick={() => setOpen(true)}>继续原账号操作</button>
+          )}
+        </section>
+      )}
+
+      <AccountOverlay
+        open={open}
+        variant={surface === "create" ? "modal" : "drawer"}
+        title={
+          surface === "create"
+            ? "开通账号"
+            : selected
+              ? "人员详情"
+              : "原账号操作"
+        }
+        description={
+          surface === "create"
+            ? "为新的运营成员创建后台登录账号"
+            : "查看账号资料与管理权限"
+        }
+        canClose={canClose}
+        onClose={close}
+        footer={
+          <div className={local.taskFooter}>
+            {link && <p>请先妥善保存设置链接，再明确结束本次记录。</p>}
+            {!pending && dirty && (
+              <button className={styles.danger} onClick={discard}>
+                放弃输入
+              </button>
+            )}
+            <button disabled={!canClose} onClick={close}>
+              {dirty || pending
+                ? "收起"
+                : surface === "create"
+                  ? "取消"
+                  : "完成"}
+            </button>
+          </div>
+        }
+      >
+        {surface === "create" && (
+          <div hidden={Boolean(operation.mutation?.account)}>
+            <form
+              aria-label="开通账号"
+              className={styles.formRow}
+              onSubmit={(event) => {
+                event.preventDefault();
+                void submit();
+              }}
+            >
+              <div className={styles.field}>
+                <label htmlFor="account-display-name">显示名称</label>
+                <input
+                  id="account-display-name"
+                  required
+                  placeholder="如：运营小林"
+                  autoComplete="off"
+                  value={displayName}
+                  disabled={disabled}
+                  onChange={(event) => setDisplayName(event.target.value)}
+                />
+              </div>
               <div className={styles.field}>
                 <label htmlFor="new-account-login">
                   登录账号（创建后不可修改）
@@ -382,88 +519,188 @@ export function AccountsPage({
                   required
                   minLength={3}
                   maxLength={64}
+                  placeholder="如：lin.ops"
                   autoCapitalize="none"
                   autoComplete="off"
                   value={loginName}
-                  disabled={operation.blocked}
+                  disabled={disabled}
                   onChange={(event) => setLoginName(event.target.value)}
                 />
+                <p className={local.roleHelp}>
+                  使用 3–64 位英文字母、数字、点、下划线或连字符。
+                </p>
+              </div>
+              {roleField}
+              <div className={styles.hint}>
+                创建后生成一次性密码设置链接，由本人设置密码。请私下交付链接。
+              </div>
+              <div className={styles.formActions}>
+                <button className={styles.primary} disabled={disabled}>
+                  创建账号并生成设置链接
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
+        {selected && (
+          <div className={local.details}>
+            {surface === "create" && (
+              <div className={styles.hint}>
+                账号已创建，请将下方密码设置链接交付本人。
               </div>
             )}
-            {(mode === "create" || mode === "display-name") && (
-              <div className={styles.field}>
-                <label htmlFor="account-display-name">显示名称</label>
-                <input
-                  id="account-display-name"
-                  required
-                  value={displayName}
-                  disabled={operation.blocked}
-                  onChange={(event) => setDisplayName(event.target.value)}
-                />
+            <div className={local.identity}>
+              <AccountPerson account={selected} />
+            </div>
+            <div className={styles.pills}>
+              <RoleBadge role={selected.role} />
+              <StatusBadge status={selected.status} />
+            </div>
+            <dl className={styles.kv}>
+              <div>
+                <dt>登录账号</dt>
+                <dd>{selected.loginName ?? "尚未配置"}</dd>
               </div>
-            )}
-            {(mode === "create" || mode === "role") && (
-              <div className={styles.field}>
-                <label htmlFor="account-role">角色</label>
-                <select
-                  id="account-role"
-                  value={role}
-                  disabled={operation.blocked}
-                  onChange={(event) =>
-                    setRole(event.target.value as StudioRole)
-                  }
-                >
-                  {studioRoles.map((value) => (
-                    <option key={value} value={value}>
-                      {roleLabel(value)}
-                    </option>
-                  ))}
-                </select>
+              <div>
+                <dt>创建时间</dt>
+                <dd>{accountDate(selected.createdAt)}</dd>
               </div>
+              {selected.disabledAt && (
+                <div>
+                  <dt>停用时间</dt>
+                  <dd>{accountDate(selected.disabledAt)}</dd>
+                </div>
+              )}
+            </dl>
+            {surface === "person" && (
+              <>
+                <section>
+                  <h3 className={styles.groupTitle}>
+                    <ShieldCheck size={18} aria-hidden="true" />
+                    当前权限范围
+                  </h3>
+                  <ul className={local.permission}>
+                    {permissions[selected.role].map((item) => (
+                      <li key={item}>{item}</li>
+                    ))}
+                  </ul>
+                </section>
+                <section>
+                  <h3 className={styles.groupTitle}>账号管理</h3>
+                  <div className={styles.actionList}>
+                    {personActions(selected).map((action) => {
+                      const Icon = actionIcons[action];
+                      return (
+                        <button
+                          key={action}
+                          className={
+                            action === "disable" || action === "revoke-sessions"
+                              ? styles.danger
+                              : undefined
+                          }
+                          disabled={disabled}
+                          aria-expanded={mode === action}
+                          onClick={() => chooseAction(action)}
+                        >
+                          <Icon size={18} aria-hidden="true" />
+                          {actionLabels[action]}
+                          <ChevronRight size={16} aria-hidden="true" />
+                        </button>
+                      );
+                    })}
+                  </div>
+                </section>
+                {mode && (
+                  <form
+                    className={styles.actionForm}
+                    aria-label={actionLabels[mode]}
+                    onSubmit={(event) => {
+                      event.preventDefault();
+                      void submit();
+                    }}
+                  >
+                    <h3 className={local.actionHeading}>
+                      {actionLabels[mode]}
+                    </h3>
+                    <p className={local.actionDescription}>
+                      操作对象：{selected.displayName} ·{" "}
+                      {selected.loginName ?? "尚未配置登录账号"}
+                    </p>
+                    {mode === "display-name" && (
+                      <div className={styles.field}>
+                        <label htmlFor="person-display-name">显示名称</label>
+                        <input
+                          id="person-display-name"
+                          required
+                          value={displayName}
+                          disabled={disabled}
+                          onChange={(event) =>
+                            setDisplayName(event.target.value)
+                          }
+                        />
+                      </div>
+                    )}
+                    {mode === "role" && roleField}
+                    {actionDescriptions[mode] && (
+                      <p
+                        className={`${styles.hint} ${mode === "disable" || mode === "revoke-sessions" ? styles.warn : ""}`}
+                      >
+                        {actionDescriptions[mode]}
+                      </p>
+                    )}
+                    {mode !== "display-name" && mode !== "restore" && (
+                      <label className={styles.checkboxRow}>
+                        <input
+                          type="checkbox"
+                          checked={confirmation}
+                          disabled={disabled}
+                          onChange={(event) =>
+                            setConfirmation(event.target.checked)
+                          }
+                        />
+                        我已了解影响，确认{actionLabels[mode]}
+                      </label>
+                    )}
+                    <div className={styles.formActions}>
+                      <button
+                        className={
+                          mode === "disable" || mode === "revoke-sessions"
+                            ? styles.danger
+                            : styles.primary
+                        }
+                        disabled={
+                          disabled ||
+                          (mode !== "display-name" &&
+                            mode !== "restore" &&
+                            !confirmation)
+                        }
+                      >
+                        确认{actionLabels[mode]}
+                      </button>
+                      <button
+                        type="button"
+                        disabled={pending || operation.busy}
+                        onClick={discard}
+                      >
+                        取消修改
+                      </button>
+                    </div>
+                  </form>
+                )}
+              </>
             )}
-            {[
-              "role",
-              "disable",
-              "issue-setup",
-              "issue-reset",
-              "revoke-sessions",
-            ].includes(mode) && (
-              <label>
-                <input
-                  type="checkbox"
-                  checked={confirmation}
-                  disabled={operation.blocked}
-                  onChange={(event) => setConfirmation(event.target.checked)}
-                />
-                {mode === "issue-reset" || mode === "issue-setup"
-                  ? "确认重新发送设置链接：以前的设置链接将失效，本人改完密码后会退出全部登录。"
-                  : mode === "role"
-                    ? "确认调整角色：修改后需重新登录，至少保留一位可登录管理员。"
-                    : mode === "disable"
-                      ? "确认停用账号：该账号将无法登录，已登录人员也会退出。"
-                      : "确认退出该账号的全部登录：继续使用时需重新登录。"}
-              </label>
-            )}
-            <button disabled={operation.blocked}>
-              确认{actionLabel[mode]}
-            </button>
-          </form>
-          {!operation.pending && taskActive && (
-            <button
-              type="button"
-              className={styles.secondary}
-              disabled={operation.busy}
-              onClick={discard}
-            >
-              放弃本次未提交任务
-            </button>
-          )}
-          <AccountOperationPanel
-            operation={operation}
-            onFinished={finishTask}
-          />
-        </section>
-      </dialog>
+          </div>
+        )}
+        {pending && !selected && operation.pending?.targetId && (
+          <p className={styles.hint}>
+            原操作目标编号：{operation.pending.targetId}
+            。请核实原操作记录；列表当前值不代表原请求结果。
+          </p>
+        )}
+        <div className={local.operation}>
+          <AccountOperationPanel operation={operation} onFinished={finished} />
+        </div>
+      </AccountOverlay>
     </div>
   );
 }
