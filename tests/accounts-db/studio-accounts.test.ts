@@ -86,7 +86,8 @@ function tokenOf(result: AccountMutationDto) {
 }
 beforeAll(async () => {
   const config = await loadRuntimeConfig();
-  if (config.purpose !== "test") throw Error("OWNED_TEST_DATABASE_REQUIRED");
+  if (config.purpose !== "test" && config.purpose !== "ci")
+    throw Error("OWNED_TEST_DATABASE_REQUIRED");
   instanceId = config.instanceId;
   owner = await openManagedDatabase(instanceId);
   const [r] = await owner.sql`SELECT count(*)::int n FROM qf.operator`;

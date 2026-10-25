@@ -4,7 +4,6 @@ import type postgres from "postgres";
 import { readMigrations } from "@/lib/db/migrate";
 import {
   RECOVERY_LIMITS,
-  RECOVERY_MIGRATION_COUNT,
   RECOVERY_TABLES,
   canonicalRecoveryJson,
   recoveryDatabaseEvidenceSchema,
@@ -61,7 +60,7 @@ export async function readRecoveryDatabaseEvidence(
     checksum: recoveryHash(source),
   }));
   if (
-    expected.length !== RECOVERY_MIGRATION_COUNT ||
+    expected.length !== 18 ||
     canonicalRecoveryJson(history) !== canonicalRecoveryJson(expected)
   )
     throw failure();

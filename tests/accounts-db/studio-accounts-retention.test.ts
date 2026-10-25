@@ -14,7 +14,8 @@ import { digestToken } from "@/lib/security/p2a-tokens";
 let owner: Awaited<ReturnType<typeof openManagedDatabase>>, db: P2aDatabase;
 beforeAll(async () => {
   const config = await loadRuntimeConfig();
-  if (config.purpose !== "test") throw Error("OWNED_TEST_DATABASE_REQUIRED");
+  if (config.purpose !== "test" && config.purpose !== "ci")
+    throw Error("OWNED_TEST_DATABASE_REQUIRED");
   owner = await openManagedDatabase(config.instanceId);
   db = await createDatabase(config);
 });

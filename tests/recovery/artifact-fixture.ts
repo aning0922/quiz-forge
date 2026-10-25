@@ -3,7 +3,6 @@ import { mkdir, mkdtemp, writeFile } from "node:fs/promises";
 import path from "node:path";
 import {
   RECOVERY_TABLES,
-  RECOVERY_MIGRATION_COUNT,
   RECOVERY_ROW_FORMAT,
   canonicalRecoveryJson,
   recoveryHash,
@@ -50,7 +49,7 @@ export async function artifactFixture() {
   });
   const baseEvidence = {
     rowFormat: RECOVERY_ROW_FORMAT,
-    migrations: Array.from({ length: RECOVERY_MIGRATION_COUNT }, (_, i) => ({
+    migrations: Array.from({ length: 18 }, (_, i) => ({
       version: `${String(i + 1).padStart(4, "0")}_test`,
       checksum: recoveryHash(`synthetic migration ${i}`),
     })),

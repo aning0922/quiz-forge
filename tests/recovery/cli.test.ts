@@ -32,14 +32,7 @@ function service() {
       pgPort: 55426,
       origin: "http://127.0.0.1:55427",
       manifestSha256: sha,
-      sourceDatabaseGraphSha256: sha,
       databaseGraphSha256: sha,
-      authenticationRevocation: {
-        accounts: 1,
-        sessions: 2,
-        passwordTokens: 1,
-        kdfAttempts: 1,
-      },
       storageSha256: sha,
       status: "verified-stopped",
     }),
@@ -114,10 +107,8 @@ describe("finite recovery CLI", () => {
     expect(result.output.status).toBe("verified-stopped");
     expect(JSON.stringify(result)).not.toContain("/synthetic/private");
     expect(Object.keys(result.output).sort()).toEqual([
-      "authenticationRevocation",
       "databaseGraphSha256",
       "manifestSha256",
-      "sourceDatabaseGraphSha256",
       "status",
       "storageSha256",
     ]);

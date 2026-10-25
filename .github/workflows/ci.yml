@@ -96,3 +96,9 @@ jobs:
       - name: Consumer faults with a separate fresh database
         shell: bash
         run: bash scripts/ci-p2a-service.sh consumer-faults
+      - name: Account authorization with a separate fresh database
+        shell: bash
+        run: bash scripts/ci-p2a-service.sh accounts
+      - name: Account recovery windows with a separate fresh database
+        shell: bash
+        run: bash scripts/ci-p2a-service.sh accounts-retention

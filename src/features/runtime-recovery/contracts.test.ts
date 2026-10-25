@@ -1,8 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
   RECOVERY_LIMITS,
-  LEGACY_RECOVERY_TABLES,
-  RECOVERY_MIGRATION_COUNT,
   RECOVERY_ROW_FORMAT,
   RECOVERY_TABLES,
   canonicalRecoveryJson,
@@ -28,7 +26,7 @@ const directories = [
 const database = () => {
   const facts = {
     rowFormat: RECOVERY_ROW_FORMAT,
-    migrations: Array.from({ length: RECOVERY_MIGRATION_COUNT }, (_, i) => ({
+    migrations: Array.from({ length: 18 }, (_, i) => ({
       version: `${String(i + 1).padStart(4, "0")}_synthetic`,
       checksum: hash,
     })),
@@ -67,36 +65,6 @@ const manifest = () => ({
 });
 
 describe("finite recovery artifact contract", () => {
-  it("reads the exact old profile but rejects mixed or partially migrated profiles", () => {
-    const current = database();
-    const oldFacts = {
-      rowFormat: current.rowFormat,
-      migrations: current.migrations.slice(0, 18),
-      tables: current.tables.filter((table) =>
-        (LEGACY_RECOVERY_TABLES as readonly string[]).includes(table.name),
-      ),
-    };
-    const old = {
-      ...oldFacts,
-      graphSha256: recoveryHash(canonicalRecoveryJson(oldFacts)),
-    };
-    expect(
-      recoveryManifestSchema.safeParse({ ...manifest(), database: old })
-        .success,
-    ).toBe(true);
-    for (const facts of [
-      { ...oldFacts, tables: current.tables },
-      { ...oldFacts, migrations: current.migrations },
-      { ...oldFacts, migrations: current.migrations.slice(0, 19) },
-    ]) {
-      expect(
-        recoveryDatabaseEvidenceSchema.safeParse({
-          ...facts,
-          graphSha256: recoveryHash(canonicalRecoveryJson(facts)),
-        }).success,
-      ).toBe(false);
-    }
-  });
   it("round trips finite evidence without credentials or private row contents", () => {
     expect(
       recoveryManifestSchema.parse(

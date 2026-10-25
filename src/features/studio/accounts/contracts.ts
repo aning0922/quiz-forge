@@ -10,7 +10,6 @@ export type AccountDto = {
   role: StudioRole;
   status: AccountStatus;
   revision: number;
-  legacyCredentialActive: boolean;
   createdAt: string;
   disabledAt: string | null;
 };

@@ -127,9 +127,7 @@ export async function runRecoveryCli(
           output: {
             status: result.status,
             manifestSha256: result.manifestSha256,
-            sourceDatabaseGraphSha256: result.sourceDatabaseGraphSha256,
             databaseGraphSha256: result.databaseGraphSha256,
-            authenticationRevocation: result.authenticationRevocation,
             storageSha256: result.storageSha256,
           },
         };

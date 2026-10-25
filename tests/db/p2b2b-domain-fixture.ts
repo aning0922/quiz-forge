@@ -401,9 +401,9 @@ export async function resetDomainDatabase(db: TestDatabase) {
       throw new Error("TEST_DOMAIN_SYNTHETIC_OWNER_REQUIRED");
     await lock.check();
     await safe(() =>
-      withEmptyAccountFixtureScope(db, async (tx, accounts) => {
+      withEmptyAccountFixtureScope(db, async (tx) => {
         await tx.unsafe(
-          `TRUNCATE ${accounts ? "qf.operator_account_operation,qf.operator_password_token,qf.operator_kdf_attempt," : ""}${ledgerSchema.consumer ? "qf.quiz_report,qf.consumer_grant,qf.consumer_session,qf.access_key,qf.internal_play_version," : ""}${ledgerSchema.reviews ? "qf.product_version,qf.draft_review," : ""}qf.draft_application,qf.draft_revision,qf.product_draft,qf.product_asset,qf.asset_blob,qf.quizpack_validation,qf.quizpack_import,qf.product_tag,qf.product,qf.category,qf.tag,qf.operator_session,qf.audit_event,qf.operator`,
+          `TRUNCATE qf.operator_account_operation,qf.operator_password_token,qf.operator_kdf_attempt,${ledgerSchema.consumer ? "qf.quiz_report,qf.consumer_grant,qf.consumer_session,qf.access_key,qf.internal_play_version," : ""}${ledgerSchema.reviews ? "qf.product_version,qf.draft_review," : ""}qf.draft_application,qf.draft_revision,qf.product_draft,qf.product_asset,qf.asset_blob,qf.quizpack_validation,qf.quizpack_import,qf.product_tag,qf.product,qf.category,qf.tag,qf.operator_session,qf.audit_event,qf.operator`,
         );
       }),
     );

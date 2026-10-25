@@ -24,11 +24,7 @@ import {
   recoveryOriginSchema,
   recoveryPortSchema,
 } from "./contracts";
-import type {
-  RecoveryBudget,
-  RecoveryAuthenticationRevocation,
-  RestoreManagedRecoveryData,
-} from "./ports";
+import type { RecoveryBudget, RestoreManagedRecoveryData } from "./ports";
 import {
   assertRecoveryDirectory,
   checkRecoveryBudget,
@@ -47,7 +43,6 @@ import { readRecoverySourceStorage } from "./source-storage";
 import { normalizeRestoredRecoverySchema } from "./restore-schema";
 import { assertRecoveryToc } from "./restore-toc";
 import { RecoveryError } from "./errors";
-import { invalidateRestoredStudioAuthority } from "./restore-auth";
 
 export const restoreManagedRecoveryData: RestoreManagedRecoveryData = async (
   input,
@@ -123,7 +118,6 @@ export const restoreManagedRecoveryData: RestoreManagedRecoveryData = async (
     closeFailed = false;
   let graph = "",
     storageHash = "";
-  let authenticationRevocation: RecoveryAuthenticationRevocation | undefined;
   const cleanupBudget = (): RecoveryBudget => ({
     deadlineMonotonicMs: performance.now() + 15000,
     signal: new AbortController().signal,
@@ -206,34 +200,7 @@ export const restoreManagedRecoveryData: RestoreManagedRecoveryData = async (
       input.codeSha256
     )
       throw new RecoveryError("RECOVERY_CODE_MISMATCH");
-    // Preserve proof of the exact restored source before intentionally invalidating authentication.
-    await connection.unsafe("ROLLBACK");
-    authenticationRevocation = await invalidateRestoredStudioAuthority(
-      connection,
-      input,
-    );
-    await connection.unsafe("BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY");
-    await connection.unsafe(
-      `LOCK TABLE ${RECOVERY_TABLES.join(",")} IN SHARE MODE NOWAIT`,
-    );
-    await setRecoveryRowFormat(connection);
-    const finalDatabase = await readRecoveryDatabaseEvidence(connection, input);
-    const changedTables = new Set([
-      "qf.operator",
-      "qf.operator_session",
-      "qf.operator_password_token",
-      "qf.operator_kdf_attempt",
-    ]);
-    if (
-      finalDatabase.tables.some(
-        (table, index) =>
-          !changedTables.has(table.name) &&
-          canonicalRecoveryJson(table) !==
-            canonicalRecoveryJson(database.tables[index]),
-      )
-    )
-      throw new RecoveryError("RECOVERY_INTEGRITY_FAILED");
-    graph = finalDatabase.graphSha256;
+    graph = database.graphSha256;
     verified = true;
   } finally {
     if (connection) {
@@ -269,17 +236,15 @@ export const restoreManagedRecoveryData: RestoreManagedRecoveryData = async (
     assertRecoveryProcessesKnown();
     if (closeFailed) throw new RecoveryError("RECOVERY_CLOSE_UNPROVEN");
   }
-  if (!verified || !stopped || !target || !authenticationRevocation)
+  if (!verified || !stopped || !target)
     throw new RecoveryError("RECOVERY_RESTORE_FAILED_PRESERVED");
   checkRecoveryBudget(input);
   await assertRecoveryDirectory(targetDirectory, input);
   await writePrivateJson(path.join(targetDirectory, "recovery-verified.json"), {
-    schemaVersion: "quizforge.recovery-target.v2",
+    schemaVersion: "quizforge.recovery-target.v1",
     instanceId: source.instanceId,
     manifestSha256: input.bundle.manifestSha256,
-    sourceDatabaseGraphSha256: manifest.database.graphSha256,
     databaseGraphSha256: graph,
-    authenticationRevocation,
     storageSha256: storageHash,
     status: "verified-stopped",
   });
@@ -292,9 +257,7 @@ export const restoreManagedRecoveryData: RestoreManagedRecoveryData = async (
     pgPort: input.pgPort,
     origin: input.origin,
     manifestSha256: input.bundle.manifestSha256,
-    sourceDatabaseGraphSha256: manifest.database.graphSha256,
     databaseGraphSha256: graph,
-    authenticationRevocation,
     storageSha256: storageHash,
     status: "verified-stopped",
   };

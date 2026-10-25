@@ -40,36 +40,22 @@ export async function openTestDatabase() {
 }
 export type TestDatabase = Awaited<ReturnType<typeof openTestDatabase>>;
 
-/** Legacy fixtures never own account operations or password links. Only include proven empty tables. */
+/** Business fixtures never own account operations or password links. Refuse occupied account scope. */
 export async function withEmptyAccountFixtureScope(
   db: TestDatabase,
-  work: (tx: postgres.TransactionSql, accounts: boolean) => Promise<void>,
+  work: (tx: postgres.TransactionSql) => Promise<void>,
 ): Promise<void> {
   if (db.config.purpose !== "test" && db.config.purpose !== "ci")
     throw new Error("P2A_TEST_DATABASE_REQUIRED");
   await db.admin.sql.begin(async (tx) => {
-    const [schema] = await tx<
-      { tokens: boolean; operations: boolean; attempts: boolean }[]
-    >`
-      SELECT to_regclass('qf.operator_password_token') IS NOT NULL tokens,
-        to_regclass('qf.operator_account_operation') IS NOT NULL operations,
-        to_regclass('qf.operator_kdf_attempt') IS NOT NULL attempts`;
-    if (
-      !schema ||
-      schema.tokens !== schema.operations ||
-      schema.tokens !== schema.attempts
-    )
-      throw new Error("TEST_ACCOUNT_SCHEMA_INCOMPLETE");
-    if (schema.tokens) {
-      await tx`LOCK TABLE qf.operator_password_token,qf.operator_account_operation,qf.operator_kdf_attempt IN ACCESS EXCLUSIVE MODE NOWAIT`;
-      const [rows] = await tx<{ occupied: boolean }[]>`
+    await tx`LOCK TABLE qf.operator_password_token,qf.operator_account_operation,qf.operator_kdf_attempt IN ACCESS EXCLUSIVE MODE NOWAIT`;
+    const [rows] = await tx<{ occupied: boolean }[]>`
         SELECT EXISTS(SELECT 1 FROM qf.operator_password_token)
           OR EXISTS(SELECT 1 FROM qf.operator_account_operation)
           OR EXISTS(SELECT 1 FROM qf.operator_kdf_attempt) occupied`;
-      if (rows?.occupied !== false)
-        throw new Error("TEST_ACCOUNT_SCOPE_NOT_EMPTY");
-    }
-    await work(tx, schema.tokens);
+    if (rows?.occupied !== false)
+      throw new Error("TEST_ACCOUNT_SCOPE_NOT_EMPTY");
+    await work(tx);
   });
 }
 
@@ -152,7 +138,7 @@ export async function resetTestDatabase(database: TestDatabase): Promise<void> {
         }
       }
       await lock.check();
-      await withEmptyAccountFixtureScope(verified, async (tx, accounts) => {
+      await withEmptyAccountFixtureScope(verified, async (tx) => {
         // Account locks remain held from the emptiness check through every destructive step.
         // Refusal must leave both import files and DB rows intact.
         for (const [id, files] of importFiles) {
@@ -161,7 +147,7 @@ export async function resetTestDatabase(database: TestDatabase): Promise<void> {
         }
         await lock.check();
         await tx.unsafe(
-          `TRUNCATE ${accounts ? "qf.operator_account_operation,qf.operator_password_token,qf.operator_kdf_attempt," : ""}qf.quiz_report,qf.consumer_grant,qf.consumer_session,qf.access_key,qf.internal_play_version,qf.product_version,qf.draft_review,qf.draft_application,qf.draft_revision,qf.product_draft,qf.product_asset,qf.asset_blob,qf.quizpack_validation,qf.quizpack_import,qf.product_tag,qf.product,qf.category,qf.tag,qf.operator_session,qf.audit_event,qf.operator`,
+          `TRUNCATE qf.operator_account_operation,qf.operator_password_token,qf.operator_kdf_attempt,qf.quiz_report,qf.consumer_grant,qf.consumer_session,qf.access_key,qf.internal_play_version,qf.product_version,qf.draft_review,qf.draft_application,qf.draft_revision,qf.product_draft,qf.product_asset,qf.asset_blob,qf.quizpack_validation,qf.quizpack_import,qf.product_tag,qf.product,qf.category,qf.tag,qf.operator_session,qf.audit_event,qf.operator`,
         );
       });
     } finally {
