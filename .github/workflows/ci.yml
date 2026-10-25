@@ -105,3 +105,6 @@ jobs:
       - name: Account deadline races with a separate fresh database
         shell: bash
         run: bash scripts/ci-p2a-service.sh accounts-authority
+      - name: Account datetime projection with a separate fresh database
+        shell: bash
+        run: bash scripts/ci-p2a-service.sh accounts-projection
