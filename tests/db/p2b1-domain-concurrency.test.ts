@@ -75,6 +75,7 @@ describe("B1 real lock order and current-session races", () => {
   it.each(["category", "tag"] as const)(
     "%s archive before allocation rejects; reverse order retains reference",
     async (kind) => {
+      auth = await authenticateTestOperator(fixture, "admin");
       const item = await service.createTaxonomy(
         fixture.app,
         auth.credentials,
@@ -278,6 +279,18 @@ describe("B1 real lock order and current-session races", () => {
       await expect(
         service.readProduct(fixture.app, auth.session.raw, "synthetic"),
       ).rejects.toMatchObject({ code: "UNAUTHENTICATED" });
+      const receipts = await safe(
+        () => fixture.admin.sql<{ operation_id: string }[]>`
+        SELECT operation_id FROM qf.operator_account_operation
+        WHERE target_id=${auth.id} AND actor_id IS NULL AND action='disable' AND status='completed'`,
+      );
+      expect(receipts).toHaveLength(1);
+      // All assertions succeeded; remove only this unique target's confirmed maintenance receipt.
+      await safe(
+        () => fixture.admin.sql`DELETE FROM qf.operator_account_operation
+        WHERE operation_id=${receipts[0]!.operation_id} AND target_id=${auth.id}
+          AND actor_id IS NULL AND action='disable' AND status='completed'`,
+      );
     } finally {
       hold2.release();
       await blocker2;
@@ -288,6 +301,8 @@ describe("B1 real lock order and current-session races", () => {
   it.each(["auth", "product", "category"] as const)(
     "expiry after waiting for %s rolls back all business and audit",
     async (lock) => {
+      if (lock === "category")
+        auth = await authenticateTestOperator(fixture, "admin");
       const item =
         lock === "category"
           ? await service.createTaxonomy(
