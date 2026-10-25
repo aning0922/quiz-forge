@@ -21,7 +21,7 @@ describe("Studio navigation location", () => {
     });
     expect(studioLocation("/studio/session")).toEqual({
       section: "settings",
-      title: "身份与退出",
+      title: "我的账号",
     });
     expect(studioLocation("/studio")).toEqual({
       section: "dashboard",

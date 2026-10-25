@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
 import { describe, expect, it } from "vitest";
-import previewMetadata from "../internal-versions/implementation-data/renderer-folio-preview-v1.json";
+import previewMetadata from "../internal-versions/implementation-data/renderer-folio-preview-v1-1.json";
 import { internalPlayFixture } from "./contracts.test-support";
 import { consumerImplementationDescriptorSha256 } from "./implementation-schema";
 import { verifyConsumerImplementations } from "../../../../scripts/verify-consumer-implementations";
