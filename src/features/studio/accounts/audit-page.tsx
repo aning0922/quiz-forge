@@ -36,8 +36,11 @@ export function AccountAuditPage() {
                 </p>
                 <p>
                   操作者：
-                  {item.actorDisplayName ?? "历史维护记录（未记录人员）"} →{" "}
-                  {item.targetDisplayName}
+                  {item.actorDisplayName ??
+                    (item.action === "password-setup"
+                      ? "设置链接持有人"
+                      : "本机维护工具")}{" "}
+                  → {item.targetDisplayName}
                 </p>
                 <p>{new Date(item.createdAt).toLocaleString("zh-CN")}</p>
                 <details>
