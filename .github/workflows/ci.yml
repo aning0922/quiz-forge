@@ -102,3 +102,6 @@ jobs:
       - name: Account recovery windows with a separate fresh database
         shell: bash
         run: bash scripts/ci-p2a-service.sh accounts-retention
+      - name: Account deadline races with a separate fresh database
+        shell: bash
+        run: bash scripts/ci-p2a-service.sh accounts-authority
