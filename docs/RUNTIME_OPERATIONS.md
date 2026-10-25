@@ -2,6 +2,8 @@
 
 适用合同见 [RECOVERY_R1.md](RECOVERY_R1.md)，当前候选、独审和实际验收状态以 [PROGRESS.md](PROGRESS.md) 为准。本文件说明已接入 CLI 的操作顺序，命令存在、doctor 或文件测试通过均不代替完整真实恢复与 HTTP 验收。现有 39eb、作者资料、原工作树和归档标签保持原位，开发演练只使用新建合成 test 实例。
 
+Studio 账号首版的适配见 [账号合同](STUDIO_ACCOUNTS_V1.md)：当前工具新增 20 迁移/25 表的完整清单。旧 18 迁移/23 表档案仍可只读校验；实际恢复继续要求准确 source.codeSha256，旧档案应使用其原匹配工作树和工具，不能用新工具自动升级或改写旧清单。历史 R1 验收仅证明原版本，账号 schema 的新恢复证据以本批交付记录为准。
+
 ## 环境与凭据
 
 备份/恢复支持 macOS arm64、固定 Homebrew PostgreSQL 18.4 及项目声明的 Node 版本。命令必须从正式 origin 的独立受管仓库根执行，先用冻结锁文件安装依赖。doctor 仅检查仓库、工具链和代码字节，不连接业务数据库、不读取用户资料、不启动服务或配置媒体运行时。包完整性校验不需要启动 PostgreSQL；Linux 工具测试不等于 Linux 恢复支持。
@@ -78,7 +80,7 @@ pnpm --silent runtime:recovery verify --bundle="$QF_BACKUP_DIR" --manifest-sha="
 
 数据库恢复不复制媒体运行时 authority。实际 HTTP 与媒体读取前，按仓库固定脚本为目标工作树重新 build/provision/setup 相匹配的媒体环境，不能复制源 control 文件绕过配置。
 
-新端口不会隔离同 host Cookie，数据库密码更换也不会撤销旧 token。恢复副本不能自动成为同时接待同一用户的第二写权威。合成 HTTP 演练必须先停止源 HTTP，使用独立 browser context 与明确目标配置，再实际检查旧报告及资源、原进度和新 Key 完成，最后证明目标 HTTP/数据库停止。真实业务接管、凭证处置、生产迁移、部署或发布需要单独方案和授权。
+新端口不会隔离同 host Cookie，数据库密码更换也不会撤销旧 token。账号首版工具在新目标完成原数据等值检查后，专门撤销全部旧 Studio session 和一次性设密 token，并递增账号 revision；重新使用账号密码登录，或按受控维护入口重新签发设置入口。消费者 token 与业务数据保持原值，恢复副本仍不能自动成为同时接待同一用户的第二写权威。合成 HTTP 演练必须先停止源 HTTP，使用独立 browser context 与明确目标配置，再检查本批受影响的真实路径并证明目标进程停止。真实业务接管、凭证处置、生产迁移、部署或发布需要单独方案和授权。
 
 ## 恢复、手工启动、验证与停库
 
@@ -94,7 +96,7 @@ pnpm --silent runtime:recovery restore --bundle="$QF_BACKUP_DIR" --manifest-sha=
 pnpm p2a:db status --instance "$QF_SOURCE_INSTANCE"
 ```
 
-只在 restore 实际返回 `verified-stopped`、受管 status 确认 stopped 后进入下一步。这证明恢复时的迁移/schema/权限、23 表指纹及私有资源图通过比较，并且本次新库已停止；它没有启动网页、检查视觉、完成接管或发布。成功输出中的 `manifestSha256`、`databaseGraphSha256`、`storageSha256` 留在私有验收记录。失败则保留目录和证据，不重复覆盖同一个目标。
+只在 restore 实际返回 `verified-stopped`、受管 status 确认 stopped 后进入下一步。这证明当前迁移/schema/权限、完整表指纹及私有资源图先通过源比对，旧 Studio 认证能力已明确撤销，其他表仍与源一致，并且本次新库已停止；它没有启动网页、检查视觉、完成接管或发布。成功输出中的 `sourceDatabaseGraphSha256` 是撤销前与源相同的依据，`databaseGraphSha256` 是撤销后的目标，不能再把两者宣称为同一数据图。它们与 `manifestSha256`、`storageSha256`、`authenticationRevocation` 计数保存在私有验收记录。失败则保留目录和证据，不重复覆盖同一个目标。
 
 目标尚未启动应用时构建本工作树，准备自己的媒体部署和 helper，再 provision 封存。构建阶段不继承源 `QUIZFORGE_P2A_CONFIG`，不复制源构建或 capability：
 

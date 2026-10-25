@@ -14,7 +14,8 @@ export const RECOVERY_LIMITS = Object.freeze({
   operationMs: 300_000,
 });
 
-export const RECOVERY_TABLES = [
+/** The old profile is read-only compatible; restore still requires its exact code identity. */
+export const LEGACY_RECOVERY_TABLES = [
   "qf.access_key",
   "qf.asset_blob",
   "qf.audit_event",
@@ -38,6 +39,18 @@ export const RECOVERY_TABLES = [
   "qf.quizpack_validation",
   "qf.tag",
   "qf_meta.schema_migrations",
+] as const;
+
+export const RECOVERY_MIGRATION_COUNT = 20;
+export const RECOVERY_TABLES = [
+  ...LEGACY_RECOVERY_TABLES.filter(
+    (name) => name < "qf.operator_account_operation",
+  ),
+  "qf.operator_account_operation",
+  "qf.operator_password_token",
+  ...LEGACY_RECOVERY_TABLES.filter(
+    (name) => name >= "qf.operator_account_operation",
+  ),
 ] as const;
 
 /** UTF-8 to_jsonb(row)::text + LF, verified primary-key order, UTC/ISO/postgres session settings. */
@@ -152,14 +165,28 @@ export const recoveryTableSchema = z.strictObject({
 export const recoveryDatabaseEvidenceSchema = z
   .strictObject({
     rowFormat: z.literal(RECOVERY_ROW_FORMAT),
-    migrations: z.array(recoveryMigrationSchema).length(18),
-    tables: z.array(recoveryTableSchema).length(RECOVERY_TABLES.length),
+    migrations: z
+      .array(recoveryMigrationSchema)
+      .min(18)
+      .max(RECOVERY_MIGRATION_COUNT),
+    tables: z
+      .array(recoveryTableSchema)
+      .min(LEGACY_RECOVERY_TABLES.length)
+      .max(RECOVERY_TABLES.length),
     graphSha256: sha256,
   })
   .superRefine((value, context) => {
+    const expectedTables =
+      value.migrations.length === 18
+        ? LEGACY_RECOVERY_TABLES
+        : value.migrations.length === RECOVERY_MIGRATION_COUNT
+          ? RECOVERY_TABLES
+          : null;
     if (
+      expectedTables === null ||
+      value.tables.length !== expectedTables.length ||
       value.tables.some(
-        (table, index) => table.name !== RECOVERY_TABLES[index],
+        (table, index) => table.name !== expectedTables[index],
       ) ||
       value.migrations.some(
         (migration, index) =>

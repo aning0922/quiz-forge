@@ -10,6 +10,8 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   // Project governance is maintained explicitly, not rewritten on dev startup.
   agentRules: false,
+  // Keep the qualified native password KDF in the Node server runtime.
+  serverExternalPackages: ["argon2"],
   compiler: {
     defineServer: {
       __QUIZFORGE_MEDIA_CHECKOUT_ROOT__: checkoutRoot,

@@ -40,13 +40,21 @@ export type VerifiedRecoveryBundle = Readonly<{
   installStorage(instanceDirectory: string): Promise<void>;
 }>;
 
+export type RecoveryAuthenticationRevocation = Readonly<{
+  accounts: number;
+  sessions: number;
+  passwordTokens: number;
+}>;
+
 export type RecoveryRestoreResult = Readonly<{
   instanceId: string;
   root: string;
   pgPort: number;
   origin: string;
   manifestSha256: string;
+  sourceDatabaseGraphSha256: string;
   databaseGraphSha256: string;
+  authenticationRevocation: RecoveryAuthenticationRevocation;
   storageSha256: string;
   status: "verified-stopped";
 }>;

@@ -88,7 +88,9 @@ app 不获得 operator/token/operation 表直接 INSERT/UPDATE/DELETE，也不�
 
 新增函数、列、类型和 ACL 纳入精确 catalog/schema 校验；不笼统允许任意 definer 或放宽旧断言。旧数据服务/消费者合同校验保留。
 
-R1 的封闭迁移/表/TOC/catalog 清单必须包含新账号 schema，不能漏掉 token/回执或假称旧恢复证据覆盖新 schema。主控负责有限适配与一个受影响的隔离恢复证明；恢复后旧会话及一次性设置 token 不得复活。旧 18 迁移档案保持原识别/原工具恢复路径，不自动跨版本恢复或升级真实环境，具体兼容入口以实现核实后补充。
+R1 的封闭迁移/表/TOC/catalog 清单必须包含新账号 schema，不能漏掉 token/回执或假称旧恢复证据覆盖新 schema。主控负责有限适配与一个受影响的隔离恢复证明。manifest 的 v1 外框保留，数据库描述只读识别旧 18 迁移/23 表、新 20 迁移/25 表两个准确组合，混搭或部分迁移拒绝；旧备份可核完整性，但恢复仍要求 source.codeSha256 与运行工具准确相同，必须使用其原匹配工具，不自动跨版本恢复或升级真实环境。
+
+新目标先与源备份做完整表/资源等值验证，再在认证锁事务中递增全部账号 revision，撤销所有 Studio session（包括 preauth）和未消费 token；保留密码 PHC、账号 ID、历史归属及消费者记录。明确提交后重新读取目标证据，逐表核对除上述三表外的所有数据仍不变。结果与私有回执分别记录 sourceDatabaseGraphSha256、撤销后的 databaseGraphSha256 和实际撤销计数。提交不明、重读失败或进程关闭未证明均保留 recovery-pending，不重试、不启动；只有全部完成才写 verified-stopped。该有限顺序已于 2026-10-25 独审放行，实现证据另行验收。
 
 ## 7. 最小接口与页面接线
 
