@@ -25,17 +25,31 @@ export function useWorkspaceRead<T>(
     const current = ++sequence.current;
     const epoch = captureStudioEpoch();
     const controller = new AbortController();
+    const stale = () => {
+      if (current !== sequence.current || controller.signal.aborted) return;
+      // Finish this read without accepting old data or notifying a new authority.
+      setResult((previous) => ({
+        ...(previous.path === path ? previous : { path }),
+        error: "本次读取已中断，请重新读取。",
+      }));
+    };
     studioFetch<T>(path, { signal: controller.signal }).then(
       (value) => {
-        if (current === sequence.current && acceptsStudioEpoch(epoch))
+        if (!acceptsStudioEpoch(epoch)) {
+          stale();
+          return;
+        }
+        if (current === sequence.current && !controller.signal.aborted)
           setResult({ path, value });
       },
       (error) => {
         if (
           error instanceof StudioClientError &&
           error.code === "STUDIO_REQUEST_STALE"
-        )
+        ) {
+          stale();
           return;
+        }
         if (current === sequence.current && !controller.signal.aborted) {
           errorObserver.current?.(error);
           setResult({ path, error: studioMessage(error) });

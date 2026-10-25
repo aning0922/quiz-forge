@@ -24,9 +24,9 @@ import {AccountsPage} from '@/features/studio/accounts/admin-page';
 import {SetPasswordPage} from '@/features/studio/accounts/set-password-page';
 import {CreateReceive} from '@/features/studio/imports/create-receive';
 import {useStudioAccountOwner} from '@/features/studio/accounts/session-owner';
-import {useContentAuthority} from '@/features/studio/product-workspace/content-authority';
 import {InternalAuthorityProvider,useInternalAuthority} from '@/features/studio/internal-versions/authority';
-import {useWorkspaceRead} from '@/features/studio/workspace/use-request';
+import {ProductDetail} from '@/features/studio/workspace/product-detail';
+import {ProductTaskSurfaces} from '@/features/studio/product-workspace/task-surfaces';
 import {useImportRead} from '@/features/studio/imports/use-read';
 import {invalidateCurrentStudioAuthority} from '@/features/studio/authority-events';
 const id='00000000-0000-4000-8000-000000000001', other='00000000-0000-4000-8000-000000000002', now='2026-10-25T00:00:00.000Z';
@@ -42,11 +42,12 @@ window.fetch=async(raw,init={})=>{
    if(window.deniedReads>8)return new Promise(()=>{});
    return Response.json({code:'UNAUTHENTICATED'},{status:401});
  }
- if(path==='/synthetic/metadata'){
+ if(path==='/api/studio/products/synthetic-product'){
    window.metadataReads++;
    if(window.metadataReads===1)return new Promise(resolve=>{window.releaseOld=()=>resolve(Response.json({code:'UNAUTHENTICATED'},{status:401}));});
-   return Response.json({code:'UNAUTHENTICATED'},{status:401});
+   return Response.json({id:'synthetic-product',slug:'synthetic-product',title:'合成测评原名称',metadataRevision:1,primaryCategory:null,tags:[],archivedAt:null,createdAt:now,updatedAt:now});
  }
+ if(path==='/api/studio/categories'||path==='/api/studio/tags')return Response.json({items:[],page:1,pageSize:10,total:0,hasNext:false});
  if(path.endsWith('/auth/session'))return Response.json(window.currentSession);
  if(path.endsWith('/accounts')&&method==='GET'){
    window.directoryQueries.push(new URL(raw,location.href).search);
@@ -72,7 +73,7 @@ window.fetch=async(raw,init={})=>{
 };
 function OwnerFacts(){const owner=useStudioAccountOwner();useEffect(()=>{window.owner=owner;if(owner.revoked)window.revokedOwners.add(owner);},[owner]);return <output data-testid="owner" data-revoked={String(owner.revoked)} data-generation={owner.generation}/>;}
 function Denied(){useImportRead('/synthetic/denied');return <OwnerFacts/>;}
-function Late(){const authority=useInternalAuthority();const read=useWorkspaceRead('/synthetic/metadata',error=>authority.observe(error));return <><OwnerFacts/><output data-testid="authority" data-revoked={String(authority.isRevoked)}/><button onClick={read.refresh}>明确读取当前元数据</button><CreateReceive embedded productId="synthetic-product" session={session} settings={{enabled:true,maxArchiveBytes:33554432,receiveTimeoutMs:60000}} onChanged={()=>{}}/></>;}
+function Late(){const authority=useInternalAuthority();return <ProductTaskSurfaces><OwnerFacts/><output data-testid="authority" data-revoked={String(authority.isRevoked)}/><ProductDetail productId="synthetic-product" session={session} embedded/></ProductTaskSurfaces>;}
 const content=scenario==='loop'?<Denied/>:scenario==='late'?<InternalAuthorityProvider productId="synthetic-product"><Late/></InternalAuthorityProvider>:scenario==='setup'?<SetPasswordPage/>:<><OwnerFacts/><AccountsPage session={session}/></>;
 createRoot(document.getElementById('root')).render(<StudioShell authenticated={scenario!=='setup'} identity={session.operator} session={scenario==='setup'?undefined:session}>{content}</StudioShell>);
 `;
@@ -201,30 +202,25 @@ try {
   }
   if (selected("late")) {
     await open("late");
+    await expect(
+      page.getByText("正在读取测评…", { exact: true }),
+    ).toBeVisible();
     await expect
       .poll(() => page.evaluate(() => Boolean(window.releaseOld)))
       .toBe(true);
-    const file = page.locator("input[type=file]");
-    await file.setInputFiles({
-      name: "retained.quizpack",
-      mimeType: "application/octet-stream",
-      buffer: Buffer.from("synthetic"),
-    });
-    await expect(
-      page.getByText("retained.quizpack", { exact: true }),
-    ).toBeVisible();
-    await page.evaluate(() => {
-      window.fileNode = document.querySelector("input[type=file]");
-      window.fileObject = window.fileNode.files[0];
-      window.revoke();
-    });
+    await page.evaluate(() => window.revoke());
     await recover();
     await expect(page.getByTestId("owner")).toHaveAttribute(
       "data-generation",
       "1",
     );
     await page.evaluate(() => window.releaseOld());
-    await frames();
+    await expect(page.getByText("正在读取测评…", { exact: true })).toHaveCount(
+      0,
+    );
+    await expect(
+      page.getByText("本次读取已中断，请重新读取。", { exact: true }),
+    ).toBeVisible();
     await expect(page.getByTestId("owner")).toHaveAttribute(
       "data-revoked",
       "false",
@@ -233,24 +229,39 @@ try {
       "data-revoked",
       "false",
     );
+    expect(await page.evaluate(() => window.metadataReads)).toBe(1);
+    await page
+      .getByRole("button", { name: "重新读取测评", exact: true })
+      .click();
+    const title = page.getByLabel("测评名称", { exact: true });
+    await expect(title).toHaveValue("合成测评原名称");
+    await expect(title).toBeEnabled();
+    await title.fill("合成未保存名称");
+    await page.evaluate(() => {
+      window.titleNode = document.querySelector("#product-title");
+    });
+    await frames();
+    await expect(title).toHaveValue("合成未保存名称");
     expect(
       await page.evaluate(
-        () =>
-          window.fileNode === document.querySelector("input[type=file]") &&
-          window.fileObject === window.fileNode.files[0],
+        () => window.titleNode === document.querySelector("#product-title"),
       ),
     ).toBe(true);
-    await page.getByRole("button", { name: "明确读取当前元数据" }).click();
+    expect(await page.evaluate(() => window.metadataReads)).toBe(2);
+    expect(
+      await page.evaluate(
+        () => window.calls.filter((call) => call.method !== "GET").length,
+      ),
+    ).toBe(0);
+    await expect(
+      page.getByRole("button", { name: "重新读取测评", exact: true }),
+    ).toHaveCount(0);
     await expect(page.getByTestId("owner")).toHaveAttribute(
       "data-revoked",
-      "true",
-    );
-    await expect(page.getByTestId("authority")).toHaveAttribute(
-      "data-revoked",
-      "true",
+      "false",
     );
     results.push(
-      "P1-late-metadata-cannot-revoke-recovered-owner-current-401-still-revokes-file-preserved",
+      "actual-product-settings-stale-read-settles-then-existing-retry-loads-editable-form-without-write",
     );
   }
   if (selected("downgrade")) {
@@ -455,11 +466,9 @@ try {
   }
   if (selected("query")) {
     await open("query");
-    const target = page
-      .locator("article")
-      .filter({
-        has: page.getByRole("heading", { name: "合成其他运营", exact: true }),
-      });
+    const target = page.locator("article").filter({
+      has: page.getByRole("heading", { name: "合成其他运营", exact: true }),
+    });
     await expect(
       target.getByText("运营者 · 待本人设置密码", { exact: true }),
     ).toBeVisible();
