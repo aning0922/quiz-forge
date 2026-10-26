@@ -116,9 +116,9 @@ export function StudioLoginForm() {
   return (
     <EntryScene
       kind="login"
-      eyebrow="欢迎回来"
-      title="登录运营后台"
-      description="请使用管理员开通的登录账号访问 Studio。"
+      eyebrow="WELCOME BACK"
+      title="登录运营管理空间"
+      description="使用运营账号与密码登录，访问范围由你的角色决定。"
     >
       <form className={styles.form} onSubmit={submit}>
         <label className={styles.field} htmlFor="studio-login-name">

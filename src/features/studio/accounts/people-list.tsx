@@ -20,7 +20,7 @@ export function AccountSummary({
   summary: AccountListDto["summary"] | undefined;
 }) {
   const stats = [
-    { key: "total", label: "全部账号", detail: "当前组织成员", Icon: Users },
+    { key: "total", label: "全部账号", detail: "当前后台人员", Icon: Users },
     { key: "active", label: "可登录", detail: "已完成密码设置", Icon: Check },
     {
       key: "pending",
@@ -81,11 +81,13 @@ export function PeopleList({
   loading,
   onOpen,
   onPage,
+  onReset,
 }: {
   value: AccountListDto;
   loading: boolean;
   onOpen: (account: AccountDto) => void;
   onPage: (offset: number) => void;
+  onReset: () => void;
 }) {
   const manage = (account: AccountDto) => (
     <button
@@ -170,13 +172,17 @@ export function PeopleList({
           >
             上一页
           </button>
-          <span>第 {Math.floor(value.offset / value.limit) + 1} 页</span>
+          <span>
+            第 {Math.floor(value.offset / value.limit) + 1} /{" "}
+            {Math.max(1, Math.ceil(value.total / value.limit))} 页
+          </span>
           <button
             disabled={!value.hasMore || loading}
             onClick={() => onPage(value.offset + value.limit)}
           >
             下一页
           </button>
+          <button onClick={onReset}>重置</button>
         </nav>
       </div>
     </>

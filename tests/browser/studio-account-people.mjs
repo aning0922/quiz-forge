@@ -133,7 +133,7 @@ try {
     await button("查看与管理 " + name).click();
   }
   async function create(fill = true) {
-    await button("开通账号").click();
+    await button("开通人员").click();
     if (fill) {
       await page.getByLabel("显示名称", { exact: true }).fill("合成新成员");
       await page.getByLabel("登录账号（创建后不可修改）").fill("synthetic.new");
@@ -160,16 +160,16 @@ try {
     await expect(
       page.getByText("共 26 位人员，显示 26–26 位", { exact: true }),
     ).toBeVisible();
-    await page.getByLabel("搜索人员").fill("合成待开通");
+    await page.getByLabel("姓名或登录账号").fill("合成待开通");
     await page.getByLabel("角色", { exact: true }).selectOption("operator");
     await page.getByLabel("账号状态", { exact: true }).selectOption("pending");
-    await button("查询").click();
+    await button("应用筛选").click();
     await expect(
       page.getByText("共 1 位人员，显示 1–1 位", { exact: true }),
     ).toBeVisible();
     await expect(page.locator('[data-account-stat="total"]')).toHaveText("30");
     const count = await page.evaluate(() => window.reads.length);
-    await button("查询").click();
+    await button("应用筛选").click();
     await expect
       .poll(() => page.evaluate(() => window.reads.length))
       .toBe(count + 1);
@@ -185,8 +185,59 @@ try {
     for (const width of [1440, 320, 375, 390, 430]) {
       await page.setViewportSize({ width, height: 1000 });
       await noOverflow();
+      const tabs = page.getByRole("navigation", {
+        name: "账号工作区",
+        exact: true,
+      });
+      await expect(tabs.getByRole("link")).toHaveCount(3);
+      await expect(tabs.locator('a[aria-current="page"]')).toHaveAttribute(
+        "href",
+        "/studio/accounts",
+      );
+      await expect(
+        page.getByRole("heading", { name: "人员账号", exact: true }),
+      ).toBeVisible();
+      if (width < 731) {
+        const geometry = await page.evaluate(() => {
+          const box = (id) =>
+            document.getElementById(id).getBoundingClientRect();
+          const search = box("account-search"),
+            role = box("account-filter-role"),
+            status = box("account-status");
+          const apply = [...document.querySelectorAll("button")]
+            .find((n) => n.textContent === "应用筛选")
+            .getBoundingClientRect();
+          const stats = [
+            ...document.querySelector('[aria-label="全部账号概览"]').children,
+          ].map((n) => n.getBoundingClientRect());
+          return {
+            row: role.y === status.y,
+            search: Math.abs(search.width - apply.width) < 1,
+            apply: apply.y > role.bottom,
+            stats:
+              stats[0].y === stats[1].y &&
+              stats[2].y === stats[3].y &&
+              stats[2].y > stats[0].y,
+          };
+        });
+        expect(geometry).toEqual({
+          row: true,
+          search: true,
+          apply: true,
+          stats: true,
+        });
+      }
       if (width === 1440 || width === 390)
         await page.screenshot({ path: path.join(out, `people-${width}.png`) });
+      if (width === 390) {
+        await page
+          .getByRole("article")
+          .first()
+          .screenshot({ path: path.join(out, "people-card-390.png") });
+        await page
+          .getByRole("navigation", { name: "账号分页", exact: true })
+          .screenshot({ path: path.join(out, "people-pager-390.png") });
+      }
       await person();
       await expect(page.locator("dialog:modal")).toHaveCount(1);
       await expect
@@ -195,7 +246,7 @@ try {
             .locator("dialog:modal")
             .evaluate((n) => Math.round(n.getBoundingClientRect().width)),
         )
-        .toBe(width === 1440 ? 495 : width);
+        .toBe(width === 1440 ? 470 : width);
       await noOverflow();
       expect(
         await page
@@ -216,8 +267,8 @@ try {
       if (width === 1440)
         await page.screenshot({ path: path.join(out, "inline-role-1440.png") });
       await expect(page.locator("dialog:modal")).toHaveCount(1);
-      await button("取消修改").click();
-      await button("完成").click();
+      await button("取消返回详情").click();
+      await button("关闭").click();
       await create(false);
       await noOverflow();
       await expect
@@ -226,7 +277,7 @@ try {
             .locator("dialog:modal")
             .evaluate((n) => Math.round(n.getBoundingClientRect().width)),
         )
-        .toBe(width === 1440 ? 510 : width - 32);
+        .toBe(width === 1440 ? 640 : width - 36);
       if (width === 1440 || width === 390)
         await page.screenshot({ path: path.join(out, `create-${width}.png`) });
       await button("取消").click();
@@ -237,7 +288,7 @@ try {
     await expect(button("停用账号")).toHaveCount(0);
     await expect(button("生成密码重置入口")).toHaveCount(0);
     await expect(button("撤销全部登录")).toHaveCount(0);
-    await button("完成").click();
+    await button("关闭").click();
     await person("合成待开通");
     await expect(button("生成设置入口")).toBeVisible();
     await expect(button("生成密码重置入口")).toHaveCount(0);
@@ -245,33 +296,25 @@ try {
   });
   await run("inline-action-replacement", async () => {
     await person();
-    const management = page.getByRole("region", {
-      name: "账号管理",
-      exact: true,
-    });
-    await expect(management.getByRole("button")).toHaveCount(5);
+    const drawer = page.locator("dialog:modal");
+    await expect(
+      drawer.getByRole("region", { name: "账号管理" }),
+    ).toBeVisible();
     await button("调整角色").click();
-    const form = management.getByRole("form", {
-      name: "调整角色",
-      exact: true,
-    });
+    const form = page.getByRole("form", { name: "调整角色", exact: true });
     await expect(form).toBeVisible();
+    await expect(
+      drawer.getByRole("heading", { name: "调整角色", exact: true }),
+    ).toBeVisible();
     await expect(button("编辑显示名称")).toHaveCount(0);
     await expect(button("生成密码重置入口")).toHaveCount(0);
-    await expect(management.getByRole("button")).toHaveCount(2);
-    const gap = await management.evaluate((node) => {
-      const title = node.querySelector("h3").getBoundingClientRect();
-      return (
-        node.querySelector("form").getBoundingClientRect().top - title.bottom
-      );
-    });
-    expect(gap).toBeLessThanOrEqual(20);
+    await expect(page.locator("dialog:modal")).toHaveCount(1);
     await form.getByLabel("角色", { exact: true }).selectOption("read-only");
     const input = await form
       .getByLabel("角色", { exact: true })
       .elementHandle();
-    await button("收起").click();
-    await button("查询").click();
+    await button("关闭调整角色").click();
+    await button("应用筛选").click();
     await expect(
       page.getByText("共 26 位人员，显示 1–25 位", { exact: true }),
     ).toBeVisible();
@@ -284,28 +327,28 @@ try {
     await expect(form.getByLabel("角色", { exact: true })).toHaveValue(
       "read-only",
     );
-    await form.scrollIntoViewIfNeeded();
     await page.screenshot({
       path: path.join(out, "inline-action-replacement-1440.png"),
     });
     page.once("dialog", (dialog) => dialog.accept());
-    await button("取消修改").click();
-    await expect(management.getByRole("form")).toHaveCount(0);
-    await expect(management.getByRole("button")).toHaveCount(5);
+    await button("取消返回详情").click();
+    await expect(
+      page.getByRole("form", { name: "调整角色", exact: true }),
+    ).toHaveCount(0);
     await expect(button("编辑显示名称")).toBeVisible();
     await button("生成密码重置入口").click();
     await expect(
-      management.getByRole("form", { name: "生成密码重置入口", exact: true }),
+      page.getByRole("form", { name: "生成密码重置入口", exact: true }),
     ).toContainText("管理员手动保存并私下交付本人");
-    await button("取消修改").click();
-    await expect(management.getByRole("button")).toHaveCount(5);
-    await button("完成").click();
+    await button("取消返回详情").click();
+    await expect(button("编辑显示名称")).toBeVisible();
+    await button("关闭").click();
     await person("合成待开通");
     await button("生成设置入口").click();
     await expect(
       page.getByRole("form", { name: "生成设置入口", exact: true }),
     ).toContainText("管理员手动保存并私下交付本人");
-    await button("取消修改").click();
+    await button("取消返回详情").click();
     await expect(button("生成设置入口")).toBeVisible();
     expect(await page.evaluate(() => window.writes.length)).toBe(0);
   });
@@ -319,8 +362,8 @@ try {
       .getByLabel("显示名称", { exact: true })
       .elementHandle();
     await button("收起").click();
-    await page.getByLabel("搜索人员").fill("合成待开通");
-    await button("查询").click();
+    await page.getByLabel("姓名或登录账号").fill("合成待开通");
+    await button("应用筛选").click();
     await expect(
       page.getByText("共 1 位人员，显示 1–1 位", { exact: true }),
     ).toBeVisible();
@@ -359,11 +402,11 @@ try {
       .toBe(true);
     await page.keyboard.press("Escape");
     await expect(page.locator("dialog:modal")).toBeVisible();
-    await expect(button("收起")).toBeDisabled();
+    await expect(button("关闭编辑显示名称")).toBeDisabled();
     await page.evaluate(() => window.releaseWrite());
     await expect(button("核实原操作")).toBeEnabled();
     await button("收起").click();
-    await button("查询").click();
+    await button("应用筛选").click();
     await expect(button("查看与管理 合成管理员")).toBeVisible();
     await person("合成管理员");
     await expect(page.locator("dialog:modal")).toContainText("合成运营");
@@ -372,7 +415,7 @@ try {
         .getByLabel("显示名称", { exact: true })
         .evaluate((n, old) => n === old, input),
     ).toBe(true);
-    await expect(button("确认编辑显示名称")).toBeDisabled();
+    await expect(page.getByLabel("显示名称", { exact: true })).toBeDisabled();
     await button("核实原操作").click();
     await expect(
       page.getByText("处理结果：已完成", { exact: true }),
@@ -425,13 +468,13 @@ try {
   await run("one-off-link", async () => {
     await page.evaluate(() => (window.mode = "success"));
     await create();
-    await button("开通并生成设置入口").click();
+    await button("确认开通账号").click();
     await expect(page.getByLabel("密码设置链接")).toBeVisible();
     await expect(page.getByLabel("密码设置链接")).toHaveAttribute(
       "type",
       "password",
     );
-    await expect(button("关闭开通账号")).toBeDisabled();
+    await expect(button("关闭一次性设置入口")).toBeDisabled();
     await expect(button("收起")).toBeDisabled();
     await page.keyboard.press("Escape");
     await page.mouse.click(10, 10);
@@ -458,7 +501,7 @@ try {
   });
   await run("unknown-create-reissue", async () => {
     await create();
-    await button("开通并生成设置入口").click();
+    await button("确认开通账号").click();
     await expect(button("核实原操作")).toBeEnabled();
     await button("核实原操作").click();
     await expect(
@@ -500,7 +543,7 @@ try {
       await page.evaluate(() => window.writes.at(-1).body.expectedRevision),
     ).toBe(5);
     await button("明确结束本次记录").click();
-    await button("完成").click();
+    await button("关闭").click();
     await person("合成管理员");
     await button("停用账号").click();
     await page.getByLabel("我已了解影响，确认停用账号").check();

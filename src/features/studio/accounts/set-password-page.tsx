@@ -260,15 +260,15 @@ export function SetPasswordPage() {
       kind="setup"
       eyebrow={
         completed
-          ? "账号安全 · 设置完成"
+          ? "ACCOUNT SECURITY / COMPLETE"
           : reset
-            ? "账号安全 · 重置密码"
-            : "首次开通 · 设置密码"
+            ? "ACCOUNT SECURITY / RESET"
+            : "ACCOUNT ACTIVATION"
       }
       title={
-        completed ? "密码设置成功" : reset ? "重置账号密码" : "为账号设置密码"
+        completed ? "密码设置成功" : reset ? "重置账号密码" : "设置登录密码"
       }
-      description="完成设置后，再使用登录账号和新密码登录。"
+      description="一次性设置入口仅用于本账号的密码操作，设置成功后仍需重新登录。"
     >
       {completed ? (
         <div className={styles.success} role="status">
