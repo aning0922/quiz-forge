@@ -13,3 +13,7 @@ export type ConsumerReadingPageV2 =
 export type ConsumerViewPropsV2 = ConsumerV2HostProps & {
   onRead: (page: ConsumerReadingPageV2) => void;
 };
+
+export type ConsumerExperiencePropsV2 = ConsumerV2HostProps & {
+  initialScreen?: "report";
+};

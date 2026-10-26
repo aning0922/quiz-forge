@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import type { ConsumerExperiencePropsV2 } from "./interfaces";
 import type { ConsumerV2HostProps } from "@/lib/consumer-contract/v2/client-contract";
 import type { ConsumerReadingPageV2, ConsumerViewPropsV2 } from "./interfaces";
 import {
@@ -48,8 +49,14 @@ export function supportsStructuredReaderV2(
   return true;
 }
 /** Pure props host. Its only local state is the reading panel; IO and original operation stay with the owner. */
-export function ConsumerExperienceV2({ model, onEvent }: ConsumerV2HostProps) {
-  const [page, setPage] = useState<ConsumerReadingPageV2>("cover");
+export function ConsumerExperienceV2({
+  model,
+  onEvent,
+  initialScreen,
+}: ConsumerExperiencePropsV2) {
+  const [page, setPage] = useState<ConsumerReadingPageV2>(
+    initialScreen ?? "cover",
+  );
   const compatible = supportsStructuredReaderV2(model);
   const editable = compatible && canEditConsumerV2(model);
   const read = (next: ConsumerReadingPageV2) => {
@@ -118,6 +125,11 @@ export function ConsumerExperienceV2({ model, onEvent }: ConsumerV2HostProps) {
               >
                 核对原操作
               </button>
+              {model.phase === "conflict" && (
+                <button onClick={() => event({ type: "reload" })}>
+                  采用已核对服务器记录
+                </button>
+              )}
             </section>
           )}
           {model.entry && model.draft && !model.report && (

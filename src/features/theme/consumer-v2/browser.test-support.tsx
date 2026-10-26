@@ -4,15 +4,13 @@ import type {
   ConsumerV2ReaderModel,
 } from "@/lib/consumer-contract/v2/client-contract";
 import { ConsumerExperienceV2 } from "./host";
-import { StudioStructurePreviewV2 } from "./studio-structure-preview";
 
 /** Synthetic owner for isolated browser interaction checks; no HTTP, receipts or persistence. */
 const fixture = JSON.parse(
   document.getElementById("fixture")!.textContent!,
 ) as { model: ConsumerV2ReaderModel; completed: ConsumerV2ReaderModel };
 const root = createRoot(document.getElementById("root")!);
-let current = structuredClone(fixture.model),
-  studio = false;
+let current = structuredClone(fixture.model);
 const events: ConsumerV2ReaderEvent[] = [];
 function onEvent(event: ConsumerV2ReaderEvent) {
   events.push(event);
@@ -42,8 +40,7 @@ function onEvent(event: ConsumerV2ReaderEvent) {
 }
 function render(model: ConsumerV2ReaderModel) {
   current = model;
-  const Component = studio ? StudioStructurePreviewV2 : ConsumerExperienceV2;
-  root.render(<Component model={current} onEvent={onEvent} />);
+  root.render(<ConsumerExperienceV2 model={current} onEvent={onEvent} />);
 }
 Object.assign(window, {
   readerProbe: {
@@ -51,10 +48,6 @@ Object.assign(window, {
     fixture,
     getModel: () => structuredClone(current),
     render,
-    setStudio(value: boolean) {
-      studio = value;
-      render(current);
-    },
   },
 });
 render(current);
