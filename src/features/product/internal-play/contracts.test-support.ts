@@ -1,3 +1,6 @@
+import type { z } from "zod";
+import { internalVersionSnapshotV1Schema } from "../internal-versions/identity-contracts";
+import { internalPlaySnapshotV1Schema } from "./contracts";
 import { DISPLAY_COMPONENT_IDS_V1 } from "@/lib/assessment-contract/display-limits-v1";
 import {
   CONSUMER_PROTOCOLS_V1,
@@ -26,7 +29,6 @@ import {
 import {
   internalPlayBindingSha256,
   internalPlaySnapshotSha256,
-  type InternalPlayDetail,
   type InternalPlayResources,
 } from "./contracts";
 
@@ -75,7 +77,7 @@ export async function internalPlayFixture() {
       state,
       { id, version: "2.0.0", propsSchemaVersion: "1.0.0" },
     ]),
-  ) as InternalVersionDetail["snapshot"]["components"];
+  ) as z.infer<typeof internalVersionSnapshotV1Schema>["components"];
   const engine = {
     kind: "engine" as const,
     ...content.engine,
@@ -104,7 +106,7 @@ export async function internalPlayFixture() {
     renderer: previewRenderer,
     engine,
   };
-  const parentSnapshot: InternalVersionDetail["snapshot"] = {
+  const parentSnapshot: z.infer<typeof internalVersionSnapshotV1Schema> = {
     schemaVersion: "quizforge.internal-version-snapshot.v1",
     productId: source.productId,
     target,
@@ -163,8 +165,8 @@ export async function internalPlayFixture() {
       slot: 1,
       binding,
       fingerprint: await sealInternalVersionFingerprint(binding),
-      purpose: "internal-test",
-      publicationApproved: false,
+      purpose: "internal-test" as const,
+      publicationApproved: false as const,
       snapshotSha256: await hashInternalText(
         internalSnapshotText(parentSnapshot),
       ),
@@ -204,7 +206,7 @@ export async function internalPlayFixture() {
     },
     renderer,
   };
-  const snapshot: InternalPlayDetail["snapshot"] = {
+  const snapshot: z.infer<typeof internalPlaySnapshotV1Schema> = {
     schemaVersion: "quizforge.internal-play-snapshot.v1",
     purpose: "internal-test",
     publicationApproved: false,
@@ -216,10 +218,10 @@ export async function internalPlayFixture() {
     resources,
     protocols: { ...CONSUMER_PROTOCOLS_V1 },
   };
-  const play: InternalPlayDetail = {
+  const play = {
     snapshot,
     play: {
-      schemaVersion: "quizforge.internal-play-receipt.v1",
+      schemaVersion: "quizforge.internal-play-receipt.v1" as const,
       id: testUuid(9),
       slot: 1,
       binding: playBinding,
@@ -227,8 +229,8 @@ export async function internalPlayFixture() {
       snapshotSha256: await internalPlaySnapshotSha256(snapshot),
       createdBy: testUuid(7),
       createdAt: testMoment,
-      purpose: "internal-test",
-      publicationApproved: false,
+      purpose: "internal-test" as const,
+      publicationApproved: false as const,
     },
   };
   return { content, parent, play, answers, scored: scored.value };

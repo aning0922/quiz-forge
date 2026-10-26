@@ -120,3 +120,10 @@ export type PersistedReportReceiptV2 = z.infer<
   typeof persistedReportReceiptV2Schema
 >;
 export type PersistedReportViewV2 = z.infer<typeof persistedReportViewV2Schema>;
+
+export async function verifyPersistedReportReceiptV2(input: unknown) {
+  const v = persistedReportReceiptV2Schema.parse(input);
+  if ((await consumerCompleteBindingSha256V2(v.binding)) !== v.bindingSha256)
+    throw Error("CONSUMER_REPORT_RECEIPT_MISMATCH");
+  return v;
+}

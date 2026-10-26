@@ -195,7 +195,7 @@ export const internalVersionSnapshotV2Schema = z
     versions: internalVersionSnapshotV1Schema.shape.versions.extend({
       engine: engineDeclarationV2Schema,
     }),
-    rendererCapability: z.literal("structured-internal-preview"),
+    rendererCapability: z.literal("studio-internal-preview"),
     components: fixedDisplayComponentsV3Schema,
     engine: consumerEngineIdentityV2Schema,
     font: consumerFontIdentityV2Schema,

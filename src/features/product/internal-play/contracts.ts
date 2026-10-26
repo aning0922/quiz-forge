@@ -6,6 +6,7 @@ import {
 } from "../internal-versions/identity-contracts";
 import {
   consumerComponentMappingV2Schema,
+  consumerMappingSha256V2,
   consumerProtocolsV2Schema,
 } from "@/lib/consumer-contract/v2/identities";
 import {
@@ -29,9 +30,7 @@ import {
   sameConsumerFact,
   withinConsumerBytes,
 } from "@/lib/consumer-contract/v1/integrity";
-import {
-  internalVersionDetailSchema,
-} from "../internal-versions/contracts";
+import { internalVersionDetailSchema } from "../internal-versions/contracts";
 import { verifyInternalVersionDetail } from "../internal-versions/integrity";
 
 /** Only the registered consumer implementation is selectable. Engine/source facts come from the parent. */
@@ -220,7 +219,9 @@ export async function verifyInternalPlayDetail(input: unknown) {
       consumerTextSha256(
         consumerCanonicalText(snapshot.resources, L.playSnapshotBytes),
       ),
-      consumerMappingSha256(snapshot.mapping),
+      snapshot.schemaVersion === "quizforge.internal-play-snapshot.v2"
+        ? consumerMappingSha256V2(snapshot.mapping)
+        : consumerMappingSha256(snapshot.mapping),
     ]);
   if (
     bindingHash !== value.play.bindingSha256 ||
