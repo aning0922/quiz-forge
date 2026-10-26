@@ -4,7 +4,7 @@
 
 2026-10-26，作者确认 D0 的四项业务决定，并进一步授权按 D1 → D4 顺序实施。D0 的只读阶段已结束；常规实现、定向验证和独立演示可继续。新增美术仍需对应视觉确认，main 合并、生产迁移、公开部署、商业使用和 Release 不由本次开发授权推定。
 
-基线为 main `0d1715c572e1f1e2ed2337fb446e6ea2f02b651a`。独立集成分支 `codex/qianzai-tongxin-d1-d4`，核心分支 `codex/qianzai-tongxin-core`。原 P5、Studio 演示及作者工作树保持。当前开始 D1；下方交付条件是计划，不是已通过结果。
+基线为 main `0d1715c572e1f1e2ed2337fb446e6ea2f02b651a`。独立集成分支 `codex/qianzai-tongxin-d1-d4`，核心分支 `codex/qianzai-tongxin-core`。原 P5、Studio 演示及作者工作树保持。D1核心及唯一独审修复已完成，接续D2设计；各阶段实际结果以[进度](PROGRESS.md)为准，下方未完成阶段的交付条件仍是计划。
 
 ### 已确认业务基线
 

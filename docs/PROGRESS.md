@@ -1,10 +1,20 @@
 # 阶段进度
 
+## 2026-10-26 《千载同心》D1 工程出口，接续 D2
+
+D1核心`82d9763f65cc060625da2fe624cb2bb311d717ee`及文学桥修复`5c30cdd7ebd4a79ce3ad6ac57793ff86925c6956`已集成（对应`d878932`、`2fc8203`）。新增评分v2、matching context、content.v3有限COMPOSED合同、引用/证据校验和`quizpack-v3.ts`转换/校验/评分CLI；现有v1/v2文件、SQL、现行消费者和实现分派未修改。Astra限定独审通过；唯一P2“approved不能把weak文学桥提升为accepted”已修为仅medium可接受、weak/none保留事实，并完成针对性复核。
+
+实际作者输入24题/五维/五人物完成转换，12条合成路径×any/male/female共36次与候选期望一致。输出明确`coreValid=true / contentValid=false / importable=false`，尚缺报告与资源bindings，不能称完整QuizPack已可导入。该输入使用本机校验身份`qianzai-tongxin@1.0.0`，尚未创建数据库Product；正式记录建立后绑定同一实际ID，不新增UUID或目录到业务的隐式映射。
+
+验证复用A同输入记录：`pnpm exec vitest run src/features/quiz/scoring/v2/score.test.ts src/features/quizpack/content/v3.test.ts src/features/quizpack/content/v3-cli.test.ts src/features/quiz/scoring/historical.test.ts`初轮19项通过；新增边界/静态修正后仅复核新15项，旧4项复用。新文件定向ESLint、`pnpm exec tsc --noEmit --project .cache/qztx-d1/tsconfig.json`及差异检查通过；初次未使用变量/类型推断失败保留于核心树私有`.cache/qztx-d1/recovered-validation-records.json`。文学桥只跑`pnpm exec vitest run src/features/quizpack/content/v3.test.ts -t "approved matched"`，2通过/6名称筛选跳过，未重跑36路径或整轮。主控与独审不再重复执行；未运行数据库、媒体、生产构建、E2E，因为D1未改变这些运行路径。
+
+D2已提出当前管线显式v3分派、偏好持久化、六卷快照和追加0024迁移方案，进入针对性设计审查；尚未启动SQL变更或数据库。资源准备并行，已有W1真实单图恢复证据与包外原件补查见下方；最终美术、消费者和双PNG仍待D3/D4。
+
 ## 2026-10-26 《千载同心》24题五维 D1–D4 启动
 
 作者已确认D0四项业务基线并明确授权按D1→D4实施，要求区分固定视觉、可派生资源、待找回原件与Windows本地生图。main已核实为`0d1715c572e1f1e2ed2337fb446e6ea2f02b651a`（账号PR #31已合并），建立独立`codex/qianzai-tongxin-d1-d4`集成树和`codex/qianzai-tongxin-core`核心树；下方旧“等待体验/尚未合并”保持原日期语境。
 
-按原独立A/B开发及Astra审查方式推进：A先收口D1新内容/评分合同，B实施独立Art Factory单任务与恢复工具，主控负责集成、共享文件及资源分工。高风险合同先定向独审。业务、视觉、资源与阶段出口见[千载同心实施合同](QIANZAI_TONGXIN.md)。当前仅开始D1及资源工具准备，尚无本批测试/运行验收；未启动GPU任务、素材迁移或D2数据库迁移。既有P5、Studio演示与作者文件保持，不自动合并、生产部署或扩大到其他商品。
+按原独立A/B开发及Astra审查方式推进：A先收口D1新内容/评分合同，B实施独立Art Factory单任务与恢复工具，主控负责集成、共享文件及资源分工。高风险合同先定向独审。业务、视觉、资源与阶段出口见[千载同心实施合同](QIANZAI_TONGXIN.md)。启动时仅开始D1及资源工具准备，当时未运行本批验证或GPU任务；后续实际结果见下方接续记录。素材迁移与D2数据库迁移尚未开始。既有P5、Studio演示与作者文件保持，不自动合并、生产部署或扩大到其他商品。
 
 同日接续：D1合同已获Astra定向审查通过，A开始实现。独立Art Factory在本地提交`750e3266622fe0db3b69ed2c0ed5f4411694b6d9`完成零依赖CLI；18项初轮离线测试、审查后定向反例及关联路径按分段记录复用，未重复全套。Astra关闭完成项哈希及窄PNG两项问题后，主控实际执行唯一虚构角色W1：单次提交后客户端注入丢回执，保留UNKNOWN，随后仅恢复原任务并成功下载832×1216 PNG，原始文件SHA `a6c0a48632a43738e6cfe79e69602eaffa6921dc1a05cb059e47d7fbe16168de`。这是本地工具链工程证据，候选仍pending，不是《千载同心》正式人物/风格/商用批准；没有重复POST、改SSH或重新生成封面。原任务与失败/注入证据保留在独立工具私有运行目录。D2数据库及正式消费者接线仍未开始。
 
