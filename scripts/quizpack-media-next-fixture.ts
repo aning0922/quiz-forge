@@ -467,7 +467,8 @@ async function generateCases(deadline: number) {
 function routeSource(expectedRootsHash: string) {
   return `import "server-only";
 import {createHash} from "node:crypto";
-import {validateArchiveCandidate,copyCandidateResourceBytes,strictSupportedReportSchema,serializeSealedReport} from "@/features/quizpack/server/validation";
+import {validateArchiveCandidate,copyCandidateResourceBytes,serializeSealedReport} from "@/features/quizpack/server/validation";
+import {strictCurrentReportSchema} from "@/features/quizpack/server/validation/report";
 import {createMediaOperationContext,disposeMediaOperationContext,readMediaRuntimeBinding,runIsolatedImage,type ImageDeclaration} from "@/features/quizpack/server/media";
 import {cases,image} from "../../fixture-data";
 declare const __QUIZFORGE_MEDIA_CHECKOUT_ROOT__: string;
@@ -507,7 +508,7 @@ export async function GET(request:Request){
     const e=result.evidence;
     settled=e.completion.relatedIo==="settled"&&e.completion.mediaStopped!=="unknown";
     const report=e.report.status==="sealed"?e.report.value:null;
-    const reportValid=e.report.status==="sealed"&&strictSupportedReportSchema.safeParse(e.report.value).success&&hash(serializeSealedReport(e.report))===e.report.sha256;
+    const reportValid=e.report.status==="sealed"&&strictCurrentReportSchema.safeParse(e.report.value).success&&hash(serializeSealedReport(e.report))===e.report.sha256;
     const checksPassed=!!report&&Object.keys(report.checks).length===6&&Object.values(report.checks).every((value)=>value==="passed");
     const checksFailed=!!report&&Object.values(report.checks).some((value)=>value==="failed");
     const mediaDecoded=e.media.length>0&&e.media.every((item)=>item.result.outcome==="decoded"&&item.result.stopped==="confirmed");
@@ -1069,7 +1070,7 @@ async function verify(
             result.contentKind !== expected.contentKind ||
             result.engineId !== expected.engineId ||
             result.componentVersion !== expected.componentVersion ||
-            result.identitySchema !== "quizpack-validation-identity.v2" ||
+            result.identitySchema !== "quizpack-validation-identity.v3" ||
             result.report !== "sealed" ||
             result.reportValid !== true ||
             result.checksPassed !== true ||
