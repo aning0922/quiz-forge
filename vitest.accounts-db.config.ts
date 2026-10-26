@@ -7,7 +7,9 @@ if (
   suite !== "retention" &&
   suite !== "authority" &&
   suite !== "projection" &&
-  suite !== "directory"
+  suite !== "directory" &&
+  suite !== "cleanup" &&
+  suite !== "migration"
 )
   throw new Error("EXPLICIT_ACCOUNTS_DATABASE_SUITE_REQUIRED");
 
@@ -26,7 +28,11 @@ export default defineConfig({
             ? "tests/accounts-db/studio-accounts-authority.test.ts"
             : suite === "projection"
               ? "tests/accounts-db/studio-accounts-projection.test.ts"
-              : "tests/accounts-db/studio-account-directory.test.ts",
+              : suite === "cleanup"
+                ? "tests/accounts-db/studio-auth-cleanup.test.ts"
+                : suite === "migration"
+                  ? "tests/accounts-db/studio-auth-migration.test.ts"
+                  : "tests/accounts-db/studio-account-directory.test.ts",
     ],
     exclude: [],
   },
