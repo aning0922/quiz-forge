@@ -234,6 +234,23 @@ function Workspace({
     launched,
     surfaces,
   ]);
+  const historyEntryTarget = entry.scope
+    ? requestedTarget
+    : workspace?.read.value?.content.draft.state === "present"
+      ? workspace.read.value.content.draft.value.target
+      : undefined;
+  useEffect(() => {
+    if (entry.panel !== "revisions" || historyScope || !historyEntryTarget)
+      return;
+    let active = true;
+    queueMicrotask(() => {
+      if (active)
+        setHistoryScope(revisionTargetSchema.parse(historyEntryTarget));
+    });
+    return () => {
+      active = false;
+    };
+  }, [entry.panel, historyScope, historyEntryTarget]);
   const openedPanel = useRef<string | undefined>(undefined);
   const openSurface = surfaces.open;
   useEffect(() => {
@@ -702,8 +719,20 @@ function Workspace({
             onInspectSource={inspectSource}
             onInspectRevision={inspectRevision}
           />
-        ) : (
+        ) : (entry.scope ? fixedRead.loading : read.loading) ? (
+          <p role="status">正在读取草稿范围，请稍候…</p>
+        ) : (entry.scope ? fixedRead.error : read.error) ? (
+          <section role="alert" className={styles.notice}>
+            <p>草稿范围读取失败，尚不能判定是否存在可读修订。</p>
+            <p>{entry.scope ? fixedRead.error : read.error}</p>
+            <button onClick={entry.scope ? fixedRead.refresh : read.refresh}>
+              重新读取草稿范围
+            </button>
+          </section>
+        ) : !entry.scope && value?.content.draft.state === "none" ? (
           <p>尚无可读取的草稿修订。</p>
+        ) : (
+          <p role="status">草稿范围尚待核实，不会改用其他来源。</p>
         )}
       </RetainedTaskSurface>
       <RetainedTaskSurface id="source">

@@ -67,6 +67,9 @@ const draft = (revision2) => ({
 let role = "admin",
   revision = 3,
   fixedFail = false,
+  summaryMode = "normal",
+  currentDraftId = uuid(1),
+  heldSummary,
   reads = [],
   writes = [];
 const session = () => ({
@@ -85,14 +88,17 @@ function operations() {
   return projectProductOperations(product, now, {
     reception: { total: 0, latest: null },
     validation: { total: 0, latest: null },
-    draft: {
-      target: target(revision),
-      sourceImportId: uuid(3),
-      sourceValidationId: uuid(4),
-      sourceValidationStateRevision: 1,
-      candidateSha256: "d".repeat(64),
-      createdAt: now,
-    },
+    draft:
+      summaryMode === "empty"
+        ? null
+        : {
+            target: { ...target(revision), draftId: currentDraftId },
+            sourceImportId: uuid(3),
+            sourceValidationId: uuid(4),
+            sourceValidationStateRevision: 1,
+            candidateSha256: "d".repeat(64),
+            createdAt: now,
+          },
     reviews: [],
     versions: [],
     testing: [],
@@ -104,11 +110,13 @@ await esbuild.build({
 import {createRoot} from 'react-dom/client';import {useState} from 'react';
 import {StudioShell} from '@/features/studio/shell';
 import {ProductWorkspaceFrame} from '@/features/studio/product-workspace/frame';
+import {useProductWorkspaceContext} from '@/features/studio/product-workspace/context';
+function ReadProbe(){const value=useProductWorkspaceContext();window.refreshWorkspace=value.read.refresh;return null;}
 import {ProductTaskWorkspace} from '@/features/studio/product-workspace/task-workspace';
 import {DraftRevisionPage} from '@/features/studio/drafts/read-page';
 import {invalidateCurrentStudioAuthority} from '@/features/studio/authority-events';
 const input=JSON.parse(document.querySelector('#fixture').textContent);
-function App(){const [entry,setEntry]=useState(input.entry);window.navigateTask=setEntry;window.revokeWorkspace=invalidateCurrentStudioAuthority;return <StudioShell authenticated identity={input.session.operator} session={input.session}><ProductWorkspaceFrame productId=input.productId><>{input.detail?<DraftRevisionPage productId={input.productId} draftId={input.draftId} revision={1} navigation={null}/>:<ProductTaskWorkspace session={input.session} initialTask={entry.task} initialPanel={entry.panel} initialScope={entry.scope} consumerScope={input.scope} consumerRenderer={input.renderer}/>}</></ProductWorkspaceFrame></StudioShell>}
+function App(){const [entry,setEntry]=useState(input.entry);window.navigateTask=setEntry;window.revokeWorkspace=invalidateCurrentStudioAuthority;return <StudioShell authenticated identity={input.session.operator} session={input.session}><ProductWorkspaceFrame productId=input.productId><ReadProbe/><>{input.detail?<DraftRevisionPage productId={input.productId} draftId={input.draftId} revision={1} navigation={null}/>:<ProductTaskWorkspace session={input.session} initialTask={entry.task} initialPanel={entry.panel} initialScope={entry.scope} consumerScope={input.scope} consumerRenderer={input.renderer}/>}</></ProductWorkspaceFrame></StudioShell>}
 createRoot(document.getElementById('root')).render(<App/>);`.replace(
       "productId=input.productId",
       "productId={input.productId}",
@@ -183,6 +191,14 @@ const server = createServer(async (req, res) => {
       }
       reads.push(p + url.search);
       if (p === "/api/studio/operations/products/" + id) {
+        if (summaryMode === "hold") {
+          heldSummary = res;
+          return;
+        }
+        if (summaryMode === "fail") {
+          json(res, 503, { code: "STUDIO_UNAVAILABLE", requestId: uuid(99) });
+          return;
+        }
         json(res, 200, operations());
         return;
       }
@@ -200,6 +216,24 @@ const server = createServer(async (req, res) => {
       }
       if (p.endsWith("/draft")) {
         json(res, 200, { kind: "draft", draft: draft(revision) });
+        return;
+      }
+      const historyPath = p.match(/\/drafts\/([^/]+)\/revisions$/);
+      if (historyPath) {
+        const size = Number(url.searchParams.get("pageSize")),
+          anchor = historyPath[1] === uuid(1) ? 3 : revision;
+        json(res, 200, {
+          productId: id,
+          draftId: historyPath[1],
+          anchorRevision: anchor,
+          beforeRevision: anchor + 1,
+          pageSize: size,
+          items: Array.from({ length: anchor }, (_, i) => ({
+            ...draft(anchor - i),
+            draftId: historyPath[1],
+          })),
+          nextBeforeRevision: null,
+        });
         return;
       }
       const r = p.match(
@@ -304,11 +338,13 @@ const origin = `http://127.0.0.1:${server.address().port}`,
   results = [],
   errors = [];
 let context, page;
-async function open(nextRole = "admin", query = "") {
+async function open(nextRole = "admin", query = "", initialSummary = "normal") {
   if (context) await context.close();
   role = nextRole;
   revision = 3;
   fixedFail = false;
+  summaryMode = initialSummary;
+  currentDraftId = uuid(1);
   reads = [];
   writes = [];
   context = await browser.newContext({
@@ -319,9 +355,10 @@ async function open(nextRole = "admin", query = "") {
   page.setDefaultTimeout(6e3);
   page.on("pageerror", (e) => errors.push(e.message));
   await page.goto(origin + "/studio/products/" + id + query);
-  await expect(
-    page.getByRole("heading", { name: product.title, exact: true }),
-  ).toBeVisible();
+  if (initialSummary === "normal" || initialSummary === "empty")
+    await expect(
+      page.getByRole("heading", { name: product.title, exact: true }),
+    ).toBeVisible();
 }
 const button = (name) =>
   page.getByRole("button", { name, exact: true }).filter({ visible: true });
@@ -582,6 +619,81 @@ try {
       path: path.join(out, "workspace-formal-revision-1440.png"),
     });
   });
+  await run("revisions-url", async () => {
+    const historyReads = () =>
+      reads.filter((value) => /\/drafts\/[^/]+\/revisions\?/.test(value));
+    await open("read-only", "?task=content&panel=revisions", "hold");
+    const dialog = page.getByRole("dialog", {
+      name: "内容修订记录",
+      exact: true,
+    });
+    await expect(dialog).toBeVisible();
+    await expect(
+      dialog.getByText("正在读取草稿范围，请稍候…", { exact: true }),
+    ).toBeVisible();
+    await expect(
+      dialog.getByText("尚无可读取的草稿修订。", { exact: true }),
+    ).toHaveCount(0);
+    expect(historyReads()).toHaveLength(0);
+    await expect.poll(() => Boolean(heldSummary)).toBe(true);
+    summaryMode = "normal";
+    json(heldSummary, 200, operations());
+    heldSummary = undefined;
+    await expect(dialog.getByText("修订 r3", { exact: true })).toBeVisible();
+    expect(historyReads()).toEqual([
+      `/api/studio/products/${id}/drafts/${uuid(1)}/revisions?pageSize=20`,
+    ]);
+    const row = await dialog
+      .getByText("修订 r3", { exact: true })
+      .elementHandle();
+    revision = 4;
+    currentDraftId = uuid(11);
+    await page.evaluate(() => window.refreshWorkspace());
+    await expect
+      .poll(() =>
+        page
+          .locator("header")
+          .allTextContents()
+          .then((values) => values.join(" ").includes("草稿 r4")),
+      )
+      .toBe(true);
+    expect(
+      await dialog
+        .getByText("修订 r3", { exact: true })
+        .evaluate((node, old) => node === old, row),
+    ).toBe(true);
+    expect(historyReads()).toHaveLength(1);
+    expect(historyReads().some((value) => value.includes(uuid(11)))).toBe(
+      false,
+    );
+    summaryMode = "fail";
+    await page.evaluate(() => window.refreshWorkspace());
+    await expect(
+      page.getByText("当前状态读取失败，已保留任务不会被替换。", {
+        exact: false,
+      }),
+    ).toBeVisible();
+    await expect(dialog.getByText("修订 r3", { exact: true })).toBeVisible();
+    expect(historyReads()).toHaveLength(1);
+    await open("read-only", "?task=content&panel=revisions", "fail");
+    await expect(
+      page.getByRole("dialog", { name: "内容修订记录", exact: true }),
+    ).toContainText("草稿范围读取失败，尚不能判定是否存在可读修订。");
+    await expect(
+      page.getByText("尚无可读取的草稿修订。", { exact: true }),
+    ).toHaveCount(0);
+    expect(historyReads()).toHaveLength(0);
+    summaryMode = "normal";
+    await button("重新读取草稿范围").click();
+    await expect(page.getByText("修订 r3", { exact: true })).toBeVisible();
+    expect(historyReads()).toHaveLength(1);
+    await open("read-only", "?task=content&panel=revisions", "empty");
+    await expect(
+      page.getByText("尚无可读取的草稿修订。", { exact: true }),
+    ).toBeVisible();
+    expect(historyReads()).toHaveLength(0);
+    expect(writes).toHaveLength(0);
+  });
   expect(errors).toEqual([]);
   console.log(JSON.stringify({ out, results, errors }));
 } catch (error) {
@@ -600,6 +712,8 @@ try {
   );
   throw error;
 } finally {
+  if (heldSummary && !heldSummary.writableEnded)
+    json(heldSummary, 503, { code: "STUDIO_UNAVAILABLE", requestId: uuid(99) });
   await browser.close();
   await new Promise((resolve) => server.close(() => resolve()));
 }
