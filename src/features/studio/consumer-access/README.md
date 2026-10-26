@@ -1,4 +1,8 @@
-# P4 Studio play / Key 操作客户端
+# Studio 内测发放客户端
+
+当前入口为 `/studio/products/[productId]?task=testing`，在 V2-B 四任务工作区中运行；旧通用 `consumer-access` 页面已删除。创建答题版本、发码与作废使用保留任务弹窗，历史安全详情使用单层抽屉。admin 可创建答题版本，admin/operator 可发码，只读身份只能查看。真实服务及首次内测闭环已有 P4/P5 记录，本次整合证据见 `docs/S1_ACCEPTANCE.md`。以下 P4 初始实现记录中的“尚待”只描述当时状态。
+
+## P4 初始实现记录
 
 当前已建立客户端严格事实验证、本标签原请求/秘密保管、Studio 页面及 HTTP 适配；运营 API 已接入真实业务 service factory，尚待主控生产构建与实际 HTTP/浏览器闭环验证，不声称实际页面已完成 Key 发放。
 
