@@ -359,14 +359,14 @@ describe("B2-2B service: real PostgreSQL + finite media stub (not isolated-media
       });
       const row = await serviceRow(db, prepared.validationKey);
       expect(row.content_kind).toBe(kind);
-      expect(row.archive_policy_version).toBe("quizpack-private-archive.v3");
+      expect(row.archive_policy_version).toBe("quizpack-private-archive.v4");
       expect(JSON.parse(row.identity_text).schemaVersion).toBe(
-        "quizpack-validation-identity.v2",
+        "quizpack-validation-identity.v3",
       );
       const evidence = JSON.parse(row.evidence_text!);
       expect(
         evidence.attempts[0].result.evidence.report.value.schemaVersion,
-      ).toBe("quizpack-validation.v2");
+      ).toBe("quizpack-validation.v3");
       expect(
         parseValidationAttempts(row.attempts_text).every(
           (a) =>
