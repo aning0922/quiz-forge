@@ -133,7 +133,8 @@ GitHub Actions 在 `main` 推送、PR 和手工触发时执行冻结安装与工
 - 唯一应用配置入口为 `QUIZFORGE_P2A_CONFIG`，指向**当前工作树内**受管实例的私有 `runtime.json` 绝对路径。应用不回退到 `DATABASE_URL`。
 - 完整 E2E 的实例 origin 必须为 `http://127.0.0.1:3100`，用途为 `test` / `ci`；人工查看可使用单独的 `demo` 实例。
 - `corepack pnpm test:db` 连接真实隔离库，缺配置或实例不可用会失败。驱动回归另外使用 `QF_DRIVER_TEST_INSTANCE` 和 `test:driver`。
-- 运营凭证通过 `p2a:operator create` 写入专属私有文件，不进入 Git、终端日志、截图或浏览器公开数据。
+- 当前运营身份使用账号密码。通过 `pnpm studio:accounts bootstrap-admin` 明确指定新实例、账号 UUID、原操作 UUID、登录名、显示名和私有 `--operation-file` 文件，再由本人设置密码；后续开通人员由管理员后台完成。维护与原操作核实见 [账号合同](docs/STUDIO_ACCOUNTS_V1.md)。旧随机凭证命令已移除。
+- R1 的 18 条迁移备份合同只适用于其历史归档版本；当前账号结构不承诺由 R1 恢复，旧 `runtime:recovery` 入口已退出当前命令。历史实例与封存证据保持，见 [历史恢复边界](docs/RUNTIME_OPERATIONS.md)。
 - 原实例启停、媒体环境准备与私有资源保留须遵循已有身份约束。新 clone / worktree 不能直接复用另一工作树的运行配置。
 
 </details>

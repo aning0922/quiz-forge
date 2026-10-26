@@ -4,13 +4,13 @@
 
 ## 1. 身份与角色
 
-账号使用稳定 `qf.operator.id` 关联本系统操作与业务记录；唯一 `login_name` 用于登录，可改的 `display_name` 用于展示，PHC `password_hash` 用于认证，递增 `account_revision` 用于 CAS 与在途认证失效。原 label/credential 列作为既有底座字段保留，不为它们提供网页登录或迁移入口，也不因修改显示名称改写业务归属。新演示直接初始化最终结构与合成数据。
+账号使用稳定 `qf.operator.id` 关联本系统操作与业务记录；唯一 `login_name` 用于登录，可改的 `display_name` 用于展示，PHC `password_hash` 用于认证，递增 `account_revision` 用于 CAS 与在途认证失效。0023 移除旧 label/credential_digest 列及随机凭证登录/维护入口。当前账号必须具备完整规范的登录名、显示名、角色和修订；历史缺字段记录明确拒绝迁移，不自动收编或回填。password_hash 为空仍表示合法待设密人员，但不能形成已认证身份。新演示直接初始化最终结构与合成数据。
 
 - 登录名：ASCII 3–64 字符，去首尾空格后转小写，`[a-z0-9][a-z0-9._-]{2,63}`；数据库保证规范值及唯一，停用不释放。首版不提供登录名改名。
-- 显示名：1–80 个 Unicode code point，复用目录文本的 well-formed/控制字符边界，允许中文；修改显示名不改变原 label 或 ID。
+- 显示名：1–80 个 Unicode code point，复用目录文本的 well-formed/控制字符边界，允许中文；修改显示名不改变 ID 或业务归属。
 - 展示状态：disabled 优先；无密码或未配置登录名为 pending（待设置密码）；其余为 active。待设置账号没有账号密码登录能力。
 - 有效管理员：role=admin、operator.status=active、登录名已配置且密码 PHC 符合本版策略。尚未设置密码的管理员不计入保护数量。
-- `StudioSessionDto` 保留原 id/label/role/期限字段，role 增加 admin；扩展可选 loginName/displayName/accountRevision，实际新服务完整返回。账号管理使用独立的完整 Account DTO，不能根据缺失字段推定权限。
+- `StudioSessionDto.operator` 固定包含 id、loginName、displayName、role、accountRevision 五个必需字段，服务端和浏览器同用严格 Schema；缺失/旧字段/非规范值拒绝，不补默认值。会话期限字段保持。账号管理使用独立的完整 Account DTO，不能根据缺失字段推定权限。
 
 浏览器和服务端使用同一个纯角色能力表；服务端仍只接受数据库核实过的 branded actor。不能以“不是 read-only”代替具体能力。
 
@@ -111,7 +111,7 @@ app 不获得 operator/token/operation/KDF 预约表直接 INSERT/UPDATE/DELETE�
 | GET `/api/studio/accounts/operations/[operationId]` | admin 或原操作者本人；只读原结果，降权后仍可核对本人已发起操作                                            |
 | GET `/api/studio/accounts/audit`                    | admin；分页账号操作记录，无秘密                                                                           |
 
-Account DTO 至少含 id、原 label、loginName|null、displayName、role、status(pending/active/disabled)、revision、createdAt、disabledAt。错误码保持稳定 code/requestId：ACCOUNT_CONFLICT、LOGIN_NAME_TAKEN、LAST_ACTIVE_ADMIN、PASSWORD_POLICY_REJECTED、PASSWORD_CONFIRMATION_FAILED、PASSWORD_TOKEN_INVALID、OPERATION_BINDING_CONFLICT；401/403继续现有失权链，未确定提交仍为 WRITE_OUTCOME_UNKNOWN。
+Account DTO 含 id、loginName、displayName、role、status(pending/active/disabled)、revision、createdAt、disabledAt。错误码保持稳定 code/requestId：ACCOUNT_CONFLICT、LOGIN_NAME_TAKEN、LAST_ACTIVE_ADMIN、PASSWORD_POLICY_REJECTED、PASSWORD_CONFIRMATION_FAILED、PASSWORD_TOKEN_INVALID、OPERATION_BINDING_CONFLICT；401/403继续现有失权链，未确定提交仍为 WRITE_OUTCOME_UNKNOWN。
 
 “我的账号”沿 `/studio/session` 重组，系统设置加入 `/studio/accounts` 和 `/studio/accounts/audit`。短操作用现有保留式任务弹窗，危险影响有确认，密码字段允许显隐/粘贴/密码管理器。页面不展示维护数据库、PHC 或技术实现参数。
 
@@ -125,7 +125,11 @@ Account DTO 至少含 id、原 label、loginName|null、displayName、role、sta
 
 ## 9. 维护工具、实施切片和验证
 
-本机工具只在明确 instance 和 operatorId 下操作，私有 setup 文件 O_EXCL/O_NOFOLLOW、0600，保留 COMMIT 不明现场及原 operationId。bootstrap 只在尚无管理员配置时按明确的新 UUID 创建首个管理员待设置身份，无自动取第一行或旧身份迁移。本人成功设密时才取得 admin 权限。recover-admin 只处理指定的现有 active admin，不作为任意升权/恢复停用的后门。工具不代作者设置密码。
+当前本机入口只有 `pnpm studio:accounts`，命令为 `bootstrap-admin`、`recover-admin`、`disable`、`restore` 与 `inspect-operation`。所有写入都必须明确 instance、operationId、targetId；除首次 bootstrap 外必须提供 expectedRevision。bootstrap 还要规范登录名和显示名。`--operation-file` 指向该实例目录下 `account-operation-*.json`，按 O_EXCL/O_NOFOLLOW、0600 先落原绑定再发送；已有文件拒绝 execute，只可 inspect。退出或提交结果不明仍保留原文件，不自动换键或重发。
+
+bootstrap 只在尚无管理员配置时创建完整的待设置身份，本人成功设密时才取得 admin 权限。recover-admin 只处理指定且匹配 revision 的现有 active admin。disable/restore 保持最后有效管理员保护；恢复不复活会话或 token。结果 changed、前后 revision、当时业务状态与账号修改和回执同事务保存，no-op 也有终态回执；inspect 仅核对原文件与原记录，不从当前账号推断原结果，不签发链接或重写账号。旧维护记录缺少此结果时不重构、不伪称当前合同通过。工具不代作者设置密码。
+
+数据库 0023 只用于明确授权的新隔离环境；不就地迁移既有演示。运行身份必须已设密且完整，窄 `qf.account_actor(text)` 以固定 search_path 查询当前会话，app 没有 PHC 读取权限。旧随机凭证列、登录 service、旧 p2a:operator 和 schema 探测维护分支已移除。当前 owner 的 pending/原键仍保留；无归属旧桶不扫描、不读写、不认领或重放。
 
 首片：密码登录、bootstrap/本人设置、我的账号改密/退出全部、本机 admin 恢复。次片：管理列表、创建、角色/状态、签发入口、审计、跨账号任务恢复。全部在独立合成实例，提供真实可操作演示和对应 Draft PR；作者真实环境不自动迁移，main 不自动合并。
 

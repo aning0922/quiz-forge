@@ -23,9 +23,7 @@ export default async function StudioLayout({
       identity={
         state.status === "authenticated"
           ? {
-              label:
-                state.session.operator.displayName ??
-                state.session.operator.label,
+              label: state.session.operator.displayName,
               role: state.session.operator.role,
             }
           : undefined

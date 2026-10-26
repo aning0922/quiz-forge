@@ -5,10 +5,9 @@ import {
   timingSafeEqual,
 } from "node:crypto";
 
-export type TokenKind = "credential" | "preauth" | "session";
-export type CsrfKind = Exclude<TokenKind, "credential">;
+export type TokenKind = "preauth" | "session";
+export type CsrfKind = TokenKind;
 const prefixes: Record<TokenKind, string> = {
-  credential: "qfo_p2a_",
   preauth: "qfp_p2a_",
   session: "qfs_p2a_",
 };
