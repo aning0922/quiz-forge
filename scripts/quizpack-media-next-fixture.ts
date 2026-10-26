@@ -518,7 +518,9 @@ export async function GET(request:Request){
     if(result.outcome==="accepted"){
       const candidate=result.candidate;
       const facts=candidate.facts;
-      contentSchemaVersion=facts.contentSchemaVersion;contentKind=facts.content.kind;engineId=facts.content.engine.id;componentVersion=facts.content.componentVersion;
+      const sourceContent=facts.content;
+      if(sourceContent.schemaVersion!=="quizpack-content.v1"&&sourceContent.schemaVersion!=="quizpack-content.v2")throw Error("FIXTURE_UNEXPECTED_CONTENT_SCHEMA");
+      contentSchemaVersion=facts.contentSchemaVersion;contentKind=sourceContent.kind;engineId=sourceContent.engine.id;componentVersion=sourceContent.componentVersion;
       resourceCount=facts.resources.length;
       const rows= facts.resources.map((resource,index)=>{
         const copy=copyCandidateResourceBytes(candidate,index);
@@ -527,8 +529,8 @@ export async function GET(request:Request){
         if(copy.length)copy[0]=copy[0]!^255;
         const fresh=copyCandidateResourceBytes(candidate,index);
         const declaration=resource.declaration;
-        const content=facts.content.resources.find((item)=>item.id===declaration.id&&item.version===declaration.version);
-        const valid=blob===resource.blobSha256&&blob===declaration.sha256&&originalLength===resource.bytes&&originalLength===declaration.bytes&&hash(fresh)===blob&&declaration.productId===facts.productId&&facts.productId===entry.target&&facts.content.product.productId===facts.productId&&facts.manifest.productId===facts.productId&&!!content&&content.path===declaration.path&&content.sha256===blob&&content.bytes===originalLength&&hash(resource.canonicalDeclarationText)===resource.declarationSha256;
+        const content=sourceContent.resources.find((item)=>item.id===declaration.id&&item.version===declaration.version);
+        const valid=blob===resource.blobSha256&&blob===declaration.sha256&&originalLength===resource.bytes&&originalLength===declaration.bytes&&hash(fresh)===blob&&declaration.productId===facts.productId&&facts.productId===entry.target&&sourceContent.product.productId===facts.productId&&facts.manifest.productId===facts.productId&&!!content&&content.path===declaration.path&&content.sha256===blob&&content.bytes===originalLength&&hash(resource.canonicalDeclarationText)===resource.declarationSha256;
         return {valid,row:[blob,originalLength,hash(declaration.productId)]};
       });
       resourcesCopied=rows.length>0&&rows.every((item)=>item.valid)&&facts.archiveSha256===(e.input.status==="snapshotted"?e.input.archiveSha256:null);

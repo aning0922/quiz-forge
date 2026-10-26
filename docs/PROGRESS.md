@@ -20,6 +20,8 @@ D2 合同经独审后实施，已集成 v3 包接收/校验分派、五维偏好
 
 Art Factory 的 W2 两张实际样图技术完成但偏写实，未作为美术通过。限定独审后增加唯一一张 W3 单参考诊断，实际 768×1696、原参考字节核实、单次 GPU POST 与完整 PNG 验证通过；助手图检已更接近二维原稿，仍 pending 作者确认、research-only，不准入正式资源。D3 独立视觉组件已按授权接续，D4 尚未实施。独立 3270 结构演示保持；原 3100/3260 服务、作者工作树和既有数据保持。[Draft PR #32](https://github.com/aning0922/quiz-forge/pull/32) 保留，不合并或部署生产。
 
+`858d7da` 自动 CI 首轮未通过：checks 的 Format 仅指出本文档同批 `QIANZAI_TONGXIN.md` 表格格式；media isolation 的固定 Next 夹具因 accepted content 联合增加 v3，生成探针仍直接取旧结构字段而类型失败。限定修正生成探针，显式只接受其原 v1/v2 固定用例后读取字段，不屏蔽类型或放宽生产校验。定向 Prettier/ESLint 及官方 `media:fixture prepare/build` 通过，原 build 失败日志保留；不重复主应用构建、native 矩阵或消费者链。修复提交的自动 CI 另行核实，不把初轮或跳过项记为通过。
+
 ## 2026-10-26 《千载同心》D1 工程出口，接续 D2
 
 D1核心`82d9763f65cc060625da2fe624cb2bb311d717ee`及文学桥修复`5c30cdd7ebd4a79ce3ad6ac57793ff86925c6956`已集成（对应`d878932`、`2fc8203`）。新增评分v2、matching context、content.v3有限COMPOSED合同、引用/证据校验和`quizpack-v3.ts`转换/校验/评分CLI；现有v1/v2文件、SQL、现行消费者和实现分派未修改。Astra限定独审通过；唯一P2“approved不能把weak文学桥提升为accepted”已修为仅medium可接受、weak/none保留事实，并完成针对性复核。
