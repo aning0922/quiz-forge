@@ -8,13 +8,14 @@ import {
   readdir,
   realpath,
   rm,
+  rename,
   symlink,
   unlink,
   writeFile,
 } from "node:fs/promises";
 import path from "node:path";
 import { createRequire } from "node:module";
-import { writeFileSync, readdirSync, existsSync } from "node:fs";
+import { writeFileSync, readdirSync, existsSync, lstatSync } from "node:fs";
 import type { Dir } from "node:fs";
 import { describe, expect, it, vi } from "vitest";
 import {
@@ -208,7 +209,530 @@ async function replaceManifest(bound: MediaDeploymentRoots, value: unknown) {
   await writeFile(manifestPath(bound.checkoutRoot), JSON.stringify(value));
 }
 
+async function addArgon2(bound: MediaDeploymentRoots) {
+  const declaration = JSON.parse(
+    await readFile(path.join(bound.checkoutRoot, "package.json"), "utf8"),
+  );
+  declaration.dependencies.argon2 = "0.44.0";
+  await put(bound.checkoutRoot, "package.json", JSON.stringify(declaration));
+  const packages = [
+    { name: "argon2", version: "0.44.0", main: "argon2.cjs" },
+    { name: "@phc/format", version: "1.0.0", main: "index.js" },
+    { name: "node-gyp-build", version: "4.8.4", main: "index.js" },
+  ];
+  const roots: Record<string, string> = {};
+  const argon = "node_modules/.pnpm/argon2@0.44.0/node_modules/argon2";
+  for (const p of packages) {
+    const rel = `node_modules/.pnpm/${p.name.replace("/", "+")}@${p.version}/node_modules/${p.name}`;
+    roots[p.name] = rel;
+    await put(
+      bound.checkoutRoot,
+      rel + "/package.json",
+      JSON.stringify({
+        ...p,
+        dependencies:
+          p.name === "argon2"
+            ? {
+                "@phc/format": "^1.0.0",
+                "node-gyp-build": "^4.8.4",
+                "cross-env": "^10.0.0",
+                "node-addon-api": "^8.5.0",
+              }
+            : {},
+      }),
+    );
+    // Neither runtime JS nor the synthetic native can be executed by binding.
+    await put(
+      bound.checkoutRoot,
+      rel + "/" + p.main,
+      "throw Error('SYNTHETIC_RUNTIME_MUST_NOT_EXECUTE');",
+    );
+    const edge =
+      p.name === "argon2"
+        ? "node_modules/argon2"
+        : path.join(path.dirname(argon), p.name);
+    await mkdir(path.dirname(path.join(bound.checkoutRoot, edge)), {
+      recursive: true,
+      mode: 0o700,
+    });
+    await symlink(
+      path.relative(
+        path.dirname(path.join(bound.checkoutRoot, edge)),
+        path.join(bound.checkoutRoot, rel),
+      ),
+      path.join(bound.checkoutRoot, edge),
+    );
+  }
+  await put(
+    bound.checkoutRoot,
+    roots["node-gyp-build"] + "/node-gyp-build.js",
+    "throw Error('SYNTHETIC_LOADER_MUST_NOT_EXECUTE');",
+  );
+  const native =
+    argon +
+    (process.platform === "darwin"
+      ? "/prebuilds/darwin-arm64/argon2.armv8.glibc.node"
+      : "/prebuilds/linux-x64/argon2.glibc.node");
+  await put(bound.checkoutRoot, native, "synthetic-native-not-loaded");
+  return { roots, native, argon };
+}
+async function addAlias(
+  bound: MediaDeploymentRoots,
+  kind: "sharp" | "argon2",
+  suffix = "0123456789abcdef",
+  target?: string,
+) {
+  const link = path.join(
+    bound.deploymentRoot,
+    "node_modules",
+    kind + "-" + suffix,
+  );
+  await mkdir(path.dirname(link), { recursive: true, mode: 0o700 });
+  const actual =
+    target ??
+    (await realpath(path.join(bound.checkoutRoot, "node_modules", kind)));
+  await symlink(path.relative(path.dirname(link), actual), link);
+  return link;
+}
+
 describe("trusted media deployment binding", () => {
+  it.each([false, true])(
+    "binds Linux Argon2 glibc only and rejects an Alpine host marker: %s",
+    async (alpine) => {
+      const platform = Object.getOwnPropertyDescriptor(process, "platform")!,
+        arch = Object.getOwnPropertyDescriptor(process, "arch")!;
+      const report = vi.spyOn(process.report, "getReport").mockReturnValue({
+        header: { glibcVersionRuntime: "2.39" },
+      } as unknown as ReturnType<typeof process.report.getReport>);
+      try {
+        Object.defineProperty(process, "platform", {
+          ...platform,
+          value: "linux",
+        });
+        Object.defineProperty(process, "arch", { ...arch, value: "x64" });
+        await fixture(async (bound) => {
+          const runtime = await addArgon2(bound);
+          await put(
+            bound.checkoutRoot,
+            path.dirname(runtime.native) + "/argon2.musl.node",
+            "synthetic-musl-not-loaded",
+          );
+          if (!alpine) {
+            await build(bound);
+            const data = await manifest(bound);
+            expect(data.argon2Runtime?.platform).toBe("linux-x64");
+            expect(data.argon2Runtime?.native.path).toBe(runtime.native);
+            expect((await verifyMediaDeployment(bound, context())).ok).toBe(
+              true,
+            );
+          } else {
+            const actual =
+              await vi.importActual<typeof import("node:fs/promises")>(
+                "node:fs/promises",
+              );
+            vi.resetModules();
+            vi.doMock("node:fs/promises", () => ({
+              ...actual,
+              lstat: async (...args: Parameters<typeof actual.lstat>) => {
+                if (String(args[0]) === "/etc/alpine-release")
+                  args[0] = path.join(bound.checkoutRoot, "package.json");
+                return actual.lstat(...args);
+              },
+            }));
+            try {
+              const fresh = await import("./media-deployment");
+              expect(
+                await fresh.hardenMediaDeploymentArtifacts(bound, context()),
+              ).toMatchObject({
+                ok: false,
+                code: "DEPENDENCY_INVALID",
+                summary: { changedFiles: 0, changedDirectories: 0 },
+              });
+            } finally {
+              vi.doUnmock("node:fs/promises");
+              vi.resetModules();
+            }
+          }
+        });
+      } finally {
+        report.mockRestore();
+        Object.defineProperty(process, "platform", platform);
+        Object.defineProperty(process, "arch", arch);
+      }
+    },
+  );
+  it("detects Argon2 closure changes during artifact hardening", async () => {
+    await fixture(async (bound) => {
+      const runtime = await addArgon2(bound);
+      const artifact = path.join(bound.deploymentRoot, "server/probe.js");
+      await chmod(artifact, 0o664);
+      let changed = false;
+      const result = await hardenMediaDeploymentArtifacts(bound, {
+        ...context(),
+        checkpoint() {
+          if (!changed && (lstatSync(artifact).mode & 0o777) === 0o600) {
+            changed = true;
+            writeFileSync(
+              path.join(
+                bound.checkoutRoot,
+                runtime.roots["@phc/format"]!,
+                "index.js",
+              ),
+              "changed during artifact hardening",
+            );
+          }
+        },
+      });
+      expect(changed).toBe(true);
+      expect(result).toMatchObject({ ok: false, code: "FILE_CHANGED" });
+    });
+  });
+  it("binds both fixed aliases and Argon2 runtime/native bytes without loading or chmod on dependencies", async () => {
+    await fixture(async (bound) => {
+      const runtime = await addArgon2(bound);
+      await addAlias(bound, "sharp");
+      await addAlias(bound, "argon2");
+      const native = path.join(bound.checkoutRoot, runtime.native);
+      await chmod(native, 0o644);
+      const before = await lstat(native, { bigint: true });
+      expect((await hardenMediaDeploymentArtifacts(bound, context())).ok).toBe(
+        true,
+      );
+      const after = await lstat(native, { bigint: true });
+      expect({
+        mode: after.mode,
+        ino: after.ino,
+        ctime: after.ctimeNs,
+      }).toEqual({ mode: before.mode, ino: before.ino, ctime: before.ctimeNs });
+      await build(bound);
+      const data = await manifest(bound);
+      expect(data.artifactAliases.map((a) => a.path)).toEqual([
+        "node_modules/argon2-0123456789abcdef",
+        "node_modules/sharp-0123456789abcdef",
+      ]);
+      expect(data.argon2Runtime?.packageRoots.map((p) => p.name)).toEqual([
+        "argon2",
+        "@phc/format",
+        "node-gyp-build",
+      ]);
+      const registered = data.sourceFiles.filter(
+        (f) => f.role === "argon2-runtime",
+      );
+      expect(
+        registered.some(
+          (f) =>
+            f.path.includes("cross-env") || f.path.includes("node-addon-api"),
+        ),
+      ).toBe(false);
+      const nativeEntry = registered.find((f) => f.path === runtime.native)!;
+      expect(data.argon2Runtime?.native).toEqual({
+        path: nativeEntry.path,
+        bytes: nativeEntry.bytes,
+        sha256: nativeEntry.sha256,
+      });
+      expect((await verifyMediaDeployment(bound, context())).ok).toBe(true);
+    });
+  });
+  it("rejects an Argon2 package-internal symlink before artifact chmod", async () => {
+    await fixture(async (bound, owned) => {
+      const runtime = await addArgon2(bound);
+      await put(owned, "outside-private-bytes", "outside");
+      await symlink(
+        path.join(owned, "outside-private-bytes"),
+        path.join(bound.checkoutRoot, runtime.argon, "unexpected-data"),
+      );
+      const file = path.join(bound.deploymentRoot, "server/probe.js");
+      await chmod(file, 0o664);
+      expect(
+        await hardenMediaDeploymentArtifacts(bound, context()),
+      ).toMatchObject({
+        ok: false,
+        code: "FILE_UNSAFE",
+        summary: { changedFiles: 0, changedDirectories: 0 },
+      });
+      expect((await lstat(file)).mode & 0o777).toBe(0o664);
+    });
+  });
+  it.each(["duplicate", "unknown", "target", "native", "entry", "extra"])(
+    "strictly parses Argon2 manifest closure and aliases: %s",
+    async (kind) => {
+      await fixture(async (bound) => {
+        await addArgon2(bound);
+        await addAlias(bound, "argon2");
+        await build(bound);
+        const data = await manifest(bound);
+        if (kind === "duplicate")
+          data.artifactAliases.push({
+            ...data.artifactAliases[0]!,
+            path: "node_modules/argon2-fedcba9876543210",
+          });
+        if (kind === "unknown")
+          data.artifactAliases[0]!.path = "node_modules/other-0123456789abcdef";
+        if (kind === "target")
+          data.artifactAliases[0]!.targetRoot =
+            data.sharpRuntime.packageRoots[0]!.root;
+        if (kind === "native")
+          data.argon2Runtime!.native.path = "/outside/native.node";
+        if (kind === "entry")
+          data.argon2Runtime!.packageRoots[1]!.entry =
+            data.argon2Runtime!.packageRoots[0]!.entry;
+        if (kind === "extra")
+          Object.assign(data.argon2Runtime!, { undeclared: true });
+        await replaceManifest(bound, data);
+        expect(await verifyMediaDeployment(bound, context())).toMatchObject({
+          ok: false,
+          code: "MANIFEST_INVALID",
+        });
+      });
+    },
+  );
+  it.each([
+    "unknown",
+    "duplicate",
+    "wrong-root",
+    "indirect",
+    "outside",
+    "directory",
+  ])("rejects Argon2 alias preflight before chmod: %s", async (kind) => {
+    await fixture(async (bound, owned) => {
+      await addArgon2(bound);
+      const file = path.join(bound.deploymentRoot, "server/probe.js");
+      await chmod(file, 0o664);
+      if (kind === "duplicate") {
+        await addAlias(bound, "argon2");
+        await addAlias(bound, "argon2", "fedcba9876543210");
+      } else if (kind === "directory")
+        await mkdir(
+          path.join(
+            bound.deploymentRoot,
+            "node_modules/argon2-0123456789abcdef",
+          ),
+          { recursive: true, mode: 0o700 },
+        );
+      else if (kind === "unknown") {
+        const alias = await addAlias(bound, "argon2");
+        await rename(
+          alias,
+          path.join(path.dirname(alias), "other-0123456789abcdef"),
+        );
+      } else {
+        let target = await realpath(
+          path.join(bound.checkoutRoot, "node_modules/argon2"),
+        );
+        if (kind === "wrong-root")
+          target = await realpath(
+            path.join(bound.checkoutRoot, "node_modules/sharp"),
+          );
+        if (kind === "outside") {
+          target = path.join(owned, "outside");
+          await mkdir(target, { mode: 0o700 });
+        }
+        if (kind === "indirect") {
+          const link = path.join(bound.checkoutRoot, "indirect-argon");
+          await symlink(target, link);
+          target = link;
+        }
+        await addAlias(bound, "argon2", "0123456789abcdef", target);
+      }
+      expect(
+        await hardenMediaDeploymentArtifacts(bound, context()),
+      ).toMatchObject({
+        ok: false,
+        code: "FILE_UNSAFE",
+        summary: { changedFiles: 0, changedDirectories: 0 },
+      });
+      expect((await lstat(file)).mode & 0o777).toBe(0o664);
+    });
+  });
+  it.each(["argon2", "@phc/format", "node-gyp-build", "native"])(
+    "detects sealed Argon2 closure byte changes: %s",
+    async (name) => {
+      await fixture(async (bound) => {
+        const runtime = await addArgon2(bound);
+        await addAlias(bound, "argon2");
+        await build(bound);
+        const file =
+          name === "native"
+            ? runtime.native
+            : runtime.roots[name] +
+              (name === "argon2" ? "/argon2.cjs" : "/index.js");
+        await put(bound.checkoutRoot, file, "changed runtime bytes");
+        expect(await verifyMediaDeployment(bound, context())).toMatchObject({
+          ok: false,
+          code: "MANIFEST_MISMATCH",
+        });
+      });
+    },
+  );
+  it.each(["missing", "added", "text-changed"])(
+    "rechecks the sealed Argon2 alias set: %s",
+    async (kind) => {
+      await fixture(async (bound) => {
+        await addArgon2(bound);
+        let alias: string | undefined;
+        if (kind !== "added") alias = await addAlias(bound, "argon2");
+        await build(bound);
+        if (alias) await unlink(alias);
+        if (kind === "text-changed") {
+          const target = await realpath(
+            path.join(bound.checkoutRoot, "node_modules/argon2"),
+          );
+          await symlink(target, alias!);
+        }
+        if (kind === "added") await addAlias(bound, "argon2");
+        expect(await verifyMediaDeployment(bound, context())).toMatchObject({
+          ok: false,
+          code: "MANIFEST_MISMATCH",
+        });
+      });
+    },
+  );
+  it.each(["version", "entry", "edge", "indirect-edge"])(
+    "locks Argon2 package identity, entry and direct dependency edge: %s",
+    async (kind) => {
+      await fixture(async (bound, owned) => {
+        const runtime = await addArgon2(bound);
+        const file = path.join(bound.deploymentRoot, "server/probe.js");
+        await chmod(file, 0o664);
+        if (kind === "version" || kind === "entry") {
+          const metadata = JSON.parse(
+            await readFile(
+              path.join(
+                bound.checkoutRoot,
+                runtime.roots["@phc/format"] + "/package.json",
+              ),
+              "utf8",
+            ),
+          );
+          if (kind === "version") metadata.version = "1.0.1";
+          else metadata.main = "elsewhere.js";
+          await put(
+            bound.checkoutRoot,
+            runtime.roots["@phc/format"] + "/package.json",
+            JSON.stringify(metadata),
+          );
+        } else {
+          const edge = path.join(
+            bound.checkoutRoot,
+            path.dirname(runtime.argon),
+            "@phc/format",
+          );
+          await unlink(edge);
+          let target = path.join(owned, "unmanaged");
+          await mkdir(target, { mode: 0o700 });
+          if (kind === "indirect-edge") {
+            const targetLink = path.join(owned, "indirect-edge");
+            await symlink(
+              path.join(bound.checkoutRoot, runtime.roots["@phc/format"]!),
+              targetLink,
+            );
+            target = targetLink;
+          }
+          await symlink(target, edge);
+        }
+        expect(
+          await hardenMediaDeploymentArtifacts(bound, context()),
+        ).toMatchObject({
+          ok: false,
+          code: "DEPENDENCY_INVALID",
+          summary: { changedFiles: 0, changedDirectories: 0 },
+        });
+        expect((await lstat(file)).mode & 0o777).toBe(0o664);
+      });
+    },
+  );
+  it.each([
+    "ARGON2_PREBUILD",
+    "PREBUILDS_ONLY",
+    "npm_config_arch",
+    "npm_config_platform",
+    "LIBC",
+    "ARM_VERSION",
+    "ELECTRON_RUN_AS_NODE",
+  ])("rejects Argon2 loader environment selection: %s", async (name) => {
+    await fixture(async (bound, owned) => {
+      await addArgon2(bound);
+      const file = path.join(bound.deploymentRoot, "server/probe.js");
+      await chmod(file, 0o664);
+      const previous = process.env[name];
+      process.env[name] = path.join(owned, "outside-loader-selection");
+      try {
+        expect(
+          await hardenMediaDeploymentArtifacts(bound, context()),
+        ).toMatchObject({
+          ok: false,
+          code: "DEPENDENCY_INVALID",
+          summary: { changedFiles: 0, changedDirectories: 0 },
+        });
+      } finally {
+        if (previous === undefined) delete process.env[name];
+        else process.env[name] = previous;
+      }
+      expect((await lstat(file)).mode & 0o777).toBe(0o664);
+    });
+  });
+  it.each([
+    "Release",
+    "Debug",
+    "missing-native",
+    "exec-fallback",
+    "extra-native",
+    "native-link",
+  ])("rejects unregistered Argon2 native selection: %s", async (kind) => {
+    await fixture(async (bound, owned) => {
+      const runtime = await addArgon2(bound);
+      let descriptor: PropertyDescriptor | undefined;
+      if (kind === "Release" || kind === "Debug")
+        await put(
+          bound.checkoutRoot,
+          runtime.argon + "/build/" + kind + "/other.node",
+          "synthetic-priority-addon",
+        );
+      if (kind === "extra-native")
+        await put(
+          bound.checkoutRoot,
+          path.dirname(runtime.native) + "/other.node",
+          "synthetic-unknown-addon",
+        );
+      if (
+        kind === "missing-native" ||
+        kind === "exec-fallback" ||
+        kind === "native-link"
+      )
+        await unlink(path.join(bound.checkoutRoot, runtime.native));
+      if (kind === "native-link") {
+        await put(owned, "outside.node", "synthetic-outside-addon");
+        await symlink(
+          path.join(owned, "outside.node"),
+          path.join(bound.checkoutRoot, runtime.native),
+        );
+      }
+      if (kind === "exec-fallback") {
+        const execRoot = path.join(owned, "nearby-exec");
+        await put(
+          execRoot,
+          runtime.native.split("/prebuilds/")[1]!.replace(/^/, "prebuilds/"),
+          "synthetic-nearby-addon",
+        );
+        descriptor = Object.getOwnPropertyDescriptor(process, "execPath")!;
+        Object.defineProperty(process, "execPath", {
+          ...descriptor,
+          value: path.join(execRoot, "node"),
+        });
+      }
+      try {
+        expect(
+          await hardenMediaDeploymentArtifacts(bound, context()),
+        ).toMatchObject({
+          ok: false,
+          code: kind === "native-link" ? "FILE_UNSAFE" : "DEPENDENCY_INVALID",
+          summary: { changedFiles: 0, changedDirectories: 0 },
+        });
+      } finally {
+        if (descriptor) Object.defineProperty(process, "execPath", descriptor);
+      }
+    });
+  });
   it.each([
     "redirected",
     "missing-edge",
