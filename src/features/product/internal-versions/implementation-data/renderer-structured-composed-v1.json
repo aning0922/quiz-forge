@@ -90,8 +90,8 @@
         },
         {
           "path": "src/features/theme/consumer-v2/components.tsx",
-          "bytes": 18396,
-          "sha256": "10252d51ddcad6f243176a52500986da900afb1fa900385923a143e8043e6ede"
+          "bytes": 18688,
+          "sha256": "0f3dc8b12203d7e36d5681730a0a9479e0108b3e2227693717d5c0efdeb4c470"
         },
         {
           "path": "src/features/theme/consumer-v2/consumer.module.css",
@@ -1873,7 +1873,7 @@
         "serverCondition": "react-server"
       }
     },
-    "implementationSha256": "4eae14edf04ebb82c8bd3608f5d54ea98ec1c1b5f20d497cd93500f0743e26b6",
+    "implementationSha256": "2b8e48c892448d0a77d85cf3f89dc198f63eedc589ca931dde4513ed3e13d533",
     "kind": "renderer",
     "capability": "studio-internal-preview",
     "components": {
@@ -1918,5 +1918,5 @@
       "pngAvailable": false
     }
   },
-  "entrySha256": "7391f062fdfdbe560ab95064336658a6f244872001feb6043e1824db3cfd7ce7"
+  "entrySha256": "0887d995a6b7035ea6a42cac233a958d3df9bc2d9e48fa475f405ab719f31e2d"
 }

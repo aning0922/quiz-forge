@@ -43,7 +43,7 @@ export const IMPLEMENTATION_AVAILABILITY_V2 = freeze({
     id: "structured-composed-preview",
     version: "1.0.0",
     entrySha256:
-      "7391f062fdfdbe560ab95064336658a6f244872001feb6043e1824db3cfd7ce7",
+      "0887d995a6b7035ea6a42cac233a958d3df9bc2d9e48fa475f405ab719f31e2d",
   }),
 });
 export function findEngineImplementationDescriptorV2(input: unknown) {

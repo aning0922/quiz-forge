@@ -346,6 +346,9 @@ export function ConsumerCompletionReviewViewV2({
     !!model.entry?.questions.length &&
     answeredCount(model) === model.entry.questions.length &&
     !!model.draft?.matchingContext;
+  const saved = consumerDraftStatusV2(model);
+  const allSaved =
+    saved.preferenceSaved && saved.answersSaved && saved.progressSaved;
   return (
     <section className={styles.panel} data-consumer-v2-state="review">
       <h1>确认完成本轮测评</h1>
@@ -356,9 +359,12 @@ export function ConsumerCompletionReviewViewV2({
       <p>
         尚未保存的偏好、答案和阅读位置会在上方分别提示。完成结果以服务器回执为准。
       </p>
+      {complete && !allSaved && (
+        <p role="status">请先返回检查并保存当前偏好与答案，再确认完成。</p>
+      )}
       <div className={styles.actions}>
         <button
-          disabled={!canEditConsumerV2(model) || !complete}
+          disabled={!canEditConsumerV2(model) || !complete || !allSaved}
           onClick={() => onEvent({ type: "complete" })}
         >
           确认完成并封存报告

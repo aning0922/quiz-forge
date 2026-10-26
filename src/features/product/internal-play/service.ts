@@ -4,6 +4,7 @@ import {
   consumerUuidSchema,
 } from "@/lib/consumer-contract/v1/primitives";
 import { CONSUMER_PROTOCOLS_V1 } from "@/lib/consumer-contract/v1/identities";
+import { CONSUMER_PROTOCOLS_V2 } from "@/lib/consumer-contract/v2/identities";
 import { CONSUMER_LIMITS_V1 as L } from "@/lib/consumer-contract/v1/limits";
 import { sameConsumerFact } from "@/lib/consumer-contract/v1/integrity";
 import { ConsumerError } from "@/lib/consumer-contract/v1/errors";
@@ -34,6 +35,7 @@ import {
   internalPlayListSchema,
 } from "./contracts";
 import { resolveConsumerImplementation } from "./implementation-server";
+import { resolveConsumerImplementationV2 } from "./implementation-server-v2";
 import {
   lockConsumerProduct,
   readConsumerProduct,
@@ -186,13 +188,18 @@ export function createInternalPlayService(
                     checked.source.evidence.canonicalContentSha256
                 )
                   throw new ConsumerError("SOURCE_OBSOLETE");
-                const implementation = resolveConsumerImplementation(
-                  binding.renderer,
-                );
+                const v2 =
+                  parent.snapshot.schemaVersion ===
+                  "quizforge.internal-version-snapshot.v2";
+                const implementation = v2
+                  ? resolveConsumerImplementationV2(binding.renderer)
+                  : resolveConsumerImplementation(binding.renderer);
                 if (!implementation)
                   throw new ConsumerError("UNSUPPORTED_IMPLEMENTATION");
                 const snapshot = internalPlaySnapshotSchema.parse({
-                  schemaVersion: "quizforge.internal-play-snapshot.v1",
+                  schemaVersion: v2
+                    ? "quizforge.internal-play-snapshot.v2"
+                    : "quizforge.internal-play-snapshot.v1",
                   purpose: "internal-test",
                   publicationApproved: false,
                   parent: binding.parent,
@@ -201,7 +208,17 @@ export function createInternalPlayService(
                   mapping: implementation.descriptor.mapping,
                   mappingSha256: implementation.descriptor.mappingSha256,
                   resources: JSON.parse(source.evidence.assetSetText),
-                  protocols: { ...CONSUMER_PROTOCOLS_V1 },
+                  protocols: v2 ? CONSUMER_PROTOCOLS_V2 : CONSUMER_PROTOCOLS_V1,
+                  ...(implementation.descriptor.schemaVersion ===
+                  "quizforge.consumer-implementation-entry.v2"
+                    ? {
+                        presentation: {
+                          presentationMode:
+                            implementation.descriptor.presentationMode,
+                          exports: implementation.descriptor.exports,
+                        },
+                      }
+                    : {}),
                 });
                 const created = await insertInternalPlay(
                   tx,

@@ -111,6 +111,11 @@
           "runtime": "server"
         },
         {
+          "path": "src/features/theme/consumer-v2/experience.tsx",
+          "exports": ["ConsumerSessionRuntimeV2"],
+          "runtime": "browser"
+        },
+        {
           "path": "src/features/theme/consumer-v2/controller.ts",
           "exports": ["ConsumerControllerV2"],
           "runtime": "browser"
@@ -268,8 +273,8 @@
         },
         {
           "path": "src/features/theme/consumer-v2/components.tsx",
-          "bytes": 18396,
-          "sha256": "10252d51ddcad6f243176a52500986da900afb1fa900385923a143e8043e6ede"
+          "bytes": 18688,
+          "sha256": "0f3dc8b12203d7e36d5681730a0a9479e0108b3e2227693717d5c0efdeb4c470"
         },
         {
           "path": "src/features/theme/consumer-v2/consumer.module.css",
@@ -282,9 +287,14 @@
           "sha256": "e95ee07fe64b16976d95250667c1703ec5ebd3fa7a8d57ca5ac4370c53f6e47b"
         },
         {
+          "path": "src/features/theme/consumer-v2/experience.tsx",
+          "bytes": 4361,
+          "sha256": "18e157994f01a0da3aae6e8d9316afd9488774b43907816c3bfd61ca5c86dd2c"
+        },
+        {
           "path": "src/features/theme/consumer-v2/host.tsx",
-          "bytes": 6231,
-          "sha256": "a87f8f9a57bc24ef6d4cd6de76cf5b4b883ee6e75a7866c52f3795153df0f060"
+          "bytes": 6554,
+          "sha256": "6c7f2bbfdc4d80cc94787564d60f16545ae25bfa3c4b266f3f5673b237232add"
         },
         {
           "path": "src/features/theme/consumer-v2/pending.ts",
@@ -2111,7 +2121,7 @@
         "serverCondition": "react-server"
       }
     },
-    "implementationSha256": "3e50f358fe5960db2c600c7c9d56fba66540bd246f851dc1a5cb8a034447855e"
+    "implementationSha256": "cfa4ffc0c7e880d66a29c36306b9f465e93d56f4bd8e587f34c92f091c696f31"
   },
-  "entrySha256": "5acbf78c420d13b5f785c153ba4a4f9f989cf2d7299b87149319b29c2f92e60c"
+  "entrySha256": "e4149bca321883da85fc3029e34aba2ca7b05e22da572877c98448c3447fa6c1"
 }

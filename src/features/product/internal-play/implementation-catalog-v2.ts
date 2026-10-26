@@ -44,7 +44,7 @@ export const CONSUMER_IMPLEMENTATION_AVAILABILITY_V2 = freeze({
     id: "consumer-structured-composed",
     version: "1.0.0",
     entrySha256:
-      "5acbf78c420d13b5f785c153ba4a4f9f989cf2d7299b87149319b29c2f92e60c",
+      "e4149bca321883da85fc3029e34aba2ca7b05e22da572877c98448c3447fa6c1",
   }),
 });
 export function findConsumerImplementationDescriptorV2(input: unknown) {

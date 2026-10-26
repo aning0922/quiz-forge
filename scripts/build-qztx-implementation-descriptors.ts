@@ -52,6 +52,11 @@ async function main() {
   const consumerClosure = await collectQztxImplementationClosure(cwd, [
     projection,
     {
+      path: "src/features/theme/consumer-v2/experience.tsx",
+      exports: ["ConsumerSessionRuntimeV2"],
+      runtime: "browser",
+    },
+    {
       path: "src/features/theme/consumer-v2/controller.ts",
       exports: ["ConsumerControllerV2"],
       runtime: "browser",

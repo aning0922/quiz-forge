@@ -8,6 +8,7 @@ import {
   ConsumerReportViewV2,
   ConsumerResultViewV2,
   ConsumerPosterViewV2,
+  ConsumerCompletionReviewViewV2,
   consumerDraftStatusV2,
 } from "./components";
 import { ConsumerExperienceV2, supportsStructuredReaderV2 } from "./host";
@@ -25,6 +26,21 @@ const html = (
     createElement(Component, { model, onEvent() {}, onRead() {} }),
   );
 describe("v2 structured reader (synthetic props, no service persistence proof)", () => {
+  it("does not offer completion for a full but unsaved draft", () => {
+    const { model } = structuredReaderFixtureV2();
+    model.draft!.matchingContext = {
+      schemaVersion: "quiz-matching-context.v1",
+      preference: "any",
+      policyRef: model.entry!.matchingPolicyRef,
+    };
+    model.draft!.answers = model.entry!.questions.map((q) => ({
+      questionId: q.ref.id,
+      optionId: q.options[0]!.ref.id,
+    }));
+    const rendered = html(ConsumerCompletionReviewViewV2, model);
+    expect(rendered).toContain("请先返回检查并保存");
+    expect(rendered).toMatch(/<button[^>]*disabled[^>]*>确认完成并封存报告/);
+  });
   it.each([
     "saving",
     "completing",
