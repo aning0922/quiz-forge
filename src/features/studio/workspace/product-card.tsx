@@ -1,6 +1,10 @@
+import type { StudioRole } from "@/lib/auth/role-policy";
 import Link from "next/link";
 import type { ProductOperations } from "../operations/contracts";
-import { productPresentation } from "../operations-ui/presentation";
+import {
+  productPresentation,
+  productPrimaryAction,
+} from "../operations-ui/presentation";
 import { StatusBadge } from "../operations-ui/status-badge";
 import type { ProductDto } from "@/features/product/workspace/contracts";
 import { directoryTime } from "./directory-time";
@@ -8,37 +12,24 @@ import { TechnicalDetails } from "../presentation/technical-details";
 import styles from "./workspace.module.css";
 import parity from "./catalog-parity.module.css";
 
-/** Keep existing fact-based choice, but open the matching task in the V2 workspace. */
-export function catalogPrimaryAction(operations: ProductOperations) {
-  const primary = productPresentation(operations).primary;
-  const base = `/studio/products/${encodeURIComponent(operations.directory.id)}`;
-  const route = primary.href.slice(base.length);
-  const task =
-    route === "/content"
-      ? "content"
-      : route === "/consumer-access"
-        ? "testing"
-        : route === "/internal-versions" || route.endsWith("/internal-review")
-          ? "review"
-          : null;
-  return { ...primary, href: task ? `${base}?task=${task}` : base };
-}
-
 /** The same current-value card is used by explicit reconciliation, never as a receipt. */
 export function ProductCard({
   product,
   showIdentity = false,
   newTab = false,
   operations,
+  role,
 }: {
   product: ProductDto;
   showIdentity?: boolean;
   newTab?: boolean;
-  operations?: ProductOperations;
-}) {
+} & (
+  | { operations: ProductOperations; role: StudioRole }
+  | { operations?: never; role?: never }
+)) {
   if (operations) {
     const facts = productPresentation(operations);
-    const action = catalogPrimaryAction(operations);
+    const action = productPrimaryAction(operations, role);
     return (
       <article className={`${styles.catalogCard} ${parity.mobileCard}`}>
         <h2>

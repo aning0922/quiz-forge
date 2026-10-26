@@ -5,7 +5,7 @@ import type {
   ReviewEvidence,
   VersionEvidence,
 } from "../operations/contracts";
-import { productPresentation } from "./presentation";
+import { productPresentation, productPrimaryAction } from "./presentation";
 
 const target = {
   draftId: "00000000-0000-4000-8000-000000000001",
@@ -99,8 +99,10 @@ describe("shared product presentation", () => {
     };
     value.testing.historicalCount = 1;
     const result = productPresentation(value);
-    expect(result.primary.label).toBe("核实当前状态");
-    expect(result.primary.reason).not.toContain("尚无匹配固定版");
+    expect(productPrimaryAction(value, "admin").label).toBe("核实当前状态");
+    expect(productPrimaryAction(value, "admin").reason).not.toContain(
+      "尚无匹配固定版",
+    );
     expect(result.testing).toEqual({
       label: "内测状态待核实",
       tone: "warning",
@@ -108,9 +110,10 @@ describe("shared product presentation", () => {
     expect(result.historicalNote).toBe("历史内测 1 项");
   });
   it("selects one content action without a draft and no preview", () => {
-    const result = productPresentation(fixture(false));
-    expect(result.primary.href).toBe(
-      "/studio/products/presentation-test/content",
+    const value = fixture(false);
+    const result = productPresentation(value);
+    expect(productPrimaryAction(value, "admin").href).toBe(
+      "/studio/products/presentation-test?task=content",
     );
     expect(result.previewHref).toBeNull();
     expect(result.content.label).toBe("尚无内容");
@@ -135,9 +138,13 @@ describe("shared product presentation", () => {
       },
     };
     const result = productPresentation(value);
-    expect(result.primary.label).toBe("核对当前修订");
-    expect(result.primary.href).toContain("/revisions/3/internal-review");
-    expect(result.previewHref).toContain("/revisions/3/preview");
+    expect(productPrimaryAction(value, "admin").label).toBe("核对当前修订");
+    expect(productPrimaryAction(value, "admin").href).toContain(
+      "task=review&draftId=" + target.draftId + "&revision=3",
+    );
+    expect(result.previewHref).toContain(
+      "task=preview&draftId=" + target.draftId + "&revision=3",
+    );
     expect(result.review.tone).toBe("warning");
     expect(result.historicalNote).toBe("历史固定版 r1 · 历史内测 r1");
     expect(result.testing.label).toBe("仅有历史内测");
@@ -145,13 +152,13 @@ describe("shared product presentation", () => {
   it("offers versions after exact review and testing after an exact current fixed version", () => {
     const value = fixture();
     value.review.current = { state: "present", value: review };
-    expect(productPresentation(value).primary.href).toBe(
-      "/studio/products/presentation-test/internal-versions",
+    expect(productPrimaryAction(value, "admin").href).toBe(
+      "/studio/products/presentation-test?task=review&draftId=00000000-0000-4000-8000-000000000001&revision=3",
     );
     value.versions.currentCount = 1;
     value.versions.current = { state: "present", value: version };
-    expect(productPresentation(value).primary.href).toBe(
-      "/studio/products/presentation-test/consumer-access",
+    expect(productPrimaryAction(value, "admin").href).toBe(
+      "/studio/products/presentation-test?task=testing",
     );
   });
   it("does not turn mismatched hashes or indeterminate facts into completion", () => {
@@ -163,7 +170,7 @@ describe("shared product presentation", () => {
         target: { ...target, assetSetSha256: "0".repeat(64) },
       },
     };
-    expect(productPresentation(value).primary.label).toBe("核实当前状态");
+    expect(productPrimaryAction(value, "admin").label).toBe("核实当前状态");
     value.content.draft = { state: "indeterminate", reason: "unknown" };
     expect(productPresentation(value).previewHref).toBeNull();
     expect(productPresentation(value).review.tone).toBe("warning");
@@ -174,7 +181,7 @@ describe("shared product presentation", () => {
     value.nextActions = [
       { kind: "review", href: "https://example.com", reason: "untrusted" },
     ];
-    expect(productPresentation(value).primary).toMatchObject({
+    expect(productPrimaryAction(value, "admin")).toMatchObject({
       label: "查看测评",
       href: "/studio/products/presentation-test",
     });
@@ -207,5 +214,31 @@ describe("shared product presentation", () => {
       label: "不同来源待核对",
       tone: "warning",
     });
+  });
+});
+
+describe("role-aware product actions", () => {
+  it("keeps facts identical while operator waits for admin and reader only views", () => {
+    const value = fixture();
+    const before = structuredClone(productPresentation(value));
+    expect(productPrimaryAction(value, "admin").label).toBe("核对当前修订");
+    expect(productPrimaryAction(value, "operator")).toMatchObject({
+      label: "需管理员核对",
+      href: expect.stringContaining("revision=3"),
+    });
+    expect(productPrimaryAction(value, "read-only").label).toBe("查看审核状态");
+    expect(productPresentation(value)).toEqual(before);
+    expect(before).not.toHaveProperty("primary");
+  });
+  it("allows operators to handle content and existing testing, never readers", () => {
+    const empty = fixture(false);
+    expect(productPrimaryAction(empty, "operator").label).toBe("处理内容");
+    expect(productPrimaryAction(empty, "read-only").label).toBe("查看内容");
+    const value = fixture();
+    value.review.current = { state: "present", value: review };
+    value.versions.currentCount = 1;
+    value.versions.current = { state: "present", value: version };
+    expect(productPrimaryAction(value, "operator").label).toBe("管理内测");
+    expect(productPrimaryAction(value, "read-only").label).toBe("查看内测记录");
   });
 });

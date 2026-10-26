@@ -1,3 +1,5 @@
+import { roleHasCapability, type StudioRole } from "@/lib/auth/role-policy";
+import { productWorkspaceHref } from "../product-workspace/routes";
 import {
   sameRevisionTarget,
   type RevisionTarget,
@@ -12,7 +14,6 @@ export type ProductPresentation = {
   content: PresentationStatus;
   review: PresentationStatus;
   testing: PresentationStatus;
-  primary: { label: string; href: string; reason: string };
   previewHref: string | null;
   historicalNote: string | null;
 };
@@ -85,7 +86,6 @@ function contentStatus(value: ProductOperations): PresentationStatus {
 export function productPresentation(
   value: ProductOperations,
 ): ProductPresentation {
-  const base = `/studio/products/${encodeURIComponent(value.directory.id)}`;
   const draft = value.content.draft;
   const target = draft.state === "present" ? draft.value.target : null;
   const currentReview = target && matches(value.review.current, target);
@@ -98,11 +98,6 @@ export function productPresentation(
     value.testing.currentCount > 0 &&
     target &&
     matches(value.testing.current, target);
-  const uncertain =
-    (draft.state !== "present" && draft.state !== "none") ||
-    value.versions.current.state === "indeterminate" ||
-    (target && value.review.current.state !== "none" && !currentReview) ||
-    (target && value.versions.currentCount > 0 && !currentVersion);
   const review = !target
     ? status(
         draft.state === "none" ? "暂无草稿" : "审核待核实",
@@ -123,7 +118,52 @@ export function productPresentation(
           : value.testing.historicalCount > 0
             ? status("仅有历史内测", "neutral")
             : status("尚无当前内测", "neutral");
-  let primary: ProductPresentation["primary"];
+  const historical: string[] = [];
+  for (const [label, count, observation] of [
+    ["历史审核", value.review.historicalCount, value.review.latestHistorical],
+    ["历史固定版", value.versions.historicalCount, value.versions.historical],
+    ["历史内测", value.testing.historicalCount, value.testing.historical],
+  ] as const)
+    if (count > 0)
+      historical.push(
+        `${label}${observation.state === "present" ? ` r${observation.value.target.revision}` : ` ${count} 项`}`,
+      );
+  return {
+    content: contentStatus(value),
+    review,
+    testing,
+    previewHref: target
+      ? productWorkspaceHref(value.directory.id, "preview", target)
+      : null,
+    historicalNote: historical.length ? historical.join(" · ") : null,
+  };
+}
+
+export type ProductPrimaryAction = {
+  label: string;
+  href: string;
+  reason: string;
+};
+
+/** Explain the next task for this role. The server remains the write authority. */
+export function productPrimaryAction(
+  value: ProductOperations,
+  role: StudioRole,
+): ProductPrimaryAction {
+  const base = `/studio/products/${encodeURIComponent(value.directory.id)}`;
+  const draft = value.content.draft;
+  const target = draft.state === "present" ? draft.value.target : null;
+  const currentReview = target && matches(value.review.current, target);
+  const currentVersion =
+    target &&
+    value.versions.currentCount > 0 &&
+    matches(value.versions.current, target);
+  const uncertain =
+    (draft.state !== "present" && draft.state !== "none") ||
+    value.versions.current.state === "indeterminate" ||
+    (target && value.review.current.state !== "none" && !currentReview) ||
+    (target && value.versions.currentCount > 0 && !currentVersion);
+  let primary: ProductPrimaryAction;
   if (value.directory.archivedAt)
     primary = {
       label: "查看测评",
@@ -139,45 +179,49 @@ export function productPresentation(
   else if (!target)
     primary = {
       label: "处理内容",
-      href: `${base}/content`,
+      href: productWorkspaceHref(value.directory.id, "content"),
       reason: "尚无当前草稿，先处理内容包接收、检查与草稿。",
     };
   else if (!currentReview)
     primary = {
       label: "核对当前修订",
-      href: `${base}/drafts/${target.draftId}/revisions/${target.revision}/internal-review`,
+      href: productWorkspaceHref(value.directory.id, "review", target),
       reason: `当前 r${target.revision} 尚无精确匹配的审核依据。`,
     };
   else if (!currentVersion)
     primary = {
       label: "审核与版本",
-      href: `${base}/internal-versions`,
+      href: productWorkspaceHref(value.directory.id, "review", target),
       reason: `当前 r${target.revision} 有审核依据，尚无匹配固定版。`,
     };
   else
     primary = {
       label: "管理内测",
-      href: `${base}/consumer-access`,
+      href: productWorkspaceHref(value.directory.id, "testing"),
       reason: `查看与 r${target.revision} 关联的答题版本及内测记录。`,
     };
-  const historical: string[] = [];
-  for (const [label, count, observation] of [
-    ["历史审核", value.review.historicalCount, value.review.latestHistorical],
-    ["历史固定版", value.versions.historicalCount, value.versions.historical],
-    ["历史内测", value.testing.historicalCount, value.testing.historical],
-  ] as const)
-    if (count > 0)
-      historical.push(
-        `${label}${observation.state === "present" ? ` r${observation.value.target.revision}` : ` ${count} 项`}`,
-      );
-  return {
-    content: contentStatus(value),
-    review,
-    testing,
-    primary,
-    previewHref: target
-      ? `${base}/drafts/${target.draftId}/revisions/${target.revision}/preview`
-      : null,
-    historicalNote: historical.length ? historical.join(" · ") : null,
-  };
+  if (value.directory.archivedAt || uncertain) return primary;
+  if (!target && !roleHasCapability(role, "import:create"))
+    return {
+      label: "查看内容",
+      href: primary.href,
+      reason: "当前尚无草稿；只读身份可查看已有接收与检查记录，不能导入内容。",
+    };
+  if (
+    target &&
+    (!currentReview || !currentVersion) &&
+    !roleHasCapability(role, "review:record-baseline")
+  )
+    return {
+      label: role === "operator" ? "需管理员核对" : "查看审核状态",
+      href: primary.href,
+      reason: `当前 r${target.revision}${!currentReview ? "尚无匹配审核依据" : "尚无匹配固定内测内容"}，需管理员核对并完成审核封存；当前身份仅查看。`,
+    };
+  if (target && currentVersion && !roleHasCapability(role, "access-key:issue"))
+    return {
+      label: "查看内测记录",
+      href: primary.href,
+      reason: `查看与 r${target.revision} 关联的安全记录；只读身份不能创建答题版本或发码。`,
+    };
+  return primary;
 }
