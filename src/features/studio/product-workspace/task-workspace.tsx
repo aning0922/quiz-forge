@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import type { StudioSessionDto } from "../contracts";
 import type { StudioConsumerScopeV1 } from "../consumer-access/pending";
-import type { ConsumerRendererIdentity } from "@/lib/consumer-contract/v1/identities";
+import type { StudioConsumerRenderers } from "../consumer-access/controller";
 import { StudioConsumerAccessPageV1 } from "../consumer-access/page";
 import { ReviewWorkbench } from "./review-workbench";
 import {
@@ -84,14 +84,14 @@ export function ProductTaskWorkspace({
   initialPanel,
   initialScope,
   consumerScope,
-  consumerRenderer,
+  consumerRenderers,
 }: {
   session: StudioSessionDto;
   initialTask?: TaskTab;
   initialPanel?: WorkspaceQuery["panel"];
   initialScope?: PreviewScope | undefined;
   consumerScope: StudioConsumerScopeV1;
-  consumerRenderer: ConsumerRendererIdentity;
+  consumerRenderers: StudioConsumerRenderers;
 }) {
   const session = useOwnedStudioSession(initialSession);
   const authority = useInternalAuthority();
@@ -118,7 +118,7 @@ export function ProductTaskWorkspace({
           initialPanel={initialPanel}
           initialScope={initialScope}
           consumerScope={consumerScope}
-          consumerRenderer={consumerRenderer}
+          consumerRenderers={consumerRenderers}
         />
       </ProductTaskSurfaces>
     </ContentAuthorityContext.Provider>
@@ -131,14 +131,14 @@ function Workspace({
   initialPanel,
   initialScope,
   consumerScope,
-  consumerRenderer,
+  consumerRenderers,
 }: {
   session: StudioSessionDto;
   initialTask: TaskTab;
   initialPanel?: WorkspaceQuery["panel"];
   initialScope?: PreviewScope | undefined;
   consumerScope: StudioConsumerScopeV1;
-  consumerRenderer: ConsumerRendererIdentity;
+  consumerRenderers: StudioConsumerRenderers;
 }) {
   const session = useOwnedStudioSession(initialSession);
   const workspace = useProductWorkspaceContext();
@@ -655,7 +655,7 @@ function Workspace({
               <StudioConsumerAccessPageV1
                 key={`${consumerScope.instanceId}:${consumerScope.issuerId}:${consumerScope.productId}`}
                 scope={consumerScope}
-                renderer={consumerRenderer}
+                renderers={consumerRenderers}
                 workspaceAuthority={authority}
                 visible={tab === "testing"}
                 onChanged={read.refresh}

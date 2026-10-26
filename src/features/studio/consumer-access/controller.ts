@@ -6,6 +6,10 @@ import { z } from "zod";
 import { studioOperatorIdentitySchema } from "@/lib/auth/identity";
 import type { StudioSessionDto } from "../contracts";
 import type { InternalVersionList } from "@/features/product/internal-versions/contracts";
+import { verifyInternalVersionDetail } from "@/features/product/internal-versions/integrity";
+import { readInternalVersion } from "../internal-versions/client";
+import { consumerImplementationAvailable } from "@/features/product/internal-play/implementation-catalog";
+import { consumerImplementationAvailableV2 } from "@/features/product/internal-play/implementation-catalog-v2";
 import { StudioClientError } from "../client";
 import { consumerMomentSchema } from "@/lib/consumer-contract/v1/primitives";
 import type { ConsumerRendererIdentity } from "@/lib/consumer-contract/v1/identities";
@@ -75,6 +79,10 @@ export type StudioConsumerStateV1 = Readonly<{
   notice: "none" | "unavailable" | "copied" | "exported";
 }>;
 type Task = Readonly<{ signal: AbortSignal; current: () => boolean }>;
+export type StudioConsumerRenderers = Readonly<{
+  "quizforge.internal-version-snapshot.v1": ConsumerRendererIdentity;
+  "quizforge.internal-version-snapshot.v2": ConsumerRendererIdentity;
+}>;
 /** Raw escrow never enters the public snapshot, React props, metadata lists or ordinary DOM. */
 export class StudioConsumerControllerV1 {
   readonly scope: StudioConsumerScopeV1;
@@ -96,13 +104,18 @@ export class StudioConsumerControllerV1 {
   #pending: StudioConsumerPendingV1 | null = null;
   constructor(
     scope: StudioConsumerScopeV1,
-    readonly renderer: ConsumerRendererIdentity,
+    readonly renderers: StudioConsumerRenderers,
     readonly storage: ConsumerPendingStorage,
     readonly fetcher?: ConsumerFetch,
     readonly readVersions?: (
       productId: string,
       signal: AbortSignal,
     ) => Promise<InternalVersionList>,
+    readonly readVersion: (
+      productId: string,
+      versionId: string,
+      signal: AbortSignal,
+    ) => Promise<unknown> = readInternalVersion,
   ) {
     this.scope = Object.freeze(studioConsumerScopeSchemaV1.parse(scope));
   }
@@ -273,21 +286,50 @@ export class StudioConsumerControllerV1 {
     }
   }
   async createPlay(versionId: string) {
+    if (this.#state.phase !== "ready") return;
     const version = this.#state.versions.find((v) => v.id === versionId);
     if (!version) return;
-    await this.#prepare({
-      kind: "play",
-      binding: {
-        schemaVersion: "quizforge.internal-play-create.v1",
-        operationKey: crypto.randomUUID(),
-        parent: {
-          productId: this.scope.productId,
-          versionId: version.id,
-          snapshotSha256: version.snapshotSha256,
+    const task = this.#task();
+    this.#publish({ phase: "working", notice: "none" });
+    try {
+      await this.#fresh(task, "version:seal-internal");
+      const parent = await verifyInternalVersionDetail(
+        await this.readVersion(this.scope.productId, version.id, task.signal),
+      );
+      if (!task.current()) return;
+      if (
+        parent.version.id !== version.id ||
+        parent.version.binding.productId !== this.scope.productId ||
+        parent.version.snapshotSha256 !== version.snapshotSha256
+      )
+        throw new ConsumerClientError("UNAVAILABLE");
+      const schema = parent.snapshot.schemaVersion,
+        renderer = this.renderers[schema];
+      if (
+        !(schema === "quizforge.internal-version-snapshot.v1"
+          ? consumerImplementationAvailable(renderer)
+          : consumerImplementationAvailableV2(renderer))
+      )
+        throw new ConsumerClientError("UNSUPPORTED_IMPLEMENTATION");
+      await this.#prepareAndSend(
+        {
+          kind: "play",
+          binding: {
+            schemaVersion: "quizforge.internal-play-create.v1",
+            operationKey: crypto.randomUUID(),
+            parent: {
+              productId: this.scope.productId,
+              versionId: version.id,
+              snapshotSha256: version.snapshotSha256,
+            },
+            renderer,
+          },
         },
-        renderer: this.renderer,
-      },
-    });
+        task,
+      );
+    } catch (error) {
+      this.#failure(task, error);
+    }
   }
   async issueKey(playId: string, seconds: number) {
     if (this.#state.phase !== "ready") return;

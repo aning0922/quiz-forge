@@ -7,6 +7,8 @@ import { loadRuntimeConfig } from "@/lib/db/runtime";
 import { consumerIdSchema } from "@/lib/consumer-contract/v1/primitives";
 import { CONSUMER_IMPLEMENTATION_AVAILABILITY } from "@/features/product/internal-play/implementation-catalog";
 
+import { CONSUMER_IMPLEMENTATION_AVAILABILITY_V2 } from "@/features/product/internal-play/implementation-catalog-v2";
+
 export default async function StudioProductPage({
   searchParams,
   params,
@@ -44,7 +46,12 @@ export default async function StudioProductPage({
       initialPanel={query.data.panel}
       initialScope={initialScope}
       consumerScope={consumerScope}
-      consumerRenderer={CONSUMER_IMPLEMENTATION_AVAILABILITY.rendererV1_2}
+      consumerRenderers={{
+        "quizforge.internal-version-snapshot.v1":
+          CONSUMER_IMPLEMENTATION_AVAILABILITY.rendererV1_2,
+        "quizforge.internal-version-snapshot.v2":
+          CONSUMER_IMPLEMENTATION_AVAILABILITY_V2.structured,
+      }}
     />
   );
 }
