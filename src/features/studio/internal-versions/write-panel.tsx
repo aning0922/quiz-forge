@@ -100,6 +100,8 @@ export function InternalWritePanel({
           ownedPendingStorage(sessionStorage, session.operator.id),
           productId,
         );
+        // Only a confirmed-empty local pending set ends the retained receipt view.
+        setResult(undefined);
         setAvailable(true);
       } catch {
         setAvailable(false);
