@@ -102,22 +102,13 @@ export async function migrateDatabase(
       await tx`REVOKE ALL ON ALL FUNCTIONS IN SCHEMA qf FROM ${app}`;
       await tx`REVOKE ALL ON ALL TABLES IN SCHEMA qf_meta FROM ${app}`;
       // PG18 table REVOKE also clears column grants; explicitly restate the application column boundary.
-      await tx`REVOKE ALL(id,label,credential_digest,role,status,created_at,disabled_at) ON qf.operator FROM ${app}`;
+      await tx`REVOKE ALL(id,role,status,created_at,disabled_at,login_name,display_name,password_hash,account_revision) ON qf.operator FROM ${app}`;
       await tx`REVOKE ALL(id,token_digest,kind,operator_id,created_at,last_seen_at,idle_expires_at,absolute_expires_at,revoked_at,failed_attempts) ON qf.operator_session FROM ${app}`;
       await tx`REVOKE ALL(id,occurred_at,action,outcome,reason_code,actor_id,session_id,request_id,target_kind,target_id,target_revision) ON qf.audit_event FROM ${app}`;
       await tx`GRANT CONNECT ON DATABASE ${tx(config.database.name)} TO ${app}`;
       await tx`GRANT USAGE ON SCHEMA qf TO ${app}`;
-      const [accounts] = await tx<
-        { present: boolean }[]
-      >`SELECT to_regprocedure('qf.account_command(text,text,jsonb)') IS NOT NULL AS present`;
-      if (accounts?.present) {
-        await tx`GRANT SELECT(id,label,credential_digest,role,status,created_at,disabled_at,login_name,display_name,account_revision) ON qf.operator TO ${app}`;
-        await tx`GRANT EXECUTE ON FUNCTION qf.account_command(text,text,jsonb),qf.account_password(text,text,jsonb) TO ${app}`;
-      } else await tx`GRANT SELECT ON qf.operator TO ${app}`;
-      const [directory] = await tx<{ present: boolean }[]>`
-        SELECT to_regprocedure('qf.account_directory_read(text,text,jsonb)') IS NOT NULL AS present`;
-      if (directory?.present)
-        await tx`GRANT EXECUTE ON FUNCTION qf.account_directory_read(text,text,jsonb) TO ${app}`;
+      await tx`GRANT SELECT(id,role,status,created_at,disabled_at,login_name,display_name,account_revision) ON qf.operator TO ${app}`;
+      await tx`GRANT EXECUTE ON FUNCTION qf.account_actor(text),qf.account_command(text,text,jsonb),qf.account_password(text,text,jsonb),qf.account_directory_read(text,text,jsonb) TO ${app}`;
       await tx`GRANT SELECT,INSERT ON qf.operator_session TO ${app}`;
       await tx`GRANT UPDATE(last_seen_at,idle_expires_at,revoked_at,failed_attempts) ON qf.operator_session TO ${app}`;
       await tx`GRANT SELECT,INSERT ON qf.audit_event TO ${app}`;

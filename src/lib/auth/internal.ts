@@ -11,11 +11,10 @@ type Transaction = postgres.TransactionSql;
 export type DatabaseTime = string | Date;
 export type ActorRow = {
   id: string;
-  label: string;
   role: StudioRole;
-  login_name?: string | null;
-  display_name?: string | null;
-  account_revision?: number;
+  login_name: string;
+  display_name: string;
+  account_revision: number;
   session_id: string;
   idle_expires_at: DatabaseTime;
   absolute_expires_at: DatabaseTime;
@@ -35,26 +34,22 @@ export async function activeActor(
   tx: Transaction,
   digest: string,
 ): Promise<ActorRow | null> {
-  // App has SELECT-only operator privileges. Mutation statements recheck active.
+  // The narrow SD read checks password readiness without granting app PHC access.
   const [row] = await tx<
     ActorRow[]
-  >`SELECT o.id, o.label, o.role, o.login_name,o.display_name,o.account_revision, s.id AS session_id,
+  >`SELECT o.id, o.role, o.login_name,o.display_name,o.account_revision, s.id AS session_id,
     s.idle_expires_at, s.absolute_expires_at
-    FROM qf.operator_session s JOIN qf.operator o ON o.id = s.operator_id
-    WHERE s.token_digest = ${digest} AND s.kind = 'authenticated'
-      AND s.revoked_at IS NULL AND s.idle_expires_at > clock_timestamp()
-      AND s.absolute_expires_at > clock_timestamp() AND o.status = 'active'`;
+    FROM qf.account_actor(${digest}) s JOIN qf.operator o ON o.id = s.operator_id`;
   return row ?? null;
 }
 
 export function toActor(row: ActorRow): StudioActor {
   const actor = verifiedActor({
     id: row.id,
-    label: row.label,
     role: row.role,
-    loginName: row.login_name ?? null,
-    displayName: row.display_name ?? row.label,
-    accountRevision: row.account_revision ?? 1,
+    loginName: row.login_name,
+    displayName: row.display_name,
+    accountRevision: row.account_revision,
     sessionId: row.session_id,
     idleExpiresAt: dateFromDatabase(row.idle_expires_at),
     absoluteExpiresAt: dateFromDatabase(row.absolute_expires_at),

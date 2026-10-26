@@ -92,10 +92,8 @@ export const operators = qf.table(
   "operator",
   {
     id: uuid("id").primaryKey(),
-    label: varchar("label", { length: 64 }).notNull().unique(),
-    credentialDigest: char("credential_digest", { length: 64 }).unique(),
-    loginName: varchar("login_name", { length: 64 }).unique(),
-    displayName: varchar("display_name", { length: 320 }),
+    loginName: varchar("login_name", { length: 64 }).notNull().unique(),
+    displayName: varchar("display_name", { length: 320 }).notNull(),
     passwordHash: varchar("password_hash", { length: 256 }),
     accountRevision: integer("account_revision").notNull().default(1),
     role: operatorRole("role").notNull(),
@@ -104,8 +102,6 @@ export const operators = qf.table(
     disabledAt: time("disabled_at"),
   },
   (t) => [
-    check("operator_label", sql`${t.label} ~ '^[a-z0-9-]{1,64}$'`),
-    check("operator_digest", sql`${t.credentialDigest} ~ '^[0-9a-f]{64}$'`),
     check(
       "operator_status_time",
       sql`(${t.status} = 'active' AND ${t.disabledAt} IS NULL) OR (${t.status} = 'disabled' AND ${t.disabledAt} IS NOT NULL AND ${t.disabledAt} >= ${t.createdAt})`,
@@ -829,6 +825,7 @@ export const operatorAccountOperations = qf.table(
       .references(() => operators.id),
     action: text("action").notNull(),
     binding: jsonb("binding").notNull(),
+    localResult: jsonb("local_result"),
     status: text("status").notNull(),
     errorCode: varchar("error_code", { length: 64 }),
     tokenId: uuid("token_id").references(() => operatorPasswordTokens.id),

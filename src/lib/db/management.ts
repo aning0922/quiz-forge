@@ -1,11 +1,9 @@
 import "server-only";
-import { randomBytes, randomUUID } from "node:crypto";
-import { constants } from "node:fs";
+import { randomBytes } from "node:crypto";
 import {
   chmod,
   lstat,
   mkdir,
-  open,
   realpath,
   unlink,
   writeFile,
@@ -14,8 +12,6 @@ import net from "node:net";
 import path from "node:path";
 import postgres from "postgres";
 import { z } from "zod";
-import { issueToken } from "../security/p2a-tokens";
-import { acquireAuthWriteLock } from "./auth-lock";
 import { runPg, type PgCommandRunner } from "./pg-command";
 import {
   assertLocalPgdata,
@@ -486,140 +482,6 @@ export async function manageLocalInstance(
       "stop",
     ]);
   return { instanceId, status: command === "stop" ? "stopped" : "running" };
-}
-
-export async function createOperator(
-  instanceId: string,
-  options: {
-    label: string;
-    role: "operator" | "read-only";
-    credentialFile: string;
-  },
-) {
-  if (
-    !/^[a-z0-9-]{1,64}$/.test(options.label) ||
-    !["operator", "read-only"].includes(options.role)
-  )
-    fail("OPERATOR_ARGUMENTS_INVALID");
-  const paths = instancePaths(instanceId);
-  if (
-    !path.isAbsolute(options.credentialFile) ||
-    path.dirname(options.credentialFile) !== paths.directory ||
-    !/^[a-z0-9][a-z0-9.-]*$/.test(path.basename(options.credentialFile)) ||
-    ["runtime.json", "manifest.json", "admin.json", "server.log"].includes(
-      path.basename(options.credentialFile),
-    )
-  )
-    fail("CREDENTIAL_PATH_INVALID");
-  const db = await openManagedDatabase(instanceId);
-  const token = issueToken("credential"),
-    id = randomUUID();
-  let owned: { ino: number; dev: number } | undefined;
-  let commitAttempted = false;
-  let committed = false;
-  try {
-    const file = await open(
-      options.credentialFile,
-      constants.O_WRONLY |
-        constants.O_CREAT |
-        constants.O_EXCL |
-        constants.O_NOFOLLOW,
-      0o600,
-    );
-    try {
-      owned = await file.stat();
-      await file.writeFile(token.raw + "\n", "utf8");
-      await file.sync();
-    } finally {
-      await file.close();
-    }
-    await db.sql.begin(async (tx) => {
-      await tx`INSERT INTO qf.operator(id,label,credential_digest,role,status) VALUES(${id},${options.label},${token.digest},${options.role},'active')`;
-      await tx`INSERT INTO qf.audit_event(id,occurred_at,action,outcome,actor_id,request_id) VALUES(${randomUUID()},clock_timestamp(),'bootstrap','success',${id},${randomUUID()})`;
-      commitAttempted = true;
-    });
-    committed = true;
-    return {
-      id,
-      label: options.label,
-      role: options.role,
-      credentialFile: options.credentialFile,
-    };
-  } catch (error) {
-    // A connection failure at COMMIT is an unknown outcome. Preserve the secret and require reconciliation.
-    const knownCommitRejection =
-      error instanceof postgres.PostgresError &&
-      /^(23|40)/.test(error.code) &&
-      error.code !== "40003";
-    if (commitAttempted && !knownCommitRejection)
-      fail("BOOTSTRAP_OUTCOME_UNKNOWN_CREDENTIAL_PRESERVED");
-    if (owned) {
-      try {
-        const stat = await lstat(options.credentialFile);
-        if (
-          stat.ino !== owned.ino ||
-          stat.dev !== owned.dev ||
-          stat.isSymbolicLink()
-        )
-          fail("CREDENTIAL_CLEANUP_REQUIRED");
-        await unlink(options.credentialFile);
-      } catch {
-        fail("CREDENTIAL_CLEANUP_REQUIRED");
-      }
-    }
-    fail("BOOTSTRAP_FAILED");
-  } finally {
-    try {
-      await db.close();
-    } catch {
-      if (committed) fail("BOOTSTRAP_COMMITTED_CONNECTION_CLOSE_FAILED");
-    }
-  }
-}
-
-export async function disableOperator(instanceId: string, id: string) {
-  if (!z.uuid().safeParse(id).success) fail("OPERATOR_ARGUMENTS_INVALID");
-  const db = await openManagedDatabase(instanceId);
-  try {
-    const [accountSchema] = await db.sql<
-      { present: boolean }[]
-    >`SELECT to_regprocedure('qf.account_local(jsonb)') IS NOT NULL AS present`;
-    if (accountSchema?.present) {
-      return await db.sql.begin(async (tx) => {
-        const [row] = await tx<
-          { value: { error?: string; changed?: boolean } }[]
-        >`SELECT qf.account_local(${JSON.stringify({ operationId: randomUUID(), targetId: id, action: "disable" })}::text::jsonb) value`;
-        if (row?.value.error) fail(row.value.error);
-        return { id, changed: row?.value.changed ?? true };
-      });
-    }
-    return await db.sql.begin(async (tx) => {
-      await acquireAuthWriteLock(tx);
-      // Preserve PG microseconds through both SELECT and Bind. Force OID25 before timestamptz
-      // so postgres.js cannot use its OID1184 Date serializer and truncate to milliseconds.
-      const [moment] = await tx<
-        { at: string }[]
-      >`SELECT clock_timestamp()::text AS at`;
-      if (!moment) fail("DISABLE_FAILED_OUTCOME_REQUIRES_RECHECK");
-      const changed =
-        await tx`UPDATE qf.operator SET status='disabled',disabled_at=${moment.at}::text::timestamptz WHERE id=${id} AND status='active' RETURNING id`;
-      if (!changed.length) return { id, changed: false };
-      await tx`UPDATE qf.operator_session SET revoked_at=${moment.at}::text::timestamptz WHERE operator_id=${id} AND revoked_at IS NULL`;
-      await tx`INSERT INTO qf.audit_event(id,occurred_at,action,outcome,reason_code,actor_id,request_id) VALUES(${randomUUID()},${moment.at}::text::timestamptz,'operator_disabled','success','MANUAL',${id},${randomUUID()})`;
-      return { id, changed: true };
-    });
-  } catch (error) {
-    if (
-      error &&
-      typeof error === "object" &&
-      "message" in error &&
-      error.message === "LAST_ACTIVE_ADMIN"
-    )
-      fail("LAST_ACTIVE_ADMIN");
-    return fail("DISABLE_FAILED_OUTCOME_REQUIRES_RECHECK");
-  } finally {
-    await db.close();
-  }
 }
 
 export async function initCiInstance(input: {
