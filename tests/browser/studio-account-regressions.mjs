@@ -73,7 +73,7 @@ window.fetch=async(raw,init={})=>{
 };
 function OwnerFacts(){const owner=useStudioAccountOwner();useEffect(()=>{window.owner=owner;if(owner.revoked)window.revokedOwners.add(owner);},[owner]);return <output data-testid="owner" data-revoked={String(owner.revoked)} data-generation={owner.generation}/>;}
 function Denied(){useImportRead('/synthetic/denied');return <OwnerFacts/>;}
-function Late(){const authority=useInternalAuthority();return <ProductTaskSurfaces><OwnerFacts/><output data-testid="authority" data-revoked={String(authority.isRevoked)}/><ProductDetail productId="synthetic-product" session={session} embedded/></ProductTaskSurfaces>;}
+function Late(){const authority=useInternalAuthority();return <ProductTaskSurfaces><OwnerFacts/><output data-testid="authority" data-revoked={String(authority.isRevoked)}/><ProductDetail productId="synthetic-product" session={session}/></ProductTaskSurfaces>;}
 const content=scenario==='loop'?<Denied/>:scenario==='late'?<InternalAuthorityProvider productId="synthetic-product"><Late/></InternalAuthorityProvider>:scenario==='setup'?<SetPasswordPage/>:<><OwnerFacts/><AccountsPage session={session}/></>;
 createRoot(document.getElementById('root')).render(<StudioShell authenticated={scenario!=='setup'} identity={session.operator} session={scenario==='setup'?undefined:session}>{content}</StudioShell>);
 `;

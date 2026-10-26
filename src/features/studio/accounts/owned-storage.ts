@@ -36,22 +36,3 @@ export function ownedPendingStorage(
     },
   };
 }
-export const legacyPendingKeys = [
-  "quizforge-validation-pending.v1",
-  "quizforge.studio.draft-applications.v1",
-  "quizforge.studio.draft-revisions.v1",
-  "quizforge.studio.review-record.v1",
-  "quizforge.studio.version-seal.v1",
-] as const;
-export function hasUnownedPending(storage: Pick<Storage, "getItem">) {
-  return legacyPendingKeys.some((key) => {
-    const raw = storage.getItem(key);
-    if (!raw) return false;
-    try {
-      const value = JSON.parse(raw) as { entries?: unknown[] };
-      return !Array.isArray(value.entries) || value.entries.length > 0;
-    } catch {
-      return true;
-    }
-  });
-}

@@ -17,7 +17,6 @@ import {
   captureStudioEpoch,
   subscribeStudioAuthorityInvalidation,
 } from "../authority-events";
-import { hasUnownedPending } from "./owned-storage";
 import { operatorName, roleLabel } from "./presentation";
 import styles from "./accounts.module.css";
 type Owner = {
@@ -76,28 +75,13 @@ export function StudioAccountOwner({
   const [candidate, setCandidate] = useState<StudioSessionDto>(),
     [checking, setChecking] = useState(false),
     [message, setMessage] = useState(""),
-    [confirmed, setConfirmed] = useState(false),
-    [legacy, setLegacy] = useState(false);
+    [confirmed, setConfirmed] = useState(false);
   const revoke = useCallback(() => {
     setState((old) => (old.revoked ? old : { ...old, revoked: true }));
     setCandidate(undefined);
     setConfirmed(false);
   }, []);
   useEffect(() => subscribeStudioAuthorityInvalidation(revoke), [revoke]);
-  useEffect(() => {
-    let active = true;
-    queueMicrotask(() => {
-      if (!active) return;
-      try {
-        setLegacy(hasUnownedPending(sessionStorage));
-      } catch {
-        setLegacy(true);
-      }
-    });
-    return () => {
-      active = false;
-    };
-  }, []);
   async function inspect() {
     if (checking) return;
     const epoch = captureStudioEpoch();
@@ -154,13 +138,6 @@ export function StudioAccountOwner({
   }
   return (
     <Context.Provider value={state}>
-      {legacy && (
-        <aside className={`${styles.page} ${styles.notice}`} role="status">
-          <p>
-            此页有无法确认所属账号的操作记录。记录已保留，请联系管理员核对；请勿重复提交。
-          </p>
-        </aside>
-      )}
       {state.revoked && (
         <aside
           className={`${styles.page} ${styles.notice}`}

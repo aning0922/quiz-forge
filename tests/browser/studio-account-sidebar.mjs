@@ -112,6 +112,34 @@ async function open(width = 1440, scenario = "") {
     }),
   );
   await page.goto(origin + "/studio" + (scenario ? "?case=" + scenario : ""));
+  if (scenario === "legacyignored") {
+    await page.evaluate(() => {
+      window.oldBuckets = Object.fromEntries(
+        [
+          "quizforge-validation-pending.v1",
+          "quizforge.studio.draft-applications.v1",
+          "quizforge.studio.draft-revisions.v1",
+          "quizforge.studio.review-record.v1",
+          "quizforge.studio.version-seal.v1",
+        ].map((key) => [key, "{synthetic-unowned:" + key]),
+      );
+      for (const [key, value] of Object.entries(window.oldBuckets))
+        localStorage.setItem(key, value);
+      window.storageReads = [];
+      const getItem = Storage.prototype.getItem;
+      window.readOriginalBuckets = () =>
+        Object.fromEntries(
+          Object.keys(window.oldBuckets).map((key) => [
+            key,
+            getItem.call(localStorage, key),
+          ]),
+        );
+      Storage.prototype.getItem = function (key) {
+        window.storageReads.push(key);
+        return getItem.call(this, key);
+      };
+    });
+  }
   await page.addStyleTag({ content: css });
   await page.addScriptTag({ content: bundle });
   if (scenario !== "sessionchange")
@@ -169,6 +197,24 @@ const selected = (name) =>
   !process.env.QUIZFORGE_ACCOUNT_SIDEBAR_CASES ||
   process.env.QUIZFORGE_ACCOUNT_SIDEBAR_CASES.split(",").includes(name);
 try {
+  if (selected("legacyignored")) {
+    await open(1440, "legacyignored");
+    await expect(page.getByTestId("owner")).toHaveAttribute(
+      "data-revoked",
+      "false",
+    );
+    const buckets = await page.evaluate(() => ({
+      expected: window.oldBuckets,
+      actual: window.readOriginalBuckets(),
+      reads: window.storageReads.filter((key) => key in window.oldBuckets),
+    }));
+    expect(buckets.reads).toEqual([]);
+    expect(buckets.actual).toEqual(buckets.expected);
+    await expect(page.getByRole("complementary")).toHaveCount(0);
+    results.push(
+      "unowned historical buckets are never read, claimed, migrated or changed and produce no global notice",
+    );
+  }
   if (selected("gate")) {
     await open();
     await page.evaluate(() =>

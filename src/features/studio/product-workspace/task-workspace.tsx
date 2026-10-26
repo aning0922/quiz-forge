@@ -657,7 +657,6 @@ function Workspace({
                 scope={consumerScope}
                 renderer={consumerRenderer}
                 workspaceAuthority={authority}
-                embedded
                 visible={tab === "testing"}
                 onChanged={read.refresh}
                 onGoToReview={() => switchTab("review")}
@@ -758,7 +757,7 @@ function Workspace({
         )}
       </RetainedTaskSurface>
       <RetainedTaskSurface id="settings">
-        <ProductDetail productId={productId} session={session} embedded />
+        <ProductDetail productId={productId} session={session} />
       </RetainedTaskSurface>
       <RetainedTaskSurface id="preview">
         {launched && (

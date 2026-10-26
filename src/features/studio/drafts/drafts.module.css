@@ -1,6 +1,3 @@
-.separatedActions {
-  margin-top: 12px;
-}
 .body {
   display: grid;
   gap: 12px;
@@ -18,31 +15,4 @@
   white-space: pre-wrap;
   overflow-wrap: anywhere;
   resize: vertical;
-}
-
-.recoveryQuiet > summary {
-  min-height: 44px;
-  padding-block: 8px;
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
-  overflow-wrap: anywhere;
-}
-.recoveryQuiet > summary:focus-visible {
-  outline: 3px solid #267bc1;
-  outline-offset: 3px;
-}
-.recoveryAttention > summary {
-  display: none;
-}
-.recoveryBody {
-  min-width: 0;
-}
-.recoveryQuiet[open] > .recoveryBody {
-  padding-top: 16px;
-}
-
-.recoveryAttention {
-  border-left: 3px solid #ad782c;
-  padding-left: 14px;
 }
