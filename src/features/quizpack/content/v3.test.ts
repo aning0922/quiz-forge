@@ -186,6 +186,66 @@ describe("v3 offline content and composed evidence contract", () => {
       ).status,
     ).toBe("facts-only");
   });
+  it("keeps approved matched weak or absent literary bridges as facts-only", () => {
+    const c = syntheticContentV3();
+    const claim = c.bindings.reportTemplates[0]!.claims[0]!;
+    claim.kind = "literary";
+    for (const grade of ["weak", "none"] as const) {
+      claim.literaryBridge = {
+        roleRef: c.core.results[1]!.ref,
+        grade,
+        sources: [{ ref: claim.ref, sha256: "b".repeat(64) }],
+        review: "approved",
+      };
+      const result = good(
+        inspectComposedClaimV3(
+          good(prepareContentV3(c)),
+          syntheticInputV2(3, [2, 2, 2]),
+          "template",
+          "claim",
+        ),
+      );
+      expect(result.status).toBe("facts-only");
+      expect(result.evidence).toEqual([
+        {
+          questionId: "q-0",
+          optionId: "q-0-o-2",
+          text: "Synthetic choice 0/2",
+          scope: "Synthetic context 0",
+        },
+        {
+          questionId: "q-1",
+          optionId: "q-1-o-2",
+          text: "Synthetic choice 1/2",
+          scope: "Synthetic context 1",
+        },
+      ]);
+    }
+  });
+  it("accepts an approved matched medium literary bridge", () => {
+    const c = syntheticContentV3();
+    const claim = c.bindings.reportTemplates[0]!.claims[0]!;
+    claim.kind = "literary";
+    claim.literaryBridge = {
+      roleRef: c.core.results[1]!.ref,
+      grade: "medium",
+      sources: [{ ref: claim.ref, sha256: "b".repeat(64) }],
+      review: "approved",
+    };
+    const result = good(
+      inspectComposedClaimV3(
+        good(prepareContentV3(c)),
+        syntheticInputV2(3, [2, 2, 2]),
+        "template",
+        "claim",
+      ),
+    );
+    expect(result.status).toBe("accepted");
+    expect(result.evidence.map((e) => e.optionId)).toEqual([
+      "q-0-o-2",
+      "q-1-o-2",
+    ]);
+  });
   it("converts invented 24-question data while rejecting conversion collisions and source drift", () => {
     const source = syntheticEditorialV05(),
       converted = good(convertEditorialV05(rawImport(source)));

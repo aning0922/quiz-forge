@@ -179,7 +179,7 @@ export function inspectComposedClaimV3(
   if (claim.kind === "literary")
     allowed =
       claim.literaryBridge?.review === "approved" &&
-      claim.literaryBridge.grade !== "none" &&
+      claim.literaryBridge.grade === "medium" &&
       refKey(claim.literaryBridge.roleRef) ===
         refKey(score.decision.selectedResultRef);
   const evidence = [...claim.evidence, ...claim.counterevidence].map((e) => ({
