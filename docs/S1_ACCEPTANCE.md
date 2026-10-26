@@ -1,5 +1,36 @@
 # Studio S1 / V2-A 验收记录
 
+## 2026-10-26 Demo 后台遗留认证与无效兼容清理
+
+作者在账号版本验收和 main CI 成功后，从进度分析聊天发出专项启动通知；本批从 main `3816e596596df3ed49dac761ff1c76002c846144` 建立独立 `codex/studio-auth-cleanup`，沿原独立 Sol/high A/B 开发与 Astra/high 审查。不对旧凭证、旧字段、旧维护 API 或旧备份增加兼容层，不就地迁移既有演示。
+
+- 删除随机凭证 `auth/service.login`、`p2a:operator`、`createOperator`、探测双 schema 的 `disableOperator` 和 credential token 编码。会话与预认证 token 保持；消费者 AccessKey/Grant 摘要未改。
+- 当前身份统一为必需的 id、loginName、displayName、role、accountRevision，服务端和浏览器使用同一严格 Schema。删除 label、缺字段补值与默认 revision。新增 `0023_current_password_accounts.sql`，同事务替换受影响函数并移除 operator 旧列；完整 pending 人员保留，未设密身份不能凭旧 session 成为 Actor。原 UUID、业务归属和审计不变；app 仍不能 SELECT PHC。
+- 本机维护统一 `studio:accounts` 的 bootstrap-admin / recover-admin / disable / restore / inspect-operation。固定目标、原 operationId、CAS 和先落私有文件后发送保持；新增仅供本机操作的 local_result，保存当时 changed/前后 revision/业务状态。no-op 和拒绝也保留终态，重查不从当前账号推断旧结果，不重发或签发新 token。
+- 删除无归属旧 pending 桶的扫描及全局提示，不读取、认领、迁移或删除这些旧桶。当前 owner envelope、原 File/DOM、UNKNOWN、原键核实、失权与私密结果保存门槛保持。删除无调用 ImportList、DraftWorkspacePage、专属旧恢复面板及 ProductDetail/consumer 页面死分支；准确对象路由、固定修订与当前任务保留。
+- 旧 18 迁移 R1 runtime:recovery 入口及旧认证 HTTP 演练退出当前命令；历史 R1 证据、文件/进程保护和有用合成包 helper 保留。本批不建设当前账号版本的新备份平台。领域 fixture 改真实密码账号，清理仍要求 UUID、规范登录名、含 runId 显示名、角色和私有密码一致，不降低归属要求。
+
+### 验证与复用
+
+| 范围                | 结果与边界                                                                                                                                                                                                                                                          |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0022 暂存库迁移反例 | A 的 7 项通过：非法/缺失身份拒绝、完整 pending、UUID/审计保持和事务回滚；仅明确 pristine 0022 合成库                                                                                                                                                                |
+| 当前账号及维护      | A 的 4 项真实 PG 通过：pending session、ACL、原结果/CAS/no-op、restore 不复活、ACK 丢失原文件核实、并发最后管理员保护；另 6 项权限截止/事务尾部和 2 项时间投影通过                                                                                                  |
+| 账号核心初轮        | 10 通过、1 旧断言失败。新维护合同返回持久化 rejected receipt，旧用例期待异常；断言已更新，同一拒绝及原结果在新增维护用例通过，未重跑整套或冒称整套全绿                                                                                                              |
+| 主控数据库集成      | 5 文件 68 项通过：数据库/迁移/ACL、当前会话和 HTTP、停用与写入并发及精确时间、草稿 fixture 归属；namespace 3 项通过，仍实际复现视图绕权后拒绝启动/迁移                                                                                                              |
+| 纯逻辑与组件        | A 15 项及最终身份投影后其中 4 项复核；B 34 项与相应 React+合成 HTTP 浏览器证据复用；主控 fixture/消费者凭据 10+16 项、草稿 service 6 项通过。重叠项不累加作总覆盖率                                                                                                 |
+| 静态与构建          | 各自改动文件格式、lint、定向类型通过；主控最终生产 build 包含严格类型/路由及固定实现登记检查，121 traces / 25402 paths / 0 私有运行输入违规                                                                                                                         |
+| 实际浏览器          | Chromium 156.0.8078.4，真实隔离服务/DB。4 个可用账号实际登录，pending/disabled 拒绝，operator/reader 管理接口及 reader 产品写入 403；6 人目录，1440/390 账号页无横向溢出。原 File/DOM 关开保留、原上传、原生检查、创建 r1、大预览及授权素材读取分段通过，无页面错误 |
+| 独审                | B、A core、root fixture/入口撤回、补充测试和配置均由 Astra 限定审查，无本批阻断；没有重复已通过套件                                                                                                                                                                 |
+
+实际业务浏览器证据是分段完成：第一段在上传后的 DevTools 响应正文读取被驱逐时中断。随后只读核实原 import 为 received、实际/预期字节一致，再沿同一来源继续，无重复上传；后续旧探针仍按旧步骤寻找“继续检查步骤”、可被跳过的“准备草稿”按钮，或在已直接打开大预览后再次寻找预览入口；这三次中断均停在后续操作前，未重发已完成写入。原生检查 201、草稿创建 201 及固定 r1 预览/素材读取分别留有确认记录，不将中断脚本称为整轮通过。
+
+运行源码提交 `6ba8b8e`，BUILD_ID `YBgBxfihl1fQ2dRZOh7O2`。新绝对路径/构建按官方 media build/setup/provision 封存，deployment `d5ca342b9e5a1e2451ebc93c867b98c325940bd5c587ed91832740a4209f4eb0`，runtime bundle `622c8fac6a3294eac82a7b5310d9b4bae4debcc0f410ee49494b8b81f6344585`。初次 media:build 因构建缓存总量超过既定上限失败；按运行手册只移存本树 `.next/cache` 后封存成功，不放宽上限、不重建旧实例。保留失败与所有原操作文件。
+
+独立体验入口 `http://127.0.0.1:3260/studio/login`，PG 55458、实例 `ff682434a53de78e7f23170aa8f15c66`、purpose=test。六个合成人员、一个真实草稿 r1 和一个空测评；合成内容只用于操作链验证，不代表历史人物视觉、人工审核或发布资格。私有登录信息及逐账号纯密码文件在本工作树 `.cache/auth-cleanup/`（0600），配套样例在 sample-packs/。账号桌面/移动截图在 accounts-1793015538171/；预览和草稿截图见对应 result.json。完整证据在本树 `.cache/auth-cleanup/` 及 A/B 同名专项树 .cache；不提交私密请求/回执/凭证。
+
+主控 55459 集成测试库和 A 的 55457 自有库已停止并保留；现有 3250 最终仍返回 HTTP 200，作者六个未提交文件保持。main 仍为原 3816e59，本批仅交付 Draft PR，自动 CI 以 PR 当前 head 为准。未重复全量 E2E、目录/retention、消费者/P5、历史媒体矩阵或 R1；工程证据不代替作者体验，不自动合并、生产迁移或对外部署。
+
 ## 2026-10-26 Studio V2-B 四批整合
 
 按作者一次授权 B1–B4，从已合并账号系统的 main `19923d49e356e791cfb7949238df6717e71b7f97` 建立独立 `codex/studio-v2b`。产品基线为《QuizForge_Studio_V2B_后台账号整合交互原型.html》（SHA-256 `78319fc1c569cb09a88cde2f9171fc577d023f20d30a1858be81393af0f6bb15`）、联合审查报告及使用说明；附件对 PR #29 未合并的观察属于旧状态，本次以真实 main 为准。继续独立 Sol/high 开发 A/B、Astra/high 审查，主控负责共享外框、集成和真实隔离验证。

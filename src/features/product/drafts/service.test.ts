@@ -34,7 +34,9 @@ async function setup() {
   });
   const actor = verifiedActor({
     id: randomUUID(),
-    label: "synthetic-test",
+    loginName: "synthetic-test",
+    displayName: "Synthetic test",
+    accountRevision: 1,
     role: "operator",
     sessionId: randomUUID(),
     idleExpiresAt: new Date("2026-10-16"),

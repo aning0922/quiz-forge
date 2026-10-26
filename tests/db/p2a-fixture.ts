@@ -182,7 +182,7 @@ export async function authenticateTestOperator(
   await safeTestOperation(
     () =>
       database.admin
-        .sql`INSERT INTO qf.operator(id,label,login_name,display_name,password_hash,role,status) VALUES(${id},${`test-${id}`},${`test-${id}`},'合成领域测试账号',${passwordHash},${role},'active')`,
+        .sql`INSERT INTO qf.operator(id,login_name,display_name,password_hash,role,status) VALUES(${id},${`test-${id}`},'合成领域测试账号',${passwordHash},${role},'active')`,
   );
   await safeTestOperation(
     () => database.admin.sql`

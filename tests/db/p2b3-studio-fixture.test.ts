@@ -12,7 +12,7 @@ import {
   cleanupStudioDraftFixture,
 } from "./p2b3-studio-fixture";
 import { createDatabase } from "@/lib/db/client";
-import { createPreauth, login } from "@/lib/auth/service";
+import { loginVersionFixtureAccount } from "./version-account-fixture";
 import { createProductDraftService } from "@/features/product/drafts/service";
 
 let db: TestDatabase;
@@ -28,14 +28,7 @@ it("refuses every foreign backend without deletion, then clears only the complet
     const runId = randomUUID(),
       value = await prepareStudioDraftFixture(db, runId),
       source = value.sources[0]!,
-      preauth = await createPreauth(db.app, null, randomUUID()),
-      session = await login(
-        db.app,
-        preauth.raw,
-        preauth.dto.csrfToken,
-        value.operator.secret,
-        randomUUID(),
-      );
+      session = await loginVersionFixtureAccount(db, value.operator);
     await createProductDraftService().applyReadyValidation(
       db.app,
       {

@@ -1,6 +1,6 @@
 import { constants } from "node:fs";
 import { open, lstat, rename, unlink } from "node:fs/promises";
-import { randomUUID } from "node:crypto";
+import { randomBytes, randomUUID } from "node:crypto";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { z } from "zod";
@@ -8,7 +8,7 @@ import {
   loginVersionFixtureAccount,
   seedVersionFixtureAccount,
 } from "./version-account-fixture";
-import { issueToken } from "@/lib/security/p2a-tokens";
+
 import { createDatabase } from "@/lib/db/client";
 import { createStudioRequestBudget } from "@/lib/http-security/request-budget";
 import { acquireAuthWriteLock } from "@/lib/db/auth-lock";
@@ -269,11 +269,11 @@ export async function prepareConsumerFixture(
     completed: false,
     operator: {
       identifier: randomUUID(),
-      secret: issueToken("credential").raw,
+      secret: randomBytes(32).toString("base64url"),
     },
     readOnly: {
       identifier: randomUUID(),
-      secret: issueToken("credential").raw,
+      secret: randomBytes(32).toString("base64url"),
     },
     initial: null,
     target: null,

@@ -136,10 +136,8 @@ export function MyAccountPage({
         <div className={access.identityText}>
           <h2>{name}</h2>
           <p>
-            {read.value?.loginName ??
-              session.operator.loginName ??
-              "登录账号暂不可用"}{" "}
-            · {roleLabel(session.operator.role)} ·{" "}
+            {read.value?.loginName ?? session.operator.loginName} ·{" "}
+            {roleLabel(session.operator.role)} ·{" "}
             {ended ? "登录已结束" : "当前登录"}
           </p>
           <div className={styles.pills}>
@@ -344,7 +342,7 @@ export function MyAccountPage({
           <input
             autoComplete="username"
             name="username"
-            value={session.operator.loginName ?? ""}
+            value={session.operator.loginName}
             readOnly
             hidden
           />

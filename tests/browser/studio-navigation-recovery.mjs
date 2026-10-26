@@ -20,7 +20,7 @@ import {StudioAccountOwner,useStudioAccountOwner} from '@/features/studio/accoun
 import {useWorkspaceMutation} from '@/features/studio/workspace/use-mutation';
 import {studioFetch} from '@/features/studio/client';
 import {invalidateCurrentStudioAuthority,captureStudioEpoch} from '@/features/studio/authority-events';
-const session={operator:{id:'00000000-0000-4000-8000-000000000001',label:'Synthetic',role:'operator'},csrfToken:'A'.repeat(43),idleExpiresAt:'2030-01-01T00:00:00Z',absoluteExpiresAt:'2030-01-01T00:00:00Z'};
+const session={operator:{loginName:"synthetic.account",accountRevision:1,id:'00000000-0000-4000-8000-000000000001',displayName:'Synthetic',role:'operator'},csrfToken:'A'.repeat(43),idleExpiresAt:'2030-01-01T00:00:00Z',absoluteExpiresAt:'2030-01-01T00:00:00Z'};
 window.mode='normal';window.posts=0;window.dialogs=[];window.revoked=invalidateCurrentStudioAuthority;window.epoch=captureStudioEpoch;
 window.confirm=()=>{window.dialogs.push('confirm');return window.acceptLeave===true};
 window.alert=()=>window.dialogs.push('alert');

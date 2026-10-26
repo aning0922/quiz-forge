@@ -1,12 +1,17 @@
+import {
+  seedVersionFixtureAccount,
+  loginVersionFixtureAccount,
+  fixtureAccountMatches,
+  type FixtureAccountRow,
+} from "./version-account-fixture";
 import { assertNoRetainedInternalReferences } from "@/features/product/internal-versions/retention";
 import { constants } from "node:fs";
 import { open, lstat, unlink } from "node:fs/promises";
-import { createHash, randomUUID } from "node:crypto";
+import { randomBytes, createHash, randomUUID } from "node:crypto";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { z } from "zod";
-import { createPreauth, login } from "@/lib/auth/service";
-import { issueToken, digestToken } from "@/lib/security/p2a-tokens";
+
 import { readPrivateJson } from "@/lib/db/runtime";
 import { acquireAuthWriteLock } from "@/lib/db/auth-lock";
 import { createDatabase } from "@/lib/db/client";
@@ -128,18 +133,10 @@ async function createActor(
   role: "operator" | "read-only",
   runId: string,
 ) {
-  await db.admin
-    .sql`INSERT INTO qf.operator(id,label,credential_digest,role,status) VALUES(${a.identifier},${`p3c-e2e-${runId}-${role}`},${digestToken(a.secret, "credential")},${role},'active')`;
+  await seedVersionFixtureAccount(db, a, `p3c-e2e-${runId}-${role}`, role);
 }
 async function authenticate(db: TestDatabase, a: PreviewFixture["operator"]) {
-  const pre = await createPreauth(db.app, null, randomUUID());
-  const session = await login(
-    db.app,
-    pre.raw,
-    pre.dto.csrfToken,
-    a.secret,
-    randomUUID(),
-  );
+  const session = await loginVersionFixtureAccount(db, a);
   return {
     id: a.identifier,
     credentials: {
@@ -155,8 +152,8 @@ export async function preparePreviewFixture(
 ): Promise<PreviewFixture> {
   requireTest(db);
   z.uuid().parse(runId);
-  const operator = issueToken("credential"),
-    readonly = issueToken("credential");
+  const operator = randomBytes(32).toString("base64url"),
+    readonly = randomBytes(32).toString("base64url");
   const value: PreviewFixture = {
     version: 1,
     qualification: "synthetic-db-and-private-pixels-no-native",
@@ -165,8 +162,8 @@ export async function preparePreviewFixture(
     writerPid: process.pid,
     prepared: false,
     completed: false,
-    operator: { identifier: randomUUID(), secret: operator.raw },
-    readOnly: { identifier: randomUUID(), secret: readonly.raw },
+    operator: { identifier: randomUUID(), secret: operator },
+    readOnly: { identifier: randomUUID(), secret: readonly },
     sources: [],
   };
   await save(db, value, true); // Unknown preparation is intentionally non-retryable and preserved.
@@ -398,25 +395,22 @@ export async function cleanupPreviewFixture(
       { present: boolean }[]
     >`SELECT EXISTS(SELECT 1 FROM qf.quizpack_validation WHERE reserved_bytes>0) OR EXISTS(SELECT 1 FROM qf.quizpack_import WHERE reserved_bytes>0) present`;
     if (held?.present) throw fail();
-    const actorRows = await db.admin.sql<
-      { id: string; label: string; credential_digest: string }[]
-    >`SELECT id,label,credential_digest FROM qf.operator WHERE id=ANY(${db.admin.sql.array(actors)}::uuid[])`;
-    if (
-      actorRows.length !== 2 ||
-      actorRows.some(
-        (a) =>
-          a.label !==
-            `p3c-e2e-${runId}-${a.id === value.operator.identifier ? "operator" : "read-only"}` ||
-          a.credential_digest !==
-            digestToken(
-              a.id === value.operator.identifier
-                ? value.operator.secret
-                : value.readOnly.secret,
-              "credential",
-            ),
+    const actorRows = await db.admin.sql<FixtureAccountRow[]>`
+      SELECT id,login_name,display_name,password_hash,role FROM qf.operator
+      WHERE id=ANY(${db.admin.sql.array(actors)}::uuid[])`;
+    if (actorRows.length !== 2) throw fail();
+    for (const row of actorRows) {
+      const isOperator = row.id === value.operator.identifier;
+      if (
+        !(await fixtureAccountMatches(
+          row,
+          isOperator ? value.operator : value.readOnly,
+          `p3c-e2e-${runId}-${isOperator ? "operator" : "read-only"}`,
+          isOperator ? "operator" : "read-only",
+        ))
       )
-    )
-      throw fail();
+        throw fail();
+    }
     const sessions = await db.admin.sql<
       { id: string }[]
     >`SELECT id FROM qf.operator_session WHERE operator_id=ANY(${db.admin.sql.array(actors)}::uuid[]) LIMIT 1025`;

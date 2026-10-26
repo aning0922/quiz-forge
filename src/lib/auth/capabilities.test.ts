@@ -9,10 +9,12 @@ import {
 
 const actor = (role: StudioRole) =>
   verifiedActor({
-    id: "synthetic-operator",
-    label: "synthetic",
+    id: "00000000-0000-4000-8000-000000000001",
+    loginName: "synthetic-operator",
+    displayName: "合成运营",
+    accountRevision: 1,
     role,
-    sessionId: "synthetic-session",
+    sessionId: "00000000-0000-4000-8000-000000000002",
     idleExpiresAt: new Date(),
     absoluteExpiresAt: new Date(),
   });

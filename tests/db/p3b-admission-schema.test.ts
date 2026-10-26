@@ -86,7 +86,7 @@ async function syntheticImport(
     attemptId = randomUUID(),
     pid = "migration-" + randomUUID().replaceAll("-", "");
   const hash = createHash("sha256").update(op).digest("hex");
-  await tx`INSERT INTO qf.operator(id,label,credential_digest,role,status) VALUES(${op},${pid},${hash},'operator','active')`;
+  await tx`INSERT INTO qf.operator(id,login_name,display_name,role,status) VALUES(${op},${pid},${hash},'operator','active')`;
   await tx`INSERT INTO qf.product(id,slug,title,metadata_revision,created_at,updated_at) VALUES(${pid},${pid},'Synthetic admission migration',1,now(),now())`;
   const active = kind === "receiving";
   const attempts = active

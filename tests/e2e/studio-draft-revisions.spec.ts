@@ -1,3 +1,4 @@
+import { signInStudioPassword } from "./studio-password-login";
 // Current URLs/history task are aligned below. Historical global recovery steps and
 // credential fixtures still need account-backed rebasing; no security assertions are skipped.
 import { test, expect, type Page } from "@playwright/test";
@@ -213,27 +214,7 @@ function binding(
   };
 }
 async function signIn(page: Page, role: "operator" | "readOnly" = "operator") {
-  await page.goto("/studio/login");
-  await expect(page.getByLabel("运营凭证")).toBeEnabled();
-  try {
-    await page.evaluate((value) => {
-      const input = document.getElementById("studio-credential");
-      if (!(input instanceof HTMLInputElement) || input.disabled) throw Error();
-      const setter = Object.getOwnPropertyDescriptor(
-        HTMLInputElement.prototype,
-        "value",
-      )?.set;
-      if (!setter) throw Error();
-      setter.call(input, value);
-      input.dispatchEvent(new Event("input", { bubbles: true }));
-    }, fixture[role].secret);
-  } catch {
-    throw Error("REVISIONS_E2E_INPUT_UNAVAILABLE");
-  }
-  await page.getByRole("button", { name: "登录 Studio", exact: true }).click();
-  await expect(
-    page.getByRole("heading", { name: "工作台", exact: true }),
-  ).toBeVisible();
+  await signInStudioPassword(page, fixture[role]);
 }
 async function headers(page: Page) {
   const response = await page.request.get("/api/studio/auth/session");

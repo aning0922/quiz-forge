@@ -24,7 +24,7 @@ import {StudioMobileNavigation,useStudioMobileNavigation} from '@/features/studi
 import {StudioAccountOwner,useStudioAccountOwner,useOwnedStudioSession} from '@/features/studio/accounts/session-owner';
 import {SidebarLogoutAction} from '@/features/studio/accounts/sidebar-logout-action';
 import {invalidateCurrentStudioAuthority} from '@/features/studio/authority-events';
-const session={operator:{id:'00000000-0000-4000-8000-000000000001',label:'synthetic',loginName:'synthetic.reader',displayName:'合成只读人员',role:'read-only',accountRevision:1},csrfToken:'A'.repeat(43),idleExpiresAt:'2030-01-01T00:00:00.000Z',absoluteExpiresAt:'2030-01-01T00:00:00.000Z'};
+const session={operator:{id:'00000000-0000-4000-8000-000000000001',loginName:'synthetic.reader',displayName:'合成只读人员',role:'read-only',accountRevision:1},csrfToken:'A'.repeat(43),idleExpiresAt:'2030-01-01T00:00:00.000Z',absoluteExpiresAt:'2030-01-01T00:00:00.000Z'};
 const sessionChangeCase=new URLSearchParams(location.search).get('case')==='sessionchange';
 if(sessionChangeCase){session.operator.role='admin';session.operator.displayName='合成管理员';}
 window.currentSession=session;window.logoutCalls=[];window.revoke=invalidateCurrentStudioAuthority;window.sessionChanges=[];window.ownerMounts=0;
@@ -112,6 +112,34 @@ async function open(width = 1440, scenario = "") {
     }),
   );
   await page.goto(origin + "/studio" + (scenario ? "?case=" + scenario : ""));
+  if (scenario === "legacyignored") {
+    await page.evaluate(() => {
+      window.oldBuckets = Object.fromEntries(
+        [
+          "quizforge-validation-pending.v1",
+          "quizforge.studio.draft-applications.v1",
+          "quizforge.studio.draft-revisions.v1",
+          "quizforge.studio.review-record.v1",
+          "quizforge.studio.version-seal.v1",
+        ].map((key) => [key, "{synthetic-unowned:" + key]),
+      );
+      for (const [key, value] of Object.entries(window.oldBuckets))
+        localStorage.setItem(key, value);
+      window.storageReads = [];
+      const getItem = Storage.prototype.getItem;
+      window.readOriginalBuckets = () =>
+        Object.fromEntries(
+          Object.keys(window.oldBuckets).map((key) => [
+            key,
+            getItem.call(localStorage, key),
+          ]),
+        );
+      Storage.prototype.getItem = function (key) {
+        window.storageReads.push(key);
+        return getItem.call(this, key);
+      };
+    });
+  }
   await page.addStyleTag({ content: css });
   await page.addScriptTag({ content: bundle });
   if (scenario !== "sessionchange")
@@ -169,6 +197,24 @@ const selected = (name) =>
   !process.env.QUIZFORGE_ACCOUNT_SIDEBAR_CASES ||
   process.env.QUIZFORGE_ACCOUNT_SIDEBAR_CASES.split(",").includes(name);
 try {
+  if (selected("legacyignored")) {
+    await open(1440, "legacyignored");
+    await expect(page.getByTestId("owner")).toHaveAttribute(
+      "data-revoked",
+      "false",
+    );
+    const buckets = await page.evaluate(() => ({
+      expected: window.oldBuckets,
+      actual: window.readOriginalBuckets(),
+      reads: window.storageReads.filter((key) => key in window.oldBuckets),
+    }));
+    expect(buckets.reads).toEqual([]);
+    expect(buckets.actual).toEqual(buckets.expected);
+    await expect(page.getByRole("complementary")).toHaveCount(0);
+    results.push(
+      "unowned historical buckets are never read, claimed, migrated or changed and produce no global notice",
+    );
+  }
   if (selected("gate")) {
     await open();
     await page.evaluate(() =>
@@ -360,6 +406,39 @@ try {
     ).toBeVisible();
     expect(await page.evaluate(() => window.sessionChanges)).toEqual([]);
     await page.evaluate(() => window.revoke());
+    for (const patch of [
+      { label: "historical identity" },
+      { accountRevision: undefined },
+    ]) {
+      await page.evaluate((patch) => {
+        window.currentSession = {
+          ...window.currentSession,
+          operator: {
+            id: "00000000-0000-4000-8000-000000000001",
+            loginName: "synthetic.admin",
+            displayName: "合成管理员",
+            role: "admin",
+            accountRevision: 1,
+            ...patch,
+          },
+        };
+      }, patch);
+      await page
+        .getByRole("button", { name: "检查登录状态", exact: true })
+        .click();
+      await expect(
+        page.getByText("Studio 暂不可用，请由本机维护者检查配置与数据库。", {
+          exact: true,
+        }),
+      ).toBeVisible();
+      await expect(
+        page.getByRole("button", { name: "继续原任务", exact: true }),
+      ).toHaveCount(0);
+      expect(await page.evaluate(() => window.sessionChanges)).toEqual([]);
+    }
+    await page.evaluate(() => {
+      window.currentSession.operator.accountRevision = 1;
+    });
     await page.evaluate(
       () =>
         (window.currentSession = {

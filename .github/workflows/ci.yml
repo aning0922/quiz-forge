@@ -132,3 +132,6 @@ jobs:
       - name: Account directory read projections with a separate fresh database
         shell: bash
         run: bash scripts/ci-p2a-service.sh accounts-directory
+      - name: Current account maintenance boundaries with a separate fresh database
+        shell: bash
+        run: bash scripts/ci-p2a-service.sh accounts-cleanup

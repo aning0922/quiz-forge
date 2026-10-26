@@ -67,7 +67,7 @@ export function SidebarLogoutAction({
         variant="modal"
         size="short"
         title="退出当前登录"
-        description={`${operatorName(session.operator)} · ${session.operator.loginName ?? "当前账号"}`}
+        description={`${operatorName(session.operator)} · ${session.operator.loginName}`}
         onClose={() => setOpen(false)}
         canClose={!logout.busy}
         footer={

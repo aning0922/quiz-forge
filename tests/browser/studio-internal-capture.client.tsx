@@ -12,8 +12,10 @@ const f = JSON.parse(document.getElementById("fixture")!.textContent!) as {
 };
 const session = {
   operator: {
+    loginName: "synthetic.account",
+    accountRevision: 1,
     id: "00000000-0000-4000-8000-000000000004",
-    label: "Synthetic reader capture",
+    displayName: "Synthetic reader capture",
     role: "operator" as const,
   },
   csrfToken: "A".repeat(43),

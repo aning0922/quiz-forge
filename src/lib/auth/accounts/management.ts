@@ -14,49 +14,173 @@ import {
   issuePasswordToken,
   passwordTokenDigest,
 } from "./service";
-import { displayName, loginName } from "./input";
-import type { AccountOperationDto } from "@/features/studio/accounts/contracts";
-export async function prepareLocalAccount(
-  instanceId: string,
-  action: "bootstrap-admin" | "admin-recovery",
-  options: {
-    operatorId: string;
-    operationId: string;
-    setupFile: string;
-    loginName?: string;
-    displayName?: string;
-  },
-) {
-  const targetId = z.uuid().parse(options.operatorId),
-    operationId = z.uuid().parse(options.operationId);
+import {
+  localAccountBindingSchema,
+  localAccountReceiptSchema,
+  type LocalAccountBinding,
+} from "./local-contracts";
+export type {
+  LocalAccountBinding,
+  LocalAccountReceipt,
+} from "./local-contracts";
+
+const fileSchema = z
+  .strictObject({
+    schemaVersion: z.literal("quizforge.local-account-operation.v1"),
+    instanceId: z.string().regex(/^[a-f0-9]{32}$/),
+    binding: localAccountBindingSchema,
+    passwordSetup: z
+      .strictObject({
+        tokenId: z.uuid(),
+        tokenDigest: z.string().regex(/^[a-f0-9]{64}$/),
+        url: z.string().max(1024),
+      })
+      .optional(),
+  })
+  .superRefine((value, ctx) => {
+    if (
+      (value.binding.action === "bootstrap-admin" ||
+        value.binding.action === "admin-recovery") !== !!value.passwordSetup
+    )
+      ctx.addIssue({ code: "custom", message: "Invalid local operation file" });
+  });
+function checkPath(instanceId: string, file: string) {
   const folder = instancePaths(instanceId).directory;
   if (
-    !path.isAbsolute(options.setupFile) ||
-    path.dirname(options.setupFile) !== folder ||
-    !/^account-setup-[a-z0-9-]+\.json$/.test(path.basename(options.setupFile))
+    !path.isAbsolute(file) ||
+    path.dirname(file) !== folder ||
+    !/^account-operation-[a-z0-9-]+\.json$/.test(path.basename(file))
   )
-    throw new ManagementError("ACCOUNT_SETUP_PATH_INVALID");
-  const token = issuePasswordToken(),
-    binding = {
-      action,
-      targetId,
-      operationId,
-      ...(action === "admin-recovery"
-        ? {}
-        : {
-            loginName: loginName.parse(options.loginName),
-            displayName: displayName.parse(options.displayName),
-          }),
-    };
+    throw new ManagementError("ACCOUNT_OPERATION_PATH_INVALID");
+}
+async function readOperation(instanceId: string, file: string) {
+  checkPath(instanceId, file);
+  try {
+    const handle = await open(
+      file,
+      constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK,
+    );
+    try {
+      const info = await handle.stat();
+      if (
+        !info.isFile() ||
+        (info.mode & 0o777) !== 0o600 ||
+        info.uid !== process.getuid?.() ||
+        info.size > 4096
+      )
+        throw Error("PRIVATE_FILE_REQUIRED");
+      const bytes = Buffer.alloc(4097);
+      let total = 0;
+      while (total < bytes.length) {
+        const part = await handle.read(
+          bytes,
+          total,
+          bytes.length - total,
+          total,
+        );
+        if (!part.bytesRead) break;
+        total += part.bytesRead;
+      }
+      if (total !== info.size) throw Error("FILE_CHANGED");
+      return fileSchema.parse(
+        JSON.parse(
+          new TextDecoder("utf-8", { fatal: true }).decode(
+            bytes.subarray(0, total),
+          ),
+        ),
+      );
+    } finally {
+      await handle.close();
+    }
+  } catch {
+    throw new ManagementError("ACCOUNT_OPERATION_FILE_INVALID");
+  }
+}
+async function closeManaged(
+  db: Awaited<ReturnType<typeof openManagedDatabase>>,
+) {
+  try {
+    await db.close();
+  } catch {
+    throw new ManagementError(
+      "ACCOUNT_OPERATION_CLOSE_UNCONFIRMED_FILE_PRESERVED",
+    );
+  }
+}
+function requestFromFile(value: z.infer<typeof fileSchema>) {
+  return {
+    ...value.binding,
+    ...(value.passwordSetup
+      ? {
+          tokenId: value.passwordSetup.tokenId,
+          tokenDigest: value.passwordSetup.tokenDigest,
+        }
+      : {}),
+  };
+}
+function checkLink(value: z.infer<typeof fileSchema>, origin: string) {
+  if (!value.passwordSetup) return;
+  const link = value.passwordSetup;
+  const url = new URL(link.url),
+    params = new URLSearchParams(url.hash.slice(1));
+  if (
+    url.origin !== origin ||
+    url.pathname !== "/studio/set-password" ||
+    url.search ||
+    url.username ||
+    url.password ||
+    [...params.keys()].length !== 2 ||
+    params.getAll("token").length !== 1 ||
+    params.getAll("tokenId").length !== 1 ||
+    params.get("tokenId") !== link.tokenId ||
+    passwordTokenDigest(params.get("token") ?? "") !== link.tokenDigest
+  )
+    throw new ManagementError("ACCOUNT_OPERATION_FILE_INVALID");
+}
+
+/** One explicit owner write. Existing files are never overwritten or automatically replayed. */
+export async function executeLocalAccountOperation(
+  instanceId: string,
+  input: LocalAccountBinding,
+  operationFile: string,
+) {
+  const binding = localAccountBindingSchema.parse(input);
+  checkPath(instanceId, operationFile);
   const db = await openManagedDatabase(instanceId);
   let fileCreated = false;
   try {
     const prior =
-      await db.sql`SELECT operation_id FROM qf.operator_account_operation WHERE operation_id=${operationId}`;
+      await db.sql`SELECT operation_id FROM qf.operator_account_operation WHERE operation_id=${binding.operationId}`;
     if (prior.length)
-      throw new ManagementError("ACCOUNT_OPERATION_ALREADY_RECORDED");
+      throw new ManagementError(
+        "ACCOUNT_OPERATION_ALREADY_RECORDED_INSPECT_ORIGINAL",
+      );
+    const token =
+      binding.action === "bootstrap-admin" ||
+      binding.action === "admin-recovery"
+        ? issuePasswordToken()
+        : undefined;
+    const original = fileSchema.parse({
+      schemaVersion: "quizforge.local-account-operation.v1",
+      instanceId,
+      binding,
+      ...(token
+        ? {
+            passwordSetup: {
+              tokenId: token.id,
+              tokenDigest: token.digest,
+              url:
+                db.config.origin +
+                "/studio/set-password#token=" +
+                token.raw +
+                "&tokenId=" +
+                token.id,
+            },
+          }
+        : {}),
+    });
     const file = await open(
-      options.setupFile,
+      operationFile,
       constants.O_WRONLY |
         constants.O_CREAT |
         constants.O_EXCL |
@@ -65,194 +189,107 @@ export async function prepareLocalAccount(
     );
     fileCreated = true;
     try {
-      await file.writeFile(
-        JSON.stringify({
-          instanceId,
-          ...binding,
-          url:
-            db.config.origin +
-            "/studio/set-password#token=" +
-            token.raw +
-            "&tokenId=" +
-            token.id,
-        }) + "\n",
-      );
+      await file.writeFile(JSON.stringify(original) + "\n");
       await file.sync();
     } finally {
       await file.close();
     }
-    const result = await accountCall<{ first: boolean }>(
+    const directory = await open(
+      path.dirname(operationFile),
+      constants.O_RDONLY | constants.O_DIRECTORY,
+    );
+    try {
+      await directory.sync();
+    } finally {
+      await directory.close();
+    }
+    const value = await accountCall<{ first: boolean; receipt: unknown }>(
       db as unknown as P2aDatabase,
       "account_local",
       "",
       null,
-      { ...binding, tokenId: token.id, tokenDigest: token.digest },
+      requestFromFile(original),
       true,
     );
-    if (!result.first)
-      throw new ManagementError("ACCOUNT_OPERATION_ALREADY_RECORDED");
-    return { id: targetId, operationId, setupFile: options.setupFile };
-  } catch (e) {
-    if (fileCreated && !(e instanceof ManagementError))
+    const receipt = localAccountReceiptSchema.parse(value.receipt);
+    if (JSON.stringify(receipt.binding) !== JSON.stringify(binding))
+      throw Error("LOCAL_RECEIPT_BINDING_MISMATCH");
+    return { receipt, operationFile };
+  } catch (error) {
+    if (fileCreated)
       throw new ManagementError(
-        "ACCOUNT_SETUP_OUTCOME_REQUIRES_RECHECK_FILE_PRESERVED",
+        "ACCOUNT_OPERATION_REQUIRES_INSPECTION_FILE_PRESERVED",
       );
-    throw e;
+    if (error instanceof ManagementError) throw error;
+    if ((error as NodeJS.ErrnoException).code === "EEXIST")
+      throw new ManagementError(
+        "ACCOUNT_OPERATION_FILE_EXISTS_INSPECT_ORIGINAL",
+      );
+    throw new ManagementError("ACCOUNT_OPERATION_NOT_SENT");
   } finally {
-    await db.close();
+    await closeManaged(db);
   }
 }
 
-/** Owner-only reconciliation of the original issuance. This function never issues or mutates anything. */
+/** Repeatable owner-only inspection. No token issuance, mutation, or inferred nonexecution. */
 export async function inspectLocalAccountOperation(
   instanceId: string,
-  action: "bootstrap-admin" | "admin-recovery",
-  options: { operatorId: string; operationId: string; setupFile: string },
+  operationFile: string,
 ) {
-  const targetId = z.uuid().parse(options.operatorId),
-    operationId = z.uuid().parse(options.operationId);
-  const resultBinding = { operationId, targetId, action };
-  const folder = instancePaths(instanceId).directory;
-  if (
-    !path.isAbsolute(options.setupFile) ||
-    path.dirname(options.setupFile) !== folder ||
-    !/^account-setup-[a-z0-9-]+\.json$/.test(path.basename(options.setupFile))
-  )
-    throw new ManagementError("ACCOUNT_SETUP_PATH_INVALID");
-  let evidence: {
-    instanceId: string;
-    action: "bootstrap-admin" | "admin-recovery";
-    targetId: string;
-    operationId: string;
-    loginName?: string | undefined;
-    displayName?: string | undefined;
-    url: string;
-  };
-  try {
-    const file = await open(
-      options.setupFile,
-      constants.O_RDONLY | constants.O_NOFOLLOW,
-    );
-    try {
-      const info = await file.stat();
-      if (
-        !info.isFile() ||
-        (info.mode & 0o077) !== 0 ||
-        info.uid !== process.getuid?.() ||
-        info.size > 4096
-      )
-        throw Error("PRIVATE_FILE_REQUIRED");
-      const bytes = Buffer.alloc(4097),
-        read = await file.read(bytes, 0, bytes.length, 0);
-      if (read.bytesRead > 4096) throw Error("FILE_TOO_LARGE");
-      evidence = z
-        .strictObject({
-          instanceId: z.string().regex(/^[a-f0-9]{32}$/),
-          action: z.enum(["bootstrap-admin", "admin-recovery"]),
-          targetId: z.uuid(),
-          operationId: z.uuid(),
-          loginName: loginName.optional(),
-          displayName: displayName.optional(),
-          url: z.string().max(1024),
-        })
-        .parse(
-          JSON.parse(
-            new TextDecoder("utf-8", { fatal: true }).decode(
-              bytes.subarray(0, read.bytesRead),
-            ),
-          ),
-        );
-    } finally {
-      await file.close();
-    }
-  } catch {
-    throw new ManagementError("ACCOUNT_SETUP_FILE_INVALID");
-  }
-  if (
-    evidence.instanceId !== instanceId ||
-    evidence.action !== action ||
-    evidence.targetId !== targetId ||
-    evidence.operationId !== operationId ||
-    (action === "bootstrap-admin" &&
-      (!evidence.loginName || !evidence.displayName)) ||
-    (action === "admin-recovery" &&
-      (evidence.loginName !== undefined || evidence.displayName !== undefined))
-  )
+  const original = await readOperation(instanceId, operationFile);
+  const { binding } = original;
+  if (original.instanceId !== instanceId)
     return {
       status: "binding-mismatch" as const,
-      ...resultBinding,
       binding: "original-file" as const,
     };
   const db = await openManagedDatabase(instanceId);
   try {
-    let tokenId: string, tokenDigest: string;
-    try {
-      const url = new URL(evidence.url),
-        params = new URLSearchParams(url.hash.slice(1));
-      if (
-        url.origin !== db.config.origin ||
-        url.pathname !== "/studio/set-password" ||
-        url.search ||
-        url.username ||
-        url.password ||
-        [...params.keys()].length !== 2 ||
-        params.getAll("token").length !== 1 ||
-        params.getAll("tokenId").length !== 1
-      )
-        throw Error("LINK_BINDING_INVALID");
-      tokenId = z.uuid().parse(params.get("tokenId"));
-      tokenDigest = passwordTokenDigest(params.get("token") ?? "");
-    } catch {
-      throw new ManagementError("ACCOUNT_SETUP_FILE_INVALID");
-    }
-    const binding = {
-      action,
-      targetId,
-      operationId,
-      ...(action === "bootstrap-admin"
-        ? { loginName: evidence.loginName, displayName: evidence.displayName }
-        : {}),
-    };
+    checkLink(original, db.config.origin);
     return await db.sql.begin(async (tx) => {
       await tx`SET TRANSACTION ISOLATION LEVEL REPEATABLE READ, READ ONLY`;
       await tx`SET LOCAL statement_timeout='5s'`;
       const [row] = await tx<
         {
-          operation: AccountOperationDto;
-          receipt_matches: boolean;
+          receipt: unknown;
+          matches: boolean;
           token_matches: boolean;
-          token_id: string | null;
-          expires_at: string | null;
           token_state: string;
+          expires_at: string | null;
         }[]
       >`
-        SELECT qf.account_operation_dto(r) AS operation,
-          (r.actor_id IS NULL AND r.target_id=${targetId}::uuid AND r.action=${action} AND r.binding=${JSON.stringify(binding)}::text::jsonb) AS receipt_matches,
-          coalesce(t.id=${tokenId}::uuid AND t.token_digest=${tokenDigest} AND t.operator_id=${targetId}::uuid AND t.purpose=${action} AND t.issued_by IS NULL,false) AS token_matches,
-          t.id AS token_id,qf.consumer_moment(date_trunc('milliseconds',t.expires_at)) AS expires_at,
-          CASE WHEN t.id IS NULL THEN 'missing' WHEN t.consumed_at IS NOT NULL THEN 'consumed' WHEN t.revoked_at IS NOT NULL THEN 'revoked' WHEN t.expires_at<=clock_timestamp() THEN 'expired' ELSE 'active' END AS token_state
+        SELECT jsonb_build_object('operation',qf.account_operation_dto(r),'binding',r.binding-ARRAY['tokenId','tokenDigest'],'result',r.local_result) receipt,
+          (r.actor_id IS NULL AND r.target_id=${binding.targetId}::uuid AND r.action=${binding.action} AND r.binding=${JSON.stringify(requestFromFile(original))}::text::jsonb) matches,
+          CASE WHEN r.status='rejected' OR ${!original.passwordSetup} THEN t.id IS NULL ELSE
+            coalesce(t.id=${original.passwordSetup?.tokenId ?? null}::uuid AND r.token_id=t.id AND t.token_digest=${original.passwordSetup?.tokenDigest ?? null}
+              AND t.operator_id=r.target_id AND t.purpose=r.action AND t.issued_by IS NULL,false) END token_matches,
+          CASE WHEN t.id IS NULL THEN 'missing' WHEN t.consumed_at IS NOT NULL THEN 'consumed' WHEN t.revoked_at IS NOT NULL THEN 'revoked' WHEN t.expires_at<=clock_timestamp() THEN 'expired' ELSE 'active' END token_state,
+          qf.consumer_moment(date_trunc('milliseconds',t.expires_at)) expires_at
         FROM qf.operator_account_operation r LEFT JOIN qf.operator_password_token t ON t.operation_id=r.operation_id
-        WHERE r.operation_id=${operationId}::uuid`;
-      if (!row) return { status: "unknown" as const, ...resultBinding };
-      if (!row.receipt_matches || !row.token_matches)
+        WHERE r.operation_id=${binding.operationId}::uuid`;
+      if (!row)
+        return { status: "unknown" as const, operationId: binding.operationId };
+      if (!row.matches || !row.token_matches)
         return {
           status: "binding-mismatch" as const,
-          ...resultBinding,
           binding: "database" as const,
         };
       return {
         status: "found" as const,
-        binding: "matched" as const,
-        operation: row.operation,
-        passwordSetup: {
-          tokenId: row.token_id,
-          purpose: action,
-          expiresAt: row.expires_at,
-          state: row.token_state,
-        },
+        receipt: localAccountReceiptSchema.parse(row.receipt),
+        ...(original.passwordSetup && row.token_state !== "missing"
+          ? {
+              passwordSetup: {
+                tokenId: original.passwordSetup.tokenId,
+                purpose: binding.action,
+                expiresAt: row.expires_at,
+                state: row.token_state,
+              },
+            }
+          : {}),
       };
     });
   } finally {
-    await db.close();
+    await closeManaged(db);
   }
 }

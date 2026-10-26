@@ -1,3 +1,4 @@
+import { signInStudioPassword } from "./studio-password-login";
 import {
   checkDraftRead,
   draftRevisionPath,
@@ -115,28 +116,7 @@ const workspace = (index = 0) =>
 const postApi = () =>
   `**/api/studio/products/${source().productId}/imports/${source().sourceImportId}/validations/${source().sourceValidationId}/apply`;
 async function signIn(page: Page, role: "operator" | "readOnly" = "operator") {
-  await page.goto("/studio/login");
-  await expect(page.getByLabel("运营凭证")).toBeEnabled();
-  try {
-    await page.evaluate((value) => {
-      const input = document.getElementById("studio-credential");
-      if (!(input instanceof HTMLInputElement) || input.disabled)
-        throw new Error("INPUT_UNAVAILABLE");
-      const setter = Object.getOwnPropertyDescriptor(
-        HTMLInputElement.prototype,
-        "value",
-      )?.set;
-      if (!setter) throw new Error("INPUT_UNAVAILABLE");
-      setter.call(input, value);
-      input.dispatchEvent(new Event("input", { bubbles: true }));
-    }, fixture[role].secret);
-  } catch {
-    throw new Error("DRAFTS_E2E_INPUT_UNAVAILABLE");
-  }
-  await page.getByRole("button", { name: "登录 Studio", exact: true }).click();
-  await expect(
-    page.getByRole("heading", { name: "工作台", exact: true }),
-  ).toBeVisible();
+  await signInStudioPassword(page, fixture[role]);
 }
 async function pending(page: Page) {
   const value = await page.evaluate((key) => {

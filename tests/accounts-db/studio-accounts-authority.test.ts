@@ -42,7 +42,7 @@ afterAll(async () => {
 async function actor(role: "admin" | "operator" | "read-only" = "admin") {
   const id = op(),
     token = issueToken("session");
-  await owner.sql`INSERT INTO qf.operator(id,label,login_name,display_name,password_hash,role,status) VALUES(${id},${"synthetic-" + id},${"synthetic-" + id},'合成身份',${fixtureHash},${role},'active')`;
+  await owner.sql`INSERT INTO qf.operator(id,login_name,display_name,password_hash,role,status) VALUES(${id},${"synthetic-" + id},'合成身份',${fixtureHash},${role},'active')`;
   await owner.sql`WITH t AS(SELECT clock_timestamp() AS moment) INSERT INTO qf.operator_session(id,token_digest,kind,operator_id,created_at,last_seen_at,idle_expires_at,absolute_expires_at) SELECT ${op()},${token.digest},'authenticated',${id},moment,moment,moment+interval '30 minutes',moment+interval '8 hours' FROM t`;
   return {
     id,
@@ -56,7 +56,7 @@ async function actor(role: "admin" | "operator" | "read-only" = "admin") {
 async function pending() {
   const id = op(),
     token = issuePasswordToken();
-  await owner.sql`INSERT INTO qf.operator(id,label,login_name,display_name,role,status) VALUES(${id},${"pending-" + id},${"pending-" + id},'合成待设密','operator','active')`;
+  await owner.sql`INSERT INTO qf.operator(id,login_name,display_name,role,status) VALUES(${id},${"pending-" + id},'合成待设密','operator','active')`;
   await owner.sql`SELECT qf.account_issue(${id}::uuid,'setup',${token.digest},${token.id}::uuid,NULL,${op()}::uuid)`;
   return { id, token };
 }
@@ -125,7 +125,7 @@ it("owner CLI reconciles the original bootstrap/recovery receipt and token bindi
     target = op(),
     operationId = op(),
     folder = path.dirname(process.env.QUIZFORGE_P2A_CONFIG!),
-    file = path.join(folder, "account-setup-" + operationId + ".json");
+    file = path.join(folder, "account-operation-" + operationId + ".json");
   const base = [
     "--conditions=react-server",
     "--import",
@@ -142,86 +142,98 @@ it("owner CLI reconciles the original bootstrap/recovery receipt and token bindi
     target,
     "--operation-id",
     operationId,
-    "--setup-file",
+    "--operation-file",
     file,
     "--login-name",
     "synthetic-owner",
     "--display-name",
     "合成恢复",
   ]);
-  const inspect = async (action: string, id: string, setupFile: string) => {
-    const { stdout } = await execute(process.execPath, [
-      ...base,
-      "inspect-operation",
-      "--instance",
-      db.config.instanceId,
-      "--operation-id",
-      id,
-      "--operator-id",
-      target,
-      "--action",
-      action,
-      "--setup-file",
-      setupFile,
-    ]);
-    return { value: JSON.parse(stdout), stdout };
+  const inspect = async (operationFile: string) => {
+    try {
+      const { stdout } = await execute(process.execPath, [
+        ...base,
+        "inspect-operation",
+        "--instance",
+        db.config.instanceId,
+        "--operation-file",
+        operationFile,
+      ]);
+      return { value: JSON.parse(stdout), stdout };
+    } catch (error) {
+      const stdout = (error as { stdout?: string }).stdout;
+      if (!stdout) throw error;
+      return { value: JSON.parse(stdout), stdout };
+    }
   };
   const rawFile = JSON.parse(await readFile(file, "utf8")),
-    raw = new URLSearchParams(new URL(rawFile.url).hash.slice(1)).get("token")!;
+    raw = new URLSearchParams(
+      new URL(rawFile.passwordSetup.url).hash.slice(1),
+    ).get("token")!;
   const [before] =
     await owner.sql`SELECT (SELECT count(*)::int FROM qf.operator_account_operation) operations,(SELECT count(*)::int FROM qf.operator_password_token) tokens,(SELECT count(*)::int FROM qf.audit_event) audits`;
-  const found = await inspect("bootstrap-admin", operationId, file);
+  const found = await inspect(file);
   expect(found.value).toMatchObject({
     status: "found",
-    binding: "matched",
-    operation: {
-      operationId,
-      targetId: target,
-      action: "bootstrap-admin",
-      status: "completed",
+    receipt: {
+      operation: {
+        operationId,
+        targetId: target,
+        action: "bootstrap-admin",
+        status: "completed",
+      },
     },
     passwordSetup: { state: "active" },
   });
   expect(found.stdout).not.toContain(raw);
   expect(found.stdout).not.toContain("$argon2");
   const fakeToken = issuePasswordToken(),
-    badFile = path.join(folder, "account-setup-bad-" + op() + ".json");
+    badFile = path.join(folder, "account-operation-bad-" + op() + ".json");
   await writeFile(
     badFile,
     JSON.stringify({
       ...rawFile,
-      url:
-        db.config.origin +
-        "/studio/set-password#token=" +
-        fakeToken.raw +
-        "&tokenId=" +
-        fakeToken.id,
+      passwordSetup: {
+        tokenId: fakeToken.id,
+        tokenDigest: fakeToken.digest,
+        url:
+          db.config.origin +
+          "/studio/set-password#token=" +
+          fakeToken.raw +
+          "&tokenId=" +
+          fakeToken.id,
+      },
     }),
     { mode: 0o600, flag: "wx" },
   );
-  expect(
-    (await inspect("bootstrap-admin", operationId, badFile)).value,
-  ).toMatchObject({ status: "binding-mismatch", binding: "database" });
+  expect((await inspect(badFile)).value).toMatchObject({
+    status: "binding-mismatch",
+    binding: "database",
+  });
   const missing = op(),
-    missingFile = path.join(folder, "account-setup-" + missing + ".json");
+    missingFile = path.join(folder, "account-operation-" + missing + ".json");
   await writeFile(
     missingFile,
-    JSON.stringify({ ...rawFile, operationId: missing }),
+    JSON.stringify({
+      ...rawFile,
+      binding: { ...rawFile.binding, operationId: missing },
+    }),
     { mode: 0o600, flag: "wx" },
   );
-  expect(
-    (await inspect("bootstrap-admin", missing, missingFile)).value,
-  ).toMatchObject({ status: "unknown", operationId: missing });
+  expect((await inspect(missingFile)).value).toMatchObject({
+    status: "unknown",
+    operationId: missing,
+  });
   const [after] =
     await owner.sql`SELECT (SELECT count(*)::int FROM qf.operator_account_operation) operations,(SELECT count(*)::int FROM qf.operator_password_token) tokens,(SELECT count(*)::int FROM qf.audit_event) audits`;
   expect(after).toEqual(before);
-  const digest = new URLSearchParams(new URL(rawFile.url).hash.slice(1)).get(
-    "token",
-  )!;
+  const digest = new URLSearchParams(
+    new URL(rawFile.passwordSetup.url).hash.slice(1),
+  ).get("token")!;
   const { passwordTokenDigest } = await import("@/lib/auth/accounts/service");
   await completePasswordSetup(db, passwordTokenDigest(digest), op(), password);
   const recovery = op(),
-    recoveryFile = path.join(folder, "account-setup-" + recovery + ".json");
+    recoveryFile = path.join(folder, "account-operation-" + recovery + ".json");
   await execute(process.execPath, [
     ...base,
     "recover-admin",
@@ -231,15 +243,14 @@ it("owner CLI reconciles the original bootstrap/recovery receipt and token bindi
     target,
     "--operation-id",
     recovery,
-    "--setup-file",
+    "--operation-file",
     recoveryFile,
+    "--expected-revision",
+    "2",
   ]);
-  expect(
-    (await inspect("admin-recovery", recovery, recoveryFile)).value,
-  ).toMatchObject({
+  expect((await inspect(recoveryFile)).value).toMatchObject({
     status: "found",
-    binding: "matched",
-    operation: { operationId: recovery, action: "admin-recovery" },
+    receipt: { operation: { operationId: recovery, action: "admin-recovery" } },
     passwordSetup: { state: "active" },
   });
 });

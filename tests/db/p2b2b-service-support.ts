@@ -1,6 +1,9 @@
 import { randomUUID } from "node:crypto";
 import type { StudioWriteCredentials } from "@/lib/auth/write";
-import { createPreauth, login } from "@/lib/auth/service";
+import {
+  loginVersionFixtureAccount,
+  type FixtureAccount,
+} from "./version-account-fixture";
 import { createDatabase, type P2aDatabase } from "@/lib/db/client";
 import { createValidationContext } from "@/features/quizpack/validation/operation";
 import type { MediaOperationContext } from "@/features/quizpack/server/media";
@@ -33,20 +36,9 @@ export async function serviceRequest<T>(
 
 export async function fixtureCredentials(
   database: TestDatabase,
-  credential: string,
+  actor: FixtureAccount,
 ): Promise<StudioWriteCredentials> {
-  const preauth = await safe(() =>
-    createPreauth(database.app, null, randomUUID()),
-  );
-  const session = await safe(() =>
-    login(
-      database.app,
-      preauth.raw,
-      preauth.dto.csrfToken,
-      credential,
-      randomUUID(),
-    ),
-  );
+  const session = await safe(() => loginVersionFixtureAccount(database, actor));
   return {
     sessionToken: session.raw,
     csrfToken: session.dto.csrfToken,

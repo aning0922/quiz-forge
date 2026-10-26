@@ -23,7 +23,6 @@ import {
   type ActorRow,
   type DatabaseTime,
 } from "./internal";
-import type { StudioRole } from "./capabilities";
 type Transaction = postgres.TransactionSql;
 type Result<T> = { ok: true; value: T } | { ok: false; code: StudioErrorCode };
 function result<T>(value: Result<T>): T {
@@ -59,11 +58,10 @@ export function sessionDto(actor: StudioActor, raw: string): StudioSessionDto {
   return {
     operator: {
       id: actor.id,
-      label: actor.label,
       role: actor.role,
-      loginName: actor.loginName ?? null,
-      displayName: actor.displayName ?? actor.label,
-      accountRevision: actor.accountRevision ?? 1,
+      loginName: actor.loginName,
+      displayName: actor.displayName,
+      accountRevision: actor.accountRevision,
     },
     csrfToken,
     idleExpiresAt: actor.idleExpiresAt.toISOString(),
@@ -89,8 +87,9 @@ export async function readSession(
       FROM moment, qf.operator o WHERE s.id = ${row.session_id} AND s.kind = 'authenticated'
         AND s.revoked_at IS NULL AND s.idle_expires_at > moment.at AND s.absolute_expires_at > moment.at
         AND o.id = s.operator_id AND o.status = 'active'
-      RETURNING o.id, o.label, o.role,o.login_name,o.display_name,o.account_revision, s.id AS session_id, s.idle_expires_at, s.absolute_expires_at`;
-    return touched ? toActor(touched) : null;
+      RETURNING o.id, o.role,o.login_name,o.display_name,o.account_revision, s.id AS session_id, s.idle_expires_at, s.absolute_expires_at`;
+    const current = touched ? await activeActor(tx, digest) : null;
+    return current ? toActor(current) : null;
   });
   if (!actor) throw new StudioError("UNAUTHENTICATED");
   return actor;
@@ -136,84 +135,6 @@ export async function createPreauth(
             ).toISOString(),
           },
         },
-      } as const;
-    }),
-  );
-}
-
-export async function login(
-  database: P2aDatabase,
-  preauthRaw: string | null,
-  csrf: string | null,
-  credential: string,
-  requestId: string,
-): Promise<{ raw: string; dto: StudioSessionDto }> {
-  assertCsrf(preauthRaw, "preauth", csrf);
-  const preauthDigest = digestToken(preauthRaw, "preauth")!;
-  const credentialDigest = digestToken(credential, "credential");
-  return result(
-    await database.sql.begin(async (tx) => {
-      await acquireAuthWriteLock(tx);
-      // Lock first; then query validity against current DB time after any wait.
-      const [challenge] = await tx<
-        { id: string }[]
-      >`SELECT id FROM qf.operator_session
-      WHERE token_digest = ${preauthDigest} AND kind = 'preauth' FOR UPDATE`;
-      if (!challenge)
-        return { ok: false, code: "AUTHENTICATION_FAILED" } as const;
-      const [valid] = await tx<
-        { failed_attempts: number }[]
-      >`SELECT failed_attempts FROM qf.operator_session
-      WHERE id = ${challenge.id} AND revoked_at IS NULL AND failed_attempts < 5
-        AND idle_expires_at > clock_timestamp() AND absolute_expires_at > clock_timestamp()`;
-      if (!valid) return { ok: false, code: "AUTHENTICATION_FAILED" } as const;
-      const [operator] = credentialDigest
-        ? await tx<{ id: string; label: string; role: StudioRole }[]>`
-      SELECT id, label, role FROM qf.operator WHERE credential_digest = ${credentialDigest} AND status = 'active' AND role<>'admin'`
-        : [];
-      if (!operator) {
-        const [failures] = await tx<
-          { count: number }[]
-        >`SELECT count(*)::int AS count FROM qf.audit_event
-        WHERE action = 'login_failed' AND reason_code = 'AUTHENTICATION_FAILED'
-        AND occurred_at > clock_timestamp() - interval '60 seconds'`;
-        if (!failures || failures.count >= 10)
-          return { ok: false, code: "RATE_LIMITED" } as const;
-        const [failed] = await tx<
-          { id: string }[]
-        >`UPDATE qf.operator_session SET failed_attempts = failed_attempts + 1,
-        revoked_at = CASE WHEN failed_attempts + 1 >= 5 THEN clock_timestamp() ELSE NULL END
-        WHERE id = ${challenge.id} AND revoked_at IS NULL AND failed_attempts < 5
-          AND idle_expires_at > clock_timestamp() AND absolute_expires_at > clock_timestamp() RETURNING id`;
-        if (!failed)
-          return { ok: false, code: "AUTHENTICATION_FAILED" } as const;
-        await audit(tx, "login_failed", requestId, challenge.id, null, true);
-        return { ok: false, code: "AUTHENTICATION_FAILED" } as const;
-      }
-      const [consumed] = await tx<
-        { id: string }[]
-      >`UPDATE qf.operator_session SET revoked_at = clock_timestamp()
-      WHERE id = ${challenge.id} AND revoked_at IS NULL AND failed_attempts < 5
-        AND idle_expires_at > clock_timestamp() AND absolute_expires_at > clock_timestamp() RETURNING id`;
-      if (!consumed)
-        return { ok: false, code: "AUTHENTICATION_FAILED" } as const;
-      const token = issueToken("session");
-      const sessionId = randomUUID();
-      const [session] = await tx<
-        { idle_expires_at: DatabaseTime; absolute_expires_at: DatabaseTime }[]
-      >`
-      WITH moment AS MATERIALIZED (SELECT clock_timestamp() AS at)
-      INSERT INTO qf.operator_session (id, token_digest, kind, operator_id, created_at, last_seen_at, idle_expires_at, absolute_expires_at)
-      SELECT ${sessionId}, ${token.digest}, 'authenticated', o.id, at, at, at + interval '30 minutes', at + interval '8 hours'
-      FROM moment, qf.operator o WHERE o.id = ${operator.id} AND o.status = 'active'
-      RETURNING idle_expires_at, absolute_expires_at`;
-      if (!session)
-        return { ok: false, code: "AUTHENTICATION_FAILED" } as const;
-      await audit(tx, "login_succeeded", requestId, sessionId, operator.id);
-      const actor = toActor({ ...operator, session_id: sessionId, ...session });
-      return {
-        ok: true,
-        value: { raw: token.raw, dto: sessionDto(actor, token.raw) },
       } as const;
     }),
   );

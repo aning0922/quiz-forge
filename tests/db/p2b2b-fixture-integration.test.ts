@@ -21,7 +21,7 @@ import {
   testValidationRequestEnded,
 } from "./p2b2b-request-fixture";
 import { fixtureValidationOwnersEnded } from "./p2b2b-maintenance";
-import { createPreauth, login } from "@/lib/auth/service";
+import { loginVersionFixtureAccount } from "./version-account-fixture";
 import { configureImports } from "@/features/quizpack/import/config-management";
 import { currentConfig } from "@/features/quizpack/import/service";
 import { validationTransactions as transactions } from "@/features/quizpack/validation/transactions";
@@ -156,13 +156,9 @@ it("a real pre-candidate request publishes its actual file, commits ACK and drai
     const fixture = await safe(() =>
       prepareTestValidationFixture(database, randomUUID()),
     );
-    const preauth = await createPreauth(database.app, null, randomUUID());
-    const session = await login(
-      database.app,
-      preauth.raw,
-      preauth.dto.csrfToken,
-      fixture.operator.secret,
-      randomUUID(),
+    const session = await loginVersionFixtureAccount(
+      database,
+      fixture.operator,
     );
     const credentials = {
       sessionToken: session.raw,

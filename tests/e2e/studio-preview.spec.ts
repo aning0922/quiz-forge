@@ -1,3 +1,4 @@
+import { signInStudioPassword } from "./studio-password-login";
 import { PREVIEW_FONT_ASSET } from "../../src/features/product/preview/descriptor";
 import { test, expect, type Page } from "@playwright/test";
 import { constants } from "node:fs";
@@ -141,27 +142,7 @@ async function readFixture() {
 const source = (engine: "archetype" | "dimensions" = "archetype") =>
   fixture.sources.find((s) => s.engine === engine)!;
 async function signIn(page: Page, role: "operator" | "readOnly" = "operator") {
-  await page.goto("/studio/login");
-  await expect(page.getByLabel("运营凭证")).toBeEnabled();
-  try {
-    await page.evaluate((value) => {
-      const input = document.getElementById("studio-credential");
-      if (!(input instanceof HTMLInputElement) || input.disabled) throw Error();
-      const setter = Object.getOwnPropertyDescriptor(
-        HTMLInputElement.prototype,
-        "value",
-      )?.set;
-      if (!setter) throw Error();
-      setter.call(input, value);
-      input.dispatchEvent(new Event("input", { bubbles: true }));
-    }, fixture[role].secret);
-  } catch {
-    throw Error("PREVIEW_E2E_INPUT_UNAVAILABLE");
-  }
-  await page.getByRole("button", { name: "登录 Studio", exact: true }).click();
-  await expect(
-    page.getByRole("heading", { name: "工作台", exact: true }),
-  ).toBeVisible();
+  await signInStudioPassword(page, fixture[role]);
 }
 async function enter(
   page: Page,

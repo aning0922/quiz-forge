@@ -71,7 +71,7 @@ beforeAll(async () => {
   const hash = await withPasswordCapacity((k) => k.hash(syntheticPassword));
   await owner.sql.begin(async (tx) => {
     for (const person of people)
-      await tx`WITH moment AS(SELECT clock_timestamp() at) INSERT INTO qf.operator(id,label,login_name,display_name,role,status,password_hash,created_at,disabled_at) SELECT ${person.id},${"directory-" + person.id},${person.login},${person.name},${person.role},${person.status === "disabled" ? "disabled" : "active"},${person.status === "pending" ? null : hash},at,CASE WHEN ${person.status === "disabled"} THEN at ELSE NULL END FROM moment`;
+      await tx`WITH moment AS(SELECT clock_timestamp() at) INSERT INTO qf.operator(id,login_name,display_name,role,status,password_hash,created_at,disabled_at) SELECT ${person.id},${person.login},${person.name},${person.role},${person.status === "disabled" ? "disabled" : "active"},${person.status === "pending" ? null : hash},at,CASE WHEN ${person.status === "disabled"} THEN at ELSE NULL END FROM moment`;
   });
   await session(people[0].id, root);
   await session(people[2].id, operator);
@@ -164,7 +164,6 @@ it("searches audits beyond the first page and returns only the existing safe DTO
   expect(Object.keys(list.items[0]!).sort()).toEqual(
     [
       "id",
-      "label",
       "loginName",
       "displayName",
       "role",

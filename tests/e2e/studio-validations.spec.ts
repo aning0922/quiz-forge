@@ -1,3 +1,4 @@
+import { signInStudioPassword } from "./studio-password-login";
 import { test, expect, type Page, type TestInfo } from "@playwright/test";
 import { constants } from "node:fs";
 import { sampleStudioLayout, assertStudioLayout } from "./studio-layout";
@@ -122,26 +123,7 @@ async function signIn(
   index: number,
   role: "operator" | "readOnly" = "operator",
 ) {
-  await page.goto("/studio/login");
-  await expect(page.getByLabel("运营凭证")).toBeEnabled();
-  try {
-    await page.evaluate((value) => {
-      const input = document.getElementById("studio-credential");
-      if (!(input instanceof HTMLInputElement) || input.disabled)
-        throw new Error("INPUT_UNAVAILABLE");
-      const setter = Object.getOwnPropertyDescriptor(
-        HTMLInputElement.prototype,
-        "value",
-      )?.set;
-      if (!setter) throw new Error("INPUT_UNAVAILABLE");
-      setter.call(input, value);
-      input.dispatchEvent(new Event("input", { bubbles: true }));
-    }, fixture[role].secret);
-  } catch {
-    throw new Error("VALIDATIONS_E2E_INPUT_UNAVAILABLE");
-  }
-  await page.getByRole("button", { name: "登录 Studio" }).click();
-  await expect(page.getByRole("heading", { name: "工作台" })).toBeVisible();
+  await signInStudioPassword(page, fixture[role]);
   const item = fixture.imports[index];
   if (!item) throw new Error("VALIDATIONS_E2E_IMPORT_UNAVAILABLE");
   await page.goto(

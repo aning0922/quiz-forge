@@ -24,8 +24,8 @@ import {CreateReceive} from '@/features/studio/imports/create-receive';
 import {invalidateCurrentStudioAuthority} from '@/features/studio/authority-events';
 const now='2026-10-25T00:00:00.000Z', id='00000000-0000-4000-8000-000000000001';
 const params=new URLSearchParams(location.search), role=params.get('role')||'admin';
-const session={operator:{id,label:'synthetic-stable-label',displayName:'合成管理员',loginName:'synthetic.admin',role,accountRevision:1},csrfToken:'A'.repeat(43),idleExpiresAt:'2030-01-01T00:00:00.000Z',absoluteExpiresAt:'2030-01-01T00:00:00.000Z'};
-const account={id,label:'synthetic-stable-label',displayName:'合成管理员',loginName:'synthetic.admin',role,status:'active',revision:1,createdAt:now,disabledAt:null};
+const session={operator:{id,displayName:'合成管理员',loginName:'synthetic.admin',role,accountRevision:1},csrfToken:'A'.repeat(43),idleExpiresAt:'2030-01-01T00:00:00.000Z',absoluteExpiresAt:'2030-01-01T00:00:00.000Z'};
+const account={id,displayName:'合成管理员',loginName:'synthetic.admin',role,status:'active',revision:1,createdAt:now,disabledAt:null};
 const token='qfa_setup_v1_'+'A'.repeat(43);
 window.calls=[];window.currentSession=session;window.revoke=invalidateCurrentStudioAuthority;
 const operation=(operationId,action,actorId=id)=>({operationId,action,actorId,targetId:id,status:'completed',errorCode:null,createdAt:now});
@@ -57,7 +57,7 @@ window.fetch=async(raw,init={})=>{
 const view=params.get('view')||'accounts';
 const page=view==='self'?<MyAccountPage session={session}/>:view==='audit'?<AccountAuditPage/>:view==='setup'?<SetPasswordPage/>:view==='login'?<StudioLoginForm/>:view==='recovery'?<CreateReceive embedded productId="synthetic-product" session={session} settings={{enabled:true,maxArchiveBytes:33554432,receiveTimeoutMs:60000}} onChanged={()=>{}}/>:<AccountsPage session={session}/>;
 const authenticated=!['setup','login'].includes(view);
-createRoot(document.getElementById('root')).render(<StudioShell authenticated={authenticated} identity={session.operator} session={authenticated?session:undefined}>{page}</StudioShell>);
+createRoot(document.getElementById('root')).render(<StudioShell authenticated={authenticated} identity={{label:session.operator.displayName,role:session.operator.role}} session={authenticated?session:undefined}>{page}</StudioShell>);
 `;
 await esbuild.build({
   stdin: { contents: source, resolveDir: process.cwd(), loader: "tsx" },

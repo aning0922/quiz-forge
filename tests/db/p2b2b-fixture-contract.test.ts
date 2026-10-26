@@ -7,8 +7,8 @@ function value() {
   return {
     version: 1,
     runId,
-    operator: { identifier: randomUUID(), secret: `qfo_p2a_${"A".repeat(43)}` },
-    readOnly: { identifier: randomUUID(), secret: `qfo_p2a_${"B".repeat(43)}` },
+    operator: { identifier: randomUUID(), secret: "A".repeat(43) },
+    readOnly: { identifier: randomUUID(), secret: "B".repeat(43) },
     productId: `e2e-validations-${runId.slice(0, 8)}`,
     imports: Array.from({ length: 3 }, () => ({
       importId: randomUUID(),

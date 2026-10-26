@@ -8,7 +8,7 @@ import { passwordSetupCsrf } from "@/features/studio/accounts/password-token";
 import { SESSION_COOKIE, PREAUTH_COOKIE } from "@/lib/auth/cookies";
 import { beforeAll, afterAll, describe, it, expect } from "vitest";
 import { loadRuntimeConfig } from "@/lib/db/runtime";
-import { openManagedDatabase, disableOperator } from "@/lib/db/management";
+import { openManagedDatabase } from "@/lib/db/management";
 import { createDatabase, type P2aDatabase } from "@/lib/db/client";
 import { createPreauth, readSession } from "@/lib/auth/service";
 import {
@@ -50,7 +50,7 @@ const op = () => randomUUID();
 async function actor(role: StudioRole) {
   const id = op(),
     token = issueToken("session");
-  await owner.sql`INSERT INTO qf.operator(id,label,login_name,display_name,password_hash,role,status) VALUES(${id},${"synthetic-" + id},${"synthetic-" + id},'合成账号',${fixtureHash},${role},'active')`;
+  await owner.sql`INSERT INTO qf.operator(id,login_name,display_name,password_hash,role,status) VALUES(${id},${"synthetic-" + id},'合成账号',${fixtureHash},${role},'active')`;
   await owner.sql`WITH t AS(SELECT clock_timestamp() at) INSERT INTO qf.operator_session(id,token_digest,kind,operator_id,created_at,last_seen_at,idle_expires_at,absolute_expires_at) SELECT ${op()},${token.digest},'authenticated',${id},at,at,at+interval '30 minutes',at+interval '8 hours' FROM t`;
   return {
     id,
@@ -105,7 +105,7 @@ describe("accounts on a pristine isolated PG; no shared reset or deletion", () =
       operationId = op(),
       setupFile = path.join(
         path.dirname(process.env.QUIZFORGE_P2A_CONFIG!),
-        "account-setup-" + operationId + ".json",
+        "account-operation-" + operationId + ".json",
       );
     const { stdout } = await execute(process.execPath, [
       "--conditions=react-server",
@@ -119,7 +119,7 @@ describe("accounts on a pristine isolated PG; no shared reset or deletion", () =
       rootId,
       "--operation-id",
       operationId,
-      "--setup-file",
+      "--operation-file",
       setupFile,
       "--login-name",
       "synthetic-admin",
@@ -127,14 +127,15 @@ describe("accounts on a pristine isolated PG; no shared reset or deletion", () =
       "合成管理员",
     ]);
     expect(JSON.parse(stdout)).toMatchObject({
-      id: rootId,
-      operationId,
-      setupFile,
+      operationFile: setupFile,
+      receipt: { operation: { targetId: rootId, operationId } },
     });
     expect(stdout).not.toContain("#token=");
     expect((await stat(setupFile)).mode & 0o777).toBe(0o600);
     const file = JSON.parse(await readFile(setupFile, "utf8")),
-      params = new URLSearchParams(new URL(file.url).hash.slice(1)),
+      params = new URLSearchParams(
+        new URL(file.passwordSetup.url).hash.slice(1),
+      ),
       raw = params.get("token")!;
     expect(params.get("tokenId")).toMatch(/^[0-9a-f-]{36}$/);
     const [pending] =
@@ -616,7 +617,7 @@ describe("accounts on a pristine isolated PG; no shared reset or deletion", () =
       recovery = op(),
       recoveryFile = path.join(
         path.dirname(process.env.QUIZFORGE_P2A_CONFIG!),
-        "account-setup-" + recovery + ".json",
+        "account-operation-" + recovery + ".json",
       ),
       args = [
         "--conditions=react-server",
@@ -633,19 +634,22 @@ describe("accounts on a pristine isolated PG; no shared reset or deletion", () =
       rootId,
       "--operation-id",
       recovery,
-      "--setup-file",
+      "--operation-file",
       recoveryFile,
+      "--expected-revision",
+      String(await revision(rootId)),
     ]);
     expect(JSON.parse(stdout)).toMatchObject({
-      id: rootId,
-      operationId: recovery,
-      setupFile: recoveryFile,
+      operationFile: recoveryFile,
+      receipt: { operation: { targetId: rootId, operationId: recovery } },
     });
     expect(stdout).not.toContain("#token=");
     expect((await readSession(db, root.sessionToken)).role).toBe("admin");
     expect((await stat(recoveryFile)).mode & 0o777).toBe(0o600);
     const file = JSON.parse(await readFile(recoveryFile, "utf8")),
-      raw = new URLSearchParams(new URL(file.url).hash.slice(1)).get("token")!;
+      raw = new URLSearchParams(
+        new URL(file.passwordSetup.url).hash.slice(1),
+      ).get("token")!;
     const recoverySetup = op();
     await completePasswordSetup(
       db,
@@ -668,10 +672,22 @@ describe("accounts on a pristine isolated PG; no shared reset or deletion", () =
         "account_local",
         "",
         null,
-        { action: "admin-recovery", targetId: member.id, operationId: op() },
+        {
+          action: "admin-recovery",
+          targetId: member.id,
+          operationId: op(),
+          expectedRevision: 1,
+          tokenId: op(),
+          tokenDigest: "a".repeat(64),
+        },
         true,
       ),
-    ).rejects.toMatchObject({ code: "ACCOUNT_CONFLICT" });
+    ).resolves.toMatchObject({
+      receipt: {
+        operation: { status: "rejected", errorCode: "ACCOUNT_CONFLICT" },
+        result: { changed: false },
+      },
+    });
     await expect(
       accountCall(
         owner as unknown as P2aDatabase,
@@ -704,8 +720,25 @@ describe("accounts on a pristine isolated PG; no shared reset or deletion", () =
       await owner.sql`SELECT id FROM qf.operator WHERE role='admin' AND status='active' AND password_hash IS NOT NULL`;
     expect(rows).toHaveLength(1);
     await expect(
-      disableOperator(instanceId, rows[0]!.id),
-    ).rejects.toMatchObject({ code: "LAST_ACTIVE_ADMIN" });
+      accountCall(
+        owner as unknown as P2aDatabase,
+        "account_local",
+        "",
+        null,
+        {
+          action: "disable",
+          operationId: op(),
+          targetId: rows[0]!.id,
+          expectedRevision: await revision(rows[0]!.id),
+        },
+        true,
+      ),
+    ).resolves.toMatchObject({
+      receipt: {
+        operation: { status: "rejected", errorCode: "LAST_ACTIVE_ADMIN" },
+        result: { changed: false },
+      },
+    });
   });
   it("applies current-password and all-KDF budgets before work and retains window-protected reservations", async () => {
     // Wait for the real rolling window; never clear/age existing unknown reservations to make quota pass.

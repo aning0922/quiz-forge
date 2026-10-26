@@ -15,8 +15,8 @@ import {StudioShell} from '@/features/studio/shell';
 import {AccountsPage} from '@/features/studio/accounts/admin-page';
 import {invalidateCurrentStudioAuthority} from '@/features/studio/authority-events';
 const id='00000000-0000-4000-8000-000000000001', now='2026-10-26T00:00:00.000Z';
-const session={operator:{id,label:'合成管理员',loginName:'synthetic.admin',displayName:'合成管理员',role:'admin',accountRevision:1},csrfToken:'A'.repeat(43),idleExpiresAt:'2030-01-01T00:00:00.000Z',absoluteExpiresAt:'2030-01-01T00:00:00.000Z'};
-const accounts=Array.from({length:26},(_,i)=>({id:'00000000-0000-4000-8000-'+String(i+1).padStart(12,'0'),label:'合成人员',displayName:['合成管理员','合成运营','合成待开通','合成停用'][i]||'合成人员'+(i+1),loginName:'synthetic.'+(i+1),role:i===0?'admin':i===3?'read-only':'operator',status:i===2?'pending':i===3?'disabled':'active',revision:4,createdAt:now,disabledAt:i===3?now:null}));
+const session={operator:{id,loginName:'synthetic.admin',displayName:'合成管理员',role:'admin',accountRevision:1},csrfToken:'A'.repeat(43),idleExpiresAt:'2030-01-01T00:00:00.000Z',absoluteExpiresAt:'2030-01-01T00:00:00.000Z'};
+const accounts=Array.from({length:26},(_,i)=>({id:'00000000-0000-4000-8000-'+String(i+1).padStart(12,'0'),displayName:['合成管理员','合成运营','合成待开通','合成停用'][i]||'合成人员'+(i+1),loginName:'synthetic.'+(i+1),role:i===0?'admin':i===3?'read-only':'operator',status:i===2?'pending':i===3?'disabled':'active',revision:4,createdAt:now,disabledAt:i===3?now:null}));
 window.mode='unknown';window.writes=[];window.reads=[];window.revoke=invalidateCurrentStudioAuthority;window.setDirectoryRevision=revision=>{accounts[1].revision=revision;};
 function result(body,target,action){return {account:{...target,revision:target.revision+1,...(action==='display-name'?{displayName:body.displayName}:{}),...(action==='role'?{role:body.role}:{})},operation:{operationId:body.operationId,actorId:id,targetId:target.id,action,status:'completed',errorCode:null,createdAt:now},...((action==='create'||action.startsWith('issue-'))?{passwordSetup:{tokenId:target.id,purpose:'setup',url:location.origin+'/studio/set-password#synthetic-private-link',expiresAt:'2030-01-01T00:00:00.000Z'}}:{})}}
 window.fetch=async(raw,init={})=>{
@@ -40,7 +40,7 @@ window.fetch=async(raw,init={})=>{
  }
  throw Error('UNEXPECTED_SYNTHETIC_PATH');
 };
-createRoot(document.getElementById('root')).render(<StudioShell authenticated identity={session.operator} session={session}><AccountsPage session={session}/><a href='/outside' id='leave-test'>离开页面</a></StudioShell>);
+createRoot(document.getElementById('root')).render(<StudioShell authenticated identity={{label:session.operator.displayName,role:session.operator.role}} session={session}><AccountsPage session={session}/><a href='/outside' id='leave-test'>离开页面</a></StudioShell>);
 `;
 await esbuild.build({
   stdin: { contents: source, resolveDir: process.cwd(), loader: "tsx" },

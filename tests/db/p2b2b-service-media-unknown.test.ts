@@ -86,7 +86,7 @@ beforeAll(async () => {
   await db.close();
   await configureImports(db.config.instanceId, true);
   db = await safe(openTestDatabase);
-  credentials = await fixtureCredentials(db, fixture.operator.secret);
+  credentials = await fixtureCredentials(db, fixture.operator);
 }, 60_000);
 beforeEach(() => {
   media.binding.mockReset().mockResolvedValue({

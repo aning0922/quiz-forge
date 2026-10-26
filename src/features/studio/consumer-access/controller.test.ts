@@ -33,8 +33,10 @@ async function fixture() {
   };
   const session: StudioSessionDto = {
     operator: {
+      loginName: "synthetic.account",
+      accountRevision: 1,
       id: scope.issuerId,
-      label: "Synthetic operator",
+      displayName: "Synthetic operator",
       role: "operator",
     },
     csrfToken: "A".repeat(43),
@@ -522,3 +524,32 @@ it("operator cannot create a play and a revoked controller cannot revive via ref
     f.c.dispose();
   }
 });
+
+it.each([
+  { label: "historical label" },
+  { loginName: undefined },
+  { loginName: null },
+  { loginName: " Synthetic.account " },
+  { displayName: undefined },
+  { displayName: "" },
+  { accountRevision: undefined },
+  { accountRevision: 0 },
+])(
+  "rejects incomplete or historical session identity %j without writes",
+  async (patch) => {
+    const f = await fixture();
+    try {
+      // Deliberately corrupt the synthetic HTTP response, never repair missing identity.
+      f.setActor({
+        ...f.session,
+        operator: { ...f.session.operator, ...patch },
+      } as StudioSessionDto);
+      await f.c.refresh();
+      expect(f.c.getSnapshot().session).toBeNull();
+      expect(f.c.getSnapshot().phase).not.toBe("ready");
+      expect(f.posts).toHaveLength(0);
+    } finally {
+      f.c.dispose();
+    }
+  },
+);

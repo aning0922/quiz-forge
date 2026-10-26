@@ -4,8 +4,7 @@ import type { StudioRole } from "@/lib/auth/role-policy";
 export type AccountStatus = "pending" | "active" | "disabled";
 export type AccountDto = {
   id: string;
-  label: string;
-  loginName: string | null;
+  loginName: string;
   displayName: string;
   role: StudioRole;
   status: AccountStatus;

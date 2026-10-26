@@ -11,7 +11,6 @@ import {
   InternalVersionDetailPage,
   InternalVersionsPage,
 } from "./pages";
-import { ProductDetail } from "../workspace/product-detail";
 import { internalVersionPageUrl } from "./paths";
 const reads = vi.hoisted(() => ({
   error: "synthetic unavailable",
@@ -33,35 +32,19 @@ vi.mock("../drafts/use-read", () => ({
     refresh: () => {},
   }),
 }));
-vi.mock("../workspace/use-request", () => ({
-  useWorkspaceRead: () => ({
-    value: undefined,
-    loading: false,
-    error: reads.error,
-    refresh: () => {},
-  }),
-}));
 const session: StudioSessionDto = {
-  operator: { id: uuid(4), label: "Synthetic read-only", role: "read-only" },
+  operator: {
+    loginName: "synthetic.account",
+    accountRevision: 1,
+    id: uuid(4),
+    displayName: "Synthetic read-only",
+    role: "read-only",
+  },
   csrfToken: "synthetic-not-a-session-token",
   idleExpiresAt: "2026-10-18T00:00:00.000Z",
   absoluteExpiresAt: "2026-10-18T00:00:00.000Z",
 };
 describe("internal metadata and recovery presentation, server markup only", () => {
-  it("keeps Product recovery mounted after Product detail GET error", () => {
-    const html = renderToStaticMarkup(
-      createElement(ProductDetail, { productId: binding.productId, session }),
-    );
-    expect(html).toContain("测评信息暂未读取");
-    expect(html).toContain('aria-label="审核依据记录操作查询"');
-    expect(html).toContain('aria-label="内容版本固定操作查询"');
-    expect(html.match(/<details open=""/g)).toHaveLength(2);
-    expect(html).toContain(
-      "正在检查上次操作，请稍候；检查完成前不能继续提交。",
-    );
-    expect(html).not.toContain("暂无待处理操作");
-    // The shared workspace owns navigation; failed metadata must retain recovery.
-  });
   it("keeps both original operations mounted after each review/list/detail GET error", () => {
     const pages = [
       createElement(InternalReviewPage, {

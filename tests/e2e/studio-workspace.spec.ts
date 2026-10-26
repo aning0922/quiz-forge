@@ -1,3 +1,4 @@
+import { enterStudioPassword } from "./studio-password-login";
 import { test, expect, type Page } from "@playwright/test";
 import { constants } from "node:fs";
 import { open } from "node:fs/promises";
@@ -76,8 +77,8 @@ async function readFixture(): Promise<PrivateFixture> {
         !("readOnly" in value) ||
         typeof value.operator !== "string" ||
         typeof value.readOnly !== "string" ||
-        !/^qfo_p2a_[A-Za-z0-9_-]{43}$/.test(value.operator) ||
-        !/^qfo_p2a_[A-Za-z0-9_-]{43}$/.test(value.readOnly)
+        !/^[A-Za-z0-9_-]{43}$/.test(value.operator) ||
+        !/^[A-Za-z0-9_-]{43}$/.test(value.readOnly)
       )
         throw new Error();
       return { operator: value.operator, readOnly: value.readOnly };
@@ -86,26 +87,6 @@ async function readFixture(): Promise<PrivateFixture> {
     }
   } catch {
     throw new Error("WORKSPACE_E2E_FIXTURE_UNAVAILABLE");
-  }
-}
-
-// Avoid locator.fill(secret): its failure call log can print the value even with tracing off.
-async function enterCredential(page: Page, credential: string): Promise<void> {
-  try {
-    await page.evaluate((value) => {
-      const input = document.getElementById("studio-credential");
-      if (!(input instanceof HTMLInputElement) || input.disabled)
-        throw new Error("INPUT_UNAVAILABLE");
-      const setter = Object.getOwnPropertyDescriptor(
-        HTMLInputElement.prototype,
-        "value",
-      )?.set;
-      if (!setter) throw new Error("INPUT_UNAVAILABLE");
-      setter.call(input, value);
-      input.dispatchEvent(new Event("input", { bubbles: true }));
-    }, credential);
-  } catch {
-    throw new Error("WORKSPACE_E2E_INPUT_UNAVAILABLE");
   }
 }
 
@@ -165,8 +146,11 @@ async function openCreate(page: Page) {
 
 async function signIn(page: Page, role: "operator" | "readOnly" = "operator") {
   await page.goto("/studio/login");
-  await expect(page.getByLabel("运营凭证")).toBeEnabled();
-  await enterCredential(page, fixture[role]);
+  await enterStudioPassword(
+    page,
+    role === "operator" ? "workspace-e2e-operator" : "workspace-e2e-read-only",
+    fixture[role],
+  );
   await page.getByRole("button", { name: "登录 Studio" }).click();
   await expect(page).not.toHaveURL(/\/studio\/login$/);
   await navigateStudio(page, "工作区");

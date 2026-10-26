@@ -2,7 +2,7 @@ import { assertNoRetainedInternalReferences } from "@/features/product/internal-
 import { constants } from "node:fs";
 import { open, lstat, opendir, unlink, rmdir } from "node:fs/promises";
 import path from "node:path";
-import { createHash, randomUUID } from "node:crypto";
+import { randomBytes, createHash, randomUUID } from "node:crypto";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { fileURLToPath } from "node:url";
@@ -15,8 +15,11 @@ import {
 import { createDatabase } from "@/lib/db/client";
 import { instancePaths } from "@/lib/db/management";
 import { createProduct } from "@/features/product/workspace/service";
-import { issueToken } from "@/lib/security/p2a-tokens";
-import { createPreauth, login } from "@/lib/auth/service";
+
+import {
+  seedVersionFixtureAccount,
+  loginVersionFixtureAccount,
+} from "./version-account-fixture";
 import { acquireAuthWriteLock } from "@/lib/db/auth-lock";
 import { readPrivateJson } from "@/lib/db/runtime";
 import {
@@ -149,16 +152,16 @@ async function prepare(database: TestDatabase, runId: string) {
       0o600,
     );
   // A failed preparation leaves its private record and rows for explicit maintenance.
-  const operator = issueToken("credential"),
-    readOnly = issueToken("credential"),
+  const operator = randomBytes(32).toString("base64url"),
+    readOnly = randomBytes(32).toString("base64url"),
     operatorId = randomUUID(),
     readOnlyId = randomUUID(),
     productId = `e2e-validations-${runId.slice(0, 8)}`;
   const value = {
     version: 1 as const,
     runId,
-    operator: { identifier: operatorId, secret: operator.raw },
-    readOnly: { identifier: readOnlyId, secret: readOnly.raw },
+    operator: { identifier: operatorId, secret: operator },
+    readOnly: { identifier: readOnlyId, secret: readOnly },
     productId,
     imports: [] as Fixture["imports"],
   };
@@ -183,18 +186,19 @@ async function prepare(database: TestDatabase, runId: string) {
     await save();
     await configureEnabled(database, true);
     enabledConfirmed = true;
-    await database.admin.sql.begin(async (tx) => {
-      await acquireAuthWriteLock(tx);
-      await tx`INSERT INTO qf.operator(id,label,credential_digest,role,status) VALUES(${operatorId},'validations-e2e-operator',${operator.digest},'operator','active'),(${readOnlyId},'validations-e2e-read-only',${readOnly.digest},'read-only','active')`;
-    });
-    const preauth = await createPreauth(database.app, null, randomUUID()),
-      session = await login(
-        database.app,
-        preauth.raw,
-        preauth.dto.csrfToken,
-        operator.raw,
-        randomUUID(),
-      ),
+    await seedVersionFixtureAccount(
+      database,
+      value.operator,
+      `validations-e2e-${runId}-operator`,
+      "operator",
+    );
+    await seedVersionFixtureAccount(
+      database,
+      value.readOnly,
+      `validations-e2e-${runId}-read-only`,
+      "read-only",
+    );
+    const session = await loginVersionFixtureAccount(database, value.operator),
       credentials = {
         sessionToken: session.raw,
         csrfToken: session.dto.csrfToken,

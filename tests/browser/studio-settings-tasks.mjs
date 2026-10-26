@@ -17,8 +17,8 @@ import {InternalAuthorityProvider} from '@/features/studio/internal-versions/aut
 import {StudioNavigationBoundary} from '@/features/studio/navigation-boundary';
 import {ProductTaskSurfaces,RetainedTaskSurface,useWorkspaceSurfaces} from '@/features/studio/product-workspace/task-surfaces';
 import {ProductDetail} from '@/features/studio/workspace/product-detail';
-const session={operator:{id:'00000000-0000-0000-0000-000000000007',label:'Synthetic',role:'operator'},csrfToken:'A'.repeat(43),idleExpiresAt:'2030-01-01T00:00:00.000Z',absoluteExpiresAt:'2030-01-01T00:00:00.000Z'};
-function Body(){const s=useWorkspaceSurfaces();return <><button onClick={()=>s.open('settings')}>打开设置</button><output id='retained-state'>{s.states.settings?.pending?'pending':s.states.settings?.retained?'dirty':'clean'}</output><RetainedTaskSurface id='settings'><ProductDetail productId='parity-settings' session={session} embedded/></RetainedTaskSurface></>}
+const session={operator:{id:'00000000-0000-0000-0000-000000000007',loginName:'synthetic.admin',displayName:'Synthetic admin',role:'admin',accountRevision:1},csrfToken:'A'.repeat(43),idleExpiresAt:'2030-01-01T00:00:00.000Z',absoluteExpiresAt:'2030-01-01T00:00:00.000Z'};
+function Body(){const s=useWorkspaceSurfaces();return <><button onClick={()=>s.open('settings')}>打开设置</button><output id='retained-state'>{s.states.settings?.pending?'pending':s.states.settings?.retained?'dirty':'clean'}</output><RetainedTaskSurface id='settings'><ProductDetail productId='parity-settings' session={session}/></RetainedTaskSurface></>}
 createRoot(document.getElementById('root')).render(<StudioNavigationBoundary><InternalAuthorityProvider productId='parity-settings'><ProductTaskSurfaces><Body/></ProductTaskSurfaces></InternalAuthorityProvider></StudioNavigationBoundary>);
 `,
     resolveDir: process.cwd(),
@@ -197,6 +197,19 @@ async function open() {
 try {
   if (!taxonomyOnly) {
     let p = await open();
+    for (const width of [1440, 390]) {
+      await p.setViewportSize({ width, height: 900 });
+      expect(
+        await p.evaluate(
+          () => document.documentElement.scrollWidth <= innerWidth,
+        ),
+      ).toBe(true);
+      await p.screenshot({
+        path: path.join(out, `settings-${width}.png`),
+        fullPage: true,
+      });
+    }
+    await p.setViewportSize({ width: 1440, height: 900 });
     await p.getByLabel("测评名称", { exact: true }).fill("保留的未保存输入");
     await p.evaluate(
       () => (window.original = document.querySelector("#product-title")),

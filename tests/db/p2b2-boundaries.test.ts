@@ -1,3 +1,4 @@
+import { disableTestAccount } from "./local-account-fixture";
 import { createDatabase } from "../../src/lib/db/client";
 import { createHash, randomUUID } from "node:crypto";
 import {
@@ -462,11 +463,9 @@ it("read-only change, operator disable and Product archive in file stage block c
                 .sql`UPDATE qf.operator SET role='read-only' WHERE id=${actor.id}`,
           );
         else if (kind === "operator") {
-          const { disableOperator } =
-            await import("../../src/lib/db/management");
           expect(
-            await disableOperator(db.config.instanceId, disabledTarget),
-          ).toEqual({ id: disabledTarget, changed: true });
+            await disableTestAccount(db.config.instanceId, disabledTarget, 1),
+          ).toMatchObject({ changed: true });
         } else
           await workspaceService.archiveProduct(
             db.app,

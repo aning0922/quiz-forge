@@ -13,7 +13,10 @@ import {
 } from "@/features/product/internal-versions/integrity";
 import { readFrozenDraftSourceEvidenceReadonly } from "@/features/quizpack/draft-source-evidence";
 import { buildInternalSnapshot } from "@/features/product/internal-versions/snapshot";
-import { digestToken } from "@/lib/security/p2a-tokens";
+import {
+  fixtureAccountMatches,
+  type FixtureAccountRow,
+} from "./version-account-fixture";
 import {
   fixtureAuditAllowed,
   type FixtureAuditTarget,
@@ -188,10 +191,12 @@ export async function verifyConsumerFixtureGraph(
     const operator = row.body.id === value.operator.identifier,
       actor = operator ? value.operator : value.readOnly;
     if (
-      row.body.label !==
-        `p4-e2e-${value.runId}-${operator ? "admin" : "read-only"}` ||
-      row.body.role !== (operator ? "admin" : "read-only") ||
-      row.body.credential_digest !== digestToken(actor.secret, "credential")
+      !(await fixtureAccountMatches(
+        row.body as FixtureAccountRow,
+        actor,
+        `p4-e2e-${value.runId}-${operator ? "admin" : "read-only"}`,
+        operator ? "admin" : "read-only",
+      ))
     )
       throw fail();
   }

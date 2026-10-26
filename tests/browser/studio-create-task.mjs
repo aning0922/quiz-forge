@@ -21,8 +21,8 @@ import {invalidateCurrentStudioAuthority} from '@/features/studio/authority-even
 import {ProductCreatePage} from '@/features/studio/workspace/product-create';
 window.revokeCreate=invalidateCurrentStudioAuthority;
 import {ProductCreateTask, ProductCreateAction} from '@/features/studio/workspace/product-create-task';
-const session={operator:{id:'00000000-0000-0000-0000-000000000007',label:'Synthetic',role:'operator'},csrfToken:'A'.repeat(43),idleExpiresAt:'2030-01-01T00:00:00.000Z',absoluteExpiresAt:'2030-01-01T00:00:00.000Z'};
-function App(){const [query,setQuery]=useState('initial');window.changeCatalogQuery=setQuery;return <StudioShell authenticated identity={session.operator} session={session}>{location.search.includes('deep=1')?<ProductCreatePage session={session}/>:<ProductCreateTask session={session}>{query==='invalid'?<main><h1>无法使用此列表地址</h1></main>:<main key={query}><h1>测评管理</h1><ProductCreateAction /></main>}<a href='/outside'>离开目录</a></ProductCreateTask>}</StudioShell>}
+const session={operator:{loginName:"synthetic.account",accountRevision:1,id:'00000000-0000-0000-0000-000000000007',displayName:'Synthetic',role:'operator'},csrfToken:'A'.repeat(43),idleExpiresAt:'2030-01-01T00:00:00.000Z',absoluteExpiresAt:'2030-01-01T00:00:00.000Z'};
+function App(){const [query,setQuery]=useState('initial');window.changeCatalogQuery=setQuery;return <StudioShell authenticated identity={{label:session.operator.displayName,role:session.operator.role}} session={session}>{location.search.includes('deep=1')?<ProductCreatePage session={session}/>:<ProductCreateTask session={session}>{query==='invalid'?<main><h1>无法使用此列表地址</h1></main>:<main key={query}><h1>测评管理</h1><ProductCreateAction /></main>}<a href='/outside'>离开目录</a></ProductCreateTask>}</StudioShell>}
 createRoot(document.getElementById('root')).render(<App/>);`,
     loader: "tsx",
     resolveDir: process.cwd(),

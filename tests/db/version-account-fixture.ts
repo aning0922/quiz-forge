@@ -5,7 +5,14 @@ import { passwordLogin } from "@/lib/auth/accounts/service";
 import { withPasswordCapacity } from "@/lib/auth/accounts/password";
 import { digestToken } from "@/lib/security/p2a-tokens";
 
-type FixtureAccount = { identifier: string; secret: string };
+export type FixtureAccount = { identifier: string; secret: string };
+export type FixtureAccountRow = {
+  id: string;
+  login_name: string;
+  display_name: string;
+  password_hash: string | null;
+  role: string;
+};
 function requireOwnedTest(db: TestDatabase) {
   if (db.config.purpose !== "test" && db.config.purpose !== "ci")
     throw Error("OWNED_VERSION_ACCOUNT_FIXTURE_REQUIRED");
@@ -14,15 +21,34 @@ function requireOwnedTest(db: TestDatabase) {
 export async function seedVersionFixtureAccount(
   db: TestDatabase,
   actor: FixtureAccount,
-  label: string,
-  role: "admin" | "read-only",
+  displayName: string,
+  role: "admin" | "operator" | "read-only",
+  loginName = `test-${actor.identifier}`,
 ) {
   requireOwnedTest(db);
   const hash = await withPasswordCapacity((k) => k.hash(actor.secret));
-  // The existing digest is only the fixture's exact ownership marker, not a web login route.
   await db.admin
-    .sql`INSERT INTO qf.operator(id,label,credential_digest,login_name,display_name,password_hash,role,status)
-    VALUES(${actor.identifier},${label},${digestToken(actor.secret, "credential")},${`test-${actor.identifier}`},'合成版本验证账号',${hash},${role},'active')`;
+    .sql`INSERT INTO qf.operator(id,login_name,display_name,password_hash,role,status)
+    VALUES(${actor.identifier},${loginName},${displayName},${hash},${role},'active')`;
+}
+/** Cleanup needs both exact fixture identity and its private password, never just a UUID. */
+export async function fixtureAccountMatches(
+  row: FixtureAccountRow,
+  actor: FixtureAccount,
+  displayName: string,
+  role: string,
+) {
+  if (
+    row.id !== actor.identifier ||
+    row.login_name !== `test-${actor.identifier}` ||
+    row.display_name !== displayName ||
+    row.role !== role ||
+    !row.password_hash
+  )
+    return false;
+  return withPasswordCapacity((k) =>
+    k.verify(actor.secret, row.password_hash!),
+  );
 }
 export async function loginVersionFixtureAccount(
   db: TestDatabase,

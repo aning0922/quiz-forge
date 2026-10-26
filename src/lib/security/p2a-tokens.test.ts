@@ -11,16 +11,16 @@ import {
 describe("P2-A token contract", () => {
   it("hashes decoded bytes with the versioned kind domain", () => {
     const bytes = Buffer.alloc(32, 7);
-    const raw = `qfo_p2a_${bytes.toString("base64url")}`;
-    expect(digestToken(raw, "credential")).toBe(
+    const raw = `qfs_p2a_${bytes.toString("base64url")}`;
+    expect(digestToken(raw, "session")).toBe(
       createHash("sha256")
-        .update("quizforge.p2a.token.v1:credential:")
+        .update("quizforge.p2a.token.v1:session:")
         .update(bytes)
         .digest("hex"),
     );
-    expect(digestToken(raw, "session")).toBeNull();
+    expect(digestToken(raw, "preauth")).toBeNull();
   });
-  it.each(["credential", "preauth", "session"] as const)(
+  it.each(["preauth", "session"] as const)(
     "issues independent canonical %s tokens",
     (kind) => {
       const first = issueToken(kind);
@@ -28,7 +28,7 @@ describe("P2-A token contract", () => {
       expect(first.digest).toMatch(/^[0-9a-f]{64}$/);
       expect(first.digest).toBe(digestToken(first.raw, kind));
       expect(issueToken(kind).raw).not.toBe(first.raw);
-      for (const other of ["credential", "preauth", "session"] as const)
+      for (const other of ["preauth", "session"] as const)
         if (kind !== other) expect(parseToken(first.raw, other)).toBeNull();
     },
   );
@@ -42,6 +42,7 @@ describe("P2-A token contract", () => {
       canonical.slice(0, -1),
       canonical.slice(0, -1) + "B",
       canonical.replace("qfs", "qfp"),
+      canonical.replace("qfs", "qfo"),
     ]) {
       expect(parseToken(raw, "session")).toBeNull();
       expect(digestToken(raw, "session")).toBeNull();

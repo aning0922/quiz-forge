@@ -3,13 +3,11 @@ import {
   type StudioCapability,
 } from "@/lib/auth/role-policy";
 import { z } from "zod";
+import { studioOperatorIdentitySchema } from "@/lib/auth/identity";
 import type { StudioSessionDto } from "../contracts";
 import type { InternalVersionList } from "@/features/product/internal-versions/contracts";
 import { StudioClientError } from "../client";
-import {
-  consumerMomentSchema,
-  consumerUuidSchema,
-} from "@/lib/consumer-contract/v1/primitives";
+import { consumerMomentSchema } from "@/lib/consumer-contract/v1/primitives";
 import type { ConsumerRendererIdentity } from "@/lib/consumer-contract/v1/identities";
 import {
   internalPlayBindingSha256,
@@ -47,40 +45,15 @@ import {
   type StudioConsumerScopeV1,
 } from "./pending";
 
-const sessionSchema = z
-  .strictObject({
-    operator: z.strictObject({
-      id: consumerUuidSchema,
-      label: z.string().min(1).max(160),
-      role: z.enum(["admin", "operator", "read-only"]),
-      loginName: z.string().nullable().optional(),
-      displayName: z.string().optional(),
-      accountRevision: z.number().int().positive().optional(),
-    }),
-    csrfToken: z
-      .string()
-      .length(43)
-      .regex(/^[A-Za-z0-9_-]{43}$/),
-    idleExpiresAt: consumerMomentSchema,
-    absoluteExpiresAt: consumerMomentSchema,
-  })
-  .transform(({ operator, ...rest }): StudioSessionDto => ({
-    ...rest,
-    operator: {
-      id: operator.id,
-      label: operator.label,
-      role: operator.role,
-      ...(operator.loginName === undefined
-        ? {}
-        : { loginName: operator.loginName }),
-      ...(operator.displayName === undefined
-        ? {}
-        : { displayName: operator.displayName }),
-      ...(operator.accountRevision === undefined
-        ? {}
-        : { accountRevision: operator.accountRevision }),
-    },
-  }));
+const sessionSchema = z.strictObject({
+  operator: studioOperatorIdentitySchema,
+  csrfToken: z
+    .string()
+    .length(43)
+    .regex(/^[A-Za-z0-9_-]{43}$/),
+  idleExpiresAt: consumerMomentSchema,
+  absoluteExpiresAt: consumerMomentSchema,
+});
 type Evidence =
   | { kind: "play"; value: InternalPlayResolution }
   | { kind: "issue"; value: IssueAccessKeyResolution }

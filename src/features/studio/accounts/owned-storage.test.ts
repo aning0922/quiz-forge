@@ -1,9 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  ownedPendingStorage,
-  hasUnownedPending,
-  legacyPendingKeys,
-} from "./owned-storage";
+import { ownedPendingStorage } from "./owned-storage";
 import { isSetupReceipt, passwordProblem } from "./presentation";
 
 describe("account-owned pending records", () => {
@@ -17,11 +13,10 @@ describe("account-owned pending records", () => {
     };
     const original =
       '{"entries":[{"tuple":{"key":"original"},"mayHaveBeenSent":true}]}';
-    const key = legacyPendingKeys[0];
+    const key = "quizforge.studio.draft-applications.v1";
     values.set(key, original);
     const a = ownedPendingStorage(storage, "account-a"),
       b = ownedPendingStorage(storage, "account-b");
-    expect(hasUnownedPending(storage)).toBe(true);
     expect(a.getItem(key)).toBeNull();
     expect(b.getItem(key)).toBeNull();
     a.setItem(key, original);
@@ -37,12 +32,29 @@ describe("account-owned pending records", () => {
     expect(() => a.getItem(key)).toThrow("PENDING_OWNER_MISMATCH");
     expect(storage.getItem(key)).toBe(original);
   });
-  it("preserves malformed legacy bytes as an actionable unowned record", () => {
+  it("reads only the current owner's envelope and leaves unowned malformed bytes untouched", () => {
+    const values = new Map([
+      ["quizforge.studio.draft-applications.v1", "{unreadable"],
+      ["unrelated-old-bucket", "old bytes"],
+    ]);
+    const reads: string[] = [];
     const storage = {
-      getItem: (key: string) =>
-        key === legacyPendingKeys[0] ? "{unreadable" : null,
+      getItem: (key: string) => {
+        reads.push(key);
+        return values.get(key) ?? null;
+      },
+      setItem: (key: string, value: string) => {
+        values.set(key, value);
+      },
     };
-    expect(hasUnownedPending(storage)).toBe(true);
+    const owned = ownedPendingStorage(storage, "account-a");
+    const key = "quizforge.studio.draft-applications.v1";
+    expect(owned.getItem(key)).toBeNull();
+    expect(reads).toEqual(["quizforge.studio.owned.v1:account-a:" + key]);
+    expect([...values]).toEqual([
+      [key, "{unreadable"],
+      ["unrelated-old-bucket", "old bytes"],
+    ]);
   });
 });
 it("checks NFC code points and byte bounds without trimming or truncation", () => {

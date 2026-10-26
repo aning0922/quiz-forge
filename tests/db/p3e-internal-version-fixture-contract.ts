@@ -15,7 +15,7 @@ import {
 const sha = z.string().regex(/^[a-f0-9]{64}$/);
 const actor = z.strictObject({
   identifier: z.uuid(),
-  secret: z.string().regex(/^qfo_p2a_[A-Za-z0-9_-]{43}$/),
+  secret: z.string().regex(/^[A-Za-z0-9_-]{43}$/),
 });
 export const INTERNAL_VERSION_FIXTURE_PRIVATE_NAME =
   "internal-version-p3e-e2e-fixture.json";

@@ -32,7 +32,14 @@ const receiptsOnly = process.argv.includes("--receipts-only");
 const productId = consumer.content.product.productId;
 const issuerId = testUuid(7);
 const session = {
-  operator: { id: issuerId, label: "Synthetic operator", role: "operator" },
+  operator: {
+    id: issuerId,
+
+    loginName: "synthetic.admin",
+    displayName: "Synthetic admin",
+    role: "admin",
+    accountRevision: 1,
+  },
   csrfToken: "A".repeat(43),
   idleExpiresAt: "2026-10-24T23:00:00.000Z",
   absoluteExpiresAt: "2026-10-25T23:00:00.000Z",
@@ -74,7 +81,7 @@ if(input.receipts){const actions={onOpenVersion:id=>{document.querySelector('#re
 window.revokeWorkspace=()=>authority.observe(new StudioClientError('UNAUTHENTICATED'));
 if(input.revoked&&!authority.isRevoked) window.revokeWorkspace();
 return <><div hidden={input.parity}><button onClick={()=>{if(surfaces.canSwitch())setVisible(!visible)}}>切换主区域</button><button onClick={()=>setCurrent(input.nextTarget)}>模拟新摘要</button></div>
-{input.review?<ReviewWorkbench productId={input.productId} session={input.session} currentTarget={current} visible={visible} onChanged={()=>{}}/>:<StudioConsumerAccessPageV1 scope={input.scope} renderer={input.renderer} embedded visible={visible} workspaceAuthority={authority}/>}</>}
+{input.review?<ReviewWorkbench productId={input.productId} session={input.session} currentTarget={current} visible={visible} onChanged={()=>{}}/>:<StudioConsumerAccessPageV1 scope={input.scope} renderer={input.renderer} visible={visible} workspaceAuthority={authority}/>}</>}
 createRoot(document.getElementById('root')).render(<InternalAuthorityProvider productId={input.productId}><ProductTaskSurfaces><Body/></ProductTaskSurfaces></InternalAuthorityProvider>);
 `,
     resolveDir: process.cwd(),

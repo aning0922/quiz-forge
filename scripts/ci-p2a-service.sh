@@ -9,7 +9,7 @@ if [[ $# -gt 1 ]]; then
 fi
 ci_test_suite=${1:-baseline}
 case "$ci_test_suite" in
-  baseline|validation|media-unknown|namespace|consumer-faults|accounts|accounts-retention|accounts-authority|accounts-projection|accounts-directory) ;;
+  baseline|validation|media-unknown|namespace|consumer-faults|accounts|accounts-retention|accounts-authority|accounts-projection|accounts-directory|accounts-cleanup) ;;
   *) printf '%s\n' 'P2A_CI_SUITE_INVALID' >&2; exit 1 ;;
 esac
 
@@ -113,4 +113,5 @@ case "$ci_test_suite" in
   accounts-authority) QUIZFORGE_ACCOUNTS_DB_SUITE=authority pnpm exec vitest run --config vitest.accounts-db.config.ts ;;
   accounts-projection) QUIZFORGE_ACCOUNTS_DB_SUITE=projection pnpm exec vitest run --config vitest.accounts-db.config.ts ;;
   accounts-directory) QUIZFORGE_ACCOUNTS_DB_SUITE=directory pnpm exec vitest run --config vitest.accounts-db.config.ts ;;
+  accounts-cleanup) QUIZFORGE_ACCOUNTS_DB_SUITE=cleanup pnpm exec vitest run --config vitest.accounts-db.config.ts ;;
 esac

@@ -1,12 +1,17 @@
+import {
+  seedVersionFixtureAccount,
+  loginVersionFixtureAccount,
+  fixtureAccountMatches,
+  type FixtureAccountRow,
+} from "./version-account-fixture";
 import { assertNoRetainedInternalReferences } from "@/features/product/internal-versions/retention";
 import { constants } from "node:fs";
 import { open, lstat, unlink, rename } from "node:fs/promises";
-import { createHash, randomUUID } from "node:crypto";
+import { randomBytes, createHash, randomUUID } from "node:crypto";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { z } from "zod";
-import { createPreauth, login } from "@/lib/auth/service";
-import { issueToken, digestToken } from "@/lib/security/p2a-tokens";
+
 import { readPrivateJson } from "@/lib/db/runtime";
 import { acquireAuthWriteLock } from "@/lib/db/auth-lock";
 import { createDatabase } from "@/lib/db/client";
@@ -177,11 +182,11 @@ export async function prepareDraftRevisionFixture(
     initial: null,
     operator: {
       identifier: randomUUID(),
-      secret: issueToken("credential").raw,
+      secret: randomBytes(32).toString("base64url"),
     },
     readOnly: {
       identifier: randomUUID(),
-      secret: issueToken("credential").raw,
+      secret: randomBytes(32).toString("base64url"),
     },
     blobs: [],
     sources: [],
@@ -193,16 +198,8 @@ export async function prepareDraftRevisionFixture(
       [value.operator, "operator"],
       [value.readOnly, "read-only"],
     ] as const)
-      await db.admin
-        .sql`INSERT INTO qf.operator(id,label,credential_digest,role,status) VALUES(${a.identifier},${`p3d-e2e-${runId}-${role}`},${digestToken(a.secret, "credential")},${role},'active')`;
-    const pre = await createPreauth(db.app, null, randomUUID()),
-      session = await login(
-        db.app,
-        pre.raw,
-        pre.dto.csrfToken,
-        value.operator.secret,
-        randomUUID(),
-      ),
+      await seedVersionFixtureAccount(db, a, `p3d-e2e-${runId}-${role}`, role);
+    const session = await loginVersionFixtureAccount(db, value.operator),
       auth = {
         id: value.operator.identifier,
         credentials: {
@@ -544,25 +541,22 @@ export async function cleanupDraftRevisionFixture(
       { present: boolean }[]
     >`SELECT EXISTS(SELECT 1 FROM qf.quizpack_validation WHERE reserved_bytes>0) OR EXISTS(SELECT 1 FROM qf.quizpack_import WHERE reserved_bytes>0) present`;
     if (held?.present) throw fail();
-    const rows = await db.admin.sql<
-      { id: string; label: string; credential_digest: string }[]
-    >`SELECT id,label,credential_digest FROM qf.operator WHERE id=ANY(${db.admin.sql.array(actors)}::uuid[])`;
-    if (
-      rows.length !== 2 ||
-      rows.some(
-        (a) =>
-          a.label !==
-            `p3d-e2e-${runId}-${a.id === value.operator.identifier ? "operator" : "read-only"}` ||
-          a.credential_digest !==
-            digestToken(
-              a.id === value.operator.identifier
-                ? value.operator.secret
-                : value.readOnly.secret,
-              "credential",
-            ),
+    const rows = await db.admin.sql<FixtureAccountRow[]>`
+      SELECT id,login_name,display_name,password_hash,role FROM qf.operator
+      WHERE id=ANY(${db.admin.sql.array(actors)}::uuid[])`;
+    if (rows.length !== 2) throw fail();
+    for (const row of rows) {
+      const isOperator = row.id === value.operator.identifier;
+      if (
+        !(await fixtureAccountMatches(
+          row,
+          isOperator ? value.operator : value.readOnly,
+          `p3d-e2e-${runId}-${isOperator ? "operator" : "read-only"}`,
+          isOperator ? "operator" : "read-only",
+        ))
       )
-    )
-      throw fail();
+        throw fail();
+    }
     const [foreign] = await db.admin.sql<
       { present: boolean }[]
     >`SELECT EXISTS(SELECT 1 FROM qf.draft_application WHERE created_by=ANY(${db.admin.sql.array(actors)}::uuid[]) AND product_id<>${value.productId}) OR EXISTS(SELECT 1 FROM qf.draft_revision WHERE created_by=ANY(${db.admin.sql.array(actors)}::uuid[]) AND product_id<>${value.productId}) OR EXISTS(SELECT 1 FROM qf.product_draft WHERE created_by=ANY(${db.admin.sql.array(actors)}::uuid[]) AND product_id<>${value.productId}) OR EXISTS(SELECT 1 FROM qf.quizpack_import WHERE created_by=ANY(${db.admin.sql.array(actors)}::uuid[]) AND product_id<>${value.productId}) OR EXISTS(SELECT 1 FROM qf.quizpack_validation WHERE created_by=ANY(${db.admin.sql.array(actors)}::uuid[]) AND product_id<>${value.productId}) AS present`;

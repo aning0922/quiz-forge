@@ -30,9 +30,7 @@ export function StudioShell({
   const [recoveredSession, setRecoveredSession] = useState<StudioSessionDto>();
   const liveIdentity = recoveredSession
     ? {
-        label:
-          recoveredSession.operator.displayName ??
-          recoveredSession.operator.label,
+        label: recoveredSession.operator.displayName,
         role: recoveredSession.operator.role,
       }
     : identity;

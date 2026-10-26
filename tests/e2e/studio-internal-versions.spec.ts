@@ -193,7 +193,7 @@ const scope = () => ({
   revision: 1,
 });
 async function signIn(page: Page, role: "operator" | "readOnly" = "operator") {
-  await signInInternalOperator(page, fixture[role].secret);
+  await signInInternalOperator(page, fixture[role]);
 }
 function original(operation: "review" | "seal"): InternalRequest {
   if (operation === "review" && review)

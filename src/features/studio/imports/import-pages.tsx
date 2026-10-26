@@ -8,17 +8,14 @@ import { useStudioLeaveProtection } from "../navigation-boundary";
 import type {
   ImportDto,
   ImportSettingsDto,
-  Page,
 } from "@/features/quizpack/import/contracts";
 import type { ProductDto } from "@/features/product/workspace/contracts";
 import type { StudioSessionDto } from "../contracts";
-import { Pagination, ReadOnlyNotice } from "../workspace/primitives";
+import { ReadOnlyNotice } from "../workspace/primitives";
 import { useImportRead } from "./use-read";
-import { CreateReceive } from "./create-receive";
-import { ImportSummary } from "./import-facts";
 import { ReceiveControls } from "./receive-controls";
-import { ValidationOverview, ValidationPanel } from "../validations/panel";
-import { checkImport, checkImportPage, checkSettings } from "./client";
+import { ValidationPanel } from "../validations/panel";
+import { checkImport, checkSettings } from "./client";
 import { prepareArchiveInput } from "./prepare-archive";
 import styles from "../workspace/workspace.module.css";
 import local from "./imports.module.css";
@@ -83,113 +80,6 @@ function ReadFeedback({
     </>
   );
 }
-export function ImportList({
-  productId,
-  session: initialSession,
-}: {
-  productId: string;
-  session: StudioSessionDto;
-}) {
-  const session = useOwnedStudioSession(initialSession);
-  const endpoint = `/api/studio/products/${encodeURIComponent(productId)}`;
-  const product = useImportRead<ProductDto>(endpoint);
-  const settings = useImportRead<ImportSettingsDto>(
-    `${endpoint}/imports/settings`,
-    checkSettings,
-  );
-  const [page, setPage] = useState(1);
-  const imports = useImportRead<Page<ImportDto>>(
-    `${endpoint}/imports?page=${page}&pageSize=20`,
-    (value) => checkImportPage(value, { productId, page, pageSize: 20 }),
-  );
-  const readOnly = !roleHasCapability(session.operator.role, "import:create");
-  return (
-    <div className={styles.workspace}>
-      <section className={styles.panel}>
-        <StudioPageHeader
-          title="内容包接收"
-          description="先接收内容包，再验证结构与资源。接收成功不等于已验证、已创建草稿或已发布。"
-        />
-        <Link
-          className={`${styles.link} ${styles.secondary}`}
-          href={`/studio/products/${encodeURIComponent(productId)}`}
-        >
-          返回工作区详情
-        </Link>
-        <ReadFeedback {...product} />
-        <ReadFeedback {...settings} />
-        {product.value && settings.value && (
-          <>
-            <h2>{product.value.title}</h2>
-            <ImportEnvironment
-              settings={settings.value}
-              archived={!!product.value.archivedAt}
-              readOnly={readOnly}
-            />
-          </>
-        )}
-      </section>
-      {product.value &&
-        settings.value &&
-        !product.value.archivedAt &&
-        !readOnly &&
-        settings.value.enabled && (
-          <CreateReceive
-            productId={productId}
-            session={session}
-            settings={settings.value}
-            onChanged={imports.refresh}
-          />
-        )}
-      <section className={styles.panel}>
-        <h2>接收记录</h2>
-        <p className={styles.note}>
-          接收记录只说明内容包接收与存储事实；独立验证与资源归档分别记录，仍不可发布。完整事实及失败说明请进入详情。
-        </p>
-        <ReadFeedback {...imports} />
-        <button
-          className={`${styles.button} ${styles.secondary}`}
-          onClick={imports.refresh}
-        >
-          刷新接收列表
-        </button>
-        {imports.value && (
-          <>
-            {imports.value.items.length === 0 && (
-              <p className={styles.status}>
-                尚无接收记录。此列表不执行恢复，也不推断未提交请求的结果。
-              </p>
-            )}
-            <ul className={styles.cards}>
-              {imports.value.items.map((value) => (
-                <li className={styles.card} key={value.id}>
-                  <ImportSummary value={value} />
-                  <ValidationOverview value={value} />
-                  <Link
-                    className={`${styles.link} ${styles.secondary}`}
-                    href={`/studio/products/${encodeURIComponent(productId)}/imports/${value.id}`}
-                    aria-label={`查看接收记录 ${value.id}`}
-                  >
-                    查看接收与检查结果
-                  </Link>
-                </li>
-              ))}
-            </ul>
-            <div className={local.pagination}>
-              <Pagination
-                page={page}
-                hasNext={imports.value.hasNext}
-                busy={imports.loading}
-                onPage={setPage}
-              />
-            </div>
-          </>
-        )}
-      </section>
-    </div>
-  );
-}
-
 function ExistingReceive({
   value,
   settings,

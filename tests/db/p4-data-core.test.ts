@@ -188,7 +188,7 @@ it("refuses fixture cleanup before its first delete when an unobserved old row e
   const id = randomUUID(),
     digest = "4".repeat(64);
   await db.admin
-    .sql`INSERT INTO qf.operator(id,label,credential_digest,role,status) VALUES(${id},${`unobserved-${id}`},${digest},'operator','active')`;
+    .sql`INSERT INTO qf.operator(id,login_name,display_name,role,status) VALUES(${id},${`unobserved-${id}`},${digest},'operator','active')`;
   const before = await readP4OldGraph(db.admin.sql);
   const [children] = await db.admin
     .sql`SELECT (SELECT jsonb_agg(to_jsonb(t)) FROM qf.internal_play_version t) plays,(SELECT jsonb_agg(to_jsonb(t)) FROM qf.access_key t) keys,(SELECT jsonb_agg(to_jsonb(t)) FROM qf.consumer_session t) sessions,(SELECT jsonb_agg(to_jsonb(t)) FROM qf.consumer_grant t) grants,(SELECT jsonb_agg(to_jsonb(t)) FROM qf.quiz_report t) reports`;
@@ -199,5 +199,5 @@ it("refuses fixture cleanup before its first delete when an unobserved old row e
   expect(after).toEqual(children);
   // Only remove the exact extra synthetic row introduced above, after zero-deletion proof succeeded.
   await db.admin
-    .sql`DELETE FROM qf.operator WHERE id=${id} AND credential_digest=${digest}`;
+    .sql`DELETE FROM qf.operator WHERE id=${id} AND display_name=${digest}`;
 });

@@ -1,5 +1,5 @@
-// V2-B task URLs and modal transitions are current. The historical credential fixture
-// still needs the account-backed root harness; this alignment does not claim a real run.
+// V2-B task URLs and modal transitions use current password-account fixtures.
+// Source alignment alone does not claim a real production-build/DB browser run.
 // Receipt identity, ACK-loss counts, private-link handling and safety assertions remain.
 import {
   test,
@@ -300,7 +300,7 @@ test.beforeAll(async ({ browser }) => {
   });
   contexts.push(context);
   operator = await context.newPage();
-  await signInInternalOperator(operator, fixture.operator.secret);
+  await signInInternalOperator(operator, fixture.operator);
   const consumer = await browser.newContext({
     baseURL: "http://127.0.0.1:3100",
     viewport: { width: 390, height: 900 },
@@ -806,7 +806,7 @@ test(
     });
     contexts.push(roContext);
     const ro = await roContext.newPage();
-    await signInInternalOperator(ro, fixture.readOnly.secret);
+    await signInInternalOperator(ro, fixture.readOnly);
     await ro.goto(studioPage());
     await expect(
       ro.getByText("当前只读，可查看安全记录及查询原请求", { exact: false }),

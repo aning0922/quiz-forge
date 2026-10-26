@@ -1,10 +1,10 @@
+import { seedVersionFixtureAccount } from "./version-account-fixture";
 import { constants } from "node:fs";
 import { open, unlink } from "node:fs/promises";
 import path from "node:path";
-import { randomUUID } from "node:crypto";
+import { randomBytes, randomUUID } from "node:crypto";
 import { openTestDatabase, resetTestDatabase } from "./p2a-fixture";
-import { issueToken } from "@/lib/security/p2a-tokens";
-import { acquireAuthWriteLock } from "@/lib/db/auth-lock";
+
 import { readPrivateJson } from "@/lib/db/runtime";
 
 // Run only as a separate react-server helper process, never import into Playwright.
@@ -46,8 +46,8 @@ async function run() {
       });
       return;
     }
-    const operator = issueToken("credential");
-    const readOnly = issueToken("credential");
+    const operator = randomBytes(32).toString("base64url");
+    const readOnly = randomBytes(32).toString("base64url");
     const handle = await open(
       file,
       constants.O_WRONLY |
@@ -62,20 +62,28 @@ async function run() {
         JSON.stringify({
           version: 1,
           runId,
-          operator: operator.raw,
-          readOnly: readOnly.raw,
+          operator: operator,
+          readOnly: readOnly,
         }),
       );
     } finally {
       await handle.close();
     }
     await resetTestDatabase(fixture);
-    await fixture.admin.sql.begin(async (tx) => {
-      await acquireAuthWriteLock(tx);
-      await tx`INSERT INTO qf.operator (id,label,credential_digest,role,status) VALUES
-        (${randomUUID()}, 'e2e-operator', ${operator.digest}, 'operator', 'active'),
-        (${randomUUID()}, 'e2e-read-only', ${readOnly.digest}, 'read-only', 'active')`;
-    });
+    await seedVersionFixtureAccount(
+      fixture,
+      { identifier: randomUUID(), secret: operator },
+      "Synthetic e2e operator",
+      "operator",
+      "e2e-operator",
+    );
+    await seedVersionFixtureAccount(
+      fixture,
+      { identifier: randomUUID(), secret: readOnly },
+      "Synthetic e2e reader",
+      "read-only",
+      "e2e-read-only",
+    );
   } catch {
     if (created) await unlink(file).catch(() => undefined);
     throw new Error();

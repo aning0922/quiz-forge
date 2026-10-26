@@ -15,7 +15,7 @@ import type {
 } from "@/features/studio/accounts/contracts";
 import {
   inspectLocalAccountOperation,
-  prepareLocalAccount,
+  executeLocalAccountOperation,
 } from "@/lib/auth/accounts/management";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
@@ -40,7 +40,7 @@ it("returns bound ISO-millisecond account/link/inspection/setup/result DTOs whil
     session = issueToken("session"),
     password = "synthetic datetime projection 2026",
     hash = await withPasswordCapacity((k) => k.hash(password));
-  await owner.sql`INSERT INTO qf.operator(id,label,login_name,display_name,password_hash,role,status) VALUES(${id},${"projection-" + id},${"projection-" + id},'合成时间管理员',${hash},'admin','active')`;
+  await owner.sql`INSERT INTO qf.operator(id,login_name,display_name,password_hash,role,status) VALUES(${id},${"projection-" + id},'合成时间管理员',${hash},'admin','active')`;
   await owner.sql`WITH t AS(SELECT clock_timestamp() AS moment) INSERT INTO qf.operator_session(id,token_digest,kind,operator_id,created_at,last_seen_at,idle_expires_at,absolute_expires_at) SELECT ${randomUUID()},${session.digest},'authenticated',${id},moment,moment,moment+interval '30 minutes',moment+interval '8 hours' FROM t`;
   const post = (
     endpoint: Parameters<typeof handleAccounts>[1],
@@ -151,27 +151,27 @@ it("owner reconciliation returns an ISO expiry for a preserved original issuance
     hash = await withPasswordCapacity((k) =>
       k.hash("synthetic owner projection 2026"),
     );
-  await owner.sql`INSERT INTO qf.operator(id,label,login_name,display_name,password_hash,role,status) VALUES(${targetId},${"projection-owner-" + targetId},${"projection-owner-" + targetId},'合成核实管理员',${hash},'admin','active')`;
-  const file = path.join(folder, "account-setup-" + operationId + ".json");
-  await prepareLocalAccount(config.instanceId, "admin-recovery", {
-    operatorId: targetId,
-    operationId,
-    setupFile: file,
-  });
-  const evidence = JSON.parse(await readFile(file, "utf8"));
-  const result = await inspectLocalAccountOperation(
+  await owner.sql`INSERT INTO qf.operator(id,login_name,display_name,password_hash,role,status) VALUES(${targetId},${"projection-owner-" + targetId},'合成核实管理员',${hash},'admin','active')`;
+  const file = path.join(folder, "account-operation-" + operationId + ".json");
+  await executeLocalAccountOperation(
     config.instanceId,
-    "admin-recovery",
     {
-      operatorId: targetId,
+      action: "admin-recovery",
+      targetId,
       operationId,
-      setupFile: file,
+      expectedRevision: 1,
     },
+    file,
   );
+  const evidence = JSON.parse(await readFile(file, "utf8"));
+  const result = await inspectLocalAccountOperation(config.instanceId, file);
   expect(result.status).toBe("found");
   if (result.status !== "found") throw Error("ORIGINAL_RECEIPT_REQUIRED");
-  iso(result.passwordSetup.expiresAt);
+  if (!result.passwordSetup) throw Error("TOKEN_METADATA_REQUIRED");
+  iso(result.passwordSetup.expiresAt!);
   expect(JSON.stringify(result)).not.toContain(
-    new URLSearchParams(new URL(evidence.url).hash.slice(1)).get("token")!,
+    new URLSearchParams(new URL(evidence.passwordSetup.url).hash.slice(1)).get(
+      "token",
+    )!,
   );
 });

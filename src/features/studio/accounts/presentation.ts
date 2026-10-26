@@ -3,7 +3,7 @@ import type { StudioOperatorDto } from "../contracts";
 export const roleLabel = (role: StudioRole) =>
   ({ admin: "管理员", operator: "运营人员", "read-only": "只读人员" })[role];
 export const operatorName = (operator: StudioOperatorDto) =>
-  operator.displayName ?? operator.label;
+  operator.displayName;
 export function passwordProblem(value: string): string | null {
   if (!value.isWellFormed()) return "密码包含无效字符，请重新输入。";
   const normalized = value.normalize("NFC"),

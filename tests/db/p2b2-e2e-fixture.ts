@@ -1,7 +1,8 @@
+import { seedVersionFixtureAccount } from "./version-account-fixture";
 import { constants } from "node:fs";
 import { open, unlink } from "node:fs/promises";
 import path from "node:path";
-import { createHash, randomUUID } from "node:crypto";
+import { randomBytes, createHash, randomUUID } from "node:crypto";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import {
@@ -10,8 +11,7 @@ import {
   authenticateTestOperator,
 } from "./p2a-fixture";
 import { createProduct } from "@/features/product/workspace/service";
-import { issueToken } from "@/lib/security/p2a-tokens";
-import { acquireAuthWriteLock } from "@/lib/db/auth-lock";
+
 import { readPrivateJson } from "@/lib/db/runtime";
 import { idempotencyKeySchema } from "@/features/quizpack/import/contracts";
 import {
@@ -146,8 +146,8 @@ async function run() {
       return;
     }
     if (mode !== "prepare") throw new Error();
-    const operator = issueToken("credential");
-    const readOnly = issueToken("credential");
+    const operator = randomBytes(32).toString("base64url");
+    const readOnly = randomBytes(32).toString("base64url");
     const handle = await open(
       file,
       constants.O_WRONLY |
@@ -162,8 +162,8 @@ async function run() {
         JSON.stringify({
           version: 1,
           runId,
-          operator: operator.raw,
-          readOnly: readOnly.raw,
+          operator: operator,
+          readOnly: readOnly,
         }),
       );
     } finally {
@@ -178,12 +178,20 @@ async function run() {
       primaryCategoryId: null,
       tagIds: [],
     });
-    await fixture.admin.sql.begin(async (tx) => {
-      await acquireAuthWriteLock(tx);
-      await tx`INSERT INTO qf.operator (id,label,credential_digest,role,status) VALUES
-        (${randomUUID()}, 'imports-e2e-operator', ${operator.digest}, 'operator', 'active'),
-        (${randomUUID()}, 'imports-e2e-read-only', ${readOnly.digest}, 'read-only', 'active')`;
-    });
+    await seedVersionFixtureAccount(
+      fixture,
+      { identifier: randomUUID(), secret: operator },
+      "Synthetic imports-e2e operator",
+      "operator",
+      "imports-e2e-operator",
+    );
+    await seedVersionFixtureAccount(
+      fixture,
+      { identifier: randomUUID(), secret: readOnly },
+      "Synthetic imports-e2e reader",
+      "read-only",
+      "imports-e2e-read-only",
+    );
   } catch {
     if (created) await unlink(file).catch(() => undefined);
     throw new Error();

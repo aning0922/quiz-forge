@@ -31,8 +31,8 @@ window.fetch=async (raw,init={})=>{
  }
  throw Error('UNEXPECTED_SYNTHETIC_READ');
 };
-const session={operator:{id:'synthetic-operator',label:'隔离合成运营',role:'operator'},csrfToken:'synthetic-csrf',idleExpiresAt:'2030-01-01T00:00:00.000Z',absoluteExpiresAt:'2030-01-01T00:00:00.000Z'};
-createRoot(document.getElementById('root')).render(<StudioShell authenticated identity={session.operator}><ProductList session={session}/></StudioShell>);
+const session={operator:{loginName:"synthetic.account",accountRevision:1,id:'synthetic-operator',displayName:'隔离合成运营',role:'operator'},csrfToken:'synthetic-csrf',idleExpiresAt:'2030-01-01T00:00:00.000Z',absoluteExpiresAt:'2030-01-01T00:00:00.000Z'};
+createRoot(document.getElementById('root')).render(<StudioShell authenticated identity={{label:session.operator.displayName,role:session.operator.role}}><ProductList session={session}/></StudioShell>);
 `;
 await esbuild.build({
   stdin: { contents: source, resolveDir: process.cwd(), loader: "tsx" },

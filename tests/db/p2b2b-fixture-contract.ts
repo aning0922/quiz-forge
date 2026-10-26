@@ -1,7 +1,7 @@
 import { z } from "zod";
 const credential = z.strictObject({
   identifier: z.uuid(),
-  secret: z.string().regex(/^qfo_p2a_[A-Za-z0-9_-]{43}$/),
+  secret: z.string().regex(/^[A-Za-z0-9_-]{43}$/),
 });
 export const p2b2bFixtureSchema = z
   .strictObject({

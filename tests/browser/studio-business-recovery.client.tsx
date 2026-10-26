@@ -7,8 +7,10 @@ const { productId } = JSON.parse(
 ) as { productId: string };
 const session = {
   operator: {
+    loginName: "synthetic.account",
+    accountRevision: 1,
     id: "00000000-0000-4000-8000-000000000004",
-    label: "Synthetic business recovery",
+    displayName: "Synthetic business recovery",
     role: "operator" as const,
   },
   csrfToken: "A".repeat(43),

@@ -21,8 +21,8 @@ import {StudioLoginForm} from '@/features/studio/login-form';
 import {invalidateCurrentStudioAuthority} from '@/features/studio/authority-events';
 const id='00000000-0000-4000-8000-000000000001',target='00000000-0000-4000-8000-000000000002';
 const now=new Date().toISOString(),expiry=new Date(Date.now()+1800000).toISOString();
-const session={operator:{id,label:'synthetic-stable-label',loginName:'synthetic.admin',displayName:'合成管理员',role:'admin',accountRevision:1},csrfToken:'A'.repeat(43),idleExpiresAt:expiry,absoluteExpiresAt:new Date(Date.now()+28800000).toISOString()};
-const account={id,label:'synthetic-stable-label',loginName:'synthetic.admin',displayName:'合成管理员',role:'admin',status:'active',revision:1,createdAt:now,disabledAt:null};
+const session={operator:{id,loginName:'synthetic.admin',displayName:'合成管理员',role:'admin',accountRevision:1},csrfToken:'A'.repeat(43),idleExpiresAt:expiry,absoluteExpiresAt:new Date(Date.now()+28800000).toISOString()};
+const account={id,loginName:'synthetic.admin',displayName:'合成管理员',role:'admin',status:'active',revision:1,createdAt:now,disabledAt:null};
 const params=new URLSearchParams(location.search),scenario=params.get('case')||'success';
 window.calls=[];window.auditQueries=[];window.resultFound=false;window.currentSession=session;window.originalSession=session;window.revoke=invalidateCurrentStudioAuthority;window.routes=[];window.records={};
 if(scenario==='reader'){session.operator.role='read-only';account.role='read-only';}
