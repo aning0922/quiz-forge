@@ -1,14 +1,16 @@
+import {
+  seedVersionFixtureAccount,
+  loginVersionFixtureAccount,
+  fixtureAccountMatches,
+  type FixtureAccountRow,
+} from "./version-account-fixture";
 import { constants } from "node:fs";
 import { open, lstat, rename, unlink } from "node:fs/promises";
-import { randomUUID } from "node:crypto";
+import { randomBytes, randomUUID } from "node:crypto";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { z } from "zod";
-import {
-  loginVersionFixtureAccount,
-  seedVersionFixtureAccount,
-} from "./version-account-fixture";
-import { issueToken, digestToken } from "@/lib/security/p2a-tokens";
+
 import { readPrivateJson } from "@/lib/db/runtime";
 import { acquireAuthWriteLock } from "@/lib/db/auth-lock";
 import { currentConfig } from "@/features/quizpack/import/service";
@@ -218,11 +220,11 @@ export async function prepareInternalVersionFixture(
     target: null,
     operator: {
       identifier: randomUUID(),
-      secret: issueToken("credential").raw,
+      secret: randomBytes(32).toString("base64url"),
     },
     readOnly: {
       identifier: randomUUID(),
-      secret: issueToken("credential").raw,
+      secret: randomBytes(32).toString("base64url"),
     },
     baseline: null,
     renderer: null,
@@ -726,25 +728,22 @@ export async function cleanupInternalVersionFixture(
     )
       throw fail();
     const actors = [value.operator.identifier, value.readOnly.identifier];
-    const operatorRows = await db.admin.sql<
-      { id: string; label: string; credential_digest: string; role: string }[]
-    >`SELECT id,label,credential_digest,role FROM qf.operator WHERE id=ANY(${db.admin.sql.array(actors)}::uuid[])`;
-    if (
-      operatorRows.length !== 2 ||
-      operatorRows.some((a) => {
-        const operator = a.id === value.operator.identifier;
-        return (
-          a.label !== `p3e-e2e-${runId}-${operator ? "admin" : "read-only"}` ||
-          a.role !== (operator ? "admin" : "read-only") ||
-          a.credential_digest !==
-            digestToken(
-              operator ? value.operator.secret : value.readOnly.secret,
-              "credential",
-            )
-        );
-      })
-    )
-      throw fail();
+    const operatorRows = await db.admin.sql<FixtureAccountRow[]>`
+      SELECT id,login_name,display_name,password_hash,role FROM qf.operator
+      WHERE id=ANY(${db.admin.sql.array(actors)}::uuid[])`;
+    if (operatorRows.length !== 2) throw fail();
+    for (const row of operatorRows) {
+      const isOperator = row.id === value.operator.identifier;
+      if (
+        !(await fixtureAccountMatches(
+          row,
+          isOperator ? value.operator : value.readOnly,
+          `p3e-e2e-${runId}-${isOperator ? "admin" : "read-only"}`,
+          isOperator ? "admin" : "read-only",
+        ))
+      )
+        throw fail();
+    }
     const [foreign] = await db.admin.sql<
       { present: boolean }[]
     >`SELECT EXISTS(SELECT 1 FROM qf.draft_application WHERE created_by=ANY(${db.admin.sql.array(actors)}::uuid[]) AND product_id<>${value.productId}) OR EXISTS(SELECT 1 FROM qf.quizpack_import WHERE created_by=ANY(${db.admin.sql.array(actors)}::uuid[]) AND product_id<>${value.productId}) OR EXISTS(SELECT 1 FROM qf.quizpack_validation WHERE created_by=ANY(${db.admin.sql.array(actors)}::uuid[]) AND product_id<>${value.productId}) OR EXISTS(SELECT 1 FROM qf.draft_review WHERE recorded_by=ANY(${db.admin.sql.array(actors)}::uuid[]) AND product_id<>${value.productId}) OR EXISTS(SELECT 1 FROM qf.product_version WHERE created_by=ANY(${db.admin.sql.array(actors)}::uuid[]) AND product_id<>${value.productId}) OR EXISTS(SELECT 1 FROM qf.quizpack_validation WHERE reserved_bytes>0) OR EXISTS(SELECT 1 FROM qf.quizpack_import WHERE reserved_bytes>0) AS present`;

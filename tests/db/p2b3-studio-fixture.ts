@@ -1,9 +1,15 @@
+import {
+  seedVersionFixtureAccount,
+  loginVersionFixtureAccount,
+  fixtureAccountMatches,
+  type FixtureAccountRow,
+} from "./version-account-fixture";
 import { assertNoRetainedInternalReferences } from "@/features/product/internal-versions/retention";
 import { constants, type Stats } from "node:fs";
 import { lstat, open, unlink } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { randomUUID } from "node:crypto";
+import { randomBytes, randomUUID } from "node:crypto";
 import { z } from "zod";
 import {
   openTestDatabase,
@@ -15,8 +21,7 @@ import {
   studioDraftFixtureSchema,
   type StudioDraftFixture,
 } from "./p2b3-studio-contract";
-import { issueToken, digestToken } from "@/lib/security/p2a-tokens";
-import { createPreauth, login } from "@/lib/auth/service";
+
 import { acquireAuthWriteLock } from "@/lib/db/auth-lock";
 import { archiveProduct } from "@/features/product/workspace/service";
 import {
@@ -103,14 +108,7 @@ async function credentials(
   db: TestDatabase,
   actor: StudioDraftFixture["operator"],
 ) {
-  const preauth = await createPreauth(db.app, null, randomUUID());
-  const session = await login(
-    db.app,
-    preauth.raw,
-    preauth.dto.csrfToken,
-    actor.secret,
-    randomUUID(),
-  );
+  const session = await loginVersionFixtureAccount(db, actor);
   return {
     sessionToken: session.raw,
     csrfToken: session.dto.csrfToken,
@@ -124,22 +122,30 @@ export async function prepareStudioDraftFixture(
 ): Promise<StudioDraftFixture> {
   requireTestDatabase(db);
   z.uuid().parse(runId);
-  const operator = issueToken("credential"),
-    readOnly = issueToken("credential"),
+  const operator = randomBytes(32).toString("base64url"),
+    readOnly = randomBytes(32).toString("base64url"),
     value = {
       version: 1 as const,
       runId,
       qualification: "synthetic-db-only-no-media" as const,
       completed: false,
-      operator: { identifier: randomUUID(), secret: operator.raw },
-      readOnly: { identifier: randomUUID(), secret: readOnly.raw },
+      operator: { identifier: randomUUID(), secret: operator },
+      readOnly: { identifier: randomUUID(), secret: readOnly },
       sources: [] as StudioDraftFixture["sources"],
     };
   await save(db, value, true);
-  await db.admin.sql.begin(async (tx) => {
-    await acquireAuthWriteLock(tx);
-    await tx`INSERT INTO qf.operator(id,label,credential_digest,role,status) VALUES(${value.operator.identifier},${`b3-e2e-${runId}-operator`},${operator.digest},'operator','active'),(${value.readOnly.identifier},${`b3-e2e-${runId}-readonly`},${readOnly.digest},'read-only','active')`;
-  });
+  await seedVersionFixtureAccount(
+    db,
+    value.operator,
+    `b3-e2e-${runId}-operator`,
+    "operator",
+  );
+  await seedVersionFixtureAccount(
+    db,
+    value.readOnly,
+    `b3-e2e-${runId}-readonly`,
+    "read-only",
+  );
   const auth = {
     id: value.operator.identifier,
     credentials: await credentials(db, value.operator),
@@ -341,25 +347,22 @@ export async function cleanupStudioDraftFixture(
       if (root.created_by !== value.operator.identifier) throw new Error();
       targets.add(root.id);
     }
-    const actorRows = await db.admin.sql<
-      { id: string; label: string; credential_digest: string }[]
-    >`SELECT id,label,credential_digest FROM qf.operator WHERE id=ANY(${db.admin.sql.array(actors)}::uuid[])`;
-    if (
-      actorRows.length !== 2 ||
-      actorRows.some(
-        (a) =>
-          a.label !==
-            `b3-e2e-${value.runId}-${a.id === value.operator.identifier ? "operator" : "readonly"}` ||
-          a.credential_digest !==
-            digestToken(
-              a.id === value.operator.identifier
-                ? value.operator.secret
-                : value.readOnly.secret,
-              "credential",
-            ),
+    const actorRows = await db.admin.sql<FixtureAccountRow[]>`
+      SELECT id,login_name,display_name,password_hash,role FROM qf.operator
+      WHERE id=ANY(${db.admin.sql.array(actors)}::uuid[])`;
+    if (actorRows.length !== 2) throw new Error("DRAFTS_FIXTURE_ACTOR_CHANGED");
+    for (const row of actorRows) {
+      const isOperator = row.id === value.operator.identifier;
+      if (
+        !(await fixtureAccountMatches(
+          row,
+          isOperator ? value.operator : value.readOnly,
+          `b3-e2e-${value.runId}-${isOperator ? "operator" : "readonly"}`,
+          isOperator ? "operator" : "read-only",
+        ))
       )
-    )
-      throw new Error("DRAFTS_FIXTURE_ACTOR_CHANGED");
+        throw new Error("DRAFTS_FIXTURE_ACTOR_CHANGED");
+    }
     const audit = await db.admin.sql<
       { id: string; target_id: string | null; target_kind: string | null }[]
     >`SELECT id,target_id,target_kind FROM qf.audit_event WHERE actor_id=ANY(${db.admin.sql.array(actors)}::uuid[]) LIMIT 257`;

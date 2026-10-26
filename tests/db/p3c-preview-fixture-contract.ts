@@ -8,7 +8,7 @@ import {
 export const PREVIEW_FIXTURE_PRIVATE_NAME = "preview-p3c-e2e-fixture.json";
 const actor = z.strictObject({
   identifier: z.uuid(),
-  secret: z.string().regex(/^qfo_p2a_[A-Za-z0-9_-]{43}$/),
+  secret: z.string().regex(/^[A-Za-z0-9_-]{43}$/),
 });
 const sourceSchema = z.strictObject({
   scope: previewScopeSchema,

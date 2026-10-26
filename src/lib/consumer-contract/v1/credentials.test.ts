@@ -47,7 +47,7 @@ describe("consumer credentials remain separate from selectors and Studio session
     expect(await digestConsumerToken(access, "access-key")).toBe(expected);
     expect(await digestConsumerToken(grant, "grant")).not.toBe(expected);
     expect(await digestConsumerToken(access, "grant")).toBeNull();
-    expect(digestToken(access, "credential")).toBeNull();
+    expect(digestToken(access, "preauth")).toBeNull();
     expect(digestToken(grant, "session")).toBeNull();
   });
   it("uses the declared HMAC bytes and refuses an access key as a grant", async () => {

@@ -99,8 +99,8 @@ beforeAll(async () => {
   await db.close();
   await configureImports(db.config.instanceId, true);
   db = await safe(openTestDatabase);
-  credentials = await fixtureCredentials(db, fixture.operator.secret);
-  readOnly = await fixtureCredentials(db, fixture.readOnly.secret);
+  credentials = await fixtureCredentials(db, fixture.operator);
+  readOnly = await fixtureCredentials(db, fixture.readOnly);
 }, 60_000);
 
 beforeEach(() => {

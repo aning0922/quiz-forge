@@ -61,7 +61,7 @@ const productId = z.literal("consumer-flow-fixture"),
   instanceId = z.string().regex(/^[a-f0-9]{32}$/);
 const actor = z.strictObject({
   identifier: z.uuid(),
-  secret: z.string().regex(/^qfo_p2a_[A-Za-z0-9_-]{43}$/),
+  secret: z.string().regex(/^[A-Za-z0-9_-]{43}$/),
 });
 /** Raw HttpOnly cookie and CSRF are intentionally absent. Digest is computed privately by test Node. */
 export const consumerFixtureGrantObservationSchema = z

@@ -1,6 +1,6 @@
+import { disableTestAccount } from "./local-account-fixture";
 import { randomUUID } from "node:crypto";
-import { lstat, readFile, unlink } from "node:fs/promises";
-import path from "node:path";
+
 import { acquireAuthWriteLock } from "../../src/lib/db/auth-lock";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import {
@@ -9,15 +9,12 @@ import {
   verifyDatabaseIdentity,
 } from "../../src/lib/db/client";
 import {
-  createOperator,
-  disableOperator,
-  instancePaths,
   loadManagedInstance,
   openManagedDatabase,
 } from "../../src/lib/db/management";
 import { migrateDatabase, readMigrations } from "../../src/lib/db/migrate";
 import { operators } from "../../src/lib/db/schema";
-import { digestToken, issueToken } from "../../src/lib/security/p2a-tokens";
+import { issueToken } from "../../src/lib/security/p2a-tokens";
 import {
   openTestDatabase,
   resetTestDatabase,
@@ -37,7 +34,7 @@ afterAll(async () => {
 async function operator(label = "synthetic-one") {
   const id = randomUUID();
   await database.admin
-    .sql`INSERT INTO qf.operator(id,label,credential_digest,role,status) VALUES(${id},${label},${issueToken("credential").digest},'operator','active')`;
+    .sql`INSERT INTO qf.operator(id,login_name,display_name,role,status) VALUES(${id},${label},${"合成数据库测试账号"},'operator','active')`;
   return id;
 }
 async function preauth(sql = database.app.sql) {
@@ -55,7 +52,7 @@ describe("real P2-A database", () => {
     const rows = await database.app.db
       .select({
         id: operators.id,
-        label: operators.label,
+        loginName: operators.loginName,
         role: operators.role,
         status: operators.status,
       })
@@ -63,12 +60,12 @@ describe("real P2-A database", () => {
     expect(
       rows.map((r) => ({
         id: r.id,
-        label: r.label,
+        loginName: r.loginName,
         role: r.role,
         status: r.status,
       })),
     ).toEqual([
-      { id, label: "synthetic-one", role: "operator", status: "active" },
+      { id, loginName: "synthetic-one", role: "operator", status: "active" },
     ]);
     const tables = await database.admin
       .sql`SELECT tablename FROM pg_tables WHERE schemaname='qf' ORDER BY tablename`;
@@ -216,7 +213,7 @@ describe("real P2-A database", () => {
     "CREATE SCHEMA forbidden",
     "CREATE TABLE public.forbidden(id int)",
     "CREATE TEMP TABLE forbidden(id int)",
-    "INSERT INTO qf.operator(id,label,credential_digest,role,status) VALUES(gen_random_uuid(),'forbidden',repeat('a',64),'operator','active')",
+    "INSERT INTO qf.operator(id,login_name,display_name,role,status) VALUES(gen_random_uuid(),'forbidden','Forbidden','operator','active')",
     "UPDATE qf.operator SET role='operator'",
     "DELETE FROM qf.operator",
     "TRUNCATE qf.operator",
@@ -230,7 +227,7 @@ describe("real P2-A database", () => {
     "UPDATE qf.operator_session SET absolute_expires_at=now()+interval '1 day'",
     "DELETE FROM qf.operator_session",
     "TRUNCATE qf.operator_session",
-    "INSERT INTO qf_meta.schema_migrations VALUES('forbidden',repeat('a',64),now())",
+    "INSERT INTO qf_meta.schema_migrations VALUES('forbidden','Forbidden',now())",
     "SELECT * FROM qf_meta.schema_migrations",
   ])("denies app privilege: %s", async (statement) => {
     await expect(database.app.sql.unsafe(statement)).rejects.toMatchObject(
@@ -283,9 +280,9 @@ describe("real P2-A database", () => {
     await database.app.sql`UPDATE qf.operator_session SET failed_attempts=1`;
   });
   it.each([
-    "INSERT INTO qf.operator(id,label,credential_digest,role,status) VALUES(gen_random_uuid(),'Not Synthetic',repeat('a',64),'operator','active')",
-    "INSERT INTO qf.operator(id,label,credential_digest,role,status) VALUES(gen_random_uuid(),'synthetic',repeat('A',64),'operator','active')",
-    "INSERT INTO qf.operator(id,label,credential_digest,role,status) VALUES(gen_random_uuid(),'synthetic',repeat('a',64),'operator','disabled')",
+    "INSERT INTO qf.operator(id,login_name,display_name,role,status) VALUES(gen_random_uuid(),'Not Canonical','Synthetic','operator','active')",
+    "INSERT INTO qf.operator(id,login_name,display_name,role,status) VALUES(gen_random_uuid(),'synthetic','','operator','active')",
+    "INSERT INTO qf.operator(id,login_name,display_name,role,status) VALUES(gen_random_uuid(),'synthetic','Synthetic','operator','disabled')",
     "INSERT INTO qf.operator_session(id,token_digest,kind,created_at,last_seen_at,idle_expires_at,absolute_expires_at) VALUES(gen_random_uuid(),repeat('a',64),'preauth',now(),now(),now()+interval '6 minutes',now()+interval '6 minutes')",
     "INSERT INTO qf.operator_session(id,token_digest,kind,created_at,last_seen_at,idle_expires_at,absolute_expires_at,failed_attempts) VALUES(gen_random_uuid(),repeat('a',64),'preauth',now(),now(),now()+interval '5 minutes',now()+interval '5 minutes',6)",
     "INSERT INTO qf.operator_session(id,token_digest,kind,created_at,last_seen_at,idle_expires_at,absolute_expires_at) VALUES(gen_random_uuid(),repeat('a',64),'authenticated',now(),now(),now()+interval '30 minutes',now()+interval '8 hours')",
@@ -349,66 +346,17 @@ describe("real P2-A database", () => {
       );
     }
   });
-  it("bootstraps only generated secrets into new private files and compensates known DB failure", async () => {
-    const paths = instancePaths(database.config.instanceId);
-    const file = path.join(
-      paths.directory,
-      `operator-${randomUUID()}.credential`,
-    );
-    const duplicate = path.join(
-      paths.directory,
-      `operator-${randomUUID()}.credential`,
-    );
-    try {
-      const result = await createOperator(database.config.instanceId, {
-        label: "synthetic-bootstrap",
-        role: "read-only",
-        credentialFile: file,
-      });
-      expect((await lstat(file)).mode & 0o777).toBe(0o600);
-      const credential = (await readFile(file, "utf8")).trim();
-      const [row] = await database.admin
-        .sql`SELECT credential_digest,role FROM qf.operator WHERE id=${result.id}`;
-      // A boolean assertion prevents printing a secret in failure diffs.
-      expect(
-        row?.credential_digest === digestToken(credential, "credential"),
-      ).toBe(true);
-      expect(row?.role).toBe("read-only");
-      await expect(
-        createOperator(database.config.instanceId, {
-          label: "synthetic-bootstrap",
-          role: "operator",
-          credentialFile: duplicate,
-        }),
-      ).rejects.toMatchObject({ code: "BOOTSTRAP_FAILED" });
-      await expect(lstat(duplicate)).rejects.toMatchObject({ code: "ENOENT" });
-      await expect(
-        createOperator(database.config.instanceId, {
-          label: "another",
-          role: "operator",
-          credentialFile: file,
-        }),
-      ).rejects.toMatchObject({ code: "BOOTSTRAP_FAILED" });
-      expect((await readFile(file, "utf8")) === credential + "\n").toBe(true);
-      const audit = await database.admin
-        .sql`SELECT action FROM qf.audit_event WHERE actor_id=${result.id}`;
-      expect(audit.map((r) => r.action)).toEqual(["bootstrap"]);
-    } finally {
-      await unlink(file).catch(() => {});
-      await unlink(duplicate).catch(() => {});
-    }
-  });
   it("disables without deleting operator and revokes sessions with an idempotent audit", async () => {
     const operatorId = await operator(),
       sessionId = randomUUID();
     await database.app
       .sql`INSERT INTO qf.operator_session(id,token_digest,kind,operator_id,created_at,last_seen_at,idle_expires_at,absolute_expires_at) VALUES(${sessionId},${issueToken("session").digest},'authenticated',${operatorId},now(),now(),now()+interval '30 minutes',now()+interval '8 hours')`;
     expect(
-      await disableOperator(database.config.instanceId, operatorId),
-    ).toEqual({ id: operatorId, changed: true });
+      await disableTestAccount(database.config.instanceId, operatorId, 1),
+    ).toMatchObject({ changed: true });
     expect(
-      await disableOperator(database.config.instanceId, operatorId),
-    ).toEqual({ id: operatorId, changed: false });
+      await disableTestAccount(database.config.instanceId, operatorId, 2),
+    ).toMatchObject({ changed: false });
     const [row] = await database.app
       .sql`SELECT status,disabled_at IS NOT NULL AS disabled FROM qf.operator WHERE id=${operatorId}`;
     expect(row).toMatchObject({ status: "disabled", disabled: true });
@@ -418,10 +366,10 @@ describe("real P2-A database", () => {
     const receipts = await database.admin.sql<{ operation_id: string }[]>`
       SELECT operation_id FROM qf.operator_account_operation
       WHERE action='disable' AND actor_id IS NULL AND target_id=${operatorId} AND status='completed'`;
-    expect(receipts).toHaveLength(1);
+    expect(receipts).toHaveLength(2);
     // This confirmed receipt belongs to this test's unique target. Never broaden reset authority.
     await database.admin.sql`DELETE FROM qf.operator_account_operation
-      WHERE operation_id=${receipts[0]!.operation_id} AND target_id=${operatorId} AND actor_id IS NULL`;
+      WHERE operation_id=ANY(${database.admin.sql.array(receipts.map((r) => r.operation_id))}::uuid[]) AND target_id=${operatorId} AND actor_id IS NULL`;
   });
   it("management disable waits for auth writes then revokes the newly committed session", async () => {
     const operatorId = await operator(),
@@ -449,10 +397,10 @@ describe("real P2-A database", () => {
         SELECT ${sessionId},${issueToken("session").digest},'authenticated',${operatorId},at,at,at+interval '30 minutes',at+interval '8 hours' FROM moment`;
     });
     void login.catch(() => entered());
-    let disabling: ReturnType<typeof disableOperator> | undefined;
+    let disabling: ReturnType<typeof disableTestAccount> | undefined;
     try {
       await enteredGate;
-      disabling = disableOperator(database.config.instanceId, operatorId);
+      disabling = disableTestAccount(database.config.instanceId, operatorId, 1);
       let waiting = false;
       for (let attempt = 0; attempt < 100 && !waiting; attempt++) {
         const [lock] = await database.admin
@@ -463,7 +411,7 @@ describe("real P2-A database", () => {
       expect(waiting).toBe(true);
       release();
       await login;
-      expect(await disabling).toEqual({ id: operatorId, changed: true });
+      expect(await disabling).toMatchObject({ changed: true });
       const rows = await database.admin.sql<
         {
           operation_id: string;

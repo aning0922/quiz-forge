@@ -9,7 +9,7 @@ import {
   type FileHandle,
 } from "node:fs/promises";
 import { afterAll, beforeAll, expect, it, vi } from "vitest";
-import { createPreauth, login } from "@/lib/auth/service";
+import { loginVersionFixtureAccount } from "./version-account-fixture";
 import { SESSION_COOKIE } from "@/lib/auth/cookies";
 import * as resourceStorage from "@/features/quizpack/resource-read/storage";
 import { privateDirectory } from "@/features/quizpack/import/storage";
@@ -65,14 +65,7 @@ beforeAll(async () => {
   db = await openTestDatabase();
   await command("prepare");
   fixture = await readPreviewFixture(db, runId);
-  const pre = await createPreauth(db.app, null, randomUUID());
-  const session = await login(
-    db.app,
-    pre.raw,
-    pre.dto.csrfToken,
-    fixture.readOnly.secret,
-    randomUUID(),
-  );
+  const session = await loginVersionFixtureAccount(db, fixture.readOnly);
   token = session.raw;
   const [row] = await db.admin.sql<
     { id: string }[]
@@ -239,14 +232,7 @@ it("actual revoke after complete file read is caught by a NEW final authorizatio
   } finally {
     spy.mockRestore();
   }
-  const pre = await createPreauth(db.app, null, randomUUID()),
-    session = await login(
-      db.app,
-      pre.raw,
-      pre.dto.csrfToken,
-      fixture.readOnly.secret,
-      randomUUID(),
-    );
+  const session = await loginVersionFixtureAccount(db, fixture.readOnly);
   token = session.raw;
   const [row] = await db.admin.sql<
     { id: string }[]

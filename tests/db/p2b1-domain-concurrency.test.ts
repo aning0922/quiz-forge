@@ -1,3 +1,4 @@
+import { disableTestAccount } from "./local-account-fixture";
 import { beforeAll, beforeEach, afterAll, describe, it, expect } from "vitest";
 import {
   openTestDatabase,
@@ -14,7 +15,6 @@ import {
 import { acquireAuthWriteLock } from "@/lib/db/auth-lock";
 import { withStudioWrite } from "@/lib/auth/write";
 import { readSession } from "@/lib/auth/service";
-import { disableOperator } from "@/lib/db/management";
 import * as service from "@/features/product/workspace/service";
 let fixture: TestDatabase;
 let auth: Awaited<ReturnType<typeof authenticateTestOperator>>;
@@ -262,7 +262,7 @@ describe("B1 real lock order and current-session races", () => {
     try {
       await waitForLocks(1, false);
       disabling = safe(() =>
-        disableOperator(fixture.config.instanceId, auth.id),
+        disableTestAccount(fixture.config.instanceId, auth.id, 1),
       );
       await waitForLocks();
       hold2.release();

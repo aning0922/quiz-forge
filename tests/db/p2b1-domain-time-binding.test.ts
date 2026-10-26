@@ -1,3 +1,4 @@
+import { disableTestAccount } from "./local-account-fixture";
 import { beforeAll, beforeEach, afterAll, describe, it, expect } from "vitest";
 import {
   authenticateTestOperator,
@@ -6,7 +7,6 @@ import {
   safeTestOperation as safe,
   type TestDatabase,
 } from "./p2a-fixture";
-import { disableOperator } from "@/lib/db/management";
 import { readSession } from "@/lib/auth/service";
 let fixture: TestDatabase;
 beforeAll(async () => {
@@ -50,9 +50,9 @@ describe("PG microsecond preservation in management time bindings", () => {
       const { sessionId } = await readSession(fixture.app, auth.session.raw);
       expect(
         await safe(() =>
-          disableOperator(fixture.config.instanceId, operatorId),
+          disableTestAccount(fixture.config.instanceId, operatorId, 1),
         ),
-      ).toEqual({ id: operatorId, changed: true });
+      ).toMatchObject({ changed: true });
       const rows = await safe(
         () => fixture.admin.sql<
           {

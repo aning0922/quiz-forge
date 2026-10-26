@@ -8,7 +8,7 @@ import { beforeAll, afterAll, expect, it } from "vitest";
 import { prepareP3cSource } from "./p3c-source-fixture";
 import { openTestDatabase, type TestDatabase } from "./p2a-fixture";
 import { resetDomainDatabase } from "./p2b2b-domain-fixture";
-import { createPreauth, login } from "@/lib/auth/service";
+import { loginVersionFixtureAccount } from "./version-account-fixture";
 import { createProductDraftService } from "@/features/product/drafts/service";
 import { createProductDraftRevisionService } from "@/features/product/draft-revisions/service";
 import {
@@ -131,14 +131,7 @@ it("prepares five exact sources; finish never deletes; fake proof or incomplete 
   }
   await expect(cli("finish", runId)).rejects.toThrow();
   expect((await readDraftRevisionFixture(db, runId)).completed).toBe(false);
-  const pre = await createPreauth(db.app, null, randomUUID()),
-    session = await login(
-      db.app,
-      pre.raw,
-      pre.dto.csrfToken,
-      fixture.operator.secret,
-      randomUUID(),
-    ),
+  const session = await loginVersionFixtureAccount(db, fixture.operator),
     credentials = {
       sessionToken: session.raw,
       csrfToken: session.dto.csrfToken,

@@ -13,7 +13,7 @@ export const DRAFT_REVISION_FIXTURE_PRIVATE_NAME =
 export const DRAFT_REVISION_FIXTURE_MAX_BYTES = 32768;
 const actor = z.strictObject({
   identifier: z.uuid(),
-  secret: z.string().regex(/^qfo_p2a_[A-Za-z0-9_-]{43}$/),
+  secret: z.string().regex(/^[A-Za-z0-9_-]{43}$/),
 });
 export const draftRevisionFixtureSourceSchema = z.strictObject({
   name: z.enum(["initial", "second", "third", "spare", "alias-initial"]),

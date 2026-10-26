@@ -102,14 +102,17 @@ export async function probePreviewNext() {
       .find((c) => c.startsWith(PREAUTH_COOKIE + "="))
       ?.split(";")[0];
     if (!preCookie) throw fail();
-    const login = await fetch(origin + "/api/studio/auth/login", {
+    const login = await fetch(origin + "/api/studio/auth/password-login", {
       method: "POST",
       headers: {
         ...postHeaders,
         cookie: preCookie,
         "x-csrf-token": preDto.csrfToken,
       },
-      body: JSON.stringify({ credential: fixture.readOnly.secret }),
+      body: JSON.stringify({
+        loginName: `test-${fixture.readOnly.identifier}`,
+        password: fixture.readOnly.secret,
+      }),
     });
     const session = await login.json();
     if (!login.ok || session.operator.role !== "read-only") throw fail();

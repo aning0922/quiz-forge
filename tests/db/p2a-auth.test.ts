@@ -1,9 +1,13 @@
 import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
-import { openTestDatabase, resetTestDatabase } from "./p2a-fixture";
+import {
+  openTestDatabase,
+  resetTestDatabase,
+  authenticateTestOperator,
+} from "./p2a-fixture";
 import { createDatabase } from "@/lib/db/client";
 import { acquireAuthWriteLock } from "@/lib/db/auth-lock";
-import { createPreauth, login, logout, readSession } from "@/lib/auth/service";
+import { createPreauth, logout, readSession } from "@/lib/auth/service";
 import { handleStudioAuth } from "@/lib/auth/http";
 import { requireCapability } from "@/lib/auth/capabilities";
 import { SESSION_COOKIE } from "@/lib/auth/cookies";
@@ -28,29 +32,11 @@ async function safe<T>(work: () => PromiseLike<T>): Promise<T> {
 }
 const rid = () => randomUUID();
 
-async function operator(role: "operator" | "read-only" = "operator") {
-  const credential = issueToken("credential");
-  const id = rid();
-  await safe(
-    () => fixture.admin
-      .sql`INSERT INTO qf.operator (id,label,credential_digest,role,status)
-    VALUES (${id}, ${`test-${id}`}, ${credential.digest}, ${role}, 'active')`,
-  );
-  return { id, credential: credential.raw };
-}
+// Password login, challenge consumption, KDF budgets and disable races are
+// covered by tests/accounts-db. These tests exercise current sessions and HTTP guards.
 async function authenticated(role: "operator" | "read-only" = "operator") {
-  const identity = await operator(role);
-  const challenge = await safe(() => createPreauth(fixture.app, null, rid()));
-  const session = await safe(() =>
-    login(
-      fixture.app,
-      challenge.raw,
-      challenge.dto.csrfToken,
-      identity.credential,
-      rid(),
-    ),
-  );
-  return { ...identity, ...session, challenge };
+  const identity = await authenticateTestOperator(fixture, role);
+  return { id: identity.id, ...identity.session };
 }
 function request(
   endpoint: string,
@@ -112,45 +98,6 @@ describe("real PostgreSQL Studio auth", () => {
     expect(record!.occurred_at.getTime() >= releasedAt.getTime()).toBe(true);
   });
 
-  it("serializes disable vs login across independent connections without a later usable session", async () => {
-    const identity = await operator();
-    const challenge = await safe(() => createPreauth(fixture.app, null, rid()));
-    const second = await safe(() => createDatabase(fixture.config));
-    let outcome: Promise<string> | undefined;
-    try {
-      await safe(() =>
-        fixture.admin.sql.begin(async (tx) => {
-          await acquireAuthWriteLock(tx);
-          outcome = safe(() =>
-            login(
-              second,
-              challenge.raw,
-              challenge.dto.csrfToken,
-              identity.credential,
-              rid(),
-            ),
-          ).then(
-            () => "success",
-            (error) =>
-              error instanceof Error ? error.message : "STUDIO_UNAVAILABLE",
-          );
-          await tx`SELECT pg_sleep(0.05)`;
-          await tx`UPDATE qf.operator SET status='disabled',disabled_at=clock_timestamp() WHERE id=${identity.id}`;
-          await tx`UPDATE qf.operator_session SET revoked_at=clock_timestamp() WHERE operator_id=${identity.id} AND revoked_at IS NULL`;
-        }),
-      );
-      expect(await outcome).toBe("AUTHENTICATION_FAILED");
-      const [record] = await safe(
-        () =>
-          fixture.admin
-            .sql`SELECT count(*)::int AS count FROM qf.operator_session WHERE operator_id=${identity.id} AND kind='authenticated'`,
-      );
-      expect(record?.count).toBe(0);
-    } finally {
-      await safe(() => second.close());
-    }
-  });
-
   it("serializes disable/revoke vs touch and cannot revive the session", async () => {
     for (const disabled of [true, false]) {
       const current = await authenticated();
@@ -181,146 +128,6 @@ describe("real PostgreSQL Studio auth", () => {
       } finally {
         await safe(() => second.close());
       }
-    }
-  });
-
-  it("rotates preauth into a separate authenticated row and commits audits", async () => {
-    const current = await authenticated();
-    const [state] = await safe(
-      () => fixture.admin.sql`SELECT
-      (SELECT count(*)::int FROM qf.operator_session WHERE kind='preauth' AND revoked_at IS NOT NULL) AS consumed,
-      (SELECT count(*)::int FROM qf.operator_session WHERE kind='authenticated' AND revoked_at IS NULL) AS authenticated,
-      (SELECT count(*)::int FROM qf.audit_event WHERE action='login_succeeded') AS successes`,
-    );
-    expect(state).toMatchObject({
-      consumed: 1,
-      authenticated: 1,
-      successes: 1,
-    });
-    expect(current.raw !== current.challenge.raw).toBe(true);
-    expect(
-      await safe(() => readSession(fixture.app, current.raw)),
-    ).toMatchObject({ id: current.id, role: "operator" });
-    await expect(
-      safe(() =>
-        login(
-          fixture.app,
-          current.challenge.raw,
-          current.challenge.dto.csrfToken,
-          current.credential,
-          rid(),
-        ),
-      ),
-    ).rejects.toThrow("AUTHENTICATION_FAILED");
-  });
-
-  it("lets only one of two independent connections consume the same preauth", async () => {
-    const identity = await operator();
-    const challenge = await safe(() => createPreauth(fixture.app, null, rid()));
-    const second = await safe(() => createDatabase(fixture.config));
-    try {
-      const outcomes = await Promise.allSettled(
-        [fixture.app, second].map((db) =>
-          safe(() =>
-            login(
-              db,
-              challenge.raw,
-              challenge.dto.csrfToken,
-              identity.credential,
-              rid(),
-            ),
-          ),
-        ),
-      );
-      expect(
-        outcomes.filter((value) => value.status === "fulfilled").length,
-      ).toBe(1);
-      const [counts] = await safe(
-        () =>
-          fixture.admin
-            .sql`SELECT count(*)::int AS count FROM qf.operator_session WHERE kind='authenticated'`,
-      );
-      expect(counts?.count).toBe(1);
-    } finally {
-      await safe(() => second.close());
-    }
-  });
-
-  it("persists failed attempts and revokes at five without revealing disabled or unknown credentials", async () => {
-    const identity = await operator();
-    await safe(
-      () =>
-        fixture.admin
-          .sql`UPDATE qf.operator SET status='disabled', disabled_at=clock_timestamp() WHERE id=${identity.id}`,
-    );
-    const challenge = await safe(() => createPreauth(fixture.app, null, rid()));
-    for (let attempt = 0; attempt < 5; attempt++) {
-      await expect(
-        safe(() =>
-          login(
-            fixture.app,
-            challenge.raw,
-            challenge.dto.csrfToken,
-            attempt % 2 ? "not-a-credential" : identity.credential,
-            rid(),
-          ),
-        ),
-      ).rejects.toThrow("AUTHENTICATION_FAILED");
-    }
-    const [row] = await safe(
-      () =>
-        fixture.admin
-          .sql`SELECT failed_attempts, revoked_at IS NOT NULL AS revoked FROM qf.operator_session WHERE token_digest=${digestToken(challenge.raw, "preauth")}`,
-    );
-    expect(row).toMatchObject({ failed_attempts: 5, revoked: true });
-    await expect(
-      safe(() =>
-        login(
-          fixture.app,
-          challenge.raw,
-          challenge.dto.csrfToken,
-          identity.credential,
-          rid(),
-        ),
-      ),
-    ).rejects.toThrow("AUTHENTICATION_FAILED");
-    const [audits] = await safe(
-      () =>
-        fixture.admin
-          .sql`SELECT count(*)::int AS count FROM qf.audit_event WHERE action='login_failed'`,
-    );
-    expect(audits?.count).toBe(5);
-  });
-
-  it("rejects expired and revoked challenges", async () => {
-    for (const expired of [true, false]) {
-      const identity = await operator();
-      const challenge = await safe(() =>
-        createPreauth(fixture.app, null, rid()),
-      );
-      if (expired)
-        await safe(
-          () =>
-            fixture.admin
-              .sql`WITH moment AS MATERIALIZED (SELECT clock_timestamp() AS at) UPDATE qf.operator_session SET created_at=at-interval '6 minutes', last_seen_at=at-interval '6 minutes', idle_expires_at=at-interval '1 minute', absolute_expires_at=at-interval '1 minute' FROM moment WHERE token_digest=${digestToken(challenge.raw, "preauth")}`,
-        );
-      else
-        await safe(
-          () =>
-            fixture.admin
-              .sql`UPDATE qf.operator_session SET revoked_at=clock_timestamp() WHERE token_digest=${digestToken(challenge.raw, "preauth")}`,
-        );
-      await expect(
-        safe(() =>
-          login(
-            fixture.app,
-            challenge.raw,
-            challenge.dto.csrfToken,
-            identity.credential,
-            rid(),
-          ),
-        ),
-      ).rejects.toThrow("AUTHENTICATION_FAILED");
     }
   });
 
@@ -377,30 +184,8 @@ describe("real PostgreSQL Studio auth", () => {
     ).rejects.toThrow("UNAUTHENTICATED");
   });
 
-  it("rejects cross-challenge and cross-session CSRF before any authentication mutation", async () => {
-    const identity = await operator();
-    const first = await safe(() => createPreauth(fixture.app, null, rid()));
-    const second = await safe(() => createPreauth(fixture.app, null, rid()));
-    await expect(
-      safe(() =>
-        login(
-          fixture.app,
-          first.raw,
-          second.dto.csrfToken,
-          identity.credential,
-          rid(),
-        ),
-      ),
-    ).rejects.toThrow("CSRF_REJECTED");
-    const current = await safe(() =>
-      login(
-        fixture.app,
-        first.raw,
-        first.dto.csrfToken,
-        identity.credential,
-        rid(),
-      ),
-    );
+  it("rejects cross-session CSRF before any authentication mutation", async () => {
+    const current = await authenticated();
     await expect(
       safe(() =>
         logout(
@@ -412,7 +197,7 @@ describe("real PostgreSQL Studio auth", () => {
       ),
     ).rejects.toThrow("CSRF_REJECTED");
     expect((await safe(() => readSession(fixture.app, current.raw))).id).toBe(
-      identity.id,
+      current.id,
     );
   });
 
@@ -433,42 +218,6 @@ describe("real PostgreSQL Studio auth", () => {
     expect(audits?.count).toBe(20);
   });
 
-  it("serializes failed-credential rate competition at ten without unlimited rejected audits", async () => {
-    const challenges = await Promise.all(
-      Array.from({ length: 3 }, () =>
-        safe(() => createPreauth(fixture.app, null, rid())),
-      ),
-    );
-    const outcomes = await Promise.allSettled(
-      challenges.flatMap((challenge) =>
-        Array.from({ length: 4 }, () =>
-          safe(() =>
-            login(
-              fixture.app,
-              challenge.raw,
-              challenge.dto.csrfToken,
-              "invalid",
-              rid(),
-            ),
-          ),
-        ),
-      ),
-    );
-    const rateLimited = outcomes.filter(
-      (value) =>
-        value.status === "rejected" &&
-        value.reason instanceof Error &&
-        value.reason.message === "RATE_LIMITED",
-    );
-    expect(rateLimited.length).toBe(2);
-    const [audits] = await safe(
-      () =>
-        fixture.admin
-          .sql`SELECT count(*)::int AS count FROM qf.audit_event WHERE action='login_failed'`,
-    );
-    expect(audits?.count).toBe(10);
-  });
-
   it("caps outstanding preauth even without recent audit rows", async () => {
     await safe(
       () => fixture.admin
@@ -482,7 +231,6 @@ describe("real PostgreSQL Studio auth", () => {
   });
 
   it("commits preauth and logout cookies with fixed attributes and no-cache session reads", async () => {
-    const identity = await operator();
     const preauth = await handleStudioAuth(request("preauth"), "preauth");
     expect(preauth.status).toBe(201);
     const setCookie = preauth.headers.get("set-cookie") ?? "";
@@ -493,17 +241,8 @@ describe("real PostgreSQL Studio auth", () => {
         !setCookie.includes("Domain=") &&
         !setCookie.includes("Secure"),
     ).toBe(true);
-    const raw = setCookie.split(";")[0]?.split("=").slice(1).join("=") ?? "";
-    const csrf = csrfForToken(raw, "preauth")!;
-    // The removed credential HTTP route is not a supported demo contract.
-    // Current password-login cookie rotation is verified by the dedicated account suite.
-    const fixtureSession = await login(
-      fixture.app,
-      raw,
-      csrf,
-      identity.credential,
-      rid(),
-    );
+    // Real password-login cookie rotation is verified by the dedicated account suite.
+    const fixtureSession = await authenticated();
     const sessionRaw = fixtureSession.raw;
     const response = await handleStudioAuth(
       request(
