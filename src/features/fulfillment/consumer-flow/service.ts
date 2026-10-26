@@ -1,3 +1,13 @@
+import { projectConsumerCompletion } from "./result";
+import { verifyPersistedReportSnapshotV2 } from "@/features/report/persisted/snapshot-contract-v2";
+import { consumerCompleteBindingSha256V2 } from "@/lib/consumer-contract/v2/state";
+import {
+  currentSaveInputSchema as consumerSaveInputSchema,
+  currentSaveBindingSchema as consumerSaveBindingSchema,
+  currentCompleteBindingSchema as consumerCompleteBindingSchema,
+  verifyCurrentSaveInput as verifyConsumerSaveInput,
+  verifyCurrentReportView as verifyPersistedReportView,
+} from "./current-wire";
 import "server-only";
 import { randomUUID } from "node:crypto";
 import { ConsumerError } from "@/lib/consumer-contract/v1/errors";
@@ -9,16 +19,7 @@ import {
   digestConsumerToken,
   consumerCsrfForGrant,
 } from "@/lib/consumer-contract/v1/credentials";
-import {
-  consumerSaveInputSchema,
-  consumerSaveBindingSchema,
-  verifyConsumerSaveInput,
-} from "@/lib/consumer-contract/v1/state";
-import {
-  consumerCompleteBindingSchema,
-  consumerCompleteBindingSha256,
-  verifyPersistedReportView,
-} from "@/features/report/persisted/view-contracts";
+import { consumerCompleteBindingSha256 } from "@/features/report/persisted/view-contracts";
 import { verifyPersistedReportSnapshot } from "@/features/report/persisted/snapshot-contract";
 import {
   readPersistedReport,
@@ -57,7 +58,11 @@ import {
   reauthorizeConsumer,
   type ConsumerAuthority,
 } from "./authorization";
-import { observeConsumerSave, observeConsumerCompletion } from "./resolution";
+import {
+  observeCurrentSave as observeConsumerSave,
+  observeCurrentCompletion as observeConsumerCompletion,
+  verifyCurrentSessionView,
+} from "./current-contracts";
 import {
   readConsumerExecutionSource,
   readConsumerPlaySource,
@@ -73,7 +78,6 @@ import {
 import {
   consumerExchangeInputSchema,
   consumerExchangeResultSchema,
-  verifyConsumerSessionView,
 } from "./contracts";
 import {
   consumerResourceSelectorSchema,
@@ -93,7 +97,12 @@ async function selectConsumerResource(
 ) {
   const report = await readPersistedReport(tx, authority.state.session.keyId);
   let assets: readonly DisplayAssetV1[];
-  if (report) assets = [report.snapshot.view.display.result.portrait];
+  if (report)
+    assets =
+      report.snapshot.view.display.contentSchemaVersion ===
+      "quizpack-content.v3"
+        ? report.snapshot.view.display.assets
+        : [report.snapshot.view.display.result.portrait];
   else {
     assertActiveConsumerKey(authority.key, authority.at);
     const execution = await readConsumerExecutionSource(tx, authority.state),
@@ -193,9 +202,12 @@ export function createConsumerFlowService(
                     tx,
                     a.state.session.keyId,
                   );
-                  return verifyConsumerSessionView(
+                  return verifyCurrentSessionView(
                     {
-                      schemaVersion: "quizforge.consumer-session-view.v1",
+                      schemaVersion:
+                        a.state.schemaVersion === "quizforge.consumer-state.v2"
+                          ? "quizforge.consumer-session-view.v2"
+                          : "quizforge.consumer-session-view.v1",
                       grant: {
                         grantId: a.grant.grantId,
                         session: a.state.session,
@@ -216,6 +228,7 @@ export function createConsumerFlowService(
                           },
                     },
                     sessionId,
+                    a.state,
                   );
                 },
               )
@@ -258,6 +271,10 @@ export function createConsumerFlowService(
             current.value.play.snapshot.parentSnapshot,
             current.value.play.snapshot.renderer,
             current.value.source,
+            current.value.play.snapshot.schemaVersion ===
+              "quizforge.internal-play-snapshot.v2"
+              ? current.value.play.snapshot.presentation
+              : undefined,
           );
           const entry = await projectConsumerEntry(
             current.authority.state,
@@ -386,6 +403,10 @@ export function createConsumerFlowService(
             execution.play.snapshot.parentSnapshot,
             execution.play.snapshot.renderer,
             execution.source,
+            execution.play.snapshot.schemaVersion ===
+              "quizforge.internal-play-snapshot.v2"
+              ? execution.play.snapshot.presentation
+              : undefined,
           );
           return consumerWrite(
             io.db,
@@ -409,42 +430,57 @@ export function createConsumerFlowService(
                 final.play.snapshot.parentSnapshot,
                 final.play.snapshot.renderer,
                 final.source,
+                final.play.snapshot.schemaVersion ===
+                  "quizforge.internal-play-snapshot.v2"
+                  ? final.play.snapshot.presentation
+                  : undefined,
               );
               io.checkpoint();
-              const score = fixed.engine.score(fixed.prepared, a.state.answers);
-              if (!score.ok) throw new ConsumerError("INVALID_ANSWERS");
-              const display = fixed.display.projectResult(
-                final.source.content,
-                score.value,
-                final.source.evidence.canonicalContentSha256,
+              const projected = projectConsumerCompletion(
+                fixed,
+                final,
+                a.state,
               );
-              if (!display.ok)
-                throw new ConsumerError("DEPENDENCY_UNAVAILABLE");
               await verifyLockedGrant(tx, a.key, a.session, a.locator);
               const completedAt = await consumerDatabaseMoment(tx);
               assertActiveConsumerKey(a.key, completedAt);
-              const snapshot = await verifyPersistedReportSnapshot({
-                schemaVersion: "quizforge.consumer-report-snapshot.v1",
+              const snapshotInput = {
+                schemaVersion:
+                  projected.version === 2
+                    ? "quizforge.consumer-report-snapshot.v2"
+                    : "quizforge.consumer-report-snapshot.v1",
                 binding,
                 play: final.play,
                 answers: a.state.answers,
                 progress: a.state.progress,
-                score: score.value,
+                score: projected.score,
+                ...(a.state.schemaVersion === "quizforge.consumer-state.v2"
+                  ? { matchingContext: a.state.matchingContext }
+                  : {}),
                 view: {
-                  schemaVersion: "quizforge.consumer-report-display.v1",
+                  schemaVersion:
+                    projected.version === 2
+                      ? "quizforge.consumer-report-display.v2"
+                      : "quizforge.consumer-report-display.v1",
                   reportId: randomUUID(),
                   session: a.state.session,
                   completedAt,
                   completionBindingSha256:
-                    await consumerCompleteBindingSha256(binding),
+                    projected.version === 2
+                      ? await consumerCompleteBindingSha256V2(binding)
+                      : await consumerCompleteBindingSha256(binding),
                   parent: final.play.snapshot.parent,
                   renderer: final.play.snapshot.renderer,
                   font: final.play.snapshot.parentSnapshot.font,
                   mapping: final.play.snapshot.mapping,
                   mappingSha256: final.play.snapshot.mappingSha256,
-                  display: display.value,
+                  display: projected.display,
                 },
-              });
+              };
+              const snapshot =
+                projected.version === 2
+                  ? await verifyPersistedReportSnapshotV2(snapshotInput)
+                  : await verifyPersistedReportSnapshot(snapshotInput);
               // Pure assembly/hash work has finished. Observe this exact locked grant again before INSERT.
               await verifyLockedGrant(tx, a.key, a.session, a.locator);
               io.checkpoint();

@@ -1,3 +1,4 @@
+import { parseCurrentContent, readContentMetadata } from "./content/current";
 import "server-only";
 import { createHash } from "node:crypto";
 import type postgres from "postgres";
@@ -139,18 +140,11 @@ async function readSourceEvidence(
       a.report.value.contentSha256 !== row.content_sha256
     )
       return invalid();
-    const content = JSON.parse(source.canonicalContentText) as {
-      resources: {
-        productId: string;
-        id: string;
-        version: string;
-        sha256: string;
-        bytes: number;
-        mediaType: "image/png" | "image/jpeg" | "image/webp";
-        width: number;
-        height: number;
-      }[];
-    };
+    const parsedContent = parseCurrentContent(
+      JSON.parse(source.canonicalContentText),
+    );
+    if (!parsedContent.ok) return invalid();
+    const resources = readContentMetadata(parsedContent.value).resources;
     return freezeJson({
       ...source,
       validation: {
@@ -165,7 +159,7 @@ async function readSourceEvidence(
         archivePolicySha256: row.archive_policy_sha256,
         evidenceSha256: row.evidence_sha256,
       },
-      resources: content.resources.map((r) => ({
+      resources: resources.map((r) => ({
         resourceRef: { productId: r.productId, id: r.id, version: r.version },
         sha256: r.sha256,
         bytes: r.bytes,

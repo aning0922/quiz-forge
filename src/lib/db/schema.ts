@@ -644,6 +644,8 @@ export const consumerSessions = qf.table(
     lastBindingSha256: char("last_binding_sha256", { length: 64 }),
     lastReceiptText: text("last_receipt_text"),
     lastReceiptSha256: char("last_receipt_sha256", { length: 64 }),
+    matchingContextText: text("matching_context_text"),
+    matchingContextSha256: char("matching_context_sha256", { length: 64 }),
   },
   (t) => [
     unique("consumer_session_claim").on(t.keyId, t.id),
@@ -656,6 +658,17 @@ export const consumerSessions = qf.table(
       t.stateRevision,
       t.consumerStateAnswersSha256,
       t.progressSha256,
+    ),
+    unique("consumer_session_final_context").on(
+      t.id,
+      t.keyId,
+      t.productId,
+      t.playVersionId,
+      t.playSnapshotSha256,
+      t.stateRevision,
+      t.consumerStateAnswersSha256,
+      t.progressSha256,
+      t.matchingContextSha256,
     ),
     foreignKey({
       name: "consumer_session_key",
@@ -740,6 +753,7 @@ export const quizReports = qf.table(
     snapshotSha256: char("snapshot_sha256", { length: 64 }).notNull(),
     displaySha256: char("display_sha256", { length: 64 }).notNull(),
     completedAt: time("completed_at").notNull(),
+    matchingContextSha256: char("matching_context_sha256", { length: 64 }),
   },
   (t) => [
     unique("quiz_report_key_id_key").on(t.keyId),
@@ -770,6 +784,34 @@ export const quizReports = qf.table(
       .onUpdate("restrict")
       .onDelete("restrict"),
     unique("quiz_report_session_id_key").on(t.sessionId),
+    // PostgreSQL's default MATCH SIMPLE is deliberate; legacy context is SQL NULL.
+    foreignKey({
+      name: "quiz_report_session_final_context",
+      columns: [
+        t.sessionId,
+        t.keyId,
+        t.productId,
+        t.playVersionId,
+        t.playSnapshotSha256,
+        t.stateRevision,
+        t.consumerStateAnswersSha256,
+        t.progressSha256,
+        t.matchingContextSha256,
+      ],
+      foreignColumns: [
+        consumerSessions.id,
+        consumerSessions.keyId,
+        consumerSessions.productId,
+        consumerSessions.playVersionId,
+        consumerSessions.playSnapshotSha256,
+        consumerSessions.stateRevision,
+        consumerSessions.consumerStateAnswersSha256,
+        consumerSessions.progressSha256,
+        consumerSessions.matchingContextSha256,
+      ],
+    })
+      .onUpdate("restrict")
+      .onDelete("restrict"),
     check(
       "quiz_report_text_exact",
       sql.raw("((qf.consumer_report_valid(quiz_report.*) IS TRUE))"),

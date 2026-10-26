@@ -214,7 +214,8 @@ function restoreInput(
     row.pack_version === null ||
     row.container_schema_version !== "quizpack.v1" ||
     (row.content_schema_version !== "quizpack-content.v1" &&
-      row.content_schema_version !== "quizpack-content.v2") ||
+      row.content_schema_version !== "quizpack-content.v2" &&
+      row.content_schema_version !== "quizpack-content.v3") ||
     (row.content_kind !== "synthetic" && row.content_kind !== "authored") ||
     row.manifest_sha256 === null ||
     row.content_sha256 === null ||

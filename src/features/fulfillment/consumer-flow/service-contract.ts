@@ -1,3 +1,15 @@
+import type {
+  ConsumerSaveInputV2,
+  ConsumerSaveBindingV2,
+  ConsumerCompleteBindingV2,
+} from "@/lib/consumer-contract/v2/state";
+import type { PersistedReportViewV2 } from "@/features/report/persisted/view-contracts-v2";
+import type {
+  ConsumerSaveResolutionV2,
+  ConsumerCompleteResolutionV2,
+  ConsumerSessionViewV2,
+} from "./contracts-v2";
+import type { ConsumerEntryViewV2 } from "./display-contract-v2";
 import "server-only";
 import type { StudioWriteCredentials } from "@/lib/auth/write";
 import type {
@@ -73,35 +85,35 @@ export interface ConsumerFlowService {
   readSession(
     credentials: ConsumerReadCredentials,
     sessionId: string,
-  ): Promise<ConsumerSessionView>;
+  ): Promise<ConsumerSessionView | ConsumerSessionViewV2>;
   readEntry(
     credentials: ConsumerReadCredentials,
     sessionId: string,
-  ): Promise<ConsumerEntryView>;
+  ): Promise<ConsumerEntryView | ConsumerEntryViewV2>;
   save(
     credentials: ConsumerWriteCredentials,
     sessionId: string,
-    input: ConsumerSaveInput,
-  ): Promise<ConsumerSaveResolution>;
+    input: ConsumerSaveInput | ConsumerSaveInputV2,
+  ): Promise<ConsumerSaveResolution | ConsumerSaveResolutionV2>;
   resolveSave(
     credentials: ConsumerWriteCredentials,
     sessionId: string,
-    binding: ConsumerSaveBinding,
-  ): Promise<ConsumerSaveResolution>;
+    binding: ConsumerSaveBinding | ConsumerSaveBindingV2,
+  ): Promise<ConsumerSaveResolution | ConsumerSaveResolutionV2>;
   complete(
     credentials: ConsumerWriteCredentials,
     sessionId: string,
-    binding: ConsumerCompleteBinding,
-  ): Promise<ConsumerCompleteResolution>;
+    binding: ConsumerCompleteBinding | ConsumerCompleteBindingV2,
+  ): Promise<ConsumerCompleteResolution | ConsumerCompleteResolutionV2>;
   resolveComplete(
     credentials: ConsumerWriteCredentials,
     sessionId: string,
-    binding: ConsumerCompleteBinding,
-  ): Promise<ConsumerCompleteResolution>;
+    binding: ConsumerCompleteBinding | ConsumerCompleteBindingV2,
+  ): Promise<ConsumerCompleteResolution | ConsumerCompleteResolutionV2>;
   readReport(
     credentials: ConsumerReadCredentials,
     sessionId: string,
-  ): Promise<PersistedReportView>;
+  ): Promise<PersistedReportView | PersistedReportViewV2>;
   /** Bounded bytes fully owned by this request; no path, FD, dynamic URL or arbitrary source exposed. */
   readResource(
     credentials: ConsumerReadCredentials,

@@ -1,5 +1,5 @@
 import "server-only";
-/** Frozen PostgreSQL 18 definitions with the additive 0018 audit target extension. */
+/** Exact retained definitions after additive D2 protocol/content migration 0024. */
 export const draftSchemaFacts = {
   columns: [
     {
@@ -703,7 +703,7 @@ export const draftSchemaFacts = {
       table_name: "draft_revision",
       name: "draft_revision_content_schema_version_check",
       definition:
-        "CHECK (((content_schema_version)::text = ANY ((ARRAY['quizpack-content.v1'::character varying, 'quizpack-content.v2'::character varying])::text[])))",
+        "CHECK (((content_schema_version)::text = ANY ((ARRAY['quizpack-content.v1'::character varying, 'quizpack-content.v2'::character varying, 'quizpack-content.v3'::character varying])::text[])))",
       kind: "c",
     },
     {
@@ -747,7 +747,7 @@ export const draftSchemaFacts = {
       table_name: "draft_revision",
       name: "draft_revision_engine_id_check",
       definition:
-        "CHECK (((engine_id)::text = ANY ((ARRAY['dimensions'::character varying, 'archetype'::character varying])::text[])))",
+        "CHECK ((((((content_schema_version)::text = ANY ((ARRAY['quizpack-content.v1'::character varying, 'quizpack-content.v2'::character varying])::text[])) AND ((engine_id)::text = ANY ((ARRAY['dimensions'::character varying, 'archetype'::character varying])::text[]))) OR (((content_schema_version)::text = 'quizpack-content.v3'::text) AND ((engine_id)::text = 'archetype-l1'::text))) IS TRUE))",
       kind: "c",
     },
     {
@@ -1043,7 +1043,7 @@ export const draftSchemaFacts = {
     {
       signature: "qf.protect_draft_revision_source()",
       body_sha256:
-        "207aed795f0613302038cd81ac000add3345fff4b7fe912e76f84e389b17f3da",
+        "74c69db008e64f09a599b08a0828a4bb4af569ce56a73065f820482d073761fe",
       volatility: "v",
     },
   ],

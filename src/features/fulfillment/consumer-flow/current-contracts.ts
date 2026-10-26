@@ -1,22 +1,13 @@
-import { z } from "zod";
 import { ConsumerError } from "@/lib/consumer-contract/v1/errors";
 import {
-  consumerSaveInputSchema,
-  consumerSaveBindingSchema,
-  verifyConsumerSaveInput,
   type ConsumerSaveBinding,
   type ConsumerState,
 } from "@/lib/consumer-contract/v1/state";
 import {
-  consumerCompleteBindingSchema,
   type ConsumerCompleteBinding,
   type PersistedReportReceipt,
 } from "@/features/report/persisted/view-contracts";
 import {
-  consumerSaveInputV2Schema,
-  consumerSaveBindingV2Schema,
-  consumerCompleteBindingV2Schema,
-  verifyConsumerSaveInputV2,
   type ConsumerSaveBindingV2,
   type ConsumerCompleteBindingV2,
   type ConsumerStateV2,
@@ -29,25 +20,12 @@ import {
 } from "./resolution-v2";
 import { verifyConsumerSessionView } from "./contracts";
 import { verifyConsumerSessionViewV2 } from "./contracts-v2";
-/** Parsing describes request shape only. Fixed-play-derived state authorizes the branch below. */
-export const currentSaveInputSchema = z.union([
-  consumerSaveInputSchema,
-  consumerSaveInputV2Schema,
-]);
-export const currentSaveBindingSchema = z.union([
-  consumerSaveBindingSchema,
-  consumerSaveBindingV2Schema,
-]);
-export const currentCompleteBindingSchema = z.union([
-  consumerCompleteBindingSchema,
-  consumerCompleteBindingV2Schema,
-]);
-export async function verifyCurrentSaveInput(input: unknown) {
-  const v = currentSaveInputSchema.parse(input);
-  return "matchingContext" in v
-    ? verifyConsumerSaveInputV2(v)
-    : verifyConsumerSaveInput(v);
-}
+export {
+  currentSaveInputSchema,
+  currentSaveBindingSchema,
+  currentCompleteBindingSchema,
+  verifyCurrentSaveInput,
+} from "./current-wire";
 export async function observeCurrentSave(
   binding: ConsumerSaveBinding | ConsumerSaveBindingV2,
   state: ConsumerState | ConsumerStateV2,

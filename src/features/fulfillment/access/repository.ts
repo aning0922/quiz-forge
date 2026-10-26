@@ -281,7 +281,7 @@ export async function readCurrentGrants(tx: ConsumerTx, key: LockedAccessKey) {
 export async function verifyLockedGrant(
   tx: ConsumerTx,
   key: LockedAccessKey,
-  session: Readonly<{ state: ConsumerState }>,
+  session: Readonly<{ state: Pick<ConsumerState, "session"> }>,
   locator: GrantLocator,
 ) {
   assertLockWitness(tx, key, "key", locator.keyId);
@@ -295,7 +295,7 @@ export async function verifyLockedGrant(
 export async function rotateConsumerGrant(
   tx: ConsumerTx,
   key: LockedAccessKey,
-  session: Readonly<{ state: ConsumerState }>,
+  session: Readonly<{ state: Pick<ConsumerState, "session"> }>,
   fresh: { grantId: string; credentialDigest: string },
   at: string,
 ) {
@@ -333,7 +333,7 @@ export async function rotateConsumerGrant(
 export async function revokeExactGrant(
   tx: ConsumerTx,
   key: LockedAccessKey,
-  session: Readonly<{ state: ConsumerState }>,
+  session: Readonly<{ state: Pick<ConsumerState, "session"> }>,
   grant: GrantFact,
   at: string,
 ): Promise<void> {

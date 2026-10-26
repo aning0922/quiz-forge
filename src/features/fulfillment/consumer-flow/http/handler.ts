@@ -1,3 +1,15 @@
+import {
+  currentSaveInputSchema as consumerSaveInputSchema,
+  currentSaveBindingSchema as consumerSaveBindingSchema,
+  currentCompleteBindingSchema as consumerCompleteBindingSchema,
+  verifyCurrentSaveInput as verifyConsumerSaveInput,
+  currentEntryViewSchema as consumerEntryViewSchema,
+  verifyCurrentEntryView as verifyConsumerEntryView,
+  verifyCurrentSessionViewResponse as verifyConsumerSessionView,
+  verifyCurrentReportView as verifyPersistedReportView,
+  verifyCurrentSaveResolution as verifyConsumerSaveResolution,
+  verifyCurrentCompleteResolution as verifyConsumerCompleteResolution,
+} from "../current-wire";
 import "server-only";
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
@@ -6,28 +18,12 @@ import { createStudioRequestBudget } from "@/lib/http-security/request-budget";
 import { ConsumerError } from "@/lib/consumer-contract/v1/errors";
 import { CONSUMER_LIMITS_V1 as L } from "@/lib/consumer-contract/v1/limits";
 import { consumerUuidSchema } from "@/lib/consumer-contract/v1/primitives";
-import {
-  consumerSaveInputSchema,
-  consumerSaveBindingSchema,
-  verifyConsumerSaveInput,
-} from "@/lib/consumer-contract/v1/state";
 import { verifyConsumerCsrf } from "@/lib/consumer-contract/v1/credentials";
-import {
-  consumerCompleteBindingSchema,
-  verifyPersistedReportView,
-} from "@/features/report/persisted/view-contracts";
 import {
   consumerExchangeInputSchema,
   consumerExchangeResultSchema,
-  verifyConsumerSessionView,
-  verifyConsumerSaveResolution,
-  verifyConsumerCompleteResolution,
 } from "../contracts";
-import {
-  consumerEntryViewSchema,
-  consumerResourceSelectorSchema,
-  verifyConsumerEntryView,
-} from "../display-contract";
+import { consumerResourceSelectorSchema } from "../display-contract";
 import type {
   ConsumerFlowService,
   ConsumerRequestLifecycle,

@@ -1,5 +1,5 @@
 import "server-only";
-import { readContentMetadata } from "../content/current";
+import { readContentMetadata, parseCurrentContent } from "../content/current";
 import { randomUUID } from "node:crypto";
 import { withStudioWrite, type StudioWriteCredentials } from "@/lib/auth/write";
 import type { P2aDatabase } from "@/lib/db/client";
@@ -470,21 +470,11 @@ export async function completeValidation(
           "VALIDATION_STATE_CONFLICT",
           current.state_revision,
         );
-      const resources = (
-        JSON.parse(current.canonical_content_text) as {
-          resources: {
-            id: string;
-            version: string;
-            productId: string;
-            sha256: string;
-            bytes: number;
-            mediaType: string;
-            width: number;
-            height: number;
-            purpose: string;
-          }[];
-        }
-      ).resources;
+      const parsedContent = parseCurrentContent(
+        JSON.parse(current.canonical_content_text),
+      );
+      if (!parsedContent.ok) throw new StudioError("EVIDENCE_INVALID");
+      const resources = readContentMetadata(parsedContent.value).resources;
       const plan = (
         JSON.parse(current.asset_set_text!) as {
           resources: {
