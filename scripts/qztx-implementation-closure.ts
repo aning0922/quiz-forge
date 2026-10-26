@@ -149,7 +149,10 @@ export async function collectQztxImplementationClosure(
             .getModifiers(node)
             ?.some((m) => m.kind === ts.SyntaxKind.ExportKeyword)
         ) {
-          if (ts.isFunctionDeclaration(node) && node.name)
+          if (
+            (ts.isFunctionDeclaration(node) || ts.isClassDeclaration(node)) &&
+            node.name
+          )
             declared.add(node.name.text);
           if (ts.isVariableStatement(node))
             for (const d of node.declarationList.declarations)

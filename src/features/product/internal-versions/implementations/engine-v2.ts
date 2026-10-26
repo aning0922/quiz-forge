@@ -8,6 +8,7 @@ import {
   type PreparedContentV3,
 } from "@/features/quizpack/content/v3-scoring-adapter";
 import { composePreparedReportV3 } from "@/features/report/composed-v1/compose";
+import { verifyPreparedContentWitnessesV3 } from "@/features/quizpack/content/v3-witnesses";
 
 /** One exact compiled algorithm; request fields cannot select or replace executable code. */
 export function bindEngineV2(algorithmInput: {
@@ -38,6 +39,10 @@ export function bindEngineV2(algorithmInput: {
     compose(handle: PreparedContentV3, input: unknown) {
       if (!owns(handle)) return failure("INVALID_PREPARED_DEFINITION");
       return composePreparedReportV3(handle, input);
+    },
+    witnesses(handle: PreparedContentV3) {
+      if (!owns(handle)) return failure("INVALID_PREPARED_DEFINITION");
+      return verifyPreparedContentWitnessesV3(handle);
     },
   });
 }

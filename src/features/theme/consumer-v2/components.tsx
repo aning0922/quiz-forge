@@ -447,73 +447,81 @@ function Evidence({
     </div>
   ) : null;
 }
+/** Plain display content shared with Studio; it carries no consumer session or completion authority. */
+export function StructuredReportContentV2({
+  body,
+}: {
+  body: ComposedReportBodyV1;
+}) {
+  const id = useId();
+  return (
+    <>
+      <p>{body.notice}</p>
+      <nav className={styles.actions} aria-label="六卷目录">
+        {body.volumes.map((v) => (
+          <a key={v.id} href={`#${id}-${v.id}`}>
+            {v.title}
+          </a>
+        ))}
+      </nav>
+      <Matching body={body} />
+      <h2>{body.dimensions.length === 5 ? "本轮五维" : "本轮维度"}</h2>
+      <dl className={styles.dimensions}>
+        {body.dimensions.map((d) => (
+          <div key={d.dimensionRef.id}>
+            <dt>{d.label}</dt>
+            <dd>{d.score} / 100</dd>
+          </div>
+        ))}
+      </dl>
+      {body.volumes.map((v) => (
+        <article key={v.id} id={`${id}-${v.id}`} className={styles.volume}>
+          <h2>{v.title}</h2>
+          {v.paragraphs.map((paragraph, index) => (
+            <section key={index} className={styles.paragraph}>
+              <p className={styles.qualifier}>
+                {paragraph.status === "facts-only"
+                  ? "仅记录本轮事实"
+                  : paragraph.status === "fallback"
+                    ? "证据不足时的说明"
+                    : "有证据支持的限定描述"}{" "}
+                · {paragraph.kind === "literary" ? "文学类比" : "本轮情境"}
+              </p>
+              <p>{paragraph.text}</p>
+              <Evidence
+                entries={paragraph.evidence}
+                label="支持本段的实际选择"
+              />
+              <Evidence
+                entries={paragraph.counterevidence}
+                label="应同时阅读的反向证据"
+              />
+            </section>
+          ))}
+        </article>
+      ))}
+      <details>
+        <summary>查看本轮全部答案记录（{body.answers.length} 题）</summary>
+        <ol>
+          {body.answers.map((a) => (
+            <li key={a.questionRef.id}>
+              <p>
+                第 {a.act} 幕 · {a.prompt}
+              </p>
+              <p>{a.optionText}</p>
+            </li>
+          ))}
+        </ol>
+      </details>
+    </>
+  );
+}
 export function ConsumerReportViewV2({ model, onRead }: ConsumerViewPropsV2) {
-  const id = useId(),
-    body = model.report?.view.display.body;
+  const body = model.report?.view.display.body;
   return (
     <section className={styles.panel} data-consumer-v2-state="report">
       <h1>完整六卷 · {body?.title ?? "只读报告"}</h1>
-      {body && (
-        <>
-          <p>{body.notice}</p>
-          <nav className={styles.actions} aria-label="六卷目录">
-            {body.volumes.map((v) => (
-              <a key={v.id} href={`#${id}-${v.id}`}>
-                {v.title}
-              </a>
-            ))}
-          </nav>
-          <Matching body={body} />
-          <h2>{body.dimensions.length === 5 ? "本轮五维" : "本轮维度"}</h2>
-          <dl className={styles.dimensions}>
-            {body.dimensions.map((d) => (
-              <div key={d.dimensionRef.id}>
-                <dt>{d.label}</dt>
-                <dd>{d.score} / 100</dd>
-              </div>
-            ))}
-          </dl>
-          {body.volumes.map((v) => (
-            <article key={v.id} id={`${id}-${v.id}`} className={styles.volume}>
-              <h2>{v.title}</h2>
-              {v.paragraphs.map((paragraph, index) => (
-                <section key={index} className={styles.paragraph}>
-                  <p className={styles.qualifier}>
-                    {paragraph.status === "facts-only"
-                      ? "仅记录本轮事实"
-                      : paragraph.status === "fallback"
-                        ? "证据不足时的说明"
-                        : "有证据支持的限定描述"}{" "}
-                    · {paragraph.kind === "literary" ? "文学类比" : "本轮情境"}
-                  </p>
-                  <p>{paragraph.text}</p>
-                  <Evidence
-                    entries={paragraph.evidence}
-                    label="支持本段的实际选择"
-                  />
-                  <Evidence
-                    entries={paragraph.counterevidence}
-                    label="应同时阅读的反向证据"
-                  />
-                </section>
-              ))}
-            </article>
-          ))}
-          <details>
-            <summary>查看本轮全部答案记录（{body.answers.length} 题）</summary>
-            <ol>
-              {body.answers.map((a) => (
-                <li key={a.questionRef.id}>
-                  <p>
-                    第 {a.act} 幕 · {a.prompt}
-                  </p>
-                  <p>{a.optionText}</p>
-                </li>
-              ))}
-            </ol>
-          </details>
-        </>
-      )}
+      {body && <StructuredReportContentV2 body={body} />}
       <div className={styles.actions}>
         <button onClick={() => onRead("result")}>返回相逢结果</button>
         <button onClick={() => onRead("poster")}>查看保存分享能力</button>

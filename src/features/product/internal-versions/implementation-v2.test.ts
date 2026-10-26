@@ -158,10 +158,12 @@ describe("explicit v2 implementation metadata and bound execution", () => {
     const input = syntheticInputV2(3, [2, 2, 2]);
     expect(a.score(prepared.value, input).ok).toBe(true);
     expect(a.compose(prepared.value, input).ok).toBe(true);
+    expect(a.witnesses(prepared.value).ok).toBe(true);
     expect(b.score(prepared.value, input)).toMatchObject({
       ok: false,
       issues: [{ code: "INVALID_PREPARED_DEFINITION" }],
     });
     expect(b.compose(prepared.value, input).ok).toBe(false);
+    expect(b.witnesses(prepared.value).ok).toBe(false);
   });
 });
