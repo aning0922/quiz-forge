@@ -15,14 +15,18 @@ await esbuild.build({
     loader: "tsx",
     contents: `
 import {createRoot} from 'react-dom/client';
-import {useEffect,useState} from 'react';
+import {useCallback,useEffect,useState} from 'react';
+import {StudioNavigation} from '@/features/studio/navigation';
+import shellStyles from '@/features/studio/studio.module.css';
 import {StudioNavigationBoundary,useStudioLeaveProtection} from '@/features/studio/navigation-boundary';
 import {StudioMobileNavigation,useStudioMobileNavigation} from '@/features/studio/mobile-navigation';
-import {StudioAccountOwner,useStudioAccountOwner} from '@/features/studio/accounts/session-owner';
+import {StudioAccountOwner,useStudioAccountOwner,useOwnedStudioSession} from '@/features/studio/accounts/session-owner';
 import {SidebarLogoutAction} from '@/features/studio/accounts/sidebar-logout-action';
 import {invalidateCurrentStudioAuthority} from '@/features/studio/authority-events';
 const session={operator:{id:'00000000-0000-4000-8000-000000000001',label:'synthetic',loginName:'synthetic.reader',displayName:'合成只读人员',role:'read-only',accountRevision:1},csrfToken:'A'.repeat(43),idleExpiresAt:'2030-01-01T00:00:00.000Z',absoluteExpiresAt:'2030-01-01T00:00:00.000Z'};
-window.currentSession=session;window.logoutCalls=[];window.revoke=invalidateCurrentStudioAuthority;
+const sessionChangeCase=new URLSearchParams(location.search).get('case')==='sessionchange';
+if(sessionChangeCase){session.operator.role='admin';session.operator.displayName='合成管理员';}
+window.currentSession=session;window.logoutCalls=[];window.revoke=invalidateCurrentStudioAuthority;window.sessionChanges=[];window.ownerMounts=0;
 window.fetch=async(raw,init={})=>{
  const url=new URL(raw,location.href);
  if(url.pathname==='/api/studio/auth/session')return Response.json(window.currentSession);
@@ -44,7 +48,19 @@ function Surface(){
  <output data-testid="protected">{JSON.stringify(protectedTask)}</output>
  </>;
 }
-createRoot(document.getElementById('root')).render(<StudioNavigationBoundary><StudioMobileNavigation><StudioAccountOwner initialSession={session}><Surface/></StudioAccountOwner></StudioMobileNavigation></StudioNavigationBoundary>);
+function RecoveryFacts(){
+ const owner=useStudioAccountOwner(),owned=useOwnedStudioSession(session);
+ const [draft,setDraft]=useState('保留的未提交输入');
+ useState(()=>{window.ownerMounts++;return null;});
+ return <><input aria-label="原任务输入" value={draft} onChange={event=>setDraft(event.target.value)}/><output data-testid="recovery-role">{owned.operator.role}</output><output data-testid="recovery-generation">{owner.generation}</output></>;
+}
+function Harness(){
+ const [accepted,setAccepted]=useState(session);
+ const changed=useCallback(fresh=>{window.sessionChanges.push({id:fresh.operator.id,role:fresh.operator.role});setAccepted(fresh);},[]);
+ if(sessionChangeCase)return <div className={shellStyles.shell}><StudioNavigation identity={{label:accepted.operator.displayName,role:accepted.operator.role}}/><main className={shellStyles.main}><StudioAccountOwner initialSession={session} onSessionChange={changed}><RecoveryFacts/></StudioAccountOwner></main></div>;
+ return <StudioAccountOwner initialSession={session}><Surface/></StudioAccountOwner>;
+}
+createRoot(document.getElementById('root')).render(<StudioNavigationBoundary><StudioMobileNavigation><Harness/></StudioMobileNavigation></StudioNavigationBoundary>);
 `,
   },
   outfile: path.join(out, "probe.js"),
@@ -79,7 +95,7 @@ const browser = await chromium.launch(),
   results = [],
   errors = [];
 let context, page;
-async function open(width = 1440) {
+async function open(width = 1440, scenario = "") {
   if (context) await context.close();
   context = await browser.newContext({
     viewport: { width, height: 1000 },
@@ -94,10 +110,13 @@ async function open(width = 1440) {
       body: '<!doctype html><html><head><meta name="viewport" content="width=device-width, initial-scale=1"></head><body><div id="root"></div></body></html>',
     }),
   );
-  await page.goto(origin + "/studio");
+  await page.goto(origin + "/studio" + (scenario ? "?case=" + scenario : ""));
   await page.addStyleTag({ content: css });
   await page.addScriptTag({ content: bundle });
-  await expect(page.locator("#studio-sidebar-logout button")).toBeAttached();
+  if (scenario !== "sessionchange")
+    await expect(page.locator("#studio-sidebar-logout button")).toBeAttached();
+  else
+    await expect(page.getByLabel("原任务输入", { exact: true })).toBeVisible();
 }
 const launcher = () => page.locator("#studio-sidebar-logout button");
 async function launch() {
@@ -324,6 +343,92 @@ try {
     expect(repeatedUnload).toBe(false);
     results.push(
       "accepted dirty discard permits only the confirmed successful logout document exit without a second prompt",
+    );
+  }
+  if (selected("sessionchange")) {
+    await open(1440, "sessionchange");
+    const nav = page.getByRole("navigation", {
+      name: "Studio 导航",
+      exact: true,
+    });
+    const input = page.getByLabel("原任务输入", { exact: true });
+    const original = await input.elementHandle();
+    await input.fill("恢复后仍保留的原输入");
+    await expect(
+      nav.getByRole("link", { name: "账号与权限", exact: true }),
+    ).toBeVisible();
+    expect(await page.evaluate(() => window.sessionChanges)).toEqual([]);
+    await page.evaluate(() => window.revoke());
+    await page.evaluate(
+      () =>
+        (window.currentSession = {
+          ...window.currentSession,
+          operator: {
+            ...window.currentSession.operator,
+            id: "00000000-0000-4000-8000-000000000002",
+            role: "operator",
+          },
+        }),
+    );
+    await page
+      .getByRole("button", { name: "检查登录状态", exact: true })
+      .click();
+    await expect(page.getByText(/当前登录的是其他账号/)).toBeVisible();
+    expect(await page.evaluate(() => window.sessionChanges)).toEqual([]);
+    await expect(
+      page.getByRole("button", { name: "继续原任务", exact: true }),
+    ).toHaveCount(0);
+    await page.evaluate(
+      () =>
+        (window.currentSession = {
+          ...window.currentSession,
+          csrfToken: "C".repeat(43),
+          operator: {
+            ...window.currentSession.operator,
+            id: "00000000-0000-4000-8000-000000000001",
+            role: "operator",
+            displayName: "合成运营人员",
+            accountRevision: 2,
+          },
+        }),
+    );
+    await page
+      .getByRole("button", { name: "检查登录状态", exact: true })
+      .click();
+    const acknowledgement = page.getByLabel(
+      "我已核对账号与操作状态，继续后先核实待确认结果",
+      { exact: true },
+    );
+    await expect(acknowledgement).toBeVisible();
+    expect(await page.evaluate(() => window.sessionChanges)).toEqual([]);
+    await expect(
+      nav.getByRole("link", { name: "账号与权限", exact: true }),
+    ).toBeVisible();
+    await acknowledgement.check();
+    expect(await page.evaluate(() => window.sessionChanges)).toEqual([]);
+    await page.getByRole("button", { name: "继续原任务", exact: true }).click();
+    await expect(page.getByTestId("recovery-role")).toHaveText("operator");
+    await expect(page.getByTestId("recovery-generation")).toHaveText("1");
+    await expect(
+      nav.getByRole("link", { name: "账号与权限", exact: true }),
+    ).toHaveCount(0);
+    await expect(
+      nav.getByRole("link", { name: "账号操作记录", exact: true }),
+    ).toHaveCount(0);
+    await expect(
+      page.getByRole("link", { name: "我的账号", exact: true }),
+    ).toContainText("合成运营人员");
+    expect(await page.evaluate(() => window.sessionChanges)).toEqual([
+      { id: "00000000-0000-4000-8000-000000000001", role: "operator" },
+    ]);
+    expect(await page.evaluate(() => window.ownerMounts)).toBe(1);
+    expect(await input.evaluate((node, old) => node === old, original)).toBe(
+      true,
+    );
+    await expect(input).toHaveValue("恢复后仍保留的原输入");
+    expect(await page.evaluate(() => window.logoutCalls.length)).toBe(0);
+    results.push(
+      "only explicit same-owner recovery publishes one accepted session; outer real navigation follows downgraded role without remounting owner or losing draft DOM",
     );
   }
   expect(errors).toEqual([]);
