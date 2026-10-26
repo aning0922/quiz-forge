@@ -226,3 +226,83 @@
     padding: 18px 17px 12px;
   }
 }
+
+.page > header > div:first-child {
+  flex: 1;
+  min-width: 0;
+}
+.page > header h1 {
+  font-weight: 750;
+}
+@media (max-width: 640px) {
+  .page > header {
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .page > header > :last-child:not(:first-child) {
+    flex: none;
+    max-width: 45%;
+  }
+  .page > header > :last-child:not(:first-child) button {
+    padding-inline: 10px;
+  }
+}
+
+.mobileCard {
+  padding: 18px 17px;
+  border-bottom: 1px solid #eff0f7;
+  min-width: 0;
+}
+.mobileCard h2 {
+  margin: 0;
+}
+.mobileCard p {
+  color: var(--studio-muted);
+  margin: 4px 0 0;
+}
+.mobileIdentity {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+.mobileIdentity > div {
+  min-width: 0;
+  flex: 1;
+}
+.mobileIdentity > span {
+  flex: none;
+  max-width: 42%;
+  white-space: normal;
+}
+.mobileAction {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  border: 1px solid #eee9ff;
+  border-radius: 10px;
+  margin-top: 12px;
+  padding: 8px 13px;
+  background: #f3efff;
+  color: #6353c4;
+  font-weight: 600;
+  text-decoration: none;
+}
+.panel > ul {
+  padding: 0;
+  gap: 0;
+}
+.panel > ul > li:last-child .mobileCard {
+  border-bottom: 0;
+}
+
+.filterActions > button[aria-expanded],
+.additionalChoices > button {
+  border-color: #e6e8f0;
+  background: #fff;
+  color: #62718b;
+}

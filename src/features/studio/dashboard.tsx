@@ -80,22 +80,12 @@ export function StudioDashboard({
             <div className={`${styles.dashboardMetrics} ${parity.metrics}`}>
               {(
                 [
-                  [
-                    "测评总量",
-                    read.value.directoryTotal,
-                    "全部测评，含已归档",
-                    BookOpen,
-                  ],
-                  [
-                    "已有内容草稿",
-                    read.value.activeDrafts,
-                    "未归档且有当前草稿",
-                    FileText,
-                  ],
+                  ["测评总量", read.value.directoryTotal, "含已归档", BookOpen],
+                  ["内容草稿", read.value.activeDrafts, "未归档测评", FileText],
                   [
                     "待核对审核",
                     read.value.activeMissingReview,
-                    "未归档且缺精确匹配依据",
+                    "缺当前审核依据",
                     ShieldCheck,
                   ],
                 ] as const

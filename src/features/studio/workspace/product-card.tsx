@@ -1,3 +1,4 @@
+import { directoryTime } from "./directory-time";
 import type { StudioRole } from "@/lib/auth/role-policy";
 import Link from "next/link";
 import type { ProductOperations } from "../operations/contracts";
@@ -7,7 +8,6 @@ import {
 } from "../operations-ui/presentation";
 import { StatusBadge } from "../operations-ui/status-badge";
 import type { ProductDto } from "@/features/product/workspace/contracts";
-import { directoryTime } from "./directory-time";
 import { TechnicalDetails } from "../presentation/technical-details";
 import styles from "./workspace.module.css";
 import parity from "./catalog-parity.module.css";
@@ -39,45 +39,39 @@ export function ProductCard({
     const facts = productPresentation(operations);
     const action = productPrimaryAction(operations, role);
     return (
-      <article className={`${styles.catalogCard} ${parity.mobileCard}`}>
-        <h2>
-          <Link
-            className={styles.catalogTitle}
-            href={`/studio/products/${encodeURIComponent(product.id)}`}
-            aria-label={`查看测评 ${product.title}（编号 ${product.id}）`}
-          >
-            {product.title}
-          </Link>
-        </h2>
-        <p className={parity.identifier}>{product.slug}</p>
-        <p className={styles.catalogCategory}>
-          {product.primaryCategory
-            ? `${product.primaryCategory.name}${product.primaryCategory.archivedAt ? "（分类已归档）" : ""}`
-            : "未分类"}
-          {product.archivedAt ? " · 已归档" : ""}
-        </p>
-        <div className={styles.catalogStates}>
-          <StatusBadge status={facts.content} />
-          <StatusBadge status={facts.review} />
-          <StatusBadge status={facts.testing} />
+      <article className={parity.mobileCard}>
+        <div className={parity.mobileIdentity}>
+          <div>
+            <h2>
+              <Link
+                className={styles.catalogTitle}
+                href={`/studio/products/${encodeURIComponent(product.id)}`}
+                aria-label={`查看测评 ${product.title}（编号 ${product.id}）`}
+              >
+                {product.title}
+              </Link>
+            </h2>
+            <p>
+              {product.primaryCategory?.name ?? "未分类"} ·{" "}
+              {facts.content.label}
+              {product.archivedAt ? " · 已归档" : ""}
+            </p>
+          </div>
+          <StatusBadge
+            status={
+              operations.content.draft.state === "present"
+                ? facts.review
+                : facts.content
+            }
+          />
         </div>
-        <div className={styles.catalogCardFooter}>
-          <p>
-            目录更新{" "}
-            <time dateTime={product.updatedAt}>
-              {directoryTime(product.updatedAt)}
-            </time>
-          </p>
-          <Link
-            className={styles.catalogAction}
-            href={action.href}
-            title={action.reason}
-            aria-label={`${action.label} ${product.title}`}
-          >
-            {action.label}
-            <span aria-hidden="true"> →</span>
-          </Link>
-        </div>
+        <Link
+          className={parity.mobileAction}
+          href={action.href}
+          title={action.reason}
+        >
+          {action.label} <span aria-hidden="true">→</span>
+        </Link>
       </article>
     );
   }

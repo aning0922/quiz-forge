@@ -104,3 +104,26 @@
     gap: 12px;
   }
 }
+
+.page > header > div:first-child {
+  flex: 1;
+  min-width: 0;
+}
+.page > header h1 {
+  font-weight: 750;
+}
+@media (max-width: 640px) {
+  .page > header {
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .page > header > :last-child:not(:first-child) {
+    flex: none;
+    max-width: 45%;
+  }
+  .page > header > :last-child:not(:first-child) button {
+    padding-inline: 10px;
+  }
+}
