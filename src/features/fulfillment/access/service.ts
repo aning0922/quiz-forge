@@ -13,8 +13,7 @@ import {
   readConsumerProduct,
   readFixedInternalPlay,
 } from "@/features/product/internal-play/repository";
-import { resolveConsumerImplementation } from "@/features/product/internal-play/implementation-server";
-import { resolveEngineImplementation } from "@/features/product/internal-versions/implementation-server";
+import { accessKeyPlayImplementationAvailable } from "./implementation-availability";
 import { readClaimMetadata } from "../consumer-session/repository";
 import { readCompletionMetadata } from "@/features/report/persisted/repository";
 import type { ConsumerRequestOwner } from "../consumer-flow/request-owner";
@@ -153,12 +152,7 @@ export function createAccessKeyService(
               if (product.archivedAt !== null)
                 throw new ConsumerError("PRODUCT_ARCHIVED");
               const play = await readFixedInternalPlay(tx, binding.play);
-              if (
-                !resolveConsumerImplementation(play.snapshot.renderer) ||
-                !resolveEngineImplementation(
-                  play.snapshot.parentSnapshot.engine,
-                )
-              )
+              if (!accessKeyPlayImplementationAvailable(play.snapshot))
                 throw new ConsumerError("UNSUPPORTED_IMPLEMENTATION");
               const created = await insertAccessKey(
                 tx,
