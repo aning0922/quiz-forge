@@ -3,7 +3,11 @@ import { createHash } from "node:crypto";
 import { canonicalP1Json } from "../v1/canonical";
 import * as limits from "./limits";
 import { SUPPORTED_COMPATIBILITY_POLICY } from "../package/compatibility";
-import { supportedValidationIdentitySchema } from "../server/validation/contracts";
+import {
+  currentValidationIdentitySchema,
+  supportedValidationIdentitySchema,
+} from "../server/validation/contracts";
+import { CURRENT_COMPATIBILITY_POLICY } from "../package/current-compatibility";
 const { ARCHIVE_POLICY_VERSION, LEGACY_ARCHIVE_POLICY_VERSION } = limits;
 /** Fixed trusted B policy. A's independent policy remains bound by identitySha256. */
 export const legacyArchivePolicyDescriptor = Object.freeze({
@@ -90,13 +94,30 @@ export function matchesSupportedArchiveIdentity(
   identity: unknown,
 ): boolean {
   return (
-    version === limits.SUPPORTED_ARCHIVE_POLICY_VERSION &&
-    sha256 === supportedArchivePolicySha256 &&
-    supportedValidationIdentitySchema.safeParse(identity).success
+    (version === limits.CURRENT_ARCHIVE_POLICY_VERSION &&
+      sha256 === currentArchivePolicySha256 &&
+      currentValidationIdentitySchema.safeParse(identity).success) ||
+    (version === limits.SUPPORTED_ARCHIVE_POLICY_VERSION &&
+      sha256 === supportedArchivePolicySha256 &&
+      supportedValidationIdentitySchema.safeParse(identity).success)
   );
 }
 
-export const archivePolicyDescriptor = supportedArchivePolicyDescriptor;
-export const archivePolicyText = supportedArchivePolicyText;
-export const archivePolicySha256 = supportedArchivePolicySha256;
+export const currentArchivePolicyDescriptor = Object.freeze({
+  ...supportedArchivePolicyDescriptor,
+  schemaVersion: limits.CURRENT_ARCHIVE_POLICY_VERSION,
+  accepted: Object.freeze({
+    containerSchema: "quizpack.v1" as const,
+    profiles: CURRENT_COMPATIBILITY_POLICY.profiles,
+  }),
+});
+export const currentArchivePolicyText = canonicalP1Json(
+  currentArchivePolicyDescriptor,
+);
+export const currentArchivePolicySha256 = createHash("sha256")
+  .update(currentArchivePolicyText, "utf8")
+  .digest("hex");
+export const archivePolicyDescriptor = currentArchivePolicyDescriptor;
+export const archivePolicyText = currentArchivePolicyText;
+export const archivePolicySha256 = currentArchivePolicySha256;
 export { LEGACY_ARCHIVE_POLICY_VERSION } from "./limits";

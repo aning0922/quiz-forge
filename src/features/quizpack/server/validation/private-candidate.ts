@@ -1,4 +1,5 @@
 import "server-only";
+import { readContentMetadata } from "../../content/current";
 import { createHash } from "node:crypto";
 import { types } from "node:util";
 import { canonicalP1Json } from "../../v1/canonical";
@@ -8,8 +9,8 @@ import type { QuizPackContent } from "../../v1/content";
 import type { SupportedParsedPack } from "../../package/api";
 import { parseSupportedPack } from "../../package/manifest";
 import { checkArchiveIntegrity } from "../../v1/validate-core";
-import { checkCompatibility } from "../../v1/compatibility";
-import { SUPPORTED_COMPATIBILITY_POLICY } from "../../package/compatibility";
+import { checkCurrentCompatibility as checkCompatibility } from "../../package/current-compatibility";
+import { CURRENT_COMPATIBILITY_POLICY as SUPPORTED_COMPATIBILITY_POLICY } from "../../package/current-compatibility";
 import {
   sealCandidateResultEvidence,
   type CandidateResultEvidence,
@@ -115,12 +116,19 @@ export function preparePrivateCandidate(
   if (!parsed.ok) throw new EvidenceError("INVALID_CANDIDATE");
   const pack = parsed.value;
   const { manifest, content } = pack;
+  const metadata = readContentMetadata(content);
+  if (
+    sealed.evidence.identity.value.schemaVersion !==
+      "quizpack-validation-identity.v3" &&
+    content.schemaVersion === "quizpack-content.v3"
+  )
+    throw new EvidenceError("INVALID_CANDIDATE");
   // Legacy evidence is readable only for the original v1/synthetic matrix.
   if (
     sealed.evidence.identity.value.schemaVersion ===
       "quizpack-validation-identity.v1" &&
     (pack.contentSchemaVersion !== "quizpack-content.v1" ||
-      content.kind !== "synthetic")
+      metadata.kind !== "synthetic")
   )
     throw new EvidenceError("INVALID_CANDIDATE");
   const profile = SUPPORTED_COMPATIBILITY_POLICY.profiles.find(
@@ -143,9 +151,9 @@ export function preparePrivateCandidate(
   const canonicalContentText = canonicalP1Json(content, "content");
   assertPersistenceUnicode(manifest);
   assertPersistenceUnicode(content);
-  if (sealed.evidence.media.length !== content.resources.length)
+  if (sealed.evidence.media.length !== metadata.resources.length)
     throw new EvidenceError("INVALID_CANDIDATE");
-  for (const [index, declaration] of content.resources.entries()) {
+  for (const [index, declaration] of metadata.resources.entries()) {
     const fact = sealed.evidence.media.find(
       (item) => item.resourceIndex === index,
     )?.result;
@@ -159,7 +167,7 @@ export function preparePrivateCandidate(
       throw new EvidenceError("INVALID_CANDIDATE");
   }
   const resources: Buffer[] = [];
-  const declarations = [...content.resources].sort((a, b) =>
+  const declarations = [...metadata.resources].sort((a, b) =>
     a.id < b.id
       ? -1
       : a.id > b.id
@@ -195,10 +203,7 @@ export function preparePrivateCandidate(
     };
   });
   const productId = sealed.evidence.input.targetProductId;
-  if (
-    manifest.productId !== productId ||
-    content.product.productId !== productId
-  )
+  if (manifest.productId !== productId || metadata.productId !== productId)
     throw new EvidenceError("INVALID_CANDIDATE");
   const assetSetText = canonicalP1Json({
     schemaVersion: "quizpack-candidate-asset-set.v1",

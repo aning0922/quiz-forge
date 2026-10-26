@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { engineDeclarationV2Schema } from "@/lib/assessment-contract/scoring-v2";
 import {
   engineDeclarationSchema,
   packIdSchema,
@@ -93,7 +94,7 @@ export const draftVersionsSchema = z.strictObject({
   reportVersion: packVersionSchema,
   resourceVersion: packVersionSchema,
   componentVersion: packVersionSchema,
-  engine: engineDeclarationSchema,
+  engine: z.union([engineDeclarationSchema, engineDeclarationV2Schema]),
 });
 const snapshotShape = {
   productId: packIdSchema,
@@ -107,7 +108,11 @@ const snapshotShape = {
   canonicalManifestSha256: sha256Schema,
   candidateSha256: sha256Schema,
   containerSchemaVersion: z.literal("quizpack.v1"),
-  contentSchemaVersion: z.enum(["quizpack-content.v1", "quizpack-content.v2"]),
+  contentSchemaVersion: z.enum([
+    "quizpack-content.v1",
+    "quizpack-content.v2",
+    "quizpack-content.v3",
+  ]),
   contentKind: z.enum(["synthetic", "authored"]),
   packId: packIdSchema,
   packVersion: packVersionSchema,

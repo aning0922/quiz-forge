@@ -6,6 +6,7 @@ import type {
   PackageValidationReport,
   SupportedValidationContext,
   SupportedValidationReportV2,
+  SupportedValidationReportV3,
 } from "../src/features/quizpack/package/api";
 import { buildQuizPack } from "../src/features/quizpack/v1/build";
 import {
@@ -165,14 +166,13 @@ export function buildSupportedQuizPackFile(
 ) {
   if (
     expectedContentVersion !== "quizpack-content.v1" &&
-    expectedContentVersion !== "quizpack-content.v2"
+    expectedContentVersion !== "quizpack-content.v2" &&
+    expectedContentVersion !== "quizpack-content.v3"
   )
     throw new PackToolError("CLI_INVALID_ARGUMENTS");
-  return buildQuizPackFileWith<SupportedValidationReportV2>(
-    inputFile,
-    outFile,
-    context,
-    (input, selected) =>
-      buildSupportedQuizPack(input, selected, expectedContentVersion),
+  return buildQuizPackFileWith<
+    SupportedValidationReportV2 | SupportedValidationReportV3
+  >(inputFile, outFile, context, (input, selected) =>
+    buildSupportedQuizPack(input, selected, expectedContentVersion),
   );
 }

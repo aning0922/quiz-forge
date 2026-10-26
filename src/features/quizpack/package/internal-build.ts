@@ -6,7 +6,7 @@ import type {
   Result,
   ValidationContext,
 } from "../v1/api";
-import type { SupportedContent } from "../content/supported";
+import { readContentMetadata, type CurrentContent } from "../content/current";
 import type {
   SupportedManifest,
   PackageValidationReport,
@@ -59,7 +59,7 @@ interface BuildProfile<C, R extends PackageValidationReport> {
   snapshot(
     context: C & { signal: AbortSignal; limits: Readonly<PackLimits> },
   ): ValidationContext & { limits: Readonly<PackLimits> };
-  parse(input: unknown): Result<SupportedContent>;
+  parse(input: unknown): Result<CurrentContent>;
   collect(issues: PackIssue[], limit: number): IssueBatch;
   validate(
     source: AsyncIterable<Uint8Array>,
@@ -110,6 +110,7 @@ export async function runBuild<
       );
       if (!content.ok)
         return { ok: false, ...profile.collect(content.issues, limits.issues) };
+      const metadata = readContentMetadata(content.value);
       if (
         !Array.isArray(input.assets) ||
         types.isProxy(input.assets) ||
@@ -162,11 +163,7 @@ export async function runBuild<
         payloadBytes += item.bytes.length;
         if (payloadBytes > payloadLimit)
           throw new PackToolError("BUILD_TOTAL_LIMIT");
-        if (
-          !content.value.resources.some(
-            (resource) => resource.path === item.path,
-          )
-        )
+        if (!metadata.resources.some((resource) => resource.path === item.path))
           throw new PackToolError("BUILD_UNDECLARED_ASSET");
         seen.add(item.path);
         assets.push({ path: item.path, bytes: Buffer.from(item.bytes) });
@@ -176,19 +173,14 @@ export async function runBuild<
         string,
         SupportedManifest["components"][number]
       >();
-      for (const component of [
-        ...Object.values(content.value.layouts).map(
-          (layout) => layout.component,
-        ),
-        ...content.value.reportTemplates.map((report) => report.component),
-      ])
+      for (const component of metadata.components)
         components.set(canonicalPackJson(component), component);
       const manifest = {
         schemaVersion: "quizpack.v1",
         ...identity,
-        productId: content.value.product.productId,
+        productId: metadata.productId,
         contentSchemaVersion: content.value.schemaVersion,
-        engine: content.value.engine,
+        engine: metadata.engine,
         components: [...components.entries()]
           .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
           .map(([, value]) => value),
@@ -203,7 +195,7 @@ export async function runBuild<
             path: asset.path,
             bytes: asset.bytes.length,
             sha256: hashBytes(asset.bytes),
-            mediaType: content.value.resources.find(
+            mediaType: metadata.resources.find(
               (resource) => resource.path === asset.path,
             )!.mediaType,
           })),

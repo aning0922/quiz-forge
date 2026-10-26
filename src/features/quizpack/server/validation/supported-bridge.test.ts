@@ -1,3 +1,5 @@
+import { synthetic24ContentV3 } from "../../content/v3-synthetic.test-support";
+import { readContentMetadata } from "../../content/current";
 import { randomUUID } from "node:crypto";
 import { performance } from "node:perf_hooks";
 import {
@@ -57,11 +59,11 @@ import {
   preparePrivateCandidate,
   issuePreparedCandidate,
 } from "./private-candidate";
-import { runtimeIdentity, supportedRuntimeIdentity } from "./identity";
+import { runtimeIdentity, currentRuntimeIdentity } from "./identity";
 import {
   sealP1Report,
-  sealSupportedReport,
-  SUPPORTED_REPORT_SCHEMA_HASH,
+  sealCurrentReport,
+  CURRENT_REPORT_SCHEMA_HASH,
 } from "./report";
 import { sealCandidateResultEvidence, sealEvidenceEnvelope } from "./contracts";
 import { computeCandidateSha256 } from "./candidate-hash";
@@ -110,7 +112,7 @@ function expectedFacts(accepted: Accepted): ExpectedCandidateFacts {
     packVersion: facts.packVersion,
     containerSchemaVersion: facts.manifest.schemaVersion,
     contentSchemaVersion: facts.contentSchemaVersion,
-    contentKind: facts.content.kind,
+    contentKind: readContentMetadata(facts.content).kind,
     manifestSha256: accepted.evidence.report.value.manifestSha256!,
     contentSha256: accepted.evidence.report.value.contentSha256!,
     canonicalManifestText: facts.canonicalManifestText,
@@ -242,18 +244,69 @@ afterEach(() => {
 });
 
 describe("supported trusted bridge (real ZIP, mocked platform authority)", () => {
+  it("admits and restores v3 raw bytes with current evidence, retaining the nested source and resource owners", async () => {
+    const fixture = await synthetic24ContentV3("synthetic-v3-bridge");
+    const built = await buildSupportedQuizPack(
+      {
+        packId: "synthetic-v3-bridge",
+        packVersion: "1.0.0",
+        content: fixture.content,
+        assets: fixture.assets,
+      },
+      { targetProductId: "synthetic-v3-bridge" },
+      "quizpack-content.v3",
+    );
+    if (!built.ok) throw Error(JSON.stringify(built.issues));
+    const result = await validateArchiveCandidate(
+      built.value.archive,
+      "synthetic-v3-bridge",
+      context(),
+    );
+    expect(result.outcome).toBe("accepted");
+    if (result.outcome !== "accepted") throw Error("EXPECTED_ACCEPTED");
+    expect(result.candidate.facts.content).toEqual(fixture.content);
+    expect(result.candidate.facts.contentSchemaVersion).toBe(
+      "quizpack-content.v3",
+    );
+    expect(result.evidence.identity).toEqual({
+      status: "bound",
+      value: currentRuntimeIdentity(binding),
+    });
+    expect(result.evidence.report).toMatchObject({
+      status: "sealed",
+      value: { schemaVersion: "quizpack-validation.v3", candidateValid: true },
+    });
+    expect(result.candidate.facts.resources).toHaveLength(
+      fixture.assets.length,
+    );
+    const restore = await restoredInput(result);
+    const restored = await restoreValidatedCandidate(
+      built.value.archive,
+      restore.input,
+      restore.operation,
+    );
+    expect(restored.outcome).toBe("restored");
+    if (restored.outcome !== "restored") throw Error("EXPECTED_RESTORED");
+    expect(restored.candidate.facts.canonicalContentText).toBe(
+      result.candidate.facts.canonicalContentText,
+    );
+    expect(restored.candidate.facts.candidateSha256).toBe(
+      result.candidate.facts.candidateSha256,
+    );
+  });
+
   it("validates and restores eight engine/schema/kind combinations from identical raw bytes", async () => {
     for (const entry of matrix) {
       const accepted = await accept(entry),
         facts = accepted.candidate.facts;
       expect(accepted.evidence.identity).toEqual({
         status: "bound",
-        value: supportedRuntimeIdentity(binding),
+        value: currentRuntimeIdentity(binding),
       });
       expect(accepted.evidence.report).toMatchObject({
         status: "sealed",
         value: {
-          schemaVersion: "quizpack-validation.v2",
+          schemaVersion: "quizpack-validation.v3",
           candidateValid: true,
           importable: false,
           publishable: false,
@@ -267,13 +320,13 @@ describe("supported trusted bridge (real ZIP, mocked platform authority)", () =>
       )
         throw new Error("fixture");
       expect(accepted.evidence.identity.value.reportSchemaHash).toBe(
-        SUPPORTED_REPORT_SCHEMA_HASH,
+        CURRENT_REPORT_SCHEMA_HASH,
       );
       expect(accepted.evidence.report.value.unverified).toHaveLength(5);
       expect(facts.contentSchemaVersion).toBe(entry.version);
       expect(facts.manifest.contentSchemaVersion).toBe(entry.version);
       expect(facts.content.schemaVersion).toBe(entry.version);
-      expect(facts.content.kind).toBe(entry.kind);
+      expect(readContentMetadata(facts.content).kind).toBe(entry.kind);
       expect(facts.archiveSha256).toBe(hashBytes(entry.archive));
       expect(facts.candidateSha256).toBe(
         computeCandidateSha256({
@@ -459,7 +512,7 @@ describe("supported trusted bridge (real ZIP, mocked platform authority)", () =>
     ).toThrow();
     const forged = structuredClone(accepted.evidence);
     if (forged.report.status !== "sealed") throw new Error("fixture");
-    forged.report = sealSupportedReport({
+    forged.report = sealCurrentReport({
       ...forged.report.value,
       contentSha256: hashBytes(changed.get("content.json")!),
     });

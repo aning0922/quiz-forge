@@ -48,7 +48,8 @@ export type ExpectedCandidateFacts = Readonly<{
   packId: string;
   packVersion: string;
   containerSchemaVersion: "quizpack.v1";
-  contentSchemaVersion: "quizpack-content.v1" | "quizpack-content.v2";
+  contentSchemaVersion:
+    "quizpack-content.v1" | "quizpack-content.v2" | "quizpack-content.v3";
   contentKind: "synthetic" | "authored";
   /** SHA256 of exact original ZIP JSON entry bytes. */
   manifestSha256: string;

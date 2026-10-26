@@ -7,8 +7,11 @@ import { importIdSchema } from "./import/contracts";
 import { canonicalP1Json } from "./v1/canonical";
 import { packIdSchema, sha256Schema } from "./v1/manifest";
 import { supportedManifestSchema } from "./package/manifest";
-import { parseSupportedContent } from "./content/supported";
-import { SUPPORTED_COMPATIBILITY_POLICY } from "./package/compatibility";
+import {
+  parseCurrentContent as parseSupportedContent,
+  readContentMetadata,
+} from "./content/current";
+import { CURRENT_COMPATIBILITY_POLICY as SUPPORTED_COMPATIBILITY_POLICY } from "./package/current-compatibility";
 import { validationIdentitySchema } from "./server/validation/contracts";
 import { assertPersistenceUnicode } from "./server/validation/unicode";
 import { computeCandidateSha256 } from "./server/validation/candidate-hash";
@@ -104,7 +107,8 @@ export type ReadyDraftSource = Readonly<{
   canonicalManifestSha256: string;
   candidateSha256: string;
   containerSchemaVersion: "quizpack.v1";
-  contentSchemaVersion: "quizpack-content.v1" | "quizpack-content.v2";
+  contentSchemaVersion:
+    "quizpack-content.v1" | "quizpack-content.v2" | "quizpack-content.v3";
   contentKind: "synthetic" | "authored";
   packId: string;
   packVersion: string;
@@ -115,7 +119,10 @@ export type ReadyDraftSource = Readonly<{
     reportVersion: string;
     resourceVersion: string;
     componentVersion: string;
-    engine: Readonly<{ id: "dimensions" | "archetype"; version: "1.0.0" }>;
+    engine: Readonly<{
+      id: "dimensions" | "archetype" | "archetype-l1";
+      version: "1.0.0";
+    }>;
   }>;
 }>;
 const invalid = (): never => {
@@ -235,6 +242,7 @@ function inspectSource(
       return parsed.ok ? parsed.value : invalid();
     }),
   );
+  const metadata = readContentMetadata(content);
   const assets = canonical(
     row.asset_set_text,
     row.asset_set_sha256,
@@ -243,15 +251,15 @@ function inspectSource(
   );
   if (
     manifest.productId !== scope.productId ||
-    content.product.productId !== scope.productId ||
+    metadata.productId !== scope.productId ||
     assets.productId !== scope.productId ||
-    content.kind !== row.content_kind ||
+    metadata.kind !== row.content_kind ||
     manifest.packId !== row.pack_id ||
     manifest.packVersion !== row.pack_version ||
     content.schemaVersion !== row.content_schema_version ||
     manifest.contentSchemaVersion !== content.schemaVersion ||
-    canonicalP1Json(manifest.engine) !== canonicalP1Json(content.engine) ||
-    content.resources.length !== row.resource_count ||
+    canonicalP1Json(manifest.engine) !== canonicalP1Json(metadata.engine) ||
+    metadata.resources.length !== row.resource_count ||
     assets.resources.length !== row.resource_count
   )
     return invalid();
@@ -260,12 +268,12 @@ function inspectSource(
   );
   if (
     !profile ||
-    content.componentVersion !== profile.componentVersion ||
+    metadata.componentVersion !== profile.componentVersion ||
     manifest.components.length !== 6 ||
-    Object.entries(profile.states).some(([state, id]) => {
-      const component =
-        content.layouts[state as keyof typeof content.layouts].component;
+    Object.values(profile.states).some((id) => {
+      const component = metadata.components.find((c) => c.id === id);
       return (
+        !component ||
         component.id !== id ||
         component.version !== profile.componentVersion ||
         component.propsSchemaVersion !== profile.propsSchemaVersion ||
@@ -279,7 +287,7 @@ function inspectSource(
     })
   )
     return invalid();
-  const resources = [...content.resources].sort((a, b) =>
+  const resources = [...metadata.resources].sort((a, b) =>
     a.id < b.id
       ? -1
       : a.id > b.id
@@ -408,17 +416,17 @@ async function readSource(
     candidateSha256: row.candidate_sha256!,
     containerSchemaVersion: "quizpack.v1",
     contentSchemaVersion: content.schemaVersion,
-    contentKind: content.kind,
+    contentKind: readContentMetadata(content).kind,
     packId: row.pack_id!,
     packVersion: row.pack_version!,
     resourceCount: resources.length,
     versions: Object.freeze({
-      contentVersion: content.contentVersion,
-      visualVersion: content.visualVersion,
-      reportVersion: content.reportVersion,
-      resourceVersion: content.resourceVersion,
-      componentVersion: content.componentVersion,
-      engine: Object.freeze({ ...content.engine }),
+      contentVersion: readContentMetadata(content).contentVersion,
+      visualVersion: readContentMetadata(content).visualVersion,
+      reportVersion: readContentMetadata(content).reportVersion,
+      resourceVersion: readContentMetadata(content).resourceVersion,
+      componentVersion: readContentMetadata(content).componentVersion,
+      engine: Object.freeze({ ...readContentMetadata(content).engine }),
     }),
   });
 }

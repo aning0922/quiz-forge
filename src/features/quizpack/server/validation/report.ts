@@ -1,4 +1,9 @@
 import "server-only";
+import {
+  CURRENT_REPORT_VERSION,
+  CURRENT_VALIDATOR_VERSION,
+  CURRENT_POLICY_ID,
+} from "../../package/current-compatibility";
 import { createHash } from "node:crypto";
 import { z } from "zod";
 import { canonicalP1Json } from "../../v1/canonical";
@@ -307,10 +312,53 @@ export const strictSupportedReportSchema = z
       });
   });
 export type StrictSupportedReport = z.infer<typeof strictSupportedReportSchema>;
+export const strictCurrentReportSchema = z
+  .strictObject({
+    ...strictSupportedReportSchema.shape,
+    schemaVersion: z.literal(CURRENT_REPORT_VERSION),
+    validatorVersion: z.literal(CURRENT_VALIDATOR_VERSION),
+    policyId: z.literal(CURRENT_POLICY_ID),
+    issues: z
+      .array(
+        strictSupportedReportSchema.shape.issues.element.extend({
+          code: z.enum([
+            ...SUPPORTED_ISSUE_CODES,
+            "INVALID_CONTENT",
+            "INVALID_REPORT_RULES",
+            "INPUT_LIMIT_EXCEEDED",
+            "INVALID_DEFINITION",
+            "REFERENCE_MISMATCH",
+            "INVALID_NORMALIZATION_BOUNDS",
+          ]),
+          message: z.enum([
+            ...SUPPORTED_ISSUE_MESSAGES,
+            "Value does not satisfy the declared v3 content contract.",
+          ]),
+        }),
+      )
+      .max(100),
+  })
+  .superRefine((r, c) => {
+    if (
+      r.candidateValid &&
+      (Object.values(r.checks).some((v) => v !== "passed") ||
+        r.issues.length ||
+        r.issuesTruncated ||
+        !r.archiveSha256 ||
+        !r.manifestSha256 ||
+        !r.contentSha256)
+    )
+      c.addIssue({
+        code: "custom",
+        message: "Inconsistent supported candidate evidence.",
+      });
+  });
 export const supportedReportValueSchema = z.union([
   strictP1ReportSchema,
   strictSupportedReportSchema,
+  strictCurrentReportSchema,
 ]);
+export type StrictCurrentReport = z.infer<typeof strictCurrentReportSchema>;
 
 export const sealedReportSchema = z.strictObject({
   status: z.literal("sealed"),
@@ -347,7 +395,9 @@ export function freezeJson<T>(value: T): T {
 }
 
 /** Copies, checks, hashes and freezes the complete final report once. */
-function sealStrictReport<T extends StrictP1Report | StrictSupportedReport>(
+function sealStrictReport<
+  T extends StrictP1Report | StrictSupportedReport | StrictCurrentReport,
+>(
   input: unknown,
   schema: z.ZodType<T>,
 ): { status: "sealed"; value: T; canonicalBytes: number; sha256: string } {
@@ -378,6 +428,9 @@ export function sealP1Report(input: unknown) {
 }
 export function sealSupportedReport(input: unknown) {
   return sealStrictReport(input, strictSupportedReportSchema);
+}
+export function sealCurrentReport(input: unknown) {
+  return sealStrictReport(input, strictCurrentReportSchema);
 }
 
 /** No stored canonicalText: serialization is recreated from the frozen value. */
@@ -413,6 +466,20 @@ export const SUPPORTED_REPORT_SCHEMA_HASH = createHash("sha256")
     canonicalP1Json({
       schema: JSON.parse(
         JSON.stringify(z.toJSONSchema(strictSupportedReportSchema)),
+      ),
+      refinements: [
+        "candidateValid-requires-all-checks-passed-no-issues-and-three-byte-hashes",
+        "issuesTruncated-preserves-upstream-content-or-package-or-collector-truncation",
+      ],
+    }),
+    "utf8",
+  )
+  .digest("hex");
+export const CURRENT_REPORT_SCHEMA_HASH = createHash("sha256")
+  .update(
+    canonicalP1Json({
+      schema: JSON.parse(
+        JSON.stringify(z.toJSONSchema(strictCurrentReportSchema)),
       ),
       refinements: [
         "candidateValid-requires-all-checks-passed-no-issues-and-three-byte-hashes",

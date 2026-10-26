@@ -1,4 +1,5 @@
 import "server-only";
+import { readContentMetadata } from "../../content/current";
 import { createHash } from "node:crypto";
 import { types } from "node:util";
 import { z } from "zod";
@@ -60,7 +61,11 @@ export const expectedCandidateFactsSchema = z.strictObject({
   packId: packIdSchema,
   packVersion: packVersionSchema,
   containerSchemaVersion: z.literal("quizpack.v1"),
-  contentSchemaVersion: z.enum(["quizpack-content.v1", "quizpack-content.v2"]),
+  contentSchemaVersion: z.enum([
+    "quizpack-content.v1",
+    "quizpack-content.v2",
+    "quizpack-content.v3",
+  ]),
   contentKind: z.enum(["synthetic", "authored"]),
   manifestSha256: sha256Schema,
   contentSha256: sha256Schema,
@@ -304,7 +309,7 @@ export async function restoreValidatedCandidate(
         facts.packVersion !== expected.packVersion ||
         facts.manifest.schemaVersion !== expected.containerSchemaVersion ||
         facts.content.schemaVersion !== expected.contentSchemaVersion ||
-        facts.content.kind !== expected.contentKind ||
+        readContentMetadata(facts.content).kind !== expected.contentKind ||
         report.manifestSha256 !== expected.manifestSha256 ||
         report.contentSha256 !== expected.contentSha256 ||
         facts.canonicalManifestText !== expected.canonicalManifestText ||

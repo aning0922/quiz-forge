@@ -1,3 +1,4 @@
+import { readContentMetadata } from "../../content/current";
 import { randomUUID } from "node:crypto";
 import { performance } from "node:perf_hooks";
 import {
@@ -173,13 +174,15 @@ describe("trusted candidate validation (mock isolation, real ZIP/supported core)
           Array(6).fill("passed"),
         );
       expect(mocks.run).toHaveBeenCalledTimes(
-        result.candidate.facts.content.resources.length,
+        readContentMetadata(result.candidate.facts.content).resources.length,
       );
       expect(mocks.run.mock.calls.every((call) => call[2] === operation)).toBe(
         true,
       );
       expect(result.evidence.media.map((fact) => fact.resourceIndex)).toEqual(
-        result.candidate.facts.content.resources.map((_, index) => index),
+        readContentMetadata(result.candidate.facts.content).resources.map(
+          (_, index) => index,
+        ),
       );
       const copy = copyCandidateResourceBytes(result.candidate, 0);
       copy.fill(0);
@@ -194,7 +197,7 @@ describe("trusted candidate validation (mock isolation, real ZIP/supported core)
     },
   );
   it.each([
-    ["schemaVersion", "quizpack-content.v3", "UNSUPPORTED_CONTENT_VERSION"],
+    ["schemaVersion", "quizpack-content.v4", "UNSUPPORTED_CONTENT_VERSION"],
   ])(
     "rejects %s precheck without P1 report or decoding",
     async (field, value, code) => {

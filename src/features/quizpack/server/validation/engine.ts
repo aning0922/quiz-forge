@@ -2,8 +2,9 @@ import {
   createValidationOperationScope,
   ValidationInterrupted as CoreInterrupted,
 } from "./operation-scope";
-import { supportedRuntimeIdentity, readTrustedBinding } from "./identity";
+import { currentRuntimeIdentity, readTrustedBinding } from "./identity";
 import "server-only";
+import { readContentMetadata } from "../../content/current";
 import { createHash } from "node:crypto";
 import { types } from "node:util";
 import {
@@ -37,7 +38,7 @@ import {
   issuePrivateCandidate,
   type CandidateResult,
 } from "./private-candidate";
-import { EVIDENCE_LIMITS, sealSupportedReport } from "./report";
+import { EVIDENCE_LIMITS, sealCurrentReport } from "./report";
 import { assertPersistenceUnicode, EvidenceError } from "./unicode";
 
 const hash = (input: Uint8Array | string) =>
@@ -164,7 +165,7 @@ export async function validateArchiveCandidate(
   };
   const sealReport = (value: PackageValidationReport): void => {
     try {
-      report = sealSupportedReport(value);
+      report = sealCurrentReport(value);
     } catch (error) {
       report = {
         status: "invalid",
@@ -201,7 +202,7 @@ export async function validateArchiveCandidate(
     checkpoint();
     report = { status: "not-run", reason: "IDENTITY_UNAVAILABLE" };
     const runtime = await readBinding();
-    identity = { status: "bound", value: supportedRuntimeIdentity(runtime) };
+    identity = { status: "bound", value: currentRuntimeIdentity(runtime) };
     const operation = readMediaOperationState(context);
     report = { status: "not-run", reason: "OPERATION_INTERRUPTED_BEFORE_P1" };
     const validated = await awaitOperationTask(
@@ -397,7 +398,8 @@ export async function validateArchiveCandidate(
       assertPersistenceUnicode(frozenParsed.pack.content);
       canonicalP1Json(frozenParsed.pack.manifest, "manifest");
       canonicalP1Json(frozenParsed.pack.content, "content");
-      for (const declaration of frozenParsed.pack.content.resources) {
+      for (const declaration of readContentMetadata(frozenParsed.pack.content)
+        .resources) {
         if (
           Buffer.byteLength(canonicalP1Json(declaration), "utf8") >
           EVIDENCE_LIMITS.resourceDeclarationBytes

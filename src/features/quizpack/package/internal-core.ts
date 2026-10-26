@@ -1,21 +1,21 @@
 import type { PackIssue, ValidationContext } from "../v1/api";
-import type { SupportedContent } from "../content/supported";
+import {
+  readContentMetadata,
+  loweredCurrentContentIssues,
+  type CurrentContent,
+} from "../content/current";
 import type {
   SupportedManifest,
   PackageValidationReport,
   IssueBatch,
 } from "./api";
 import type { P1CoreExecution } from "../v1/validate-core";
-import {
-  hashBytes,
-  loweredContentIssues,
-  checkArchiveIntegrity,
-} from "../v1/core-support";
+import { hashBytes, checkArchiveIntegrity } from "../v1/core-support";
 import { PACK_LIMITS, type PackLimits } from "../v1/limits";
 import { packIdSchema } from "../v1/manifest";
 import { canonicalPackJson, parsePackJson } from "../v1/io";
 import { PackToolError, packIssue, readBoundedBytes } from "../v1/zip";
-type Parsed = { manifest: SupportedManifest; content: SupportedContent };
+type Parsed = { manifest: SupportedManifest; content: CurrentContent };
 type Snapshot = ValidationContext & { limits: Readonly<PackLimits> };
 type ParsedResult<P> =
   | { ok: true; value: P }
@@ -166,7 +166,7 @@ export async function runValidationCore<
         return;
       }
       const pack = parsed.value;
-      const contentIssues = loweredContentIssues(pack.content, limits);
+      const contentIssues = loweredCurrentContentIssues(pack.content, limits);
       if (contentIssues.length) {
         report.checks.structure = "failed";
         add(contentIssues);
@@ -190,7 +190,9 @@ export async function runValidationCore<
         snapshot.targetProductId,
       );
       const mediaIssues: PackIssue[] = [];
-      for (const [i, resource] of pack.content.resources.entries()) {
+      for (const [i, resource] of readContentMetadata(
+        pack.content,
+      ).resources.entries()) {
         execution.checkpoint(signal);
         const bytes = files.get(resource.path);
         if (!bytes) {

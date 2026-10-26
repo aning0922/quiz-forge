@@ -14,6 +14,7 @@ import {
   reportEvidenceSchema,
   REPORT_SCHEMA_HASH,
   SUPPORTED_REPORT_SCHEMA_HASH,
+  CURRENT_REPORT_SCHEMA_HASH,
   serializeSealedReport,
 } from "./report";
 import {
@@ -29,6 +30,13 @@ import {
   SUPPORTED_REPORT_VERSION,
   SUPPORTED_VALIDATOR_VERSION,
 } from "../../package/compatibility";
+import {
+  CURRENT_COMPATIBILITY_HASH,
+  CURRENT_IDENTITY_VERSION,
+  CURRENT_POLICY_ID,
+  CURRENT_REPORT_VERSION,
+  CURRENT_VALIDATOR_VERSION,
+} from "../../package/current-compatibility";
 
 export const POLICY_REJECTION_CODES = [
   "UNSUPPORTED_MANIFEST_VERSION",
@@ -121,9 +129,37 @@ export const supportedValidationIdentitySchema = z
         message: "Invalid validation identity binding.",
       });
   });
+export const currentValidationIdentitySchema = z
+  .strictObject({
+    ...supportedValidationIdentitySchema.shape,
+    schemaVersion: z.literal(CURRENT_IDENTITY_VERSION),
+    validatorVersion: z.literal(CURRENT_VALIDATOR_VERSION),
+    policyId: z.literal(CURRENT_POLICY_ID),
+    compatibilityPolicyHash: z.literal(CURRENT_COMPATIBILITY_HASH),
+    reportSchemaVersion: z.literal(CURRENT_REPORT_VERSION),
+    reportSchemaHash: z.literal(CURRENT_REPORT_SCHEMA_HASH),
+  })
+  .superRefine((v, c) => {
+    const { identitySha256, ...payload } = v;
+    if (
+      identitySha256 !==
+        createHash("sha256")
+          .update(canonicalP1Json(payload), "utf8")
+          .digest("hex") ||
+      v.validatorBundleSha256 !== v.runtime.runtimeBundleHash
+    )
+      c.addIssue({
+        code: "custom",
+        message: "Invalid validation identity binding.",
+      });
+  });
+export type CurrentValidationIdentity = z.infer<
+  typeof currentValidationIdentitySchema
+>;
 export const validationIdentitySchema = z.union([
   legacyValidationIdentitySchema,
   supportedValidationIdentitySchema,
+  currentValidationIdentitySchema,
 ]);
 export type LegacyValidationIdentity = z.infer<
   typeof legacyValidationIdentitySchema
@@ -258,7 +294,9 @@ export const candidateResultEvidenceSchema = z
           evidence.identity.value.reportSchemaHash !==
             (evidence.report.value.schemaVersion === "quizpack-validation.v1"
               ? REPORT_SCHEMA_HASH
-              : SUPPORTED_REPORT_SCHEMA_HASH) ||
+              : evidence.report.value.schemaVersion === "quizpack-validation.v2"
+                ? SUPPORTED_REPORT_SCHEMA_HASH
+                : CURRENT_REPORT_SCHEMA_HASH) ||
           evidence.report.value.compatibilityPolicyHash !==
             evidence.identity.value.compatibilityPolicyHash ||
           evidence.report.value.effectiveLimitsHash !==

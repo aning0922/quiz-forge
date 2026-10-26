@@ -16,10 +16,14 @@ export function contentVersionArgument(
   if (
     args.length !== 2 ||
     args[0] !== "--content-version" ||
-    !["v1", "v2"].includes(args[1]!)
+    !["v1", "v2", "v3"].includes(args[1]!)
   )
     throw new PackToolError("CLI_INVALID_ARGUMENTS");
-  return args[1] === "v1" ? "quizpack-content.v1" : "quizpack-content.v2";
+  return args[1] === "v1"
+    ? "quizpack-content.v1"
+    : args[1] === "v2"
+      ? "quizpack-content.v2"
+      : "quizpack-content.v3";
 }
 export function outputJson(value: unknown): void {
   process.stdout.write(`${JSON.stringify(value)}\n`);

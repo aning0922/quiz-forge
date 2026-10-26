@@ -1,4 +1,5 @@
 import "server-only";
+import { readContentMetadata } from "../content/current";
 import { randomUUID } from "node:crypto";
 import { withStudioWrite, type StudioWriteCredentials } from "@/lib/auth/write";
 import type { P2aDatabase } from "@/lib/db/client";
@@ -7,7 +8,7 @@ import type { StudioActor } from "@/lib/auth/capabilities";
 import { productRow, type Tx } from "@/features/product/workspace/repository";
 import { importRow } from "../import/repository";
 import { canonicalP1Json } from "../v1/canonical";
-import { supportedValidationIdentitySchema } from "../server/validation/contracts";
+import { currentValidationIdentitySchema } from "../server/validation/contracts";
 import {
   MAX_ATTEMPTS,
   MAX_PENDING_VALIDATIONS,
@@ -93,7 +94,7 @@ function verifyBinding(
   archiveBytes: number,
 ) {
   try {
-    const identity = supportedValidationIdentitySchema.parse(
+    const identity = currentValidationIdentitySchema.parse(
       JSON.parse(binding.identityText),
     );
     if (
@@ -333,7 +334,7 @@ export async function appendValidationEvidence(
       }
       const [row] = await tx<
         ValidationRow[]
-      >`UPDATE qf.quizpack_validation SET status=${status},state_revision=state_revision+1,updated_at=clock_timestamp(),attempts_text=${controls},evidence_text=${input.projection.evidenceText},evidence_sha256=${input.projection.evidenceSha256},report_texts=${tx.array([...input.projection.reportTexts])},evidence_metadata_text=${input.projection.metadataText},last_error_code=${error},pack_id=${c?.facts.packId ?? null},pack_version=${c?.facts.packVersion ?? null},container_schema_version=${c?.facts.manifest.schemaVersion ?? null},content_schema_version=${c?.facts.content.schemaVersion ?? null},content_kind=${c?.facts.content.kind ?? null},manifest_sha256=${c?.manifestSha256 ?? null},content_sha256=${c?.contentSha256 ?? null},canonical_manifest_text=${c?.facts.canonicalManifestText ?? null},canonical_manifest_sha256=${c?.facts.canonicalManifestSha256 ?? null},canonical_content_text=${c?.facts.canonicalContentText ?? null},canonical_content_sha256=${c?.facts.canonicalContentSha256 ?? null},asset_set_text=${c?.facts.assetSetText ?? null},asset_set_sha256=${c?.facts.assetSetSha256 ?? null},candidate_sha256=${c?.facts.candidateSha256 ?? null},resource_count=${c?.facts.resources.length ?? null},identity_kind=${identityKind},canonical_validation_id=${canonicalId},validated_at=${c ? tx`clock_timestamp()` : tx`NULL`} WHERE id=${current.id} RETURNING *`;
+      >`UPDATE qf.quizpack_validation SET status=${status},state_revision=state_revision+1,updated_at=clock_timestamp(),attempts_text=${controls},evidence_text=${input.projection.evidenceText},evidence_sha256=${input.projection.evidenceSha256},report_texts=${tx.array([...input.projection.reportTexts])},evidence_metadata_text=${input.projection.metadataText},last_error_code=${error},pack_id=${c?.facts.packId ?? null},pack_version=${c?.facts.packVersion ?? null},container_schema_version=${c?.facts.manifest.schemaVersion ?? null},content_schema_version=${c?.facts.content.schemaVersion ?? null},content_kind=${c ? readContentMetadata(c.facts.content).kind : null},manifest_sha256=${c?.manifestSha256 ?? null},content_sha256=${c?.contentSha256 ?? null},canonical_manifest_text=${c?.facts.canonicalManifestText ?? null},canonical_manifest_sha256=${c?.facts.canonicalManifestSha256 ?? null},canonical_content_text=${c?.facts.canonicalContentText ?? null},canonical_content_sha256=${c?.facts.canonicalContentSha256 ?? null},asset_set_text=${c?.facts.assetSetText ?? null},asset_set_sha256=${c?.facts.assetSetSha256 ?? null},candidate_sha256=${c?.facts.candidateSha256 ?? null},resource_count=${c?.facts.resources.length ?? null},identity_kind=${identityKind},canonical_validation_id=${canonicalId},validated_at=${c ? tx`clock_timestamp()` : tx`NULL`} WHERE id=${current.id} RETURNING *`;
       if (!row) throw new StudioError("STUDIO_UNAVAILABLE");
       await audit(
         tx,
