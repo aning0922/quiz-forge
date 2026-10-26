@@ -13,25 +13,6 @@
 .identity > div > div > div:first-child {
   font-size: 20px;
 }
-.permission {
-  margin: 0;
-  padding: 16px 18px 16px 36px;
-  border-radius: 11px;
-  background: #f7f8fd;
-  color: #62718c;
-}
-.permission li + li {
-  margin-top: 8px;
-}
-.actionHeading {
-  margin: 0 0 12px;
-  font-size: 18px;
-  font-weight: 700;
-}
-.actionDescription {
-  color: #68758e;
-  margin: 8px 0 16px;
-}
 .roleHelp {
   margin: 4px 0 0;
   color: #737e97;
@@ -46,13 +27,6 @@
   flex: 1 0 100%;
   margin: 0;
   color: #98692a;
-}
-.filters {
-  width: 100%;
-}
-.summaryTime {
-  margin: -8px 0 0;
-  color: #737e97;
 }
 .operation {
   overflow-wrap: anywhere;
@@ -72,7 +46,24 @@
   flex: 0 0 20px;
 }
 @media (max-width: 630px) {
-  .actionDescription {
-    overflow-wrap: anywhere;
-  }
+}
+
+.actionLabel {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.actionLabel > svg {
+  margin-top: 4px;
+  flex: none;
+  color: #8b7ce5;
+}
+.target {
+  padding: 15px;
+  border: 1px solid #edeaf3;
+  border-radius: 12px;
+}
+.target p {
+  margin: 3px 0 10px;
+  color: #79839a;
 }

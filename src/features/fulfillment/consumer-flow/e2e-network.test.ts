@@ -125,8 +125,7 @@ it("rebuilds native faults without their cause, request credentials or original 
 
 function interception() {
   const origin = "http://127.0.0.1:3100";
-  let pageUrl =
-      origin + "/studio/products/consumer-flow-fixture/consumer-access",
+  let pageUrl = origin + "/studio/products/consumer-flow-fixture?task=testing",
     frameUrl = pageUrl,
     principal = origin,
     main = true,

@@ -291,7 +291,7 @@ test(CASES[1], async ({ page }, info) => {
 });
 test(CASES[2], async ({ page }, info) => {
   await signIn(page, "readOnly");
-  await page.goto(internalVersionsPageUrl(fixture.productId));
+  await page.goto(internalReviewPageUrl(scope()));
   for (const operation of ["review", "seal"] as const) {
     const request = original(operation);
     await installInternalPending(page, request);
@@ -447,7 +447,7 @@ test(CASES[3], async ({ page }, info) => {
   }
   await page.goto(internalVersionsPageUrl(fixture.productId));
   await expect(
-    page.getByText("历史修订的固定内测内容版本", { exact: true }),
+    page.getByRole("dialog", { name: "固定内测内容版本", exact: true }),
   ).toBeVisible();
   await captureInternalWidths(page, info, "historical-list");
   const detail = await internalGet(
@@ -464,7 +464,7 @@ test(CASES[3], async ({ page }, info) => {
 });
 test(CASES[4], async ({ page }) => {
   await signIn(page, "readOnly");
-  await page.goto(internalVersionsPageUrl(fixture.productId));
+  await page.goto(internalReviewPageUrl(scope()));
   const request = original("review");
   if (request.operation !== "review")
     throw Error("INTERNAL_VERSION_E2E_REVIEW_REQUIRED");

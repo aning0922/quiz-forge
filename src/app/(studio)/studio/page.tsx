@@ -1,4 +1,3 @@
-import { roleHasCapability } from "@/lib/auth/role-policy";
 import { redirect } from "next/navigation";
 import { studioPageState } from "@/features/studio/page-session";
 import { StudioDashboard } from "@/features/studio/dashboard";
@@ -8,13 +7,5 @@ export default async function StudioPage() {
   const state = await studioPageState();
   if (state.status === "unavailable") return <StudioUnavailable />;
   if (state.status === "unauthenticated") redirect("/studio/login");
-  return (
-    <StudioDashboard
-      canCreate={roleHasCapability(
-        state.session.operator.role,
-        "workspace:write",
-      )}
-      session={state.session}
-    />
-  );
+  return <StudioDashboard session={state.session} />;
 }

@@ -1,10 +1,9 @@
 "use client";
+import { studioSameTabLink } from "../navigation-boundary";
 import { useStudioAccountOwner } from "../accounts/session-owner";
 import { roleHasCapability } from "@/lib/auth/role-policy";
-import { studioSameTabLink } from "../navigation-boundary";
 import { TechnicalDetails } from "../presentation/technical-details";
 import { StudioPageHeader } from "../presentation/page-header";
-import { StudioWorkflowNav } from "../presentation/workflow-nav";
 import Link from "next/link";
 import {
   useEffect,
@@ -528,13 +527,7 @@ export function StudioConsumerAccessPageV1({
           title="内测记录"
           description="查看这款测评的答题版本与访问码，按需继续内测操作。"
         />
-        <div
-          onClickCapture={(event) => {
-            if (studioSameTabLink(event)) controller.revoke();
-          }}
-        >
-          <StudioWorkflowNav productId={scope.productId} current="keys" />
-        </div>
+
         <button
           onClick={() => {
             setVoidId(null);
@@ -695,7 +688,7 @@ export function StudioConsumerAccessPageV1({
                 )}
                 <Link
                   className={styles.actionLink}
-                  href={`/studio/products/${scope.productId}/internal-versions`}
+                  href={`/studio/products/${scope.productId}?task=review&panel=versions`}
                   onClick={(event) => {
                     if (studioSameTabLink(event)) controller.revoke();
                   }}
@@ -794,7 +787,7 @@ export function StudioConsumerAccessPageV1({
                       </p>
                       <Link
                         className={styles.actionLink}
-                        href={`/studio/products/${scope.productId}/internal-versions`}
+                        href={`/studio/products/${scope.productId}?task=review&panel=versions`}
                         onClick={(event) => {
                           if (studioSameTabLink(event)) controller.revoke();
                         }}

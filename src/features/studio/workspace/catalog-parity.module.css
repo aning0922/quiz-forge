@@ -1,124 +1,308 @@
 .page {
-  gap: 20px;
+  gap: 18px;
 }
 .page > header {
-  margin-bottom: 0;
+  margin-bottom: 6px;
 }
 .page > header h1 {
   font-size: 28px;
+  letter-spacing: -0.6px;
 }
 .page > header p {
   margin: 0;
 }
-.panel .filters {
-  padding: 16px 19px 0;
-  border-bottom: 1px solid var(--studio-border, #e1e6f0);
+.filterPanel,
+.panel {
+  min-width: 0;
+  border: 1px solid var(--studio-border);
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 10px 34px #2a28530b;
 }
-.panel .commonFilters {
-  grid-template-columns:
-    minmax(180px, 1.3fr) minmax(120px, 0.8fr) minmax(135px, 0.8fr)
-    minmax(145px, 0.9fr) auto;
-  align-items: start;
+.filterPanel {
+  padding: 17px 20px;
+}
+.filters {
+  display: grid;
+  gap: 0;
+}
+.commonFilters {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) 155px 160px auto;
+  align-items: end;
+  gap: 12px;
+}
+.commonFilters > div {
+  min-width: 0;
+}
+.filters label {
+  color: #677189;
+  font-weight: 600;
+}
+.filters input,
+.filters select {
+  min-height: 44px;
+  border-radius: 9px;
+}
+.filterActions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.filterActions > button {
+  white-space: nowrap;
+  padding-inline: 12px;
 }
 .searchField {
   position: relative;
 }
 .searchField > svg {
   position: absolute;
-  top: 13px;
-  left: 11px;
-  color: var(--studio-muted, #63718b);
+  top: 14px;
+  left: 12px;
+  color: #a5aec0;
   pointer-events: none;
 }
-.panel .searchField > input {
+.searchField > input {
   padding-left: 36px;
   width: 100%;
 }
+.additionalChoices {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
+  align-items: end;
+  gap: 12px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px dashed #e5e7f1;
+}
+.additionalChoices > div {
+  min-width: 0;
+}
+.listHeading {
+  padding: 21px 21px 12px;
+}
+.listHeading h2 {
+  margin: 0;
+  font-size: 19px;
+  font-weight: 650;
+}
+.listHeading h2 span {
+  display: inline-block;
+  vertical-align: middle;
+  padding: 3px 9px;
+  margin-left: 5px;
+  background: #f3f4f8;
+  color: #747e91;
+  border-radius: 99px;
+  font-size: 14px;
+}
+.listHeading p {
+  margin: 5px 0 0;
+  color: var(--studio-muted);
+}
 .panel .table th:nth-child(1) {
-  width: 26%;
+  width: 25%;
 }
 .panel .table th:nth-child(2) {
-  width: 11%;
+  width: 12%;
 }
 .panel .table th:nth-child(3) {
-  width: 21%;
+  width: 18%;
 }
 .panel .table th:nth-child(4) {
   width: 15%;
 }
 .panel .table th:nth-child(5) {
-  width: 13%;
+  width: 16%;
 }
 .panel .table th:nth-child(6) {
   width: 14%;
 }
+.panel .table th,
+.panel .table td {
+  padding: 18px 16px;
+}
 .table th:last-child,
 .table td:last-child {
-  text-align: right;
+  text-align: left;
 }
 .table td:last-child a {
   white-space: normal;
   text-align: center;
 }
+.productIdentity {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+.productIdentity > div {
+  min-width: 0;
+}
+.productIcon {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  background: #f3efff;
+  color: #7863cd;
+}
 .identifier {
   display: block;
-  margin-top: 5px;
-  color: var(--studio-muted, #63718b);
-  font-size: 16px;
+  margin-top: 3px;
+  color: #8993a8;
+  font-size: 14px;
   font-weight: 400;
   line-height: 1.45;
   overflow-wrap: anywhere;
 }
 .category {
-  display: inline-block;
-  padding: 3px 8px;
-  border-radius: 6px;
-  background: #f3f4fa;
-  color: var(--studio-muted, #63718b);
-  font-size: 16px;
-  line-height: 1.45;
+  color: var(--studio-muted);
+  line-height: 1.5;
 }
 .contentState {
   display: grid;
   justify-items: start;
   gap: 7px;
 }
-.reviewState {
-  color: var(--studio-muted, #63718b);
-  font-size: 16px;
-  line-height: 1.5;
-}
 .mobileCard {
-  box-shadow: 0 2px 8px #24304b04;
+  box-shadow: none;
 }
-@media (max-width: 1350px) {
-  .panel .commonFilters {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+@media (max-width: 1250px) {
+  .commonFilters {
+    grid-template-columns: minmax(180px, 1fr) 130px 140px auto;
+    gap: 10px;
   }
-  .panel .commonFilters > div:first-child {
-    grid-column: 1 / 3;
+  .filterActions {
+    gap: 6px;
   }
-  .panel .commonFilters > div:last-child {
-    grid-column: 2 / 4;
+  .filterActions > button {
+    padding-inline: 9px;
   }
 }
-@media (max-width: 600px) {
-  .panel .filters {
-    padding: 12px 12px 0;
+@media (max-width: 1080px) and (min-width: 960px) {
+  .commonFilters {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   }
-  .panel .commonFilters {
+  .commonFilters > div:first-child,
+  .filterActions {
+    grid-column: 1/-1;
+  }
+  .additionalChoices {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-  .panel .commonFilters > div:first-child,
-  .panel .commonFilters > div:nth-child(4),
-  .panel .commonFilters > div:last-child {
-    grid-column: 1 / -1;
+}
+@media (max-width: 640px) {
+  .page > header h1 {
+    font-size: 23px;
+  }
+  .filterPanel {
+    padding: 17px;
+  }
+  .commonFilters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+  .commonFilters > div:first-child,
+  .filterActions {
+    grid-column: 1/-1;
+  }
+  .filterActions {
+    flex-wrap: wrap;
+  }
+  .filterActions > button {
+    flex: 1;
+  }
+  .additionalChoices {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+  .additionalChoices > button {
+    align-self: end;
+  }
+  .listHeading {
+    padding: 18px 17px 12px;
   }
 }
 
-/* The tag picker must not stretch the neighbouring archive select to its height. */
-.panel .additionalChoices {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  align-items: start;
-  gap: 12px;
+.page > header > div:first-child {
+  flex: 1;
+  min-width: 0;
+}
+.page > header h1 {
+  font-weight: 750;
+}
+@media (max-width: 640px) {
+  .page > header {
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .page > header > :last-child:not(:first-child) {
+    flex: none;
+    max-width: 45%;
+  }
+  .page > header > :last-child:not(:first-child) button {
+    padding-inline: 10px;
+  }
+}
+
+.mobileCard {
+  padding: 18px 17px;
+  border-bottom: 1px solid #eff0f7;
+  min-width: 0;
+}
+.mobileCard h2 {
+  margin: 0;
+}
+.mobileCard p {
+  color: var(--studio-muted);
+  margin: 4px 0 0;
+}
+.mobileIdentity {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+.mobileIdentity > div {
+  min-width: 0;
+  flex: 1;
+}
+.mobileIdentity > span {
+  flex: none;
+  max-width: 42%;
+  white-space: normal;
+}
+.mobileAction {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  border: 1px solid #eee9ff;
+  border-radius: 10px;
+  margin-top: 12px;
+  padding: 8px 13px;
+  background: #f3efff;
+  color: #6353c4;
+  font-weight: 600;
+  text-decoration: none;
+}
+.panel > ul {
+  padding: 0;
+  gap: 0;
+}
+.panel > ul > li:last-child .mobileCard {
+  border-bottom: 0;
+}
+
+.filterActions > button[aria-expanded],
+.additionalChoices > button {
+  border-color: #e6e8f0;
+  background: #fff;
+  color: #62718b;
 }

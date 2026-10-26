@@ -2,7 +2,6 @@
 import { useOwnedStudioSession } from "../accounts/session-owner";
 import { TechnicalDetails } from "../presentation/technical-details";
 import { StudioPageHeader } from "../presentation/page-header";
-import { StudioWorkflowNav } from "../presentation/workflow-nav";
 import Link from "next/link";
 import { useState } from "react";
 import type { StudioSessionDto } from "../contracts";
@@ -101,11 +100,6 @@ function InternalReviewContent({
   }
   return (
     <div className={styles.workspace}>
-      <StudioWorkflowNav
-        productId={scope.productId}
-        current="versions"
-        previewHref={previewPagePath(scope)}
-      />
       <section className={styles.panel}>
         <StudioPageHeader
           title={`固定修订 ${scope.revision} · 已有审核依据`}
@@ -204,11 +198,6 @@ function InternalVersionsContent({
   }
   return (
     <div className={styles.workspace}>
-      <StudioWorkflowNav
-        productId={productId}
-        current="versions"
-        {...(current ? { previewHref: previewPagePath(current) } : {})}
-      />
       <StudioPageHeader
         title="审核与版本"
         description="核对当前修订的内容、既有依据与封存条件；已有固定版本分别保留。"
@@ -366,19 +355,6 @@ function InternalVersionDetailContent({
   const current = draft.value?.kind === "draft" ? draft.value.draft : undefined;
   return (
     <div className={styles.workspace}>
-      <StudioWorkflowNav
-        productId={productId}
-        current="versions"
-        {...(read.value
-          ? {
-              previewHref: previewPagePath({
-                productId,
-                draftId: read.value.snapshot.target.draftId,
-                revision: read.value.snapshot.target.revision,
-              }),
-            }
-          : {})}
-      />
       <section className={styles.panel}>
         <StudioPageHeader
           title="固定内容版本详情"

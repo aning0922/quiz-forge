@@ -1,20 +1,13 @@
 "use client";
-import { useId, useRef, useState } from "react";
-import {
-  CheckCircle2,
-  ChevronRight,
-  LockKeyhole,
-  LogOut,
-  ShieldCheck,
-} from "lucide-react";
+import { useId, useState } from "react";
+import { CheckCircle2, ShieldCheck } from "lucide-react";
 import type { StudioSessionDto } from "../contracts";
 import { useWorkspaceRead } from "../workspace/use-request";
-import { studioFetch, studioMessage } from "../client";
-import {
-  invalidateCurrentStudioAuthority,
-  invalidateStudioAuthority,
-} from "../authority-events";
+import { invalidateStudioAuthority } from "../authority-events";
 import { useStudioLeaveProtection } from "../navigation-boundary";
+import { AccountWorkspaceNav } from "./workspace-nav";
+import { roleHasCapability } from "@/lib/auth/role-policy";
+import { useCurrentStudioLogout } from "./use-current-logout";
 import { PasswordField } from "./password-field";
 import { passwordProblem, operatorName, roleLabel } from "./presentation";
 import { useAccountOperation } from "./use-operation";
@@ -45,11 +38,11 @@ export function MyAccountPage({
     [confirm, setConfirm] = useState(""),
     [message, setMessage] = useState("");
   const [modal, setModal] = useState<"password" | "current" | "all" | null>(
-      null,
-    ),
-    [loggingOut, setLoggingOut] = useState(false);
-  const logoutLock = useRef(false),
-    formId = useId();
+    null,
+  );
+  const formId = useId();
+  const currentLogout = useCurrentStudioLogout(session);
+  const loggingOut = currentLogout.busy;
   const dirty = Boolean(current || next || confirm),
     pending = Boolean(change.pending || all.pending);
   const protection = useStudioLeaveProtection({
@@ -60,6 +53,7 @@ export function MyAccountPage({
   const busy = change.busy || all.busy || loggingOut;
   function open(which: "password" | "current" | "all") {
     setMessage("");
+    currentLogout.clearMessage();
     setModal(which);
   }
   function close() {
@@ -112,35 +106,12 @@ export function MyAccountPage({
     }
   }
   async function logout() {
-    if (logoutLock.current || owner?.revoked || pending) return;
-    logoutLock.current = true;
+    if (loggingOut || owner?.revoked || pending) return;
     setCurrent("");
     setNext("");
     setConfirm("");
-    setLoggingOut(true);
     setMessage("");
-    // Revoke this page immediately; broadcasting before the response would
-    // invalidate our own request epoch through the owner's channel.
-    invalidateCurrentStudioAuthority();
-    try {
-      await studioFetch<void>("/api/studio/auth/logout", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-CSRF-Token": session.csrfToken,
-        },
-        body: "{}",
-      });
-      leave();
-    } catch (error) {
-      // The request has settled. Notify other tabs while keeping this page
-      // revoked and the error visible; never replay the logout automatically.
-      invalidateStudioAuthority();
-      setMessage(studioMessage(error));
-    } finally {
-      logoutLock.current = false;
-      setLoggingOut(false);
-    }
+    await currentLogout.submit(protection.markSaved);
   }
   const changeDone = change.receipt?.status === "completed",
     allDone = all.receipt?.status === "completed";
@@ -149,88 +120,56 @@ export function MyAccountPage({
     <div className={styles.page} data-account-access="self">
       <header className={styles.heading}>
         <div>
+          <div className={styles.eyebrow}>QUIZFORGE STUDIO / OPERATOR</div>
           <h1>我的账号</h1>
-          <p>个人信息与安全操作分开管理，减少误操作。</p>
+          <p>个人信息与安全操作分开管理，不把改密或退出动作做成常驻表单。</p>
         </div>
       </header>
-      <div className={access.columns}>
-        <div className={access.stack}>
-          <section
-            className={`${styles.card} ${styles.cardPad}`}
-            aria-label="本人资料"
-          >
-            <div className={access.identity}>
-              <div className={access.largeAvatar}>
-                <AccountAvatar name={name} />
-              </div>
-              <div>
-                <strong>{name}</strong>
-                <p>
-                  {read.value?.loginName ??
-                    session.operator.loginName ??
-                    "登录账号暂不可用"}
-                </p>
-              </div>
-            </div>
-            <div className={access.profilePills}>
-              <RoleBadge role={read.value?.role ?? session.operator.role} />
-              {read.value && <StatusBadge status={read.value.status} />}
-            </div>
-            <dl className={styles.kv}>
-              <div>
-                <dt>显示名称</dt>
-                <dd>{name}</dd>
-              </div>
-              <div>
-                <dt>登录账号</dt>
-                <dd>
-                  {read.value?.loginName ?? session.operator.loginName ?? "—"}
-                </dd>
-              </div>
-              <div>
-                <dt>当前角色</dt>
-                <dd>{roleLabel(read.value?.role ?? session.operator.role)}</dd>
-              </div>
-              <div>
-                <dt>账号状态</dt>
-                <dd>
-                  {read.value
-                    ? {
-                        active: "可登录",
-                        pending: "待设置密码",
-                        disabled: "已停用",
-                      }[read.value.status]
-                    : read.error
-                      ? "暂不可用"
-                      : "正在核对本人资料…"}
-                </dd>
-              </div>
-            </dl>
-            {read.error && (
-              <div className={styles.error} role="alert">
-                {read.error}
-                <button type="button" onClick={read.refresh}>
-                  重新读取资料
-                </button>
-              </div>
-            )}
-          </section>
-          <div className={`${styles.hint} ${access.inlineHint}`}>
-            <ShieldCheck size={18} aria-hidden="true" />
-            <p>
-              此处仅查看本人资料。修改显示名请联系管理员；退出登录后，待确认业务请求不会自动重发。
-            </p>
+      <AccountWorkspaceNav role={session.operator.role} />
+      <section
+        className={`${styles.card} ${access.identityCard}`}
+        aria-label="本人资料"
+      >
+        <div className={access.largeAvatar}>
+          <AccountAvatar name={name} />
+        </div>
+        <div className={access.identityText}>
+          <h2>{name}</h2>
+          <p>
+            {read.value?.loginName ??
+              session.operator.loginName ??
+              "登录账号暂不可用"}{" "}
+            · {roleLabel(session.operator.role)} ·{" "}
+            {ended ? "登录已结束" : "当前登录"}
+          </p>
+          <div className={styles.pills}>
+            <RoleBadge role={read.value?.role ?? session.operator.role} />
+            {read.value && <StatusBadge status={read.value.status} />}
           </div>
         </div>
-        <div className={access.stack}>
-          <section className={`${styles.card} ${styles.cardPad}`}>
-            <h2>账号安全</h2>
-            <p className={styles.muted}>
-              建议使用独立长口令，支持粘贴和密码管理器。
-            </p>
-            <div className={access.securityLinks}>
+        {read.error && (
+          <div className={styles.error} role="alert">
+            {read.error}
+            <button onClick={read.refresh}>重新读取资料</button>
+          </div>
+        )}
+      </section>
+      <div className={access.columns}>
+        <section className={`${styles.card} ${styles.cardPad}`}>
+          <div className={access.sectionTitle}>
+            <div>
+              <h2>账号安全</h2>
+              <p>操作需本人确认；改密与退出全部会撤销登录。</p>
+            </div>
+            <ShieldCheck size={21} aria-hidden="true" />
+          </div>
+          <div className={access.securityLinks}>
+            <div className={access.securityItem}>
+              <div>
+                <h3>修改登录密码</h3>
+                <p>需要验证当前密码，成功后全部设备重新登录。</p>
+              </div>
               <button
-                className={access.securityLink}
                 disabled={
                   ended ||
                   Boolean(owner?.revoked) ||
@@ -239,21 +178,28 @@ export function MyAccountPage({
                 }
                 onClick={() => open("password")}
               >
-                <span className={access.icon}>
-                  <LockKeyhole size={21} aria-hidden="true" />
-                </span>
-                <span>
-                  <strong>修改登录密码</strong>
-                  <span>需验证当前密码，成功后退出全部登录</span>
-                </span>
-                <ChevronRight
-                  className={access.arrow}
-                  size={18}
-                  aria-hidden="true"
-                />
+                修改密码
               </button>
+            </div>
+            <div className={access.securityItem}>
+              <div>
+                <h3>退出当前登录</h3>
+                <p>只退出正在使用的会话，其他登录不会自动退出。</p>
+              </div>
               <button
-                className={access.securityLink}
+                disabled={ended || busy || pending || Boolean(owner?.revoked)}
+                onClick={() => open("current")}
+              >
+                退出当前
+              </button>
+            </div>
+            <div className={access.securityItem}>
+              <div>
+                <h3>退出全部登录</h3>
+                <p>撤销该账号所有会话，重新登录才可操作。</p>
+              </div>
+              <button
+                className={styles.danger}
                 disabled={
                   ended ||
                   Boolean(owner?.revoked) ||
@@ -262,37 +208,39 @@ export function MyAccountPage({
                 }
                 onClick={() => open("all")}
               >
-                <span className={access.icon}>
-                  <LogOut size={21} aria-hidden="true" />
-                </span>
-                <span>
-                  <strong>退出全部登录</strong>
-                  <span>撤销这个账号的所有已登录会话</span>
-                </span>
-                <ChevronRight
-                  className={access.arrow}
-                  size={18}
-                  aria-hidden="true"
-                />
+                退出全部
               </button>
             </div>
-          </section>
-          <section className={`${styles.card} ${styles.cardPad}`}>
-            <h2>当前登录</h2>
+          </div>
+        </section>
+        <aside className={`${styles.card} ${styles.cardPad}`}>
+          <div className={access.sectionTitle}>
+            <div>
+              <h2>角色与权限</h2>
+              <p>能力来自服务端策略。</p>
+            </div>
+          </div>
+          <p className={styles.muted}>
+            当前为{roleLabel(session.operator.role)}。
+            {roleHasCapability(session.operator.role, "account:manage")
+              ? "可以管理成员、审核封存与内容运营操作。"
+              : roleHasCapability(session.operator.role, "workspace:write")
+                ? "可维护测评、导入内容、发放和作废未领取访问码；审核封存由管理员完成。"
+                : "仅可查看测评、版本和已授权的安全信息，不可进行业务写入。"}
+          </p>
+          <div className={`${styles.hint} ${access.sessionHint}`}>
             {ended ? (
-              <p className={styles.muted} role="status">
-                当前登录已失效。请完成原操作记录后重新登录。
-              </p>
+              <p role="status">当前登录已失效。请完成原操作记录后重新登录。</p>
             ) : (
-              <dl className={styles.kv}>
+              <dl className={access.sessionFacts}>
                 <div>
-                  <dt>空闲到期时间</dt>
+                  <dt>空闲到期</dt>
                   <dd>
                     {new Date(session.idleExpiresAt).toLocaleString("zh-CN")}
                   </dd>
                 </div>
                 <div>
-                  <dt>最长到期时间</dt>
+                  <dt>最长到期</dt>
                   <dd>
                     {new Date(session.absoluteExpiresAt).toLocaleString(
                       "zh-CN",
@@ -301,15 +249,11 @@ export function MyAccountPage({
                 </div>
               </dl>
             )}
-            <button
-              className={`${styles.danger} ${access.currentExit}`}
-              disabled={busy || pending || Boolean(owner?.revoked)}
-              onClick={() => open("current")}
-            >
-              退出当前登录
-            </button>
-          </section>
-        </div>
+          </div>
+          <p className={access.profileHelp}>
+            修改显示名称请联系管理员。待确认的原业务操作不会自动重发。
+          </p>
+        </aside>
       </div>
       {modal !== "password" && dirty && !change.pending && (
         <aside
@@ -347,6 +291,7 @@ export function MyAccountPage({
       <AccountOverlay
         open={modal === "password"}
         variant="modal"
+        size="short"
         title="修改登录密码"
         description="操作完成后退出所有登录会话"
         onClose={close}
@@ -447,6 +392,7 @@ export function MyAccountPage({
       <AccountOverlay
         open={modal === "all"}
         variant="modal"
+        size="short"
         title="退出全部登录"
         description="请确认操作范围"
         onClose={close}
@@ -503,6 +449,7 @@ export function MyAccountPage({
       <AccountOverlay
         open={modal === "current"}
         variant="modal"
+        size="short"
         title="退出当前登录"
         description="请确认操作范围"
         onClose={close}
@@ -530,9 +477,9 @@ export function MyAccountPage({
             本页还有未提交的密码输入；确认退出将放弃这些输入。
           </p>
         )}
-        {modal === "current" && message && (
+        {modal === "current" && currentLogout.message && (
           <p className={styles.error} role="alert">
-            {message}
+            {currentLogout.message}
           </p>
         )}
       </AccountOverlay>

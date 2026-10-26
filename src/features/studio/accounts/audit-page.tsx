@@ -9,6 +9,8 @@ import type {
   AccountAuditListDto,
 } from "./contracts";
 import { accountActionLabel } from "./presentation";
+import { AccountWorkspaceNav } from "./workspace-nav";
+import { useStudioAccountOwner } from "./session-owner";
 import { AccountOverlay } from "./account-ui";
 import styles from "./experience.module.css";
 import access from "./access.module.css";
@@ -59,6 +61,7 @@ function Result({ item }: { item: AccountAuditDto }) {
   );
 }
 export function AccountAuditPage() {
+  const owner = useStudioAccountOwner();
   const [draft, setDraft] = useState(""),
     [action, setAction] = useState<AccountAction | "all">("all");
   const [query, setQuery] = useState<{
@@ -85,26 +88,25 @@ export function AccountAuditPage() {
     <div className={styles.page} data-account-access="audit">
       <header className={styles.heading}>
         <div>
+          <div className={styles.eyebrow}>QUIZFORGE STUDIO / OPERATOR</div>
           <h1>账号操作记录</h1>
           <p>查看账号开通、角色变更、密码入口和会话撤销等安全操作。</p>
         </div>
         <Link className={styles.button} href="/studio/accounts">
-          返回账号管理
+          返回人员管理
         </Link>
       </header>
+      <AccountWorkspaceNav role={owner?.session.operator.role ?? "read-only"} />
       <section className={styles.card} aria-label="账号操作记录列表">
         <form
-          className={styles.controls}
+          className={`${styles.controls} ${access.auditFilters}`}
           onSubmit={(event) => {
             event.preventDefault();
             setQuery({ q: draft.trim(), action, offset: 0 });
           }}
         >
-          <div
-            className={`${styles.field} ${styles.searchField} ${access.filterSearch}`}
-          >
-            <label htmlFor="account-audit-q">搜索记录</label>
-            <Search size={19} aria-hidden="true" />
+          <div className={`${styles.field} ${styles.searchField}`}>
+            <label htmlFor="account-audit-q">操作者 / 目标人员</label>
             <input
               id="account-audit-q"
               value={draft}
@@ -131,9 +133,8 @@ export function AccountAuditPage() {
               ))}
             </select>
           </div>
-          <button type="submit">
-            <Search size={18} aria-hidden="true" />
-            查询
+          <button type="submit" className={styles.primary}>
+            查询记录
           </button>
           <button type="button" onClick={reset}>
             重置
@@ -165,24 +166,24 @@ export function AccountAuditPage() {
                     <caption className="sr-only">账号安全操作记录</caption>
                     <thead>
                       <tr>
-                        <th scope="col">操作时间</th>
-                        <th scope="col">业务动作</th>
+                        <th scope="col">操作</th>
                         <th scope="col">操作者</th>
                         <th scope="col">目标人员</th>
                         <th scope="col">结果</th>
-                        <th scope="col">更多</th>
+                        <th scope="col">记录时间</th>
+                        <th scope="col">详情</th>
                       </tr>
                     </thead>
                     <tbody>
                       {read.value.items.map((item) => (
                         <tr key={item.operationId}>
-                          <td>{moment(item.createdAt)}</td>
                           <td>{accountActionLabel(item.action)}</td>
                           <td>{actorName(item)}</td>
                           <td>{item.targetDisplayName}</td>
                           <td>
                             <Result item={item} />
                           </td>
+                          <td>{moment(item.createdAt)}</td>
                           <td>
                             <button
                               onClick={() => setSelected(item)}
@@ -204,6 +205,12 @@ export function AccountAuditPage() {
                     >
                       <div className={access.auditCardHead}>
                         <strong>{accountActionLabel(item.action)}</strong>
+                        <Result item={item} />
+                      </div>
+                      <div>
+                        <p>
+                          {actorName(item)} → {item.targetDisplayName}
+                        </p>
                         <time
                           dateTime={item.createdAt}
                           className={styles.muted}
@@ -211,18 +218,12 @@ export function AccountAuditPage() {
                           {moment(item.createdAt)}
                         </time>
                       </div>
-                      <p>
-                        {actorName(item)} → {item.targetDisplayName}
-                      </p>
-                      <div className={access.auditCardHead}>
-                        <Result item={item} />
-                        <button
-                          onClick={() => setSelected(item)}
-                          aria-label={`查看${accountActionLabel(item.action)}详情`}
-                        >
-                          查看结果
-                        </button>
-                      </div>
+                      <button
+                        onClick={() => setSelected(item)}
+                        aria-label={`查看${accountActionLabel(item.action)}详情`}
+                      >
+                        查看记录详情
+                      </button>
                     </article>
                   ))}
                 </div>

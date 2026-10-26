@@ -29,7 +29,7 @@ const Context = createContext<Owner | null>(null);
 export function useStudioAccountOwner() {
   return useContext(Context);
 }
-/** Props remain a compatibility fallback for isolated components; the live owner never changes ID. */
+/** Isolated components use their input session; a mounted owner supplies updates only for the same operator ID. */
 export function useOwnedStudioSession(
   initial: StudioSessionDto,
 ): StudioSessionDto;
@@ -61,9 +61,11 @@ export function useStudioRecoveryReset(reset: () => void) {
 export function StudioAccountOwner({
   initialSession,
   children,
+  onSessionChange,
 }: {
   initialSession: StudioSessionDto;
   children: ReactNode;
+  onSessionChange?: (session: StudioSessionDto) => void;
 }) {
   const [ownerId] = useState(initialSession.operator.id);
   const [state, setState] = useState<Owner>({
@@ -143,6 +145,9 @@ export function StudioAccountOwner({
       generation: old.generation + 1,
       revoked: false,
     }));
+    // Publish only the session explicitly accepted for this unchanged owner.
+    // Keep the callback outside the state updater, which React may replay.
+    onSessionChange?.(candidate);
     setCandidate(undefined);
     setConfirmed(false);
     setMessage("");

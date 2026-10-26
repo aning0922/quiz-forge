@@ -1,57 +1,47 @@
 import { describe, expect, it } from "vitest";
-import { activeProductWorkspaceTab, productWorkspaceTabs } from "./navigation";
-
-const productId = "workspace-test";
-const base = `/studio/products/${productId}`;
-describe("product business navigation", () => {
-  it("keeps six distinct destinations inside the selected product", () => {
-    const tabs = productWorkspaceTabs(productId);
-    expect(tabs.map((tab) => tab.label)).toEqual([
-      "概览",
-      "内容与素材",
-      "体验预览",
-      "审核与版本",
-      "内测记录",
-      "基本设置",
+import { productWorkspaceTabs, activeProductWorkspaceTab } from "./navigation";
+describe("one four-task product navigation", () => {
+  it("uses the four current task URLs without a six-tab parallel landing", () => {
+    expect(
+      productWorkspaceTabs("example").map(({ label, href }) => [label, href]),
+    ).toEqual([
+      ["内容制作", "/studio/products/example?task=content"],
+      ["体验预览", "/studio/products/example?task=preview"],
+      ["审核封存", "/studio/products/example?task=review"],
+      ["内测发放", "/studio/products/example?task=testing"],
     ]);
-    expect(tabs.map((tab) => tab.href)).toEqual([
-      base,
-      `${base}/content`,
-      `${base}/preview`,
-      `${base}/internal-versions`,
-      `${base}/consumer-access`,
-      `${base}/settings`,
-    ]);
-    for (const tab of tabs)
-      expect(activeProductWorkspaceTab(tab.href, productId)).toBe(tab.id);
   });
   it.each([
-    ["/imports", "content"],
-    ["/imports/old-import", "content"],
-    ["/imports/old-import/validations/old-validation", "content"],
-    ["/draft", "content"],
-    ["/drafts/draft-id/revisions/2", "content"],
-    ["/drafts/draft-id/revisions/2/preview", "preview"],
-    ["/drafts/draft-id/revisions/2/internal-review", "versions"],
-    ["/internal-versions/version-id", "versions"],
-  ] as const)("classifies the unchanged deep link %s", (suffix, expected) => {
-    expect(activeProductWorkspaceTab(base + suffix, productId)).toBe(expected);
-  });
-  it("never highlights another product or an unknown route as overview", () => {
-    for (const path of [
-      `${base}-other/draft`,
-      "/studio/products/other/preview",
-      `${base}/unknown`,
-      `${base}/drafts/id/revisions/2/not-preview`,
-    ])
-      expect(activeProductWorkspaceTab(path, productId)).toBeNull();
-  });
-  it("supports a trailing slash without changing a fixed revision destination", () => {
+    ["imports/source", "content"],
+    ["imports/source/validations/check", "content"],
+    ["drafts/draft/revisions/2", "content"],
+    ["drafts/draft/revisions/2/preview", "preview"],
+    ["drafts/draft/revisions/2/internal-review", "review"],
+    ["internal-versions/version", "review"],
+  ])("classifies formal object detail %s", (path, task) => {
     expect(
-      activeProductWorkspaceTab(
-        `${base}/drafts/id/revisions/2/preview/`,
-        productId,
-      ),
-    ).toBe("preview");
+      activeProductWorkspaceTab("/studio/products/example/" + path, "example"),
+    ).toBe(task);
+  });
+  it("does not map removed pages or another product to a task", () => {
+    for (const path of [
+      "content",
+      "preview",
+      "draft",
+      "imports",
+      "internal-versions",
+      "consumer-access",
+      "settings",
+      "unknown",
+    ])
+      expect(
+        activeProductWorkspaceTab(
+          "/studio/products/example/" + path,
+          "example",
+        ),
+      ).toBeNull();
+    expect(
+      activeProductWorkspaceTab("/studio/products/other/imports/id", "example"),
+    ).toBeNull();
   });
 });

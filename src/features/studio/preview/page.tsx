@@ -2,8 +2,6 @@
 import { useOwnedStudioSession } from "../accounts/session-owner";
 import { TechnicalDetails } from "../presentation/technical-details";
 import { StudioPageHeader } from "../presentation/page-header";
-import { previewPagePath } from "@/features/product/preview/urls";
-import { StudioWorkflowNav } from "../presentation/workflow-nav";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { StudioSessionDto } from "../contracts";
@@ -103,11 +101,6 @@ export function FixedRevisionPreviewPage({
                 。此处用于检查内容与画面，不产生正式消费者报告。
               </>
             }
-          />
-          <StudioWorkflowNav
-            productId={scope.productId}
-            current="preview"
-            previewHref={previewPagePath(scope)}
           />
           <nav className={styles.navigation} aria-label="固定修订导航">
             <Link

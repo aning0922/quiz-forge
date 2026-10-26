@@ -99,7 +99,12 @@ export function StudioNavigation({
                   href={item.href}
                   prefetch={false}
                   aria-current={
-                    location.section === item.id ? "page" : undefined
+                    location.section === item.id &&
+                    (item.id !== "settings" ||
+                      pathname === "/studio/settings" ||
+                      pathname === "/studio/taxonomy")
+                      ? "page"
+                      : undefined
                   }
                   className={styles.navigationLink}
                   onClick={followedLink}
@@ -140,11 +145,6 @@ export function StudioNavigation({
           )}
         </nav>
         <div className={styles.sideFooter}>
-          <p className={styles.navigationNote}>
-            内测运营环境
-            <br />
-            内容、版本与访问码按测评管理。
-          </p>
           <Link
             className={styles.identityLink}
             href="/studio/session"
@@ -167,6 +167,12 @@ export function StudioNavigation({
               )}
             </span>
           </Link>
+          <div id="studio-sidebar-logout" className={styles.sidebarLogout} />
+          <p className={styles.navigationNote}>
+            内测运营空间
+            <br />
+            内容、版本与访问码按测评管理。
+          </p>
         </div>
       </dialog>
     </aside>

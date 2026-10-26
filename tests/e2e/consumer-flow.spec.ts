@@ -1,3 +1,6 @@
+// V2-B task URLs and modal transitions are current. The historical credential fixture
+// still needs the account-backed root harness; this alignment does not claim a real run.
+// Receipt identity, ACK-loss counts, private-link handling and safety assertions remain.
 import {
   test,
   expect,
@@ -168,8 +171,7 @@ function safeCase(
     }
   };
 }
-const studioPage = () =>
-  `/studio/products/${fixture.productId}/consumer-access`;
+const studioPage = () => `/studio/products/${fixture.productId}?task=testing`;
 function rememberKey(key: AccessKeyDetail) {
   const index = observations.keys.findIndex(
     (k) => k.issue.binding.keyId === key.issue.binding.keyId,
@@ -211,8 +213,9 @@ async function finishStudioPending() {
   await operator
     .getByRole("button", { name: "确认结束并清除当前标签页记录", exact: true })
     .click();
+  await expect(operator.locator("dialog:modal")).toHaveCount(0);
   await expect(
-    operator.getByRole("combobox", { name: "固定内测内容版本", exact: true }),
+    operator.getByRole("button", { name: "创建答题版本", exact: true }),
   ).toBeEnabled();
 }
 async function unknown(route: Route) {
@@ -387,14 +390,12 @@ test(
     });
     await operator.bringToFront();
     await operator.goto(studioPage());
-    for (const name of ["创建答题版本", "发放访问码"]) {
-      const summary = operator
-        .locator("summary")
-        .filter({ hasText: new RegExp(`^${name}$`) });
-      await expect(summary).toBeVisible();
-      if ((await summary.locator("..").getAttribute("open")) === null)
-        await summary.click();
-    }
+    await operator
+      .getByRole("button", { name: "创建答题版本", exact: true })
+      .click();
+    await expect(
+      operator.getByRole("dialog", { name: "创建内测答题版本", exact: true }),
+    ).toBeVisible();
     const parentChoice = operator.getByRole("combobox", {
       name: "固定内测内容版本",
       exact: true,
@@ -407,7 +408,7 @@ test(
     await parentChoice.selectOption(fixture.parent!.version.id);
     operatorStage = "create-play";
     await operator
-      .getByRole("button", { name: "创建答题版本", exact: true })
+      .getByRole("button", { name: "确认创建答题版本", exact: true })
       .click();
     await expect(
       operator.getByRole("heading", { name: "原内测版本已创建", exact: true }),
@@ -434,6 +435,12 @@ test(
     for (let i = 0; i < 3; i++) {
       operatorStage = "issue-key";
       await operator
+        .getByRole("button", { name: "发放访问码", exact: true })
+        .click();
+      await expect(
+        operator.getByRole("dialog", { name: "发放内测访问码", exact: true }),
+      ).toBeVisible();
+      await operator
         .getByRole("combobox", { name: "答题版本", exact: true })
         .selectOption(play.id);
       let issued: AccessKeyDetail | undefined,
@@ -457,7 +464,7 @@ test(
           },
         );
       await operator
-        .getByRole("button", { name: "生成并发放一枚访问码", exact: true })
+        .getByRole("button", { name: "确认生成并发放一枚访问码", exact: true })
         .click();
       if (i === 2) {
         await expect(
@@ -467,6 +474,9 @@ test(
           }),
         ).toBeVisible();
         await operator.reload();
+        await operator
+          .getByRole("button", { name: "继续发放访问码", exact: true })
+          .click();
         await expect(
           operator.getByRole("button", {
             name: "查询上次操作结果",
@@ -799,7 +809,7 @@ test(
     await signInInternalOperator(ro, fixture.readOnly.secret);
     await ro.goto(studioPage());
     await expect(
-      ro.getByText("当前运营身份为只读", { exact: false }),
+      ro.getByText("当前只读，可查看安全记录及查询原请求", { exact: false }),
     ).toBeVisible();
     const original = keys[0]!.issue.binding;
     const resolve = await consumerPost(
@@ -833,22 +843,25 @@ test(
   safeCase(async ({ browser }) => {
     await operator.bringToFront();
     await operator.goto(studioPage());
-    for (const name of ["创建答题版本", "发放访问码"]) {
-      const summary = operator
-        .locator("summary")
-        .filter({ hasText: new RegExp(`^${name}$`) });
-      await expect(summary).toBeVisible();
-      if ((await summary.locator("..").getAttribute("open")) === null)
-        await summary.click();
-    }
     const unusedId = keys[1]!.issue.binding.keyId;
-    const card = operator
-      .locator("li")
-      .filter({ has: operator.locator("code", { hasText: unusedId }) });
-    await card
+    const row = operator
+      .getByRole("row")
+      .filter({ has: operator.locator(`span[title="${unusedId}"]`) });
+    await expect(row).toHaveCount(1);
+    await row.getByRole("button", { name: "查看详情", exact: true }).click();
+    await expect(
+      operator.getByRole("dialog", { name: "访问码安全详情", exact: true }),
+    ).toBeVisible();
+    await operator
       .getByRole("button", { name: "作废此未领取访问码", exact: true })
       .click();
-    await card
+    await expect(
+      operator.getByRole("dialog", {
+        name: "确认作废未领取访问码",
+        exact: true,
+      }),
+    ).toBeVisible();
+    await operator
       .getByRole("button", { name: "确认作废未领取访问码", exact: true })
       .click();
     await expect(

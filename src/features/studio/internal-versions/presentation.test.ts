@@ -12,7 +12,7 @@ import {
   InternalVersionsPage,
 } from "./pages";
 import { ProductDetail } from "../workspace/product-detail";
-import { internalVersionsPageUrl, internalVersionPageUrl } from "./paths";
+import { internalVersionPageUrl } from "./paths";
 const reads = vi.hoisted(() => ({
   error: "synthetic unavailable",
   draft: undefined as unknown,
@@ -60,7 +60,7 @@ describe("internal metadata and recovery presentation, server markup only", () =
       "正在检查上次操作，请稍候；检查完成前不能继续提交。",
     );
     expect(html).not.toContain("暂无待处理操作");
-    expect(html).toContain(internalVersionsPageUrl(binding.productId));
+    // The shared workspace owns navigation; failed metadata must retain recovery.
   });
   it("keeps both original operations mounted after each review/list/detail GET error", () => {
     const pages = [

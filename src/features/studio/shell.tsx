@@ -1,6 +1,8 @@
 "use client";
 import { usePathname } from "next/navigation";
+import { useState } from "react";
 import { StudioAccountOwner } from "./accounts/session-owner";
+import { SidebarLogoutAction } from "./accounts/sidebar-logout-action";
 import type { StudioSessionDto } from "./contracts";
 import styles from "./studio.module.css";
 import { StudioNavigation } from "./navigation";
@@ -25,13 +27,17 @@ export function StudioShell({
   session?: StudioSessionDto | undefined;
 }) {
   const pathname = usePathname();
+  const [recoveredSession, setRecoveredSession] = useState<StudioSessionDto>();
+  const liveIdentity = recoveredSession
+    ? {
+        label:
+          recoveredSession.operator.displayName ??
+          recoveredSession.operator.label,
+        role: recoveredSession.operator.role,
+      }
+    : identity;
   const entry =
     pathname === "/studio/login" || pathname === "/studio/set-password";
-  const account =
-    pathname === "/studio/accounts" ||
-    pathname === "/studio/accounts/audit" ||
-    pathname === "/studio/session" ||
-    pathname === "/studio/settings";
   if (entry)
     return (
       <StudioNavigationBoundary>
@@ -42,17 +48,27 @@ export function StudioShell({
     <StudioNavigationBoundary>
       <StudioMobileNavigation>
         <div
-          className={`${styles.shell} ${authenticated ? "" : styles.signedOut} ${account ? styles.accountShell : ""}`}
+          className={`${styles.shell} ${authenticated ? "" : styles.signedOut}`}
         >
-          {authenticated && <StudioNavigation identity={identity} />}
+          {authenticated && <StudioNavigation identity={liveIdentity} />}
           <div className={styles.content}>
             <header className={styles.publicHeader}>
               <StudioBrand />
             </header>
-            {authenticated && <StudioTopbar identity={identity} />}
-            <main id="main" className={styles.main}>
+            {authenticated && <StudioTopbar />}
+            <main
+              id="main"
+              className={styles.main}
+              data-workspace={
+                pathname.startsWith("/studio/products/") || undefined
+              }
+            >
               {session ? (
-                <StudioAccountOwner initialSession={session}>
+                <StudioAccountOwner
+                  initialSession={session}
+                  onSessionChange={setRecoveredSession}
+                >
+                  <SidebarLogoutAction session={session} />
                   {children}
                 </StudioAccountOwner>
               ) : (

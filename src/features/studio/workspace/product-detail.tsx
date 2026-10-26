@@ -20,10 +20,9 @@ import {
   type ProductFormFields,
 } from "./product-fields";
 import { ProductCard } from "./product-card";
-import { StudioWorkflowNav } from "../presentation/workflow-nav";
 import { StudioPageHeader } from "../presentation/page-header";
 import { TechnicalDetails } from "../presentation/technical-details";
-import { WorkspaceNav, ReadOnlyNotice } from "./primitives";
+import { ReadOnlyNotice } from "./primitives";
 import { ReconcilePanel } from "./reconcile-panel";
 import {
   InternalAuthorityProvider,
@@ -523,12 +522,6 @@ function ProductDetailContent({
     );
   return (
     <div className={styles.workspace}>
-      {!embedded && (
-        <>
-          <WorkspaceNav />
-          <StudioWorkflowNav productId={productId} current="product" />
-        </>
-      )}
       {read.loading && (
         <p className={styles.status} role="status">
           正在读取测评…

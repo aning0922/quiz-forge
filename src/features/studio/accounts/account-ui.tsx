@@ -51,6 +51,7 @@ export function AccountOverlay({
   footer,
   onClose,
   canClose = true,
+  size = "regular",
 }: {
   open: boolean;
   variant: "drawer" | "modal";
@@ -60,6 +61,7 @@ export function AccountOverlay({
   footer?: ReactNode;
   onClose: () => void;
   canClose?: boolean;
+  size?: "regular" | "short";
 }) {
   const id = useId(),
     dialog = useRef<HTMLDialogElement>(null),
@@ -88,7 +90,7 @@ export function AccountOverlay({
   return (
     <dialog
       ref={dialog}
-      className={`${styles.overlay} ${styles[variant]}`}
+      className={`${styles.overlay} ${styles[variant]} ${size === "short" ? styles.short : ""}`}
       aria-labelledby={`${id}-title`}
       aria-describedby={description ? `${id}-description` : undefined}
       onCancel={(event) => {

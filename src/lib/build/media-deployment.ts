@@ -49,6 +49,22 @@ const ARTIFACT_FIXED_FILES = [
 ] as const;
 const DEPENDENCIES = ["zod", "buffer-crc32"] as const;
 type Dependency = (typeof DEPENDENCIES)[number];
+const ARGON2_PACKAGES = [
+  { name: "argon2", version: "0.44.0", entry: "argon2.cjs" },
+  { name: "@phc/format", version: "1.0.0", entry: "index.js" },
+  { name: "node-gyp-build", version: "4.8.4", entry: "index.js" },
+] as const;
+type AliasKind = "sharp" | "argon2";
+type AliasRoots = { sharp: string; argon2?: string };
+const ARGON2_SELECTION_ENV = [
+  "ARGON2_PREBUILD",
+  "PREBUILDS_ONLY",
+  "npm_config_arch",
+  "npm_config_platform",
+  "LIBC",
+  "ARM_VERSION",
+  "ELECTRON_RUN_AS_NODE",
+] as const;
 
 export interface MediaDeploymentRoots {
   checkoutRoot: string;
@@ -65,7 +81,7 @@ export interface MediaDeploymentFile {
   sha256: string;
 }
 export interface MediaDeploymentSourceFile extends MediaDeploymentFile {
-  role: "source" | Dependency | "sharp-runtime";
+  role: "source" | Dependency | "sharp-runtime" | "argon2-runtime";
 }
 export interface MediaDeploymentArtifactAlias {
   path: string;
@@ -76,10 +92,17 @@ export interface MediaDeploymentSharpRuntime {
   platform: "darwin-arm64" | "linux-x64";
   packageRoots: { name: string; root: string }[];
 }
+export interface MediaDeploymentArgon2Runtime {
+  platform: MediaDeploymentSharpRuntime["platform"];
+  packageRoots: { name: string; root: string; entry: string }[];
+  native: MediaDeploymentFile;
+  filesHash: string;
+}
 export interface MediaDeploymentManifest extends MediaDeploymentRoots {
   schema: typeof SCHEMA;
   dependencyRoots: Record<Dependency, string>;
   sharpRuntime: MediaDeploymentSharpRuntime;
+  argon2Runtime: MediaDeploymentArgon2Runtime | null;
   sourceFiles: MediaDeploymentSourceFile[];
   artifactFiles: MediaDeploymentFile[];
   artifactAliases: MediaDeploymentArtifactAlias[];
@@ -222,6 +245,28 @@ function dependencyRoot(value: unknown, name: string): value is string {
     ).test(value)
   );
 }
+function argon2Root(name: string, version: string) {
+  return `node_modules/.pnpm/${name.replace("/", "+")}@${version}/node_modules/${name}`;
+}
+function argon2Native(platform: MediaDeploymentSharpRuntime["platform"]) {
+  return platform === "darwin-arm64"
+    ? "prebuilds/darwin-arm64/argon2.armv8.glibc.node"
+    : "prebuilds/linux-x64/argon2.glibc.node";
+}
+function artifactAliasKind(rel: string, error: MediaDeploymentCode): AliasKind {
+  const match = /^node_modules\/(sharp|argon2)-[a-f0-9]{16}$/.exec(rel);
+  if (!match) fail(error);
+  return match[1] as AliasKind;
+}
+function aliasRoots(
+  sharp: MediaDeploymentSharpRuntime,
+  argon2: MediaDeploymentArgon2Runtime | null,
+): AliasRoots {
+  return {
+    sharp: sharp.packageRoots[0]!.root,
+    ...(argon2 ? { argon2: argon2.packageRoots[0]!.root } : {}),
+  };
+}
 function sharpNames(platform: string): string[] {
   if (platform !== "darwin-arm64" && platform !== "linux-x64")
     fail("DEPENDENCY_INVALID");
@@ -258,6 +303,9 @@ function sharpPlatform(): MediaDeploymentSharpRuntime["platform"] {
   }
   return platform as MediaDeploymentSharpRuntime["platform"];
 }
+function argon2FilesHash(files: MediaDeploymentFile[]) {
+  return digest(JSON.stringify(files.map((f) => [f.path, f.bytes, f.sha256])));
+}
 function hashes(
   manifest: Omit<MediaDeploymentManifest, "sourceBundleHash" | "deploymentId">,
 ) {
@@ -270,6 +318,16 @@ function hashes(
         [
           manifest.sharpRuntime.platform,
           manifest.sharpRuntime.packageRoots.map((p) => [p.name, p.root]),
+        ],
+        manifest.argon2Runtime && [
+          manifest.argon2Runtime.platform,
+          manifest.argon2Runtime.packageRoots.map((p) => [
+            p.name,
+            p.root,
+            p.entry,
+          ]),
+          manifest.argon2Runtime.native,
+          manifest.argon2Runtime.filesHash,
         ],
         manifest.sourceFiles.map((f) => [f.role, f.path, f.bytes, f.sha256]),
       ]),
@@ -307,6 +365,7 @@ function parseManifest(bytes: Buffer): MediaDeploymentManifest {
     "deploymentRoot",
     "dependencyRoots",
     "sharpRuntime",
+    "argon2Runtime",
     "sourceFiles",
     "artifactFiles",
     "artifactAliases",
@@ -340,19 +399,75 @@ function parseManifest(bytes: Buffer): MediaDeploymentManifest {
       fail("MANIFEST_INVALID");
     return p as unknown as { name: string; root: string };
   });
-  if (!Array.isArray(input.artifactAliases) || input.artifactAliases.length > 1)
+  let argon2Runtime: MediaDeploymentArgon2Runtime | null = null;
+  if (input.argon2Runtime !== null) {
+    const a = object(input.argon2Runtime);
+    exactKeys(a, ["platform", "packageRoots", "native", "filesHash"]);
+    if (
+      a.platform !== sharp.platform ||
+      !Array.isArray(a.packageRoots) ||
+      a.packageRoots.length !== ARGON2_PACKAGES.length
+    )
+      fail("MANIFEST_INVALID");
+    const roots = a.packageRoots.map((value, i) => {
+      const p = object(value),
+        fixed = ARGON2_PACKAGES[i]!;
+      exactKeys(p, ["name", "root", "entry"]);
+      const root = argon2Root(fixed.name, fixed.version);
+      if (
+        p.name !== fixed.name ||
+        p.root !== root ||
+        p.entry !== root + "/" + fixed.entry
+      )
+        fail("MANIFEST_INVALID");
+      return p as unknown as { name: string; root: string; entry: string };
+    });
+    const native = object(a.native);
+    exactKeys(native, ["path", "bytes", "sha256"]);
+    if (
+      native.path !== roots[0]!.root + "/" + argon2Native(sharp.platform) ||
+      !Number.isSafeInteger(native.bytes) ||
+      (native.bytes as number) <= 0 ||
+      (native.bytes as number) > MAX_FILE ||
+      typeof native.sha256 !== "string" ||
+      !/^[a-f0-9]{64}$/.test(native.sha256)
+    )
+      fail("MANIFEST_INVALID");
+    if (typeof a.filesHash !== "string" || !/^[a-f0-9]{64}$/.test(a.filesHash))
+      fail("MANIFEST_INVALID");
+    argon2Runtime = {
+      platform: sharp.platform,
+      packageRoots: roots,
+      native: native as unknown as MediaDeploymentFile,
+      filesHash: a.filesHash,
+    };
+  }
+  const acceptedRoots: AliasRoots = {
+    sharp: packageRoots[0]!.root,
+    ...(argon2Runtime ? { argon2: argon2Runtime.packageRoots[0]!.root } : {}),
+  };
+  if (!Array.isArray(input.artifactAliases) || input.artifactAliases.length > 2)
     fail("MANIFEST_INVALID");
-  for (const value of input.artifactAliases) {
+  const aliasKinds = new Set<AliasKind>();
+  for (const [i, value] of input.artifactAliases.entries()) {
     const a = object(value);
     exactKeys(a, ["path", "targetRoot", "readlinkSha256"]);
+    if (typeof a.path !== "string") fail("MANIFEST_INVALID");
+    const kind = artifactAliasKind(a.path, "MANIFEST_INVALID");
     if (
-      typeof a.path !== "string" ||
-      !/^node_modules\/sharp-[a-f0-9]{16}$/.test(a.path) ||
-      a.targetRoot !== packageRoots[0]!.root ||
+      aliasKinds.has(kind) ||
+      !acceptedRoots[kind] ||
+      a.targetRoot !== acceptedRoots[kind] ||
+      (i > 0 &&
+        compare(
+          (input.artifactAliases[i - 1] as MediaDeploymentArtifactAlias).path,
+          a.path,
+        ) >= 0) ||
       typeof a.readlinkSha256 !== "string" ||
       !/^[a-f0-9]{64}$/.test(a.readlinkSha256)
     )
       fail("MANIFEST_INVALID");
+    aliasKinds.add(kind);
   }
   if (!Array.isArray(input.sourceFiles) || !Array.isArray(input.artifactFiles))
     fail("MANIFEST_INVALID");
@@ -395,6 +510,14 @@ function parseManifest(bytes: Buffer): MediaDeploymentManifest {
           !packageRoots.some((p) => (f.path as string).startsWith(p.root + "/"))
         )
           fail("MANIFEST_INVALID");
+      } else if (f.role === "argon2-runtime") {
+        if (
+          !argon2Runtime ||
+          !argon2Runtime.packageRoots.some((p) =>
+            (f.path as string).startsWith(p.root + "/"),
+          )
+        )
+          fail("MANIFEST_INVALID");
       } else fail("MANIFEST_INVALID");
     } else if (!artifactPath(f.path)) fail("MANIFEST_INVALID");
     return f;
@@ -414,6 +537,19 @@ function parseManifest(bytes: Buffer): MediaDeploymentManifest {
     )
   )
     fail("MANIFEST_INVALID");
+  if (argon2Runtime) {
+    const files = sourceFiles.filter((f) => f.role === "argon2-runtime");
+    if (
+      argon2FilesHash(files) !== argon2Runtime.filesHash ||
+      !files.some(
+        (f) =>
+          f.path === argon2Runtime.native.path &&
+          f.bytes === argon2Runtime.native.bytes &&
+          f.sha256 === argon2Runtime.native.sha256,
+      )
+    )
+      fail("MANIFEST_INVALID");
+  }
   for (const key of ["sourceBundleHash", "deploymentId"])
     if (
       typeof input[key] !== "string" ||
@@ -849,14 +985,215 @@ async function sharpMapping(
     packageRoots,
   };
 }
+/** A finite installed runtime, independent of Argon2's build-time toolchain. */
+async function argon2Mapping(
+  bound: MediaDeploymentRoots,
+  ctx: MediaDeploymentContext,
+): Promise<MediaDeploymentArgon2Runtime | null> {
+  const declaration = packageIdentity(
+    (await readRegular(bound.checkoutRoot, "package.json", ctx)).bytes,
+  ).dependencies.argon2;
+  if (declaration === undefined) return null; // The sharp-only offline fixture has no authentication runtime.
+  if (declaration !== ARGON2_PACKAGES[0].version) fail("DEPENDENCY_INVALID");
+  if (
+    ARGON2_SELECTION_ENV.some((name) => process.env[name] !== undefined) ||
+    process.versions.electron ||
+    process.versions.nw
+  )
+    fail("DEPENDENCY_INVALID");
+  const platform = sharpPlatform();
+  if (platform === "linux-x64") {
+    // The loader otherwise treats this fixed host marker as musl, even when a
+    // glibc-compatible Node supplies a glibc report. Never select its other ABI.
+    try {
+      await lstat("/etc/alpine-release", { bigint: true });
+      checkpoint(ctx);
+      fail("DEPENDENCY_INVALID");
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+      checkpoint(ctx);
+    }
+  }
+  const packageRoots: MediaDeploymentArgon2Runtime["packageRoots"] = [];
+  const checkoutRequire = createRequire(
+    path.join(bound.checkoutRoot, "package.json"),
+  );
+  let argonRoot = "";
+  for (const fixed of ARGON2_PACKAGES) {
+    const root = argon2Root(fixed.name, fixed.version);
+    const actual = path.join(bound.checkoutRoot, root);
+    const edge =
+      fixed.name === "argon2"
+        ? path.join(bound.checkoutRoot, "node_modules/argon2")
+        : path.join(
+            /* turbopackIgnore: true */ path.dirname(argonRoot),
+            fixed.name,
+          );
+    await ancestors(bound.checkoutRoot, edge, ctx);
+    const before = await lstat(edge, { bigint: true });
+    checkpoint(ctx);
+    if (!before.isSymbolicLink() || before.uid !== BigInt(process.getuid!()))
+      fail("DEPENDENCY_INVALID");
+    const text = await readlink(edge);
+    checkpoint(ctx);
+    if (
+      !validText(text) ||
+      Buffer.byteLength(text) > 4096 ||
+      path.resolve(path.dirname(edge), text) !== actual ||
+      (await realpath(edge)) !== actual
+    )
+      fail("DEPENDENCY_INVALID");
+    checkpoint(ctx);
+    const metadata = await readRegular(
+      bound.checkoutRoot,
+      root + "/package.json",
+      ctx,
+      undefined,
+      false,
+      64 * 1024,
+    );
+    const identity = packageIdentity(metadata.bytes);
+    const raw = object(JSON.parse(metadata.bytes.toString("utf8")));
+    if (
+      identity.name !== fixed.name ||
+      identity.version !== fixed.version ||
+      raw.main !== fixed.entry ||
+      raw.exports !== undefined
+    )
+      fail("DEPENDENCY_INVALID");
+    if (
+      fixed.name === "argon2" &&
+      (identity.dependencies["@phc/format"] !== "^1.0.0" ||
+        identity.dependencies["node-gyp-build"] !== "^4.8.4")
+    )
+      fail("DEPENDENCY_INVALID");
+    const entry = root + "/" + fixed.entry;
+    await readRegular(bound.checkoutRoot, entry, ctx);
+    const resolver =
+      fixed.name === "argon2"
+        ? checkoutRequire
+        : createRequire(path.join(argonRoot, "package.json"));
+    if (
+      typeof (resolver as unknown as { addon?: unknown }).addon === "function"
+    )
+      fail("DEPENDENCY_INVALID");
+    const resolved = resolver.resolve(fixed.name);
+    checkpoint(ctx);
+    if (
+      resolved !== path.join(bound.checkoutRoot, entry) ||
+      (await realpath(resolved)) !== resolved
+    )
+      fail("DEPENDENCY_INVALID");
+    checkpoint(ctx);
+    if (
+      !same(before, await lstat(edge, { bigint: true })) ||
+      (await readlink(edge)) !== text ||
+      (await realpath(edge)) !== actual
+    )
+      fail("FILE_CHANGED");
+    checkpoint(ctx);
+    packageRoots.push({ name: fixed.name, root, entry });
+    if (fixed.name === "argon2") argonRoot = actual;
+  }
+  // node-gyp-build loads this second JS file, then prefers local Release/Debug
+  // builds over prebuilds. Never admit an unregistered priority directory.
+  await readRegular(
+    bound.checkoutRoot,
+    packageRoots[2]!.root + "/node-gyp-build.js",
+    ctx,
+  );
+  for (const leaf of ["build/Release", "build/Debug"]) {
+    await ancestors(
+      bound.checkoutRoot,
+      path.join(/* turbopackIgnore: true */ argonRoot, leaf),
+      ctx,
+    ).catch((error) => {
+      if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+    });
+    try {
+      await lstat(path.join(/* turbopackIgnore: true */ argonRoot, leaf), {
+        bigint: true,
+      });
+      checkpoint(ctx);
+      fail("DEPENDENCY_INVALID");
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+      checkpoint(ctx);
+    }
+  }
+  const nativePath = packageRoots[0]!.root + "/" + argon2Native(platform);
+  // Require the local platform's native before any executable-adjacent fallback
+  // could be selected. No loader or native addon is executed during binding.
+  let native;
+  try {
+    native = (await readRegular(bound.checkoutRoot, nativePath, ctx)).entry;
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT")
+      fail("DEPENDENCY_INVALID");
+    throw error;
+  }
+  if (native.bytes === 0) fail("DEPENDENCY_INVALID");
+  const nativeDirectory = path.dirname(
+    path.join(bound.checkoutRoot, nativePath),
+  );
+  const before = await directory(nativeDirectory, ctx);
+  const dir = await opendir(nativeDirectory, { bufferSize: 16 });
+  try {
+    for (;;) {
+      const entry = await dir.read();
+      checkpoint(ctx);
+      if (!entry) break;
+      // The fixed Linux package also carries musl; it cannot win under the
+      // proven glibc platform. Every other entry could alter loader selection.
+      if (
+        !entry.isFile() ||
+        ![
+          path.basename(nativePath),
+          ...(platform === "linux-x64" ? ["argon2.musl.node"] : []),
+        ].includes(entry.name)
+      )
+        fail("DEPENDENCY_INVALID");
+    }
+    if (!same(before, await lstat(nativeDirectory, { bigint: true })))
+      fail("FILE_CHANGED");
+    checkpoint(ctx);
+  } finally {
+    await dir.close();
+  }
+  checkpoint(ctx);
+  // Validate and fingerprint the complete three-package closure before the
+  // first artifact chmod, including otherwise unselected package files. Never
+  // traverse links into build-only dependencies or another package root.
+  const files: MediaDeploymentFile[] = [],
+    budget = { entries: 0, files: 0, bytes: 0 };
+  for (const p of packageRoots)
+    await walk(bound.checkoutRoot, p.root, ctx, budget, async (file) => {
+      files.push(
+        (await readRegular(bound.checkoutRoot, file, ctx, budget)).entry,
+      );
+    });
+  files.sort((a, b) => compare(a.path, b.path));
+  if (
+    !files.some(
+      (f) =>
+        f.path === native.path &&
+        f.bytes === native.bytes &&
+        f.sha256 === native.sha256,
+    )
+  )
+    fail("FILE_CHANGED");
+  return { platform, packageRoots, native, filesHash: argon2FilesHash(files) };
+}
 async function readArtifactAlias(
   bound: MediaDeploymentRoots,
   rel: string,
-  sharpRoot: string,
+  accepted: AliasRoots,
   ctx: MediaDeploymentContext,
   hardening = false,
 ) {
-  if (!/^node_modules\/sharp-[a-f0-9]{16}$/.test(rel)) fail("FILE_UNSAFE");
+  const kind = artifactAliasKind(rel, "FILE_UNSAFE"),
+    targetRoot = accepted[kind];
+  if (!targetRoot) fail("FILE_UNSAFE");
   const target = path.join(bound.deploymentRoot, rel);
   if (hardening) {
     for (const p of [
@@ -883,12 +1220,12 @@ async function readArtifactAlias(
   if (!validText(text) || Buffer.byteLength(text) > 4096) fail("FILE_UNSAFE");
   if (
     path.resolve(path.dirname(target), text) !==
-    path.join(bound.checkoutRoot, sharpRoot)
+    path.join(bound.checkoutRoot, targetRoot)
   )
     fail("FILE_UNSAFE");
   const actual = await realpath(target);
   checkpoint(ctx);
-  if (actual !== path.join(bound.checkoutRoot, sharpRoot)) fail("FILE_UNSAFE");
+  if (actual !== path.join(bound.checkoutRoot, targetRoot)) fail("FILE_UNSAFE");
   const after = await lstat(target, { bigint: true });
   checkpoint(ctx);
   if (
@@ -899,13 +1236,14 @@ async function readArtifactAlias(
     fail("FILE_CHANGED");
   checkpoint(ctx);
   return {
+    kind,
     stat: before,
-    entry: { path: rel, targetRoot: sharpRoot, readlinkSha256: digest(text) },
+    entry: { path: rel, targetRoot, readlinkSha256: digest(text) },
   };
 }
 async function artifactAliases(
   bound: MediaDeploymentRoots,
-  sharpRoot: string,
+  accepted: AliasRoots,
   ctx: MediaDeploymentContext,
   budget: Budget,
 ): Promise<MediaDeploymentArtifactAlias[]> {
@@ -917,6 +1255,7 @@ async function artifactAliases(
     throw error;
   }
   const aliases: MediaDeploymentArtifactAlias[] = [];
+  const kinds = new Set<AliasKind>();
   const dir = await opendir(target, { bufferSize: 16 });
   try {
     const before = await lstat(target, { bigint: true });
@@ -926,17 +1265,16 @@ async function artifactAliases(
       checkpoint(ctx);
       if (!entry) break;
       if (++budget.entries > MAX_ENTRIES) fail("LIMIT_EXCEEDED");
-      if (aliases.length >= 1 || !entry.isSymbolicLink()) fail("FILE_UNSAFE");
-      aliases.push(
-        (
-          await readArtifactAlias(
-            bound,
-            "node_modules/" + entry.name,
-            sharpRoot,
-            ctx,
-          )
-        ).entry,
+      if (!entry.isSymbolicLink()) fail("FILE_UNSAFE");
+      const alias = await readArtifactAlias(
+        bound,
+        "node_modules/" + entry.name,
+        accepted,
+        ctx,
       );
+      if (kinds.has(alias.kind)) fail("FILE_UNSAFE");
+      kinds.add(alias.kind);
+      aliases.push(alias.entry);
     }
     if (!same(before, await lstat(target, { bigint: true })))
       fail("FILE_CHANGED");
@@ -945,7 +1283,7 @@ async function artifactAliases(
     await dir.close();
   }
   checkpoint(ctx);
-  return aliases;
+  return aliases.sort((a, b) => compare(a.path, b.path));
 }
 async function snapshot(
   bound: MediaDeploymentRoots,
@@ -955,6 +1293,7 @@ async function snapshot(
   const sourceFiles: MediaDeploymentSourceFile[] = [];
   const artifactFiles: MediaDeploymentFile[] = [];
   const sharpRuntime = await sharpMapping(bound, ctx);
+  const argon2Runtime = await argon2Mapping(bound, ctx);
   let declared: Record<string, unknown> = {};
   for (const rel of SOURCE_FIXED_FILES) {
     const result = await readRegular(bound.checkoutRoot, rel, ctx, budget);
@@ -1047,6 +1386,29 @@ async function snapshot(
       });
     });
   }
+  if (argon2Runtime) {
+    for (const p of argon2Runtime.packageRoots)
+      await walk(bound.checkoutRoot, p.root, ctx, budget, async (file) => {
+        sourceFiles.push({
+          role: "argon2-runtime",
+          ...(await readRegular(bound.checkoutRoot, file, ctx, budget)).entry,
+        });
+      });
+  }
+  if (
+    argon2Runtime &&
+    argon2FilesHash(
+      sourceFiles
+        .filter((f) => f.role === "argon2-runtime")
+        .sort((a, b) => compare(a.path, b.path)),
+    ) !== argon2Runtime.filesHash
+  )
+    fail("FILE_CHANGED");
+  if (
+    JSON.stringify(await argon2Mapping(bound, ctx)) !==
+    JSON.stringify(argon2Runtime)
+  )
+    fail("FILE_CHANGED");
   if (
     JSON.stringify(await sharpMapping(bound, ctx)) !==
     JSON.stringify(sharpRuntime)
@@ -1054,7 +1416,7 @@ async function snapshot(
     fail("FILE_CHANGED");
   const aliases = await artifactAliases(
     bound,
-    sharpRuntime.packageRoots[0]!.root,
+    aliasRoots(sharpRuntime, argon2Runtime),
     ctx,
     budget,
   );
@@ -1089,6 +1451,7 @@ async function snapshot(
     ...bound,
     dependencyRoots,
     sharpRuntime,
+    argon2Runtime,
     sourceFiles,
     artifactFiles,
     artifactAliases: aliases,
@@ -1348,7 +1711,9 @@ export async function hardenMediaDeploymentArtifacts(
     await ancestors(input.checkoutRoot, input.deploymentRoot, ctx);
     const entries: { rel: string; stat: BigIntStats }[] = [];
     const sharpRuntime = await sharpMapping(input, ctx);
-    const sharpRoot = sharpRuntime.packageRoots[0]!.root;
+    const argon2Runtime = await argon2Mapping(input, ctx);
+    const accepted = aliasRoots(sharpRuntime, argon2Runtime);
+    const kinds = new Set<AliasKind>();
     const aliases: Awaited<ReturnType<typeof readArtifactAlias>>[] = [];
     let itemCount = 0;
     let totalBytes = 0;
@@ -1363,10 +1728,10 @@ export async function hardenMediaDeploymentArtifacts(
       checkpoint(ctx!);
       if (!ownerOnly(stat)) fail("FILE_UNSAFE");
       if (stat.isSymbolicLink()) {
-        if (aliases.length >= 1) fail("FILE_UNSAFE");
-        aliases.push(
-          await readArtifactAlias(input, rel, sharpRoot, ctx!, true),
-        );
+        const alias = await readArtifactAlias(input, rel, accepted, ctx!, true);
+        if (kinds.has(alias.kind)) fail("FILE_UNSAFE");
+        kinds.add(alias.kind);
+        aliases.push(alias);
         return;
       }
       if (rel.startsWith("node_modules/")) fail("FILE_UNSAFE");
@@ -1472,7 +1837,7 @@ export async function hardenMediaDeploymentArtifacts(
       const after = await readArtifactAlias(
         input,
         alias.entry.path,
-        sharpRoot,
+        accepted,
         ctx,
       );
       if (
@@ -1481,6 +1846,11 @@ export async function hardenMediaDeploymentArtifacts(
       )
         fail("FILE_CHANGED");
     }
+    if (
+      JSON.stringify(await argon2Mapping(input, ctx)) !==
+      JSON.stringify(argon2Runtime)
+    )
+      fail("FILE_CHANGED");
     if (
       JSON.stringify(await sharpMapping(input, ctx)) !==
       JSON.stringify(sharpRuntime)

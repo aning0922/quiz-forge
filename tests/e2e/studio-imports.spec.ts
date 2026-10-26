@@ -1,3 +1,7 @@
+// V2-B route alignment only: this historical suite still needs account-password fixtures
+// and the retained receive/check task sequence. Its old full-page snapshot/list assertions
+// are preserved, not skipped or claimed green. Current task/UNKNOWN/owner coverage:
+// tests/browser/studio-v2b-workspace.mjs; root must supply account-backed real closure.
 import { test, expect, type Page } from "@playwright/test";
 import { constants } from "node:fs";
 import { open } from "node:fs/promises";
@@ -145,9 +149,18 @@ async function signIn(page: Page, role: "operator" | "readOnly" = "operator") {
   await enterCredential(page, fixture[role]);
   await page.getByRole("button", { name: "登录 Studio" }).click();
   await expect(page.getByRole("heading", { name: "工作台" })).toBeVisible();
-  await page.goto("/studio/products/e2e-imports/imports");
+  await page.goto(
+    role === "readOnly"
+      ? "/studio/products/e2e-imports?task=content&panel=imports"
+      : "/studio/products/e2e-imports?task=content",
+  );
+  if (role !== "readOnly")
+    await page.getByRole("button", { name: "上传内容包", exact: true }).click();
   await expect(
-    page.getByRole("heading", { name: "内容包接收", exact: true }),
+    page.getByRole("dialog", {
+      name: role === "readOnly" ? "接收与检查记录" : "导入或更新测评内容",
+      exact: true,
+    }),
   ).toBeVisible();
 }
 
@@ -202,16 +215,23 @@ test("real intent and raw received state remains unvalidated", async ({
 }, testInfo) => {
   await fixtureCommand("enable");
   await signIn(page);
-  const workflow = page.getByRole("navigation", {
-    name: "商品操作流程",
-    exact: true,
-  });
+  // The drawer owns the current task; no removed six-step navigation is restored.
   await expect(
-    workflow.getByRole("link", { name: "导入与验证", exact: true }),
+    page
+      .getByRole("navigation", {
+        name: "测评核心任务",
+        exact: true,
+        includeHidden: true,
+      })
+      .getByRole("button", {
+        name: "内容制作",
+        exact: true,
+        includeHidden: true,
+      }),
   ).toHaveAttribute("aria-current", "page");
   await expect(
-    workflow.getByRole("link", { name: "预览 · 先选内容", exact: true }),
-  ).toHaveAttribute("href", "/studio/products/e2e-imports/draft");
+    page.getByRole("dialog", { name: "导入或更新测评内容", exact: true }),
+  ).toBeVisible();
   await expect(
     page.getByText("内容包接收已启用（只读配置快照）", { exact: true }),
   ).toBeVisible();

@@ -12,6 +12,7 @@ import {
   Settings,
   RefreshCw,
   CheckCircle2,
+  ChevronRight,
 } from "lucide-react";
 import type { StudioSessionDto } from "../contracts";
 import type { StudioConsumerScopeV1 } from "../consumer-access/pending";
@@ -23,11 +24,20 @@ import {
   sameRevisionTarget,
   type RevisionTarget,
 } from "@/features/product/internal-versions/identity-contracts";
+import Link from "next/link";
+import {
+  checkDraftRevision,
+  checkedDraftFetch,
+  draftRevisionEndpoint,
+} from "../drafts/client";
+import { useInternalRead } from "../internal-versions/use-read";
+import type { WorkspaceQuery } from "./routes";
+import { WorkspaceAside } from "./aside";
 import type { PreviewScope } from "@/features/product/preview/contracts";
 import { FixedRevisionPreviewPage } from "../preview/page";
 import { RevisionHistoryPanel } from "../draft-revisions/history";
 import { invalidateCurrentStudioAuthority } from "../authority-events";
-import { previewSelectionStatus } from "./preview-hub";
+import { previewSelectionStatus } from "./preview-selection";
 import { useInternalAuthority } from "../internal-versions/authority";
 import { productPresentation } from "../operations-ui/presentation";
 import { StatusBadge } from "../operations-ui/status-badge";
@@ -49,14 +59,14 @@ import styles from "./task-workspace.module.css";
 
 const tabs = [
   { id: "content", label: "内容制作", icon: FileText },
-  { id: "preview", label: "预览体验", icon: Eye },
-  { id: "review", label: "审核与版本", icon: ShieldCheck },
+  { id: "preview", label: "体验预览", icon: Eye },
+  { id: "review", label: "审核封存", icon: ShieldCheck },
   { id: "testing", label: "内测发放", icon: Ticket },
 ] as const;
 export type TaskTab = (typeof tabs)[number]["id"];
 const taskLabels: Record<string, string> = {
   content: "内容制作",
-  review: "审核与版本",
+  review: "审核封存",
   play: "创建答题版本",
   issue: "发放访问码",
   void: "作废访问码",
@@ -71,11 +81,15 @@ type PreviewLaunch = {
 export function ProductTaskWorkspace({
   session: initialSession,
   initialTask = "content",
+  initialPanel,
+  initialScope,
   consumerScope,
   consumerRenderer,
 }: {
   session: StudioSessionDto;
   initialTask?: TaskTab;
+  initialPanel?: WorkspaceQuery["panel"];
+  initialScope?: PreviewScope | undefined;
   consumerScope: StudioConsumerScopeV1;
   consumerRenderer: ConsumerRendererIdentity;
 }) {
@@ -101,6 +115,8 @@ export function ProductTaskWorkspace({
         <Workspace
           session={session}
           initialTask={initialTask}
+          initialPanel={initialPanel}
+          initialScope={initialScope}
           consumerScope={consumerScope}
           consumerRenderer={consumerRenderer}
         />
@@ -112,11 +128,15 @@ export function ProductTaskWorkspace({
 function Workspace({
   session: initialSession,
   initialTask,
+  initialPanel,
+  initialScope,
   consumerScope,
   consumerRenderer,
 }: {
   session: StudioSessionDto;
   initialTask: TaskTab;
+  initialPanel?: WorkspaceQuery["panel"];
+  initialScope?: PreviewScope | undefined;
   consumerScope: StudioConsumerScopeV1;
   consumerRenderer: ConsumerRendererIdentity;
 }) {
@@ -136,6 +156,118 @@ function Workspace({
   const [contentRun, setContentRun] = useState(0);
   const [sourceDetail, setSourceDetail] = useState<string>();
   const [revisionDetail, setRevisionDetail] = useState<RevisionTarget>();
+  const incomingEntry = JSON.stringify({
+    task: initialTask,
+    scope: initialScope,
+    panel: initialPanel,
+  });
+  const acceptedEntry = useRef(incomingEntry);
+  const [entry, setEntry] = useState({
+    task: initialTask,
+    scope: initialScope,
+    panel: initialPanel,
+  });
+  const [routeNotice, setRouteNotice] = useState("");
+  const scopeKey = JSON.stringify(entry.scope ?? null);
+  const fixedRead = useInternalRead(
+    `workspace-target:${scopeKey}`,
+    async (signal) => {
+      const scope = entry.scope;
+      if (!scope) return undefined;
+      const result = await checkedDraftFetch(
+        draftRevisionEndpoint(scope.productId, scope.draftId, scope.revision),
+        { signal },
+        (value) => checkDraftRevision(value, scope),
+        { revision: true },
+      );
+      const draft = result.draft;
+      return revisionTargetSchema.parse({
+        draftId: draft.draftId,
+        revision: draft.revision,
+        canonicalContentSha256: draft.canonicalContentSha256,
+        assetSetSha256: draft.assetSetSha256,
+        canonicalManifestSha256: draft.canonicalManifestSha256,
+      });
+    },
+  );
+  const [fixedEntry, setFixedEntry] = useState<{
+    key: string;
+    target: RevisionTarget;
+  }>();
+  if (fixedRead.value && fixedEntry?.key !== scopeKey)
+    setFixedEntry({ key: scopeKey, target: fixedRead.value });
+  const requestedTarget =
+    fixedEntry?.key === scopeKey ? fixedEntry.target : undefined;
+  useEffect(() => {
+    if (acceptedEntry.current === incomingEntry) return;
+    let active = true;
+    queueMicrotask(() => {
+      if (!active) return;
+      acceptedEntry.current = incomingEntry;
+      if (
+        launched ||
+        Object.values(surfaces.states).some(
+          (state) => state?.busy || state?.pending || state?.retained,
+        )
+      ) {
+        setRouteNotice(
+          "本页已有保留的任务或固定预览，本次地址中的新目标未接管原任务。请先核实并明确结束原操作，再重新进入目标。",
+        );
+        return;
+      }
+      if (!surfaces.canSwitch()) return;
+      surfaces.close();
+      setEntry({ task: initialTask, scope: initialScope, panel: initialPanel });
+      setSelection(undefined);
+      setVisitedTabs((old) => new Set([...old, initialTask]));
+      setTab(initialTask);
+      setRouteNotice("");
+    });
+    return () => {
+      active = false;
+    };
+  }, [
+    incomingEntry,
+    initialTask,
+    initialScope,
+    initialPanel,
+    launched,
+    surfaces,
+  ]);
+  const historyEntryTarget = entry.scope
+    ? requestedTarget
+    : workspace?.read.value?.content.draft.state === "present"
+      ? workspace.read.value.content.draft.value.target
+      : undefined;
+  useEffect(() => {
+    if (entry.panel !== "revisions" || historyScope || !historyEntryTarget)
+      return;
+    let active = true;
+    queueMicrotask(() => {
+      if (active)
+        setHistoryScope(revisionTargetSchema.parse(historyEntryTarget));
+    });
+    return () => {
+      active = false;
+    };
+  }, [entry.panel, historyScope, historyEntryTarget]);
+  const openedPanel = useRef<string | undefined>(undefined);
+  const openSurface = surfaces.open;
+  useEffect(() => {
+    const key = JSON.stringify(entry);
+    if (!entry.panel || openedPanel.current === key) return;
+    let active = true;
+    queueMicrotask(() => {
+      if (!active || !entry.panel) return;
+      if (entry.panel === "versions")
+        setVisitedTabs((old) => new Set([...old, "review"]));
+      openedPanel.current = key;
+      openSurface(entry.panel);
+    });
+    return () => {
+      active = false;
+    };
+  }, [entry, openSurface]);
   const tabBar = useRef<HTMLElement>(null);
   useEffect(() => {
     const element = tabBar.current;
@@ -171,7 +303,8 @@ function Workspace({
     value?.content.draft.state === "present"
       ? value.content.draft.value.target
       : undefined;
-  const selected = selection ?? launched?.target ?? current;
+  const selected =
+    selection ?? launched?.target ?? (entry.scope ? requestedTarget : current);
   function switchTab(next: TaskTab) {
     if (!surfaces.canSwitch()) return;
     if (surfaces.active && !surfaces.close()) return;
@@ -252,10 +385,27 @@ function Workspace({
     <div className={styles.workspace}>
       <header className={styles.heading}>
         <div>
-          <p className={styles.kicker}>测评工作区 / 内容生产与内测</p>
+          <Link className={styles.kicker} href="/studio/products">
+            测评管理 <ChevronRight size={14} aria-hidden="true" /> 测评工作区
+          </Link>
+          <div className={styles.headerTags}>
+            {value?.directory.primaryCategory && (
+              <StatusBadge
+                status={{
+                  label: value.directory.primaryCategory.name,
+                  tone: "info",
+                }}
+              />
+            )}
+            <StatusBadge
+              status={{
+                label: value?.directory.archivedAt ? "已归档" : "仅内测",
+                tone: value?.directory.archivedAt ? "neutral" : "success",
+              }}
+            />
+          </div>
           <div className={styles.titleRow}>
             <h1>{value?.directory.title ?? "正在读取测评"}</h1>
-            {presentation && <StatusBadge status={presentation.review} />}
           </div>
           <p className={styles.subtitle}>
             当前内容：
@@ -264,9 +414,7 @@ function Workspace({
               : value?.content.draft.state === "none"
                 ? "尚无草稿"
                 : "待读取核实"}
-            {presentation?.historicalNote && (
-              <> · {presentation.historicalNote}</>
-            )}
+            {presentation?.review && <> · {presentation.review.label}</>}
             {" · "}
             {session.operator.role === "read-only"
               ? "只读身份"
@@ -293,6 +441,26 @@ function Workspace({
           </button>
         </div>
       </header>
+      {routeNotice && (
+        <p className={styles.notice} role="alert">
+          {routeNotice}
+        </p>
+      )}
+      {entry.scope && !requestedTarget && (
+        <section
+          className={styles.notice}
+          role={fixedRead.error ? "alert" : "status"}
+        >
+          <p>
+            {fixedRead.error
+              ? `固定目标读取失败：${fixedRead.error}，不会改为当前最新修订。`
+              : `正在核对地址指定的固定 r${entry.scope.revision}，不会替换为当前草稿。`}
+          </p>
+          {fixedRead.error && (
+            <button onClick={fixedRead.refresh}>重新读取指定修订</button>
+          )}
+        </section>
+      )}
       {read.error && (
         <p role="alert" className={styles.notice}>
           当前状态读取失败，已保留任务不会被替换。{read.error}
@@ -307,10 +475,11 @@ function Workspace({
           <p>重新登录不会恢复本页旧权限，请保留原记录在新工作区核实。</p>
         </section>
       )}
-      <nav ref={tabBar} className={styles.tabs} aria-label="测评内部任务">
+      <nav ref={tabBar} className={styles.tabs} aria-label="测评核心任务">
         {tabs.map(({ id, label, icon: Icon }) => (
           <button
             key={id}
+            className={tab === id ? styles.activeTab : undefined}
             aria-current={tab === id ? "page" : undefined}
             onClick={() => switchTab(id)}
           >
@@ -335,156 +504,172 @@ function Workspace({
             </button>
           </section>
         ))}
-      <div hidden={tab !== "content"}>
-        <ContentWorkbench
-          value={value}
-          loading={read.loading}
-          error={read.error}
-          taskState={surfaces.states.content}
-          previewBlocked={authority.isRevoked}
-          readOnly={
-            !roleHasCapability(session.operator.role, "import:create") ||
-            authority.isRevoked
-          }
-          onOpenTask={() => surfaces.open("content")}
-          onOpenHistory={openRevisions}
-          onOpenImports={() => surfaces.open("imports")}
-          onOpenVersions={openVersions}
-          onInspectSource={inspectSource}
-          onPreview={launchPreview}
-        />
-      </div>
-      <div hidden={tab !== "preview"}>
-        <div className={styles.sectionHeading}>
-          <div>
-            <h2>预览体验</h2>
-            <p>日常体验默认指向当前草稿；历史内容按需选择。</p>
+      <div className={styles.workspaceGrid}>
+        <div className={styles.mainColumn}>
+          <div hidden={tab !== "content"}>
+            <ContentWorkbench
+              value={value}
+              loading={read.loading}
+              error={read.error}
+              taskState={surfaces.states.content}
+              previewBlocked={authority.isRevoked}
+              readOnly={
+                !roleHasCapability(session.operator.role, "import:create") ||
+                authority.isRevoked
+              }
+              onOpenTask={() => surfaces.open("content")}
+              onOpenHistory={openRevisions}
+              onOpenImports={() => surfaces.open("imports")}
+              onInspectSource={inspectSource}
+              onPreview={launchPreview}
+            />
           </div>
-          <button onClick={openRevisions}>历史修订</button>
-        </div>
-        <div className={styles.columns}>
-          <section className={styles.panel}>
-            {selected ? (
-              <>
-                <div className={styles.cardHead}>
+          <div hidden={tab !== "preview"}>
+            <div className={styles.columns}>
+              <section className={styles.panel}>
+                <div className={styles.sectionHeading}>
                   <div>
-                    <h3>
-                      {current && sameRevisionTarget(selected, current)
-                        ? "当前草稿预览"
-                        : "历史修订预览"}
-                    </h3>
-                    <p>选择目标：r{selected.revision} · 固定修订</p>
+                    <h2>体验预览</h2>
+                    <p>日常体验默认指向当前草稿；历史内容按需选择。</p>
                   </div>
-                  <StatusBadge
-                    status={previewSelectionStatus(
-                      { productId, target: selected },
-                      productId,
-                      value,
-                    )}
-                  />
+                  <button onClick={openRevisions}>历史修订</button>
                 </div>
-                <div
-                  className={styles.previewDisplay}
-                  aria-label="固定修订预览入口"
-                >
-                  <Eye size={28} aria-hidden="true" />
-                  <strong>{value?.directory.title ?? "测评内容"}</strong>
-                  <span>r{selected.revision} · 打开后查看真实封面与内容</span>
-                </div>
-                <div className={styles.actions}>
-                  <button
-                    className={styles.primary}
-                    disabled={authority.isRevoked}
-                    onClick={() => launchPreview(selected)}
-                  >
-                    <Eye size={18} aria-hidden="true" />
-                    体验 r{selected.revision} 完整流程
-                  </button>
-                  <button onClick={openRevisions}>选择其他修订</button>
-                </div>
-                <p className={styles.previewHint}>
-                  打开预览不会自动登记人工体验，也不会替代审核依据。
-                </p>
-                {switchPreview && (
-                  <section className={styles.notice} role="status">
-                    <p>
-                      将从 r{launched?.target.revision} 切换到 r
-                      {switchPreview.revision}
-                      ，旧预览的临时答案与结果会重置。内容导入任务和历史记录保持。
-                    </p>
+                {selected ? (
+                  <>
+                    <div className={styles.cardHead}>
+                      <div>
+                        <h3>
+                          {current && sameRevisionTarget(selected, current)
+                            ? "当前草稿预览"
+                            : "历史修订预览"}
+                        </h3>
+                        <p>选择目标：r{selected.revision} · 固定修订</p>
+                      </div>
+                      <StatusBadge
+                        status={previewSelectionStatus(
+                          { productId, target: selected },
+                          productId,
+                          value,
+                        )}
+                      />
+                    </div>
+                    <div
+                      className={styles.previewDisplay}
+                      aria-label="固定修订预览入口"
+                    >
+                      <Eye size={28} aria-hidden="true" />
+                      <strong>{value?.directory.title ?? "测评内容"}</strong>
+                      <span>
+                        r{selected.revision} · 打开后查看真实封面与内容
+                      </span>
+                    </div>
                     <div className={styles.actions}>
                       <button
-                        onClick={() => launchPreview(switchPreview, true)}
+                        className={styles.primary}
+                        disabled={authority.isRevoked}
+                        onClick={() => launchPreview(selected)}
                       >
-                        确认切换并开始 r{switchPreview.revision}
+                        <Eye size={18} aria-hidden="true" />
+                        体验 r{selected.revision} 完整流程
                       </button>
-                      <button onClick={() => setSwitchPreview(undefined)}>
-                        保留原预览
-                      </button>
+                      <button onClick={openRevisions}>选择其他修订</button>
                     </div>
-                  </section>
+                    <p className={styles.previewHint}>
+                      打开预览不会自动登记人工体验，也不会替代审核依据。
+                    </p>
+                    {switchPreview && (
+                      <section className={styles.notice} role="status">
+                        <p>
+                          将从 r{launched?.target.revision} 切换到 r
+                          {switchPreview.revision}
+                          ，旧预览的临时答案与结果会重置。内容导入任务和历史记录保持。
+                        </p>
+                        <div className={styles.actions}>
+                          <button
+                            onClick={() => launchPreview(switchPreview, true)}
+                          >
+                            确认切换并开始 r{switchPreview.revision}
+                          </button>
+                          <button onClick={() => setSwitchPreview(undefined)}>
+                            保留原预览
+                          </button>
+                        </div>
+                      </section>
+                    )}
+                    {current && !sameRevisionTarget(selected, current) && (
+                      <button onClick={() => choosePreview(current)}>
+                        选择当前 r{current.revision}
+                      </button>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <h2>还没有可预览的内容</h2>
+                    <p>先完成内容包接收、检查并形成首稿。</p>
+                    <button onClick={() => switchTab("content")}>
+                      去处理内容
+                    </button>
+                  </>
                 )}
-                {current && !sameRevisionTarget(selected, current) && (
-                  <button onClick={() => choosePreview(current)}>
-                    选择当前 r{current.revision}
-                  </button>
-                )}
-              </>
-            ) : (
-              <>
-                <h2>还没有可预览的内容</h2>
-                <p>先完成内容包接收、检查并形成首稿。</p>
-                <button onClick={() => switchTab("content")}>去处理内容</button>
-              </>
-            )}
-          </section>
-          <aside className={styles.panel}>
-            <h3>预览什么？</h3>
-            <ul className={styles.previewChecklist}>
-              {[
-                ["封面与答题", "检查视觉布局和阅读体验"],
-                ["结果揭晓", "检查对应结果与内容表现"],
-                ["完整报告与海报", "核对展示及导出入口"],
-              ].map(([title, description]) => (
-                <li key={title}>
-                  <CheckCircle2 size={24} aria-hidden="true" />
-                  <div>
-                    <strong>{title}</strong>
-                    <p>{description}</p>
-                  </div>
-                </li>
-              ))}
-            </ul>
-            <p className={styles.previewHint}>
-              新修订产生时，已打开的预览仍保持原目标和本页进度。
-            </p>
-          </aside>
+              </section>
+              <aside className={styles.panel}>
+                <h3>预览什么？</h3>
+                <ul className={styles.previewChecklist}>
+                  {[
+                    ["封面与答题", "检查视觉布局和阅读体验"],
+                    ["结果揭晓", "检查对应结果与内容表现"],
+                    ["完整报告与海报", "核对展示及导出入口"],
+                  ].map(([title, description]) => (
+                    <li key={title}>
+                      <CheckCircle2 size={24} aria-hidden="true" />
+                      <div>
+                        <strong>{title}</strong>
+                        <p>{description}</p>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+                <p className={styles.previewHint}>
+                  新修订产生时，已打开的预览仍保持原目标和本页进度。
+                </p>
+              </aside>
+            </div>
+          </div>
+          {visitedTabs.has("review") && (
+            <ReviewWorkbench
+              productId={productId}
+              session={session}
+              key={scopeKey}
+              currentTarget={current}
+              initialTarget={entry.scope ? requestedTarget : undefined}
+              requireInitialTarget={Boolean(entry.scope)}
+              visible={tab === "review"}
+              onChanged={read.refresh}
+              onGoToTesting={() => switchTab("testing")}
+              onPreviewTarget={launchPreview}
+              onInspectRevision={inspectRevision}
+            />
+          )}
+          {visitedTabs.has("testing") && (
+            <div hidden={tab !== "testing"} className={styles.testingPane}>
+              <StudioConsumerAccessPageV1
+                key={`${consumerScope.instanceId}:${consumerScope.issuerId}:${consumerScope.productId}`}
+                scope={consumerScope}
+                renderer={consumerRenderer}
+                workspaceAuthority={authority}
+                embedded
+                visible={tab === "testing"}
+                onChanged={read.refresh}
+                onGoToReview={() => switchTab("review")}
+              />
+            </div>
+          )}
         </div>
+        <WorkspaceAside
+          value={value}
+          onHistory={() => surfaces.open("history")}
+        />
       </div>
-      {visitedTabs.has("review") && (
-        <ReviewWorkbench
-          productId={productId}
-          session={session}
-          currentTarget={current}
-          visible={tab === "review"}
-          onChanged={read.refresh}
-          onGoToTesting={() => switchTab("testing")}
-          onPreviewTarget={launchPreview}
-          onInspectRevision={inspectRevision}
-        />
-      )}
-      {visitedTabs.has("testing") && (
-        <StudioConsumerAccessPageV1
-          key={`${consumerScope.instanceId}:${consumerScope.issuerId}:${consumerScope.productId}`}
-          scope={consumerScope}
-          renderer={consumerRenderer}
-          workspaceAuthority={authority}
-          embedded
-          visible={tab === "testing"}
-          onChanged={read.refresh}
-          onGoToReview={() => switchTab("review")}
-        />
-      )}
       <RetainedTaskSurface id="content">
         <ContentTask
           key={contentRun}
@@ -534,8 +719,20 @@ function Workspace({
             onInspectSource={inspectSource}
             onInspectRevision={inspectRevision}
           />
-        ) : (
+        ) : (entry.scope ? fixedRead.loading : read.loading) ? (
+          <p role="status">正在读取草稿范围，请稍候…</p>
+        ) : (entry.scope ? fixedRead.error : read.error) ? (
+          <section role="alert" className={styles.notice}>
+            <p>草稿范围读取失败，尚不能判定是否存在可读修订。</p>
+            <p>{entry.scope ? fixedRead.error : read.error}</p>
+            <button onClick={entry.scope ? fixedRead.refresh : read.refresh}>
+              重新读取草稿范围
+            </button>
+          </section>
+        ) : !entry.scope && value?.content.draft.state === "none" ? (
           <p>尚无可读取的草稿修订。</p>
+        ) : (
+          <p role="status">草稿范围尚待核实，不会改用其他来源。</p>
         )}
       </RetainedTaskSurface>
       <RetainedTaskSurface id="source">

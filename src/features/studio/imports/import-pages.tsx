@@ -2,7 +2,6 @@
 import { useOwnedStudioSession } from "../accounts/session-owner";
 import { roleHasCapability } from "@/lib/auth/role-policy";
 import { StudioPageHeader } from "../presentation/page-header";
-import { StudioWorkflowNav } from "../presentation/workflow-nav";
 import Link from "next/link";
 import { useState } from "react";
 import { useStudioLeaveProtection } from "../navigation-boundary";
@@ -111,7 +110,6 @@ export function ImportList({
           title="内容包接收"
           description="先接收内容包，再验证结构与资源。接收成功不等于已验证、已创建草稿或已发布。"
         />
-        <StudioWorkflowNav productId={productId} current="imports" />
         <Link
           className={`${styles.link} ${styles.secondary}`}
           href={`/studio/products/${encodeURIComponent(productId)}`}
@@ -314,10 +312,9 @@ export function ImportDetail({
           title="内容包接收状态"
           description="查看本次接收事实，核实未确认操作，再进入验证归档。"
         />
-        <StudioWorkflowNav productId={productId} current="imports" />
         <Link
           className={`${styles.link} ${styles.secondary}`}
-          href={`/studio/products/${encodeURIComponent(productId)}/imports`}
+          href={`/studio/products/${encodeURIComponent(productId)}?task=content&panel=imports`}
         >
           返回内容包列表
         </Link>

@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { LockKeyhole, ShieldCheck, Users } from "lucide-react";
+import { LockKeyhole, ShieldCheck, Sparkles, Users } from "lucide-react";
 import styles from "./entry.module.css";
 
 export function EntryScene({
@@ -19,10 +19,11 @@ export function EntryScene({
     <div className={styles.scene} data-studio-entry={kind}>
       <aside className={styles.side} aria-label="QuizForge Studio">
         <div className={styles.brand}>
-          <span className={styles.mark}>Q</span>
+          <span className={styles.mark}>
+            <Sparkles size={23} aria-hidden="true" />
+          </span>
           <div>
             <strong>QuizForge Studio</strong>
-            <span>运营管理空间</span>
           </div>
         </div>
         <div className={styles.hero}>
@@ -32,18 +33,17 @@ export function EntryScene({
             留出更从容的运营空间。
           </h2>
           <p>
-            作品管理、清晰的角色分工与安全的账号访问，统一于一个简洁、专业的后台。
+            清晰的工作流、明确的角色分工与可信的操作记录，在一个完整的后台里协作。
           </p>
           <div className={styles.art} aria-hidden="true">
             {[
-              { Icon: Users, label: "成员与权限管理" },
-              { Icon: ShieldCheck, label: "角色分工清晰" },
-              { Icon: LockKeyhole, label: "账号与操作安全" },
+              { Icon: Users, label: "人员与权限管理" },
+              { Icon: ShieldCheck, label: "角色边界清晰" },
+              { Icon: LockKeyhole, label: "原操作及账号安全" },
             ].map(({ Icon, label }) => (
               <div key={label}>
                 <Icon size={20} />
                 <strong>{label}</strong>
-                <i />
               </div>
             ))}
           </div>
@@ -56,6 +56,11 @@ export function EntryScene({
           <h1>{title}</h1>
           <p className={styles.description}>{description}</p>
           {children}
+          <p className={styles.footnote}>
+            运营人员专用空间
+            <br />
+            账号由管理员开通；不提供公开注册或消费者登录。
+          </p>
         </div>
       </main>
     </div>

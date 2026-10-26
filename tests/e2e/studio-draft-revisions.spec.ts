@@ -1,3 +1,5 @@
+// Current URLs/history task are aligned below. Historical global recovery steps and
+// credential fixtures still need account-backed rebasing; no security assertions are skipped.
 import { test, expect, type Page } from "@playwright/test";
 import { constants } from "node:fs";
 import { captureRevisionWidths as screenshot } from "./studio-draft-revisions.visual";
@@ -180,6 +182,17 @@ const pendingPanel = (page: Page) =>
   page.getByRole("region", { name: "草稿更新操作查询", exact: true });
 const historyPanel = (page: Page) =>
   page.getByRole("region", { name: "草稿历史修订", exact: true });
+async function openRevisionHistory(page: Page) {
+  await page.goto(draftWorkspacePath(fixture.productId));
+  await page.getByRole("button", { name: "记录与历史", exact: true }).click();
+  await page
+    .getByRole("button", { name: "查看内容修订记录", exact: true })
+    .click();
+  await expect(
+    page.getByRole("dialog", { name: "内容修订记录", exact: true }),
+  ).toBeVisible();
+}
+
 function binding(
   s: Source,
   base: DraftSummaryDto,
@@ -487,7 +500,7 @@ test("legacy anchors and corrupt revision storage block new preparation while se
       exact: true,
     }),
   ).toHaveCount(0);
-  await page.goto(draftWorkspacePath(fixture.productId));
+  await openRevisionHistory(page);
   await expect(
     historyPanel(page).locator('[data-history-revision="1"]'),
   ).toBeVisible();
@@ -647,7 +660,7 @@ test("another tab appends third to r3; old history anchor and original spare req
   expect(original.tuple.target.expectedRevision).toBe(2);
   await page.unrouteAll({ behavior: "wait" });
   const history = await page.context().newPage();
-  await history.goto(draftWorkspacePath(fixture.productId));
+  await openRevisionHistory(history);
   await historyPanel(history).getByLabel("每页条数").selectOption("1");
   await expect(
     historyPanel(history).locator('[data-history-revision="2"]'),
@@ -849,7 +862,7 @@ test("fixed r1/r2 content, actual scoring and private resources survive two late
   await expect(
     page.getByRole("textbox", { name: "完整内容正文", exact: true }),
   ).toHaveValue(original.canonicalContentText);
-  await page.goto(draftWorkspacePath(fixture.productId));
+  await openRevisionHistory(page);
   await expect(
     historyPanel(page).locator("[data-history-revision]"),
   ).toHaveCount(3);

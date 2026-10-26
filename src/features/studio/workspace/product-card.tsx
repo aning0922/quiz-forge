@@ -1,27 +1,23 @@
+import { directoryTime } from "./directory-time";
+import type { StudioRole } from "@/lib/auth/role-policy";
 import Link from "next/link";
 import type { ProductOperations } from "../operations/contracts";
-import { productPresentation } from "../operations-ui/presentation";
+import {
+  productPresentation,
+  productPrimaryAction,
+} from "../operations-ui/presentation";
 import { StatusBadge } from "../operations-ui/status-badge";
 import type { ProductDto } from "@/features/product/workspace/contracts";
-import { directoryTime } from "./directory-time";
 import { TechnicalDetails } from "../presentation/technical-details";
 import styles from "./workspace.module.css";
 import parity from "./catalog-parity.module.css";
 
-/** Keep existing fact-based choice, but open the matching task in the V2 workspace. */
-export function catalogPrimaryAction(operations: ProductOperations) {
-  const primary = productPresentation(operations).primary;
-  const base = `/studio/products/${encodeURIComponent(operations.directory.id)}`;
-  const route = primary.href.slice(base.length);
-  const task =
-    route === "/content"
-      ? "content"
-      : route === "/consumer-access"
-        ? "testing"
-        : route === "/internal-versions" || route.endsWith("/internal-review")
-          ? "review"
-          : null;
-  return { ...primary, href: task ? `${base}?task=${task}` : base };
+/** Catalog callers always supply the live role; no route inference or default write role. */
+export function catalogPrimaryAction(
+  operations: ProductOperations,
+  role: StudioRole,
+) {
+  return productPrimaryAction(operations, role);
 }
 
 /** The same current-value card is used by explicit reconciliation, never as a receipt. */
@@ -30,55 +26,52 @@ export function ProductCard({
   showIdentity = false,
   newTab = false,
   operations,
+  role,
 }: {
   product: ProductDto;
   showIdentity?: boolean;
   newTab?: boolean;
-  operations?: ProductOperations;
-}) {
+} & (
+  | { operations: ProductOperations; role: StudioRole }
+  | { operations?: never; role?: never }
+)) {
   if (operations) {
     const facts = productPresentation(operations);
-    const action = catalogPrimaryAction(operations);
+    const action = productPrimaryAction(operations, role);
     return (
-      <article className={`${styles.catalogCard} ${parity.mobileCard}`}>
-        <h2>
-          <Link
-            className={styles.catalogTitle}
-            href={`/studio/products/${encodeURIComponent(product.id)}`}
-            aria-label={`查看测评 ${product.title}（编号 ${product.id}）`}
-          >
-            {product.title}
-          </Link>
-        </h2>
-        <p className={parity.identifier}>{product.slug}</p>
-        <p className={styles.catalogCategory}>
-          {product.primaryCategory
-            ? `${product.primaryCategory.name}${product.primaryCategory.archivedAt ? "（分类已归档）" : ""}`
-            : "未分类"}
-          {product.archivedAt ? " · 已归档" : ""}
-        </p>
-        <div className={styles.catalogStates}>
-          <StatusBadge status={facts.content} />
-          <StatusBadge status={facts.review} />
-          <StatusBadge status={facts.testing} />
+      <article className={parity.mobileCard}>
+        <div className={parity.mobileIdentity}>
+          <div>
+            <h2>
+              <Link
+                className={styles.catalogTitle}
+                href={`/studio/products/${encodeURIComponent(product.id)}`}
+                aria-label={`查看测评 ${product.title}（编号 ${product.id}）`}
+              >
+                {product.title}
+              </Link>
+            </h2>
+            <p>
+              {product.primaryCategory?.name ?? "未分类"} ·{" "}
+              {facts.content.label}
+              {product.archivedAt ? " · 已归档" : ""}
+            </p>
+          </div>
+          <StatusBadge
+            status={
+              operations.content.draft.state === "present"
+                ? facts.review
+                : facts.content
+            }
+          />
         </div>
-        <div className={styles.catalogCardFooter}>
-          <p>
-            目录更新{" "}
-            <time dateTime={product.updatedAt}>
-              {directoryTime(product.updatedAt)}
-            </time>
-          </p>
-          <Link
-            className={styles.catalogAction}
-            href={action.href}
-            title={action.reason}
-            aria-label={`${action.label} ${product.title}`}
-          >
-            {action.label}
-            <span aria-hidden="true"> →</span>
-          </Link>
-        </div>
+        <Link
+          className={parity.mobileAction}
+          href={action.href}
+          title={action.reason}
+        >
+          {action.label} <span aria-hidden="true">→</span>
+        </Link>
       </article>
     );
   }

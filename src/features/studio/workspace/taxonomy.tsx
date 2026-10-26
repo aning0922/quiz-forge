@@ -21,7 +21,7 @@ import { studioFetch, studioMessage } from "../client";
 import { useWorkspaceRead } from "./use-request";
 import { useWorkspaceMutation, type MutationState } from "./use-mutation";
 import { taxonomyPath } from "./taxonomy-picker";
-import { WorkspaceNav, ReadOnlyNotice, Pagination } from "./primitives";
+import { ReadOnlyNotice, Pagination } from "./primitives";
 import { FilterBar } from "./filter-bar";
 import { ReconcilePanel } from "./reconcile-panel";
 import styles from "./workspace.module.css";
@@ -734,7 +734,6 @@ export function TaxonomyWorkspace({
   const [protectedState, setProtectedState] = useState(false);
   return (
     <div className={`${styles.workspace} ${local.workspace}`}>
-      <WorkspaceNav />
       <header className={local.pageHeader}>
         <div>
           <Link className={local.back} href="/studio/settings">

@@ -2,10 +2,8 @@
 import { useOwnedStudioSession } from "../accounts/session-owner";
 import { TechnicalDetails } from "../presentation/technical-details";
 import { StudioPageHeader } from "../presentation/page-header";
-import { StudioWorkflowNav } from "../presentation/workflow-nav";
 import Link from "next/link";
 import { useState, type ReactNode } from "react";
-import { previewPagePath } from "@/features/product/preview/urls";
 import type { AppendDraftApplication } from "@/features/product/draft-revisions/contracts";
 import { RevisionHistoryPanel } from "../draft-revisions/history";
 import { RevisionPendingPanel } from "../draft-revisions/pending-panel";
@@ -42,13 +40,6 @@ export function DraftWorkspacePage({
         <StudioPageHeader
           title="内容草稿"
           description="先核对当前草稿，再选择固定修订阅读、预览或记录内测基线。历史处理结果与当前指针分别保留。"
-        />
-        <StudioWorkflowNav
-          productId={productId}
-          current="draft"
-          {...(read.value?.kind === "draft"
-            ? { previewHref: previewPagePath(read.value.draft) }
-            : {})}
         />
         <div className={styles.actions}>
           <Link
@@ -142,13 +133,6 @@ export function DraftRevisionPage({
               。正文核验成功后可进入此修订预览或既有审核依据记录。
             </>
           }
-        />
-        <StudioWorkflowNav
-          productId={productId}
-          current="draft"
-          {...(read.value
-            ? { previewHref: previewPagePath(read.value.draft) }
-            : {})}
         />
         <div className={styles.actions}>
           <Link className={styles.link} href={draftWorkspacePath(productId)}>

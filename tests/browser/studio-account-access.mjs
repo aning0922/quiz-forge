@@ -25,6 +25,7 @@ const session={operator:{id,label:'synthetic-stable-label',loginName:'synthetic.
 const account={id,label:'synthetic-stable-label',loginName:'synthetic.admin',displayName:'合成管理员',role:'admin',status:'active',revision:1,createdAt:now,disabledAt:null};
 const params=new URLSearchParams(location.search),scenario=params.get('case')||'success';
 window.calls=[];window.auditQueries=[];window.resultFound=false;window.currentSession=session;window.originalSession=session;window.revoke=invalidateCurrentStudioAuthority;window.routes=[];window.records={};
+if(scenario==='reader'){session.operator.role='read-only';account.role='read-only';}
 const operation=(operationId,action,actorId=id,targetId=id)=>({operationId,action,actorId,targetId,status:'completed',errorCode:null,createdAt:now});
 window.fetch=async(raw,init={})=>{
  const url=new URL(raw,location.href),method=init.method||'GET',body=init.body?JSON.parse(init.body):{};
@@ -244,14 +245,14 @@ try {
       await assertLayout();
     }
     await page.setViewportSize({ width: 1440, height: 1000 });
-    await page.getByRole("button", { name: /修改登录密码/ }).click();
+    await page.getByRole("button", { name: "修改密码", exact: true }).click();
     await expect(
       page.getByRole("dialog", { name: "修改登录密码", exact: true }),
     ).toBeVisible();
     await shot("password-modal-1440");
     await page.getByRole("button", { name: "取消", exact: true }).click();
     await expect(page.getByLabel("保留的密码输入")).toHaveCount(0);
-    await page.getByRole("button", { name: /修改登录密码/ }).click();
+    await page.getByRole("button", { name: "修改密码", exact: true }).click();
     await fillPassword();
     await page.evaluate(
       () =>
@@ -292,10 +293,10 @@ try {
       }),
     ).toBeVisible();
     await expect(
-      page.getByRole("button", { name: "退出当前登录", exact: true }),
+      page.getByRole("button", { name: "退出当前", exact: true }),
     ).toBeDisabled();
     await expect(
-      page.getByRole("button", { name: /修改登录密码/ }),
+      page.getByRole("button", { name: "修改密码", exact: true }),
     ).toBeDisabled();
     await page
       .getByRole("button", { name: "继续处理原改密操作", exact: true })
@@ -313,7 +314,7 @@ try {
   }
   if (selected.has("unknown")) {
     await open("/studio/session", "unknown");
-    await page.getByRole("button", { name: /修改登录密码/ }).click();
+    await page.getByRole("button", { name: "修改密码", exact: true }).click();
     await fillPassword();
     await page
       .getByRole("button", { name: "确认修改密码", exact: true })
@@ -377,7 +378,7 @@ try {
   }
   if (selected.has("rate")) {
     await open("/studio/session", "rate");
-    await page.getByRole("button", { name: /修改登录密码/ }).click();
+    await page.getByRole("button", { name: "修改密码", exact: true }).click();
     await fillPassword();
     await page
       .getByRole("button", { name: "确认修改密码", exact: true })
@@ -396,12 +397,12 @@ try {
   }
   if (selected.has("logout")) {
     await open("/studio/session");
-    await page.getByRole("button", { name: /修改登录密码/ }).click();
+    await page.getByRole("button", { name: "修改密码", exact: true }).click();
     await fillPassword();
     await page
       .getByRole("button", { name: "收起并保留输入", exact: true })
       .click();
-    await page.getByRole("button", { name: /退出全部登录 撤销/ }).click();
+    await page.getByRole("button", { name: "退出全部", exact: true }).click();
     await expect(
       page.getByRole("dialog", { name: "退出全部登录", exact: true }),
     ).toBeVisible();
@@ -418,7 +419,7 @@ try {
       phrase,
     );
     expect(await posts("/api/studio/accounts/me/logout-all")).toBe(0);
-    await page.getByRole("button", { name: /退出全部登录 撤销/ }).click();
+    await page.getByRole("button", { name: "退出全部", exact: true }).click();
     await page
       .getByRole("button", { name: "确认退出全部登录", exact: true })
       .click();
@@ -433,14 +434,12 @@ try {
       await page.evaluate((k) => sessionStorage.getItem(k), allKey),
     ).toBeNull();
     await open("/studio/session");
-    await page.getByRole("button", { name: /修改登录密码/ }).click();
+    await page.getByRole("button", { name: "修改密码", exact: true }).click();
     await fillPassword();
     await page
       .getByRole("button", { name: "收起并保留输入", exact: true })
       .click();
-    await page
-      .getByRole("button", { name: "退出当前登录", exact: true })
-      .click();
+    await page.getByRole("button", { name: "退出当前", exact: true }).click();
     expect(await posts("/api/studio/auth/logout")).toBe(0);
     await expect(
       page
@@ -468,9 +467,7 @@ try {
         window.logoutObserver.onmessage = (event) =>
           window.broadcasts.push(event.data);
       });
-      await page
-        .getByRole("button", { name: "退出当前登录", exact: true })
-        .click();
+      await page.getByRole("button", { name: "退出当前", exact: true }).click();
       await page
         .getByRole("button", { name: "确认退出当前登录", exact: true })
         .click();
@@ -634,8 +631,10 @@ try {
     await expect(
       page.getByText("下一页人员", { exact: true }).filter({ visible: true }),
     ).toBeVisible();
-    await page.getByLabel("搜索记录", { exact: true }).fill("跨页目标");
-    await page.getByRole("button", { name: "查询", exact: true }).click();
+    await page
+      .getByLabel("操作者 / 目标人员", { exact: true })
+      .fill("跨页目标");
+    await page.getByRole("button", { name: "查询记录", exact: true }).click();
     await expect(
       page.getByText("共 1 条匹配记录", { exact: true }),
     ).toBeVisible();
@@ -652,7 +651,7 @@ try {
       ),
     ).toBe("0");
     await page.getByLabel("操作类型", { exact: true }).selectOption("disable");
-    await page.getByRole("button", { name: "查询", exact: true }).click();
+    await page.getByRole("button", { name: "查询记录", exact: true }).click();
     await expect(
       page.getByText("已拒绝", { exact: true }).filter({ visible: true }),
     ).toBeVisible();
@@ -675,8 +674,8 @@ try {
     ).toBeVisible();
     await assertLayout();
     await page.keyboard.press("Escape");
-    await page.getByLabel("搜索记录", { exact: true }).fill("无结果");
-    await page.getByRole("button", { name: "查询", exact: true }).click();
+    await page.getByLabel("操作者 / 目标人员", { exact: true }).fill("无结果");
+    await page.getByRole("button", { name: "查询记录", exact: true }).click();
     await expect(
       page.getByText("没有符合条件的操作记录", { exact: true }),
     ).toBeVisible();
@@ -692,6 +691,41 @@ try {
       "server-wide audit search/action/page/reset, total snapshot, table/mobile cards, readonly drawer and failure state",
     );
   }
+  if (selected.has("navigation")) {
+    for (const route of ["/studio/session", "/studio/accounts/audit"]) {
+      await open(route);
+      const tabs = page.getByRole("navigation", {
+        name: "账号工作区",
+        exact: true,
+      });
+      await expect(tabs.getByRole("link")).toHaveCount(3);
+      await expect(tabs.locator('a[aria-current="page"]')).toHaveAttribute(
+        "href",
+        route,
+      );
+      await expect(
+        tabs.getByRole("link", { name: "账号与权限", exact: true }),
+      ).toHaveAttribute("href", "/studio/accounts");
+    }
+    await open("/studio/session", "reader");
+    const tabs = page.getByRole("navigation", {
+      name: "账号工作区",
+      exact: true,
+    });
+    await expect(tabs.getByRole("link")).toHaveCount(1);
+    await expect(
+      tabs.getByRole("link", { name: "我的账号", exact: true }),
+    ).toHaveAttribute("aria-current", "page");
+    await expect(
+      page.getByText(
+        "仅可查看测评、版本和已授权的安全信息，不可进行业务写入。",
+        { exact: false },
+      ),
+    ).toBeVisible();
+    results.push(
+      "account route tabs use real href/current route and read-only role exposes only self",
+    );
+  }
   if (selected.has("layout")) {
     for (const [route, ready] of [
       ["/studio/login", "请输入登录账号和密码。"],
@@ -705,7 +739,7 @@ try {
         const box = await page.locator("[data-studio-entry]").boundingBox();
         expect(Math.abs(box.width - width)).toBeLessThan(1);
         expect(box.height).toBeGreaterThanOrEqual(1000);
-        if (width < 930)
+        if (width < 731)
           await expect(
             page.getByRole("complementary", { name: "QuizForge Studio" }),
           ).toBeHidden();
@@ -719,11 +753,33 @@ try {
       if (route.endsWith("login")) await shot("final-login-1440", 1440);
       else await shot("final-setup-390", 390);
     }
-    await open("/studio/session");
-    await expect(
-      page.getByRole("heading", { name: "我的账号", exact: true }),
-    ).toBeVisible();
-    await shot("final-self-1440", 1440);
+    for (const route of ["/studio/session", "/studio/accounts/audit"]) {
+      await open(route);
+      await expect(
+        page.getByRole("navigation", { name: "账号工作区", exact: true }),
+      ).toBeVisible();
+      for (const width of [1440, 320, 375, 390, 430]) {
+        await page.setViewportSize({ width, height: 1000 });
+        await assertLayout();
+        if (width === 1440 || width === 390)
+          await shot(
+            `final-${route.endsWith("session") ? "self" : "audit"}-${width}`,
+            width,
+          );
+      }
+      if (route.endsWith("session")) {
+        await page.setViewportSize({ width: 1440, height: 1000 });
+        await page
+          .getByRole("button", { name: "修改密码", exact: true })
+          .click();
+        expect(
+          await page
+            .locator("dialog:modal")
+            .evaluate((n) => Math.round(n.getBoundingClientRect().width)),
+        ).toBe(490);
+        await shot("final-short-task-1440", 1440);
+      }
+    }
     results.push(
       "integrated entry shell: exact full viewport, five widths, mobile hidden side, 16px inputs and 44px targets",
     );

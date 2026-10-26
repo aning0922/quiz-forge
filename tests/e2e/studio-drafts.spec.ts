@@ -1,3 +1,12 @@
+import {
+  checkDraftRead,
+  draftRevisionPath,
+} from "../../src/features/studio/drafts/client";
+// V2-B route alignment only. Global DraftWorkspacePage recovery no longer exists;
+// the retained exact-source task must replace those historical whole-page UI steps.
+// Keep original tuple/UNKNOWN/immutable-content assertions; do not silently skip them.
+// Current retained File/owner/UNKNOWN coverage is tests/browser/studio-v2b-workspace.mjs;
+// root owns real account-backed DB/HTTP task closure.
 import { test, expect, type Page } from "@playwright/test";
 import { constants } from "node:fs";
 import {
@@ -102,7 +111,7 @@ const detail = (index = 0) => {
   return `/studio/products/${s.productId}/imports/${s.sourceImportId}/validations/${s.sourceValidationId}`;
 };
 const workspace = (index = 0) =>
-  `/studio/products/${source(index).productId}/draft`;
+  `/studio/products/${source(index).productId}?task=content`;
 const postApi = () =>
   `**/api/studio/products/${source().productId}/imports/${source().sourceImportId}/validations/${source().sourceValidationId}/apply`;
 async function signIn(page: Page, role: "operator" | "readOnly" = "operator") {
@@ -426,8 +435,17 @@ test("full escaped historical synthetic content is hash-checked and read-only ac
   page,
 }, info) => {
   await signIn(page);
-  await page.goto(workspace());
-  await page.getByRole("link", { name: "查看此修订内容", exact: true }).click();
+  const response = await page.request.get(
+    `/api/studio/products/${source().productId}/draft`,
+  );
+  expect(response.status()).toBe(200);
+  const current = checkDraftRead(await response.json(), source().productId);
+  expect(current.kind).toBe("draft");
+  if (current.kind !== "draft") throw Error("HISTORICAL_DRAFT_REQUIRED");
+  expect(current.draft.revision).toBe(1);
+  await page.goto(
+    draftRevisionPath(source().productId, current.draft.draftId, 1),
+  );
   const body = page.getByRole("textbox", { name: "完整内容正文", exact: true });
   await expect(body).toBeHidden();
   await page.getByText("固定修订完整正文与素材集合", { exact: true }).click();

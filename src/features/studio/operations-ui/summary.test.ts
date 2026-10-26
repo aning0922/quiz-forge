@@ -136,7 +136,7 @@ function fixture(): ProductOperations {
     nextActions: [
       {
         kind: "review",
-        href: "/studio/products/summary-test/internal-versions",
+        href: "/studio/products/summary-test?task=review",
         reason: "current-review-missing",
       },
     ],
@@ -156,9 +156,7 @@ describe("read-only operations presentation", () => {
     expect(html).toContain("r2");
     for (const hash of ["a", "b", "c"]) expect(html).toContain(hash.repeat(64));
     expect(html).toContain("2026-10-24T02:00:00.000Z");
-    expect(html).toContain(
-      'href="/studio/products/summary-test/internal-versions"',
-    );
+    expect(html).toContain('href="/studio/products/summary-test?task=review"');
     expect(html).toContain("浏览器未决操作");
     expect(html).not.toMatch(/进度百分比|已发布|人类预览已完成/);
   });

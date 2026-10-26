@@ -1,15 +1,14 @@
 "use client";
 import { useOwnedStudioSession } from "./accounts/session-owner";
+import { roleHasCapability } from "@/lib/auth/role-policy";
 
 import Link from "next/link";
 import {
   ArrowRight,
-  ClipboardCheck,
   BookOpen,
   FileText,
   ShieldCheck,
-  Ticket,
-  Layers,
+  Info,
 } from "lucide-react";
 import type { StudioSessionDto } from "./contracts";
 import {
@@ -21,7 +20,10 @@ import {
   useOperationsDashboard,
   useOperationsProducts,
 } from "./operations-ui/read";
-import { productPresentation } from "./operations-ui/presentation";
+import {
+  productPresentation,
+  productPrimaryAction,
+} from "./operations-ui/presentation";
 import { operationsQuerySchema, operationsListHref } from "./operations/query";
 import { directoryTime } from "./workspace/directory-time";
 import ui from "./studio.module.css";
@@ -36,13 +38,12 @@ const reviewQuery = operationsQuerySchema.parse({
 });
 
 export function StudioDashboard({
-  canCreate,
   session: initialSession,
 }: {
-  canCreate: boolean;
-  session?: StudioSessionDto;
+  session: StudioSessionDto;
 }) {
   const session = useOwnedStudioSession(initialSession);
+  const canCreate = roleHasCapability(session.operator.role, "workspace:write");
   const read = useOperationsDashboard();
   const waiting = useOperationsProducts(reviewQuery);
   return (
@@ -50,8 +51,9 @@ export function StudioDashboard({
       <div className={`${styles.page} ${parity.page}`}>
         <header className={styles.pageHeader}>
           <div>
+            <p className={parity.eyebrow}>QUIZFORGE STUDIO / OPERATOR</p>
             <h1>工作台</h1>
-            <p>查看当前草稿与审核缺口，继续处理具体测评。</p>
+            <p>优先处理需要你操作的测评，再回到具体工作区继续。</p>
           </div>
           {canCreate && <ProductCreateAction />}
         </header>
@@ -78,22 +80,12 @@ export function StudioDashboard({
             <div className={`${styles.dashboardMetrics} ${parity.metrics}`}>
               {(
                 [
+                  ["测评总量", read.value.directoryTotal, "含已归档", BookOpen],
+                  ["内容草稿", read.value.activeDrafts, "未归档测评", FileText],
                   [
-                    "目录测评总量",
-                    read.value.directoryTotal,
-                    "全部测评，含已归档",
-                    BookOpen,
-                  ],
-                  [
-                    "有当前草稿",
-                    read.value.activeDrafts,
-                    "未归档且有当前草稿",
-                    FileText,
-                  ],
-                  [
-                    "当前草稿缺匹配审核",
+                    "待核对审核",
                     read.value.activeMissingReview,
-                    "未归档且缺精确匹配依据",
+                    "缺当前审核依据",
                     ShieldCheck,
                   ],
                 ] as const
@@ -112,21 +104,6 @@ export function StudioDashboard({
                   <span>{description}</span>
                 </Link>
               ))}
-            </div>
-            <div className={styles.dashboardObservation}>
-              <p>
-                指标 / 最近创建读取于{" "}
-                <time dateTime={read.value.asOf}>
-                  {directoryTime(read.value.asOf)}
-                </time>
-              </p>
-              <button
-                className={styles.compactButton}
-                type="button"
-                onClick={read.refresh}
-              >
-                刷新工作台摘要
-              </button>
             </div>
           </>
         )}
@@ -170,29 +147,28 @@ export function StudioDashboard({
                   <ul className={styles.dashboardList}>
                     {waiting.value.items.map((operations) => {
                       const facts = productPresentation(operations);
+                      const action = productPrimaryAction(
+                        operations,
+                        session.operator.role,
+                      );
                       return (
                         <li
                           key={operations.directory.id}
                           className={styles.queueRow}
                         >
-                          <ClipboardCheck
-                            className={parity.taskIcon}
-                            size={22}
-                            aria-hidden="true"
-                          />
                           <div className={styles.queueIdentity}>
                             <h3>{operations.directory.title}</h3>
                             <p className={parity.taskDescription}>
-                              {facts.review.label} · 继续核对当前草稿的审核依据
+                              {facts.review.label} · {action.reason}
                             </p>
                           </div>
                           <Link
                             className={styles.compactButton}
-                            href={`/studio/products/${encodeURIComponent(operations.directory.id)}?task=review`}
-                            title={facts.primary.reason}
-                            aria-label={`${facts.primary.label} ${operations.directory.title}`}
+                            href={action.href}
+                            title={action.reason}
+                            aria-label={`${action.label} ${operations.directory.title}`}
                           >
-                            {facts.primary.label}
+                            {action.label}
                             <ArrowRight size={16} aria-hidden="true" />
                           </Link>
                         </li>
@@ -277,38 +253,30 @@ export function StudioDashboard({
             {read.error && <p>最近创建记录尚未读取成功。</p>}
           </section>
         </div>
-        <div className={parity.lowerColumns}>
-          <section className={`${styles.panel} ${parity.entryPanel}`}>
-            <div className={styles.sectionHeading}>
-              <h2>
-                <Ticket size={20} aria-hidden="true" />
-                内测运营
-              </h2>
-              <Link className={styles.textLink} href="/studio/testing">
-                查看内测入口 →
-              </Link>
-            </div>
-            <p>选择具体测评，查看关联的答题版本与访问码记录。</p>
-            <p className={parity.boundary}>
-              此处不提供跨测评访问码或参与人数统计。
-            </p>
-          </section>
-          <section className={`${styles.panel} ${parity.entryPanel}`}>
-            <div className={styles.sectionHeading}>
-              <h2>
-                <Layers size={20} aria-hidden="true" />
-                运营与能力边界
-              </h2>
-            </div>
+        <section className={`${styles.panel} ${parity.scopePanel}`}>
+          <div>
+            <h2>关于工作台数据</h2>
             <p>
-              当前工作区用于内容制作与内部测试。正式公开发布、站点运营及商业化尚未开放。
+              测评、草稿和审核分别按当前记录显示；参与人数、销售额和全局访问码统计尚未开放。
             </p>
-            <nav className={styles.smallOperations} aria-label="低频运营入口">
-              <Link href="/studio/settings">分类与系统设置 →</Link>
-              <Link href="/studio/session">当前运营身份 →</Link>
-            </nav>
-          </section>
-        </div>
+            {read.value && (
+              <p className={parity.observedAt}>
+                摘要读取于{" "}
+                <time dateTime={read.value.asOf}>
+                  {directoryTime(read.value.asOf)}
+                </time>
+              </p>
+            )}
+          </div>
+          <button
+            className={styles.compactButton}
+            type="button"
+            onClick={read.refresh}
+            disabled={read.loading}
+          >
+            刷新摘要 <Info size={17} aria-hidden="true" />
+          </button>
+        </section>
       </div>
     </ProductCreateTask>
   );
