@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, beforeEach, expect, it } from "vitest";
-import { supportedRuntimeIdentity } from "@/features/quizpack/server/validation/identity";
+import { currentRuntimeIdentity } from "@/features/quizpack/server/validation/identity";
 import { canonicalP1Json } from "@/features/quizpack/v1/canonical";
 import {
   claimValidation,
@@ -42,7 +42,7 @@ afterAll(async () => {
 });
 // Every distinct identity still describes the same received archive; no opaque handles are forged.
 function binding(n: number) {
-  const identity = supportedRuntimeIdentity({
+  const identity = currentRuntimeIdentity({
     schema: "quizpack-media-runtime-binding.v1",
     platform: "darwin-arm64",
     componentId: "a".repeat(64),
