@@ -17,6 +17,7 @@ await esbuild.build({
 import {createRoot} from 'react-dom/client';
 import {useCallback,useEffect,useState} from 'react';
 import {StudioNavigation} from '@/features/studio/navigation';
+import {StudioSettings} from '@/features/studio/settings';
 import shellStyles from '@/features/studio/studio.module.css';
 import {StudioNavigationBoundary,useStudioLeaveProtection} from '@/features/studio/navigation-boundary';
 import {StudioMobileNavigation,useStudioMobileNavigation} from '@/features/studio/mobile-navigation';
@@ -57,7 +58,7 @@ function RecoveryFacts(){
 function Harness(){
  const [accepted,setAccepted]=useState(session);
  const changed=useCallback(fresh=>{window.sessionChanges.push({id:fresh.operator.id,role:fresh.operator.role});setAccepted(fresh);},[]);
- if(sessionChangeCase)return <div className={shellStyles.shell}><StudioNavigation identity={{label:accepted.operator.displayName,role:accepted.operator.role}}/><main className={shellStyles.main}><StudioAccountOwner initialSession={session} onSessionChange={changed}><RecoveryFacts/></StudioAccountOwner></main></div>;
+ if(sessionChangeCase)return <div className={shellStyles.shell}><StudioNavigation identity={{label:accepted.operator.displayName,role:accepted.operator.role}}/><main className={shellStyles.main}><StudioAccountOwner initialSession={session} onSessionChange={changed}><RecoveryFacts/><div data-testid="recovery-settings"><StudioSettings session={session}/></div></StudioAccountOwner></main></div>;
  return <StudioAccountOwner initialSession={session}><Surface/></StudioAccountOwner>;
 }
 createRoot(document.getElementById('root')).render(<StudioNavigationBoundary><StudioMobileNavigation><Harness/></StudioMobileNavigation></StudioNavigationBoundary>);
@@ -416,11 +417,25 @@ try {
       nav.getByRole("link", { name: "账号操作记录", exact: true }),
     ).toHaveCount(0);
     await expect(
-      page.getByRole("link", { name: "我的账号", exact: true }),
+      page
+        .getByRole("complementary")
+        .getByRole("link", { name: "我的账号", exact: true }),
     ).toContainText("合成运营人员");
     expect(await page.evaluate(() => window.sessionChanges)).toEqual([
       { id: "00000000-0000-4000-8000-000000000001", role: "operator" },
     ]);
+    const settings = page.getByTestId("recovery-settings");
+    await expect(
+      settings.getByRole("link", { name: "账号与权限", exact: true }),
+    ).toHaveCount(0);
+    await expect(
+      settings.getByText("其他成员及全体账号操作记录由管理员管理。", {
+        exact: true,
+      }),
+    ).toBeVisible();
+    await expect(
+      settings.getByText("合成运营人员", { exact: true }),
+    ).toBeVisible();
     expect(await page.evaluate(() => window.ownerMounts)).toBe(1);
     expect(await input.evaluate((node, old) => node === old, original)).toBe(
       true,

@@ -1,12 +1,23 @@
+"use client";
+import { useOwnedStudioSession } from "./accounts/session-owner";
+import type { StudioSessionDto } from "./contracts";
 import { roleHasCapability } from "@/lib/auth/role-policy";
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
-import type { StudioIdentity } from "./navigation-model";
 import { AccountAvatar, RoleBadge } from "./accounts/account-ui";
 import { AccountWorkspaceNav } from "./accounts/workspace-nav";
 import styles from "./settings.module.css";
 
-export function StudioSettings({ identity }: { identity: StudioIdentity }) {
+export function StudioSettings({
+  session: initialSession,
+}: {
+  session: StudioSessionDto;
+}) {
+  const session = useOwnedStudioSession(initialSession);
+  const identity = {
+    label: session.operator.displayName ?? session.operator.label,
+    role: session.operator.role,
+  };
   const manage = roleHasCapability(identity.role, "account:manage");
   const taxonomy = roleHasCapability(identity.role, "taxonomy:manage");
   return (
