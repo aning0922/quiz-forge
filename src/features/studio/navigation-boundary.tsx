@@ -18,11 +18,20 @@ import styles from "./navigation-boundary.module.css";
 
 type Protection = { dirty: boolean; pending: boolean; message?: string };
 type Entry = { current: Protection; saved: boolean };
-const ProtectionContext = createContext<Map<symbol, Entry> | null>(null);
+const ProtectionContext = createContext<{
+  entries: Map<symbol, Entry>;
+  allow: () => boolean;
+} | null>(null);
+
+/** Explicit exits use the same live task guard as ordinary navigation. */
+export function useStudioLeaveGate() {
+  const context = useContext(ProtectionContext);
+  return context?.allow ?? (() => false);
+}
 
 /** UI-only leave protection. It never grants authority or settles a write. */
 export function useStudioLeaveProtection(value: Protection) {
-  const entries = useContext(ProtectionContext);
+  const entries = useContext(ProtectionContext)?.entries;
   const key = useRef(Symbol("studio-leave"));
   const entry = useRef<Entry>({ current: value, saved: false });
   useLayoutEffect(() => {
@@ -149,7 +158,7 @@ export function StudioNavigationBoundary({
     };
   }, [entries]);
   return (
-    <ProtectionContext.Provider value={entries}>
+    <ProtectionContext.Provider value={{ entries, allow }}>
       <div
         style={{ display: "contents" }}
         onClickCapture={(event) => {

@@ -1,20 +1,13 @@
 "use client";
-import { roleLabel } from "./accounts/presentation";
-import { ChevronRight, Search, Menu } from "lucide-react";
-import Link from "next/link";
+import { Search, Menu } from "lucide-react";
 import { usePathname } from "next/navigation";
-import { studioLocation, type StudioIdentity } from "./navigation-model";
+import { studioLocation } from "./navigation-model";
 import styles from "./studio.module.css";
 import { useStudioMobileNavigation } from "./mobile-navigation";
 
-export function StudioTopbar({
-  identity,
-}: {
-  identity?: StudioIdentity | undefined;
-}) {
+export function StudioTopbar() {
   const pathname = usePathname();
   const location = studioLocation(pathname);
-  const productWorkspace = /^\/studio\/products\/[^/]+$/.test(pathname);
   const account = [
     "/studio/accounts",
     "/studio/accounts/audit",
@@ -38,13 +31,13 @@ export function StudioTopbar({
           <Menu size={22} aria-hidden="true" />
         </button>
         <div className={styles.breadcrumb} aria-label="当前位置">
-          <span>{account ? "平台管理" : "运营管理"}</span>
-          <ChevronRight size={17} aria-hidden="true" />
-          <strong>{location.title}</strong>
+          <strong>Studio</strong>
+          <span aria-hidden="true">/</span>
+          <span>{location.title}</span>
         </div>
       </div>
       <div className={styles.topbarActions}>
-        {!productWorkspace && !account && (
+        {!account && (
           <form
             className={styles.topSearch}
             action="/studio/products"
@@ -59,28 +52,12 @@ export function StudioTopbar({
               type="search"
               name="q"
               aria-label="搜索测评名称或编号"
-              placeholder="输入名称或编号，回车搜索"
+              placeholder="搜索测评，按 Enter 查看"
               maxLength={80}
             />
           </form>
         )}
-        {account && <span className={styles.accountEnvironment}>内测环境</span>}
-        {identity && (
-          <Link
-            href="/studio/session"
-            prefetch={false}
-            className={styles.topIdentity}
-            aria-label="查看当前运营身份"
-            title={identity.label}
-          >
-            <span className={styles.roleBadge}>
-              {account ? identity.label : roleLabel(identity.role)}
-            </span>
-            <span className={styles.topAvatar} aria-hidden="true">
-              {Array.from(identity.label.trim() || "Q")[0]?.toUpperCase()}
-            </span>
-          </Link>
-        )}
+        <span className={styles.environment}>内测运营</span>
       </div>
     </header>
   );

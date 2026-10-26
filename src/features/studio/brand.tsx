@@ -1,15 +1,15 @@
-import { Sparkles } from "lucide-react";
+import { Sparkle } from "lucide-react";
 import styles from "./studio.module.css";
 
 export function StudioBrand() {
   return (
     <div className={styles.brand}>
       <span className={styles.brandMark} aria-hidden="true">
-        <Sparkles size={21} />
+        <Sparkle size={21} />
       </span>
       <div>
-        <strong>QuizForge Studio</strong>
-        <span>运营管理空间</span>
+        <strong>QuizForge</strong>
+        <span>STUDIO / 工作空间</span>
       </div>
     </div>
   );
