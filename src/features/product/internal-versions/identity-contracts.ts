@@ -1,4 +1,10 @@
 import { z } from "zod";
+import { engineDeclarationV2Schema } from "@/lib/assessment-contract/scoring-v2";
+import {
+  consumerEngineIdentityV2Schema,
+  consumerFontIdentityV2Schema,
+} from "@/lib/consumer-contract/v2/identities";
+import { CONTENT_COMPONENTS_V3 } from "@/lib/assessment-contract/presentation-v3";
 import {
   assessmentIdSchema,
   assessmentVersionSchema,
@@ -48,12 +54,16 @@ export const rendererIdentitySchema = z.strictObject({
   kind: z.literal("renderer"),
   ...registryIdentity,
 });
-export const engineIdentitySchema = z.strictObject({
+export const engineIdentityV1Schema = z.strictObject({
   kind: z.literal("engine"),
   ...registryIdentity,
   id: engineDeclarationSchema.shape.id,
   version: engineDeclarationSchema.shape.version,
 });
+export const engineIdentitySchema = z.union([
+  engineIdentityV1Schema,
+  consumerEngineIdentityV2Schema,
+]);
 export const baselineApprovalSchema = z.discriminatedUnion("kind", [
   z.strictObject({
     kind: z.literal("author-baseline"),
@@ -119,7 +129,7 @@ export const fixedValidationIdentitySchema = z.strictObject({
   archivePolicySha256: sha,
   evidenceSha256: sha,
 });
-export const internalVersionSnapshotSchema = z
+export const internalVersionSnapshotV1Schema = z
   .strictObject({
     schemaVersion: z.literal("quizforge.internal-version-snapshot.v1"),
     productId: id,
@@ -145,7 +155,7 @@ export const internalVersionSnapshotSchema = z
     renderer: rendererIdentitySchema,
     rendererCapability: internalRendererCapabilitySchema,
     components: fixedDisplayComponentsSchema,
-    engine: engineIdentitySchema,
+    engine: engineIdentityV1Schema,
     font: fixedFontIdentitySchema,
     validation: fixedValidationIdentitySchema,
   })
@@ -156,6 +166,51 @@ export const internalVersionSnapshotSchema = z
       v.engine.id === v.versions.engine.id &&
       v.engine.version === v.versions.engine.version,
   );
+export const fixedDisplayComponentsV3Schema = z.strictObject(
+  Object.fromEntries(
+    Object.entries(CONTENT_COMPONENTS_V3).map(([state, id]) => [
+      state,
+      z.strictObject({
+        id: z.literal(id),
+        version: z.literal("1.0.0"),
+        propsSchemaVersion: z.literal("1.0.0"),
+      }),
+    ]),
+  ) as Record<
+    keyof typeof CONTENT_COMPONENTS_V3,
+    z.ZodObject<{
+      id: z.ZodLiteral<
+        (typeof CONTENT_COMPONENTS_V3)[keyof typeof CONTENT_COMPONENTS_V3]
+      >;
+      version: z.ZodLiteral<"1.0.0">;
+      propsSchemaVersion: z.ZodLiteral<"1.0.0">;
+    }>
+  >,
+);
+export const internalVersionSnapshotV2Schema = z
+  .strictObject({
+    ...internalVersionSnapshotV1Schema.shape,
+    schemaVersion: z.literal("quizforge.internal-version-snapshot.v2"),
+    contentSchemaVersion: z.literal("quizpack-content.v3"),
+    versions: internalVersionSnapshotV1Schema.shape.versions.extend({
+      engine: engineDeclarationV2Schema,
+    }),
+    rendererCapability: z.literal("structured-internal-preview"),
+    components: fixedDisplayComponentsV3Schema,
+    engine: consumerEngineIdentityV2Schema,
+    font: consumerFontIdentityV2Schema,
+  })
+  .refine(
+    (v) =>
+      withinInternalBytes(v, INTERNAL_VERSION_LIMITS.snapshotBytes) &&
+      v.versions.componentVersion === "1.0.0" &&
+      v.engine.id === v.versions.engine.id &&
+      v.engine.version === v.versions.engine.version,
+  );
+export const internalVersionSnapshotSchema = z.union([
+  internalVersionSnapshotV1Schema,
+  internalVersionSnapshotV2Schema,
+]);
 export function withinInternalBytes(value: unknown, maximum: number): boolean {
   return new TextEncoder().encode(JSON.stringify(value)).byteLength <= maximum;
 }

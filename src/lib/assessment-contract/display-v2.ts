@@ -11,61 +11,87 @@ import { composedReportBodyV1Schema } from "./composed-report-v1";
 import { displayAssetV1Schema } from "./display-v1";
 
 const text = z.string().min(1).max(4000);
-export const displayEntryBodyV2Schema = z.strictObject({
-  presentationMode: z.literal("structured-only"),
+export const displayCapabilitiesV2Shape = {
+  presentationMode: z.enum(["structured-only", "authored-product"]),
   exports: z.strictObject({
-    posterPng: z.literal(false),
-    fullReportPng: z.literal(false),
+    posterPng: z.boolean(),
+    fullReportPng: z.boolean(),
   }),
-  schemaVersion: z.literal("quiz-entry-display.v2"),
-  contentSchemaVersion: z.literal("quizpack-content.v3"),
-  canonicalContentSha256: sha256Schema,
-  kind: z.enum(["synthetic", "authored"]),
-  product: z.strictObject({ productId: assessmentIdSchema, title: text }),
-  matchingPolicyRef: ref,
-  preferences: z.array(matchingPreferenceSchema).length(3),
-  questions: z
-    .array(
-      z.strictObject({
-        ref,
-        prompt: text,
-        act: z.number().int().min(1).max(8),
-        options: z
-          .array(z.strictObject({ ref, label: text }))
-          .min(2)
-          .max(8),
-      }),
-    )
-    .min(1)
-    .max(100),
-  slots: presentationSlotsV3Schema.shape.neutral,
-  assets: z.array(displayAssetV1Schema).min(1).max(64),
-});
-export const resultDisplaySnapshotV2Schema = z.strictObject({
-  presentationMode: z.literal("structured-only"),
-  exports: z.strictObject({
-    posterPng: z.literal(false),
-    fullReportPng: z.literal(false),
-  }),
-  schemaVersion: z.literal("quiz-result-display.v2"),
-  contentSchemaVersion: z.literal("quizpack-content.v3"),
-  contentVersion: assessmentVersionSchema,
-  reportVersion: assessmentVersionSchema,
-  canonicalContentSha256: sha256Schema,
-  logicHash: sha256Schema,
-  answersHash: sha256Schema,
-  inputHash: sha256Schema,
-  matchingContextSha256: sha256Schema,
-  selectedResultRef: ref,
-  reportTemplateRef: ref,
-  body: composedReportBodyV1Schema,
-  bodySha256: sha256Schema,
-  slots: z.strictObject({
-    neutral: presentationSlotsV3Schema.shape.neutral,
-    character: presentationSlotsV3Schema.shape.characters.element,
-  }),
-  assets: z.array(displayAssetV1Schema).min(1).max(64),
-});
+};
+const validCapabilities = (v: {
+  presentationMode: string;
+  exports: { posterPng: boolean; fullReportPng: boolean };
+}) =>
+  v.presentationMode !== "structured-only" ||
+  (!v.exports.posterPng && !v.exports.fullReportPng);
+export const displayCapabilitiesV2Schema = z
+  .strictObject(displayCapabilitiesV2Shape)
+  .refine(validCapabilities);
+export type DisplayCapabilitiesV2 = z.infer<typeof displayCapabilitiesV2Schema>;
+/** fixed is taken from a compiled renderer descriptor, never a request or pack claim. */
+export function matchesDisplayCapabilitiesV2(
+  actual: DisplayCapabilitiesV2,
+  fixed: DisplayCapabilitiesV2,
+) {
+  return (
+    validCapabilities(actual) &&
+    validCapabilities(fixed) &&
+    actual.presentationMode === fixed.presentationMode &&
+    actual.exports.posterPng === fixed.exports.posterPng &&
+    actual.exports.fullReportPng === fixed.exports.fullReportPng
+  );
+}
+export const displayEntryBodyV2Schema = z
+  .strictObject({
+    ...displayCapabilitiesV2Shape,
+    schemaVersion: z.literal("quiz-entry-display.v2"),
+    contentSchemaVersion: z.literal("quizpack-content.v3"),
+    canonicalContentSha256: sha256Schema,
+    kind: z.enum(["synthetic", "authored"]),
+    product: z.strictObject({ productId: assessmentIdSchema, title: text }),
+    matchingPolicyRef: ref,
+    preferences: z.array(matchingPreferenceSchema).length(3),
+    questions: z
+      .array(
+        z.strictObject({
+          ref,
+          prompt: text,
+          act: z.number().int().min(1).max(8),
+          options: z
+            .array(z.strictObject({ ref, label: text }))
+            .min(2)
+            .max(8),
+        }),
+      )
+      .min(1)
+      .max(100),
+    slots: presentationSlotsV3Schema.shape.neutral,
+    assets: z.array(displayAssetV1Schema).min(1).max(64),
+  })
+  .refine(validCapabilities);
+export const resultDisplaySnapshotV2Schema = z
+  .strictObject({
+    ...displayCapabilitiesV2Shape,
+    schemaVersion: z.literal("quiz-result-display.v2"),
+    contentSchemaVersion: z.literal("quizpack-content.v3"),
+    contentVersion: assessmentVersionSchema,
+    reportVersion: assessmentVersionSchema,
+    canonicalContentSha256: sha256Schema,
+    logicHash: sha256Schema,
+    answersHash: sha256Schema,
+    inputHash: sha256Schema,
+    matchingContextSha256: sha256Schema,
+    selectedResultRef: ref,
+    reportTemplateRef: ref,
+    body: composedReportBodyV1Schema,
+    bodySha256: sha256Schema,
+    slots: z.strictObject({
+      neutral: presentationSlotsV3Schema.shape.neutral,
+      character: presentationSlotsV3Schema.shape.characters.element,
+    }),
+    assets: z.array(displayAssetV1Schema).min(1).max(64),
+  })
+  .refine(validCapabilities);
 export type DisplayEntryBodyV2 = z.infer<typeof displayEntryBodyV2Schema>;
 export type ResultDisplaySnapshotV2 = z.infer<
   typeof resultDisplaySnapshotV2Schema

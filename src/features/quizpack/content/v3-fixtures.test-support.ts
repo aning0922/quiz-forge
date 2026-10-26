@@ -115,6 +115,18 @@ export function syntheticContentV3(claim = syntheticClaim()) {
       visualVersion: "1.0.0",
       resourceVersion: "1.0.0",
       componentVersion: "1.0.0",
+      witnesses: {
+        schemaVersion: "quiz-content-witnesses.v3",
+        status: "declared-not-executed",
+        entries: core.scoringDefinition.profiles.map((p) => ({
+          expectedResultRef: p.resultRef,
+          preference: p.sex,
+          answers: core.questions.map((q) => ({
+            questionId: q.ref.id,
+            optionId: q.options[2]!.ref.id,
+          })),
+        })),
+      },
       reportVersion: "1.0.0",
       reportTemplates: [
         {

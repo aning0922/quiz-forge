@@ -137,6 +137,10 @@ export function validateContentV3(input: unknown): V2Result<QuizPackContentV3> {
       b.slots.characters.map((r) => refKey(r.resultRef)),
       results,
     ) ||
+    !fullSet(
+      b.witnesses.entries.map((w) => refKey(w.expectedResultRef)),
+      results,
+    ) ||
     b.resultReports.some((r) => !templates.has(refKey(r.templateRef))) ||
     b.slots.characters.some(
       (r) =>

@@ -5,6 +5,8 @@ import {
   sha256Schema,
 } from "@/lib/assessment-contract/primitives";
 import { scoringDefinitionV2Schema } from "@/lib/assessment-contract/scoring-v2";
+import { scoringAnswersV2Schema } from "@/lib/assessment-contract/scoring-api-v2";
+import { matchingPreferenceSchema } from "@/lib/assessment-contract/matching-v1";
 import { quizPackContentSchema } from "../v1/content";
 import { componentDeclarationSchema } from "../v1/manifest";
 import { quizPackContentV2Schema } from "./v2";
@@ -131,6 +133,20 @@ export const contentBindingsV3Schema = z.strictObject({
   visualVersion: assessmentVersionSchema,
   resourceVersion: assessmentVersionSchema,
   componentVersion: z.literal(CONTENT_COMPONENT_VERSION_V3),
+  witnesses: z.strictObject({
+    schemaVersion: z.literal("quiz-content-witnesses.v3"),
+    status: z.literal("declared-not-executed"),
+    entries: z
+      .array(
+        z.strictObject({
+          expectedResultRef: ref,
+          preference: matchingPreferenceSchema,
+          answers: scoringAnswersV2Schema,
+        }),
+      )
+      .min(1)
+      .max(32),
+  }),
   reportVersion: assessmentVersionSchema,
   reportTemplates: z.array(composedTemplateV1Schema).min(1).max(32),
   resultReports: z
