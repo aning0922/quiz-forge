@@ -1,4 +1,5 @@
 "use client";
+import { studioSameTabLink } from "../navigation-boundary";
 import { useStudioAccountOwner } from "../accounts/session-owner";
 import { roleHasCapability } from "@/lib/auth/role-policy";
 import { TechnicalDetails } from "../presentation/technical-details";
