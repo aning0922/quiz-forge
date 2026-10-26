@@ -122,7 +122,7 @@ async function navigateStudio(
   page: Page,
   name: "工作区" | "类目与标签" | "身份与退出",
 ) {
-  // Directory business regression also keeps the supported legacy deep link.
+  // Taxonomy remains a current formal platform route.
   if (name === "类目与标签") {
     await page.goto("/studio/taxonomy");
     return;
@@ -138,10 +138,13 @@ async function navigateStudio(
 }
 
 async function openProductSettings(page: Page) {
-  // Keep this legacy-route suite's metadata/recovery coverage. The retained
-  // settings drawer and external footer form have focused browser coverage.
-  await page.goto("/studio/products/e2e-workspace/settings");
-  await expect(page).toHaveURL(/\/studio\/products\/e2e-workspace\/settings$/);
+  await page.goto("/studio/products/e2e-workspace?task=content&panel=settings");
+  await expect(page).toHaveURL(
+    /\/studio\/products\/e2e-workspace\?task=content&panel=settings$/,
+  );
+  await expect(
+    page.getByRole("dialog", { name: "基本设置", exact: true }),
+  ).toBeVisible();
   await expect(
     page.getByRole("heading", { name: "基本设置", exact: true }),
   ).toBeVisible();

@@ -85,7 +85,7 @@ await fromTsx("esbuild").build({
       subscribeStudioAuthorityInvalidation(() => { invalidations++; });
       window.readNavigationInvalidations = () => invalidations;
       createRoot(document.getElementById("root")).render(
-        <PathnameContext.Provider value={"/studio/products/" + input.scope.productId + "/consumer-access"}>
+        <PathnameContext.Provider value={"/studio/products/" + input.scope.productId}>
           <StudioShell authenticated><StudioConsumerAccessPageV1 {...input} /></StudioShell>
         </PathnameContext.Provider>);
     `,

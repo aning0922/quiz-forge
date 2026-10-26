@@ -41,11 +41,11 @@ await require("esbuild").build({
     function Form(){const [first,setFirst]=useState(true);return <>
       {first&&<Field name="第一项"/>}<Field name="第二项"/>
       <button onClick={()=>setFirst(false)}>卸载第一项</button></>}
-    const file=location.pathname.includes('/imports');
+    const file=location.pathname.includes('/imports/')||(location.pathname==='/studio/products/example'&&new URLSearchParams(location.search).get('task')==='content');
     const content = <>
         <a href="/studio/products">测评管理</a>
         <a href="/studio/new-product">新建测评</a>
-        <a href="/studio/products/example/imports">原包接收</a>
+        <a href="/studio/products/example?task=content">原包接收</a>
         <form action="/studio/products" data-studio-navigation-form><input name="q" aria-label="搜索"/><button>搜索</button></form>
         {file?<CreateReceive productId="example" settings={{enabled:true,maxArchiveBytes:33554432,receiveTimeoutMs:60000}}
           session={{operator:{id:'00000000-0000-0000-0000-000000000007',label:'Synthetic',role:'operator'},csrfToken:'A'.repeat(43),idleExpiresAt:'2030-01-01T00:00:00.000Z',absoluteExpiresAt:'2030-01-01T00:00:00.000Z'}} onChanged={()=>{}}/>
@@ -223,7 +223,7 @@ try {
   if (mobileOnly) {
     if (!mobileNavigationOnly) {
       await page.setViewportSize({ width: 390, height: 900 });
-      await page.goto(origin + "/studio/products/example/imports");
+      await page.goto(origin + "/studio/products/example?task=content");
       const opener = page.getByRole("button", {
         name: "打开 Studio 导航",
         exact: true,
