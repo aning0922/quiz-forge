@@ -34,7 +34,7 @@ import { useInternalRead } from "../internal-versions/use-read";
 import type { WorkspaceQuery } from "./routes";
 import { WorkspaceAside } from "./aside";
 import type { PreviewScope } from "@/features/product/preview/contracts";
-import { FixedRevisionPreviewPage } from "../preview/page";
+import { CurrentFixedRevisionPreviewPage } from "../preview/current-page";
 import { RevisionHistoryPanel } from "../draft-revisions/history";
 import { invalidateCurrentStudioAuthority } from "../authority-events";
 import { previewSelectionStatus } from "./preview-selection";
@@ -761,7 +761,7 @@ function Workspace({
       </RetainedTaskSurface>
       <RetainedTaskSurface id="preview">
         {launched && (
-          <FixedRevisionPreviewPage
+          <CurrentFixedRevisionPreviewPage
             key={launched.key}
             scope={launched.scope}
             session={session}
