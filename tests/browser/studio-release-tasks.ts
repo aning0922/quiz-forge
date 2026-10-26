@@ -34,7 +34,7 @@ const issuerId = testUuid(7);
 const session = {
   operator: {
     id: issuerId,
-    label: "Synthetic admin",
+
     loginName: "synthetic.admin",
     displayName: "Synthetic admin",
     role: "admin",

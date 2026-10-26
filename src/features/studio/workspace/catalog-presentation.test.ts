@@ -11,7 +11,7 @@ import type { StudioSessionDto } from "../contracts";
 const session = (role: "admin" | "read-only"): StudioSessionDto => ({
   operator: {
     id: "00000000-0000-4000-8000-000000000010",
-    label: "合成人员",
+
     role,
     loginName: "test.operator",
     displayName: "合成人员",

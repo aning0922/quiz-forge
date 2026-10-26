@@ -24,7 +24,7 @@ import {StudioMobileNavigation,useStudioMobileNavigation} from '@/features/studi
 import {StudioAccountOwner,useStudioAccountOwner,useOwnedStudioSession} from '@/features/studio/accounts/session-owner';
 import {SidebarLogoutAction} from '@/features/studio/accounts/sidebar-logout-action';
 import {invalidateCurrentStudioAuthority} from '@/features/studio/authority-events';
-const session={operator:{id:'00000000-0000-4000-8000-000000000001',label:'synthetic',loginName:'synthetic.reader',displayName:'合成只读人员',role:'read-only',accountRevision:1},csrfToken:'A'.repeat(43),idleExpiresAt:'2030-01-01T00:00:00.000Z',absoluteExpiresAt:'2030-01-01T00:00:00.000Z'};
+const session={operator:{id:'00000000-0000-4000-8000-000000000001',loginName:'synthetic.reader',displayName:'合成只读人员',role:'read-only',accountRevision:1},csrfToken:'A'.repeat(43),idleExpiresAt:'2030-01-01T00:00:00.000Z',absoluteExpiresAt:'2030-01-01T00:00:00.000Z'};
 const sessionChangeCase=new URLSearchParams(location.search).get('case')==='sessionchange';
 if(sessionChangeCase){session.operator.role='admin';session.operator.displayName='合成管理员';}
 window.currentSession=session;window.logoutCalls=[];window.revoke=invalidateCurrentStudioAuthority;window.sessionChanges=[];window.ownerMounts=0;
@@ -406,6 +406,39 @@ try {
     ).toBeVisible();
     expect(await page.evaluate(() => window.sessionChanges)).toEqual([]);
     await page.evaluate(() => window.revoke());
+    for (const patch of [
+      { label: "historical identity" },
+      { accountRevision: undefined },
+    ]) {
+      await page.evaluate((patch) => {
+        window.currentSession = {
+          ...window.currentSession,
+          operator: {
+            id: "00000000-0000-4000-8000-000000000001",
+            loginName: "synthetic.admin",
+            displayName: "合成管理员",
+            role: "admin",
+            accountRevision: 1,
+            ...patch,
+          },
+        };
+      }, patch);
+      await page
+        .getByRole("button", { name: "检查登录状态", exact: true })
+        .click();
+      await expect(
+        page.getByText("Studio 暂不可用，请由本机维护者检查配置与数据库。", {
+          exact: true,
+        }),
+      ).toBeVisible();
+      await expect(
+        page.getByRole("button", { name: "继续原任务", exact: true }),
+      ).toHaveCount(0);
+      expect(await page.evaluate(() => window.sessionChanges)).toEqual([]);
+    }
+    await page.evaluate(() => {
+      window.currentSession.operator.accountRevision = 1;
+    });
     await page.evaluate(
       () =>
         (window.currentSession = {

@@ -33,7 +33,13 @@ vi.mock("../drafts/use-read", () => ({
   }),
 }));
 const session: StudioSessionDto = {
-  operator: { id: uuid(4), label: "Synthetic read-only", role: "read-only" },
+  operator: {
+    loginName: "synthetic.account",
+    accountRevision: 1,
+    id: uuid(4),
+    displayName: "Synthetic read-only",
+    role: "read-only",
+  },
   csrfToken: "synthetic-not-a-session-token",
   idleExpiresAt: "2026-10-18T00:00:00.000Z",
   absoluteExpiresAt: "2026-10-18T00:00:00.000Z",

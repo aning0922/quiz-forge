@@ -8,7 +8,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { isStudioRole } from "@/lib/auth/role-policy";
+import { studioOperatorIdentitySchema } from "@/lib/auth/identity";
 import type { StudioSessionDto } from "../contracts";
 import { studioFetch, studioMessage } from "../client";
 import {
@@ -94,8 +94,7 @@ export function StudioAccountOwner({
         {},
       );
       if (
-        !fresh?.operator?.id ||
-        !isStudioRole(fresh.operator.role) ||
+        !studioOperatorIdentitySchema.safeParse(fresh?.operator).success ||
         !fresh.csrfToken
       )
         throw Error();

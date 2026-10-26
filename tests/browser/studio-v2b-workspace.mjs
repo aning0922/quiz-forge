@@ -74,8 +74,9 @@ let role = "admin",
   writes = [];
 const session = () => ({
   operator: {
+    accountRevision: 1,
     id: uuid(7),
-    label: "合成管理员",
+
     displayName: "合成管理员",
     loginName: "synthetic.admin",
     role,
@@ -116,7 +117,7 @@ import {ProductTaskWorkspace} from '@/features/studio/product-workspace/task-wor
 import {DraftRevisionPage} from '@/features/studio/drafts/read-page';
 import {invalidateCurrentStudioAuthority} from '@/features/studio/authority-events';
 const input=JSON.parse(document.querySelector('#fixture').textContent);
-function App(){const [entry,setEntry]=useState(input.entry);window.navigateTask=setEntry;window.revokeWorkspace=invalidateCurrentStudioAuthority;return <StudioShell authenticated identity={input.session.operator} session={input.session}><ProductWorkspaceFrame productId=input.productId><ReadProbe/><>{input.detail?<DraftRevisionPage productId={input.productId} draftId={input.draftId} revision={1} navigation={null}/>:<ProductTaskWorkspace session={input.session} initialTask={entry.task} initialPanel={entry.panel} initialScope={entry.scope} consumerScope={input.scope} consumerRenderer={input.renderer}/>}</></ProductWorkspaceFrame></StudioShell>}
+function App(){const [entry,setEntry]=useState(input.entry);window.navigateTask=setEntry;window.revokeWorkspace=invalidateCurrentStudioAuthority;return <StudioShell authenticated identity={{label:input.session.operator.displayName,role:input.session.operator.role}} session={input.session}><ProductWorkspaceFrame productId=input.productId><ReadProbe/><>{input.detail?<DraftRevisionPage productId={input.productId} draftId={input.draftId} revision={1} navigation={null}/>:<ProductTaskWorkspace session={input.session} initialTask={entry.task} initialPanel={entry.panel} initialScope={entry.scope} consumerScope={input.scope} consumerRenderer={input.renderer}/>}</></ProductWorkspaceFrame></StudioShell>}
 createRoot(document.getElementById('root')).render(<App/>);`.replace(
       "productId=input.productId",
       "productId={input.productId}",

@@ -68,9 +68,7 @@ export function AccountPerson({ account }: { account: AccountDto }) {
       />
       <div>
         <div className={styles.personLabel}>{account.displayName}</div>
-        <div className={styles.personSub}>
-          {account.loginName ?? "尚未配置登录账号"}
-        </div>
+        <div className={styles.personSub}>{account.loginName}</div>
       </div>
     </div>
   );

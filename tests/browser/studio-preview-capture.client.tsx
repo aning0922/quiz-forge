@@ -11,8 +11,10 @@ createRoot(document.getElementById("root")!).render(
       scope={scope}
       session={{
         operator: {
+          loginName: "synthetic.account",
+          accountRevision: 1,
           id: "00000000-0000-4000-8000-000000000001",
-          label: "Synthetic preview capture",
+          displayName: "Synthetic preview capture",
           role: "operator",
         },
         csrfToken: "A".repeat(43),

@@ -30,8 +30,8 @@ import {ProductTaskSurfaces} from '@/features/studio/product-workspace/task-surf
 import {useImportRead} from '@/features/studio/imports/use-read';
 import {invalidateCurrentStudioAuthority} from '@/features/studio/authority-events';
 const id='00000000-0000-4000-8000-000000000001', other='00000000-0000-4000-8000-000000000002', now='2026-10-25T00:00:00.000Z';
-const session={operator:{id,label:'合成原身份',loginName:'synthetic.admin',displayName:'合成管理员',role:'admin',accountRevision:1},csrfToken:'A'.repeat(43),idleExpiresAt:'2030-01-01T00:00:00.000Z',absoluteExpiresAt:'2030-01-01T00:00:00.000Z'};
-const account={id,label:'合成原身份',loginName:'synthetic.admin',displayName:'合成管理员',role:'admin',status:'active',revision:1,createdAt:now,disabledAt:null};
+const session={operator:{id,loginName:'synthetic.admin',displayName:'合成管理员',role:'admin',accountRevision:1},csrfToken:'A'.repeat(43),idleExpiresAt:'2030-01-01T00:00:00.000Z',absoluteExpiresAt:'2030-01-01T00:00:00.000Z'};
+const account={id,loginName:'synthetic.admin',displayName:'合成管理员',role:'admin',status:'active',revision:1,createdAt:now,disabledAt:null};
 const scenario=new URLSearchParams(location.search).get('case');
 window.calls=[];window.operationIds=[];window.currentSession=session;window.revoke=invalidateCurrentStudioAuthority;
 window.metadataReads=0;window.deniedReads=0;window.revokedOwners=new Set();window.directoryQueries=[];
@@ -75,7 +75,7 @@ function OwnerFacts(){const owner=useStudioAccountOwner();useEffect(()=>{window.
 function Denied(){useImportRead('/synthetic/denied');return <OwnerFacts/>;}
 function Late(){const authority=useInternalAuthority();return <ProductTaskSurfaces><OwnerFacts/><output data-testid="authority" data-revoked={String(authority.isRevoked)}/><ProductDetail productId="synthetic-product" session={session}/></ProductTaskSurfaces>;}
 const content=scenario==='loop'?<Denied/>:scenario==='late'?<InternalAuthorityProvider productId="synthetic-product"><Late/></InternalAuthorityProvider>:scenario==='setup'?<SetPasswordPage/>:<><OwnerFacts/><AccountsPage session={session}/></>;
-createRoot(document.getElementById('root')).render(<StudioShell authenticated={scenario!=='setup'} identity={session.operator} session={scenario==='setup'?undefined:session}>{content}</StudioShell>);
+createRoot(document.getElementById('root')).render(<StudioShell authenticated={scenario!=='setup'} identity={{label:session.operator.displayName,role:session.operator.role}} session={scenario==='setup'?undefined:session}>{content}</StudioShell>);
 `;
 await esbuild.build({
   stdin: { contents: source, resolveDir: process.cwd(), loader: "tsx" },
@@ -172,7 +172,7 @@ try {
     );
   }
   async function create() {
-    await page.getByRole("button", { name: "开通账号", exact: true }).click();
+    await page.getByRole("button", { name: "开通人员", exact: true }).click();
     await page.getByLabel("登录账号（创建后不可修改）").fill("synthetic.new");
     await page.getByLabel("显示名称", { exact: true }).fill("合成输入");
   }
@@ -284,8 +284,12 @@ try {
     });
     await recover();
     await expect(
-      page.getByRole("button", { name: "开通账号", exact: true }),
+      page.getByRole("button", { name: "开通人员", exact: true }),
     ).toHaveCount(0);
+    await page
+      .getByRole("button", { name: "继续原账号操作", exact: true })
+      .click();
+    await page.getByText("操作记录与技术信息", { exact: true }).click();
     await expect(
       page.getByText("原操作编号：" + original, { exact: true }),
     ).toBeVisible();
@@ -318,7 +322,7 @@ try {
   if (selected("task")) {
     await open("accounts");
     await create();
-    await page.getByLabel("角色", { exact: true }).selectOption("admin");
+    await page.getByLabel("初始角色", { exact: true }).selectOption("admin");
     await page.evaluate(() => {
       window.loginNode = document.querySelector("#new-account-login");
     });
@@ -338,7 +342,9 @@ try {
     await expect(page.getByLabel("显示名称", { exact: true })).toHaveValue(
       "合成输入",
     );
-    await expect(page.getByLabel("角色", { exact: true })).toHaveValue("admin");
+    await expect(page.getByLabel("初始角色", { exact: true })).toHaveValue(
+      "admin",
+    );
     expect(
       await page.evaluate(
         () => window.loginNode === document.querySelector("#new-account-login"),

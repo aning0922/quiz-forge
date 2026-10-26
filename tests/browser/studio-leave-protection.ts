@@ -48,10 +48,10 @@ await require("esbuild").build({
         <a href="/studio/products/example?task=content">原包接收</a>
         <form action="/studio/products" data-studio-navigation-form><input name="q" aria-label="搜索"/><button>搜索</button></form>
         {file?<CreateReceive productId="example" settings={{enabled:true,maxArchiveBytes:33554432,receiveTimeoutMs:60000}}
-          session={{operator:{id:'00000000-0000-0000-0000-000000000007',label:'Synthetic',role:'operator'},csrfToken:'A'.repeat(43),idleExpiresAt:'2030-01-01T00:00:00.000Z',absoluteExpiresAt:'2030-01-01T00:00:00.000Z'}} onChanged={()=>{}}/>
+          session={{operator:{id:'00000000-0000-0000-0000-000000000007',loginName:'synthetic.account',displayName:'Synthetic',role:'operator',accountRevision:1},csrfToken:'A'.repeat(43),idleExpiresAt:'2030-01-01T00:00:00.000Z',absoluteExpiresAt:'2030-01-01T00:00:00.000Z'}} onChanged={()=>{}}/>
           :location.pathname==='/studio/new-product'?<Form/>:<h1>目录</h1>}
       </>;
-    createRoot(document.getElementById("root")).render(${mobileOnly}?<PathnameContext.Provider value={location.pathname}><StudioShell authenticated identity={{id:"00000000-0000-0000-0000-000000000007",label:"Synthetic",role:"operator"}}>{content}</StudioShell></PathnameContext.Provider>:<StudioNavigationBoundary>{content}</StudioNavigationBoundary>);
+    createRoot(document.getElementById("root")).render(${mobileOnly}?<PathnameContext.Provider value={location.pathname}><StudioShell authenticated identity={{label:"Synthetic",role:"operator"}}>{content}</StudioShell></PathnameContext.Provider>:<StudioNavigationBoundary>{content}</StudioNavigationBoundary>);
   `,
     loader: "tsx",
     resolveDir: process.cwd(),

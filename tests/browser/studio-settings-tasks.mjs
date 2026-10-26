@@ -17,7 +17,7 @@ import {InternalAuthorityProvider} from '@/features/studio/internal-versions/aut
 import {StudioNavigationBoundary} from '@/features/studio/navigation-boundary';
 import {ProductTaskSurfaces,RetainedTaskSurface,useWorkspaceSurfaces} from '@/features/studio/product-workspace/task-surfaces';
 import {ProductDetail} from '@/features/studio/workspace/product-detail';
-const session={operator:{id:'00000000-0000-0000-0000-000000000007',label:'Synthetic',loginName:'synthetic.admin',displayName:'Synthetic admin',role:'admin',accountRevision:1},csrfToken:'A'.repeat(43),idleExpiresAt:'2030-01-01T00:00:00.000Z',absoluteExpiresAt:'2030-01-01T00:00:00.000Z'};
+const session={operator:{id:'00000000-0000-0000-0000-000000000007',loginName:'synthetic.admin',displayName:'Synthetic admin',role:'admin',accountRevision:1},csrfToken:'A'.repeat(43),idleExpiresAt:'2030-01-01T00:00:00.000Z',absoluteExpiresAt:'2030-01-01T00:00:00.000Z'};
 function Body(){const s=useWorkspaceSurfaces();return <><button onClick={()=>s.open('settings')}>打开设置</button><output id='retained-state'>{s.states.settings?.pending?'pending':s.states.settings?.retained?'dirty':'clean'}</output><RetainedTaskSurface id='settings'><ProductDetail productId='parity-settings' session={session}/></RetainedTaskSurface></>}
 createRoot(document.getElementById('root')).render(<StudioNavigationBoundary><InternalAuthorityProvider productId='parity-settings'><ProductTaskSurfaces><Body/></ProductTaskSurfaces></InternalAuthorityProvider></StudioNavigationBoundary>);
 `,

@@ -461,7 +461,7 @@ export function AccountsPage({
               ? "本次确认回执中展示；关闭后不提供历史找回"
               : "创建后等待本人设置密码；不自动发送通知或登录"
             : selected
-              ? `${selected.displayName} · ${selected.loginName ?? "尚未配置"} · r${selected.revision}`
+              ? `${selected.displayName} · ${selected.loginName} · r${selected.revision}`
               : "保留原操作编号并核实结果"
         }
         canClose={canClose}
@@ -678,7 +678,7 @@ export function AccountsPage({
                 {mode !== "display-name" && mode !== "role" && (
                   <div className={local.target}>
                     <strong>{selected.displayName}</strong>
-                    <p>{selected.loginName ?? "尚未配置登录账号"}</p>
+                    <p>{selected.loginName}</p>
                     <div className={styles.pills}>
                       <RoleBadge role={selected.role} />
                       <StatusBadge status={selected.status} />

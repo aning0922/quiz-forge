@@ -24,7 +24,13 @@ const out = path.resolve(
 await mkdir(out, { recursive: true, mode: 0o700 });
 const f = await fixture();
 const session = {
-  operator: { id: uuid(40), label: "Synthetic admin", role: "admin" },
+  operator: {
+    loginName: "synthetic.account",
+    accountRevision: 1,
+    id: uuid(40),
+    displayName: "Synthetic admin",
+    role: "admin",
+  },
   csrfToken: "A".repeat(43),
   idleExpiresAt: "2026-10-27T00:00:00.000Z",
   absoluteExpiresAt: "2026-10-27T00:00:00.000Z",

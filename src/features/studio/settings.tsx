@@ -15,7 +15,7 @@ export function StudioSettings({
 }) {
   const session = useOwnedStudioSession(initialSession);
   const identity = {
-    label: session.operator.displayName ?? session.operator.label,
+    label: session.operator.displayName,
     role: session.operator.role,
   };
   const manage = roleHasCapability(identity.role, "account:manage");
