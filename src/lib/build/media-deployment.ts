@@ -1103,13 +1103,17 @@ async function argon2Mapping(
     ctx,
   );
   for (const leaf of ["build/Release", "build/Debug"]) {
-    await ancestors(bound.checkoutRoot, path.join(argonRoot, leaf), ctx).catch(
-      (error) => {
-        if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
-      },
-    );
+    await ancestors(
+      bound.checkoutRoot,
+      path.join(/* turbopackIgnore: true */ argonRoot, leaf),
+      ctx,
+    ).catch((error) => {
+      if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+    });
     try {
-      await lstat(path.join(argonRoot, leaf), { bigint: true });
+      await lstat(path.join(/* turbopackIgnore: true */ argonRoot, leaf), {
+        bigint: true,
+      });
       checkpoint(ctx);
       fail("DEPENDENCY_INVALID");
     } catch (error) {
