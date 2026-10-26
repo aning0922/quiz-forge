@@ -22,7 +22,7 @@ import {
 import { ProductCard } from "./product-card";
 import { StudioPageHeader } from "../presentation/page-header";
 import { TechnicalDetails } from "../presentation/technical-details";
-import { WorkspaceNav, ReadOnlyNotice } from "./primitives";
+import { ReadOnlyNotice } from "./primitives";
 import { ReconcilePanel } from "./reconcile-panel";
 import {
   InternalAuthorityProvider,
@@ -522,11 +522,6 @@ function ProductDetailContent({
     );
   return (
     <div className={styles.workspace}>
-      {!embedded && (
-        <>
-          <WorkspaceNav />
-        </>
-      )}
       {read.loading && (
         <p className={styles.status} role="status">
           正在读取测评…

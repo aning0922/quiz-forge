@@ -2,11 +2,6 @@
 
 import styles from "./workspace.module.css";
 
-export function WorkspaceNav() {
-  // Existing consumers retain this export; StudioShell now owns the only nav.
-  return null;
-}
-
 export function Pagination({
   page,
   hasNext,
