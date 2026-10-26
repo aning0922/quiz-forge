@@ -18,7 +18,8 @@
   flex-direction: column;
 }
 .dialog::backdrop {
-  background: #171e36a8;
+  background: #17182d82;
+  backdrop-filter: blur(3px);
 }
 .dialog[data-surface="play"],
 .dialog[data-surface="issue"],
@@ -38,6 +39,7 @@
 }
 .dialog[data-variant="drawer"]::backdrop {
   background: #1b23385b;
+  backdrop-filter: none;
 }
 .dialog[data-variant="preview"] {
   position: fixed;
@@ -203,11 +205,11 @@
 @media (max-width: 570px) {
   .dialog[data-variant="task"] {
     position: fixed;
-    inset: auto 0 0;
-    margin: 0;
-    width: 100vw;
+    inset: 0;
+    margin: auto;
+    width: calc(100vw - 20px);
     max-height: 94dvh;
-    border-radius: 14px 14px 0 0;
+    border-radius: 16px;
   }
   .header,
   .body,

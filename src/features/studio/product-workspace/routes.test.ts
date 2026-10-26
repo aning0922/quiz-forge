@@ -24,7 +24,7 @@ describe("current workspace URLs", () => {
     { task: "review", revision: "2" },
     { task: "preview", draftId, revision: "latest" },
     { task: "preview", draftId, revision: "0" },
-    { task: "preview", draftId, revision: "2147483648" },
+    { task: "preview", draftId, revision: "101" },
     { task: "testing", draftId, revision: "2" },
     { task: "content", unexpected: "target" },
   ])("rejects ambiguous or invalid URL identity %j", (query) => {

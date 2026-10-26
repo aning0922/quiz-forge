@@ -237,3 +237,27 @@
 .heading h2 {
   font-weight: 650;
 }
+/* The current-object rail belongs to the workspace, not an individual tab. */
+.reviewColumns {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+}
+.panel {
+  border: 1px solid #e7e8f2;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 8px 28px #3b357307;
+}
+.heading h2 {
+  font-size: 21px;
+  font-weight: 750;
+}
+.condition {
+  padding: 15px;
+  gap: 11px;
+}
+@media (max-width: 640px) {
+  .panel {
+    padding: 19px;
+  }
+}

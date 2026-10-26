@@ -1,4 +1,6 @@
 "use client";
+import { roleHasCapability } from "@/lib/auth/role-policy";
+import { useInternalAuthority } from "../internal-versions/authority";
 import { useOwnedStudioSession } from "../accounts/session-owner";
 
 import {
@@ -48,6 +50,8 @@ export function ReviewWorkbench({
   productId,
   session: initialSession,
   currentTarget,
+  initialTarget,
+  requireInitialTarget = false,
   visible,
   onChanged,
   onGoToTesting,
@@ -57,6 +61,8 @@ export function ReviewWorkbench({
   productId: string;
   session: StudioSessionDto;
   currentTarget?: RevisionTarget | undefined;
+  initialTarget?: RevisionTarget | undefined;
+  requireInitialTarget?: boolean;
   visible: boolean;
   onChanged: () => void;
   onGoToTesting?: (() => void) | undefined;
@@ -65,13 +71,21 @@ export function ReviewWorkbench({
 }) {
   const session = useOwnedStudioSession(initialSession);
   const surfaces = useWorkspaceSurfaces();
+  const authority = useInternalAuthority();
+  const canReview =
+    roleHasCapability(session.operator.role, "review:record-baseline") &&
+    !authority.isRevoked;
   const [selection, setSelection] = useState<RevisionTarget | undefined>(
-    currentTarget,
+    initialTarget ?? (requireInitialTarget ? undefined : currentTarget),
   );
   // Capture the first reliable fixed scope even when the initial summary is still loading.
   // Later summaries only produce a difference notice; they never replace this selection.
-  if (!selection && currentTarget) setSelection(currentTarget);
-  const target = selection ?? currentTarget;
+  if (!selection && (initialTarget || (!requireInitialTarget && currentTarget)))
+    setSelection(initialTarget ?? currentTarget);
+  const target =
+    selection ??
+    initialTarget ??
+    (requireInitialTarget ? undefined : currentTarget);
   const [nonce, setNonce] = useState(0);
   const [versionId, setVersionId] = useState<string>();
   const [writeState, setWriteState] = useState(quiet);
@@ -165,7 +179,7 @@ export function ReviewWorkbench({
       sameRevisionTarget(version.target, value.target),
     );
   function openReview() {
-    if (!surfaces.canSwitch()) return;
+    if (!canReview || !surfaces.canSwitch()) return;
     if (!selection && currentTarget) setSelection(currentTarget);
     surfaces.open("review");
   }
@@ -177,18 +191,20 @@ export function ReviewWorkbench({
   return (
     <>
       <div hidden={!visible} className={styles.workbench}>
-        <div className={styles.heading}>
-          <div>
-            <h2>审核与版本</h2>
-            <p>先核对当前修订的真实条件，再决定是否固定；历史记录独立查看。</p>
-          </div>
-          <button onClick={() => surfaces.open("versions")}>
-            <History size={18} aria-hidden="true" />
-            历史固定版本
-          </button>
-        </div>
         <div className={styles.reviewColumns}>
           <section className={styles.panel}>
+            <div className={styles.heading}>
+              <div>
+                <h2>审核封存</h2>
+                <p>
+                  先核对当前修订的真实条件，再决定是否固定；历史记录独立查看。
+                </p>
+              </div>
+              <button onClick={() => surfaces.open("versions")}>
+                <History size={18} aria-hidden="true" />
+                历史固定版本
+              </button>
+            </div>
             <div className={styles.cardHeading}>
               <div>
                 <h3>当前修订检查</h3>
@@ -322,6 +338,13 @@ export function ReviewWorkbench({
                 )}
               </>
             )}
+            {!canReview && (
+              <p className={styles.notice}>
+                {session.operator.role === "operator"
+                  ? "需管理员核对并完成审核封存。当前身份可查看准确依据与内容。"
+                  : "只读身份可查看审核状态，不能登记依据或封存版本。"}
+              </p>
+            )}
             <div className={styles.actions}>
               {pending || writeState.retained ? (
                 <button
@@ -339,7 +362,11 @@ export function ReviewWorkbench({
                   进入内测发放
                 </button>
               ) : head && (value?.review || value?.baseline) ? (
-                <button className={styles.primary} onClick={openReview}>
+                <button
+                  className={styles.primary}
+                  disabled={!canReview}
+                  onClick={openReview}
+                >
                   {value.review ? "固定内测内容版本" : "核对并记录既有依据"}
                 </button>
               ) : null}

@@ -12,6 +12,14 @@ import { TechnicalDetails } from "../presentation/technical-details";
 import styles from "./workspace.module.css";
 import parity from "./catalog-parity.module.css";
 
+/** Catalog callers always supply the live role; no route inference or default write role. */
+export function catalogPrimaryAction(
+  operations: ProductOperations,
+  role: StudioRole,
+) {
+  return productPrimaryAction(operations, role);
+}
+
 /** The same current-value card is used by explicit reconciliation, never as a receipt. */
 export function ProductCard({
   product,

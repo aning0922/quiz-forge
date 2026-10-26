@@ -24,7 +24,6 @@ export type ContentWorkbenchProps = {
   onOpenTask: () => void;
   onOpenHistory: () => void;
   onOpenImports?: (() => void) | undefined;
-  onOpenVersions?: (() => void) | undefined;
   onInspectSource?: ((importId: string) => void) | undefined;
   onPreview: (target: RevisionTarget) => void;
 };
@@ -38,7 +37,6 @@ export function ContentWorkbench({
   onOpenTask,
   onOpenHistory,
   onOpenImports,
-  onOpenVersions,
   onInspectSource,
   onPreview,
 }: ContentWorkbenchProps) {
@@ -106,227 +104,178 @@ export function ContentWorkbench({
     !!taskState?.busy ||
     (!retained &&
       (readOnly || !!value?.directory.archivedAt || !value || !!error));
-  const historical =
-    value?.versions.historical.state === "present"
-      ? value.versions.historical.value
-      : undefined;
   return (
     <div className={styles.workbench}>
-      <div className={styles.introHeader}>
-        <div>
-          <h2>内容制作</h2>
-          <p>只突出当前需要完成的任务。检查历史与不可变来源放在记录详情中。</p>
-        </div>
-        <button
-          className={styles.secondary}
-          disabled={disabledImport}
-          onClick={onOpenTask}
-        >
-          <Upload size={17} />
-          导入新内容
-        </button>
-      </div>
       {error && (
         <p className={styles.warning} role="alert">
           内容摘要未能读取，原任务仍保留。请核实后继续。
         </p>
       )}
-      <div className={styles.columns}>
-        <div className={styles.stack}>
-          <section className={styles.hero} aria-label="内容制作主任务">
-            <div className={styles.eyebrow}>
-              <Sparkles size={16} />
-              现在可以做什么
-            </div>
-            <h2>
-              {retained
-                ? "继续处理本次内容"
+      <section className={styles.hero} aria-label="内容制作主任务">
+        <div className={styles.eyebrow}>
+          <Sparkles size={16} aria-hidden="true" />
+          现在可以做什么
+        </div>
+        <h2>
+          {retained
+            ? "继续原内容任务"
+            : current
+              ? `当前内容 r${current.target.revision}，可以继续完善`
+              : "从第一份内容包开始"}
+        </h2>
+        <p>
+          {retained
+            ? "本页保留着原文件和处理记录，请回到原任务继续。"
+            : current
+              ? "草稿修订是不可变的。重新导入并确认内容后会产生新的修订，不覆盖既有报告和历史审核。"
+              : "先在外部制作 QuizPack，后台负责安全接收、检查素材与内容结构，再明确生成草稿修订。"}
+        </p>
+        {(taskState?.pending || taskState?.message) && (
+          <p className={styles.warning} role="status">
+            {taskState.message || "原操作尚待核实，不要以新操作替代。"}
+          </p>
+        )}
+        <div className={styles.actions}>
+          <button
+            className={styles.primary}
+            disabled={
+              retained
+                ? !!taskState?.busy
                 : current
-                  ? `继续制作当前 r${current.target.revision} 版`
-                  : "开始制作这款测评"}
-            </h2>
-            <p>
-              {retained
-                ? "本页保留着原文件和处理记录，请回到原任务继续。"
+                  ? loading || previewBlocked
+                  : disabledImport
+            }
+            onClick={
+              current && !retained
+                ? () => onPreview(current.target)
+                : onOpenTask
+            }
+          >
+            <ArrowRight size={17} aria-hidden="true" />
+            {taskState?.busy
+              ? "正在处理…"
+              : retained
+                ? "继续核实原任务"
                 : current
-                  ? `当前 r${current.target.revision} 是固定修订；更新内容会形成新修订，历史记录保持。`
-                  : "上传已经制作好的内容包，在同一任务窗口内完成接收、检查与建立草稿。"}
+                  ? `预览当前 r${current.target.revision}`
+                  : "上传内容包"}
+          </button>
+          {current && !retained && (
+            <button
+              className={styles.secondary}
+              disabled={disabledImport}
+              onClick={onOpenTask}
+            >
+              <Upload size={17} aria-hidden="true" />
+              更新内容包
+            </button>
+          )}
+          <button className={styles.textButton} onClick={onOpenHistory}>
+            查看修订历史
+          </button>
+        </div>
+        {(readOnly || value?.directory.archivedAt) && (
+          <p className={styles.caption}>
+            当前不能发起新写入，已有任务与历史记录仍可核实。
+          </p>
+        )}
+      </section>
+      <section className={styles.panel} aria-label="内容处理进度">
+        <div className={styles.cardHead}>
+          <div>
+            <h2>内容制作流程</h2>
+            <p>每步有自己的确切记录，不以最近时间拼接完成状态。</p>
+          </div>
+          <span className={styles.badge}>
+            {current ? `当前 r${current.target.revision}` : "尚无草稿"}
+          </span>
+        </div>
+        <ol className={styles.flow}>
+          {states.map((item, i) => (
+            <li key={item.label}>
+              <span className={item.done ? styles.done : styles.counter}>
+                {item.done ? <Check size={15} aria-hidden="true" /> : i + 1}
+              </span>
+              <div>
+                <strong>{item.label}</strong>
+                <small>{item.detail}</small>
+              </div>
+            </li>
+          ))}
+        </ol>
+        <div className={styles.division} />
+        <div className={styles.sourceRow}>
+          <div>
+            <h3>如何开始？</h3>
+            <p className={styles.caption}>
+              在外部制作内容，再上传 QuizPack 压缩包。
             </p>
-            {(taskState?.pending || taskState?.message) && (
-              <p className={styles.warning} role="status">
-                {taskState.message ||
-                  "本次操作尚待核实，请保留原任务，不要用新的操作替代。"}
-              </p>
-            )}
-            <div className={styles.actions}>
-              <button
-                className={styles.primary}
-                disabled={
-                  retained
-                    ? !!taskState?.busy
-                    : current
-                      ? loading || previewBlocked
-                      : disabledImport
-                }
-                onClick={
-                  current && !retained
-                    ? () => onPreview(current.target)
-                    : onOpenTask
+          </div>
+          <button
+            className={styles.secondary}
+            onClick={onOpenImports ?? onOpenHistory}
+          >
+            <List size={17} aria-hidden="true" />
+            接收 / 检查记录
+          </button>
+        </div>
+      </section>
+      <section className={styles.panel} aria-label="当前制作对象">
+        <div className={styles.cardHead}>
+          <div>
+            <h2>当前内容</h2>
+            <p>只突出最新准确对象，来源细节进入记录查看。</p>
+          </div>
+          <button className={styles.textButton} onClick={onOpenHistory}>
+            完整历史
+          </button>
+        </div>
+        {current ? (
+          <>
+            <div className={styles.valueTop}>
+              <div>
+                <span className={styles.caption}>当前不可变内容修订</span>
+                <div className={styles.revision}>
+                  r{current.target.revision}
+                </div>
+              </div>
+              <span
+                className={
+                  matchedReview ? styles.greenBadge : styles.amberBadge
                 }
               >
-                <ArrowRight size={17} />
-                {taskState?.busy
-                  ? "正在处理…"
-                  : retained
-                    ? "继续核实原任务"
-                    : current
-                      ? `预览当前 r${current.target.revision}`
-                      : "上传内容包"}
-              </button>
-              <button className={styles.secondary} onClick={onOpenHistory}>
-                查看内容修订
-              </button>
-            </div>
-            {(readOnly || value?.directory.archivedAt) && (
-              <p className={styles.caption}>
-                当前不能发起新写入，已有任务与历史记录仍可核实。
-              </p>
-            )}
-          </section>
-          <section className={styles.panel} aria-label="内容处理进度">
-            <div className={styles.cardHead}>
-              <div>
-                <h3>内容处理进度</h3>
-                <p>各步骤按自己的准确来源记录，不以最近时间拼接完成状态。</p>
-              </div>
-              <span className={styles.badge}>
-                {current ? `当前 r${current.target.revision}` : "尚无草稿"}
+                {matchedReview ? "已有匹配审核记录" : "尚无匹配审核"}
               </span>
             </div>
-            <ol className={styles.flow}>
-              {states.map((item, i) => (
-                <li key={item.label}>
-                  <span className={item.done ? styles.done : styles.counter}>
-                    {item.done ? <Check size={15} /> : i + 1}
-                  </span>
-                  <div>
-                    <strong>{item.label}</strong>
-                    <small>{item.detail}</small>
-                  </div>
-                </li>
-              ))}
-            </ol>
-            <div className={styles.division} />
-            <div className={styles.actions}>
-              <button
-                className={styles.secondary}
-                disabled={disabledImport}
-                onClick={onOpenTask}
-              >
-                <Upload size={17} />
-                {current ? "更新内容包" : "上传内容包"}
-              </button>
-              <button
-                className={styles.secondary}
-                onClick={onOpenImports ?? onOpenHistory}
-              >
-                <List size={17} />
-                接收与检查记录
-              </button>
-            </div>
-          </section>
-        </div>
-        <aside className={styles.stack}>
-          <section className={styles.panel} aria-label="当前制作对象">
-            <div className={styles.cardHead}>
+            <div className={styles.sourceRow}>
               <div>
-                <h3>当前制作对象</h3>
-                <p>摘要信息，完整来源在记录中查看。</p>
+                <h3>此修订的内容来源</h3>
+                <p className={styles.caption}>来源已固定，不随新内容包改变。</p>
               </div>
+              {onInspectSource && (
+                <button
+                  className={styles.secondary}
+                  onClick={() => onInspectSource(current.sourceImportId)}
+                >
+                  查看准确来源
+                </button>
+              )}
             </div>
-            {current ? (
-              <>
-                <div className={styles.valueTop}>
-                  <div>
-                    <span className={styles.caption}>当前内容修订</span>
-                    <div className={styles.revision}>
-                      r{current.target.revision}
-                    </div>
-                  </div>
-                  <span
-                    className={
-                      matchedReview ? styles.greenBadge : styles.amberBadge
-                    }
-                  >
-                    {matchedReview ? "已有匹配审核记录" : "尚无匹配审核"}
-                  </span>
-                </div>
-                <div className={styles.miniStats}>
-                  <div>
-                    <small>来源内容包</small>
-                    <strong>
-                      {onInspectSource ? (
-                        <button
-                          className={styles.textButton}
-                          onClick={() =>
-                            onInspectSource(current.sourceImportId)
-                          }
-                        >
-                          查看准确来源
-                        </button>
-                      ) : (
-                        "已固定来源，详见修订记录"
-                      )}
-                    </strong>
-                  </div>
-                  <div>
-                    <small>已有固定内测版本</small>
-                    <strong>
-                      {value
-                        ? `${value.versions.currentCount + value.versions.historicalCount} 个`
-                        : "待核实"}
-                    </strong>
-                  </div>
-                </div>
-              </>
-            ) : (
-              <div className={styles.empty}>
-                <FileText size={29} />
-                <h3>{loading ? "正在读取当前内容" : "还没有内容草稿"}</h3>
-                <p>先完成内容包接收、检查，再明确生成草稿。</p>
-              </div>
-            )}
-            <div className={styles.division} />
-            <button
-              className={`${styles.secondary} ${styles.block}`}
-              onClick={onOpenHistory}
-            >
-              查看来源与修订记录
-            </button>
-          </section>
-          <section className={styles.panel}>
-            <h3>保留的历史</h3>
-            {historical ? (
-              <div className={styles.historyRow}>
-                <div>
-                  <strong>历史 r{historical.target.revision} 内容</strong>
-                  <small>已固定，不随当前修订改变</small>
-                </div>
-                {onOpenVersions && (
-                  <button className={styles.secondary} onClick={onOpenVersions}>
-                    查看
-                  </button>
-                )}
-              </div>
-            ) : (
-              <p className={styles.intro}>暂无可确认的历史固定版本。</p>
-            )}
-            <p className={styles.hint}>
-              内容检查完成不代表人工审核通过；完整审核依据由现有版本服务维护。
-            </p>
-          </section>
-        </aside>
-      </div>
+          </>
+        ) : (
+          <div className={styles.empty}>
+            <FileText size={28} aria-hidden="true" />
+            <h3>
+              {loading
+                ? "正在读取当前内容"
+                : value?.content.draft.state === "none"
+                  ? "还没有内容草稿"
+                  : "当前内容待核实"}
+            </h3>
+            <p>先完成内容包接收、检查，再明确生成草稿。</p>
+          </div>
+        )}
+      </section>
     </div>
   );
 }

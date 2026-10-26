@@ -12,11 +12,14 @@ const revision = z
   .string()
   .regex(/^[1-9][0-9]{0,9}$/)
   .transform(Number)
-  .pipe(z.number().int().max(2_147_483_647));
+  .pipe(z.number().int().max(100));
 /** URL identity selects one immutable revision; it is never permission or a write receipt. */
 export const workspaceQuerySchema = z
   .strictObject({
     task: z.enum(workspaceTasks).default("content"),
+    panel: z
+      .enum(["history", "settings", "imports", "revisions", "versions"])
+      .optional(),
     draftId: z.uuid().optional(),
     revision: revision.optional(),
   })

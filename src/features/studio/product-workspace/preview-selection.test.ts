@@ -4,15 +4,10 @@ import { describe, expect, it } from "vitest";
 import { projectProductOperations } from "../operations/projection";
 import { previewPagePath } from "@/features/product/preview/urls";
 import {
-  ProductWorkspaceContext,
-  type ProductWorkspaceContextValue,
-} from "./context";
-import { ProductContentHub } from "./content-hub";
-import {
-  ProductPreviewHub,
   selectPreviewTarget,
   previewSelectionStatus,
-} from "./preview-hub";
+} from "./preview-selection";
+import { ContentWorkbench } from "./content-workbench";
 const now = "2026-10-24T02:00:00.000Z";
 const uuid = (n: number) =>
   `00000000-0000-4000-8000-${String(n).padStart(12, "0")}`;
@@ -59,35 +54,12 @@ function fixture() {
   };
   return value;
 }
-function render(
-  component: typeof ProductContentHub | typeof ProductPreviewHub,
-  value: ProductWorkspaceContextValue["read"]["value"],
-  error?: string,
-) {
-  return renderToStaticMarkup(
-    createElement(
-      ProductWorkspaceContext.Provider,
-      {
-        value: {
-          productId: "hubs-test",
-          read: { value, loading: false, error, refresh() {} },
-        },
-      },
-      createElement(component),
-    ),
-  );
-}
 describe("fixed preview selection", () => {
   it("captures a full independent target only on explicit selection", () => {
     const input = { ...target };
     const selection = selectPreviewTarget("hubs-test", input);
     input.assetSetSha256 = "0".repeat(64);
     expect(selection.target).toEqual(target);
-    const html = render(ProductPreviewHub, fixture());
-    expect(html).toContain("当前草稿 r2");
-    expect(html).toContain("尚未选择修订");
-    expect(html).not.toContain("打开 r2 体验预览");
-    expect(html).not.toContain("checked=");
   });
   it.each([
     "draftId",
@@ -156,8 +128,8 @@ describe("fixed preview selection", () => {
     );
   });
 });
-describe("content and preview task presentation", () => {
-  it("separates latest intake, independent validation and the draft's own source", () => {
+describe("content workbench facts", () => {
+  it("does not combine unrelated reception and validation into the current source", () => {
     const value = fixture();
     value.content.reception.latest = {
       state: "present",
@@ -181,24 +153,32 @@ describe("content and preview task presentation", () => {
         createdAt: now,
       },
     };
-    const html = render(ProductContentHub, value);
-    expect(html).toContain("不是同一来源");
-    expect(html).toContain("此草稿有自己的来源检查");
-    expect(html).toContain(`/imports/${uuid(12)}/validations/${uuid(11)}`);
-    expect(html).toContain(`/imports/${uuid(2)}/validations/${uuid(3)}`);
-    expect(html).toContain("明确形成草稿修订");
-    expect(html).toContain("当前 r2");
+    const html = renderToStaticMarkup(
+      createElement(ContentWorkbench, {
+        value,
+        loading: false,
+        onOpenTask() {},
+        onOpenHistory() {},
+        onPreview() {},
+      }),
+    );
+    expect(html).toContain("当前来源接收需按记录核对");
+    expect(html).toContain("当前来源检查需按记录核对");
+    expect(html).toContain("当前内容 r2");
   });
-  it("does not call empty/failed preview state a ready experience", () => {
-    const empty = fixture();
-    empty.content.draft = { state: "none", reason: "none" };
-    const html = render(ProductPreviewHub, empty);
-    expect(html).toContain("尚无可选择的草稿");
-    expect(html).toContain("尚未选择修订");
-    expect(html).not.toMatch(/<iframe|<img/);
-    const failed = render(ProductPreviewHub, undefined, "读取失败");
-    expect(failed).toContain('role="alert"');
-    expect(failed).toContain("当前归属无法判定");
-    expect(failed).not.toContain("尚无可选择的草稿");
+  it("keeps failed reading distinct from an empty draft", () => {
+    const html = renderToStaticMarkup(
+      createElement(ContentWorkbench, {
+        value: undefined,
+        loading: false,
+        error: "读取失败",
+        onOpenTask() {},
+        onOpenHistory() {},
+        onPreview() {},
+      }),
+    );
+    expect(html).toContain('role="alert"');
+    expect(html).toContain("当前内容待核实");
+    expect(html).not.toContain("还没有内容草稿");
   });
 });
