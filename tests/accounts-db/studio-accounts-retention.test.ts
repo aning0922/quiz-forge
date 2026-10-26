@@ -25,7 +25,7 @@ afterAll(async () => {
 });
 it("expires bearer result access at issuance plus 24 hours even when consume/revoke is late; strict inspection never revives a consumed token", async () => {
   const target = randomUUID();
-  await owner.sql`INSERT INTO qf.operator(id,label,role,status) VALUES(${target},${"synthetic-window-" + target},'operator','active')`;
+  await owner.sql`INSERT INTO qf.operator(id,login_name,display_name,role,status) VALUES(${target},${"retention-" + target},'合成保留账号','operator','active')`;
   for (const hours of [23, 26]) {
     const token = issuePasswordToken(),
       operationId = randomUUID(),

@@ -1,12 +1,8 @@
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { parseArguments } from "../../../scripts/p2a-db-cli";
-import {
-  createOperator,
-  initCiInstance,
-  initLocalInstance,
-  instancePaths,
-} from "./management";
+import { executeLocalAccountOperation } from "../auth/accounts/management";
+import { initCiInstance, initLocalInstance, instancePaths } from "./management";
 
 afterEach(() => {
   delete process.env.GITHUB_ACTIONS;
@@ -44,6 +40,28 @@ describe("P2-A management refusal boundaries", () => {
     for (const id of ["../existing", "", "a".repeat(31), "A".repeat(32)])
       expect(() => instancePaths(id)).toThrow();
   });
+  it("rejects noncanonical maintenance inputs and unowned operation files before DB access", async () => {
+    const binding = {
+      action: "disable" as const,
+      operationId: "00000000-0000-4000-8000-000000000001",
+      targetId: "00000000-0000-4000-8000-000000000002",
+      expectedRevision: 1,
+    };
+    await expect(
+      executeLocalAccountOperation(
+        "a".repeat(32),
+        binding,
+        "/tmp/account-operation-private.json",
+      ),
+    ).rejects.toThrow("ACCOUNT_OPERATION_PATH_INVALID");
+    await expect(
+      executeLocalAccountOperation(
+        "a".repeat(32),
+        { ...binding, expectedRevision: 0 },
+        "/tmp/account-operation-private.json",
+      ),
+    ).rejects.toThrow();
+  });
   it("does not permit arbitrary CI connections, even with a CI flag", async () => {
     const input = {
       host: "127.0.0.1",
@@ -66,22 +84,5 @@ describe("P2-A management refusal boundaries", () => {
       await expect(initCiInstance(invalid)).rejects.toThrow(
         "CI_SERVICE_ARGUMENTS_INVALID",
       );
-  });
-  it("rejects user credentials/paths and invalid synthetic labels before DB access", async () => {
-    const instance = "a".repeat(32);
-    await expect(
-      createOperator(instance, {
-        label: "Alice@real",
-        role: "operator",
-        credentialFile: "/tmp/operator-secret",
-      }),
-    ).rejects.toThrow("OPERATOR_ARGUMENTS_INVALID");
-    await expect(
-      createOperator(instance, {
-        label: "synthetic",
-        role: "operator",
-        credentialFile: "/tmp/operator-secret",
-      }),
-    ).rejects.toThrow("CREDENTIAL_PATH_INVALID");
   });
 });
