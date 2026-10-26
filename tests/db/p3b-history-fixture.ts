@@ -18,7 +18,9 @@ import type { PreparedP2b3Source } from "./p2b3-fixture";
 import type { TestDatabase, authenticateTestOperator } from "./p2a-fixture";
 
 /** Explicit historical SQL fixture: real old guards and transitions, synthetic no-file evidence.
- * Restore functions only inside a transaction, then re-run actual 0015 including quiescence checks.
+ * Restore old functions only inside a transaction, then run actual 0015 in a rollback savepoint.
+ * Its quiescence/data checks still execute; its DDL cannot replace later admission checks.
+ * Restore exact entry functions before commit so later admission migrations remain intact.
  * No trigger/constraint disabling and no table/history/checksum edits. */
 export async function historicalTransaction<T>(
   db: TestDatabase,
@@ -31,13 +33,14 @@ export async function historicalTransaction<T>(
     .filter((m) => m.version < "0015")
     .map((m) => m.source)
     .join("\n");
-  const definitions = [
+  const functionNames = [
     "protect_validation",
     "validation_shape_valid",
     "validation_file_stop_controls_valid",
     "protect_validation_file_stop_ack",
     "protect_draft_revision_source",
-  ]
+  ];
+  const definitions = functionNames
     .map((name) => {
       const matches = [
         ...old.matchAll(
@@ -56,6 +59,12 @@ export async function historicalTransaction<T>(
   try {
     let completed: { value: T } | undefined;
     await db.admin.sql.begin(async (tx) => {
+      const current = await tx<{ definition: string }[]>`
+        SELECT pg_get_functiondef(oid) AS definition FROM pg_proc
+        WHERE pronamespace='qf'::regnamespace AND proname=ANY(${tx.array(functionNames)}::text[])
+        ORDER BY proname`;
+      if (current.length !== functionNames.length)
+        throw Error("P3B_CURRENT_HELPERS_REQUIRED");
       await tx.unsafe(definitions);
       const value = await work(tx);
       await tx`SET CONSTRAINTS ALL IMMEDIATE`;
@@ -63,7 +72,16 @@ export async function historicalTransaction<T>(
         (m) => m.version === "0015_supported_pack_admission",
       );
       if (!migration) throw Error("P3B_MIGRATION_REQUIRED");
-      await tx.unsafe(migration.source);
+      const checked = new Error("P3B_MIGRATION_CHECKED");
+      try {
+        await tx.savepoint(async (probe) => {
+          await probe.unsafe(migration.source);
+          throw checked;
+        });
+      } catch (error) {
+        if (error !== checked) throw error;
+      }
+      for (const helper of current) await tx.unsafe(helper.definition);
       completed = { value };
     });
     if (!completed) throw Error("P3B_HISTORY_TRANSACTION_REQUIRED");

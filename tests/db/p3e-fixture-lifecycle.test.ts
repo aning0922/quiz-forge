@@ -28,7 +28,7 @@ import { canonicalP1Json } from "@/features/quizpack/v1/canonical";
 import { quizPackContentSchema } from "@/features/quizpack/v1/content";
 import { supportedManifestSchema } from "@/features/quizpack/package/manifest";
 import { sealCandidateResultEvidence } from "@/features/quizpack/server/validation/contracts";
-import { sealSupportedReport } from "@/features/quizpack/server/validation/report";
+import { sealCurrentReport } from "@/features/quizpack/server/validation/report";
 import { issuePrivateCandidate } from "@/features/quizpack/server/validation/private-candidate";
 import { matchRegisteredBaseline } from "@/features/product/internal-versions/baseline-registry";
 import { prepareP2b3Source, seedReadyP2b3Source } from "./p2b3-fixture";
@@ -183,7 +183,7 @@ async function legacySharedSource(productId: string, runId: string) {
         archiveBytes: 100,
         targetProductId: productId,
       },
-      report: sealSupportedReport({
+      report: sealCurrentReport({
         ...base.result.evidence.report.value,
         archiveSha256,
         manifestSha256: sha(manifestText),
