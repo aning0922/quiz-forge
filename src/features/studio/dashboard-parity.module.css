@@ -1,93 +1,106 @@
 .page {
   gap: 18px;
 }
+.page > header {
+  margin-bottom: 6px;
+}
+.page .eyebrow {
+  color: #9389a9;
+  font-size: 11px;
+  letter-spacing: 1.9px;
+  font-weight: 800;
+  margin-bottom: 8px;
+}
 .page .metrics {
-  gap: 14px;
+  gap: 15px;
 }
 .page .metric {
   position: relative;
   grid-template-columns: minmax(0, 1fr);
-  min-height: 136px;
-  padding: 18px;
-  gap: 8px;
-  box-shadow: 0 3px 12px #24304b05;
+  min-height: 132px;
+  padding: 20px 22px;
+  gap: 5px;
+  border-radius: 16px;
+  box-shadow: 0 10px 34px #2a28530b;
 }
 .page .metric > span:last-child {
   display: block;
 }
 .metricLabel {
-  padding-right: 38px;
+  padding-right: 30px;
 }
 .metricIcon {
   position: absolute;
-  top: 16px;
-  right: 16px;
-  width: 32px;
-  height: 32px;
-  display: grid;
-  place-items: center;
-  background: #f2f0ff;
-  color: var(--studio-primary, #6358df);
-  border-radius: 8px;
+  top: 20px;
+  right: 19px;
+  color: #aa9ee8;
+}
+.page .metric strong {
+  font-size: 31px;
+  line-height: 1.2;
+  margin: 4px 0;
 }
 .page .columns {
-  grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr);
-  gap: 17px;
-}
-.taskIcon {
-  box-sizing: content-box;
-  padding: 8px;
-  border-radius: 9px;
-  color: var(--studio-primary, #6358df);
-  background: #f1eeff;
-}
-.page li:has(> .taskIcon) {
-  grid-template-columns: 38px minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1.5fr) minmax(290px, 0.85fr);
+  gap: 18px;
+  align-items: start;
 }
 .page .taskDescription {
-  color: var(--studio-muted, #63718b);
-  margin: 3px 0 0;
-  font-size: 16px;
+  color: var(--studio-muted);
+  margin: 4px 0 0;
   line-height: 1.55;
 }
-.lowerColumns {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 18px;
-}
-.entryPanel h2 {
-  display: inline-flex;
+.page .scopePanel {
+  display: flex;
   align-items: center;
-  gap: 9px;
+  justify-content: space-between;
+  gap: 20px;
 }
-.entryPanel h2 > svg {
-  color: var(--studio-primary, #6358df);
-  flex-shrink: 0;
+.page .scopePanel h2 {
+  margin: 0;
 }
-.entryPanel .boundary {
-  font-size: 16px;
-  color: var(--studio-muted, #63718b);
+.page .scopePanel p {
+  margin-bottom: 0;
 }
-@media (max-width: 1050px) {
-  .page .columns,
-  .lowerColumns {
+.page .scopePanel > button {
+  flex: none;
+}
+.page .observedAt {
+  color: #8c95a8;
+  font-size: 14px;
+}
+@media (max-width: 1000px) {
+  .page .columns {
     grid-template-columns: minmax(0, 1fr);
   }
 }
-@media (max-width: 600px) {
-  .page .metric {
-    padding: 16px;
-    min-height: 134px;
-  }
+@media (max-width: 640px) {
   .page .metrics {
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 7px;
   }
-  .page li:has(> .taskIcon) {
-    grid-template-columns: 38px minmax(0, 1fr);
+  .page .metric {
+    padding: 13px 10px;
+    min-height: 138px;
+    gap: 5px;
   }
-  .page li:has(> .taskIcon) > a {
-    grid-column: 2;
-    justify-self: start;
-    max-width: 100%;
+  .metricLabel {
+    padding: 18px 0 0;
+  }
+  .metricIcon {
+    top: 10px;
+    right: 9px;
+  }
+  .metricIcon > svg {
+    width: 16px;
+    height: 16px;
+  }
+  .page .metric strong {
+    font-size: 25px;
+  }
+  .page .scopePanel {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 12px;
   }
 }

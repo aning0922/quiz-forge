@@ -1,7 +1,6 @@
 "use client";
 import { useOwnedStudioSession } from "../accounts/session-owner";
 import { StudioPageHeader } from "../presentation/page-header";
-import { StudioWorkflowNav } from "../presentation/workflow-nav";
 import Link from "next/link";
 import type { StudioSessionDto } from "../contracts";
 import { ApplyDraftPanel } from "../drafts/apply-panel";
@@ -33,7 +32,6 @@ export function ValidationDetailPage({
           title="内容检查结果"
           description="核对归档结论后，明确选择首次草稿或追加修订。待确认原操作在下方独立保留。"
         />
-        <StudioWorkflowNav productId={productId} current="imports" />
         <Link
           className={`${styles.link} ${styles.secondary}`}
           href={`/studio/products/${encodeURIComponent(productId)}/imports/${encodeURIComponent(importId)}`}

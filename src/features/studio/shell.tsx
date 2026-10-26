@@ -1,6 +1,7 @@
 "use client";
 import { usePathname } from "next/navigation";
 import { StudioAccountOwner } from "./accounts/session-owner";
+import { SidebarLogoutAction } from "./accounts/sidebar-logout-action";
 import type { StudioSessionDto } from "./contracts";
 import styles from "./studio.module.css";
 import { StudioNavigation } from "./navigation";
@@ -54,6 +55,7 @@ export function StudioShell({
             >
               {session ? (
                 <StudioAccountOwner initialSession={session}>
+                  <SidebarLogoutAction session={session} />
                   {children}
                 </StudioAccountOwner>
               ) : (

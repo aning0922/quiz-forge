@@ -17,7 +17,7 @@ export function StudioConsumerWorkspaceLink({
       </p>
       <Link
         className={styles.link}
-        href={`/studio/products/${parsed.data}/consumer-access`}
+        href={`/studio/products/${parsed.data}?task=testing`}
       >
         答题版本与访问码
       </Link>

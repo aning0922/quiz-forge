@@ -105,6 +105,7 @@ function CatalogList({
     <div className={`${styles.workspace} ${parity.page}`}>
       <StudioPageHeader
         title="测评管理"
+        eyebrow="QUIZFORGE STUDIO / OPERATOR"
         description={
           <p>查找测评，识别当前内容与内测状态，再进入具体工作区继续。</p>
         }
@@ -114,10 +115,8 @@ function CatalogList({
           ) : undefined
         }
       />
-      <section
-        className={`${styles.panel} ${styles.catalogPanel} ${parity.panel}`}
-      >
-        {session.operator.role === "read-only" && <ReadOnlyNotice />}
+      {session.operator.role === "read-only" && <ReadOnlyNotice />}
+      <section className={parity.filterPanel}>
         <CatalogFilters
           key={catalogQueryString(query)}
           query={query}
@@ -125,6 +124,14 @@ function CatalogList({
           onApply={go}
           onReset={() => pushCatalogQuery(null)}
         />
+      </section>
+      <section
+        className={`${styles.panel} ${styles.catalogPanel} ${parity.panel}`}
+      >
+        <div className={parity.listHeading}>
+          <h2>全部测评 {read.value && <span>{read.value.total} 项</span>}</h2>
+          <p>查看当前内容、审核与内测情况，再继续适合你的操作。</p>
+        </div>
         <p className={styles.filterSummary} role="status">
           当前：
           {query.status === "active"
@@ -199,7 +206,10 @@ function CatalogList({
                 </div>
               </div>
             ) : (
-              <CatalogProducts products={read.value.items} />
+              <CatalogProducts
+                products={read.value.items}
+                role={session.operator.role}
+              />
             )}
             <div className={styles.catalogObservation}>
               <AsOf value={read.value.asOf} />

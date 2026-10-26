@@ -1,94 +1,113 @@
 import { roleHasCapability } from "@/lib/auth/role-policy";
 import Link from "next/link";
-import {
-  Users,
-  History,
-  User,
-  Tags,
-  ChevronRight,
-  ShieldCheck,
-} from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import type { StudioIdentity } from "./navigation-model";
 import { AccountAvatar, RoleBadge } from "./accounts/account-ui";
-import ui from "./accounts/experience.module.css";
+import { AccountWorkspaceNav } from "./accounts/workspace-nav";
 import styles from "./settings.module.css";
 
 export function StudioSettings({ identity }: { identity: StudioIdentity }) {
+  const manage = roleHasCapability(identity.role, "account:manage");
+  const taxonomy = roleHasCapability(identity.role, "taxonomy:manage");
   return (
-    <div className={ui.page}>
-      <header className={ui.heading}>
-        <div>
-          <h1>系统设置</h1>
-          <p>人员管理与账号安全各有清晰入口，让日常运营更从容。</p>
-        </div>
+    <div className={styles.page}>
+      <header className={styles.header}>
+        <p className={styles.eyebrow}>QUIZFORGE STUDIO / OPERATOR</p>
+        <h1>系统设置</h1>
+        <p>平台目录和账号安全分区呈现，让日常运营更从容。</p>
       </header>
+      <AccountWorkspaceNav role={identity.role} />
       <div className={styles.grid}>
-        <section className={`${ui.card} ${ui.cardPad}`}>
-          <h2>人员与权限</h2>
-          <div className={styles.accountLinks}>
-            {roleHasCapability(identity.role, "account:manage") && (
-              <Link href="/studio/accounts">
-                <span className={styles.linkIcon}>
-                  <Users size={21} />
-                </span>
-                <span>
-                  <strong>账号与权限</strong>
-                  <span>开通成员、调整角色、停用或恢复账号</span>
-                </span>
-                <ChevronRight size={18} />
-              </Link>
+        <div className={styles.stack}>
+          <section className={styles.panel}>
+            <div className={styles.title}>
+              <div>
+                <h2>人员与权限</h2>
+                <p>管理运营成员与账号安全</p>
+              </div>
+              <span className={styles.available}>已开放</span>
+            </div>
+            {manage ? (
+              <>
+                <div className={styles.settingRow}>
+                  <div>
+                    <strong>账号与权限</strong>
+                    <p>开通成员、调整角色、停用与设密入口</p>
+                  </div>
+                  <Link className={styles.button} href="/studio/accounts">
+                    进入 <ChevronRight size={16} aria-hidden="true" />
+                  </Link>
+                </div>
+                <div className={styles.settingRow}>
+                  <div>
+                    <strong>账号操作记录</strong>
+                    <p>查看人员变更、安全动作与处理结果</p>
+                  </div>
+                  <Link className={styles.button} href="/studio/accounts/audit">
+                    查看 <ChevronRight size={16} aria-hidden="true" />
+                  </Link>
+                </div>
+              </>
+            ) : (
+              <p className={styles.notice}>
+                其他成员及全体账号操作记录由管理员管理。
+              </p>
             )}
-            {roleHasCapability(identity.role, "account:audit") && (
-              <Link href="/studio/accounts/audit">
-                <span className={styles.linkIcon}>
-                  <History size={21} />
-                </span>
-                <span>
-                  <strong>账号操作记录</strong>
-                  <span>查看人员变更、安全操作及处理结果</span>
-                </span>
-                <ChevronRight size={18} />
-              </Link>
-            )}
-            <Link href="/studio/session">
-              <span className={styles.linkIcon}>
-                <User size={21} />
-              </span>
-              <span>
+            <div className={styles.settingRow}>
+              <div>
                 <strong>我的账号</strong>
-                <span>本人密码和登录管理</span>
-              </span>
-              <ChevronRight size={18} />
-            </Link>
-          </div>
-        </section>
-        <section className={`${ui.card} ${ui.cardPad}`}>
-          <h2>当前角色</h2>
-          <div className={ui.person}>
-            <AccountAvatar name={identity.label} />
-            <strong>{identity.label}</strong>
-          </div>
-          <div className={styles.role}>
-            <RoleBadge role={identity.role} />
-          </div>
-          <div className={ui.hint}>
-            <ShieldCheck size={19} />
-            <span>
-              仅显示当前角色适用的设置入口。具体操作仍以服务器核验的权限为准。
-            </span>
-          </div>
-        </section>
-        <section className={`${ui.card} ${ui.cardPad}`}>
-          <h2>测评分类与标签</h2>
-          <p className={ui.muted}>
-            维护已有测评使用的分类和标签；归档保留原测评关联。
-          </p>
-          <Link className={ui.button} href="/studio/taxonomy">
-            <Tags size={18} />
-            打开分类与标签管理
-            <ChevronRight size={18} />
-          </Link>
-        </section>
+                <p>个人身份、修改密码与退出登录</p>
+              </div>
+              <Link className={styles.button} href="/studio/session">
+                管理 <ChevronRight size={16} aria-hidden="true" />
+              </Link>
+            </div>
+          </section>
+          <section className={styles.panel}>
+            <div className={styles.title}>
+              <div>
+                <h2>分类与标签</h2>
+                <p>组织测评目录，保留已有测评关联</p>
+              </div>
+              <span className={styles.available}>已开放</span>
+            </div>
+            <div className={styles.settingRow}>
+              <div>
+                <strong>测评分类和标签</strong>
+                <p>
+                  {taxonomy
+                    ? "创建、改名、归档与恢复"
+                    : "当前角色可查看已有分类和标签"}
+                </p>
+              </div>
+              <Link className={styles.button} href="/studio/taxonomy">
+                {taxonomy ? "管理" : "查看"}{" "}
+                <ChevronRight size={16} aria-hidden="true" />
+              </Link>
+            </div>
+          </section>
+        </div>
+        <div className={styles.stack}>
+          <section className={styles.panel}>
+            <h2>当前角色</h2>
+            <div className={styles.identity}>
+              <AccountAvatar name={identity.label} />
+              <strong>{identity.label}</strong>
+            </div>
+            <div className={styles.role}>
+              <RoleBadge role={identity.role} />
+            </div>
+            <p>角色更改或停用会撤销原登录；未结束的任务仍归原发起账号。</p>
+          </section>
+          <section className={styles.panel}>
+            <h2>后续站点运营</h2>
+            <p>支付、公开注册、消费者账号和统一参与统计尚未开放。</p>
+          </section>
+          <section className={styles.panel}>
+            <h2>环境维护</h2>
+            <p>数据库备份与恢复由独立维护流程完成。</p>
+          </section>
+        </div>
       </div>
     </div>
   );

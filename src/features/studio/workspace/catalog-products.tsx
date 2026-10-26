@@ -1,16 +1,19 @@
 import Link from "next/link";
+import { BookOpen } from "lucide-react";
+import type { StudioRole } from "@/lib/auth/role-policy";
 import type { ProductOperations } from "../operations/contracts";
 import { productPresentation } from "../operations-ui/presentation";
 import { StatusBadge } from "../operations-ui/status-badge";
 import { ProductCard, catalogPrimaryAction } from "./product-card";
-import { directoryTime } from "./directory-time";
 import styles from "./workspace.module.css";
 import parity from "./catalog-parity.module.css";
 
 export function CatalogProducts({
   products,
+  role,
 }: {
   products: ProductOperations[];
+  role: StudioRole;
 }) {
   return (
     <>
@@ -20,33 +23,40 @@ export function CatalogProducts({
         </caption>
         <thead>
           <tr>
-            <th scope="col">测评作品</th>
+            <th scope="col">测评</th>
             <th scope="col">分类</th>
-            <th scope="col">内容进度</th>
-            <th scope="col">内测状态</th>
-            <th scope="col">目录更新时间</th>
-            <th scope="col">操作</th>
+            <th scope="col">当前内容</th>
+            <th scope="col">审核状态</th>
+            <th scope="col">内测情况</th>
+            <th scope="col">下一步</th>
           </tr>
         </thead>
         <tbody>
           {products.map((operations) => {
             const product = operations.directory;
             const facts = productPresentation(operations);
-            const action = catalogPrimaryAction(operations);
+            const action = catalogPrimaryAction(operations, role);
             return (
               <tr key={product.id}>
                 <th scope="row">
-                  <Link
-                    className={styles.catalogTitle}
-                    href={`/studio/products/${encodeURIComponent(product.id)}`}
-                    aria-label={`查看测评 ${product.title}（编号 ${product.id}）`}
-                  >
-                    {product.title}
-                  </Link>
-                  <span className={parity.identifier}>
-                    {product.slug}
-                    {product.archivedAt ? " · 已归档" : ""}
-                  </span>
+                  <div className={parity.productIdentity}>
+                    <span className={parity.productIcon}>
+                      <BookOpen size={18} aria-hidden="true" />
+                    </span>
+                    <div>
+                      <Link
+                        className={styles.catalogTitle}
+                        href={`/studio/products/${encodeURIComponent(product.id)}`}
+                        aria-label={`查看测评 ${product.title}（编号 ${product.id}）`}
+                      >
+                        {product.title}
+                      </Link>
+                      <span className={parity.identifier}>
+                        {product.slug}
+                        {product.archivedAt ? " · 已归档" : ""}
+                      </span>
+                    </div>
+                  </div>
                 </th>
                 <td>
                   <span className={parity.category}>
@@ -58,21 +68,17 @@ export function CatalogProducts({
                 <td>
                   <div className={parity.contentState}>
                     <StatusBadge status={facts.content} />
-                    <span className={parity.reviewState}>
-                      {facts.review.label}
-                    </span>
                   </div>
+                </td>
+                <td>
+                  <StatusBadge status={facts.review} />
                 </td>
                 <td>
                   <span title={facts.historicalNote ?? undefined}>
                     <StatusBadge status={facts.testing} />
                   </span>
                 </td>
-                <td>
-                  <time dateTime={product.updatedAt}>
-                    {directoryTime(product.updatedAt)}
-                  </time>
-                </td>
+
                 <td>
                   <Link
                     className={styles.catalogAction}
@@ -98,6 +104,7 @@ export function CatalogProducts({
             <ProductCard
               product={operations.directory}
               operations={operations}
+              role={role}
             />
           </li>
         ))}

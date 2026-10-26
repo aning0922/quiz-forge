@@ -7,7 +7,5 @@ export default async function Page() {
   const state = await studioPageState();
   if (state.status === "unavailable") return <StudioUnavailable />;
   if (state.status === "unauthenticated") redirect("/studio/login");
-  return (
-    <StudioTesting readOnly={state.session.operator.role === "read-only"} />
-  );
+  return <StudioTesting session={state.session} />;
 }

@@ -190,7 +190,7 @@ export function VersionReceiptFacts({
       </Link>
       <Link
         className={styles.link}
-        href={`/studio/products/${encodeURIComponent(version.binding.productId)}/consumer-access`}
+        href={`/studio/products/${encodeURIComponent(version.binding.productId)}?task=testing`}
       >
         创建答题版本与发码
       </Link>

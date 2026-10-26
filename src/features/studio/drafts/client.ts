@@ -27,7 +27,7 @@ export const draftRevisionEndpoint = (
 ) =>
   `/api/studio/products/${encodeURIComponent(productId)}/drafts/${encodeURIComponent(draftId)}/revisions/${revision}`;
 export const draftWorkspacePath = (productId: string) =>
-  `/studio/products/${encodeURIComponent(productId)}/draft`;
+  `/studio/products/${encodeURIComponent(productId)}?task=content&panel=revisions`;
 export const draftRevisionPath = (
   productId: string,
   draftId: string,

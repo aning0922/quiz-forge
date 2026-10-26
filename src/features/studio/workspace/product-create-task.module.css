@@ -1,17 +1,17 @@
 .dialog {
-  width: min(540px, calc(100vw - 36px));
+  width: min(640px, calc(100vw - 36px));
   max-width: none;
-  max-height: min(92dvh, 920px);
+  max-height: min(90dvh, 850px);
   margin: auto;
   padding: 0;
   border: 0;
-  border-radius: 15px;
+  border-radius: 19px;
   background: #fff;
   color: #202743;
   font-size: 16px;
   line-height: 1.55;
   overflow: hidden;
-  box-shadow: 0 22px 70px #121d3926;
+  box-shadow: 0 28px 94px #17163552;
 }
 .dialog[open] {
   display: flex;
@@ -21,19 +21,20 @@
   display: none;
 }
 .dialog::backdrop {
-  background: #171e366b;
+  background: #17182d82;
+  backdrop-filter: blur(3px);
 }
 .header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
-  padding: 23px 25px 19px;
+  padding: 21px 26px 17px;
   border-bottom: 1px solid #e9ecf3;
   flex-shrink: 0;
 }
 .header h2 {
-  font-size: 22px;
+  font-size: 19px;
   line-height: 1.35;
   margin: 0;
   font-weight: 700;
@@ -47,10 +48,10 @@
   flex: 1;
   overflow: auto;
   overscroll-behavior: contain;
-  padding: 23px 25px;
+  padding: 23px 26px;
 }
 .footer {
-  padding: 15px 25px;
+  padding: 16px 26px;
   border-top: 1px solid #e9ecf3;
   display: flex;
   gap: 10px;
@@ -119,7 +120,7 @@
   min-width: 44px;
   padding: 9px 15px;
   border: 1px solid #dfe4ee;
-  border-radius: 8px;
+  border-radius: 10px;
   font: inherit;
   font-size: 16px;
   font-weight: 600;

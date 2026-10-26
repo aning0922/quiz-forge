@@ -20,7 +20,6 @@ import {
   type ProductFormFields,
 } from "./product-fields";
 import { ProductCard } from "./product-card";
-import { StudioWorkflowNav } from "../presentation/workflow-nav";
 import { StudioPageHeader } from "../presentation/page-header";
 import { TechnicalDetails } from "../presentation/technical-details";
 import { WorkspaceNav, ReadOnlyNotice } from "./primitives";
@@ -526,7 +525,6 @@ function ProductDetailContent({
       {!embedded && (
         <>
           <WorkspaceNav />
-          <StudioWorkflowNav productId={productId} current="product" />
         </>
       )}
       {read.loading && (

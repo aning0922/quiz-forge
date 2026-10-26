@@ -7,6 +7,20 @@ import { ProductCard } from "./product-card";
 import { CatalogProducts } from "./catalog-products";
 import { CatalogFilters } from "./catalog-filters";
 import { StudioDashboard } from "../dashboard";
+import type { StudioSessionDto } from "../contracts";
+const session = (role: "admin" | "read-only"): StudioSessionDto => ({
+  operator: {
+    id: "00000000-0000-4000-8000-000000000010",
+    label: "合成人员",
+    role,
+    loginName: "test.operator",
+    displayName: "合成人员",
+    accountRevision: 1,
+  },
+  csrfToken: "synthetic-csrf",
+  idleExpiresAt: "2026-10-26T00:30:00.000Z",
+  absoluteExpiresAt: "2026-10-26T08:00:00.000Z",
+});
 
 const readers = vi.hoisted(() => ({ dashboard: vi.fn(), products: vi.fn() }));
 vi.mock("../operations-ui/read", () => ({
@@ -116,13 +130,16 @@ beforeEach(() => {
 describe("compact catalog surfaces", () => {
   it("shows current content and independent testing without full evidence or action menus", () => {
     const html = renderToStaticMarkup(
-      createElement(CatalogProducts, { products: [currentDraft(operation())] }),
+      createElement(CatalogProducts, {
+        products: [currentDraft(operation())],
+        role: "admin",
+      }),
     );
     expect(html).toContain("当前草稿 r3");
     expect(html).toContain("r3 待核对审核");
     expect(html).toContain("尚无当前内测");
-    expect(html).toContain("目录更新时间");
-    expect(html).toContain(`dateTime="${directory.updatedAt}"`);
+    expect(html).toContain("审核状态");
+    expect(html).toContain("内测情况");
     expect(html).not.toContain("a".repeat(64));
     expect(html).not.toContain("摘要依据与完整目标");
     expect(html).not.toContain("编号与标签详情");
@@ -130,13 +147,16 @@ describe("compact catalog surfaces", () => {
       createElement(ProductCard, {
         product: directory,
         operations: operation(),
+        role: "admin",
       }),
     );
     expect((card.match(/href=/g) ?? []).length).toBe(2); // Title opens overview; one explicit primary action.
     expect(card).toContain('href="/studio/products/compact-test"');
     expect(card).toContain("处理内容");
     expect(card).toContain('href="/studio/products/compact-test?task=content"');
-    expect(html).toContain('href="/studio/products/compact-test?task=review"');
+    expect(html).toContain("task=review");
+    expect(html).toContain("draftId=00000000-0000-4000-8000-000000000003");
+    expect(html).toContain("revision=3");
   });
   it("preserves identity, metadata revision and separate-tab reconciliation when operations is absent", () => {
     const html = renderToStaticMarkup(
@@ -178,7 +198,7 @@ describe("compact catalog surfaces", () => {
 describe("dashboard independently observed review queue", () => {
   it("queries the bounded exact fact set and keeps the two observation times distinct", () => {
     const html = renderToStaticMarkup(
-      createElement(StudioDashboard, { canCreate: true }),
+      createElement(StudioDashboard, { session: session("admin") }),
     );
     expect(readers.products).toHaveBeenLastCalledWith(
       expect.objectContaining({
@@ -205,7 +225,7 @@ describe("dashboard independently observed review queue", () => {
       value: undefined,
     });
     const html = renderToStaticMarkup(
-      createElement(StudioDashboard, { canCreate: false }),
+      createElement(StudioDashboard, { session: session("read-only") }),
     );
     expect(html).toContain("不能据此判断是否存在审核缺口");
     expect(html).toContain("recent-only");

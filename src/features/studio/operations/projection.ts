@@ -253,7 +253,7 @@ export function operationsActions(
     { kind: "directory", href: base, reason: "查看测评目录信息" },
     {
       kind: "imports",
-      href: `${base}/imports`,
+      href: `${base}?task=content&panel=imports`,
       reason: "查看内容包接收与原请求；摘要不核实浏览器待确认操作",
     },
   ];
@@ -262,7 +262,7 @@ export function operationsActions(
     nextActions.push(
       {
         kind: "draft",
-        href: `${base}/draft`,
+        href: `${base}?task=content&panel=revisions`,
         reason: "查看当前草稿与修订历史",
       },
       {
@@ -282,12 +282,12 @@ export function operationsActions(
   nextActions.push(
     {
       kind: "versions",
-      href: `${base}/internal-versions`,
+      href: `${base}?task=review&panel=versions`,
       reason: "查看固定内测版本及其来源",
     },
     {
       kind: "testing",
-      href: `${base}/consumer-access`,
+      href: `${base}?task=testing`,
       reason: "查看测评内测记录；不表示公开发布",
     },
   );
