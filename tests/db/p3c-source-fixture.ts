@@ -6,7 +6,7 @@ import { createContentV2Fixture } from "@/features/quizpack/content/fixtures.tes
 import { createSyntheticFixture } from "@/features/quizpack/v1/fixtures/synthetic";
 import { supportedManifestSchema } from "@/features/quizpack/package/manifest";
 import { canonicalP1Json } from "@/features/quizpack/v1/canonical";
-import { sealSupportedReport } from "@/features/quizpack/server/validation/report";
+import { sealCurrentReport } from "@/features/quizpack/server/validation/report";
 import { sealCandidateResultEvidence } from "@/features/quizpack/server/validation/contracts";
 import { issuePrivateCandidate } from "@/features/quizpack/server/validation/private-candidate";
 /** Actual candidate/PG shape with explicitly synthetic media evidence; never native-media proof. */
@@ -103,7 +103,7 @@ export async function prepareP3cSource(
     ...base.result,
     evidence: {
       ...evidence,
-      report: sealSupportedReport({
+      report: sealCurrentReport({
         ...report.value,
         manifestSha256: sha(manifestText),
         contentSha256: sha(contentText),

@@ -9,7 +9,7 @@ import {
   archivePolicySha256,
 } from "./validation/policy";
 import { serializeValidationAttempts } from "./validation/repository";
-import { supportedRuntimeIdentity } from "./server/validation/identity";
+import { currentRuntimeIdentity } from "./server/validation/identity";
 import {
   readReadyDraftSource,
   readReadyDraftSourceReadonly,
@@ -75,7 +75,7 @@ async function sourceFixture() {
       declarationSha256: hash(canonicalP1Json(r)),
     })),
   });
-  const identity = supportedRuntimeIdentity({
+  const identity = currentRuntimeIdentity({
     schema: "quizpack-media-runtime-binding.v1",
     platform: "darwin-arm64",
     componentId: "a".repeat(64),

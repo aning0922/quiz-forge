@@ -1,6 +1,6 @@
 import type { FixtureCandidate } from "../support/legacy-fixture-types";
 import {
-  supportedRuntimeIdentity,
+  currentRuntimeIdentity,
   runtimeIdentity,
 } from "@/features/quizpack/server/validation/identity";
 import { lstat, readdir } from "node:fs/promises";
@@ -14,7 +14,7 @@ import { issuePrivateCandidate } from "@/features/quizpack/server/validation/pri
 import {
   P1_UNVERIFIED,
   sealP1Report,
-  sealSupportedReport,
+  sealCurrentReport,
 } from "@/features/quizpack/server/validation/report";
 import { sealCandidateResultEvidence } from "@/features/quizpack/server/validation/contracts";
 import {
@@ -127,7 +127,7 @@ export async function domainFixture(
   const importId = randomUUID();
   const archiveSha256 = hash("Synthetic DB archive");
   const archiveBytes = 100;
-  const identity = (legacy ? runtimeIdentity : supportedRuntimeIdentity)({
+  const identity = (legacy ? runtimeIdentity : currentRuntimeIdentity)({
     schema: "quizpack-media-runtime-binding.v1",
     platform: "darwin-arm64",
     componentId: "a".repeat(64),
@@ -150,7 +150,7 @@ export async function domainFixture(
         targetProductId: productId,
       },
       identity: { status: "bound", value: identity },
-      report: (legacy ? sealP1Report : sealSupportedReport)({
+      report: (legacy ? sealP1Report : sealCurrentReport)({
         schemaVersion: identity.reportSchemaVersion,
         targetProductId: productId,
         validatorVersion: identity.validatorVersion,

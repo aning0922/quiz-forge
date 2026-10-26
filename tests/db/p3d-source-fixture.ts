@@ -4,7 +4,7 @@ import { prepareP3cSource } from "./p3c-source-fixture";
 import { canonicalP1Json } from "@/features/quizpack/v1/canonical";
 import { supportedManifestSchema } from "@/features/quizpack/package/manifest";
 import { sealCandidateResultEvidence } from "@/features/quizpack/server/validation/contracts";
-import { sealSupportedReport } from "@/features/quizpack/server/validation/report";
+import { sealCurrentReport } from "@/features/quizpack/server/validation/report";
 import { issuePrivateCandidate } from "@/features/quizpack/server/validation/private-candidate";
 /** Real supported candidate construction and PG transitions, synthetic no-file archive/media evidence. */
 export async function prepareP3dSource(
@@ -48,7 +48,7 @@ export async function prepareP3dSource(
         archiveBytes: 100,
         targetProductId: productId,
       },
-      report: sealSupportedReport({
+      report: sealCurrentReport({
         ...base.result.evidence.report.value,
         archiveSha256,
         manifestSha256: sha(manifestText),

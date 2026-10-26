@@ -180,7 +180,7 @@ describe("explicit supported CLI selection", () => {
     async () => {
       for (const suffix of [
         ["--content-version"],
-        ["--content-version", "v3"],
+        ["--content-version", "v99"],
         ["--content-version", "v2", "--content-version", "v1"],
         ["--other", "v1"],
       ]) {

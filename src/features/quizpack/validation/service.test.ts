@@ -5,7 +5,7 @@ import { StudioError } from "@/lib/http-security/errors";
 import { canonicalP1Json } from "../v1/canonical";
 import {
   runtimeIdentity,
-  supportedRuntimeIdentity,
+  currentRuntimeIdentity,
 } from "../server/validation/identity";
 import {
   createMediaOperationContext,
@@ -105,10 +105,7 @@ import {
 } from "./repository";
 import type { ArchiveOperation } from "./operation";
 import type { ValidationAttempt, ValidationRow } from "./repository";
-import {
-  sealSupportedReport,
-  P1_UNVERIFIED,
-} from "../server/validation/report";
+import { sealCurrentReport, P1_UNVERIFIED } from "../server/validation/report";
 import { VALIDATION_RESERVATION_BYTES } from "./limits";
 import {
   ARCHIVE_POLICY_VERSION,
@@ -119,7 +116,7 @@ import {
 const productId = "synthetic-dimensions",
   importId = randomUUID(),
   hash = "a".repeat(64);
-const identity = supportedRuntimeIdentity({
+const identity = currentRuntimeIdentity({
   schema: "quizpack-media-runtime-binding.v1",
   platform: "darwin-arm64",
   componentId: hash,
@@ -648,11 +645,11 @@ function candidateResult(accepted = false) {
     evidence: {
       ...evidence,
       policy: { status: "passed" },
-      report: sealSupportedReport({
-        schemaVersion: "quizpack-validation.v2",
+      report: sealCurrentReport({
+        schemaVersion: identity.reportSchemaVersion,
         targetProductId: productId,
-        validatorVersion: "2.0.0",
-        policyId: "quizpack-local-supported.v1",
+        validatorVersion: identity.validatorVersion,
+        policyId: identity.policyId,
         archiveSha256: hash,
         manifestSha256: hash,
         contentSha256: hash,

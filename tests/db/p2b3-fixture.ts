@@ -1,6 +1,6 @@
 import type { FixtureCandidate } from "../support/legacy-fixture-types";
 import {
-  supportedRuntimeIdentity,
+  currentRuntimeIdentity,
   runtimeIdentity,
 } from "@/features/quizpack/server/validation/identity";
 import { createHash, randomUUID } from "node:crypto";
@@ -10,7 +10,7 @@ import { issuePrivateCandidate } from "@/features/quizpack/server/validation/pri
 import {
   P1_UNVERIFIED,
   sealP1Report,
-  sealSupportedReport,
+  sealCurrentReport,
 } from "@/features/quizpack/server/validation/report";
 import { sealCandidateResultEvidence } from "@/features/quizpack/server/validation/contracts";
 import {
@@ -95,7 +95,7 @@ export async function prepareP2b3Source(
   });
   const archiveSha256 = hash(options.archiveLabel ?? "Synthetic DB archive");
   const archiveBytes = 100;
-  const identity = (legacy ? runtimeIdentity : supportedRuntimeIdentity)({
+  const identity = (legacy ? runtimeIdentity : currentRuntimeIdentity)({
     schema: "quizpack-media-runtime-binding.v1",
     platform: "darwin-arm64",
     componentId: "a".repeat(64),
@@ -118,7 +118,7 @@ export async function prepareP2b3Source(
         targetProductId: productId,
       },
       identity: { status: "bound", value: identity },
-      report: (legacy ? sealP1Report : sealSupportedReport)({
+      report: (legacy ? sealP1Report : sealCurrentReport)({
         schemaVersion: identity.reportSchemaVersion,
         targetProductId: productId,
         validatorVersion: identity.validatorVersion,
@@ -255,7 +255,7 @@ export async function prepareP2b3Source(
       ...result,
       evidence: {
         ...result.evidence,
-        report: (legacy ? sealP1Report : sealSupportedReport)({
+        report: (legacy ? sealP1Report : sealCurrentReport)({
           ...result.evidence.report.value,
           manifestSha256: canonicalManifestSha256,
           contentSha256: canonicalContentSha256,

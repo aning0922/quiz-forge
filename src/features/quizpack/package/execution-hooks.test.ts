@@ -164,7 +164,7 @@ describe.each(["legacy", "supported"] as const)(
             expect(report.schemaVersion).toBe(
               mode === "legacy"
                 ? "quizpack-validation.v1"
-                : "quizpack-validation.v2",
+                : "quizpack-validation.v3",
             );
             expect(active).toBe("container");
             return false;

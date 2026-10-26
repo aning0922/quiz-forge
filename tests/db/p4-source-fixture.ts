@@ -4,7 +4,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { prepareP2b3Source } from "./p2b3-fixture";
 import { canonicalP1Json } from "@/features/quizpack/v1/canonical";
 import { sealCandidateResultEvidence } from "@/features/quizpack/server/validation/contracts";
-import { sealSupportedReport } from "@/features/quizpack/server/validation/report";
+import { sealCurrentReport } from "@/features/quizpack/server/validation/report";
 import { issuePrivateCandidate } from "@/features/quizpack/server/validation/private-candidate";
 import { supportedManifestSchema } from "@/features/quizpack/package/manifest";
 
@@ -86,7 +86,7 @@ export async function prepareP4ConsumerSource(runId: string, ordinal = 1) {
         archiveBytes: 100,
         targetProductId: productId,
       },
-      report: sealSupportedReport({
+      report: sealCurrentReport({
         ...base.result.evidence.report.value,
         archiveSha256,
         manifestSha256: sha(manifestBytes),
