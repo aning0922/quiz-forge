@@ -1,4 +1,17 @@
 import { z } from "zod";
+import { consumerFontIdentitySchema } from "../v1/identities";
+export const STRUCTURED_FONT_V2 = Object.freeze({
+  kind: "system-structured",
+  pngAvailable: false,
+} as const);
+export const structuredFontIdentityV2Schema = z.strictObject({
+  kind: z.literal(STRUCTURED_FONT_V2.kind),
+  pngAvailable: z.literal(false),
+});
+export const consumerFontIdentityV2Schema = z.union([
+  consumerFontIdentitySchema,
+  structuredFontIdentityV2Schema,
+]);
 import { CONTENT_COMPONENTS_V3 } from "@/lib/assessment-contract/presentation-v3";
 import { engineDeclarationV2Schema } from "@/lib/assessment-contract/scoring-v2";
 import {

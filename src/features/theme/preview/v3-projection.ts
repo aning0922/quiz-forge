@@ -54,6 +54,8 @@ export function projectContentEntryV3(
   if (hash(content) !== expectedContentSha256)
     return failure("REFERENCE_MISMATCH");
   const entry = displayEntryBodyV2Schema.parse({
+    presentationMode: "structured-only",
+    exports: { posterPng: false, fullReportPng: false },
     schemaVersion: "quiz-entry-display.v2",
     contentSchemaVersion: "quizpack-content.v3",
     canonicalContentSha256: expectedContentSha256,
@@ -93,6 +95,8 @@ export function projectPreparedResultV3(
     (c) => refKey(c.resultRef) === refKey(s.decision.selectedResultRef),
   )!;
   const display = resultDisplaySnapshotV2Schema.parse({
+    presentationMode: "structured-only",
+    exports: { posterPng: false, fullReportPng: false },
     schemaVersion: "quiz-result-display.v2",
     contentSchemaVersion: "quizpack-content.v3",
     contentVersion: content.core.scoringDefinition.contentVersion,

@@ -7,11 +7,9 @@ import {
 import {
   consumerComponentMappingV2Schema,
   consumerMappingSha256V2,
+  consumerFontIdentityV2Schema,
 } from "@/lib/consumer-contract/v2/identities";
-import {
-  consumerRendererIdentitySchema,
-  consumerFontIdentitySchema,
-} from "@/lib/consumer-contract/v1/identities";
+import { consumerRendererIdentitySchema } from "@/lib/consumer-contract/v1/identities";
 import {
   consumerUuidSchema as uuid,
   consumerSha256Schema as sha,
@@ -36,7 +34,7 @@ export const persistedReportDisplayV2Schema = z
     completionBindingSha256: sha,
     parent: internalParentVersionRefSchema,
     renderer: consumerRendererIdentitySchema,
-    font: consumerFontIdentitySchema,
+    font: consumerFontIdentityV2Schema,
     mapping: consumerComponentMappingV2Schema,
     mappingSha256: sha,
     display: resultDisplaySnapshotV2Schema,

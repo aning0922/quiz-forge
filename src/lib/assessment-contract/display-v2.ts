@@ -12,6 +12,11 @@ import { displayAssetV1Schema } from "./display-v1";
 
 const text = z.string().min(1).max(4000);
 export const displayEntryBodyV2Schema = z.strictObject({
+  presentationMode: z.literal("structured-only"),
+  exports: z.strictObject({
+    posterPng: z.literal(false),
+    fullReportPng: z.literal(false),
+  }),
   schemaVersion: z.literal("quiz-entry-display.v2"),
   contentSchemaVersion: z.literal("quizpack-content.v3"),
   canonicalContentSha256: sha256Schema,
@@ -37,6 +42,11 @@ export const displayEntryBodyV2Schema = z.strictObject({
   assets: z.array(displayAssetV1Schema).min(1).max(64),
 });
 export const resultDisplaySnapshotV2Schema = z.strictObject({
+  presentationMode: z.literal("structured-only"),
+  exports: z.strictObject({
+    posterPng: z.literal(false),
+    fullReportPng: z.literal(false),
+  }),
   schemaVersion: z.literal("quiz-result-display.v2"),
   contentSchemaVersion: z.literal("quizpack-content.v3"),
   contentVersion: assessmentVersionSchema,
