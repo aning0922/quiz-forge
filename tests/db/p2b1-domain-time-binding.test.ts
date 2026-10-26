@@ -1,13 +1,13 @@
-import { randomUUID } from "node:crypto";
 import { beforeAll, beforeEach, afterAll, describe, it, expect } from "vitest";
 import {
+  authenticateTestOperator,
   openTestDatabase,
   resetTestDatabase,
   safeTestOperation as safe,
   type TestDatabase,
 } from "./p2a-fixture";
 import { disableOperator } from "@/lib/db/management";
-import { issueToken } from "@/lib/security/p2a-tokens";
+import { readSession } from "@/lib/auth/service";
 let fixture: TestDatabase;
 beforeAll(async () => {
   fixture = await safe(openTestDatabase);
@@ -42,43 +42,61 @@ describe("PG microsecond preservation in management time bindings", () => {
     }
   });
   it("actual disable path preserves submillisecond precision in all three stored times", async () => {
-    let submillisecondSamples = 0;
+    const submillisecondSamples = { disabled: 0, revoked: 0, receipt: 0 };
+    const confirmed: Array<{ targetId: string; operationId: string }> = [];
     for (let attempt = 0; attempt < 8; attempt++) {
-      const operatorId = randomUUID(),
-        sessionId = randomUUID();
-      await safe(
-        () =>
-          fixture.admin
-            .sql`INSERT INTO qf.operator(id,label,credential_digest,role,status) VALUES(${operatorId},${`test-${operatorId}`},${issueToken("credential").digest},'operator','active')`,
-      );
-      await safe(
-        () =>
-          fixture.app
-            .sql`WITH m AS MATERIALIZED(SELECT clock_timestamp() at) INSERT INTO qf.operator_session(id,token_digest,kind,operator_id,created_at,last_seen_at,idle_expires_at,absolute_expires_at) SELECT ${sessionId},${issueToken("session").digest},'authenticated',${operatorId},at,at,at+interval '30 minutes',at+interval '8 hours' FROM m`,
-      );
+      const auth = await authenticateTestOperator(fixture),
+        operatorId = auth.id;
+      const { sessionId } = await readSession(fixture.app, auth.session.raw);
       expect(
         await safe(() =>
           disableOperator(fixture.config.instanceId, operatorId),
         ),
       ).toEqual({ id: operatorId, changed: true });
-      const [row] = await safe(
-        () => fixture.app.sql`SELECT
-    s.revoked_at>=s.created_at valid_session_time,
-    o.disabled_at=s.revoked_at same_operator_time,
-    a.occurred_at=s.revoked_at same_audit_time,
-    mod(EXTRACT(microseconds FROM o.disabled_at)::bigint,1000)<>0 submillisecond_preserved
-    FROM qf.operator_session s JOIN qf.operator o ON o.id=s.operator_id
-    JOIN qf.audit_event a ON a.actor_id=o.id AND a.action='operator_disabled'
-    WHERE s.id=${sessionId}`,
+      const rows = await safe(
+        () => fixture.admin.sql<
+          {
+            operation_id: string;
+            valid_session_time: boolean;
+            valid_disable_time: boolean;
+            valid_receipt_time: boolean;
+            disabled_submillisecond: boolean;
+            revoked_submillisecond: boolean;
+            receipt_submillisecond: boolean;
+          }[]
+        >`SELECT a.operation_id,
+        s.revoked_at>=s.created_at AS valid_session_time,
+        o.disabled_at>=s.created_at AND s.revoked_at>=o.disabled_at AS valid_disable_time,
+        a.created_at>=s.revoked_at AS valid_receipt_time,
+        mod(EXTRACT(microseconds FROM o.disabled_at)::bigint,1000)<>0 AS disabled_submillisecond,
+        mod(EXTRACT(microseconds FROM s.revoked_at)::bigint,1000)<>0 AS revoked_submillisecond,
+        mod(EXTRACT(microseconds FROM a.created_at)::bigint,1000)<>0 AS receipt_submillisecond
+        FROM qf.operator_session s JOIN qf.operator o ON o.id=s.operator_id
+        JOIN qf.operator_account_operation a ON a.target_id=o.id AND a.actor_id IS NULL AND a.action='disable' AND a.status='completed'
+        WHERE s.id=${sessionId}`,
       );
-      expect(row).toMatchObject({
+      expect(rows).toHaveLength(1);
+      expect(rows[0]).toMatchObject({
         valid_session_time: true,
-        same_operator_time: true,
-        same_audit_time: true,
+        valid_disable_time: true,
+        valid_receipt_time: true,
       });
-      if (row?.submillisecond_preserved) submillisecondSamples++;
+      const row = rows[0]!;
+      if (row.disabled_submillisecond) submillisecondSamples.disabled++;
+      if (row.revoked_submillisecond) submillisecondSamples.revoked++;
+      if (row.receipt_submillisecond) submillisecondSamples.receipt++;
+      confirmed.push({ targetId: operatorId, operationId: row.operation_id });
     }
-    // The previous serializer deterministically produced only millisecond-aligned values.
-    expect(submillisecondSamples).toBeGreaterThan(0);
+    // Each real DB clock retains microseconds; current operations have ordered, distinct moments.
+    expect(submillisecondSamples.disabled).toBeGreaterThan(0);
+    expect(submillisecondSamples.revoked).toBeGreaterThan(0);
+    expect(submillisecondSamples.receipt).toBeGreaterThan(0);
+    // Preserve every receipt if any timing assertion failed. Never broaden the shared reset.
+    for (const receipt of confirmed)
+      await safe(
+        () => fixture.admin.sql`DELETE FROM qf.operator_account_operation
+      WHERE operation_id=${receipt.operationId} AND target_id=${receipt.targetId}
+        AND actor_id IS NULL AND action='disable' AND status='completed'`,
+      );
   });
 });

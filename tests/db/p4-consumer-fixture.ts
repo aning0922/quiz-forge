@@ -4,8 +4,11 @@ import { randomUUID } from "node:crypto";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { z } from "zod";
-import { createPreauth, login } from "@/lib/auth/service";
-import { issueToken, digestToken } from "@/lib/security/p2a-tokens";
+import {
+  loginVersionFixtureAccount,
+  seedVersionFixtureAccount,
+} from "./version-account-fixture";
+import { issueToken } from "@/lib/security/p2a-tokens";
 import { createDatabase } from "@/lib/db/client";
 import { createStudioRequestBudget } from "@/lib/http-security/request-budget";
 import { acquireAuthWriteLock } from "@/lib/db/auth-lock";
@@ -240,7 +243,7 @@ export async function readConsumerFixture(
 export async function prepareConsumerFixture(
   db: TestDatabase,
   runId: string,
-  consumerRenderer: ConsumerRendererIdentity = CONSUMER_IMPLEMENTATION_AVAILABILITY.rendererV1,
+  consumerRenderer: ConsumerRendererIdentity = CONSUMER_IMPLEMENTATION_AVAILABILITY.rendererV1_2,
 ): Promise<ConsumerFixture> {
   requireTest(db);
   const selectedConsumerRenderer =
@@ -285,19 +288,11 @@ export async function prepareConsumerFixture(
   };
   await save(db, value, true);
   for (const [actor, role] of [
-    [value.operator, "operator"],
+    [value.operator, "admin"],
     [value.readOnly, "read-only"],
   ] as const)
-    await db.admin
-      .sql`INSERT INTO qf.operator(id,label,credential_digest,role,status) VALUES(${actor.identifier},${`p4-e2e-${runId}-${role}`},${digestToken(actor.secret, "credential")},${role},'active')`;
-  const pre = await createPreauth(db.app, null, randomUUID()),
-    session = await login(
-      db.app,
-      pre.raw,
-      pre.dto.csrfToken,
-      value.operator.secret,
-      randomUUID(),
-    ),
+    await seedVersionFixtureAccount(db, actor, `p4-e2e-${runId}-${role}`, role);
+  const session = await loginVersionFixtureAccount(db, value.operator),
     auth = {
       id: value.operator.identifier,
       credentials: {
@@ -734,7 +729,7 @@ async function main() {
           await prepareConsumerFixture(
             db,
             runId!,
-            CONSUMER_IMPLEMENTATION_AVAILABILITY.rendererV1_1,
+            CONSUMER_IMPLEMENTATION_AVAILABILITY.rendererV1_2,
           ))
         : await finishConsumerFixture(
             db,

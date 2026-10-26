@@ -1,6 +1,6 @@
 import "server-only";
-/** Exact OID-independent PG18.4 catalog/ACL fingerprint after 0018. Query and migration are the reviewable source. */
+/** Exact PG18.4 complete catalog and ACL after 0022_account_directory_read. */
 export const consumerSchemaFacts = {
-  sha256: "906ca3748d7991b3a2095cb4a603465c5abb776e2df0213f2ee84ff7b2f98ab6",
-  tables: 22,
+  sha256: "f611296f9ab62803081595a137bf5e803017b71a15c6780ef0539dcf2b43a6a7",
+  tables: 25,
 } as const;

@@ -19,6 +19,13 @@ export default defineConfig({
       "tests/db/p2b2b-service*.test.ts",
       "tests/db/p4-namespace.test.ts",
       "tests/db/p4-consumer-faults.test.ts",
+      // Archived pre-account application-at-partial-schema upgrade scenarios.
+      // The current demo supports the complete schema; do not add legacy auth
+      // adapters to execute today's app against schema 10/16/17. Bodies remain
+      // unchanged at these paths; historical evidence is scoped in STUDIO_ACCOUNTS_V1.
+      "tests/db/p2b2b-domain-upgrade.test.ts",
+      "tests/db/p3e-upgrade.test.ts",
+      "tests/db/p4-upgrade.test.ts",
     ],
     fileParallelism: false,
     testTimeout: 20_000,

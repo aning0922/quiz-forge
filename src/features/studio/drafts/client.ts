@@ -1,3 +1,4 @@
+import { captureStudioEpoch, acceptsStudioEpoch } from "../authority-events";
 import { z } from "zod";
 import {
   DRAFT_LIMITS,
@@ -161,7 +162,10 @@ export async function checkedDraftFetch<T>(
   externalSignal?.addEventListener("abort", abort, { once: true });
   if (externalSignal?.aborted) abort();
   const timer = setTimeout(abort, 15_000);
+  const requestEpoch = captureStudioEpoch();
   const checkpoint = () => {
+    if (!acceptsStudioEpoch(requestEpoch))
+      throw new StudioClientError("STUDIO_REQUEST_STALE");
     if (controller.signal.aborted || performance.now() >= deadlineMonotonicMs)
       throw new StudioClientError(uncertain);
   };

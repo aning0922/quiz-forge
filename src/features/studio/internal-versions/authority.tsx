@@ -2,10 +2,13 @@
 import {
   createContext,
   useContext,
-  useState,
+  useMemo,
+  useEffect,
   useSyncExternalStore,
   type ReactNode,
 } from "react";
+import { useStudioAccountOwner } from "../accounts/session-owner";
+import { subscribeStudioAuthorityInvalidation } from "../authority-events";
 import { StudioClientError } from "../client";
 const authorityErrors = new Set([
   "UNAUTHENTICATED",
@@ -71,7 +74,17 @@ export function InternalAuthorityProvider({
   children: ReactNode;
 }) {
   const inherited = useContext(Context);
-  const [owned] = useState(() => new InternalProductAuthority(productId));
+  const owner = useStudioAccountOwner();
+  const owned = useMemo(() => {
+    void owner?.generation;
+    return new InternalProductAuthority(productId);
+  }, [productId, owner?.generation]);
+  useEffect(() => {
+    if (owner?.revoked) owned.observe(new StudioClientError("UNAUTHENTICATED"));
+    return subscribeStudioAuthorityInvalidation(() =>
+      owned.observe(new StudioClientError("UNAUTHENTICATED")),
+    );
+  }, [owned, owner?.revoked]);
   const authority = inherited ?? owned;
   if (authority.productId !== productId)
     throw Error("INTERNAL_PRODUCT_AUTHORITY_SCOPE_CHANGED");

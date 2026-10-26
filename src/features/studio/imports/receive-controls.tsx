@@ -1,4 +1,9 @@
 "use client";
+import {
+  useOwnedStudioSession,
+  useStudioRecoveryReset,
+} from "../accounts/session-owner";
+import { roleHasCapability } from "@/lib/auth/role-policy";
 import { useContentAuthority } from "../product-workspace/content-authority";
 
 import { useState, type ReactNode } from "react";
@@ -24,7 +29,7 @@ import styles from "../workspace/workspace.module.css";
 export function ReceiveControls({
   initial,
   productId,
-  session,
+  session: initialSession,
   settings,
   archived,
   file,
@@ -46,6 +51,7 @@ export function ReceiveControls({
   renderActions?: ((actions: ReactNode) => ReactNode) | undefined;
   onInspectSource?: ((importId: string) => void) | undefined;
 }) {
+  const session = useOwnedStudioSession(initialSession);
   const authority = useContentAuthority();
   const [value, setValue] = useState(initial);
   const [selectedFile, setSelectedFile] = useState<File>();
@@ -57,9 +63,10 @@ export function ReceiveControls({
   const endpoint = `/api/studio/products/${encodeURIComponent(productId)}/imports/${value.id}`;
   const canWrite =
     authority.canWrite() &&
-    session.operator.role === "operator" &&
+    roleHasCapability(session.operator.role, "import:create") &&
     settings.enabled &&
     !archived;
+  useStudioRecoveryReset(() => setMustRead(true));
   function adopt(next: ImportDto) {
     setValue(next);
     onUpdate?.(next);
@@ -318,7 +325,7 @@ export function ReceiveControls({
                 </a>
                 不会恢复本页旧权限。
               </>
-            ) : session.operator.role !== "operator" ? (
+            ) : !roleHasCapability(session.operator.role, "import:create") ? (
               "当前身份只读，可读取原操作，不能上传或恢复接收。"
             ) : archived ? (
               "工作区已归档，不能上传或恢复接收。"

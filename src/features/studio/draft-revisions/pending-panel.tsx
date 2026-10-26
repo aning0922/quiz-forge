@@ -1,4 +1,10 @@
 "use client";
+import {
+  useOwnedStudioSession,
+  useStudioRecoveryReset,
+} from "../accounts/session-owner";
+import { ownedPendingStorage } from "../accounts/owned-storage";
+import { roleHasCapability } from "@/lib/auth/role-policy";
 import { useContentAuthority } from "../product-workspace/content-authority";
 import { TechnicalDetails } from "../presentation/technical-details";
 import { useEffect, useRef, useState, type ReactNode } from "react";
@@ -32,7 +38,7 @@ import {
 } from "../product-workspace/content-task-state";
 export function RevisionPendingPanel({
   productId,
-  session,
+  session: initialSession,
   refreshing,
   writeBlocked = false,
   onChanged,
@@ -55,6 +61,7 @@ export function RevisionPendingPanel({
   onInspectRevision?: ((target: RevisionTarget) => void) | undefined;
   onInspectSource?: ((importId: string) => void) | undefined;
 }) {
+  const session = useOwnedStudioSession(initialSession);
   const authority = useContentAuthority();
   const [epoch] = useState(() => new RevisionEpoch(productId)),
     [entry, setEntry] = useState<RevisionPendingEntry>(),
@@ -68,15 +75,23 @@ export function RevisionPendingPanel({
   }>();
   const active = useRef(true),
     controller = useRef<AbortController | undefined>(undefined);
+  const [readVerified, setReadVerified] = useState(false);
+  useStudioRecoveryReset(() => {
+    setDenied(false);
+    setEvidence(undefined);
+    epoch.invalidate();
+    controller.current?.abort();
+    setReadVerified(false);
+  });
   function readLocal() {
     epoch.invalidate();
     controller.current?.abort();
     setEvidence(undefined);
     try {
       setEntry(
-        readRevisionPending(sessionStorage).find(
-          (e) => e.tuple.productId === productId,
-        ),
+        readRevisionPending(
+          ownedPendingStorage(sessionStorage, session.operator.id),
+        ).find((e) => e.tuple.productId === productId),
       );
       setLoaded(true);
     } catch (error) {
@@ -118,8 +133,9 @@ export function RevisionPendingPanel({
       busy ||
       refreshing ||
       (replay &&
-        (!authority.canWrite() ||
-          session.operator.role !== "operator" ||
+        (!readVerified ||
+          !authority.canWrite() ||
+          !roleHasCapability(session.operator.role, "draft:write") ||
           denied ||
           writeBlocked))
     )
@@ -134,7 +150,7 @@ export function RevisionPendingPanel({
     try {
       if (replay) {
         const result = await retryAppendRevision(
-          sessionStorage,
+          ownedPendingStorage(sessionStorage, session.operator.id),
           ticket.binding,
           session.csrfToken,
         );
@@ -147,7 +163,7 @@ export function RevisionPendingPanel({
         }
       } else {
         const result = await resolvePendingRevision(
-          sessionStorage,
+          ownedPendingStorage(sessionStorage, session.operator.id),
           ticket.binding,
           session.csrfToken,
           request.signal,
@@ -155,9 +171,14 @@ export function RevisionPendingPanel({
         if (
           active.current &&
           epoch.accepts(ticket) &&
-          hasExactRevisionPending(sessionStorage, ticket.binding)
-        )
+          hasExactRevisionPending(
+            ownedPendingStorage(sessionStorage, session.operator.id),
+            ticket.binding,
+          )
+        ) {
           setEvidence({ ticket, result });
+          setReadVerified(true);
+        }
       }
     } catch (error) {
       authority.observe(error);
@@ -180,7 +201,7 @@ export function RevisionPendingPanel({
     setMessage("");
     try {
       await clearResolvedRevision(
-        sessionStorage,
+        ownedPendingStorage(sessionStorage, session.operator.id),
         entry.tuple,
         result,
         () => active.current && epoch.accepts(ticket),
@@ -223,19 +244,21 @@ export function RevisionPendingPanel({
       >
         {embedded ? "核实原操作" : "查询上次草稿更新结果"}
       </button>
-      {session.operator.role === "operator" && !denied && !writeBlocked && (
-        <button
-          className={
-            embedded
-              ? compact.secondary
-              : `${styles.button} ${styles.secondary}`
-          }
-          disabled={!loaded || busy || refreshing}
-          onClick={() => void perform(true)}
-        >
-          {embedded ? "按原参数重提" : "再次发送原草稿更新操作"}
-        </button>
-      )}
+      {roleHasCapability(session.operator.role, "draft:write") &&
+        !denied &&
+        !writeBlocked && (
+          <button
+            className={
+              embedded
+                ? compact.secondary
+                : `${styles.button} ${styles.secondary}`
+            }
+            disabled={!loaded || busy || refreshing || !readVerified}
+            onClick={() => void perform(true)}
+          >
+            {embedded ? "按原参数重提" : "再次发送原草稿更新操作"}
+          </button>
+        )}
     </div>
   );
   if (embedded && !needsAttention) return null;

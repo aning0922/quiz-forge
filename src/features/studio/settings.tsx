@@ -1,74 +1,93 @@
+import { roleHasCapability } from "@/lib/auth/role-policy";
 import Link from "next/link";
-import { ExternalLink, ArrowRight } from "lucide-react";
+import {
+  Users,
+  History,
+  User,
+  Tags,
+  ChevronRight,
+  ShieldCheck,
+} from "lucide-react";
 import type { StudioIdentity } from "./navigation-model";
+import { AccountAvatar, RoleBadge } from "./accounts/account-ui";
+import ui from "./accounts/experience.module.css";
 import styles from "./settings.module.css";
 
 export function StudioSettings({ identity }: { identity: StudioIdentity }) {
   return (
-    <div className={styles.page}>
-      <header className={styles.header}>
-        <h1>系统设置</h1>
-        <p>集中维护分类标签及基础运营环境，低频技术配置不干扰日常工作。</p>
+    <div className={ui.page}>
+      <header className={ui.heading}>
+        <div>
+          <h1>系统设置</h1>
+          <p>人员管理与账号安全各有清晰入口，让日常运营更从容。</p>
+        </div>
       </header>
       <div className={styles.grid}>
-        <section className={styles.panel}>
-          <div className={styles.title}>
-            <h2>分类与标签</h2>
-            <span className={styles.available}>现有能力</span>
+        <section className={`${ui.card} ${ui.cardPad}`}>
+          <h2>人员与权限</h2>
+          <div className={styles.accountLinks}>
+            {roleHasCapability(identity.role, "account:manage") && (
+              <Link href="/studio/accounts">
+                <span className={styles.linkIcon}>
+                  <Users size={21} />
+                </span>
+                <span>
+                  <strong>账号与权限</strong>
+                  <span>开通成员、调整角色、停用或恢复账号</span>
+                </span>
+                <ChevronRight size={18} />
+              </Link>
+            )}
+            {roleHasCapability(identity.role, "account:audit") && (
+              <Link href="/studio/accounts/audit">
+                <span className={styles.linkIcon}>
+                  <History size={21} />
+                </span>
+                <span>
+                  <strong>账号操作记录</strong>
+                  <span>查看人员变更、安全操作及处理结果</span>
+                </span>
+                <ChevronRight size={18} />
+              </Link>
+            )}
+            <Link href="/studio/session">
+              <span className={styles.linkIcon}>
+                <User size={21} />
+              </span>
+              <span>
+                <strong>我的账号</strong>
+                <span>本人密码和登录管理</span>
+              </span>
+              <ChevronRight size={18} />
+            </Link>
           </div>
-          <p>
-            支持分类、标签的创建、改名、归档和恢复。归档保留已有测评关联，可在原目录中恢复。
+        </section>
+        <section className={`${ui.card} ${ui.cardPad}`}>
+          <h2>当前角色</h2>
+          <div className={ui.person}>
+            <AccountAvatar name={identity.label} />
+            <strong>{identity.label}</strong>
+          </div>
+          <div className={styles.role}>
+            <RoleBadge role={identity.role} />
+          </div>
+          <div className={ui.hint}>
+            <ShieldCheck size={19} />
+            <span>
+              仅显示当前角色适用的设置入口。具体操作仍以服务器核验的权限为准。
+            </span>
+          </div>
+        </section>
+        <section className={`${ui.card} ${ui.cardPad}`}>
+          <h2>测评分类与标签</h2>
+          <p className={ui.muted}>
+            维护已有测评使用的分类和标签；归档保留原测评关联。
           </p>
-          <Link className={styles.button} href="/studio/taxonomy">
-            <ExternalLink size={16} aria-hidden="true" />
+          <Link className={ui.button} href="/studio/taxonomy">
+            <Tags size={18} />
             打开分类与标签管理
+            <ChevronRight size={18} />
           </Link>
-        </section>
-        <section className={styles.panel}>
-          <div className={styles.title}>
-            <h2>运营身份与权限</h2>
-            <span className={styles.foundation}>现有基础</span>
-          </div>
-          <dl className={styles.facts}>
-            <div>
-              <dt>当前身份</dt>
-              <dd>{identity.label}</dd>
-            </div>
-            <div>
-              <dt>角色范围</dt>
-              <dd>
-                {identity.role === "operator"
-                  ? "运营者（operator）"
-                  : "只读（read-only）"}
-              </dd>
-            </div>
-            <div>
-              <dt>权限策略</dt>
-              <dd>以服务端授权为最终依据</dd>
-            </div>
-          </dl>
-          <Link className={styles.textLink} href="/studio/session">
-            查看会话与退出登录
-            <ArrowRight size={16} aria-hidden="true" />
-          </Link>
-        </section>
-        <section className={styles.panel}>
-          <div className={styles.title}>
-            <h2>未来站点运营</h2>
-            <span className={styles.future}>后续独立接入</span>
-          </div>
-          <p>
-            作品正式上线、首页推荐、专题、展示排序和公告尚未接入。固定内测版本不代表公开发布。
-          </p>
-        </section>
-        <section className={styles.panel}>
-          <div className={styles.title}>
-            <h2>维护与恢复</h2>
-            <span className={styles.future}>技术维护</span>
-          </div>
-          <p>
-            备份校验、隔离恢复与运行环境维护由本机维护者使用受管工具执行。普通运营页面不提供维护命令入口。
-          </p>
         </section>
       </div>
     </div>

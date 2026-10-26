@@ -4,15 +4,19 @@ import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { StudioClientError, studioFetch, studioMessage } from "./client";
 import type { StudioPreauthDto, StudioSessionDto } from "./contracts";
-import styles from "./studio.module.css";
+import { ArrowRight } from "lucide-react";
+import { EntryScene } from "./accounts/entry-scene";
+import styles from "./accounts/entry.module.css";
+import { PasswordField } from "./accounts/password-field";
 import { invalidateStudioAuthority } from "./authority-events";
 
 export function StudioLoginForm() {
   const router = useRouter();
-  const [credential, setCredential] = useState("");
+  const [password, setPassword] = useState("");
+  const [loginName, setLoginName] = useState("");
   const [preauth, setPreauth] = useState<StudioPreauthDto | null>(null);
   const [busy, setBusy] = useState(true);
-  const [message, setMessage] = useState("正在准备登录验证…");
+  const [message, setMessage] = useState("正在准备登录…");
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
@@ -25,7 +29,7 @@ export function StudioLoginForm() {
       .then((value) => {
         if (active) {
           setPreauth(value);
-          setMessage("登录验证已准备，请输入本机生成的运营凭证。");
+          setMessage("请输入登录账号和密码。");
         }
       })
       .catch((error) => {
@@ -52,9 +56,9 @@ export function StudioLoginForm() {
   async function prepare() {
     setBusy(true);
     setFailed(false);
-    setCredential("");
+    setPassword("");
     setPreauth(null);
-    setMessage("正在准备登录验证…");
+    setMessage("正在准备登录…");
     try {
       const value = await studioFetch<StudioPreauthDto>(
         "/api/studio/auth/preauth",
@@ -65,7 +69,7 @@ export function StudioLoginForm() {
         },
       );
       setPreauth(value);
-      setMessage("登录验证已准备，请输入本机生成的运营凭证。");
+      setMessage("请输入登录账号和密码。");
     } catch (error) {
       if (
         error instanceof StudioClientError &&
@@ -87,17 +91,17 @@ export function StudioLoginForm() {
     invalidateStudioAuthority();
     setBusy(true);
     setFailed(false);
-    setMessage("正在验证运营身份…");
-    const input = credential;
-    setCredential("");
+    setMessage("正在登录…");
+    const input = password;
+    setPassword("");
     try {
-      await studioFetch<StudioSessionDto>("/api/studio/auth/login", {
+      await studioFetch<StudioSessionDto>("/api/studio/auth/password-login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "X-CSRF-Token": preauth.csrfToken,
         },
-        body: JSON.stringify({ credential: input }),
+        body: JSON.stringify({ loginName, password: input }),
       });
       router.replace("/studio");
       router.refresh();
@@ -110,33 +114,43 @@ export function StudioLoginForm() {
   }
 
   return (
-    <section className={styles.panel} data-studio-entry="login">
-      <h1>运营登录</h1>
-      <p className={styles.intro}>
-        使用本机维护者生成的专属运营凭证。普通买家的测评访问凭证不用于此处。
-      </p>
+    <EntryScene
+      kind="login"
+      eyebrow="欢迎回来"
+      title="登录运营后台"
+      description="请使用管理员开通的登录账号访问 Studio。"
+    >
       <form className={styles.form} onSubmit={submit}>
-        <label htmlFor="studio-credential">运营凭证</label>
-        <input
-          id="studio-credential"
-          className={styles.input}
-          type="password"
-          autoComplete="off"
-          spellCheck={false}
-          autoCapitalize="none"
-          maxLength={128}
-          value={credential}
-          onChange={(event) => setCredential(event.target.value)}
+        <label className={styles.field} htmlFor="studio-login-name">
+          登录账号
+          <input
+            id="studio-login-name"
+            name="username"
+            autoComplete="username"
+            autoCapitalize="none"
+            spellCheck={false}
+            required
+            maxLength={64}
+            placeholder="例如 admin.qf"
+            value={loginName}
+            disabled={busy || !preauth}
+            onChange={(event) => setLoginName(event.target.value)}
+          />
+        </label>
+        <PasswordField
+          label="密码"
+          value={password}
+          onChange={setPassword}
+          autoComplete="current-password"
           disabled={busy || !preauth}
-          required
-          aria-describedby="studio-status"
         />
         <button
-          className={styles.button}
-          disabled={busy || !preauth || !credential}
+          className={`${styles.button} ${styles.primary}`}
+          disabled={busy || !preauth || !password || !loginName.trim()}
           type="submit"
         >
           {busy ? "请稍候…" : "登录 Studio"}
+          <ArrowRight size={18} aria-hidden="true" />
         </button>
       </form>
       <p
@@ -154,13 +168,12 @@ export function StudioLoginForm() {
           onClick={prepare}
           type="button"
         >
-          重新准备登录验证
+          重新准备登录
         </button>
       )}
-      <p className={styles.note}>
-        仅用于本机 HTTP 内测。登录验证 5 分钟有效；会话空闲 30 分钟或登录满 8
-        小时后失效。
+      <p className={styles.prompt}>
+        忘记密码？请联系管理员获取一次性重置入口。
       </p>
-    </section>
+    </EntryScene>
   );
 }

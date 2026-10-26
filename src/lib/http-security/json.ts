@@ -112,19 +112,3 @@ export function emptyDto(value: unknown): void {
     throw new StudioError("INVALID_REQUEST");
   }
 }
-
-export function loginDto(value: unknown): { credential: string } {
-  if (
-    value === null ||
-    typeof value !== "object" ||
-    Array.isArray(value) ||
-    Object.keys(value).length !== 1 ||
-    !("credential" in value) ||
-    typeof value.credential !== "string" ||
-    value.credential.length > 128 ||
-    value.credential.length === 0
-  ) {
-    throw new StudioError("INVALID_REQUEST");
-  }
-  return { credential: value.credential };
-}

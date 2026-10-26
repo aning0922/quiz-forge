@@ -1,4 +1,10 @@
 "use client";
+import {
+  useOwnedStudioSession,
+  useStudioRecoveryReset,
+} from "../accounts/session-owner";
+import { ownedPendingStorage } from "../accounts/owned-storage";
+import { roleHasCapability } from "@/lib/auth/role-policy";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
   RetainedTaskActions,
@@ -120,7 +126,7 @@ export function InternalEvidenceFacts({
 export function InternalPendingPanel({
   productId,
   operation,
-  session,
+  session: initialSession,
   onChanged,
   onTaskState,
   embedded = false,
@@ -136,6 +142,7 @@ export function InternalPendingPanel({
     | ((operation: InternalOperation, state: WorkspaceTaskState) => void)
     | undefined;
 }) {
+  const session = useOwnedStudioSession(initialSession);
   const authority = useInternalAuthority(),
     label = operation === "review" ? "审核依据记录" : "内容版本固定",
     [epoch] = useState(() => new InternalOperationEpoch(productId)),
@@ -152,6 +159,7 @@ export function InternalPendingPanel({
       authorityTicket: InternalAuthorityTicket;
       result: InternalEvidence;
     }>();
+  const [readVerified, setReadVerified] = useState(false);
   const active = useRef(true),
     controller = useRef<AbortController | undefined>(undefined);
   useLayoutEffect(() => {
@@ -166,6 +174,13 @@ export function InternalPendingPanel({
           : undefined,
     });
   }, [operation, busy, entry, loaded, onTaskState]);
+  useStudioRecoveryReset(() => {
+    setDenied(false);
+    setEvidence(undefined);
+    epoch.invalidate();
+    controller.current?.abort();
+    setReadVerified(false);
+  });
   function readLocal() {
     epoch.invalidate();
     controller.current?.abort();
@@ -174,7 +189,10 @@ export function InternalPendingPanel({
     try {
       const found =
         operation === "review"
-          ? readInternalPending(sessionStorage, "review")
+          ? readInternalPending(
+              ownedPendingStorage(sessionStorage, session.operator.id),
+              "review",
+            )
               .filter((e) => e.tuple.productId === productId)
               .map((e) => ({
                 request: freezeInternalRequest({
@@ -183,7 +201,10 @@ export function InternalPendingPanel({
                 }),
                 mayHaveBeenSent: e.mayHaveBeenSent,
               }))[0]
-          : readInternalPending(sessionStorage, "seal")
+          : readInternalPending(
+              ownedPendingStorage(sessionStorage, session.operator.id),
+              "seal",
+            )
               .filter((e) => e.tuple.productId === productId)
               .map((e) => ({
                 request: freezeInternalRequest({
@@ -232,7 +253,10 @@ export function InternalPendingPanel({
       authority.isRevoked ||
       !loaded ||
       busy ||
-      (replay && (denied || session.operator.role !== "operator"))
+      (replay &&
+        (!readVerified ||
+          denied ||
+          !roleHasCapability(session.operator.role, "review:record-baseline")))
     )
       return;
     const ticket = epoch.begin(entry.request),
@@ -251,20 +275,23 @@ export function InternalPendingPanel({
       const result = replay
         ? evidenceFromWrite(
             await retryInternalOperation(
-              sessionStorage,
+              ownedPendingStorage(sessionStorage, session.operator.id),
               ticket.request,
               session.csrfToken,
               current,
             ),
           )
         : await resolveInternalPending(
-            sessionStorage,
+            ownedPendingStorage(sessionStorage, session.operator.id),
             ticket.request,
             session.csrfToken,
             abort.signal,
             current,
           );
-      if (current()) setEvidence({ ticket, authorityTicket, result });
+      if (current()) {
+        setEvidence({ ticket, authorityTicket, result });
+        if (!replay) setReadVerified(true);
+      }
     } catch (error) {
       const accepting = current();
       if (active.current) authority.observe(error);
@@ -292,7 +319,7 @@ export function InternalPendingPanel({
     setMessage("");
     try {
       await clearConfirmedInternalPending(
-        sessionStorage,
+        ownedPendingStorage(sessionStorage, session.operator.id),
         ticket.request,
         result,
         current,
@@ -343,7 +370,7 @@ export function InternalPendingPanel({
               <RequestFacts request={entry.request} />
             </>
           )}
-          {(denied || authority.isRevoked) && (
+          {(!readVerified || denied || authority.isRevoked) && (
             <p role="alert">
               本页授权已失效，原操作记录保留。请重新登录并重新打开本页。
             </p>
@@ -372,7 +399,7 @@ export function InternalPendingPanel({
           {evidence && evidence.result.value.kind !== "unresolved" ? (
             <button
               className={styles.button}
-              disabled={busy || denied || authority.isRevoked}
+              disabled={busy || denied || authority.isRevoked || !readVerified}
               onClick={() => void clear()}
             >
               确认处理结果并结束此操作记录
@@ -386,7 +413,10 @@ export function InternalPendingPanel({
               >
                 查询{label}结果
               </button>
-              {session.operator.role === "operator" &&
+              {roleHasCapability(
+                session.operator.role,
+                "review:record-baseline",
+              ) &&
                 !denied &&
                 !authority.isRevoked && (
                   <button
@@ -443,7 +473,10 @@ export function InternalPendingPanel({
                 >
                   查询{label}结果
                 </button>
-                {session.operator.role === "operator" &&
+                {roleHasCapability(
+                  session.operator.role,
+                  "review:record-baseline",
+                ) &&
                   !denied &&
                   !authority.isRevoked && (
                     <button
@@ -457,7 +490,7 @@ export function InternalPendingPanel({
               </div>
             </>
           )}
-          {(denied || authority.isRevoked) && (
+          {(!readVerified || denied || authority.isRevoked) && (
             <p role="alert">
               本页授权已失效。写入、核实与清理入口已关闭；原操作记录保留，请重新登录并重新打开本页。
             </p>
@@ -471,7 +504,9 @@ export function InternalPendingPanel({
               {evidence.result.value.kind !== "unresolved" && (
                 <button
                   className={`${styles.button} ${styles.secondary}`}
-                  disabled={busy || denied || authority.isRevoked}
+                  disabled={
+                    busy || denied || authority.isRevoked || !readVerified
+                  }
                   onClick={() => void clear()}
                 >
                   确认处理结果并结束此操作记录
@@ -499,7 +534,7 @@ export function InternalPendingPanel({
 }
 export function InternalRecoveryPanels({
   productId,
-  session,
+  session: initialSession,
   nonce = 0,
   onChanged = () => {},
   onTaskState,
@@ -516,6 +551,7 @@ export function InternalRecoveryPanels({
     | ((operation: InternalOperation, state: WorkspaceTaskState) => void)
     | undefined;
 }) {
+  const session = useOwnedStudioSession(initialSession);
   return (
     <>
       <InternalPendingPanel

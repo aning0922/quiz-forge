@@ -1,4 +1,9 @@
 "use client";
+import {
+  useOwnedStudioSession,
+  useStudioRecoveryReset,
+} from "../accounts/session-owner";
+import { roleHasCapability } from "@/lib/auth/role-policy";
 import { useContentAuthority } from "../product-workspace/content-authority";
 import { TechnicalDetails } from "../presentation/technical-details";
 import { useStudioLeaveProtection } from "../navigation-boundary";
@@ -28,7 +33,7 @@ import local from "./imports.module.css";
 export function CreateReceive({
   productId,
   settings,
-  session,
+  session: initialSession,
   onChanged,
   embedded = false,
   onConfirmed,
@@ -46,6 +51,7 @@ export function CreateReceive({
   renderActions?: ((actions: ReactNode) => ReactNode) | undefined;
   onInspectSource?: ((importId: string) => void) | undefined;
 }) {
+  const session = useOwnedStudioSession(initialSession);
   const authority = useContentAuthority();
   const [pending, setPending] = useState<PendingArchive>();
   const [fileInputRevision, setFileInputRevision] = useState(0);
@@ -73,6 +79,7 @@ export function CreateReceive({
       ? "接收意图结果待核实，原文件与操作编号已保留。"
       : receiveState.message,
   });
+  useStudioRecoveryReset(() => setQueriedEmpty(false));
   function adopt(next: ImportDto) {
     setValue(next);
     onConfirmed?.(next);
@@ -95,7 +102,7 @@ export function CreateReceive({
   async function submit() {
     if (
       !authority.canWrite() ||
-      session.operator.role !== "operator" ||
+      !roleHasCapability(session.operator.role, "import:create") ||
       !settings.enabled ||
       !pending ||
       busy ||
@@ -178,7 +185,7 @@ export function CreateReceive({
               className={compact.primary}
               disabled={
                 !authority.canWrite() ||
-                session.operator.role !== "operator" ||
+                !roleHasCapability(session.operator.role, "import:create") ||
                 !settings.enabled ||
                 busy ||
                 (unknown && !queriedEmpty)
@@ -379,7 +386,7 @@ export function CreateReceive({
               className={styles.button}
               disabled={
                 !authority.canWrite() ||
-                session.operator.role !== "operator" ||
+                !roleHasCapability(session.operator.role, "import:create") ||
                 !settings.enabled ||
                 busy ||
                 (unknown && !queriedEmpty)

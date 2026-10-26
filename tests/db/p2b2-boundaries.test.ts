@@ -445,8 +445,14 @@ it("no-clobber refuses an existing archive without overwriting; matching fact ca
   await recover(wrong.id);
 });
 it("read-only change, operator disable and Product archive in file stage block completion without auth lock waiting", async () => {
+  actor = await authenticateTestOperator(db, "admin");
   for (const kind of ["role", "product", "operator"] as const) {
+    const disabledTarget = actor.id;
     const created = await create();
+    const replacement =
+      kind === "operator"
+        ? await authenticateTestOperator(db, "admin")
+        : undefined;
     const service = createImportReceiveService({
       afterFreeze: async () => {
         if (kind === "role")
@@ -458,7 +464,9 @@ it("read-only change, operator disable and Product archive in file stage block c
         else if (kind === "operator") {
           const { disableOperator } =
             await import("../../src/lib/db/management");
-          await disableOperator(db.config.instanceId, actor.id);
+          expect(
+            await disableOperator(db.config.instanceId, disabledTarget),
+          ).toEqual({ id: disabledTarget, changed: true });
         } else
           await workspaceService.archiveProduct(
             db.app,
@@ -480,9 +488,9 @@ it("read-only change, operator disable and Product archive in file stage block c
       await safeTestOperation(
         () =>
           db.admin
-            .sql`UPDATE qf.operator SET role='operator' WHERE id=${actor.id}`,
+            .sql`UPDATE qf.operator SET role='admin' WHERE id=${actor.id}`,
       );
-    else if (kind === "operator") actor = await authenticateTestOperator(db);
+    else if (kind === "operator") actor = replacement!;
     else
       await workspaceService.restoreProduct(
         db.app,
@@ -491,6 +499,20 @@ it("read-only change, operator disable and Product archive in file stage block c
         { expectedMetadataRevision: 2 },
       );
     expect((await recover(created.id)).status).toBe("received");
+    if (kind === "operator") {
+      const receipts = await safeTestOperation(
+        () => db.admin.sql<{ operation_id: string }[]>`
+        SELECT operation_id FROM qf.operator_account_operation
+        WHERE target_id=${disabledTarget} AND actor_id IS NULL AND action='disable' AND status='completed'`,
+      );
+      expect(receipts).toHaveLength(1);
+      // Only this successfully asserted recovery owns this confirmed maintenance receipt.
+      await safeTestOperation(
+        () => db.admin.sql`DELETE FROM qf.operator_account_operation
+        WHERE operation_id=${receipts[0]!.operation_id} AND target_id=${disabledTarget}
+          AND actor_id IS NULL AND action='disable' AND status='completed'`,
+      );
+    }
   }
 });
 it("orphan logical bytes at 512MiB prevent admission, without deleting unknown files", async () => {

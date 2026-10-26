@@ -10,7 +10,10 @@ import {
   type MouseEvent,
   type ReactNode,
 } from "react";
-import { invalidateCurrentStudioAuthority } from "./authority-events";
+import {
+  advanceStudioRequestEpoch,
+  invalidateCurrentStudioAuthority,
+} from "./authority-events";
 import styles from "./navigation-boundary.module.css";
 
 type Protection = { dirty: boolean; pending: boolean; message?: string };
@@ -152,21 +155,31 @@ export function StudioNavigationBoundary({
         onClickCapture={(event) => {
           const url = studioSameTabLink(event);
           if (!url || event.defaultPrevented) return;
+          if (url.href === window.location.href) {
+            // Selecting the current page is a no-op, including plain anchors.
+            // Do not discard inputs or revoke the persistent account owner.
+            event.preventDefault();
+            return;
+          }
           if (!allow()) {
             event.preventDefault();
             event.stopPropagation();
             return;
           }
-          invalidateCurrentStudioAuthority();
           if (
             url.origin !== window.location.origin ||
             documentBoundary(window.location.pathname) ||
             documentBoundary(url.pathname)
           ) {
+            invalidateCurrentStudioAuthority();
             event.preventDefault();
             event.stopPropagation();
             permittedUnload.current = true;
             window.location.assign(url.href);
+          } else {
+            // A Next.js layout survives SPA navigation. Retire old requests,
+            // while actual authentication failures retain the revoke path.
+            advanceStudioRequestEpoch();
           }
         }}
         onSubmitCapture={(event) => {

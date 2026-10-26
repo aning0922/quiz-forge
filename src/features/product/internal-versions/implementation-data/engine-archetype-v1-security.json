@@ -1,0 +1,229 @@
+{
+  "descriptor": {
+    "schemaVersion": "quizforge.implementation-entry.v1",
+    "kind": "engine",
+    "id": "archetype",
+    "version": "1.0.0",
+    "algorithm": {
+      "id": "archetype",
+      "version": "1.0.0"
+    },
+    "closure": {
+      "entrypoints": [
+        {
+          "path": "src/features/product/internal-versions/implementations/engine-v1.ts",
+          "exports": ["bindEngineV1"],
+          "runtime": "server"
+        }
+      ],
+      "files": [
+        {
+          "path": "src/features/product/internal-versions/implementations/engine-v1.ts",
+          "bytes": 2663,
+          "sha256": "ab34f008b72e0a58884eba640dce8220bbe042e91d4797d62543beadd7859292"
+        },
+        {
+          "path": "src/features/quiz/scoring/boundary.ts",
+          "bytes": 3166,
+          "sha256": "0c9824966bffa744dfb9330b056773b7df6d95362f5c62fd9dccc9b47319a093"
+        },
+        {
+          "path": "src/features/quiz/scoring/coverage-budget.ts",
+          "bytes": 1787,
+          "sha256": "fdcd5898b0cac4ee382cd26ffb1c47a662af65f3b6529473668a4d1ff3f1fd1e"
+        },
+        {
+          "path": "src/features/quiz/scoring/coverage.ts",
+          "bytes": 5301,
+          "sha256": "2a13160d5febf0048449e102932550d8da2c2cc02e0bd849741fecddc5974d08"
+        },
+        {
+          "path": "src/features/quiz/scoring/index.ts",
+          "bytes": 294,
+          "sha256": "2c2a95afd84aba88d04aef534a94fec7056ecad54993086d87e0bb7125ad58bc"
+        },
+        {
+          "path": "src/features/quiz/scoring/prepare.ts",
+          "bytes": 8601,
+          "sha256": "59dc5e71bcba399abc531490f10cda4dcc7f192e51d8067e79cbe4b084ed09fb"
+        },
+        {
+          "path": "src/features/quiz/scoring/rational.ts",
+          "bytes": 944,
+          "sha256": "a2d2f70c1e0e58b0782539b99f72e579f694561265590c8d3643a699417bb512"
+        },
+        {
+          "path": "src/features/quiz/scoring/score.ts",
+          "bytes": 4356,
+          "sha256": "2bac57d99633b7916ea0d1bd89fed8523f419d32e7327a8cbf6d5fdf3e29b5d2"
+        },
+        {
+          "path": "src/features/quiz/scoring/witness.ts",
+          "bytes": 3937,
+          "sha256": "851da1e6e89bfa175e32262f95ee22622b3c1763eddf4fa88de246b9b2e39a51"
+        },
+        {
+          "path": "src/features/quizpack/content/reference-graph.ts",
+          "bytes": 14984,
+          "sha256": "e13cc660c645ebe40990bd744bbe32b8b4d7f0fc34109da2e9bfb8d8d871bc0d"
+        },
+        {
+          "path": "src/features/quizpack/content/references.ts",
+          "bytes": 5718,
+          "sha256": "6dd124406e063183906a700a0a4ac49d06fd5b86ac4f078f06773b1f083968a8"
+        },
+        {
+          "path": "src/features/quizpack/content/scoring-adapter.ts",
+          "bytes": 7776,
+          "sha256": "b8d8d83f697e6070caaadb5cf1d959604d9629633b1efc49e7e317512199c1f2"
+        },
+        {
+          "path": "src/features/quizpack/content/scoring-output.ts",
+          "bytes": 1404,
+          "sha256": "fdef6f8f5fee6f19dfa0d46dc2ae2d0286a87025d7ab4718ff7e481711ae979b"
+        },
+        {
+          "path": "src/features/quizpack/content/supported.ts",
+          "bytes": 3305,
+          "sha256": "6b9a19a997edb690139cd5da1ef03b8065bd49801461d138b4c0c2931a487c77"
+        },
+        {
+          "path": "src/features/quizpack/content/v2.ts",
+          "bytes": 4356,
+          "sha256": "915534df3ebd8ceac640eedf4b40c780ebb8aee9fdb76dc98a665b0eab9f0b85"
+        },
+        {
+          "path": "src/features/quizpack/v1/canonical.ts",
+          "bytes": 1015,
+          "sha256": "68c1a92f46dfb5cbeeed3d90bd85a630cd08c3179f9d58444ebcb7682fa7d575"
+        },
+        {
+          "path": "src/features/quizpack/v1/compatibility.ts",
+          "bytes": 2924,
+          "sha256": "ff5ac6b6b43d91563790e13e757e531b03d78417251f07697a563334c1414174"
+        },
+        {
+          "path": "src/features/quizpack/v1/content.ts",
+          "bytes": 5504,
+          "sha256": "5fb89844fcee7293aca85b7fb64c737bb54649d41f36e176b34bf83768e7b7d7"
+        },
+        {
+          "path": "src/features/quizpack/v1/limits.ts",
+          "bytes": 2679,
+          "sha256": "5effb24159a57984286df60f4b36b5047a8ead62e8f3103e9c1019adf423cf78"
+        },
+        {
+          "path": "src/features/quizpack/v1/manifest.ts",
+          "bytes": 2433,
+          "sha256": "7394694afc33ab74e8477c5635880c954e1e032834954ad707b34e7d40f4f9a7"
+        },
+        {
+          "path": "src/lib/assessment-contract/authoring-review-v1.ts",
+          "bytes": 1515,
+          "sha256": "6e187b9c9f3c179c2317821792317e684717f7c64fe836b99def4df3c7e97c7e"
+        },
+        {
+          "path": "src/lib/assessment-contract/primitives.ts",
+          "bytes": 683,
+          "sha256": "cf8384fa89448806a75fc9856b5738915ba4412e9bf5c5cfaa2c465311fd4941"
+        },
+        {
+          "path": "src/lib/assessment-contract/scoring-api-v1.ts",
+          "bytes": 14091,
+          "sha256": "20a3eda9b2752f076125e73a6d5fe52c9965a5335b85c6803786a8b8a709d1b0"
+        },
+        {
+          "path": "src/lib/assessment-contract/scoring-v1.ts",
+          "bytes": 2197,
+          "sha256": "22db791c1b065ea715494992e0414c8475fdf3f73f0f8b1067e53e3e577f8478"
+        },
+        {
+          "path": "src/lib/json/canonical.ts",
+          "bytes": 3415,
+          "sha256": "5d58431618dd22d78b148bfbd4d259fb30d0c31c29d3d5bf4deb9f1a7f6d0804"
+        }
+      ],
+      "buildInputs": [
+        {
+          "path": "tsconfig.json",
+          "bytes": 722,
+          "sha256": "b37242da6c2b2caa43cd7138bbe0c002c965378843d76e8dbcde0b26b1a04675"
+        }
+      ],
+      "dependencies": {
+        "roots": [
+          {
+            "name": "server-only",
+            "version": "0.0.1",
+            "lockSnapshot": "server-only@0.0.1",
+            "section": "dependencies",
+            "importerSha256": "83a3acc7e4337e01cf5204d797e4aeda7fd6205e4df552847855832c5c26e38e"
+          },
+          {
+            "name": "typescript",
+            "version": "5.9.3",
+            "lockSnapshot": "typescript@5.9.3",
+            "section": "devDependencies",
+            "importerSha256": "3c707ca548b935d20fbbd6237aaec90683184b87687267dbcd6b30dd76f74fb6"
+          },
+          {
+            "name": "zod",
+            "version": "4.6.6",
+            "lockSnapshot": "zod@4.6.6",
+            "section": "dependencies",
+            "importerSha256": "152a7033959e218214e3b8987c4d26cb97b420cfdbb6cdd03d2041c622d3b87d"
+          }
+        ],
+        "lockRecords": [
+          {
+            "section": "packages",
+            "key": "server-only@0.0.1",
+            "bytes": 147,
+            "sha256": "1199ce3118a1ad94958249ad4ac42580737e3883090f8e993d2ecf230b829827"
+          },
+          {
+            "section": "packages",
+            "key": "typescript@5.9.3",
+            "bytes": 194,
+            "sha256": "28cdfd0c03349e4da7d365f691611e66e8c4b75b478a778a92333529978c77fb"
+          },
+          {
+            "section": "packages",
+            "key": "zod@4.6.6",
+            "bytes": 139,
+            "sha256": "87ffc19cecdf50ff5b0191fe028daf0ba048fce599b59525467f37e9cf5cd4a2"
+          },
+          {
+            "section": "snapshots",
+            "key": "server-only@0.0.1",
+            "bytes": 25,
+            "sha256": "94ce22843a95375f0bf291dc658b3b9af7d328aabef3c1af87d9205811fb4ce6"
+          },
+          {
+            "section": "snapshots",
+            "key": "typescript@5.9.3",
+            "bytes": 24,
+            "sha256": "9fad910686500f0f64b15314a8df96539adb225620df19df93369820c13c1983"
+          },
+          {
+            "section": "snapshots",
+            "key": "zod@4.6.6",
+            "bytes": 17,
+            "sha256": "c9e77f50ed23372ecfafbe57a32ea55158f0106490f4225eadb2cd6535bcfbb6"
+          }
+        ],
+        "builtins": ["node:crypto", "node:util"],
+        "settingsSha256": "078cb045ec56da085d08eb6efd0f1b925aa95b0ed16afff689183a2a919c0dd3"
+      },
+      "runtimePolicy": {
+        "node": ">=20.19.0 <21 || >=22.13.0",
+        "packageManager": "pnpm@10.32.1",
+        "browser": null,
+        "jsxImport": null,
+        "serverCondition": "react-server"
+      }
+    },
+    "implementationSha256": "cbcb29ebf018c76904a645090791836b72cc91005d01515df1fa693a992fb687"
+  },
+  "entrySha256": "fd636c16ddb60b97a51c42b7e6eb949d9c924bf55908ac6eb07f90a302645148"
+}

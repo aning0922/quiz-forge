@@ -1,7 +1,13 @@
 "use client";
+import {
+  useOwnedStudioSession,
+  useStudioRecoveryReset,
+} from "../accounts/session-owner";
+import { ownedPendingStorage } from "../accounts/owned-storage";
+import { roleHasCapability } from "@/lib/auth/role-policy";
 import { useContentAuthority } from "../product-workspace/content-authority";
 import Link from "next/link";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useMemo, useEffect, useRef, useState, type ReactNode } from "react";
 import type {
   ImportDto,
   ImportSettingsDto,
@@ -45,7 +51,7 @@ import {
 import { TechnicalDetails } from "../presentation/technical-details";
 import compact from "../product-workspace/content-workbench.module.css";
 import styles from "../workspace/workspace.module.css";
-const storage: PendingStorage = {
+const baseStorage: PendingStorage = {
   getItem: (key) => window.sessionStorage.getItem(key),
   setItem: (key, value) => window.sessionStorage.setItem(key, value),
 };
@@ -80,7 +86,7 @@ export function ValidationPanel({
   value,
   settings,
   archived,
-  session,
+  session: initialSession,
   embedded = false,
   onSelect,
   onRejected,
@@ -99,7 +105,12 @@ export function ValidationPanel({
   renderActions?: ((actions: ReactNode) => ReactNode) | undefined;
   onInspectSource?: ((importId: string) => void) | undefined;
 }) {
+  const session = useOwnedStudioSession(initialSession);
   const authority = useContentAuthority();
+  const storage = useMemo(
+    () => ownedPendingStorage(baseStorage, session.operator.id),
+    [session.operator.id],
+  );
   const pair = { productId: value.productId, importId: value.id };
   const [page, setPage] = useState(1);
   const endpoint = validationEndpoint(pair);
@@ -121,10 +132,16 @@ export function ValidationPanel({
     tuple: PendingTuple;
     result: StartValidationResult;
   }>();
+  useStudioRecoveryReset(() => {
+    setRefusal(undefined);
+    setHalted(
+      Object.fromEntries(Object.keys(snapshots).map((id) => [id, true])),
+    );
+  });
   const active = useRef(false);
   const busyRef = useRef(false);
   const generation = useRef(0);
-  const readOnly = session.operator.role !== "operator";
+  const readOnly = !roleHasCapability(session.operator.role, "import:create");
   const writable =
     authority.canWrite() && !readOnly && settings.enabled && !archived;
   const reloadPending = () => {
@@ -180,7 +197,7 @@ export function ValidationPanel({
       active.current = false;
       generation.current = captured + 1;
     };
-  }, [value.productId, value.id, authority]);
+  }, [value.productId, value.id, authority, storage]);
   async function run(work: () => Promise<void>) {
     if (busyRef.current) return;
     busyRef.current = true;

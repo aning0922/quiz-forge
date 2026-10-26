@@ -1,3 +1,4 @@
+import { captureStudioEpoch, acceptsStudioEpoch } from "../authority-events";
 import { z } from "zod";
 import {
   preparedValidationDtoSchema,
@@ -159,6 +160,7 @@ export async function checkedValidationFetch<T>(
   statuses: readonly number[] = [200],
 ): Promise<T> {
   const uncertain = write ? "WRITE_OUTCOME_UNKNOWN" : "STUDIO_UNAVAILABLE";
+  const requestEpoch = captureStudioEpoch();
   let response: Response;
   let value: unknown;
   try {
@@ -172,6 +174,8 @@ export async function checkedValidationFetch<T>(
   } catch {
     throw new StudioClientError(uncertain);
   }
+  if (!acceptsStudioEpoch(requestEpoch))
+    throw new StudioClientError("STUDIO_REQUEST_STALE");
   if (!response.ok) {
     const parsed = errorSchema.safeParse(value);
     if (

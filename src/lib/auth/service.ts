@@ -57,7 +57,14 @@ export function sessionDto(actor: StudioActor, raw: string): StudioSessionDto {
   const csrfToken = csrfForToken(raw, "session");
   if (!csrfToken) throw new StudioError("UNAUTHENTICATED");
   return {
-    operator: { id: actor.id, label: actor.label, role: actor.role },
+    operator: {
+      id: actor.id,
+      label: actor.label,
+      role: actor.role,
+      loginName: actor.loginName ?? null,
+      displayName: actor.displayName ?? actor.label,
+      accountRevision: actor.accountRevision ?? 1,
+    },
     csrfToken,
     idleExpiresAt: actor.idleExpiresAt.toISOString(),
     absoluteExpiresAt: actor.absoluteExpiresAt.toISOString(),
@@ -82,7 +89,7 @@ export async function readSession(
       FROM moment, qf.operator o WHERE s.id = ${row.session_id} AND s.kind = 'authenticated'
         AND s.revoked_at IS NULL AND s.idle_expires_at > moment.at AND s.absolute_expires_at > moment.at
         AND o.id = s.operator_id AND o.status = 'active'
-      RETURNING o.id, o.label, o.role, s.id AS session_id, s.idle_expires_at, s.absolute_expires_at`;
+      RETURNING o.id, o.label, o.role,o.login_name,o.display_name,o.account_revision, s.id AS session_id, s.idle_expires_at, s.absolute_expires_at`;
     return touched ? toActor(touched) : null;
   });
   if (!actor) throw new StudioError("UNAUTHENTICATED");
@@ -162,7 +169,7 @@ export async function login(
       if (!valid) return { ok: false, code: "AUTHENTICATION_FAILED" } as const;
       const [operator] = credentialDigest
         ? await tx<{ id: string; label: string; role: StudioRole }[]>`
-      SELECT id, label, role FROM qf.operator WHERE credential_digest = ${credentialDigest} AND status = 'active'`
+      SELECT id, label, role FROM qf.operator WHERE credential_digest = ${credentialDigest} AND status = 'active' AND role<>'admin'`
         : [];
       if (!operator) {
         const [failures] = await tx<

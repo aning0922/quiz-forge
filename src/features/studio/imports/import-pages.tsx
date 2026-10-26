@@ -1,4 +1,6 @@
 "use client";
+import { useOwnedStudioSession } from "../accounts/session-owner";
+import { roleHasCapability } from "@/lib/auth/role-policy";
 import { StudioPageHeader } from "../presentation/page-header";
 import { StudioWorkflowNav } from "../presentation/workflow-nav";
 import Link from "next/link";
@@ -84,11 +86,12 @@ function ReadFeedback({
 }
 export function ImportList({
   productId,
-  session,
+  session: initialSession,
 }: {
   productId: string;
   session: StudioSessionDto;
 }) {
+  const session = useOwnedStudioSession(initialSession);
   const endpoint = `/api/studio/products/${encodeURIComponent(productId)}`;
   const product = useImportRead<ProductDto>(endpoint);
   const settings = useImportRead<ImportSettingsDto>(
@@ -100,7 +103,7 @@ export function ImportList({
     `${endpoint}/imports?page=${page}&pageSize=20`,
     (value) => checkImportPage(value, { productId, page, pageSize: 20 }),
   );
-  const readOnly = session.operator.role !== "operator";
+  const readOnly = !roleHasCapability(session.operator.role, "import:create");
   return (
     <div className={styles.workspace}>
       <section className={styles.panel}>
@@ -193,13 +196,14 @@ function ExistingReceive({
   value,
   settings,
   product,
-  session,
+  session: initialSession,
 }: {
   value: ImportDto;
   settings: ImportSettingsDto;
   product: ProductDto;
   session: StudioSessionDto;
 }) {
+  const session = useOwnedStudioSession(initialSession);
   const [current, setCurrent] = useState(value);
   const [file, setFile] = useState<Blob>();
   const [busy, setBusy] = useState(false);
@@ -210,7 +214,7 @@ function ExistingReceive({
     message: "正在核实原文件，请完成本地摘要计算后再离开。",
   });
   const canSelect =
-    session.operator.role === "operator" &&
+    roleHasCapability(session.operator.role, "import:create") &&
     settings.enabled &&
     !product.archivedAt &&
     (current.status === "awaiting-upload" ||
@@ -286,12 +290,13 @@ function ExistingReceive({
 export function ImportDetail({
   productId,
   importId,
-  session,
+  session: initialSession,
 }: {
   productId: string;
   importId: string;
   session: StudioSessionDto;
 }) {
+  const session = useOwnedStudioSession(initialSession);
   const endpoint = `/api/studio/products/${encodeURIComponent(productId)}`;
   const product = useImportRead<ProductDto>(endpoint);
   const settings = useImportRead<ImportSettingsDto>(
@@ -323,7 +328,9 @@ export function ImportDetail({
           <ImportEnvironment
             settings={settings.value}
             archived={!!product.value.archivedAt}
-            readOnly={session.operator.role !== "operator"}
+            readOnly={
+              !roleHasCapability(session.operator.role, "import:create")
+            }
           />
         )}
       </section>

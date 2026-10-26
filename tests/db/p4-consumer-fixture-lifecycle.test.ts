@@ -5,7 +5,7 @@ import { createServer } from "node:net";
 import { lstat, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { expect, it } from "vitest";
-import { createPreauth, login } from "@/lib/auth/service";
+import { loginVersionFixtureAccount } from "./version-account-fixture";
 import { createStudioRequestBudget } from "@/lib/http-security/request-budget";
 import { createConsumerRequestOwner } from "@/features/fulfillment/consumer-flow/request-owner";
 import { createInternalPlayService } from "@/features/product/internal-play/service";
@@ -86,14 +86,7 @@ it("dedicated r1 physical source, actual play/Key services, exact finish and pre
     ).toBe(true);
     expect((await lstat(manifest)).mode & 0o777).toBe(0o600);
     expect(fixture.blobs.length).toBe(5);
-    const pre = await createPreauth(db.app, null, randomUUID()),
-      session = await login(
-        db.app,
-        pre.raw,
-        pre.dto.csrfToken,
-        fixture.operator.secret,
-        randomUUID(),
-      ),
+    const session = await loginVersionFixtureAccount(db, fixture.operator),
       credentials = {
         sessionToken: session.raw,
         csrfToken: session.dto.csrfToken,
@@ -243,13 +236,9 @@ it("dedicated r1 physical source, actual play/Key services, exact finish and pre
       ),
     );
     expect(resolvedVoid.kind).toBe("applied");
-    const readOnlyPre = await createPreauth(db.app, null, randomUUID()),
-      readOnlySession = await login(
-        db.app,
-        readOnlyPre.raw,
-        readOnlyPre.dto.csrfToken,
-        fixture.readOnly.secret,
-        randomUUID(),
+    const readOnlySession = await loginVersionFixtureAccount(
+        db,
+        fixture.readOnly,
       ),
       readOnlyCredentials = {
         sessionToken: readOnlySession.raw,

@@ -32,6 +32,7 @@
     "test:db:media-unknown": "QUIZFORGE_DB_SERVICE_SUITE=media-unknown vitest run --config vitest.service-db.config.ts",
     "p2a:db": "node --conditions=react-server --import tsx scripts/p2a-db.ts",
     "p2a:operator": "node --conditions=react-server --import tsx scripts/p2a-operator.ts",
+    "studio:accounts": "TSX_TSCONFIG_PATH=./tsconfig.json node --conditions=react-server --import tsx scripts/studio-accounts.ts",
     "p2a:db:ci": "node --conditions=react-server --import tsx scripts/p2a-db-ci.ts",
     "test:driver": "node --conditions=react-server --import tsx scripts/test-postgres-disconnect.ts",
     "media:build": "TSX_TSCONFIG_PATH=./tsconfig.json node --conditions=react-server --import tsx scripts/quizpack-media-build.ts",
@@ -43,13 +44,14 @@
   },
   "dependencies": {
     "@radix-ui/react-slot": "1.4.0",
+    "argon2": "0.44.0",
     "buffer-crc32": "1.0.0",
     "class-variance-authority": "0.7.1",
     "clsx": "2.1.1",
     "drizzle-orm": "0.45.4",
     "lucide-react": "1.55.0",
     "motion": "14.1.0",
-    "next": "16.4.0",
+    "next": "16.4.3",
     "postgres": "3.4.9",
     "react": "19.3.0",
     "react-dom": "19.3.0",
@@ -57,7 +59,7 @@
     "sharp": "0.35.5",
     "tailwind-merge": "3.7.0",
     "yazl": "3.3.1",
-    "zod": "4.6.5"
+    "zod": "4.6.6"
   },
   "devDependencies": {
     "@playwright/test": "1.64.0",
@@ -67,7 +69,7 @@
     "@types/react-dom": "19.3.0",
     "@types/yazl": "3.3.1",
     "eslint": "9.39.5",
-    "eslint-config-next": "16.4.0",
+    "eslint-config-next": "16.4.3",
     "eslint-config-prettier": "10.1.8",
     "prettier": "3.9.10",
     "tailwindcss": "4.3.3",

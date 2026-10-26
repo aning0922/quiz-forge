@@ -1,3 +1,4 @@
+import { captureStudioEpoch, acceptsStudioEpoch } from "../authority-events";
 import { z } from "zod";
 import {
   archiveHashSchema,
@@ -160,6 +161,7 @@ export async function checkedImportFetch<T>(
   successStatuses: readonly number[] = [200],
 ): Promise<T> {
   const uncertainCode = write ? "WRITE_OUTCOME_UNKNOWN" : "STUDIO_UNAVAILABLE";
+  const requestEpoch = captureStudioEpoch();
   let response: Response;
   try {
     response = await fetch(path, {
@@ -177,6 +179,8 @@ export async function checkedImportFetch<T>(
   } catch {
     throw new StudioClientError(uncertainCode);
   }
+  if (!acceptsStudioEpoch(requestEpoch))
+    throw new StudioClientError("STUDIO_REQUEST_STALE");
   if (!response.ok) {
     const envelope = errorEnvelopeSchema.safeParse(value);
     if (
@@ -195,6 +199,8 @@ export async function checkedImportFetch<T>(
   if (!successStatuses.includes(response.status))
     throw new StudioClientError(uncertainCode);
   try {
+    if (!acceptsStudioEpoch(requestEpoch))
+      throw new StudioClientError("STUDIO_REQUEST_STALE");
     return check(value);
   } catch {
     throw new StudioClientError(uncertainCode);

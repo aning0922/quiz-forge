@@ -1,4 +1,5 @@
 "use client";
+import { useOwnedStudioSession } from "../accounts/session-owner";
 import { StudioPageHeader } from "../presentation/page-header";
 import { StudioWorkflowNav } from "../presentation/workflow-nav";
 import Link from "next/link";
@@ -13,13 +14,14 @@ export function ValidationDetailPage({
   productId,
   importId,
   validationId,
-  session,
+  session: initialSession,
 }: {
   productId: string;
   importId: string;
   validationId: string;
   session: StudioSessionDto;
 }) {
+  const session = useOwnedStudioSession(initialSession);
   const record = useValidationRead(
     `${validationEndpoint({ productId, importId })}/${encodeURIComponent(validationId)}`,
     (value) => checkValidation(value, { productId, importId, validationId }),

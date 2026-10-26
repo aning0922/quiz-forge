@@ -6,7 +6,7 @@ import { acquireAuthWriteLock } from "@/lib/db/auth-lock";
 import { createPreauth, login, logout, readSession } from "@/lib/auth/service";
 import { handleStudioAuth } from "@/lib/auth/http";
 import { requireCapability } from "@/lib/auth/capabilities";
-import { PREAUTH_COOKIE, SESSION_COOKIE } from "@/lib/auth/cookies";
+import { SESSION_COOKIE } from "@/lib/auth/cookies";
 import {
   csrfForToken,
   digestToken,
@@ -481,7 +481,7 @@ describe("real PostgreSQL Studio auth", () => {
     ).rejects.toThrow("RATE_LIMITED");
   });
 
-  it("commits HTTP cookie rotation/clearing with fixed attributes and no cache", async () => {
+  it("commits preauth and logout cookies with fixed attributes and no-cache session reads", async () => {
     const identity = await operator();
     const preauth = await handleStudioAuth(request("preauth"), "preauth");
     expect(preauth.status).toBe(201);
@@ -495,22 +495,26 @@ describe("real PostgreSQL Studio auth", () => {
     ).toBe(true);
     const raw = setCookie.split(";")[0]?.split("=").slice(1).join("=") ?? "";
     const csrf = csrfForToken(raw, "preauth")!;
+    // The removed credential HTTP route is not a supported demo contract.
+    // Current password-login cookie rotation is verified by the dedicated account suite.
+    const fixtureSession = await login(
+      fixture.app,
+      raw,
+      csrf,
+      identity.credential,
+      rid(),
+    );
+    const sessionRaw = fixtureSession.raw;
     const response = await handleStudioAuth(
-      request("login", JSON.stringify({ credential: identity.credential }), {
-        cookie: `${PREAUTH_COOKIE}=${raw}`,
-        "x-csrf-token": csrf,
-      }),
-      "login",
+      request(
+        "session",
+        "",
+        { cookie: `${SESSION_COOKIE}=${sessionRaw}` },
+        "GET",
+      ),
+      "session",
     );
     expect(response.status).toBe(200);
-    const cookies = response.headers.get("set-cookie") ?? "";
-    expect(
-      cookies.includes("Max-Age=28800") &&
-        cookies.includes(`${PREAUTH_COOKIE}=;`) &&
-        cookies.includes("Max-Age=0"),
-    ).toBe(true);
-    const sessionRaw =
-      cookies.match(new RegExp(`${SESSION_COOKIE}=([^;]+)`))?.[1] ?? "";
     const dto: unknown = await response.json();
     expect(Object.keys(dto as object).sort()).toEqual([
       "absoluteExpiresAt",

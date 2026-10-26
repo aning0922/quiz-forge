@@ -172,7 +172,7 @@ export async function prepareRecoveryBusinessSource(
         versionId: parent.version.id,
         snapshotSha256: parent.version.snapshotSha256,
       },
-      renderer: CONSUMER_IMPLEMENTATION_AVAILABILITY.rendererV1_1,
+      renderer: CONSUMER_IMPLEMENTATION_AVAILABILITY.rendererV1_2,
     }),
   );
   const issue = async () => {

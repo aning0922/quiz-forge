@@ -131,7 +131,7 @@ export function createAccessKeyService(
           operatorWrite(
             db,
             credentials,
-            "workspace:write",
+            "access-key:issue",
             check,
             observation,
             async (tx, actor) => {
@@ -236,7 +236,7 @@ export function createAccessKeyService(
           operatorWrite(
             db,
             credentials,
-            "workspace:write",
+            "access-key:void",
             check,
             observation,
             async (tx, actor) => {

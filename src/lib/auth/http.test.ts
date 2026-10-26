@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { cookieToken, PREAUTH_COOKIE } from "./cookies";
 import { handleStudioAuth } from "./http";
+import { handleAccounts } from "./accounts/http";
 
 afterEach(() => vi.unstubAllEnvs());
 
@@ -25,7 +26,16 @@ describe("Studio cookie and unavailable boundary", () => {
   it("fails closed with missing config and never falls back to DATABASE_URL", async () => {
     vi.stubEnv("QUIZFORGE_P2A_CONFIG", "");
     vi.stubEnv("DATABASE_URL", "deliberately-unused");
-    for (const endpoint of ["preauth", "login", "session", "logout"] as const) {
+    const passwordResponse = await handleAccounts(
+      new Request("http://127.0.0.1:3100/api/studio/auth/password-login"),
+      "password-login",
+    );
+    expect(passwordResponse.status).toBe(503);
+    expect(passwordResponse.headers.has("set-cookie")).toBe(false);
+    expect(await passwordResponse.json()).toMatchObject({
+      code: "STUDIO_UNAVAILABLE",
+    });
+    for (const endpoint of ["preauth", "session", "logout"] as const) {
       const response = await handleStudioAuth(
         new Request("http://127.0.0.1:3100/api/studio/auth/" + endpoint),
         endpoint,

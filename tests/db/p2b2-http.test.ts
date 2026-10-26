@@ -252,8 +252,9 @@ describe("real PostgreSQL receipt HTTP boundary", () => {
   });
   it("reads archived history but refuses new receipt operations", async () => {
     const record = await intent();
+    const admin = await authenticateTestOperator(db, "admin");
     await safeTestOperation(() =>
-      workspaceService.archiveProduct(db.app, actor.credentials, productId, {
+      workspaceService.archiveProduct(db.app, admin.credentials, productId, {
         expectedMetadataRevision: 1,
       }),
     );

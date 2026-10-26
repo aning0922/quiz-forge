@@ -1,4 +1,6 @@
 "use client";
+import { roleLabel } from "./accounts/presentation";
+import { roleHasCapability } from "@/lib/auth/role-policy";
 
 import { Fragment, type MouseEvent } from "react";
 import Link from "next/link";
@@ -9,6 +11,8 @@ import {
   Ticket,
   Settings,
   X,
+  Users,
+  History,
 } from "lucide-react";
 import { StudioBrand } from "./brand";
 import {
@@ -106,6 +110,34 @@ export function StudioNavigation({
               </Fragment>
             );
           })}
+          {roleHasCapability(identity?.role, "account:manage") && (
+            <Link
+              href="/studio/accounts"
+              prefetch={false}
+              className={`${styles.accountNavigationLink} ${pathname === "/studio/accounts" ? styles.accountNavigationActive : ""}`}
+              aria-current={
+                pathname === "/studio/accounts" ? "page" : undefined
+              }
+              onClick={followedLink}
+            >
+              <Users size={19} aria-hidden="true" />
+              <span>账号与权限</span>
+            </Link>
+          )}
+          {roleHasCapability(identity?.role, "account:audit") && (
+            <Link
+              href="/studio/accounts/audit"
+              prefetch={false}
+              className={`${styles.accountNavigationLink} ${pathname === "/studio/accounts/audit" ? styles.accountNavigationActive : ""}`}
+              aria-current={
+                pathname === "/studio/accounts/audit" ? "page" : undefined
+              }
+              onClick={followedLink}
+            >
+              <History size={19} aria-hidden="true" />
+              <span>账号操作记录</span>
+            </Link>
+          )}
         </nav>
         <div className={styles.sideFooter}>
           <p className={styles.navigationNote}>
@@ -117,7 +149,7 @@ export function StudioNavigation({
             className={styles.identityLink}
             href="/studio/session"
             prefetch={false}
-            aria-label="身份与退出"
+            aria-label="我的账号"
             aria-current={pathname === "/studio/session" ? "page" : undefined}
             onClick={followedLink}
           >
@@ -128,13 +160,10 @@ export function StudioNavigation({
               {identity ? (
                 <>
                   <strong>{identity.label}</strong>
-                  <small>
-                    {identity.role === "operator" ? "运营者" : "只读身份"} ·
-                    身份与退出
-                  </small>
+                  <small>{roleLabel(identity.role)} · 我的账号</small>
                 </>
               ) : (
-                "身份与退出"
+                "我的账号"
               )}
             </span>
           </Link>

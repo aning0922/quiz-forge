@@ -6,7 +6,7 @@ import { lstat, readFile, open } from "node:fs/promises";
 import { constants, type Stats } from "node:fs";
 import path from "node:path";
 import { beforeAll, afterAll, expect, it } from "vitest";
-import { createPreauth, login } from "@/lib/auth/service";
+import { loginVersionFixtureAccount } from "./version-account-fixture";
 import { createDatabase } from "@/lib/db/client";
 import { createStudioRequestBudget } from "@/lib/http-security/request-budget";
 import { withStudioWrite } from "@/lib/auth/write";
@@ -94,7 +94,7 @@ async function cli(action: string, runId: string) {
 }
 async function prepareWithExistingAuthWindow(runId: string) {
   // Only this bounded PG test skips reserving an ENTIRE future E2E login window.
-  // createPreauth/login still use the actual unchanged DB limiter; there is no bypass/registration flag.
+  // Password login remains a real service call; only this fixture-owned completed reservation is retired.
   await exec(
     process.execPath,
     [
@@ -250,14 +250,7 @@ async function freePort() {
   });
 }
 async function applyUiOperations(f: InternalVersionFixture) {
-  const pre = await createPreauth(db.app, null, randomUUID()),
-    session = await login(
-      db.app,
-      pre.raw,
-      pre.dto.csrfToken,
-      f.operator.secret,
-      randomUUID(),
-    ),
+  const session = await loginVersionFixtureAccount(db, f.operator),
     credentials = {
       sessionToken: session.raw,
       csrfToken: session.dto.csrfToken,

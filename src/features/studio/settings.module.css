@@ -124,3 +124,50 @@
     grid-template-columns: 85px minmax(0, 1fr);
   }
 }
+
+.accountLinks {
+  display: grid;
+  gap: 12px;
+  margin-top: 18px;
+}
+.accountLinks a {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid #e4e8f1;
+  border-radius: 12px;
+  text-decoration: none;
+  color: #22283d;
+  min-height: 82px;
+}
+.accountLinks a:hover {
+  border-color: #baafff;
+  background: #fcfbff;
+}
+.accountLinks strong,
+.accountLinks a > span > span {
+  display: block;
+}
+.accountLinks a > span > span {
+  color: #737e97;
+  margin-top: 3px;
+}
+.accountLinks a > svg:last-child {
+  margin-left: auto;
+  flex: none;
+  color: #9ca6bb;
+}
+.linkIcon {
+  display: grid;
+  place-items: center;
+  width: 39px;
+  height: 39px;
+  flex: none;
+  border-radius: 10px;
+  color: #6554dd;
+  background: #f2efff;
+}
+.role {
+  margin: 18px 0;
+}

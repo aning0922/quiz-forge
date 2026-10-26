@@ -257,7 +257,7 @@ async function productLifecycle(
   return withStudioWrite(
     database,
     credentials,
-    "workspace:write",
+    "workspace:archive",
     async (tx, actor) => {
       const row = await productRow(tx, id, true);
       revision(
@@ -321,7 +321,7 @@ export async function createTaxonomy(
   return withStudioWrite(
     database,
     credentials,
-    "workspace:write",
+    "taxonomy:manage",
     async (tx, actor) => {
       await tx`WITH moment AS MATERIALIZED(SELECT clock_timestamp() at) INSERT INTO ${tx(table)}(id,slug,name,created_at,updated_at) SELECT ${id},${value.slug},${value.name},at,at FROM moment`;
       await audit(tx, actor, credentials.requestId, kind, id, 1, "created");
@@ -342,7 +342,7 @@ export async function renameTaxonomy(
   return withStudioWrite(
     database,
     credentials,
-    "workspace:write",
+    "taxonomy:manage",
     async (tx, actor) => {
       const row = await taxonomyRow(tx, kind, id, true);
       revision(row.revision, value.expectedRevision, "taxonomy");
@@ -379,7 +379,7 @@ async function taxonomyLifecycle(
   return withStudioWrite(
     database,
     credentials,
-    "workspace:write",
+    "taxonomy:manage",
     async (tx, actor) => {
       const row = await taxonomyRow(tx, kind, id, true);
       revision(row.revision, value.expectedRevision, "taxonomy");

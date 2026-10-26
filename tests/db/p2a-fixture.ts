@@ -1,5 +1,6 @@
 import { rmdir } from "node:fs/promises";
 import path from "node:path";
+import type postgres from "postgres";
 import { StorageLock } from "../../src/features/quizpack/import/storage-lock";
 import {
   scanStorage,
@@ -38,6 +39,25 @@ export async function openTestDatabase() {
   }
 }
 export type TestDatabase = Awaited<ReturnType<typeof openTestDatabase>>;
+
+/** Business fixtures never own account operations or password links. Refuse occupied account scope. */
+export async function withEmptyAccountFixtureScope(
+  db: TestDatabase,
+  work: (tx: postgres.TransactionSql) => Promise<void>,
+): Promise<void> {
+  if (db.config.purpose !== "test" && db.config.purpose !== "ci")
+    throw new Error("P2A_TEST_DATABASE_REQUIRED");
+  await db.admin.sql.begin(async (tx) => {
+    await tx`LOCK TABLE qf.operator_password_token,qf.operator_account_operation,qf.operator_kdf_attempt IN ACCESS EXCLUSIVE MODE NOWAIT`;
+    const [rows] = await tx<{ occupied: boolean }[]>`
+        SELECT EXISTS(SELECT 1 FROM qf.operator_password_token)
+          OR EXISTS(SELECT 1 FROM qf.operator_account_operation)
+          OR EXISTS(SELECT 1 FROM qf.operator_kdf_attempt) occupied`;
+    if (rows?.occupied !== false)
+      throw new Error("TEST_ACCOUNT_SCOPE_NOT_EMPTY");
+    await work(tx);
+  });
+}
 
 export async function resetTestDatabase(database: TestDatabase): Promise<void> {
   if (database.config.purpose !== "test" && database.config.purpose !== "ci")
@@ -117,14 +137,19 @@ export async function resetTestDatabase(database: TestDatabase): Promise<void> {
             throw new Error("TEST_UPLOAD_FILE_UNPROVEN");
         }
       }
-      // Verify all ownership/stopping before deleting a single file or truncating any business row.
-      for (const [id, files] of importFiles) {
-        for (const file of files) await removeOwned(file.file, file.inode);
-        await rmdir(importDirectory(verified.config, id));
-      }
       await lock.check();
-      await verified.admin
-        .sql`TRUNCATE qf.quiz_report,qf.consumer_grant,qf.consumer_session,qf.access_key,qf.internal_play_version,qf.product_version,qf.draft_review,qf.draft_application,qf.draft_revision,qf.product_draft,qf.product_asset,qf.asset_blob,qf.quizpack_validation,qf.quizpack_import,qf.product_tag,qf.product,qf.category,qf.tag,qf.operator_session,qf.audit_event,qf.operator`;
+      await withEmptyAccountFixtureScope(verified, async (tx) => {
+        // Account locks remain held from the emptiness check through every destructive step.
+        // Refusal must leave both import files and DB rows intact.
+        for (const [id, files] of importFiles) {
+          for (const file of files) await removeOwned(file.file, file.inode);
+          await rmdir(importDirectory(verified.config, id));
+        }
+        await lock.check();
+        await tx.unsafe(
+          `TRUNCATE qf.operator_account_operation,qf.operator_password_token,qf.operator_kdf_attempt,qf.quiz_report,qf.consumer_grant,qf.consumer_session,qf.access_key,qf.internal_play_version,qf.product_version,qf.draft_review,qf.draft_application,qf.draft_revision,qf.product_draft,qf.product_asset,qf.asset_blob,qf.quizpack_validation,qf.quizpack_import,qf.product_tag,qf.product,qf.category,qf.tag,qf.operator_session,qf.audit_event,qf.operator`,
+        );
+      });
     } finally {
       dispose();
       await lock.close();
@@ -134,33 +159,41 @@ export async function resetTestDatabase(database: TestDatabase): Promise<void> {
   }
 }
 
-/** Synthetic sessions for B1 domain/HTTP tests; raw values stay inside test process. */
+let fixturePasswordHash: Promise<string> | undefined;
+/** Current account rows and synthetic sessions for domain tests; password login has its own real suite. */
 export async function authenticateTestOperator(
   database: TestDatabase,
-  role: "operator" | "read-only" = "operator",
+  role: "admin" | "operator" | "read-only" = "operator",
 ) {
+  if (database.config.purpose !== "test" && database.config.purpose !== "ci")
+    throw new Error("P2A_TEST_DATABASE_REQUIRED");
   const { randomUUID } = await import("node:crypto");
   const { issueToken } = await import("../../src/lib/security/p2a-tokens");
-  const { createPreauth, login } = await import("../../src/lib/auth/service");
-  const credential = issueToken("credential");
+  const { readSession, sessionDto } =
+    await import("../../src/lib/auth/service");
+  const { withPasswordCapacity } =
+    await import("../../src/lib/auth/accounts/password");
+  fixturePasswordHash ??= withPasswordCapacity(({ hash }) =>
+    hash("synthetic domain fixture password 2026"),
+  );
+  const passwordHash = await fixturePasswordHash;
+  const token = issueToken("session");
   const id = randomUUID();
   await safeTestOperation(
     () =>
       database.admin
-        .sql`INSERT INTO qf.operator(id,label,credential_digest,role,status) VALUES(${id},${`test-${id}`},${credential.digest},${role},'active')`,
+        .sql`INSERT INTO qf.operator(id,label,login_name,display_name,password_hash,role,status) VALUES(${id},${`test-${id}`},${`test-${id}`},'合成领域测试账号',${passwordHash},${role},'active')`,
   );
-  const preauth = await safeTestOperation(() =>
-    createPreauth(database.app, null, randomUUID()),
+  await safeTestOperation(
+    () => database.admin.sql`
+    WITH moment AS(SELECT clock_timestamp() at)
+    INSERT INTO qf.operator_session(id,token_digest,kind,operator_id,created_at,last_seen_at,idle_expires_at,absolute_expires_at)
+    SELECT ${randomUUID()},${token.digest},'authenticated',${id},at,at,at+interval '30 minutes',at+interval '8 hours' FROM moment`,
   );
-  const session = await safeTestOperation(() =>
-    login(
-      database.app,
-      preauth.raw,
-      preauth.dto.csrfToken,
-      credential.raw,
-      randomUUID(),
-    ),
+  const actor = await safeTestOperation(() =>
+    readSession(database.app, token.raw),
   );
+  const session = { raw: token.raw, dto: sessionDto(actor, token.raw) };
   return {
     id,
     session,

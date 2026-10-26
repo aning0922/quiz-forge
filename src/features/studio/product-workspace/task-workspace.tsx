@@ -1,4 +1,6 @@
 "use client";
+import { useOwnedStudioSession } from "../accounts/session-owner";
+import { roleHasCapability } from "@/lib/auth/role-policy";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -67,7 +69,7 @@ type PreviewLaunch = {
 };
 
 export function ProductTaskWorkspace({
-  session,
+  session: initialSession,
   initialTask = "content",
   consumerScope,
   consumerRenderer,
@@ -77,11 +79,13 @@ export function ProductTaskWorkspace({
   consumerScope: StudioConsumerScopeV1;
   consumerRenderer: ConsumerRendererIdentity;
 }) {
+  const session = useOwnedStudioSession(initialSession);
   const authority = useInternalAuthority();
   const contentAuthority = useMemo(
     () => ({
       canWrite: () =>
-        session.operator.role === "operator" && !authority.isRevoked,
+        roleHasCapability(session.operator.role, "import:create") &&
+        !authority.isRevoked,
       observe: (error: unknown) => {
         const wasRevoked = authority.isRevoked;
         authority.observe(error);
@@ -106,7 +110,7 @@ export function ProductTaskWorkspace({
 }
 
 function Workspace({
-  session,
+  session: initialSession,
   initialTask,
   consumerScope,
   consumerRenderer,
@@ -116,6 +120,7 @@ function Workspace({
   consumerScope: StudioConsumerScopeV1;
   consumerRenderer: ConsumerRendererIdentity;
 }) {
+  const session = useOwnedStudioSession(initialSession);
   const workspace = useProductWorkspaceContext();
   const authority = useInternalAuthority();
   const surfaces = useWorkspaceSurfaces();
@@ -337,7 +342,10 @@ function Workspace({
           error={read.error}
           taskState={surfaces.states.content}
           previewBlocked={authority.isRevoked}
-          readOnly={session.operator.role !== "operator" || authority.isRevoked}
+          readOnly={
+            !roleHasCapability(session.operator.role, "import:create") ||
+            authority.isRevoked
+          }
           onOpenTask={() => surfaces.open("content")}
           onOpenHistory={openRevisions}
           onOpenImports={() => surfaces.open("imports")}

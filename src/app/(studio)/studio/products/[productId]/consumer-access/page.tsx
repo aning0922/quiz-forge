@@ -27,7 +27,7 @@ export default async function Page({
     <StudioConsumerAccessPageV1
       key={`${scope.instanceId}:${scope.issuerId}:${scope.productId}`}
       scope={scope}
-      renderer={CONSUMER_IMPLEMENTATION_AVAILABILITY.rendererV1_1}
+      renderer={CONSUMER_IMPLEMENTATION_AVAILABILITY.rendererV1_2}
     />
   );
 }

@@ -1,18 +1,14 @@
 import "server-only";
 import { StudioError } from "@/lib/http-security/errors";
+import {
+  roleHasCapability,
+  type StudioCapability,
+  type StudioRole,
+} from "./role-policy";
+
+export type { StudioCapability, StudioRole } from "./role-policy";
 
 const authenticatedActor = Symbol("authenticated-studio-actor");
-
-export type StudioRole = "operator" | "read-only";
-export type StudioCapability =
-  | "studio:read"
-  | "workspace:write"
-  | "draft:write"
-  | "import:create"
-  | "review:submit"
-  | "review:return"
-  | "review:record-baseline"
-  | "version:seal-internal";
 
 export type StudioActor = Readonly<{
   id: string;
@@ -21,6 +17,9 @@ export type StudioActor = Readonly<{
   sessionId: string;
   idleExpiresAt: Date;
   absoluteExpiresAt: Date;
+  loginName?: string | null;
+  displayName?: string;
+  accountRevision?: number;
   [authenticatedActor]: true;
 }>;
 
@@ -35,20 +34,9 @@ export function requireCapability(
   actor: StudioActor,
   capability: StudioCapability,
 ): void {
-  const known = [
-    "workspace:write",
-    "draft:write",
-    "import:create",
-    "review:submit",
-    "review:return",
-    "review:record-baseline",
-    "version:seal-internal",
-  ];
   if (
     actor[authenticatedActor] !== true ||
-    (actor.role !== "operator" && actor.role !== "read-only") ||
-    (capability !== "studio:read" &&
-      (actor.role !== "operator" || !known.includes(capability)))
+    !roleHasCapability(actor.role, capability)
   ) {
     throw new StudioError("CAPABILITY_DENIED");
   }

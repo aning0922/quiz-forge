@@ -1,4 +1,5 @@
 "use client";
+import { useOwnedStudioSession } from "../accounts/session-owner";
 import { TechnicalDetails } from "../presentation/technical-details";
 import { StudioPageHeader } from "../presentation/page-header";
 import { previewPagePath } from "@/features/product/preview/urls";
@@ -51,7 +52,7 @@ function observePreviewAuthority(
 
 export function FixedRevisionPreviewPage({
   scope,
-  session,
+  session: initialSession,
   embedded = false,
   authority,
 }: {
@@ -60,6 +61,7 @@ export function FixedRevisionPreviewPage({
   embedded?: boolean;
   authority?: InternalProductAuthority;
 }) {
+  const session = useOwnedStudioSession(initialSession);
   const [attempt, setAttempt] = useState(0),
     [read, setRead] = useState<{
       attempt: number;
@@ -164,13 +166,14 @@ export function FixedRevisionPreviewPage({
 }
 function PreviewExperience({
   entry,
-  session,
+  session: initialSession,
   authority,
 }: {
   entry: PreviewEntry;
   session: StudioSessionDto;
   authority?: InternalProductAuthority | undefined;
 }) {
+  const session = useOwnedStudioSession(initialSession);
   const [flow] = useState(() => new PreviewFlow(entry)),
     [screen, setScreen] = useState<PreviewState>("cover"),
     [index, setIndex] = useState(0),

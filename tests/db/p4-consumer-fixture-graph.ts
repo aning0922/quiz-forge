@@ -189,8 +189,8 @@ export async function verifyConsumerFixtureGraph(
       actor = operator ? value.operator : value.readOnly;
     if (
       row.body.label !==
-        `p4-e2e-${value.runId}-${operator ? "operator" : "read-only"}` ||
-      row.body.role !== (operator ? "operator" : "read-only") ||
+        `p4-e2e-${value.runId}-${operator ? "admin" : "read-only"}` ||
+      row.body.role !== (operator ? "admin" : "read-only") ||
       row.body.credential_digest !== digestToken(actor.secret, "credential")
     )
       throw fail();

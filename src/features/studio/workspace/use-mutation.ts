@@ -1,6 +1,8 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { useStudioAccountOwner } from "../accounts/session-owner";
+import { captureStudioEpoch, acceptsStudioEpoch } from "../authority-events";
 import { StudioClientError, studioFetch, studioMessage } from "../client";
 
 export type MutationState = {
@@ -14,6 +16,7 @@ export function useWorkspaceMutation<T>(
   csrfToken: string,
   onError?: (error: unknown) => void,
 ) {
+  const owner = useStudioAccountOwner();
   const locked = useRef(false);
   const [state, setState] = useState<MutationState>({
     phase: "idle",
@@ -26,7 +29,8 @@ export function useWorkspaceMutation<T>(
     body: unknown,
     successMessage: string,
   ): Promise<T | undefined> {
-    if (locked.current) return;
+    if (locked.current || owner?.revoked) return;
+    const epoch = captureStudioEpoch();
     locked.current = true;
     setState({ phase: "submitting", message: "正在提交，请等待服务器确认…" });
     try {
@@ -42,6 +46,8 @@ export function useWorkspaceMutation<T>(
         },
         true,
       );
+      if (!acceptsStudioEpoch(epoch))
+        throw new StudioClientError("WRITE_OUTCOME_UNKNOWN");
       setState({ phase: "success", message: successMessage });
       locked.current = false;
       return result;
@@ -72,7 +78,7 @@ export function useWorkspaceMutation<T>(
   }
 
   function reconciled() {
-    if (state.phase === "submitting") return;
+    if (state.phase === "submitting" || owner?.revoked) return;
     locked.current = false;
     setState({
       phase: "idle",
@@ -83,13 +89,16 @@ export function useWorkspaceMutation<T>(
     });
   }
 
+  // Permission loss blocks new writes, but is not evidence that a write was sent.
+  const pending =
+    state.phase === "submitting" ||
+    state.phase === "unknown" ||
+    state.phase === "conflict";
   return {
     state,
     submit,
     reconciled,
-    blocked:
-      state.phase === "submitting" ||
-      state.phase === "unknown" ||
-      state.phase === "conflict",
+    pending,
+    blocked: owner?.revoked || pending,
   };
 }

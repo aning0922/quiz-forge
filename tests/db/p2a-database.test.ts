@@ -52,7 +52,14 @@ describe("real P2-A database", () => {
   it("uses PostgreSQL18.4, the correct marker and typed qualified schema", async () => {
     await verifyDatabaseIdentity(database.app.sql, database.config);
     const id = await operator();
-    const rows = await database.app.db.select().from(operators);
+    const rows = await database.app.db
+      .select({
+        id: operators.id,
+        label: operators.label,
+        role: operators.role,
+        status: operators.status,
+      })
+      .from(operators);
     expect(
       rows.map((r) => ({
         id: r.id,
@@ -78,6 +85,9 @@ describe("real P2-A database", () => {
       "draft_revision",
       "internal_play_version",
       "operator",
+      "operator_account_operation",
+      "operator_kdf_attempt",
+      "operator_password_token",
       "operator_session",
       "product",
       "product_asset",
@@ -114,7 +124,9 @@ describe("real P2-A database", () => {
   });
   it("keeps Drizzle Date fields distinct from raw SQL timestamp strings", async () => {
     const id = await operator();
-    const rows = await database.app.db.select().from(operators);
+    const rows = await database.app.db
+      .select({ createdAt: operators.createdAt })
+      .from(operators);
     const [raw] = await database.app
       .sql`SELECT created_at FROM qf.operator WHERE id=${id}`;
     expect(rows[0]?.createdAt).toBeInstanceOf(Date);
@@ -403,10 +415,13 @@ describe("real P2-A database", () => {
     const [session] = await database.app
       .sql`SELECT revoked_at IS NOT NULL AS revoked FROM qf.operator_session WHERE id=${sessionId}`;
     expect(session?.revoked).toBe(true);
-    expect(
-      await database.app
-        .sql`SELECT id FROM qf.audit_event WHERE action='operator_disabled'`,
-    ).toHaveLength(1);
+    const receipts = await database.admin.sql<{ operation_id: string }[]>`
+      SELECT operation_id FROM qf.operator_account_operation
+      WHERE action='disable' AND actor_id IS NULL AND target_id=${operatorId} AND status='completed'`;
+    expect(receipts).toHaveLength(1);
+    // This confirmed receipt belongs to this test's unique target. Never broaden reset authority.
+    await database.admin.sql`DELETE FROM qf.operator_account_operation
+      WHERE operation_id=${receipts[0]!.operation_id} AND target_id=${operatorId} AND actor_id IS NULL`;
   });
   it("management disable waits for auth writes then revokes the newly committed session", async () => {
     const operatorId = await operator(),
@@ -449,17 +464,30 @@ describe("real P2-A database", () => {
       release();
       await login;
       expect(await disabling).toEqual({ id: operatorId, changed: true });
-      const [row] = await database.app
-        .sql`SELECT s.revoked_at IS NOT NULL AS revoked,s.revoked_at>=s.created_at AS valid_time,
-          o.disabled_at=s.revoked_at AS same_operator_time,
-          a.occurred_at=s.revoked_at AS same_audit_time
-          FROM qf.operator_session s JOIN qf.operator o ON o.id=s.operator_id JOIN qf.audit_event a ON a.actor_id=o.id AND a.action='operator_disabled' WHERE s.id=${sessionId}`;
-      expect(row?.revoked).toBe(true);
-      expect(row).toMatchObject({
+      const rows = await database.admin.sql<
+        {
+          operation_id: string;
+          revoked: boolean;
+          valid_time: boolean;
+          valid_disable_time: boolean;
+          valid_receipt_time: boolean;
+        }[]
+      >`
+        SELECT a.operation_id,s.revoked_at IS NOT NULL AS revoked,s.revoked_at>=s.created_at AS valid_time,
+          o.disabled_at>=s.created_at AND s.revoked_at>=o.disabled_at AS valid_disable_time,
+          a.created_at>=s.revoked_at AS valid_receipt_time
+          FROM qf.operator_session s JOIN qf.operator o ON o.id=s.operator_id
+          JOIN qf.operator_account_operation a ON a.target_id=o.id AND a.actor_id IS NULL AND a.action='disable' AND a.status='completed'
+          WHERE s.id=${sessionId}`;
+      expect(rows).toHaveLength(1);
+      expect(rows[0]).toMatchObject({
+        revoked: true,
         valid_time: true,
-        same_operator_time: true,
-        same_audit_time: true,
+        valid_disable_time: true,
+        valid_receipt_time: true,
       });
+      await database.admin.sql`DELETE FROM qf.operator_account_operation
+        WHERE operation_id=${rows[0]!.operation_id} AND target_id=${operatorId} AND actor_id IS NULL`;
     } finally {
       release();
       await login.catch(() => {});

@@ -1,4 +1,6 @@
 "use client";
+import { useStudioAccountOwner } from "../accounts/session-owner";
+import { roleHasCapability } from "@/lib/auth/role-policy";
 import { studioSameTabLink } from "../navigation-boundary";
 import { TechnicalDetails } from "../presentation/technical-details";
 import { StudioPageHeader } from "../presentation/page-header";
@@ -6,6 +8,7 @@ import { StudioWorkflowNav } from "../presentation/workflow-nav";
 import Link from "next/link";
 import {
   useEffect,
+  useMemo,
   useLayoutEffect,
   useRef,
   useState,
@@ -31,7 +34,10 @@ import {
 } from "./controller";
 import type { StudioConsumerScopeV1 } from "./pending";
 import styles from "./consumer-access.module.css";
-import { subscribeStudioAuthorityInvalidation } from "../authority-events";
+import {
+  invalidateCurrentStudioAuthority,
+  subscribeStudioAuthorityInvalidation,
+} from "../authority-events";
 const time = (value: string) =>
   new Intl.DateTimeFormat("zh-CN", {
     timeZone: "Asia/Taipei",
@@ -205,7 +211,14 @@ function PendingPanel({
   const pending = state.pending!,
     evidence = state.evidence,
     active = state.phase === "pending",
-    operator = state.session?.operator.role === "operator";
+    operator = roleHasCapability(
+      state.session?.operator.role,
+      pending.kind === "play"
+        ? "version:seal-internal"
+        : pending.kind === "void"
+          ? "access-key:void"
+          : "access-key:issue",
+    );
   const terminal = evidence !== null && evidence.value.kind !== "unresolved";
   const { usable, unavailableReason } = issueDisclosureState(evidence);
   const mustSave = requireSecretSave && pending.hasRaw && operator && usable;
@@ -391,19 +404,44 @@ export function StudioConsumerAccessPageV1({
   workspaceAuthority?: InternalProductAuthority | undefined;
   onGoToReview?: (() => void) | undefined;
 }) {
-  const [controller] = useState(
-    () =>
-      new StudioConsumerControllerV1(scope, renderer, {
+  const owner = useStudioAccountOwner();
+  const { origin, instanceId, issuerId, productId } = scope;
+  const { id: rendererId, version: rendererVersion, entrySha256 } = renderer;
+  const controller = useMemo(() => {
+    void owner?.generation;
+    return new StudioConsumerControllerV1(
+      { origin, instanceId, issuerId, productId },
+      {
+        kind: "consumer-renderer",
+        id: rendererId,
+        version: rendererVersion,
+        entrySha256,
+      },
+      {
         getItem: (k) => sessionStorage.getItem(k),
         setItem: (k, v) => sessionStorage.setItem(k, v),
         removeItem: (k) => sessionStorage.removeItem(k),
-      }),
-  );
+      },
+    );
+  }, [
+    origin,
+    instanceId,
+    issuerId,
+    productId,
+    rendererId,
+    rendererVersion,
+    entrySha256,
+    owner?.generation,
+  ]);
   const state = useSyncExternalStore(
     controller.subscribe,
     controller.getSnapshot,
     controller.getSnapshot,
   );
+  useEffect(() => {
+    if (state.phase === "lost" && owner && !owner.revoked)
+      invalidateCurrentStudioAuthority();
+  }, [state.phase, owner]);
   const [versionId, setVersionId] = useState(""),
     [playId, setPlayId] = useState(""),
     [duration, setDuration] = useState(604800),
@@ -446,7 +484,14 @@ export function StudioConsumerAccessPageV1({
     if (state.pending?.kind === "issue" && issueTask.current)
       issueTask.current.open = true;
   }, [state.pending?.kind]);
-  const canWrite = state.session?.operator.role === "operator",
+  const canWrite = roleHasCapability(
+      state.session?.operator.role,
+      "access-key:issue",
+    ),
+    canCreatePlay = roleHasCapability(
+      state.session?.operator.role,
+      "version:seal-internal",
+    ),
     ready = state.phase === "ready";
   const pendingKey = state.evidence?.value.binding.operationKey ?? "original";
   const notified = useRef<string | undefined>(undefined);
@@ -716,7 +761,7 @@ export function StudioConsumerAccessPageV1({
                     答题版本会固定本次使用的内容、评分和画面，不随后续草稿变化。请选择已固定的内测内容版本。
                   </p>
                   <fieldset
-                    disabled={!canWrite || !ready}
+                    disabled={!canCreatePlay || !ready}
                     className={styles.form}
                   >
                     <label>
@@ -810,7 +855,11 @@ function ConsumerTaskView({
   const working = state.phase === "working";
   const ready = state.phase === "ready";
   const canWrite =
-    state.session?.operator.role === "operator" && !authority.isRevoked;
+    roleHasCapability(state.session?.operator.role, "access-key:issue") &&
+    !authority.isRevoked;
+  const canCreatePlay =
+    roleHasCapability(state.session?.operator.role, "version:seal-internal") &&
+    !authority.isRevoked;
   useStudioLeaveProtection({
     dirty: !!versionId || !!playId || !!voidId,
     pending: working || !!state.pending,
@@ -832,7 +881,11 @@ function ConsumerTaskView({
         blockCloseReason:
           pending && id === "issue" && state.pending?.hasRaw
             ? (unavailableReason ??
-              (usable && state.session?.operator.role === "operator"
+              (usable &&
+              roleHasCapability(
+                state.session?.operator.role,
+                "access-key:issue",
+              )
                 ? "私密链接仍由当前标签页保管。请先复制或下载并妥善保存，再明确结束当前记录。"
                 : "原发码请求仍保留。请先核实服务器事实，再按可用操作明确结束本地记录。"))
             : undefined,
@@ -889,7 +942,10 @@ function ConsumerTaskView({
             <p>先查看已有答题版本和安全记录，短操作在任务中完成。</p>
           </div>
           <div className={styles.actions}>
-            <button disabled={!canWrite || !ready} onClick={() => open("play")}>
+            <button
+              disabled={!canCreatePlay || !ready}
+              onClick={() => open("play")}
+            >
               创建答题版本
             </button>
             <button
@@ -1040,7 +1096,7 @@ function ConsumerTaskView({
                   ? "可基于已有答题版本明确发放一枚测试码。"
                   : "先选择固定内测内容，创建答题版本后再发码。"}
               </p>
-              {canWrite && (
+              {(state.plays.length ? canWrite : canCreatePlay) && (
                 <button
                   className={styles.primaryButton}
                   onClick={() => open(state.plays.length ? "issue" : "play")}
@@ -1111,7 +1167,10 @@ function ConsumerTaskView({
             <p className={styles.taskIntro}>
               选择已固定的内容，生成独立的答题版本。后续草稿不会改变它。
             </p>
-            <fieldset className={styles.form} disabled={!canWrite || !ready}>
+            <fieldset
+              className={styles.form}
+              disabled={!canCreatePlay || !ready}
+            >
               <label>
                 固定内测内容版本
                 <select
@@ -1148,7 +1207,7 @@ function ConsumerTaskView({
           <button
             className={styles.primaryButton}
             disabled={
-              !canWrite ||
+              !canCreatePlay ||
               !ready ||
               !state.versions.some((version) => version.id === versionId)
             }

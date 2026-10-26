@@ -4,7 +4,10 @@ import { randomUUID } from "node:crypto";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { z } from "zod";
-import { createPreauth, login } from "@/lib/auth/service";
+import {
+  loginVersionFixtureAccount,
+  seedVersionFixtureAccount,
+} from "./version-account-fixture";
 import { issueToken, digestToken } from "@/lib/security/p2a-tokens";
 import { readPrivateJson } from "@/lib/db/runtime";
 import { acquireAuthWriteLock } from "@/lib/db/auth-lock";
@@ -231,19 +234,16 @@ export async function prepareInternalVersionFixture(
   };
   await save(db, value, true);
   for (const [actor, role] of [
-    [value.operator, "operator"],
+    [value.operator, "admin"],
     [value.readOnly, "read-only"],
   ] as const)
-    await db.admin
-      .sql`INSERT INTO qf.operator(id,label,credential_digest,role,status) VALUES(${actor.identifier},${`p3e-e2e-${runId}-${role}`},${digestToken(actor.secret, "credential")},${role},'active')`;
-  const pre = await createPreauth(db.app, null, randomUUID()),
-    session = await login(
-      db.app,
-      pre.raw,
-      pre.dto.csrfToken,
-      value.operator.secret,
-      randomUUID(),
+    await seedVersionFixtureAccount(
+      db,
+      actor,
+      `p3e-e2e-${runId}-${role}`,
+      role,
     );
+  const session = await loginVersionFixtureAccount(db, value.operator);
   const auth = {
     id: value.operator.identifier,
     credentials: {
@@ -734,9 +734,8 @@ export async function cleanupInternalVersionFixture(
       operatorRows.some((a) => {
         const operator = a.id === value.operator.identifier;
         return (
-          a.label !==
-            `p3e-e2e-${runId}-${operator ? "operator" : "read-only"}` ||
-          a.role !== (operator ? "operator" : "read-only") ||
+          a.label !== `p3e-e2e-${runId}-${operator ? "admin" : "read-only"}` ||
+          a.role !== (operator ? "admin" : "read-only") ||
           a.credential_digest !==
             digestToken(
               operator ? value.operator.secret : value.readOnly.secret,

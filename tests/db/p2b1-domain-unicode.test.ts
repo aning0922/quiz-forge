@@ -134,6 +134,7 @@ describe("invalid UTF-16 fails before persistence", () => {
     "rejects %j without revision or audit changes",
     async (value) => {
       const auth = await authenticateTestOperator(fixture);
+      const admin = await authenticateTestOperator(fixture, "admin");
       const product = await service.createProduct(
         fixture.app,
         auth.credentials,
@@ -147,13 +148,13 @@ describe("invalid UTF-16 fails before persistence", () => {
       );
       const category = await service.createTaxonomy(
         fixture.app,
-        auth.credentials,
+        admin.credentials,
         "category",
         { slug: "synthetic", name: "Synthetic" },
       );
       const tag = await service.createTaxonomy(
         fixture.app,
-        auth.credentials,
+        admin.credentials,
         "tag",
         { slug: "synthetic", name: "Synthetic" },
       );
@@ -191,16 +192,22 @@ describe("invalid UTF-16 fails before persistence", () => {
         ["tag", tag],
       ] as const) {
         await expect(
-          service.createTaxonomy(fixture.app, auth.credentials, kind, {
+          service.createTaxonomy(fixture.app, admin.credentials, kind, {
             slug: "other",
             name: value,
           }),
         ).rejects.toMatchObject({ code: "INVALID_REQUEST" });
         await expect(
-          service.renameTaxonomy(fixture.app, auth.credentials, kind, item.id, {
-            expectedRevision: 1,
-            name: value,
-          }),
+          service.renameTaxonomy(
+            fixture.app,
+            admin.credentials,
+            kind,
+            item.id,
+            {
+              expectedRevision: 1,
+              name: value,
+            },
+          ),
         ).rejects.toMatchObject({ code: "INVALID_REQUEST" });
         await expect(
           service.listTaxonomy(fixture.app, auth.session.raw, kind, {
@@ -253,6 +260,7 @@ describe("invalid UTF-16 fails before persistence", () => {
   );
   it("valid emoji persists exactly and identical input is a no-op", async () => {
     const auth = await authenticateTestOperator(fixture);
+    const admin = await authenticateTestOperator(fixture, "admin");
     const value = "X\uD83D\uDE00";
     const product = await service.createProduct(fixture.app, auth.credentials, {
       id: "synthetic",
@@ -278,7 +286,7 @@ describe("invalid UTF-16 fails before persistence", () => {
     expect(result.product.metadataRevision).toBe(1);
     const item = await service.createTaxonomy(
       fixture.app,
-      auth.credentials,
+      admin.credentials,
       "tag",
       { slug: "synthetic", name: value },
     );
@@ -287,7 +295,7 @@ describe("invalid UTF-16 fails before persistence", () => {
       (
         await service.renameTaxonomy(
           fixture.app,
-          auth.credentials,
+          admin.credentials,
           "tag",
           item.id,
           { expectedRevision: 1, name: value },

@@ -353,7 +353,7 @@ const server = createServer(async (req, res) => {
         : undefined,
       session,
       scope: { origin, instanceId: "a".repeat(32), issuerId, productId },
-      renderer: CONSUMER_IMPLEMENTATION_AVAILABILITY.rendererV1,
+      renderer: CONSUMER_IMPLEMENTATION_AVAILABILITY.rendererV1_2,
     };
     res.writeHead(200, { "content-type": "text/html;charset=utf-8" });
     res.end(

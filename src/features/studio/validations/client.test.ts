@@ -283,3 +283,18 @@ describe("validation request coordination", () => {
     }
   });
 });
+
+it("a pre-revocation not-started proof cannot clear the original anchor after reauthentication", async () => {
+  const { advanceStudioRequestEpoch } = await import("../authority-events");
+  const storage = memoryStorage();
+  addPrepared(storage, tuple);
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async () => Response.json(notStarted)),
+  );
+  const result = await continuePrepared(storage, tuple, "csrf");
+  const original = storage.value;
+  advanceStudioRequestEpoch();
+  expect(() => abandonNotStarted(storage, tuple, result)).toThrow();
+  expect(storage.value).toBe(original);
+});

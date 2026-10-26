@@ -1,4 +1,10 @@
 "use client";
+import {
+  useOwnedStudioSession,
+  useStudioRecoveryReset,
+} from "../accounts/session-owner";
+import { ownedPendingStorage } from "../accounts/owned-storage";
+import { roleHasCapability } from "@/lib/auth/role-policy";
 import { useContentAuthority } from "../product-workspace/content-authority";
 import { TechnicalDetails } from "../presentation/technical-details";
 import { useEffect, useState, type ReactNode } from "react";
@@ -36,7 +42,7 @@ const productSchema = z.object({
 export function AppendRevisionPanel({
   productId,
   validation,
-  session,
+  session: initialSession,
   refreshing,
   embedded = false,
   onConfirmed,
@@ -58,6 +64,7 @@ export function AppendRevisionPanel({
   onInspectRevision?: ((target: RevisionTarget) => void) | undefined;
   onInspectSource?: ((importId: string) => void) | undefined;
 }) {
+  const session = useOwnedStudioSession(initialSession);
   const authority = useContentAuthority();
   const current = useDraftRead(draftEndpoint(productId), (v) =>
       checkDraftRead(v, productId),
@@ -92,13 +99,20 @@ export function AppendRevisionPanel({
     retained: !!confirmation || !!receipt || pendingState.retained,
     message: pendingState.message,
   });
+  useStudioRecoveryReset(() => {
+    setDenied(false);
+    setConfirmation(undefined);
+  });
   function adopt(next: AppendDraftApplication) {
     setReceipt(next);
     if (authority.canWrite()) onConfirmed?.(next);
   }
   function availability() {
     try {
-      inspectRevisionPreparation(sessionStorage, productId);
+      inspectRevisionPreparation(
+        ownedPendingStorage(sessionStorage, session.operator.id),
+        productId,
+      );
       setStorageReady(true);
     } catch {
       setStorageReady(false);
@@ -127,7 +141,9 @@ export function AppendRevisionPanel({
       product.loading ||
       Boolean(current.error || product.error),
     operator =
-      authority.canWrite() && session.operator.role === "operator" && !denied,
+      authority.canWrite() &&
+      roleHasCapability(session.operator.role, "draft:write") &&
+      !denied,
     full = Boolean(
       base && base.revision >= DRAFT_REVISION_LIMITS.maximumRevision,
     );
@@ -152,7 +168,10 @@ export function AppendRevisionPanel({
   function prepare() {
     if (!authority.canWrite() || !canPrepare || !base || !validation) return;
     try {
-      inspectRevisionPreparation(sessionStorage, productId);
+      inspectRevisionPreparation(
+        ownedPendingStorage(sessionStorage, session.operator.id),
+        productId,
+      );
       setConfirmation({
         source: validation,
         base,
@@ -195,7 +214,7 @@ export function AppendRevisionPanel({
     setConfirmation(undefined);
     try {
       const result = await applyAppendRevision(
-        sessionStorage,
+        ownedPendingStorage(sessionStorage, session.operator.id),
         tuple,
         session.csrfToken,
       );

@@ -1,4 +1,6 @@
 "use client";
+import { useOwnedStudioSession } from "../accounts/session-owner";
+import { roleHasCapability } from "@/lib/auth/role-policy";
 
 import {
   createContext,
@@ -31,12 +33,13 @@ const Context = createContext<{
 
 /** One creation owner per page, outside catalog query/loading/error branches. */
 export function ProductCreateTask({
-  session,
+  session: initialSession,
   children,
 }: {
   session?: StudioSessionDto | undefined;
   children: ReactNode;
 }) {
+  const session = useOwnedStudioSession(initialSession);
   const id = useId();
   const dialog = useRef<HTMLDialogElement>(null);
   const trigger = useRef<HTMLButtonElement | null>(null);
@@ -65,6 +68,11 @@ export function ProductCreateTask({
     dialog.current?.close();
     setOpen(false);
     setNotice("");
+    if (!stateRef.current.dirty && !stateRef.current.pending) {
+      setStarted(false);
+      stateRef.current = initial;
+      setState(initial);
+    }
     requestAnimationFrame(() => {
       if (trigger.current?.isConnected) trigger.current.focus();
       else
@@ -72,6 +80,18 @@ export function ProductCreateTask({
           .querySelector<HTMLButtonElement>("[data-create-trigger]")
           ?.focus();
     });
+  }, []);
+  const discard = useCallback(() => {
+    if (stateRef.current.busy || stateRef.current.pending) return;
+    if (!window.confirm("放弃本次未提交的新建内容？")) return;
+    stateRef.current = initial;
+    setState(initial);
+    setStarted(false);
+    setOpen(false);
+    setNotice("");
+    requestAnimationFrame(
+      () => trigger.current?.isConnected && trigger.current.focus(),
+    );
   }, []);
   useLayoutEffect(() => {
     const node = dialog.current;
@@ -82,7 +102,8 @@ export function ProductCreateTask({
     if (!node) return;
     // Native listener also covers footer portal targets outside the form owner.
     const escape = (event: KeyboardEvent) => {
-      if (event.key !== "Escape" || !node.open) return;
+      if (event.key !== "Escape" || !node.open || event.defaultPrevented)
+        return;
       event.preventDefault();
       event.stopPropagation();
       close();
@@ -98,7 +119,10 @@ export function ProductCreateTask({
       document.documentElement.style.overflow = previous;
     };
   }, [open]);
-  const available = session?.operator.role === "operator";
+  const available = roleHasCapability(
+    session?.operator.role,
+    "workspace:write",
+  );
   return (
     <Context.Provider
       value={
@@ -116,14 +140,14 @@ export function ProductCreateTask({
           : null
       }
     >
-      {!open && (state.dirty || state.pending || state.revoked) && (
+      {!open && (state.dirty || state.pending) && (
         <aside className={styles.retained} role="status">
           <p>
-            {state.revoked
-              ? "原创建任务失权，输入仍保留"
-              : state.pending
-                ? "创建结果待核实，原请求仍保留"
-                : "本页保留着未提交的创建输入"}
+            {state.pending
+              ? "创建结果待确认，请先核实，勿重复提交。"
+              : state.revoked
+                ? "已保留新建输入，重新登录后可继续。"
+                : "本页保留着未提交的新建输入。"}
           </p>
           <button
             className={styles.secondary}
@@ -168,7 +192,7 @@ export function ProductCreateTask({
             <button
               className={styles.close}
               type="button"
-              aria-label="收起新建测评"
+              aria-label="关闭新建测评"
               onClick={close}
             >
               <X size={20} aria-hidden="true" />
@@ -189,8 +213,17 @@ export function ProductCreateTask({
           </div>
           <footer className={styles.footer}>
             <button className={styles.secondary} type="button" onClick={close}>
-              先返回
+              {state.dirty || state.pending ? "收起" : "取消"}
             </button>
+            {state.dirty && !state.pending && !state.busy && (
+              <button
+                className={styles.secondary}
+                type="button"
+                onClick={discard}
+              >
+                放弃输入
+              </button>
+            )}
             <div ref={setActionsHost} className={styles.actions} />
           </footer>
         </dialog>
@@ -208,7 +241,7 @@ export function ProductCreateAction() {
         新建测评
       </Link>
     );
-  const retained = task.state.dirty || task.state.pending || task.state.revoked;
+  const retained = task.state.dirty || task.state.pending;
   return (
     <div className={styles.launcher}>
       <button

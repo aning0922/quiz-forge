@@ -4,6 +4,9 @@ import { StudioUnavailableError } from "./runtime";
 
 const tables = [
   "operator",
+  "operator_password_token",
+  "operator_account_operation",
+  "operator_kdf_attempt",
   "operator_session",
   "audit_event",
   "category",

@@ -1,0 +1,60 @@
+import { randomUUID } from "node:crypto";
+import type { TestDatabase } from "./p2a-fixture";
+import { createPreauth } from "@/lib/auth/service";
+import { passwordLogin } from "@/lib/auth/accounts/service";
+import { withPasswordCapacity } from "@/lib/auth/accounts/password";
+import { digestToken } from "@/lib/security/p2a-tokens";
+
+type FixtureAccount = { identifier: string; secret: string };
+function requireOwnedTest(db: TestDatabase) {
+  if (db.config.purpose !== "test" && db.config.purpose !== "ci")
+    throw Error("OWNED_VERSION_ACCOUNT_FIXTURE_REQUIRED");
+}
+/** Private version/consumer fixtures use current password accounts, never legacy admin login. */
+export async function seedVersionFixtureAccount(
+  db: TestDatabase,
+  actor: FixtureAccount,
+  label: string,
+  role: "admin" | "read-only",
+) {
+  requireOwnedTest(db);
+  const hash = await withPasswordCapacity((k) => k.hash(actor.secret));
+  // The existing digest is only the fixture's exact ownership marker, not a web login route.
+  await db.admin
+    .sql`INSERT INTO qf.operator(id,label,credential_digest,login_name,display_name,password_hash,role,status)
+    VALUES(${actor.identifier},${label},${digestToken(actor.secret, "credential")},${`test-${actor.identifier}`},'合成版本验证账号',${hash},${role},'active')`;
+}
+export async function loginVersionFixtureAccount(
+  db: TestDatabase,
+  actor: FixtureAccount,
+) {
+  requireOwnedTest(db);
+  const pre = await createPreauth(db.app, null, randomUUID());
+  const [challenge] = await db.admin.sql<{ id: string }[]>`
+    SELECT id FROM qf.operator_session WHERE token_digest=${digestToken(pre.raw, "preauth")} AND kind='preauth'`;
+  if (!challenge) throw Error("VERSION_FIXTURE_PREAUTH_MISSING");
+  const session = await passwordLogin(
+    db.app,
+    pre.raw,
+    pre.dto.csrfToken,
+    `test-${actor.identifier}`,
+    actor.secret,
+  );
+  if (session.dto.operator.id !== actor.identifier)
+    throw Error("VERSION_FIXTURE_LOGIN_IDENTITY_MISMATCH");
+  // These business fixtures own this one newly created preauth only. Account-budget
+  // tests run separately and retain their attempts. Any uncertain login leaves evidence.
+  await db.admin.sql.begin(async (tx) => {
+    const rows = await tx<{ id: string }[]>`
+      SELECT id FROM qf.operator_kdf_attempt
+      WHERE session_id=${challenge.id} AND operator_id=${actor.identifier}
+        AND kind='login' AND finished_at IS NOT NULL AND token_id IS NULL AND operation_id IS NULL
+      FOR UPDATE`;
+    if (rows.length !== 1)
+      throw Error("VERSION_FIXTURE_COMPLETED_LOGIN_REQUIRED");
+    await tx`DELETE FROM qf.operator_kdf_attempt WHERE id=${rows[0]!.id}
+      AND session_id=${challenge.id} AND operator_id=${actor.identifier} AND kind='login'
+      AND finished_at IS NOT NULL AND token_id IS NULL AND operation_id IS NULL`;
+  });
+  return session;
+}

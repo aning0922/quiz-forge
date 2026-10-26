@@ -5,7 +5,7 @@ import { createServer } from "node:net";
 import { readFile, rename } from "node:fs/promises";
 import path from "node:path";
 import { expect, it } from "vitest";
-import { createPreauth, login } from "@/lib/auth/service";
+import { loginVersionFixtureAccount } from "./version-account-fixture";
 import { createStudioRequestBudget } from "@/lib/http-security/request-budget";
 import { createConsumerRequestOwner } from "@/features/fulfillment/consumer-flow/request-owner";
 import { createConsumerFlowService } from "@/features/fulfillment/consumer-flow/service";
@@ -106,14 +106,7 @@ it("actual consumer grants, CAS races, immutable completion, scoped resource str
       },
     );
     const fixture = await readConsumerFixture(db, runId),
-      pre = await createPreauth(db.app, null, randomUUID()),
-      operator = await login(
-        db.app,
-        pre.raw,
-        pre.dto.csrfToken,
-        fixture.operator.secret,
-        randomUUID(),
-      ),
+      operator = await loginVersionFixtureAccount(db, fixture.operator),
       credentials = {
         sessionToken: operator.raw,
         csrfToken: operator.dto.csrfToken,

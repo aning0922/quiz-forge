@@ -46,7 +46,7 @@ export function syntheticReport(): QuizPackValidationReport {
   };
 }
 describe("strict P1 report persistence evidence", () => {
-  it("seals real rejected raw-array paths beyond the valid question count", async () => {
+  it("seals an oversized question collection rejection before parsing its invalid elements", async () => {
     const fixture = await createSyntheticFixture("dimensions");
     const targetProductId = fixture.content.product.productId;
     const built = await buildQuizPack(
@@ -94,9 +94,12 @@ describe("strict P1 report persistence evidence", () => {
     });
     expect(
       report.issues.some(
-        (issue) => JSON.stringify(issue.path) === '["questions",101,"prompt"]',
+        (issue) =>
+          issue.code === "CONTENT_STRUCTURE" &&
+          JSON.stringify(issue.path) === '["questions"]',
       ),
     ).toBe(true);
+    expect(report.issues.some((issue) => issue.path?.[1] === 101)).toBe(false);
     expect(sealP1Report(report).value.candidateValid).toBe(false);
   });
   it("copies and freezes report, storing its payload once", () => {

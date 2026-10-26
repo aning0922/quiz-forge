@@ -13,6 +13,9 @@ export type ActorRow = {
   id: string;
   label: string;
   role: StudioRole;
+  login_name?: string | null;
+  display_name?: string | null;
+  account_revision?: number;
   session_id: string;
   idle_expires_at: DatabaseTime;
   absolute_expires_at: DatabaseTime;
@@ -35,7 +38,7 @@ export async function activeActor(
   // App has SELECT-only operator privileges. Mutation statements recheck active.
   const [row] = await tx<
     ActorRow[]
-  >`SELECT o.id, o.label, o.role, s.id AS session_id,
+  >`SELECT o.id, o.label, o.role, o.login_name,o.display_name,o.account_revision, s.id AS session_id,
     s.idle_expires_at, s.absolute_expires_at
     FROM qf.operator_session s JOIN qf.operator o ON o.id = s.operator_id
     WHERE s.token_digest = ${digest} AND s.kind = 'authenticated'
@@ -49,6 +52,9 @@ export function toActor(row: ActorRow): StudioActor {
     id: row.id,
     label: row.label,
     role: row.role,
+    loginName: row.login_name ?? null,
+    displayName: row.display_name ?? row.label,
+    accountRevision: row.account_revision ?? 1,
     sessionId: row.session_id,
     idleExpiresAt: dateFromDatabase(row.idle_expires_at),
     absoluteExpiresAt: dateFromDatabase(row.absolute_expires_at),
