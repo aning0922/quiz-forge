@@ -1,3 +1,4 @@
+import type { FixtureCandidate } from "../support/legacy-fixture-types";
 import sharp from "sharp";
 import { createHash, randomUUID } from "node:crypto";
 import { prepareP2b3Source } from "./p2b3-fixture";
@@ -132,7 +133,8 @@ export async function prepareP3cSource(
   ]);
   if (result.outcome !== "accepted")
     throw Error("P3C_SYNTHETIC_CANDIDATE_REQUIRED");
-  const facts = issuePrivateCandidate(result, files).facts;
+  const facts = issuePrivateCandidate(result, files)
+    .facts as FixtureCandidate<"quizpack-content.v2">["facts"];
   return {
     ...base,
     assetFiles,

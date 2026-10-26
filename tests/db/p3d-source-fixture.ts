@@ -1,3 +1,4 @@
+import type { FixtureCandidate } from "../support/legacy-fixture-types";
 import { createHash } from "node:crypto";
 import { prepareP3cSource } from "./p3c-source-fixture";
 import { canonicalP1Json } from "@/features/quizpack/v1/canonical";
@@ -64,7 +65,7 @@ export async function prepareP3dSource(
       ["content.json", Buffer.from(text)],
       ...base.assetFiles.map((a) => [a.path, a.bytes] as const),
     ]),
-  ).facts;
+  ).facts as FixtureCandidate<"quizpack-content.v2">["facts"];
   return {
     ...base,
     archiveSha256,

@@ -1,3 +1,4 @@
+import type { VersionSnapshotV1 } from "../support/legacy-fixture-types";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { randomUUID, createHash } from "node:crypto";
@@ -370,9 +371,9 @@ it("reserves one exact fixed fixture, observes actual operations, preserves unow
         tx,
         { ...actual.detail.version.binding, idempotencyKey: randomUUID() },
         {
-          ...actual.detail.snapshot,
+          ...(actual.detail.snapshot as VersionSnapshotV1),
           font: {
-            ...actual.detail.snapshot.font,
+            ...(actual.detail.snapshot as VersionSnapshotV1).font,
             id: "unregistered-foreign-fixture-font",
           },
         },

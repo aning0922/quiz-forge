@@ -1,3 +1,4 @@
+import type { FixtureCandidate } from "../support/legacy-fixture-types";
 import {
   supportedRuntimeIdentity,
   runtimeIdentity,
@@ -29,10 +30,7 @@ import {
   type ValidationFileStopProof,
   type ValidationRow,
 } from "@/features/quizpack/validation/repository";
-import type {
-  FrozenCandidate,
-  EvidenceProjection,
-} from "@/features/quizpack/validation/transactions-contract";
+import type { EvidenceProjection } from "@/features/quizpack/validation/transactions-contract";
 import {
   authenticateTestOperator,
   withEmptyAccountFixtureScope,
@@ -220,11 +218,11 @@ export async function domainFixture(
       declarationSha256: r.declarationSha256,
     })),
   });
-  const candidate: FrozenCandidate = {
+  const candidate = {
     facts: { ...facts, assetSetText },
     manifestSha256,
     contentSha256,
-  };
+  } as FixtureCandidate<"quizpack-content.v1">;
   const binding = {
     identityText,
     identitySha256: identity.identitySha256,

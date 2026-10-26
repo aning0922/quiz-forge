@@ -19,7 +19,7 @@ import { createInternalPlayService } from "@/features/product/internal-play/serv
 import { CONSUMER_IMPLEMENTATION_AVAILABILITY } from "@/features/product/internal-play/implementation-catalog";
 import { createAccessKeyService } from "@/features/fulfillment/access/service";
 import { createConsumerRequestOwner } from "@/features/fulfillment/consumer-flow/request-owner";
-import { createConsumerFlowService } from "@/features/fulfillment/consumer-flow/service";
+import { createConsumerFlowServiceV1 as createConsumerFlowService } from "../support/consumer-v1-service";
 import {
   createConsumerToken,
   digestConsumerToken,

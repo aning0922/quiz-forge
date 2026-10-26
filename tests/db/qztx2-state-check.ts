@@ -264,7 +264,7 @@ async function main() {
           "completion-context-conflict",
           "sql-null-context-rejected",
         ],
-        stateRevision: stored.state_revision,
+        stateRevision: stored!.state_revision,
       }),
     );
   } finally {

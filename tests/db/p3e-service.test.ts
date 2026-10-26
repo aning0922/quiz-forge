@@ -1,3 +1,4 @@
+import type { VersionSnapshotV1 } from "../support/legacy-fixture-types";
 import { constants, type Stats } from "node:fs";
 import { open, rename, readFile } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
@@ -637,9 +638,9 @@ it("uses the immutable 100-slot facts for capacity proof; a finite VERSION_LIMIT
             idempotencyKey: randomUUID(),
           },
           {
-            ...fixed.snapshot,
+            ...(fixed.snapshot as VersionSnapshotV1),
             font: {
-              ...fixed.snapshot.font,
+              ...(fixed.snapshot as VersionSnapshotV1).font,
               id: `capacity-fixture-font-${slot}`,
             },
           },

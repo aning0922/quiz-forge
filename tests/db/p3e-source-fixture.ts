@@ -1,3 +1,4 @@
+import type { FixtureCandidate } from "../support/legacy-fixture-types";
 import { readFile } from "node:fs/promises";
 import { createHash, randomUUID } from "node:crypto";
 import { prepareP2b3Source } from "./p2b3-fixture";
@@ -31,7 +32,7 @@ export async function prepareP3eSource(runId: string, ordinal = 1) {
     throw Error("P3E_FIXED_INPUT_CHANGED");
   let content = JSON.parse(
     contentBytes.toString(),
-  ) as typeof base.candidate.facts.content;
+  ) as FixtureCandidate<"quizpack-content.v2">["facts"]["content"];
   if (ordinal > 1) {
     // Deliberately UNREGISTERED next revision for head/obsolete tests. Static image bytes are preserved.
     content = {
@@ -115,7 +116,7 @@ export async function prepareP3eSource(runId: string, ordinal = 1) {
       ["content.json", contentBytes],
       ...assetFiles.map((a) => [a.path, a.bytes] as [string, Buffer]),
     ]),
-  ).facts;
+  ).facts as FixtureCandidate<"quizpack-content.v2">["facts"];
   if (
     facts.assetSetText !== assetSetBytes.toString() ||
     canonicalP1Json(facts.content) !== contentBytes.toString()

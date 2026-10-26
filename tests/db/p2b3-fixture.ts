@@ -1,3 +1,4 @@
+import type { FixtureCandidate } from "../support/legacy-fixture-types";
 import {
   supportedRuntimeIdentity,
   runtimeIdentity,
@@ -278,7 +279,7 @@ export async function prepareP2b3Source(
       }),
     });
   }
-  const candidate: FrozenCandidate = {
+  const candidate = {
     facts,
     manifestSha256:
       options.largeContent || options.transformContent
@@ -288,7 +289,7 @@ export async function prepareP2b3Source(
       options.largeContent || options.transformContent
         ? facts.canonicalContentSha256
         : contentSha256,
-  };
+  } as FixtureCandidate<"quizpack-content.v1">;
   return freezeJson({
     productId,
     archiveSha256,
@@ -326,7 +327,9 @@ const authority = (r: ValidationRow) => ({
 export async function seedReadyP2b3Source(
   db: TestDatabase,
   auth: { id: string; credentials: StudioWriteCredentials },
-  prepared: PreparedP2b3Source,
+  prepared: Omit<PreparedP2b3Source, "candidate"> & {
+    candidate: FrozenCandidate;
+  },
   options: { createProduct?: boolean; importId?: string } = {},
 ) {
   if (db.config.purpose !== "test" && db.config.purpose !== "ci")

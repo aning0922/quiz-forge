@@ -1,3 +1,8 @@
+import type {
+  VersionDetailV1,
+  PlaySnapshotV1,
+  PlayDetailV1,
+} from "../support/legacy-fixture-types";
 import { randomUUID, createHash } from "node:crypto";
 import type postgres from "postgres";
 import { withStudioWrite } from "@/lib/auth/write";
@@ -28,8 +33,6 @@ import { internalPlayFixture } from "@/features/product/internal-play/contracts.
 import {
   internalPlayBindingText,
   internalPlaySnapshotText,
-  type InternalPlayDetail,
-  type InternalPlaySnapshot,
 } from "@/features/product/internal-play/contracts";
 import {
   consumerMappingSha256,
@@ -164,7 +167,11 @@ export async function p4Fixture(
       const receipt = await insertVersion(tx, seal, built.snapshot, 1, actor);
       const row = await versionById(tx, evidence.productId, receipt.id);
       if (!row) throw Error("P4_TEST_PARENT_MISSING");
-      return { parent: await versionDetail(row), review, evidence };
+      return {
+        parent: (await versionDetail(row)) as VersionDetailV1,
+        review,
+        evidence,
+      };
     },
   );
   const sources = [source];
@@ -221,7 +228,7 @@ export async function p4Fixture(
     },
     renderer: base.play.snapshot.renderer,
   };
-  const snapshot: InternalPlaySnapshot = {
+  const snapshot: PlaySnapshotV1 = {
     schemaVersion: "quizforge.internal-play-snapshot.v1",
     purpose: "internal-test",
     publicationApproved: false,
@@ -255,7 +262,7 @@ export async function p4Fixture(
     expected.set(table, rows);
     return row;
   };
-  let play: InternalPlayDetail | undefined;
+  let play: PlayDetailV1 | undefined;
   if (createPlay) {
     const [r] = await db.app.sql<
       Row[]
