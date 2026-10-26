@@ -8,7 +8,7 @@
 
 运行源码 `1fb5d64ff0ed2f453ebbeafea9832c0256a38ba4`，BUILD_ID `Jkwnml1ZL_tiGCU2lDwWg`。账号开通/首次设密→运营上传/原生检查/草稿→管理员审核/封存/答题版本→运营发码与私密保存的真实隔离服务链分段通过；大预览临时答案保留、评分和报告通过。最终 demo 六项代表读取与五宽布局证据、必要单元/组件验证和失败续跑边界详见 [V2-B 验收记录](S1_ACCEPTANCE.md#2026-10-26-studio-v2-b-四批整合)。未重复全量 DB/消费者/P5；工程验收不代替作者体验。
 
-可体验入口 `http://127.0.0.1:3250/studio/login`，专属 PG 55456、purpose=test 合成内容。六账号与四测评为真实记录，含当前 r3 未审核/历史 r1 可内测、已接收待检查、空上传和归档示例。账号文件 `.cache/studio-v2b/demo-login.txt`、配套包 `.cache/studio-v2b/sample-packs/` 仅本机保留。自有 3251 测试服务及 PG 55455 已确认停止；作者与原演示环境保持。独立 `codex/studio-v2b` 保留 Draft，停止在体验点，不自动合并或生产部署。
+可体验入口 `http://127.0.0.1:3250/studio/login`，专属 PG 55456、purpose=test 合成内容。六账号与四测评为真实记录，含当前 r3 未审核/历史 r1 可内测、已接收待检查、空上传和归档示例。账号文件 `.cache/studio-v2b/demo-login.txt`、配套包 `.cache/studio-v2b/sample-packs/` 仅本机保留。自有 3251 测试服务及 PG 55455 已确认停止；作者与原演示环境保持。独立 `codex/studio-v2b` 保留 [Draft PR #30](https://github.com/aning0922/quiz-forge/pull/30)，停止在体验点，不自动合并或生产部署。
 
 ## 2026-10-26 账号系统原型还原与真实操作交付
 

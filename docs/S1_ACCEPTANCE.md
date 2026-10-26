@@ -37,6 +37,8 @@ B 的 49 项文件系统/manifest/alias 定向用例随后补 3 项 Linux 元数
 
 真实连续操作还定位到结束审核后旧 result 残留。`1fb5d64` 仅在本地原 pending 检查确认全部为空后清旧结果；未改 confirmation、renderer、CAS、失权、持久化或请求逻辑。A 的 `1793005647813` 保留原版回归失败，`1793005668713` 两路径通过：未结束时刷新/重开仍保留 tuple/result；明确结束后重开进入封存准备，仅一次 review POST 和一次 resolve。Astra 精确审查关闭。另一个新标签页选择器失败属于 `getByLabel(exact)` 包含 option 文本，改用正确 ARIA combobox；没有把这次探针失败混入产品缺陷。
 
+最终 Draft 为 [PR #30](https://github.com/aning0922/quiz-forge/pull/30)。首个 head `b1457d0` 的自动 CI 中，Linux 媒体 [40299155402](https://github.com/aning0922/quiz-forge/actions/runs/40299155402) 已实际 success，账号 job 也通过。常规 CI 的单元阶段为 2155 通过/1 失败：旧 `internal-versions/presentation.test.ts` 在 ProductDetail 子组件错误态中仍要求已删除的导航链接，现由外层统一工作区拥有导航。仅移除此过时断言和未用导入，其恢复挂载、原操作、错误/授权、非批准及跨请求证据断言均保留；该文件 8 项定向通过。测试/文档补丁不改变运行源码、构建或演示，不重建、不重跑本地全套。后续自动 CI 按 PR 最新 head 实际状态报告，未结束的运行不记通过。
+
 ### 最终演示与边界
 
 运行源码准确为 `1fb5d64ff0ed2f453ebbeafea9832c0256a38ba4`，BUILD_ID `Jkwnml1ZL_tiGCU2lDwWg`；最终构建、类型、实现登记、trace 通过，121 / 25379 路径 / 0 私有违规，无新增 warning。前版 `41854e1` 的真实全链与媒体封存证据仍单列；最后两行 UI 状态修复不重做业务事务回归，只更新必要构建身份和代表页面。
