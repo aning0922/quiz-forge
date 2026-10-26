@@ -1,14 +1,7 @@
 /** Browser-safe response DTOs. No persistence or raw cookie-token types. */
-import type { StudioRole } from "@/lib/auth/role-policy";
+import type { StudioOperatorIdentity } from "@/lib/auth/identity";
 
-export type StudioOperatorDto = {
-  id: string;
-  label: string;
-  role: StudioRole;
-  loginName?: string | null;
-  displayName?: string;
-  accountRevision?: number;
-};
+export type StudioOperatorDto = StudioOperatorIdentity;
 
 export type StudioSessionDto = {
   operator: StudioOperatorDto;
