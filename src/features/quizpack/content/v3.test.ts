@@ -43,7 +43,7 @@ describe("v3 offline content and composed evidence contract", () => {
       importable: false,
       missingBindings: [
         "report-templates",
-        "portraits",
+        "character-slots",
         "resources",
         "layouts",
         "visual-presentation",
@@ -159,7 +159,7 @@ describe("v3 offline content and composed evidence contract", () => {
     );
     expect(validateCoreV3(other.core).ok).toBe(false);
     const broken = syntheticContentV3();
-    broken.bindings.portraits[0]!.resourceRef.id = "cover";
+    broken.bindings.slots.characters[0]!.report.id = "cover";
     expect(validateContentV3(broken).ok).toBe(false);
     const empty = syntheticContentV3();
     empty.bindings.reportTemplates[0]!.volumes[0]!.fallbackText = "";

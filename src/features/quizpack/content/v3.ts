@@ -8,6 +8,11 @@ import { scoringDefinitionV2Schema } from "@/lib/assessment-contract/scoring-v2"
 import { quizPackContentSchema } from "../v1/content";
 import { componentDeclarationSchema } from "../v1/manifest";
 import { quizPackContentV2Schema } from "./v2";
+import { COMPOSED_VOLUME_IDS_V1 } from "@/lib/assessment-contract/composed-report-v1";
+import {
+  presentationSlotsV3Schema,
+  CONTENT_COMPONENT_VERSION_V3,
+} from "@/lib/assessment-contract/presentation-v3";
 
 const text = z
   .string()
@@ -53,14 +58,7 @@ export const composedClaimV1Schema = z.strictObject({
     })
     .nullable(),
 });
-export const COMPOSED_VOLUME_IDS = [
-  "encounter",
-  "dimensions",
-  "patterns",
-  "counterevidence",
-  "literature",
-  "closure",
-] as const;
+export const COMPOSED_VOLUME_IDS = COMPOSED_VOLUME_IDS_V1;
 export const composedTemplateV1Schema = z.strictObject({
   ref,
   mode: z.literal("COMPOSED"),
@@ -129,16 +127,17 @@ export const contentCoreV3Schema = z.strictObject({
 });
 export const contentBindingsV3Schema = z.strictObject({
   schemaVersion: z.literal("quizpack-bindings.v3"),
+  kind: z.enum(["synthetic", "authored"]),
+  visualVersion: assessmentVersionSchema,
+  resourceVersion: assessmentVersionSchema,
+  componentVersion: z.literal(CONTENT_COMPONENT_VERSION_V3),
   reportVersion: assessmentVersionSchema,
   reportTemplates: z.array(composedTemplateV1Schema).min(1).max(32),
   resultReports: z
     .array(z.strictObject({ resultRef: ref, templateRef: ref }))
     .min(1)
     .max(32),
-  portraits: z
-    .array(z.strictObject({ resultRef: ref, resourceRef: ref }))
-    .min(1)
-    .max(32),
+  slots: presentationSlotsV3Schema,
   resources: quizPackContentSchema.shape.resources,
   layouts: z.strictObject(
     Object.fromEntries(

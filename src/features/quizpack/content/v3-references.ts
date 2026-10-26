@@ -1,6 +1,12 @@
 import type { V2Result } from "@/lib/assessment-contract/scoring-api-v2";
 import { prepareScoringV2 } from "@/features/quiz/scoring/v2";
 import {
+  CONTENT_COMPONENTS_V3,
+  CONTENT_COMPONENT_VERSION_V3,
+  neutralSlotRefsV3,
+  characterSlotRefsV3,
+} from "@/lib/assessment-contract/presentation-v3";
+import {
   failure,
   parseBounded,
   refKey,
@@ -12,6 +18,7 @@ import {
   type ContentCoreV3,
   type QuizPackContentV3,
 } from "./v3";
+import { estimateContentReportBudgetV3 } from "./v3-budget";
 
 const exact = (
   a: { id: string; productId: string; version: string }[],
@@ -127,12 +134,15 @@ export function validateContentV3(input: unknown): V2Result<QuizPackContentV3> {
       results,
     ) ||
     !fullSet(
-      b.portraits.map((r) => refKey(r.resultRef)),
+      b.slots.characters.map((r) => refKey(r.resultRef)),
       results,
     ) ||
     b.resultReports.some((r) => !templates.has(refKey(r.templateRef))) ||
-    b.portraits.some(
-      (r) => resources.get(refKey(r.resourceRef))?.purpose !== "portrait",
+    b.slots.characters.some(
+      (r) =>
+        [r.reveal, r.report, r.poster].some(
+          (v) => resources.get(refKey(v))?.purpose !== "portrait",
+        ) || resources.get(refKey(r.nameArt))?.purpose !== "decoration",
     ) ||
     b.resources.some((r) => r.productId !== pid) ||
     b.reportTemplates.some((t) => t.ref.productId !== pid) ||
@@ -142,6 +152,32 @@ export function validateContentV3(input: unknown): V2Result<QuizPackContentV3> {
   )
     return failure("REFERENCE_MISMATCH");
   const vp = b.visualPresentation;
+  const neutralRefs = neutralSlotRefsV3(b.slots),
+    neutral = new Set(neutralRefs.map(refKey));
+  const owners = new Map<string, string>();
+  for (const character of b.slots.characters)
+    for (const r of characterSlotRefsV3(character)) {
+      const key = refKey(r),
+        owner = refKey(character.resultRef);
+      if (neutral.has(key) || (owners.has(key) && owners.get(key) !== owner))
+        return failure("REFERENCE_MISMATCH");
+      owners.set(key, owner);
+    }
+  if (
+    neutralRefs.some((r) => {
+      const p = resources.get(refKey(r))?.purpose;
+      return p !== "cover" && p !== "decoration";
+    }) ||
+    resources.size !== new Set([...neutral, ...owners.keys()]).size ||
+    refKey(b.slots.neutral.cover) !== refKey(vp.coverSceneRef) ||
+    b.slots.neutral.acts.length !== vp.sections.length ||
+    b.slots.neutral.acts.some(
+      (a, i) =>
+        a.sectionId !== vp.sections[i]!.id ||
+        refKey(a.background) !== refKey(vp.sections[i]!.sceneRef),
+    )
+  )
+    return failure("REFERENCE_MISMATCH");
   const scenes = new Map(vp.sections.map((s, i) => [s.id, i]));
   const scene = (r: typeof vp.coverSceneRef, purpose: string) =>
     resources.get(refKey(r))?.purpose === purpose;
@@ -170,23 +206,38 @@ export function validateContentV3(input: unknown): V2Result<QuizPackContentV3> {
     previous = section;
   }
   if (previous !== vp.sections.length - 1) return failure("REFERENCE_MISMATCH");
-  const sceneRefs = [
-    ...vp.sections.map((s) => s.sceneRef),
-    ...vp.questionFrames.flatMap((f) =>
-      f.sceneOverrideRef ? [f.sceneOverrideRef] : [],
-    ),
-  ];
-  const portraits = b.portraits.map((p) => p.resourceRef);
+  const sceneRefs = b.slots.neutral.acts.flatMap((a) => [
+    a.background,
+    a.questionPaper,
+    a.optionIdle,
+    a.optionSelected,
+  ]);
+  const n = b.slots.neutral,
+    seal = n.seal ? [n.seal] : [],
+    paper = [n.reportPaper, ...(n.reportBorder ? [n.reportBorder] : [])];
   const graphs = {
-    cover: [vp.coverSceneRef],
+    cover: [vp.coverSceneRef, ...seal],
     question: sceneRefs,
     resume: [vp.coverSceneRef, ...sceneRefs],
-    result: portraits,
-    report: portraits,
-    poster: portraits,
+    result: [
+      ...b.slots.characters.flatMap((p) => [p.reveal, p.nameArt]),
+      ...seal,
+    ],
+    report: [
+      ...paper,
+      ...b.slots.characters.flatMap((p) => [p.report, p.nameArt]),
+    ],
+    poster: [
+      ...paper,
+      ...seal,
+      ...b.slots.characters.flatMap((p) => [p.poster, p.nameArt]),
+    ],
   };
   for (const state of Object.keys(graphs) as (keyof typeof graphs)[])
     if (
+      b.layouts[state].component.id !== CONTENT_COMPONENTS_V3[state] ||
+      b.layouts[state].component.version !== CONTENT_COMPONENT_VERSION_V3 ||
+      b.layouts[state].component.propsSchemaVersion !== "1.0.0" ||
       !fullSet(
         b.layouts[state].resourceRefs.map(refKey),
         new Set(graphs[state].map(refKey)),
@@ -245,6 +296,8 @@ export function validateContentV3(input: unknown): V2Result<QuizPackContentV3> {
         return failure("INVALID_REPORT_RULES");
     }
   }
+  if (!estimateContentReportBudgetV3(parsed.value).ok)
+    return failure("INPUT_LIMIT_EXCEEDED");
   return parsed;
 }
 
@@ -266,7 +319,7 @@ export function inspectBuildInputV3(core: unknown, bindings: unknown = null) {
       bindings === null
         ? [
             "report-templates",
-            "portraits",
+            "character-slots",
             "resources",
             "layouts",
             "visual-presentation",

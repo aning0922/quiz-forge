@@ -9,6 +9,7 @@ import {
   contentCoreV3Schema,
   type ComposedClaimV1,
 } from "./v3";
+import { CONTENT_COMPONENTS_V3 } from "@/lib/assessment-contract/presentation-v3";
 
 export function syntheticCoreV3() {
   const scoringDefinition = syntheticV2(1, 3);
@@ -73,6 +74,14 @@ export function syntheticClaim(kind: ComposedClaimV1["kind"] = "summary") {
 }
 export function syntheticContentV3(claim = syntheticClaim()) {
   const core = syntheticCoreV3();
+  const characters = core.results.map((v) => ({
+    resultRef: v.ref,
+    reveal: r(`portrait-${v.ref.id}`),
+    nameArt: r(`name-${v.ref.id}`),
+    report: r(`portrait-${v.ref.id}`),
+    poster: r(`portrait-${v.ref.id}`),
+  }));
+  const portraits = characters.flatMap((c) => [c.report, c.nameArt]);
   const resource = (
     id: string,
     purpose: "cover" | "portrait" | "decoration",
@@ -102,6 +111,10 @@ export function syntheticContentV3(claim = syntheticClaim()) {
     core,
     bindings: {
       schemaVersion: "quizpack-bindings.v3",
+      kind: "synthetic",
+      visualVersion: "1.0.0",
+      resourceVersion: "1.0.0",
+      componentVersion: "1.0.0",
       reportVersion: "1.0.0",
       reportTemplates: [
         {
@@ -122,14 +135,31 @@ export function syntheticContentV3(claim = syntheticClaim()) {
         resultRef: v.ref,
         templateRef: r("template"),
       })),
-      portraits: core.results.map((v) => ({
-        resultRef: v.ref,
-        resourceRef: r("portrait"),
-      })),
+      slots: {
+        neutral: {
+          cover: r("cover"),
+          acts: [
+            {
+              sectionId: "act-one",
+              background: r("scene"),
+              questionPaper: r("scene"),
+              optionIdle: r("scene"),
+              optionSelected: r("scene"),
+            },
+          ],
+          reportPaper: r("scene"),
+          reportBorder: null,
+          seal: null,
+        },
+        characters,
+      },
       resources: [
         resource("cover", "cover"),
         resource("scene", "decoration"),
-        resource("portrait", "portrait"),
+        ...core.results.flatMap((v) => [
+          resource(`portrait-${v.ref.id}`, "portrait"),
+          resource(`name-${v.ref.id}`, "decoration"),
+        ]),
       ],
       layouts: Object.fromEntries(
         ["cover", "question", "resume", "result", "report", "poster"].map(
@@ -137,7 +167,9 @@ export function syntheticContentV3(claim = syntheticClaim()) {
             state,
             {
               component: {
-                id: `synthetic-${state}`,
+                id: CONTENT_COMPONENTS_V3[
+                  state as keyof typeof CONTENT_COMPONENTS_V3
+                ],
                 version: "1.0.0",
                 propsSchemaVersion: "1.0.0",
               },
@@ -148,7 +180,9 @@ export function syntheticContentV3(claim = syntheticClaim()) {
                     ? [r("scene")]
                     : state === "resume"
                       ? [r("cover"), r("scene")]
-                      : [r("portrait")],
+                      : state === "result"
+                        ? portraits
+                        : [r("scene"), ...portraits],
             },
           ],
         ),
@@ -169,7 +203,11 @@ export function syntheticContentV3(claim = syntheticClaim()) {
           sectionId: "act-one",
           caption: "Synthetic",
         })),
-        resourceDescriptions: ["cover", "scene", "portrait"].map((id) => ({
+        resourceDescriptions: [
+          "cover",
+          "scene",
+          ...portraits.map((p) => p.id),
+        ].map((id) => ({
           resourceRef: r(id),
           alt: `Synthetic ${id}`,
         })),

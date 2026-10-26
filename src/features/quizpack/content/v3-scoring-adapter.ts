@@ -30,6 +30,13 @@ const issued = new WeakMap<
   object,
   { content: QuizPackContentV3; core: PreparedScoringV2; contentSha256: string }
 >();
+const issuedScores = new WeakMap<object, PreparedContentV3>();
+/** Server composition port only. Never serialize a prepared source to a consumer. */
+export function readPreparedContentV3ForComposition(handle: PreparedContentV3) {
+  return handle !== null && typeof handle === "object"
+    ? issued.get(handle)?.content
+    : undefined;
+}
 export const contentScoreV3Schema = z.strictObject({
   contentSchemaVersion: z.literal("quizpack-content.v3"),
   canonicalContentSha256: sha256Schema,
@@ -80,6 +87,7 @@ export function scorePreparedContentV3(
   } catch {
     return failure("INPUT_LIMIT_EXCEEDED");
   }
+  issuedScores.set(value, handle);
   return freeze({ ok: true, value });
 }
 
@@ -98,15 +106,29 @@ export function inspectComposedClaimV3(
     scope: string;
   }[];
 }> {
+  const score = scorePreparedContentV3(handle, input);
+  return score.ok
+    ? inspectScoredClaimV3(handle, score.value, templateId, claimId)
+    : score;
+}
+export function inspectScoredClaimV3(
+  handle: PreparedContentV3,
+  scored: ContentScoreV3,
+  templateId: string,
+  claimId: string,
+): ReturnType<typeof inspectComposedClaimV3> {
   const fixed =
     handle !== null && typeof handle === "object"
       ? issued.get(handle)
       : undefined;
-  if (!fixed) return failure("INVALID_PREPARED_DEFINITION");
-  // Always execute from actual answers; no caller-supplied score is authoritative.
-  const scored = scoreCompleteAnswersV2(fixed.core, input);
-  if (!scored.ok) return scored;
-  const score: ScoreSnapshotV2 = scored.value;
+  if (
+    !fixed ||
+    scored === null ||
+    typeof scored !== "object" ||
+    issuedScores.get(scored) !== handle
+  )
+    return failure("INVALID_PREPARED_DEFINITION");
+  const score: ScoreSnapshotV2 = scored.score;
   const selectedTemplate = fixed.content.bindings.resultReports.find(
     (r) => refKey(r.resultRef) === refKey(score.decision.selectedResultRef),
   )!;
