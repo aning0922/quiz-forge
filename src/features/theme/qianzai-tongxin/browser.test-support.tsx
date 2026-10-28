@@ -9,6 +9,11 @@ import type { consumerSessionFixtureV2 } from "../consumer-v2/session.test-suppo
 import type { ConsumerV2ReaderModel } from "@/lib/consumer-contract/v2/client-contract";
 import { QianzaiTongxinExperience } from "./experience";
 import { QianzaiWater, QianzaiPetals, useQianzaiMotion } from "./motion";
+import type {
+  QianzaiResolvedImage,
+  QianzaiPrototypeImage,
+  QianzaiVisualProps,
+} from "./art";
 import styles from "./qianzai.module.css";
 
 /** Actual owner and renderer, synthetic HTTP only. No catalog admission or DB. */
@@ -17,6 +22,12 @@ const fixture = JSON.parse(
 ) as {
   session: Awaited<ReturnType<typeof consumerSessionFixtureV2>>;
   completed: ConsumerV2ReaderModel;
+  visuals?: {
+    asset: QianzaiResolvedImage["asset"];
+    url: string;
+    layer: QianzaiResolvedImage["layer"] | QianzaiPrototypeImage["layer"];
+  }[];
+  preferenceSceneRef?: QianzaiResolvedImage["asset"]["resourceRef"];
 };
 const restored = JSON.parse(
   localStorage.getItem("qianzai-synthetic-server-state") ?? "null",
@@ -99,6 +110,69 @@ const owner = new ConsumerControllerV2(
 );
 const root = createRoot(document.getElementById("root")!);
 function Runtime() {
+  const [visuals, setVisuals] = useState<QianzaiVisualProps>({});
+  useEffect(() => {
+    const abort = new AbortController();
+    const urls: string[] = [];
+    Object.assign(
+      (window as unknown as { qianzaiProbe: object }).qianzaiProbe,
+      {
+        hideQuestionPaper: () => {
+          const current = owner.getSnapshot();
+          const q = current.entry?.questions.find(
+            (q) => q.ref.id === current.draft?.progress.questionId,
+          );
+          const ref = q
+            ? current.entry?.slots.acts[q.act - 1]?.questionPaper
+            : undefined;
+          if (ref)
+            setVisuals((old) => ({
+              ...old,
+              images:
+                old.images?.filter(
+                  (image) => image.asset.resourceRef.id !== ref.id,
+                ) ?? [],
+            }));
+        },
+      },
+    );
+    void Promise.all(
+      (fixture.visuals ?? []).map(async (entry) => {
+        const response = await fetch(entry.url, { signal: abort.signal });
+        const blob = await response.blob();
+        const bytes = await blob.arrayBuffer();
+        const sha = Array.from(
+          new Uint8Array(await crypto.subtle.digest("SHA-256", bytes)),
+          (b) => b.toString(16).padStart(2, "0"),
+        ).join("");
+        if (
+          sha !== entry.asset.sha256 ||
+          bytes.byteLength !== entry.asset.bytes
+        )
+          throw Error("PROTOTYPE_FIXTURE_CHANGED");
+        const decoded = await createImageBitmap(blob);
+        decoded.close();
+        if (abort.signal.aborted) return null;
+        const objectUrl = URL.createObjectURL(blob) as `blob:${string}`;
+        urls.push(objectUrl);
+        return { asset: entry.asset, objectUrl, layer: entry.layer };
+      }),
+    ).then((images) => {
+      if (abort.signal.aborted) return;
+      setVisuals({
+        images: images.filter(
+          (i): i is QianzaiResolvedImage => !!i && i.layer === "clean",
+        ),
+        prototypeImages: images.filter(
+          (i): i is QianzaiPrototypeImage => !!i && i.layer !== "clean",
+        ),
+      });
+    });
+    return () => {
+      abort.abort();
+      for (const url of urls) URL.revokeObjectURL(url);
+    };
+  }, []);
   const model = useSyncExternalStore(
     owner.subscribe,
     owner.getSnapshot,
@@ -108,7 +182,28 @@ function Runtime() {
     void owner.bootstrap();
     return () => owner.dispose();
   }, []);
-  return <QianzaiTongxinExperience model={model} onEvent={owner.onEvent} />;
+  // UI-only projection of the agreed optional preference slot; this fixture
+  // does not register or claim the companion shared-schema/runtime delivery.
+  const viewModel =
+    model.entry && fixture.preferenceSceneRef
+      ? {
+          ...model,
+          entry: {
+            ...model.entry,
+            slots: {
+              ...model.entry.slots,
+              preferenceScene: fixture.preferenceSceneRef,
+            },
+          },
+        }
+      : model;
+  return (
+    <QianzaiTongxinExperience
+      model={viewModel}
+      onEvent={owner.onEvent}
+      {...visuals}
+    />
+  );
 }
 Object.assign(window, {
   qianzaiProbe: {

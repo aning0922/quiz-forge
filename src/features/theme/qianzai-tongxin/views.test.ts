@@ -5,8 +5,8 @@ import { structuredReaderFixtureV2 } from "../consumer-v2/fixtures.test-support"
 import { QianzaiTongxinExperience, qianzaiResumeQuestion } from "./experience";
 import { QianzaiReport } from "./report";
 import { QianzaiPreference, QianzaiQuestion } from "./views";
-import { qianzaiImage, qianzaiCharacter } from "./art";
-import type { QianzaiResolvedImage } from "./art";
+import { qianzaiImage, qianzaiCharacter, qianzaiPrototypeImage } from "./art";
+import type { QianzaiResolvedImage, QianzaiPrototypeImage } from "./art";
 
 describe("Qianzai D3 view ports (synthetic props only)", () => {
   it("requires exact approved scoped resource metadata and a clean local object URL", () => {
@@ -37,6 +37,87 @@ describe("Qianzai D3 view ports (synthetic props only)", () => {
     completed.report!.view.display.slots.character.resultRef.id =
       "other-character";
     expect(qianzaiCharacter(completed)).toBeUndefined();
+  });
+  it("withholds baked-UI bases until the full question composition is ready and never treats them as clean character art", () => {
+    const { model, completed } = structuredReaderFixtureV2();
+    const scene = model.entry!.slots.acts[0]!;
+    const original = model.entry!.assets.find(
+      (a) => a.resourceRef.id === scene.background.id,
+    )!;
+    for (const key of [
+      "background",
+      "questionPaper",
+      "optionIdle",
+      "optionSelected",
+    ] as const) {
+      scene[key] = { ...scene[key], id: "safety-" + key };
+      model.entry!.assets.push({ ...original, resourceRef: scene[key] });
+    }
+    model.draft!.progress.questionId = model.entry!.questions[0]!.ref.id;
+    const asset = (ref: typeof scene.background) =>
+      model.entry!.assets.find((a) => a.resourceRef.id === ref.id)!;
+    const base: QianzaiPrototypeImage = {
+      asset: asset(scene.background),
+      objectUrl: "blob:baked-base",
+      layer: "prototype-scene-base",
+    };
+    const skins: QianzaiPrototypeImage[] = [
+      scene.optionIdle,
+      scene.optionSelected,
+    ].map((ref) => ({
+      asset: asset(ref),
+      objectUrl: ("blob:" + ref.id) as `blob:${string}`,
+      layer: "prototype-option-skin",
+    }));
+    const paper: QianzaiResolvedImage = {
+      asset: asset(scene.questionPaper),
+      objectUrl: "blob:clean-paper",
+      layer: "clean",
+    };
+    const props = {
+      model,
+      onRead() {},
+      onEvent() {},
+      onChoose() {},
+      prototypeImages: [base, ...skins],
+    };
+    expect(
+      renderToStaticMarkup(createElement(QianzaiQuestion, props)),
+    ).not.toContain('src="blob:baked-base"');
+    expect(
+      renderToStaticMarkup(
+        createElement(QianzaiQuestion, { ...props, images: [paper] }),
+      ),
+    ).toContain('src="blob:baked-base"');
+    expect(
+      qianzaiPrototypeImage(model, scene.optionIdle, [
+        { ...skins[0]!, layer: "prototype-scene-base" },
+      ]),
+    ).toBeUndefined();
+    expect(
+      qianzaiPrototypeImage(
+        model,
+        scene.background,
+        [{ ...base, layer: "prototype-option-skin" }],
+        "prototype-option-skin",
+      ),
+    ).toBeUndefined();
+    expect(
+      qianzaiImage(model, scene.background, [
+        base as unknown as QianzaiResolvedImage,
+      ]),
+    ).toBeUndefined();
+    expect(
+      qianzaiPrototypeImage(
+        completed,
+        completed.report!.view.display.slots.character.reveal,
+        [base],
+      ),
+    ).toBeUndefined();
+    model.phase = "denied";
+    expect(
+      qianzaiPrototypeImage(model, scene.background, [base]),
+    ).toBeUndefined();
   });
   it("keeps null preference distinct and disables preserved answers while unknown", () => {
     const { model } = structuredReaderFixtureV2();

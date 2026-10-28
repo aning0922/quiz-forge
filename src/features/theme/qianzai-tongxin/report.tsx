@@ -15,6 +15,8 @@ const point = (index: number, radius: number) => {
 };
 export function QianzaiDimensions({ body }: { body: ComposedReportBodyV1 }) {
   const id = useId();
+  const [selected, setSelected] = useState(0);
+  const dimension = body.dimensions[selected];
   return (
     <section className={styles.dimensionCard} aria-label="本轮五维">
       <h3>本轮选择的五个方向</h3>
@@ -22,7 +24,7 @@ export function QianzaiDimensions({ body }: { body: ComposedReportBodyV1 }) {
       {body.dimensions.length === 5 && (
         <svg
           viewBox="0 0 360 330"
-          role="img"
+          role="group"
           aria-labelledby={id}
           className={styles.radar}
         >
@@ -59,22 +61,53 @@ export function QianzaiDimensions({ body }: { body: ComposedReportBodyV1 }) {
               [px, py] = point(i, (d.score / 100) * 103);
             return (
               <g key={d.dimensionRef.id}>
-                <circle cx={px} cy={py} r={4} />
-                <text x={x} y={y} textAnchor="middle">
-                  <tspan x={x}>{d.label}</tspan>
-                  <tspan x={x} dy={23}>
-                    {d.score}
-                  </tspan>
-                </text>
+                <circle
+                  cx={px}
+                  cy={py}
+                  r={selected === i ? 6 : 4}
+                  data-qianzai-radar-point={d.dimensionRef.id}
+                  className={styles.radarPoint}
+                  aria-hidden="true"
+                  onClick={() => setSelected(i)}
+                />
+                <g
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`${d.label} ${d.score}分`}
+                  aria-pressed={selected === i}
+                  className={styles.radarNode}
+                  onClick={() => setSelected(i)}
+                  onKeyDown={(event) => {
+                    if (["Enter", " "].includes(event.key)) {
+                      event.preventDefault();
+                      setSelected(i);
+                    }
+                  }}
+                >
+                  <circle cx={x} cy={y} r={29} className={styles.radarHit} />
+                  <text x={x} y={y} textAnchor="middle">
+                    <tspan x={x}>{d.label}</tspan>
+                    <tspan x={x} dy={23}>
+                      {d.score}
+                    </tspan>
+                  </text>
+                </g>
               </g>
             );
           })}
         </svg>
       )}
       <dl className={styles.dimensionBars}>
-        {body.dimensions.map((d) => (
-          <div key={d.dimensionRef.id}>
-            <dt>{d.label}</dt>
+        {body.dimensions.map((d, i) => (
+          <div key={d.dimensionRef.id} data-selected={selected === i}>
+            <dt>
+              <button
+                aria-pressed={selected === i}
+                onClick={() => setSelected(i)}
+              >
+                {d.label}
+              </button>
+            </dt>
             <dd>
               <span className={styles.dualBar} aria-hidden="true">
                 <i
@@ -90,6 +123,34 @@ export function QianzaiDimensions({ body }: { body: ComposedReportBodyV1 }) {
           </div>
         ))}
       </dl>
+      {dimension && (
+        <aside className={styles.dimensionReading} aria-live="polite">
+          <h4>
+            {dimension.label} · {dimension.score} / 100
+          </h4>
+          <p>这是本轮选择的一个方向，不是能力等级。</p>
+          <button
+            onClick={(event) => {
+              const evidence = event.currentTarget
+                .closest("article")
+                ?.querySelector("details");
+              if (evidence) {
+                evidence.open = true;
+                evidence.scrollIntoView({
+                  block: "center",
+                  behavior: window.matchMedia(
+                    "(prefers-reduced-motion: reduce)",
+                  ).matches
+                    ? "instant"
+                    : "smooth",
+                });
+              }
+            }}
+          >
+            阅读本卷选择依据
+          </button>
+        </aside>
+      )}
       <div className={styles.scaleLegend} aria-hidden="true">
         <span>0</span>
         <span>50</span>
@@ -184,7 +245,28 @@ export function QianzaiReport({
                 <summary>六卷目录</summary>
                 <nav aria-label="六卷目录">
                   {body?.volumes.map((v, i) => (
-                    <a key={v.id} href={`#${id}-${v.id}`}>
+                    <a
+                      key={v.id}
+                      href={`#${id}-${v.id}`}
+                      onClick={(event) => {
+                        event.preventDefault();
+                        const target =
+                          container.current?.querySelector<HTMLElement>(
+                            `[data-report-chapter-id="${v.id}"]`,
+                          );
+                        target?.scrollIntoView({
+                          block: "start",
+                          behavior: window.matchMedia(
+                            "(prefers-reduced-motion: reduce)",
+                          ).matches
+                            ? "instant"
+                            : "smooth",
+                        });
+                        event.currentTarget
+                          .closest("details")
+                          ?.removeAttribute("open");
+                      }}
+                    >
                       卷{["一", "二", "三", "四", "五", "六"][i]} · {v.title}
                     </a>
                   ))}
@@ -261,7 +343,9 @@ export function QianzaiReport({
                     key={v.id}
                     id={`${id}-${v.id}`}
                     className={styles.volume}
+                    data-volume={v.id}
                     data-report-chapter={v.title}
+                    data-report-chapter-id={v.id}
                   >
                     <header>
                       <p>第{["一", "二", "三", "四", "五", "六"][i]}卷</p>
@@ -269,7 +353,12 @@ export function QianzaiReport({
                     </header>
                     {v.id === "dimensions" && <QianzaiDimensions body={body} />}
                     {v.paragraphs.map((p, j) => (
-                      <section key={j} className={styles.paragraph}>
+                      <section
+                        key={j}
+                        className={styles.paragraph}
+                        data-kind={p.kind}
+                        data-status={p.status}
+                      >
                         <p className={styles.qualifier}>
                           {p.status === "facts-only"
                             ? "本轮事实"

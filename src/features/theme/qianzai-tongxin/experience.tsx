@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type {
   ConsumerExperiencePropsV2,
   ConsumerReadingPageV2,
@@ -10,6 +10,7 @@ import {
   consumerDraftStatusV2,
 } from "../consumer-v2/components";
 import {
+  ACTS,
   QianzaiCover,
   QianzaiPreference,
   QianzaiQuestion,
@@ -47,7 +48,7 @@ export function qianzaiResumeQuestion(
   const id = state.progress.questionId ?? questions[0]!.ref.id;
   return questions.some((q) => q.ref.id === id) ? id : undefined;
 }
-/** Unregistered D3 renderer. The compiled registry/authorized resource owner is
+/** Dedicated D3 renderer. The compiled registry/authorized resource owner is
  * integrated separately by the coordinator. IO, CAS and original pending identity
  * remain exclusively in ConsumerControllerV2; timers below only present a click.
  */
@@ -56,6 +57,7 @@ export function QianzaiTongxinExperience({
   onEvent,
   initialScreen,
   images,
+  prototypeImages,
 }: QianzaiTongxinExperienceProps) {
   const [page, setPage] = useState<ConsumerReadingPageV2 | null>(
     initialScreen ?? null,
@@ -77,28 +79,109 @@ export function QianzaiTongxinExperience({
     : page === "report"
       ? defaultPage
       : (page ?? defaultPage);
-  const cancel = () => {
+  const stage = useRef<HTMLDivElement>(null);
+  const sceneContent = useRef<HTMLDivElement>(null);
+  const stageTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const hideStage = useCallback(() => {
+    stageTimers.current.forEach(clearTimeout);
+    stageTimers.current = [];
+    if (stage.current) {
+      stage.current.hidden = true;
+      stage.current.removeAttribute("data-active");
+    }
+    if (sceneContent.current) sceneContent.current.inert = false;
+    queued.current = false;
+  }, []);
+  const cancel = useCallback(() => {
     if (timer.current !== null) clearTimeout(timer.current);
     timer.current = null;
-    queued.current = false;
-  };
+    hideStage();
+  }, [hideStage]);
   useEffect(() => {
     if (model.phase !== "ready") {
       if (timer.current !== null) clearTimeout(timer.current);
       timer.current = null;
     }
-    // No automatic action follows a receipt/recovery. The original controller
-    // alone adopts its saved target; this merely allows a fresh explicit click.
+    // Saving may finish beneath the veil; authority/error/UNKNOWN cancels any
+    // not-yet-dispatched navigation. Only the controller adopts receipts.
+    const committed =
+      stage.current?.dataset.active === "true" &&
+      stage.current.dataset.step === "enter";
+    const finishingReceipt =
+      committed && ["saving", "loading", "conflict"].includes(model.phase);
+    if (model.phase !== "ready" && !finishingReceipt) hideStage();
     queued.current = false;
-  }, [model.phase, model.draft?.progress.questionId]);
-  useEffect(
-    () => () => {
-      if (timer.current !== null) clearTimeout(timer.current);
-    },
-    [],
-  );
+  }, [model.phase, model.draft?.progress.questionId, hideStage]);
+  useEffect(() => cancel, [cancel]);
+  const transition = (
+    kind: "cover" | "preference" | "chapter" | "paper",
+    act: number,
+    commit: () => void,
+  ) => {
+    cancel();
+    if (!enabled) return;
+    const node = stage.current;
+    if (!motion || !node) {
+      commit();
+      return;
+    }
+    const duration = kind === "chapter" ? 860 : kind === "paper" ? 465 : 660;
+    const midpoint = kind === "paper" ? 155 : Math.round(duration * 0.51);
+    void node.offsetWidth; // Restart this finite stage after a cancelled/repeated gesture.
+    node.hidden = false;
+    node.dataset.active = "true";
+    node.dataset.kind = kind;
+    node.dataset.act = String(act);
+    node.dataset.step = "leave";
+    node.style.setProperty("--transition-duration", duration + "ms");
+    const caption = ACTS[act - 1];
+    for (const [part, text] of Object.entries({
+      kicker: act === 3 ? "第三幕" : "第二幕",
+      title: caption?.title ?? "",
+      place: caption?.place ?? "",
+      line: ACTS[act - 2]?.line ?? "",
+    })) {
+      const leaf = node.querySelector<HTMLElement>(
+        `[data-transition-part="${part}"]`,
+      );
+      if (leaf) leaf.textContent = text;
+    }
+    if (sceneContent.current) sceneContent.current.inert = true;
+    queued.current = true;
+    stageTimers.current = [
+      setTimeout(() => {
+        node.dataset.step = "enter";
+        commit();
+      }, midpoint),
+      setTimeout(hideStage, duration + (kind === "paper" ? 0 : 30)),
+    ];
+  };
+  const navigateQuestion = (questionId: string) => {
+    const questions = model.entry?.questions ?? [];
+    const from = questions.findIndex(
+        (q) => q.ref.id === model.draft?.progress.questionId,
+      ),
+      to = questions.findIndex((q) => q.ref.id === questionId);
+    if (to < 0) return;
+    if (to === from) {
+      cancel();
+      onEvent({ type: "navigate", questionId });
+      return;
+    }
+    const chapter = to > from && questions[to]?.act !== questions[from]?.act;
+    transition(chapter ? "chapter" : "paper", questions[to]!.act, () =>
+      onEvent({ type: "navigate", questionId }),
+    );
+  };
   const read = (next: ConsumerReadingPageV2) => {
     if (!compatible) return;
+    if (
+      active === "preference" &&
+      next === "question" &&
+      timer.current !== null &&
+      queued.current
+    )
+      return;
     if (model.report) {
       if (
         model.phase === "completed" &&
@@ -108,21 +191,25 @@ export function QianzaiTongxinExperience({
         setPage(next);
       }
     } else if (enabled) {
-      cancel();
-      setPage(next);
+      if (active === "cover" && next === "preference") {
+        if (stageTimers.current.length) return;
+        transition("cover", 1, () => setPage(next));
+      } else if (active === "preference" && next === "question") {
+        transition("preference", 1, () => setPage(next));
+      } else {
+        cancel();
+        setPage(next);
+      }
     }
   };
   const feedback = (commit: () => void) => {
     // Same-tick double clicks cannot enqueue a second delayed navigation.
-    if (!enabled || queued.current) return false;
+    if (!enabled || queued.current || stageTimers.current.length) return false;
     queued.current = true;
-    timer.current = setTimeout(
-      () => {
-        timer.current = null;
-        commit();
-      },
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 400,
-    );
+    timer.current = setTimeout(() => {
+      timer.current = null;
+      commit();
+    }, 400);
     return true;
   };
   const event: typeof onEvent = (value) => {
@@ -138,14 +225,38 @@ export function QianzaiTongxinExperience({
       !enabled
     )
       return;
-    cancel();
-    onEvent(value);
+    if (timer.current !== null && queued.current) {
+      if (
+        ["save", "complete"].includes(value.type) ||
+        (value.type === "navigate" && active === "preference")
+      )
+        return;
+      if (
+        value.type === "navigate" &&
+        value.questionId &&
+        active === "question"
+      ) {
+        const questions = model.entry?.questions ?? [];
+        const from = questions.findIndex(
+            (q) => q.ref.id === model.draft?.progress.questionId,
+          ),
+          to = questions.findIndex((q) => q.ref.id === value.questionId);
+        if (to >= from) return;
+      }
+    }
+    if (value.type === "navigate" && value.questionId && active === "question")
+      navigateQuestion(value.questionId);
+    else {
+      cancel();
+      onEvent(value);
+    }
   };
   const props = {
     model,
     onEvent: event,
     onRead: read,
     ...(images ? { images } : {}),
+    ...(prototypeImages ? { prototypeImages } : {}),
   };
   const questions = model.entry?.questions ?? [];
   const count = questions.filter((q) =>
@@ -235,154 +346,177 @@ export function QianzaiTongxinExperience({
           </div>
         </Screen>
       ) : (
-        <>
-          {model.entry && model.draft && !model.report && (
-            <div>
-              <div hidden={active !== "cover"}>
-                <QianzaiCover {...props} active={active === "cover"} />
-              </div>
-              <div hidden={active !== "preference"}>
-                <QianzaiPreference
-                  {...props}
-                  onChoose={(value) => {
-                    if (
-                      feedback(() => {
-                        const q =
-                          model.draft?.progress.questionId ??
-                          questions[0]?.ref.id;
-                        if (q) {
-                          onEvent({ type: "navigate", questionId: q });
-                          setPage("question");
-                        }
-                      })
-                    )
-                      onEvent({ type: "choose-preference", preference: value });
-                  }}
-                />
-              </div>
-              <div hidden={active !== "question"}>
-                <QianzaiQuestion
-                  {...props}
-                  {...((page === null || page === "report") && resumeQuestion
-                    ? { readingQuestionId: resumeQuestion }
-                    : {})}
-                  onChoose={(questionId, optionId) => {
-                    const index = questions.findIndex(
-                        (q) => q.ref.id === questionId,
-                      ),
-                      target = questions[index + 1]?.ref.id ?? questionId;
-                    if (
-                      feedback(() =>
-                        onEvent({ type: "navigate", questionId: target }),
+        <div className={styles.sceneFrame}>
+          <div
+            ref={stage}
+            data-qianzai-transition
+            className={styles.transitionStage}
+            aria-hidden="true"
+          >
+            <div className={styles.transitionCurtain} />
+            <div className={styles.transitionRibbon} />
+            <div className={styles.transitionFiligree} />
+            <div className={styles.transitionWords}>
+              <p data-transition-part="kicker" />
+              <h2 data-transition-part="title" />
+              <p data-transition-part="place" />
+              <p data-transition-part="line" />
+            </div>
+          </div>
+          <div ref={sceneContent}>
+            {model.entry && model.draft && !model.report && (
+              <div>
+                <div hidden={active !== "cover"}>
+                  <QianzaiCover {...props} active={active === "cover"} />
+                </div>
+                <div hidden={active !== "preference"}>
+                  <QianzaiPreference
+                    {...props}
+                    onChoose={(value) => {
+                      if (
+                        feedback(() => {
+                          const q =
+                            model.draft?.progress.questionId ??
+                            questions[0]?.ref.id;
+                          if (q) {
+                            transition("preference", 1, () => {
+                              onEvent({ type: "navigate", questionId: q });
+                              setPage("question");
+                            });
+                          }
+                        })
                       )
-                    )
-                      onEvent({ type: "choose-answer", questionId, optionId });
-                  }}
-                />
-              </div>
-              <div hidden={active !== "resume"}>
-                <Screen name="resume" className={styles.resume}>
-                  <header>
-                    <p className={styles.eyebrow}>三幕旅程</p>
-                    <h1>回望来时的选择</h1>
+                        onEvent({
+                          type: "choose-preference",
+                          preference: value,
+                        });
+                    }}
+                  />
+                </div>
+                <div hidden={active !== "question"}>
+                  <QianzaiQuestion
+                    {...props}
+                    {...((page === null || page === "report") && resumeQuestion
+                      ? { readingQuestionId: resumeQuestion }
+                      : {})}
+                    onChoose={(questionId, optionId) => {
+                      const index = questions.findIndex(
+                          (q) => q.ref.id === questionId,
+                        ),
+                        target = questions[index + 1]?.ref.id ?? questionId;
+                      if (feedback(() => navigateQuestion(target)))
+                        onEvent({
+                          type: "choose-answer",
+                          questionId,
+                          optionId,
+                        });
+                    }}
+                  />
+                </div>
+                <div hidden={active !== "resume"}>
+                  <Screen name="resume" className={styles.resume}>
+                    <header>
+                      <p className={styles.eyebrow}>三幕旅程</p>
+                      <h1>回望来时的选择</h1>
+                      <p>
+                        已选 {count} / {questions.length} 题
+                      </p>
+                    </header>
+                    <ol>
+                      {questions.map((q, i) => (
+                        <li key={q.ref.id}>
+                          <button
+                            disabled={!enabled}
+                            onClick={() => {
+                              event({ type: "navigate", questionId: q.ref.id });
+                              read("question");
+                            }}
+                          >
+                            <span>
+                              第 {i + 1} 题 · {q.prompt}
+                            </span>
+                            <span>
+                              {model.draft?.answers.some(
+                                (a) => a.questionId === q.ref.id,
+                              )
+                                ? "已选择"
+                                : "尚未选择"}
+                            </span>
+                          </button>
+                        </li>
+                      ))}
+                    </ol>
+                    <button
+                      className={styles.primary}
+                      disabled={!enabled}
+                      onClick={() => read("question")}
+                    >
+                      继续旅程
+                    </button>
+                    <button
+                      disabled={
+                        model.phase === "saving" || model.phase === "completing"
+                      }
+                      onClick={() => event({ type: "logout" })}
+                    >
+                      结束本次访问
+                    </button>
+                  </Screen>
+                </div>
+                <div hidden={active !== "review"}>
+                  <Screen name="review" className={styles.review}>
+                    <p className={styles.eyebrow}>三幕已毕 · 相逢将至</p>
+                    <h1>
+                      让此刻的选择
+                      <br />
+                      成为这场相逢
+                    </h1>
                     <p>
-                      已选 {count} / {questions.length} 题
+                      已选 {count} / {questions.length}{" "}
+                      题。确认后，本轮选择和人物长卷将成为同一份只读记录。
                     </p>
-                  </header>
-                  <ol>
-                    {questions.map((q, i) => (
-                      <li key={q.ref.id}>
-                        <button
-                          disabled={!enabled}
-                          onClick={() => {
-                            event({ type: "navigate", questionId: q.ref.id });
-                            read("question");
-                          }}
-                        >
-                          <span>
-                            第 {i + 1} 题 · {q.prompt}
-                          </span>
-                          <span>
-                            {model.draft?.answers.some(
-                              (a) => a.questionId === q.ref.id,
-                            )
-                              ? "已选择"
-                              : "尚未选择"}
-                          </span>
-                        </button>
-                      </li>
-                    ))}
-                  </ol>
-                  <button
-                    className={styles.primary}
-                    disabled={!enabled}
-                    onClick={() => read("question")}
-                  >
-                    继续旅程
-                  </button>
-                  <button
-                    disabled={
-                      model.phase === "saving" || model.phase === "completing"
+                    <button
+                      className={styles.primary}
+                      disabled={
+                        !enabled ||
+                        count !== questions.length ||
+                        !questions.length ||
+                        !allSaved
+                      }
+                      onClick={() => event({ type: "complete" })}
+                    >
+                      开启相逢
+                    </button>
+                    <button disabled={!enabled} onClick={() => read("resume")}>
+                      再看一眼来时的路
+                    </button>
+                  </Screen>
+                </div>
+              </div>
+            )}
+            {model.report && (
+              <div inert={model.phase !== "completed"}>
+                <div
+                  hidden={active !== "result"}
+                  onWheel={(e) => {
+                    if (e.deltaY > 38) read("report");
+                  }}
+                  onKeyDown={(e) => {
+                    if (["ArrowDown", "PageDown"].includes(e.key)) {
+                      e.preventDefault();
+                      read("report");
                     }
-                    onClick={() => event({ type: "logout" })}
-                  >
-                    结束本次访问
-                  </button>
-                </Screen>
+                  }}
+                >
+                  <QianzaiReveal {...props} />
+                </div>
+                <div hidden={active !== "report"}>
+                  <QianzaiReport {...props} />
+                </div>
               </div>
-              <div hidden={active !== "review"}>
-                <Screen name="review" className={styles.review}>
-                  <p className={styles.eyebrow}>三幕已毕 · 相逢将至</p>
-                  <h1>
-                    让此刻的选择
-                    <br />
-                    成为这场相逢
-                  </h1>
-                  <p>
-                    已选 {count} / {questions.length}{" "}
-                    题。确认后，本轮选择和人物长卷将成为同一份只读记录。
-                  </p>
-                  <button
-                    className={styles.primary}
-                    disabled={
-                      !enabled ||
-                      count !== questions.length ||
-                      !questions.length ||
-                      !allSaved
-                    }
-                    onClick={() => event({ type: "complete" })}
-                  >
-                    开启相逢
-                  </button>
-                  <button disabled={!enabled} onClick={() => read("resume")}>
-                    再看一眼来时的路
-                  </button>
-                </Screen>
-              </div>
-            </div>
-          )}
-          {model.report && (
-            <div inert={model.phase !== "completed"}>
-              <div
-                hidden={active !== "result"}
-                onWheel={(e) => {
-                  if (e.deltaY > 38) read("report");
-                }}
-                onKeyDown={(e) => {
-                  if (["ArrowDown", "PageDown"].includes(e.key)) {
-                    e.preventDefault();
-                    read("report");
-                  }
-                }}
-              >
-                <QianzaiReveal {...props} />
-              </div>
-              <div hidden={active !== "report"}>
-                <QianzaiReport {...props} />
-              </div>
-            </div>
-          )}
-        </>
+            )}
+          </div>
+        </div>
       )}
     </div>
   );
