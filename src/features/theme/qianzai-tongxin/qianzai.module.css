@@ -964,7 +964,7 @@
   height: 100dvh;
   min-height: 650px;
   overflow: hidden;
-  background: #f6ead3;
+  background: #f7eedc;
   color: var(--ink);
 }
 .reportScroll {
@@ -978,80 +978,136 @@
   position: sticky;
   top: 0;
   z-index: 10;
-  background: #0c2035eb;
-  color: #f7e7c6;
+  background: linear-gradient(180deg, #091624f0, #0c1b2cc2 75%, #0c1b2c8f);
+  color: #f8eacb;
   height: 112px;
-  padding: 12px 15px 10px;
+  padding: 12px 22px 9px;
   backdrop-filter: blur(13px);
   border-bottom: 1px solid #d8b77966;
+  transition:
+    background 250ms ease,
+    color 250ms ease;
 }
 .reportNav[data-paper="true"] {
   background: #fcf4e5f5;
   color: #4b3b2d;
   border-color: #d7b682;
+  box-shadow: 0 4px 20px #5c3c181b;
 }
 .reportNav > div:first-child {
   display: grid;
-  grid-template-columns: 70px 1fr 100px;
-  gap: 8px;
+  grid-template-columns: 44px minmax(0, 1fr) 70px;
+  gap: 7px;
   align-items: center;
 }
 .reportNav > div > span {
   text-align: center;
-  font-size: 16px;
-  line-height: 1.3;
-  letter-spacing: 0.12em;
+  font-size: 12px;
+  line-height: 1.25;
+  letter-spacing: 0.18em;
 }
 .reportNav strong {
   display: block;
-  font-size: 21px;
-  margin-top: 4px;
+  font-size: 18px;
+  letter-spacing: 0.16em;
+  margin-top: 2px;
 }
 .reportNav button {
   background: transparent;
   color: inherit;
   padding: 6px 10px;
 }
+.reportNav .reportBack {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  padding: 0;
+  border-color: #eecf9b9c;
+  background: #1d232c42;
+}
+.reportNav[data-paper="true"] .reportBack {
+  background: #fff8e9;
+  border-color: #d7b986;
+}
 .reportNav > p {
   display: flex;
   justify-content: space-between;
   gap: 15px;
   font-size: 16px;
-  margin: 8px 3px 5px;
+  margin: 7px 3px 5px;
+  color: #f2d7aa;
+}
+.reportNav[data-paper="true"] > p {
+  color: #815f39;
+}
+.reportNav > p > span:last-child {
+  font-family: Georgia, serif;
+  font-weight: 700;
 }
 .readingTrack {
   height: 4px;
   background: #c5b28e55;
   border-radius: 4px;
   overflow: hidden;
+  position: relative;
+}
+.readingTrack::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    90deg,
+    transparent 0 calc(16.66% - 1px),
+    #fff8dd99 calc(16.66% - 1px) 16.66%
+  );
 }
 .readingTrack i {
   display: block;
   height: 100%;
   background: linear-gradient(90deg, #b88742, #f0ce8f, #c29553);
+  transition: width 120ms linear;
 }
 .contents {
   position: relative;
 }
 .contents summary {
   min-height: 44px;
-  display: grid;
-  place-items: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
   border: 1px solid #d8b87e;
   border-radius: 18px;
   cursor: pointer;
+  list-style: none;
+  background: #1c24322e;
+}
+.contents summary::-webkit-details-marker {
+  display: none;
+}
+.reportNav[data-paper="true"] .contents summary {
+  background: #fff9ed;
 }
 .contents nav {
   position: absolute;
   right: 0;
   top: 52px;
-  width: min(310px, 80vw);
+  width: min(280px, 82vw);
   background: #fff5df;
   color: #493727;
   border: 1px solid #c9a573;
   border-radius: 14px;
   padding: 12px;
   box-shadow: 0 12px 30px #0005;
+  max-height: calc(100dvh - 130px);
+  overflow-y: auto;
+}
+.contentsHeading {
+  padding: 0 7px 9px;
+  border-bottom: 1px solid #e8d5b6;
+  color: #98856b;
 }
 .contents a {
   display: block;
@@ -1077,7 +1133,7 @@
   align-items: end;
   text-align: center;
   padding: 30px 22px 55px;
-  background: #152e45;
+  background: linear-gradient(147deg, #101f32, #244159 64%, #6f604d);
   color: #fae7c8;
   overflow: hidden;
 }
@@ -1086,37 +1142,90 @@
   z-index: 1;
   text-shadow: 0 2px 10px #000;
 }
-.reportHero h1 {
-  font-size: 46px;
-  letter-spacing: 0.16em;
-  margin: 16px 0;
-}
 .reportHero p {
-  font-size: 17px;
+  font-size: 16px;
+}
+.reportHero .reportHeroKicker {
+  letter-spacing: 0.22em;
+  font-size: 20px;
+  margin-bottom: 10px;
+}
+.reportHero .reportArtPending {
+  position: absolute;
+  bottom: 160px;
+  left: 0;
+  right: 0;
+  color: #e5d7c4;
+  font: 16px/1.7 system-ui;
 }
 .reportPaper {
-  --paper-pad: 22px;
+  --paper-pad: 21px;
   position: relative;
   border-top: 1px solid #dbbc8a;
   border-radius: 28px 28px 0 0;
-  background-color: #fbf0db;
+  background-color: #fbf0da;
   background-image:
-    radial-gradient(ellipse at 50% 10%, #fffdf5aa, transparent 65%),
+    linear-gradient(180deg, #fffcf3f7, #fbf0daf5 23%, #f8ebd0fa),
     repeating-linear-gradient(96deg, #d5b98908 0 1px, transparent 1px 6px);
   color: #293c50;
   z-index: 2;
   margin-top: -24px;
-  padding: 35px 22px 30px;
+  padding: 32px var(--paper-pad) 0;
   box-shadow: 0 -8px 25px #0c1b2c38;
+}
+.reportPaper::before,
+.reportPaper::after {
+  content: "❧";
+  position: absolute;
+  top: -3px;
+  left: 29px;
+  font-size: 35px;
+  color: #d19b5b;
+  opacity: 0.72;
+  transform: rotate(-31deg);
+  pointer-events: none;
+}
+.reportPaper::after {
+  left: auto;
+  right: 29px;
+  transform: rotate(145deg);
 }
 .reportOpening {
   text-align: center;
   margin-bottom: 45px;
 }
-.reportOpening h2 {
-  font-size: 29px;
-  line-height: 1.6;
-  margin: 20px 0;
+.reportOpening h1 {
+  font-size: 35px;
+  line-height: 1.45;
+  letter-spacing: 0.075em;
+  color: #172b42;
+  margin: 16px 0 5px;
+}
+.reportOpening .eyebrow {
+  color: #ad874c;
+  font-size: 16px;
+  letter-spacing: 0.08em;
+}
+.reportOpening .eyebrow span {
+  color: #c89d62;
+}
+.reportSubtitle {
+  color: #7b6752;
+}
+.reportNotice {
+  font-size: 16px;
+  line-height: 1.95;
+  color: #64584d;
+  text-align: left;
+}
+.reportKind {
+  text-align: left;
+  line-height: 1.8;
+  color: #957d62;
+  background: #f2e5ce91;
+  border: 1px dashed #d9b991;
+  border-radius: 8px;
+  padding: 9px 10px;
 }
 .reportOpening > p + p {
   margin-top: 14px;
@@ -1124,7 +1233,12 @@
 .reportIndex {
   color: #a4603a;
   padding: 18px 12px;
-  border-block: 1px solid #cba66b;
+  border: 1px solid #d8b37b;
+  border-radius: 12px;
+  background: linear-gradient(130deg, #fffaeeee, #f6e7cdc4);
+  box-shadow:
+    inset 0 0 0 3px #fffaf077,
+    0 5px 14px #7b592514;
   margin-bottom: 25px !important;
 }
 .reportIndex strong {
@@ -1133,41 +1247,44 @@
     serif;
 }
 .volume {
-  scroll-margin-top: 165px;
-  margin: 0 0 48px;
+  scroll-margin-top: 140px;
+  margin: 0 0 42px;
 }
 .volume > header {
   text-align: center;
-  margin-bottom: 25px;
+  margin-bottom: 18px;
 }
 .volume > header > p {
   letter-spacing: 0.3em;
   color: #a4804b;
 }
 .volume h2 {
-  font-size: 26px;
-  line-height: 1.65;
-  margin-top: 10px;
+  font-size: 24px;
+  line-height: 1.45;
+  letter-spacing: 0.055em;
+  color: #213850;
+  margin-top: 6px;
 }
 .volume > header::after {
-  content: "";
+  content: "✧";
   display: block;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, #bf975c, transparent);
-  width: 70%;
-  margin: 20px auto 0;
+  color: #c9a167;
+  font-size: 16px;
+  line-height: 1.2;
+  margin: 5px auto 0;
 }
 .paragraph {
-  margin: 0 0 24px;
-  border: 1px solid #dbbd8b;
+  margin: 0 0 12px;
+  border: 1px solid #e1c49a;
   border-radius: 12px;
   padding: 18px 15px;
-  background: #fff8e588;
-  box-shadow: 0 3px 8px #81542a12;
+  background: linear-gradient(120deg, #fffcf3f2, #faecd1d6);
+  box-shadow: 0 2px 9px #8b68221a;
+  color: #64584d;
 }
 .paragraph > p:not(.qualifier) {
-  font-size: 17px;
-  line-height: 1.95;
+  font-size: 16px;
+  line-height: 1.85;
   white-space: pre-line;
 }
 .qualifier {
@@ -1179,7 +1296,7 @@
 }
 .evidence {
   margin: 15px 0 0;
-  background: #f2e3c8;
+  background: #fff8ed;
   border: 1px solid #d5bb91;
   border-radius: 11px;
   padding: 0 13px;
@@ -1243,15 +1360,38 @@
   color: #4c3823;
 }
 .dimensionCard {
-  border: 1px solid #d4b88a;
-  border-radius: 16px;
-  background: linear-gradient(135deg, #fff9ea, #f2dfbc);
-  padding: 20px 14px;
+  border: 1px solid #dfc49c;
+  border-radius: 15px;
+  background:
+    radial-gradient(ellipse at 50% 40%, #f7ecd0b3, transparent 85%),
+    linear-gradient(#fffaf0, #f6e7cb);
+  box-shadow: 0 5px 15px #9272421a;
+  padding: 15px 9px 11px;
   margin-bottom: 28px;
 }
-.dimensionCard h3 {
-  font-size: 21px;
-  margin-bottom: 10px;
+.dimensionHeading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 1px 11px 8px;
+  color: #6e5a46;
+}
+.dimensionHeading h3 {
+  font-size: 16px;
+}
+.dimensionHeading > span {
+  font-size: 16px;
+  color: #a88159;
+  border: 1px solid #d9c09d;
+  padding: 4px 7px;
+  border-radius: 6px;
+  background: #fff6e6;
+}
+.dimensionNote {
+  padding: 12px 11px 0;
+  border-top: 1px solid #d6b385;
+  margin-top: 12px !important;
 }
 .dimensionCard > p {
   color: #76634b;
@@ -1265,7 +1405,7 @@
   margin: 5px auto;
 }
 .radar text {
-  font: 26px var(--font);
+  font: 24px var(--font);
   fill: #2d4258;
 }
 .radar circle {
@@ -1283,8 +1423,8 @@
   stroke-width: 1;
 }
 .radarShape {
-  fill: #b18a3c40;
-  stroke: #9c6f2b;
+  fill: #657e8359;
+  stroke: #314d62;
   stroke-width: 2;
 }
 .dimensionBars {
@@ -1510,13 +1650,13 @@
     padding-inline: 10px;
   }
   .reportNav > div:first-child {
-    grid-template-columns: 60px 1fr 95px;
+    grid-template-columns: 44px minmax(0, 1fr) 70px;
   }
   .reportNav button {
     padding-inline: 7px;
   }
-  .reportOpening h2 {
-    font-size: 26px;
+  .reportOpening h1 {
+    font-size: 32px;
   }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -2024,21 +2164,21 @@
 }
 .volume[data-volume="patterns"] .paragraph {
   position: relative;
-  padding-left: 55px;
+  padding-left: 65px;
   counter-increment: pattern;
 }
 .volume[data-volume="patterns"] .paragraph::before {
-  content: counter(pattern, upper-roman);
+  content: counter(pattern, trad-chinese-formal);
   position: absolute;
   top: 20px;
   left: 12px;
-  width: 30px;
-  height: 30px;
+  width: 41px;
+  height: 41px;
   display: grid;
   place-items: center;
   border: 1px solid #d1ad70;
   border-radius: 50%;
-  background: #f5d899;
+  background: linear-gradient(145deg, #efcc87, #fbe5b6);
   color: #785128;
   font:
     18px Georgia,
@@ -2063,29 +2203,99 @@
   margin-left: 8px;
 }
 .volume[data-volume="closure"] {
-  margin-inline: calc(-1 * var(--paper-pad));
-  padding: 34px 22px;
-  background: radial-gradient(ellipse at 50% 90%, #314b55, #11283d 72%);
-  color: #f6e2bd;
-}
-.volume[data-volume="closure"] .paragraph {
-  background: transparent;
-  border-color: #b79c6866;
-}
-.volume[data-volume="closure"] .qualifier {
-  color: #e1c28e;
-}
-.volume[data-volume="closure"] .evidence {
-  color: #293c50;
+  color: #64584d;
 }
 .reportClosing {
-  margin: 35px calc(-1 * var(--paper-pad)) -30px;
-  padding: 35px 25px;
-  background: #122b3f;
-  color: #ecd9b5;
+  position: relative;
+  margin: 35px calc(-1 * var(--paper-pad)) 0;
+  padding: 38px 24px 27px;
+  background: radial-gradient(
+    ellipse at 50% 90%,
+    #1a3543 0%,
+    #1e3647 30%,
+    #11283d 72%,
+    #0e2134
+  );
+  color: #e7d9c2;
 }
-.reportClosing > p:first-child {
-  color: #f5dba5;
+.reportClosing::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 100px;
+  background: radial-gradient(ellipse at 50% 110%, #dfb67644, transparent 66%);
+  pointer-events: none;
+}
+.closingOrnament {
+  font-size: 16px;
+  color: #d4ab70;
+  letter-spacing: 0.5em;
+  margin-bottom: 14px;
+}
+.reportClosing > p {
+  font-size: 16px;
+  line-height: 1.9;
+}
+.reportClosing > p:first-of-type {
+  color: #f6dcaa;
+  font-size: 30px;
+  line-height: 1.5;
+  letter-spacing: 0.12em;
+  margin: 14px 0 24px;
+  text-shadow: 0 0 16px #daa96855;
+}
+.finalStamp {
+  margin: 0 auto;
+  width: 47px;
+  height: 47px;
+  display: grid;
+  place-content: center;
+  background: #af493b;
+  box-shadow: 0 0 0 1px #e5af91 inset;
+  color: #fff3df;
+  font-size: 16px;
+  line-height: 1.1;
+  transform: rotate(-7deg);
+}
+.reportClosing .reportEndline {
+  color: #cbb58b;
+  letter-spacing: 0.08em;
+  margin: 21px 0 17px;
+}
+.reportActions {
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+}
+.reportActions > button {
+  min-height: 48px;
+  border-radius: 11px;
+  background: #f4e1b81c;
+  border-color: #c4a5717d;
+  color: #f7e7cb;
+}
+.reportActions > button:first-child {
+  background: linear-gradient(110deg, #edc88b, #fff2d0 50%, #e6bb73);
+  border-color: #b9935d;
+  color: #593919;
+  box-shadow: 0 6px 17px #e8c3834b;
+}
+.reportClosing .posterNote {
+  margin: 12px 0 0;
+  color: #cbb58b;
+}
+.reportClosing .returnToStart {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin: 12px auto 16px;
+  background: transparent;
+  border: 0;
+  color: #e2c89f;
+  letter-spacing: 0.12em;
 }
 
 .motionToggle:has(> svg) {

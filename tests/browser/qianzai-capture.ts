@@ -979,7 +979,9 @@ try {
       actBoundaries: [8, 16],
       previousQuestion: 15,
     };
-  } else if (process.env.QZTX_CAPTURE_TARGET === "report") {
+  } else if (
+    ["report", "report-parity"].includes(process.env.QZTX_CAPTURE_TARGET ?? "")
+  ) {
     await page.goto(origin);
     await expect(page.locator("[data-qianzai-experience]")).toHaveAttribute(
       "data-view-phase",
@@ -990,18 +992,127 @@ try {
         window as unknown as { qianzaiProbe: { completed(): void } }
       ).qianzaiProbe.completed(),
     );
-    await page.emulateMedia({ reducedMotion: "reduce" });
     const report = page.locator('[data-qianzai-screen="report"]');
-    for (const width of [320, 390, 1024]) {
+    const scroll = report.locator(":scope > div"),
+      bar = report.getByRole("progressbar", { name: "长卷阅读进度" }),
+      contents = report.locator("header details");
+    const percent = async () => Number(await bar.getAttribute("aria-valuenow"));
+    const move = async (end: boolean) => {
+      const expected = await scroll.evaluate((node, end) => {
+        const max = node.scrollHeight - node.clientHeight;
+        node.scrollTo({ top: end ? max : 0, behavior: "instant" });
+        return max > 0 ? (end ? 100 : 0) : 100;
+      }, end);
+      // scrollTop changes synchronously; React's onScroll receipt is asynchronous.
+      // Await the actual progress state before taking the frame.
+      await expect.poll(percent).toBe(expected);
+    };
+    const jump = async (title: string) => {
+      await contents.locator("summary").click();
+      await contents.getByRole("link", { name: title, exact: true }).click();
+      await expect(contents).not.toHaveAttribute("open", "");
+      const heading = report.getByRole("heading", {
+        name: title.split(" · ")[1]!,
+        exact: true,
+      });
+      await expect(heading).toBeFocused();
+      await expect
+        .poll(async () =>
+          heading.evaluate((node) => {
+            const section = node.closest("article")!;
+            const scroller =
+              section.closest("main")!.parentElement!.parentElement!;
+            return Math.abs(
+              Math.round(
+                section.getBoundingClientRect().top -
+                  scroller.getBoundingClientRect().top -
+                  parseFloat(getComputedStyle(section).scrollMarginTop),
+              ),
+            );
+          }),
+        )
+        .toBe(0);
+      await expect.poll(percent).toBeGreaterThan(0);
+      await expect(report.locator("header > p > span").first()).toHaveText(
+        title.split(" · ")[1]!,
+      );
+    };
+    await page.evaluate(async () => {
+      await document.fonts.ready;
+    });
+    await move(false);
+    await expect(
+      report.getByRole("heading", { name: "合成人物", exact: true }),
+    ).toBeVisible();
+    await expect(
+      report.getByText("人物画作待接入", { exact: true }),
+    ).toBeVisible();
+    await check(page, "report-parity-opening", 390);
+    // Exercise the normal scrolling path before checking the reduced-motion path.
+    await jump("卷二 · 合成卷2");
+    await check(page, "report-parity-five-dimensions", 390);
+    await checkRadar(page);
+    await expect(
+      report
+        .locator('article[data-volume="dimensions"] details[open] summary')
+        .first(),
+    ).toBeFocused();
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    expect(
+      await scroll.evaluate((node) => getComputedStyle(node).scrollBehavior),
+    ).toBe("auto");
+    await jump("卷三 · 合成卷3");
+    await check(page, "report-parity-chapter", 390);
+    const longText = body.volumes[2]!.paragraphs[0]!.text;
+    expect(
       await report
-        .locator(":scope > div")
-        .evaluate((node) => (node.scrollTop = 0));
-      await check(page, "report-opening-refined", width);
-      await report
-        .locator(":scope > div")
-        .evaluate((node) => (node.scrollTop = node.scrollHeight));
-      await check(page, "report-closure-refined", width);
-    }
+        .locator('article[data-volume="patterns"] section > p')
+        .allTextContents(),
+    ).toContain(longText);
+    await move(true);
+    await expect(
+      report.getByRole("button", { name: "分享卡待开放", exact: true }),
+    ).toBeDisabled();
+    await check(page, "report-parity-closure", 390);
+    await report.getByRole("button", { name: "回到卷首", exact: true }).click();
+    await expect.poll(percent).toBe(0);
+    await expect(
+      report.getByRole("heading", { name: "合成人物", exact: true }),
+    ).toBeFocused();
+    await page.setViewportSize({ width: 320, height: 844 });
+    await jump("卷三 · 合成卷3");
+    await check(page, "report-parity-long-text", 320);
+    await report
+      .locator('article[data-volume="patterns"] summary')
+      .first()
+      .click();
+    await expect(
+      report.locator('article[data-volume="patterns"] details[open]').first(),
+    ).toBeVisible();
+    await check(page, "report-parity-evidence", 320);
+    await move(true);
+    await check(page, "report-parity-closure", 320);
+    expect(await percent()).toBe(100);
+    await report
+      .getByRole("button", { name: "回看人物揭晓", exact: true })
+      .click();
+    await expect(page.locator('[data-qianzai-screen="result"]')).toBeVisible();
+    facts.reportParity = {
+      widths: [390, 320],
+      realSealedFields: {
+        role: body.matching.selected.label,
+        index: body.matching.selected.narrativeIndex,
+        dimensions: body.dimensions.map((d) => d.score),
+      },
+      contentsHeadingFocus: true,
+      evidenceSummaryFocus: true,
+      returnToStartFocus: true,
+      progressAtEnd: 100,
+      reducedMotion: true,
+      shareExportUnavailable: true,
+      progressFix:
+        "probe now awaits React scroll state; product progress algorithm unchanged",
+    };
   } else if (process.env.QZTX_CAPTURE_TARGET === "radar") {
     await page.goto(origin);
     await expect(page.locator("[data-qianzai-experience]")).toHaveAttribute(
@@ -1257,7 +1368,9 @@ try {
     await radar.scrollIntoViewIfNeeded();
     await expect(radar).toHaveAccessibleName(/守心 23分/);
     await check(page, "five-axes-fixed-font", 320);
-    await report.getByRole("button", { name: "相逢", exact: true }).click();
+    await report
+      .getByRole("button", { name: "返回人物揭晓", exact: true })
+      .click();
     await expect(
       page.locator('[data-qianzai-screen="result"] svg'),
     ).toHaveAttribute("aria-hidden", "true");
@@ -1477,7 +1590,9 @@ try {
         ),
       )
       .toBeGreaterThan(50);
-    await report.getByRole("button", { name: "相逢", exact: true }).click();
+    await report
+      .getByRole("button", { name: "返回人物揭晓", exact: true })
+      .click();
     await expect(page.locator('[data-qianzai-screen="result"]')).toBeVisible();
     await check(page, "reveal-neutral", 390);
     await page.emulateMedia({ reducedMotion: "reduce" });

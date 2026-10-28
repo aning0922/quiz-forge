@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
+import { ChevronLeft, ChevronDown, ArrowUp } from "lucide-react";
 import type { ComposedReportBodyV1 } from "@/lib/assessment-contract/composed-report-v1";
 import { ArtImage, Screen, type QianzaiViewProps } from "./views";
 import { qianzaiCharacter, qianzaiImage } from "./art";
@@ -19,8 +20,10 @@ export function QianzaiDimensions({ body }: { body: ComposedReportBodyV1 }) {
   const dimension = body.dimensions[selected];
   return (
     <section className={styles.dimensionCard} aria-label="本轮五维">
-      <h3>本轮选择的五个方向</h3>
-      <p>分数来自同一份封存报告；50 只是刻度中点。</p>
+      <div className={styles.dimensionHeading}>
+        <h3>同心画像</h3>
+        <span>封存分值</span>
+      </div>
       {body.dimensions.length === 5 && (
         <svg
           viewBox="0 0 360 330"
@@ -136,6 +139,9 @@ export function QianzaiDimensions({ body }: { body: ComposedReportBodyV1 }) {
                 ?.querySelector("details");
               if (evidence) {
                 evidence.open = true;
+                evidence
+                  .querySelector("summary")
+                  ?.focus({ preventScroll: true });
                 evidence.scrollIntoView({
                   block: "center",
                   behavior: window.matchMedia(
@@ -156,6 +162,9 @@ export function QianzaiDimensions({ body }: { body: ComposedReportBodyV1 }) {
         <span>50</span>
         <span>100</span>
       </div>
+      <p className={styles.dimensionNote}>
+        分数来自同一份封存报告；50 只是刻度中点。
+      </p>
     </section>
   );
 }
@@ -200,13 +209,16 @@ export function QianzaiReport({
     );
   const id = useId(),
     container = useRef<HTMLDivElement>(null);
-  const [reading, setReading] = useState({ percent: 0, chapter: "开卷" });
+  const [reading, setReading] = useState({
+    percent: 0,
+    chapter: "卷首 · 相逢",
+  });
   const measure = (node: HTMLDivElement) => {
     const max = Math.max(0, node.scrollHeight - node.clientHeight);
     const percent = max
       ? Math.round(Math.min(1, Math.max(0, node.scrollTop / max)) * 100)
       : 100;
-    let chapter = "开卷";
+    let chapter = "卷首 · 相逢";
     const threshold = node.getBoundingClientRect().top + 160;
     for (const section of node.querySelectorAll<HTMLElement>(
       "[data-report-chapter]",
@@ -227,6 +239,17 @@ export function QianzaiReport({
     if (node.firstElementChild) observer.observe(node.firstElementChild);
     return () => observer.disconnect();
   }, []);
+  const returnToStart = () => {
+    container.current?.scrollTo({
+      top: 0,
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+        ? "instant"
+        : "smooth",
+    });
+    container.current
+      ?.querySelector<HTMLElement>("[data-report-opening-title]")
+      ?.focus({ preventScroll: true });
+  };
   return (
     <Screen name="report" className={styles.reportScreen}>
       <div
@@ -237,13 +260,22 @@ export function QianzaiReport({
         <div>
           <header className={styles.reportNav} data-paper={reading.percent > 3}>
             <div>
-              <button onClick={() => onRead("result")}>相逢</button>
+              <button
+                className={styles.reportBack}
+                onClick={() => onRead("result")}
+                aria-label="返回人物揭晓"
+              >
+                <ChevronLeft size={24} aria-hidden="true" />
+              </button>
               <span>
-                千载同心<strong>人物长卷</strong>
+                千载同心<strong>人物深度报告</strong>
               </span>
               <details className={styles.contents}>
-                <summary>六卷目录</summary>
+                <summary>
+                  卷目 <ChevronDown size={15} aria-hidden="true" />
+                </summary>
                 <nav aria-label="六卷目录">
+                  <p className={styles.contentsHeading}>此卷共六章</p>
                   {body?.volumes.map((v, i) => (
                     <a
                       key={v.id}
@@ -265,6 +297,9 @@ export function QianzaiReport({
                         event.currentTarget
                           .closest("details")
                           ?.removeAttribute("open");
+                        target
+                          ?.querySelector("h2")
+                          ?.focus({ preventScroll: true });
                       }}
                     >
                       卷{["一", "二", "三", "四", "五", "六"][i]} · {v.title}
@@ -298,8 +333,10 @@ export function QianzaiReport({
               className={styles.fullArt}
             />
             <div>
-              <p>千载之间 · 同心之人</p>
-              <h1>{body?.matching.selected.label ?? "人物长卷"}</h1>
+              {!hero && (
+                <p className={styles.reportArtPending}>人物画作待接入</p>
+              )}
+              <p className={styles.reportHeroKicker}>一卷山河 · 因你而展</p>
               <p>循着本轮选择，展开六卷相逢。</p>
             </div>
           </div>
@@ -307,24 +344,32 @@ export function QianzaiReport({
             className={styles.reportPaper}
             style={
               paper
-                ? { backgroundImage: `url("${paper.objectUrl}")` }
+                ? {
+                    backgroundImage: `linear-gradient(180deg, rgba(255,252,243,.97), rgba(251,240,218,.96) 23%, rgba(248,235,208,.98)), url("${paper.objectUrl}")`,
+                  }
                 : undefined
             }
           >
             {body && (
               <>
                 <section className={styles.reportOpening}>
-                  <p className={styles.eyebrow}>命定相逢 · 本轮记录</p>
-                  <h2>{body.title}</h2>
+                  <p className={styles.eyebrow}>
+                    <span aria-hidden="true">✧</span> 命定相逢 · 本轮记录{" "}
+                    <span aria-hidden="true">✧</span>
+                  </p>
+                  <h1 data-report-opening-title tabIndex={-1}>
+                    {body.matching.selected.label}
+                  </h1>
+                  <p className={styles.reportSubtitle}>{body.title}</p>
                   <p className={styles.reportIndex}>
                     契合指数{" "}
                     <strong>{body.matching.selected.narrativeIndex}</strong> /
                     100
                   </p>
-                  <p>{body.notice}</p>
-                  <p>
+                  <p className={styles.reportNotice}>{body.notice}</p>
+                  <p className={styles.reportKind}>
                     {body.matching.selected.kind === "literary-legendary"
-                      ? "木兰以文学／传说人物的艺术形象参与本轮匹配。"
+                      ? `${body.matching.selected.label}以文学／传说人物的艺术形象参与本轮匹配。`
                       : "人物为文学类比，不是历史人物心理测量。"}
                   </p>
                   {body.matching.status !== "single-candidate" &&
@@ -349,7 +394,7 @@ export function QianzaiReport({
                   >
                     <header>
                       <p>第{["一", "二", "三", "四", "五", "六"][i]}卷</p>
-                      <h2>{v.title}</h2>
+                      <h2 tabIndex={-1}>{v.title}</h2>
                     </header>
                     {v.id === "dimensions" && <QianzaiDimensions body={body} />}
                     {v.paragraphs.map((p, j) => (
@@ -388,9 +433,35 @@ export function QianzaiReport({
                   </ol>
                 </details>
                 <footer className={styles.reportClosing}>
+                  <div className={styles.closingOrnament} aria-hidden="true">
+                    ✧　✦　✧
+                  </div>
                   <p>千载相逢，始于此刻的你。</p>
+                  <div className={styles.finalStamp} aria-hidden="true">
+                    千载
+                    <br />
+                    同心
+                  </div>
+                  <p className={styles.reportEndline}>长卷已展至尽处</p>
+                  <div className={styles.reportActions}>
+                    <button disabled aria-describedby={`${id}-poster-note`}>
+                      分享卡待开放
+                    </button>
+                    <button onClick={() => onRead("result")}>
+                      回看人物揭晓
+                    </button>
+                  </div>
+                  <p id={`${id}-poster-note`} className={styles.posterNote}>
+                    分享卡与图片导出尚未开放。
+                  </p>
+                  <button
+                    className={styles.returnToStart}
+                    onClick={returnToStart}
+                  >
+                    <ArrowUp size={16} aria-hidden="true" />
+                    回到卷首
+                  </button>
                   <p>{body.notice}</p>
-                  <button onClick={() => onRead("result")}>回望相逢</button>
                 </footer>
               </>
             )}
