@@ -12,10 +12,12 @@ import {
 import { persistedReportFixtureV2 } from "@/features/report/persisted/contracts-v2.test-support";
 import { CONSUMER_IMPLEMENTATION_AVAILABILITY } from "@/features/product/internal-play/implementation-catalog";
 import { CONSUMER_IMPLEMENTATION_AVAILABILITY_V2 } from "@/features/product/internal-play/implementation-catalog-v2";
+import { IMPLEMENTATION_AVAILABILITY_V2 } from "@/features/product/internal-versions/implementation-catalog-v2";
 import {
   hashInternalText,
   internalSnapshotText,
   sealInternalVersionFingerprint,
+  internalVersionSnapshotV2Schema,
   type InternalVersionDetail,
   type InternalVersionSnapshot,
 } from "@/features/product/internal-versions/contracts";
@@ -38,7 +40,14 @@ const json = (v: unknown) =>
 async function fixture(v2 = false, map = renderers) {
   const old = await internalPlayFixture();
   const snapshot = v2
-    ? (await persistedReportFixtureV2()).snapshot.play.snapshot.parentSnapshot
+    ? internalVersionSnapshotV2Schema.parse({
+        // The report fixture has synthetic, unregistered parent identities.
+        // This controller path needs a compiled parent; makeDetail reseals it below.
+        ...(await persistedReportFixtureV2()).snapshot.play.snapshot
+          .parentSnapshot,
+        renderer: IMPLEMENTATION_AVAILABILITY_V2.renderer,
+        engine: IMPLEMENTATION_AVAILABILITY_V2.engine,
+      })
     : old.parent.snapshot;
   const makeDetail = async (s: InternalVersionSnapshot, id: string) => {
     const binding = {
