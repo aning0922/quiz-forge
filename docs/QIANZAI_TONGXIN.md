@@ -42,7 +42,7 @@
 
 视觉确认、使用依据、工程接入和商业发布分别记录。既有确认不重复审批；新增人物美术与具体有变更的局部单独供作者查看。来源未知不自动变为 approved。
 
-正文用字体已从既有固定 Noto Serif SC 源生成独立 `qianzai-v1` 子集（源提交 `8b0a1d0f5983c89bc2b93f1b5fb55f9e252744b5`，SIL OFL 1.1），保留旧字体不变。2026-10-29 新增 `qianzai-v2`、字体身份 `1.1.0`：188868 字节，940 个码点，补齐本批 UI 的“古子滑级”，cmap 无缺字；准确来源、文件/字表哈希见 `public/assets/fonts/qianzai-v2/manifest.json`。字表覆盖实际题目、来源文案、待审补充文案及当前界面，不代表任意中文字库或内容批准，也不代替姓名书法。固定 fonttools 4.61.1 / brotli 1.2.0 配合 `scripts/build-qztx-font.py --profile v2 --source-font <固定源TTF路径>` 可重现；默认 v1 行为保持。生产由授权字体 owner 核对 bytes/SHA 后注册，CSS 不直接注册同名字体；原型 harness 的测试字体装载独立。D3 页面定向字体验证已通过，D4 PNG 的字体与最终图检尚待实现。
+正文用字体已从既有固定 Noto Serif SC 源生成独立子集（源提交 `8b0a1d0f5983c89bc2b93f1b5fb55f9e252744b5`，SIL OFL 1.1），保留旧字体不变。2026-10-29 当前版本为 `qianzai-v3`、字体身份 `1.2.0`：189416 字节，942 个码点；在 V2 的“古子滑级”补充上，再加入原型报告按钮的“揭晓”，cmap 及当前 UI 字面量无缺字；准确来源、文件/字表哈希见 `public/assets/fonts/qianzai-v3/manifest.json`，V1/V2 文件保持。字表覆盖实际题目、来源文案、待审补充文案及当前界面，不代表任意中文字库或内容批准，也不代替姓名书法。固定 fonttools 4.61.1 / brotli 1.2.0 配合 `scripts/build-qztx-font.py --profile v3 --source-font <固定源TTF路径>` 可重现；旧 profile 行为保持。生产由授权字体 owner 核对 bytes/SHA 后注册，CSS 不直接注册同名字体；原型 harness 的测试字体装载独立。D3 页面与最终真实报告的字体加载已验证，D4 PNG 的字体与最终图检尚待实现。
 
 ### 包外原件补查
 
