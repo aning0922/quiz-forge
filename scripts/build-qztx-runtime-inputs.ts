@@ -46,8 +46,8 @@ const font = Object.fromEntries(
     "licenseSha256",
   ].map((k) => [k, manifest[k]]),
 );
-if (font.id !== "qianzai-tongxin-serif" || font.version !== "1.1.0")
-  throw Error("QIANZAI_V2_FONT_REQUIRED");
+if (font.id !== "qianzai-tongxin-serif" || font.version !== "1.2.0")
+  throw Error("QIANZAI_V3_FONT_REQUIRED");
 const roles = {
   scene: "background",
   question: "questionPaper",

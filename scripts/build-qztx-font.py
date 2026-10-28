@@ -27,10 +27,10 @@ def sha(value):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--source-font", required=True, type=Path)
-    parser.add_argument("--profile", choices=("v1", "v2"), default="v1")
+    parser.add_argument("--profile", choices=("v1", "v2", "v3"), default="v1")
     args = parser.parse_args()
-    version = "1.0.0" if args.profile == "v1" else "1.1.0"
-    family = "QuizForge Qianzai Serif" + ("" if args.profile == "v1" else " V2")
+    version = {"v1": "1.0.0", "v2": "1.1.0", "v3": "1.2.0"}[args.profile]
+    family = "QuizForge Qianzai Serif" + ("" if args.profile == "v1" else " " + args.profile.upper())
     out = Path(f"public/assets/fonts/qianzai-{args.profile}")
     if fontTools.__version__ != "4.61.1" or brotli.__version__ != "1.2.0":
         raise RuntimeError("PINNED_FONT_TOOLS_REQUIRED")
@@ -48,7 +48,7 @@ def main():
     font = instantiateVariableFont(font, {"wght": 600}, inplace=True, optimize=True)
     for name_id, value in {
         1: family, 2: "SemiBold", 3: f"QuizForgeQianzaiSerif-{version}",
-        4: family + " SemiBold", 6: "QuizForgeQianzaiSerif-SemiBold" + ("" if args.profile == "v1" else "V2"),
+        4: family + " SemiBold", 6: "QuizForgeQianzaiSerif-SemiBold" + ("" if args.profile == "v1" else args.profile.upper()),
         16: family, 17: "SemiBold",
     }.items():
         font["name"].setName(value, name_id, 3, 1, 0x409)

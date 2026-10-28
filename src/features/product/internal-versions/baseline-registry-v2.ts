@@ -13,6 +13,7 @@ import {
 } from "./baseline-registry";
 import synthetic from "./baselines/synthetic-d2-structured-v1.json";
 import qianzaiSynthetic from "./baselines/synthetic-d3-qianzai-v1.json";
+import qianzaiSyntheticImages from "./baselines/synthetic-d3-images-qianzai-v1.json";
 
 function freeze<T>(value: T): T {
   if (value && typeof value === "object") {
@@ -22,7 +23,7 @@ function freeze<T>(value: T): T {
   return value;
 }
 export const BASELINES_V2 = freeze(
-  [synthetic, qianzaiSynthetic].map((input) => {
+  [synthetic, qianzaiSynthetic, qianzaiSyntheticImages].map((input) => {
     const descriptor = baselineDescriptorV2Schema.parse(input);
     return {
       identity: baselineIdentitySchema.parse({

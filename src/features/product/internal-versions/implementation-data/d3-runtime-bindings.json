@@ -4342,19 +4342,19 @@
         ],
         "files": [
           {
-            "path": "public/assets/fonts/qianzai-v2/OFL.txt",
+            "path": "public/assets/fonts/qianzai-v3/OFL.txt",
             "bytes": 4350,
             "sha256": "5e0da210fb04058a8c0087985d2d456b931c2579811a49655721d3cf0c36b6d6"
           },
           {
-            "path": "public/assets/fonts/qianzai-v2/characters.txt",
-            "bytes": 2629,
-            "sha256": "75858bbfb1d82215d294c39a700c2cedcd9ef51980f2d859bcae7f3a14a89225"
+            "path": "public/assets/fonts/qianzai-v3/characters.txt",
+            "bytes": 2635,
+            "sha256": "15eb64c8d60ba9bd855b0d13dcfb801fe1d98e6f233362ac020d3d5981893a35"
           },
           {
-            "path": "public/assets/fonts/qianzai-v2/serif-600.woff2",
-            "bytes": 188868,
-            "sha256": "c135e211b94dfc61cefb5bf70ba849f0ccac870d3ec2ea021ef76c079d87d4e8"
+            "path": "public/assets/fonts/qianzai-v3/serif-600.woff2",
+            "bytes": 189416,
+            "sha256": "4efdf8a7722b24e81ab78edb790ab0df714fca35b131e49f148e90bae615e746"
           },
           {
             "path": "src/features/quiz/scoring/v2/boundary.ts",
@@ -6270,7 +6270,7 @@
           "serverCondition": "react-server"
         }
       },
-      "implementationSha256": "828c29ad8a3a5055741e9ca714d2392debefbb240f0e8761fef31afe3788d4f0",
+      "implementationSha256": "dc899b475ef5e40302eb997b45d01706d5a230bec6a15356360794ddc4461ab4",
       "kind": "renderer",
       "capability": "studio-internal-preview",
       "components": {
@@ -6312,19 +6312,19 @@
       },
       "font": {
         "id": "qianzai-tongxin-serif",
-        "version": "1.1.0",
-        "family": "QuizForge Qianzai Serif V2",
+        "version": "1.2.0",
+        "family": "QuizForge Qianzai Serif V3",
         "weight": 600,
-        "file": "/assets/fonts/qianzai-v2/serif-600.woff2",
-        "fileSha256": "c135e211b94dfc61cefb5bf70ba849f0ccac870d3ec2ea021ef76c079d87d4e8",
-        "bytes": 188868,
-        "coverage": "/assets/fonts/qianzai-v2/characters.txt",
-        "coverageSha256": "75858bbfb1d82215d294c39a700c2cedcd9ef51980f2d859bcae7f3a14a89225",
-        "licenseFile": "/assets/fonts/qianzai-v2/OFL.txt",
+        "file": "/assets/fonts/qianzai-v3/serif-600.woff2",
+        "fileSha256": "4efdf8a7722b24e81ab78edb790ab0df714fca35b131e49f148e90bae615e746",
+        "bytes": 189416,
+        "coverage": "/assets/fonts/qianzai-v3/characters.txt",
+        "coverageSha256": "15eb64c8d60ba9bd855b0d13dcfb801fe1d98e6f233362ac020d3d5981893a35",
+        "licenseFile": "/assets/fonts/qianzai-v3/OFL.txt",
         "licenseSha256": "5e0da210fb04058a8c0087985d2d456b931c2579811a49655721d3cf0c36b6d6"
       }
     },
-    "entrySha256": "599f7e8ca49a402c337cda26b3c0085a08dc1831b1bd65681d89f57f6eb59c65"
+    "entrySha256": "efb97aa76227d2c1087e6cdbd0278510f93c3b60739d0726084e80e58b17b9e4"
   },
   "qianzaiConsumer": {
     "descriptor": {
@@ -6429,15 +6429,15 @@
       },
       "font": {
         "id": "qianzai-tongxin-serif",
-        "version": "1.1.0",
-        "family": "QuizForge Qianzai Serif V2",
+        "version": "1.2.0",
+        "family": "QuizForge Qianzai Serif V3",
         "weight": 600,
-        "file": "/assets/fonts/qianzai-v2/serif-600.woff2",
-        "fileSha256": "c135e211b94dfc61cefb5bf70ba849f0ccac870d3ec2ea021ef76c079d87d4e8",
-        "bytes": 188868,
-        "coverage": "/assets/fonts/qianzai-v2/characters.txt",
-        "coverageSha256": "75858bbfb1d82215d294c39a700c2cedcd9ef51980f2d859bcae7f3a14a89225",
-        "licenseFile": "/assets/fonts/qianzai-v2/OFL.txt",
+        "file": "/assets/fonts/qianzai-v3/serif-600.woff2",
+        "fileSha256": "4efdf8a7722b24e81ab78edb790ab0df714fca35b131e49f148e90bae615e746",
+        "bytes": 189416,
+        "coverage": "/assets/fonts/qianzai-v3/characters.txt",
+        "coverageSha256": "15eb64c8d60ba9bd855b0d13dcfb801fe1d98e6f233362ac020d3d5981893a35",
+        "licenseFile": "/assets/fonts/qianzai-v3/OFL.txt",
         "licenseSha256": "5e0da210fb04058a8c0087985d2d456b931c2579811a49655721d3cf0c36b6d6"
       },
       "closure": {
@@ -6479,19 +6479,19 @@
         ],
         "files": [
           {
-            "path": "public/assets/fonts/qianzai-v2/OFL.txt",
+            "path": "public/assets/fonts/qianzai-v3/OFL.txt",
             "bytes": 4350,
             "sha256": "5e0da210fb04058a8c0087985d2d456b931c2579811a49655721d3cf0c36b6d6"
           },
           {
-            "path": "public/assets/fonts/qianzai-v2/characters.txt",
-            "bytes": 2629,
-            "sha256": "75858bbfb1d82215d294c39a700c2cedcd9ef51980f2d859bcae7f3a14a89225"
+            "path": "public/assets/fonts/qianzai-v3/characters.txt",
+            "bytes": 2635,
+            "sha256": "15eb64c8d60ba9bd855b0d13dcfb801fe1d98e6f233362ac020d3d5981893a35"
           },
           {
-            "path": "public/assets/fonts/qianzai-v2/serif-600.woff2",
-            "bytes": 188868,
-            "sha256": "c135e211b94dfc61cefb5bf70ba849f0ccac870d3ec2ea021ef76c079d87d4e8"
+            "path": "public/assets/fonts/qianzai-v3/serif-600.woff2",
+            "bytes": 189416,
+            "sha256": "4efdf8a7722b24e81ab78edb790ab0df714fca35b131e49f148e90bae615e746"
           },
           {
             "path": "src/features/fulfillment/consumer-flow/contracts-v2.ts",
@@ -6715,13 +6715,13 @@
           },
           {
             "path": "src/features/theme/qianzai-tongxin/qianzai.module.css",
-            "bytes": 49637,
-            "sha256": "486558050ca23d9bf7baf76702574b197ef0eddde8f2950eb1aba2ba611fc401"
+            "bytes": 54007,
+            "sha256": "c52c9d22c67b93b05cab56c83f5e1facb248d1e2b6891d28bd77ba06cf3d31fb"
           },
           {
             "path": "src/features/theme/qianzai-tongxin/report.tsx",
-            "bytes": 14657,
-            "sha256": "f90394019258c93860714ddd17feba16c22b14cecba63635e3ee3aa6e5b2d7a3"
+            "bytes": 17573,
+            "sha256": "57558d7ff02b8897631cb0341e5d2cfd48a419a341f4a67604f80f57bf7e8dfc"
           },
           {
             "path": "src/features/theme/qianzai-tongxin/resource-owner.ts",
@@ -6730,8 +6730,8 @@
           },
           {
             "path": "src/features/theme/qianzai-tongxin/runtime-inputs.json",
-            "bytes": 8652,
-            "sha256": "33117b6b11f1ba8ac5464706eddc8ff8fbeb33e082d3f498194ab0a3e89fef26"
+            "bytes": 8666,
+            "sha256": "473ede6a434321ecd4fa56022f379027d7322dbf3afb5d7dc1b68b45d4f9fabd"
           },
           {
             "path": "src/features/theme/qianzai-tongxin/runtime-inputs.ts",
@@ -8592,8 +8592,8 @@
           "serverCondition": "react-server"
         }
       },
-      "implementationSha256": "2dada90ddb9228b79401a2f25a3c90fa110bb9a55a53238b210484b150c27598"
+      "implementationSha256": "07c5154d8096ea7fec203c6873820ba4fd563671073c8de5c329a46e9ecbf1a5"
     },
-    "entrySha256": "ecf06880d6498872b837b263969a24074b66f0aa5acce9d476f1c55228db22b3"
+    "entrySha256": "183ed19001f13360469b599382fdd9a8fc5d173f3dcb853a676fcbe0491825f3"
   }
 }

@@ -56,7 +56,7 @@ describe("exact neutral resource roles and ownership", () => {
       (b) => b.asset.resourceRef.productId === "qianzai-tongxin",
     );
     const synthetic = QIANZAI_RUNTIME_INPUTS.resources.filter(
-      (b) => b.asset.resourceRef.productId === "synthetic-d3",
+      (b) => b.asset.resourceRef.productId === "synthetic-d3-images",
     );
     expect(original).toHaveLength(14);
     expect(new Set(original.map((b) => b.slot)).size).toBe(14);

@@ -125,8 +125,8 @@ const files = new Map([
     { body: await readFile(path.join(out, "probe.css")), type: "text/css" },
   ],
 ]);
-files.set("/assets/fonts/qianzai-v2/serif-600.woff2", {
-  body: await readFile("public/assets/fonts/qianzai-v2/serif-600.woff2"),
+files.set("/assets/fonts/qianzai-v3/serif-600.woff2", {
+  body: await readFile("public/assets/fonts/qianzai-v3/serif-600.woff2"),
   type: "font/woff2",
 });
 if (process.env.QZTX_MOTION_STUDY === "1") {
@@ -274,7 +274,7 @@ const server = createServer((req, res) => {
   res.end(
     // Standalone synthetic harness only. Production registration belongs solely
     // to loadQianzaiFont, which verifies the compiled font descriptor first.
-    '<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/probe.css"><style>@font-face{font-family:"QuizForge Qianzai Serif V2";src:url("/assets/fonts/qianzai-v2/serif-600.woff2") format("woff2");font-weight:600;font-style:normal;font-display:swap}body{margin:0}button,input{font:inherit}</style><div id="root"></div><script id="fixture" type="application/json">' +
+    '<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/probe.css"><style>@font-face{font-family:"QuizForge Qianzai Serif V3";src:url("/assets/fonts/qianzai-v3/serif-600.woff2") format("woff2");font-weight:600;font-style:normal;font-display:swap}body{margin:0}button,input{font:inherit}</style><div id="root"></div><script id="fixture" type="application/json">' +
       JSON.stringify({
         session,
         completed: fixture.completed,
@@ -341,7 +341,7 @@ async function check(page: Page, name: string, width: number) {
         document.querySelector("[data-qianzai-screen]")!,
     ).fontFamily,
     loaded: document.fonts.check(
-      '600 16px "QuizForge Qianzai Serif V2"',
+      '600 16px "QuizForge Qianzai Serif V3"',
       "古子滑级",
     ),
   }));
