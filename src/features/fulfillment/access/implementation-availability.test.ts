@@ -91,3 +91,51 @@ it("fails closed for changed engine/renderer identities and mismatched v2 mappin
   ])
     expect(accessKeyPlayImplementationAvailable(changed)).toBe(false);
 });
+
+it("admits the exact fixed-font identity without requiring descriptor-only file metadata", () => {
+  const identity = CONSUMER_IMPLEMENTATION_AVAILABILITY_V2.qianzai;
+  if (!identity) throw Error("QIANZAI_BINDING_REQUIRED");
+  const runtime = resolveConsumerImplementationV2(identity);
+  if (!runtime || "kind" in runtime.descriptor.font)
+    throw Error("FIXED_FONT_REQUIRED");
+  const descriptor = runtime.descriptor,
+    font = runtime.descriptor.font;
+  const fixedFont = {
+    id: font.id,
+    version: font.version,
+    weight: font.weight,
+    fileSha256: font.fileSha256,
+    coverageSha256: font.coverageSha256,
+    licenseSha256: font.licenseSha256,
+  };
+  const authored: typeof play = {
+    ...play,
+    renderer: identity,
+    mapping: descriptor.mapping,
+    presentation: {
+      presentationMode: descriptor.presentationMode,
+      exports: descriptor.exports,
+    },
+    parentSnapshot: { ...play.parentSnapshot, font: fixedFont },
+  };
+  expect(accessKeyPlayImplementationAvailable(authored)).toBe(true);
+  for (const key of ["fileSha256", "coverageSha256", "licenseSha256"] as const)
+    expect(
+      accessKeyPlayImplementationAvailable({
+        ...authored,
+        parentSnapshot: {
+          ...authored.parentSnapshot,
+          font: { ...fixedFont, [key]: "0".repeat(64) },
+        },
+      }),
+    ).toBe(false);
+  expect(
+    accessKeyPlayImplementationAvailable({
+      ...authored,
+      parentSnapshot: {
+        ...authored.parentSnapshot,
+        font: play.parentSnapshot.font,
+      },
+    }),
+  ).toBe(false);
+});

@@ -12,6 +12,7 @@ import {
   type ExactBaselineSource,
 } from "./baseline-registry";
 import synthetic from "./baselines/synthetic-d2-structured-v1.json";
+import qianzaiSynthetic from "./baselines/synthetic-d3-qianzai-v1.json";
 
 function freeze<T>(value: T): T {
   if (value && typeof value === "object") {
@@ -20,22 +21,27 @@ function freeze<T>(value: T): T {
   }
   return value;
 }
-const descriptor = baselineDescriptorV2Schema.parse(synthetic);
-export const BASELINES_V2 = freeze([
-  {
-    identity: baselineIdentitySchema.parse({
-      kind: "baseline",
-      id: descriptor.id,
-      version: descriptor.version,
-      entrySha256: createHash("sha256")
-        .update(
-          canonicalOrdinaryJson(descriptor, { maxBytes: 65_536, maxDepth: 32 }),
-        )
-        .digest("hex"),
-    }),
-    descriptor,
-  },
-]);
+export const BASELINES_V2 = freeze(
+  [synthetic, qianzaiSynthetic].map((input) => {
+    const descriptor = baselineDescriptorV2Schema.parse(input);
+    return {
+      identity: baselineIdentitySchema.parse({
+        kind: "baseline",
+        id: descriptor.id,
+        version: descriptor.version,
+        entrySha256: createHash("sha256")
+          .update(
+            canonicalOrdinaryJson(descriptor, {
+              maxBytes: 65_536,
+              maxDepth: 32,
+            }),
+          )
+          .digest("hex"),
+      }),
+      descriptor,
+    };
+  }),
+);
 const key = (v: BaselineIdentity) =>
   JSON.stringify([v.kind, v.id, v.version, v.entrySha256]);
 /** Exact catalog union; no request, database row or environment registers new entries. */

@@ -51,6 +51,42 @@ export async function collectQztxImplementationClosure(
   const baseline = structuredClone(
     (browser ? browserBaseline : engineBaseline).descriptor.closure,
   );
+  if (browser) {
+    // QZTX uses the repository's already installed icon package. Pin its exact
+    // importer and both lock spans; this does not admit arbitrary new roots.
+    baseline.dependencies.roots.push({
+      name: "lucide-react",
+      version: "1.55.0",
+      lockSnapshot: "lucide-react@1.55.0(@types/react@19.3.0)(react@19.3.0)",
+      section: "dependencies",
+      importerSha256:
+        "1ab4fc45cf9be5882f5e37b9f326470e0cc940fd2dba6695c036640402fd77a9",
+    });
+    baseline.dependencies.lockRecords.push(
+      {
+        section: "packages",
+        key: "lucide-react@1.55.0",
+        bytes: 322,
+        sha256:
+          "a7117dfd67569925c519dcf27a2dbe5e063d4cd65d50652ca896f5b12ad0c6c4",
+      },
+      {
+        section: "snapshots",
+        key: "lucide-react@1.55.0(@types/react@19.3.0)(react@19.3.0)",
+        bytes: 152,
+        sha256:
+          "962402742ad255481c57b56a0f18d66d45fba6d2503ecad6e5cb7a4ac7596212",
+      },
+    );
+    baseline.dependencies.roots.sort((a, b) =>
+      a.name < b.name ? -1 : a.name > b.name ? 1 : 0,
+    );
+    baseline.dependencies.lockRecords.sort((a, b) => {
+      const x = `${a.section}:${a.key}`,
+        y = `${b.section}:${b.key}`;
+      return x < y ? -1 : x > y ? 1 : 0;
+    });
+  }
   const sources = new Map<string, Buffer>();
   const builtins = new Set<string>();
   const external = new Set<string>();
@@ -217,8 +253,11 @@ export async function collectQztxImplementationClosure(
     await visit(file);
   }
   const pinned = new Set(baseline.dependencies.roots.map((r) => r.name));
-  if ([...external].some((name) => !pinned.has(name)))
-    throw Error("IMPLEMENTATION_NEW_DEPENDENCY_REQUIRES_PIN");
+  const unpinned = [...external].filter((name) => !pinned.has(name));
+  if (unpinned.length)
+    throw Error(
+      `IMPLEMENTATION_NEW_DEPENDENCY_REQUIRES_PIN:${unpinned.join(",")}`,
+    );
   const fact = (file: string, bytes: Buffer) => ({
     path: file,
     bytes: bytes.length,

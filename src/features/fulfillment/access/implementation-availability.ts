@@ -19,6 +19,18 @@ export function accessKeyPlayImplementationAvailable(
     );
   const display = resolveConsumerImplementationV2(play.renderer),
     engine = resolveEngineImplementationV2(play.parentSnapshot.engine);
+  const font = display?.descriptor.font;
+  const fontIdentity =
+    !font || "kind" in font
+      ? font
+      : {
+          id: font.id,
+          version: font.version,
+          fileSha256: font.fileSha256,
+          coverageSha256: font.coverageSha256,
+          licenseSha256: font.licenseSha256,
+          weight: font.weight,
+        };
   return Boolean(
     display &&
     engine &&
@@ -30,7 +42,7 @@ export function accessKeyPlayImplementationAvailable(
     ) &&
     sameConsumerFact(
       play.parentSnapshot.font,
-      display.descriptor.font,
+      fontIdentity,
       L.playRequestBytes,
     ),
   );

@@ -265,6 +265,42 @@
       },
       "slot": "acts.2.optionSelected",
       "layer": "prototype-option-skin"
+    },
+    {
+      "asset": {
+        "mediaType": "image/png",
+        "bytes": 289,
+        "sha256": "8695839e6da72d2175a4df2c21e196499e8560c14fd43ee31a521b709da77969",
+        "width": 8,
+        "height": 8,
+        "purpose": "cover",
+        "resourceRef": {
+          "productId": "synthetic-d3",
+          "id": "cover",
+          "version": "1.0.0"
+        },
+        "approval": "approved"
+      },
+      "slot": "cover",
+      "layer": "clean"
+    },
+    {
+      "asset": {
+        "mediaType": "image/png",
+        "bytes": 289,
+        "sha256": "8695839e6da72d2175a4df2c21e196499e8560c14fd43ee31a521b709da77969",
+        "width": 8,
+        "height": 8,
+        "purpose": "decoration",
+        "resourceRef": {
+          "productId": "synthetic-d3",
+          "id": "paper",
+          "version": "1.0.0"
+        },
+        "approval": "approved"
+      },
+      "slot": "reportPaper",
+      "layer": "clean"
     }
   ]
 }
