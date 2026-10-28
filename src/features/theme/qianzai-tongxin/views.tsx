@@ -334,6 +334,12 @@ export function QianzaiQuestion({
     (a) => a.questionId === q?.ref.id,
   )?.optionId;
   const saved = consumerDraftStatusV2(model);
+  const confirmedSaved =
+    canEditConsumerV2(model) &&
+    model.pendingOperation === null &&
+    saved.preferenceSaved &&
+    saved.answersSaved &&
+    saved.progressSaved;
   return (
     <Screen
       name="question"
@@ -388,9 +394,13 @@ export function QianzaiQuestion({
             </span>
             <span className={styles.progressReceipt} role="status">
               <BookmarkCheck size={15} aria-hidden="true" />
-              {saved.answersSaved && saved.progressSaved
+              {confirmedSaved
                 ? "已保存"
-                : "本轮选择"}
+                : model.phase === "saving"
+                  ? "保存中"
+                  : ["unknown", "conflict", "unavailable"].includes(model.phase)
+                    ? "待核实"
+                    : "本轮选择"}
             </span>
           </div>
           <div className={styles.questionBody} key={q.ref.id}>

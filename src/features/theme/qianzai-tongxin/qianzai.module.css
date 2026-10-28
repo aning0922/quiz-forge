@@ -1,10 +1,3 @@
-@font-face {
-  font-family: "QuizForge Qianzai Serif V2";
-  src: url("/assets/fonts/qianzai-v2/serif-600.woff2") format("woff2");
-  font-weight: 600;
-  font-style: normal;
-  font-display: swap;
-}
 .host {
   --gold: #f5d49a;
   --ink: #24394d;

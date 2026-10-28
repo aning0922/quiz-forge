@@ -8,6 +8,10 @@ import { chromium, expect, type Page } from "@playwright/test";
 import { consumerSessionFixtureV2 } from "@/features/theme/consumer-v2/session.test-support";
 import { structuredReaderFixtureV2 } from "@/features/theme/consumer-v2/fixtures.test-support";
 import { consumerEntryFactsSha256V2 } from "@/features/fulfillment/consumer-flow/display-contract-v2";
+import type {
+  ConsumerV2ReaderEvent,
+  ConsumerV2ReaderModel,
+} from "@/lib/consumer-contract/v2/client-contract";
 
 const out = path.resolve(
   process.env.QZTX_PARITY_CAPTURE === "1"
@@ -268,7 +272,9 @@ const server = createServer((req, res) => {
   }
   res.writeHead(200, { "content-type": "text/html; charset=utf-8" });
   res.end(
-    '<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/probe.css"><style>body{margin:0}button,input{font:inherit}</style><div id="root"></div><script id="fixture" type="application/json">' +
+    // Standalone synthetic harness only. Production registration belongs solely
+    // to loadQianzaiFont, which verifies the compiled font descriptor first.
+    '<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/probe.css"><style>@font-face{font-family:"QuizForge Qianzai Serif V2";src:url("/assets/fonts/qianzai-v2/serif-600.woff2") format("woff2");font-weight:600;font-style:normal;font-display:swap}body{margin:0}button,input{font:inherit}</style><div id="root"></div><script id="fixture" type="application/json">' +
       JSON.stringify({
         session,
         completed: fixture.completed,
@@ -393,7 +399,125 @@ async function checkRadar(page: Page) {
 try {
   const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
   page.on("pageerror", (e) => errors.push(e.message));
-  if (process.env.QZTX_CAPTURE_TARGET === "transitions") {
+  if (process.env.QZTX_CAPTURE_TARGET === "preference-receipt") {
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.goto(origin);
+    const host = page.locator("[data-qianzai-experience]"),
+      question = page.locator('[data-qianzai-screen="question"]'),
+      receipt = question.getByRole("status").first();
+    const snapshot = () =>
+      page.evaluate(() =>
+        (
+          window as unknown as {
+            qianzaiProbe: { snapshot(): ConsumerV2ReaderModel };
+          }
+        ).qianzaiProbe.snapshot(),
+      );
+    const event = (e: ConsumerV2ReaderEvent) =>
+      page.evaluate(
+        (e) =>
+          (
+            window as unknown as {
+              qianzaiProbe: {
+                owner: { onEvent(e: ConsumerV2ReaderEvent): void };
+              };
+            }
+          ).qianzaiProbe.owner.onEvent(e),
+        e,
+      );
+    const saveCount = () =>
+      page.evaluate(
+        () =>
+          (
+            window as unknown as { qianzaiProbe: { calls: { path: string }[] } }
+          ).qianzaiProbe.calls.filter((c) => c.path.endsWith("/save")).length,
+      );
+    await expect(host).toHaveAttribute("data-view-phase", "ready");
+    await page
+      .getByRole("button", { name: "开启穿越之旅", exact: true })
+      .click();
+    await page
+      .locator('[data-qianzai-screen="preference"] label')
+      .first()
+      .click();
+    await expect(question).toBeVisible();
+    await expect(host).toHaveAttribute("data-view-phase", "ready");
+    await expect(receipt).toHaveText("已保存");
+    const before = await snapshot(),
+      posts = await saveCount();
+    await event({
+      type: "choose-preference",
+      preference:
+        before.draft!.matchingContext!.preference === "male"
+          ? "female"
+          : "male",
+    });
+    const dirty = await snapshot();
+    expect(dirty.draft!.answers).toEqual(before.draft!.answers);
+    expect(dirty.draft!.progress).toEqual(before.draft!.progress);
+    expect(dirty.draft!.matchingContext).not.toEqual(
+      before.draft!.matchingContext,
+    );
+    await expect(receipt).toHaveText("本轮选择");
+    await page.evaluate(() => {
+      const probe = (
+        window as unknown as {
+          qianzaiProbe: { holdNext(): void; dropNext(): void };
+        }
+      ).qianzaiProbe;
+      probe.holdNext();
+      probe.dropNext();
+    });
+    await event({ type: "save" });
+    await expect(host).toHaveAttribute("data-view-phase", "saving");
+    await expect(receipt).toHaveText("保存中");
+    expect((await snapshot()).state).toEqual(before.state);
+    expect(await saveCount()).toBe(posts + 1);
+    await page.screenshot({
+      path: path.join(out, "preference-receipt-saving-390.png"),
+      fullPage: true,
+    });
+    await page.evaluate(() =>
+      (
+        window as unknown as { qianzaiProbe: { release(): void } }
+      ).qianzaiProbe.release(),
+    );
+    await expect(host).toHaveAttribute("data-view-phase", "unknown");
+    await expect(receipt).toHaveText("待核实");
+    expect((await snapshot()).pendingOperation).toBe("save");
+    await page.screenshot({
+      path: path.join(out, "preference-receipt-unknown-390.png"),
+      fullPage: true,
+    });
+    await page
+      .getByRole("button", { name: "核对保存结果", exact: true })
+      .click();
+    await expect(host).toHaveAttribute("data-view-phase", "conflict");
+    await expect(receipt).toHaveText("待核实");
+    expect(await saveCount()).toBe(posts + 1);
+    await page
+      .getByRole("button", { name: "采用已核对的服务器进度", exact: true })
+      .click();
+    await expect(host).toHaveAttribute("data-view-phase", "ready");
+    await expect(receipt).toHaveText("已保存");
+    const reconciled = await snapshot();
+    expect(reconciled.pendingOperation).toBeNull();
+    expect(reconciled.state!.matchingContext).toEqual(
+      dirty.draft!.matchingContext,
+    );
+    expect(reconciled.state!.answers).toEqual(before.state!.answers);
+    expect(reconciled.state!.progress).toEqual(before.state!.progress);
+    expect(await saveCount()).toBe(posts + 1);
+    facts.preferenceReceipt = {
+      preferenceOnly: true,
+      delayedReceiptUnconfirmed: true,
+      lostReceiptUnconfirmed: true,
+      conflictUnconfirmed: true,
+      explicitReconciliationRestoresSaved: true,
+      savePosts: 1,
+      scope: "real controller with synthetic HTTP; no production/DB claim",
+    };
+  } else if (process.env.QZTX_CAPTURE_TARGET === "transitions") {
     await page.goto(origin);
     const host = page.locator("[data-qianzai-experience]"),
       stage = page.locator("[data-qianzai-transition]"),
