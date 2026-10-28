@@ -18,8 +18,6 @@ from fontTools.varLib.instancer import instantiateVariableFont
 SOURCE_COMMIT = "8b0a1d0f5983c89bc2b93f1b5fb55f9e252744b5"
 SOURCE_SHA = "050080d9255a86808f2945bffac582b31ef32bc36411ce29563b4961670c66f9"
 LICENSE_SHA = "5e0da210fb04058a8c0087985d2d456b931c2579811a49655721d3cf0c36b6d6"
-FAMILY = "QuizForge Qianzai Serif"
-OUT = Path("public/assets/fonts/qianzai-v1")
 
 
 def sha(value):
@@ -29,15 +27,19 @@ def sha(value):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--source-font", required=True, type=Path)
+    parser.add_argument("--profile", choices=("v1", "v2"), default="v1")
     args = parser.parse_args()
+    version = "1.0.0" if args.profile == "v1" else "1.1.0"
+    family = "QuizForge Qianzai Serif" + ("" if args.profile == "v1" else " V2")
+    out = Path(f"public/assets/fonts/qianzai-{args.profile}")
     if fontTools.__version__ != "4.61.1" or brotli.__version__ != "1.2.0":
         raise RuntimeError("PINNED_FONT_TOOLS_REQUIRED")
     if sha(args.source_font.read_bytes()) != SOURCE_SHA:
         raise RuntimeError("FONT_SOURCE_HASH_MISMATCH")
-    license_bytes = (OUT / "OFL.txt").read_bytes()
+    license_bytes = (out / "OFL.txt").read_bytes()
     if sha(license_bytes) != LICENSE_SHA:
         raise RuntimeError("FONT_LICENSE_HASH_MISMATCH")
-    characters = (OUT / "characters.txt").read_bytes()
+    characters = (out / "characters.txt").read_bytes()
     requested = {ord(c) for c in characters.decode("utf-8").rstrip("\n")}
     font = TTFont(args.source_font, recalcTimestamp=False)
     missing = requested - font.getBestCmap().keys()
@@ -45,9 +47,9 @@ def main():
         raise RuntimeError("SOURCE_GLYPH_MISSING:" + ",".join(hex(c) for c in sorted(missing)))
     font = instantiateVariableFont(font, {"wght": 600}, inplace=True, optimize=True)
     for name_id, value in {
-        1: FAMILY, 2: "SemiBold", 3: "QuizForgeQianzaiSerif-1.0.0",
-        4: FAMILY + " SemiBold", 6: "QuizForgeQianzaiSerif-SemiBold",
-        16: FAMILY, 17: "SemiBold",
+        1: family, 2: "SemiBold", 3: f"QuizForgeQianzaiSerif-{version}",
+        4: family + " SemiBold", 6: "QuizForgeQianzaiSerif-SemiBold" + ("" if args.profile == "v1" else "V2"),
+        16: family, 17: "SemiBold",
     }.items():
         font["name"].setName(value, name_id, 3, 1, 0x409)
         font["name"].setName(value, name_id, 1, 0, 0)
@@ -60,18 +62,18 @@ def main():
     sub.subset(font)
     font.recalcTimestamp = False
     font.flavor = "woff2"
-    target = OUT / "serif-600.woff2"
+    target = out / "serif-600.woff2"
     font.save(target)
     if requested - TTFont(target, recalcTimestamp=False).getBestCmap().keys():
         raise RuntimeError("OUTPUT_GLYPH_MISSING")
     data = target.read_bytes()
     descriptor = {
-        "id": "qianzai-tongxin-serif", "version": "1.0.0", "family": FAMILY,
-        "weight": 600, "file": "/assets/fonts/qianzai-v1/serif-600.woff2",
+        "id": "qianzai-tongxin-serif", "version": version, "family": family,
+        "weight": 600, "file": f"/assets/fonts/qianzai-{args.profile}/serif-600.woff2",
         "fileSha256": sha(data), "bytes": len(data),
-        "coverage": "/assets/fonts/qianzai-v1/characters.txt",
+        "coverage": f"/assets/fonts/qianzai-{args.profile}/characters.txt",
         "coverageSha256": sha(characters), "coveredCodepoints": len(requested),
-        "license": "SIL OFL 1.1", "licenseFile": "/assets/fonts/qianzai-v1/OFL.txt",
+        "license": "SIL OFL 1.1", "licenseFile": f"/assets/fonts/qianzai-{args.profile}/OFL.txt",
         "licenseSha256": LICENSE_SHA, "sourceRepository": "https://github.com/google/fonts",
         "sourceCommit": SOURCE_COMMIT, "sourceFile": "ofl/notoserifsc/NotoSerifSC[wght].ttf",
         "sourceSha256": SOURCE_SHA,
@@ -79,7 +81,7 @@ def main():
         "audit": {"missingCodepoints": [], "allFiveCharacterNamesCovered": all(ord(c) in requested for c in "李白苏轼陶渊明李清照木兰")},
         "scope": "Declared QZTX body-copy subset, including pending copy candidates. No arbitrary Chinese or calligraphy coverage claim."
     }
-    (OUT / "manifest.json").write_text(json.dumps(descriptor, ensure_ascii=False, indent=2) + "\n")
+    (out / "manifest.json").write_text(json.dumps(descriptor, ensure_ascii=False, indent=2) + "\n")
     print(json.dumps({"bytes": len(data), "coveredCodepoints": len(requested), "fileSha256": sha(data), "missing": 0}))
 
 
