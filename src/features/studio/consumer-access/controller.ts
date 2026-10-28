@@ -10,6 +10,7 @@ import { verifyInternalVersionDetail } from "@/features/product/internal-version
 import { readInternalVersion } from "../internal-versions/client";
 import { consumerImplementationAvailable } from "@/features/product/internal-play/implementation-catalog";
 import { consumerImplementationAvailableV2 } from "@/features/product/internal-play/implementation-catalog-v2";
+import { selectParentConsumerRendererV2 } from "@/features/product/internal-play/parent-renderer-v2";
 import { StudioClientError } from "../client";
 import { consumerMomentSchema } from "@/lib/consumer-contract/v1/primitives";
 import type { ConsumerRendererIdentity } from "@/lib/consumer-contract/v1/identities";
@@ -82,6 +83,7 @@ type Task = Readonly<{ signal: AbortSignal; current: () => boolean }>;
 export type StudioConsumerRenderers = Readonly<{
   "quizforge.internal-version-snapshot.v1": ConsumerRendererIdentity;
   "quizforge.internal-version-snapshot.v2": ConsumerRendererIdentity;
+  qianzai?: ConsumerRendererIdentity;
 }>;
 /** Raw escrow never enters the public snapshot, React props, metadata lists or ordinary DOM. */
 export class StudioConsumerControllerV1 {
@@ -304,8 +306,15 @@ export class StudioConsumerControllerV1 {
       )
         throw new ConsumerClientError("UNAVAILABLE");
       const schema = parent.snapshot.schemaVersion,
-        renderer = this.renderers[schema];
+        renderer =
+          schema === "quizforge.internal-version-snapshot.v2"
+            ? selectParentConsumerRendererV2(parent.snapshot, [
+                this.renderers[schema],
+                ...(this.renderers.qianzai ? [this.renderers.qianzai] : []),
+              ])
+            : this.renderers[schema];
       if (
+        !renderer ||
         !(schema === "quizforge.internal-version-snapshot.v1"
           ? consumerImplementationAvailable(renderer)
           : consumerImplementationAvailableV2(renderer))

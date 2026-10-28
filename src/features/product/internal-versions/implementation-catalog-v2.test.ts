@@ -9,10 +9,10 @@ import { CONSUMER_IMPLEMENTATION_AVAILABILITY_V2 as consumer } from "../internal
 import { resolveConsumerImplementationV2 } from "../internal-play/implementation-server-v2";
 import { resolveConsumerExperienceRuntimeV2 } from "../internal-play/implementation-client-v2";
 
-describe("compiled structured v2 implementation registration", () => {
-  it("checks actual source, pinned dependencies and build input bytes for all three bindings", async () => {
+describe("compiled v2 implementation registration", () => {
+  it("checks actual source, pinned dependencies and build input bytes for all five current bindings", async () => {
     expect(await verifyV2Implementations(process.cwd())).toMatchObject({
-      available: 3,
+      available: 5,
     });
   });
   it("resolves exact identities and rejects modified identity, mapping or capabilities", () => {

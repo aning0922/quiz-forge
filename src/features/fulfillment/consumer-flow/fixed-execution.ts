@@ -53,6 +53,8 @@ export function fixedConsumerExecution(
       !engine ||
       !display ||
       source.content.schemaVersion !== "quizpack-content.v3" ||
+      (display.requiresPreferenceScene &&
+        !source.content.bindings.slots.neutral.preferenceScene) ||
       !presentation ||
       !matchesDisplayCapabilitiesV2(presentation, display.descriptor) ||
       !sameConsumerFact(

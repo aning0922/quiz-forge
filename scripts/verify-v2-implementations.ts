@@ -13,19 +13,18 @@ import {
 
 /** Build gate for compiled v2 catalogs; it grants no database review or content approval. */
 export async function verifyV2Implementations(cwd: string) {
-  for (const entry of IMPLEMENTATION_DESCRIPTORS_V2.engines)
-    if (!engineImplementationAvailableV2(implementationIdentityV2(entry)))
-      throw Error("V2_ENGINE_BINDING_MISMATCH");
-  for (const entry of IMPLEMENTATION_DESCRIPTORS_V2.renderers)
-    if (!rendererImplementationAvailableV2(implementationIdentityV2(entry)))
-      throw Error("V2_PREVIEW_BINDING_MISMATCH");
-  for (const entry of CONSUMER_IMPLEMENTATION_DESCRIPTORS_V2)
-    if (
-      !consumerImplementationAvailableV2(
-        consumerImplementationIdentityV2(entry),
-      )
-    )
-      throw Error("V2_CONSUMER_BINDING_MISMATCH");
+  if (
+    IMPLEMENTATION_DESCRIPTORS_V2.engines.filter((e) =>
+      engineImplementationAvailableV2(implementationIdentityV2(e)),
+    ).length !== 1 ||
+    IMPLEMENTATION_DESCRIPTORS_V2.renderers.filter((e) =>
+      rendererImplementationAvailableV2(implementationIdentityV2(e)),
+    ).length !== 2 ||
+    CONSUMER_IMPLEMENTATION_DESCRIPTORS_V2.filter((e) =>
+      consumerImplementationAvailableV2(consumerImplementationIdentityV2(e)),
+    ).length !== 2
+  )
+    throw Error("D3_FINAL_BINDINGS_REQUIRED");
   return verifyTrustedImplementationEntries(
     cwd,
     [
@@ -33,6 +32,18 @@ export async function verifyV2Implementations(cwd: string) {
       ...IMPLEMENTATION_DESCRIPTORS_V2.renderers,
       ...CONSUMER_IMPLEMENTATION_DESCRIPTORS_V2,
     ],
-    () => true,
+    (entry) => {
+      const identity = {
+        kind: entry.descriptor.kind,
+        id: entry.descriptor.id,
+        version: entry.descriptor.version,
+        entrySha256: entry.entrySha256,
+      };
+      return identity.kind === "consumer-renderer"
+        ? consumerImplementationAvailableV2(identity)
+        : identity.kind === "engine"
+          ? engineImplementationAvailableV2(identity)
+          : rendererImplementationAvailableV2(identity);
+    },
   );
 }

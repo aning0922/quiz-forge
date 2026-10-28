@@ -1,0 +1,270 @@
+{
+  "schemaVersion": "qianzai-runtime-inputs.v1",
+  "font": {
+    "id": "qianzai-tongxin-serif",
+    "version": "1.1.0",
+    "family": "QuizForge Qianzai Serif V2",
+    "weight": 600,
+    "file": "/assets/fonts/qianzai-v2/serif-600.woff2",
+    "fileSha256": "c135e211b94dfc61cefb5bf70ba849f0ccac870d3ec2ea021ef76c079d87d4e8",
+    "bytes": 188868,
+    "coverage": "/assets/fonts/qianzai-v2/characters.txt",
+    "coverageSha256": "75858bbfb1d82215d294c39a700c2cedcd9ef51980f2d859bcae7f3a14a89225",
+    "licenseFile": "/assets/fonts/qianzai-v2/OFL.txt",
+    "licenseSha256": "5e0da210fb04058a8c0087985d2d456b931c2579811a49655721d3cf0c36b6d6"
+  },
+  "resources": [
+    {
+      "asset": {
+        "resourceRef": {
+          "productId": "qianzai-tongxin",
+          "id": "qztx-v1-cover",
+          "version": "1.0.0"
+        },
+        "mediaType": "image/webp",
+        "bytes": 475734,
+        "sha256": "fc0fb75e94f080cc2481998b818ecbb7f7b41263a6edb8bbebac01dd2b00773d",
+        "width": 852,
+        "height": 1844,
+        "purpose": "cover",
+        "approval": "approved"
+      },
+      "slot": "cover",
+      "layer": "prototype-scene-base"
+    },
+    {
+      "asset": {
+        "resourceRef": {
+          "productId": "qianzai-tongxin",
+          "id": "qztx-v1-gender",
+          "version": "1.0.0"
+        },
+        "mediaType": "image/jpeg",
+        "bytes": 180806,
+        "sha256": "f33476f4d394ae512d1de622d15e8a5be99bb0c8f33b4f881d1aba224190a662",
+        "width": 390,
+        "height": 844,
+        "purpose": "decoration",
+        "approval": "approved"
+      },
+      "slot": "preferenceScene",
+      "layer": "prototype-scene-base"
+    },
+    {
+      "asset": {
+        "resourceRef": {
+          "productId": "qianzai-tongxin",
+          "id": "qztx-v1-scene0",
+          "version": "1.0.0"
+        },
+        "mediaType": "image/jpeg",
+        "bytes": 177042,
+        "sha256": "65e52b1f8a9c02cd13b24281f01aa6bdb377fae54cb619d5c9858fdc3f992066",
+        "width": 390,
+        "height": 844,
+        "purpose": "decoration",
+        "approval": "approved"
+      },
+      "slot": "acts.0.background",
+      "layer": "prototype-scene-base"
+    },
+    {
+      "asset": {
+        "resourceRef": {
+          "productId": "qianzai-tongxin",
+          "id": "qztx-v1-question0",
+          "version": "1.0.0"
+        },
+        "mediaType": "image/png",
+        "bytes": 50720,
+        "sha256": "22a00ce4aba3d54cc742b156873fbebcbfe304653371039cc20741c7ea7ba906",
+        "width": 354,
+        "height": 98,
+        "purpose": "decoration",
+        "approval": "approved"
+      },
+      "slot": "acts.0.questionPaper",
+      "layer": "clean"
+    },
+    {
+      "asset": {
+        "resourceRef": {
+          "productId": "qianzai-tongxin",
+          "id": "qztx-v1-option0",
+          "version": "1.0.0"
+        },
+        "mediaType": "image/png",
+        "bytes": 32258,
+        "sha256": "f64f703933519b742c3df3f0ec3d82a95bf46ef2bbc96f6939a3c0ca92889c09",
+        "width": 355,
+        "height": 65,
+        "purpose": "decoration",
+        "approval": "approved"
+      },
+      "slot": "acts.0.optionIdle",
+      "layer": "prototype-option-skin"
+    },
+    {
+      "asset": {
+        "resourceRef": {
+          "productId": "qianzai-tongxin",
+          "id": "qztx-v1-chosen0",
+          "version": "1.0.0"
+        },
+        "mediaType": "image/png",
+        "bytes": 32919,
+        "sha256": "09028581e4b67cdcb2524f8787f8b964de1ef747664e83ffbf7bab75e35a5e0d",
+        "width": 355,
+        "height": 65,
+        "purpose": "decoration",
+        "approval": "approved"
+      },
+      "slot": "acts.0.optionSelected",
+      "layer": "prototype-option-skin"
+    },
+    {
+      "asset": {
+        "resourceRef": {
+          "productId": "qianzai-tongxin",
+          "id": "qztx-v1-scene1",
+          "version": "1.0.0"
+        },
+        "mediaType": "image/jpeg",
+        "bytes": 172946,
+        "sha256": "3db580488243cc66b005c75057bc9cd6fca9891845d6de6110e1c27b533fcbb0",
+        "width": 390,
+        "height": 844,
+        "purpose": "decoration",
+        "approval": "approved"
+      },
+      "slot": "acts.1.background",
+      "layer": "prototype-scene-base"
+    },
+    {
+      "asset": {
+        "resourceRef": {
+          "productId": "qianzai-tongxin",
+          "id": "qztx-v1-question1",
+          "version": "1.0.0"
+        },
+        "mediaType": "image/png",
+        "bytes": 50551,
+        "sha256": "52636c8a641c6a0650b754178ed04109980432786fabf66bfbea3514fb559e3a",
+        "width": 354,
+        "height": 98,
+        "purpose": "decoration",
+        "approval": "approved"
+      },
+      "slot": "acts.1.questionPaper",
+      "layer": "clean"
+    },
+    {
+      "asset": {
+        "resourceRef": {
+          "productId": "qianzai-tongxin",
+          "id": "qztx-v1-option1",
+          "version": "1.0.0"
+        },
+        "mediaType": "image/png",
+        "bytes": 32319,
+        "sha256": "90afaf4068aede7ee95eaa12695a4003a46063bdc774f28e8cb4018aec253335",
+        "width": 355,
+        "height": 65,
+        "purpose": "decoration",
+        "approval": "approved"
+      },
+      "slot": "acts.1.optionIdle",
+      "layer": "prototype-option-skin"
+    },
+    {
+      "asset": {
+        "resourceRef": {
+          "productId": "qianzai-tongxin",
+          "id": "qztx-v1-chosen1",
+          "version": "1.0.0"
+        },
+        "mediaType": "image/png",
+        "bytes": 33133,
+        "sha256": "fc032835718dc7df19fca068b73981b997f002a3130bbaa2d05c6a1ef198170f",
+        "width": 355,
+        "height": 65,
+        "purpose": "decoration",
+        "approval": "approved"
+      },
+      "slot": "acts.1.optionSelected",
+      "layer": "prototype-option-skin"
+    },
+    {
+      "asset": {
+        "resourceRef": {
+          "productId": "qianzai-tongxin",
+          "id": "qztx-v1-scene2",
+          "version": "1.0.0"
+        },
+        "mediaType": "image/jpeg",
+        "bytes": 175631,
+        "sha256": "9cdf8d04bbe3a134ae4aa769410f7a152f5617ccd091a3e0e3fe93e7c63bd35a",
+        "width": 390,
+        "height": 844,
+        "purpose": "decoration",
+        "approval": "approved"
+      },
+      "slot": "acts.2.background",
+      "layer": "prototype-scene-base"
+    },
+    {
+      "asset": {
+        "resourceRef": {
+          "productId": "qianzai-tongxin",
+          "id": "qztx-v1-question2",
+          "version": "1.0.0"
+        },
+        "mediaType": "image/png",
+        "bytes": 50630,
+        "sha256": "c621989276404ce099682843ecddc2d7c363b1b123f06d996a5d2a5e836c3089",
+        "width": 354,
+        "height": 98,
+        "purpose": "decoration",
+        "approval": "approved"
+      },
+      "slot": "acts.2.questionPaper",
+      "layer": "clean"
+    },
+    {
+      "asset": {
+        "resourceRef": {
+          "productId": "qianzai-tongxin",
+          "id": "qztx-v1-option2",
+          "version": "1.0.0"
+        },
+        "mediaType": "image/png",
+        "bytes": 32207,
+        "sha256": "e8a83d448a5e32c55812de6f6ce2312198873b82f6f42ef7efdf4aec8da29e67",
+        "width": 355,
+        "height": 65,
+        "purpose": "decoration",
+        "approval": "approved"
+      },
+      "slot": "acts.2.optionIdle",
+      "layer": "prototype-option-skin"
+    },
+    {
+      "asset": {
+        "resourceRef": {
+          "productId": "qianzai-tongxin",
+          "id": "qztx-v1-chosen2",
+          "version": "1.0.0"
+        },
+        "mediaType": "image/png",
+        "bytes": 34037,
+        "sha256": "54bd42e901af2422bad8353dc4c342bc3abeebdab6db8b06f1aa5a6f569b0a36",
+        "width": 355,
+        "height": 65,
+        "purpose": "decoration",
+        "approval": "approved"
+      },
+      "slot": "acts.2.optionSelected",
+      "layer": "prototype-option-skin"
+    }
+  ]
+}

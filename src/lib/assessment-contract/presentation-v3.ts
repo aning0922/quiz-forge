@@ -17,6 +17,7 @@ export const CONTENT_COMPONENT_VERSION_V3 = "1.0.0" as const;
 export const presentationSlotsV3Schema = z.strictObject({
   neutral: z.strictObject({
     cover: ref,
+    preferenceScene: ref.optional(),
     acts: z
       .array(
         z.strictObject({
@@ -51,6 +52,7 @@ export function neutralSlotRefsV3(slots: PresentationSlotsV3) {
   const n = slots.neutral;
   return [
     n.cover,
+    ...(n.preferenceScene ? [n.preferenceScene] : []),
     ...n.acts.flatMap((a) => [
       a.background,
       a.questionPaper,

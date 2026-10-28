@@ -44,6 +44,7 @@ const externalRoot = (name: string) =>
 export async function collectQztxImplementationClosure(
   cwd: string,
   entries: Entry[],
+  fixedFontFiles: readonly string[] = [],
 ) {
   cwd = await realpath(cwd);
   const browser = entries.some((e) => e.runtime === "browser");
@@ -207,6 +208,14 @@ export async function collectQztxImplementationClosure(
     }
   };
   for (const entry of entries) await visit(entry.path);
+  for (const file of fixedFontFiles) {
+    if (
+      !file.startsWith("public/assets/fonts/") ||
+      !/\.(?:woff2|txt)$/.test(file)
+    )
+      throw Error("IMPLEMENTATION_FONT_SCOPE");
+    await visit(file);
+  }
   const pinned = new Set(baseline.dependencies.roots.map((r) => r.name));
   if ([...external].some((name) => !pinned.has(name)))
     throw Error("IMPLEMENTATION_NEW_DEPENDENCY_REQUIRES_PIN");

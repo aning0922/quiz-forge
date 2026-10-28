@@ -259,6 +259,14 @@ async function verifyExecution(
       context.checkpoint();
       const prepared = engine.prepare(JSON.parse(source.canonicalContentText));
       if (!prepared.ok) throw new StudioError("VERSION_DEPENDENCY_UNAVAILABLE");
+      if (
+        renderer.requiresPreferenceScene &&
+        !renderer.projectEntry(
+          JSON.parse(source.canonicalContentText),
+          source.canonicalContentSha256,
+        ).ok
+      )
+        throw new StudioError("VERSION_DEPENDENCY_UNAVAILABLE");
       context.checkpoint();
       return { renderer, witnesses: engine.witnesses(prepared.value) };
     }

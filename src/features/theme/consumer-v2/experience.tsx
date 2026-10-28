@@ -9,6 +9,10 @@ import type { ConsumerEntryViewV2 } from "@/features/fulfillment/consumer-flow/d
 import type { ConsumerImplementationDescriptorV2 } from "@/features/product/internal-play/implementation-schema-v2";
 import { ConsumerControllerV2 } from "./controller";
 import styles from "./consumer.module.css";
+import {
+  ConsumerResourceContextV2,
+  createConsumerResourcePortV2,
+} from "./resource-port";
 
 export type { ConsumerExperiencePropsV2 } from "./interfaces";
 import type { ConsumerExperiencePropsV2 } from "./interfaces";
@@ -28,6 +32,10 @@ type Owner = Pick<
   | "onEvent"
   | "bootstrap"
   | "dispose"
+  | "task"
+  | "revoke"
+  | "sessionId"
+  | "fetcher"
 >;
 export type ConsumerSessionRuntimeV2Props = {
   sessionId: string;
@@ -59,6 +67,10 @@ export function ConsumerSessionRuntimeV2({
     controller.getSnapshot,
     controller.getSnapshot,
   );
+  const resources = useMemo(
+    () => createConsumerResourcePortV2(controller),
+    [controller],
+  );
   useEffect(() => {
     void controller.bootstrap(initialScreen);
     return () => controller.dispose();
@@ -80,11 +92,13 @@ export function ConsumerSessionRuntimeV2({
   if (runtime) {
     const Experience = runtime.Experience;
     return (
-      <Experience
-        model={model}
-        onEvent={controller.onEvent}
-        {...(initialScreen ? { initialScreen } : {})}
-      />
+      <ConsumerResourceContextV2.Provider value={resources}>
+        <Experience
+          model={model}
+          onEvent={controller.onEvent}
+          {...(initialScreen ? { initialScreen } : {})}
+        />
+      </ConsumerResourceContextV2.Provider>
     );
   }
   return (

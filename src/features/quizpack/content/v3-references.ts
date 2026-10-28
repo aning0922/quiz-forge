@@ -168,6 +168,9 @@ export function validateContentV3(input: unknown): V2Result<QuizPackContentV3> {
       owners.set(key, owner);
     }
   if (
+    (b.slots.neutral.preferenceScene &&
+      resources.get(refKey(b.slots.neutral.preferenceScene))?.purpose !==
+        "decoration") ||
     neutralRefs.some((r) => {
       const p = resources.get(refKey(r))?.purpose;
       return p !== "cover" && p !== "decoration";
@@ -217,12 +220,13 @@ export function validateContentV3(input: unknown): V2Result<QuizPackContentV3> {
     a.optionSelected,
   ]);
   const n = b.slots.neutral,
+    preference = n.preferenceScene ? [n.preferenceScene] : [],
     seal = n.seal ? [n.seal] : [],
     paper = [n.reportPaper, ...(n.reportBorder ? [n.reportBorder] : [])];
   const graphs = {
-    cover: [vp.coverSceneRef, ...seal],
+    cover: [vp.coverSceneRef, ...preference, ...seal],
     question: sceneRefs,
-    resume: [vp.coverSceneRef, ...sceneRefs],
+    resume: [vp.coverSceneRef, ...preference, ...sceneRefs],
     result: [
       ...b.slots.characters.flatMap((p) => [p.reveal, p.nameArt]),
       ...seal,

@@ -51,6 +51,9 @@ export default async function StudioProductPage({
           CONSUMER_IMPLEMENTATION_AVAILABILITY.rendererV1_2,
         "quizforge.internal-version-snapshot.v2":
           CONSUMER_IMPLEMENTATION_AVAILABILITY_V2.structured,
+        ...(CONSUMER_IMPLEMENTATION_AVAILABILITY_V2.qianzai
+          ? { qianzai: CONSUMER_IMPLEMENTATION_AVAILABILITY_V2.qianzai }
+          : {}),
       }}
     />
   );
