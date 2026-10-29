@@ -3412,6 +3412,11 @@
   width: 100%;
   padding: 10px 9px;
   text-align: left;
+  font:
+    400 16px/1.5 system-ui,
+    "PingFang SC",
+    "Noto Sans CJK SC",
+    sans-serif;
   color: #f4e3c6;
   background: transparent;
   border: 0;
