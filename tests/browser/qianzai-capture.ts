@@ -13,18 +13,24 @@ import type {
   ConsumerV2ReaderModel,
 } from "@/lib/consumer-contract/v2/client-contract";
 
+const reportRun =
+  process.env.QZTX_CAPTURE_TARGET === "fidelity-report"
+    ? new Date().toISOString().replaceAll(":", "-")
+    : null;
 const out = path.resolve(
-  process.env.QZTX_PARITY_CAPTURE === "1"
-    ? ".cache/qztx-parity/browser"
-    : process.env.QZTX_CAPTURE_TARGET === "restore"
-      ? ".cache/qztx-d3/restore"
-      : process.env.QZTX_CAPTURE_TARGET === "reading"
-        ? ".cache/qztx-d3/reading"
-        : process.env.QZTX_CAPTURE_TARGET === "finish"
-          ? ".cache/qztx-d3/finish"
-          : process.env.QZTX_MOTION_STUDY === "1"
-            ? ".cache/qztx-d3/motion-study"
-            : ".cache/qztx-d3/browser",
+  reportRun
+    ? `.cache/qztx-fidelity/report-${reportRun}`
+    : process.env.QZTX_PARITY_CAPTURE === "1"
+      ? ".cache/qztx-parity/browser"
+      : process.env.QZTX_CAPTURE_TARGET === "restore"
+        ? ".cache/qztx-d3/restore"
+        : process.env.QZTX_CAPTURE_TARGET === "reading"
+          ? ".cache/qztx-d3/reading"
+          : process.env.QZTX_CAPTURE_TARGET === "finish"
+            ? ".cache/qztx-d3/finish"
+            : process.env.QZTX_MOTION_STUDY === "1"
+              ? ".cache/qztx-d3/motion-study"
+              : ".cache/qztx-d3/browser",
 );
 await mkdir(out, { recursive: true });
 const session = await consumerSessionFixtureV2(),
@@ -70,6 +76,157 @@ body.volumes.forEach((v, i) => {
       12,
     );
 });
+// Optional comparison data is read only from the explicitly supplied original
+// HTML. It never enters the production renderer, content registry, or snapshots.
+let referenceInput: Record<string, unknown> | undefined;
+if (process.env.QZTX_REPORT_REFERENCE_HTML) {
+  const htmlSha256 = createHash("sha256")
+    .update(await readFile(process.env.QZTX_REPORT_REFERENCE_HTML))
+    .digest("hex");
+  const referenceBrowser = await chromium.launch({ headless: true });
+  try {
+    const reference = await referenceBrowser.newPage();
+    await reference.goto(
+      new URL(`file://${process.env.QZTX_REPORT_REFERENCE_HTML}`).href,
+    );
+    // tsx preserves local helper names in serialized evaluate callbacks.
+    await reference.evaluate("window.__name = (fn) => fn");
+    await reference.evaluate(
+      "window.__quizforgeLiBai.showReveal(false);window.__quizforgeLiBai.toReport()",
+    );
+    const sample = await reference.evaluate(() => {
+      const plain = (node: Element | null) => {
+        if (!node) return "";
+        // textContent is independent of transition/visibility. Preserve actual
+        // source line breaks without inferring any production report fields.
+        const copy = node.cloneNode(true) as Element;
+        copy.querySelectorAll("br").forEach((br) => br.replaceWith("\n"));
+        return (copy.textContent ?? "").trim();
+      };
+      const text = (selector: string, root: ParentNode = document) =>
+        plain(root.querySelector(selector));
+      const opening = document.querySelector("#reportStart")!;
+      const rows = (selector: string) =>
+        Array.from(document.querySelectorAll(selector), plain);
+      return {
+        label: opening.querySelector("h1")!.firstChild!.textContent!.trim(),
+        title: text(".rp-identity-sub", opening),
+        axes: rows(".rp-radar-label"),
+        scores: rows(".rp-radar-value").map(Number),
+        titles: ["命定相逢", ...rows(".rp-section-head h2"), "寄语留存"],
+        encounter: [text(".rp-verse p", opening), text(".rp-lead", opening)],
+        dimension: text("#reportRadar .rp-section-head p"),
+        patterns: Array.from(document.querySelectorAll(".rp-res-body"), (n) =>
+          [text("h3", n), text("p", n), text("span", n)].join("\n"),
+        ),
+        reflection: [
+          text(".rp-reflection-feature blockquote"),
+          text(".rp-reflection-feature p"),
+          ...rows(".rp-dual-note>div"),
+        ],
+        literature: [
+          text(".rp-history-banner"),
+          ...rows(".rp-time-row"),
+          text(".rp-source-note"),
+        ],
+        closure: [text(".rp-final-verse"), text("#reportClosing>p")],
+      };
+    });
+    const groups = [
+      sample.encounter,
+      [sample.dimension],
+      sample.patterns,
+      sample.reflection,
+      sample.literature,
+      sample.closure,
+    ];
+    const counts = groups.map((group) => group.length);
+    if (
+      !sample.label ||
+      !sample.title ||
+      sample.titles.length !== 6 ||
+      sample.titles.some((t) => !t.trim()) ||
+      JSON.stringify(counts) !== JSON.stringify([2, 1, 3, 4, 5, 2]) ||
+      groups.some((group) => group.some((text) => !text.trim())) ||
+      sample.axes.length !== 5 ||
+      sample.axes.some((t) => !t.trim()) ||
+      sample.scores.length !== 5 ||
+      sample.scores.some((n) => !Number.isFinite(n) || n < 0 || n > 100)
+    )
+      throw Error("REFERENCE_REPORT_EMPTY_OR_INCOMPLETE");
+    body.matching.selected.label = sample.label;
+    body.matching.selected.kind = "documented-historical";
+    body.title = sample.title;
+    body.dimensions.forEach((d, i) => {
+      d.label = sample.axes[i]!;
+      d.score = sample.scores[i]!;
+    });
+    const paragraph = body.volumes[0]!.paragraphs[0]!;
+    const make = (text: string, kind: typeof paragraph.kind) => ({
+      ...paragraph,
+      kind,
+      text,
+      evidence: [],
+      counterevidence: [],
+    });
+    const content = [
+      [
+        make(sample.encounter[0]!, "literary"),
+        make(sample.encounter[1]!, "summary"),
+      ],
+      [make(sample.dimension, "context")],
+      sample.patterns.map((t) => make(t, "summary")),
+      sample.reflection.map((t, i) =>
+        make(t, i === 0 ? "literary" : "context"),
+      ),
+      sample.literature.map((t) => make(t, "fact")),
+      sample.closure.map((t, i) => make(t, i === 0 ? "literary" : "context")),
+    ];
+    body.volumes.forEach((v, i) => {
+      v.title = sample.titles[i]!;
+      v.paragraphs = content[i]!;
+    });
+    referenceInput = {
+      htmlSha256,
+      fixtureSha256: createHash("sha256")
+        .update(JSON.stringify(body))
+        .digest("hex"),
+      nonEmpty: true,
+      titles: sample.titles,
+      paragraphCounts: counts,
+      paragraphLengths: groups.map((g) => g.map((t) => t.length)),
+      axes: sample.axes,
+      scores: sample.scores,
+    };
+    await writeFile(
+      path.join(out, "reference-fixture.json"),
+      JSON.stringify(body, null, 2),
+    );
+  } catch (error) {
+    await writeFile(
+      path.join(out, "reference-input.failed.json"),
+      JSON.stringify(
+        { passed: false, htmlSha256, error: String(error) },
+        null,
+        2,
+      ),
+    );
+    throw error;
+  } finally {
+    await referenceBrowser.close();
+  }
+}
+if (process.env.QZTX_CAPTURE_TARGET === "reflection-evidence") {
+  const source = body.volumes[0]!.paragraphs[0]!,
+    reflection = body.volumes.find((v) => v.id === "counterevidence")!;
+  reflection.paragraphs = Array.from({ length: 5 }, (_, i) => ({
+    ...source,
+    text: `合成反思段落 ${i + 1}：正文、限定状态与本段证据必须完整保留。`,
+    kind: i === 0 ? "literary" : "context",
+    status: i === 3 ? "fallback" : i === 2 ? "facts-only" : "accepted",
+    counterevidence: i === 4 ? source.evidence : [],
+  }));
+}
 const fromTsx = createRequire(
   createRequire(import.meta.url).resolve("tsx/package.json"),
 );
@@ -295,6 +452,9 @@ const facts: Record<string, unknown> = {
     "actual D3 React and v2 controller; synthetic HTTP/prose, no DB/Next/registry/real resource admission",
   browser: await browser.version(),
   screenshots: [],
+  ...(reportRun
+    ? { run: reportRun, artifactDirectory: out, referenceInput }
+    : {}),
 };
 const continuing = process.env.QZTX_CAPTURE_CONTINUE === "1";
 if (continuing) {
@@ -387,7 +547,9 @@ async function checkRadar(page: Page) {
   await report
     .getByRole("button", { name: "阅读本卷选择依据", exact: true })
     .click();
-  await expect(report.locator("details[open]")).toHaveCount(1);
+  await expect(
+    report.locator("details[data-report-evidence][open]"),
+  ).toHaveCount(1);
   facts.radarNodes = {
     point: true,
     keyboard: true,
@@ -399,7 +561,378 @@ async function checkRadar(page: Page) {
 try {
   const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
   page.on("pageerror", (e) => errors.push(e.message));
-  if (process.env.QZTX_CAPTURE_TARGET === "preference-receipt") {
+  if (process.env.QZTX_CAPTURE_TARGET === "reflection-evidence") {
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.goto(origin);
+    await expect(page.locator("[data-qianzai-experience]")).toHaveAttribute(
+      "data-view-phase",
+      "ready",
+    );
+    await page.evaluate(() =>
+      (
+        window as unknown as { qianzaiProbe: { completed(): void } }
+      ).qianzaiProbe.completed(),
+    );
+    const report = page.locator('[data-qianzai-screen="report"]'),
+      article = report.locator('article[data-volume="counterevidence"]'),
+      groups = article.locator(":scope>div");
+    await expect(groups.nth(0).locator(":scope>section")).toHaveCount(2);
+    await expect(groups.nth(1).locator(":scope>section")).toHaveCount(3);
+    for (const width of [390, 320]) {
+      await page.setViewportSize({ width, height: 844 });
+      const primary = groups
+          .nth(0)
+          .locator("details[data-report-evidence]")
+          .first(),
+        note = groups.nth(1).locator("details[data-report-evidence]").first();
+      for (const evidence of [primary, note]) {
+        await evidence.locator("summary").focus();
+        await page.keyboard.press("Enter");
+        await expect(evidence).toHaveAttribute("open", "");
+        await expect(evidence.locator("blockquote").first()).toBeVisible();
+        await page.keyboard.press("Enter");
+        await expect(evidence).not.toHaveAttribute("open", "");
+        await expect(evidence.locator("summary")).toBeFocused();
+      }
+      await expect(
+        article.getByText("证据不足时的说明 · 本轮情境", { exact: true }),
+      ).toBeVisible();
+      const columns = await groups
+        .nth(1)
+        .evaluate(
+          (n) => getComputedStyle(n).gridTemplateColumns.split(" ").length,
+        );
+      expect(columns).toBe(width === 390 ? 2 : 1);
+      expect(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth <= innerWidth,
+        ),
+      ).toBe(true);
+    }
+    facts.reflectionEvidence = {
+      widths: [390, 320],
+      primaryParagraphs: 2,
+      flowingNotes: 3,
+      allEvidencePreserved: true,
+      keyboardExpandCollapse: true,
+      focusRetained: true,
+      scope: "synthetic snapshot only",
+    };
+  } else if (process.env.QZTX_CAPTURE_TARGET === "fidelity-report") {
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.goto(origin);
+    await expect(page.locator("[data-qianzai-experience]")).toHaveAttribute(
+      "data-view-phase",
+      "ready",
+    );
+    await page.evaluate(() =>
+      (
+        window as unknown as { qianzaiProbe: { completed(): void } }
+      ).qianzaiProbe.completed(),
+    );
+    const report = page.locator('[data-qianzai-screen="report"]'),
+      scroll = report.locator(":scope>div"),
+      nav = report.locator("header").first();
+    expect(referenceInput?.nonEmpty).toBe(true);
+    expect(await report.locator("article>header h2").allTextContents()).toEqual(
+      body.volumes.map((v) => v.title),
+    );
+    for (const volume of body.volumes) {
+      expect(
+        await report
+          .locator(
+            `article[data-volume="${volume.id}"] section[data-kind]>p:first-child`,
+          )
+          .allTextContents(),
+      ).toEqual(volume.paragraphs.map((p) => p.text));
+    }
+    const geometry: Record<string, unknown> = {};
+    const move = async (top: number) => {
+      const expected = await scroll.evaluate((n, top) => {
+        const max = n.scrollHeight - n.clientHeight;
+        n.scrollTo({ top, behavior: "instant" });
+        return {
+          top: Math.max(0, Math.min(top, max)),
+          percent: Math.round((Math.max(0, Math.min(top, max)) / max) * 100),
+        };
+      }, top);
+      await expect
+        .poll(async () =>
+          scroll.evaluate(
+            (n, top) => Math.abs(n.scrollTop - top),
+            expected.top,
+          ),
+        )
+        .toBeLessThan(1);
+      await expect
+        .poll(async () =>
+          Number(
+            await report.getByRole("progressbar").getAttribute("aria-valuenow"),
+          ),
+        )
+        .toBe(expected.percent);
+      await expect
+        .poll(() => nav.getAttribute("data-paper"))
+        .toBe(expected.top > 210 ? "true" : "false");
+    };
+    const capture = async (name: string) => {
+      await page.evaluate(async () => {
+        await document.fonts.ready;
+      });
+      const width = page.viewportSize()!.width;
+      geometry[width === 390 ? name : `${name}-${width}`] =
+        await report.evaluate((n) => {
+          const scroll = n.firstElementChild!,
+            nav = n.querySelector("header")!,
+            hero = n.querySelector("main")!.previousElementSibling!;
+          const nodes = [
+            nav,
+            hero,
+            n.querySelector("main")!,
+            ...n.querySelectorAll(
+              "article>header h2,article section[data-kind]>p:first-child",
+            ),
+          ];
+          return {
+            top: scroll.scrollTop,
+            percent: n
+              .querySelector("[role=progressbar]")
+              ?.getAttribute("aria-valuenow"),
+            nodes: nodes.map((n) => {
+              const r = n.getBoundingClientRect(),
+                s = getComputedStyle(n);
+              return {
+                text: n.textContent?.trim().slice(0, 60),
+                x: r.x,
+                y: r.y,
+                width: r.width,
+                height: r.height,
+                font: s.font,
+                background: s.backgroundColor,
+              };
+            }),
+          };
+        });
+      await page.screenshot({
+        path: path.join(out, `fidelity-report-${name}-${width}.png`),
+      });
+    };
+    await page.evaluate(async () => {
+      await document.fonts.ready;
+    });
+    if (process.env.QZTX_FIDELITY_VOLUME === "counterevidence") {
+      for (const width of [390, 320]) {
+        await page.setViewportSize({ width, height: 844 });
+        const top = await report
+          .locator('[data-report-chapter-id="counterevidence"]')
+          .evaluate((n) => {
+            const scroll = n.closest("main")!.parentElement!.parentElement!;
+            return (
+              scroll.scrollTop +
+              n.getBoundingClientRect().top -
+              scroll.getBoundingClientRect().top -
+              128
+            );
+          });
+        await move(top);
+        await capture("counterevidence");
+      }
+    } else {
+      await move(0);
+      await capture("top");
+      await move(210);
+      await expect(nav).toHaveAttribute("data-paper", "false");
+      await move(211);
+      await expect(nav).toHaveAttribute("data-paper", "true");
+      await move(300);
+      await capture("handoff");
+      for (const volume of body.volumes) {
+        const target = report.locator(
+          `[data-report-chapter-id="${volume.id}"]`,
+        );
+        const top = await target.evaluate((n) => {
+          const scroll = n.closest("main")!.parentElement!.parentElement!;
+          return (
+            scroll.scrollTop +
+            n.getBoundingClientRect().top -
+            scroll.getBoundingClientRect().top -
+            128
+          );
+        });
+        await move(top);
+        await capture(volume.id);
+      }
+      await move(await scroll.evaluate((n) => n.scrollHeight - n.clientHeight));
+      await capture("end");
+    }
+    facts.reportFidelity = {
+      geometry,
+      viewports: process.env.QZTX_FIDELITY_VOLUME
+        ? [
+            [390, 844],
+            [320, 844],
+          ]
+        : [[390, 844]],
+      source: process.env.QZTX_REPORT_REFERENCE_HTML
+        ? "explicit original HTML demo content projected into synthetic DTO"
+        : "synthetic fixture",
+      stateBar:
+        "original HTML includes a simulated 30px system status row; webpage does not fabricate it",
+      missingFields:
+        "snapshot has no role title, tags or quote source fields; none inferred or hardcoded",
+      scope: "offline comparison, not production or author acceptance",
+    };
+  } else if (
+    ["fidelity", "fidelity-question-footer"].includes(
+      process.env.QZTX_CAPTURE_TARGET ?? "",
+    )
+  ) {
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.goto(origin);
+    const host = page.locator("[data-qianzai-experience]");
+    await expect(host).toHaveAttribute("data-view-phase", "ready");
+    // This is a comparison canvas, not an author/production receipt. Keep the
+    // synthetic scope in the result metadata, outside the 390x844 page artwork.
+    await page
+      .getByText("合成内容与视觉容器验证 · 非正式题目或作者美术验收", {
+        exact: true,
+      })
+      .evaluate((node) => {
+        node.style.display = "none";
+      });
+    const geometry: Record<string, unknown> = {};
+    const captureOne = async (name: string, screen: string, width: number) => {
+      await page.setViewportSize({ width, height: 844 });
+      await page.evaluate(async () => {
+        await document.fonts.ready;
+      });
+      const view = page.locator(`[data-qianzai-screen="${screen}"]`);
+      expect(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth <= innerWidth,
+        ),
+      ).toBe(true);
+      expect(
+        await view.getByRole("button").evaluateAll((nodes) =>
+          nodes.every((n) => {
+            const r = n.getBoundingClientRect();
+            return r.width >= 44 && r.height >= 44;
+          }),
+        ),
+      ).toBe(true);
+      geometry[width === 390 ? name : `${name}-${width}`] = await view
+        .locator("header, h1, h2, fieldset, label, button, [role=progressbar]")
+        .evaluateAll((nodes) =>
+          nodes.map((node) => {
+            const r = node.getBoundingClientRect(),
+              css = getComputedStyle(node);
+            return {
+              tag: node.tagName,
+              text: node.textContent?.trim().slice(0, 90),
+              x: r.x,
+              y: r.y,
+              width: r.width,
+              height: r.height,
+              font: css.font,
+              lineHeight: css.lineHeight,
+              background: css.backgroundColor,
+            };
+          }),
+        );
+      await page.screenshot({
+        path: path.join(out, `fidelity-${name}-${width}.png`),
+      });
+    };
+    const capture = async (name: string, screen: string) => {
+      for (const width of process.env.QZTX_CAPTURE_TARGET ===
+      "fidelity-question-footer"
+        ? [390]
+        : [320, 375, 390, 430])
+        await captureOne(name, screen, width);
+      await page.setViewportSize({ width: 390, height: 844 });
+    };
+    await expect(
+      page.locator('[data-qianzai-screen="cover"] > div > img'),
+    ).toBeVisible();
+    if (process.env.QZTX_CAPTURE_TARGET === "fidelity")
+      await capture("cover", "cover");
+    await page
+      .getByRole("button", { name: "开启穿越之旅", exact: true })
+      .click();
+    await expect(
+      page.locator('[data-qianzai-screen="preference"] > img'),
+    ).toBeVisible();
+    if (process.env.QZTX_CAPTURE_TARGET === "fidelity")
+      await capture("preference", "preference");
+    await page
+      .locator('[data-qianzai-screen="preference"] label')
+      .first()
+      .click();
+    await expect(host).toHaveAttribute("data-view-phase", "ready");
+    await expect(
+      page.locator('[data-qianzai-screen="question"]'),
+    ).toBeVisible();
+    for (const [index, name] of [
+      [0, "act-one"],
+      [8, "act-two"],
+      [16, "act-three"],
+    ] as const) {
+      await page.evaluate(
+        (index) =>
+          (
+            window as unknown as {
+              qianzaiProbe: {
+                owner: {
+                  onEvent(e: { type: "navigate"; questionId: string }): void;
+                };
+              };
+            }
+          ).qianzaiProbe.owner.onEvent({
+            type: "navigate",
+            questionId: `q-${index}`,
+          }),
+        index,
+      );
+      await expect(host).toHaveAttribute("data-view-phase", "ready");
+      await expect(
+        page.locator('[data-qianzai-screen="question"] [role=progressbar]'),
+      ).toHaveAttribute("aria-valuenow", String(index + 1));
+      await capture(name, "question");
+    }
+    if (process.env.QZTX_CAPTURE_TARGET === "fidelity-question-footer") {
+      await page.emulateMedia({ reducedMotion: "no-preference" });
+      await page.clock.install();
+      await page.clock.pauseAt(new Date(Date.now() + 100));
+      const paper = page.locator('[data-qianzai-screen="question"] h2'),
+        before = await paper.boundingBox();
+      await page
+        .locator('[data-qianzai-screen="question"] label')
+        .first()
+        .click();
+      await page.clock.runFor(400);
+      await expect(page.locator("[data-qianzai-transition]")).toHaveAttribute(
+        "data-kind",
+        "paper",
+      );
+      expect(Math.abs((await paper.boundingBox())!.y - before!.y)).toBeLessThan(
+        1,
+      );
+      await page.clock.runFor(155);
+      await expect(host).toHaveAttribute("data-view-phase", "ready");
+      await page.clock.runFor(400);
+      await expect(page.locator("[data-qianzai-transition]")).toBeHidden();
+      facts.footerPaperTransition = {
+        noLayoutShift: true,
+        scope: "new footer background only; previous stage matrix reused",
+      };
+    }
+    facts.fidelity = {
+      geometry,
+      canvas: [390, 844],
+      scope:
+        "prototype bytes and synthetic HTTP, comparison canvas excludes synthetic banner; no production/author acceptance",
+    };
+  } else if (process.env.QZTX_CAPTURE_TARGET === "preference-receipt") {
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.goto(origin);
     const host = page.locator("[data-qianzai-experience]"),
@@ -838,10 +1371,37 @@ try {
     await expect(
       page.locator('[data-qianzai-screen="cover"] [data-motion]'),
     ).toHaveAttribute("data-motion", "paused");
+    expect(
+      await page
+        .locator('[data-qianzai-screen="cover"] [aria-hidden="true"]')
+        .evaluateAll((nodes) =>
+          nodes
+            .filter((n) =>
+              getComputedStyle(n, "::after").animationName.includes(
+                "waterwayPulse",
+              ),
+            )
+            .map((n) => getComputedStyle(n, "::after").animationPlayState),
+        ),
+    ).toEqual(["paused"]);
     await page
       .getByRole("button", { name: "封面动效设置", exact: true })
       .click();
     await page.getByRole("button", { name: "继续动效", exact: true }).click();
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    expect(
+      await page
+        .locator('[data-qianzai-screen="cover"] [aria-hidden="true"]')
+        .evaluateAll((nodes) =>
+          nodes.every(
+            (n) =>
+              !getComputedStyle(n, "::after").animationName.includes(
+                "waterwayPulse",
+              ),
+          ),
+        ),
+    ).toBe(true);
+    await page.emulateMedia({ reducedMotion: "no-preference" });
     await page
       .getByRole("button", { name: "开启穿越之旅", exact: true })
       .click();
@@ -1054,7 +1614,9 @@ try {
     await checkRadar(page);
     await expect(
       report
-        .locator('article[data-volume="dimensions"] details[open] summary')
+        .locator(
+          'article[data-volume="dimensions"] details[data-report-evidence][open] summary',
+        )
         .first(),
     ).toBeFocused();
     await page.emulateMedia({ reducedMotion: "reduce" });

@@ -124,7 +124,10 @@ export function QianzaiCover({
           </div>
         )}
         <div className={styles.coverFacts}>
-          <p>{model.entry?.questions.length ?? 0} 道情境题 · 三幕旅程</p>
+          <p>
+            {model.entry?.questions.length ?? 0} 道题 · 三幕旅程 ·
+            一场穿越千年的相遇
+          </p>
           {!image && <p>依据本轮选择，阅读与你相逢的六卷。</p>}
         </div>
         <button
@@ -134,13 +137,16 @@ export function QianzaiCover({
         >
           开启穿越之旅
         </button>
+        <div className={styles.waterway} aria-hidden="true" />
         <button
           className={styles.swipeHint}
           disabled={!canEditConsumerV2(model)}
           onClick={() => onRead("preference")}
         >
-          <ChevronUp size={36} aria-hidden="true" focusable="false" />
-          启程相逢
+          <span className={styles.swipeUp}>
+            <ChevronUp size={24} aria-hidden="true" focusable="false" />
+          </span>
+          上滑也可启程
         </button>
         <button
           className={styles.motionToggle}
@@ -271,10 +277,15 @@ export function QianzaiPreference({
         进入第一幕
       </button>
       <p className={styles.finePrint}>
-        三幕 · {model.entry?.questions.length ?? 0} 道情境题
+        下一步将开启 {model.entry?.questions.length ?? 0} 道测试题
         <br />
-        探寻你与古人的命定相逢
+        探寻你与TA的命定相逢
       </p>
+      {scene?.layer === "prototype-scene-base" && (
+        <span className={styles.preferenceCount} aria-hidden="true">
+          {model.entry?.questions.length ?? 0}
+        </span>
+      )}
     </Screen>
   );
 }
@@ -404,8 +415,21 @@ export function QianzaiQuestion({
             </span>
           </div>
           <div className={styles.questionBody} key={q.ref.id}>
+            {art?.layer === "prototype-scene-base" && (
+              // The fixed base contains an old footer at y=751. Reuse only its
+              // text-free water band so growing prose cannot expose old controls.
+              <svg
+                className={styles.footerContinuation}
+                viewBox="0 817 390 27"
+                preserveAspectRatio="none"
+                aria-hidden="true"
+              >
+                <image href={art.objectUrl} width="390" height="844" />
+              </svg>
+            )}
             <div
               className={styles.questionPaper}
+              data-long={q.prompt.length >= 30}
               style={
                 paper
                   ? {
@@ -476,8 +500,10 @@ export function QianzaiQuestion({
                   art?.layer === "prototype-scene-base"
                     ? {
                         backgroundImage: `url("${art.objectUrl}")`,
-                        backgroundSize: "390px 844px",
-                        backgroundPosition: "-20px -760px",
+                        backgroundSize:
+                          "var(--scene-width) calc(var(--scene-width) * 844 / 390)",
+                        backgroundPosition:
+                          "calc(var(--scene-width) * -18 / 390) calc(var(--scene-width) * -751 / 390)",
                       }
                     : undefined
                 }
@@ -496,8 +522,10 @@ export function QianzaiQuestion({
                   art?.layer === "prototype-scene-base"
                     ? {
                         backgroundImage: `url("${art.objectUrl}")`,
-                        backgroundSize: "390px 844px",
-                        backgroundPosition: "-252px -760px",
+                        backgroundSize:
+                          "var(--scene-width) calc(var(--scene-width) * 844 / 390)",
+                        backgroundPosition:
+                          "calc(var(--scene-width) * -251 / 390) calc(var(--scene-width) * -751 / 390)",
                       }
                     : undefined
                 }

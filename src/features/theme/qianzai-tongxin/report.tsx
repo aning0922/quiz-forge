@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { Fragment, useEffect, useId, useRef, useState } from "react";
 import { ChevronLeft, ChevronDown, ArrowUp } from "lucide-react";
 import type { ComposedReportBodyV1 } from "@/lib/assessment-contract/composed-report-v1";
 import { ArtImage, Screen, type QianzaiViewProps } from "./views";
@@ -10,14 +10,19 @@ import styles from "./qianzai.module.css";
 const point = (index: number, radius: number) => {
   const angle = -Math.PI / 2 + (index * Math.PI * 2) / 5;
   return [
-    180 + Math.cos(angle) * radius,
-    166 + Math.sin(angle) * radius,
+    170 + Math.cos(angle) * radius,
+    167 + Math.sin(angle) * radius,
   ] as const;
 };
 export function QianzaiDimensions({ body }: { body: ComposedReportBodyV1 }) {
   const id = useId();
-  const [selected, setSelected] = useState(0);
-  const dimension = body.dimensions[selected];
+  const [selected, setSelected] = useState<number | null>(null);
+  const reading = useRef<HTMLDetailsElement>(null);
+  const dimension = body.dimensions[selected ?? 0];
+  const select = (index: number) => {
+    setSelected(index);
+    if (reading.current) reading.current.open = true;
+  };
   return (
     <section className={styles.dimensionCard} aria-label="本轮五维">
       <div className={styles.dimensionHeading}>
@@ -26,7 +31,7 @@ export function QianzaiDimensions({ body }: { body: ComposedReportBodyV1 }) {
       </div>
       {body.dimensions.length === 5 && (
         <svg
-          viewBox="0 0 360 330"
+          viewBox="0 0 340 348"
           role="group"
           aria-labelledby={id}
           className={styles.radar}
@@ -34,7 +39,7 @@ export function QianzaiDimensions({ body }: { body: ComposedReportBodyV1 }) {
           <title id={id}>
             {body.dimensions.map((d) => `${d.label} ${d.score}分`).join("，")}
           </title>
-          {[0.25, 0.5, 0.75, 1].map((scale) => (
+          {[0.2, 0.4, 0.6, 0.8, 1].map((scale) => (
             <polygon
               key={scale}
               points={Array.from({ length: 5 }, (_, i) =>
@@ -46,8 +51,8 @@ export function QianzaiDimensions({ body }: { body: ComposedReportBodyV1 }) {
           {body.dimensions.map((d, i) => (
             <line
               key={d.dimensionRef.id}
-              x1={180}
-              y1={166}
+              x1={170}
+              y1={167}
               x2={point(i, 103)[0]}
               y2={point(i, 103)[1]}
               className={styles.radarAxis}
@@ -60,7 +65,13 @@ export function QianzaiDimensions({ body }: { body: ComposedReportBodyV1 }) {
             className={styles.radarShape}
           />
           {body.dimensions.map((d, i) => {
-            const [x, y] = point(i, 139),
+            const [x, y] = [
+                [170, 26],
+                [290, 112],
+                [281, 298],
+                [59, 298],
+                [50, 112],
+              ][i]!,
               [px, py] = point(i, (d.score / 100) * 103);
             return (
               <g key={d.dimensionRef.id}>
@@ -71,7 +82,7 @@ export function QianzaiDimensions({ body }: { body: ComposedReportBodyV1 }) {
                   data-qianzai-radar-point={d.dimensionRef.id}
                   className={styles.radarPoint}
                   aria-hidden="true"
-                  onClick={() => setSelected(i)}
+                  onClick={() => select(i)}
                 />
                 <g
                   role="button"
@@ -79,11 +90,11 @@ export function QianzaiDimensions({ body }: { body: ComposedReportBodyV1 }) {
                   aria-label={`${d.label} ${d.score}分`}
                   aria-pressed={selected === i}
                   className={styles.radarNode}
-                  onClick={() => setSelected(i)}
+                  onClick={() => select(i)}
                   onKeyDown={(event) => {
                     if (["Enter", " "].includes(event.key)) {
                       event.preventDefault();
-                      setSelected(i);
+                      select(i);
                     }
                   }}
                 >
@@ -100,71 +111,73 @@ export function QianzaiDimensions({ body }: { body: ComposedReportBodyV1 }) {
           })}
         </svg>
       )}
-      <dl className={styles.dimensionBars}>
-        {body.dimensions.map((d, i) => (
-          <div key={d.dimensionRef.id} data-selected={selected === i}>
-            <dt>
-              <button
-                aria-pressed={selected === i}
-                onClick={() => setSelected(i)}
-              >
-                {d.label}
-              </button>
-            </dt>
-            <dd>
-              <span className={styles.dualBar} aria-hidden="true">
-                <i
-                  style={{
-                    left: `${Math.min(50, d.score)}%`,
-                    width: `${Math.abs(d.score - 50)}%`,
-                  }}
-                />
-                <b style={{ left: `${d.score}%` }} />
-              </span>
-              <span className={styles.numericScore}>{d.score} / 100</span>
-            </dd>
-          </div>
-        ))}
-      </dl>
-      {dimension && (
-        <aside className={styles.dimensionReading} aria-live="polite">
-          <h4>
-            {dimension.label} · {dimension.score} / 100
-          </h4>
-          <p>这是本轮选择的一个方向，不是能力等级。</p>
-          <button
-            onClick={(event) => {
-              const evidence = event.currentTarget
-                .closest("article")
-                ?.querySelector("details");
-              if (evidence) {
-                evidence.open = true;
-                evidence
-                  .querySelector("summary")
-                  ?.focus({ preventScroll: true });
-                evidence.scrollIntoView({
-                  block: "center",
-                  behavior: window.matchMedia(
-                    "(prefers-reduced-motion: reduce)",
-                  ).matches
-                    ? "instant"
-                    : "smooth",
-                });
-              }
-            }}
-          >
-            阅读本卷选择依据
-          </button>
-        </aside>
-      )}
-      <div className={styles.scaleLegend} aria-hidden="true">
-        <span>0</span>
-        <span>50</span>
-        <span>100</span>
-      </div>
-      <p className={styles.dimensionNote}>
-        分数来自同一份封存报告；50 只是刻度中点。
-      </p>
+      <details ref={reading} className={styles.dimensionDetails}>
+        <summary>查看五维分值与选择依据</summary>
+        <dl className={styles.dimensionBars}>
+          {body.dimensions.map((d, i) => (
+            <div key={d.dimensionRef.id} data-selected={selected === i}>
+              <dt>
+                <button aria-pressed={selected === i} onClick={() => select(i)}>
+                  {d.label}
+                </button>
+              </dt>
+              <dd>
+                <span className={styles.dualBar} aria-hidden="true">
+                  <i
+                    style={{
+                      left: `${Math.min(50, d.score)}%`,
+                      width: `${Math.abs(d.score - 50)}%`,
+                    }}
+                  />
+                  <b style={{ left: `${d.score}%` }} />
+                </span>
+                <span className={styles.numericScore}>{d.score} / 100</span>
+              </dd>
+            </div>
+          ))}
+        </dl>
+        {dimension && (
+          <aside className={styles.dimensionReading} aria-live="polite">
+            <h4>
+              {dimension.label} · {dimension.score} / 100
+            </h4>
+            <p>这是本轮选择的一个方向，不是能力等级。</p>
+            <button
+              onClick={(event) => {
+                const evidence = event.currentTarget
+                  .closest("article")
+                  ?.querySelector<HTMLDetailsElement>(
+                    "details[data-report-evidence]",
+                  );
+                if (evidence) {
+                  evidence.open = true;
+                  evidence
+                    .querySelector("summary")
+                    ?.focus({ preventScroll: true });
+                  evidence.scrollIntoView({
+                    block: "center",
+                    behavior: window.matchMedia(
+                      "(prefers-reduced-motion: reduce)",
+                    ).matches
+                      ? "instant"
+                      : "smooth",
+                  });
+                }
+              }}
+            >
+              阅读本卷选择依据
+            </button>
+          </aside>
+        )}
+        <div className={styles.scaleLegend} aria-hidden="true">
+          <span>0</span>
+          <span>50</span>
+          <span>100</span>
+        </div>
+        <p className={styles.dimensionNote}>
+          分数来自同一份封存报告；50 只是刻度中点。
+        </p>
+      </details>
     </section>
   );
 }
@@ -176,7 +189,11 @@ function Evidence({
   counter?: boolean;
 }) {
   return entries.length ? (
-    <details className={styles.evidence} data-counter={counter}>
+    <details
+      className={styles.evidence}
+      data-report-evidence
+      data-counter={counter}
+    >
       <summary>
         {counter ? "同时阅读的反向证据" : "本段依据的实际选择"} ·{" "}
         {entries.length}
@@ -192,6 +209,33 @@ function Evidence({
       </ul>
     </details>
   ) : null;
+}
+function ReportParagraph({
+  paragraph,
+}: {
+  paragraph: ComposedReportBodyV1["volumes"][number]["paragraphs"][number];
+}) {
+  return (
+    <section
+      className={styles.paragraph}
+      data-kind={paragraph.kind}
+      data-status={paragraph.status}
+    >
+      <p>{paragraph.text}</p>
+      <p
+        className={`${styles.qualifier} ${paragraph.status === "accepted" ? styles.srOnly : ""}`}
+      >
+        {paragraph.status === "facts-only"
+          ? "本轮事实"
+          : paragraph.status === "fallback"
+            ? "证据不足时的说明"
+            : "有证据支持的限定描述"}{" "}
+        · {paragraph.kind === "literary" ? "文学类比" : "本轮情境"}
+      </p>
+      <Evidence entries={paragraph.evidence} />
+      <Evidence entries={paragraph.counterevidence} counter />
+    </section>
+  );
 }
 export function QianzaiReport({
   model,
@@ -212,6 +256,7 @@ export function QianzaiReport({
   const [reading, setReading] = useState({
     percent: 0,
     chapter: "卷首 · 相逢",
+    paper: false,
   });
   const measure = (node: HTMLDivElement) => {
     const max = Math.max(0, node.scrollHeight - node.clientHeight);
@@ -225,10 +270,11 @@ export function QianzaiReport({
     ))
       if (section.getBoundingClientRect().top <= threshold)
         chapter = section.dataset.reportChapter ?? chapter;
+    const paper = node.scrollTop > 210;
     setReading((old) =>
-      old.percent === percent && old.chapter === chapter
+      old.percent === percent && old.chapter === chapter && old.paper === paper
         ? old
-        : { percent, chapter },
+        : { percent, chapter, paper },
     );
   };
   useEffect(() => {
@@ -258,7 +304,7 @@ export function QianzaiReport({
         onScroll={(e) => measure(e.currentTarget)}
       >
         <div>
-          <header className={styles.reportNav} data-paper={reading.percent > 3}>
+          <header className={styles.reportNav} data-paper={reading.paper}>
             <div>
               <button
                 className={styles.reportBack}
@@ -298,7 +344,7 @@ export function QianzaiReport({
                           .closest("details")
                           ?.removeAttribute("open");
                         target
-                          ?.querySelector("h2")
+                          ?.querySelector<HTMLElement>("h1,h2")
                           ?.focus({ preventScroll: true });
                       }}
                     >
@@ -352,7 +398,10 @@ export function QianzaiReport({
           >
             {body && (
               <>
-                <section className={styles.reportOpening}>
+                <section
+                  className={styles.reportOpening}
+                  data-report-chapter-id="encounter"
+                >
                   <p className={styles.eyebrow}>
                     <span aria-hidden="true">✧</span> 命定相逢 · 本轮记录{" "}
                     <span aria-hidden="true">✧</span>
@@ -366,12 +415,6 @@ export function QianzaiReport({
                     <strong>{body.matching.selected.narrativeIndex}</strong> /
                     100
                   </p>
-                  <p className={styles.reportNotice}>{body.notice}</p>
-                  <p className={styles.reportKind}>
-                    {body.matching.selected.kind === "literary-legendary"
-                      ? `${body.matching.selected.label}以文学／传说人物的艺术形象参与本轮匹配。`
-                      : "人物为文学类比，不是历史人物心理测量。"}
-                  </p>
                   {body.matching.status !== "single-candidate" &&
                     body.matching.runnerUp && (
                       <p>
@@ -384,85 +427,118 @@ export function QianzaiReport({
                     )}
                 </section>
                 {body.volumes.map((v, i) => (
-                  <article
-                    key={v.id}
-                    id={`${id}-${v.id}`}
-                    className={styles.volume}
-                    data-volume={v.id}
-                    data-report-chapter={v.title}
-                    data-report-chapter-id={v.id}
-                  >
-                    <header>
-                      <p>第{["一", "二", "三", "四", "五", "六"][i]}卷</p>
-                      <h2 tabIndex={-1}>{v.title}</h2>
-                    </header>
-                    {v.id === "dimensions" && <QianzaiDimensions body={body} />}
-                    {v.paragraphs.map((p, j) => (
-                      <section
-                        key={j}
-                        className={styles.paragraph}
-                        data-kind={p.kind}
-                        data-status={p.status}
-                      >
-                        <p className={styles.qualifier}>
-                          {p.status === "facts-only"
-                            ? "本轮事实"
-                            : p.status === "fallback"
-                              ? "证据不足时的说明"
-                              : "有证据支持的限定描述"}{" "}
-                          · {p.kind === "literary" ? "文学类比" : "本轮情境"}
-                        </p>
-                        <p>{p.text}</p>
-                        <Evidence entries={p.evidence} />
-                        <Evidence entries={p.counterevidence} counter />
-                      </section>
-                    ))}
-                  </article>
+                  <Fragment key={v.id}>
+                    {v.id === "closure" && (
+                      <details className={styles.allAnswers}>
+                        <summary>
+                          本轮全部选择 · {body.answers.length} 题
+                        </summary>
+                        <ol>
+                          {body.answers.map((a) => (
+                            <li key={a.questionRef.id}>
+                              <p>
+                                第 {a.act} 幕 · {a.prompt}
+                              </p>
+                              <blockquote>{a.optionText}</blockquote>
+                            </li>
+                          ))}
+                        </ol>
+                      </details>
+                    )}
+                    <article
+                      id={`${id}-${v.id}`}
+                      className={styles.volume}
+                      data-volume={v.id}
+                      data-report-chapter={v.title}
+                      data-report-chapter-id={
+                        v.id === "encounter" ? undefined : v.id
+                      }
+                    >
+                      <header>
+                        <p>第{["一", "二", "三", "四", "五", "六"][i]}卷</p>
+                        <h2 tabIndex={-1}>{v.title}</h2>
+                      </header>
+                      {v.id === "dimensions" && (
+                        <QianzaiDimensions body={body} />
+                      )}
+                      {v.id === "counterevidence" ? (
+                        <>
+                          <div className={styles.reflectionFeature}>
+                            {v.paragraphs.slice(0, 2).map((paragraph, j) => (
+                              <ReportParagraph key={j} paragraph={paragraph} />
+                            ))}
+                          </div>
+                          {v.paragraphs.length > 2 && (
+                            <div className={styles.reflectionNotes}>
+                              {v.paragraphs.slice(2).map((paragraph, j) => (
+                                <ReportParagraph
+                                  key={j}
+                                  paragraph={paragraph}
+                                />
+                              ))}
+                            </div>
+                          )}
+                        </>
+                      ) : (
+                        v.paragraphs.map((paragraph, j) => (
+                          <ReportParagraph key={j} paragraph={paragraph} />
+                        ))
+                      )}
+                      {v.id === "encounter" && (
+                        <div className={styles.reportNotices}>
+                          <p className={styles.reportNotice}>{body.notice}</p>
+                          <p className={styles.reportKind}>
+                            {body.matching.selected.kind ===
+                            "literary-legendary"
+                              ? `${body.matching.selected.label}以文学／传说人物的艺术形象参与本轮匹配。`
+                              : "人物为文学类比，不是历史人物心理测量。"}
+                          </p>
+                        </div>
+                      )}
+                      {v.id === "closure" && (
+                        <footer className={styles.reportClosing}>
+                          <div
+                            className={styles.closingOrnament}
+                            aria-hidden="true"
+                          >
+                            ✧　✦　✧
+                          </div>
+                          <div className={styles.finalStamp} aria-hidden="true">
+                            千载
+                            <br />
+                            同心
+                          </div>
+                          <p className={styles.reportEndline}>长卷已展至尽处</p>
+                          <div className={styles.reportActions}>
+                            <button
+                              disabled
+                              aria-describedby={`${id}-poster-note`}
+                            >
+                              分享卡待开放
+                            </button>
+                            <button onClick={() => onRead("result")}>
+                              回看人物揭晓
+                            </button>
+                          </div>
+                          <p
+                            id={`${id}-poster-note`}
+                            className={styles.posterNote}
+                          >
+                            分享卡与图片导出尚未开放。
+                          </p>
+                          <button
+                            className={styles.returnToStart}
+                            onClick={returnToStart}
+                          >
+                            <ArrowUp size={16} aria-hidden="true" />
+                            回到卷首
+                          </button>
+                          <p>{body.notice}</p>
+                        </footer>
+                      )}
+                    </article>
+                  </Fragment>
                 ))}
-                <details className={styles.allAnswers}>
-                  <summary>本轮全部选择 · {body.answers.length} 题</summary>
-                  <ol>
-                    {body.answers.map((a) => (
-                      <li key={a.questionRef.id}>
-                        <p>
-                          第 {a.act} 幕 · {a.prompt}
-                        </p>
-                        <blockquote>{a.optionText}</blockquote>
-                      </li>
-                    ))}
-                  </ol>
-                </details>
-                <footer className={styles.reportClosing}>
-                  <div className={styles.closingOrnament} aria-hidden="true">
-                    ✧　✦　✧
-                  </div>
-                  <p>千载相逢，始于此刻的你。</p>
-                  <div className={styles.finalStamp} aria-hidden="true">
-                    千载
-                    <br />
-                    同心
-                  </div>
-                  <p className={styles.reportEndline}>长卷已展至尽处</p>
-                  <div className={styles.reportActions}>
-                    <button disabled aria-describedby={`${id}-poster-note`}>
-                      分享卡待开放
-                    </button>
-                    <button onClick={() => onRead("result")}>
-                      回看人物揭晓
-                    </button>
-                  </div>
-                  <p id={`${id}-poster-note`} className={styles.posterNote}>
-                    分享卡与图片导出尚未开放。
-                  </p>
-                  <button
-                    className={styles.returnToStart}
-                    onClick={returnToStart}
-                  >
-                    <ArrowUp size={16} aria-hidden="true" />
-                    回到卷首
-                  </button>
-                  <p>{body.notice}</p>
-                </footer>
               </>
             )}
           </main>
