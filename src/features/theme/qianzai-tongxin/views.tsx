@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import {
   ChevronUp,
   ChevronDown,
@@ -101,6 +101,7 @@ export function QianzaiCover({
           src={image?.objectUrl}
           className={styles.fullArt}
         />
+        {image && <div className={styles.coverIntroShade} aria-hidden="true" />}
         {image && (
           <>
             <div className={styles.lamps} aria-hidden="true">
@@ -558,67 +559,126 @@ export function QianzaiQuestion({
   );
 }
 
-export function QianzaiReveal({ model, onRead, images }: QianzaiViewProps) {
+export function QianzaiReveal({
+  model,
+  onRead,
+  images,
+  active = true,
+  presentation = "ready",
+  startedAt = 0,
+  onReplay,
+}: QianzaiViewProps & {
+  active?: boolean;
+  presentation?: "waiting" | "playing" | "ready";
+  startedAt?: number;
+  onReplay?: () => void;
+}) {
   const character = qianzaiCharacter(model),
     image = qianzaiImage(model, character?.reveal, images),
     name = qianzaiImage(model, character?.nameArt, images);
   const body = model.report?.view.display.body,
     selected = body?.matching.selected;
+  const layers = useRef<HTMLDivElement>(null),
+    motion = useQianzaiMotion(active);
+  useEffect(() => {
+    if (presentation !== "playing" || !startedAt || !layers.current) return;
+    // Late decoded resources join the current reveal clock. They never restart
+    // a finished reveal or delay access to the immutable text report.
+    const elapsed = Math.max(0, performance.now() - startedAt);
+    for (const animation of layers.current.getAnimations({ subtree: true })) {
+      if (Number.isFinite(animation.effect?.getComputedTiming().endTime))
+        animation.currentTime = Math.max(
+          Number(animation.currentTime ?? 0),
+          elapsed,
+        );
+    }
+  }, [image?.objectUrl, name?.objectUrl, presentation, startedAt]);
   return (
     <Screen name="result" className={styles.reveal}>
-      <ArtImage
-        key={image?.objectUrl ?? "none"}
-        src={image?.objectUrl}
-        className={styles.revealArt}
-      />
-      <div className={styles.moonbeam} aria-hidden="true" />
-      <div className={styles.inkSweep} aria-hidden="true" />
-      <header className={styles.revealHeader}>
-        <p>千载同心</p>
-        <span>终章 · 相逢</span>
-      </header>
-      <div className={styles.revealIdentity}>
-        <p>与你相逢的是</p>
-        {name ? (
-          <>
-            <ArtImage
-              key={name.objectUrl}
-              src={name.objectUrl}
-              className={styles.nameArt}
-            />
-            <h1 className={styles.srOnly}>{selected?.label}</h1>
-          </>
-        ) : (
-          <h1 className={styles.diagonalName}>
-            {Array.from(selected?.label ?? "本轮相逢").map((letter, i) => (
-              <span key={i}>{letter}</span>
-            ))}
-          </h1>
+      <div
+        ref={layers}
+        className={styles.revealLayers}
+        data-reveal-phase={presentation}
+        data-motion={motion ? "running" : "paused"}
+        aria-hidden={presentation === "waiting"}
+      >
+        <ArtImage
+          key={image?.objectUrl ?? "none"}
+          src={image?.objectUrl}
+          className={styles.revealArt}
+        />
+        <div className={styles.moonbeam} aria-hidden="true" />
+        <div className={styles.inkSweep} aria-hidden="true" />
+        <header className={styles.revealHeader}>
+          <p>千载同心</p>
+          <span>终章 · 相逢</span>
+        </header>
+        {onReplay && (
+          <details className={styles.revealMenu}>
+            <summary aria-label="揭晓选项">
+              <MoreHorizontal size={22} aria-hidden="true" />
+            </summary>
+            <nav aria-label="相逢阅读">
+              <button
+                onClick={(event) => {
+                  event.currentTarget
+                    .closest("details")
+                    ?.removeAttribute("open");
+                  onReplay();
+                }}
+              >
+                重新播放揭晓
+              </button>
+              <button onClick={() => onRead("report")}>阅读人物报告</button>
+            </nav>
+          </details>
         )}
-        <span className={styles.identitySeal} aria-hidden="true">
-          相<br />逢
-        </span>
-        <p className={styles.index}>
-          契合指数 <strong>{selected?.narrativeIndex ?? "—"}</strong>
-          <span> / 100</span>
-        </p>
-        <p>
-          {body?.matching.status === "single-candidate"
-            ? "本轮偏好下仅有一位候选人物。"
-            : body?.matching.status === "near-tie"
-              ? "前两位人物接近，这是一种开放的文学类比。"
-              : "循着本轮选择，照见相逢的线索。"}
+        <div className={styles.revealIdentity}>
+          <p>与你相逢的是</p>
+          {name ? (
+            <>
+              <ArtImage
+                key={name.objectUrl}
+                src={name.objectUrl}
+                className={styles.nameArt}
+              />
+              <h1 className={styles.srOnly}>{selected?.label}</h1>
+            </>
+          ) : (
+            <h1 className={styles.diagonalName}>
+              {Array.from(selected?.label ?? "本轮相逢").map((letter, i) => (
+                <span key={i}>{letter}</span>
+              ))}
+            </h1>
+          )}
+          <span className={styles.identitySeal} aria-hidden="true">
+            相<br />逢
+          </span>
+          <p className={styles.index}>
+            契合指数 <strong>{selected?.narrativeIndex ?? "—"}</strong>
+            <span> / 100</span>
+          </p>
+          <p>
+            {body?.matching.status === "single-candidate"
+              ? "本轮偏好下仅有一位候选人物。"
+              : body?.matching.status === "near-tie"
+                ? "前两位人物接近，这是一种开放的文学类比。"
+                : "循着本轮选择，照见相逢的线索。"}
+          </p>
+        </div>
+        <button
+          data-reveal-continue
+          className={styles.revealContinue}
+          disabled={!body || model.phase !== "completed"}
+          onClick={() => onRead("report")}
+        >
+          <ChevronDown size={30} aria-hidden="true" focusable="false" />
+          下滑查看人物报告
+        </button>
+        <p className={styles.revealNotice}>
+          娱乐性文学类比 · 非准确率或身份概率
         </p>
       </div>
-      <button
-        className={styles.revealContinue}
-        disabled={!body || model.phase !== "completed"}
-        onClick={() => onRead("report")}
-      >
-        <ChevronDown size={30} aria-hidden="true" focusable="false" />
-        下滑查看人物报告
-      </button>
-      <p className={styles.revealNotice}>娱乐性文学类比 · 非准确率或身份概率</p>
     </Screen>
   );
 }

@@ -242,7 +242,9 @@ export function QianzaiReport({
   onRead,
   onEvent,
   images,
-}: QianzaiViewProps) {
+  entry = 0,
+  active = true,
+}: QianzaiViewProps & { entry?: number; active?: boolean }) {
   const body = model.report?.view.display.body,
     character = qianzaiCharacter(model);
   const hero = qianzaiImage(model, character?.report, images),
@@ -285,6 +287,14 @@ export function QianzaiReport({
     if (node.firstElementChild) observer.observe(node.firstElementChild);
     return () => observer.disconnect();
   }, []);
+  useEffect(() => {
+    if (active && container.current) {
+      container.current.scrollTop = 0;
+      measure(container.current);
+    }
+    // Opening the paper from the reveal starts at the beginning, as in the
+    // original reader. Resource/font completion never resets a reading position.
+  }, [entry, active]);
   const returnToStart = () => {
     container.current?.scrollTo({
       top: 0,

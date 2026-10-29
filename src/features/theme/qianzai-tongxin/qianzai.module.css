@@ -162,6 +162,7 @@
   background: #162c40;
 }
 .coverScene > .fullArt {
+  transform-origin: 50% 45%;
   animation: sceneIn 1750ms cubic-bezier(0.2, 0.65, 0.18, 1) both;
 }
 .coverScene:has(> .fullArt) {
@@ -335,6 +336,8 @@
   z-index: 5;
 }
 .coverScene canvas[data-qianzai-water] {
+  opacity: 0;
+  animation: waterArrive 1100ms 1100ms ease forwards;
   mask-image: radial-gradient(
     ellipse 68% 33% at 50% 104%,
     black 12%,
@@ -818,7 +821,7 @@
   height: 100%;
   object-fit: cover;
   object-position: center top;
-  animation: revealIdentify 1940ms cubic-bezier(0.24, 0.47, 0.22, 1) both;
+  opacity: 1;
 }
 .revealHeader {
   position: absolute;
@@ -844,7 +847,7 @@
   pointer-events: none;
   mix-blend-mode: screen;
   background: radial-gradient(ellipse at 57% 36%, #ffe7af55, transparent 67%);
-  animation: moonRise 1600ms 100ms ease-out both;
+  opacity: 0.13;
 }
 .inkSweep {
   position: absolute;
@@ -861,7 +864,7 @@
     transparent 64%
   );
   filter: blur(8px);
-  animation: inkSweep 1100ms 900ms ease-out both;
+  opacity: 0;
 }
 .revealIdentity {
   position: absolute;
@@ -924,7 +927,7 @@
   height: 44px;
   border-radius: 50%;
   filter: drop-shadow(0 0 6px #f9bb62);
-  animation: hintUp 2s ease-in-out infinite;
+  animation: revealScrollPulse 2.9s ease-in-out infinite;
 }
 .diagonalName {
   display: flex;
@@ -1570,7 +1573,7 @@
 @keyframes paperEnter {
   0% {
     opacity: 0;
-    transform: translateY(8px);
+    transform: translateY(7px);
   }
   100% {
     opacity: 1;
@@ -1578,10 +1581,12 @@
   }
 }
 @keyframes revealIdentify {
-  0%,
-  24% {
+  0% {
     opacity: 0;
     filter: brightness(1.2) blur(1.1px);
+  }
+  24% {
+    opacity: 0.08;
   }
   48% {
     opacity: 0.42;
@@ -2663,9 +2668,11 @@
     transform: rotate(-18deg) translateX(46%);
     opacity: 0;
   }
-  35%,
+  35% {
+    opacity: 0.63;
+  }
   73% {
-    opacity: 0.6;
+    opacity: 0.52;
   }
   100% {
     transform: rotate(-18deg) translateX(-37%);
@@ -2699,6 +2706,7 @@
     opacity: 1;
     transform: translateY(0);
   }
+  97%,
   100% {
     opacity: 0;
     transform: translateY(-8px);
@@ -2734,6 +2742,7 @@
   display: none;
 }
 .transitionStage[data-kind="paper"] {
+  pointer-events: none;
   animation: none;
 }
 .transitionStage[data-kind="paper"] > * {
@@ -2757,7 +2766,7 @@
     .transitionStage[data-kind="paper"][data-active="true"][data-step="leave"]
   )
   :is(.questionPaper, .option) {
-  animation: paperLeave 155ms ease both;
+  animation: paperLeave 145ms ease both;
 }
 .sceneFrame:has(
     .transitionStage[data-kind="paper"][data-active="true"][data-step="enter"]
@@ -3237,5 +3246,250 @@
   .footerContinuation {
     left: -12px;
     width: calc(100% + 24px);
+  }
+}
+
+/* Finite presentation phases follow the confirmed HTML clocks. The controller
+   alone supplies accepted positions/results; no animation event submits IO. */
+.coverIntroShade {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background: radial-gradient(ellipse at 53% 27%, transparent 20%, #0008176b);
+  animation: coverShade 1750ms cubic-bezier(0.2, 0.65, 0.18, 1) both;
+}
+@keyframes coverShade {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+@keyframes waterArrive {
+  to {
+    opacity: 1;
+  }
+}
+.sceneFrame:has(.transitionStage[data-active="true"][data-kind="cover"])
+  .coverScene
+  > .fullArt {
+  animation: coverLift 620ms ease-out both;
+}
+.sceneFrame:has(.transitionStage[data-active="true"][data-kind="preference"])
+  .preference
+  > .fullArt {
+  animation: preferenceLift 660ms ease-out both;
+}
+@keyframes coverLift {
+  0% {
+    transform: scale(1);
+    filter: brightness(1);
+  }
+  55% {
+    transform: scale(1.018) translateY(-4px);
+    filter: brightness(1.12);
+  }
+  100% {
+    transform: scale(1.025) translateY(-8px);
+    filter: brightness(1.07);
+  }
+}
+@keyframes preferenceLift {
+  0% {
+    transform: scale(1);
+    filter: brightness(1);
+  }
+  55% {
+    transform: scale(1.016);
+    filter: brightness(1.11);
+  }
+  100% {
+    transform: scale(1.022);
+    filter: brightness(1.05);
+  }
+}
+.coverScene[data-motion="paused"] .lamps i,
+.coverScene[data-motion="paused"] .lamps i::before,
+.coverScene[data-motion="paused"] .coverIntroShade,
+.coverScene[data-motion="paused"] > .fullArt,
+.coverScene[data-motion="paused"] [data-qianzai-water],
+.coverScene[data-motion="paused"] .scrollButton::after {
+  animation-play-state: paused !important;
+}
+.transitionStage[data-kind="reveal"] .transitionCurtain {
+  background: radial-gradient(
+    ellipse at 54% 35%,
+    #bdad7b 0%,
+    #546680 20%,
+    #18334c 49%,
+    #071525 94%
+  );
+}
+.transitionStage[data-kind="reveal"] .transitionFiligree {
+  top: 63%;
+}
+.transitionStage[data-kind="reveal"] .transitionWords {
+  display: block;
+  top: 43%;
+  animation: sceneLetters var(--transition-duration) ease both;
+}
+.transitionStage[data-kind="reveal"] .transitionWords h2 {
+  font-size: 29px;
+}
+.sceneFrame:has(
+    .transitionStage[data-active="true"][data-kind="paper"][data-step="wait"]
+  )
+  :is(.questionPaper, .option) {
+  animation: none;
+  opacity: 0;
+}
+.revealLayers {
+  position: absolute;
+  inset: 0;
+}
+.revealLayers[data-reveal-phase="waiting"] {
+  visibility: hidden;
+}
+.revealLayers[data-reveal-phase="playing"] .moonbeam {
+  animation: moonRise 1600ms 100ms ease-out both;
+}
+.revealLayers[data-reveal-phase="playing"] .inkSweep {
+  animation: inkSweep 1100ms 900ms ease-out both;
+}
+.revealLayers[data-reveal-phase="playing"] .revealIdentity {
+  animation: revealIdentify 1480ms 460ms cubic-bezier(0.24, 0.47, 0.22, 1) both;
+}
+.revealLayers[data-motion="paused"] .revealContinue > svg {
+  animation-play-state: paused;
+}
+@keyframes revealScrollPulse {
+  0%,
+  100% {
+    transform: scale(0.78);
+    opacity: 0.24;
+  }
+  50% {
+    transform: scale(1.18);
+    opacity: 0.84;
+  }
+}
+.revealMenu {
+  position: absolute;
+  z-index: 18;
+  top: 41px;
+  right: 12px;
+}
+.revealMenu > summary {
+  list-style: none;
+  width: 44px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #dfba7c89;
+  border-radius: 50%;
+  background: #11203466;
+  color: #f4e3c6;
+  cursor: pointer;
+}
+.revealMenu > summary::-webkit-details-marker {
+  display: none;
+}
+.revealMenu > nav {
+  position: absolute;
+  top: 55px;
+  right: 5px;
+  width: 185px;
+  padding: 8px;
+  border: 1px solid #dfba7c89;
+  border-radius: 14px;
+  background: #112034ec;
+  box-shadow: 0 15px 30px #030a1399;
+  backdrop-filter: blur(9px);
+}
+.revealMenu button {
+  width: 100%;
+  padding: 10px 9px;
+  text-align: left;
+  color: #f4e3c6;
+  background: transparent;
+  border: 0;
+  border-radius: 8px;
+}
+.readerDeck {
+  position: relative;
+  height: max(844px, 100dvh);
+  overflow: hidden;
+}
+.readerResult,
+.readerReport {
+  position: absolute;
+  inset: 0;
+}
+.readerReport {
+  z-index: 58;
+  transform: translateY(101%);
+}
+.readerReport .reportScreen {
+  height: 100%;
+  min-height: 0;
+}
+.readerDeck[data-reader-moving] .readerReport {
+  transition: transform 700ms cubic-bezier(0.2, 0.68, 0.17, 1);
+}
+.readerDeck[data-reader-page="report"] .readerReport {
+  transform: translateY(0);
+}
+.readerDeck[data-reader-moving="prepare"] .readerReport {
+  transform: translateY(101%);
+  transition: none;
+}
+.contents a,
+.contents button,
+.evidence summary,
+.allAnswers summary,
+.revealMenu button {
+  transition:
+    background-color 120ms ease,
+    color 120ms ease;
+}
+.contents :is(a, button):hover,
+.revealMenu button:hover {
+  background: #c69a5d24;
+}
+.evidence[open] > ul,
+.allAnswers[open] > ol {
+  animation: reportUnfold 160ms ease-out both;
+}
+@keyframes reportUnfold {
+  from {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .coverIntroShade {
+    display: none;
+  }
+  .coverScene canvas[data-qianzai-water] {
+    animation: none !important;
+    opacity: 0;
+  }
+  .revealLayers *,
+  .revealLayers *::before,
+  .readerDeck .readerReport,
+  .evidence[open] > ul,
+  .allAnswers[open] > ol {
+    animation: none !important;
+    transition: none !important;
+  }
+  .revealLayers[data-reveal-phase="ready"] .revealIdentity {
+    opacity: 1;
+    filter: none;
   }
 }

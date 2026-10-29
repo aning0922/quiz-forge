@@ -3,6 +3,8 @@ import { createRoot } from "react-dom/client";
 import { ConsumerControllerV2 } from "../consumer-v2/controller";
 import {
   consumerSaveBindingSha256V2,
+  consumerCompleteBindingSha256V2,
+  type ConsumerCompleteBindingV2,
   type ConsumerSaveInputV2,
 } from "@/lib/consumer-contract/v2/state";
 import type { consumerSessionFixtureV2 } from "../consumer-v2/session.test-support";
@@ -15,6 +17,14 @@ import type {
   QianzaiVisualProps,
 } from "./art";
 import styles from "./qianzai.module.css";
+import {
+  consumerCanonicalText,
+  consumerTextSha256,
+} from "@/lib/consumer-contract/v1/integrity";
+import { consumerMappingSha256V2 } from "@/lib/consumer-contract/v2/identities";
+import { CONSUMER_LIMITS_V1 } from "@/lib/consumer-contract/v1/limits";
+import { persistedReportDisplaySha256V2 } from "@/features/report/persisted/view-contracts-v2";
+import { QianzaiResourceOwner } from "./resource-owner";
 
 /** Actual owner and renderer, synthetic HTTP only. No catalog admission or DB. */
 const fixture = JSON.parse(
@@ -28,12 +38,21 @@ const fixture = JSON.parse(
     layer: QianzaiResolvedImage["layer"] | QianzaiPrototypeImage["layer"];
   }[];
   preferenceSceneRef?: QianzaiResolvedImage["asset"]["resourceRef"];
+  completedVisuals?: {
+    asset: QianzaiResolvedImage["asset"];
+    url: string;
+    layer: "clean";
+  }[];
+  leaseRemount?: boolean;
 };
 const restored = JSON.parse(
   localStorage.getItem("qianzai-synthetic-server-state") ?? "null",
 ) as typeof fixture.session.initial | null;
 let state = restored ?? fixture.session.initial;
 let original: ConsumerSaveInputV2 | undefined;
+let completedReport: NonNullable<ConsumerV2ReaderModel["report"]> | null = null;
+let holdArt = false;
+const artWaiters = new Set<() => void>();
 let drop = false,
   hold = false,
   release: (() => void) | undefined;
@@ -70,15 +89,72 @@ async function apply(input: ConsumerSaveInputV2) {
     state,
   };
 }
+async function applyComplete(binding: ConsumerCompleteBindingV2) {
+  if (completedReport)
+    return {
+      schemaVersion: "quizforge.consumer-complete-resolution.v2",
+      kind: "applied",
+      binding,
+      bindingSha256: await consumerCompleteBindingSha256V2(binding),
+      report: completedReport.receipt,
+    };
+  const report = structuredClone(fixture.completed.report!);
+  report.receipt.binding = binding;
+  report.receipt.bindingSha256 = await consumerCompleteBindingSha256V2(binding);
+  report.view.session = binding.session;
+  report.view.completionBindingSha256 = report.receipt.bindingSha256;
+  const display = report.view.display;
+  display.matchingContextSha256 = binding.matchingContextSha256;
+  display.body.provenance.matchingContextSha256 = binding.matchingContextSha256;
+  display.bodySha256 = await consumerTextSha256(
+    consumerCanonicalText(display.body, CONSUMER_LIMITS_V1.reportResponseBytes),
+  );
+  report.view.mappingSha256 = await consumerMappingSha256V2(
+    report.view.mapping,
+  );
+  report.receipt.displaySha256 = await persistedReportDisplaySha256V2(
+    report.view,
+  );
+  completedReport = report;
+  return {
+    schemaVersion: "quizforge.consumer-complete-resolution.v2",
+    kind: "applied",
+    binding,
+    bindingSha256: report.receipt.bindingSha256,
+    report: report.receipt,
+  };
+}
 const fetcher: typeof fetch = async (url, options) => {
   const path = String(url);
   calls.push({ path, method: options?.method ?? "GET" });
   if (path.endsWith("session"))
     return json({
       ...fixture.session.view,
-      outcome: { kind: "editable", state },
+      outcome: completedReport
+        ? { kind: "completed", report: completedReport.receipt }
+        : { kind: "editable", state },
     });
   if (path.endsWith("entry")) return json(fixture.session.entry);
+  if (path.endsWith("report")) return json(completedReport);
+  if (path.endsWith("complete/resolve"))
+    return json(await applyComplete(JSON.parse(String(options?.body))));
+  if (path.endsWith("complete")) {
+    const binding = JSON.parse(
+      String(options?.body),
+    ) as ConsumerCompleteBindingV2;
+    if (hold) {
+      hold = false;
+      await new Promise<void>((r) => {
+        release = r;
+      });
+    }
+    const result = await applyComplete(binding);
+    if (drop) {
+      drop = false;
+      throw Error("SYNTHETIC_LOST_COMPLETE_ACK");
+    }
+    return json(result);
+  }
   if (path.endsWith("save/resolve")) return json(await apply(original!));
   if (path.endsWith("save")) {
     const input = JSON.parse(String(options?.body)) as ConsumerSaveInputV2;
@@ -111,12 +187,19 @@ const owner = new ConsumerControllerV2(
 const root = createRoot(document.getElementById("root")!);
 function Runtime() {
   const [visuals, setVisuals] = useState<QianzaiVisualProps>({});
+  const [generation, setGeneration] = useState(0);
+  const [reportImages, setReportImages] = useState<{
+    generation: number;
+    view: NonNullable<ConsumerV2ReaderModel["report"]>["view"];
+    images: readonly QianzaiResolvedImage[];
+  } | null>(null);
   useEffect(() => {
     const abort = new AbortController();
     const urls: string[] = [];
     Object.assign(
       (window as unknown as { qianzaiProbe: object }).qianzaiProbe,
       {
+        remountSameReport: () => setGeneration((old) => old + 1),
         hideQuestionPaper: () => {
           const current = owner.getSnapshot();
           const q = current.entry?.questions.find(
@@ -179,7 +262,79 @@ function Runtime() {
     owner.getSnapshot,
   );
   useEffect(() => {
-    void owner.bootstrap();
+    if (
+      !model.report ||
+      model.phase !== "completed" ||
+      !fixture.completedVisuals?.length
+    )
+      return;
+    const abort = new AbortController(),
+      view = model.report.view;
+    const resourceOwner = new QianzaiResourceOwner({
+      generation,
+      model,
+      view,
+      signal: abort.signal,
+      current: () =>
+        !abort.signal.aborted &&
+        owner.getSnapshot().phase === "completed" &&
+        owner.getSnapshot().report?.view === view,
+      transport: async (ref, options) => {
+        const asset = fixture.completedVisuals!.find(
+          (v) => v.asset.resourceRef.id === ref.resourceRef.id,
+        );
+        if (!asset) throw Error("UNSCOPED_MOTION_FIXTURE");
+        if (holdArt)
+          await new Promise<void>((resolve) => {
+            const done = () => {
+              artWaiters.delete(done);
+              options.removeEventListener("abort", done);
+              resolve();
+            };
+            artWaiters.add(done);
+            options.addEventListener("abort", done, { once: true });
+            if (options.aborted) done();
+          });
+        return fetch(asset.url, { signal: options });
+      },
+    });
+    const unsubscribe = resourceOwner.subscribe(() =>
+      setReportImages({
+        generation,
+        view,
+        images: resourceOwner
+          .getSnapshot()
+          .filter(
+            (image): image is typeof image & { layer: "clean" } =>
+              image.layer === "clean",
+          ),
+      }),
+    );
+    void resourceOwner.load(
+      fixture.completedVisuals.map((v, i) => ({
+        asset: v.asset,
+        slot: i === 0 ? "character.reveal" : "character.nameArt",
+        layer: "clean",
+      })),
+    );
+    return () => {
+      abort.abort();
+      unsubscribe();
+      resourceOwner.dispose();
+    };
+  }, [model, generation]);
+  useEffect(() => {
+    void owner.bootstrap().then(async () => {
+      if (!new URLSearchParams(location.search).has("motion-question")) return;
+      owner.choosePreference("any");
+      await owner.navigate(
+        { questionId: owner.getSnapshot().entry!.questions[0]!.ref.id },
+        "question",
+      );
+      // Isolated synthetic setup ends here; assertions count subsequent UI IO.
+      calls.length = 0;
+      setGeneration((old) => old + 1);
+    });
     return () => owner.dispose();
   }, []);
   // UI-only projection of the agreed optional preference slot; this fixture
@@ -199,9 +354,22 @@ function Runtime() {
       : model;
   return (
     <QianzaiTongxinExperience
+      key={
+        fixture.leaseRemount
+          ? `${model.report ? "report" : "entry"}:${generation}`
+          : "stable"
+      }
       model={viewModel}
       onEvent={owner.onEvent}
-      {...visuals}
+      {...(model.report
+        ? {
+            images:
+              reportImages?.generation === generation &&
+              reportImages.view === model.report.view
+                ? reportImages.images
+                : [],
+          }
+        : visuals)}
     />
   );
 }
@@ -217,6 +385,30 @@ Object.assign(window, {
       hold = true;
     },
     release: () => release?.(),
+    delayArt: () => {
+      holdArt = true;
+    },
+    releaseArt: () => {
+      holdArt = false;
+      for (const done of [...artWaiters]) done();
+    },
+    setHidden: (hidden: boolean) => {
+      Object.defineProperty(document, "hidden", {
+        configurable: true,
+        value: hidden,
+      });
+      document.dispatchEvent(new Event("visibilitychange"));
+    },
+    prepareLast: async () => {
+      owner.choosePreference("any");
+      const questions = owner.getSnapshot().entry!.questions;
+      for (const q of questions) owner.choose(q.ref.id, q.options[0]!.ref.id);
+      await owner.navigate(
+        { questionId: questions.at(-1)!.ref.id },
+        "question",
+      );
+    },
+    unmount: () => root.unmount(),
     completed: () =>
       root.render(
         <QianzaiTongxinExperience

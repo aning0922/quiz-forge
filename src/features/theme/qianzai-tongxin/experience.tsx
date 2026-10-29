@@ -1,6 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import type {
   ConsumerExperiencePropsV2,
   ConsumerReadingPageV2,
@@ -21,6 +27,20 @@ import { QianzaiReport } from "./report";
 import type { QianzaiVisualProps } from "./art";
 import { useQianzaiMotion } from "./motion";
 import styles from "./qianzai.module.css";
+
+type RevealPresentation = "waiting" | "playing" | "ready";
+const viewedReports = new Set<string>();
+function rememberReport(key: string) {
+  viewedReports.add(key);
+  if (viewedReports.size > 64)
+    viewedReports.delete(viewedReports.values().next().value!);
+}
+function reportIdentity(model: QianzaiTongxinExperienceProps["model"]) {
+  const receipt = model.report?.receipt;
+  return receipt
+    ? `${receipt.binding.session.sessionId}:${receipt.reportId}:${receipt.reportSnapshotSha256}`
+    : null;
+}
 
 export type QianzaiTongxinExperienceProps = ConsumerExperiencePropsV2 &
   QianzaiVisualProps;
@@ -82,9 +102,41 @@ export function QianzaiTongxinExperience({
   const stage = useRef<HTMLDivElement>(null);
   const sceneContent = useRef<HTMLDivElement>(null);
   const stageTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const generation = useRef(0);
+  const latest = useRef({ model, compatible, onEvent });
+  useLayoutEffect(() => {
+    latest.current = { model, compatible, onEvent };
+  }, [model, compatible, onEvent]);
+  const reportKey = reportIdentity(model);
+  const [reveal, setReveal] = useState<{
+    phase: RevealPresentation;
+    startedAt: number;
+    cycle: number;
+  }>({ phase: "waiting", startedAt: 0, cycle: 0 });
+  const revealTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const readerTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const readerFrame = useRef<number | null>(null);
+  const settleFrame = useRef<number | null>(null);
+  const readerDeck = useRef<HTMLDivElement>(null);
+  const [readerVisit, setReaderVisit] = useState(0);
+  const [readerMoving, setReaderMoving] = useState<
+    "prepare" | "enter" | "leave" | null
+  >(null);
+  const readerTarget = useRef<"result" | "report" | null>(
+    initialScreen === "report" ? "report" : null,
+  );
+  const seenReport = useRef<string | null>(null);
+  const waiting = useRef<{
+    token: number;
+    kind: string;
+    target: string;
+    duration: number;
+    midpoint: number;
+  } | null>(null);
   const hideStage = useCallback(() => {
     stageTimers.current.forEach(clearTimeout);
     stageTimers.current = [];
+    waiting.current = null;
     if (stage.current) {
       stage.current.hidden = true;
       stage.current.removeAttribute("data-active");
@@ -93,41 +145,185 @@ export function QianzaiTongxinExperience({
     queued.current = false;
   }, []);
   const cancel = useCallback(() => {
+    generation.current++;
     if (timer.current !== null) clearTimeout(timer.current);
     timer.current = null;
     hideStage();
   }, [hideStage]);
+  const settleReading = useCallback(() => {
+    if (readerTimer.current !== null) clearTimeout(readerTimer.current);
+    if (readerFrame.current !== null) cancelAnimationFrame(readerFrame.current);
+    readerFrame.current = null;
+    if (revealTimer.current !== null) clearTimeout(revealTimer.current);
+    readerTimer.current = null;
+    revealTimer.current = null;
+    setReaderMoving(null);
+    setReveal((old) =>
+      old.phase === "ready" ? old : { ...old, phase: "ready" },
+    );
+  }, []);
+  const settleOnFrame = useCallback(() => {
+    if (settleFrame.current !== null) cancelAnimationFrame(settleFrame.current);
+    // Invalid model phases already hide the reader synchronously in render.
+    // Clear its presentation state at the next browser frame, without a render cascade.
+    settleFrame.current = requestAnimationFrame(settleReading);
+  }, [settleReading]);
+  const finishStage = useCallback(
+    (duration: number, midpoint: number, token: number) => {
+      if (generation.current !== token || !stage.current) return;
+      waiting.current = null;
+      stage.current.dataset.step = "enter";
+      for (const animation of stage.current.getAnimations({ subtree: true }))
+        animation.play();
+      stageTimers.current.push(
+        setTimeout(
+          () => {
+            if (generation.current === token) hideStage();
+          },
+          duration -
+            midpoint +
+            (stage.current.dataset.kind === "paper" ? 0 : 30),
+        ),
+      );
+    },
+    [hideStage],
+  );
   useEffect(() => {
+    if (
+      !compatible ||
+      ["unknown", "conflict", "unavailable", "denied"].includes(model.phase)
+    ) {
+      cancel();
+      settleOnFrame();
+      return;
+    }
     if (model.phase !== "ready") {
       if (timer.current !== null) clearTimeout(timer.current);
       timer.current = null;
+      queued.current = false;
+      const sent = waiting.current !== null;
+      if (
+        !(sent && model.phase === "saving") &&
+        !(
+          model.phase === "completed" &&
+          stage.current?.dataset.kind === "reveal"
+        )
+      )
+        hideStage();
+    } else if (
+      waiting.current &&
+      model.pendingOperation === null &&
+      model.draft?.progress.questionId === waiting.current.target
+    ) {
+      const pending = waiting.current;
+      finishStage(pending.duration, pending.midpoint, pending.token);
     }
-    // Saving may finish beneath the veil; authority/error/UNKNOWN cancels any
-    // not-yet-dispatched navigation. Only the controller adopts receipts.
-    const committed =
-      stage.current?.dataset.active === "true" &&
-      stage.current.dataset.step === "enter";
-    const finishingReceipt =
-      committed && ["saving", "loading", "conflict"].includes(model.phase);
-    if (model.phase !== "ready" && !finishingReceipt) hideStage();
-    queued.current = false;
-  }, [model.phase, model.draft?.progress.questionId, hideStage]);
-  useEffect(() => cancel, [cancel]);
+  }, [
+    model.phase,
+    model.pendingOperation,
+    model.draft?.progress.questionId,
+    compatible,
+    cancel,
+    hideStage,
+    finishStage,
+    settleOnFrame,
+  ]);
+  const acceptedQuestion = useRef(model.state?.progress.questionId ?? null);
+  useEffect(() => {
+    if (model.phase !== "ready" || !compatible) return;
+    const next = model.state?.progress.questionId ?? null,
+      previous = acceptedQuestion.current;
+    acceptedQuestion.current = next;
+    if (
+      !previous ||
+      !next ||
+      previous === next ||
+      waiting.current ||
+      stage.current?.dataset.active === "true" ||
+      document.hidden ||
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    )
+      return;
+    // A reconciled receipt may arrive after a conflict cancelled its veil. This
+    // is an entrance for an already-accepted question, never another dispatch.
+    const node = stage.current;
+    if (!node) return;
+    cancel();
+    const token = generation.current;
+    node.hidden = false;
+    node.dataset.active = "true";
+    node.dataset.kind = "paper";
+    node.dataset.step = "enter";
+    stageTimers.current = [
+      setTimeout(() => {
+        if (generation.current === token) hideStage();
+      }, 310),
+    ];
+  }, [
+    model.phase,
+    model.state?.progress.questionId,
+    compatible,
+    cancel,
+    hideStage,
+  ]);
+  useEffect(() => {
+    const media = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const interrupt = () => {
+      if (document.hidden || media.matches) {
+        cancel();
+        settleReading();
+      }
+    };
+    document.addEventListener("visibilitychange", interrupt);
+    media.addEventListener("change", interrupt);
+    return () => {
+      document.removeEventListener("visibilitychange", interrupt);
+      media.removeEventListener("change", interrupt);
+      cancel();
+      if (readerTimer.current !== null) clearTimeout(readerTimer.current);
+      if (readerFrame.current !== null)
+        cancelAnimationFrame(readerFrame.current);
+      if (settleFrame.current !== null)
+        cancelAnimationFrame(settleFrame.current);
+      if (revealTimer.current !== null) clearTimeout(revealTimer.current);
+    };
+  }, [cancel, settleReading]);
   const transition = (
-    kind: "cover" | "preference" | "chapter" | "paper",
+    kind: "cover" | "preference" | "chapter" | "paper" | "reveal",
     act: number,
     commit: () => void,
+    target?: string,
   ) => {
     cancel();
-    if (!enabled) return;
+    const current = latest.current,
+      identity = reportIdentity(current.model),
+      state = current.model.state;
+    const allowed = () =>
+      latest.current.compatible &&
+      !document.hidden &&
+      (kind === "reveal"
+        ? latest.current.model.phase === "completed" &&
+          latest.current.model.pendingOperation === null &&
+          reportIdentity(latest.current.model) === identity
+        : canEditConsumerV2(latest.current.model) &&
+          latest.current.model.state === state);
+    if (!allowed()) return;
     const node = stage.current;
     if (!motion || !node) {
       commit();
       return;
     }
-    const duration = kind === "chapter" ? 860 : kind === "paper" ? 465 : 660;
-    const midpoint = kind === "paper" ? 155 : Math.round(duration * 0.51);
-    void node.offsetWidth; // Restart this finite stage after a cancelled/repeated gesture.
+    const duration =
+      kind === "reveal"
+        ? 1030
+        : kind === "chapter"
+          ? 860
+          : kind === "paper"
+            ? 465
+            : 660;
+    const midpoint = kind === "paper" ? 155 : Math.round(duration * 0.51),
+      token = generation.current;
+    void node.offsetWidth;
     node.hidden = false;
     node.dataset.active = "true";
     node.dataset.kind = kind;
@@ -135,12 +331,21 @@ export function QianzaiTongxinExperience({
     node.dataset.step = "leave";
     node.style.setProperty("--transition-duration", duration + "ms");
     const caption = ACTS[act - 1];
-    for (const [part, text] of Object.entries({
-      kicker: act === 3 ? "第三幕" : "第二幕",
-      title: caption?.title ?? "",
-      place: caption?.place ?? "",
-      line: ACTS[act - 2]?.line ?? "",
-    })) {
+    for (const [part, text] of Object.entries(
+      kind === "reveal"
+        ? {
+            kicker: "终章",
+            title: "命定相逢",
+            place: "千载之间 · 同心之人",
+            line: "月色为引 · 故人将至",
+          }
+        : {
+            kicker: act === 3 ? "第三幕" : "第二幕",
+            title: caption?.title ?? "",
+            place: caption?.place ?? "",
+            line: ACTS[act - 2]?.line ?? "",
+          },
+    )) {
       const leaf = node.querySelector<HTMLElement>(
         `[data-transition-part="${part}"]`,
       );
@@ -150,12 +355,107 @@ export function QianzaiTongxinExperience({
     queued.current = true;
     stageTimers.current = [
       setTimeout(() => {
-        node.dataset.step = "enter";
-        commit();
+        if (
+          generation.current !== token ||
+          !allowed() ||
+          window.matchMedia("(prefers-reduced-motion: reduce)").matches
+        ) {
+          cancel();
+          return;
+        }
+        if (target) {
+          node.dataset.step = "wait";
+          waiting.current = { token, kind, target, duration, midpoint };
+          for (const animation of node.getAnimations({ subtree: true })) {
+            animation.pause();
+            animation.currentTime = midpoint;
+          }
+          commit();
+        } else {
+          commit();
+          finishStage(duration, midpoint, token);
+        }
       }, midpoint),
-      setTimeout(hideStage, duration + (kind === "paper" ? 0 : 30)),
     ];
   };
+  const playReveal = (veil: boolean) => {
+    if (
+      latest.current.model.phase !== "completed" ||
+      latest.current.model.pendingOperation !== null ||
+      !reportIdentity(latest.current.model)
+    )
+      return;
+    cancel();
+    settleReading();
+    readerTarget.current = "result";
+    setPage("result");
+    const begin = () => {
+      if (
+        document.hidden ||
+        window.matchMedia("(prefers-reduced-motion: reduce)").matches
+      ) {
+        setReveal((old) => ({ ...old, phase: "ready" }));
+        return;
+      }
+      const identity = reportIdentity(latest.current.model),
+        token = generation.current;
+      setReveal((old) => ({
+        phase: "playing",
+        startedAt: performance.now(),
+        cycle: old.cycle + 1,
+      }));
+      revealTimer.current = setTimeout(() => {
+        if (
+          generation.current === token &&
+          latest.current.model.phase === "completed" &&
+          reportIdentity(latest.current.model) === identity
+        )
+          setReveal((old) => ({ ...old, phase: "ready" }));
+      }, 2000);
+    };
+    if (!motion) {
+      setReveal((old) => ({ ...old, phase: "ready" }));
+      return;
+    }
+    setReveal((old) => ({ ...old, phase: "waiting" }));
+    if (veil) transition("reveal", 3, begin);
+    else begin();
+  };
+  useEffect(() => {
+    if (
+      !reportKey ||
+      model.phase !== "completed" ||
+      model.pendingOperation !== null ||
+      seenReport.current === reportKey
+    )
+      return;
+    seenReport.current = reportKey;
+    const shouldPlay =
+      initialScreen !== "report" && !viewedReports.has(reportKey);
+    rememberReport(reportKey);
+    const token = generation.current;
+    const frame = requestAnimationFrame(() => {
+      if (
+        generation.current !== token ||
+        latest.current.model.phase !== "completed" ||
+        latest.current.model.pendingOperation !== null ||
+        reportIdentity(latest.current.model) !== reportKey
+      )
+        return;
+      if (
+        !shouldPlay ||
+        document.hidden ||
+        window.matchMedia("(prefers-reduced-motion: reduce)").matches
+      ) {
+        cancel();
+        settleReading();
+      } else playReveal(true);
+    });
+    return () => cancelAnimationFrame(frame);
+    // A lease can remount this component on entry -> report. Identity, rather
+    // than a phase edge in the old mount, owns this one presentation.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reportKey, model.phase, model.pendingOperation]);
   const navigateQuestion = (questionId: string) => {
     const questions = model.entry?.questions ?? [];
     const from = questions.findIndex(
@@ -169,8 +469,11 @@ export function QianzaiTongxinExperience({
       return;
     }
     const chapter = to > from && questions[to]?.act !== questions[from]?.act;
-    transition(chapter ? "chapter" : "paper", questions[to]!.act, () =>
-      onEvent({ type: "navigate", questionId }),
+    transition(
+      chapter ? "chapter" : "paper",
+      questions[to]!.act,
+      () => latest.current.onEvent({ type: "navigate", questionId }),
+      questionId,
     );
   };
   const read = (next: ConsumerReadingPageV2) => {
@@ -187,8 +490,50 @@ export function QianzaiTongxinExperience({
         model.phase === "completed" &&
         (next === "result" || next === "report")
       ) {
+        if (
+          readerTarget.current === next ||
+          (readerTarget.current === null && active === next)
+        )
+          return;
         cancel();
+        settleReading();
+        readerTarget.current = next;
         setPage(next);
+        if (next === "report") setReaderVisit((old) => old + 1);
+        if (motion) {
+          setReaderMoving(next === "report" ? "prepare" : "leave");
+          const identity = reportIdentity(model),
+            token = generation.current;
+          if (next === "report")
+            readerFrame.current = requestAnimationFrame(() => {
+              if (
+                generation.current !== token ||
+                document.hidden ||
+                reportIdentity(latest.current.model) !== identity
+              )
+                return;
+              readerDeck.current
+                ?.querySelector("[data-reader-paper]")
+                ?.getBoundingClientRect();
+              setReaderMoving("enter");
+            });
+          readerTimer.current = setTimeout(() => {
+            if (
+              generation.current === token &&
+              latest.current.model.phase === "completed" &&
+              reportIdentity(latest.current.model) === identity
+            ) {
+              setReaderMoving(null);
+              readerDeck.current
+                ?.querySelector<HTMLElement>(
+                  next === "report"
+                    ? "[data-report-opening-title]"
+                    : "[data-reveal-continue]",
+                )
+                ?.focus({ preventScroll: true });
+            }
+          }, 720);
+        }
       }
     } else if (enabled) {
       if (active === "cover" && next === "preference") {
@@ -206,14 +551,26 @@ export function QianzaiTongxinExperience({
     // Same-tick double clicks cannot enqueue a second delayed navigation.
     if (!enabled || queued.current || stageTimers.current.length) return false;
     queued.current = true;
+    const token = generation.current,
+      state = latest.current.model.state;
     timer.current = setTimeout(() => {
       timer.current = null;
+      if (
+        generation.current !== token ||
+        document.hidden ||
+        !latest.current.compatible ||
+        !canEditConsumerV2(latest.current.model) ||
+        latest.current.model.state !== state
+      ) {
+        cancel();
+        return;
+      }
       commit();
     }, 400);
     return true;
   };
   const event: typeof onEvent = (value) => {
-    if (!compatible) return;
+    if (!compatible || (value.type === "complete" && queued.current)) return;
     if (
       [
         "choose-answer",
@@ -248,7 +605,8 @@ export function QianzaiTongxinExperience({
       navigateQuestion(value.questionId);
     else {
       cancel();
-      onEvent(value);
+      if (value.type === "complete") queued.current = true;
+      latest.current.onEvent(value);
     }
   };
   const props = {
@@ -313,7 +671,11 @@ export function QianzaiTongxinExperience({
         </p>
       )}
       {!!messages[model.phase] && (
-        <aside className={styles.status} aria-label="本轮旅程状态">
+        <aside
+          className={styles.status}
+          aria-label="本轮旅程状态"
+          aria-busy={model.phase === "saving" || model.phase === "completing"}
+        >
           <p role="status">{messages[model.phase]}</p>
           {model.message && <p role="alert">{model.message}</p>}
           {model.pendingOperation &&
@@ -379,10 +741,18 @@ export function QianzaiTongxinExperience({
                             model.draft?.progress.questionId ??
                             questions[0]?.ref.id;
                           if (q) {
-                            transition("preference", 1, () => {
-                              onEvent({ type: "navigate", questionId: q });
-                              setPage("question");
-                            });
+                            transition(
+                              "preference",
+                              1,
+                              () => {
+                                latest.current.onEvent({
+                                  type: "navigate",
+                                  questionId: q,
+                                });
+                                setPage("question");
+                              },
+                              q,
+                            );
                           }
                         })
                       )
@@ -494,27 +864,61 @@ export function QianzaiTongxinExperience({
                 </div>
               </div>
             )}
-            {model.report && (
-              <div inert={model.phase !== "completed"}>
+            {model.report &&
+              model.phase === "completed" &&
+              model.pendingOperation === null && (
                 <div
-                  hidden={active !== "result"}
-                  onWheel={(e) => {
-                    if (e.deltaY > 38) read("report");
-                  }}
+                  ref={readerDeck}
+                  className={styles.readerDeck}
+                  data-reader-page={active}
+                  data-reader-moving={readerMoving ?? undefined}
+                  inert={model.phase !== "completed"}
                   onKeyDown={(e) => {
-                    if (["ArrowDown", "PageDown"].includes(e.key)) {
+                    if (e.key === "Escape" && active === "report") {
                       e.preventDefault();
-                      read("report");
+                      read("result");
                     }
                   }}
                 >
-                  <QianzaiReveal {...props} />
+                  <div
+                    className={styles.readerResult}
+                    hidden={
+                      active !== "result" &&
+                      readerMoving !== "enter" &&
+                      readerMoving !== "prepare"
+                    }
+                    onWheel={(e) => {
+                      if (e.deltaY > 38) read("report");
+                    }}
+                    onKeyDown={(e) => {
+                      if (["ArrowDown", "PageDown"].includes(e.key)) {
+                        e.preventDefault();
+                        read("report");
+                      }
+                    }}
+                  >
+                    <QianzaiReveal
+                      key={`${reportKey}:${reveal.cycle}`}
+                      {...props}
+                      active={active === "result"}
+                      presentation={reveal.phase}
+                      startedAt={reveal.startedAt}
+                      onReplay={() => playReveal(false)}
+                    />
+                  </div>
+                  <div
+                    data-reader-paper
+                    className={styles.readerReport}
+                    hidden={active !== "report" && readerMoving !== "leave"}
+                  >
+                    <QianzaiReport
+                      {...props}
+                      entry={readerVisit}
+                      active={active === "report"}
+                    />
+                  </div>
                 </div>
-                <div hidden={active !== "report"}>
-                  <QianzaiReport {...props} />
-                </div>
-              </div>
-            )}
+              )}
           </div>
         </div>
       )}

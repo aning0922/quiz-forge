@@ -75,13 +75,14 @@ export function QianzaiWater({
       if (!ready || !w || !h) return;
       const scale = Math.max(w / image.naturalWidth, h / image.naturalHeight);
       const cw = w / scale,
-        ch = h / scale;
+        ch = h / scale,
+        stretch = window.matchMedia("(max-width: 360px)").matches;
       source.drawImage(
         image,
-        (image.naturalWidth - cw) / 2,
-        (image.naturalHeight - ch) / 2,
-        cw,
-        ch,
+        stretch ? 0 : (image.naturalWidth - cw) / 2,
+        stretch ? 0 : (image.naturalHeight - ch) / 2,
+        stretch ? image.naturalWidth : cw,
+        stretch ? image.naturalHeight : ch,
         0,
         0,
         w,
