@@ -497,6 +497,11 @@ export function QianzaiReport({
                       {v.id === "encounter" && (
                         <div className={styles.reportNotices}>
                           <p className={styles.reportNotice}>{body.notice}</p>
+                          {body.matching.status === "single-candidate" && (
+                            <p className={styles.reportKind}>
+                              本轮偏好下仅有一位候选人物。
+                            </p>
+                          )}
                           <p className={styles.reportKind}>
                             {body.matching.selected.kind ===
                             "literary-legendary"

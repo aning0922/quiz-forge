@@ -1,6 +1,13 @@
 "use client";
 
-import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import {
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import {
   ChevronUp,
   ChevronDown,
@@ -183,12 +190,13 @@ const preferences = {
 export function QianzaiPreference({
   model,
   onRead,
-  onEvent,
+  onEnter,
   onChoose,
   images,
   prototypeImages,
 }: QianzaiViewProps & {
   onChoose: (value: "male" | "female" | "any") => void;
+  onEnter: () => void;
 }) {
   const id = useId(),
     selected = model.draft?.matchingContext?.preference,
@@ -232,61 +240,69 @@ export function QianzaiPreference({
           此选择不代表你的性别，不改变五维分数。
         </p>
       </div>
-      <fieldset
-        className={styles.preferences}
-        disabled={!canEditConsumerV2(model)}
-      >
-        <legend className={styles.srOnly}>目标人物偏好</legend>
-        {(model.entry?.preferences ?? []).map((value) => (
-          <label
-            key={value}
-            className={styles.preferenceChoice}
-            data-selected={selected === value}
+      <div className={styles.preferenceBody} data-qianzai-scroll-region>
+        <div className={styles.preferenceControls}>
+          {scene?.layer === "prototype-scene-base" && (
+            <svg
+              className={styles.preferenceLowerArt}
+              viewBox="0 393 390 451"
+              aria-hidden="true"
+            >
+              <image href={scene.objectUrl} width="390" height="844" />
+            </svg>
+          )}
+          <fieldset
+            className={styles.preferences}
+            disabled={!canEditConsumerV2(model)}
           >
-            <input
-              name={id}
-              type="radio"
-              value={value}
-              aria-label={preferences[value].note}
-              checked={selected === value}
-              onChange={() => onChoose(value)}
-            />
-            <span className={styles.preferencePortrait} aria-hidden="true" />
-            <strong>{preferences[value].title}</strong>
-            <span className={styles.preferenceNote}>
-              {preferences[value].note}
+            <legend className={styles.srOnly}>目标人物偏好</legend>
+            {(model.entry?.preferences ?? []).map((value) => (
+              <label
+                key={value}
+                className={styles.preferenceChoice}
+                data-selected={selected === value}
+              >
+                <input
+                  name={id}
+                  type="radio"
+                  value={value}
+                  aria-label={preferences[value].note}
+                  checked={selected === value}
+                  onChange={() => onChoose(value)}
+                />
+                <span
+                  className={styles.preferencePortrait}
+                  aria-hidden="true"
+                />
+                <strong>{preferences[value].title}</strong>
+                <span className={styles.preferenceNote}>
+                  {preferences[value].note}
+                </span>
+                <span className={styles.radioMark} aria-hidden="true">
+                  {selected === value && <Check size={20} strokeWidth={3} />}
+                </span>
+              </label>
+            ))}
+          </fieldset>
+          <button
+            className={styles.primary}
+            disabled={!canEditConsumerV2(model) || !selected}
+            onClick={onEnter}
+          >
+            进入第一幕
+          </button>
+          <p className={styles.finePrint}>
+            下一步将开启 {model.entry?.questions.length ?? 0} 道测试题
+            <br />
+            探寻你与TA的命定相逢
+          </p>
+          {scene?.layer === "prototype-scene-base" && (
+            <span className={styles.preferenceCount} aria-hidden="true">
+              {model.entry?.questions.length ?? 0}
             </span>
-            <span className={styles.radioMark} aria-hidden="true">
-              {selected === value && <Check size={20} strokeWidth={3} />}
-            </span>
-          </label>
-        ))}
-      </fieldset>
-      <button
-        className={styles.primary}
-        disabled={!canEditConsumerV2(model) || !selected}
-        onClick={() => {
-          const q =
-            model.draft?.progress.questionId ??
-            model.entry?.questions[0]?.ref.id;
-          if (q) {
-            onEvent({ type: "navigate", questionId: q });
-            onRead("question");
-          }
-        }}
-      >
-        进入第一幕
-      </button>
-      <p className={styles.finePrint}>
-        下一步将开启 {model.entry?.questions.length ?? 0} 道测试题
-        <br />
-        探寻你与TA的命定相逢
-      </p>
-      {scene?.layer === "prototype-scene-base" && (
-        <span className={styles.preferenceCount} aria-hidden="true">
-          {model.entry?.questions.length ?? 0}
-        </span>
-      )}
+          )}
+        </div>
+      </div>
     </Screen>
   );
 }
@@ -303,6 +319,15 @@ export function QianzaiQuestion({
   onChoose: (questionId: string, optionId: string) => void;
   readingQuestionId?: string;
 }) {
+  const bodyPort = useRef<HTMLDivElement>(null),
+    acceptedPosition = useRef<string | null>(null);
+  useLayoutEffect(() => {
+    const next = model.state?.progress.questionId;
+    if (model.phase === "ready" && next && next !== acceptedPosition.current) {
+      acceptedPosition.current = next;
+      if (bodyPort.current) bodyPort.current.scrollTop = 0;
+    }
+  }, [model.phase, model.state?.progress.questionId]);
   const id = useId(),
     questions = model.entry?.questions ?? [];
   const index = questions.findIndex(
@@ -336,6 +361,16 @@ export function QianzaiQuestion({
         "prototype-option-skin",
         { act },
       );
+  const cover =
+    qianzaiImage(model, model.entry?.slots.cover, images) ??
+    qianzaiPrototypeImage(model, model.entry?.slots.cover, prototypeImages);
+  // Fixed, reviewed V8 derivative. This is shared water scenery, not an
+  // original clean background for any of the three acts. The owner still
+  // verifies/adopts the whole neutral.cover; no arbitrary crop comes from a pack.
+  const water =
+    cover?.asset.width === 852 && cover.asset.height === 1844
+      ? cover
+      : undefined;
   const paper = qianzaiImage(model, scene?.questionPaper, images),
     enabled = canEditConsumerV2(model) && !!model.draft?.matchingContext;
   // Never expose a base containing old question/answer UI until its full dynamic
@@ -363,6 +398,23 @@ export function QianzaiQuestion({
         src={art?.objectUrl}
         className={styles.fullArt}
       />
+      {water && (
+        <svg
+          className={styles.answerBackdrop}
+          viewBox="0 0 852 444"
+          preserveAspectRatio="xMidYMid slice"
+          aria-hidden="true"
+        >
+          <svg
+            width="852"
+            height="444"
+            viewBox="0 1400 852 444"
+            overflow="hidden"
+          >
+            <image href={water.objectUrl} width="852" height="1844" />
+          </svg>
+        </svg>
+      )}
       <header className={styles.topbar}>
         <button
           disabled={!enabled}
@@ -415,19 +467,11 @@ export function QianzaiQuestion({
                     : "本轮选择"}
             </span>
           </div>
-          <div className={styles.questionBody} key={q.ref.id}>
-            {art?.layer === "prototype-scene-base" && (
-              // The fixed base contains an old footer at y=751. Reuse only its
-              // text-free water band so growing prose cannot expose old controls.
-              <svg
-                className={styles.footerContinuation}
-                viewBox="0 817 390 27"
-                preserveAspectRatio="none"
-                aria-hidden="true"
-              >
-                <image href={art.objectUrl} width="390" height="844" />
-              </svg>
-            )}
+          <div
+            className={styles.questionBody}
+            ref={bodyPort}
+            data-qianzai-scroll-region
+          >
             <div
               className={styles.questionPaper}
               data-long={q.prompt.length >= 30}
@@ -481,20 +525,6 @@ export function QianzaiQuestion({
                 );
               })}
             </fieldset>
-            <p
-              className={styles.saveNote}
-              role="status"
-              data-live={
-                model.phase === "saving" ||
-                ["unknown", "conflict", "unavailable"].includes(model.phase)
-              }
-            >
-              {model.phase === "saving"
-                ? "正在保存…"
-                : ["unknown", "conflict", "unavailable"].includes(model.phase)
-                  ? "选择已保留，等待核对"
-                  : "可随时修改答案"}
-            </p>
             <nav className={styles.questionNav} aria-label="答题导航">
               <button
                 style={
@@ -518,6 +548,20 @@ export function QianzaiQuestion({
               >
                 上一题
               </button>
+              <p
+                className={styles.saveNote}
+                role="status"
+                data-live={
+                  model.phase === "saving" ||
+                  ["unknown", "conflict", "unavailable"].includes(model.phase)
+                }
+              >
+                {model.phase === "saving"
+                  ? "正在保存…"
+                  : ["unknown", "conflict", "unavailable"].includes(model.phase)
+                    ? "选择已保留，等待核对"
+                    : "可随时修改答案"}
+              </p>
               <button
                 style={
                   art?.layer === "prototype-scene-base"
@@ -578,6 +622,14 @@ export function QianzaiReveal({
     name = qianzaiImage(model, character?.nameArt, images);
   const body = model.report?.view.display.body,
     selected = body?.matching.selected;
+  const sealedLine = body?.volumes
+    .find((v) => v.id === "encounter")
+    ?.paragraphs.find(
+      (p) =>
+        p.kind === "literary" &&
+        p.status === "accepted" &&
+        Array.from(p.text).length <= 96,
+    );
   const layers = useRef<HTMLDivElement>(null),
     motion = useQianzaiMotion(active);
   useEffect(() => {
@@ -633,38 +685,35 @@ export function QianzaiReveal({
             </nav>
           </details>
         )}
-        <div className={styles.revealIdentity}>
+        <div className={styles.revealIdentity} data-qianzai-scroll-region>
           <p>与你相逢的是</p>
-          {name ? (
-            <>
-              <ArtImage
-                key={name.objectUrl}
-                src={name.objectUrl}
-                className={styles.nameArt}
-              />
-              <h1 className={styles.srOnly}>{selected?.label}</h1>
-            </>
-          ) : (
-            <h1 className={styles.diagonalName}>
-              {Array.from(selected?.label ?? "本轮相逢").map((letter, i) => (
-                <span key={i}>{letter}</span>
-              ))}
-            </h1>
+          <div className={styles.revealNameFrame}>
+            {name ? (
+              <>
+                <ArtImage
+                  key={name.objectUrl}
+                  src={name.objectUrl}
+                  className={styles.nameArt}
+                />
+                <h1 className={styles.srOnly}>{selected?.label}</h1>
+              </>
+            ) : (
+              <h1
+                className={styles.diagonalName}
+                data-name-size={Array.from(selected?.label ?? "").length}
+              >
+                {Array.from(selected?.label ?? "本轮相逢").map((letter, i) => (
+                  <span key={i}>{letter}</span>
+                ))}
+              </h1>
+            )}
+            <span className={styles.identitySeal} aria-hidden="true">
+              相<br />逢
+            </span>
+          </div>
+          {sealedLine && (
+            <p className={styles.revealSealedLine}>{sealedLine.text}</p>
           )}
-          <span className={styles.identitySeal} aria-hidden="true">
-            相<br />逢
-          </span>
-          <p className={styles.index}>
-            契合指数 <strong>{selected?.narrativeIndex ?? "—"}</strong>
-            <span> / 100</span>
-          </p>
-          <p>
-            {body?.matching.status === "single-candidate"
-              ? "本轮偏好下仅有一位候选人物。"
-              : body?.matching.status === "near-tie"
-                ? "前两位人物接近，这是一种开放的文学类比。"
-                : "循着本轮选择，照见相逢的线索。"}
-          </p>
         </div>
         <button
           data-reveal-continue
@@ -675,9 +724,6 @@ export function QianzaiReveal({
           <ChevronDown size={30} aria-hidden="true" focusable="false" />
           下滑查看人物报告
         </button>
-        <p className={styles.revealNotice}>
-          娱乐性文学类比 · 非准确率或身份概率
-        </p>
       </div>
     </Screen>
   );

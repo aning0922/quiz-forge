@@ -409,16 +409,21 @@ Object.assign(window, {
       );
     },
     unmount: () => root.unmount(),
-    completed: () =>
+    completed: (label?: string) => {
+      const model = structuredClone(fixture.completed);
+      if (label)
+        model.report!.view.display.body.matching.selected.label = label;
       root.render(
         <QianzaiTongxinExperience
-          model={fixture.completed}
+          key={label ?? "readonly-report"}
+          model={model}
           initialScreen="report"
           onEvent={() => {
             throw Error("READ_ONLY_REPORT_MUTATION");
           }}
         />,
-      ),
+      );
+    },
   },
 });
 function MotionStudy() {

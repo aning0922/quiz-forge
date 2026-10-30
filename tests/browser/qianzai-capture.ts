@@ -27,29 +27,35 @@ type MotionProbe = {
   prepareLast(): Promise<void>;
   remountSameReport(): void;
   unmount(): void;
+  completed(label?: string): void;
 };
 
+const responsiveRun =
+  process.env.QZTX_CAPTURE_TARGET?.startsWith("responsive-");
 const reportRun =
+  responsiveRun ||
   process.env.QZTX_CAPTURE_TARGET === "fidelity-report" ||
   process.env.QZTX_CAPTURE_TARGET?.startsWith("motion-")
     ? new Date().toISOString().replaceAll(":", "-")
     : null;
 const out = path.resolve(
-  reportRun
-    ? process.env.QZTX_CAPTURE_TARGET?.startsWith("motion-")
-      ? `.cache/qztx-motion/${process.env.QZTX_CAPTURE_TARGET}-${reportRun}`
-      : `.cache/qztx-fidelity/report-${reportRun}`
-    : process.env.QZTX_PARITY_CAPTURE === "1"
-      ? ".cache/qztx-parity/browser"
-      : process.env.QZTX_CAPTURE_TARGET === "restore"
-        ? ".cache/qztx-d3/restore"
-        : process.env.QZTX_CAPTURE_TARGET === "reading"
-          ? ".cache/qztx-d3/reading"
-          : process.env.QZTX_CAPTURE_TARGET === "finish"
-            ? ".cache/qztx-d3/finish"
-            : process.env.QZTX_MOTION_STUDY === "1"
-              ? ".cache/qztx-d3/motion-study"
-              : ".cache/qztx-d3/browser",
+  responsiveRun
+    ? `.cache/qztx-responsive/${process.env.QZTX_CAPTURE_TARGET}-${reportRun}`
+    : reportRun
+      ? process.env.QZTX_CAPTURE_TARGET?.startsWith("motion-")
+        ? `.cache/qztx-motion/${process.env.QZTX_CAPTURE_TARGET}-${reportRun}`
+        : `.cache/qztx-fidelity/report-${reportRun}`
+      : process.env.QZTX_PARITY_CAPTURE === "1"
+        ? ".cache/qztx-parity/browser"
+        : process.env.QZTX_CAPTURE_TARGET === "restore"
+          ? ".cache/qztx-d3/restore"
+          : process.env.QZTX_CAPTURE_TARGET === "reading"
+            ? ".cache/qztx-d3/reading"
+            : process.env.QZTX_CAPTURE_TARGET === "finish"
+              ? ".cache/qztx-d3/finish"
+              : process.env.QZTX_MOTION_STUDY === "1"
+                ? ".cache/qztx-d3/motion-study"
+                : ".cache/qztx-d3/browser",
 );
 await mkdir(out, { recursive: true });
 const session = await consumerSessionFixtureV2(),
@@ -326,7 +332,7 @@ const visuals: {
   layer: "clean" | "prototype-scene-base" | "prototype-option-skin";
 }[] = [];
 const completedVisuals: typeof visuals = [];
-if (process.env.QZTX_CAPTURE_TARGET?.startsWith("motion-")) {
+if (responsiveRun || process.env.QZTX_CAPTURE_TARGET?.startsWith("motion-")) {
   const report = scope(fixture.completed.report!) as NonNullable<
     typeof fixture.completed.report
   >;
@@ -468,6 +474,43 @@ if (process.env.QZTX_PROTOTYPE_HTML) {
     session.entry.facts,
   );
 }
+if (responsiveRun) {
+  for (const q of session.entry.facts.entry.questions) {
+    q.prompt = "夜深时分，你独自在高处远望，\n心中最先浮现的是什么？";
+    q.options.forEach((o, i) => {
+      o.label = [
+        "对未来的期待，想要看见更广阔的世界",
+        "心中某个重要的人，忍不住想起TA",
+        "过往的遗憾，仍在心头萦绕",
+        "当下的平静，只愿珍惜此刻的安宁",
+      ][i]!;
+    });
+  }
+  session.entry.factsSha256 = await consumerEntryFactsSha256V2(
+    session.entry.facts,
+  );
+}
+if (process.env.QZTX_CAPTURE_TARGET === "responsive-long") {
+  const q = session.entry.facts.entry.questions[0]!;
+  q.prompt =
+    "合成长题：" +
+    "在这一段用于小屏完整阅读的合成情境里，请保留全部文字并慢慢阅读。".repeat(
+      7,
+    ) +
+    "合成长题完整结尾。";
+  q.options.forEach(
+    (o, i) =>
+      (o.label =
+        `合成长选项${i + 1}：` +
+        "这一段合成选项用于验证长文字换行与下部独立滚动，不是作者正式题目。".repeat(
+          5,
+        ) +
+        `第${i + 1}项完整结尾。`),
+  );
+  session.entry.factsSha256 = await consumerEntryFactsSha256V2(
+    session.entry.facts,
+  );
+}
 const server = createServer((req, res) => {
   const file = files.get(req.url ?? "");
   if (file) {
@@ -487,7 +530,8 @@ const server = createServer((req, res) => {
         preferenceSceneRef,
         completedVisuals,
         leaseRemount:
-          process.env.QZTX_CAPTURE_TARGET?.startsWith("motion-") ?? false,
+          responsiveRun ||
+          (process.env.QZTX_CAPTURE_TARGET?.startsWith("motion-") ?? false),
       }).replaceAll("<", "\\u003c") +
       '</script><script src="/probe.js"></script></html>',
   );
@@ -612,7 +656,8 @@ async function checkRadar(page: Page) {
 try {
   const page = await browser.newPage({
     viewport: { width: 390, height: 844 },
-    ...(process.env.QZTX_CAPTURE_TARGET === "motion-showcase"
+    ...(process.env.QZTX_CAPTURE_TARGET === "motion-showcase" ||
+    process.env.QZTX_CAPTURE_TARGET === "responsive-first-act"
       ? {
           recordVideo: {
             dir: path.join(out, "video"),
@@ -623,7 +668,1125 @@ try {
   });
   await page.addInitScript("window.__name = (fn) => fn");
   page.on("pageerror", (e) => errors.push(e.message));
-  if (process.env.QZTX_CAPTURE_TARGET === "motion-boundaries") {
+  if (
+    responsiveRun &&
+    process.env.QZTX_CAPTURE_TARGET !== "responsive-boundaries" &&
+    process.env.QZTX_CAPTURE_TARGET !== "responsive-first-act" &&
+    process.env.QZTX_CAPTURE_TARGET !== "responsive-names" &&
+    process.env.QZTX_CAPTURE_TARGET !== "responsive-selection" &&
+    process.env.QZTX_CAPTURE_TARGET !== "responsive-noop" &&
+    process.env.QZTX_CAPTURE_TARGET !== "responsive-long"
+  ) {
+    await page.close();
+    const rows: unknown[] = [],
+      paperEdges: {
+        width: number;
+        height: number;
+        act: number;
+        edgeY: number | null;
+        ratios: number[];
+      }[] = [];
+    const validating =
+      process.env.QZTX_CAPTURE_TARGET !== "responsive-baseline" &&
+      process.env.QZTX_CAPTURE_TARGET !== "responsive-layout-draft";
+    const baselinePath = process.env.QZTX_RESPONSIVE_BASELINE_RESULT;
+    const baseline = baselinePath
+      ? (JSON.parse(await readFile(baselinePath, "utf8")) as {
+          passed: boolean;
+          responsive: {
+            rows: {
+              kind: string;
+              act?: number;
+              width: number;
+              height: number;
+              original: unknown;
+            }[];
+          };
+        })
+      : null;
+    if (validating && !baseline?.passed)
+      throw Error("PASSED_RESPONSIVE_BASELINE_REQUIRED");
+    const reference = baseline
+      ? null
+      : await browser.newPage({ reducedMotion: "reduce" });
+    if (reference) {
+      await reference.addInitScript("window.__name = (fn) => fn");
+      await reference.goto(
+        new URL(`file://${process.env.QZTX_PROTOTYPE_HTML}`).href,
+      );
+    }
+    const geometry = async (p: Page, original: boolean, screen: string) =>
+      p.evaluate(
+        ({ original, screen }) => {
+          const root = document.querySelector<HTMLElement>(
+            original
+              ? `#${screen === "preference" ? "gender" : screen === "question" ? "quiz" : screen === "result" ? "reveal" : screen}`
+              : `[data-qianzai-screen="${screen}"]`,
+          )!;
+          const origin = root.getBoundingClientRect();
+          const rect = (el: Element | null) => {
+            if (!el) return null;
+            const r = el.getBoundingClientRect(),
+              s = getComputedStyle(el);
+            return {
+              x: r.x - origin.x,
+              y: r.y - origin.y,
+              width: r.width,
+              height: r.height,
+              bottom: r.bottom - origin.y,
+              overflowY: s.overflowY,
+              clientHeight: el.clientHeight,
+              scrollHeight: el.scrollHeight,
+              visible: el.checkVisibility(),
+            };
+          };
+          const select = (ours: string, theirs: string) =>
+            root.querySelector(original ? theirs : ours);
+          return {
+            viewport: { width: innerWidth, height: innerHeight },
+            root: rect(root),
+            art: rect(
+              select(
+                ":scope>.fullArt, :scope>[class*=fullArt]",
+                ".art,.scene-art,.reveal-art",
+              ),
+            ),
+            choices: Array.from(
+              root.querySelectorAll(original ? ".choice" : "label"),
+              rect,
+            ),
+            marks: Array.from(
+              root.querySelectorAll(original ? ".dot" : "[class*=radioMark]"),
+              rect,
+            ),
+            paper: rect(select("[class*=questionPaper]", ".question-panel")),
+            question: rect(select("[class*=questionBody]", ".readable")),
+            prompt: rect(select("[class*=questionPaper] h2", ".question-text")),
+            options: Array.from(
+              root.querySelectorAll(
+                original ? ".option" : "[class*=options] label",
+              ),
+              rect,
+            ),
+            nav: rect(select("[class*=questionNav]", ".foot.next")),
+            identity: rect(
+              select("[class*=revealIdentity]", ".reveal-art.full"),
+            ),
+            continue: rect(
+              select("[data-reveal-continue]", ".reveal-scroll-hit"),
+            ),
+            notice: rect(select("[class*=revealNotice]", ".reveal-toast")),
+            reportScroll: rect(select("[class*=reportScroll]", ":scope")),
+            document: {
+              scrollHeight: document.documentElement.scrollHeight,
+              clientHeight: document.documentElement.clientHeight,
+              scrollWidth: document.documentElement.scrollWidth,
+            },
+            scrollContainers: Array.from(root.querySelectorAll("*"))
+              .filter((el) =>
+                ["auto", "scroll"].includes(getComputedStyle(el).overflowY),
+              )
+              .map((el) => ({ class: el.className, ...rect(el) })),
+          };
+        },
+        { original, screen },
+      );
+    for (const [width, height] of [
+      [390, 844],
+      [375, 667],
+      [320, 568],
+      [430, 932],
+    ] as const) {
+      const current = await browser.newPage({
+        viewport: { width, height },
+        reducedMotion: "reduce",
+      });
+      current.on("pageerror", (e) => errors.push(e.message));
+      await current.addInitScript("window.__name = (fn) => fn");
+      await current.goto(origin);
+      // Remove only the synthetic harness label outside the actual product stage.
+      await current.addStyleTag({
+        content: '[class*="synthetic"]{display:none!important}',
+      });
+      await expect(
+        current.locator("[data-qianzai-experience]"),
+      ).toHaveAttribute("data-view-phase", "ready");
+      await current.evaluate(() => document.fonts.ready);
+      await expect(
+        current.locator('[data-qianzai-screen="cover"] img'),
+      ).toHaveCount(1);
+      if (reference) {
+        await reference.setViewportSize({ width, height });
+        await reference.evaluate("show('gender')");
+      }
+      const originalGeometry = (kind: string, screen: string, act?: number) =>
+        reference
+          ? geometry(reference, true, screen)
+          : Promise.resolve(
+              baseline!.responsive.rows.find(
+                (row) =>
+                  row.kind === kind &&
+                  row.width === width &&
+                  row.height === height &&
+                  row.act === act,
+              )!.original,
+            );
+      await current
+        .getByRole("button", { name: "开启穿越之旅", exact: true })
+        .click();
+      await expect(
+        current.locator('[data-qianzai-screen="preference"] img'),
+      ).toHaveCount(1);
+      const prefGeometry = await geometry(current, false, "preference");
+      if (validating) {
+        const unit = width / 390;
+        expect(prefGeometry.root!.height).toBe(height);
+        expect(prefGeometry.document.scrollHeight).toBe(height);
+        for (let i = 0; i < 3; i++) {
+          expect(prefGeometry.choices[i]!.x).toBeCloseTo(12 * unit, 0);
+          expect(prefGeometry.choices[i]!.y).toBeCloseTo(
+            (393 + 91 * i) * unit,
+            0,
+          );
+          expect(prefGeometry.choices[i]!.width).toBeCloseTo(364 * unit, 0);
+          expect(prefGeometry.marks[i]!.x).toBeCloseTo(330 * unit, 0);
+          expect(prefGeometry.marks[i]!.y).toBeCloseTo(
+            [441, 530, 619][i]! * unit,
+            0,
+          );
+        }
+      }
+      rows.push({
+        kind: "preference",
+        width,
+        height,
+        original: await originalGeometry("preference", "preference"),
+        current: await geometry(current, false, "preference"),
+      });
+      if (reference)
+        await reference.screenshot({
+          path: path.join(out, `original-preference-${width}x${height}.png`),
+        });
+      await current.screenshot({
+        path: path.join(out, `current-preference-${width}x${height}.png`),
+      });
+      await current
+        .locator('[data-qianzai-screen="preference"] label')
+        .nth(2)
+        .click();
+      await expect(
+        current.locator('[data-qianzai-screen="question"]'),
+      ).toBeVisible();
+      for (const [act, index] of [
+        [1, 0],
+        [2, 8],
+        [3, 16],
+      ] as const) {
+        if (index)
+          await current.evaluate(async (index) => {
+            const p = (window as unknown as { qianzaiProbe: MotionProbe })
+              .qianzaiProbe;
+            await p.owner.navigate({ questionId: `q-${index}` }, "question");
+          }, index);
+        await expect(
+          current.locator("[data-qianzai-experience]"),
+        ).toHaveAttribute("data-view-phase", "ready");
+        if (reference)
+          await reference.evaluate(
+            `showQuestion(${(act - 1) * 4});document.getElementById('questionText').textContent='夜深时分，你独自在高处远望，\\n心中最先浮现的是什么？';document.querySelectorAll('#optionHost .words').forEach((el,i)=>el.textContent=['对未来的期待，想要看见更广阔的世界','心中某个重要的人，忍不住想起TA','过往的遗憾，仍在心头萦绕','当下的平静，只愿珍惜此刻的安宁'][i]);`,
+          );
+        await current.evaluate(() => scrollTo(0, 0));
+        rows.push({
+          kind: "question",
+          act,
+          width,
+          height,
+          original: await originalGeometry("question", "question", act),
+          current: await geometry(current, false, "question"),
+        });
+        if (reference)
+          await reference.screenshot({
+            path: path.join(out, `original-act-${act}-${width}x${height}.png`),
+          });
+        await current.screenshot({
+          path: path.join(out, `current-act-${act}-${width}x${height}.png`),
+        });
+        const geo = await geometry(current, false, "question");
+        if (validating) {
+          expect(geo.root!.height).toBe(height);
+          expect(geo.document.scrollHeight).toBe(height);
+          expect(geo.document.scrollWidth).toBe(width);
+          expect(geo.paper!.y).toBeCloseTo((391 * width) / 390, 0);
+          const port = current.locator(
+            '[data-qianzai-screen="question"] [data-qianzai-scroll-region]',
+          );
+          const metrics = await port.evaluate((n) => ({
+            client: n.clientHeight,
+            scroll: n.scrollHeight,
+          }));
+          expect(metrics.scroll > metrics.client).toBe(height < 800);
+          const before = await current.evaluate(
+            () =>
+              (window as unknown as { qianzaiProbe: MotionProbe }).qianzaiProbe
+                .calls.length,
+          );
+          await port.evaluate((n) => (n.scrollTop = n.scrollHeight));
+          const nav = await current
+            .locator(
+              '[data-qianzai-screen="question"] nav[aria-label="答题导航"]',
+            )
+            .boundingBox();
+          expect(nav!.y + nav!.height).toBeLessThanOrEqual(height + 1);
+          expect(await current.evaluate(() => scrollY)).toBe(0);
+          if (height < 800)
+            await current.screenshot({
+              path: path.join(
+                out,
+                `current-act-${act}-bottom-${width}x${height}.png`,
+              ),
+            });
+          await port.evaluate((n) => (n.scrollTop = 0));
+          expect(
+            await current.evaluate(
+              () =>
+                (window as unknown as { qianzaiProbe: MotionProbe })
+                  .qianzaiProbe.calls.length,
+            ),
+          ).toBe(before);
+          const backdrop = current.locator('svg[class*="answerBackdrop"]');
+          await expect(backdrop).toHaveAttribute(
+            "preserveAspectRatio",
+            "xMidYMid slice",
+          );
+          await expect(backdrop.locator(":scope>svg")).toHaveAttribute(
+            "viewBox",
+            "0 1400 852 444",
+          );
+          await expect(backdrop.locator(":scope>svg")).toHaveAttribute(
+            "overflow",
+            "hidden",
+          );
+        }
+        // Read rendered pixels, not only the DOM top: locate the first central
+        // pale paper row in each real screenshot, independently of CSS offsets.
+        const { data, info } = await sharp(
+          await readFile(
+            path.join(out, `current-act-${act}-${width}x${height}.png`),
+          ),
+        )
+          .ensureAlpha()
+          .raw()
+          .toBuffer({ resolveWithObject: true });
+        const paper = geo.paper!,
+          left = Math.ceil(paper.x + (80 * paper.width) / 354),
+          right = Math.floor(paper.x + (274 * paper.width) / 354),
+          top = Math.floor(paper.y),
+          ratios: number[] = [];
+        for (let dy = 0; dy < 10; dy++) {
+          let bright = 0;
+          for (let x = left; x < right; x++) {
+            const pos = ((top + dy) * info.width + x) * 4;
+            if (
+              data[pos]! > 190 &&
+              data[pos + 1]! > 165 &&
+              data[pos + 2]! > 110
+            )
+              bright++;
+          }
+          ratios.push(bright / (right - left));
+        }
+        const edgeIndex = ratios.findIndex((r) => r >= 0.9);
+        paperEdges.push({
+          width,
+          height,
+          act,
+          edgeY: edgeIndex < 0 ? null : top + edgeIndex,
+          ratios,
+        });
+      }
+      await current.evaluate(async () => {
+        const p = (window as unknown as { qianzaiProbe: MotionProbe })
+          .qianzaiProbe;
+        await p.prepareLast();
+      });
+      await current
+        .getByRole("button", { name: "走向相逢", exact: true })
+        .click();
+      await current
+        .getByRole("button", { name: "开启相逢", exact: true })
+        .click();
+      await expect(
+        current.locator("[data-qianzai-experience]"),
+      ).toHaveAttribute("data-view-phase", "completed");
+      await expect(current.locator("[data-reveal-phase]")).toHaveAttribute(
+        "data-reveal-phase",
+        "ready",
+      );
+      if (reference)
+        await reference.evaluate("window.__quizforgeLiBai.showReveal(false)");
+      await current.evaluate(() => scrollTo(0, 0));
+      rows.push({
+        kind: "reveal",
+        width,
+        height,
+        original: await originalGeometry("reveal", "result"),
+        current: await geometry(current, false, "result"),
+      });
+      if (reference)
+        await reference.screenshot({
+          path: path.join(out, `original-reveal-${width}x${height}.png`),
+        });
+      await current.screenshot({
+        path: path.join(out, `current-reveal-${width}x${height}.png`),
+      });
+      await current.locator("[data-reveal-continue]").click();
+      if (reference)
+        await reference.evaluate("window.__quizforgeLiBai.toReport()");
+      rows.push({
+        kind: "report",
+        width,
+        height,
+        original: await originalGeometry("report", "report"),
+        current: await geometry(current, false, "report"),
+      });
+      await current.evaluate(() => scrollTo(0, 0));
+      await current.screenshot({
+        path: path.join(out, `current-report-${width}x${height}.png`),
+      });
+      if (reference)
+        await reference.screenshot({
+          path: path.join(out, `original-report-${width}x${height}.png`),
+        });
+      await current.close();
+      await writeFile(
+        path.join(out, "geometry.in-progress.json"),
+        JSON.stringify(rows, null, 2),
+      );
+    }
+    await reference?.close();
+    if (validating)
+      for (const [width, height] of [
+        [390, 844],
+        [375, 667],
+        [320, 568],
+        [430, 932],
+      ]) {
+        const edges = paperEdges.filter(
+          (e) => e.width === width && e.height === height,
+        );
+        expect(edges).toHaveLength(3);
+        expect(edges.every((e) => e.edgeY !== null)).toBe(true);
+        expect(
+          Math.max(...edges.map((e) => e.edgeY!)) -
+            Math.min(...edges.map((e) => e.edgeY!)),
+        ).toBeLessThanOrEqual(1);
+      }
+    facts.responsive = {
+      reusedBaseline: baselinePath,
+      paperEdges,
+      validated: validating,
+      source:
+        "explicit original HTML read only; same prompts/options across acts; synthetic HTTP and role noise markers",
+      rows,
+    };
+  } else if (process.env.QZTX_CAPTURE_TARGET === "responsive-noop") {
+    await page.goto(`${origin}/?motion-question`);
+    await page.addStyleTag({
+      content: '[class*="synthetic"]{display:none!important}',
+    });
+    const host = page.locator("[data-qianzai-experience]"),
+      stage = page.locator("[data-qianzai-transition]"),
+      question = page.locator('[data-qianzai-screen="question"]');
+    await expect(question).toBeVisible();
+    await expect(host).toHaveAttribute("data-view-phase", "ready");
+    await question.getByRole("button", { name: "偏好", exact: true }).click();
+    await expect(
+      page.locator('[data-qianzai-screen="preference"] input').nth(2),
+    ).toBeChecked();
+    await page.clock.install();
+    await page.clock.pauseAt(new Date(Date.now() + 100));
+    const before = await page.evaluate(() => {
+      const p = (window as unknown as { qianzaiProbe: MotionProbe })
+        .qianzaiProbe;
+      return {
+        calls: p.calls.length,
+        saves: p.calls.filter((c) => c.path.endsWith("/save")).length,
+        state: p.snapshot().state,
+        storage: JSON.stringify(sessionStorage),
+      };
+    });
+    await page.getByRole("button", { name: "进入第一幕", exact: true }).click();
+    await expect(stage).toHaveAttribute("data-kind", "chapter");
+    await expect(stage.locator('[data-transition-part="kicker"]')).toHaveText(
+      "第一幕",
+    );
+    await page.clock.runFor(439);
+    await expect(host).toHaveAttribute("data-view-phase", "ready");
+    await expect(stage).toHaveAttribute("data-step", "enter");
+    await page.clock.runFor(451);
+    await expect(stage).toBeHidden();
+    expect(await question.evaluate((n) => n.closest("[inert]") !== null)).toBe(
+      false,
+    );
+    const after = await page.evaluate(() => {
+      const p = (window as unknown as { qianzaiProbe: MotionProbe })
+        .qianzaiProbe;
+      return {
+        calls: p.calls.length,
+        saves: p.calls.filter((c) => c.path.endsWith("/save")).length,
+        state: p.snapshot().state,
+        storage: JSON.stringify(sessionStorage),
+      };
+    });
+    expect(after).toEqual(before);
+    await page.screenshot({
+      path: path.join(out, "no-change-navigation-settled.png"),
+    });
+    facts.noChangeNavigation = {
+      controlledClock: true,
+      setup:
+        "real owner saved preference/first position before observation; returned to preference unchanged",
+      chapterEndedMs: 890,
+      noAdditionalRequest: true,
+      noAdditionalSave: true,
+      sameAcceptedStateAndStorage: true,
+      inertReleased: true,
+      before,
+      after,
+    };
+    await page.close();
+  } else if (process.env.QZTX_CAPTURE_TARGET === "responsive-long") {
+    await page.setViewportSize({ width: 320, height: 568 });
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.goto(`${origin}/?motion-question`);
+    await page.addStyleTag({
+      content: '[class*="synthetic"]{display:none!important}',
+    });
+    const question = page.locator('[data-qianzai-screen="question"]'),
+      port = question.locator("[data-qianzai-scroll-region]");
+    await expect(question).toBeVisible();
+    await expect(question.locator(":scope>img")).toHaveCount(1);
+    await page.evaluate(() => document.fonts.ready);
+    const before = await page.evaluate(() => {
+      const p = (window as unknown as { qianzaiProbe: MotionProbe })
+        .qianzaiProbe;
+      return { calls: p.calls.length, state: p.snapshot().state };
+    });
+    const proof = await question.evaluate((n) => {
+      const p = (window as unknown as { qianzaiProbe: MotionProbe })
+          .qianzaiProbe,
+        q = p.snapshot().entry!.questions[0]!,
+        port = n.querySelector("[data-qianzai-scroll-region]")!,
+        paper = n.querySelector('[class*="questionPaper"] h2')!;
+      return {
+        expectedPrompt: q.prompt,
+        prompt: paper.textContent,
+        promptClient: paper.clientHeight,
+        promptScroll: paper.scrollHeight,
+        options: Array.from(n.querySelectorAll("label")).map((el, i) => {
+          const text = el.querySelector("span:nth-of-type(2)")!;
+          return {
+            expected: q.options[i]!.label,
+            text: text.textContent,
+            client: text.clientHeight,
+            scroll: text.scrollHeight,
+            width: text.clientWidth,
+            scrollWidth: text.scrollWidth,
+          };
+        }),
+        client: port.clientHeight,
+        scroll: port.scrollHeight,
+        portTop: port.getBoundingClientRect().top,
+        headerTop: n.querySelector("header")!.getBoundingClientRect().top,
+        doc: document.documentElement.scrollHeight,
+      };
+    });
+    expect(proof.prompt).toBe(proof.expectedPrompt);
+    expect(proof.promptScroll).toBeLessThanOrEqual(proof.promptClient + 1);
+    expect(
+      proof.options.every(
+        (o) =>
+          o.text === o.expected &&
+          o.scroll <= o.client + 1 &&
+          o.scrollWidth <= o.width + 1,
+      ),
+    ).toBe(true);
+    expect(proof.expectedPrompt.length).toBeGreaterThan(150);
+    expect(proof.options.every((o) => o.expected.length > 100)).toBe(true);
+    expect(proof.scroll).toBeGreaterThan(proof.client);
+    expect(proof.doc).toBe(568);
+    await page.screenshot({
+      path: path.join(out, "long-prompt-top-320x568.png"),
+    });
+    await port.evaluate((n) => (n.scrollTop = n.scrollHeight));
+    const end = await question.evaluate((n) => {
+      const text = n.querySelectorAll("label span:nth-of-type(2)")[3]!,
+        range = document.createRange(),
+        child = text.firstChild!;
+      range.setStart(child, child.textContent!.length - 8);
+      range.setEnd(child, child.textContent!.length);
+      const last = range.getBoundingClientRect(),
+        nav = n
+          .querySelector('nav[aria-label="答题导航"]')!
+          .getBoundingClientRect();
+      return {
+        lastTextTop: last.top,
+        lastTextBottom: last.bottom,
+        navTop: nav.top,
+        navBottom: nav.bottom,
+        headerTop: n.querySelector("header")!.getBoundingClientRect().top,
+        docScroll: scrollY,
+      };
+    });
+    expect(end.lastTextTop).toBeGreaterThanOrEqual(proof.portTop);
+    expect(end.lastTextBottom).toBeLessThanOrEqual(568);
+    expect(end.navBottom).toBeLessThanOrEqual(568);
+    expect(end.headerTop).toBe(proof.headerTop);
+    expect(end.docScroll).toBe(0);
+    await page.screenshot({
+      path: path.join(out, "long-options-bottom-nav-320x568.png"),
+    });
+    const after = await page.evaluate(() => {
+      const p = (window as unknown as { qianzaiProbe: MotionProbe })
+        .qianzaiProbe;
+      return { calls: p.calls.length, state: p.snapshot().state };
+    });
+    expect(after).toEqual(before);
+    facts.longQuestion = {
+      scope:
+        "320x568 synthetic long prompt and four long options; real controller setup, no author answers",
+      proof,
+      end,
+      scrollWithoutIOOrStateChange: true,
+    };
+    await page.close();
+  } else if (process.env.QZTX_CAPTURE_TARGET === "responsive-selection") {
+    await page.close();
+    const frames: unknown[] = [];
+    for (const [width, height] of [
+      [390, 844],
+      [375, 667],
+      [320, 568],
+      [430, 932],
+    ] as const) {
+      const p = await browser.newPage({
+        viewport: { width, height },
+        reducedMotion: "reduce",
+      });
+      p.on("pageerror", (e) => errors.push(e.message));
+      await p.goto(origin);
+      await p.addStyleTag({
+        content: '[class*="synthetic"]{display:none!important}',
+      });
+      await expect(p.locator("[data-qianzai-experience]")).toHaveAttribute(
+        "data-view-phase",
+        "ready",
+      );
+      await p
+        .getByRole("button", { name: "开启穿越之旅", exact: true })
+        .click();
+      const pref = p.locator('[data-qianzai-screen="preference"]');
+      await expect(pref.locator(":scope>img")).toHaveCount(1);
+      await p.evaluate(() => document.fonts.ready);
+      await p.emulateMedia({ reducedMotion: "no-preference" });
+      await p.clock.install();
+      await p.clock.pauseAt(new Date(Date.now() + 100));
+      await pref.locator("label").first().click();
+      await p.clock.runFor(180);
+      await expect(pref.locator("input").first()).toBeChecked();
+      await expect(p.locator("[data-qianzai-transition]")).toBeHidden();
+      const metrics = await pref
+        .locator("label")
+        .first()
+        .evaluate((n) => {
+          const r = n.getBoundingClientRect(),
+            s = getComputedStyle(n);
+          return {
+            x: r.x,
+            y: r.y,
+            width: r.width,
+            height: r.height,
+            radius: s.borderRadius,
+            checked: (n.querySelector("input") as HTMLInputElement).checked,
+          };
+        });
+      expect(parseFloat(metrics.radius)).toBeCloseTo((width / 390) * 35, 0);
+      expect(
+        await p.evaluate(
+          () =>
+            (
+              window as unknown as { qianzaiProbe: MotionProbe }
+            ).qianzaiProbe.calls.filter((c) => c.method === "POST").length,
+        ),
+      ).toBe(0);
+      await p.screenshot({
+        path: path.join(out, `preference-selected-${width}x${height}.png`),
+      });
+      frames.push({ viewport: { width, height }, ...metrics });
+      await p.close();
+    }
+    facts.preferenceSelection = {
+      controlledClockMs: 180,
+      frames,
+      scope:
+        "selected bounds/radius and screenshot; no real-clock rhythm claim",
+    };
+  } else if (process.env.QZTX_CAPTURE_TARGET === "responsive-names") {
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.goto(origin);
+    await page.addStyleTag({
+      content: '[class*="synthetic"]{display:none!important}',
+    });
+    await expect(page.locator("[data-qianzai-experience]")).toHaveAttribute(
+      "data-view-phase",
+      "ready",
+    );
+    const frames: unknown[] = [];
+    for (const [width, height] of [
+      [320, 568],
+      [430, 932],
+    ] as const) {
+      await page.setViewportSize({ width, height });
+      for (const label of ["李白", "李清照", "爱新觉罗"]) {
+        await page.evaluate(
+          (label) =>
+            (
+              window as unknown as { qianzaiProbe: MotionProbe }
+            ).qianzaiProbe.completed(label),
+          label,
+        );
+        await page
+          .getByRole("button", { name: "返回人物揭晓", exact: true })
+          .click();
+        const result = page.locator('[data-qianzai-screen="result"]');
+        await expect(result).toBeVisible();
+        const metrics = await result.evaluate((n) => {
+          const entry = n
+              .querySelector("[data-reveal-continue]")!
+              .getBoundingClientRect(),
+            identity = n
+              .querySelector("[data-qianzai-scroll-region]")!
+              .getBoundingClientRect();
+          const glyphs = Array.from(n.querySelectorAll("h1 span"), (el) => {
+            const r = el.getBoundingClientRect();
+            return {
+              top: r.top,
+              bottom: r.bottom,
+              left: r.left,
+              right: r.right,
+            };
+          });
+          return {
+            entryTop: entry.top,
+            entryBottom: entry.bottom,
+            identityTop: identity.top,
+            identityBottom: identity.bottom,
+            glyphs,
+            doc: document.documentElement.scrollHeight,
+          };
+        });
+        expect(metrics.entryBottom).toBeLessThanOrEqual(height);
+        expect(metrics.identityBottom).toBeLessThan(metrics.entryTop);
+        expect(metrics.doc).toBe(height);
+        expect(
+          metrics.glyphs.every(
+            (g) =>
+              g.bottom < metrics.entryTop && g.left >= 0 && g.right <= width,
+          ),
+        ).toBe(true);
+        await page.screenshot({
+          path: path.join(
+            out,
+            `name-${Array.from(label).length}-${width}x${height}.png`,
+          ),
+        });
+        frames.push({ label, width, height, ...metrics });
+      }
+    }
+    expect(
+      await page.evaluate(
+        () =>
+          (
+            window as unknown as { qianzaiProbe: MotionProbe }
+          ).qianzaiProbe.calls.filter((c) => c.method === "POST").length,
+      ),
+    ).toBe(0);
+    facts.nameFallback = {
+      scope:
+        "pure synthetic readonly presentation, no formal role art, no verified receipt claim",
+      frames,
+    };
+    await page.close();
+  } else if (process.env.QZTX_CAPTURE_TARGET === "responsive-first-act") {
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.goto(origin);
+    await page.addStyleTag({
+      content: '[class*="synthetic"]{display:none!important}',
+    });
+    const host = page.locator("[data-qianzai-experience]"),
+      stage = page.locator("[data-qianzai-transition]");
+    await expect(host).toHaveAttribute("data-view-phase", "ready");
+    await page.evaluate(() => document.fonts.ready);
+    await page
+      .getByRole("button", { name: "开启穿越之旅", exact: true })
+      .click();
+    await page.emulateMedia({ reducedMotion: "no-preference" });
+    const at = await page
+      .locator('[data-qianzai-screen="preference"] label')
+      .nth(2)
+      .evaluate((node) => {
+        (node.querySelector("input") as HTMLInputElement).click();
+        return performance.now();
+      });
+    const frames: unknown[] = [];
+    for (const [name, offset] of [
+      ["selection", 180],
+      ["chapter-early", 530],
+      ["chapter-first-act-caption", 750],
+      ["first-question-incoming", 1030],
+      ["first-question-ready", 1500],
+    ] as const) {
+      await page.waitForFunction(
+        ({ at, offset }) => performance.now() >= at + offset,
+        { at, offset },
+        { polling: "raf", timeout: 5000 },
+      );
+      frames.push(
+        await page.evaluate(
+          ({ at, name, offset }) => ({
+            name,
+            offset,
+            elapsedMs: performance.now() - at,
+            kind: document
+              .querySelector("[data-qianzai-transition]")
+              ?.getAttribute("data-kind"),
+            kicker: document.querySelector('[data-transition-part="kicker"]')
+              ?.textContent,
+            phase: document
+              .querySelector("[data-qianzai-experience]")
+              ?.getAttribute("data-view-phase"),
+          }),
+          { at, name, offset },
+        ),
+      );
+      await page.screenshot({ path: path.join(out, `${name}.png`) });
+    }
+    await expect(stage).toBeHidden();
+    await expect(
+      page.locator('[data-qianzai-screen="question"]'),
+    ).toBeVisible();
+    const calls = await page.evaluate(
+      () =>
+        (window as unknown as { qianzaiProbe: MotionProbe }).qianzaiProbe.calls,
+    );
+    expect(calls.filter((c) => c.path.endsWith("/save"))).toHaveLength(1);
+    expect(calls.filter((c) => c.path.endsWith("/complete"))).toHaveLength(0);
+    facts.firstActRealClock = {
+      realClock: true,
+      noClockInstallOrSeeking: true,
+      frames,
+      calls,
+    };
+    await page.close();
+  } else if (process.env.QZTX_CAPTURE_TARGET === "responsive-boundaries") {
+    await page.setViewportSize({ width: 320, height: 568 });
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.goto(origin);
+    await page.addStyleTag({
+      content: '[class*="synthetic"]{display:none!important}',
+    });
+    const host = page.locator("[data-qianzai-experience]"),
+      stage = page.locator("[data-qianzai-transition]"),
+      question = page.locator('[data-qianzai-screen="question"]'),
+      port = question.locator("[data-qianzai-scroll-region]");
+    const inspect = () =>
+      page.evaluate(() => {
+        const p = (window as unknown as { qianzaiProbe: MotionProbe })
+          .qianzaiProbe;
+        return {
+          calls: p.calls,
+          snapshot: p.snapshot(),
+          storage: JSON.stringify(sessionStorage),
+          scroll: document.querySelector(
+            '[data-qianzai-screen="question"] [data-qianzai-scroll-region]',
+          )?.scrollTop,
+        };
+      });
+    await expect(host).toHaveAttribute("data-view-phase", "ready");
+    await page
+      .getByRole("button", { name: "开启穿越之旅", exact: true })
+      .click();
+    await page.emulateMedia({ reducedMotion: "no-preference" });
+    await page.clock.install();
+    await page.clock.pauseAt(new Date(Date.now() + 100));
+    await page
+      .locator('[data-qianzai-screen="preference"] label')
+      .first()
+      .click();
+    await page.clock.runFor(399);
+    await expect(stage).toBeHidden();
+    expect(
+      (await inspect()).calls.filter((c) => c.method === "POST"),
+    ).toHaveLength(0);
+    await page.clock.runFor(1);
+    await expect(stage).toHaveAttribute("data-kind", "chapter");
+    await expect(stage).toHaveAttribute("data-act", "1");
+    await expect(stage.locator('[data-transition-part="kicker"]')).toHaveText(
+      "第一幕",
+    );
+    await expect(stage.locator('[data-transition-part="title"]')).toHaveText(
+      "初识本心",
+    );
+    await expect(stage.locator('[data-transition-part="place"]')).toHaveText(
+      "灯下问心",
+    );
+    await page.clock.runFor(438);
+    expect(
+      (await inspect()).calls.filter((c) => c.method === "POST"),
+    ).toHaveLength(0);
+    await page.evaluate(() =>
+      (
+        window as unknown as { qianzaiProbe: MotionProbe }
+      ).qianzaiProbe.holdNext(),
+    );
+    await page.clock.runFor(1);
+    await expect(host).toHaveAttribute("data-view-phase", "saving");
+    await expect(stage).toHaveAttribute("data-step", "wait");
+    await page.evaluate(() =>
+      (
+        window as unknown as { qianzaiProbe: MotionProbe }
+      ).qianzaiProbe.release(),
+    );
+    await expect(host).toHaveAttribute("data-view-phase", "ready");
+    await page.clock.runFor(451);
+    await expect(stage).toBeHidden();
+    expect(await question.evaluate((n) => n.closest("[inert]") !== null)).toBe(
+      false,
+    );
+    await port.evaluate((n) => (n.scrollTop = 110));
+    await question
+      .locator('input[type="radio"]')
+      .first()
+      .evaluate((n) => (n as HTMLInputElement).click());
+    await page.clock.runFor(399);
+    expect((await inspect()).scroll).toBe(110);
+    await page.evaluate(() =>
+      (
+        window as unknown as { qianzaiProbe: MotionProbe }
+      ).qianzaiProbe.dropNext(),
+    );
+    await page.clock.runFor(156);
+    await expect(host).toHaveAttribute("data-view-phase", "unknown");
+    expect((await inspect()).scroll).toBe(110);
+    await expect(stage).toBeHidden();
+    const unknown = await inspect();
+    await page.setViewportSize({ width: 375, height: 667 });
+    await page.evaluate(() => document.fonts.ready);
+    expect((await inspect()).calls).toEqual(unknown.calls);
+    expect((await inspect()).storage).toBe(unknown.storage);
+    expect((await inspect()).scroll).toBe(110);
+    await page
+      .getByRole("button", { name: "核对保存结果", exact: true })
+      .click();
+    await expect(host).toHaveAttribute("data-view-phase", "conflict");
+    expect((await inspect()).scroll).toBe(110);
+    await page
+      .getByRole("button", { name: "采用已核对的服务器进度", exact: true })
+      .click();
+    await expect(host).toHaveAttribute("data-view-phase", "ready");
+    expect((await inspect()).snapshot.state?.progress.questionId).toBe("q-1");
+    expect((await inspect()).scroll).toBe(0);
+    await page.clock.runFor(350);
+    expect(
+      (await inspect()).calls.filter((c) => c.path.endsWith("/save")),
+    ).toHaveLength(2);
+    // Hide during the preference feedback; only a fresh explicit Enter may submit.
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await question.getByRole("button", { name: "偏好", exact: true }).click();
+    await page.emulateMedia({ reducedMotion: "no-preference" });
+    await page
+      .locator('[data-qianzai-screen="preference"] label')
+      .nth(2)
+      .click();
+    await page.clock.runFor(399);
+    await page.evaluate(() =>
+      (
+        window as unknown as { qianzaiProbe: MotionProbe }
+      ).qianzaiProbe.setHidden(true),
+    );
+    await page.clock.runFor(2000);
+    await page.evaluate(() =>
+      (
+        window as unknown as { qianzaiProbe: MotionProbe }
+      ).qianzaiProbe.setHidden(false),
+    );
+    await page.clock.runFor(1000);
+    expect(
+      (await inspect()).calls.filter((c) => c.path.endsWith("/save")),
+    ).toHaveLength(2);
+    // Button can be below the short-screen fold; scroll its own reading port.
+    await page
+      .locator(
+        '[data-qianzai-screen="preference"] [data-qianzai-scroll-region]',
+      )
+      .evaluate((n) => (n.scrollTop = n.scrollHeight));
+    await page.getByRole("button", { name: "进入第一幕", exact: true }).click();
+    await expect(stage).toHaveAttribute("data-kind", "chapter");
+    await expect(stage.locator('[data-transition-part="kicker"]')).toHaveText(
+      "第一幕",
+    );
+    await page.clock.runFor(438);
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.clock.runFor(1000);
+    expect(
+      (await inspect()).calls.filter((c) => c.path.endsWith("/save")),
+    ).toHaveLength(2);
+    await expect(stage).toBeHidden();
+    await page.getByRole("button", { name: "进入第一幕", exact: true }).click();
+    await expect(host).toHaveAttribute("data-view-phase", "ready");
+    await expect(question).toBeVisible();
+    expect(
+      (await inspect()).calls.filter((c) => c.path.endsWith("/save")),
+    ).toHaveLength(3);
+    // Long prompt/option fixtures are covered by the layout target, while these
+    // read-only models exercise two-, three-, and four-character name fallback.
+    for (const label of ["李白", "李清照", "爱新觉罗"]) {
+      await page.evaluate(
+        (label) =>
+          (
+            window as unknown as { qianzaiProbe: MotionProbe }
+          ).qianzaiProbe.completed(label),
+        label,
+      );
+      const report = page.locator('[data-qianzai-screen="report"]');
+      await expect(report).toBeVisible();
+      await report
+        .getByRole("button", { name: "返回人物揭晓", exact: true })
+        .click();
+      const result = page.locator('[data-qianzai-screen="result"]'),
+        identity = result.locator("[data-qianzai-scroll-region]"),
+        entry = result.locator("[data-reveal-continue]");
+      await expect(result).toBeVisible();
+      const box = await result.evaluate((n) => {
+        const identity = n
+            .querySelector("[data-qianzai-scroll-region]")!
+            .getBoundingClientRect(),
+          name = n.querySelector("h1")!.getBoundingClientRect(),
+          entry = n
+            .querySelector("[data-reveal-continue]")!
+            .getBoundingClientRect();
+        return {
+          identityBottom: identity.bottom,
+          nameBottom: name.bottom,
+          entryTop: entry.top,
+          entryBottom: entry.bottom,
+          documentHeight: document.documentElement.scrollHeight,
+          height: innerHeight,
+        };
+      });
+      expect(box.identityBottom).toBeLessThan(box.entryTop);
+      expect(box.nameBottom).toBeLessThan(box.entryTop);
+      expect(box.entryBottom).toBeLessThanOrEqual(box.height);
+      expect(box.documentHeight).toBe(box.height);
+      await page.emulateMedia({ reducedMotion: "no-preference" });
+      await identity.evaluate((n) => {
+        n.dispatchEvent(
+          new WheelEvent("wheel", { deltaY: 100, bubbles: true }),
+        );
+        n.dispatchEvent(
+          new KeyboardEvent("keydown", { key: "PageDown", bubbles: true }),
+        );
+        const touch = (type: string, y: number) =>
+          n.dispatchEvent(
+            new TouchEvent(type, {
+              bubbles: true,
+              touches:
+                type === "touchstart"
+                  ? [
+                      new Touch({
+                        identifier: 1,
+                        target: n,
+                        clientX: 120,
+                        clientY: y,
+                      }),
+                    ]
+                  : [],
+              changedTouches: [
+                new Touch({
+                  identifier: 1,
+                  target: n,
+                  clientX: 120,
+                  clientY: y,
+                }),
+              ],
+            }),
+          );
+        touch("touchstart", 350);
+        touch("touchend", 200);
+      });
+      await expect(page.locator("[data-reader-page]")).toHaveAttribute(
+        "data-reader-page",
+        "result",
+      );
+      // A canceled blank-scene gesture cannot open the report later.
+      await result.evaluate((n) => {
+        const t = (y: number) =>
+          new Touch({ identifier: 1, target: n, clientX: 120, clientY: y });
+        n.dispatchEvent(
+          new TouchEvent("touchstart", { bubbles: true, touches: [t(350)] }),
+        );
+        n.dispatchEvent(new TouchEvent("touchcancel", { bubbles: true }));
+        n.dispatchEvent(
+          new TouchEvent("touchend", {
+            bubbles: true,
+            changedTouches: [t(200)],
+          }),
+        );
+      });
+      await expect(page.locator("[data-reader-page]")).toHaveAttribute(
+        "data-reader-page",
+        "result",
+      );
+      await page.emulateMedia({ reducedMotion: "reduce" });
+      await page.screenshot({
+        path: path.join(
+          out,
+          `fallback-${Array.from(label).length}-characters.png`,
+        ),
+      });
+      await entry.click();
+      await expect(report).toBeVisible();
+      await report.locator("details").first().locator("summary").click();
+      await report
+        .getByRole("link", { name: "卷六 · 合成卷6", exact: true })
+        .click();
+      await expect
+        .poll(() =>
+          report
+            .getByRole("progressbar", { name: "长卷阅读进度" })
+            .getAttribute("aria-valuenow")
+            .then(Number),
+        )
+        .toBeGreaterThan(50);
+    }
+    await page.clock.runFor(4000);
+    expect(errors).toEqual([]);
+    facts.responsiveBoundaries = {
+      controlledClock: true,
+      firstActAutoAndManualSameChapter: true,
+      feedback400AndCommit439: true,
+      hiddenAndReduceBeforeCommitNoSend: true,
+      unknownKeepsScrollAndOriginalPending: true,
+      resizeAndFontNoRequests: true,
+      acceptedNextResetsScrollBeforePaint: true,
+      savePosts: 3,
+      readOnlyNameLengths: [2, 3, 4],
+      entryInsideViewportAndNoOverlap: true,
+      localScrollAndCanceledGestureNoReportNavigation: true,
+      readonlyReportToc: true,
+    };
+    await page.close();
+  } else if (process.env.QZTX_CAPTURE_TARGET === "motion-boundaries") {
     await page.goto(`${origin}/?motion-question`);
     const host = page.locator("[data-qianzai-experience]"),
       stage = page.locator("[data-qianzai-transition]"),
@@ -968,7 +2131,7 @@ try {
       .click();
     await sample("preference-selection-feedback", at, 200);
     await sample("preference-question-veil", at, 650);
-    await sample("first-question-arrived", at, 1200);
+    await sample("first-question-arrived", at, 1400);
     await expect(question).toBeVisible();
     await expect(stage).toBeHidden();
     at = await start();
@@ -1678,16 +2841,16 @@ try {
     await page.clock.runFor(399);
     await expect(stage).toBeHidden();
     await page.clock.runFor(1);
-    await expect(stage).toHaveAttribute("data-kind", "preference");
-    await page.clock.runFor(336);
+    await expect(stage).toHaveAttribute("data-kind", "chapter");
+    await page.clock.runFor(438);
     await expect(
       page.locator('[data-qianzai-screen="preference"]'),
     ).toBeVisible();
     await page.clock.runFor(1);
     await expect(question).toBeVisible();
     await expect(host).toHaveAttribute("data-view-phase", "ready");
-    await frame("preference-veil-midpoint-337ms", 337);
-    await page.clock.runFor(353);
+    await frame("first-act-midpoint-439ms", 439);
+    await page.clock.runFor(451);
     await expect(stage).toBeHidden();
     await page.screenshot({
       path: path.join(out, "transition-final-act-1.png"),
@@ -1702,11 +2865,14 @@ try {
     await expect(stage).toHaveAttribute("data-kind", "paper");
     await page.clock.runFor(154);
     expect(await id()).toBe("q-0");
+    await expect(
+      question.locator('svg[class*="answerBackdrop"]'),
+    ).toBeVisible();
     expect(
       await question
-        .locator('[class*="questionBody"]')
-        .evaluate((node) => getComputedStyle(node, "::before").backgroundColor),
-    ).toBe("rgb(24, 43, 59)");
+        .locator(":scope>img")
+        .evaluate((node) => getComputedStyle(node).clipPath),
+    ).not.toBe("none");
     await frame("paper-out-opaque-plane-154ms", 154);
     await page.clock.runFor(1);
     await expect.poll(id).toBe("q-1");
@@ -1837,7 +3003,7 @@ try {
     await reduced.close();
     facts.transitions = {
       coverCommitMs: 337,
-      preferenceCommitMs: 337,
+      firstActCommitMs: 439,
       selectionFeedbackMs: 400,
       paperCommitMs: 155,
       chapterCommitMs: 439,

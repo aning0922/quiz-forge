@@ -121,7 +121,13 @@ describe("Qianzai D3 view ports (synthetic props only)", () => {
   });
   it("keeps null preference distinct and disables preserved answers while unknown", () => {
     const { model } = structuredReaderFixtureV2();
-    const props = { model, onRead() {}, onEvent() {}, onChoose() {} };
+    const props = {
+      model,
+      onRead() {},
+      onEvent() {},
+      onChoose() {},
+      onEnter() {},
+    };
     expect(
       renderToStaticMarkup(createElement(QianzaiPreference, props)),
     ).not.toContain('checked=""');
@@ -166,6 +172,7 @@ describe("Qianzai D3 view ports (synthetic props only)", () => {
     for (const d of body.dimensions) expect(html).toContain(`${d.score} / 100`);
     expect(html).toContain("同时阅读的反向证据");
     expect(html).toContain("37");
+    expect(html).toContain("本轮偏好下仅有一位候选人物。");
     expect(html).not.toContain("89%");
     expect(html).not.toContain("下载");
   });

@@ -340,10 +340,10 @@ export function QianzaiTongxinExperience({
             line: "月色为引 · 故人将至",
           }
         : {
-            kicker: act === 3 ? "第三幕" : "第二幕",
+            kicker: ["第一幕", "第二幕", "第三幕"][act - 1] ?? "",
             title: caption?.title ?? "",
             place: caption?.place ?? "",
-            line: ACTS[act - 2]?.line ?? "",
+            line: act > 1 ? (ACTS[act - 2]?.line ?? "") : "",
           },
     )) {
       const leaf = node.querySelector<HTMLElement>(
@@ -456,6 +456,31 @@ export function QianzaiTongxinExperience({
     // than a phase edge in the old mount, owns this one presentation.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reportKey, model.phase, model.pendingOperation]);
+  const enterPreferredAct = () => {
+    const current = latest.current.model;
+    const q =
+      current.draft?.progress.questionId ?? current.entry?.questions[0]?.ref.id;
+    if (!q || !current.draft?.matchingContext) return;
+    const act =
+      current.entry?.questions.find((question) => question.ref.id === q)?.act ??
+      1;
+    const saved = consumerDraftStatusV2(current);
+    const needsSave = !(
+      saved.preferenceSaved &&
+      saved.answersSaved &&
+      saved.progressSaved &&
+      current.state?.progress.questionId === q
+    );
+    transition(
+      "chapter",
+      act,
+      () => {
+        latest.current.onEvent({ type: "navigate", questionId: q });
+        setPage("question");
+      },
+      needsSave ? q : undefined,
+    );
+  };
   const navigateQuestion = (questionId: string) => {
     const questions = model.entry?.questions ?? [];
     const from = questions.findIndex(
@@ -540,7 +565,7 @@ export function QianzaiTongxinExperience({
         if (stageTimers.current.length) return;
         transition("cover", 1, () => setPage(next));
       } else if (active === "preference" && next === "question") {
-        transition("preference", 1, () => setPage(next));
+        enterPreferredAct();
       } else {
         cancel();
         setPage(next);
@@ -647,8 +672,19 @@ export function QianzaiTongxinExperience({
       data-motion={motion ? "running" : "paused"}
       onTouchStart={(e) => {
         const t = e.touches[0];
+        const excluded = (e.target as Element).closest(
+          "[data-qianzai-scroll-region],button,a,input,label,summary,details,nav",
+        );
         touch.current =
-          e.touches.length === 1 && t ? { x: t.clientX, y: t.clientY } : null;
+          (active === "cover" || active === "result") &&
+          !excluded &&
+          e.touches.length === 1 &&
+          t
+            ? { x: t.clientX, y: t.clientY }
+            : null;
+      }}
+      onTouchCancel={() => {
+        touch.current = null;
       }}
       onTouchEnd={(e) => {
         const t = e.changedTouches[0],
@@ -734,28 +770,12 @@ export function QianzaiTongxinExperience({
                 <div hidden={active !== "preference"}>
                   <QianzaiPreference
                     {...props}
+                    onEnter={() => {
+                      if (queued.current || stageTimers.current.length) return;
+                      enterPreferredAct();
+                    }}
                     onChoose={(value) => {
-                      if (
-                        feedback(() => {
-                          const q =
-                            model.draft?.progress.questionId ??
-                            questions[0]?.ref.id;
-                          if (q) {
-                            transition(
-                              "preference",
-                              1,
-                              () => {
-                                latest.current.onEvent({
-                                  type: "navigate",
-                                  questionId: q,
-                                });
-                                setPage("question");
-                              },
-                              q,
-                            );
-                          }
-                        })
-                      )
+                      if (feedback(enterPreferredAct))
                         onEvent({
                           type: "choose-preference",
                           preference: value,
@@ -888,9 +908,21 @@ export function QianzaiTongxinExperience({
                       readerMoving !== "prepare"
                     }
                     onWheel={(e) => {
+                      if (
+                        (e.target as Element).closest(
+                          "[data-qianzai-scroll-region],button,a,summary,details,nav",
+                        )
+                      )
+                        return;
                       if (e.deltaY > 38) read("report");
                     }}
                     onKeyDown={(e) => {
+                      if (
+                        (e.target as Element).closest(
+                          "[data-qianzai-scroll-region],button,a,input,summary,details,nav",
+                        )
+                      )
+                        return;
                       if (["ArrowDown", "PageDown"].includes(e.key)) {
                         e.preventDefault();
                         read("report");

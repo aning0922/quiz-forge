@@ -67,7 +67,7 @@
 .screen {
   position: relative;
   min-height: 100dvh;
-  max-width: 390px;
+  max-width: 430px;
   margin: auto;
   overflow: hidden;
   background: #13283b;
@@ -366,7 +366,8 @@
   background: #0c2032a8;
 }
 .preference {
-  min-height: max(844px, 100svh);
+  height: 100dvh;
+  min-height: 0;
   color: #392b20;
   background: #213a4a;
   padding-bottom: 34px;
@@ -509,7 +510,7 @@
   color: #fff;
   box-shadow: 0 0 15px #ffc97d;
 }
-.preference > .primary {
+.preferenceControls > .primary {
   display: block;
   width: 62%;
   margin: 28px auto 12px;
@@ -520,13 +521,15 @@
   outline: 3px double #b48544;
   outline-offset: 3px;
 }
-.preference > .finePrint {
+.preferenceControls > .finePrint {
   color: #f5e0b8;
   font-size: 16px;
   text-shadow: 0 2px 4px #15283d;
   padding: 0 22px;
 }
 .question {
+  height: 100dvh;
+  min-height: 0;
   background: linear-gradient(#17334b, #1d3444 50%, #132839);
 }
 .questionProgress {
@@ -625,14 +628,22 @@
   box-shadow: inset 0 0 0 3px #d7ba8014;
 }
 .questionBody {
-  position: relative;
-  margin-top: clamp(178px, 59.5vw, 256px);
-  padding: 0 18px 24px;
-  animation: paperEnter 465ms ease both;
+  position: absolute;
+  top: var(--answer-top);
+  left: 0;
+  right: 0;
+  bottom: 0;
+  min-height: 0;
+  margin: 0;
+  padding: 0 calc(var(--scene-unit) * 18) max(24px, env(safe-area-inset-bottom));
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  scrollbar-width: thin;
+  background: transparent;
 }
 .questionPaper {
   position: relative;
-  min-height: 98px;
+  min-height: calc(var(--scene-unit) * 98);
   display: grid;
   place-items: center;
   padding: 15px 31px;
@@ -810,7 +821,8 @@
   margin-top: 20px;
 }
 .reveal {
-  height: max(844px, 100dvh);
+  height: 100dvh;
+  min-height: 0;
   background: #10263d;
   isolation: isolate;
 }
@@ -825,7 +837,7 @@
 }
 .revealHeader {
   position: absolute;
-  top: 40px;
+  top: max(calc(var(--scene-unit) * 20), env(safe-area-inset-top));
   left: 20px;
   right: 20px;
   text-align: center;
@@ -833,12 +845,12 @@
   text-shadow: 0 2px 7px #000;
 }
 .revealHeader p {
-  font-size: 30px;
+  font-size: calc(var(--scene-unit) * 36);
   letter-spacing: 0.16em;
 }
 .revealHeader > span {
   display: block;
-  margin-top: 12px;
+  margin-top: 4px;
   letter-spacing: 0.22em;
 }
 .moonbeam {
@@ -866,53 +878,15 @@
   filter: blur(8px);
   opacity: 0;
 }
-.revealIdentity {
-  position: absolute;
-  left: 10%;
-  right: 8%;
-  top: 49%;
-  text-align: left;
-  text-shadow: 0 2px 12px #000;
-}
-.revealIdentity > p:first-child {
-  letter-spacing: 0.25em;
-}
-.revealIdentity h1 {
-  font-size: 64px;
-  letter-spacing: 0.2em;
-  font-weight: 500;
-  line-height: 1.5;
-  margin: 15px 0 10px;
-}
-.nameArt {
-  display: block;
-  width: min(70%, 260px);
-  max-height: 220px;
-  object-fit: contain;
-  margin: 12px auto;
-}
-.revealIdentity > .index {
-  margin: 14px 0;
-  color: #f6dbac;
-}
-.index strong {
-  font-size: 35px;
-  font-weight: 500;
-}
-.index span {
-  font: 16px system-ui;
-}
-.revealIdentity > p:last-child {
-  max-width: 300px;
-  margin: auto;
-  line-height: 1.8;
-}
 .revealContinue {
   position: absolute;
-  bottom: 3.5%;
-  left: 25%;
-  width: 50%;
+  bottom: env(safe-area-inset-bottom);
+  left: calc(50% - max(80px, var(--scene-unit) * 69));
+  width: max(160px, calc(var(--scene-unit) * 138));
+  white-space: nowrap;
+  height: max(86px, calc(var(--scene-unit) * 104));
   display: grid;
+  align-content: center;
   justify-items: center;
   gap: 5px;
   background: transparent !important;
@@ -929,57 +903,9 @@
   filter: drop-shadow(0 0 6px #f9bb62);
   animation: revealScrollPulse 2.9s ease-in-out infinite;
 }
-.diagonalName {
-  display: flex;
-  flex-wrap: wrap;
-  max-width: 230px;
-  gap: 0;
-  margin: 4px 0 8px !important;
-  color: #ffe5a6;
-  font: 600 110px/1.05 var(--brush) !important;
-  letter-spacing: -0.08em !important;
-  transform: rotate(-12deg);
-}
-.diagonalName > span:nth-child(even) {
-  transform: translateY(35px);
-}
-.revealIdentity {
-  left: 22%;
-  right: 10%;
-  top: 47%;
-}
-.revealIdentity > .index {
-  margin: 45px 0 6px;
-  font-size: 16px;
-}
-.revealIdentity > p:last-child {
-  font-size: 16px;
-  text-align: left;
-}
-.identitySeal {
-  position: absolute;
-  top: 140px;
-  right: 8%;
-  padding: 4px 5px;
-  color: #ffe7c2;
-  font: 18px/1.15 var(--font);
-  background: #ae342a;
-  border-radius: 40% 8px;
-  transform: rotate(-7deg);
-  box-shadow: inset 0 0 0 2px #f1b38c44;
-}
-.revealNotice {
-  position: absolute;
-  bottom: 0.4%;
-  left: 4%;
-  right: 4%;
-  text-align: center;
-  font-size: 16px;
-  color: #e6d8c5;
-}
 .reportScreen {
   height: 100dvh;
-  min-height: 650px;
+  min-height: 0;
   overflow: hidden;
   background: #f7eedc;
   color: var(--ink);
@@ -1657,9 +1583,6 @@
   .actScene {
     min-height: 0;
   }
-  .questionBody {
-    padding-inline: 12px;
-  }
   .questionPaper {
     padding: 18px 24px;
   }
@@ -1930,11 +1853,14 @@
 /* Original prototype scene bases are not clean backgrounds. These surfaces
    take over every variable field; reveal/report never use this composition. */
 .screen {
-  --scene-width: min(100vw, 390px);
+  --scene-width: min(100vw, 430px);
+  --scene-unit: calc(var(--scene-width) / 390);
+  --answer-top: calc(var(--scene-unit) * 391);
 }
 .question[data-qianzai-composite] > .fullArt {
   height: calc(var(--scene-width) * 844 / 390);
   object-fit: fill;
+  clip-path: inset(0 0 calc(100% - var(--answer-top)));
 }
 .question[data-qianzai-composite] .wordmark {
   visibility: hidden;
@@ -1960,34 +1886,24 @@
   height: calc(var(--scene-width) * 30 / 390);
   backdrop-filter: blur(3px);
 }
-.question[data-qianzai-composite] .questionBody {
-  margin-top: calc(var(--scene-width) * 391 / 390 - 84px);
-}
+
 .question[data-qianzai-composite] .options {
   margin-top: -1px !important;
   gap: 0;
   margin-right: -1px !important;
 }
 .question[data-qianzai-composite] .questionNav {
+  gap: 4px;
+  align-items: center;
   margin-top: 6px;
   background: transparent;
   position: relative;
-}
-.question[data-qianzai-composite] .saveNote {
-  position: absolute;
-  left: 34%;
-  right: 34%;
-  bottom: 24px;
-  margin: 0 !important;
-  font-size: 12px;
-  line-height: 1.6;
-  background: #172938;
-  z-index: 2;
 }
 .preference[data-qianzai-composite] > .fullArt {
   height: calc(var(--scene-width) * 844 / 390);
   object-fit: fill;
   z-index: 0;
+  clip-path: inset(0 0 calc(100% - var(--scene-unit) * 393));
 }
 .preference[data-qianzai-composite] .topbar {
   height: 100px;
@@ -1999,22 +1915,23 @@
 .preference[data-qianzai-composite] .topbar button {
   position: absolute;
   left: calc(var(--scene-width) * 7 / 390);
-  top: 36px;
-  width: 57px;
-  height: 62px;
+  top: calc(var(--scene-unit) * 36);
+  width: calc(var(--scene-unit) * 57);
+  height: calc(var(--scene-unit) * 62);
 }
 .preference[data-qianzai-composite] .preferences {
   position: absolute;
   left: 0;
   right: 0;
-  top: calc(var(--scene-width) * 393 / 390);
-  gap: 1px;
+  top: 0;
+  gap: calc(var(--scene-unit) * 1);
+  padding: 0 calc(var(--scene-unit) * 14) 0 calc(var(--scene-unit) * 12) !important;
 }
 .preference[data-qianzai-composite] .preferenceChoice {
   height: calc(var(--scene-width) * 90 / 390);
   min-height: 60px;
   border: 0;
-  border-radius: 35px;
+  border-radius: calc(var(--scene-unit) * 35);
   background: transparent;
   box-shadow: none;
   padding-right: 23px;
@@ -2033,9 +1950,9 @@
     0 0 23px #ffd380af,
     0 0 45px #ffc96f55;
 }
-.preference[data-qianzai-composite] > .primary {
+.preference[data-qianzai-composite] .preferenceControls > .primary {
   position: absolute;
-  top: calc(var(--scene-width) * 687 / 390);
+  top: calc(var(--scene-unit) * 294);
   left: 19.2%;
   width: 60.3%;
   height: calc(var(--scene-width) * 68 / 390);
@@ -2046,9 +1963,9 @@
   color: transparent !important;
   box-shadow: none;
 }
-.preference[data-qianzai-composite] > .finePrint {
+.preference[data-qianzai-composite] .preferenceControls > .finePrint {
   position: absolute;
-  top: calc(var(--scene-width) * 759 / 390);
+  top: calc(var(--scene-unit) * 366);
   left: 12%;
   right: 12%;
   padding: 0;
@@ -2078,10 +1995,10 @@
 }
 .preference[data-qianzai-composite] .radioMark {
   position: absolute;
-  left: calc(var(--scene-width) * 330 / 390 - 13px);
+  left: calc(var(--scene-unit) * 318);
   top: calc(var(--scene-width) * 48 / 390);
-  width: calc(var(--scene-width) * 25 / 390);
-  height: calc(var(--scene-width) * 25 / 390);
+  width: calc(var(--scene-unit) * 24);
+  height: calc(var(--scene-unit) * 24);
 }
 .preference[data-qianzai-composite]
   .preferenceChoice:nth-of-type(2)
@@ -2449,13 +2366,10 @@
   border-radius: 0;
   box-shadow: none;
   background-color: transparent;
+  min-height: max(65px, calc(var(--scene-unit) * 65));
   background-size:
-    100% 65px,
+    100% 100%,
     calc(100% - 44px) 100%;
-}
-.question[data-qianzai-composite] .saveNote {
-  left: 35%;
-  right: 35%;
 }
 .coverScene:has(> .fullArt) .coverFacts::before {
   content: "";
@@ -2471,13 +2385,6 @@
   );
   filter: blur(1px);
 }
-.question[data-qianzai-composite] .saveNote {
-  left: 33%;
-  right: 33%;
-  bottom: 31px;
-  min-height: 30px;
-  padding: 5px 0;
-}
 /* Clip only the sampled control silhouette; no added frame/shadow. This also
    prevents the old scene's rectangular corner pixels following long content. */
 .question[data-qianzai-composite] .option {
@@ -2489,7 +2396,7 @@
 }
 .sceneFrame {
   position: relative;
-  max-width: 390px;
+  max-width: 430px;
   margin: auto;
 }
 .transitionStage {
@@ -2735,9 +2642,6 @@
 }
 /* The original base has old UI, so a stationary opaque plane must remain
    beneath outgoing/incoming paper. Fading the whole body would expose it. */
-.questionBody {
-  animation: none;
-}
 .preference::before {
   display: none;
 }
@@ -2747,20 +2651,6 @@
 }
 .transitionStage[data-kind="paper"] > * {
   display: none;
-}
-.sceneFrame:has(.transitionStage[data-active="true"][data-kind="paper"])
-  .questionBody::before {
-  content: "";
-  position: absolute;
-  inset: -4px 0 -24px;
-  background: #182b3b;
-  z-index: 0;
-}
-.sceneFrame:has(.transitionStage[data-active="true"][data-kind="paper"])
-  .questionBody
-  > :not(.footerContinuation) {
-  position: relative;
-  z-index: 1;
 }
 .sceneFrame:has(
     .transitionStage[data-kind="paper"][data-active="true"][data-step="leave"]
@@ -3201,7 +3091,7 @@
 .preferenceCount {
   position: absolute;
   left: calc(var(--scene-width) * 199 / 390);
-  top: calc(var(--scene-width) * 761 / 390);
+  top: calc(var(--scene-unit) * 368);
   width: calc(var(--scene-width) * 17 / 390);
   height: calc(var(--scene-width) * 16 / 390);
   display: grid;
@@ -3234,21 +3124,6 @@
   );
   filter: blur(2px);
 }
-.footerContinuation {
-  position: absolute;
-  left: -18px;
-  width: calc(100% + 36px);
-  top: calc(var(--scene-width) * 360 / 390);
-  height: calc(100% - var(--scene-width) * 360 / 390);
-  pointer-events: none;
-}
-@media (max-width: 374px) {
-  .footerContinuation {
-    left: -12px;
-    width: calc(100% + 24px);
-  }
-}
-
 /* Finite presentation phases follow the confirmed HTML clocks. The controller
    alone supplies accepted positions/results; no animation event submits IO. */
 .coverIntroShade {
@@ -3424,7 +3299,7 @@
 }
 .readerDeck {
   position: relative;
-  height: max(844px, 100dvh);
+  height: 100dvh;
   overflow: hidden;
 }
 .readerResult,
@@ -3497,4 +3372,148 @@
     opacity: 1;
     filter: none;
   }
+}
+
+/* Width defines artwork coordinates. Height only bounds the reading ports. */
+.preference:not([data-qianzai-composite]) {
+  display: flex;
+  flex-direction: column;
+}
+.preference:not([data-qianzai-composite]) > :not(.preferenceBody) {
+  flex-shrink: 0;
+}
+.preferenceBody {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+.preference[data-qianzai-composite] .preferenceBody {
+  position: absolute;
+  top: calc(var(--scene-unit) * 393);
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  scrollbar-width: thin;
+}
+.preference[data-qianzai-composite] .preferenceControls {
+  position: relative;
+  height: calc(var(--scene-unit) * 451);
+}
+.preferenceLowerArt {
+  display: block;
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.question[data-qianzai-composite] .questionNav .saveNote {
+  position: static;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  margin: 0 !important;
+  padding: 2px 0;
+  background: none;
+  color: #f1dfbe;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.question[data-qianzai-composite] .option {
+  min-height: max(65px, calc(var(--scene-unit) * 65));
+  background-size:
+    100% 100%,
+    calc(100% - 44px) 100%;
+}
+
+.revealIdentity {
+  position: absolute;
+  left: 18%;
+  right: 12%;
+  top: 46%;
+  bottom: calc(
+    max(86px, var(--scene-unit) * 104) + env(safe-area-inset-bottom) + 8px
+  );
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  scrollbar-width: thin;
+  text-align: left;
+  text-shadow: 0 2px 12px #000;
+}
+.revealIdentity > p:first-child {
+  letter-spacing: 0.25em;
+  font-size: 16px;
+}
+.revealNameFrame {
+  position: relative;
+  height: min(28dvh, 220px);
+  margin-block: 8px;
+}
+.nameArt {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
+}
+.diagonalName {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-content: center;
+  width: 100%;
+  height: 100%;
+  margin: 0 !important;
+  color: #ffe5a6;
+  font: 600 min(12dvh, calc(var(--scene-unit) * 100))/1 var(--brush);
+  letter-spacing: -0.08em;
+  transform: rotate(-12deg);
+}
+.diagonalName[data-name-size="2"] > span:last-child {
+  grid-column: 2;
+  grid-row: 2;
+}
+.diagonalName > span:nth-child(even) {
+  transform: translateY(0.12em);
+}
+.identitySeal {
+  position: absolute;
+  right: 0;
+  bottom: 14%;
+  padding: 4px 5px;
+  color: #ffe7c2;
+  font: 16px/1.15 var(--font);
+  background: #ae342a;
+  border-radius: 40% 8px;
+  transform: rotate(-7deg);
+  box-shadow: inset 0 0 0 2px #f1b38c44;
+}
+.revealIdentity .revealSealedLine {
+  margin: 8px 0;
+  font-size: 16px;
+  line-height: 1.55;
+}
+
+.answerBackdrop {
+  position: absolute;
+  top: var(--answer-top);
+  left: 0;
+  width: 100%;
+  height: calc(100% - var(--answer-top));
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/* Central pale paper edges in the admitted HTML crops start at source rows
+   2, 2, and 3 respectively. Normalize the third crop's one-pixel inset. */
+.question:has([data-act="3"])[data-qianzai-composite] .questionPaper {
+  background-size: 100% calc(100% + var(--scene-unit));
+  background-position: center calc(-1 * var(--scene-unit));
+}
+
+.reportHero > .fullArt {
+  object-position: center 34%;
 }
