@@ -18,8 +18,6 @@ export const QIANZAI_CONSUMER_PRESENTATION = Object.freeze({
   presentationMode: "authored-product" as const,
   exports: Object.freeze({ posterPng: true, fullReportPng: true }),
 });
-/** Historical preview vocabulary remains false. */
-export const QIANZAI_PRESENTATION = QIANZAI_PREVIEW_PRESENTATION;
 export const QIANZAI_COMPONENT_MAPPING = consumerComponentMappingV2Schema.parse(
   {
     schemaVersion: "quizforge.consumer-component-map.v2",

@@ -293,7 +293,9 @@ function drawOperation(
     ctx.drawImage(
       image,
       b.x + (b.width - w) / 2,
-      b.y + (b.height - h) / 2,
+      op.role === "portrait" && op.fit === "cover"
+        ? b.y
+        : b.y + (b.height - h) / 2,
       w,
       h,
     );

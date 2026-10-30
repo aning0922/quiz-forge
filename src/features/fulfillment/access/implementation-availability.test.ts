@@ -119,6 +119,16 @@ it("admits the exact fixed-font identity without requiring descriptor-only file 
     parentSnapshot: { ...play.parentSnapshot, font: fixedFont },
   };
   expect(accessKeyPlayImplementationAvailable(authored)).toBe(true);
+  // A new renderer cannot silently upgrade the capability facts of an old play.
+  expect(
+    accessKeyPlayImplementationAvailable({
+      ...authored,
+      presentation: {
+        presentationMode: "authored-product",
+        exports: { posterPng: false, fullReportPng: false },
+      },
+    }),
+  ).toBe(false);
   for (const key of ["fileSha256", "coverageSha256", "licenseSha256"] as const)
     expect(
       accessKeyPlayImplementationAvailable({

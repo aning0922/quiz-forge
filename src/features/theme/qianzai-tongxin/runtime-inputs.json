@@ -6,10 +6,10 @@
     "family": "QuizForge Qianzai Serif V4",
     "weight": 600,
     "file": "/assets/fonts/qianzai-v4/serif-600.woff2",
-    "fileSha256": "15158e621102e592fbcdcaa4c1e47d25f505c45934e83b467cc7f1722f99ce00",
-    "bytes": 208444,
+    "fileSha256": "19cc202a5ac9267169189cf348bce0c5a08dc5c1020c0e856f9e292ed14dc74e",
+    "bytes": 210112,
     "coverage": "/assets/fonts/qianzai-v4/characters.txt",
-    "coverageSha256": "59839b7910f084574bc5be52c7dfeed5b12d737dec02cf8fb08cc53872ad853d",
+    "coverageSha256": "05082e2e1898cc5903ce483d3d6bb395540ab8227535f65c60ca6d1b495a76d3",
     "licenseFile": "/assets/fonts/qianzai-v4/OFL.txt",
     "licenseSha256": "5e0da210fb04058a8c0087985d2d456b931c2579811a49655721d3cf0c36b6d6"
   },
