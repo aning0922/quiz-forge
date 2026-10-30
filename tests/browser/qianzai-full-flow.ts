@@ -2,9 +2,15 @@ import { createHash } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import assert from "node:assert/strict";
-import { chromium, expect, type Page } from "@playwright/test";
+import {
+  chromium,
+  expect as playwrightExpect,
+  type Page,
+} from "@playwright/test";
 import { z } from "zod";
 import sharp from "sharp";
+
+const expect = playwrightExpect.configure({ timeout: 15_000 });
 
 // Explicit, private, newly issued test credentials only. No browser/HTTP mocks.
 const args = process.argv.slice(2);
@@ -18,6 +24,7 @@ const input = z
     preference: z.enum(["female", "male", "any"]),
     answerIndices: z.array(z.number().int().min(0).max(3)).length(24),
     expectedResultId: z.string().min(1),
+    resumeKnownSavedPrefix: z.number().int().min(1).max(23).optional(),
   })
   .parse(JSON.parse(await readFile(args[1]!, "utf8")));
 const source = JSON.parse(await readFile(input.contentFile, "utf8"));
@@ -48,6 +55,7 @@ const record = {
     sha256: string;
   }[],
   stage: "starting",
+  failure: "",
   passed: false,
 };
 const browser = await chromium.launch();
@@ -103,9 +111,39 @@ try {
   await page.getByRole("button", { name: "验证访问", exact: true }).click();
   await page.waitForURL(/\/play\/[a-f0-9-]+$/);
   const sessionPath = new URL(page.url()).pathname;
+  if (input.resumeKnownSavedPrefix) {
+    const session = await page.evaluate(
+      async (url) => (await fetch(url)).json(),
+      sessionPath + "/api/session",
+    );
+    assert.equal(session.outcome.kind, "editable");
+    const state = session.outcome.state;
+    assert.equal(state.answers.length, input.resumeKnownSavedPrefix);
+    assert.equal(state.matchingContext.preference, input.preference);
+    for (let i = 0; i < input.resumeKnownSavedPrefix; i++) {
+      const answer = state.answers.find(
+        (a: { questionId: string }) =>
+          a.questionId === core.questions[i].ref.id,
+      );
+      assert.equal(
+        answer?.optionId,
+        core.questions[i].options[input.answerIndices[i]!].ref.id,
+      );
+    }
+    assert.equal(
+      state.progress.questionId,
+      core.questions[input.resumeKnownSavedPrefix].ref.id,
+    );
+    await page.getByRole("button", { name: "偏好", exact: true }).click();
+    await page.getByRole("button", { name: "返回封面", exact: true }).click();
+    record.cases.push(
+      `verified-known-saved-prefix-${input.resumeKnownSavedPrefix}-without-replay`,
+    );
+  }
   await expect(
     page.getByRole("button", { name: "开启穿越之旅", exact: true }),
   ).toBeEnabled();
+  await expect(screen("cover").locator("img").first()).toBeVisible();
   await screenshot("cover-390");
   await page.getByRole("button", { name: "开启穿越之旅", exact: true }).click();
   const preference = {
@@ -113,8 +151,10 @@ try {
     male: "只匹配男性历史人物",
     any: "不限制人物性别",
   }[input.preference];
-  await page.getByRole("radio", { name: preference, exact: true }).check();
-  for (let i = 0; i < 24; i++) {
+  if (input.resumeKnownSavedPrefix)
+    await page.getByRole("button", { name: "进入第一幕", exact: true }).click();
+  else await page.getByRole("radio", { name: preference, exact: true }).check();
+  for (let i = input.resumeKnownSavedPrefix ?? 0; i < 24; i++) {
     record.stage = `question-${i + 1}`;
     const question = screen("question");
     await expect(
@@ -123,17 +163,24 @@ try {
         exact: true,
       }),
     ).toBeVisible();
+    await expect(
+      page.locator('[data-qianzai-transition][data-active="true"]'),
+    ).toHaveCount(0);
     const option = question.getByRole("radio").nth(input.answerIndices[i]!);
     await expect(option).toBeEnabled();
-    if (i === 0 || i === 8 || i === 16)
-      await screenshot(`act-${1 + i / 8}-390`);
-    const saved = page.waitForResponse(
-      (r) =>
-        new URL(r.url()).pathname.endsWith("/api/save") &&
-        r.request().method() === "POST",
-    );
-    await option.check();
-    assert.equal((await saved).ok(), true);
+    if (i === (input.resumeKnownSavedPrefix ?? 0) || i === 8 || i === 16) {
+      await expect(question).toHaveAttribute("data-qianzai-composite", "true");
+      await screenshot(`act-${1 + Math.floor(i / 8)}-390`);
+    }
+    const [saved] = await Promise.all([
+      page.waitForResponse(
+        (r) =>
+          new URL(r.url()).pathname.endsWith("/api/save") &&
+          r.request().method() === "POST",
+      ),
+      option.click(),
+    ]);
+    assert.equal(saved.ok(), true);
     if (i === 7) {
       await expect(
         screen("question").getByRole("heading", {
@@ -174,11 +221,19 @@ try {
   await expect(
     page.getByRole("button", { name: "下滑查看人物报告", exact: true }),
   ).toBeEnabled();
+  await expect(screen("result").locator("img")).toHaveCount(2);
+  await expect(
+    screen("result").locator('[data-reveal-phase="ready"]'),
+  ).toBeVisible();
+  await expect(
+    page.locator('[data-qianzai-transition][data-active="true"]'),
+  ).toHaveCount(0);
   await screenshot("reveal-390");
   await page
     .getByRole("button", { name: "下滑查看人物报告", exact: true })
     .click();
   await expect(screen("report")).toBeVisible();
+  await expect(screen("report").locator("img").first()).toBeVisible();
   await expect(screen("report").locator("[data-volume]")).toHaveCount(6);
   const report = await readReport(page, sessionPath);
   record.reportSha256 = report.hash;
@@ -247,8 +302,12 @@ try {
   );
   record.passed = true;
   record.stage = "complete";
-} catch {
+} catch (error) {
   // Do not log Playwright call logs: they can contain the private access URL.
+  record.failure =
+    error instanceof Error
+      ? error.message.split("\n")[0]!.replaceAll(input.rawKey, "[redacted]")
+      : "UNKNOWN_PROBE_FAILURE";
   process.exitCode = 1;
 } finally {
   await writeFile(
