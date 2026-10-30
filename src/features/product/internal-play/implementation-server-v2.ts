@@ -9,8 +9,8 @@ import {
   consumerImplementationIdentityV2,
 } from "./implementation-catalog-v2";
 import {
-  projectQianzaiEntry,
-  projectQianzaiResult,
+  projectQianzaiConsumerEntry,
+  projectQianzaiConsumerResult,
 } from "@/features/theme/qianzai-tongxin/projection";
 import { QIANZAI_CONSUMER_RENDERER } from "@/features/theme/qianzai-tongxin/component-map";
 
@@ -23,7 +23,9 @@ export function resolveConsumerImplementationV2(input: unknown) {
     identity: consumerImplementationIdentityV2(entry),
     descriptor: entry.descriptor,
     requiresPreferenceScene: qianzai,
-    projectEntry: qianzai ? projectQianzaiEntry : projectContentEntryV3,
-    projectResult: qianzai ? projectQianzaiResult : projectPreparedResultV3,
+    projectEntry: qianzai ? projectQianzaiConsumerEntry : projectContentEntryV3,
+    projectResult: qianzai
+      ? projectQianzaiConsumerResult
+      : projectPreparedResultV3,
   });
 }

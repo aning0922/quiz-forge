@@ -18,7 +18,8 @@ import {
   QIANZAI_COMPONENT_MAPPING,
   QIANZAI_CONSUMER_RENDERER,
   QIANZAI_PREVIEW_RENDERER,
-  QIANZAI_PRESENTATION,
+  QIANZAI_PREVIEW_PRESENTATION,
+  QIANZAI_CONSUMER_PRESENTATION,
 } from "../src/features/theme/qianzai-tongxin/component-map";
 import { QIANZAI_RUNTIME_INPUTS } from "../src/features/theme/qianzai-tongxin/runtime-inputs";
 
@@ -54,6 +55,11 @@ async function main() {
   const authoredProjection = entry(
     "src/features/theme/qianzai-tongxin/projection.ts",
     ["projectQianzaiEntry", "projectQianzaiResult"],
+    "server",
+  );
+  const authoredConsumerProjection = entry(
+    "src/features/theme/qianzai-tongxin/projection.ts",
+    ["projectQianzaiConsumerEntry", "projectQianzaiConsumerResult"],
     "server",
   );
   const session = entry(
@@ -123,7 +129,7 @@ async function main() {
   );
   const qianzaiConsumerClosure = await collect(
     [
-      authoredProjection,
+      authoredConsumerProjection,
       session,
       owner,
       entry(
@@ -222,14 +228,14 @@ async function main() {
     qianzaiPreview: await preview(
       QIANZAI_PREVIEW_RENDERER.id,
       QIANZAI_PREVIEW_RENDERER.version,
-      { ...QIANZAI_PRESENTATION, font },
+      { ...QIANZAI_PREVIEW_PRESENTATION, font },
       qianzaiPreviewClosure,
     ),
     qianzaiConsumer: await consumer(
       QIANZAI_CONSUMER_RENDERER.id,
       QIANZAI_CONSUMER_RENDERER.version,
       QIANZAI_COMPONENT_MAPPING,
-      { ...QIANZAI_PRESENTATION, font },
+      { ...QIANZAI_CONSUMER_PRESENTATION, font },
       qianzaiConsumerClosure,
     ),
   };

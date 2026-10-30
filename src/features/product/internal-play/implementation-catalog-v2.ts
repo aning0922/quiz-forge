@@ -89,8 +89,8 @@ export function consumerImplementationAvailableV2(input: unknown) {
       d.presentationMode === "authored-product" &&
       !("kind" in d.font) &&
       sameConsumerFact(d.font, QIANZAI_RUNTIME_INPUTS.font, 8192) &&
-      !d.exports.posterPng &&
-      !d.exports.fullReportPng
+      d.exports.posterPng &&
+      d.exports.fullReportPng
     );
   return (
     current.structuredConsumer !== null &&
