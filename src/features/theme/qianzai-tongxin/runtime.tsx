@@ -10,6 +10,7 @@ import {
   type QianzaiOwnedImage,
 } from "./resource-owner";
 import { loadQianzaiFont } from "./font-owner";
+import { QianzaiExportProvider } from "./export-context";
 
 /** Resource changes never construct a controller, mutate pending or submit business operations. */
 export function QianzaiTongxinRuntime(props: ConsumerExperiencePropsV2) {
@@ -81,11 +82,13 @@ export function QianzaiTongxinRuntime(props: ConsumerExperiencePropsV2) {
       {lease && (font.lease !== lease || !font.ready) && (
         <p role="status">固定字体尚未就绪，当前文字使用备用字体。</p>
       )}
-      <QianzaiTongxinExperience
-        key={`${lease?.generation ?? "none"}:${lease?.current() ? "active" : "revoked"}`}
-        {...props}
-        {...visual}
-      />
+      <QianzaiExportProvider model={props.model} lease={lease}>
+        <QianzaiTongxinExperience
+          key={`${lease?.generation ?? "none"}:${lease?.current() ? "active" : "revoked"}`}
+          {...props}
+          {...visual}
+        />
+      </QianzaiExportProvider>
     </>
   );
 }

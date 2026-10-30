@@ -38,6 +38,8 @@ vi.mock(
         descriptor.presentationMode = "authored-product";
         descriptor.font = QIANZAI_RUNTIME_INPUTS.font;
         if (descriptor.kind === "consumer-renderer") {
+          descriptor.version = "1.1.0";
+          descriptor.exports = { posterPng: true, fullReportPng: true };
           descriptor.mapping = QIANZAI_COMPONENT_MAPPING;
           descriptor.mappingSha256 = hash(QIANZAI_COMPONENT_MAPPING);
         }

@@ -12,7 +12,12 @@ import {
   projectPreparedResultV3,
 } from "../preview/v3-projection";
 import { resultDisplaySnapshotV2Schema } from "@/lib/assessment-contract/display-v2";
-import { projectQianzaiEntry, projectQianzaiResult } from "./projection";
+import {
+  projectQianzaiEntry,
+  projectQianzaiResult,
+  projectQianzaiConsumerEntry,
+  projectQianzaiConsumerResult,
+} from "./projection";
 import { preferenceMigration } from "../../../../scripts/build-qztx-preference-migration";
 const hash = (v: unknown) =>
   createHash("sha256").update(canonicalP1Json(v)).digest("hex");
@@ -77,6 +82,31 @@ describe("additive preference slot and fixed authored projection", () => {
     expect(result.value.score.canonicalContentSha256).not.toBe(
       before.value.score.canonicalContentSha256,
     );
+  });
+  it("seals new consumer export capabilities separately and leaves preview/old displays false", () => {
+    const c = withPreference(),
+      prepared = prepareContentV3(c);
+    if (!prepared.ok) throw Error("FIXTURE");
+    const input = syntheticInputV2(3, [2, 2, 2], "female");
+    const preview = projectQianzaiResult(prepared.value, input);
+    const consumer = projectQianzaiConsumerResult(prepared.value, input);
+    const previewEntry = projectQianzaiEntry(c, hash(c));
+    const consumerEntry = projectQianzaiConsumerEntry(c, hash(c));
+    if (!preview.ok || !consumer.ok || !previewEntry.ok || !consumerEntry.ok)
+      throw Error("FIXTURE");
+    expect(preview.value.display.exports).toEqual({
+      posterPng: false,
+      fullReportPng: false,
+    });
+    expect(previewEntry.value.exports).toEqual(preview.value.display.exports);
+    expect(consumer.value.display.exports).toEqual({
+      posterPng: true,
+      fullReportPng: true,
+    });
+    expect(consumerEntry.value.exports).toEqual(consumer.value.display.exports);
+    expect(consumer.value.display.body).toEqual(preview.value.display.body);
+    expect(consumer.value.score).toEqual(preview.value.score);
+    expect(Object.isFrozen(preview.value.display.exports)).toBe(true);
   });
   it("rejects missing, cross-product, portrait or unlisted preference resources", () => {
     for (const ref of [

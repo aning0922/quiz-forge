@@ -3,16 +3,23 @@ import { consumerComponentMappingV2Schema } from "@/lib/consumer-contract/v2/ide
 
 export const QIANZAI_CONSUMER_RENDERER = Object.freeze({
   id: "consumer-qianzai-tongxin",
-  version: "1.0.0",
+  version: "1.1.0",
 });
 export const QIANZAI_PREVIEW_RENDERER = Object.freeze({
   id: "qianzai-tongxin-preview",
   version: "1.0.0",
 });
-export const QIANZAI_PRESENTATION = Object.freeze({
+export const QIANZAI_PREVIEW_PRESENTATION = Object.freeze({
   presentationMode: "authored-product" as const,
   exports: Object.freeze({ posterPng: false, fullReportPng: false }),
 });
+/** New consumers only. Existing sealed displays are never promoted on the client. */
+export const QIANZAI_CONSUMER_PRESENTATION = Object.freeze({
+  presentationMode: "authored-product" as const,
+  exports: Object.freeze({ posterPng: true, fullReportPng: true }),
+});
+/** Historical preview vocabulary remains false. */
+export const QIANZAI_PRESENTATION = QIANZAI_PREVIEW_PRESENTATION;
 export const QIANZAI_COMPONENT_MAPPING = consumerComponentMappingV2Schema.parse(
   {
     schemaVersion: "quizforge.consumer-component-map.v2",
