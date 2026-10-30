@@ -5,7 +5,9 @@ import {
   quizPackManifestSchema,
   getQuizPackManifestJsonSchema,
 } from "../v1/manifest";
-import { freezeContent, parseSupportedContent } from "../content/supported";
+import { freezeContent } from "../content/supported";
+import { parseCurrentContent } from "../content/current";
+import { engineDeclarationV2Schema } from "@/lib/assessment-contract/scoring-v2";
 import type {
   ContentSchemaVersion,
   SupportedManifest,
@@ -13,9 +15,17 @@ import type {
   SupportedCoreSelection,
 } from "./api";
 
-export const supportedManifestSchema = quizPackManifestSchema.extend({
+const legacySupportedManifestSchema = quizPackManifestSchema.extend({
   contentSchemaVersion: z.enum(["quizpack-content.v1", "quizpack-content.v2"]),
 });
+export const supportedManifestV3Schema = quizPackManifestSchema.extend({
+  contentSchemaVersion: z.literal("quizpack-content.v3"),
+  engine: engineDeclarationV2Schema,
+});
+export const supportedManifestSchema = z.union([
+  legacySupportedManifestSchema,
+  supportedManifestV3Schema,
+]);
 /** One bounded ordinary snapshot, including rejection of accessors and proxies. */
 export function parseSupportedManifest(
   input: unknown,
@@ -55,6 +65,12 @@ export function parseSupportedManifest(
 }
 export function getSupportedManifestJsonSchema(version: ContentSchemaVersion) {
   if (version === "quizpack-content.v1") return getQuizPackManifestJsonSchema();
+  if (version === "quizpack-content.v3")
+    return z.toJSONSchema(supportedManifestV3Schema, {
+      target: "draft-2020-12",
+      io: "input",
+      unrepresentable: "throw",
+    });
   if (version !== "quizpack-content.v2")
     throw new Error("UNSUPPORTED_CONTENT_SCHEMA");
   return z.toJSONSchema(
@@ -77,7 +93,11 @@ export const declarationMismatch = () => ({
 export function isContentSchemaVersion(
   value: unknown,
 ): value is ContentSchemaVersion {
-  return value === "quizpack-content.v1" || value === "quizpack-content.v2";
+  return (
+    value === "quizpack-content.v1" ||
+    value === "quizpack-content.v2" ||
+    value === "quizpack-content.v3"
+  );
 }
 export function assertSelection(selection: SupportedCoreSelection): void {
   if (
@@ -95,7 +115,7 @@ export function parseSupportedPack(
   selection: SupportedCoreSelection,
 ): Result<SupportedParsedPack> {
   const manifest = parseSupportedManifest(manifestInput),
-    content = parseSupportedContent(contentInput);
+    content = parseCurrentContent(contentInput);
   if (!manifest.ok || !content.ok)
     return {
       ok: false,
@@ -118,6 +138,18 @@ export function parseSupportedPack(
       ok: true,
       value: {
         contentSchemaVersion: "quizpack-content.v1",
+        manifest: manifest.value,
+        content: content.value,
+      },
+    };
+  if (
+    manifest.value.contentSchemaVersion === "quizpack-content.v3" &&
+    content.value.schemaVersion === "quizpack-content.v3"
+  )
+    return {
+      ok: true,
+      value: {
+        contentSchemaVersion: "quizpack-content.v3",
         manifest: manifest.value,
         content: content.value,
       },

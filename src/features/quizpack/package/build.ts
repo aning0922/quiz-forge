@@ -1,7 +1,7 @@
 import type { BuildSupportedQuizPack } from "./api";
 import { runBuild } from "./internal-build";
 import { snapshotSupportedContext } from "./context";
-import { parseSupportedContent } from "../content/supported";
+import { parseCurrentContent } from "../content/current";
 import { declarationMismatch, isContentSchemaVersion } from "./manifest";
 import { collectIssues } from "./issues";
 import { validateSupportedQuizPack } from "./validate";
@@ -16,7 +16,7 @@ export const buildSupportedQuizPack: BuildSupportedQuizPack = async (
     return await runBuild(input, snapshot, {
       snapshot: snapshotSupportedContext,
       parse: (value) => {
-        const parsed = parseSupportedContent(value);
+        const parsed = parseCurrentContent(value);
         if (!parsed.ok) return parsed;
         return isContentSchemaVersion(expectedContentVersion) &&
           parsed.value.schemaVersion === expectedContentVersion

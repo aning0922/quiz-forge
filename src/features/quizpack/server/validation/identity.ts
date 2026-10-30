@@ -1,4 +1,16 @@
 import "server-only";
+import {
+  currentValidationIdentitySchema,
+  type CurrentValidationIdentity,
+} from "./contracts";
+import {
+  CURRENT_COMPATIBILITY_HASH,
+  CURRENT_IDENTITY_VERSION,
+  CURRENT_POLICY_ID,
+  CURRENT_REPORT_VERSION,
+  CURRENT_VALIDATOR_VERSION,
+} from "../../package/current-compatibility";
+import { CURRENT_REPORT_SCHEMA_HASH } from "./report";
 import { createHash } from "node:crypto";
 import { canonicalP1Json } from "../../v1/canonical";
 import { DEFAULT_COMPATIBILITY_POLICY } from "../../v1/compatibility";
@@ -89,6 +101,27 @@ export function supportedRuntimeIdentity(
   });
 }
 
+export function currentRuntimeIdentity(
+  binding: MediaRuntimeBinding,
+): CurrentValidationIdentity {
+  const payload = {
+    schemaVersion: CURRENT_IDENTITY_VERSION,
+    validatorVersion: CURRENT_VALIDATOR_VERSION,
+    policyId: CURRENT_POLICY_ID,
+    validatorBundleSha256: binding.runtimeBundleHash,
+    compatibilityPolicyHash: CURRENT_COMPATIBILITY_HASH,
+    effectiveLimitsHash: LIMITS_HASH,
+    persistencePolicyVersion: "quizpack-persistence-policy.v1" as const,
+    persistencePolicyHash: PERSISTENCE_UNICODE_POLICY_HASH,
+    reportSchemaVersion: CURRENT_REPORT_VERSION,
+    reportSchemaHash: CURRENT_REPORT_SCHEMA_HASH,
+    runtime: binding,
+  };
+  return currentValidationIdentitySchema.parse({
+    ...payload,
+    identitySha256: hash(canonicalP1Json(payload)),
+  });
+}
 export async function readTrustedBinding(
   scope: ValidationOperationScope,
 ): Promise<MediaRuntimeBinding> {

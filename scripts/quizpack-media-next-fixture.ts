@@ -467,7 +467,8 @@ async function generateCases(deadline: number) {
 function routeSource(expectedRootsHash: string) {
   return `import "server-only";
 import {createHash} from "node:crypto";
-import {validateArchiveCandidate,copyCandidateResourceBytes,strictSupportedReportSchema,serializeSealedReport} from "@/features/quizpack/server/validation";
+import {validateArchiveCandidate,copyCandidateResourceBytes,serializeSealedReport} from "@/features/quizpack/server/validation";
+import {strictCurrentReportSchema} from "@/features/quizpack/server/validation/report";
 import {createMediaOperationContext,disposeMediaOperationContext,readMediaRuntimeBinding,runIsolatedImage,type ImageDeclaration} from "@/features/quizpack/server/media";
 import {cases,image} from "../../fixture-data";
 declare const __QUIZFORGE_MEDIA_CHECKOUT_ROOT__: string;
@@ -507,7 +508,7 @@ export async function GET(request:Request){
     const e=result.evidence;
     settled=e.completion.relatedIo==="settled"&&e.completion.mediaStopped!=="unknown";
     const report=e.report.status==="sealed"?e.report.value:null;
-    const reportValid=e.report.status==="sealed"&&strictSupportedReportSchema.safeParse(e.report.value).success&&hash(serializeSealedReport(e.report))===e.report.sha256;
+    const reportValid=e.report.status==="sealed"&&strictCurrentReportSchema.safeParse(e.report.value).success&&hash(serializeSealedReport(e.report))===e.report.sha256;
     const checksPassed=!!report&&Object.keys(report.checks).length===6&&Object.values(report.checks).every((value)=>value==="passed");
     const checksFailed=!!report&&Object.values(report.checks).some((value)=>value==="failed");
     const mediaDecoded=e.media.length>0&&e.media.every((item)=>item.result.outcome==="decoded"&&item.result.stopped==="confirmed");
@@ -518,7 +519,9 @@ export async function GET(request:Request){
     if(result.outcome==="accepted"){
       const candidate=result.candidate;
       const facts=candidate.facts;
-      contentSchemaVersion=facts.contentSchemaVersion;contentKind=facts.content.kind;engineId=facts.content.engine.id;componentVersion=facts.content.componentVersion;
+      const sourceContent=facts.content;
+      if(sourceContent.schemaVersion!=="quizpack-content.v1"&&sourceContent.schemaVersion!=="quizpack-content.v2")throw Error("FIXTURE_UNEXPECTED_CONTENT_SCHEMA");
+      contentSchemaVersion=facts.contentSchemaVersion;contentKind=sourceContent.kind;engineId=sourceContent.engine.id;componentVersion=sourceContent.componentVersion;
       resourceCount=facts.resources.length;
       const rows= facts.resources.map((resource,index)=>{
         const copy=copyCandidateResourceBytes(candidate,index);
@@ -527,8 +530,8 @@ export async function GET(request:Request){
         if(copy.length)copy[0]=copy[0]!^255;
         const fresh=copyCandidateResourceBytes(candidate,index);
         const declaration=resource.declaration;
-        const content=facts.content.resources.find((item)=>item.id===declaration.id&&item.version===declaration.version);
-        const valid=blob===resource.blobSha256&&blob===declaration.sha256&&originalLength===resource.bytes&&originalLength===declaration.bytes&&hash(fresh)===blob&&declaration.productId===facts.productId&&facts.productId===entry.target&&facts.content.product.productId===facts.productId&&facts.manifest.productId===facts.productId&&!!content&&content.path===declaration.path&&content.sha256===blob&&content.bytes===originalLength&&hash(resource.canonicalDeclarationText)===resource.declarationSha256;
+        const content=sourceContent.resources.find((item)=>item.id===declaration.id&&item.version===declaration.version);
+        const valid=blob===resource.blobSha256&&blob===declaration.sha256&&originalLength===resource.bytes&&originalLength===declaration.bytes&&hash(fresh)===blob&&declaration.productId===facts.productId&&facts.productId===entry.target&&sourceContent.product.productId===facts.productId&&facts.manifest.productId===facts.productId&&!!content&&content.path===declaration.path&&content.sha256===blob&&content.bytes===originalLength&&hash(resource.canonicalDeclarationText)===resource.declarationSha256;
         return {valid,row:[blob,originalLength,hash(declaration.productId)]};
       });
       resourcesCopied=rows.length>0&&rows.every((item)=>item.valid)&&facts.archiveSha256===(e.input.status==="snapshotted"?e.input.archiveSha256:null);
@@ -1067,7 +1070,7 @@ async function verify(
             result.contentKind !== expected.contentKind ||
             result.engineId !== expected.engineId ||
             result.componentVersion !== expected.componentVersion ||
-            result.identitySchema !== "quizpack-validation-identity.v2" ||
+            result.identitySchema !== "quizpack-validation-identity.v3" ||
             result.report !== "sealed" ||
             result.reportValid !== true ||
             result.checksPassed !== true ||

@@ -4,6 +4,7 @@ import {
   consumerUuidSchema,
 } from "@/lib/consumer-contract/v1/primitives";
 import { CONSUMER_PROTOCOLS_V1 } from "@/lib/consumer-contract/v1/identities";
+import { CONSUMER_PROTOCOLS_V2 } from "@/lib/consumer-contract/v2/identities";
 import { CONSUMER_LIMITS_V1 as L } from "@/lib/consumer-contract/v1/limits";
 import { sameConsumerFact } from "@/lib/consumer-contract/v1/integrity";
 import { ConsumerError } from "@/lib/consumer-contract/v1/errors";
@@ -34,6 +35,23 @@ import {
   internalPlayListSchema,
 } from "./contracts";
 import { resolveConsumerImplementation } from "./implementation-server";
+import { resolveConsumerImplementationV2 } from "./implementation-server-v2";
+import type { InternalVersionSnapshot } from "../internal-versions/contracts";
+import type { ConsumerRendererIdentity } from "@/lib/consumer-contract/v1/identities";
+/** Creation has no sealed play yet: capabilities come only from the exact compiled renderer. */
+function compiledPresentation(
+  parent: InternalVersionSnapshot,
+  renderer: ConsumerRendererIdentity,
+) {
+  if (parent.schemaVersion !== "quizforge.internal-version-snapshot.v2")
+    return undefined;
+  const implementation = resolveConsumerImplementationV2(renderer);
+  if (!implementation) throw new ConsumerError("UNSUPPORTED_IMPLEMENTATION");
+  return {
+    presentationMode: implementation.descriptor.presentationMode,
+    exports: implementation.descriptor.exports,
+  };
+}
 import {
   lockConsumerProduct,
   readConsumerProduct,
@@ -93,6 +111,7 @@ export function createInternalPlayService(
                   parent.snapshot,
                   binding.renderer,
                   source,
+                  compiledPresentation(parent.snapshot, binding.renderer),
                 );
                 return null;
               },
@@ -138,11 +157,16 @@ export function createInternalPlayService(
                 created: false,
                 play: checked.play,
               });
+            const checkedPresentation = compiledPresentation(
+              checked.parent.snapshot,
+              binding.renderer,
+            );
             await verifyConsumerExecutionIo(
               io,
               checked.parent.snapshot,
               binding.renderer,
               checked.source,
+              checkedPresentation,
             );
             return operatorWrite(
               io.db,
@@ -186,13 +210,24 @@ export function createInternalPlayService(
                     checked.source.evidence.canonicalContentSha256
                 )
                   throw new ConsumerError("SOURCE_OBSOLETE");
-                const implementation = resolveConsumerImplementation(
-                  binding.renderer,
-                );
+                const v2 =
+                  parent.snapshot.schemaVersion ===
+                  "quizforge.internal-version-snapshot.v2";
+                const implementation = v2
+                  ? resolveConsumerImplementationV2(binding.renderer)
+                  : resolveConsumerImplementation(binding.renderer);
                 if (!implementation)
                   throw new ConsumerError("UNSUPPORTED_IMPLEMENTATION");
+                const presentation = compiledPresentation(
+                  parent.snapshot,
+                  binding.renderer,
+                );
+                if (v2 && !same(presentation, checkedPresentation))
+                  throw new ConsumerError("UNSUPPORTED_IMPLEMENTATION");
                 const snapshot = internalPlaySnapshotSchema.parse({
-                  schemaVersion: "quizforge.internal-play-snapshot.v1",
+                  schemaVersion: v2
+                    ? "quizforge.internal-play-snapshot.v2"
+                    : "quizforge.internal-play-snapshot.v1",
                   purpose: "internal-test",
                   publicationApproved: false,
                   parent: binding.parent,
@@ -201,7 +236,8 @@ export function createInternalPlayService(
                   mapping: implementation.descriptor.mapping,
                   mappingSha256: implementation.descriptor.mappingSha256,
                   resources: JSON.parse(source.evidence.assetSetText),
-                  protocols: { ...CONSUMER_PROTOCOLS_V1 },
+                  protocols: v2 ? CONSUMER_PROTOCOLS_V2 : CONSUMER_PROTOCOLS_V1,
+                  ...(v2 ? { presentation } : {}),
                 });
                 const created = await insertInternalPlay(
                   tx,

@@ -1,4 +1,10 @@
 import { beforeAll, describe, expect, it, vi } from "vitest";
+import {
+  CURRENT_COMPATIBILITY_HASH,
+  CURRENT_REPORT_VERSION,
+  CURRENT_POLICY_ID,
+  CURRENT_VALIDATOR_VERSION,
+} from "./current-compatibility";
 import type { BuildInput, PackIssue } from "../v1/api";
 import type {
   ContentSchemaVersion,
@@ -147,7 +153,13 @@ describe("supported complete package admission", () => {
           execution(),
           { kind: "backend-matrix" },
         );
-        expect(matrix).toEqual(checked);
+        expect(matrix).toEqual({
+          ...checked,
+          schemaVersion: CURRENT_REPORT_VERSION,
+          validatorVersion: CURRENT_VALIDATOR_VERSION,
+          policyId: CURRENT_POLICY_ID,
+          compatibilityPolicyHash: CURRENT_COMPATIBILITY_HASH,
+        });
         if (version !== expected)
           expect(
             (await validateQuizPack(source(built.value.archive), context))

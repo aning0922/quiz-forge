@@ -1,4 +1,14 @@
 import { z } from "zod";
+import { displayCapabilitiesV2Schema } from "@/lib/assessment-contract/display-v2";
+import {
+  internalVersionSnapshotV1Schema,
+  internalVersionSnapshotV2Schema,
+} from "../internal-versions/identity-contracts";
+import {
+  consumerComponentMappingV2Schema,
+  consumerMappingSha256V2,
+  consumerProtocolsV2Schema,
+} from "@/lib/consumer-contract/v2/identities";
 import {
   consumerIdSchema as id,
   consumerVersionSchema as version,
@@ -20,10 +30,7 @@ import {
   sameConsumerFact,
   withinConsumerBytes,
 } from "@/lib/consumer-contract/v1/integrity";
-import {
-  internalVersionSnapshotSchema,
-  internalVersionDetailSchema,
-} from "../internal-versions/contracts";
+import { internalVersionDetailSchema } from "../internal-versions/contracts";
 import { verifyInternalVersionDetail } from "../internal-versions/integrity";
 
 /** Only the registered consumer implementation is selectable. Engine/source facts come from the parent. */
@@ -68,13 +75,13 @@ export const internalPlayResourcesSchema = z
   });
 
 /** Parent bytes retain the original preview identity; consumer mapping is a separate identity. */
-export const internalPlaySnapshotSchema = z
+export const internalPlaySnapshotV1Schema = z
   .strictObject({
     schemaVersion: z.literal("quizforge.internal-play-snapshot.v1"),
     purpose: z.literal("internal-test"),
     publicationApproved: z.literal(false),
     parent: internalParentVersionRefSchema,
-    parentSnapshot: internalVersionSnapshotSchema,
+    parentSnapshot: internalVersionSnapshotV1Schema,
     renderer: consumerRendererIdentitySchema,
     mapping: consumerComponentMappingSchema,
     mappingSha256: sha,
@@ -100,6 +107,38 @@ export const internalPlaySnapshotSchema = z
         message: "Play and parent facts disagree.",
       });
   });
+export const internalPlaySnapshotV2Schema = z
+  .strictObject({
+    ...internalPlaySnapshotV1Schema.shape,
+    schemaVersion: z.literal("quizforge.internal-play-snapshot.v2"),
+    parentSnapshot: internalVersionSnapshotV2Schema,
+    mapping: consumerComponentMappingV2Schema,
+    protocols: consumerProtocolsV2Schema,
+    presentation: displayCapabilitiesV2Schema,
+  })
+  .superRefine((v, ctx) => {
+    if (
+      v.parent.productId !== v.parentSnapshot.productId ||
+      v.resources.productId !== v.parent.productId ||
+      Object.entries(v.mapping.states).some(
+        ([state, pair]) =>
+          !sameConsumerFact(
+            pair.source,
+            v.parentSnapshot.components[state as keyof typeof v.mapping.states],
+            L.playRequestBytes,
+          ),
+      ) ||
+      !withinConsumerBytes(v, L.playSnapshotBytes)
+    )
+      ctx.addIssue({
+        code: "custom",
+        message: "Play and parent facts disagree.",
+      });
+  });
+export const internalPlaySnapshotSchema = z.union([
+  internalPlaySnapshotV1Schema,
+  internalPlaySnapshotV2Schema,
+]);
 
 export const internalPlayReceiptSchema = z
   .strictObject({
@@ -180,7 +219,9 @@ export async function verifyInternalPlayDetail(input: unknown) {
       consumerTextSha256(
         consumerCanonicalText(snapshot.resources, L.playSnapshotBytes),
       ),
-      consumerMappingSha256(snapshot.mapping),
+      snapshot.schemaVersion === "quizforge.internal-play-snapshot.v2"
+        ? consumerMappingSha256V2(snapshot.mapping)
+        : consumerMappingSha256(snapshot.mapping),
     ]);
   if (
     bindingHash !== value.play.bindingSha256 ||

@@ -1,5 +1,5 @@
 import "server-only";
-/** Frozen PostgreSQL 18 definitions after 0017; checked at every app open. */
+/** Exact retained definitions after additive D2 protocol/content migration 0024. */
 export const internalVersionSchemaFacts = {
   columns: [
     {
@@ -713,7 +713,7 @@ export const internalVersionSchemaFacts = {
     {
       signature: "qf.internal_version_valid(qf.product_version)",
       body_sha256:
-        "c259c61d5282775356b42510957480a82442110addb95e357e190afe9d05f022",
+        "160c568ea642c62569a6299a7c70a905248de3277413c26bd70c9fd140004d0e",
       volatility: "i",
     },
     {

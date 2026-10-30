@@ -1,0 +1,225 @@
+{
+  "descriptor": {
+    "schemaVersion": "quizforge.implementation-entry.v2",
+    "id": "archetype-l1",
+    "version": "1.0.0",
+    "contentSchemaVersion": "quizpack-content.v3",
+    "closure": {
+      "entrypoints": [
+        {
+          "path": "src/features/product/internal-versions/implementations/engine-v2.ts",
+          "exports": ["bindEngineV2"],
+          "runtime": "server"
+        }
+      ],
+      "files": [
+        {
+          "path": "src/features/product/internal-versions/implementations/engine-v2.ts",
+          "bytes": 1978,
+          "sha256": "ff971a231de2104235f9c3b21ec1755b7a58f5a8c10558e8a306174cd56fab77"
+        },
+        {
+          "path": "src/features/quiz/scoring/v2/boundary.ts",
+          "bytes": 2317,
+          "sha256": "3377a9ba68ad65c65b4d2ed26310cd81e7657fa8665f62e41fbafff5802126dd"
+        },
+        {
+          "path": "src/features/quiz/scoring/v2/index.ts",
+          "bytes": 150,
+          "sha256": "231cf3bea0233bd6fe89f428f1ab3fb1b3f52802a426dfbf29a9d6841b44ff72"
+        },
+        {
+          "path": "src/features/quiz/scoring/v2/prepare.ts",
+          "bytes": 3304,
+          "sha256": "6dcaa6c3e4efa3df13611ce1b145be19d893d189ca9e86d060fad531bbfbeede"
+        },
+        {
+          "path": "src/features/quiz/scoring/v2/score.ts",
+          "bytes": 4753,
+          "sha256": "2c185ec8892d91212a02ae143b93d00f4f32fc1e2ab9a5d162f76d5ef6568240"
+        },
+        {
+          "path": "src/features/quizpack/content/v2.ts",
+          "bytes": 4356,
+          "sha256": "915534df3ebd8ceac640eedf4b40c780ebb8aee9fdb76dc98a665b0eab9f0b85"
+        },
+        {
+          "path": "src/features/quizpack/content/v3-budget.ts",
+          "bytes": 3475,
+          "sha256": "fdf75666e32cd0592a737003f3a5a22da4f6b41c12c3be0cc60f0fe70695b274"
+        },
+        {
+          "path": "src/features/quizpack/content/v3-references.ts",
+          "bytes": 11363,
+          "sha256": "3545b0199f2fa48c660a81444edca3198a32aad7cbdbbece0befe74954577e64"
+        },
+        {
+          "path": "src/features/quizpack/content/v3-report-facts.ts",
+          "bytes": 1160,
+          "sha256": "cd2cf8c6f401e3c8386120671e74fa2247172cfb0b040133eed54b603fbdf068"
+        },
+        {
+          "path": "src/features/quizpack/content/v3-scoring-adapter.ts",
+          "bytes": 7415,
+          "sha256": "40f16616757dc14ed7bca32d125c4c21674387777756906086fde73c8a298b9f"
+        },
+        {
+          "path": "src/features/quizpack/content/v3-witnesses.ts",
+          "bytes": 2096,
+          "sha256": "b5b72ad08f236213a215d54d0b08ee4a733969a96477e081341f61304270fc70"
+        },
+        {
+          "path": "src/features/quizpack/content/v3.ts",
+          "bytes": 5892,
+          "sha256": "a26a9bde2372d5042ea2f5a3b0406ec53f6405cd1757173a77efd2dc0d0f8a52"
+        },
+        {
+          "path": "src/features/quizpack/v1/content.ts",
+          "bytes": 5504,
+          "sha256": "5fb89844fcee7293aca85b7fb64c737bb54649d41f36e176b34bf83768e7b7d7"
+        },
+        {
+          "path": "src/features/quizpack/v1/limits.ts",
+          "bytes": 2679,
+          "sha256": "5effb24159a57984286df60f4b36b5047a8ead62e8f3103e9c1019adf423cf78"
+        },
+        {
+          "path": "src/features/quizpack/v1/manifest.ts",
+          "bytes": 2433,
+          "sha256": "7394694afc33ab74e8477c5635880c954e1e032834954ad707b34e7d40f4f9a7"
+        },
+        {
+          "path": "src/features/report/composed-v1/compose.ts",
+          "bytes": 4666,
+          "sha256": "acbd87d7790d2920fe04560e514decdf1c4acd7554ea4f9e81cab389a20c311a"
+        },
+        {
+          "path": "src/lib/assessment-contract/composed-report-v1.ts",
+          "bytes": 3107,
+          "sha256": "e8edc5bb68ea0091cceb3b4fb3429517508e7358a58bfcd653ce3583e3bc8a14"
+        },
+        {
+          "path": "src/lib/assessment-contract/matching-v1.ts",
+          "bytes": 668,
+          "sha256": "995d81acea7cd0a3c31964e46b529acd3128dff6da4fdcee75edd5bfe2da32bc"
+        },
+        {
+          "path": "src/lib/assessment-contract/presentation-v3.ts",
+          "bytes": 1789,
+          "sha256": "2e83078fa2aa47b5dc7c4a372d25bb2e26d93cb82c52c937b8cae5aed5a5826b"
+        },
+        {
+          "path": "src/lib/assessment-contract/primitives.ts",
+          "bytes": 683,
+          "sha256": "cf8384fa89448806a75fc9856b5738915ba4412e9bf5c5cfaa2c465311fd4941"
+        },
+        {
+          "path": "src/lib/assessment-contract/scoring-api-v2.ts",
+          "bytes": 2674,
+          "sha256": "beb1d4b0b3735869778ce4a350f8701396e14d08046f4c9815f455c70afd7b72"
+        },
+        {
+          "path": "src/lib/assessment-contract/scoring-v1.ts",
+          "bytes": 2197,
+          "sha256": "22db791c1b065ea715494992e0414c8475fdf3f73f0f8b1067e53e3e577f8478"
+        },
+        {
+          "path": "src/lib/assessment-contract/scoring-v2.ts",
+          "bytes": 2768,
+          "sha256": "98a41071cfc7a8d57e4985b53258c4af0c43eb950f5fe8f70eb93212e2b851c4"
+        },
+        {
+          "path": "src/lib/json/canonical.ts",
+          "bytes": 3415,
+          "sha256": "5d58431618dd22d78b148bfbd4d259fb30d0c31c29d3d5bf4deb9f1a7f6d0804"
+        }
+      ],
+      "buildInputs": [
+        {
+          "path": "tsconfig.json",
+          "bytes": 722,
+          "sha256": "b37242da6c2b2caa43cd7138bbe0c002c965378843d76e8dbcde0b26b1a04675"
+        }
+      ],
+      "dependencies": {
+        "roots": [
+          {
+            "name": "server-only",
+            "version": "0.0.1",
+            "lockSnapshot": "server-only@0.0.1",
+            "section": "dependencies",
+            "importerSha256": "83a3acc7e4337e01cf5204d797e4aeda7fd6205e4df552847855832c5c26e38e"
+          },
+          {
+            "name": "typescript",
+            "version": "5.9.3",
+            "lockSnapshot": "typescript@5.9.3",
+            "section": "devDependencies",
+            "importerSha256": "3c707ca548b935d20fbbd6237aaec90683184b87687267dbcd6b30dd76f74fb6"
+          },
+          {
+            "name": "zod",
+            "version": "4.6.6",
+            "lockSnapshot": "zod@4.6.6",
+            "section": "dependencies",
+            "importerSha256": "152a7033959e218214e3b8987c4d26cb97b420cfdbb6cdd03d2041c622d3b87d"
+          }
+        ],
+        "lockRecords": [
+          {
+            "section": "packages",
+            "key": "server-only@0.0.1",
+            "bytes": 147,
+            "sha256": "1199ce3118a1ad94958249ad4ac42580737e3883090f8e993d2ecf230b829827"
+          },
+          {
+            "section": "packages",
+            "key": "typescript@5.9.3",
+            "bytes": 194,
+            "sha256": "28cdfd0c03349e4da7d365f691611e66e8c4b75b478a778a92333529978c77fb"
+          },
+          {
+            "section": "packages",
+            "key": "zod@4.6.6",
+            "bytes": 139,
+            "sha256": "87ffc19cecdf50ff5b0191fe028daf0ba048fce599b59525467f37e9cf5cd4a2"
+          },
+          {
+            "section": "snapshots",
+            "key": "server-only@0.0.1",
+            "bytes": 25,
+            "sha256": "94ce22843a95375f0bf291dc658b3b9af7d328aabef3c1af87d9205811fb4ce6"
+          },
+          {
+            "section": "snapshots",
+            "key": "typescript@5.9.3",
+            "bytes": 24,
+            "sha256": "9fad910686500f0f64b15314a8df96539adb225620df19df93369820c13c1983"
+          },
+          {
+            "section": "snapshots",
+            "key": "zod@4.6.6",
+            "bytes": 17,
+            "sha256": "c9e77f50ed23372ecfafbe57a32ea55158f0106490f4225eadb2cd6535bcfbb6"
+          }
+        ],
+        "settingsSha256": "078cb045ec56da085d08eb6efd0f1b925aa95b0ed16afff689183a2a919c0dd3",
+        "builtins": ["node:crypto", "node:util"]
+      },
+      "runtimePolicy": {
+        "node": ">=20.19.0 <21 || >=22.13.0",
+        "packageManager": "pnpm@10.32.1",
+        "browser": null,
+        "jsxImport": null,
+        "serverCondition": "react-server"
+      }
+    },
+    "implementationSha256": "c648727d4a0aa78788b0ff137509f99532fee44a6cdc4fffdea01219fbcd9e1e",
+    "kind": "engine",
+    "algorithm": {
+      "id": "archetype-l1",
+      "version": "1.0.0"
+    }
+  },
+  "entrySha256": "da17f5f9ae0c7fb63a92943d62e278e17174f5138e7f014bf5f93138c74b1c3b"
+}

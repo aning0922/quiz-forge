@@ -2,7 +2,7 @@ import { redirect, notFound } from "next/navigation";
 import { studioPageState } from "@/features/studio/page-session";
 import { StudioUnavailable } from "@/features/studio/shell";
 import { previewScopeSchema } from "@/features/product/preview/contracts";
-import { FixedRevisionPreviewPage } from "@/features/studio/preview/page";
+import { CurrentFixedRevisionPreviewPage } from "@/features/studio/preview/current-page";
 export default async function PreviewPage({
   params,
 }: {
@@ -20,7 +20,7 @@ export default async function PreviewPage({
     });
   if (!parsed.success) notFound();
   return (
-    <FixedRevisionPreviewPage
+    <CurrentFixedRevisionPreviewPage
       key={`${ids.productId}/${ids.draftId}/${ids.revision}`}
       scope={parsed.data}
       session={state.session}

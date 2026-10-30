@@ -11,7 +11,20 @@ import {
 } from "../src/features/product/internal-versions/implementation-catalog";
 import type { ImplementationEntry } from "../src/features/product/internal-versions/implementation-schema";
 import type { ConsumerImplementationEntry } from "../src/features/product/internal-play/implementation-schema";
+import {
+  verifyInternalImplementationEntryV2,
+  type InternalImplementationEntryV2,
+} from "../src/features/product/internal-versions/implementation-schema-v2";
+import {
+  verifyConsumerImplementationEntryV2,
+  type ConsumerImplementationEntryV2,
+} from "../src/features/product/internal-play/implementation-schema-v2";
 import { readImplementationLock } from "./internal-implementation-lock";
+export type TrustedImplementationEntry =
+  | ImplementationEntry
+  | ConsumerImplementationEntry
+  | InternalImplementationEntryV2
+  | ConsumerImplementationEntryV2;
 const sha = (value: string | Buffer) =>
   createHash("sha256").update(value).digest("hex");
 const canonical = (value: unknown, maxBytes = 131072) =>
@@ -66,10 +79,8 @@ export async function verifyInternalImplementations(
 /** Build-time local catalogs only, never request/QuizPack descriptors or runtime registration. */
 export async function verifyTrustedImplementationEntries(
   cwd: string,
-  entries: readonly (ImplementationEntry | ConsumerImplementationEntry)[],
-  isAvailable: (
-    entry: ImplementationEntry | ConsumerImplementationEntry,
-  ) => boolean,
+  entries: readonly TrustedImplementationEntry[],
+  isAvailable: (entry: TrustedImplementationEntry) => boolean,
   overrideRead?: (path: string) => Promise<Buffer>,
 ) {
   cwd = resolve(cwd);
@@ -116,6 +127,12 @@ export async function verifyTrustedImplementationEntries(
   const sourceFiles = new Set<string>();
   for (const entry of entries) {
     const descriptor = entry.descriptor;
+    if (descriptor.schemaVersion === "quizforge.implementation-entry.v2")
+      await verifyInternalImplementationEntryV2(entry);
+    if (
+      descriptor.schemaVersion === "quizforge.consumer-implementation-entry.v2"
+    )
+      await verifyConsumerImplementationEntryV2(entry);
     const maximum = descriptor.kind === "consumer-renderer" ? 262144 : 131072;
     if (
       sha(canonical(descriptor, maximum)) !== entry.entrySha256 ||
@@ -262,15 +279,29 @@ export async function verifyTrustedImplementationEntries(
       descriptor.kind === "consumer-renderer"
     ) {
       const font = descriptor.font;
-      for (const [path, hash] of [
-        [font.file, font.fileSha256],
-        [font.coverage, font.coverageSha256],
-        [font.licenseFile, font.licenseSha256],
-      ])
-        if (sha(await read("public" + path)) !== hash)
-          throw Error("IMPLEMENTATION_FONT_CHANGED");
-      if ((await read("public" + font.file)).length !== font.bytes)
-        throw Error("IMPLEMENTATION_FONT_SIZE_CHANGED");
+      if ("kind" in font) {
+        if (
+          (descriptor.schemaVersion !== "quizforge.implementation-entry.v2" &&
+            descriptor.schemaVersion !==
+              "quizforge.consumer-implementation-entry.v2") ||
+          descriptor.presentationMode !== "structured-only" ||
+          descriptor.exports.posterPng ||
+          descriptor.exports.fullReportPng ||
+          font.kind !== "system-structured" ||
+          font.pngAvailable !== false
+        )
+          throw Error("IMPLEMENTATION_STRUCTURED_FONT_MISMATCH");
+      } else {
+        for (const [path, hash] of [
+          [font.file, font.fileSha256],
+          [font.coverage, font.coverageSha256],
+          [font.licenseFile, font.licenseSha256],
+        ])
+          if (sha(await read("public" + path)) !== hash)
+            throw Error("IMPLEMENTATION_FONT_CHANGED");
+        if ((await read("public" + font.file)).length !== font.bytes)
+          throw Error("IMPLEMENTATION_FONT_SIZE_CHANGED");
+      }
     }
   }
   return {

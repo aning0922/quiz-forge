@@ -20,4 +20,5 @@ export const MAX_FILE_STOP_PROOF_BYTES = 1024;
 export const MAX_EVIDENCE_BYTES = 1048576;
 export const LEGACY_ARCHIVE_POLICY_VERSION = "quizpack-private-archive.v2";
 export const SUPPORTED_ARCHIVE_POLICY_VERSION = "quizpack-private-archive.v3";
-export const ARCHIVE_POLICY_VERSION = SUPPORTED_ARCHIVE_POLICY_VERSION;
+export const CURRENT_ARCHIVE_POLICY_VERSION = "quizpack-private-archive.v4";
+export const ARCHIVE_POLICY_VERSION = CURRENT_ARCHIVE_POLICY_VERSION;

@@ -12,7 +12,7 @@ import {
   ValidationInterrupted,
   type ValidationOperationScope,
 } from "./operation-scope";
-import { supportedRuntimeIdentity, readTrustedBinding } from "./identity";
+import { currentRuntimeIdentity, readTrustedBinding } from "./identity";
 import { EvidenceError } from "./unicode";
 import { freezeJson } from "./report";
 export const validationCompletionSchema = z
@@ -96,7 +96,7 @@ export async function prepareValidationIdentity(
   try {
     scope.checkpoint();
     const identity = freezeJson(
-      supportedRuntimeIdentity(await readTrustedBinding(scope)),
+      currentRuntimeIdentity(await readTrustedBinding(scope)),
     );
     if (Buffer.byteLength(canonicalP1Json(identity), "utf8") > 16384)
       throw new ValidationInterrupted("BRIDGE_INTERNAL_FAILED");

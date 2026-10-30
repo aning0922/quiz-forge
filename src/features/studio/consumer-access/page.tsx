@@ -22,7 +22,7 @@ import {
   useInternalAuthority,
   type InternalProductAuthority,
 } from "../internal-versions/authority";
-import type { ConsumerRendererIdentity } from "@/lib/consumer-contract/v1/identities";
+import type { StudioConsumerRenderers } from "./controller";
 import type { AccessKeyDetail } from "@/features/fulfillment/access/contracts";
 import {
   StudioConsumerControllerV1,
@@ -317,14 +317,14 @@ function PendingPanel({
 }
 export function StudioConsumerAccessPageV1({
   scope,
-  renderer,
+  renderers,
   visible = true,
   onChanged,
   workspaceAuthority,
   onGoToReview,
 }: {
   scope: StudioConsumerScopeV1;
-  renderer: ConsumerRendererIdentity;
+  renderers: StudioConsumerRenderers;
   visible?: boolean;
   onChanged?: (() => void) | undefined;
   workspaceAuthority?: InternalProductAuthority | undefined;
@@ -332,16 +332,33 @@ export function StudioConsumerAccessPageV1({
 }) {
   const owner = useStudioAccountOwner();
   const { origin, instanceId, issuerId, productId } = scope;
-  const { id: rendererId, version: rendererVersion, entrySha256 } = renderer;
+  const {
+    id: v1Id,
+    version: v1Version,
+    entrySha256: v1Sha,
+  } = renderers["quizforge.internal-version-snapshot.v1"];
+  const {
+    id: v2Id,
+    version: v2Version,
+    entrySha256: v2Sha,
+  } = renderers["quizforge.internal-version-snapshot.v2"];
   const controller = useMemo(() => {
     void owner?.generation;
     return new StudioConsumerControllerV1(
       { origin, instanceId, issuerId, productId },
       {
-        kind: "consumer-renderer",
-        id: rendererId,
-        version: rendererVersion,
-        entrySha256,
+        "quizforge.internal-version-snapshot.v1": {
+          kind: "consumer-renderer",
+          id: v1Id,
+          version: v1Version,
+          entrySha256: v1Sha,
+        },
+        "quizforge.internal-version-snapshot.v2": {
+          kind: "consumer-renderer",
+          id: v2Id,
+          version: v2Version,
+          entrySha256: v2Sha,
+        },
       },
       {
         getItem: (k) => sessionStorage.getItem(k),
@@ -354,9 +371,12 @@ export function StudioConsumerAccessPageV1({
     instanceId,
     issuerId,
     productId,
-    rendererId,
-    rendererVersion,
-    entrySha256,
+    v1Id,
+    v1Version,
+    v1Sha,
+    v2Id,
+    v2Version,
+    v2Sha,
     owner?.generation,
   ]);
   const state = useSyncExternalStore(

@@ -1,9 +1,10 @@
+import type { FixtureCandidate } from "../support/legacy-fixture-types";
 import { createHash } from "node:crypto";
 import { prepareP3cSource } from "./p3c-source-fixture";
 import { canonicalP1Json } from "@/features/quizpack/v1/canonical";
 import { supportedManifestSchema } from "@/features/quizpack/package/manifest";
 import { sealCandidateResultEvidence } from "@/features/quizpack/server/validation/contracts";
-import { sealSupportedReport } from "@/features/quizpack/server/validation/report";
+import { sealCurrentReport } from "@/features/quizpack/server/validation/report";
 import { issuePrivateCandidate } from "@/features/quizpack/server/validation/private-candidate";
 /** Real supported candidate construction and PG transitions, synthetic no-file archive/media evidence. */
 export async function prepareP3dSource(
@@ -47,7 +48,7 @@ export async function prepareP3dSource(
         archiveBytes: 100,
         targetProductId: productId,
       },
-      report: sealSupportedReport({
+      report: sealCurrentReport({
         ...base.result.evidence.report.value,
         archiveSha256,
         manifestSha256: sha(manifestText),
@@ -64,7 +65,7 @@ export async function prepareP3dSource(
       ["content.json", Buffer.from(text)],
       ...base.assetFiles.map((a) => [a.path, a.bytes] as const),
     ]),
-  ).facts;
+  ).facts as FixtureCandidate<"quizpack-content.v2">["facts"];
   return {
     ...base,
     archiveSha256,

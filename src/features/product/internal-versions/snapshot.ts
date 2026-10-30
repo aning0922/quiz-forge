@@ -2,7 +2,11 @@ import "server-only";
 import { createHash } from "node:crypto";
 import { StudioError } from "@/lib/http-security/errors";
 import type { ReadyDraftSourceEvidence } from "@/features/quizpack/draft-source-evidence";
-import { findBaselineDescriptor } from "./baseline-registry";
+import { findCurrentBaselineDescriptor as findBaselineDescriptor } from "./baseline-registry-v2";
+import {
+  findRendererImplementationDescriptorV2,
+  findEngineImplementationDescriptorV2,
+} from "./implementation-catalog-v2";
 import {
   findRendererImplementationDescriptor,
   findEngineImplementationDescriptor,
@@ -22,11 +26,22 @@ export function buildInternalSnapshot(
   review: InternalReviewReceipt,
   source: ReadyDraftSourceEvidence,
 ) {
+  const v3 = source.contentSchemaVersion === "quizpack-content.v3";
   const baseline = findBaselineDescriptor(review.facts.baseline),
-    renderer = findRendererImplementationDescriptor(binding.renderer),
-    engine = findEngineImplementationDescriptor(binding.engine);
+    renderer = v3
+      ? findRendererImplementationDescriptorV2(binding.renderer)
+      : findRendererImplementationDescriptor(binding.renderer),
+    engine = v3
+      ? findEngineImplementationDescriptorV2(binding.engine)
+      : findEngineImplementationDescriptor(binding.engine);
   if (!baseline || !renderer || !engine)
     throw new StudioError("VERSION_DEPENDENCY_UNAVAILABLE");
+  if (
+    (baseline.descriptor.schemaVersion ===
+      "quizforge.baseline-registry-entry.v2") !==
+    v3
+  )
+    throw new StudioError("REVIEW_BASELINE_MISMATCH");
   if (
     review.id !== binding.reviewId ||
     review.reviewSha256 !== binding.reviewSha256 ||
@@ -55,7 +70,9 @@ export function buildInternalSnapshot(
     throw new StudioError("VERSION_DEPENDENCY_UNAVAILABLE");
   const f = renderer.descriptor.font;
   const parsed = internalVersionSnapshotSchema.safeParse({
-    schemaVersion: "quizforge.internal-version-snapshot.v1",
+    schemaVersion: v3
+      ? "quizforge.internal-version-snapshot.v2"
+      : "quizforge.internal-version-snapshot.v1",
     productId: source.productId,
     target: binding.target,
     reviewId: review.id,
@@ -73,14 +90,17 @@ export function buildInternalSnapshot(
     rendererCapability: renderer.descriptor.capability,
     components: renderer.descriptor.components,
     engine: binding.engine,
-    font: {
-      id: f.id,
-      version: f.version,
-      fileSha256: f.fileSha256,
-      coverageSha256: f.coverageSha256,
-      licenseSha256: f.licenseSha256,
-      weight: f.weight,
-    },
+    font:
+      "kind" in f
+        ? f
+        : {
+            id: f.id,
+            version: f.version,
+            fileSha256: f.fileSha256,
+            coverageSha256: f.coverageSha256,
+            licenseSha256: f.licenseSha256,
+            weight: f.weight,
+          },
     validation: source.validation,
   });
   if (!parsed.success) throw new StudioError("VERSION_DEPENDENCY_UNAVAILABLE");

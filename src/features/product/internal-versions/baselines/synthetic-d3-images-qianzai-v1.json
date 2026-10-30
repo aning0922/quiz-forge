@@ -1,0 +1,457 @@
+{
+  "schemaVersion": "quizforge.baseline-registry-entry.v2",
+  "kind": "baseline",
+  "id": "synthetic-d3-images-qianzai",
+  "version": "1.0.0",
+  "productId": "synthetic-d3-images",
+  "purpose": "internal-test",
+  "allowedInstancePurposes": ["test", "ci"],
+  "canonicalContentSha256": "2a65aaff1e25e8a73e45de22ac369c3a8633492cd9bc2008755e460e15085fdf",
+  "assetSetSha256": "bde204bb6376be126f68c83b450d1e9c154138789ae74bdf7b28891794c93367",
+  "canonicalManifestSha256": "4e1e22c9b4bac54cc451ea6488a06a286501bcacfe6e70411dd954093c39d7cd",
+  "logicHash": "48ab231896306bd2df1d2ac11c68684c262522e98330ff9182e9194c0a5b2ee9",
+  "approval": {
+    "kind": "synthetic-test",
+    "fixtureId": "synthetic-d3-images-qianzai",
+    "evidenceSha256": "5bec02f1fd2b0e619ebc744a2dee0dff895bbc83ffdb2fea33891941814398c5",
+    "scope": "test-evidence-no-author-approval"
+  },
+  "sourceEvidence": {
+    "kind": "synthetic-definition",
+    "definitionSha256": "5bec02f1fd2b0e619ebc744a2dee0dff895bbc83ffdb2fea33891941814398c5",
+    "qualification": "synthetic-content-private-pixels-no-author-approval"
+  },
+  "engine": {
+    "id": "archetype-l1",
+    "version": "1.0.0"
+  },
+  "components": {
+    "cover": {
+      "id": "composed-cover",
+      "version": "1.0.0",
+      "propsSchemaVersion": "1.0.0"
+    },
+    "question": {
+      "id": "composed-question",
+      "version": "1.0.0",
+      "propsSchemaVersion": "1.0.0"
+    },
+    "resume": {
+      "id": "composed-resume",
+      "version": "1.0.0",
+      "propsSchemaVersion": "1.0.0"
+    },
+    "result": {
+      "id": "composed-result",
+      "version": "1.0.0",
+      "propsSchemaVersion": "1.0.0"
+    },
+    "report": {
+      "id": "composed-report",
+      "version": "1.0.0",
+      "propsSchemaVersion": "1.0.0"
+    },
+    "poster": {
+      "id": "composed-poster",
+      "version": "1.0.0",
+      "propsSchemaVersion": "1.0.0"
+    }
+  },
+  "resourceEdges": [
+    {
+      "resourceId": "cover",
+      "version": "1.0.0",
+      "purpose": "cover",
+      "sha256": "8695839e6da72d2175a4df2c21e196499e8560c14fd43ee31a521b709da77969",
+      "bytes": 289,
+      "mediaType": "image/png",
+      "width": 8,
+      "height": 8,
+      "reviewFile": "cover.png"
+    },
+    {
+      "resourceId": "paper",
+      "version": "1.0.0",
+      "purpose": "decoration",
+      "sha256": "8695839e6da72d2175a4df2c21e196499e8560c14fd43ee31a521b709da77969",
+      "bytes": 289,
+      "mediaType": "image/png",
+      "width": 8,
+      "height": 8,
+      "reviewFile": "paper.png"
+    },
+    {
+      "resourceId": "scene-1",
+      "version": "1.0.0",
+      "purpose": "decoration",
+      "sha256": "8695839e6da72d2175a4df2c21e196499e8560c14fd43ee31a521b709da77969",
+      "bytes": 289,
+      "mediaType": "image/png",
+      "width": 8,
+      "height": 8,
+      "reviewFile": "scene-1.png"
+    },
+    {
+      "resourceId": "scene-2",
+      "version": "1.0.0",
+      "purpose": "decoration",
+      "sha256": "8695839e6da72d2175a4df2c21e196499e8560c14fd43ee31a521b709da77969",
+      "bytes": 289,
+      "mediaType": "image/png",
+      "width": 8,
+      "height": 8,
+      "reviewFile": "scene-2.png"
+    },
+    {
+      "resourceId": "scene-3",
+      "version": "1.0.0",
+      "purpose": "decoration",
+      "sha256": "8695839e6da72d2175a4df2c21e196499e8560c14fd43ee31a521b709da77969",
+      "bytes": 289,
+      "mediaType": "image/png",
+      "width": 8,
+      "height": 8,
+      "reviewFile": "scene-3.png"
+    },
+    {
+      "resourceId": "portrait-role-0",
+      "version": "1.0.0",
+      "purpose": "portrait",
+      "sha256": "8695839e6da72d2175a4df2c21e196499e8560c14fd43ee31a521b709da77969",
+      "bytes": 289,
+      "mediaType": "image/png",
+      "width": 8,
+      "height": 8,
+      "reviewFile": "portrait-role-0.png"
+    },
+    {
+      "resourceId": "name-role-0",
+      "version": "1.0.0",
+      "purpose": "decoration",
+      "sha256": "8695839e6da72d2175a4df2c21e196499e8560c14fd43ee31a521b709da77969",
+      "bytes": 289,
+      "mediaType": "image/png",
+      "width": 8,
+      "height": 8,
+      "reviewFile": "name-role-0.png"
+    },
+    {
+      "resourceId": "portrait-role-1",
+      "version": "1.0.0",
+      "purpose": "portrait",
+      "sha256": "8695839e6da72d2175a4df2c21e196499e8560c14fd43ee31a521b709da77969",
+      "bytes": 289,
+      "mediaType": "image/png",
+      "width": 8,
+      "height": 8,
+      "reviewFile": "portrait-role-1.png"
+    },
+    {
+      "resourceId": "name-role-1",
+      "version": "1.0.0",
+      "purpose": "decoration",
+      "sha256": "8695839e6da72d2175a4df2c21e196499e8560c14fd43ee31a521b709da77969",
+      "bytes": 289,
+      "mediaType": "image/png",
+      "width": 8,
+      "height": 8,
+      "reviewFile": "name-role-1.png"
+    },
+    {
+      "resourceId": "portrait-role-2",
+      "version": "1.0.0",
+      "purpose": "portrait",
+      "sha256": "8695839e6da72d2175a4df2c21e196499e8560c14fd43ee31a521b709da77969",
+      "bytes": 289,
+      "mediaType": "image/png",
+      "width": 8,
+      "height": 8,
+      "reviewFile": "portrait-role-2.png"
+    },
+    {
+      "resourceId": "name-role-2",
+      "version": "1.0.0",
+      "purpose": "decoration",
+      "sha256": "8695839e6da72d2175a4df2c21e196499e8560c14fd43ee31a521b709da77969",
+      "bytes": 289,
+      "mediaType": "image/png",
+      "width": 8,
+      "height": 8,
+      "reviewFile": "name-role-2.png"
+    },
+    {
+      "resourceId": "portrait-role-3",
+      "version": "1.0.0",
+      "purpose": "portrait",
+      "sha256": "8695839e6da72d2175a4df2c21e196499e8560c14fd43ee31a521b709da77969",
+      "bytes": 289,
+      "mediaType": "image/png",
+      "width": 8,
+      "height": 8,
+      "reviewFile": "portrait-role-3.png"
+    },
+    {
+      "resourceId": "name-role-3",
+      "version": "1.0.0",
+      "purpose": "decoration",
+      "sha256": "8695839e6da72d2175a4df2c21e196499e8560c14fd43ee31a521b709da77969",
+      "bytes": 289,
+      "mediaType": "image/png",
+      "width": 8,
+      "height": 8,
+      "reviewFile": "name-role-3.png"
+    },
+    {
+      "resourceId": "portrait-role-4",
+      "version": "1.0.0",
+      "purpose": "portrait",
+      "sha256": "8695839e6da72d2175a4df2c21e196499e8560c14fd43ee31a521b709da77969",
+      "bytes": 289,
+      "mediaType": "image/png",
+      "width": 8,
+      "height": 8,
+      "reviewFile": "portrait-role-4.png"
+    },
+    {
+      "resourceId": "name-role-4",
+      "version": "1.0.0",
+      "purpose": "decoration",
+      "sha256": "8695839e6da72d2175a4df2c21e196499e8560c14fd43ee31a521b709da77969",
+      "bytes": 289,
+      "mediaType": "image/png",
+      "width": 8,
+      "height": 8,
+      "reviewFile": "name-role-4.png"
+    }
+  ],
+  "contentSchemaVersion": "quizpack-content.v3",
+  "slots": {
+    "neutral": {
+      "cover": {
+        "id": "cover",
+        "productId": "synthetic-d3-images",
+        "version": "1.0.0"
+      },
+      "preferenceScene": {
+        "id": "scene-1",
+        "productId": "synthetic-d3-images",
+        "version": "1.0.0"
+      },
+      "acts": [
+        {
+          "sectionId": "act-1",
+          "background": {
+            "id": "scene-1",
+            "productId": "synthetic-d3-images",
+            "version": "1.0.0"
+          },
+          "questionPaper": {
+            "id": "paper",
+            "productId": "synthetic-d3-images",
+            "version": "1.0.0"
+          },
+          "optionIdle": {
+            "id": "paper",
+            "productId": "synthetic-d3-images",
+            "version": "1.0.0"
+          },
+          "optionSelected": {
+            "id": "paper",
+            "productId": "synthetic-d3-images",
+            "version": "1.0.0"
+          }
+        },
+        {
+          "sectionId": "act-2",
+          "background": {
+            "id": "scene-2",
+            "productId": "synthetic-d3-images",
+            "version": "1.0.0"
+          },
+          "questionPaper": {
+            "id": "paper",
+            "productId": "synthetic-d3-images",
+            "version": "1.0.0"
+          },
+          "optionIdle": {
+            "id": "paper",
+            "productId": "synthetic-d3-images",
+            "version": "1.0.0"
+          },
+          "optionSelected": {
+            "id": "paper",
+            "productId": "synthetic-d3-images",
+            "version": "1.0.0"
+          }
+        },
+        {
+          "sectionId": "act-3",
+          "background": {
+            "id": "scene-3",
+            "productId": "synthetic-d3-images",
+            "version": "1.0.0"
+          },
+          "questionPaper": {
+            "id": "paper",
+            "productId": "synthetic-d3-images",
+            "version": "1.0.0"
+          },
+          "optionIdle": {
+            "id": "paper",
+            "productId": "synthetic-d3-images",
+            "version": "1.0.0"
+          },
+          "optionSelected": {
+            "id": "paper",
+            "productId": "synthetic-d3-images",
+            "version": "1.0.0"
+          }
+        }
+      ],
+      "reportPaper": {
+        "id": "paper",
+        "productId": "synthetic-d3-images",
+        "version": "1.0.0"
+      },
+      "reportBorder": null,
+      "seal": null
+    },
+    "characters": [
+      {
+        "resultRef": {
+          "id": "role-0",
+          "productId": "synthetic-d3-images",
+          "version": "1.0.0"
+        },
+        "reveal": {
+          "id": "portrait-role-0",
+          "productId": "synthetic-d3-images",
+          "version": "1.0.0"
+        },
+        "nameArt": {
+          "id": "name-role-0",
+          "productId": "synthetic-d3-images",
+          "version": "1.0.0"
+        },
+        "report": {
+          "id": "portrait-role-0",
+          "productId": "synthetic-d3-images",
+          "version": "1.0.0"
+        },
+        "poster": {
+          "id": "portrait-role-0",
+          "productId": "synthetic-d3-images",
+          "version": "1.0.0"
+        }
+      },
+      {
+        "resultRef": {
+          "id": "role-1",
+          "productId": "synthetic-d3-images",
+          "version": "1.0.0"
+        },
+        "reveal": {
+          "id": "portrait-role-1",
+          "productId": "synthetic-d3-images",
+          "version": "1.0.0"
+        },
+        "nameArt": {
+          "id": "name-role-1",
+          "productId": "synthetic-d3-images",
+          "version": "1.0.0"
+        },
+        "report": {
+          "id": "portrait-role-1",
+          "productId": "synthetic-d3-images",
+          "version": "1.0.0"
+        },
+        "poster": {
+          "id": "portrait-role-1",
+          "productId": "synthetic-d3-images",
+          "version": "1.0.0"
+        }
+      },
+      {
+        "resultRef": {
+          "id": "role-2",
+          "productId": "synthetic-d3-images",
+          "version": "1.0.0"
+        },
+        "reveal": {
+          "id": "portrait-role-2",
+          "productId": "synthetic-d3-images",
+          "version": "1.0.0"
+        },
+        "nameArt": {
+          "id": "name-role-2",
+          "productId": "synthetic-d3-images",
+          "version": "1.0.0"
+        },
+        "report": {
+          "id": "portrait-role-2",
+          "productId": "synthetic-d3-images",
+          "version": "1.0.0"
+        },
+        "poster": {
+          "id": "portrait-role-2",
+          "productId": "synthetic-d3-images",
+          "version": "1.0.0"
+        }
+      },
+      {
+        "resultRef": {
+          "id": "role-3",
+          "productId": "synthetic-d3-images",
+          "version": "1.0.0"
+        },
+        "reveal": {
+          "id": "portrait-role-3",
+          "productId": "synthetic-d3-images",
+          "version": "1.0.0"
+        },
+        "nameArt": {
+          "id": "name-role-3",
+          "productId": "synthetic-d3-images",
+          "version": "1.0.0"
+        },
+        "report": {
+          "id": "portrait-role-3",
+          "productId": "synthetic-d3-images",
+          "version": "1.0.0"
+        },
+        "poster": {
+          "id": "portrait-role-3",
+          "productId": "synthetic-d3-images",
+          "version": "1.0.0"
+        }
+      },
+      {
+        "resultRef": {
+          "id": "role-4",
+          "productId": "synthetic-d3-images",
+          "version": "1.0.0"
+        },
+        "reveal": {
+          "id": "portrait-role-4",
+          "productId": "synthetic-d3-images",
+          "version": "1.0.0"
+        },
+        "nameArt": {
+          "id": "name-role-4",
+          "productId": "synthetic-d3-images",
+          "version": "1.0.0"
+        },
+        "report": {
+          "id": "portrait-role-4",
+          "productId": "synthetic-d3-images",
+          "version": "1.0.0"
+        },
+        "poster": {
+          "id": "portrait-role-4",
+          "productId": "synthetic-d3-images",
+          "version": "1.0.0"
+        }
+      }
+    ]
+  }
+}

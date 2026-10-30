@@ -163,6 +163,11 @@ export async function migrateDatabase(
         await tx`GRANT SELECT ON qf.consumer_exchange_budget TO ${app}`;
         await tx`GRANT UPDATE(revoked_at,void_operation_key,void_binding_text,void_binding_sha256,voided_by) ON qf.access_key TO ${app}`;
         await tx`GRANT UPDATE(state_revision,answers_text,consumer_state_answers_sha256,progress_text,progress_sha256,last_binding_text,last_binding_sha256,last_receipt_text,last_receipt_sha256) ON qf.consumer_session TO ${app}`;
+        const [context] = await tx<
+          { present: boolean }[]
+        >`SELECT EXISTS(SELECT 1 FROM pg_attribute WHERE attrelid='qf.consumer_session'::regclass AND attname='matching_context_text' AND NOT attisdropped) AS present`;
+        if (context?.present)
+          await tx`GRANT UPDATE(matching_context_text,matching_context_sha256) ON qf.consumer_session TO ${app}`;
         await tx`GRANT UPDATE(grant_id,credential_digest,issued_at,expires_at,revoked_at) ON qf.consumer_grant TO ${app}`;
         await tx`GRANT UPDATE(window_index,used) ON qf.consumer_exchange_budget TO ${app}`;
         for (const signature of [
@@ -179,6 +184,26 @@ export async function migrateDatabase(
           await tx.unsafe(
             `GRANT EXECUTE ON FUNCTION qf.${signature} TO "${config.database.user}"`,
           );
+        for (const signature of [
+          "consumer_schema_v2(text)",
+          "consumer_json_valid_v2(jsonb,jsonb,integer)",
+          "consumer_body_valid_v2(text,text,integer)",
+          "consumer_protocol_v2(text,uuid,text)",
+          "consumer_session_valid_v1(qf.consumer_session)",
+          "consumer_report_valid_v1(qf.quiz_report)",
+          "composed_quote_v1(jsonb,jsonb)",
+          "composed_role_v1(jsonb,jsonb)",
+          "composed_body_v1(jsonb,jsonb)",
+          "composed_assets_v1(jsonb,jsonb)",
+        ]) {
+          const [available] = await tx<
+            { present: boolean }[]
+          >`SELECT to_regprocedure(${`qf.${signature}`}) IS NOT NULL AS present`;
+          if (available?.present)
+            await tx.unsafe(
+              `GRANT EXECUTE ON FUNCTION qf.${signature} TO "${config.database.user}"`,
+            );
+        }
       }
       for (const signature of [
         "sha256_utf8(text)",

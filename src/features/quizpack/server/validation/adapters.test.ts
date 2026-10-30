@@ -1,3 +1,4 @@
+import { readContentMetadata } from "../../content/current";
 import { randomUUID } from "node:crypto";
 import { performance } from "node:perf_hooks";
 import {
@@ -406,7 +407,7 @@ describe("canonical SQL evidence projection", () => {
 
 function expectedFacts(): ExpectedCandidateFacts {
   const facts = accepted.candidate.facts;
-  if (facts.content.kind !== "synthetic")
+  if (readContentMetadata(facts.content).kind !== "synthetic")
     throw new Error("Synthetic content required.");
   if (accepted.evidence.report.status !== "sealed")
     throw new Error("Synthetic report unavailable.");
@@ -418,7 +419,7 @@ function expectedFacts(): ExpectedCandidateFacts {
     packVersion: facts.packVersion,
     containerSchemaVersion: facts.manifest.schemaVersion,
     contentSchemaVersion: facts.content.schemaVersion,
-    contentKind: facts.content.kind,
+    contentKind: readContentMetadata(facts.content).kind,
     manifestSha256: accepted.evidence.report.value.manifestSha256!,
     contentSha256: accepted.evidence.report.value.contentSha256!,
     canonicalManifestText: facts.canonicalManifestText,

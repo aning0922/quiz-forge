@@ -121,7 +121,7 @@ describe("real pnpm QuizPack entrypoints", () => {
     ]);
     for (const args of [
       ["--content-version"],
-      ["--content-version", "v3"],
+      ["--content-version", "v99"],
       ["--content-version", "v2", "--extra"],
     ]) {
       const rejected = await command("schema", args);

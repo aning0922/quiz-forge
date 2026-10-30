@@ -8,7 +8,7 @@ import { sameConsumerFact } from "@/lib/consumer-contract/v1/integrity";
 import { CONSUMER_LIMITS_V1 as L } from "@/lib/consumer-contract/v1/limits";
 import type { InternalVersionSnapshot } from "@/features/product/internal-versions/contracts";
 import { readFrozenDraftSourceEvidenceReadonly } from "./draft-source-evidence";
-import { parseSupportedContent } from "./content/supported";
+import { parseCurrentContent } from "./content/current";
 
 /** Fixed-source SQL port only. No current head, execution resolver, filesystem or client-selected source. */
 export async function readConsumerFixedSource(
@@ -46,10 +46,15 @@ export async function readConsumerFixedSource(
     )
   )
     throw new ConsumerError("DEPENDENCY_UNAVAILABLE");
-  const content = parseSupportedContent(
+  const content = parseCurrentContent(
     JSON.parse(evidence.canonicalContentText),
   );
-  if (!content.ok || content.value.schemaVersion !== "quizpack-content.v2")
+  if (
+    !content.ok ||
+    content.value.schemaVersion !== parent.contentSchemaVersion ||
+    (content.value.schemaVersion !== "quizpack-content.v2" &&
+      content.value.schemaVersion !== "quizpack-content.v3")
+  )
     throw new ConsumerError("UNSUPPORTED_IMPLEMENTATION");
   return Object.freeze({ evidence, content: content.value });
 }

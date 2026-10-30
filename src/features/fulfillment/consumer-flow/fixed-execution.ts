@@ -16,12 +16,85 @@ import type { ConsumerRendererIdentity } from "@/lib/consumer-contract/v1/identi
 import type { ConsumerIoContext } from "./request-owner";
 import type { InternalVersionWork } from "@/features/product/internal-versions/lifecycle";
 import type { ResolvedPreviewResource } from "@/features/product/preview/repository";
+import { resolveEngineImplementationV2 } from "@/features/product/internal-versions/implementation-server-v2";
+import { resolveConsumerImplementationV2 } from "@/features/product/internal-play/implementation-server-v2";
+import {
+  matchesDisplayCapabilitiesV2,
+  type DisplayCapabilitiesV2,
+} from "@/lib/assessment-contract/display-v2";
+
+function fontIdentity(
+  font: NonNullable<
+    ReturnType<typeof resolveConsumerImplementationV2>
+  >["descriptor"]["font"],
+) {
+  return "kind" in font
+    ? font
+    : {
+        id: font.id,
+        version: font.version,
+        fileSha256: font.fileSha256,
+        coverageSha256: font.coverageSha256,
+        licenseSha256: font.licenseSha256,
+        weight: font.weight,
+      };
+}
 
 export function fixedConsumerExecution(
   parent: InternalVersionSnapshot,
   renderer: ConsumerRendererIdentity,
   source: ConsumerFixedSource,
+  presentation?: DisplayCapabilitiesV2,
 ) {
+  if (parent.schemaVersion === "quizforge.internal-version-snapshot.v2") {
+    const engine = resolveEngineImplementationV2(parent.engine),
+      display = resolveConsumerImplementationV2(renderer);
+    if (
+      !engine ||
+      !display ||
+      source.content.schemaVersion !== "quizpack-content.v3" ||
+      (display.requiresPreferenceScene &&
+        !source.content.bindings.slots.neutral.preferenceScene) ||
+      !presentation ||
+      !matchesDisplayCapabilitiesV2(presentation, display.descriptor) ||
+      !sameConsumerFact(
+        fontIdentity(display.descriptor.font),
+        parent.font,
+        L.playRequestBytes,
+      ) ||
+      !sameConsumerFact(
+        engine.descriptor.algorithm,
+        source.evidence.versions.engine,
+        L.playRequestBytes,
+      ) ||
+      (
+        Object.keys(
+          display.descriptor.mapping.states,
+        ) as (keyof typeof display.descriptor.mapping.states)[]
+      ).some(
+        (state) =>
+          !sameConsumerFact(
+            display.descriptor.mapping.states[state].source,
+            parent.components[state],
+            L.playRequestBytes,
+          ),
+      )
+    )
+      throw new ConsumerError("UNSUPPORTED_IMPLEMENTATION");
+    const prepared = engine.prepare(source.content);
+    if (!prepared.ok) throw new ConsumerError("DEPENDENCY_UNAVAILABLE");
+    return Object.freeze({
+      version: 2 as const,
+      engine,
+      display,
+      prepared: prepared.value,
+    });
+  }
+  if (
+    source.content.schemaVersion !== "quizpack-content.v2" ||
+    presentation !== undefined
+  )
+    throw new ConsumerError("UNSUPPORTED_IMPLEMENTATION");
   const engine = resolveEngineImplementation(parent.engine),
     display = resolveConsumerImplementation(renderer);
   const font = display?.descriptor.font;
@@ -62,7 +135,12 @@ export function fixedConsumerExecution(
     throw new ConsumerError("UNSUPPORTED_IMPLEMENTATION");
   const prepared = engine.prepare(source.content);
   if (!prepared.ok) throw new ConsumerError("DEPENDENCY_UNAVAILABLE");
-  return Object.freeze({ engine, display, prepared: prepared.value });
+  return Object.freeze({
+    version: 1 as const,
+    engine,
+    display,
+    prepared: prepared.value,
+  });
 }
 /** No row/auth write lock is held while reading source images/font. All FDs settle before final TX. */
 export async function verifyConsumerExecutionIo(
@@ -70,10 +148,14 @@ export async function verifyConsumerExecutionIo(
   parent: InternalVersionSnapshot,
   renderer: ConsumerRendererIdentity,
   source: ConsumerFixedSource,
+  presentation?: DisplayCapabilitiesV2,
 ) {
-  const fixed = fixedConsumerExecution(parent, renderer, source);
+  const fixed = fixedConsumerExecution(parent, renderer, source, presentation);
   io.checkpoint();
-  const witnesses = fixed.engine.witnesses(fixed.prepared);
+  const witnesses =
+    fixed.version === 2
+      ? fixed.engine.witnesses(fixed.prepared)
+      : fixed.engine.witnesses(fixed.prepared);
   if (
     !witnesses.ok ||
     witnesses.value.evidence.status !== "passed" ||
@@ -97,11 +179,13 @@ export async function verifyConsumerExecutionIo(
       throw new ConsumerError("INVALID_REQUEST");
     },
   };
-  await verifyFixedFontFiles(
-    fixed.display.descriptor.font,
-    fixed.display.descriptor.closure.files,
-    fontContext,
-  );
+  const font = fixed.display.descriptor.font;
+  if (!("kind" in font))
+    await verifyFixedFontFiles(
+      font,
+      fixed.display.descriptor.closure.files,
+      fontContext,
+    );
   const resources = new Map(
     source.evidence.resources.map((r) => [r.sha256, r]),
   );

@@ -26,12 +26,20 @@ import {
 } from "../drafts/repository";
 import { internalRevisionScopeSchema } from "./urls";
 import {
-  matchRegisteredBaseline,
-  findBaselineDescriptor,
-} from "./baseline-registry";
+  matchCurrentRegisteredBaseline as matchRegisteredBaseline,
+  findCurrentBaselineDescriptor as findBaselineDescriptor,
+} from "./baseline-registry-v2";
+import {
+  IMPLEMENTATION_DESCRIPTORS_V2,
+  rendererImplementationAvailableV2,
+  engineImplementationAvailableV2,
+} from "./implementation-catalog-v2";
+import {
+  resolveRendererServerV2,
+  resolveEngineImplementationV2,
+} from "./implementation-server-v2";
 import {
   IMPLEMENTATION_DESCRIPTORS,
-  implementationIdentity,
   rendererImplementationAvailable,
   engineImplementationAvailable,
 } from "./implementation-catalog";
@@ -240,16 +248,39 @@ async function verifyExecution(
   context: InternalVersionWork,
   config: P2aDatabase["config"],
 ) {
-  const renderer = resolveRendererServer(binding.renderer),
-    engine = resolveEngineImplementation(binding.engine),
-    baseline = findBaselineDescriptor(review.facts.baseline);
-  if (!renderer || !engine || !baseline)
-    throw new StudioError("VERSION_DEPENDENCY_UNAVAILABLE");
-  context.checkpoint();
-  const prepared = engine.prepare(JSON.parse(source.canonicalContentText));
-  if (!prepared.ok) throw new StudioError("VERSION_DEPENDENCY_UNAVAILABLE");
-  context.checkpoint();
-  const witnesses = engine.witnesses(prepared.value);
+  const baseline = findBaselineDescriptor(review.facts.baseline);
+  if (!baseline) throw new StudioError("VERSION_DEPENDENCY_UNAVAILABLE");
+  const execute = () => {
+    if (source.contentSchemaVersion === "quizpack-content.v3") {
+      const engine = resolveEngineImplementationV2(binding.engine),
+        renderer = resolveRendererServerV2(binding.renderer);
+      if (!engine || !renderer)
+        throw new StudioError("VERSION_DEPENDENCY_UNAVAILABLE");
+      context.checkpoint();
+      const prepared = engine.prepare(JSON.parse(source.canonicalContentText));
+      if (!prepared.ok) throw new StudioError("VERSION_DEPENDENCY_UNAVAILABLE");
+      if (
+        renderer.requiresPreferenceScene &&
+        !renderer.projectEntry(
+          JSON.parse(source.canonicalContentText),
+          source.canonicalContentSha256,
+        ).ok
+      )
+        throw new StudioError("VERSION_DEPENDENCY_UNAVAILABLE");
+      context.checkpoint();
+      return { renderer, witnesses: engine.witnesses(prepared.value) };
+    }
+    const engine = resolveEngineImplementation(binding.engine),
+      renderer = resolveRendererServer(binding.renderer);
+    if (!engine || !renderer)
+      throw new StudioError("VERSION_DEPENDENCY_UNAVAILABLE");
+    context.checkpoint();
+    const prepared = engine.prepare(JSON.parse(source.canonicalContentText));
+    if (!prepared.ok) throw new StudioError("VERSION_DEPENDENCY_UNAVAILABLE");
+    context.checkpoint();
+    return { renderer, witnesses: engine.witnesses(prepared.value) };
+  };
+  const { renderer, witnesses } = execute();
   context.checkpoint();
   if (
     !witnesses.ok ||
@@ -259,11 +290,21 @@ async function verifyExecution(
     witnesses.value.evidence.logicHash !== baseline.descriptor.logicHash
   )
     throw new StudioError("VERSION_DEPENDENCY_UNAVAILABLE");
-  await verifyFixedFontFiles(
-    renderer.descriptor.font,
-    renderer.descriptor.closure.files,
-    context,
-  );
+  if ("kind" in renderer.descriptor.font) {
+    if (
+      renderer.descriptor.schemaVersion !==
+        "quizforge.implementation-entry.v2" ||
+      renderer.descriptor.presentationMode !== "structured-only" ||
+      renderer.descriptor.exports.posterPng ||
+      renderer.descriptor.exports.fullReportPng
+    )
+      throw new StudioError("VERSION_DEPENDENCY_UNAVAILABLE");
+  } else
+    await verifyFixedFontFiles(
+      renderer.descriptor.font,
+      renderer.descriptor.closure.files,
+      context,
+    );
   const blobs = new Map(source.resources.map((r) => [r.sha256, r]));
   if (
     source.resources.length > INTERNAL_VERSION_LIMITS.resources ||
@@ -539,8 +580,12 @@ export function createProductInternalVersionService(
             )
               throw new StudioError("REVIEW_BASELINE_MISMATCH");
             if (
-              !resolveRendererServer(binding.renderer) ||
-              !resolveEngineImplementation(binding.engine)
+              !(actualSource.contentSchemaVersion === "quizpack-content.v3"
+                ? resolveRendererServerV2(binding.renderer)
+                : resolveRendererServer(binding.renderer)) ||
+              !(actualSource.contentSchemaVersion === "quizpack-content.v3"
+                ? resolveEngineImplementationV2(binding.engine)
+                : resolveEngineImplementation(binding.engine))
             )
               throw new StudioError("VERSION_DEPENDENCY_UNAVAILABLE");
             if (await versionBySnapshot(tx, productId, snapshot.sha256))
@@ -743,32 +788,50 @@ export function createProductInternalVersionService(
           const stored = await reviewByTarget(tx, scope.productId, target),
             source = await sourceForRevision(tx, o.revision, true),
             baseline = matchRegisteredBaseline(source, db.config.purpose);
+          const v3 = source.contentSchemaVersion === "quizpack-content.v3";
+          const descriptors = v3
+            ? IMPLEMENTATION_DESCRIPTORS_V2
+            : IMPLEMENTATION_DESCRIPTORS;
           const engine = baseline
-            ? (IMPLEMENTATION_DESCRIPTORS.engines
+            ? (descriptors.engines
                 .map((e) =>
-                  engineIdentitySchema.parse(implementationIdentity(e)),
+                  engineIdentitySchema.parse({
+                    kind: e.descriptor.kind,
+                    id: e.descriptor.id,
+                    version: e.descriptor.version,
+                    entrySha256: e.entrySha256,
+                  }),
                 )
                 .find(
                   (e) =>
                     e.id === source.versions.engine.id &&
                     e.version === source.versions.engine.version &&
-                    engineImplementationAvailable(e),
+                    (v3
+                      ? engineImplementationAvailableV2(e)
+                      : engineImplementationAvailable(e)),
                 ) ?? null)
             : null;
           const rendererChoices = baseline
-            ? IMPLEMENTATION_DESCRIPTORS.renderers
+            ? descriptors.renderers
                 .filter(
                   (r) =>
                     internalCanonicalText(r.descriptor.components) ===
                     internalCanonicalText(baseline.descriptor.components),
                 )
                 .map((r) => ({
-                  renderer: rendererIdentitySchema.parse(
-                    implementationIdentity(r),
-                  ),
+                  renderer: rendererIdentitySchema.parse({
+                    kind: r.descriptor.kind,
+                    id: r.descriptor.id,
+                    version: r.descriptor.version,
+                    entrySha256: r.entrySha256,
+                  }),
                   capability: r.descriptor.capability,
                 }))
-                .filter((r) => rendererImplementationAvailable(r.renderer))
+                .filter((r) =>
+                  v3
+                    ? rendererImplementationAvailableV2(r.renderer)
+                    : rendererImplementationAvailable(r.renderer),
+                )
             : [];
           return {
             productId: scope.productId,

@@ -13,7 +13,8 @@ import { contextTarget, snapshotSupportedContext } from "./context";
 import { runValidationCore, createValidationReport } from "./internal-core";
 import { assertSelection, parseSupportedPack } from "./manifest";
 import { validateSupportedPackReferences } from "./references";
-import { checkCompatibility } from "../v1/compatibility";
+import { checkCurrentCompatibility as checkCompatibility } from "./current-compatibility";
+import { validateCurrentQuizPackCore } from "./validate-current-core";
 
 export const validateSupportedQuizPackCore: ValidateSupportedQuizPackCore = (
   source,
@@ -21,18 +22,21 @@ export const validateSupportedQuizPackCore: ValidateSupportedQuizPackCore = (
   execution,
   selection,
 ) => {
+  if (
+    selection?.kind === "backend-matrix" ||
+    (selection?.kind === "expected-version" &&
+      selection.expectedContentVersion === "quizpack-content.v3")
+  )
+    return validateCurrentQuizPackCore(source, context, execution, selection);
   let fixedSelection: SupportedCoreSelection = { kind: "backend-matrix" };
   let failure: unknown;
   let safeContext;
   try {
     assertSelection(selection);
-    fixedSelection =
-      selection.kind === "backend-matrix"
-        ? { kind: "backend-matrix" }
-        : {
-            kind: "expected-version",
-            expectedContentVersion: selection.expectedContentVersion,
-          };
+    fixedSelection = {
+      kind: "expected-version",
+      expectedContentVersion: selection.expectedContentVersion,
+    };
     safeContext = snapshotSupportedContext(context);
   } catch (error) {
     failure = error;

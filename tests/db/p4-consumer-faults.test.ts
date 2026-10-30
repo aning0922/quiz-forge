@@ -10,7 +10,7 @@ import * as privateResources from "@/features/quizpack/resource-read/storage";
 import { loginVersionFixtureAccount } from "./version-account-fixture";
 import { createStudioRequestBudget } from "@/lib/http-security/request-budget";
 import { createConsumerRequestOwner } from "@/features/fulfillment/consumer-flow/request-owner";
-import { createConsumerFlowService } from "@/features/fulfillment/consumer-flow/service";
+import { createConsumerFlowServiceV1 as createConsumerFlowService } from "../support/consumer-v1-service";
 import { createInternalPlayService } from "@/features/product/internal-play/service";
 import { createAccessKeyService } from "@/features/fulfillment/access/service";
 import {

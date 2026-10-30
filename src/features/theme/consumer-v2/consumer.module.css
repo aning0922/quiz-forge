@@ -1,0 +1,201 @@
+.host {
+  width: 100%;
+  max-width: 58rem;
+  margin: 0 auto;
+  padding: clamp(12px, 3vw, 28px);
+  background: #f4f6f8;
+  color: #182b3b;
+  font:
+    400 16px/1.75 system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+  overflow-wrap: anywhere;
+}
+.host *,
+.preview * {
+  box-sizing: border-box;
+}
+.host [hidden] {
+  display: none;
+}
+.banner,
+.panel,
+.status,
+.pending {
+  min-width: 0;
+  margin: 0 0 16px;
+  padding: clamp(16px, 3vw, 28px);
+  border: 1px solid #cad4dd;
+  border-radius: 12px;
+  background: #fff;
+}
+.banner {
+  background: #e9eff6;
+}
+.status {
+  border-left: 4px solid #496984;
+}
+.pending {
+  background: #fff5df;
+  border-color: #b88b36;
+}
+.host h1 {
+  margin: 0 0 16px;
+  font-size: clamp(24px, 4vw, 32px);
+  line-height: 1.4;
+}
+.host h2 {
+  margin: 0 0 12px;
+  font-size: 22px;
+  line-height: 1.5;
+}
+.host h3,
+.host h4 {
+  font-size: 18px;
+}
+.host p {
+  margin: 0 0 12px;
+  white-space: pre-wrap;
+}
+.host p:last-child {
+  margin-bottom: 0;
+}
+.host fieldset {
+  min-width: 0;
+  margin: 20px 0;
+  padding: 0;
+  border: 0;
+}
+.host legend {
+  margin-bottom: 12px;
+  font-weight: 600;
+}
+.option {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  min-height: 48px;
+  padding: 14px;
+  margin: 0 0 10px;
+  border: 1px solid #aebdca;
+  border-radius: 8px;
+}
+.option:has(input:checked) {
+  background: #e7f1f6;
+  border-color: #34627b;
+}
+.option input {
+  flex: 0 0 auto;
+  width: 20px;
+  height: 20px;
+  margin: 4px 0 0;
+  accent-color: #285b77;
+}
+.host fieldset:disabled .option {
+  opacity: 0.75;
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
+}
+.host button,
+.host a,
+.host summary {
+  font: inherit;
+}
+.host button,
+.actions a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 10px 16px;
+  border: 1px solid #486c87;
+  border-radius: 7px;
+  background: #eef4f9;
+  color: #193e58;
+  text-align: left;
+  white-space: normal;
+  cursor: pointer;
+}
+.host button:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+.host :focus-visible {
+  outline: 3px solid #9a5b00;
+  outline-offset: 3px;
+}
+.questionList {
+  list-style: none;
+  margin: 18px 0;
+  padding: 0;
+}
+.questionList li {
+  margin: 0 0 10px;
+}
+.questionList button {
+  width: 100%;
+  flex-direction: column;
+  align-items: flex-start;
+}
+.questionList button span + span {
+  color: #486174;
+  margin-top: 4px;
+}
+.dimensions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 160px), 1fr));
+  gap: 10px;
+  margin: 16px 0 28px;
+}
+.dimensions div {
+  border: 1px solid #cad4dd;
+  border-radius: 8px;
+  padding: 12px;
+}
+.dimensions dt {
+  font-weight: 600;
+}
+.dimensions dd {
+  margin: 0;
+}
+.volume {
+  scroll-margin-top: 16px;
+  border-top: 2px solid #cad4dd;
+  padding-top: 24px;
+  margin-top: 28px;
+}
+.paragraph {
+  margin: 16px 0 24px;
+}
+.paragraph ul {
+  padding-left: 22px;
+}
+.paragraph li {
+  margin-bottom: 16px;
+}
+.qualifier {
+  color: #4d6374;
+}
+.host details {
+  margin: 24px 0;
+  padding: 12px;
+  border: 1px solid #cad4dd;
+  border-radius: 8px;
+}
+.host summary {
+  min-height: 44px;
+  cursor: pointer;
+}
+.preview {
+  min-width: 0;
+  font:
+    16px/1.75 system-ui,
+    sans-serif;
+}

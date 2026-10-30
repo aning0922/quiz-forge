@@ -7,6 +7,7 @@ import path from "node:path";
 import { chromium, expect } from "@playwright/test";
 import { projectProductOperations } from "@/features/studio/operations/projection";
 import { CONSUMER_IMPLEMENTATION_AVAILABILITY } from "@/features/product/internal-play/implementation-catalog";
+import { CONSUMER_IMPLEMENTATION_AVAILABILITY_V2 } from "@/features/product/internal-play/implementation-catalog-v2";
 const require2 = createRequire(path.resolve("package.json"));
 const esbuild = createRequire(require2.resolve("tsx/package.json"))("esbuild");
 const postcss = createRequire(require2.resolve("next/package.json"))("postcss");
@@ -117,7 +118,7 @@ import {ProductTaskWorkspace} from '@/features/studio/product-workspace/task-wor
 import {DraftRevisionPage} from '@/features/studio/drafts/read-page';
 import {invalidateCurrentStudioAuthority} from '@/features/studio/authority-events';
 const input=JSON.parse(document.querySelector('#fixture').textContent);
-function App(){const [entry,setEntry]=useState(input.entry);window.navigateTask=setEntry;window.revokeWorkspace=invalidateCurrentStudioAuthority;return <StudioShell authenticated identity={{label:input.session.operator.displayName,role:input.session.operator.role}} session={input.session}><ProductWorkspaceFrame productId=input.productId><ReadProbe/><>{input.detail?<DraftRevisionPage productId={input.productId} draftId={input.draftId} revision={1} navigation={null}/>:<ProductTaskWorkspace session={input.session} initialTask={entry.task} initialPanel={entry.panel} initialScope={entry.scope} consumerScope={input.scope} consumerRenderer={input.renderer}/>}</></ProductWorkspaceFrame></StudioShell>}
+function App(){const [entry,setEntry]=useState(input.entry);window.navigateTask=setEntry;window.revokeWorkspace=invalidateCurrentStudioAuthority;return <StudioShell authenticated identity={{label:input.session.operator.displayName,role:input.session.operator.role}} session={input.session}><ProductWorkspaceFrame productId=input.productId><ReadProbe/><>{input.detail?<DraftRevisionPage productId={input.productId} draftId={input.draftId} revision={1} navigation={null}/>:<ProductTaskWorkspace session={input.session} initialTask={entry.task} initialPanel={entry.panel} initialScope={entry.scope} consumerScope={input.scope} consumerRenderers={input.renderers}/>}</></ProductWorkspaceFrame></StudioShell>}
 createRoot(document.getElementById('root')).render(<App/>);`.replace(
       "productId=input.productId",
       "productId={input.productId}",
@@ -319,7 +320,12 @@ const server = createServer(async (req, res) => {
         issuerId: uuid(7),
         productId: id,
       },
-      renderer: CONSUMER_IMPLEMENTATION_AVAILABILITY.rendererV1_2,
+      renderers: {
+        "quizforge.internal-version-snapshot.v1":
+          CONSUMER_IMPLEMENTATION_AVAILABILITY.rendererV1_2,
+        "quizforge.internal-version-snapshot.v2":
+          CONSUMER_IMPLEMENTATION_AVAILABILITY_V2.structured,
+      },
     };
     res.setHeader("content-type", "text/html");
     res.end(

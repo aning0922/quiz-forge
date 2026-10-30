@@ -1,6 +1,6 @@
 import "server-only";
-/** Exact PG18.4 complete catalog and ACL after 0023_current_password_accounts. */
+/** Exact isolated PG18.4 catalog after 0025_preference_scene_slot. */
 export const consumerSchemaFacts = {
-  sha256: "7124695fda10d8691bb5c25d6e94b22ed36119affc5e58c231eefa9194a17818",
+  sha256: "8f46e2688b0eeaef601bedd9b991704574ec2d7de88105a88b1e98642aa2afeb",
   tables: 25,
 } as const;

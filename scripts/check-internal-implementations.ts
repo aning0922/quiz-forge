@@ -1,4 +1,5 @@
 import { verifyInternalImplementations } from "./verify-internal-implementations";
+import { verifyV2Implementations } from "./verify-v2-implementations";
 import { verifyConsumerImplementations } from "./verify-consumer-implementations";
 import { verifyConsumerAccessGateway } from "./verify-consumer-access-gateway";
 import { CONSUMER_ACCESS_GATEWAY } from "../src/features/product/internal-play/access-gateway-binding";
@@ -9,6 +10,7 @@ import {
 } from "../src/features/product/internal-play/implementation-catalog";
 try {
   const value = await verifyInternalImplementations(process.cwd());
+  const v2 = await verifyV2Implementations(process.cwd());
   const compiled = Object.values(CONSUMER_IMPLEMENTATION_AVAILABILITY);
   if (compiled.some((identity) => !consumerImplementationAvailable(identity)))
     throw Error("CONSUMER_COMPILED_MAPPING_MISMATCH");
@@ -27,6 +29,7 @@ try {
     JSON.stringify({
       code: "INTERNAL_IMPLEMENTATIONS_OK",
       ...value,
+      v2,
       consumer,
       accessGateway,
     }) + "\n",

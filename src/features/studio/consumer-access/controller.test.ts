@@ -135,7 +135,10 @@ async function fixture() {
   };
   const c = new StudioConsumerControllerV1(
     scope,
-    play.snapshot.renderer,
+    {
+      "quizforge.internal-version-snapshot.v1": play.snapshot.renderer,
+      "quizforge.internal-version-snapshot.v2": play.snapshot.renderer,
+    },
     storage,
     fetcher,
     async () => ({

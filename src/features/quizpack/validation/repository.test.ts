@@ -55,11 +55,14 @@ import { isCurrentValidation, requireCurrentValidation } from "./repository";
 import {
   runtimeIdentity,
   supportedRuntimeIdentity,
+  currentRuntimeIdentity,
 } from "../server/validation/identity";
 import { canonicalP1Json } from "../v1/canonical";
 import {
   ARCHIVE_POLICY_VERSION,
   archivePolicySha256,
+  SUPPORTED_ARCHIVE_POLICY_VERSION,
+  supportedArchivePolicySha256,
   LEGACY_ARCHIVE_POLICY_VERSION,
   legacyArchivePolicySha256,
 } from "./policy";
@@ -72,7 +75,8 @@ const runtime = {
   limitsHash: "d".repeat(64),
 } as const;
 it("current admission binds the full policy and identity, while historical identity remains readable", () => {
-  const current = supportedRuntimeIdentity(runtime),
+  const current = currentRuntimeIdentity(runtime),
+    previous = supportedRuntimeIdentity(runtime),
     old = runtimeIdentity(runtime);
   const row = {
     archive_policy_version: ARCHIVE_POLICY_VERSION,
@@ -81,7 +85,21 @@ it("current admission binds the full policy and identity, while historical ident
     identity_sha256: current.identitySha256,
   };
   expect(isCurrentValidation(row)).toBe(true);
+  expect(
+    isCurrentValidation({
+      ...row,
+      archive_policy_version: SUPPORTED_ARCHIVE_POLICY_VERSION,
+      archive_policy_sha256: supportedArchivePolicySha256,
+      identity_text: canonicalP1Json(previous),
+      identity_sha256: previous.identitySha256,
+    }),
+  ).toBe(true);
   for (const changed of [
+    {
+      ...row,
+      identity_text: canonicalP1Json(previous),
+      identity_sha256: previous.identitySha256,
+    },
     { ...row, archive_policy_sha256: "f".repeat(64) },
     {
       ...row,
@@ -130,8 +148,8 @@ it("pre-IO policy metadata query is scoped and has no body projection; missing s
   const row = {
     archive_policy_version: ARCHIVE_POLICY_VERSION,
     archive_policy_sha256: archivePolicySha256,
-    identity_text: canonicalP1Json(supportedRuntimeIdentity(runtime)),
-    identity_sha256: supportedRuntimeIdentity(runtime).identitySha256,
+    identity_text: canonicalP1Json(currentRuntimeIdentity(runtime)),
+    identity_sha256: currentRuntimeIdentity(runtime).identitySha256,
   };
   const query = vi.fn(
     async (_parts: TemplateStringsArray, ..._values: unknown[]) => {

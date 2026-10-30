@@ -1,4 +1,7 @@
 import type { QuizPackContentV2 } from "../content/v2";
+import type { QuizPackContentV3 } from "../content/v3";
+import type { z } from "zod";
+import type { engineDeclarationV2Schema } from "@/lib/assessment-contract/scoring-v2";
 import type {
   BuildInput,
   PackIssue,
@@ -12,12 +15,20 @@ import type { P1CoreExecution } from "../v1/validate-core";
 
 /** Explicit supported entry points. Existing P1 types retain their v1 meaning. */
 export type ContentSchemaVersion =
-  "quizpack-content.v1" | "quizpack-content.v2";
+  "quizpack-content.v1" | "quizpack-content.v2" | "quizpack-content.v3";
 export type SupportedManifestV2 = Omit<
   QuizPackManifest,
   "contentSchemaVersion"
 > & { contentSchemaVersion: "quizpack-content.v2" };
-export type SupportedManifest = QuizPackManifest | SupportedManifestV2;
+export type SupportedManifestV3 = Omit<
+  QuizPackManifest,
+  "contentSchemaVersion" | "engine"
+> & {
+  contentSchemaVersion: "quizpack-content.v3";
+  engine: z.infer<typeof engineDeclarationV2Schema>;
+};
+export type SupportedManifest =
+  QuizPackManifest | SupportedManifestV2 | SupportedManifestV3;
 export type SupportedParsedPack =
   | {
       contentSchemaVersion: "quizpack-content.v1";
@@ -28,6 +39,11 @@ export type SupportedParsedPack =
       contentSchemaVersion: "quizpack-content.v2";
       manifest: SupportedManifestV2;
       content: QuizPackContentV2;
+    }
+  | {
+      contentSchemaVersion: "quizpack-content.v3";
+      manifest: SupportedManifestV3;
+      content: QuizPackContentV3;
     };
 export type IssueBatch = {
   issues: PackIssue[];
@@ -42,7 +58,17 @@ export type SupportedValidationReportV2 = Omit<
   policyId: "quizpack-local-supported.v1";
 };
 export type PackageValidationReport =
-  QuizPackValidationReport | SupportedValidationReportV2;
+  | QuizPackValidationReport
+  | SupportedValidationReportV2
+  | SupportedValidationReportV3;
+export type SupportedValidationReportV3 = Omit<
+  SupportedValidationReportV2,
+  "schemaVersion" | "validatorVersion" | "policyId"
+> & {
+  schemaVersion: "quizpack-validation.v3";
+  validatorVersion: "3.0.0";
+  policyId: "quizpack-local-supported.v2";
+};
 export type SupportedValidationContext = {
   targetProductId: string;
   signal?: AbortSignal;
@@ -66,13 +92,13 @@ export type SupportedCoreExecution = Omit<
   ) => void;
   propagate: (
     error: unknown,
-    report: SupportedValidationReportV2,
+    report: SupportedValidationReportV2 | SupportedValidationReportV3,
     active: keyof SupportedValidationReportV2["checks"],
   ) => boolean;
 };
 export type SupportedBuildResult = Result<{
   archive: Uint8Array;
-  report: SupportedValidationReportV2;
+  report: SupportedValidationReportV2 | SupportedValidationReportV3;
 }> & { issuesTruncated?: boolean };
 
 /** Callable contracts for implementations delivered by the package workstream. */
@@ -80,7 +106,7 @@ export type ValidateSupportedQuizPack = (
   source: AsyncIterable<Uint8Array>,
   context: SupportedValidationContext,
   expectedContentVersion: ContentSchemaVersion,
-) => Promise<SupportedValidationReportV2>;
+) => Promise<SupportedValidationReportV2 | SupportedValidationReportV3>;
 export type BuildSupportedQuizPack = (
   input: BuildInput,
   context: SupportedValidationContext,
@@ -91,4 +117,4 @@ export type ValidateSupportedQuizPackCore = (
   context: SupportedValidationContext,
   execution: SupportedCoreExecution,
   selection: SupportedCoreSelection,
-) => Promise<SupportedValidationReportV2>;
+) => Promise<SupportedValidationReportV2 | SupportedValidationReportV3>;
