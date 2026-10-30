@@ -1,5 +1,4 @@
 import "server-only";
-/** Exact retained definitions after additive D2 protocol/content migration 0024. */
 export const internalVersionSchemaFacts = {
   columns: [
     {
@@ -707,7 +706,7 @@ export const internalVersionSchemaFacts = {
     {
       signature: "qf.internal_review_valid(qf.draft_review)",
       body_sha256:
-        "a73ddda1378f7b35cfd9174da321450cd82b0daef5e1a71b1d4521f25105aa16",
+        "55c6ef9a2ac422fd9cc220620f6ae35b3677f174e5d976d21775b3935bd42a0c",
       volatility: "i",
     },
     {
@@ -719,7 +718,7 @@ export const internalVersionSchemaFacts = {
     {
       signature: "qf.protect_internal_reference()",
       body_sha256:
-        "ad4b4b98ec64dead58b94b949e0e6a9dec36f3fecf6fd60b25243bc46697e2ee",
+        "5119108aae4a2982f38e7b6c8a4bed8c5f1fb5ed2b32c8fc41bbd82f8db685c8",
       volatility: "v",
     },
   ],
@@ -737,4 +736,4 @@ export const internalVersionSchemaFacts = {
         "CREATE TRIGGER product_version_source BEFORE INSERT OR UPDATE ON qf.product_version FOR EACH ROW EXECUTE FUNCTION qf.protect_internal_reference()",
     },
   ],
-} as const;
+};

@@ -39,6 +39,13 @@ export const baselineDescriptorV2Schema = z
       value.sourceEvidence.kind !== "author-mapping"
     )
       reject();
+    if (
+      value.approval.kind === "private-test-only" &&
+      (value.allowedInstancePurposes.length !== 1 ||
+        value.allowedInstancePurposes[0] !== "test" ||
+        value.sourceEvidence.kind !== "private-test-definition")
+    )
+      reject();
     const key = (r: { id: string; version: string }) =>
       JSON.stringify([r.id, r.version]);
     const resources = new Map(

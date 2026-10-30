@@ -24,6 +24,13 @@ const id = assessmentIdSchema.refine((v) => !/[\r\n]/.test(v)),
 const ref = assessmentReferenceSchema.extend({ id, version, productId: id });
 const sourceEvidenceSchema = z.discriminatedUnion("kind", [
   z.strictObject({
+    kind: z.literal("private-test-definition"),
+    definitionSha256: sha,
+    qualification: z.literal(
+      "authored-candidate-private-reference-assets-not-final-approval",
+    ),
+  }),
+  z.strictObject({
     kind: z.literal("author-mapping"),
     reviewedDeliveryCommit: z
       .string()

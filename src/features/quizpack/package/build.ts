@@ -1,3 +1,4 @@
+import { hasPrivateTestUse } from "../content/private-test";
 import type { BuildSupportedQuizPack } from "./api";
 import { runBuild } from "./internal-build";
 import { snapshotSupportedContext } from "./context";
@@ -16,6 +17,8 @@ export const buildSupportedQuizPack: BuildSupportedQuizPack = async (
     return await runBuild(input, snapshot, {
       snapshot: snapshotSupportedContext,
       parse: (value) => {
+        if (hasPrivateTestUse(value))
+          return { ok: false, issues: [packIssue("CONTENT_STRUCTURE")] };
         const parsed = parseCurrentContent(value);
         if (!parsed.ok) return parsed;
         return isContentSchemaVersion(expectedContentVersion) &&

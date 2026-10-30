@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { privateTestUseSchema } from "./private-test";
 import {
   assessmentReferenceSchema as ref,
   assessmentVersionSchema,
@@ -127,6 +128,29 @@ export const contentCoreV3Schema = z.strictObject({
     .min(2)
     .max(3),
 });
+const formalResource = quizPackContentSchema.shape.resources.element;
+export const privateTestResourceV3Schema = formalResource.extend({
+  source: formalResource.shape.source.extend({
+    kind: z.enum([
+      "user-supplied-reference",
+      "ai-generated-candidate",
+      "program-font-sample",
+      "confirmed-prototype",
+    ]),
+  }),
+  license: z.strictObject({
+    scope: z.literal("private-test-only"),
+    commercialUse: z.literal(false),
+    redistribution: z.literal(false),
+    evidence: formalResource.shape.license.shape.evidence,
+  }),
+  approval: z.literal("private-test-only"),
+});
+export const currentResourceV3Schema = z.union([
+  formalResource,
+  privateTestResourceV3Schema,
+]);
+export type CurrentResourceV3 = z.infer<typeof currentResourceV3Schema>;
 export const contentBindingsV3Schema = z.strictObject({
   schemaVersion: z.literal("quizpack-bindings.v3"),
   kind: z.enum(["synthetic", "authored"]),
@@ -154,7 +178,8 @@ export const contentBindingsV3Schema = z.strictObject({
     .min(1)
     .max(32),
   slots: presentationSlotsV3Schema,
-  resources: quizPackContentSchema.shape.resources,
+  privateTestUse: privateTestUseSchema.optional(),
+  resources: z.array(currentResourceV3Schema).min(1).max(64),
   layouts: z.strictObject(
     Object.fromEntries(
       ["cover", "question", "resume", "result", "report", "poster"].map(
@@ -176,11 +201,28 @@ export const contentBindingsV3Schema = z.strictObject({
   ),
   visualPresentation: quizPackContentV2Schema.shape.visualPresentation,
 });
-export const quizPackContentV3Schema = z.strictObject({
-  schemaVersion: z.literal("quizpack-content.v3"),
-  core: contentCoreV3Schema,
-  bindings: contentBindingsV3Schema,
-});
+export const quizPackContentV3Schema = z
+  .strictObject({
+    schemaVersion: z.literal("quizpack-content.v3"),
+    core: contentCoreV3Schema,
+    bindings: contentBindingsV3Schema,
+  })
+  .superRefine((value, ctx) => {
+    const privateCount = value.bindings.resources.filter(
+      (r) => r.approval === "private-test-only",
+    ).length;
+    if (
+      value.bindings.privateTestUse
+        ? value.bindings.kind !== "authored" ||
+          privateCount !== value.bindings.resources.length
+        : privateCount !== 0
+    )
+      ctx.addIssue({
+        code: "custom",
+        message:
+          "Private candidate declaration and every private resource must remain linked.",
+      });
+  });
 export const contentBuildInputV3Schema = z.strictObject({
   schemaVersion: z.literal("quizpack-build-input.v3"),
   core: contentCoreV3Schema,

@@ -38,7 +38,7 @@ import {
   saveConsumerSession,
 } from "../consumer-session/repository";
 import type { ConsumerTx } from "@/lib/db/consumer-transaction";
-import type { DisplayAssetV1 } from "@/lib/assessment-contract/display-v1";
+import type { DisplayAssetV2 as DisplayAssetV1 } from "@/lib/assessment-contract/display-v2";
 import type { ConsumerRequestOwner } from "./request-owner";
 import type { ConsumerFlowService } from "./service-contract";
 import {

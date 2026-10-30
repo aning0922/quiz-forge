@@ -66,6 +66,13 @@ export const engineIdentitySchema = z.union([
 ]);
 export const baselineApprovalSchema = z.discriminatedUnion("kind", [
   z.strictObject({
+    kind: z.literal("private-test-only"),
+    authorizationId: z.literal("qztx-full-flow-20261030"),
+    instanceId: z.literal("953991305a7e8c49bb773d95cd120378"),
+    evidenceSha256: sha,
+    scope: z.literal("candidate-content-reference-art-local-test-only"),
+  }),
+  z.strictObject({
     kind: z.literal("author-baseline"),
     approvedOn: z.iso.date(),
     sourceRecordId: id,

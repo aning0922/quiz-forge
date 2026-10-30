@@ -79,6 +79,32 @@ export function QianzaiTongxinRuntime(props: ConsumerExperiencePropsV2) {
   };
   return (
     <>
+      {(
+        props.model.report?.view.display.assets ??
+        props.model.entry?.assets ??
+        []
+      ).some((a) => a.approval === "private-test-only") && (
+        <p
+          role="note"
+          style={{
+            position: "fixed",
+            zIndex: 100,
+            top: 8,
+            left: 12,
+            right: 12,
+            margin: 0,
+            textAlign: "center",
+            fontSize: 16,
+            color: "#f6ead2",
+            background: "#153745dd",
+            borderRadius: 8,
+            padding: "5px 8px",
+            pointerEvents: "none",
+          }}
+        >
+          本机测试 · 参考素材／候选正文
+        </p>
+      )}
       {lease && (font.lease !== lease || !font.ready) && (
         <p role="status">固定字体尚未就绪，当前文字使用备用字体。</p>
       )}

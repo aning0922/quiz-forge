@@ -1,5 +1,5 @@
 import "server-only";
-/** Fixed file/media-stop protocol and 0024 admission helper bodies. */
+/** Fixed stop protocol; 0026 restricts candidate source admission. */
 export const validationAckFunctionHashes: Readonly<Record<string, string>> = {
   "qf.validation_file_stop_protocol()":
     "6c93e6e80abd2e60faf5e4f6247150e9ede92973be16f0d5ff43b748119f14c9",
@@ -14,7 +14,7 @@ export const validationAckFunctionHashes: Readonly<Record<string, string>> = {
   "qf.protect_validation()":
     "b0943587540e4737ce009e959b0220523d3a9e34f7c19d14e2dd5bc29b525134",
   "qf.validation_shape_valid(qf.quizpack_validation)":
-    "d0a5b66fc074930440a47903d55e30d78c1c6819c082034cb904cccdfe880f0a",
+    "784ce09fffeafc7ddcd0db1911fef7710d9342772d4dc2d2569746fc248f0a17",
   "qf.sha256_utf8(text)":
     "a7668c5ec5661ce809cf17b0d9c7ceee93b8da13ea8408fe0ebf5c71ad030a91",
 };

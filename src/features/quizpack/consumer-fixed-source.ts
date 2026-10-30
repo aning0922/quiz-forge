@@ -1,3 +1,4 @@
+import { assertPrivateTestSource } from "./private-test-scope";
 import "server-only";
 import {
   assertConsumerTx,
@@ -46,6 +47,11 @@ export async function readConsumerFixedSource(
     )
   )
     throw new ConsumerError("DEPENDENCY_UNAVAILABLE");
+  await assertPrivateTestSource(
+    tx.sql,
+    JSON.parse(evidence.canonicalContentText),
+    evidence,
+  );
   const content = parseCurrentContent(
     JSON.parse(evidence.canonicalContentText),
   );

@@ -1,3 +1,9 @@
+import {
+  assertPrivateTestSource,
+  requirePrivateTestCapability,
+  assertPrivateTestDatabase,
+  type PrivateTestCapability,
+} from "../private-test-scope";
 import "server-only";
 import { randomBytes, randomUUID } from "node:crypto";
 import path from "node:path";
@@ -372,10 +378,15 @@ async function execute(
   config: Awaited<ReturnType<typeof currentConfig>>,
   initial: ValidationRow,
   archivePrepared?: Extract<PreparedIdentityResult, { outcome: "prepared" }>,
+  privateCapability?: PrivateTestCapability,
 ) {
   let row = initial,
     archivedCount = 0,
     candidate: PrivateArchiveCandidate | null = null;
+  if (privateCapability) {
+    requirePrivateTestCapability(privateCapability);
+    await assertPrivateTestDatabase(op.db.sql);
+  }
   const currentAttempt = attempt(row);
   try {
     const raw = await storage.readArchive(
@@ -406,7 +417,12 @@ async function execute(
       candidate = restored.candidate;
     } else {
       const result: CandidateResult = await op.platformTask(() =>
-        validateArchiveCandidate(raw, scope.productId, op.context),
+        validateArchiveCandidate(
+          raw,
+          scope.productId,
+          op.context,
+          privateCapability,
+        ),
       );
       op.recordPlatformCompletion(result.evidence.completion);
       op.checkpoint();
@@ -475,6 +491,11 @@ async function execute(
         candidate = result.candidate;
     }
     if (candidate) {
+      await assertPrivateTestSource(
+        op.db.sql,
+        candidate.facts.content,
+        candidate.facts,
+      );
       if (row.status === "validated")
         row = await op.databaseAwait("write", () =>
           transactions.beginArchiving(op.db, c, scope, authority(row)),
@@ -611,6 +632,18 @@ async function execute(
 
 /** Ordinary fixed service. No HTTP/config field can supply IO, runtime or transaction dependencies. */
 export function createQuizpackValidationService(): QuizpackValidationService {
+  return validationService();
+}
+/** Local managed provisioning only; HTTP calls the zero-argument ordinary factory. */
+export function createPrivateTestValidationService(
+  capability: PrivateTestCapability,
+): QuizpackValidationService {
+  requirePrivateTestCapability(capability);
+  return validationService(capability);
+}
+function validationService(
+  privateCapability?: PrivateTestCapability,
+): QuizpackValidationService {
   return {
     async prepareValidation(db, c, productId, importId, input, context) {
       const scope = {
@@ -741,7 +774,15 @@ export function createQuizpackValidationService(): QuizpackValidationService {
         return {
           outcome: "record",
           created: true,
-          validation: await execute(op, c, scope, config, claimed.row),
+          validation: await execute(
+            op,
+            c,
+            scope,
+            config,
+            claimed.row,
+            undefined,
+            privateCapability,
+          ),
         };
       } catch (error) {
         let translated: StudioError;
@@ -943,6 +984,7 @@ export function createQuizpackValidationService(): QuizpackValidationService {
           config,
           claimed,
           row.validated_at !== null ? preparation : undefined,
+          privateCapability,
         );
       } catch (error) {
         return finite(error);

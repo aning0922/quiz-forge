@@ -1,6 +1,6 @@
 import { z } from "zod";
 import inputs from "./runtime-inputs.json";
-import { displayAssetV1Schema } from "@/lib/assessment-contract/display-v1";
+import { displayAssetV2Schema } from "@/lib/assessment-contract/display-v2";
 import { rendererImplementationDescriptorSchema } from "@/features/product/internal-versions/implementation-schema";
 
 const slot = z.union([
@@ -17,7 +17,7 @@ const slot = z.union([
   ]),
 ]);
 const binding = z.strictObject({
-  asset: displayAssetV1Schema.omit({ alt: true }),
+  asset: displayAssetV2Schema.omit({ alt: true }),
   slot,
   layer: z.enum(["clean", "prototype-scene-base", "prototype-option-skin"]),
 });

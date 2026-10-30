@@ -10,6 +10,15 @@ import { presentationSlotsV3Schema } from "./presentation-v3";
 import { composedReportBodyV1Schema } from "./composed-report-v1";
 import { displayAssetV1Schema } from "./display-v1";
 
+export const displayAssetV2Schema = displayAssetV1Schema.extend({
+  approval: z.enum(["pending", "approved", "private-test-only"]),
+});
+export type DisplayAssetV2 = z.infer<typeof displayAssetV2Schema>;
+export type DisplayResourceTransportV2 = (
+  asset: DisplayAssetV2,
+  signal: AbortSignal,
+  deadlineMonotonicMs: number,
+) => Promise<Response>;
 const text = z.string().min(1).max(4000);
 export const displayCapabilitiesV2Shape = {
   presentationMode: z.enum(["structured-only", "authored-product"]),
@@ -66,7 +75,7 @@ export const displayEntryBodyV2Schema = z
       .min(1)
       .max(100),
     slots: presentationSlotsV3Schema.shape.neutral,
-    assets: z.array(displayAssetV1Schema).min(1).max(64),
+    assets: z.array(displayAssetV2Schema).min(1).max(64),
   })
   .refine(validCapabilities);
 export const resultDisplaySnapshotV2Schema = z
@@ -89,7 +98,7 @@ export const resultDisplaySnapshotV2Schema = z
       neutral: presentationSlotsV3Schema.shape.neutral,
       character: presentationSlotsV3Schema.shape.characters.element,
     }),
-    assets: z.array(displayAssetV1Schema).min(1).max(64),
+    assets: z.array(displayAssetV2Schema).min(1).max(64),
   })
   .refine(validCapabilities);
 export type DisplayEntryBodyV2 = z.infer<typeof displayEntryBodyV2Schema>;
