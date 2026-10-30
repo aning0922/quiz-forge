@@ -74,6 +74,12 @@ let page = await openPage();
 const screen = (name: string) =>
   page.locator(`[data-qianzai-screen="${name}"]:visible`);
 const screenshot = async (name: string) => {
+  await page.evaluate(() => document.fonts.ready.then(() => undefined));
+  await page.waitForFunction(() =>
+    Array.from(document.images)
+      .filter((img) => img.getClientRects().length > 0)
+      .every((img) => img.complete && img.naturalWidth > 0),
+  );
   await page.screenshot({ path: path.join(out, name + ".png") });
   record.screenshots.push(name + ".png");
 };
