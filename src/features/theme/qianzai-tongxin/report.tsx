@@ -1,11 +1,19 @@
 "use client";
 
-import { Fragment, useEffect, useId, useRef, useState } from "react";
+import {
+  Fragment,
+  useCallback,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+} from "react";
 import { ChevronLeft, ChevronDown, ArrowUp } from "lucide-react";
 import type { ComposedReportBodyV1 } from "@/lib/assessment-contract/composed-report-v1";
 import { ArtImage, Screen, type QianzaiViewProps } from "./views";
 import { qianzaiCharacter, qianzaiImage } from "./art";
 import styles from "./qianzai.module.css";
+import { QianzaiSharePanel } from "./share-panel";
 
 const point = (index: number, radius: number) => {
   const angle = -Math.PI / 2 + (index * Math.PI * 2) / 5;
@@ -27,7 +35,7 @@ export function QianzaiDimensions({ body }: { body: ComposedReportBodyV1 }) {
     <section className={styles.dimensionCard} aria-label="本轮五维">
       <div className={styles.dimensionHeading}>
         <h3>同心画像</h3>
-        <span>封存分值</span>
+        <span>本轮分值</span>
       </div>
       {body.dimensions.length === 5 && (
         <svg
@@ -39,6 +47,19 @@ export function QianzaiDimensions({ body }: { body: ComposedReportBodyV1 }) {
           <title id={id}>
             {body.dimensions.map((d) => `${d.label} ${d.score}分`).join("，")}
           </title>
+          <defs>
+            <linearGradient
+              id={`${id}-fill`}
+              x1="0%"
+              y1="0%"
+              x2="100%"
+              y2="100%"
+            >
+              <stop offset="0" stopColor="#657e83" stopOpacity=".55" />
+              <stop offset="1" stopColor="#e6b36a" stopOpacity=".34" />
+            </linearGradient>
+          </defs>
+          <circle cx="170" cy="167" r="104" className={styles.radarGround} />
           {[0.2, 0.4, 0.6, 0.8, 1].map((scale) => (
             <polygon
               key={scale}
@@ -63,6 +84,7 @@ export function QianzaiDimensions({ body }: { body: ComposedReportBodyV1 }) {
               .map((d, i) => point(i, (d.score / 100) * 103).join(","))
               .join(" ")}
             className={styles.radarShape}
+            style={{ fill: `url(#${id}-fill)` }}
           />
           {body.dimensions.map((d, i) => {
             const [x, y] = [
@@ -111,6 +133,10 @@ export function QianzaiDimensions({ body }: { body: ComposedReportBodyV1 }) {
           })}
         </svg>
       )}
+      <div className={styles.chartRule} />
+      <p className={styles.dimensionSummary}>
+        点选任一方向，阅读本轮分值与实际选择依据。
+      </p>
       <details ref={reading} className={styles.dimensionDetails}>
         <summary>查看五维分值与选择依据</summary>
         <dl className={styles.dimensionBars}>
@@ -212,12 +238,14 @@ function Evidence({
 }
 function ReportParagraph({
   paragraph,
+  className = "",
 }: {
   paragraph: ComposedReportBodyV1["volumes"][number]["paragraphs"][number];
+  className?: string | undefined;
 }) {
   return (
     <section
-      className={styles.paragraph}
+      className={`${styles.paragraph} ${className}`}
       data-kind={paragraph.kind}
       data-status={paragraph.status}
     >
@@ -254,31 +282,39 @@ export function QianzaiReport({
       images,
     );
   const id = useId(),
-    container = useRef<HTMLDivElement>(null);
+    container = useRef<HTMLDivElement>(null),
+    toc = useRef<HTMLDetailsElement>(null);
   const [reading, setReading] = useState({
     percent: 0,
     chapter: "卷首 · 相逢",
     paper: false,
   });
-  const measure = (node: HTMLDivElement) => {
-    const max = Math.max(0, node.scrollHeight - node.clientHeight);
-    const percent = max
-      ? Math.round(Math.min(1, Math.max(0, node.scrollTop / max)) * 100)
-      : 100;
-    let chapter = "卷首 · 相逢";
-    const threshold = node.getBoundingClientRect().top + 160;
-    for (const section of node.querySelectorAll<HTMLElement>(
-      "[data-report-chapter]",
-    ))
-      if (section.getBoundingClientRect().top <= threshold)
-        chapter = section.dataset.reportChapter ?? chapter;
-    const paper = node.scrollTop > 210;
-    setReading((old) =>
-      old.percent === percent && old.chapter === chapter && old.paper === paper
-        ? old
-        : { percent, chapter, paper },
-    );
-  };
+  const lastChapter = body?.volumes.at(-1)?.title ?? "卷首 · 相逢";
+  const measure = useCallback(
+    (node: HTMLDivElement) => {
+      const max = Math.max(0, node.scrollHeight - node.clientHeight);
+      const percent = max
+        ? Math.round(Math.min(1, Math.max(0, node.scrollTop / max)) * 100)
+        : 100;
+      let chapter = "卷首 · 相逢";
+      const threshold = node.getBoundingClientRect().top + 160;
+      for (const section of node.querySelectorAll<HTMLElement>(
+        "[data-report-chapter]",
+      ))
+        if (section.getBoundingClientRect().top <= threshold)
+          chapter = section.dataset.reportChapter ?? chapter;
+      if (percent === 100) chapter = lastChapter;
+      const paper = node.scrollTop > 210;
+      setReading((old) =>
+        old.percent === percent &&
+        old.chapter === chapter &&
+        old.paper === paper
+          ? old
+          : { percent, chapter, paper },
+      );
+    },
+    [lastChapter],
+  );
   useEffect(() => {
     const node = container.current;
     if (!node) return;
@@ -286,7 +322,7 @@ export function QianzaiReport({
     observer.observe(node);
     if (node.firstElementChild) observer.observe(node.firstElementChild);
     return () => observer.disconnect();
-  }, []);
+  }, [measure]);
   useEffect(() => {
     if (active && container.current) {
       container.current.scrollTop = 0;
@@ -294,7 +330,19 @@ export function QianzaiReport({
     }
     // Opening the paper from the reveal starts at the beginning, as in the
     // original reader. Resource/font completion never resets a reading position.
-  }, [entry, active]);
+  }, [entry, active, measure]);
+  useEffect(() => {
+    const dismiss = (event: PointerEvent) => {
+      if (
+        toc.current?.open &&
+        event.target instanceof Node &&
+        !toc.current.contains(event.target)
+      )
+        toc.current.open = false;
+    };
+    document.addEventListener("pointerdown", dismiss);
+    return () => document.removeEventListener("pointerdown", dismiss);
+  }, []);
   const returnToStart = () => {
     container.current?.scrollTo({
       top: 0,
@@ -326,7 +374,18 @@ export function QianzaiReport({
               <span>
                 千载同心<strong>人物深度报告</strong>
               </span>
-              <details className={styles.contents}>
+              <details
+                ref={toc}
+                className={styles.contents}
+                onKeyDown={(event) => {
+                  if (event.key === "Escape" && event.currentTarget.open) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    event.currentTarget.open = false;
+                    event.currentTarget.querySelector("summary")?.focus();
+                  }
+                }}
+              >
                 <summary>
                   卷目 <ChevronDown size={15} aria-hidden="true" />
                 </summary>
@@ -413,28 +472,13 @@ export function QianzaiReport({
                   data-report-chapter-id="encounter"
                 >
                   <p className={styles.eyebrow}>
-                    <span aria-hidden="true">✧</span> 命定相逢 · 本轮记录{" "}
-                    <span aria-hidden="true">✧</span>
+                    <span aria-hidden="true">✧</span> 第一卷 ·{" "}
+                    {body.volumes[0]?.title} <span aria-hidden="true">✧</span>
                   </p>
                   <h1 data-report-opening-title tabIndex={-1}>
                     {body.matching.selected.label}
                   </h1>
                   <p className={styles.reportSubtitle}>{body.title}</p>
-                  <p className={styles.reportIndex}>
-                    契合指数{" "}
-                    <strong>{body.matching.selected.narrativeIndex}</strong> /
-                    100
-                  </p>
-                  {body.matching.status !== "single-candidate" &&
-                    body.matching.runnerUp && (
-                      <p>
-                        {body.matching.status === "near-tie"
-                          ? "前两位接近。"
-                          : "本轮第二候选："}
-                        {body.matching.runnerUp.label} · 契合指数{" "}
-                        {body.matching.runnerUp.narrativeIndex} / 100
-                      </p>
-                    )}
                 </section>
                 {body.volumes.map((v, i) => (
                   <Fragment key={v.id}>
@@ -465,8 +509,33 @@ export function QianzaiReport({
                       }
                     >
                       <header>
-                        <p>第{["一", "二", "三", "四", "五", "六"][i]}卷</p>
-                        <h2 tabIndex={-1}>{v.title}</h2>
+                        <p>
+                          {
+                            [
+                              "壹 · 相逢",
+                              "贰 · 心象",
+                              "叁 · 同心",
+                              "肆 · 映照",
+                              "伍 · 人物",
+                              "陆 · 寄语",
+                            ][i]
+                          }
+                        </p>
+                        <h2
+                          className={
+                            v.id === "closure" ? styles.srOnly : undefined
+                          }
+                          tabIndex={-1}
+                        >
+                          {v.title}
+                        </h2>
+                        {v.id === "dimensions" &&
+                          v.paragraphs[0]?.kind === "context" && (
+                            <ReportParagraph
+                              paragraph={v.paragraphs[0]}
+                              className={styles.volumeIntro}
+                            />
+                          )}
                       </header>
                       {v.id === "dimensions" && (
                         <QianzaiDimensions body={body} />
@@ -474,6 +543,10 @@ export function QianzaiReport({
                       {v.id === "counterevidence" ? (
                         <>
                           <div className={styles.reflectionFeature}>
+                            <div className={styles.reflectionHeading}>
+                              <span>自照</span>
+                              <span aria-hidden="true">✧</span>
+                            </div>
                             {v.paragraphs.slice(0, 2).map((paragraph, j) => (
                               <ReportParagraph key={j} paragraph={paragraph} />
                             ))}
@@ -490,25 +563,26 @@ export function QianzaiReport({
                           )}
                         </>
                       ) : (
-                        v.paragraphs.map((paragraph, j) => (
-                          <ReportParagraph key={j} paragraph={paragraph} />
-                        ))
-                      )}
-                      {v.id === "encounter" && (
-                        <div className={styles.reportNotices}>
-                          <p className={styles.reportNotice}>{body.notice}</p>
-                          {body.matching.status === "single-candidate" && (
-                            <p className={styles.reportKind}>
-                              本轮偏好下仅有一位候选人物。
-                            </p>
+                        <>
+                          {v.id === "literature" && (
+                            <div className={styles.historyIdentity}>
+                              <strong>{body.matching.selected.label}</strong>
+                              <span>
+                                {body.matching.selected.kind ===
+                                "literary-legendary"
+                                  ? "文学／传说人物"
+                                  : "历史人物"}
+                              </span>
+                            </div>
                           )}
-                          <p className={styles.reportKind}>
-                            {body.matching.selected.kind ===
-                            "literary-legendary"
-                              ? `${body.matching.selected.label}以文学／传说人物的艺术形象参与本轮匹配。`
-                              : "人物为文学类比，不是历史人物心理测量。"}
-                          </p>
-                        </div>
+                          {v.paragraphs.map((paragraph, j) =>
+                            v.id === "dimensions" &&
+                            j === 0 &&
+                            paragraph.kind === "context" ? null : (
+                              <ReportParagraph key={j} paragraph={paragraph} />
+                            ),
+                          )}
+                        </>
                       )}
                       {v.id === "closure" && (
                         <footer className={styles.reportClosing}>
@@ -525,22 +599,11 @@ export function QianzaiReport({
                           </div>
                           <p className={styles.reportEndline}>长卷已展至尽处</p>
                           <div className={styles.reportActions}>
-                            <button
-                              disabled
-                              aria-describedby={`${id}-poster-note`}
-                            >
-                              分享卡待开放
-                            </button>
+                            <QianzaiSharePanel active={active} />
                             <button onClick={() => onRead("result")}>
                               回看人物揭晓
                             </button>
                           </div>
-                          <p
-                            id={`${id}-poster-note`}
-                            className={styles.posterNote}
-                          >
-                            分享卡与图片导出尚未开放。
-                          </p>
                           <button
                             className={styles.returnToStart}
                             onClick={returnToStart}
@@ -548,6 +611,32 @@ export function QianzaiReport({
                             <ArrowUp size={16} aria-hidden="true" />
                             回到卷首
                           </button>
+                          <details className={styles.reportRecord}>
+                            <summary>本轮匹配记录与说明</summary>
+                            <p>
+                              {body.matching.selected.label} · 契合指数{" "}
+                              {body.matching.selected.narrativeIndex} / 100
+                            </p>
+                            {body.matching.status === "single-candidate" && (
+                              <p>本轮偏好下仅有一位候选人物。</p>
+                            )}
+                            {body.matching.status !== "single-candidate" &&
+                              body.matching.runnerUp && (
+                                <p>
+                                  {body.matching.status === "near-tie"
+                                    ? "前两位接近。"
+                                    : "本轮第二候选："}
+                                  {body.matching.runnerUp.label} · 契合指数{" "}
+                                  {body.matching.runnerUp.narrativeIndex} / 100
+                                </p>
+                              )}
+                            <p>
+                              {body.matching.selected.kind ===
+                              "literary-legendary"
+                                ? `${body.matching.selected.label}以文学／传说人物的艺术形象参与本轮匹配。`
+                                : "人物为文学类比，不是历史人物心理测量。"}
+                            </p>
+                          </details>
                           <p>{body.notice}</p>
                         </footer>
                       )}

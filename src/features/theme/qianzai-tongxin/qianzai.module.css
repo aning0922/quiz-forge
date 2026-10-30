@@ -847,11 +847,24 @@
 .revealHeader p {
   font-size: calc(var(--scene-unit) * 36);
   letter-spacing: 0.16em;
+  position: relative;
+  display: inline-block;
+  font-family: var(--brush);
+  font-size: calc(var(--scene-unit) * 39);
+  line-height: 1.15;
+  letter-spacing: 0.015em;
 }
 .revealHeader > span {
   display: block;
   margin-top: 4px;
   letter-spacing: 0.22em;
+  display: table;
+  margin: 8px auto 0;
+  padding: 3px 22px;
+  border-block: 1px solid #bda36a99;
+  font-size: 14px;
+  line-height: 1.5;
+  letter-spacing: 0.18em;
 }
 .moonbeam {
   position: absolute;
@@ -925,7 +938,7 @@
   background: linear-gradient(180deg, #091624f0, #0c1b2cc2 75%, #0c1b2c8f);
   color: #f8eacb;
   height: 112px;
-  padding: 12px 22px 9px;
+  padding: max(30px, env(safe-area-inset-top)) 22px 7px;
   backdrop-filter: blur(13px);
   border-bottom: 1px solid #d8b77966;
   transition:
@@ -982,7 +995,7 @@
   justify-content: space-between;
   gap: 15px;
   font-size: 12px;
-  margin: 7px 3px 5px;
+  margin: 1px 3px 5px;
   color: #f2d7aa;
 }
 .reportNav[data-paper="true"] > p {
@@ -1206,7 +1219,9 @@
   margin-bottom: 18px;
 }
 .volume > header > p {
-  letter-spacing: 0.3em;
+  font-family: var(--body-font);
+  font-size: 12px;
+  letter-spacing: 0.18em;
   color: #a4804b;
 }
 .volume h2 {
@@ -1306,7 +1321,7 @@
   margin-bottom: 18px;
 }
 .reportClosing > button {
-  margin-top: 25px;
+  margin-top: 19px;
   background: #e4c99f;
   color: #4c3823;
 }
@@ -2226,6 +2241,9 @@
     #0e2134
   );
   text-align: center;
+  padding-top: 38px;
+  padding-bottom: 27px;
+  overflow: hidden;
 }
 .reportClosing {
   position: relative;
@@ -2873,8 +2891,7 @@
 .reportPaper :is(h1, h2, h3, h4) {
   font-weight: 700;
 }
-.reportPaper .eyebrow,
-.volume > header > p {
+.reportPaper .eyebrow {
   font-family: var(--font);
   font-weight: 600;
 }
@@ -2986,9 +3003,7 @@
 .volume[data-volume="closure"] > header :is(p, h2) {
   color: #d7b782;
 }
-.volume[data-volume="closure"] > header h2 {
-  font-size: 24px;
-}
+
 .volume[data-volume="closure"] > header::after {
   content: none;
 }
@@ -3450,51 +3465,73 @@
 }
 .revealNameFrame {
   position: relative;
-  height: min(28dvh, 220px);
+  height: min(31dvh, 250px);
   margin-block: 8px;
 }
 .nameArt {
   display: block;
   width: 100%;
   height: 100%;
+  max-height: 220px;
   object-fit: contain;
-  object-position: center;
+  object-position: left center;
 }
 .diagonalName {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  align-content: center;
+  position: relative;
   width: 100%;
   height: 100%;
   margin: 0 !important;
   color: #ffe5a6;
-  font: 600 min(12dvh, calc(var(--scene-unit) * 100))/1 var(--brush);
+  font: 600 min(14dvh, calc(var(--scene-unit) * 110))/1 var(--brush);
   letter-spacing: -0.08em;
-  transform: rotate(-12deg);
+  transform: rotate(-8deg);
+}
+.diagonalName > span {
+  position: absolute;
+  top: 0;
+  left: 0;
 }
 .diagonalName[data-name-size="2"] > span:last-child {
-  grid-column: 2;
-  grid-row: 2;
+  top: 46%;
+  left: 30%;
 }
-.diagonalName > span:nth-child(even) {
-  transform: translateY(0.12em);
+.diagonalName[data-name-size="3"] {
+  font-size: min(10.5dvh, calc(var(--scene-unit) * 86));
 }
-.identitySeal {
-  position: absolute;
-  right: 0;
-  bottom: 14%;
-  padding: 4px 5px;
-  color: #ffe7c2;
-  font: 16px/1.15 var(--font);
-  background: #ae342a;
-  border-radius: 40% 8px;
-  transform: rotate(-7deg);
-  box-shadow: inset 0 0 0 2px #f1b38c44;
+.diagonalName[data-name-size="3"] > span:nth-child(2) {
+  top: 31%;
+  left: 20%;
+}
+.diagonalName[data-name-size="3"] > span:nth-child(3) {
+  top: 62%;
+  left: 40%;
+}
+.diagonalName[data-name-size="4"] {
+  font-size: min(8.5dvh, calc(var(--scene-unit) * 72));
+}
+.diagonalName[data-name-size="4"] > span:nth-child(2) {
+  top: 23%;
+  left: 15%;
+}
+.diagonalName[data-name-size="4"] > span:nth-child(3) {
+  top: 46%;
+  left: 30%;
+}
+.diagonalName[data-name-size="4"] > span:nth-child(4) {
+  top: 69%;
+  left: 45%;
 }
 .revealIdentity .revealSealedLine {
   margin: 8px 0;
   font-size: 16px;
   line-height: 1.55;
+  max-width: 280px;
+  text-align: center;
+  text-wrap: balance;
+  color: #fff1d0;
+  text-shadow:
+    0 2px 7px #030c18,
+    0 0 18px #030c18;
 }
 
 .answerBackdrop {
@@ -3516,4 +3553,110 @@
 
 .reportHero > .fullArt {
   object-position: center 34%;
+}
+
+/* Result composition follows the original layout; absent character metadata is
+   omitted, rather than inferred from free prose or baked demonstration art. */
+.revealShade {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    #05101c22,
+    transparent 28%,
+    transparent 42%,
+    #07151f33 68%,
+    #05101ca6
+  );
+}
+.revealHeader i {
+  display: inline-block;
+  vertical-align: top;
+  margin: 3px 0 0 5px;
+  padding: 2px 1px;
+  writing-mode: vertical-rl;
+  font:
+    10px/1.05 system-ui,
+    sans-serif;
+  background: #a33a2b;
+  color: #fff0cc;
+  letter-spacing: 0;
+}
+.radarGround {
+  fill: #faefd68f;
+}
+.chartRule {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #d6b385, transparent);
+  margin: 0 12px 13px;
+}
+.dimensionSummary {
+  font: 400 16px/1.7 var(--body-font);
+  padding: 0 11px 8px;
+  color: #85715b;
+}
+.volume > header .volumeIntro {
+  margin: 5px auto 0;
+  max-width: 320px;
+  padding: 0;
+  border: 0;
+  background: none;
+  box-shadow: none;
+}
+.volume > header .volumeIntro > p:first-child {
+  font: 400 16px/1.7 var(--body-font);
+  color: #8d7862;
+}
+.reflectionHeading {
+  display: flex;
+  justify-content: space-between;
+  color: #eccb93;
+  font: 400 14px/1.5 var(--body-font);
+  letter-spacing: 0.2em;
+  margin-bottom: 20px;
+}
+.historyIdentity {
+  display: flex;
+  gap: 17px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #d9b684;
+  background: linear-gradient(125deg, #fff8e8, #f7dfb5);
+  border-radius: 15px;
+  padding: 17px;
+  margin-bottom: 21px;
+}
+.historyIdentity strong {
+  font: 700 32px/1.4 var(--font);
+  color: #3b3840;
+}
+.historyIdentity span {
+  font: 400 16px/1.6 var(--body-font);
+  color: #76644f;
+}
+.volume[data-volume="closure"] > header {
+  margin-bottom: 14px;
+}
+.volume[data-volume="closure"] > header .srOnly {
+  margin: 0;
+}
+.reportRecord {
+  margin: 12px 0 0;
+  color: #c9b89c;
+  font: 400 14px/1.7 var(--body-font);
+  text-align: left;
+}
+.reportRecord summary {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  text-align: center;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.reportRecord p {
+  margin-top: 8px;
 }

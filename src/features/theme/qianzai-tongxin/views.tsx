@@ -659,11 +659,14 @@ export function QianzaiReveal({
           src={image?.objectUrl}
           className={styles.revealArt}
         />
+        <div className={styles.revealShade} aria-hidden="true" />
         <div className={styles.moonbeam} aria-hidden="true" />
         <div className={styles.inkSweep} aria-hidden="true" />
         <header className={styles.revealHeader}>
-          <p>千载同心</p>
-          <span>终章 · 相逢</span>
+          <p>
+            千载同心<i aria-hidden="true">古风</i>
+          </p>
+          <span>终章 · 命定相逢</span>
         </header>
         {onReplay && (
           <details className={styles.revealMenu}>
@@ -707,9 +710,6 @@ export function QianzaiReveal({
                 ))}
               </h1>
             )}
-            <span className={styles.identitySeal} aria-hidden="true">
-              相<br />逢
-            </span>
           </div>
           {sealedLine && (
             <p className={styles.revealSealedLine}>{sealedLine.text}</p>

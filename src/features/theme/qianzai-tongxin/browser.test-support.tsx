@@ -275,6 +275,7 @@ function Runtime() {
       model,
       view,
       signal: abort.signal,
+      getSnapshot: owner.getSnapshot,
       current: () =>
         !abort.signal.aborted &&
         owner.getSnapshot().phase === "completed" &&

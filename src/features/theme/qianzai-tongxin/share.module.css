@@ -1,0 +1,543 @@
+.entryActions {
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+}
+.entryActions > button {
+  width: 100%;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  border-radius: 11px;
+  font-family: system-ui, sans-serif;
+  font-size: 16px;
+}
+.entryActions > button:first-child {
+  background: linear-gradient(110deg, #edc88b, #fff2d0 50%, #e6bb73);
+  color: #593919;
+  border: 1px solid #b9935d;
+  box-shadow: 0 6px 17px #e8c3834b;
+}
+.entryActions > button + button {
+  background: #f4e1b81c;
+  border: 1px solid #c4a5717d;
+  color: #f7e7cb;
+}
+.entryNote {
+  margin: 10px 0 0 !important;
+  color: #cfbc9b;
+  font:
+    400 14px/1.6 system-ui,
+    sans-serif;
+}
+.dialog {
+  text-align: left;
+  position: fixed;
+  inset: 0;
+  margin: 0 auto;
+  width: min(100vw, 430px);
+  height: 100dvh;
+  max-width: none;
+  max-height: none;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  color: #26374a;
+  background: transparent;
+  font:
+    400 16px/1.55 system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "PingFang SC",
+    "Microsoft YaHei",
+    sans-serif;
+}
+.dialog::backdrop {
+  background: #020b16bf;
+  backdrop-filter: blur(5px);
+}
+.dialog *,
+.dialog *::before,
+.dialog *::after {
+  box-sizing: border-box;
+}
+.dialog :is(button, h2, h3, p, small, strong) {
+  font-family: inherit;
+}
+.dialog button {
+  touch-action: manipulation;
+  cursor: pointer;
+  min-width: 44px;
+  min-height: 44px;
+  font: inherit;
+}
+.dialog button:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+.dialog :focus-visible {
+  outline: 3px solid #b98b4b;
+  outline-offset: 3px;
+}
+.dialog .sheet {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  max-height: 94%;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border-radius: 26px 26px 0 0;
+  background: radial-gradient(ellipse at 100% 0, #fff9ed, #f6e8cf 56%, #f1ddbb);
+  border-top: 2px solid #d3a866;
+  box-shadow: 0 -22px 65px #050d19aa;
+  animation: rise 350ms cubic-bezier(0.18, 0.69, 0.22, 1) both;
+}
+.sheetHead {
+  padding: 20px 20px 8px;
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+.sheetHead .kicker {
+  font-size: 12px;
+  color: #a77a40;
+  letter-spacing: 0.2em;
+  margin: 0 0 6px;
+}
+.dialog .sheetHead h2 {
+  margin: 0;
+  font-size: 22px;
+  line-height: 1.3;
+  font-weight: 700;
+  color: #243443;
+}
+.sheetHead p:not(.kicker) {
+  font-size: 16px;
+  line-height: 1.6;
+  color: #80694f;
+  margin: 8px 0 0;
+}
+.dialog .round {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  border: 1px solid #d0b383;
+  background: #fff7e9;
+  color: #715635;
+}
+.cards {
+  padding: 12px 20px 8px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.dialog .card {
+  min-width: 0;
+  position: relative;
+  text-align: left;
+  background: #fffaf1;
+  border: 1.5px solid #dfc39b;
+  border-radius: 16px;
+  padding: 9px 9px 30px;
+  color: #2b3746;
+  box-shadow: 0 3px 11px #674d2412;
+  transition:
+    border-color 180ms,
+    box-shadow 180ms;
+}
+.dialog .card[aria-pressed="true"] {
+  border-color: #b58342;
+  background: linear-gradient(155deg, #fffaf0, #fbe9c3);
+  box-shadow:
+    0 0 0 2px #d5aa684b,
+    0 6px 15px #bc874330;
+}
+.thumb {
+  display: block;
+  width: 100%;
+  height: 145px;
+  border-radius: 9px;
+  background: #e6d9bd;
+  overflow: hidden;
+  position: relative;
+  border: 1px solid #d3bd98;
+}
+.thumb > img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 18%;
+  display: block;
+}
+.thumb[data-kind="full-report"] > img {
+  object-position: 50% 0;
+}
+.emptyThumb {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  height: 100%;
+  background: linear-gradient(145deg, #f5ead5, #e6d8bd);
+  color: #92764f;
+  font-size: 14px;
+}
+.pill {
+  position: absolute;
+  z-index: 1;
+  right: 6px;
+  top: 6px;
+  border-radius: 999px;
+  padding: 3px 7px;
+  font-size: 12px;
+  color: #fef1d7;
+  background: #182733de;
+}
+.card > strong {
+  display: block;
+  font-size: 16px;
+  line-height: 1.4;
+  margin: 10px 0 4px;
+  color: #263646;
+}
+.card > small {
+  display: block;
+  font-size: 12px;
+  line-height: 1.55;
+  color: #846d51;
+}
+.radio {
+  position: absolute;
+  right: 12px;
+  bottom: 10px;
+  width: 18px;
+  height: 18px;
+  border: 1.5px solid #ac8a58;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: transparent;
+}
+.card[aria-pressed="true"] .radio {
+  border-color: #bc8b43;
+  background: #bc8b43;
+  color: white;
+}
+.sheetFoot {
+  padding: 8px 22px max(24px, env(safe-area-inset-bottom));
+}
+.sheetFoot > p {
+  margin: 4px 0 14px;
+  color: #856b4a;
+  font-size: 12px;
+  line-height: 1.65;
+  text-align: center;
+}
+.dialog .primary {
+  min-height: 48px;
+  width: 100%;
+  border: 1px solid #b68c54;
+  border-radius: 12px;
+  background: linear-gradient(110deg, #eac58c, #fff1d1 50%, #eac17a);
+  color: #5c3c21;
+  font-size: 16px;
+  font-weight: 650;
+  box-shadow: 0 5px 14px #ba92554b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+.dialog .preview {
+  position: absolute;
+  inset: 0;
+  background: #0d1d2b;
+  color: #fcf0d9;
+  display: flex;
+  flex-direction: column;
+}
+.previewHead {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 76px;
+  padding: calc(12px + env(safe-area-inset-top)) 12px 12px;
+  background: #102637;
+  border-bottom: 1px solid #c09b6344;
+}
+.dialog .back,
+.dialog .closePreview {
+  min-height: 44px;
+  min-width: 44px;
+  width: 44px;
+  padding: 0;
+  border-radius: 50%;
+  background: #f0deb219;
+  color: #f7deb7;
+  border: 1px solid #dab47f85;
+  display: grid;
+  place-items: center;
+}
+.previewHead > div {
+  flex: 1;
+  min-width: 0;
+}
+.dialog .previewHead h2 {
+  color: #fcf0d9;
+  font-size: 17px;
+  font-weight: 700;
+  margin: 0;
+}
+.previewHead p {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: #ceb99a;
+}
+.dialog .counter {
+  flex: none;
+  color: #e6cda2;
+  letter-spacing: 0.03em;
+  font-size: 12px;
+  padding: 0 3px;
+  border: 0;
+  background: transparent;
+}
+.dialog .closePreview {
+  border: 0;
+  background: transparent;
+  min-width: 44px;
+  width: 44px;
+}
+.zoomRow {
+  flex: none;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px 8px;
+  padding: 6px 12px;
+  background: #142b3d;
+  border-bottom: 1px solid #c09b6333;
+}
+.zoomRow > span {
+  font-size: 12px;
+  color: #c2ac8e;
+}
+.zoomRow > div {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.dialog .zoomRow button {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 1px solid #dfc29366;
+  color: #f6e4c4;
+  background: #fff4d60e;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+}
+.zoomRow output {
+  font-size: 12px;
+  color: #edcf9e;
+  min-width: 36px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.dialog .zoomRow .fit {
+  width: auto;
+  padding: 0 9px;
+  font-size: 14px;
+}
+.imageScroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  background: radial-gradient(ellipse at 50% 5%, #385062, #122535 48%, #07131e);
+  padding: 15px 16px 20px;
+  scrollbar-color: #c6a16c #172838;
+  scrollbar-width: thin;
+  touch-action: pan-x pan-y;
+}
+.imageStage {
+  width: max-content;
+  min-width: 100%;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.imageStage > img {
+  height: auto;
+  display: block;
+  max-width: none;
+  border-radius: 5px;
+  box-shadow: 0 10px 35px #0009;
+  border: 1px solid #e1cba9;
+  user-select: auto;
+  -webkit-touch-callout: default;
+}
+.imageStage > p {
+  font-size: 12px;
+  color: #d3b88d;
+  margin: 13px 0 4px;
+  line-height: 1.55;
+  text-align: center;
+  max-width: 290px;
+  white-space: normal;
+}
+.pending {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 28px 16px;
+  gap: 14px;
+  color: #e9d7b5;
+}
+.pending h3 {
+  font-size: 20px;
+  margin: 0;
+}
+.pending p {
+  font-size: 16px;
+  margin: 0;
+}
+.dialog .pending button {
+  background: #f1ddbd15;
+  border: 1px solid #dec398;
+  color: #f8e3bc;
+  border-radius: 10px;
+}
+.spinner {
+  width: 36px;
+  height: 36px;
+  border: 2px solid #d5b48044;
+  border-top-color: #e3c18d;
+  border-radius: 50%;
+  animation: spin 900ms linear infinite;
+}
+.actions {
+  flex: none;
+  background: linear-gradient(#112a3a, #0b1e2e);
+  border-top: 1px solid #d5aa7844;
+  padding: 12px 14px calc(12px + env(safe-area-inset-bottom));
+}
+.actions > div {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr;
+  gap: 10px;
+}
+.dialog .actions button {
+  min-height: 48px;
+  border: 1px solid #dec39899;
+  background: #f1ddbd0c;
+  border-radius: 12px;
+  color: #f8e3bc;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px;
+}
+.dialog .actions button + button {
+  border-color: #c8a064;
+  background: linear-gradient(111deg, #eed4a6, #ffeed0 51%, #e4b96c);
+  color: #51371c;
+  font-weight: 700;
+  box-shadow: 0 5px 15px #c8944840;
+}
+.actions > p {
+  margin: 8px 0 0;
+  text-align: center;
+  color: #bca98d;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.toast {
+  position: absolute;
+  z-index: 4;
+  left: 18px;
+  right: 18px;
+  bottom: 128px;
+  pointer-events: none;
+  padding: 11px 14px;
+  border: 1px solid #cda973;
+  border-radius: 10px;
+  background: #1b282ef5;
+  color: #fff1cd;
+  font-size: 14px;
+  line-height: 1.6;
+  text-align: center;
+  box-shadow: 0 8px 24px #0008;
+}
+@keyframes rise {
+  from {
+    transform: translateY(100%);
+    opacity: 0.3;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+@keyframes spin {
+  to {
+    transform: rotate(1turn);
+  }
+}
+@media (max-width: 374px) {
+  .sheetHead {
+    padding-inline: 16px;
+  }
+  .cards {
+    padding-inline: 14px;
+    gap: 9px;
+  }
+  .thumb {
+    height: 118px;
+  }
+  .card > strong {
+    font-size: 16px;
+  }
+  .previewHead {
+    gap: 5px;
+    padding-inline: 8px;
+  }
+  .previewHead h2 {
+    font-size: 16px;
+  }
+  .zoomRow {
+    justify-content: center;
+  }
+  .zoomRow > span {
+    width: 100%;
+    text-align: center;
+  }
+  .toast {
+    bottom: 150px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dialog *,
+  .dialog *::before {
+    animation: none !important;
+    transition: none !important;
+  }
+}
