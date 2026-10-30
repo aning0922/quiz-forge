@@ -108,6 +108,12 @@ describe("exact neutral resource roles and ownership", () => {
       fetcher,
     });
     const lease = port.capture(model.entry!)!;
+    model = { ...model, phase: "unknown", pendingOperation: "save" };
+    expect(lease.current()).toBe(true);
+    expect(lease.getSnapshot()).toBe(model);
+    expect(lease.getSnapshot().pendingOperation).toBe("save");
+    expect(lease.model.pendingOperation).toBeNull();
+    expect(fetcher).not.toHaveBeenCalled();
     model = { ...model, entry: structuredClone(model.entry) };
     await expect(
       lease.transport(
@@ -134,6 +140,7 @@ describe("exact neutral resource roles and ownership", () => {
     const lease: ConsumerResourceLeaseV2 = {
       generation: 1,
       model,
+      getSnapshot: () => model,
       view: model.entry!,
       signal: abort.signal,
       current: () => !abort.signal.aborted,

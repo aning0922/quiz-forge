@@ -11,6 +11,7 @@ it("verifies font bytes before installation and releases its font face on author
   const lease: ConsumerResourceLeaseV2 = {
     generation: 1,
     model,
+    getSnapshot: () => model,
     view: model.entry!,
     signal: abort.signal,
     current: () => !abort.signal.aborted,
@@ -62,6 +63,7 @@ it("does not install a font whose load settles after authority cancellation", as
   const lease: ConsumerResourceLeaseV2 = {
     generation: 1,
     model,
+    getSnapshot: () => model,
     view: model.entry!,
     signal: abort.signal,
     current: () => !abort.signal.aborted,
@@ -110,6 +112,7 @@ it("releases a font if the final bounded completion expires after installation",
   const lease: ConsumerResourceLeaseV2 = {
     generation: 1,
     model,
+    getSnapshot: () => model,
     view: model.entry!,
     signal: abort.signal,
     current: () => true,

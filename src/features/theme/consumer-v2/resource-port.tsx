@@ -16,6 +16,8 @@ export type ConsumerResourceLeaseV2 = Readonly<{
   model: ConsumerV2ReaderModel;
   signal: AbortSignal;
   current(): boolean;
+  /** Read current controller state; a retained resource lease alone does not permit export. */
+  getSnapshot(): ConsumerV2ReaderModel;
   transport: DisplayResourceTransport;
 }>;
 export type ConsumerResourcePortV2 = Readonly<{
@@ -59,6 +61,7 @@ export function createConsumerResourcePortV2(
         model,
         signal: task.signal,
         current,
+        getSnapshot: () => owner.getSnapshot(),
         transport: async (
           asset: DisplayAssetV1,
           signal: AbortSignal,
