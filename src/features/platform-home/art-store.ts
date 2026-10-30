@@ -38,7 +38,7 @@ export async function readPlatformArt(
     const file = path.join(/* turbopackIgnore: true */ root, art.file);
     handle = await open(
       /* turbopackIgnore: true */ file,
-      constants.O_RDONLY | constants.O_NOFOLLOW,
+      constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK,
     );
     const before = await handle.stat();
     if (!before.isFile() || before.nlink !== 1 || before.size !== art.bytes)

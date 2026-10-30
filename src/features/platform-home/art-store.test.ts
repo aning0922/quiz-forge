@@ -1,3 +1,4 @@
+import { execFileSync } from "node:child_process";
 import { afterEach, expect, it } from "vitest";
 import { mkdtemp, writeFile, rm, symlink, realpath } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -61,3 +62,12 @@ it("does not traverse paths or read through a linked root or file", async () => 
     await readPlatformArt(f.art, path.join(other.root, "linked")),
   ).toBeNull();
 });
+
+it("rejects a FIFO without waiting for a writer", async () => {
+  const f = await fixture();
+  const fifo = path.join(f.root, "fifo.png");
+  execFileSync("mkfifo", [fifo]);
+  await expect(
+    readPlatformArt({ ...f.art, file: "fifo.png" }, f.root),
+  ).resolves.toBeNull();
+}, 1500);
