@@ -1,9 +1,9 @@
+import type { DisplayFontDescriptorV1 } from "@/lib/assessment-contract/display-v1";
 import { DisplayClientError } from "@/lib/browser/display-task";
 import type {
-  DisplayAssetV1,
-  DisplayFontDescriptorV1,
-  DisplayResourceTransport,
-} from "@/lib/assessment-contract/display-v1";
+  DisplayAssetV2 as DisplayAssetV1,
+  DisplayResourceTransportV2 as DisplayResourceTransport,
+} from "@/lib/assessment-contract/display-v2";
 import type { ComposedReportBodyV1 } from "@/lib/assessment-contract/composed-report-v1";
 
 export type QianzaiExportKind = "poster" | "full-report";

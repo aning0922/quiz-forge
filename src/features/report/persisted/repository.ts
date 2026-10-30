@@ -1,3 +1,4 @@
+import { readConsumerFixedSource } from "@/features/quizpack/consumer-fixed-source";
 import "server-only";
 import {
   assertConsumerTx,
@@ -110,6 +111,15 @@ async function detail(
   const value = v2
     ? await verifyPersistedReportDetailV2(facts)
     : await verifyPersistedReportDetail(facts);
+  if (
+    value.snapshot.view.display.contentSchemaVersion ===
+      "quizpack-content.v3" &&
+    value.snapshot.view.display.assets.some(
+      (a) => a.approval === "private-test-only",
+    )
+  ) {
+    await readConsumerFixedSource(tx, play.snapshot.parentSnapshot);
+  }
   const b = value.receipt.binding,
     s = b.session;
   if (

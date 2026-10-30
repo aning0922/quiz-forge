@@ -137,6 +137,14 @@ export function matchesInternalConfirmation(
 }
 export function reviewApprovalPresentation(review: InternalReviewReceipt) {
   const approval = review.facts.approval;
+  if (approval.kind === "private-test-only")
+    return {
+      label: "本机测试候选（非最终批准）",
+      source: approval.authorizationId,
+      approvedOn: null,
+      recordedBy: review.recordedBy,
+      recordedAt: review.recordedAt,
+    };
   return approval.kind === "author-baseline"
     ? {
         label: "作者既有内测基线批准",

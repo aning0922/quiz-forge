@@ -243,6 +243,20 @@ export async function migrateDatabase(
           `GRANT EXECUTE ON FUNCTION qf.${signature} TO "${config.database.user}"`,
         );
       }
+      // These optional 0026 helpers retain ordinary app EXECUTE after the managed ACL reset.
+      for (const signature of [
+        "private_test_database_valid()",
+        "private_test_structure_valid(jsonb)",
+        "private_test_source_valid(jsonb,text,text)",
+      ]) {
+        const [available] = await tx<
+          { present: boolean }[]
+        >`SELECT to_regprocedure(${`qf.${signature}`}) IS NOT NULL AS present`;
+        if (available?.present)
+          await tx.unsafe(
+            `GRANT EXECUTE ON FUNCTION qf.${signature} TO "${config.database.user}"`,
+          );
+      }
       // Enums require USAGE, never CREATE; metadata remains inaccessible.
       for (const name of [
         "operator_role",

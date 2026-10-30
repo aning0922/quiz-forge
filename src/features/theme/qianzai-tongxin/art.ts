@@ -1,4 +1,5 @@
-import type { DisplayAssetV1 } from "@/lib/assessment-contract/display-v1";
+import { privateTestAssetMatches } from "@/features/quizpack/content/private-test";
+import type { DisplayAssetV2 as DisplayAssetV1 } from "@/lib/assessment-contract/display-v2";
 import type { ConsumerV2ReaderModel } from "@/lib/consumer-contract/v2/client-contract";
 
 /** Supplied by the compiled resource owner AFTER authority/hash/decode checks.
@@ -38,7 +39,11 @@ function scopedImage<T extends QianzaiResolvedImage | QianzaiPrototypeImage>(
   if (!ref || model.phase === "denied") return undefined;
   const assets = model.report?.view.display.assets ?? model.entry?.assets ?? [];
   const declared = assets.find((a) => sameArtRef(a.resourceRef, ref));
-  if (!declared || declared.approval !== "approved") return undefined;
+  if (
+    !declared ||
+    (declared.approval !== "approved" && !privateTestAssetMatches(declared))
+  )
+    return undefined;
   return images.find(
     (image) =>
       image.layer === layer &&

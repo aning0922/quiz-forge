@@ -1,3 +1,4 @@
+import { assertPrivateTestSource } from "./private-test-scope";
 import { parseCurrentContent, readContentMetadata } from "./content/current";
 import "server-only";
 import { createHash } from "node:crypto";
@@ -144,6 +145,11 @@ async function readSourceEvidence(
       JSON.parse(source.canonicalContentText),
     );
     if (!parsedContent.ok) return invalid();
+    await assertPrivateTestSource(
+      tx,
+      JSON.parse(source.canonicalContentText),
+      source,
+    );
     const resources = readContentMetadata(parsedContent.value).resources;
     return freezeJson({
       ...source,

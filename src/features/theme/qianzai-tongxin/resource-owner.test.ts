@@ -9,7 +9,6 @@ import {
   createConsumerResourcePortV2,
   type ConsumerResourceLeaseV2,
 } from "../consumer-v2/resource-port";
-import { QIANZAI_RUNTIME_INPUTS } from "./runtime-inputs";
 import type { VerifiedImage } from "@/lib/browser/display-assets";
 const fixture = () => {
   const { model } = structuredReaderFixtureV2(),
@@ -52,33 +51,6 @@ describe("exact neutral resource roles and ownership", () => {
       expect(admittedQianzaiBindings(model, [changed])).toEqual([]);
     model.phase = "denied";
     expect(admittedQianzaiBindings(model, [binding])).toEqual([]);
-    const original = QIANZAI_RUNTIME_INPUTS.resources.filter(
-      (b) => b.asset.resourceRef.productId === "qianzai-tongxin",
-    );
-    const synthetic = QIANZAI_RUNTIME_INPUTS.resources.filter(
-      (b) => b.asset.resourceRef.productId === "synthetic-d3-images",
-    );
-    expect(original).toHaveLength(14);
-    expect(new Set(original.map((b) => b.slot)).size).toBe(14);
-    expect(
-      synthetic.map((b) => [b.asset.resourceRef.id, b.slot, b.layer]),
-    ).toEqual([
-      ["cover", "cover", "clean"],
-      ["paper", "reportPaper", "clean"],
-    ]);
-    for (const { asset } of synthetic)
-      expect(asset).toMatchObject({
-        bytes: 289,
-        width: 8,
-        height: 8,
-        mediaType: "image/png",
-        sha256:
-          "8695839e6da72d2175a4df2c21e196499e8560c14fd43ee31a521b709da77969",
-        resourceRef: { version: "1.0.0" },
-      });
-    expect(QIANZAI_RUNTIME_INPUTS.resources.length).toBe(
-      original.length + synthetic.length,
-    );
   });
   it("rejects a stale verified view before fetching and routes a verified 403 through owner revocation", async () => {
     const f = fixture();

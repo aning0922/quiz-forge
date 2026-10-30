@@ -1,8 +1,9 @@
+import { privateTestAssetMatches } from "@/features/quizpack/content/private-test";
 import { composedReportBodyV1Schema } from "@/lib/assessment-contract/composed-report-v1";
 import {
-  loadVerifiedImage,
+  loadVerifiedImageV2 as loadVerifiedImage,
   type VerifiedImage,
-} from "@/lib/browser/display-assets";
+} from "@/lib/browser/display-assets-v2";
 import { checkpoint } from "@/lib/browser/display-task";
 import { withPreviewFont } from "@/features/report/preview/font";
 import {
@@ -47,7 +48,14 @@ export async function renderQianzaiExport(
   try {
     check();
     const body = composedReportBodyV1Schema.parse(scope.body);
-    const texts = qianzaiExportText(body, kind);
+    const privateNote =
+      scope.portrait.approval === "private-test-only"
+        ? "测试素材 · 候选正文"
+        : null;
+    const texts = [
+      ...qianzaiExportText(body, kind),
+      ...(privateNote ? [privateNote] : []),
+    ];
     if (
       body.dimensions.length !== 5 ||
       texts.reduce((n, s) => n + Array.from(s).length, 0) > L.maxTextCodepoints
@@ -66,7 +74,7 @@ export async function renderQianzaiExport(
     if (
       unique.some(
         (a) =>
-          a.approval !== "approved" ||
+          (a.approval !== "approved" && !privateTestAssetMatches(a)) ||
           !Number.isSafeInteger(a.width * a.height),
       ) ||
       unique.reduce((n, a) => n + a.width * a.height, 0) > L.maxImagePixels
@@ -170,6 +178,15 @@ export async function renderQianzaiExport(
               loaded,
               canvas.width,
             );
+          }
+          if (privateNote) {
+            ctx.fillStyle = "#f6ead2";
+            ctx.fillRect(28, 24, canvas.width - 56, 30);
+            ctx.fillStyle = "#25444e";
+            ctx.font = `600 18px "${family}"`;
+            ctx.textAlign = "center";
+            ctx.fillText(privateNote, canvas.width / 2, 45);
+            ctx.textAlign = "start";
           }
           check(active, deadline);
           const blob = await encode(canvas, active, () =>

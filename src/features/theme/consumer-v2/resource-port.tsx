@@ -1,9 +1,10 @@
 "use client";
+import type { DisplayAssetV1 as LegacyByteAsset } from "@/lib/assessment-contract/display-v1";
 import { createContext, useContext } from "react";
 import type {
-  DisplayAssetV1,
-  DisplayResourceTransport,
-} from "@/lib/assessment-contract/display-v1";
+  DisplayAssetV2 as DisplayAssetV1,
+  DisplayResourceTransportV2 as DisplayResourceTransport,
+} from "@/lib/assessment-contract/display-v2";
 import type { ConsumerV2ReaderModel } from "@/lib/consumer-contract/v2/client-contract";
 import { sameConsumerFact } from "@/lib/consumer-contract/v1/integrity";
 import { consumerResourceTransportV1 } from "../consumer-v1/resource";
@@ -74,7 +75,7 @@ export function createConsumerResourcePortV2(
             throw Error("CONSUMER_RESOURCE_SCOPE_CHANGED");
           let response: Response;
           try {
-            response = await read(asset, signal, deadline);
+            response = await read(asset as LegacyByteAsset, signal, deadline);
           } catch (error) {
             if (
               error instanceof ConsumerClientError &&

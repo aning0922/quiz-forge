@@ -5,7 +5,7 @@ import { types } from "node:util";
 import { canonicalP1Json } from "../../v1/canonical";
 import { parsePackJson } from "../../v1/io";
 import { PACK_LIMITS } from "../../v1/limits";
-import type { QuizPackContent } from "../../v1/content";
+import type { CurrentResourceV3 } from "../../content/v3";
 import type { SupportedParsedPack } from "../../package/api";
 import { parseSupportedPack } from "../../package/manifest";
 import { checkArchiveIntegrity } from "../../v1/validate-core";
@@ -25,7 +25,7 @@ export type DeepReadonly<T> = T extends readonly (infer U)[]
     ? { readonly [K in keyof T]: DeepReadonly<T[K]> }
     : T;
 type Resource = {
-  declaration: DeepReadonly<QuizPackContent["resources"][number]>;
+  declaration: DeepReadonly<CurrentResourceV3>;
   canonicalDeclarationText: string;
   declarationSha256: string;
   blobSha256: string;

@@ -1,3 +1,8 @@
+import { hasPrivateTestUse } from "../../content/private-test";
+import {
+  requirePrivateTestCapability,
+  type PrivateTestCapability,
+} from "../../private-test-scope";
 import {
   createValidationOperationScope,
   ValidationInterrupted as CoreInterrupted,
@@ -87,7 +92,9 @@ export async function validateArchiveCandidate(
   input: Uint8Array,
   targetProductId: string,
   context: MediaOperationContext,
+  privateCapability?: PrivateTestCapability,
 ): Promise<CandidateResult> {
+  if (privateCapability) requirePrivateTestCapability(privateCapability);
   const scope = createValidationOperationScope(context);
   const media: MediaFact[] = [];
   let identity: CandidateEvidence["identity"] = {
@@ -252,8 +259,11 @@ export async function validateArchiveCandidate(
               throw error;
             }
           },
-          beforeStructure: (manifest, content) =>
-            rawVersionGate(manifest, content, targetProductId),
+          beforeStructure: (manifest, content) => {
+            if (hasPrivateTestUse(content) && !privateCapability)
+              throw new BackendPolicyRejection("UNSUPPORTED_CONTENT_VERSION");
+            rawVersionGate(manifest, content, targetProductId);
+          },
           parsed: (pack, files) => {
             parsed.value = { pack, files };
           },

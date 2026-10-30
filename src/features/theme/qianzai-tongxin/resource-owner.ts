@@ -1,10 +1,11 @@
-import type { DisplayAssetV1 } from "@/lib/assessment-contract/display-v1";
+import { privateTestAssetMatches } from "@/features/quizpack/content/private-test";
+import type { DisplayAssetV2 as DisplayAssetV1 } from "@/lib/assessment-contract/display-v2";
 import type { ConsumerV2ReaderModel } from "@/lib/consumer-contract/v2/client-contract";
 import type { ConsumerResourceLeaseV2 } from "../consumer-v2/resource-port";
 import {
-  loadVerifiedImage,
+  loadVerifiedImageV2 as loadVerifiedImage,
   type VerifiedImage,
-} from "@/lib/browser/display-assets";
+} from "@/lib/browser/display-assets-v2";
 import { sameConsumerFact } from "@/lib/consumer-contract/v1/integrity";
 
 export type QianzaiImageLayer =
@@ -49,7 +50,12 @@ export function admittedQianzaiBindings(
       void alt;
       return sameConsumerFact(facts, a, 8192);
     });
-    if (a.approval !== "approved" || !declared || !n) return [];
+    if (
+      (a.approval !== "approved" && !privateTestAssetMatches(a)) ||
+      !declared ||
+      !n
+    )
+      return [];
     const parts = binding.slot.split(".");
     const character = model.report?.view.display.slots.character;
     if (

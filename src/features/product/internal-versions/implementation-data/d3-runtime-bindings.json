@@ -40,6 +40,16 @@
             "sha256": "2c185ec8892d91212a02ae143b93d00f4f32fc1e2ab9a5d162f76d5ef6568240"
           },
           {
+            "path": "src/features/quizpack/content/private-test-registration.json",
+            "bytes": 8581,
+            "sha256": "507404b05e7ab3a168b40dcc97d34257af18bb148668f7f155b0c7cee542f515"
+          },
+          {
+            "path": "src/features/quizpack/content/private-test.ts",
+            "bytes": 2253,
+            "sha256": "b59e66fb14270682ee1673f4c280a158617c8168760885f007a83a8c48b95068"
+          },
+          {
             "path": "src/features/quizpack/content/v2.ts",
             "bytes": 4356,
             "sha256": "915534df3ebd8ceac640eedf4b40c780ebb8aee9fdb76dc98a665b0eab9f0b85"
@@ -71,8 +81,8 @@
           },
           {
             "path": "src/features/quizpack/content/v3.ts",
-            "bytes": 5892,
-            "sha256": "a26a9bde2372d5042ea2f5a3b0406ec53f6405cd1757173a77efd2dc0d0f8a52"
+            "bytes": 7301,
+            "sha256": "dc4989cbb80e8204f1f23f88c11a2180ccacba5e5f276d1f8f2a670d2c7a9a11"
           },
           {
             "path": "src/features/quizpack/v1/content.ts",
@@ -215,14 +225,14 @@
           "serverCondition": "react-server"
         }
       },
-      "implementationSha256": "3189ff34115b3324f969cf645d15553d138106076158e137c7b2962e24f4276d",
+      "implementationSha256": "a10f87b2922841b49fa261fe94b714922b020b2e36aff4a5665a46747616344c",
       "kind": "engine",
       "algorithm": {
         "id": "archetype-l1",
         "version": "1.0.0"
       }
     },
-    "entrySha256": "f6bf1952d193cb01eac0a2b53e3c0d311395f668eeebdc425f74887ed7a1c965"
+    "entrySha256": "66e94e9da08f03137e79946b0b9932a40adf1f05a111ffc33dfe64f91f553f46"
   },
   "structuredPreview": {
     "descriptor": {
@@ -265,6 +275,16 @@
             "sha256": "2c185ec8892d91212a02ae143b93d00f4f32fc1e2ab9a5d162f76d5ef6568240"
           },
           {
+            "path": "src/features/quizpack/content/private-test-registration.json",
+            "bytes": 8581,
+            "sha256": "507404b05e7ab3a168b40dcc97d34257af18bb148668f7f155b0c7cee542f515"
+          },
+          {
+            "path": "src/features/quizpack/content/private-test.ts",
+            "bytes": 2253,
+            "sha256": "b59e66fb14270682ee1673f4c280a158617c8168760885f007a83a8c48b95068"
+          },
+          {
             "path": "src/features/quizpack/content/v2.ts",
             "bytes": 4356,
             "sha256": "915534df3ebd8ceac640eedf4b40c780ebb8aee9fdb76dc98a665b0eab9f0b85"
@@ -291,8 +311,8 @@
           },
           {
             "path": "src/features/quizpack/content/v3.ts",
-            "bytes": 5892,
-            "sha256": "a26a9bde2372d5042ea2f5a3b0406ec53f6405cd1757173a77efd2dc0d0f8a52"
+            "bytes": 7301,
+            "sha256": "dc4989cbb80e8204f1f23f88c11a2180ccacba5e5f276d1f8f2a670d2c7a9a11"
           },
           {
             "path": "src/features/quizpack/v1/content.ts",
@@ -356,8 +376,8 @@
           },
           {
             "path": "src/lib/assessment-contract/display-v2.ts",
-            "bytes": 3488,
-            "sha256": "57e103c7dce5ee083ac6afcac1e0b73781c09da2a0048b264a25b4a87dbe249f"
+            "bytes": 3837,
+            "sha256": "608b71a59adf5079516e64b34ad23571bf128963ad08c6542b99da57d2705c39"
           },
           {
             "path": "src/lib/assessment-contract/matching-v1.ts",
@@ -2118,7 +2138,7 @@
           "serverCondition": "react-server"
         }
       },
-      "implementationSha256": "e7fcfdd6a1d65cf102fe83257da407303aaed3fdd6adb542edaefaee988cd890",
+      "implementationSha256": "588c47289398e63e6c2cbdd99f7b7268cd1ab420104647c19cf09457d48b6ed7",
       "kind": "renderer",
       "capability": "studio-internal-preview",
       "components": {
@@ -2163,7 +2183,7 @@
         "pngAvailable": false
       }
     },
-    "entrySha256": "61f86e0f2e7662a232923c30cbee8851505773e23feddcfee1058c6d5fd71416"
+    "entrySha256": "8edade29f84e9379795993a510e560b8bf0270ae975a9a650694be80163e8da8"
   },
   "structuredConsumer": {
     "descriptor": {
@@ -2359,6 +2379,16 @@
             "sha256": "2c185ec8892d91212a02ae143b93d00f4f32fc1e2ab9a5d162f76d5ef6568240"
           },
           {
+            "path": "src/features/quizpack/content/private-test-registration.json",
+            "bytes": 8581,
+            "sha256": "507404b05e7ab3a168b40dcc97d34257af18bb148668f7f155b0c7cee542f515"
+          },
+          {
+            "path": "src/features/quizpack/content/private-test.ts",
+            "bytes": 2253,
+            "sha256": "b59e66fb14270682ee1673f4c280a158617c8168760885f007a83a8c48b95068"
+          },
+          {
             "path": "src/features/quizpack/content/v2.ts",
             "bytes": 4356,
             "sha256": "915534df3ebd8ceac640eedf4b40c780ebb8aee9fdb76dc98a665b0eab9f0b85"
@@ -2385,8 +2415,8 @@
           },
           {
             "path": "src/features/quizpack/content/v3.ts",
-            "bytes": 5892,
-            "sha256": "a26a9bde2372d5042ea2f5a3b0406ec53f6405cd1757173a77efd2dc0d0f8a52"
+            "bytes": 7301,
+            "sha256": "dc4989cbb80e8204f1f23f88c11a2180ccacba5e5f276d1f8f2a670d2c7a9a11"
           },
           {
             "path": "src/features/quizpack/v1/content.ts",
@@ -2475,8 +2505,8 @@
           },
           {
             "path": "src/features/theme/consumer-v2/resource-port.tsx",
-            "bytes": 3411,
-            "sha256": "da39a9c99904d97855c75c9deba1571c83817fd4cbc6000ed1a8028c5176fea0"
+            "bytes": 3573,
+            "sha256": "b24c193c37f9b5c3321f82d16eccc955b56b04ec2dcc88bb2202614515118082"
           },
           {
             "path": "src/features/theme/preview/v3-projection.ts",
@@ -2505,8 +2535,8 @@
           },
           {
             "path": "src/lib/assessment-contract/display-v2.ts",
-            "bytes": 3488,
-            "sha256": "57e103c7dce5ee083ac6afcac1e0b73781c09da2a0048b264a25b4a87dbe249f"
+            "bytes": 3837,
+            "sha256": "608b71a59adf5079516e64b34ad23571bf128963ad08c6542b99da57d2705c39"
           },
           {
             "path": "src/lib/assessment-contract/matching-v1.ts",
@@ -4317,9 +4347,9 @@
           "serverCondition": "react-server"
         }
       },
-      "implementationSha256": "f0d847f363f19cf03fbc7e2c8162bf6fde7d961509a99b369d9cb5f469193225"
+      "implementationSha256": "ca7e3be0086ea21da53c01b0ed632717a42b77530f2ad1c35e886c5aa9964735"
     },
-    "entrySha256": "34168832f00686190e3eec77d737184daff4d0c74c47ef32b0c30dc511b93772"
+    "entrySha256": "178af2448da5cfa0169d3710a8a56b5230bbe1c5cb95230477e033cff6f8a07e"
   },
   "qianzaiPreview": {
     "descriptor": {
@@ -4377,6 +4407,16 @@
             "sha256": "2c185ec8892d91212a02ae143b93d00f4f32fc1e2ab9a5d162f76d5ef6568240"
           },
           {
+            "path": "src/features/quizpack/content/private-test-registration.json",
+            "bytes": 8581,
+            "sha256": "507404b05e7ab3a168b40dcc97d34257af18bb148668f7f155b0c7cee542f515"
+          },
+          {
+            "path": "src/features/quizpack/content/private-test.ts",
+            "bytes": 2253,
+            "sha256": "b59e66fb14270682ee1673f4c280a158617c8168760885f007a83a8c48b95068"
+          },
+          {
             "path": "src/features/quizpack/content/v2.ts",
             "bytes": 4356,
             "sha256": "915534df3ebd8ceac640eedf4b40c780ebb8aee9fdb76dc98a665b0eab9f0b85"
@@ -4403,8 +4443,8 @@
           },
           {
             "path": "src/features/quizpack/content/v3.ts",
-            "bytes": 5892,
-            "sha256": "a26a9bde2372d5042ea2f5a3b0406ec53f6405cd1757173a77efd2dc0d0f8a52"
+            "bytes": 7301,
+            "sha256": "dc4989cbb80e8204f1f23f88c11a2180ccacba5e5f276d1f8f2a670d2c7a9a11"
           },
           {
             "path": "src/features/quizpack/v1/content.ts",
@@ -4478,8 +4518,8 @@
           },
           {
             "path": "src/lib/assessment-contract/display-v2.ts",
-            "bytes": 3488,
-            "sha256": "57e103c7dce5ee083ac6afcac1e0b73781c09da2a0048b264a25b4a87dbe249f"
+            "bytes": 3837,
+            "sha256": "608b71a59adf5079516e64b34ad23571bf128963ad08c6542b99da57d2705c39"
           },
           {
             "path": "src/lib/assessment-contract/matching-v1.ts",
@@ -6270,7 +6310,7 @@
           "serverCondition": "react-server"
         }
       },
-      "implementationSha256": "950c9cfda80e3759c0b40da4221a8e95787370f90795e32d33b88fb2ff8dcef7",
+      "implementationSha256": "bbfd6c7e0a038dde19c85212225441d1b7e16fc3a82eba6358991940b72370cb",
       "kind": "renderer",
       "capability": "studio-internal-preview",
       "components": {
@@ -6324,7 +6364,7 @@
         "licenseSha256": "5e0da210fb04058a8c0087985d2d456b931c2579811a49655721d3cf0c36b6d6"
       }
     },
-    "entrySha256": "66d154f800e1a9c1bf18f8c734d960c8348e69ff5c29b61d4c17d901f36d2b27"
+    "entrySha256": "d2d16157081fa9b97eda904d31d8f19a7aa29bb9581ff8101aead13bb324f88a"
   },
   "qianzaiConsumer": {
     "descriptor": {
@@ -6533,8 +6573,8 @@
           },
           {
             "path": "src/features/product/internal-versions/identity-contracts.ts",
-            "bytes": 8723,
-            "sha256": "0db63d6316f9a11df601d19a350a987324b21d934bcb2850b38091276e46d1a7"
+            "bytes": 9010,
+            "sha256": "5531e91bcea0285f01d5e1bdec73df589e8846d779400708b7a9a096046b2834"
           },
           {
             "path": "src/features/product/internal-versions/implementation-schema.ts",
@@ -6560,6 +6600,16 @@
             "path": "src/features/quiz/scoring/v2/score.ts",
             "bytes": 4753,
             "sha256": "2c185ec8892d91212a02ae143b93d00f4f32fc1e2ab9a5d162f76d5ef6568240"
+          },
+          {
+            "path": "src/features/quizpack/content/private-test-registration.json",
+            "bytes": 8581,
+            "sha256": "507404b05e7ab3a168b40dcc97d34257af18bb148668f7f155b0c7cee542f515"
+          },
+          {
+            "path": "src/features/quizpack/content/private-test.ts",
+            "bytes": 2253,
+            "sha256": "b59e66fb14270682ee1673f4c280a158617c8168760885f007a83a8c48b95068"
           },
           {
             "path": "src/features/quizpack/content/v2.ts",
@@ -6588,8 +6638,8 @@
           },
           {
             "path": "src/features/quizpack/content/v3.ts",
-            "bytes": 5892,
-            "sha256": "a26a9bde2372d5042ea2f5a3b0406ec53f6405cd1757173a77efd2dc0d0f8a52"
+            "bytes": 7301,
+            "sha256": "dc4989cbb80e8204f1f23f88c11a2180ccacba5e5f276d1f8f2a670d2c7a9a11"
           },
           {
             "path": "src/features/quizpack/import/contracts.ts",
@@ -6638,13 +6688,13 @@
           },
           {
             "path": "src/features/report/qianzai-tongxin/contracts.ts",
-            "bytes": 2353,
-            "sha256": "700bb071883f3bdc97608c1accdb706605bea4a1cae34c1643fd7e132a2c313c"
+            "bytes": 2459,
+            "sha256": "1d66c13feab2ae29b48dea0acb1f8eb7d20a3ca3e026cb4227cd6b17e88834a4"
           },
           {
             "path": "src/features/report/qianzai-tongxin/export.ts",
-            "bytes": 11829,
-            "sha256": "ebe8716344766f63d254bc2353b1f2bd73eca15f8693840efea8593ae1e7e73d"
+            "bytes": 12529,
+            "sha256": "b3680ac5d7e5bee9bca7958f6d062742f9ecd11b266c1dbc454f9fa4420c2b04"
           },
           {
             "path": "src/features/report/qianzai-tongxin/layout.ts",
@@ -6698,8 +6748,8 @@
           },
           {
             "path": "src/features/theme/consumer-v2/resource-port.tsx",
-            "bytes": 3411,
-            "sha256": "da39a9c99904d97855c75c9deba1571c83817fd4cbc6000ed1a8028c5176fea0"
+            "bytes": 3573,
+            "sha256": "b24c193c37f9b5c3321f82d16eccc955b56b04ec2dcc88bb2202614515118082"
           },
           {
             "path": "src/features/theme/preview/v3-projection.ts",
@@ -6708,8 +6758,8 @@
           },
           {
             "path": "src/features/theme/qianzai-tongxin/art.ts",
-            "bytes": 4444,
-            "sha256": "c63815a07c4ac6f9283cbb1ede47b105661f3fc91aaef329a640db5dfe356430"
+            "bytes": 4602,
+            "sha256": "e2146ac80ed6cc8d1a90be209d11c7f640bfb2d72b14a4f6eedbdc20c632799b"
           },
           {
             "path": "src/features/theme/qianzai-tongxin/component-map.ts",
@@ -6758,23 +6808,23 @@
           },
           {
             "path": "src/features/theme/qianzai-tongxin/resource-owner.ts",
-            "bytes": 5784,
-            "sha256": "2996e2b360dccf4a016d68003a027e39fa8dd6e56e08ff78e04ae0f02c47ad8f"
+            "bytes": 5975,
+            "sha256": "3b543954e1970191ecfc9556877a71607de56abe1df50902f85aba3103daffdd"
           },
           {
             "path": "src/features/theme/qianzai-tongxin/runtime-inputs.json",
-            "bytes": 8666,
-            "sha256": "f1be0eea706677871319afb65164f6ed94f77ea60793cbef50fe19374cdbdf87"
+            "bytes": 18619,
+            "sha256": "773dd6d81fb5d79467cba9648b272134020c0a29a8dacad3ba44b07c0cca7f53"
           },
           {
             "path": "src/features/theme/qianzai-tongxin/runtime-inputs.ts",
             "bytes": 1524,
-            "sha256": "87d12d29e5e33cf7273fa9afc4c426bf63bf2ccecdd1d78da33c81942ff08040"
+            "sha256": "2cb8f41a6bd706f1b9484ddc7f0fb969b0ddb99f36bca98f24017c220b40ee49"
           },
           {
             "path": "src/features/theme/qianzai-tongxin/runtime.tsx",
-            "bytes": 3157,
-            "sha256": "061b9b7e7da840ba650ac34d9fa798115c6a3d6108a19e28e2dd6b02d6cedaf2"
+            "bytes": 3843,
+            "sha256": "60f25014a7f5dbd8b2f5a902d97346e9f43adcdbb5e520d9f475bce50b341785"
           },
           {
             "path": "src/features/theme/qianzai-tongxin/share-panel.tsx",
@@ -6813,8 +6863,8 @@
           },
           {
             "path": "src/lib/assessment-contract/display-v2.ts",
-            "bytes": 3488,
-            "sha256": "57e103c7dce5ee083ac6afcac1e0b73781c09da2a0048b264a25b4a87dbe249f"
+            "bytes": 3837,
+            "sha256": "608b71a59adf5079516e64b34ad23571bf128963ad08c6542b99da57d2705c39"
           },
           {
             "path": "src/lib/assessment-contract/matching-v1.ts",
@@ -6845,6 +6895,11 @@
             "path": "src/lib/assessment-contract/scoring-v2.ts",
             "bytes": 2768,
             "sha256": "98a41071cfc7a8d57e4985b53258c4af0c43eb950f5fe8f70eb93212e2b851c4"
+          },
+          {
+            "path": "src/lib/browser/display-assets-v2.ts",
+            "bytes": 832,
+            "sha256": "16a8651472752aefbbc1726302980937976cbf8af1a2dce91bc66a549ecb26a4"
           },
           {
             "path": "src/lib/browser/display-assets.ts",
@@ -8635,8 +8690,8 @@
           "serverCondition": "react-server"
         }
       },
-      "implementationSha256": "fa1877e36e7eada5a02bbf79ffe1a10e5bfc2883eb4c6a39ce7d6e563301f4b5"
+      "implementationSha256": "9806d956156f19614ac3808ae137e5a78215f07e57a6282e401a15a578d07375"
     },
-    "entrySha256": "5da1b0baf1902cbc779cbcd0559d53918e722379fceb20e43b8a54975f94dda6"
+    "entrySha256": "5d6867800ea1fed77c1daebdaa2e12ed672412fae96293b20f02f388689ba715"
   }
 }
