@@ -6695,8 +6695,8 @@
           },
           {
             "path": "src/features/theme/qianzai-tongxin/experience.tsx",
-            "bytes": 31979,
-            "sha256": "2a26131e7eb09b70fa45ca7774d7d4854c614a90042f5c10cdd6f4cc44f35f0c"
+            "bytes": 32992,
+            "sha256": "4e2e41305d3b7361e2e1e5ccef1b069212cd32615eb273ad4d6702c6f7dbdd21"
           },
           {
             "path": "src/features/theme/qianzai-tongxin/font-owner.ts",
@@ -6715,13 +6715,13 @@
           },
           {
             "path": "src/features/theme/qianzai-tongxin/qianzai.module.css",
-            "bytes": 71411,
-            "sha256": "4465a9f56c41d5539f755e0f5f99f18bcec54a1ea358a5e076759d42ffe81b2c"
+            "bytes": 72744,
+            "sha256": "5ca4e7264afe5b27a7904a9abc71e3087e6251d73bcebc2978e0d4473acb80c1"
           },
           {
             "path": "src/features/theme/qianzai-tongxin/report.tsx",
-            "bytes": 20946,
-            "sha256": "ee8299353d9b639aba368b15066b6da6e37a1d5a81c0e92e52b90f1a0bbde281"
+            "bytes": 21219,
+            "sha256": "a4bbf3ed34bd042deb88a479ded2d01c282f954bceb69ad16e7eaecef64c2ef9"
           },
           {
             "path": "src/features/theme/qianzai-tongxin/resource-owner.ts",
@@ -6745,8 +6745,8 @@
           },
           {
             "path": "src/features/theme/qianzai-tongxin/views.tsx",
-            "bytes": 22690,
-            "sha256": "fc419adbd4fa5b2294c77a09dd75c23addac3c6e357209272131463bf0ba8f9d"
+            "bytes": 24078,
+            "sha256": "18a29fd84fd6dd6be575c9d8bd0f5a8cc56c3567c4a5742952fe787e3644f3ae"
           },
           {
             "path": "src/lib/assessment-contract/composed-report-v1.ts",
@@ -8592,8 +8592,8 @@
           "serverCondition": "react-server"
         }
       },
-      "implementationSha256": "558880d958c0929fed3dd356cad011b5d9d9ce7eb25d9a02b03f9429a0ddf328"
+      "implementationSha256": "eed21b441c10cf7583611ce193aafa57aa347af60718d4c80d7041938be3b903"
     },
-    "entrySha256": "2580f9ca32a84d211d660d130364ed4c119aecdbe9f200f31b90fd196fff0139"
+    "entrySha256": "ee6e3035deaf3f91a891b03ca679c64a875fbfe9974f613b3710830e0a53c77e"
   }
 }
