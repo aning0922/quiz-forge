@@ -591,6 +591,7 @@
   position: absolute;
   inset: 0;
   overflow: hidden;
+  touch-action: pan-x;
 }
 .coverArt {
   width: 100%;

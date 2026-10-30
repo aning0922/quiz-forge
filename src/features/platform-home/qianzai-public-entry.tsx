@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import { ArrowLeft, ChevronUp, MoreHorizontal } from "lucide-react";
 import {
   QianzaiPetals,
@@ -30,6 +30,19 @@ export function QianzaiPublicEntry({
     [options, setOptions] = useState(false),
     [paused, setPaused] = useState(false),
     [ready, setReady] = useState(false);
+  const touch = useRef<{ id: number; x: number; y: number } | null>(null),
+    dialogOpen = useRef(false);
+  const openRedemption = () => {
+    touch.current = null;
+    if (dialogOpen.current) return;
+    dialogOpen.current = true;
+    setRedeem(true);
+  };
+  const closeRedemption = () => {
+    touch.current = null;
+    dialogOpen.current = false;
+    setRedeem(false);
+  };
   const motion = useQianzaiMotion(!paused && !redeem);
   return (
     <main
@@ -41,6 +54,52 @@ export function QianzaiPublicEntry({
         <section
           className={`${styles.coverScene} ${qianzaiStyles.coverScene}`}
           data-motion={motion ? "running" : "paused"}
+          onTouchStart={(event) => {
+            const target =
+                event.target instanceof Element ? event.target : null,
+              point = event.touches[0];
+            touch.current =
+              !options &&
+              !dialogOpen.current &&
+              event.touches.length === 1 &&
+              point &&
+              !target?.closest(
+                'button, a, input, textarea, select, [role="button"], dialog',
+              )
+                ? { id: point.identifier, x: point.clientX, y: point.clientY }
+                : null;
+          }}
+          onTouchMove={(event) => {
+            if (
+              event.touches.length !== 1 ||
+              event.touches[0]?.identifier !== touch.current?.id
+            )
+              touch.current = null;
+          }}
+          onTouchCancel={() => {
+            touch.current = null;
+          }}
+          onTouchEnd={(event) => {
+            const start = touch.current,
+              point = event.changedTouches[0];
+            touch.current = null;
+            if (
+              !start ||
+              !point ||
+              event.touches.length !== 0 ||
+              event.changedTouches.length !== 1 ||
+              point.identifier !== start.id ||
+              options ||
+              dialogOpen.current
+            )
+              return;
+            const upward = start.y - point.clientY;
+            if (
+              upward >= 56 &&
+              upward >= Math.abs(start.x - point.clientX) * 1.25
+            )
+              openRedemption();
+          }}
         >
           <PlatformArtwork
             src={assets.cover}
@@ -69,7 +128,7 @@ export function QianzaiPublicEntry({
           <p className={styles.coverFact}>一场穿越千年的相遇</p>
           <button
             className={`${styles.coverStart} ${qianzaiStyles.scrollButton}`}
-            onClick={() => setRedeem(true)}
+            onClick={openRedemption}
             aria-label="开启穿越之旅，兑换资格"
             data-art-ready={ready}
           >
@@ -78,7 +137,7 @@ export function QianzaiPublicEntry({
             </span>
           </button>
           <div className={qianzaiStyles.waterway} aria-hidden="true" />
-          <button className={styles.coverSwipe} onClick={() => setRedeem(true)}>
+          <button className={styles.coverSwipe} onClick={openRedemption}>
             <ChevronUp
               size={23}
               aria-hidden="true"
@@ -109,17 +168,10 @@ export function QianzaiPublicEntry({
           )}
         </section>
         {redeem && (
-          <PlatformModal
-            title="兑换这段旅程"
-            dark
-            onClose={() => setRedeem(false)}
-          >
+          <PlatformModal title="兑换这段旅程" dark onClose={closeRedemption}>
             <p>输入有效兑换码，经验证后进入对应作品或已有报告。</p>
             <PlatformRedemption>{redemptionForm}</PlatformRedemption>
-            <button
-              className={styles.lightButton}
-              onClick={() => setRedeem(false)}
-            >
+            <button className={styles.lightButton} onClick={closeRedemption}>
               先看看封面
             </button>
           </PlatformModal>

@@ -52,6 +52,7 @@ for (const ext of ["js", "css"])
     contentType: ext === "js" ? "text/javascript" : "text/css",
   });
 const html = `<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Platform V2 scoped UI probe</title><style>*{box-sizing:border-box}body{margin:0}h1,h2,h3,p{margin:0}a{text-decoration:none}button,input{font:inherit}</style><link rel="stylesheet" href="/probe.css"><div id="root"></div><script src="/probe.js"></script></html>`;
+const gestureChecks: string[] = [];
 const posts: string[] = [],
   errors: string[] = [],
   captures: {
@@ -93,7 +94,7 @@ let passed = false;
 try {
   const widths = process.env.PLATFORM_CAPTURE_WIDTH
     ? [Number(process.env.PLATFORM_CAPTURE_WIDTH)]
-    : mode === "missing"
+    : mode === "missing" || mode === "gesture"
       ? [390]
       : [320, 375, 390, 430, 1280];
   for (const width of widths) {
@@ -113,6 +114,7 @@ try {
     const context = await browser.newContext({
       viewport,
       reducedMotion: "reduce",
+      hasTouch: mode === "gesture",
     });
     const page = await context.newPage();
     page.on("pageerror", (error) => errors.push(error.message));
@@ -239,6 +241,157 @@ try {
         expect(lamps).toEqual(Array(6).fill("paused"));
       }
     };
+    if (mode === "gesture") {
+      await page.goto(base + "/works/qianzai-tongxin");
+      await expect(page.locator("canvas[data-qianzai-petals]")).toHaveCount(1);
+      const session = await context.newCDPSession(page);
+      type Point = { x: number; y: number; id: number };
+      const event = (
+        type: "touchStart" | "touchMove" | "touchEnd" | "touchCancel",
+        touchPoints: Point[],
+      ) => session.send("Input.dispatchTouchEvent", { type, touchPoints });
+      const swipe = async (
+        x: number,
+        y: number,
+        endX: number,
+        endY: number,
+      ) => {
+        await event("touchStart", [{ x, y, id: 1 }]);
+        await event("touchMove", [{ x: endX, y: endY, id: 1 }]);
+        await event("touchEnd", []);
+      };
+      const absent = async (name: string) => {
+        await expect(page.getByRole("dialog")).toHaveCount(0);
+        gestureChecks.push(name);
+      };
+      await swipe(100, 700, 100, 665);
+      await absent("short upward movement ignored");
+      await swipe(100, 600, 100, 700);
+      await absent("downward gesture ignored");
+      await swipe(100, 700, 230, 620);
+      await absent("horizontal-dominant gesture ignored");
+      await event("touchStart", [{ x: 100, y: 700, id: 1 }]);
+      await event("touchCancel", []);
+      await page.locator("[data-motion]").dispatchEvent("touchend", {
+        touches: [],
+        changedTouches: [{ identifier: 1, clientX: 100, clientY: 550 }],
+      });
+      await absent("touchcancel clears stale origin");
+      await event("touchStart", [
+        { x: 100, y: 700, id: 1 },
+        { x: 160, y: 700, id: 2 },
+      ]);
+      await event("touchMove", [
+        { x: 100, y: 580, id: 1 },
+        { x: 160, y: 580, id: 2 },
+      ]);
+      await event("touchEnd", []);
+      await absent("multi-touch origin ignored");
+      await event("touchStart", [{ x: 100, y: 700, id: 1 }]);
+      await event("touchStart", [
+        { x: 100, y: 700, id: 1 },
+        { x: 160, y: 700, id: 2 },
+      ]);
+      await event("touchMove", [
+        { x: 100, y: 580, id: 1 },
+        { x: 160, y: 580, id: 2 },
+      ]);
+      await event("touchEnd", []);
+      await absent("second finger invalidates an existing gesture");
+      const start = page.getByRole("button", {
+        name: "开启穿越之旅，兑换资格",
+        exact: true,
+      });
+      const button = await start.boundingBox();
+      if (!button) throw Error("NO_START_TARGET");
+      await swipe(
+        button.x + button.width / 2,
+        button.y + button.height / 2,
+        button.x + button.width / 2,
+        button.y - 80,
+      );
+      await absent("button-origin swipe excluded");
+      await page
+        .getByRole("button", { name: "封面动效设置", exact: true })
+        .click();
+      await swipe(100, 700, 100, 580);
+      await absent("open menu suppresses background swipe");
+      const menu = await page
+        .getByRole("button", { name: "暂停动效", exact: true })
+        .boundingBox();
+      if (!menu) throw Error("NO_MENU_TARGET");
+      await swipe(
+        menu.x + menu.width / 2,
+        menu.y + menu.height / 2,
+        menu.x + menu.width / 2,
+        menu.y - 30,
+      );
+      await absent("menu-origin swipe excluded");
+      await page
+        .getByRole("button", { name: "封面动效设置", exact: true })
+        .click();
+      await page.evaluate(() => {
+        Object.assign(window, { platformGestureMounts: 0 });
+        new MutationObserver((records) => {
+          for (const r of records)
+            for (const node of r.addedNodes)
+              if (
+                node instanceof Element &&
+                (node.matches("dialog") || node.querySelector("dialog"))
+              )
+                (window as unknown as { platformGestureMounts: number })
+                  .platformGestureMounts++;
+        }).observe(document.getElementById("root")!, {
+          childList: true,
+          subtree: true,
+        });
+      });
+      await swipe(100, 700, 110, 580);
+      await expect(page.getByRole("dialog")).toBeVisible();
+      await expect(page.locator("form")).toHaveCount(1);
+      await page.locator("[data-motion]").dispatchEvent("touchend", {
+        touches: [],
+        changedTouches: [{ identifier: 1, clientX: 110, clientY: 580 }],
+      });
+      expect(
+        await page.evaluate(
+          () =>
+            (window as unknown as { platformGestureMounts: number })
+              .platformGestureMounts,
+        ),
+      ).toBe(1);
+      gestureChecks.push(
+        "valid upward swipe mounts one redemption form; duplicate end ignored",
+      );
+      const sheet = await page.getByRole("dialog").boundingBox();
+      if (!sheet) throw Error("NO_REDEMPTION_TARGET");
+      await swipe(sheet.x + 25, sheet.y + 130, sheet.x + 25, sheet.y + 55);
+      await expect(page.locator("form")).toHaveCount(1);
+      expect(
+        await page.evaluate(
+          () =>
+            (window as unknown as { platformGestureMounts: number })
+              .platformGestureMounts,
+        ),
+      ).toBe(1);
+      gestureChecks.push("dialog swipe cannot open another instance");
+      await page
+        .getByRole("button", { name: "先看看封面", exact: true })
+        .click();
+      await expect(page.locator("form")).toHaveCount(0);
+      await page.locator("[data-motion]").dispatchEvent("touchend", {
+        touches: [],
+        changedTouches: [{ identifier: 1, clientX: 110, clientY: 580 }],
+      });
+      await absent("closing dialog clears stale gesture");
+      await swipe(100, 700, 100, 580);
+      await expect(page.locator("form")).toHaveCount(1);
+      gestureChecks.push("fresh gesture works after closing");
+      expect(await page.evaluate(() => Object.keys(localStorage))).toEqual([]);
+      await session.detach();
+      await context.close();
+      continue;
+    }
     if (mode === "missing") {
       await page.goto(base + "/works/qianzai-tongxin?missing");
       await expect(
@@ -387,6 +540,7 @@ try {
         sourceHashes,
         assets: manifest,
         captures,
+        gestureChecks,
         posts,
         errors,
       },
