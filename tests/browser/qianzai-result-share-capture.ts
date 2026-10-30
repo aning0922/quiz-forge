@@ -249,7 +249,7 @@ for (const [url, file, type] of [
   ["/probe.css", path.join(out, "probe.css"), "text/css"],
   [
     "/font.woff2",
-    "public/assets/fonts/qianzai-v3/serif-600.woff2",
+    "public/assets/fonts/qianzai-v4/serif-600.woff2",
     "font/woff2",
   ],
 ])
@@ -263,7 +263,7 @@ const server = createServer((req, res) => {
   }
   res.writeHead(200, { "content-type": "text/html;charset=utf-8" });
   res.end(
-    '<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>@font-face{font-family:"QuizForge Qianzai Serif V3";src:url(/font.woff2) format("woff2");font-weight:600;font-display:swap}body{margin:0}</style><link rel="stylesheet" href="/probe.css"><div id="root"></div><script id="fixture" type="application/json">' +
+    '<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>@font-face{font-family:"QuizForge Qianzai Serif V4";src:url(/font.woff2) format("woff2");font-weight:600;font-display:swap}body{margin:0}</style><link rel="stylesheet" href="/probe.css"><div id="root"></div><script id="fixture" type="application/json">' +
       JSON.stringify({
         report: model,
         reveal,

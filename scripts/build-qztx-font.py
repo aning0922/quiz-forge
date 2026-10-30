@@ -27,9 +27,9 @@ def sha(value):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--source-font", required=True, type=Path)
-    parser.add_argument("--profile", choices=("v1", "v2", "v3"), default="v1")
+    parser.add_argument("--profile", choices=("v1", "v2", "v3", "v4"), default="v1")
     args = parser.parse_args()
-    version = {"v1": "1.0.0", "v2": "1.1.0", "v3": "1.2.0"}[args.profile]
+    version = {"v1": "1.0.0", "v2": "1.1.0", "v3": "1.2.0", "v4": "1.3.0"}[args.profile]
     family = "QuizForge Qianzai Serif" + ("" if args.profile == "v1" else " " + args.profile.upper())
     out = Path(f"public/assets/fonts/qianzai-{args.profile}")
     if fontTools.__version__ != "4.61.1" or brotli.__version__ != "1.2.0":
