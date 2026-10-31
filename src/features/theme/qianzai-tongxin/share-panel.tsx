@@ -101,6 +101,7 @@ function ShareDialog({
     ),
     [zoom, setZoom] = useState<number>(1),
     [notice, setNotice] = useState(""),
+    [preparing, setPreparing] = useState(!initial),
     [sharing, setSharing] = useState(false);
   const dialog = useRef<HTMLDialogElement>(null),
     port = useRef<HTMLDivElement>(null),
@@ -109,12 +110,45 @@ function ShareDialog({
     noticeTimer = useRef<ReturnType<typeof setTimeout> | null>(null),
     live = useRef(true),
     shareLock = useRef(false);
+  const prepared = useRef(false),
+    latestApi = useRef(api),
+    currentView = useRef(view);
+  useLayoutEffect(() => {
+    latestApi.current = api;
+    currentView.current = view;
+  }, [api, view]);
   const id = useId();
   const artifact =
     api.state.phase === "ready" && api.state.artifact.kind === kind
       ? api.state.artifact
       : null;
   const busy = api.state.phase === "rendering";
+  useEffect(() => {
+    if (view !== "choose" || busy || prepared.current) return;
+    prepared.current = true;
+    void Promise.resolve().then(async () => {
+      if (!live.current || currentView.current !== "choose") return;
+      setPreparing(true);
+      try {
+        for (const item of KINDS) {
+          const current = latestApi.current;
+          if (
+            !live.current ||
+            currentView.current !== "choose" ||
+            current.state.phase === "closed"
+          )
+            return;
+          if (
+            current.availability[item].allowed &&
+            !current.getCachedArtifact(item)
+          )
+            await current.generate(item);
+        }
+      } finally {
+        if (live.current) setPreparing(false);
+      }
+    });
+  }, [view, busy]);
   const failure =
     api.state.phase === "error" && api.state.kind === kind
       ? api.state.code
@@ -193,6 +227,7 @@ function ShareDialog({
     );
   };
   const choose = () => {
+    setPreparing(!prepared.current);
     setView("choose");
     setNotice("");
   };
@@ -234,17 +269,14 @@ function ShareDialog({
           </header>
           <div className={styles.cards} role="group" aria-label="保存类型">
             {KINDS.map((item) => {
-              const ready =
-                api.state.phase === "ready" && api.state.artifact.kind === item
-                  ? api.state.artifact
-                  : null;
+              const ready = api.getCachedArtifact(item);
               const allowed = api.availability[item].allowed;
               return (
                 <button
                   key={item}
                   className={styles.card}
                   aria-pressed={item === kind}
-                  disabled={!allowed || busy}
+                  disabled={!allowed || busy || preparing}
                   onClick={() => setKind(item)}
                 >
                   <span className={styles.thumb} data-kind={item}>
@@ -260,7 +292,13 @@ function ShareDialog({
                         ) : (
                           <FileImage size={32} aria-hidden="true" />
                         )}
-                        <span>{allowed ? "生成后预览" : "暂不可用"}</span>
+                        <span>
+                          {allowed
+                            ? preparing
+                              ? "正在生成预览…"
+                              : "预览暂未生成"
+                            : "暂不可用"}
+                        </span>
                       </span>
                     )}
                     <span className={styles.pill}>
@@ -293,11 +331,16 @@ function ShareDialog({
               className={styles.primary}
               disabled={
                 !api.availability[kind].allowed ||
+                preparing ||
                 (api.state.phase === "rendering" && api.state.kind !== kind)
               }
               onClick={() => preview(kind)}
             >
-              {busy ? "查看生成进度" : "查看图片预览"}{" "}
+              {preparing
+                ? "正在准备图片…"
+                : busy
+                  ? "查看生成进度"
+                  : "查看图片预览"}{" "}
               <ArrowRight size={18} aria-hidden="true" />
             </button>
           </footer>

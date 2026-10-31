@@ -65,6 +65,13 @@ export class QianzaiExportOwner {
     if (this.lease.signal.aborted) this.close();
   };
   getSnapshot = (): QianzaiExportState => this.state;
+  getCachedArtifact = (
+    kind: QianzaiExportKind,
+  ): QianzaiExportArtifact | null => {
+    if (this.state.phase === "closed" || !this.availability(kind).allowed)
+      return null;
+    return this.cache.get(kind)?.artifact ?? null;
+  };
   subscribe = (listener: () => void) => {
     this.listeners.add(listener);
     return () => {

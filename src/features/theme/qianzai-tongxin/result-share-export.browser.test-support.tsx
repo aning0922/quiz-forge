@@ -40,6 +40,10 @@ const valueStart = (): QianzaiExportContextValue => ({
     "full-report": { allowed: true, reason: null },
   },
   state: { phase: "closed" },
+  getCachedArtifact: (kind) =>
+    value.state.phase === "closed" || !value.availability[kind].allowed
+      ? null
+      : (cache.get(kind)?.artifact ?? null),
   open: () => {
     if (value.state.phase === "closed") {
       value = { ...value, state: { phase: "idle" } };

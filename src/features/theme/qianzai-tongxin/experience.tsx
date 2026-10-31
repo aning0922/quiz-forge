@@ -104,6 +104,12 @@ export function QianzaiTongxinExperience({
   const stageTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
   const generation = useRef(0);
   const latest = useRef({ model, compatible, onEvent });
+  const finalAnswer = useRef<{
+    questionId: string;
+    optionId: string;
+    entry: typeof model.entry;
+    stage: "feedback" | "save" | "complete";
+  } | null>(null);
   useLayoutEffect(() => {
     latest.current = { model, compatible, onEvent };
   }, [model, compatible, onEvent]);
@@ -193,6 +199,7 @@ export function QianzaiTongxinExperience({
       !compatible ||
       ["unknown", "conflict", "unavailable", "denied"].includes(model.phase)
     ) {
+      if (!compatible || model.phase === "denied") finalAnswer.current = null;
       cancel();
       settleOnFrame();
       return;
@@ -270,6 +277,7 @@ export function QianzaiTongxinExperience({
     const media = window.matchMedia("(prefers-reduced-motion: reduce)");
     const interrupt = () => {
       if (document.hidden || media.matches) {
+        finalAnswer.current = null;
         cancel();
         settleReading();
       }
@@ -482,6 +490,7 @@ export function QianzaiTongxinExperience({
     );
   };
   const navigateQuestion = (questionId: string) => {
+    finalAnswer.current = null;
     const questions = model.entry?.questions ?? [];
     const from = questions.findIndex(
         (q) => q.ref.id === model.draft?.progress.questionId,
@@ -503,6 +512,7 @@ export function QianzaiTongxinExperience({
   };
   const read = (next: ConsumerReadingPageV2) => {
     if (!compatible) return;
+    finalAnswer.current = null;
     if (
       active === "preference" &&
       next === "question" &&
@@ -652,6 +662,47 @@ export function QianzaiTongxinExperience({
   const saved = consumerDraftStatusV2(model),
     allSaved =
       saved.preferenceSaved && saved.answersSaved && saved.progressSaved;
+  useEffect(() => {
+    const intent = finalAnswer.current;
+    if (
+      !intent ||
+      intent.stage !== "save" ||
+      !enabled ||
+      !allSaved ||
+      model.pendingOperation !== null ||
+      model.entry !== intent.entry ||
+      model.state?.progress.questionId !== intent.questionId ||
+      model.draft?.progress.questionId !== intent.questionId ||
+      model.draft.answers.find((a) => a.questionId === intent.questionId)
+        ?.optionId !== intent.optionId
+    )
+      return;
+    const accepted = model.state,
+      token = generation.current;
+    const frame = requestAnimationFrame(() => {
+      const current = latest.current.model,
+        status = consumerDraftStatusV2(current);
+      if (
+        finalAnswer.current !== intent ||
+        generation.current !== token ||
+        document.hidden ||
+        !canEditConsumerV2(current) ||
+        current.pendingOperation !== null ||
+        current.state !== accepted ||
+        current.entry !== intent.entry ||
+        !status.preferenceSaved ||
+        !status.answersSaved ||
+        !status.progressSaved ||
+        current.draft?.answers.find((a) => a.questionId === intent.questionId)
+          ?.optionId !== intent.optionId
+      )
+        return;
+      intent.stage = "complete";
+      queued.current = true;
+      latest.current.onEvent({ type: "complete" });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [model, enabled, allSaved]);
   if (model.phase === "denied")
     return (
       <div className={styles.host}>
@@ -708,7 +759,11 @@ export function QianzaiTongxinExperience({
       )}
       {!!messages[model.phase] && (
         <aside
-          className={styles.status}
+          className={
+            model.phase === "saving" && !model.message
+              ? styles.srOnly
+              : styles.status
+          }
           aria-label="本轮旅程状态"
           aria-busy={model.phase === "saving" || model.phase === "completing"}
         >
@@ -794,6 +849,41 @@ export function QianzaiTongxinExperience({
                           (q) => q.ref.id === questionId,
                         ),
                         target = questions[index + 1]?.ref.id ?? questionId;
+                      if (index === questions.length - 1) {
+                        if (finalAnswer.current?.stage === "feedback") cancel();
+                        finalAnswer.current = null;
+                        if (
+                          feedback(() => {
+                            const intent = finalAnswer.current,
+                              current = latest.current.model;
+                            if (
+                              !intent ||
+                              intent.questionId !== questionId ||
+                              intent.optionId !== optionId ||
+                              current.draft?.answers.find(
+                                (a) => a.questionId === questionId,
+                              )?.optionId !== optionId
+                            )
+                              return;
+                            intent.stage = "save";
+                            latest.current.onEvent({ type: "save" });
+                          })
+                        ) {
+                          finalAnswer.current = {
+                            questionId,
+                            optionId,
+                            entry: model.entry,
+                            stage: "feedback",
+                          };
+                          onEvent({
+                            type: "choose-answer",
+                            questionId,
+                            optionId,
+                          });
+                        }
+                        return;
+                      }
+                      finalAnswer.current = null;
                       if (feedback(() => navigateQuestion(target)))
                         onEvent({
                           type: "choose-answer",

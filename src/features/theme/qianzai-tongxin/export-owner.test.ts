@@ -55,6 +55,24 @@ function setup(
   };
 }
 describe("Qianzai export task ownership", () => {
+  it("returns both current cached thumbnails and hides them immediately on pending or close", async () => {
+    const f = setup();
+    expect(f.owner.getCachedArtifact("poster")).toBeNull();
+    f.owner.open();
+    await f.owner.generate("poster");
+    const poster = f.owner.getCachedArtifact("poster");
+    await f.owner.generate("full-report");
+    expect(f.owner.getCachedArtifact("poster")).toBe(poster);
+    expect(f.owner.getCachedArtifact("full-report")?.kind).toBe("full-report");
+    f.setModel({ ...f.model, pendingOperation: "complete" });
+    expect(f.owner.getCachedArtifact("poster")).toBeNull();
+    expect(f.owner.getCachedArtifact("full-report")).toBeNull();
+    f.setModel(f.model);
+    f.owner.close();
+    expect(f.owner.getCachedArtifact("poster")).toBeNull();
+    expect(f.owner.getCachedArtifact("full-report")).toBeNull();
+    f.owner.dispose();
+  });
   it("does not promote old false-capability snapshots or old renderer versions", () => {
     const f = setup();
     f.model.report!.view.display.exports.posterPng = false;
