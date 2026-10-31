@@ -64,11 +64,18 @@ export const engineIdentitySchema = z.union([
   engineIdentityV1Schema,
   consumerEngineIdentityV2Schema,
 ]);
-export const baselineApprovalSchema = z.discriminatedUnion("kind", [
+export const baselineApprovalSchema = z.union([
   z.strictObject({
     kind: z.literal("private-test-only"),
     authorizationId: z.literal("qztx-full-flow-20261030"),
     instanceId: z.literal("953991305a7e8c49bb773d95cd120378"),
+    evidenceSha256: sha,
+    scope: z.literal("candidate-content-reference-art-local-test-only"),
+  }),
+  z.strictObject({
+    kind: z.literal("private-test-only"),
+    authorizationId: z.literal("qztx-prototype-rebuild-20261031"),
+    instanceId: z.literal("bea112ce460725bd10fc41226e45df48"),
     evidenceSha256: sha,
     scope: z.literal("candidate-content-reference-art-local-test-only"),
   }),

@@ -643,6 +643,52 @@
       },
       "slot": "character.nameArt",
       "layer": "clean"
+    },
+    {
+      "slot": "character.revealComposite.before",
+      "layer": "role-composite",
+      "resultRef": {
+        "id": "li-bai",
+        "productId": "qianzai-tongxin",
+        "version": "1.0.0"
+      },
+      "asset": {
+        "resourceRef": {
+          "productId": "qianzai-tongxin",
+          "id": "qztx-rebuild-li-bai-reveal-before",
+          "version": "1.0.0"
+        },
+        "mediaType": "image/png",
+        "bytes": 1904779,
+        "sha256": "778e1ae1817fc53840d4478cbcd0e6074daba6e3febe7456801066a4a396db38",
+        "width": 780,
+        "height": 1688,
+        "purpose": "decoration",
+        "approval": "private-test-only"
+      }
+    },
+    {
+      "slot": "character.revealComposite.full",
+      "layer": "role-composite",
+      "resultRef": {
+        "id": "li-bai",
+        "productId": "qianzai-tongxin",
+        "version": "1.0.0"
+      },
+      "asset": {
+        "resourceRef": {
+          "productId": "qianzai-tongxin",
+          "id": "qztx-rebuild-li-bai-reveal-full",
+          "version": "1.0.0"
+        },
+        "mediaType": "image/png",
+        "bytes": 2005034,
+        "sha256": "08ed543b80e55e4a5c3d02819270cf87c216bdc370e78465aba6c9b48ad9c425",
+        "width": 780,
+        "height": 1688,
+        "purpose": "decoration",
+        "approval": "private-test-only"
+      }
     }
   ]
 }
