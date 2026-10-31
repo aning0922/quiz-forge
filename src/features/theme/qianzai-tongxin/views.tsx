@@ -43,31 +43,86 @@ export function ArtImage({
   className = "",
   alt = "",
   asset,
+  framing,
 }: {
   src: string | undefined;
   className?: string | undefined;
   alt?: string;
   asset?: { sha256: string; width: number; height: number } | undefined;
+  framing?: "reveal";
 }) {
   const [failed, setFailed] = useState(false);
   const crop = asset && qianzaiArtworkCrop(asset);
+  const frameId = useId();
+  const revealFrame = framing === "reveal" && !!crop;
   return src && !failed && crop && asset ? (
     <svg
       className={className}
-      viewBox={`${crop.x} ${crop.y} ${crop.width} ${crop.height}`}
+      viewBox={
+        revealFrame
+          ? `0 0 ${asset.width} ${asset.height}`
+          : `${crop.x} ${crop.y} ${crop.width} ${crop.height}`
+      }
       preserveAspectRatio="xMidYMin slice"
       overflow="hidden"
       role={alt ? "img" : undefined}
       aria-label={alt || undefined}
       aria-hidden={alt ? undefined : true}
       data-qianzai-art-crop
+      data-qianzai-reveal-frame={revealFrame || undefined}
     >
-      <image
-        href={src}
-        width={asset.width}
-        height={asset.height}
-        onError={() => setFailed(true)}
-      />
+      {revealFrame ? (
+        <>
+          <defs>
+            <linearGradient id={`${frameId}-fade`} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stopColor="white" stopOpacity="0" />
+              <stop offset="0.06" stopColor="white" />
+              <stop offset="0.94" stopColor="white" />
+              <stop offset="1" stopColor="white" stopOpacity="0" />
+            </linearGradient>
+            <mask
+              id={frameId}
+              maskUnits="userSpaceOnUse"
+              x="0"
+              y="160"
+              width={crop.width}
+              height={crop.height}
+            >
+              <rect
+                x="0"
+                y="160"
+                width={crop.width}
+                height={crop.height}
+                fill={`url(#${frameId}-fade)`}
+              />
+            </mask>
+          </defs>
+          <g mask={`url(#${frameId})`}>
+            <svg
+              x="0"
+              y="160"
+              width={crop.width}
+              height={crop.height}
+              viewBox={`${crop.x} ${crop.y} ${crop.width} ${crop.height}`}
+              overflow="hidden"
+            >
+              <image
+                href={src}
+                width={asset.width}
+                height={asset.height}
+                onError={() => setFailed(true)}
+              />
+            </svg>
+          </g>
+        </>
+      ) : (
+        <image
+          href={src}
+          width={asset.width}
+          height={asset.height}
+          onError={() => setFailed(true)}
+        />
+      )}
     </svg>
   ) : src && !failed ? (
     // The compiled resource owner supplies a bounded, decoded local object URL.
@@ -755,6 +810,7 @@ export function QianzaiReveal({
           key={image?.objectUrl ?? "none"}
           src={image?.objectUrl}
           asset={image?.asset}
+          framing="reveal"
           className={styles.revealArt}
         />
         <div className={styles.revealShade} aria-hidden="true" />

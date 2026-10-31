@@ -548,7 +548,7 @@ if (check) {
       await p.clock.runFor(100);
       await expect(
         p.locator('[data-qianzai-screen="result"] [data-qianzai-art-crop]'),
-      ).toHaveAttribute("viewBox", "0 284 780 590");
+      ).toHaveAttribute("viewBox", "0 0 780 874");
       await p
         .locator('[data-qianzai-screen="result"]')
         .screenshot({ path: path.join(out, `reveal-${width}.png`) });
