@@ -458,7 +458,7 @@ export function QianzaiReportReader({
     let chapter = labels[0]!;
     const threshold =
       (nav?.getBoundingClientRect().bottom ??
-        node.getBoundingClientRect().top) + 16;
+        node.getBoundingClientRect().top) + 18;
     reader.current
       ?.querySelectorAll<HTMLElement>("[data-report-chapter]")
       .forEach((s) => {
