@@ -58,6 +58,9 @@ export function QianzaiContinuousReader({
   const [revealActive, setRevealActive] = useState(!initialReport);
   const initialPositioned = useRef(false);
   const previousHeight = useRef<number | null>(null);
+  const focusDestination = useRef<{ top: number; selector: string } | null>(
+    null,
+  );
   const locate = useCallback(
     (report: boolean, focus = true, instant = false) => {
       const node = scrollContainer.current;
@@ -75,20 +78,41 @@ export function QianzaiContinuousReader({
             node.getBoundingClientRect().top -
             (toolbar?.offsetHeight ?? 128)
           : 0;
+      const target = Math.min(
+        Math.max(0, top),
+        Math.max(0, node.scrollHeight - node.clientHeight),
+      );
+      focusDestination.current = focus
+        ? {
+            top: target,
+            selector: report
+              ? "[data-report-opening-title]"
+              : "[data-reveal-continue]",
+          }
+        : null;
       node.scrollTo({
-        top: Math.max(0, top),
+        top: target,
         behavior:
           instant ||
           window.matchMedia("(prefers-reduced-motion: reduce)").matches
             ? "instant"
             : "smooth",
       });
-      if (focus)
-        node
-          .querySelector<HTMLElement>(
-            report ? "[data-report-opening-title]" : "[data-reveal-continue]",
-          )
-          ?.focus({ preventScroll: true });
+      // Instant/zero-distance navigation may not emit a scroll event. Release
+      // the reveal's inert boundary before transferring focus back into it.
+      if (focus && Math.abs(node.scrollTop - target) < 1) {
+        const visual = node.querySelector<HTMLElement>(
+          "[data-qianzai-reveal-sticky]",
+        );
+        if (visual) visual.inert = report;
+        setRevealActive(!report);
+        const destination = focusDestination.current;
+        focusDestination.current = null;
+        if (destination)
+          node
+            .querySelector<HTMLElement>(destination.selector)
+            ?.focus({ preventScroll: true });
+      }
     },
     [],
   );
@@ -136,8 +160,19 @@ export function QianzaiContinuousReader({
       );
       node.style.setProperty("--qianzai-reader-progress", String(progress));
       if (toolbar) toolbar.inert = progress < 0.15;
+      const visual = node.querySelector<HTMLElement>(
+        "[data-qianzai-reveal-sticky]",
+      );
+      if (visual) visual.inert = progress >= 0.15;
       node.dataset.toolbarVisible = String(progress >= 0.15);
       setRevealActive(progress < 0.15);
+      const destination = focusDestination.current;
+      if (destination && Math.abs(node.scrollTop - destination.top) < 1) {
+        focusDestination.current = null;
+        node
+          .querySelector<HTMLElement>(destination.selector)
+          ?.focus({ preventScroll: true });
+      }
       // A may mount its marker after the first layout. Locate only once; resizing
       // never resets the reader or replays reveal/score/complete operations.
       if (initialReport && start && !initialPositioned.current) {
@@ -171,7 +206,11 @@ export function QianzaiContinuousReader({
       }}
     >
       <div className={styles.readerBackdropTrack}>
-        <div className={styles.readerBackdropSticky} inert={!revealActive}>
+        <div
+          className={styles.readerBackdropSticky}
+          data-qianzai-reveal-sticky
+          inert={!revealActive}
+        >
           {reveal(revealActive)}
         </div>
       </div>

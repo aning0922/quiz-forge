@@ -28,7 +28,7 @@ const fixture = JSON.parse(
   document.getElementById("fixture")!.textContent!,
 ) as {
   mode: "reference-only";
-  probe: "q08-selected-wrap" | null;
+  probe: "q08-selected-wrap" | "reader-contract" | null;
   report: { hero: string; paper: string };
   model: ConsumerV2ReaderModel;
   completed: ConsumerV2ReaderModel;
@@ -319,16 +319,66 @@ function ReferenceScenes() {
                 startedAt={startedAt}
               />
             )}
-            report={(embedded) => (
-              <QianzaiReportReader
-                document={qianzaiReferenceDocument}
-                heroUrl={fixture.report.hero}
-                paperUrl={fixture.report.paper}
-                onResult={embedded.onReturn}
-                {...{ embedded }}
-                actions={<QianzaiSharePanel referenceOnly />}
-              />
-            )}
+            report={(embedded) =>
+              fixture.probe === "reader-contract" ? (
+                // Explicit B-shell contract fixture, not A's report acceptance.
+                <section
+                  data-reader-contract-fixture
+                  style={{ pointerEvents: "none" }}
+                >
+                  <header
+                    data-qianzai-report-toolbar
+                    style={{
+                      height: 112,
+                      position: "sticky",
+                      top: 0,
+                      zIndex: 5,
+                      background: "#132838",
+                      color: "#fff1d0",
+                    }}
+                  >
+                    <button onClick={embedded.onReturn}>返回人物揭晓</button>
+                    <span>连续阅读壳合同夹具</span>
+                  </header>
+                  <main
+                    data-qianzai-report-start
+                    style={{
+                      marginTop: "calc(var(--qianzai-reveal-height) - 112px)",
+                      backgroundImage: `url(${fixture.report.paper})`,
+                      backgroundColor: "#fbf1db",
+                      borderRadius: "26px 26px 0 0",
+                      color: "#24384a",
+                      padding: 24,
+                    }}
+                  >
+                    {ACTS.concat(ACTS).map((act, i) => (
+                      <section key={i} style={{ minHeight: 700 }}>
+                        <h2
+                          tabIndex={-1}
+                          {...(i === 0
+                            ? { "data-report-opening-title": true }
+                            : {})}
+                        >
+                          第{i + 1}卷 · {act.title}
+                        </h2>
+                        <p>
+                          此处仅验证共享原生滚动壳，不代替六卷报告或业务验收。
+                        </p>
+                      </section>
+                    ))}
+                  </main>
+                </section>
+              ) : (
+                <QianzaiReportReader
+                  document={qianzaiReferenceDocument}
+                  heroUrl={fixture.report.hero}
+                  paperUrl={fixture.report.paper}
+                  onResult={embedded.onReturn}
+                  {...{ embedded }}
+                  actions={<QianzaiSharePanel referenceOnly />}
+                />
+              )
+            }
           />
         ) : (
           <QianzaiQuestion
