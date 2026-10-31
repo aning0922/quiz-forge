@@ -47,6 +47,8 @@ export type QianzaiShareOutcome =
 export type QianzaiExportContextValue = Readonly<{
   availability: Readonly<Record<QianzaiExportKind, QianzaiExportAvailability>>;
   state: QianzaiExportState;
+  /** Same-owner cache only. Null when absent, closed, cancelled or authority is lost. */
+  getCachedArtifact(kind: QianzaiExportKind): QianzaiExportArtifact | null;
   open(): void;
   generate(kind: QianzaiExportKind): Promise<void>;
   close(): void;

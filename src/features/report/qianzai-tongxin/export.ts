@@ -17,6 +17,7 @@ import {
   qianzaiExportText,
   type ExportOperation,
 } from "./layout";
+import { qianzaiArtworkCrop } from "@/features/theme/qianzai-tongxin/art-framing";
 
 export const qianzaiExportFailure = (error: unknown) => {
   if (error instanceof QianzaiExportError) return error;
@@ -109,6 +110,7 @@ export async function renderQianzaiExport(
               };
             },
             () => check(active, deadline),
+            privateNote ? { annotation: privateNote } : {},
           );
         } finally {
           scratch.width = 0;
@@ -178,15 +180,6 @@ export async function renderQianzaiExport(
               loaded,
               canvas.width,
             );
-          }
-          if (privateNote) {
-            ctx.fillStyle = "#f6ead2";
-            ctx.fillRect(28, 24, canvas.width - 56, 30);
-            ctx.fillStyle = "#25444e";
-            ctx.font = `600 18px "${family}"`;
-            ctx.textAlign = "center";
-            ctx.fillText(privateNote, canvas.width / 2, 45);
-            ctx.textAlign = "start";
           }
           check(active, deadline);
           const blob = await encode(canvas, active, () =>
@@ -296,19 +289,31 @@ function drawOperation(
   if (op.kind === "image") {
     const asset = op.role === "portrait" ? scope.portrait : scope.nameArt;
     const image = loaded.get(JSON.stringify(asset.resourceRef))!.image,
-      b = op.box;
+      b = op.box,
+      source = (op.role === "portrait"
+        ? qianzaiArtworkCrop(asset)
+        : undefined) ?? {
+        x: 0,
+        y: 0,
+        width: image.naturalWidth,
+        height: image.naturalHeight,
+      };
     const scale = (op.fit === "cover" ? Math.max : Math.min)(
-      b.width / image.naturalWidth,
-      b.height / image.naturalHeight,
+      b.width / source.width,
+      b.height / source.height,
     );
-    const w = image.naturalWidth * scale,
-      h = image.naturalHeight * scale;
+    const w = source.width * scale,
+      h = source.height * scale;
     ctx.save();
     ctx.beginPath();
     ctx.rect(b.x, b.y, b.width, b.height);
     ctx.clip();
     ctx.drawImage(
       image,
+      source.x,
+      source.y,
+      source.width,
+      source.height,
       b.x + (b.width - w) / 2,
       op.role === "portrait" && op.fit === "cover"
         ? b.y
