@@ -246,11 +246,7 @@ const server = createServer((req, res) => {
     m.state!.matchingContext = m.draft!.matchingContext;
   }
   const probe =
-    url.searchParams.get("probe") === "reader-contract"
-      ? "reader-contract"
-      : url.searchParams.get("probe") === "q08"
-        ? "q08-selected-wrap"
-        : null;
+    url.searchParams.get("probe") === "q08" ? "q08-selected-wrap" : null;
   if (probe === "q08-selected-wrap")
     m.entry!.questions[7]!.options[0]!.label =
       "保留剩余环节的原有顺序，空出的时间自由交流";
