@@ -29,6 +29,7 @@ const unavailable = Object.freeze({
 const fallback: QianzaiExportContextValue = {
   availability: { poster: unavailable, "full-report": unavailable },
   state: closed,
+  getCachedArtifact: () => null,
   open() {},
   async generate() {},
   close() {},
@@ -82,6 +83,7 @@ export function QianzaiExportProvider({
             "full-report": owner.availability("full-report"),
           },
           state,
+          getCachedArtifact: owner.getCachedArtifact,
           open: owner.open,
           generate: owner.generate,
           close: owner.close,

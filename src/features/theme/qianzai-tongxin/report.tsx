@@ -445,6 +445,7 @@ export function QianzaiReport({
             <ArtImage
               key={hero?.objectUrl ?? "none"}
               src={hero?.objectUrl}
+              asset={hero?.asset}
               className={styles.fullArt}
             />
             <div>

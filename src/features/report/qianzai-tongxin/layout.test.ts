@@ -13,6 +13,30 @@ const measure: Measure = (s, size) => ({
   descent: size * 0.2,
 });
 describe("Qianzai complete-report layout", () => {
+  it("reserves a measured footer for the test annotation without covering the title or changing report facts", () => {
+    for (const kind of ["poster", "full-report"] as const) {
+      const plain = layoutQianzaiExport(fixture.body, kind, measure);
+      const annotated = layoutQianzaiExport(
+        fixture.body,
+        kind,
+        measure,
+        undefined,
+        { annotation: "测试素材 · 候选正文" },
+      );
+      const originalText = plain.operations.filter((o) => o.kind === "text");
+      const nextText = annotated.operations.filter((o) => o.kind === "text");
+      expect(nextText.slice(0, -1).map((o) => o.text)).toEqual(
+        originalText.map((o) => o.text),
+      );
+      expect(nextText[0]).toEqual(originalText[0]);
+      const footer = nextText.at(-1)!;
+      expect(footer.text).toBe("测试素材 · 候选正文");
+      expect(footer.y).toBeGreaterThan(nextText.at(-2)!.y + 4);
+      expect(footer.y + footer.size * 0.2).toBeLessThan(annotated.height - 20);
+      if (kind === "poster") expect(annotated.height).toBe(1672);
+      else expect(annotated.height).toBeGreaterThan(plain.height);
+    }
+  });
   it("draws all five actual scores on the fixed poster, with no fixed 89 or QR", () => {
     const body = structuredClone(fixture.body);
     body.matching.selected.narrativeIndex = 43;

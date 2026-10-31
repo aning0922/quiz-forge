@@ -29,6 +29,7 @@ import {
   type QianzaiVisualProps,
 } from "./art";
 import { QianzaiWater, QianzaiPetals, useQianzaiMotion } from "./motion";
+import { qianzaiArtworkCrop } from "./art-framing";
 import styles from "./qianzai.module.css";
 
 export type QianzaiViewProps = ConsumerViewPropsV2 & QianzaiVisualProps;
@@ -41,13 +42,89 @@ export function ArtImage({
   src,
   className = "",
   alt = "",
+  asset,
+  framing,
 }: {
   src: string | undefined;
   className?: string | undefined;
   alt?: string;
+  asset?: { sha256: string; width: number; height: number } | undefined;
+  framing?: "reveal";
 }) {
   const [failed, setFailed] = useState(false);
-  return src && !failed ? (
+  const crop = asset && qianzaiArtworkCrop(asset);
+  const frameId = useId();
+  const revealFrame = framing === "reveal" && !!crop;
+  return src && !failed && crop && asset ? (
+    <svg
+      className={className}
+      viewBox={
+        revealFrame
+          ? `0 0 ${asset.width} ${asset.height}`
+          : `${crop.x} ${crop.y} ${crop.width} ${crop.height}`
+      }
+      preserveAspectRatio="xMidYMin slice"
+      overflow="hidden"
+      role={alt ? "img" : undefined}
+      aria-label={alt || undefined}
+      aria-hidden={alt ? undefined : true}
+      data-qianzai-art-crop
+      data-qianzai-reveal-frame={revealFrame || undefined}
+    >
+      {revealFrame ? (
+        <>
+          <defs>
+            <linearGradient id={`${frameId}-fade`} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stopColor="white" stopOpacity="0" />
+              <stop offset="0.06" stopColor="white" />
+              <stop offset="0.94" stopColor="white" />
+              <stop offset="1" stopColor="white" stopOpacity="0" />
+            </linearGradient>
+            <mask
+              id={frameId}
+              maskUnits="userSpaceOnUse"
+              x="0"
+              y="160"
+              width={crop.width}
+              height={crop.height}
+            >
+              <rect
+                x="0"
+                y="160"
+                width={crop.width}
+                height={crop.height}
+                fill={`url(#${frameId}-fade)`}
+              />
+            </mask>
+          </defs>
+          <g mask={`url(#${frameId})`}>
+            <svg
+              x="0"
+              y="160"
+              width={crop.width}
+              height={crop.height}
+              viewBox={`${crop.x} ${crop.y} ${crop.width} ${crop.height}`}
+              overflow="hidden"
+            >
+              <image
+                href={src}
+                width={asset.width}
+                height={asset.height}
+                onError={() => setFailed(true)}
+              />
+            </svg>
+          </g>
+        </>
+      ) : (
+        <image
+          href={src}
+          width={asset.width}
+          height={asset.height}
+          onError={() => setFailed(true)}
+        />
+      )}
+    </svg>
+  ) : src && !failed ? (
     // The compiled resource owner supplies a bounded, decoded local object URL.
     // eslint-disable-next-line @next/next/no-img-element
     <img
@@ -398,6 +475,26 @@ export function QianzaiQuestion({
         src={art?.objectUrl}
         className={styles.fullArt}
       />
+      {art?.layer === "prototype-scene-base" && (
+        <svg
+          className={styles.sceneMusicMask}
+          viewBox="0 0 390 844"
+          preserveAspectRatio="none"
+          aria-hidden="true"
+        >
+          <svg
+            x="289"
+            y="30"
+            width="50"
+            height="55"
+            viewBox="289 85 50 30"
+            preserveAspectRatio="none"
+            overflow="hidden"
+          >
+            <image href={art.objectUrl} width="390" height="844" />
+          </svg>
+        </svg>
+      )}
       {water && (
         <svg
           className={styles.answerBackdrop}
@@ -498,11 +595,37 @@ export function QianzaiQuestion({
                     style={
                       skin
                         ? {
-                            backgroundImage: `url("${skin.objectUrl}"), linear-gradient(#f8e8cb,#f8e8cb)`,
+                            backgroundImage: `url("${skin.objectUrl}")`,
                           }
                         : undefined
                     }
                   >
+                    {chosen &&
+                      skin &&
+                      art?.layer === "prototype-scene-base" && (
+                        <svg
+                          className={styles.optionSealMask}
+                          viewBox="0 0 355 65"
+                          preserveAspectRatio="none"
+                          aria-hidden="true"
+                        >
+                          <svg
+                            x="291"
+                            y="12"
+                            width="43"
+                            height="42"
+                            viewBox="253 12 24 42"
+                            preserveAspectRatio="none"
+                            overflow="hidden"
+                          >
+                            <image
+                              href={skin.objectUrl}
+                              width="355"
+                              height="65"
+                            />
+                          </svg>
+                        </svg>
+                      )}
                     <input
                       type="radio"
                       name={id}
@@ -513,7 +636,17 @@ export function QianzaiQuestion({
                     <span className={styles.optionLetter} aria-hidden="true">
                       {String.fromCharCode(65 + i)}
                     </span>
-                    <span>{option.label}</span>
+                    <span>
+                      {(
+                        option.label.match(
+                          /[^，。；！？、：]+[，。；！？、：]?|[，。；！？、：]/gu,
+                        ) ?? [option.label]
+                      ).map((phrase, part) => (
+                        <span key={part} className={styles.optionPhrase}>
+                          {phrase}
+                        </span>
+                      ))}
+                    </span>
                     <span
                       className={styles.optionCheck}
                       aria-hidden="true"
@@ -581,11 +714,30 @@ export function QianzaiQuestion({
                       type: "navigate",
                       questionId: questions[index + 1]!.ref.id,
                     });
-                  else if (saved.answersSaved && saved.progressSaved)
-                    onRead("review");
-                  else onEvent({ type: "save" });
+                  else if (selected) onChoose(q.ref.id, selected);
                 }}
               >
+                {index === questions.length - 1 &&
+                  art?.layer === "prototype-scene-base" && (
+                    <svg
+                      className={styles.buttonCaptionPatch}
+                      viewBox="0 0 122 62"
+                      preserveAspectRatio="none"
+                      aria-hidden="true"
+                    >
+                      <svg
+                        x="11"
+                        y="16"
+                        width="82"
+                        height="31"
+                        viewBox="275 790 66 8"
+                        preserveAspectRatio="none"
+                        overflow="hidden"
+                      >
+                        <image href={art.objectUrl} width="390" height="844" />
+                      </svg>
+                    </svg>
+                  )}
                 <span data-final={index === questions.length - 1}>
                   {index === questions.length - 1 ? "走向相逢" : "下一题"}
                 </span>
@@ -657,6 +809,8 @@ export function QianzaiReveal({
         <ArtImage
           key={image?.objectUrl ?? "none"}
           src={image?.objectUrl}
+          asset={image?.asset}
+          framing="reveal"
           className={styles.revealArt}
         />
         <div className={styles.revealShade} aria-hidden="true" />
@@ -691,7 +845,7 @@ export function QianzaiReveal({
         <div className={styles.revealIdentity} data-qianzai-scroll-region>
           <p>与你相逢的是</p>
           <div className={styles.revealNameFrame}>
-            {name ? (
+            {name && name.asset.approval !== "private-test-only" ? (
               <>
                 <ArtImage
                   key={name.objectUrl}

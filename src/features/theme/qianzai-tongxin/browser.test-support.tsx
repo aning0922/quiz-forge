@@ -1,4 +1,4 @@
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { createRoot } from "react-dom/client";
 import { ConsumerControllerV2 } from "../consumer-v2/controller";
 import {
@@ -25,6 +25,12 @@ import { consumerMappingSha256V2 } from "@/lib/consumer-contract/v2/identities";
 import { CONSUMER_LIMITS_V1 } from "@/lib/consumer-contract/v1/limits";
 import { persistedReportDisplaySha256V2 } from "@/features/report/persisted/view-contracts-v2";
 import { QianzaiResourceOwner } from "./resource-owner";
+import { QianzaiTongxinRuntime } from "./runtime";
+import {
+  ConsumerResourceContextV2,
+  createConsumerResourcePortV2,
+} from "../consumer-v2/resource-port";
+import type { ConsumerExperiencePropsV2 } from "../consumer-v2/interfaces";
 
 /** Actual owner and renderer, synthetic HTTP only. No catalog admission or DB. */
 const fixture = JSON.parse(
@@ -44,6 +50,7 @@ const fixture = JSON.parse(
     layer: "clean";
   }[];
   leaseRemount?: boolean;
+  review?: boolean;
 };
 const restored = JSON.parse(
   localStorage.getItem("qianzai-synthetic-server-state") ?? "null",
@@ -194,6 +201,7 @@ function Runtime() {
     images: readonly QianzaiResolvedImage[];
   } | null>(null);
   useEffect(() => {
+    if (fixture.review) return;
     const abort = new AbortController();
     const urls: string[] = [];
     Object.assign(
@@ -263,6 +271,7 @@ function Runtime() {
   );
   useEffect(() => {
     if (
+      fixture.review ||
       !model.report ||
       model.phase !== "completed" ||
       !fixture.completedVisuals?.length
@@ -334,6 +343,14 @@ function Runtime() {
       );
       // Isolated synthetic setup ends here; assertions count subsequent UI IO.
       calls.length = 0;
+      if (new URLSearchParams(location.search).has("review-last")) {
+        await (
+          window as unknown as {
+            qianzaiProbe: { prepareLast(): Promise<void> };
+          }
+        ).qianzaiProbe.prepareLast();
+        calls.length = 0;
+      }
       setGeneration((old) => old + 1);
     });
     return () => owner.dispose();
@@ -353,7 +370,13 @@ function Runtime() {
           },
         }
       : model;
-  return (
+  return fixture.review ? (
+    <ReviewHost
+      model={model}
+      onEvent={owner.onEvent}
+      getSnapshot={owner.getSnapshot}
+    />
+  ) : (
     <QianzaiTongxinExperience
       key={
         fixture.leaseRemount
@@ -372,6 +395,44 @@ function Runtime() {
           }
         : visuals)}
     />
+  );
+}
+
+function ReviewHost({
+  getSnapshot,
+  ...props
+}: ConsumerExperiencePropsV2 & { getSnapshot(): ConsumerV2ReaderModel }) {
+  const port = useMemo(() => {
+    const source = new AbortController();
+    return createConsumerResourcePortV2({
+      sessionId:
+        getSnapshot().report?.view.session.sessionId ??
+        fixture.session.session.sessionId,
+      getSnapshot,
+      task: () => ({
+        signal: source.signal,
+        current: () => !source.signal.aborted,
+      }),
+      revoke: () => source.abort(),
+      fetcher: async (input, init) => {
+        const id = new URL(String(input), location.href).searchParams.get(
+          "resourceId",
+        );
+        const found = [
+          ...(fixture.visuals ?? []),
+          ...(fixture.completedVisuals ?? []),
+        ].find((r) => r.asset.resourceRef.id === id);
+        if (!found) throw Error("UNSCOPED_REVIEW_RESOURCE");
+        return fetch(found.url, init);
+      },
+    });
+  }, [getSnapshot]);
+  return (
+    <>
+      <ConsumerResourceContextV2.Provider value={port}>
+        <QianzaiTongxinRuntime {...props} />
+      </ConsumerResourceContextV2.Provider>
+    </>
   );
 }
 Object.assign(window, {
@@ -476,7 +537,20 @@ function MotionStudy() {
   );
 }
 root.render(
-  new URLSearchParams(location.search).has("motion-study") ? (
+  fixture.review &&
+    new URLSearchParams(location.search).has("review-report") ? (
+    <ReviewHost
+      model={fixture.completed}
+      getSnapshot={() => fixture.completed}
+      {...(new URLSearchParams(location.search).get("review-report") ===
+      "reveal"
+        ? {}
+        : { initialScreen: "report" as const })}
+      onEvent={() => {
+        throw Error("READ_ONLY_REVIEW_REPORT");
+      }}
+    />
+  ) : new URLSearchParams(location.search).has("motion-study") ? (
     <MotionStudy />
   ) : (
     <Runtime />

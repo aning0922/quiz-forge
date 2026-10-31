@@ -119,8 +119,12 @@ export function layoutQianzaiExport(
   kind: QianzaiExportKind,
   measure: Measure,
   check: () => void = () => {},
+  options: Readonly<{ annotation?: string }> = {},
 ): QianzaiExportLayout {
-  const strings = qianzaiExportText(body, kind);
+  const strings = [
+    ...qianzaiExportText(body, kind),
+    ...(options.annotation ? [options.annotation] : []),
+  ];
   if (
     body.dimensions.length !== 5 ||
     strings.reduce((n, s) => n + Array.from(s).length, 0) > L.maxTextCodepoints
@@ -258,7 +262,18 @@ export function layoutQianzaiExport(
       const bottom = text(d.label, 25, x!, top!, 180, 34, top! + 70);
       text(String(d.score), 30, x!, bottom, 180, 39, top! + 112);
     });
-    text(body.notice, 22, 48, 1580, 845, 30, 1648, "#705f4d");
+    text(
+      body.notice,
+      22,
+      48,
+      options.annotation ? 1560 : 1580,
+      845,
+      options.annotation ? 28 : 30,
+      options.annotation ? 1622 : 1648,
+      "#705f4d",
+    );
+    if (options.annotation)
+      text(options.annotation, 18, 48, 1628, 845, 22, 1650, "#705f4d");
     bounds(L.posterHeight);
     return { width, height: L.posterHeight, operations };
   }
@@ -407,7 +422,10 @@ export function layoutQianzaiExport(
     y += 20;
   }
   operations.push({ kind: "rule", y });
-  y = text(body.notice, 21, 42, y + 24, 640, 32) + 48;
+  y = text(body.notice, 21, 42, y + 24, 640, 32);
+  y = options.annotation
+    ? text(options.annotation, 18, 42, y + 16, 640, 28) + 32
+    : y + 48;
   const height = Math.ceil(Math.max(y, highestInk + 48));
   bounds(height);
   return { width, height, operations };

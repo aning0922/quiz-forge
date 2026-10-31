@@ -1,4 +1,5 @@
 .host {
+  position: relative;
   --gold: #f5d49a;
   --ink: #24394d;
   --paper: #f8ecd5;
@@ -139,14 +140,22 @@
   font: 16px/1.5 system-ui;
 }
 .status {
-  position: relative;
+  position: absolute;
   z-index: 50;
-  width: min(100%, 390px);
-  margin: 0 auto;
-  padding: 14px 20px;
-  background: #fff0d4;
-  color: #3e3325;
-  box-shadow: 0 2px 12px #0003;
+  top: calc(min(100vw, 430px) * 160 / 390);
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(min(100vw, 430px) - 24px);
+  max-height: calc(min(100vw, 430px) * 200 / 390);
+  overflow-y: auto;
+  border: 1px solid #d4b78088;
+  border-radius: 12px;
+  background: #10283af2;
+  color: #fff0d3;
+  font:
+    16px/1.55 system-ui,
+    sans-serif;
+  padding: 10px 14px;
 }
 .status button {
   margin: 10px 8px 0 0;
@@ -1939,17 +1948,27 @@
   left: 0;
   right: 0;
   top: 0;
-  gap: calc(var(--scene-unit) * 1);
-  padding: 0 calc(var(--scene-unit) * 14) 0 calc(var(--scene-unit) * 12) !important;
+  display: block;
+  padding: 0 !important;
 }
 .preference[data-qianzai-composite] .preferenceChoice {
-  height: calc(var(--scene-width) * 90 / 390);
-  min-height: 60px;
+  position: absolute;
+  left: calc(var(--scene-unit) * 12);
+  top: calc(var(--scene-unit) * 17);
+  width: calc(var(--scene-unit) * 364);
+  height: calc(var(--scene-unit) * 85);
+  min-height: 0;
   border: 0;
   border-radius: calc(var(--scene-unit) * 35);
   background: transparent;
   box-shadow: none;
   padding-right: 23px;
+}
+.preference[data-qianzai-composite] .preferenceChoice:nth-of-type(2) {
+  top: calc(var(--scene-unit) * 106);
+}
+.preference[data-qianzai-composite] .preferenceChoice:nth-of-type(3) {
+  top: calc(var(--scene-unit) * 195);
 }
 .preference[data-qianzai-composite] .preferenceChoice::after {
   display: none;
@@ -2011,19 +2030,9 @@
 .preference[data-qianzai-composite] .radioMark {
   position: absolute;
   left: calc(var(--scene-unit) * 318);
-  top: calc(var(--scene-width) * 48 / 390);
+  top: calc(var(--scene-unit) * 31);
   width: calc(var(--scene-unit) * 24);
   height: calc(var(--scene-unit) * 24);
-}
-.preference[data-qianzai-composite]
-  .preferenceChoice:nth-of-type(2)
-  .radioMark {
-  top: calc(var(--scene-width) * 46 / 390);
-}
-.preference[data-qianzai-composite]
-  .preferenceChoice:nth-of-type(3)
-  .radioMark {
-  top: calc(var(--scene-width) * 44 / 390);
 }
 .coverScene:has(> .fullArt) .scrollButton {
   background: transparent !important;
@@ -2059,8 +2068,9 @@
   font-weight: 700;
 }
 .question[data-qianzai-composite] .option {
-  grid-template-columns: 37px 1fr;
-  gap: 21px;
+  filter: none;
+  grid-template-columns: 37px minmax(0, 1fr) 28px;
+  gap: 12px;
   padding: 9px 20px 9px 21px;
 }
 .question[data-qianzai-composite] .option > span:nth-of-type(2) {
@@ -2068,12 +2078,14 @@
   line-height: 1.25;
   letter-spacing: -0.2px;
   font-weight: 600;
-  text-wrap: balance;
+  text-wrap: wrap;
+  min-width: 0;
+  overflow-wrap: break-word;
 }
 .question[data-qianzai-composite]
   .option[data-selected="true"]
   > span:nth-of-type(2) {
-  padding-right: 31px;
+  padding-right: 0;
 }
 .question[data-qianzai-composite] .optionCheck {
   position: absolute;
@@ -2088,8 +2100,8 @@
     line-height: 1.4;
   }
   .question[data-qianzai-composite] .option {
-    grid-template-columns: 30px 1fr;
-    gap: 12px;
+    grid-template-columns: 30px minmax(0, 1fr) 28px;
+    gap: 10px;
     padding-inline: 16px;
   }
 }
@@ -2139,9 +2151,11 @@
   background-color: transparent;
 }
 .question[data-qianzai-composite] .questionNav button > [data-final="true"] {
-  color: #49311c;
-  background: #f3dfb5;
-  padding: 4px;
+  position: relative;
+  z-index: 1;
+  color: #755425;
+  background: none;
+  padding: 0 10px 0 0;
 }
 
 .volume[data-volume="patterns"] {
@@ -2385,9 +2399,7 @@
   box-shadow: none;
   background-color: transparent;
   min-height: max(65px, calc(var(--scene-unit) * 65));
-  background-size:
-    100% 100%,
-    calc(100% - 44px) 100%;
+  background-size: 100% 100%;
 }
 .coverScene:has(> .fullArt) .coverFacts::before {
   content: "";
@@ -3233,7 +3245,8 @@
   )
   :is(.questionPaper, .option) {
   animation: none;
-  opacity: 0;
+  opacity: 1;
+  transform: none;
 }
 .revealLayers {
   position: absolute;
@@ -3552,7 +3565,7 @@
 }
 
 .reportHero > .fullArt {
-  object-position: center 34%;
+  object-position: center top;
 }
 
 /* Result composition follows the original layout; absent character metadata is
@@ -3659,4 +3672,64 @@
 }
 .reportRecord p {
   margin-top: 8px;
+}
+
+/* Patch only the obsolete seal with pixels from the same admitted skin. */
+.optionSealMask {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  mask-image: radial-gradient(ellipse 6% 34% at 88% 50%, #000 65%, transparent);
+}
+
+.testDisclosure {
+  width: min(100%, 430px);
+  margin: 0 auto;
+  padding: 4px 16px;
+  color: #f6ead2;
+  background: #153745;
+  font:
+    16px/1.6 system-ui,
+    sans-serif;
+}
+.testDisclosure summary {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+.testDisclosure p {
+  margin: 0;
+  padding: 2px 0 12px;
+}
+
+.sceneMusicMask {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: calc(var(--scene-unit) * 844);
+  pointer-events: none;
+  mask-image: radial-gradient(
+    ellipse 7% 4% at 80.5% 6.8%,
+    #000 72%,
+    transparent
+  );
+}
+.buttonCaptionPatch {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  mask-image: radial-gradient(
+    ellipse 38% 30% at 43% 50%,
+    #000 75%,
+    transparent
+  );
+}
+.optionPhrase {
+  display: inline-block;
+  max-width: 100%;
 }
