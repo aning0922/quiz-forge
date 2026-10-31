@@ -3,7 +3,7 @@ import { consumerComponentMappingV2Schema } from "@/lib/consumer-contract/v2/ide
 
 export const QIANZAI_CONSUMER_RENDERER = Object.freeze({
   id: "consumer-qianzai-tongxin",
-  version: "1.1.0",
+  version: "1.2.0",
 });
 export const QIANZAI_PREVIEW_RENDERER = Object.freeze({
   id: "qianzai-tongxin-preview",

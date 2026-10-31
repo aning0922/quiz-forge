@@ -26,6 +26,7 @@ import { CONSUMER_LIMITS_V1 } from "@/lib/consumer-contract/v1/limits";
 import { persistedReportDisplaySha256V2 } from "@/features/report/persisted/view-contracts-v2";
 import { QianzaiResourceOwner } from "./resource-owner";
 import { QianzaiTongxinRuntime } from "./runtime";
+import { resolveConsumerRendererClientV2 } from "@/features/product/internal-play/implementation-client-v2";
 import {
   ConsumerResourceContextV2,
   createConsumerResourcePortV2,
@@ -51,13 +52,20 @@ const fixture = JSON.parse(
   }[];
   leaseRemount?: boolean;
   review?: boolean;
+  v11Demo?: boolean;
+  compositionEndpoint?: "/demo/compose";
 };
-const restored = JSON.parse(
-  localStorage.getItem("qianzai-synthetic-server-state") ?? "null",
-) as typeof fixture.session.initial | null;
+const storageName = fixture.v11Demo
+  ? `qianzai-v11-demo:${fixture.session.entry.facts.renderer.entrySha256}`
+  : "qianzai-synthetic-server-state";
+const restored = JSON.parse(localStorage.getItem(storageName) ?? "null") as
+  typeof fixture.session.initial | null;
 let state = restored ?? fixture.session.initial;
 let original: ConsumerSaveInputV2 | undefined;
-let completedReport: NonNullable<ConsumerV2ReaderModel["report"]> | null = null;
+let completedReport: NonNullable<ConsumerV2ReaderModel["report"]> | null =
+  fixture.v11Demo
+    ? JSON.parse(localStorage.getItem(storageName + ":report") ?? "null")
+    : null;
 let holdArt = false;
 const artWaiters = new Set<() => void>();
 let drop = false,
@@ -87,7 +95,7 @@ async function apply(input: ConsumerSaveInputV2) {
       savedAt: fixture.session.view.observedAt,
     },
   };
-  localStorage.setItem("qianzai-synthetic-server-state", JSON.stringify(state));
+  localStorage.setItem(storageName, JSON.stringify(state));
   return {
     schemaVersion: "quizforge.consumer-save-resolution.v2",
     kind: "applied-current",
@@ -106,6 +114,19 @@ async function applyComplete(binding: ConsumerCompleteBindingV2) {
       report: completedReport.receipt,
     };
   const report = structuredClone(fixture.completed.report!);
+  if (fixture.compositionEndpoint) {
+    const response = await fetch(fixture.compositionEndpoint, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        schemaVersion: "quiz-scoring-input.v2",
+        answers: state.answers,
+        matchingContext: state.matchingContext,
+      }),
+    });
+    if (!response.ok) throw Error("LOCAL_COMPOSITION_FAILED");
+    report.view.display = await response.json();
+  }
   report.receipt.binding = binding;
   report.receipt.bindingSha256 = await consumerCompleteBindingSha256V2(binding);
   report.view.session = binding.session;
@@ -123,6 +144,8 @@ async function applyComplete(binding: ConsumerCompleteBindingV2) {
     report.view,
   );
   completedReport = report;
+  if (fixture.v11Demo)
+    localStorage.setItem(storageName + ":report", JSON.stringify(report));
   return {
     schemaVersion: "quizforge.consumer-complete-resolution.v2",
     kind: "applied",
@@ -427,10 +450,20 @@ function ReviewHost({
       },
     });
   }, [getSnapshot]);
+  const registered = fixture.v11Demo
+    ? resolveConsumerRendererClientV2(
+        props.model.report?.view.renderer ??
+          fixture.session.entry.facts.renderer,
+      )
+    : null;
+  const Experience = fixture.v11Demo
+    ? registered?.Experience
+    : QianzaiTongxinRuntime;
+  if (!Experience) return <p role="alert">本地演示的精确实现登记尚未就绪。</p>;
   return (
     <>
       <ConsumerResourceContextV2.Provider value={port}>
-        <QianzaiTongxinRuntime {...props} />
+        <Experience {...props} />
       </ConsumerResourceContextV2.Provider>
     </>
   );

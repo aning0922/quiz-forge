@@ -11,9 +11,14 @@ import {
 } from "./resource-owner";
 import { loadQianzaiFont } from "./font-owner";
 import { QianzaiExportProvider } from "./export-context";
+import type { QianzaiPresentationBinding } from "@/features/report/qianzai-tongxin/result-presentation";
 
 /** Resource changes never construct a controller, mutate pending or submit business operations. */
-export function QianzaiTongxinRuntime(props: ConsumerExperiencePropsV2) {
+export function QianzaiTongxinRuntime(
+  props: ConsumerExperiencePropsV2 & {
+    presentationBinding?: QianzaiPresentationBinding;
+  },
+) {
   const port = useConsumerResourcePortV2();
   const view = props.model.report?.view ?? props.model.entry;
   const denied = props.model.phase === "denied";
@@ -92,7 +97,13 @@ export function QianzaiTongxinRuntime(props: ConsumerExperiencePropsV2) {
       {lease && (font.lease !== lease || !font.ready) && (
         <p role="status">固定字体尚未就绪，当前文字使用备用字体。</p>
       )}
-      <QianzaiExportProvider model={props.model} lease={lease}>
+      <QianzaiExportProvider
+        model={props.model}
+        lease={lease}
+        {...(props.presentationBinding
+          ? { presentationBinding: props.presentationBinding }
+          : {})}
+      >
         <QianzaiTongxinExperience
           key={`${lease?.generation ?? "none"}:${lease?.current() ? "active" : "revoked"}`}
           {...props}
