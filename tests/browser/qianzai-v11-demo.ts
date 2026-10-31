@@ -186,7 +186,10 @@ const setup = JSON.stringify({
   visuals,
   completedVisuals: visuals,
 }).replaceAll("<", "\\u003c");
-const html = `<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>千载同心 · V1.1 交互体验</title><link rel="stylesheet" href="/demo.css"><style>@font-face{font-family:"${font.family}";src:url(${font.file});font-weight:600;font-display:swap}body{margin:0;background:#0b1727}#demo-details{max-width:430px;margin:0 auto;padding:8px 14px;color:#f8e6be;background:#132936;font:14px/1.7 system-ui}#demo-details summary{min-height:44px;display:flex;align-items:center;cursor:pointer}#demo-details a,#demo-details button{display:inline-block;padding:8px 12px;color:inherit;background:transparent;border:1px solid #8f826a;border-radius:6px;min-height:44px;font:inherit;margin:4px}</style><div id="root"></div><details id="demo-details"><summary>体验说明与重新开始</summary><p>V1.1本地交互体验。24题和评分使用候选内容与原确定性引擎；会话和回执为隔离模拟，不连接数据库，不使用原体验资格。人物为现有参考素材，新角色净图与部分文案仍待确认。</p><a href="/?review-report=reveal">查看李白演示结果</a><button id="demo-reset">清除此演示记录，重新开始</button></details><script id="fixture" type="application/json">${setup}</script><script src="/demo.js"></script><script>document.querySelector('#demo-reset').addEventListener('click',()=>{for(const k of Object.keys(localStorage))if(k.startsWith('qianzai-v11-demo:'))localStorage.removeItem(k);for(const k of Object.keys(sessionStorage))if(k.includes('consumer'))sessionStorage.removeItem(k);location.href='/';});</script></html>`;
+const resetScript = `document.querySelector('#demo-reset').addEventListener('click',()=>{for(const k of Object.keys(localStorage))if(k.startsWith('qianzai-v11-demo:'))localStorage.removeItem(k);for(const k of Object.keys(sessionStorage))if(k.includes('consumer'))sessionStorage.removeItem(k);location.href='/';});`;
+const about = `<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>千载同心 · 体验入口</title><style>body{max-width:620px;margin:8vh auto;padding:24px;background:#122839;color:#f8e6be;font:16px/1.8 system-ui}a,button{display:inline-block;padding:12px 18px;margin:8px;color:inherit;background:transparent;border:1px solid #b99c65;border-radius:8px;font:inherit;cursor:pointer}h1{font-size:28px}</style><h1>千载同心 · V1.1 交互体验</h1><p>24题与现有确定性评分引擎可连续体验；会话和回执为本地隔离模拟，不连接原数据库，不使用原体验资格。人物沿用现有参考素材，新增资料与短句为体验候选。</p><a href="/">继续当前体验</a><button id="demo-reset">开始一轮新体验</button><a href="/?review-report=reveal">直接查看李白揭晓与报告示例</a><script>${resetScript}</script></html>`;
+const html = `<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>千载同心 · V1.1 交互体验</title><link rel="stylesheet" href="/demo.css"><style>@font-face{font-family:"${font.family}";src:url(${font.file});font-weight:600;font-display:swap}html,body{margin:0;height:100%;overflow:hidden;background:#0b1727}</style><div id="root"></div><script id="fixture" type="application/json">${setup}</script><script src="/demo.js"></script></html>`;
+
 const port = Number(process.env.QZTX_V11_PORT ?? "63201");
 if (!Number.isInteger(port) || port < 1024 || port > 65535)
   throw Error("LOCAL_PORT_REQUIRED");
@@ -226,9 +229,11 @@ const server = createServer(async (req, res) => {
       return;
     }
     const item =
-      url.pathname === "/"
-        ? { body: html, type: "text/html;charset=utf-8" }
-        : files.get(url.pathname);
+      url.pathname === "/about"
+        ? { body: about, type: "text/html;charset=utf-8" }
+        : url.pathname === "/"
+          ? { body: html, type: "text/html;charset=utf-8" }
+          : files.get(url.pathname);
     if (!item) {
       res.writeHead(404);
       res.end();
