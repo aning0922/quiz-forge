@@ -1,6 +1,9 @@
 import { beforeAll, describe, expect, it } from "vitest";
 import { qianzaiExportFixture } from "./export.test-support";
 import { layoutQianzaiExport, qianzaiExportText, type Measure } from "./layout";
+import { qianzaiSnapshotDocument } from "./presentation";
+import { qianzaiPresentationFixture } from "./result-presentation.test-support";
+import { deriveQianzaiResultPresentation } from "./result-presentation";
 let fixture: Awaited<ReturnType<typeof qianzaiExportFixture>>;
 beforeAll(async () => {
   fixture = await qianzaiExportFixture();
@@ -13,6 +16,76 @@ const measure: Measure = (s, size) => ({
   descent: size * 0.2,
 });
 describe("Qianzai complete-report layout", () => {
+  it("prints complete registered short groups without taking or truncating the long opening prose", async () => {
+    for (const id of [
+      "li-bai",
+      "su-shi",
+      "tao-yuanming",
+      "li-qingzhao",
+      "mulan-ballad",
+    ]) {
+      const f = await qianzaiPresentationFixture();
+      f.body.matching.selected.ref.id = id;
+      f.view.display.selectedResultRef = { ...f.body.matching.selected.ref };
+      f.body.matching.status = "near-tie";
+      if (id === "mulan-ballad")
+        f.body.matching.selected.kind = "literary-legendary";
+      f.body.volumes[0]!.paragraphs[0]!.text =
+        "不应被截取成海报摘要的长报告正文。".repeat(100);
+      const presentation = deriveQianzaiResultPresentation(f.view, f.binding)!;
+      const result = layoutQianzaiExport(f.body, "poster", measure, undefined, {
+        presentation,
+      });
+      const text = result.operations
+        .filter((op) => op.kind === "text")
+        .map((op) => op.text)
+        .join("");
+      for (const line of [
+        ...presentation.poster.lines,
+        presentation.quote.text,
+        presentation.quote.source,
+      ])
+        expect(text).toContain(line);
+      expect(text).not.toContain("不应被截取");
+      expect(text).toContain("前两位人物接近");
+      expect(result.operations.some((op) => op.kind === "seal")).toBe(true);
+      expect(result.height).toBe(1672);
+    }
+  });
+  it("uses the same registered role identity, verse and history as the reader while retaining all sealed prose", async () => {
+    const f = await qianzaiPresentationFixture(),
+      body = f.body;
+    const before = structuredClone(body);
+    const presentation = deriveQianzaiResultPresentation(f.view, f.binding)!;
+    const doc = qianzaiSnapshotDocument(body, undefined, presentation);
+    const result = layoutQianzaiExport(
+      body,
+      "full-report",
+      measure,
+      undefined,
+      { presentation },
+    );
+    const text = result.operations
+      .filter((op) => op.kind === "text")
+      .map((op) => op.text)
+      .join("");
+    for (const value of [
+      doc.name,
+      doc.subtitle,
+      doc.identity!.verse!.text,
+      doc.identity!.verse!.source,
+      ...doc.history!.timeline.flatMap((row) => [row.title, row.text]),
+      ...body.volumes.flatMap((volume) =>
+        volume.paragraphs.map((paragraph) => paragraph.text),
+      ),
+    ]) {
+      expect(text.replaceAll("\n", "")).toContain(value.replaceAll("\n", ""));
+    }
+    expect(qianzaiExportText(body, "full-report", presentation)).toContain(
+      doc.identity!.verse!.source,
+    );
+    expect(body).toEqual(before);
+  });
   it("reserves a measured footer for the test annotation without covering the title or changing report facts", () => {
     for (const kind of ["poster", "full-report"] as const) {
       const plain = layoutQianzaiExport(fixture.body, kind, measure);

@@ -1051,3 +1051,115 @@
 .reader.reader .rp-scrolltop-text {
   padding: 1px 6px;
 }
+
+/* Text remains independent of the portrait and never squeezes a long name. */
+.reader.reader .rp-identity {
+  align-items: center;
+}
+.reader.reader .rp-identity h1 {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: baseline;
+  column-gap: 8px;
+  min-width: 0;
+}
+.reader.reader .rp-identity h1 .roleName {
+  font: inherit;
+  letter-spacing: inherit;
+  overflow-wrap: anywhere;
+}
+.reader.reader .rp-identity h1 .roleHonorific {
+  white-space: nowrap;
+}
+.reader.reader .rp-seal {
+  flex-shrink: 0;
+}
+/* Keep the source-only comparison typography; real report prose starts at 16px. */
+.reader[data-qianzai-report-mode="snapshot"] .rp-identity-sub,
+.reader[data-qianzai-report-mode="snapshot"] .rp-lead,
+.reader[data-qianzai-report-mode="snapshot"] .runtimeParagraph p,
+.reader[data-qianzai-report-mode="snapshot"] .rp-res-body p,
+.reader[data-qianzai-report-mode="snapshot"] .rp-reflection-feature p,
+.reader[data-qianzai-report-mode="snapshot"] .rp-dual-note p,
+.reader[data-qianzai-report-mode="snapshot"] .rp-time-row p,
+.reader[data-qianzai-report-mode="snapshot"] .rp-closing-section > p,
+.reader[data-qianzai-report-mode="snapshot"] .evidence,
+.reader[data-qianzai-report-mode="snapshot"] .record,
+.reader[data-qianzai-report-mode="snapshot"] .record p {
+  font-size: 16px;
+  line-height: 1.85;
+  overflow-wrap: anywhere;
+}
+.reader[data-qianzai-report-mode="snapshot"] .rp-tags span,
+.reader[data-qianzai-report-mode="snapshot"] .rp-source-note,
+.reader[data-qianzai-report-mode="snapshot"] .qualifier {
+  font-size: 14px;
+  line-height: 1.7;
+}
+.reader.reader .rp-iconbtn,
+.reader.reader .rp-menu-toggle,
+.reader.reader .rp-scrolltop-text,
+.reader .evidence summary,
+.reader .record summary {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+.reader[data-qianzai-report-mode="snapshot"] .rp-nav {
+  height: 82px;
+}
+.reader[data-qianzai-report-mode="snapshot"] .rp-hero {
+  margin-top: -82px;
+}
+
+/* Embedded reader belongs to the scene's single native scroll container. */
+.reader.embedded {
+  height: auto;
+  overflow: visible;
+  background: transparent;
+}
+.reader.embedded .reportScroll {
+  height: auto;
+  overflow: visible;
+  overscroll-behavior: auto;
+  background: transparent;
+}
+.reader.embedded .rp-paper {
+  margin-top: max(
+    0px,
+    calc(
+      var(--qianzai-reveal-height, 100dvh) -
+        var(--qianzai-report-toolbar-height, 82px)
+    )
+  );
+}
+.reader.embedded .rp-nav {
+  top: 0;
+}
+
+.reader .axisGuides {
+  margin-top: 18px;
+}
+.reader .axisGuides > div {
+  padding: 14px 0;
+  border-bottom: 1px solid #ddc49d;
+}
+.reader .axisGuides strong {
+  font:
+    600 17px/1.6 "Noto Serif CJK SC",
+    serif;
+  color: #30425a;
+}
+.reader .axisGuides p {
+  font-size: 16px;
+  line-height: 1.85;
+  color: #786955;
+}
+.reader.reader .rp-toc button {
+  min-height: 44px;
+}
+.reader[data-qianzai-report-mode="snapshot"] .rp-radar-insight p {
+  font-size: 16px;
+  line-height: 1.7;
+}

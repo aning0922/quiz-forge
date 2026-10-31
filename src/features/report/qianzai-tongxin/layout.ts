@@ -1,4 +1,7 @@
 import type { ComposedReportBodyV1 } from "@/lib/assessment-contract/composed-report-v1";
+import { qianzaiSnapshotDocument } from "./presentation";
+import type { QianzaiResultPresentation } from "./result-presentation";
+import { QIANZAI_AXIS_GUIDES_V11 } from "./role-profiles-v11";
 import {
   QIANZAI_EXPORT_LIMITS as L,
   QianzaiExportError,
@@ -38,7 +41,8 @@ export type ExportOperation =
       radius: number;
       scores: readonly number[];
     }
-  | { kind: "card"; box: Box; dark: boolean };
+  | { kind: "card"; box: Box; dark: boolean }
+  | { kind: "seal"; box: Box };
 export type QianzaiExportLayout = Readonly<{
   width: number;
   height: number;
@@ -69,7 +73,9 @@ function paragraphNote(
 export function qianzaiExportText(
   body: ComposedReportBodyV1,
   kind: QianzaiExportKind,
+  presentation?: QianzaiResultPresentation,
 ): readonly string[] {
+  const doc = qianzaiSnapshotDocument(body, undefined, presentation);
   const opening = body.volumes.find((v) => v.id === "encounter")?.paragraphs[0];
   const shared = [
     "千载同心",
@@ -86,7 +92,18 @@ export function qianzaiExportText(
   if (kind === "poster")
     return [
       ...shared,
-      ...(opening ? [opening.text, paragraphNote(opening)] : []),
+      ...(doc.resultPresentation
+        ? [
+            doc.name,
+            doc.resultPresentation.poster.tagline,
+            ...doc.resultPresentation.poster.lines,
+            ...doc.resultPresentation.poster.tags,
+            doc.resultPresentation.quote.text,
+            doc.resultPresentation.quote.source,
+          ]
+        : opening
+          ? [opening.text, paragraphNote(opening)]
+          : []),
     ];
   return [
     ...shared,
@@ -111,6 +128,31 @@ export function qianzaiExportText(
         ]),
       ]),
     ]),
+    doc.name,
+    doc.subtitle,
+    ...(doc.identity?.honorific ? [doc.identity.honorific] : []),
+    ...(doc.identity?.seal ?? []),
+    ...(doc.identity?.tags ?? []),
+    ...(doc.identity?.verse
+      ? [doc.identity.verse.text, doc.identity.verse.source]
+      : []),
+    ...(doc.identity?.lifespan ? [doc.identity.lifespan] : []),
+    ...(doc.identity?.courtesyName ? [doc.identity.courtesyName] : []),
+    ...doc.sections.map((s) => s.title),
+    ...(doc.history
+      ? [
+          doc.history.title,
+          ...(doc.history.intro ? [doc.history.intro] : []),
+          ...doc.history.timeline.flatMap((row) => [row.title, row.text]),
+          doc.history.sourceNote,
+        ]
+      : []),
+    ...(doc.resultPresentation
+      ? [
+          ...doc.resultPresentation.closure.lines,
+          ...Object.values(QIANZAI_AXIS_GUIDES_V11),
+        ]
+      : []),
   ];
 }
 
@@ -119,10 +161,13 @@ export function layoutQianzaiExport(
   kind: QianzaiExportKind,
   measure: Measure,
   check: () => void = () => {},
-  options: Readonly<{ annotation?: string }> = {},
+  options: Readonly<{
+    annotation?: string;
+    presentation?: QianzaiResultPresentation;
+  }> = {},
 ): QianzaiExportLayout {
   const strings = [
-    ...qianzaiExportText(body, kind),
+    ...qianzaiExportText(body, kind, options.presentation),
     ...(options.annotation ? [options.annotation] : []),
   ];
   if (
@@ -205,6 +250,7 @@ export function layoutQianzaiExport(
     }
     return y;
   };
+  const doc = qianzaiSnapshotDocument(body, undefined, options.presentation);
   if (kind === "poster") {
     operations.push({
       kind: "image",
@@ -213,13 +259,34 @@ export function layoutQianzaiExport(
       fit: "cover",
     });
     text("千载同心", 48, 48, 38, 340, 62, 110);
-    text(body.matching.selected.label, 28, 58, 116, 250, 38, 158);
+    text(doc.name, 28, 58, 116, 250, 38, 158);
     operations.push({
       kind: "image",
       role: "nameArt",
-      box: { x: 56, y: 175, width: 270, height: 365 },
+      box: {
+        x: 56,
+        y: 175,
+        width: 270,
+        height: doc.resultPresentation ? 330 : 365,
+      },
       fit: "contain",
     });
+    if (doc.resultPresentation) {
+      operations.push({
+        kind: "seal",
+        box: { x: 64, y: 518, width: 160, height: 48 },
+      });
+      text(
+        doc.resultPresentation.poster.tagline,
+        26,
+        80,
+        526,
+        128,
+        36,
+        566,
+        "#fff0d9",
+      );
+    }
     text("契合指数", 32, 70, 575, 260, 44, 625);
     text(
       String(body.matching.selected.narrativeIndex),
@@ -233,12 +300,24 @@ export function layoutQianzaiExport(
     );
     text("/ 100", 28, 230, 740, 150, 38, 790, "#765e43");
     operations.push({ kind: "rule", y: 807 });
-    let y = text(body.title, 30, 65, 830, 811, 44, 930);
-    for (const note of matchingNotes(body))
-      y = text(note, 22, 65, y + 8, 811, 30, 1076);
+    let y = 830;
+    if (!doc.resultPresentation) {
+      y = text(body.title, 30, 65, y, 811, 44, 930);
+      for (const note of matchingNotes(body))
+        y = text(note, 22, 65, y + 8, 811, 30, 1076);
+    }
     const opening = body.volumes.find((v) => v.id === "encounter")
       ?.paragraphs[0];
-    if (opening) {
+    if (doc.resultPresentation) {
+      const result = doc.resultPresentation;
+      y = 830;
+      for (const line of result.poster.lines)
+        y = text(line, 27, 65, y, 811, 38, 972);
+      y = text(result.quote.text, 24, 65, y + 6, 811, 34, 1034);
+      y = text(result.quote.source, 18, 65, y + 3, 811, 26, 1076);
+      for (const note of matchingNotes(body))
+        y = text(note, 17, 65, y + 4, 811, 24, 1076);
+    } else if (opening) {
       y = text(opening.text, 26, 65, y + 10, 811, 37, 1076);
       text(paragraphNote(opening), 20, 65, y + 6, 811, 28, 1076, "#705f4d");
     }
@@ -246,22 +325,41 @@ export function layoutQianzaiExport(
     operations.push({
       kind: "radar",
       x: 340,
-      y: 1330,
-      radius: 145,
+      y: doc.resultPresentation ? 1300 : 1330,
+      radius: doc.resultPresentation ? 125 : 145,
       scores: body.dimensions.map((d) => d.score),
     });
-    const labels = [
-      [260, 1150],
-      [550, 1270],
-      [450, 1480],
-      [140, 1480],
-      [45, 1270],
-    ];
+    const labels = doc.resultPresentation
+      ? [
+          [260, 1145],
+          [550, 1255],
+          [450, 1420],
+          [140, 1420],
+          [45, 1255],
+        ]
+      : [
+          [260, 1150],
+          [550, 1270],
+          [450, 1480],
+          [140, 1480],
+          [45, 1270],
+        ];
     body.dimensions.forEach((d, i) => {
       const [x, top] = labels[i]!;
       const bottom = text(d.label, 25, x!, top!, 180, 34, top! + 70);
       text(String(d.score), 30, x!, bottom, 180, 39, top! + 112);
     });
+    if (doc.resultPresentation)
+      text(
+        doc.resultPresentation.poster.tags.join(" · "),
+        22,
+        65,
+        1510,
+        811,
+        32,
+        1550,
+        "#a23a30",
+      );
     text(
       body.notice,
       22,
@@ -291,8 +389,18 @@ export function layoutQianzaiExport(
     fit: "contain",
   });
   text("千载同心", 36, 42, 40, 210, 50, 105);
-  let y = text(body.matching.selected.label, 30, 42, 475, 640, 44) + 12;
-  y = text(body.title, 28, 42, y, 640, 42) + 12;
+  let y = text(doc.name, 30, 42, 475, 640, 44) + 12;
+  if (doc.identity?.honorific)
+    y = text(doc.identity.honorific, 24, 42, y, 640, 36) + 8;
+  if (doc.identity?.seal?.length)
+    y = text(doc.identity.seal.join(" · "), 22, 42, y, 640, 34) + 8;
+  y = text(doc.subtitle, 28, 42, y, 640, 42) + 12;
+  if (doc.identity?.tags?.length)
+    y = text(doc.identity.tags.join(" · "), 22, 42, y, 640, 34) + 12;
+  if (doc.identity?.verse) {
+    y = text(doc.identity.verse.text, 28, 42, y, 640, 42) + 8;
+    y = text(doc.identity.verse.source, 21, 42, y, 640, 32) + 16;
+  }
   y =
     text(
       `契合指数 ${body.matching.selected.narrativeIndex} / 100`,
@@ -340,12 +448,30 @@ export function layoutQianzaiExport(
   for (const volume of body.volumes) {
     bounds(y + 60);
     operations.push({ kind: "rule", y });
-    y = text(volume.title, 32, 42, y + 24, 640, 48) + 18;
+    const section = doc.sections.find((s) => s.id === volume.id)!;
+    y =
+      text(
+        volume.id === "literature" && doc.history
+          ? doc.history.title
+          : section.title,
+        32,
+        42,
+        y + 24,
+        640,
+        48,
+      ) + 18;
     if (volume.id === "dimensions") {
       for (const d of body.dimensions) {
         y = text(`${d.label} ${d.score} / 100`, 25, 58, y, 608, 38) + 8;
         operations.push({ kind: "bar", x: 58, y, width: 608, score: d.score });
         y += 34;
+        if (doc.resultPresentation) {
+          const guide =
+            QIANZAI_AXIS_GUIDES_V11[
+              d.dimensionRef.id as keyof typeof QIANZAI_AXIS_GUIDES_V11
+            ];
+          if (guide) y = text(guide, 23, 58, y, 608, 36) + 16;
+        }
       }
       y += 10;
     }
@@ -356,8 +482,26 @@ export function layoutQianzaiExport(
         box: { x: 42, y, width: 250, height: 250 },
         fit: "cover",
       });
-      text(body.matching.selected.label, 36, 326, y + 48, 355, 54);
+      text(doc.name, 36, 326, y + 48, 355, 54);
       y += 278;
+      if (doc.identity?.lifespan)
+        y = text(doc.identity.lifespan, 23, 42, y, 640, 36) + 8;
+      if (doc.identity?.courtesyName)
+        y = text(doc.identity.courtesyName, 23, 42, y, 640, 36) + 12;
+      if (doc.history) {
+        if (doc.history.intro)
+          y = text(doc.history.intro, 24, 42, y, 640, 36) + 12;
+        for (const row of doc.history.timeline) {
+          y = text(row.title, 25, 58, y, 608, 38) + 6;
+          y = text(row.text, 24, 58, y, 608, 38) + 18;
+        }
+        y = text(doc.history.sourceNote, 21, 42, y, 640, 32) + 18;
+      }
+    }
+    if (volume.id === "closure" && doc.resultPresentation) {
+      for (const line of doc.resultPresentation.closure.lines)
+        y = text(line, 32, 58, y, 608, 48) + 4;
+      y += 14;
     }
     for (const paragraph of volume.paragraphs) {
       const start = y,

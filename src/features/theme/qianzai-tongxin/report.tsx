@@ -7,6 +7,7 @@ import {
   useRef,
   useState,
   type ReactNode,
+  type RefObject,
 } from "react";
 import type { ComposedReportBodyV1 } from "@/lib/assessment-contract/composed-report-v1";
 import {
@@ -19,6 +20,8 @@ import type { QianzaiViewProps } from "./views";
 import { qianzaiRolePresentation } from "@/features/report/qianzai-tongxin/role-presentation";
 import { qianzaiCharacter, qianzaiImage } from "./art";
 import { QianzaiSharePanel } from "./share-panel";
+import { useQianzaiExport } from "./export-context";
+import { QIANZAI_AXIS_GUIDES_V11 } from "@/features/report/qianzai-tongxin/role-profiles-v11";
 import styles from "./report-parity.module.css";
 
 const c = (...names: string[]) => names.map((n) => styles[n]).join(" ");
@@ -145,7 +148,7 @@ export function QianzaiDimensions({
                     x={x! - 38}
                     y={y! - 22}
                     width="76"
-                    height="52"
+                    height="58"
                     className={c("radarHit")}
                   />
                   <text
@@ -188,6 +191,24 @@ export function QianzaiDimensions({
           </div>
         )}
       </div>
+      {documentView?.resultPresentation && (
+        <div className={c("axisGuides")}>
+          {dimensions.map((d) => (
+            <div key={d.dimensionRef.id}>
+              <strong>
+                {d.label} · {d.score} / 100
+              </strong>
+              <p>
+                {
+                  QIANZAI_AXIS_GUIDES_V11[
+                    d.dimensionRef.id as keyof typeof QIANZAI_AXIS_GUIDES_V11
+                  ]
+                }
+              </p>
+            </div>
+          ))}
+        </div>
+      )}
       {documentView?.dimensionWarning && (
         <p className={c("rp-assessment-warning")}>
           {documentView.dimensionWarning}
@@ -363,6 +384,11 @@ function Blocks({ blocks }: { blocks: readonly QianzaiReportBlock[] }) {
   );
 }
 
+export type QianzaiEmbeddedReport = Readonly<{
+  scrollContainer: RefObject<HTMLDivElement | null>;
+  onReturn(): void;
+}>;
+
 /** Presentational reader shared by the snapshot adapter and explicit reference-only
  * browser fixture. This component never writes or grants report authority. */
 export function QianzaiReportReader({
@@ -374,6 +400,7 @@ export function QianzaiReportReader({
   entry = 0,
   active = true,
   actions,
+  embedded,
 }: {
   document: QianzaiReportDocument;
   heroUrl?: string;
@@ -383,49 +410,96 @@ export function QianzaiReportReader({
   entry?: number;
   active?: boolean;
   actions?: ReactNode;
+  embedded?: QianzaiEmbeddedReport;
 }) {
   const container = useRef<HTMLDivElement>(null),
+    reader = useRef<HTMLElement>(null),
     toc = useRef<HTMLDivElement>(null);
+  const scrollContainer = embedded?.scrollContainer ?? container;
+  const returnToResult = embedded?.onReturn ?? onResult;
   const [tocOpen, setTocOpen] = useState(false),
     [reading, setReading] = useState({
       percent: 0,
       chapter: labels[0]!,
       paper: false,
+      entered: false,
     });
   const id = useId();
   const measure = useCallback((node: HTMLDivElement) => {
     const max = Math.max(0, node.scrollHeight - node.clientHeight),
-      amount = Math.min(max, Math.max(0, node.scrollTop));
-    const percent = max ? Math.round((100 * amount) / max) : 100;
+      amount = Math.min(max, Math.max(0, node.scrollTop)),
+      nav = reader.current?.querySelector<HTMLElement>(
+        "[data-qianzai-report-toolbar]",
+      ),
+      opening = reader.current?.querySelector<HTMLElement>(
+        '[data-report-chapter-id="encounter"]',
+      ),
+      toolbarHeight = nav?.offsetHeight ?? 0,
+      start = opening
+        ? Math.max(
+            0,
+            amount +
+              opening.getBoundingClientRect().top -
+              node.getBoundingClientRect().top -
+              toolbarHeight,
+          )
+        : 0,
+      readingLength = Math.max(0, max - start),
+      readingAmount = Math.max(0, amount - start);
+    const percent = readingLength
+      ? Math.round((100 * readingAmount) / readingLength)
+      : amount >= start
+        ? 100
+        : 0;
+    reader.current?.style.setProperty(
+      "--qianzai-report-toolbar-height",
+      `${toolbarHeight}px`,
+    );
     let chapter = labels[0]!;
-    const threshold = node.getBoundingClientRect().top + 177;
-    node.querySelectorAll<HTMLElement>("[data-report-chapter]").forEach((s) => {
-      if (s.getBoundingClientRect().top <= threshold)
-        chapter = s.dataset.reportChapter!;
-    });
+    const threshold =
+      (nav?.getBoundingClientRect().bottom ??
+        node.getBoundingClientRect().top) + 16;
+    reader.current
+      ?.querySelectorAll<HTMLElement>("[data-report-chapter]")
+      .forEach((s) => {
+        if (s.getBoundingClientRect().top <= threshold)
+          chapter = s.dataset.reportChapter!;
+      });
     if (percent >= 100) chapter = labels[5]!;
     setReading((old) =>
       old.percent === percent &&
       old.chapter === chapter &&
-      old.paper === amount > 210
+      old.paper === amount >= start - 1 &&
+      old.entered === (old.entered || amount >= start - 1)
         ? old
-        : { percent, chapter, paper: amount > 210 },
+        : {
+            percent,
+            chapter,
+            paper: amount >= start - 1,
+            entered: old.entered || amount >= start - 1,
+          },
     );
   }, []);
   useEffect(() => {
-    const n = container.current;
+    const n = scrollContainer.current;
     if (!n) return;
-    const observer = new ResizeObserver(() => measure(n));
+    const update = () => measure(n);
+    const observer = new ResizeObserver(update);
     observer.observe(n);
-    if (n.firstElementChild) observer.observe(n.firstElementChild);
-    return () => observer.disconnect();
-  }, [measure]);
+    if (reader.current) observer.observe(reader.current);
+    n.addEventListener("scroll", update, { passive: true });
+    update();
+    return () => {
+      observer.disconnect();
+      n.removeEventListener("scroll", update);
+    };
+  }, [measure, scrollContainer]);
   useEffect(() => {
-    if (active && container.current) {
+    if (active && !embedded && container.current) {
       container.current.scrollTop = 0;
       measure(container.current);
     }
-  }, [entry, active, measure]);
+  }, [entry, active, measure, embedded]);
   useEffect(() => {
     const close = (e: PointerEvent) => {
       if (e.target instanceof Node && !toc.current?.contains(e.target))
@@ -435,8 +509,8 @@ export function QianzaiReportReader({
     return () => document.removeEventListener("pointerdown", close);
   }, []);
   const jump = (sectionId: string) => {
-    const n = container.current,
-      target = n?.querySelector<HTMLElement>(
+    const n = scrollContainer.current,
+      target = reader.current?.querySelector<HTMLElement>(
         `[data-report-chapter-id="${sectionId}"]`,
       );
     if (n && target)
@@ -446,7 +520,10 @@ export function QianzaiReportReader({
           n.scrollTop +
             target.getBoundingClientRect().top -
             n.getBoundingClientRect().top -
-            128,
+            ((reader.current?.querySelector<HTMLElement>(
+              "[data-qianzai-report-toolbar]",
+            )?.offsetHeight ?? 82) +
+              16),
         ),
         behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
           ? "instant"
@@ -457,32 +534,32 @@ export function QianzaiReportReader({
   const opening = doc.sections.find((s) => s.id === "encounter")!;
   return (
     <section
-      className={c("reader")}
+      ref={reader}
+      className={c("reader", ...(embedded ? ["embedded"] : []))}
       data-qianzai-screen="report"
       data-qianzai-report-mode={doc.mode}
     >
-      <div
-        ref={container}
-        className={c("reportScroll")}
-        onScroll={(e) => measure(e.currentTarget)}
-      >
+      <div ref={container} className={c("reportScroll")}>
         <div>
           <header
+            data-qianzai-report-toolbar
             className={c("rp-nav", ...(reading.paper ? ["paper-mode"] : []))}
           >
-            <div className={c("rp-status")}>
-              <span>9:41</span>
-              <span className={c("rp-signals")} aria-hidden="true">
-                <span className={c("rp-bars")}>▂▄▆</span>
-                <span className={c("rp-wifi")}>◕</span>
-                <span className={c("rp-battery")} />
-              </span>
-            </div>
+            {doc.mode === "reference-only" && (
+              <div className={c("rp-status")}>
+                <span>9:41</span>
+                <span className={c("rp-signals")} aria-hidden="true">
+                  <span className={c("rp-bars")}>▂▄▆</span>
+                  <span className={c("rp-wifi")}>◕</span>
+                  <span className={c("rp-battery")} />
+                </span>
+              </div>
+            )}
             <div className={c("rp-nav-line")}>
               <button
                 className={c("rp-iconbtn")}
                 aria-label="返回人物揭晓"
-                onClick={onResult}
+                onClick={returnToResult}
               >
                 ‹
               </button>
@@ -552,23 +629,26 @@ export function QianzaiReportReader({
               <span className={c("rp-progress-glint")} />
             </div>
           </header>
-          <div
-            className={c("rp-hero")}
-            style={
-              heroUrl
-                ? {
-                    backgroundImage: `linear-gradient(to bottom,rgba(5,15,28,.23),transparent 43%,rgba(9,20,33,.28) 80%,rgba(9,20,32,.70)),url("${heroUrl}")`,
-                  }
-                : undefined
-            }
-          >
-            {!heroUrl && (
-              <span className={c("artMissing")}>人物画作待接入</span>
-            )}
-            <div className={c("rp-hero-kicker")}>一卷山河 · 因你而展</div>
-            <div className={c("rp-hero-caption")}>{doc.heroCaption}</div>
-          </div>
+          {!embedded && (
+            <div
+              className={c("rp-hero")}
+              style={
+                heroUrl
+                  ? {
+                      backgroundImage: `linear-gradient(to bottom,rgba(5,15,28,.23),transparent 43%,rgba(9,20,33,.28) 80%,rgba(9,20,32,.70)),url("${heroUrl}")`,
+                    }
+                  : undefined
+              }
+            >
+              {!heroUrl && (
+                <span className={c("artMissing")}>人物画作待接入</span>
+              )}
+              <div className={c("rp-hero-kicker")}>一卷山河 · 因你而展</div>
+              <div className={c("rp-hero-caption")}>{doc.heroCaption}</div>
+            </div>
+          )}
           <main
+            data-qianzai-report-start
             className={c("rp-paper")}
             style={
               paperUrl
@@ -589,11 +669,12 @@ export function QianzaiReportReader({
               </div>
               <div className={c("rp-identity")}>
                 <h1 data-report-opening-title tabIndex={-1}>
-                  {doc.name}
+                  <span className={c("roleName")}>{doc.name}</span>
                   {doc.identity?.honorific && (
                     <>
-                      {" "}
-                      <span>· {doc.identity.honorific}</span>
+                      <span className={c("roleHonorific")}>
+                        · {doc.identity.honorific}
+                      </span>
                     </>
                   )}
                 </h1>
@@ -610,7 +691,7 @@ export function QianzaiReportReader({
               </div>
               <p className={c("rp-identity-sub")}>{doc.subtitle}</p>
               {doc.identity?.tags && (
-                <div className={c("rp-tags")}>
+                <div className={c("rp-tags")} aria-label="人物作品与角色关键词">
                   {doc.identity.tags.map((t) => (
                     <span key={t}>{t}</span>
                   ))}
@@ -691,6 +772,16 @@ export function QianzaiReportReader({
                       </p>
                     </>
                   )}
+                  {closing && doc.resultPresentation && (
+                    <div className={c("rp-final-verse")}>
+                      {doc.resultPresentation.closure.lines.map((line, i) => (
+                        <span key={line}>
+                          {i > 0 && <br />}
+                          {line}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                   {closing && doc.mode === "reference-only" ? (
                     s.blocks.map((b, j) =>
                       b.layout === "body" ? (
@@ -721,10 +812,15 @@ export function QianzaiReportReader({
                         <span>✦</span> 长卷已展至尽处 <span>✦</span>
                       </div>
                       <div className={c("rp-share-actions")}>
-                        {actions ?? <QianzaiSharePanel active={active} />}
+                        {actions ?? (
+                          <QianzaiSharePanel
+                            active={active}
+                            prepareEnabled={!embedded || reading.entered}
+                          />
+                        )}
                         <button
                           className={c("rp-secondary")}
-                          onClick={onResult}
+                          onClick={returnToResult}
                         >
                           回看人物揭晓
                         </button>
@@ -806,13 +902,16 @@ export function QianzaiReport({
   entry = 0,
   active = true,
   presentation,
+  embedded,
 }: QianzaiViewProps & {
   entry?: number;
   active?: boolean;
   presentation?: QianzaiReportPresentation;
+  embedded?: QianzaiEmbeddedReport;
 }) {
   const body = model.report?.view.display.body,
     character = qianzaiCharacter(model);
+  const resultPresentation = useQianzaiExport().getResultPresentation();
   const hero = qianzaiImage(model, character?.report, images),
     paper = qianzaiImage(
       model,
@@ -825,6 +924,7 @@ export function QianzaiReport({
       document={qianzaiSnapshotDocument(
         body,
         presentation ?? qianzaiRolePresentation(body.matching.selected.ref),
+        resultPresentation ?? undefined,
       )}
       {...(hero ? { heroUrl: hero.objectUrl } : {})}
       {...(paper ? { paperUrl: paper.objectUrl } : {})}
@@ -832,6 +932,7 @@ export function QianzaiReport({
       onLogout={() => onEvent({ type: "logout" })}
       entry={entry}
       active={active}
+      {...(embedded ? { embedded } : {})}
     />
   );
 }

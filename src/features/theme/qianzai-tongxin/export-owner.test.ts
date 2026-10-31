@@ -154,7 +154,7 @@ describe("Qianzai export task ownership", () => {
     const task = f.owner.generate("poster");
     await f.owner.generate("full-report");
     await task;
-    expect(render).toHaveBeenCalledTimes(1);
+    expect(render).toHaveBeenCalledTimes(2);
     await f.owner.generate("full-report");
     await f.owner.generate("poster");
     expect(render).toHaveBeenCalledTimes(2);
@@ -197,6 +197,119 @@ describe("Qianzai export task ownership", () => {
     expect(f.revoke).toHaveBeenCalledTimes(1);
     expect(f.owner.download()).toBe(false);
     expect(await f.owner.share()).toBe("unavailable");
+    f.owner.dispose();
+  });
+  it("prepares serially before a dialog opens, deduplicates preparation and keeps URLs until report release", async () => {
+    const starts: string[] = [];
+    const finishes: (() => void)[] = [];
+    const f = setup(async (kind) => {
+      starts.push(kind);
+      await new Promise<void>((resolve) => finishes.push(resolve));
+      return {
+        blob: new Blob([kind], { type: "image/png" }),
+        width: kind === "poster" ? 941 : 724,
+        height: kind === "poster" ? 1672 : 4200,
+      };
+    });
+    const first = f.owner.prepare(),
+      second = f.owner.prepare();
+    expect(starts).toEqual(["poster"]);
+    finishes.shift()!();
+    await vi.waitFor(() => expect(starts).toEqual(["poster", "full-report"]));
+    const poster = f.owner.getCachedArtifact("poster");
+    expect(poster).not.toBeNull();
+    finishes.shift()!();
+    await Promise.all([first, second]);
+    f.owner.open();
+    expect(f.owner.getCachedArtifact("poster")).toBe(poster);
+    expect(f.revoke).not.toHaveBeenCalled();
+    await f.owner.prepare();
+    expect(starts).toHaveLength(2);
+    f.owner.close();
+    expect(f.revoke).toHaveBeenCalledTimes(2);
+    expect(f.owner.getCachedArtifact("poster")).toBeNull();
+    f.owner.dispose();
+  });
+  it("keeps an explicitly selected poster as the download while background full-report finishes", async () => {
+    let finish!: () => void;
+    const f = setup(async (kind) => {
+      if (kind === "full-report")
+        await new Promise<void>((resolve) => {
+          finish = resolve;
+        });
+      return {
+        blob: new Blob([kind], { type: "image/png" }),
+        width: kind === "poster" ? 941 : 724,
+        height: kind === "poster" ? 1672 : 4200,
+      };
+    });
+    const work = f.owner.prepare();
+    await vi.waitFor(() => expect(finish).toBeTypeOf("function"));
+    await f.owner.generate("poster");
+    const poster = f.owner.getCachedArtifact("poster")!;
+    finish();
+    await work;
+    const anchor = {
+      href: "",
+      download: "",
+      style: { display: "" },
+      click: vi.fn(),
+      remove: vi.fn(),
+    };
+    vi.stubGlobal("document", {
+      createElement: () => anchor,
+      body: { append: vi.fn() },
+    });
+    expect(f.owner.download()).toBe(true);
+    expect(anchor.href).toBe(poster.previewUrl);
+    expect(anchor.download).toBe("qianzai-tongxin-poster.png");
+    f.owner.dispose();
+  });
+  it("retains a per-kind failure without an automatic retry, allowing explicit retry", async () => {
+    let posterAttempts = 0;
+    const f = setup(async (kind) => {
+      if (kind === "poster" && ++posterAttempts === 1)
+        throw Error("synthetic render failure");
+      return {
+        blob: new Blob([kind], { type: "image/png" }),
+        width: kind === "poster" ? 941 : 724,
+        height: kind === "poster" ? 1672 : 4200,
+      };
+    });
+    await f.owner.prepare();
+    expect(f.owner.getFailure("poster")).not.toBeNull();
+    expect(f.owner.getCachedArtifact("full-report")).not.toBeNull();
+    await f.owner.prepare();
+    expect(posterAttempts).toBe(1);
+    await f.owner.generate("poster");
+    expect(f.owner.getFailure("poster")).toBeNull();
+    expect(f.owner.getCachedArtifact("poster")).not.toBeNull();
+    f.owner.dispose();
+  });
+  it("aborts preparation on report release and rejects late bytes without starting its next kind", async () => {
+    let finish!: () => void;
+    let child!: AbortSignal;
+    const starts: string[] = [];
+    const f = setup(async (kind, _scope, signal) => {
+      starts.push(kind);
+      child = signal;
+      await new Promise<void>((resolve) => {
+        finish = resolve;
+      });
+      return {
+        blob: new Blob([kind], { type: "image/png" }),
+        width: 941,
+        height: 1672,
+      };
+    });
+    const work = f.owner.prepare();
+    f.revokeLease();
+    expect(child.aborted).toBe(true);
+    finish();
+    await work;
+    expect(starts).toEqual(["poster"]);
+    expect(f.create).not.toHaveBeenCalled();
+    expect(f.owner.getSnapshot().phase).toBe("closed");
     f.owner.dispose();
   });
   it("reports unsupported sharing, cancellation and failure without generating another PNG", async () => {
