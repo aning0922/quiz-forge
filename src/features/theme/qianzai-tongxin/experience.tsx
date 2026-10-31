@@ -22,11 +22,13 @@ import {
   QianzaiQuestion,
   QianzaiReveal,
   Screen,
+  useQianzaiSceneScale,
 } from "./views";
 import { QianzaiReport } from "./report";
 import type { QianzaiVisualProps } from "./art";
 import { useQianzaiMotion } from "./motion";
 import styles from "./qianzai.module.css";
+import scenes from "./scenes.module.css";
 
 type RevealPresentation = "waiting" | "playing" | "ready";
 const viewedReports = new Set<string>();
@@ -78,6 +80,7 @@ export function QianzaiTongxinExperience({
   initialScreen,
   images,
   prototypeImages,
+  roleCompositeImages,
 }: QianzaiTongxinExperienceProps) {
   const [page, setPage] = useState<ConsumerReadingPageV2 | null>(
     initialScreen ?? null,
@@ -89,6 +92,7 @@ export function QianzaiTongxinExperience({
   const touch = useRef<{ x: number; y: number } | null>(null);
   const enabled = canEditConsumerV2(model);
   const motion = useQianzaiMotion();
+  const sceneScale = useQianzaiSceneScale();
   const compatible =
     (model.report?.view.display.presentationMode ??
       model.entry?.presentationMode) === "authored-product";
@@ -480,7 +484,7 @@ export function QianzaiTongxinExperience({
       current.state?.progress.questionId === q
     );
     transition(
-      "chapter",
+      act === 1 ? "preference" : "chapter",
       act,
       () => {
         latest.current.onEvent({ type: "navigate", questionId: q });
@@ -650,6 +654,7 @@ export function QianzaiTongxinExperience({
     onRead: read,
     ...(images ? { images } : {}),
     ...(prototypeImages ? { prototypeImages } : {}),
+    ...(roleCompositeImages ? { roleCompositeImages } : {}),
   };
   const questions = model.entry?.questions ?? [];
   const count = questions.filter((q) =>
@@ -799,17 +804,21 @@ export function QianzaiTongxinExperience({
           </div>
         </Screen>
       ) : (
-        <div className={styles.sceneFrame}>
+        <div className={`${styles.sceneFrame} ${scenes.journey}`}>
           <div
             ref={stage}
             data-qianzai-transition
-            className={styles.transitionStage}
+            style={{
+              left: `calc(50% - ${195 * sceneScale}px)`,
+              transform: `scale(${sceneScale})`,
+            }}
+            className={scenes.transitionStage}
             aria-hidden="true"
           >
-            <div className={styles.transitionCurtain} />
-            <div className={styles.transitionRibbon} />
-            <div className={styles.transitionFiligree} />
-            <div className={styles.transitionWords}>
+            <div className={scenes.transitionCurtain} />
+            <div className={scenes.transitionRibbon} />
+            <div className={scenes.transitionFiligree} />
+            <div className={scenes.transitionWords}>
               <p data-transition-part="kicker" />
               <h2 data-transition-part="title" />
               <p data-transition-part="place" />
@@ -827,7 +836,7 @@ export function QianzaiTongxinExperience({
                     {...props}
                     onEnter={() => {
                       if (queued.current || stageTimers.current.length) return;
-                      enterPreferredAct();
+                      feedback(enterPreferredAct);
                     }}
                     onChoose={(value) => {
                       if (feedback(enterPreferredAct))
