@@ -15,11 +15,20 @@ const slot = z.union([
     "character.",
     z.enum(["reveal", "nameArt", "report", "poster"]),
   ]),
+  z.enum([
+    "character.revealComposite.before",
+    "character.revealComposite.full",
+  ]),
 ]);
 const binding = z.strictObject({
   asset: displayAssetV2Schema.omit({ alt: true }),
   slot,
-  layer: z.enum(["clean", "prototype-scene-base", "prototype-option-skin"]),
+  layer: z.enum([
+    "clean",
+    "prototype-scene-base",
+    "prototype-option-skin",
+    "role-composite",
+  ]),
 });
 export const qianzaiRuntimeInputsSchema = z.strictObject({
   schemaVersion: z.literal("qianzai-runtime-inputs.v1"),

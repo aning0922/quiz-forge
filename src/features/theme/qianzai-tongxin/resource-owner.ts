@@ -9,7 +9,7 @@ import {
 import { sameConsumerFact } from "@/lib/consumer-contract/v1/integrity";
 
 export type QianzaiImageLayer =
-  "clean" | "prototype-scene-base" | "prototype-option-skin";
+  "clean" | "prototype-scene-base" | "prototype-option-skin" | "role-composite";
 export type QianzaiAssetSlot =
   | "cover"
   | "preferenceScene"
@@ -17,7 +17,8 @@ export type QianzaiAssetSlot =
   | "reportBorder"
   | "seal"
   | `acts.${0 | 1 | 2}.${"background" | "questionPaper" | "optionIdle" | "optionSelected"}`
-  | `character.${"reveal" | "nameArt" | "report" | "poster"}`;
+  | `character.${"reveal" | "nameArt" | "report" | "poster"}`
+  | `character.revealComposite.${"before" | "full"}`;
 export type QianzaiAssetBinding = Readonly<{
   asset: Omit<DisplayAssetV1, "alt">;
   slot: QianzaiAssetSlot;
@@ -43,7 +44,7 @@ export function admittedQianzaiBindings(
   if (model.phase === "denied") return [];
   const assets = model.report?.view.display.assets ?? model.entry?.assets ?? [];
   const n = model.report?.view.display.slots.neutral ?? model.entry?.slots;
-  return fixed.flatMap((binding) => {
+  const admitted = fixed.flatMap((binding) => {
     const a = binding.asset;
     const declared = assets.find((v) => {
       const { alt, ...facts } = v;
@@ -58,6 +59,20 @@ export function admittedQianzaiBindings(
       return [];
     const parts = binding.slot.split(".");
     const character = model.report?.view.display.slots.character;
+    const composite = parts[1] === "revealComposite";
+    if (
+      composite &&
+      (binding.layer !== "role-composite" ||
+        model.phase !== "completed" ||
+        model.pendingOperation ||
+        !character?.revealComposite ||
+        !sameRef(
+          character.resultRef,
+          model.report?.view.display.body.matching.selected.ref,
+        ))
+    )
+      return [];
+    if (binding.layer === "role-composite" && !composite) return [];
     if (
       parts[0] === "character" &&
       (!character ||
@@ -74,7 +89,11 @@ export function admittedQianzaiBindings(
               "background" | "questionPaper" | "optionIdle" | "optionSelected"
           ]
         : parts[0] === "character"
-          ? character?.[parts[1] as "reveal" | "nameArt" | "report" | "poster"]
+          ? composite
+            ? character?.revealComposite?.[parts[2] as "before" | "full"]
+            : character?.[
+                parts[1] as "reveal" | "nameArt" | "report" | "poster"
+              ]
           : n[
               binding.slot as
                 | "cover"
@@ -102,6 +121,17 @@ export function admittedQianzaiBindings(
       return [];
     return [{ ...binding, asset: declared }];
   });
+  const pair = admitted.filter((b) => b.layer === "role-composite");
+  const completePair =
+    pair.length === 2 &&
+    new Set(pair.map((b) => b.slot)).size === 2 &&
+    pair.every(
+      (b) =>
+        b.asset.width === pair[0]!.asset.width &&
+        b.asset.height === pair[0]!.asset.height &&
+        b.asset.approval === pair[0]!.asset.approval,
+    );
+  return admitted.filter((b) => b.layer !== "role-composite" || completePair);
 }
 type Loader = typeof loadVerifiedImage;
 /** One view/authority generation owns every URL. Late completions are released, never adopted. */

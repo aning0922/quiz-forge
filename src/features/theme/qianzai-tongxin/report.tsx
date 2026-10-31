@@ -16,6 +16,7 @@ import {
   type QianzaiReportPresentation,
 } from "@/features/report/qianzai-tongxin/presentation";
 import type { QianzaiViewProps } from "./views";
+import { qianzaiRolePresentation } from "@/features/report/qianzai-tongxin/role-presentation";
 import { qianzaiCharacter, qianzaiImage } from "./art";
 import { QianzaiSharePanel } from "./share-panel";
 import styles from "./report-parity.module.css";
@@ -821,7 +822,10 @@ export function QianzaiReport({
   if (!body) return null;
   return (
     <QianzaiReportReader
-      document={qianzaiSnapshotDocument(body, presentation)}
+      document={qianzaiSnapshotDocument(
+        body,
+        presentation ?? qianzaiRolePresentation(body.matching.selected.ref),
+      )}
       {...(hero ? { heroUrl: hero.objectUrl } : {})}
       {...(paper ? { paperUrl: paper.objectUrl } : {})}
       onResult={() => onRead("result")}
