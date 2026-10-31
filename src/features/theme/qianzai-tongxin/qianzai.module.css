@@ -3325,34 +3325,6 @@
   border: 0;
   border-radius: 8px;
 }
-.readerDeck {
-  position: relative;
-  height: 100dvh;
-  overflow: hidden;
-}
-.readerResult,
-.readerReport {
-  position: absolute;
-  inset: 0;
-}
-.readerReport {
-  z-index: 58;
-  transform: translateY(101%);
-}
-.readerReport .reportScreen {
-  height: 100%;
-  min-height: 0;
-}
-.readerDeck[data-reader-moving] .readerReport {
-  transition: transform 700ms cubic-bezier(0.2, 0.68, 0.17, 1);
-}
-.readerDeck[data-reader-page="report"] .readerReport {
-  transform: translateY(0);
-}
-.readerDeck[data-reader-moving="prepare"] .readerReport {
-  transform: translateY(101%);
-  transition: none;
-}
 .contents a,
 .contents button,
 .evidence summary,
@@ -3390,7 +3362,6 @@
   }
   .revealLayers *,
   .revealLayers *::before,
-  .readerDeck .readerReport,
   .evidence[open] > ul,
   .allAnswers[open] > ol {
     animation: none !important;
@@ -3732,4 +3703,51 @@
 .optionPhrase {
   display: inline-block;
   max-width: 100%;
+}
+
+/* V1.1: one native scroll port, with the same original visual held behind paper.
+   The embedded reader's toolbar starts at zero; its paper starts one viewport in. */
+.continuousReader {
+  --qianzai-reveal-height: 100dvh;
+  --qianzai-reader-progress: 0;
+  position: relative;
+  width: min(100%, 430px);
+  height: 100dvh;
+  margin: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  touch-action: pan-y;
+  isolation: isolate;
+  scroll-behavior: auto;
+}
+.readerBackdropTrack {
+  height: calc(2 * var(--qianzai-reveal-height));
+  pointer-events: none;
+}
+.readerBackdropSticky {
+  position: sticky;
+  top: 0;
+  height: var(--qianzai-reveal-height);
+  pointer-events: auto;
+  overflow: hidden;
+}
+.readerReportFlow {
+  position: relative;
+  z-index: 2;
+  margin-top: calc(-2 * var(--qianzai-reveal-height));
+  pointer-events: none;
+}
+.readerReportFlow [data-qianzai-report-toolbar] {
+  opacity: var(--qianzai-reader-progress);
+  pointer-events: none;
+}
+.continuousReader[data-toolbar-visible="true"] [data-qianzai-report-toolbar] {
+  pointer-events: auto;
+}
+.readerReportFlow [data-qianzai-report-start] {
+  pointer-events: auto;
+}
+.continuousReader [data-qianzai-screen="result"] {
+  margin-top: 0;
 }

@@ -84,18 +84,18 @@
 .frame .gender .choice {
   left: 12px;
   width: 364px;
-  height: 90px;
+  height: 84px;
   border-radius: 35px;
   transition: box-shadow 0.12s;
 }
 .frame .gender .choice[data-choice="male"] {
-  top: 393px;
+  top: 410px;
 }
 .frame .gender .choice[data-choice="female"] {
-  top: 484px;
+  top: 500px;
 }
 .frame .gender .choice[data-choice="none"] {
-  top: 575px;
+  top: 590px;
 }
 .frame .gender .choice.picked {
   box-shadow:
@@ -116,13 +116,13 @@
   box-shadow: inset 0 0 0 2px #fff9ef9c;
 }
 .frame .gender .dot[data-choice="male"] {
-  top: 441px;
+  top: 440px;
 }
 .frame .gender .dot[data-choice="female"] {
   top: 530px;
 }
 .frame .gender .dot[data-choice="none"] {
-  top: 619px;
+  top: 620px;
 }
 .frame .gender .dot.picked {
   background: radial-gradient(circle at 45% 32%, #f9d27f, #ad691a 65%);
@@ -1349,42 +1349,6 @@
     filter: brightness(1.05);
   }
 }
-.journey:has(
-    .transitionStage[data-kind="paper"][data-active="true"][data-step="leave"]
-  )
-  :is(.question-panel, .question-text, .option) {
-  opacity: 0;
-  transform: translateY(-6px);
-  transition:
-    opacity 145ms ease,
-    transform 145ms ease;
-}
-.journey:has(
-    .transitionStage[data-kind="paper"][data-active="true"][data-step="wait"]
-  )
-  :is(.question-panel, .question-text, .option) {
-  opacity: 1;
-  transform: none;
-  transition: none;
-}
-.journey:has(
-    .transitionStage[data-kind="paper"][data-active="true"][data-step="enter"]
-  )
-  :is(.question-panel, .question-text, .option) {
-  animation: qfx-paper-in 230ms cubic-bezier(0.2, 0.65, 0.2, 1) both;
-}
-.journey:has(.transitionStage[data-kind="paper"][data-step="enter"])
-  .option:nth-of-type(2) {
-  animation-delay: 28ms;
-}
-.journey:has(.transitionStage[data-kind="paper"][data-step="enter"])
-  .option:nth-of-type(3) {
-  animation-delay: 48ms;
-}
-.journey:has(.transitionStage[data-kind="paper"][data-step="enter"])
-  .option:nth-of-type(4) {
-  animation-delay: 68ms;
-}
 @media (prefers-reduced-motion: reduce) {
   .transitionStage {
     display: none !important;
@@ -1826,4 +1790,145 @@
   margin: 6px 9px;
   font: 12px/1.65 system-ui;
   color: #dfcfb2;
+}
+
+/* V1.1: one readable question layout; only the lower reading port scrolls.
+   The texture is a text-free water strip of the same admitted scene bytes. */
+.frame[data-responsive-question] {
+  width: min(100%, 430px);
+  height: 100dvh;
+}
+.frame[data-responsive-question] .quiz {
+  width: 100%;
+  height: 100%;
+}
+.frame[data-responsive-question] .scene-art {
+  width: 100%;
+  height: auto;
+}
+.frame .quiz .answerTexture {
+  position: absolute;
+  top: calc(391 * var(--scene-unit));
+  left: 0;
+  width: 100%;
+  height: calc(100% - 391 * var(--scene-unit));
+  pointer-events: none;
+}
+.frame .quiz .questionFlow {
+  top: calc(391 * var(--scene-unit));
+  bottom: calc(76px + env(safe-area-inset-bottom, 0px));
+  overscroll-behavior-y: contain;
+  touch-action: pan-y;
+}
+.questionStack {
+  position: relative;
+  min-height: 478px;
+}
+.frame .quiz .question-panel {
+  left: calc(18 * var(--scene-unit));
+  top: 0;
+  width: calc(354 * var(--scene-unit));
+  height: 164px;
+}
+.frame .quiz .question-text {
+  left: calc(53 * var(--scene-unit));
+  right: calc(48 * var(--scene-unit));
+  top: 10px;
+  height: 144px;
+  font-size: 16px;
+  line-height: 1.4;
+}
+.frame .quiz .option {
+  left: calc(18 * var(--scene-unit));
+  width: calc(355 * var(--scene-unit));
+  height: 76px;
+}
+.frame .quiz .option .letter {
+  left: calc(21 * var(--scene-unit));
+  top: 19px;
+}
+.frame .quiz .option .words,
+.frame .quiz .option.active .words {
+  left: calc(79 * var(--scene-unit));
+  right: calc(51 * var(--scene-unit));
+  height: 76px;
+  font-size: 16px;
+  line-height: 1.3;
+  font-weight: 650;
+  overflow: visible;
+}
+.frame .quiz .option .check {
+  right: calc(24 * var(--scene-unit));
+  top: 24px;
+}
+.frame .quiz .foot {
+  top: auto;
+  bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+  height: 62px;
+}
+.frame .quiz .foot svg {
+  width: 100%;
+  height: 100%;
+}
+.frame .quiz .foot:disabled {
+  filter: brightness(0.65);
+}
+.frame .gender .preferenceRequired {
+  position: absolute;
+  z-index: 5;
+  top: 670px;
+  left: 18px;
+  right: 18px;
+  text-align: center;
+  font-size: 16px;
+  color: #7b241c;
+  text-shadow:
+    0 1px 2px #fff5de,
+    0 0 8px #fff5de;
+}
+@media (prefers-reduced-motion: reduce) {
+  .transitionStage[data-kind="chapter"][data-reduced="true"] {
+    display: block !important;
+  }
+}
+/* The scene image scales by width; its small fixed status overlays use that
+   same coordinate space, independently of the readable lower content. */
+.frame[data-responsive-question] .progress-cover {
+  left: calc(107 * var(--scene-unit));
+  top: calc(119 * var(--scene-unit));
+  width: calc(212 * var(--scene-unit));
+  height: calc(30 * var(--scene-unit));
+}
+.frame[data-responsive-question] .progress-track {
+  left: calc(113 * var(--scene-unit));
+  top: calc(128 * var(--scene-unit));
+  width: calc(140 * var(--scene-unit));
+  height: calc(8 * var(--scene-unit));
+}
+.frame[data-responsive-question] .progress-num {
+  left: calc(259 * var(--scene-unit));
+  top: calc(119 * var(--scene-unit));
+  width: calc(55 * var(--scene-unit));
+  height: calc(29 * var(--scene-unit));
+  font-size: 12px;
+  min-width: 0;
+}
+.frame[data-responsive-question] .saveStatus {
+  left: calc(326 * var(--scene-unit));
+  top: calc(119 * var(--scene-unit));
+  width: calc(64 * var(--scene-unit));
+  min-width: 0;
+  height: calc(25 * var(--scene-unit));
+}
+.frame[data-responsive-question] .hit-top {
+  top: calc(32 * var(--scene-unit));
+}
+.frame[data-responsive-question] .hit-top.back {
+  left: calc(4 * var(--scene-unit));
+}
+.frame[data-responsive-question] .hit-top.music {
+  left: calc(290 * var(--scene-unit));
+}
+.frame[data-responsive-question] .hit-top.menu {
+  left: calc(337 * var(--scene-unit));
 }

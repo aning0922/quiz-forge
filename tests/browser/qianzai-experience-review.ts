@@ -512,7 +512,12 @@ if (check) {
             '[data-qianzai-screen="preference"] label[data-selected="true"]',
           )
           .boundingBox();
-        expect(Math.abs(rect!.width - (width * 364) / 390)).toBeLessThan(1);
+        const frame = await p
+          .locator('[data-qianzai-screen="preference"]')
+          .boundingBox();
+        expect(Math.abs(rect!.width - (frame!.width * 364) / 390)).toBeLessThan(
+          1,
+        );
         await p
           .locator('[data-qianzai-screen="preference"]')
           .screenshot({ path: path.join(out, `preference-${width}.png`) });

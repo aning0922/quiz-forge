@@ -156,16 +156,21 @@ function Scene({
       style={
         name === "cover"
           ? undefined
-          : { width: 390 * scale, height: 844 * scale }
+          : name === "question"
+            ? ({
+                "--scene-unit": "min(1.102564px, 100vw / 390)",
+              } as CSSProperties)
+            : { width: 390 * scale, height: 844 * scale }
       }
       data-responsive-cover={name === "cover" || undefined}
+      data-responsive-question={name === "question" || undefined}
       data-qianzai-screen={name}
       data-qianzai-composite={composite || undefined}
     >
       <div
         className={`${scenes.canvas} ${className}`}
         style={
-          name === "cover"
+          name === "cover" || name === "question"
             ? { width: "100%", height: "100%" }
             : { transform: `scale(${scale})` }
         }
@@ -350,6 +355,8 @@ export function QianzaiPreference({
   onEnter: () => void;
 }) {
   const id = useId(),
+    [selectionRequired, setSelectionRequired] = useState(false),
+    choices = useRef<HTMLFieldSetElement>(null),
     selected = model.draft?.matchingContext?.preference,
     ref = qianzaiPreferenceScene(model),
     image =
@@ -394,7 +401,13 @@ export function QianzaiPreference({
         aria-label="返回封面"
         onClick={() => onRead("cover")}
       />
-      <fieldset className={scenes.options} disabled={!canEditConsumerV2(model)}>
+      <fieldset
+        ref={choices}
+        className={scenes.options}
+        disabled={!canEditConsumerV2(model)}
+        aria-describedby={selectionRequired ? `${id}-required` : undefined}
+        tabIndex={-1}
+      >
         <legend className={scenes.srOnly}>
           希望匹配的历史人物性别，不代表你的性别，不改变五维分数
         </legend>
@@ -403,6 +416,7 @@ export function QianzaiPreference({
             key={value}
             className={`${scenes.choice} ${scenes.interact} ${selected === value ? scenes.picked : ""}`}
             data-choice={value === "any" ? "none" : value}
+            data-selected={selected === value}
           >
             <input
               className={scenes.srOnly}
@@ -411,6 +425,7 @@ export function QianzaiPreference({
               value={value}
               checked={selected === value}
               onChange={() => {
+                setSelectionRequired(false);
                 flash();
                 onChoose(value);
               }}
@@ -432,11 +447,25 @@ export function QianzaiPreference({
           aria-hidden="true"
         />
       ))}
+      {selectionRequired && (
+        <p
+          id={`${id}-required`}
+          className={scenes.preferenceRequired}
+          role="alert"
+        >
+          请先选择希望匹配的人物性别
+        </p>
+      )}
       <button
         className={`${scenes.enter} ${scenes.interact}`}
-        disabled={!canEditConsumerV2(model) || !selected}
+        disabled={!canEditConsumerV2(model)}
         aria-label="进入第一幕"
         onClick={() => {
+          if (!selected) {
+            setSelectionRequired(true);
+            choices.current?.focus({ preventScroll: true });
+            return;
+          }
           flash();
           onEnter();
         }}
@@ -534,6 +563,19 @@ export function QianzaiQuestion({
             className={scenes["scene-art"]}
           />
           <div className={scenes.readable} />
+          <svg className={scenes.answerTexture} aria-hidden="true">
+            <defs>
+              <pattern
+                id={`${id}-water`}
+                patternUnits="userSpaceOnUse"
+                width="390"
+                height="34"
+              >
+                <image href={art.objectUrl} y="-810" width="390" height="844" />
+              </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill={`url(#${id}-water)`} />
+          </svg>
           <div className={scenes["progress-cover"]} />
           <div className={scenes["progress-track"]}>
             <div
@@ -575,85 +617,85 @@ export function QianzaiQuestion({
             className={scenes.questionFlow}
             data-qianzai-scroll-region
           >
-            <ArtImage
-              src={paper?.objectUrl}
-              className={scenes["question-panel"]}
-            />
-            <h2
-              className={`${scenes["question-text"]} ${q.prompt.length >= 30 ? scenes.long : ""}`}
-            >
-              {q.prompt}
-            </h2>
-            <fieldset className={scenes.options} disabled={!enabled}>
-              <legend className={scenes.srOnly}>选择本轮想法</legend>
-              {q.options.map((option, i) => {
-                const checked = selected === option.ref.id,
-                  skin = checked ? chosen : idle;
-                return (
-                  <label
-                    key={option.ref.id}
-                    className={`${scenes.option} ${checked ? scenes.active : ""}`}
-                    data-selected={checked}
-                    style={{ top: 488 + i * 64 }}
-                  >
-                    <ArtImage src={skin?.objectUrl} className={scenes.skin} />
-                    <input
-                      name={id}
-                      type="radio"
-                      value={option.ref.id}
-                      checked={checked}
-                      onChange={() => onChoose(q.ref.id, option.ref.id)}
-                      aria-label={`${String.fromCharCode(65 + i)} ${option.label}`}
-                    />
-                    <span className={scenes.letter} aria-hidden="true">
-                      {String.fromCharCode(65 + i)}
-                    </span>
-                    <span
-                      className={scenes.words}
-                      data-wrap={option.label.length > 22 || undefined}
-                      style={{
-                        fontSize:
-                          option.label.length > 16
-                            ? "12.3px"
-                            : option.label.length > 14
-                              ? "13px"
-                              : "14px",
-                      }}
+            <div className={scenes.questionStack}>
+              <ArtImage
+                src={paper?.objectUrl}
+                className={scenes["question-panel"]}
+              />
+              <h2 className={scenes["question-text"]}>{q.prompt}</h2>
+              <fieldset className={scenes.options} disabled={!enabled}>
+                <legend className={scenes.srOnly}>选择本轮想法</legend>
+                {q.options.map((option, i) => {
+                  const checked = selected === option.ref.id,
+                    skin = checked ? chosen : idle;
+                  return (
+                    <label
+                      key={option.ref.id}
+                      className={`${scenes.option} ${checked ? scenes.active : ""}`}
+                      data-selected={checked}
+                      style={{ top: 174 + i * 76 }}
                     >
-                      {option.label}
-                    </span>
-                    <span className={scenes.check} aria-hidden="true">
-                      ✓
-                    </span>
-                  </label>
-                );
-              })}
-            </fieldset>
-            {!selected && <div className={scenes["next-disabled"]} />}
-            <button
-              className={`${scenes.interact} ${scenes.foot} ${scenes.prev}`}
-              disabled={!enabled}
-              aria-label="上一题"
-              onClick={previous}
-            />
-            <button
-              className={`${scenes.interact} ${scenes.foot} ${scenes.next}`}
-              disabled={!enabled || !selected}
-              aria-label={
-                index === questions.length - 1
-                  ? "确认最后选择，走向相逢"
-                  : "下一题"
-              }
-              onClick={() => {
-                if (index < questions.length - 1)
-                  onEvent({
-                    type: "navigate",
-                    questionId: questions[index + 1]!.ref.id,
-                  });
-                else if (selected) onChoose(q.ref.id, selected);
-              }}
-            />
+                      <ArtImage src={skin?.objectUrl} className={scenes.skin} />
+                      <input
+                        name={id}
+                        type="radio"
+                        value={option.ref.id}
+                        checked={checked}
+                        onChange={() => onChoose(q.ref.id, option.ref.id)}
+                        aria-label={`${String.fromCharCode(65 + i)} ${option.label}`}
+                      />
+                      <span className={scenes.letter} aria-hidden="true">
+                        {String.fromCharCode(65 + i)}
+                      </span>
+                      <span className={scenes.words}>{option.label}</span>
+                      <span className={scenes.check} aria-hidden="true">
+                        ✓
+                      </span>
+                    </label>
+                  );
+                })}
+              </fieldset>
+            </div>
           </div>
+          <button
+            className={`${scenes.interact} ${scenes.foot} ${scenes.prev}`}
+            disabled={!enabled}
+            aria-label="上一题"
+            onClick={previous}
+          >
+            <svg
+              viewBox="18 751 114 62"
+              preserveAspectRatio="none"
+              aria-hidden="true"
+            >
+              <image href={art.objectUrl} width="390" height="844" />
+            </svg>
+          </button>
+          <button
+            className={`${scenes.interact} ${scenes.foot} ${scenes.next}`}
+            disabled={!enabled || !selected}
+            aria-label={
+              index === questions.length - 1
+                ? "确认最后选择，走向相逢"
+                : "下一题"
+            }
+            onClick={() => {
+              if (index < questions.length - 1)
+                onEvent({
+                  type: "navigate",
+                  questionId: questions[index + 1]!.ref.id,
+                });
+              else if (selected) onChoose(q.ref.id, selected);
+            }}
+          >
+            <svg
+              viewBox="251 751 122 62"
+              preserveAspectRatio="none"
+              aria-hidden="true"
+            >
+              <image href={art.objectUrl} width="390" height="844" />
+            </svg>
+          </button>
           {menuOpen && (
             <div className={`${scenes["menu-panel"]} ${scenes.visible}`}>
               <TestingNote model={model} />
@@ -850,10 +892,10 @@ export function QianzaiReveal({
           className={scenes["reveal-scroll-hit"]}
           data-reveal-continue
           disabled={!model.report || model.phase !== "completed"}
-          aria-label="下滑查看人物报告"
+          aria-label="上滑查看人物报告"
           onClick={() => onRead("report")}
         >
-          {!frames && <span>下滑查看人物报告</span>}
+          {!frames && <span>上滑查看人物报告</span>}
         </button>
         {musicNotice && (
           <p

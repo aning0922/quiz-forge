@@ -1,5 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import styles from "./qianzai.module.css";
+import scenes from "./scenes.module.css";
+import {
+  QianzaiContinuousReader,
+  type QianzaiReaderNavigation,
+} from "./experience";
 import { QianzaiReportReader } from "./report";
 import { QianzaiSharePanel } from "./share-panel";
 import { qianzaiReferenceDocument } from "@/features/report/qianzai-tongxin/reference-document.test-support";
@@ -7,6 +12,8 @@ import { createRoot } from "react-dom/client";
 import type { ConsumerV2ReaderModel } from "@/lib/consumer-contract/v2/client-contract";
 import type { QianzaiPrototypeImage, QianzaiResolvedImage } from "./art";
 import {
+  ACTS,
+  useQianzaiSceneScale,
   QianzaiCover,
   QianzaiPreference,
   QianzaiQuestion,
@@ -36,6 +43,9 @@ const fixture = JSON.parse(
 if (fixture.mode !== "reference-only")
   throw Error("REFERENCE_ONLY_FIXTURE_REQUIRED");
 function ReferenceScenes() {
+  const sceneScale = useQianzaiSceneScale();
+  const navigation = useRef<QianzaiReaderNavigation | null>(null);
+  const [chapter, setChapter] = useState<number | null>(null);
   const [model, setModel] = useState(fixture.model),
     [screen, setScreen] = useState(
       new URLSearchParams(location.search).get("screen") ?? "cover",
@@ -141,7 +151,11 @@ function ReferenceScenes() {
   };
   const read = (next: string) => {
     cancel();
-    if (next === "result") showReveal();
+    if (screen === "result" || screen === "report") {
+      if (next === "report") navigation.current?.toReport();
+      else if (next === "result") navigation.current?.toReveal();
+      else setScreen(next);
+    } else if (next === "result") showReveal();
     else setScreen(next);
   };
   const moveQuestion = (questionId: string) => {
@@ -152,6 +166,25 @@ function ReferenceScenes() {
       draft: { ...old.draft!, progress: { questionId } },
     }));
     setScreen("question");
+  };
+  const enterQuestion = (questionId: string, first = false) => {
+    const target = model.entry!.questions.find((q) => q.ref.id === questionId)!;
+    const current = model.entry!.questions.find(
+      (q) => q.ref.id === model.draft!.progress.questionId,
+    );
+    if (first || target.act !== current?.act) {
+      cancel();
+      setChapter(target.act);
+      pending.current = setTimeout(
+        () => {
+          setChapter(null);
+          moveQuestion(questionId);
+        },
+        window.matchMedia("(prefers-reduced-motion: reduce)").matches
+          ? 450
+          : 860,
+      );
+    } else moveQuestion(questionId);
   };
   const afterFeedback = (action: () => void) => {
     cancel();
@@ -177,91 +210,140 @@ function ReferenceScenes() {
         (q) => q.ref.id === questionId,
       ),
       next = model.entry!.questions[index + 1];
-    afterFeedback(() => (next ? moveQuestion(next.ref.id) : showReveal()));
+    afterFeedback(() => (next ? enterQuestion(next.ref.id) : showReveal()));
   };
   const visual = images
     ? { images: images.clean, prototypeImages: images.prototype }
     : {};
   return (
     <main
-      className={screen === "report" ? undefined : styles.host}
+      className={`${styles.host} ${scenes.journey}`}
       data-reference-only="true"
       data-reference-probe={fixture.probe ?? undefined}
       data-reference-ready={!!images}
     >
-      {screen === "cover" ? (
-        <QianzaiCover
-          model={model}
-          {...visual}
-          onEvent={() => {
-            throw Error("REFERENCE_NO_BUSINESS_IO");
-          }}
-          onRead={read}
-          active
-        />
-      ) : screen === "preference" ? (
-        <QianzaiPreference
-          model={model}
-          {...visual}
-          onEvent={() => {
-            throw Error("REFERENCE_NO_BUSINESS_IO");
-          }}
-          onRead={read}
-          onEnter={() =>
-            afterFeedback(() => moveQuestion(model.entry!.questions[0]!.ref.id))
+      {chapter !== null && (
+        <div
+          className={scenes.transitionStage}
+          data-qianzai-transition
+          data-active="true"
+          data-kind="chapter"
+          data-act={chapter}
+          data-reduced="true"
+          style={
+            {
+              left: `calc(50% - ${195 * sceneScale}px)`,
+              transform: `scale(${sceneScale})`,
+              "--transition-duration": "860ms",
+            } as React.CSSProperties
           }
-          onChoose={(preference) => {
-            setModel((old) => ({
-              ...old,
-              state: {
-                ...old.state!,
-                matchingContext: { ...old.state!.matchingContext!, preference },
-              },
-              draft: {
-                ...old.draft!,
-                matchingContext: { ...old.draft!.matchingContext!, preference },
-              },
-            }));
-            afterFeedback(() =>
-              moveQuestion(model.entry!.questions[0]!.ref.id),
-            );
-          }}
-        />
-      ) : screen === "result" ? (
-        <QianzaiReveal
-          key={revealCycle}
-          model={fixture.completed}
-          {...visual}
-          {...(images ? { referenceComposite: images.reference } : {})}
-          onEvent={() => {
-            throw Error("REFERENCE_NO_BUSINESS_IO");
-          }}
-          onRead={read}
-          onReplay={showReveal}
-          presentation={revealPhase}
-          startedAt={startedAt}
-        />
-      ) : screen === "report" ? (
-        <QianzaiReportReader
-          document={qianzaiReferenceDocument}
-          heroUrl={fixture.report.hero}
-          paperUrl={fixture.report.paper}
-          onResult={() => read("result")}
-          actions={<QianzaiSharePanel referenceOnly />}
-        />
-      ) : (
-        <QianzaiQuestion
-          model={model}
-          {...visual}
-          onRead={read}
-          onEvent={(event) => {
-            if (event.type !== "navigate" || !event.questionId)
-              throw Error("REFERENCE_NO_BUSINESS_IO");
-            moveQuestion(event.questionId);
-          }}
-          onChoose={change}
-        />
+          role="status"
+        >
+          <div className={scenes.transitionCurtain} />
+          <div className={scenes.transitionFiligree} />
+          <div className={scenes.transitionWords}>
+            <p data-transition-part="kicker">
+              {["第一幕", "第二幕", "第三幕"][chapter - 1]}
+            </p>
+            <h2>{ACTS[chapter - 1]?.title}</h2>
+            <p data-transition-part="place">{ACTS[chapter - 1]?.place}</p>
+          </div>
+        </div>
       )}
+      <div inert={chapter !== null}>
+        {screen === "cover" ? (
+          <QianzaiCover
+            model={model}
+            {...visual}
+            onEvent={() => {
+              throw Error("REFERENCE_NO_BUSINESS_IO");
+            }}
+            onRead={read}
+            active
+          />
+        ) : screen === "preference" ? (
+          <QianzaiPreference
+            model={model}
+            {...visual}
+            onEvent={() => {
+              throw Error("REFERENCE_NO_BUSINESS_IO");
+            }}
+            onRead={read}
+            onEnter={() =>
+              afterFeedback(() =>
+                enterQuestion(model.entry!.questions[0]!.ref.id, true),
+              )
+            }
+            onChoose={(preference) => {
+              setModel((old) => ({
+                ...old,
+                state: {
+                  ...old.state!,
+                  matchingContext: {
+                    schemaVersion: "quiz-matching-context.v1",
+                    policyRef: old.entry!.matchingPolicyRef,
+                    preference,
+                  },
+                },
+                draft: {
+                  ...old.draft!,
+                  matchingContext: {
+                    schemaVersion: "quiz-matching-context.v1",
+                    policyRef: old.entry!.matchingPolicyRef,
+                    preference,
+                  },
+                },
+              }));
+              afterFeedback(() =>
+                enterQuestion(model.entry!.questions[0]!.ref.id, true),
+              );
+            }}
+          />
+        ) : screen === "result" || screen === "report" ? (
+          <QianzaiContinuousReader
+            navigation={navigation}
+            initialReport={screen === "report"}
+            reveal={(active) => (
+              <QianzaiReveal
+                key={revealCycle}
+                model={fixture.completed}
+                {...visual}
+                {...(images ? { referenceComposite: images.reference } : {})}
+                onEvent={() => {
+                  throw Error("REFERENCE_NO_BUSINESS_IO");
+                }}
+                onRead={read}
+                onReplay={showReveal}
+                active={active}
+                presentation={revealPhase}
+                startedAt={startedAt}
+              />
+            )}
+            report={(embedded) => (
+              <QianzaiReportReader
+                document={qianzaiReferenceDocument}
+                heroUrl={fixture.report.hero}
+                paperUrl={fixture.report.paper}
+                onResult={embedded.onReturn}
+                {...{ embedded }}
+                actions={<QianzaiSharePanel referenceOnly />}
+              />
+            )}
+          />
+        ) : (
+          <QianzaiQuestion
+            model={model}
+            {...visual}
+            onRead={read}
+            onEvent={(event) => {
+              if (event.type !== "navigate" || !event.questionId)
+                throw Error("REFERENCE_NO_BUSINESS_IO");
+              enterQuestion(event.questionId);
+            }}
+            onChoose={change}
+          />
+        )}
+      </div>
     </main>
   );
 }
