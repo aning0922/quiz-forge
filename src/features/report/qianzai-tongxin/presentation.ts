@@ -1,4 +1,8 @@
 import type { ComposedReportBodyV1 } from "@/lib/assessment-contract/composed-report-v1";
+import {
+  qianzaiPresentationMatchesBody,
+  type QianzaiResultPresentation,
+} from "./result-presentation";
 
 type Body = ComposedReportBodyV1;
 export type QianzaiReportParagraph =
@@ -21,6 +25,8 @@ export type QianzaiReportPresentation = Readonly<{
   roleRef: Body["matching"]["selected"]["ref"];
   version: string;
   sourceHtmlSha256: string;
+  displayName?: string;
+  identitySubtitle?: string;
   identity?: Readonly<{
     honorific?: string;
     seal?: readonly string[];
@@ -72,6 +78,7 @@ type QianzaiReportDocumentContent = Readonly<{
   dimensionBadge: string;
   dimensionInsight?: Readonly<{ title: string; text: string }>;
   dimensionWarning?: string;
+  resultPresentation?: QianzaiResultPresentation;
   sections: readonly Readonly<{
     id: QianzaiVolumeId;
     title: string;
@@ -94,6 +101,7 @@ export type QianzaiReportDocument =
 export function qianzaiSnapshotDocument(
   body: Body,
   candidate?: QianzaiReportPresentation,
+  derived?: QianzaiResultPresentation,
 ): QianzaiSnapshotDocument {
   const ref = body.matching.selected.ref;
   const presentation =
@@ -104,24 +112,59 @@ export function qianzaiSnapshotDocument(
     candidate.roleRef.version === ref.version
       ? candidate
       : undefined;
+  const result = qianzaiPresentationMatchesBody(body, derived)
+    ? derived
+    : undefined;
+  const role = result?.role;
   return {
     mode: "snapshot",
-    name: body.matching.selected.label,
-    subtitle: body.title,
+    name:
+      role?.displayName ??
+      presentation?.displayName ??
+      body.matching.selected.label,
+    subtitle:
+      role?.identitySubtitle ?? presentation?.identitySubtitle ?? body.title,
+    ...(result ? { resultPresentation: result } : {}),
     ...(presentation
       ? { sourceHtmlSha256: presentation.sourceHtmlSha256 }
       : {}),
-    ...(presentation?.identity ? { identity: presentation.identity } : {}),
-    ...(presentation?.history ? { history: presentation.history } : {}),
+    ...(role && result
+      ? {
+          identity: {
+            honorific: role.honorific,
+            ...(role.aliasSeal ? { seal: role.aliasSeal } : {}),
+            tags: role.tags,
+            verse: { text: result.quote.text, source: result.quote.source },
+            ...(role.lifespan ? { lifespan: role.lifespan } : {}),
+            ...(role.courtesyName ? { courtesyName: role.courtesyName } : {}),
+          },
+        }
+      : presentation?.identity
+        ? { identity: presentation.identity }
+        : {}),
+    ...(role
+      ? { history: role.history }
+      : presentation?.history
+        ? { history: presentation.history }
+        : {}),
     heroCaption: presentation?.heroCaption ?? "长风有信，明月知心",
-    openingTitle: body.volumes[0]!.title,
+    openingTitle: result ? "命定相逢" : body.volumes[0]!.title,
     dimensions: body.dimensions,
     dimensionBadge: "本轮分值",
     sections: body.volumes.map((v) => {
       const section = presentation?.sections?.find((s) => s.id === v.id);
       return {
         id: v.id,
-        title: section?.title ?? v.title,
+        title: result
+          ? {
+              encounter: "命定相逢",
+              dimensions: "你的心象五维",
+              patterns: "为何偏偏与你相逢",
+              counterevidence: "山河自照",
+              literature: "人物小传",
+              closure: "寄语留存",
+            }[v.id]
+          : (section?.title ?? v.title),
         ...(section?.chapterLabel
           ? { chapterLabel: section.chapterLabel }
           : {}),
@@ -139,7 +182,17 @@ export function qianzaiSnapshotDocument(
             annotation.claimRef.version === p.claimRef.version;
           return {
             text: p.text,
-            layout: annotation?.layout ?? "body",
+            layout: result
+              ? v.id === "encounter" && index === 0
+                ? "lead"
+                : v.id === "patterns"
+                  ? "card"
+                  : v.id === "counterevidence"
+                    ? index === 0
+                      ? "reflection-quote"
+                      : "reflection-body"
+                    : "body"
+              : (annotation?.layout ?? "body"),
             ...(claimMatches && annotation?.title
               ? { title: annotation.title }
               : {}),

@@ -1,4 +1,7 @@
 import { z } from "zod";
+import { createElement, type ComponentType } from "react";
+import type { ConsumerExperiencePropsV2 } from "@/features/theme/consumer-v2/interfaces";
+import { QIANZAI_PRESENTATION_V11 } from "@/features/report/qianzai-tongxin/role-profiles-v11";
 import { ConsumerExperienceV2 } from "@/features/theme/consumer-v2/host";
 import { consumerRendererIdentitySchema } from "@/lib/consumer-contract/v1/identities";
 import {
@@ -15,15 +18,44 @@ import {
 import { QianzaiTongxinRuntime } from "@/features/theme/qianzai-tongxin/runtime";
 import { QIANZAI_CONSUMER_RENDERER } from "@/features/theme/qianzai-tongxin/component-map";
 
+// Only exact installed entries reach this cache. Stable component identity keeps
+// the controller's reading/resource owners mounted through ordinary updates.
+const qianzaiRuntimes = new Map<
+  string,
+  ComponentType<ConsumerExperiencePropsV2>
+>();
+function boundQianzaiRuntime(
+  identity: ReturnType<typeof consumerImplementationIdentityV2>,
+) {
+  let runtime = qianzaiRuntimes.get(identity.entrySha256);
+  if (!runtime) {
+    const presentationBinding = Object.freeze({
+      renderer: identity,
+      profileVersion: QIANZAI_PRESENTATION_V11,
+    });
+    runtime = function QianzaiRegisteredRuntime(
+      props: ConsumerExperiencePropsV2,
+    ) {
+      return createElement(QianzaiTongxinRuntime, {
+        ...props,
+        presentationBinding,
+      });
+    };
+    qianzaiRuntimes.set(identity.entrySha256, runtime);
+  }
+  return runtime;
+}
+
 export function resolveConsumerRendererClientV2(input: unknown) {
   if (!consumerImplementationAvailableV2(input)) return null;
   const entry = findConsumerImplementationDescriptorV2(input)!;
+  const identity = consumerImplementationIdentityV2(entry);
   return Object.freeze({
-    identity: consumerImplementationIdentityV2(entry),
+    identity,
     descriptor: entry.descriptor,
     Experience:
       entry.descriptor.id === QIANZAI_CONSUMER_RENDERER.id
-        ? QianzaiTongxinRuntime
+        ? boundQianzaiRuntime(identity)
         : ConsumerExperienceV2,
   });
 }

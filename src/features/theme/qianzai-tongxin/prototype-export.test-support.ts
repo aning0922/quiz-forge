@@ -103,6 +103,13 @@ let api: QianzaiExportContextValue = {
   },
   state: { phase: "closed" },
   getCachedArtifact: (kind) => cache.get(kind) ?? null,
+  getResultPresentation: () => null,
+  getFailure: () => null,
+  prepare: async () => {
+    api.open();
+    await generate("poster");
+    await generate("full-report");
+  },
   open: () => {
     if (api.state.phase === "closed") {
       setState({ phase: "idle" });

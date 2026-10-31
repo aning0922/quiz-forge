@@ -42,7 +42,7 @@ async function main() {
   )
     throw Error("PRIVATE_OUTPUT_REQUIRED");
   const font = QIANZAI_RUNTIME_INPUTS.font;
-  if (!font || font.id !== "qianzai-tongxin-serif" || font.version !== "1.3.0")
+  if (!font || font.id !== "qianzai-tongxin-serif" || font.version !== "1.4.0")
     throw Error("PINNED_QIANZAI_FONT_REQUIRED");
   const fonts = [font.file, font.coverage, font.licenseFile].map(
     (f) => "public" + f,

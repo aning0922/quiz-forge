@@ -44,6 +44,16 @@ const valueStart = (): QianzaiExportContextValue => ({
     value.state.phase === "closed" || !value.availability[kind].allowed
       ? null
       : (cache.get(kind)?.artifact ?? null),
+  getResultPresentation: () => null,
+  getFailure: (kind) =>
+    value.state.phase === "error" && value.state.kind === kind
+      ? value.state.code
+      : null,
+  prepare: async () => {
+    value.open();
+    await value.generate("poster");
+    await value.generate("full-report");
+  },
   open: () => {
     if (value.state.phase === "closed") {
       value = { ...value, state: { phase: "idle" } };

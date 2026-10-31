@@ -105,23 +105,20 @@ const scope = <T>(x: T): T =>
 const model = scope(structuredReaderFixtureV2().model),
   completed = scope((await qianzaiExportFixture()).model),
   entry = model.entry!;
-const questions = JSON.parse(
-  sourceTexts.five!.match(/const QUESTIONS=(\[[\s\S]*?\]);\nconst POS=/)![1]!,
-) as [string, string[]][];
-const baseQuestion = entry.questions[0]!;
-entry.questions = questions.map(([prompt, options], i) => ({
-  ...baseQuestion,
-  ref: { ...baseQuestion.ref, id: `reference-question-${i}` },
-  act: (Math.floor(i / 4) + 1) as 1 | 2 | 3,
-  prompt,
-  options: options.map((label, j) => ({
-    ref: {
-      ...baseQuestion.options[0]!.ref,
-      id: `reference-question-${i}-option-${j}`,
-    },
-    label,
-  })),
-}));
+// Static authored question definitions only; never reads a session or answers.
+const questionPath =
+  process.env.QZTX_SCENES_CONTENT ??
+  "/Users/aipuli/.codex/worktrees/quizforge-qztx-full-flow-demo/quiz-forge/.cache/qztx-full-flow/candidate-02/content.json";
+const questionBytes = await readFile(questionPath);
+const questions = JSON.parse(questionBytes.toString()).core
+  .questions as typeof entry.questions;
+if (
+  questions.length !== 24 ||
+  questions.some((q, i) => q.act !== Math.floor(i / 8) + 1)
+)
+  throw Error("REFERENCE_24_QUESTION_DEFINITION_REQUIRED");
+entry.questions = questions;
+sourceHashes.questions = digest(questionBytes);
 entry.presentationMode = "authored-product";
 entry.preferences = ["male", "female", "any"];
 const bindings = QIANZAI_RUNTIME_INPUTS.resources.filter(
@@ -145,12 +142,8 @@ entry.slots.acts = [0, 1, 2].map((i) => ({
   optionIdle: asset(`acts.${i}.optionIdle`).resourceRef,
   optionSelected: asset(`acts.${i}.optionSelected`).resourceRef,
 }));
-model.draft!.matchingContext = {
-  schemaVersion: "quiz-matching-context.v1",
-  preference: "any",
-  policyRef: entry.matchingPolicyRef,
-};
-model.state!.matchingContext = model.draft!.matchingContext;
+model.draft!.matchingContext = null;
+model.state!.matchingContext = null;
 // A truthy lastSave is a pure reference projection for the source's baked "已保存".
 // It is never accepted by a controller, submitted, scored or persisted.
 model.state!.lastSave = {} as NonNullable<typeof model.state>["lastSave"];
@@ -237,16 +230,24 @@ const server = createServer((req, res) => {
     index = Math.max(
       0,
       Math.min(
-        11,
+        entry.questions.length - 1,
         Number(
           url.searchParams.get("index") ??
             (url.searchParams.get("probe") === "q08" ? 7 : 0),
         ),
       ),
     );
+  if (url.searchParams.get("screen") === "question") {
+    m.draft!.matchingContext = {
+      schemaVersion: "quiz-matching-context.v1",
+      preference: "any",
+      policyRef: entry.matchingPolicyRef,
+    };
+    m.state!.matchingContext = m.draft!.matchingContext;
+  }
   const probe =
     url.searchParams.get("probe") === "q08" ? "q08-selected-wrap" : null;
-  if (probe)
+  if (probe === "q08-selected-wrap")
     m.entry!.questions[7]!.options[0]!.label =
       "保留剩余环节的原有顺序，空出的时间自由交流";
   m.state!.progress.questionId = entry.questions[index]!.ref.id;

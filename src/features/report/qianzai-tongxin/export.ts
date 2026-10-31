@@ -54,7 +54,7 @@ export async function renderQianzaiExport(
         ? "测试素材 · 候选正文"
         : null;
     const texts = [
-      ...qianzaiExportText(body, kind),
+      ...qianzaiExportText(body, kind, scope.presentation),
       ...(privateNote ? [privateNote] : []),
     ];
     if (
@@ -110,7 +110,12 @@ export async function renderQianzaiExport(
               };
             },
             () => check(active, deadline),
-            privateNote ? { annotation: privateNote } : {},
+            {
+              ...(privateNote ? { annotation: privateNote } : {}),
+              ...(scope.presentation
+                ? { presentation: scope.presentation }
+                : {}),
+            },
           );
         } finally {
           scratch.width = 0;
@@ -277,6 +282,18 @@ function drawOperation(
     ctx.lineTo(x - 7, op.y + 6);
     ctx.closePath();
     ctx.fill();
+    return;
+  }
+  if (op.kind === "seal") {
+    ctx.fillStyle = "#a23a30";
+    ctx.fillRect(op.box.x, op.box.y, op.box.width, op.box.height);
+    ctx.strokeStyle = "#dfac7d";
+    ctx.strokeRect(
+      op.box.x + 2,
+      op.box.y + 2,
+      op.box.width - 4,
+      op.box.height - 4,
+    );
     return;
   }
   if (op.kind === "card") {

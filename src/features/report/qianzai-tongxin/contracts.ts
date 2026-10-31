@@ -5,6 +5,7 @@ import type {
   DisplayResourceTransportV2 as DisplayResourceTransport,
 } from "@/lib/assessment-contract/display-v2";
 import type { ComposedReportBodyV1 } from "@/lib/assessment-contract/composed-report-v1";
+import type { QianzaiResultPresentation } from "./result-presentation";
 
 export type QianzaiExportKind = "poster" | "full-report";
 export type QianzaiExportErrorCode =
@@ -47,8 +48,11 @@ export type QianzaiShareOutcome =
 export type QianzaiExportContextValue = Readonly<{
   availability: Readonly<Record<QianzaiExportKind, QianzaiExportAvailability>>;
   state: QianzaiExportState;
-  /** Same-owner cache only. Null when absent, closed, cancelled or authority is lost. */
+  /** Same report-owner cache; dismissing the dialog does not release it. */
   getCachedArtifact(kind: QianzaiExportKind): QianzaiExportArtifact | null;
+  getResultPresentation(): QianzaiResultPresentation | null;
+  getFailure(kind: QianzaiExportKind): QianzaiExportErrorCode | null;
+  prepare(includeFullReport?: boolean): Promise<void>;
   open(): void;
   generate(kind: QianzaiExportKind): Promise<void>;
   close(): void;
@@ -58,6 +62,7 @@ export type QianzaiExportContextValue = Readonly<{
 /** Created by the authorized runtime adapter. No paths, keys, or caller-supplied scores. */
 export type QianzaiExportScope = Readonly<{
   body: ComposedReportBodyV1;
+  presentation?: QianzaiResultPresentation;
   portrait: DisplayAssetV1;
   nameArt: DisplayAssetV1;
   paper: DisplayAssetV1 | null;

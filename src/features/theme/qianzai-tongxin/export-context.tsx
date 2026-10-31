@@ -12,6 +12,7 @@ import type { ConsumerResourceLeaseV2 } from "../consumer-v2/resource-port";
 import type { QianzaiExportContextValue } from "@/features/report/qianzai-tongxin/contracts";
 import { QianzaiExportOwner } from "./export-owner";
 import { QIANZAI_RUNTIME_INPUTS } from "./runtime-inputs";
+import type { QianzaiPresentationBinding } from "@/features/report/qianzai-tongxin/result-presentation";
 export type {
   QianzaiExportKind,
   QianzaiExportErrorCode,
@@ -30,6 +31,9 @@ const fallback: QianzaiExportContextValue = {
   availability: { poster: unavailable, "full-report": unavailable },
   state: closed,
   getCachedArtifact: () => null,
+  getResultPresentation: () => null,
+  getFailure: () => null,
+  async prepare() {},
   open() {},
   async generate() {},
   close() {},
@@ -43,11 +47,28 @@ export function QianzaiExportProvider({
   model,
   lease,
   children,
+  presentationBinding,
 }: {
   model: ConsumerV2ReaderModel;
   lease: ConsumerResourceLeaseV2 | null;
   children?: ReactNode;
+  presentationBinding?: QianzaiPresentationBinding;
 }) {
+  const profileVersion = presentationBinding?.profileVersion,
+    kind = presentationBinding?.renderer.kind,
+    id = presentationBinding?.renderer.id,
+    version = presentationBinding?.renderer.version,
+    entrySha256 = presentationBinding?.renderer.entrySha256;
+  const stableBinding = useMemo<QianzaiPresentationBinding | undefined>(
+    () =>
+      profileVersion && kind && id && version && entrySha256
+        ? Object.freeze({
+            profileVersion,
+            renderer: Object.freeze({ kind, id, version, entrySha256 }),
+          })
+        : undefined,
+    [profileVersion, kind, id, version, entrySha256],
+  );
   const owner = useMemo(
     () =>
       lease
@@ -55,9 +76,11 @@ export function QianzaiExportProvider({
             lease,
             QIANZAI_RUNTIME_INPUTS.resources,
             QIANZAI_RUNTIME_INPUTS.font,
+            undefined,
+            stableBinding,
           )
         : null,
-    [lease],
+    [lease, stableBinding],
   );
   const state = useSyncExternalStore(
     owner?.subscribe ?? subscribeNothing,
@@ -84,6 +107,9 @@ export function QianzaiExportProvider({
           },
           state,
           getCachedArtifact: owner.getCachedArtifact,
+          getResultPresentation: owner.getResultPresentation,
+          getFailure: owner.getFailure,
+          prepare: owner.prepare,
           open: owner.open,
           generate: owner.generate,
           close: owner.close,

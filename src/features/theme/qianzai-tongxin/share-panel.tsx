@@ -1,7 +1,14 @@
 "use client";
 /* eslint-disable @next/next/no-img-element -- Preview the provider-owned PNG bytes without re-encoding. */
 
-import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
+import {
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { FileImage, ImageIcon, X } from "lucide-react";
 import { useQianzaiExport } from "./export-context";
 import type {
@@ -31,25 +38,55 @@ function unavailable(code: QianzaiExportErrorCode | null) {
 export function QianzaiSharePanel({
   active = true,
   referenceOnly = false,
+  prepareEnabled = true,
 }: {
   active?: boolean;
   referenceOnly?: boolean;
+  prepareEnabled?: boolean;
 }) {
   const api = useQianzaiExport();
+  const { prepare: prepareReport, close: releaseReport } = api;
   const [intent, setIntent] = useState<QianzaiExportKind | null>(null);
+  const cycle = useMemo(() => ({ active, open: api.open }), [active, api.open]);
+  const [openedCycle, setOpenedCycle] = useState<object | null>(null);
+  const shown = openedCycle === cycle;
   const available = KINDS.some((kind) => api.availability[kind].allowed);
-  const note = useId(),
-    close = useRef(api.close);
-  useLayoutEffect(() => {
-    close.current = api.close;
-  }, [api.close]);
+  const note = useId();
   useEffect(() => {
-    if (!active) close.current();
-    return () => close.current();
-  }, [active]);
+    if (!active) releaseReport();
+    return () => releaseReport();
+  }, [active, releaseReport]);
+  useEffect(() => {
+    if (!active || !prepareEnabled) return;
+    let live = true;
+    let idle: number | undefined;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const prepare = () => {
+      if (document.visibilityState === "hidden") return;
+      if (idle !== undefined) window.cancelIdleCallback(idle);
+      if (timer !== undefined) clearTimeout(timer);
+      const memory = (navigator as Navigator & { deviceMemory?: number })
+        .deviceMemory;
+      const work = () => {
+        if (live) void prepareReport(memory === undefined || memory > 2);
+      };
+      if ("requestIdleCallback" in window)
+        idle = window.requestIdleCallback(work);
+      else timer = setTimeout(work, 0);
+    };
+    prepare();
+    document.addEventListener("visibilitychange", prepare);
+    return () => {
+      live = false;
+      if (idle !== undefined) window.cancelIdleCallback(idle);
+      if (timer !== undefined) clearTimeout(timer);
+      document.removeEventListener("visibilitychange", prepare);
+    };
+  }, [active, prepareEnabled, prepareReport]);
   const open = (kind: QianzaiExportKind | null) => {
     setIntent(kind);
     api.open();
+    setOpenedCycle(cycle);
     if (kind) void api.generate(kind);
   };
   return (
@@ -74,8 +111,13 @@ export function QianzaiSharePanel({
           {unavailable(api.availability.poster.reason)}
         </p>
       )}
-      {active && api.state.phase !== "closed" && (
-        <ShareDialog api={api} initial={intent} referenceOnly={referenceOnly} />
+      {active && shown && api.state.phase !== "closed" && (
+        <ShareDialog
+          api={api}
+          initial={intent}
+          referenceOnly={referenceOnly}
+          onDismiss={() => setOpenedCycle(null)}
+        />
       )}
     </>
   );
@@ -85,10 +127,12 @@ function ShareDialog({
   api,
   initial,
   referenceOnly,
+  onDismiss,
 }: {
   api: QianzaiExportContextValue;
   initial: QianzaiExportKind | null;
   referenceOnly: boolean;
+  onDismiss(): void;
 }) {
   const [view, setView] = useState<"choose" | "preview">(
       initial ? "preview" : "choose",
@@ -98,7 +142,6 @@ function ShareDialog({
     ),
     [zoom, setZoom] = useState<number>(1),
     [notice, setNotice] = useState(""),
-    [preparing, setPreparing] = useState(!initial),
     [sharing, setSharing] = useState(false);
   const dialog = useRef<HTMLDialogElement>(null),
     port = useRef<HTMLDivElement>(null),
@@ -107,49 +150,10 @@ function ShareDialog({
     noticeTimer = useRef<ReturnType<typeof setTimeout> | null>(null),
     live = useRef(true),
     shareLock = useRef(false);
-  const prepared = useRef(false),
-    latestApi = useRef(api),
-    currentView = useRef(view);
-  useLayoutEffect(() => {
-    latestApi.current = api;
-    currentView.current = view;
-  }, [api, view]);
   const id = useId();
-  const artifact =
-    api.state.phase === "ready" && api.state.artifact.kind === kind
-      ? api.state.artifact
-      : null;
-  const busy = api.state.phase === "rendering";
-  useEffect(() => {
-    if (view !== "choose" || busy || prepared.current) return;
-    prepared.current = true;
-    void Promise.resolve().then(async () => {
-      if (!live.current || currentView.current !== "choose") return;
-      setPreparing(true);
-      try {
-        for (const item of KINDS) {
-          const current = latestApi.current;
-          if (
-            !live.current ||
-            currentView.current !== "choose" ||
-            current.state.phase === "closed"
-          )
-            return;
-          if (
-            current.availability[item].allowed &&
-            !current.getCachedArtifact(item)
-          )
-            await current.generate(item);
-        }
-      } finally {
-        if (live.current) setPreparing(false);
-      }
-    });
-  }, [view, busy]);
-  const failure =
-    api.state.phase === "error" && api.state.kind === kind
-      ? api.state.code
-      : null;
+  const artifact = api.getCachedArtifact(kind);
+  const busy = !artifact && !api.getFailure(kind);
+  const failure = api.getFailure(kind);
   useLayoutEffect(() => {
     const node = dialog.current,
       previous = document.activeElement;
@@ -224,7 +228,6 @@ function ShareDialog({
     );
   };
   const choose = () => {
-    setPreparing(!prepared.current);
     setView("choose");
     setNotice("");
   };
@@ -236,12 +239,12 @@ function ShareDialog({
       data-qianzai-share
       data-view={view}
       onClick={(event) => {
-        if (event.target === event.currentTarget) api.close();
+        if (event.target === event.currentTarget) onDismiss();
       }}
       onCancel={(event) => {
         event.preventDefault();
         if (view === "preview") choose();
-        else api.close();
+        else onDismiss();
       }}
       onKeyDown={(event) => event.stopPropagation()}
     >
@@ -258,7 +261,7 @@ function ShareDialog({
             <button
               ref={chooserClose}
               className={styles.round}
-              onClick={api.close}
+              onClick={onDismiss}
               aria-label="关闭保存选项"
             >
               ×
@@ -273,8 +276,11 @@ function ShareDialog({
                   key={item}
                   className={styles.card}
                   aria-pressed={item === kind}
-                  disabled={!allowed || busy || preparing}
-                  onClick={() => setKind(item)}
+                  disabled={!allowed}
+                  onClick={() => {
+                    setKind(item);
+                    void api.generate(item);
+                  }}
                 >
                   <span className={styles.thumb} data-kind={item}>
                     {ready ? (
@@ -291,9 +297,11 @@ function ShareDialog({
                         )}
                         <span>
                           {allowed
-                            ? preparing
-                              ? "正在生成预览…"
-                              : "预览暂未生成"
+                            ? api.getFailure(item)
+                              ? "预览未完成，可点击重试"
+                              : api.state.phase === "rendering"
+                                ? `正在准备${LABELS[item]}…`
+                                : "点击准备图片预览"
                             : "暂不可用"}
                         </span>
                       </span>
@@ -331,24 +339,16 @@ function ShareDialog({
                   和五维为演示数值，二维码仅为不可扫描占位。
                 </>
               ) : (
-                "图片取自本轮报告，可预览后保存。"
+                "长图包含六卷正文与引用依据；全部24题记录可在报告内查看。"
               )}
             </div>
             <button
               className={styles.primary}
               aria-label="查看图片预览"
-              disabled={
-                !api.availability[kind].allowed ||
-                preparing ||
-                (api.state.phase === "rendering" && api.state.kind !== kind)
-              }
+              disabled={!api.availability[kind].allowed}
               onClick={() => preview(kind)}
             >
-              {preparing
-                ? "正在准备图片…"
-                : busy
-                  ? "查看生成进度"
-                  : "查看图片预览"}
+              {busy ? "查看准备进度" : "查看图片预览"}
               {"　→"}
             </button>
           </footer>
@@ -378,7 +378,6 @@ function ShareDialog({
               className={styles.counter}
               aria-label={`切换为${LABELS[kind === "poster" ? "full-report" : "poster"]}`}
               disabled={
-                busy ||
                 !api.availability[kind === "poster" ? "full-report" : "poster"]
                   .allowed
               }
@@ -390,7 +389,7 @@ function ShareDialog({
             </button>
             <button
               className={styles.closePreview}
-              onClick={api.close}
+              onClick={onDismiss}
               aria-label="关闭图片预览"
             >
               <X size={20} />

@@ -4,6 +4,11 @@ import { admittedQianzaiBindings } from "./resource-owner";
 import { sameConsumerFact } from "@/lib/consumer-contract/v1/integrity";
 import { sameArtRef } from "./art";
 import {
+  deriveQianzaiResultPresentation,
+  type QianzaiPresentationBinding,
+  type QianzaiResultPresentation,
+} from "@/features/report/qianzai-tongxin/result-presentation";
+import {
   QIANZAI_COMPONENT_MAPPING,
   QIANZAI_CONSUMER_RENDERER,
 } from "./component-map";
@@ -20,6 +25,7 @@ import {
   type QianzaiExportScope,
   type QianzaiExportArtifact,
   type QianzaiExportAvailability,
+  type QianzaiExportErrorCode,
   type QianzaiShareOutcome,
 } from "@/features/report/qianzai-tongxin/contracts";
 
@@ -36,6 +42,14 @@ export class QianzaiExportOwner {
   private state: QianzaiExportState = { phase: "closed" };
   private listeners = new Set<() => void>();
   private cache = new Map<QianzaiExportKind, Cached>();
+  private failures = new Map<QianzaiExportKind, QianzaiExportErrorCode>();
+  private jobs = new Map<
+    QianzaiExportKind,
+    { promise: Promise<void>; resolve(): void }
+  >();
+  private queue: QianzaiExportKind[] = [];
+  private selectedKind: QianzaiExportKind | null = null;
+  private resultPresentation: QianzaiResultPresentation | null | undefined;
   private epoch = 0;
   private active: AbortController | null = null;
   private disposed = false;
@@ -50,6 +64,7 @@ export class QianzaiExportOwner {
     private readonly bindings: readonly QianzaiAssetBinding[],
     private readonly font: Font | null,
     private readonly render: Render = renderQianzaiExport,
+    private readonly presentationBinding?: QianzaiPresentationBinding,
   ) {
     this.report = lease.model.report;
     this.receipt = this.report ? JSON.stringify(this.report.receipt) : "";
@@ -65,6 +80,19 @@ export class QianzaiExportOwner {
     if (this.lease.signal.aborted) this.close();
   };
   getSnapshot = (): QianzaiExportState => this.state;
+  getResultPresentation = (): QianzaiResultPresentation | null => {
+    try {
+      this.latest();
+      if (this.resultPresentation === undefined)
+        this.resultPresentation = deriveQianzaiResultPresentation(
+          this.report!.view,
+          this.presentationBinding,
+        );
+      return this.resultPresentation;
+    } catch {
+      return null;
+    }
+  };
   getCachedArtifact = (
     kind: QianzaiExportKind,
   ): QianzaiExportArtifact | null => {
@@ -72,6 +100,10 @@ export class QianzaiExportOwner {
       return null;
     return this.cache.get(kind)?.artifact ?? null;
   };
+  getFailure = (kind: QianzaiExportKind): QianzaiExportErrorCode | null =>
+    this.state.phase !== "closed" && this.availability(kind).allowed
+      ? (this.failures.get(kind) ?? null)
+      : null;
   subscribe = (listener: () => void) => {
     this.listeners.add(listener);
     return () => {
@@ -166,8 +198,10 @@ export class QianzaiExportOwner {
       nameArt.purpose !== "decoration"
     )
       throw new QianzaiExportError("ARTWORK_UNAVAILABLE");
+    const presentation = this.getResultPresentation();
     return {
       body: display.body,
+      ...(presentation ? { presentation } : {}),
       portrait,
       nameArt,
       paper: image("reportPaper", display.slots.neutral.reportPaper) ?? null,
@@ -221,6 +255,11 @@ export class QianzaiExportOwner {
     for (const item of this.cache.values())
       URL.revokeObjectURL(item.artifact.previewUrl);
     this.cache.clear();
+    this.failures.clear();
+    this.selectedKind = null;
+    this.queue = [];
+    for (const job of this.jobs.values()) job.resolve();
+    this.jobs.clear();
     if (this.state.phase !== "closed") this.set({ phase: "closed" });
   };
   dispose = () => {
@@ -229,7 +268,66 @@ export class QianzaiExportOwner {
     this.lease.signal.removeEventListener("abort", this.abort);
     this.listeners.clear();
   };
-  generate = async (kind: QianzaiExportKind): Promise<void> => {
+  /** Prepares only this report, once per kind unless an explicit action retries. */
+  prepare = async (includeFullReport = true): Promise<void> => {
+    this.open();
+    const epoch = this.epoch;
+    if (!this.failures.has("poster") && this.availability("poster").allowed)
+      await this.enqueue("poster", false);
+    if (
+      epoch === this.epoch &&
+      includeFullReport &&
+      (typeof document === "undefined" ||
+        document.visibilityState !== "hidden") &&
+      !this.failures.has("full-report") &&
+      this.availability("full-report").allowed
+    )
+      await this.enqueue("full-report", false);
+  };
+  generate = (kind: QianzaiExportKind): Promise<void> => {
+    this.selectedKind = kind;
+    return this.enqueue(kind, true);
+  };
+  private enqueue(kind: QianzaiExportKind, priority: boolean): Promise<void> {
+    if (
+      (kind !== "poster" && kind !== "full-report") ||
+      this.state.phase === "closed" ||
+      this.disposed
+    )
+      return Promise.resolve();
+    const cached = this.getCachedArtifact(kind);
+    if (cached) {
+      if (!this.active) this.set({ phase: "ready", artifact: cached });
+      return Promise.resolve();
+    }
+    const existing = this.jobs.get(kind);
+    if (existing) {
+      if (priority && this.queue.includes(kind)) {
+        this.queue = [kind, ...this.queue.filter((item) => item !== kind)];
+      }
+      return existing.promise;
+    }
+    let resolve!: () => void;
+    const promise = new Promise<void>((done) => {
+      resolve = done;
+    });
+    this.jobs.set(kind, { promise, resolve });
+    if (priority) this.queue.unshift(kind);
+    else this.queue.push(kind);
+    void this.drain();
+    return promise;
+  }
+  private async drain(): Promise<void> {
+    if (this.active || this.state.phase === "closed" || this.disposed) return;
+    const kind = this.queue.shift();
+    if (!kind) return;
+    const job = this.jobs.get(kind)!;
+    await this.renderOne(kind);
+    if (this.jobs.get(kind) === job) this.jobs.delete(kind);
+    job.resolve();
+    void this.drain();
+  }
+  private renderOne = async (kind: QianzaiExportKind): Promise<void> => {
     if (
       (kind !== "poster" && kind !== "full-report") ||
       this.state.phase === "closed" ||
@@ -246,6 +344,7 @@ export class QianzaiExportOwner {
       this.isCurrent();
     try {
       this.active = task;
+      this.failures.delete(kind);
       const scope = this.scope(kind, current);
       const cached = this.cache.get(kind);
       if (cached) {
@@ -292,10 +391,12 @@ export class QianzaiExportOwner {
         this.close();
         return;
       }
+      const code = qianzaiExportFailure(error).code;
+      this.failures.set(kind, code);
       this.set({
         phase: "error",
         kind,
-        code: qianzaiExportFailure(error).code,
+        code,
       });
     } finally {
       if (this.active === task) this.active = null;
@@ -303,12 +404,13 @@ export class QianzaiExportOwner {
     }
   };
   private selected() {
-    if (this.state.phase !== "ready") return null;
-    if (!this.availability(this.state.artifact.kind).allowed) {
+    const kind = this.selectedKind;
+    if (!kind || this.state.phase === "closed") return null;
+    if (!this.availability(kind).allowed) {
       this.close();
       return null;
     }
-    return this.cache.get(this.state.artifact.kind) ?? null;
+    return this.cache.get(kind) ?? null;
   }
   download = (): boolean => {
     const item = this.selected();

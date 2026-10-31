@@ -566,3 +566,42 @@
 .dialog.dialog.dialog .counter {
   padding: 0;
 }
+
+/* A visible close target must not overlap the back target in the preview bar. */
+.dialog.dialog.dialog .closePreview,
+.dialog.dialog.dialog .closePreview:focus-visible {
+  position: static;
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
+  clip-path: none;
+  display: grid;
+  place-items: center;
+  overflow: visible;
+  color: #f7deb7;
+  border: 1px solid #dab47f85;
+  border-radius: 50%;
+}
+.dialog.dialog.dialog .back,
+.dialog.dialog.dialog .counter {
+  flex-shrink: 0;
+  min-height: 44px;
+  min-width: 44px;
+}
+.dialog.dialog.dialog .zoomRow {
+  flex-wrap: wrap;
+}
+.dialog.dialog.dialog .zoomRow button {
+  min-height: 44px;
+  min-width: 44px;
+}
+.dialog.dialog.dialog .sheetHead p,
+.dialog.dialog.dialog .pending {
+  font-size: 16px;
+  line-height: 1.6;
+}
+.dialog.dialog.dialog .card small,
+.dialog.dialog.dialog .hint {
+  font-size: 14px;
+  line-height: 1.6;
+}

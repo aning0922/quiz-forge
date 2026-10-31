@@ -4,6 +4,10 @@ import {
   useCallback,
   useEffect,
   useLayoutEffect,
+  useImperativeHandle,
+  useMemo,
+  type ReactNode,
+  type RefObject,
   useRef,
   useState,
 } from "react";
@@ -29,6 +33,196 @@ import type { QianzaiVisualProps } from "./art";
 import { useQianzaiMotion } from "./motion";
 import styles from "./qianzai.module.css";
 import scenes from "./scenes.module.css";
+
+export type QianzaiEmbeddedReport = {
+  scrollContainer: RefObject<HTMLDivElement | null>;
+  onReturn: () => void;
+};
+export type QianzaiReaderNavigation = {
+  toReport: () => void;
+  toReveal: () => void;
+};
+/** One native reading port. Geometry is local presentation, never business state. */
+export function QianzaiContinuousReader({
+  navigation,
+  initialReport = false,
+  reveal,
+  report,
+}: {
+  navigation: RefObject<QianzaiReaderNavigation | null>;
+  initialReport?: boolean;
+  reveal: (active: boolean) => ReactNode;
+  report: (embedded: QianzaiEmbeddedReport) => ReactNode;
+}) {
+  const scrollContainer = useRef<HTMLDivElement>(null);
+  const [revealActive, setRevealActive] = useState(!initialReport);
+  const initialPositioned = useRef(false);
+  const previousHeight = useRef<number | null>(null);
+  const focusDestination = useRef<{ top: number; selector: string } | null>(
+    null,
+  );
+  const locate = useCallback(
+    (report: boolean, focus = true, instant = false) => {
+      const node = scrollContainer.current;
+      if (!node) return;
+      const anchor = node.querySelector<HTMLElement>(
+        report ? "[data-qianzai-report-start]" : "[data-reveal-continue]",
+      );
+      const toolbar = node.querySelector<HTMLElement>(
+        "[data-qianzai-report-toolbar]",
+      );
+      const top =
+        report && anchor
+          ? node.scrollTop +
+            anchor.getBoundingClientRect().top -
+            node.getBoundingClientRect().top -
+            (toolbar?.offsetHeight ?? 128)
+          : 0;
+      const target = Math.min(
+        Math.max(0, top),
+        Math.max(0, node.scrollHeight - node.clientHeight),
+      );
+      focusDestination.current = focus
+        ? {
+            top: target,
+            selector: report
+              ? "[data-report-opening-title]"
+              : "[data-reveal-continue]",
+          }
+        : null;
+      node.scrollTo({
+        top: target,
+        behavior:
+          instant ||
+          window.matchMedia("(prefers-reduced-motion: reduce)").matches
+            ? "instant"
+            : "smooth",
+      });
+      // Instant/zero-distance navigation may not emit a scroll event. Release
+      // the reveal's inert boundary before transferring focus back into it.
+      if (focus && Math.abs(node.scrollTop - target) < 1) {
+        const visual = node.querySelector<HTMLElement>(
+          "[data-qianzai-reveal-sticky]",
+        );
+        if (visual) visual.inert = report;
+        setRevealActive(!report);
+        const destination = focusDestination.current;
+        focusDestination.current = null;
+        if (destination)
+          node
+            .querySelector<HTMLElement>(destination.selector)
+            ?.focus({ preventScroll: true });
+      }
+    },
+    [],
+  );
+  const embedded = useMemo(
+    () => ({ scrollContainer, onReturn: () => locate(false) }),
+    [locate],
+  );
+  useImperativeHandle(
+    navigation,
+    () => ({ toReport: () => locate(true), toReveal: () => locate(false) }),
+    [locate],
+  );
+  useLayoutEffect(() => {
+    const node = scrollContainer.current;
+    if (!node) return;
+    const measure = () => {
+      const height = node.clientHeight;
+      const oldHeight = previousHeight.current;
+      const oldTop = node.scrollTop;
+      node.style.setProperty("--qianzai-reveal-height", `${height}px`);
+      const start = node.querySelector<HTMLElement>(
+        "[data-qianzai-report-start]",
+      );
+      const toolbar = node.querySelector<HTMLElement>(
+        "[data-qianzai-report-toolbar]",
+      );
+      // Browser chrome/orientation changes alter the reveal spacer. Keep the
+      // currently read paragraph at the same line instead of resetting to top.
+      if (
+        oldHeight !== null &&
+        oldHeight !== height &&
+        oldTop >= oldHeight - (toolbar?.offsetHeight ?? 128)
+      )
+        node.scrollTop = oldTop + height - oldHeight;
+      previousHeight.current = height;
+      const distance = start
+        ? node.scrollTop +
+          start.getBoundingClientRect().top -
+          node.getBoundingClientRect().top -
+          (toolbar?.offsetHeight ?? 128)
+        : node.clientHeight;
+      const progress = Math.max(
+        0,
+        Math.min(1, node.scrollTop / Math.max(1, distance)),
+      );
+      node.style.setProperty("--qianzai-reader-progress", String(progress));
+      // The old baked header is covered before any new toolbar text appears.
+      // Enable its controls only once that text has reached full opacity.
+      if (toolbar) toolbar.inert = progress < 0.28;
+      const visual = node.querySelector<HTMLElement>(
+        "[data-qianzai-reveal-sticky]",
+      );
+      if (visual) visual.inert = progress >= 0.1;
+      node.dataset.toolbarVisible = String(progress >= 0.28);
+      setRevealActive(progress < 0.1);
+      const destination = focusDestination.current;
+      if (destination && Math.abs(node.scrollTop - destination.top) < 1) {
+        focusDestination.current = null;
+        node
+          .querySelector<HTMLElement>(destination.selector)
+          ?.focus({ preventScroll: true });
+      }
+      // A may mount its marker after the first layout. Locate only once; resizing
+      // never resets the reader or replays reveal/score/complete operations.
+      if (initialReport && start && !initialPositioned.current) {
+        initialPositioned.current = true;
+        locate(true, false, true);
+      }
+    };
+    measure();
+    const resize = new ResizeObserver(measure);
+    resize.observe(node);
+    if (node.lastElementChild) resize.observe(node.lastElementChild);
+    node.addEventListener("scroll", measure, { passive: true });
+    return () => {
+      resize.disconnect();
+      node.removeEventListener("scroll", measure);
+    };
+  }, [initialReport, locate]);
+  return (
+    <div
+      ref={scrollContainer}
+      className={styles.continuousReader}
+      data-qianzai-continuous-reader
+      tabIndex={0}
+      aria-label="人物揭晓与六卷报告"
+      onKeyDown={(event) => {
+        if (
+          event.key === "Escape" &&
+          !(event.target as Element).closest("nav,[role=dialog],details")
+        )
+          locate(false);
+      }}
+    >
+      <div className={styles.readerBackdropTrack}>
+        <div
+          className={styles.readerBackdropSticky}
+          data-qianzai-reveal-sticky
+          inert={!revealActive}
+        >
+          {reveal(revealActive)}
+        </div>
+      </div>
+      <div className={styles.readerReportFlow} data-reader-paper>
+        <div className={styles.readerToolbarCover} aria-hidden="true" />
+        {report(embedded)}
+      </div>
+    </div>
+  );
+}
 
 type RevealPresentation = "waiting" | "playing" | "ready";
 const viewedReports = new Set<string>();
@@ -124,17 +318,8 @@ export function QianzaiTongxinExperience({
     cycle: number;
   }>({ phase: "waiting", startedAt: 0, cycle: 0 });
   const revealTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const readerTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const readerFrame = useRef<number | null>(null);
   const settleFrame = useRef<number | null>(null);
-  const readerDeck = useRef<HTMLDivElement>(null);
-  const [readerVisit, setReaderVisit] = useState(0);
-  const [readerMoving, setReaderMoving] = useState<
-    "prepare" | "enter" | "leave" | null
-  >(null);
-  const readerTarget = useRef<"result" | "report" | null>(
-    initialScreen === "report" ? "report" : null,
-  );
+  const readerNavigation = useRef<QianzaiReaderNavigation | null>(null);
   const seenReport = useRef<string | null>(null);
   const waiting = useRef<{
     token: number;
@@ -161,13 +346,8 @@ export function QianzaiTongxinExperience({
     hideStage();
   }, [hideStage]);
   const settleReading = useCallback(() => {
-    if (readerTimer.current !== null) clearTimeout(readerTimer.current);
-    if (readerFrame.current !== null) cancelAnimationFrame(readerFrame.current);
-    readerFrame.current = null;
     if (revealTimer.current !== null) clearTimeout(revealTimer.current);
-    readerTimer.current = null;
     revealTimer.current = null;
-    setReaderMoving(null);
     setReveal((old) =>
       old.phase === "ready" ? old : { ...old, phase: "ready" },
     );
@@ -190,9 +370,7 @@ export function QianzaiTongxinExperience({
           () => {
             if (generation.current === token) hideStage();
           },
-          duration -
-            midpoint +
-            (stage.current.dataset.kind === "paper" ? 0 : 30),
+          duration - midpoint + 30,
         ),
       );
     },
@@ -239,44 +417,6 @@ export function QianzaiTongxinExperience({
     finishStage,
     settleOnFrame,
   ]);
-  const acceptedQuestion = useRef(model.state?.progress.questionId ?? null);
-  useEffect(() => {
-    if (model.phase !== "ready" || !compatible) return;
-    const next = model.state?.progress.questionId ?? null,
-      previous = acceptedQuestion.current;
-    acceptedQuestion.current = next;
-    if (
-      !previous ||
-      !next ||
-      previous === next ||
-      waiting.current ||
-      stage.current?.dataset.active === "true" ||
-      document.hidden ||
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches
-    )
-      return;
-    // A reconciled receipt may arrive after a conflict cancelled its veil. This
-    // is an entrance for an already-accepted question, never another dispatch.
-    const node = stage.current;
-    if (!node) return;
-    cancel();
-    const token = generation.current;
-    node.hidden = false;
-    node.dataset.active = "true";
-    node.dataset.kind = "paper";
-    node.dataset.step = "enter";
-    stageTimers.current = [
-      setTimeout(() => {
-        if (generation.current === token) hideStage();
-      }, 310),
-    ];
-  }, [
-    model.phase,
-    model.state?.progress.questionId,
-    compatible,
-    cancel,
-    hideStage,
-  ]);
   useEffect(() => {
     const media = window.matchMedia("(prefers-reduced-motion: reduce)");
     const interrupt = () => {
@@ -292,16 +432,13 @@ export function QianzaiTongxinExperience({
       document.removeEventListener("visibilitychange", interrupt);
       media.removeEventListener("change", interrupt);
       cancel();
-      if (readerTimer.current !== null) clearTimeout(readerTimer.current);
-      if (readerFrame.current !== null)
-        cancelAnimationFrame(readerFrame.current);
       if (settleFrame.current !== null)
         cancelAnimationFrame(settleFrame.current);
       if (revealTimer.current !== null) clearTimeout(revealTimer.current);
     };
   }, [cancel, settleReading]);
   const transition = (
-    kind: "cover" | "preference" | "chapter" | "paper" | "reveal",
+    kind: "cover" | "preference" | "chapter" | "reveal",
     act: number,
     commit: () => void,
     target?: string,
@@ -321,7 +458,8 @@ export function QianzaiTongxinExperience({
           latest.current.model.state === state);
     if (!allowed()) return;
     const node = stage.current;
-    if (!motion || !node) {
+    const staticChapter = !motion && kind === "chapter";
+    if (!node || (!motion && !staticChapter)) {
       commit();
       return;
     }
@@ -329,16 +467,17 @@ export function QianzaiTongxinExperience({
       kind === "reveal"
         ? 1030
         : kind === "chapter"
-          ? 860
-          : kind === "paper"
-            ? 465
-            : 660;
-    const midpoint = kind === "paper" ? 155 : Math.round(duration * 0.51),
+          ? staticChapter
+            ? 450
+            : 860
+          : 660;
+    const midpoint = Math.round(duration * 0.51),
       token = generation.current;
     void node.offsetWidth;
     node.hidden = false;
     node.dataset.active = "true";
     node.dataset.kind = kind;
+    node.dataset.reduced = String(staticChapter);
     node.dataset.act = String(act);
     node.dataset.step = "leave";
     node.style.setProperty("--transition-duration", duration + "ms");
@@ -370,7 +509,8 @@ export function QianzaiTongxinExperience({
         if (
           generation.current !== token ||
           !allowed() ||
-          window.matchMedia("(prefers-reduced-motion: reduce)").matches
+          (!staticChapter &&
+            window.matchMedia("(prefers-reduced-motion: reduce)").matches)
         ) {
           cancel();
           return;
@@ -399,7 +539,7 @@ export function QianzaiTongxinExperience({
       return;
     cancel();
     settleReading();
-    readerTarget.current = "result";
+    readerNavigation.current?.toReveal();
     setPage("result");
     const begin = () => {
       if (
@@ -484,7 +624,7 @@ export function QianzaiTongxinExperience({
       current.state?.progress.questionId === q
     );
     transition(
-      act === 1 ? "preference" : "chapter",
+      "chapter",
       act,
       () => {
         latest.current.onEvent({ type: "navigate", questionId: q });
@@ -507,12 +647,19 @@ export function QianzaiTongxinExperience({
       return;
     }
     const chapter = to > from && questions[to]?.act !== questions[from]?.act;
-    transition(
-      chapter ? "chapter" : "paper",
-      questions[to]!.act,
-      () => latest.current.onEvent({ type: "navigate", questionId }),
-      questionId,
-    );
+    if (chapter) {
+      transition(
+        "chapter",
+        questions[to]!.act,
+        () => latest.current.onEvent({ type: "navigate", questionId }),
+        questionId,
+      );
+    } else {
+      // Ordinary question changes have no visual transition. The controller's
+      // save/accepted phase alone gates input; no hidden presentation tail.
+      cancel();
+      latest.current.onEvent({ type: "navigate", questionId });
+    }
   };
   const read = (next: ConsumerReadingPageV2) => {
     if (!compatible) return;
@@ -529,50 +676,10 @@ export function QianzaiTongxinExperience({
         model.phase === "completed" &&
         (next === "result" || next === "report")
       ) {
-        if (
-          readerTarget.current === next ||
-          (readerTarget.current === null && active === next)
-        )
-          return;
         cancel();
         settleReading();
-        readerTarget.current = next;
-        setPage(next);
-        if (next === "report") setReaderVisit((old) => old + 1);
-        if (motion) {
-          setReaderMoving(next === "report" ? "prepare" : "leave");
-          const identity = reportIdentity(model),
-            token = generation.current;
-          if (next === "report")
-            readerFrame.current = requestAnimationFrame(() => {
-              if (
-                generation.current !== token ||
-                document.hidden ||
-                reportIdentity(latest.current.model) !== identity
-              )
-                return;
-              readerDeck.current
-                ?.querySelector("[data-reader-paper]")
-                ?.getBoundingClientRect();
-              setReaderMoving("enter");
-            });
-          readerTimer.current = setTimeout(() => {
-            if (
-              generation.current === token &&
-              latest.current.model.phase === "completed" &&
-              reportIdentity(latest.current.model) === identity
-            ) {
-              setReaderMoving(null);
-              readerDeck.current
-                ?.querySelector<HTMLElement>(
-                  next === "report"
-                    ? "[data-report-opening-title]"
-                    : "[data-reveal-continue]",
-                )
-                ?.focus({ preventScroll: true });
-            }
-          }, 720);
-        }
+        if (next === "report") readerNavigation.current?.toReport();
+        else readerNavigation.current?.toReveal();
       }
     } else if (enabled) {
       if (active === "cover" && next === "preference") {
@@ -732,10 +839,7 @@ export function QianzaiTongxinExperience({
           "[data-qianzai-scroll-region],button,a,input,label,summary,details,nav",
         );
         touch.current =
-          (active === "cover" || active === "result") &&
-          !excluded &&
-          e.touches.length === 1 &&
-          t
+          active === "cover" && !excluded && e.touches.length === 1 && t
             ? { x: t.clientX, y: t.clientY }
             : null;
       }}
@@ -754,7 +858,6 @@ export function QianzaiTongxinExperience({
         )
           return;
         if (active === "cover") read("preference");
-        else if (active === "result") read("report");
       }}
     >
       {model.entry?.kind === "synthetic" && (
@@ -986,69 +1089,24 @@ export function QianzaiTongxinExperience({
             {model.report &&
               model.phase === "completed" &&
               model.pendingOperation === null && (
-                <div
-                  ref={readerDeck}
-                  className={styles.readerDeck}
-                  data-reader-page={active}
-                  data-reader-moving={readerMoving ?? undefined}
-                  inert={model.phase !== "completed"}
-                  onKeyDown={(e) => {
-                    if (e.key === "Escape" && active === "report") {
-                      e.preventDefault();
-                      read("result");
-                    }
-                  }}
-                >
-                  <div
-                    className={styles.readerResult}
-                    hidden={
-                      active !== "result" &&
-                      readerMoving !== "enter" &&
-                      readerMoving !== "prepare"
-                    }
-                    onWheel={(e) => {
-                      if (
-                        (e.target as Element).closest(
-                          "[data-qianzai-scroll-region],button,a,summary,details,nav",
-                        )
-                      )
-                        return;
-                      if (e.deltaY > 38) read("report");
-                    }}
-                    onKeyDown={(e) => {
-                      if (
-                        (e.target as Element).closest(
-                          "[data-qianzai-scroll-region],button,a,input,summary,details,nav",
-                        )
-                      )
-                        return;
-                      if (["ArrowDown", "PageDown"].includes(e.key)) {
-                        e.preventDefault();
-                        read("report");
-                      }
-                    }}
-                  >
+                <QianzaiContinuousReader
+                  key={reportKey}
+                  navigation={readerNavigation}
+                  initialReport={initialScreen === "report"}
+                  reveal={(visible) => (
                     <QianzaiReveal
                       key={`${reportKey}:${reveal.cycle}`}
                       {...props}
-                      active={active === "result"}
+                      active={visible}
                       presentation={reveal.phase}
                       startedAt={reveal.startedAt}
                       onReplay={() => playReveal(false)}
                     />
-                  </div>
-                  <div
-                    data-reader-paper
-                    className={styles.readerReport}
-                    hidden={active !== "report" && readerMoving !== "leave"}
-                  >
-                    <QianzaiReport
-                      {...props}
-                      entry={readerVisit}
-                      active={active === "report"}
-                    />
-                  </div>
-                </div>
+                  )}
+                  report={(embedded) => (
+                    <QianzaiReport {...props} {...{ embedded }} active />
+                  )}
+                />
               )}
           </div>
         </div>
