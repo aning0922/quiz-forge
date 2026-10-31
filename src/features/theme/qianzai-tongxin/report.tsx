@@ -23,6 +23,7 @@ import { QianzaiSharePanel } from "./share-panel";
 import { useQianzaiExport } from "./export-context";
 import { QIANZAI_AXIS_GUIDES_V11 } from "@/features/report/qianzai-tongxin/role-profiles-v11";
 import styles from "./report-parity.module.css";
+import { qianzaiInlineEmphasis } from "@/features/report/qianzai-tongxin/inline-emphasis";
 
 const c = (...names: string[]) => names.map((n) => styles[n]).join(" ");
 const labels = [
@@ -255,6 +256,11 @@ function Evidence({ block }: { block: QianzaiReportBlock }) {
     </>
   );
 }
+function inlineReportText(text: string) {
+  return qianzaiInlineEmphasis(text).map((part, index) =>
+    part.strong ? <strong key={index}>{part.text}</strong> : part.text,
+  );
+}
 function Block({ block }: { block: QianzaiReportBlock }) {
   return (
     <div
@@ -263,7 +269,7 @@ function Block({ block }: { block: QianzaiReportBlock }) {
       data-status={block.snapshot?.status}
     >
       {block.title && <h3>{block.title}</h3>}
-      <p>{block.text}</p>
+      <p>{inlineReportText(block.text)}</p>
       {block.citation && <span>{block.citation}</span>}
       <Evidence block={block} />
     </div>
@@ -282,7 +288,7 @@ function Blocks({ blocks }: { blocks: readonly QianzaiReportBlock[] }) {
             return (
               <div key={i} className={c("rp-verse")}>
                 <span className={c("rp-quote-icon")}>“</span>
-                <p>{b.text}</p>
+                <p>{inlineReportText(b.text)}</p>
                 {b.citation && <small>{b.citation}</small>}
                 <Evidence block={b} />
               </div>
@@ -290,7 +296,7 @@ function Blocks({ blocks }: { blocks: readonly QianzaiReportBlock[] }) {
           if (b.layout === "lead")
             return (
               <div key={i}>
-                <p className={c("rp-lead")}>{b.text}</p>
+                <p className={c("rp-lead")}>{inlineReportText(b.text)}</p>
                 <Evidence block={b} />
               </div>
             );
@@ -312,7 +318,7 @@ function Blocks({ blocks }: { blocks: readonly QianzaiReportBlock[] }) {
                   <span>月下自照</span>
                   <span>✧</span>
                 </div>
-                <blockquote>{b.text}</blockquote>
+                <blockquote>{inlineReportText(b.text)}</blockquote>
                 <Evidence block={b} />
                 {blocks
                   .filter(
@@ -320,7 +326,7 @@ function Blocks({ blocks }: { blocks: readonly QianzaiReportBlock[] }) {
                   )
                   .map((p, j) => (
                     <div key={j}>
-                      <p>{p.text}</p>
+                      <p>{inlineReportText(p.text)}</p>
                       <Evidence block={p} />
                     </div>
                   ))}
@@ -334,7 +340,7 @@ function Blocks({ blocks }: { blocks: readonly QianzaiReportBlock[] }) {
                 {timeline.map((row, j) => (
                   <div key={j} className={c("rp-time-row")}>
                     <span>{row.title}</span>
-                    <p>{row.text}</p>
+                    <p>{inlineReportText(row.text)}</p>
                     <Evidence block={row} />
                   </div>
                 ))}
@@ -348,7 +354,7 @@ function Blocks({ blocks }: { blocks: readonly QianzaiReportBlock[] }) {
                   {b.text.split("\n").map((line, j) => (
                     <span key={j}>
                       {j > 0 && <br />}
-                      {line}
+                      {inlineReportText(line)}
                     </span>
                   ))}
                 </p>
@@ -361,7 +367,7 @@ function Blocks({ blocks }: { blocks: readonly QianzaiReportBlock[] }) {
                 {b.text.split("\n").map((l, j) => (
                   <span key={j}>
                     {j > 0 && <br />}
-                    {l}
+                    {inlineReportText(l)}
                   </span>
                 ))}
                 <Evidence block={b} />
@@ -374,7 +380,7 @@ function Blocks({ blocks }: { blocks: readonly QianzaiReportBlock[] }) {
           {prompts.map((b, i) => (
             <div key={i}>
               <span>{b.title}</span>
-              <p>{b.text}</p>
+              <p>{inlineReportText(b.text)}</p>
               <Evidence block={b} />
             </div>
           ))}

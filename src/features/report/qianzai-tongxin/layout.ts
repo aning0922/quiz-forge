@@ -1,6 +1,7 @@
 import type { ComposedReportBodyV1 } from "@/lib/assessment-contract/composed-report-v1";
 import { qianzaiSnapshotDocument } from "./presentation";
 import type { QianzaiResultPresentation } from "./result-presentation";
+import { qianzaiPlainReportText } from "./inline-emphasis";
 import { QIANZAI_AXIS_GUIDES_V11 } from "./role-profiles-v11";
 import {
   QIANZAI_EXPORT_LIMITS as L,
@@ -102,7 +103,7 @@ export function qianzaiExportText(
             doc.resultPresentation.quote.source,
           ]
         : opening
-          ? [opening.text, paragraphNote(opening)]
+          ? [qianzaiPlainReportText(opening.text), paragraphNote(opening)]
           : []),
     ];
   return [
@@ -119,7 +120,7 @@ export function qianzaiExportText(
     ...body.volumes.flatMap((v) => [
       v.title,
       ...v.paragraphs.flatMap((p) => [
-        p.text,
+        qianzaiPlainReportText(p.text),
         paragraphNote(p),
         ...[...p.evidence, ...p.counterevidence].flatMap((e) => [
           e.scope,
@@ -318,7 +319,15 @@ export function layoutQianzaiExport(
       for (const note of matchingNotes(body))
         y = text(note, 17, 65, y + 4, 811, 24, 1076);
     } else if (opening) {
-      y = text(opening.text, 26, 65, y + 10, 811, 37, 1076);
+      y = text(
+        qianzaiPlainReportText(opening.text),
+        26,
+        65,
+        y + 10,
+        811,
+        37,
+        1076,
+      );
       text(paragraphNote(opening), 20, 65, y + 6, 811, 28, 1076, "#705f4d");
     }
     text("本轮五维", 34, 65, 1090, 350, 48, 1140);
@@ -513,7 +522,7 @@ export function layoutQianzaiExport(
       const dark = volume.id === "counterevidence";
       y =
         text(
-          paragraph.text,
+          qianzaiPlainReportText(paragraph.text),
           25,
           framed ? 66 : 48,
           y + (framed ? 22 : 0),
