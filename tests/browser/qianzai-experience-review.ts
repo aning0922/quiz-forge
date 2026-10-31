@@ -219,7 +219,11 @@ if (check) {
       setHidden(v: boolean): void;
       owner: import("@/features/theme/consumer-v2/controller").ConsumerControllerV2;
     };
-    const make = async (width = 320, last = true) => {
+    const make = async (
+      width = 320,
+      last = true,
+      reducedMotion: "reduce" | "no-preference" = "reduce",
+    ) => {
       const p = await browser.newPage({
         viewport: {
           width,
@@ -232,7 +236,7 @@ if (check) {
                   ? 932
                   : 844,
         },
-        reducedMotion: "reduce",
+        reducedMotion,
       });
       p.on("pageerror", (e) => errors.push(e.message));
       await p.addInitScript("window.__name=(f)=>f");
@@ -302,7 +306,118 @@ if (check) {
       "revoked",
     ];
     for (const scenario of scenarios) {
-      const p = await make();
+      const p =
+        scenario === "fast-next"
+          ? await make(390, false, "no-preference")
+          : await make();
+      if (scenario === "fast-next") {
+        const question = p.locator('[data-qianzai-screen="question"]');
+        const boundary = () =>
+          p.evaluate(() => {
+            const probe = (window as unknown as { qianzaiProbe: Probe })
+              .qianzaiProbe;
+            const input = document.querySelector<HTMLInputElement>(
+              '[data-qianzai-screen="question"] input[type=radio]',
+            )!;
+            const model = probe.snapshot();
+            return {
+              phase: model.phase,
+              question: model.draft?.progress.questionId,
+              disabled: input.matches(":disabled"),
+              inert: !!input.closest("[inert]"),
+            };
+          });
+        await action(p, "holdNext");
+        await question.locator("label").first().click();
+        // The first response stays held while feedback/leave time elapses.
+        // No clock advance or sleep is allowed between accepted Q2 and its click.
+        await p.clock.runFor(600);
+        await phase(p, "saving");
+        await expect.poll(async () => (await counts(p)).save).toBe(1);
+        expect(await counts(p)).toEqual({ save: 1, complete: 0 });
+        await action(p, "release");
+        await phase(p, "ready");
+        await expect(question.locator("h2")).toContainText("合成情境2");
+        expect(await boundary()).toEqual({
+          phase: "ready",
+          question: "q-1",
+          disabled: false,
+          inert: false,
+        });
+        await writeFile(
+          path.join(out, "fast-next-q2-boundary.json"),
+          JSON.stringify(await boundary(), null, 2),
+        );
+        const revision = await p.evaluate(
+          () =>
+            (
+              window as unknown as { qianzaiProbe: Probe }
+            ).qianzaiProbe.snapshot().state!.stateRevision,
+        );
+        await question.locator("label").first().click();
+        const q2Chosen = await question
+          .locator("input[type=radio]")
+          .first()
+          .isChecked();
+        if (!q2Chosen)
+          await p.screenshot({
+            path: path.join(out, "fast-next-q2-dropped-390.png"),
+          });
+        expect(q2Chosen).toBe(true);
+        expect(
+          await p.evaluate(
+            () =>
+              (
+                window as unknown as { qianzaiProbe: Probe }
+              ).qianzaiProbe.snapshot().draft!.answers,
+          ),
+        ).toContainEqual({ questionId: "q-1", optionId: "q-1-o-0" });
+        expect(await counts(p)).toEqual({ save: 1, complete: 0 });
+        await action(p, "holdNext");
+        await p.clock.runFor(401);
+        await phase(p, "saving");
+        await expect.poll(async () => (await counts(p)).save).toBe(2);
+        expect(
+          await p.evaluate(
+            () =>
+              (
+                window as unknown as { qianzaiProbe: Probe }
+              ).qianzaiProbe.snapshot().state!.stateRevision,
+          ),
+        ).toBe(revision);
+        await action(p, "release");
+        await phase(p, "ready");
+        await expect(question.locator("h2")).toContainText("合成情境3");
+        expect(await boundary()).toEqual({
+          phase: "ready",
+          question: "q-2",
+          disabled: false,
+          inert: false,
+        });
+        const accepted = await p.evaluate(
+          () =>
+            (
+              window as unknown as { qianzaiProbe: Probe }
+            ).qianzaiProbe.snapshot().state!,
+        );
+        expect(accepted.stateRevision).toBe(revision + 1);
+        expect(accepted.answers).toContainEqual({
+          questionId: "q-0",
+          optionId: "q-0-o-0",
+        });
+        expect(accepted.answers).toContainEqual({
+          questionId: "q-1",
+          optionId: "q-1-o-0",
+        });
+        await p.clock.runFor(2000);
+        expect(await counts(p)).toEqual({ save: 2, complete: 0 });
+        await p.screenshot({
+          path: path.join(out, "fast-next-ready-q3-390.png"),
+        });
+        result.push({ name: scenario, passed: true });
+        await p.close();
+        continue;
+      }
       if (scenario === "saving-presentation") {
         const question = p.locator('[data-qianzai-screen="question"]');
         const port = question.locator("[data-qianzai-scroll-region]");

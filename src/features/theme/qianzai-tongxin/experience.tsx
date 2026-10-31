@@ -370,9 +370,7 @@ export function QianzaiTongxinExperience({
           () => {
             if (generation.current === token) hideStage();
           },
-          duration -
-            midpoint +
-            (stage.current.dataset.kind === "paper" ? 0 : 30),
+          duration - midpoint + 30,
         ),
       );
     },
@@ -419,44 +417,6 @@ export function QianzaiTongxinExperience({
     finishStage,
     settleOnFrame,
   ]);
-  const acceptedQuestion = useRef(model.state?.progress.questionId ?? null);
-  useEffect(() => {
-    if (model.phase !== "ready" || !compatible) return;
-    const next = model.state?.progress.questionId ?? null,
-      previous = acceptedQuestion.current;
-    acceptedQuestion.current = next;
-    if (
-      !previous ||
-      !next ||
-      previous === next ||
-      waiting.current ||
-      stage.current?.dataset.active === "true" ||
-      document.hidden ||
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches
-    )
-      return;
-    // A reconciled receipt may arrive after a conflict cancelled its veil. This
-    // is an entrance for an already-accepted question, never another dispatch.
-    const node = stage.current;
-    if (!node) return;
-    cancel();
-    const token = generation.current;
-    node.hidden = false;
-    node.dataset.active = "true";
-    node.dataset.kind = "paper";
-    node.dataset.step = "enter";
-    stageTimers.current = [
-      setTimeout(() => {
-        if (generation.current === token) hideStage();
-      }, 310),
-    ];
-  }, [
-    model.phase,
-    model.state?.progress.questionId,
-    compatible,
-    cancel,
-    hideStage,
-  ]);
   useEffect(() => {
     const media = window.matchMedia("(prefers-reduced-motion: reduce)");
     const interrupt = () => {
@@ -478,7 +438,7 @@ export function QianzaiTongxinExperience({
     };
   }, [cancel, settleReading]);
   const transition = (
-    kind: "cover" | "preference" | "chapter" | "paper" | "reveal",
+    kind: "cover" | "preference" | "chapter" | "reveal",
     act: number,
     commit: () => void,
     target?: string,
@@ -510,10 +470,8 @@ export function QianzaiTongxinExperience({
           ? staticChapter
             ? 450
             : 860
-          : kind === "paper"
-            ? 465
-            : 660;
-    const midpoint = kind === "paper" ? 155 : Math.round(duration * 0.51),
+          : 660;
+    const midpoint = Math.round(duration * 0.51),
       token = generation.current;
     void node.offsetWidth;
     node.hidden = false;
@@ -689,12 +647,19 @@ export function QianzaiTongxinExperience({
       return;
     }
     const chapter = to > from && questions[to]?.act !== questions[from]?.act;
-    transition(
-      chapter ? "chapter" : "paper",
-      questions[to]!.act,
-      () => latest.current.onEvent({ type: "navigate", questionId }),
-      questionId,
-    );
+    if (chapter) {
+      transition(
+        "chapter",
+        questions[to]!.act,
+        () => latest.current.onEvent({ type: "navigate", questionId }),
+        questionId,
+      );
+    } else {
+      // Ordinary question changes have no visual transition. The controller's
+      // save/accepted phase alone gates input; no hidden presentation tail.
+      cancel();
+      latest.current.onEvent({ type: "navigate", questionId });
+    }
   };
   const read = (next: ConsumerReadingPageV2) => {
     if (!compatible) return;
