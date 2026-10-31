@@ -28,6 +28,14 @@ import styles from "./qianzai.module.css";
 import scenes from "./scenes.module.css";
 
 export type QianzaiViewProps = ConsumerViewPropsV2 & QianzaiVisualProps;
+function TestingNote({ model }: Pick<QianzaiViewProps, "model">) {
+  const assets = model.report?.view.display.assets ?? model.entry?.assets ?? [];
+  return assets.some((a) => a.approval === "private-test-only") ? (
+    <p className={scenes.artNote}>
+      本机测试使用参考素材与候选正文，尚非最终商品版本。
+    </p>
+  ) : null;
+}
 export const ACTS = [
   { title: "初识本心", place: "灯下问心", line: "灯影渐远 · 风雨将至" },
   { title: "命运抉择", place: "风雨渡口", line: "雨声渐歇 · 星河初明" },
@@ -276,6 +284,7 @@ export function QianzaiCover({
       </button>
       {menuOpen && (
         <div className={scenes.settingsPop}>
+          <TestingNote model={model} />
           <button
             onClick={() => {
               setReplay((old) => old + 1);
@@ -647,6 +656,7 @@ export function QianzaiQuestion({
           </div>
           {menuOpen && (
             <div className={`${scenes["menu-panel"]} ${scenes.visible}`}>
+              <TestingNote model={model} />
               <button
                 disabled={!enabled}
                 onClick={() => {
@@ -819,6 +829,7 @@ export function QianzaiReveal({
         />
         {menuOpen && (
           <div className={`${scenes["reveal-menu"]} ${scenes.visible}`}>
+            <TestingNote model={model} />
             {onReplay && (
               <button
                 onClick={() => {

@@ -1,6 +1,6 @@
 import "server-only";
-/** Exact isolated PG18.4 catalog after 0025_preference_scene_slot. */
+/** Exact isolated PG18.4 catalog after 0028 role composite registration. */
 export const consumerSchemaFacts = {
-  sha256: "6842f08a5a65d315e3b818a848bff1d2700d433fb9a6980db5cccd3d587262c3",
+  sha256: "108c7e200c73ab4b04276ba560ec83f6100d27ba22a6bf22f367329808e249c6",
   tables: 25,
 } as const;

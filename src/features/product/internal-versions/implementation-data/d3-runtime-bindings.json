@@ -9,7 +9,9 @@
         "entrypoints": [
           {
             "path": "src/features/product/internal-versions/implementations/engine-v2.ts",
-            "exports": ["bindEngineV2"],
+            "exports": [
+              "bindEngineV2"
+            ],
             "runtime": "server"
           }
         ],
@@ -40,14 +42,19 @@
             "sha256": "2c185ec8892d91212a02ae143b93d00f4f32fc1e2ab9a5d162f76d5ef6568240"
           },
           {
+            "path": "src/features/quizpack/content/private-test-registration-rebuild.json",
+            "bytes": 9263,
+            "sha256": "a219e7ef0f6fd29b1a8828f1ad0caf0142369868d8bd52ea2641026351b8d26a"
+          },
+          {
             "path": "src/features/quizpack/content/private-test-registration.json",
             "bytes": 8581,
             "sha256": "507404b05e7ab3a168b40dcc97d34257af18bb148668f7f155b0c7cee542f515"
           },
           {
             "path": "src/features/quizpack/content/private-test.ts",
-            "bytes": 2253,
-            "sha256": "b59e66fb14270682ee1673f4c280a158617c8168760885f007a83a8c48b95068"
+            "bytes": 3377,
+            "sha256": "f9d982c5bacbfbefeeea9ddf8d2f15b425a318af876a626b904e16883bfc38d0"
           },
           {
             "path": "src/features/quizpack/content/v2.ts",
@@ -61,8 +68,8 @@
           },
           {
             "path": "src/features/quizpack/content/v3-references.ts",
-            "bytes": 11595,
-            "sha256": "299c35946e503a1fd581d1ef3e48c788f5872297aa03167c9415bbfcbfe6de88"
+            "bytes": 12370,
+            "sha256": "3cfb12a9ad1941b6d8c30224328bfa46068de2f364f8b6a5e4a9b531f2ab10bd"
           },
           {
             "path": "src/features/quizpack/content/v3-report-facts.ts",
@@ -116,8 +123,8 @@
           },
           {
             "path": "src/lib/assessment-contract/presentation-v3.ts",
-            "bytes": 1881,
-            "sha256": "6c06f91e00b8c187119768aed07ba82d5254f6c9d75b6c0ecb067550c340ee18"
+            "bytes": 2274,
+            "sha256": "b62ddffd68ac6cf8392adb08035d383bb08f6f724655a584ac2499b70f594491"
           },
           {
             "path": "src/lib/assessment-contract/primitives.ts",
@@ -215,7 +222,10 @@
             }
           ],
           "settingsSha256": "078cb045ec56da085d08eb6efd0f1b925aa95b0ed16afff689183a2a919c0dd3",
-          "builtins": ["node:crypto", "node:util"]
+          "builtins": [
+            "node:crypto",
+            "node:util"
+          ]
         },
         "runtimePolicy": {
           "node": ">=20.19.0 <21 || >=22.13.0",
@@ -225,14 +235,14 @@
           "serverCondition": "react-server"
         }
       },
-      "implementationSha256": "a10f87b2922841b49fa261fe94b714922b020b2e36aff4a5665a46747616344c",
+      "implementationSha256": "110f21a9d6f95484707ca178406d761a6f314aafc4a63e540c91c551ef638c5c",
       "kind": "engine",
       "algorithm": {
         "id": "archetype-l1",
         "version": "1.0.0"
       }
     },
-    "entrySha256": "66e94e9da08f03137e79946b0b9932a40adf1f05a111ffc33dfe64f91f553f46"
+    "entrySha256": "cefaee89e50a7eb47006d8480404ce4ae62fac5b029490cc78c02501012d1610"
   },
   "structuredPreview": {
     "descriptor": {
@@ -244,12 +254,17 @@
         "entrypoints": [
           {
             "path": "src/features/theme/preview/v3-projection.ts",
-            "exports": ["projectContentEntryV3", "projectPreparedResultV3"],
+            "exports": [
+              "projectContentEntryV3",
+              "projectPreparedResultV3"
+            ],
             "runtime": "server"
           },
           {
             "path": "src/features/theme/consumer-v2/studio-structure-preview.tsx",
-            "exports": ["StudioStructurePreviewV2"],
+            "exports": [
+              "StudioStructurePreviewV2"
+            ],
             "runtime": "browser"
           }
         ],
@@ -275,14 +290,19 @@
             "sha256": "2c185ec8892d91212a02ae143b93d00f4f32fc1e2ab9a5d162f76d5ef6568240"
           },
           {
+            "path": "src/features/quizpack/content/private-test-registration-rebuild.json",
+            "bytes": 9263,
+            "sha256": "a219e7ef0f6fd29b1a8828f1ad0caf0142369868d8bd52ea2641026351b8d26a"
+          },
+          {
             "path": "src/features/quizpack/content/private-test-registration.json",
             "bytes": 8581,
             "sha256": "507404b05e7ab3a168b40dcc97d34257af18bb148668f7f155b0c7cee542f515"
           },
           {
             "path": "src/features/quizpack/content/private-test.ts",
-            "bytes": 2253,
-            "sha256": "b59e66fb14270682ee1673f4c280a158617c8168760885f007a83a8c48b95068"
+            "bytes": 3377,
+            "sha256": "f9d982c5bacbfbefeeea9ddf8d2f15b425a318af876a626b904e16883bfc38d0"
           },
           {
             "path": "src/features/quizpack/content/v2.ts",
@@ -296,8 +316,8 @@
           },
           {
             "path": "src/features/quizpack/content/v3-references.ts",
-            "bytes": 11595,
-            "sha256": "299c35946e503a1fd581d1ef3e48c788f5872297aa03167c9415bbfcbfe6de88"
+            "bytes": 12370,
+            "sha256": "3cfb12a9ad1941b6d8c30224328bfa46068de2f364f8b6a5e4a9b531f2ab10bd"
           },
           {
             "path": "src/features/quizpack/content/v3-report-facts.ts",
@@ -386,8 +406,8 @@
           },
           {
             "path": "src/lib/assessment-contract/presentation-v3.ts",
-            "bytes": 1881,
-            "sha256": "6c06f91e00b8c187119768aed07ba82d5254f6c9d75b6c0ecb067550c340ee18"
+            "bytes": 2274,
+            "sha256": "b62ddffd68ac6cf8392adb08035d383bb08f6f724655a584ac2499b70f594491"
           },
           {
             "path": "src/lib/assessment-contract/primitives.ts",
@@ -2128,7 +2148,10 @@
             }
           ],
           "settingsSha256": "078cb045ec56da085d08eb6efd0f1b925aa95b0ed16afff689183a2a919c0dd3",
-          "builtins": ["node:crypto", "node:util"]
+          "builtins": [
+            "node:crypto",
+            "node:util"
+          ]
         },
         "runtimePolicy": {
           "node": ">=20.19.0 <21 || >=22.13.0",
@@ -2138,7 +2161,7 @@
           "serverCondition": "react-server"
         }
       },
-      "implementationSha256": "588c47289398e63e6c2cbdd99f7b7268cd1ab420104647c19cf09457d48b6ed7",
+      "implementationSha256": "3e94d4750e94d209f3f7729a71b41a369f7fbf1473caab73c73650590c8221bd",
       "kind": "renderer",
       "capability": "studio-internal-preview",
       "components": {
@@ -2183,7 +2206,7 @@
         "pngAvailable": false
       }
     },
-    "entrySha256": "8edade29f84e9379795993a510e560b8bf0270ae975a9a650694be80163e8da8"
+    "entrySha256": "4f66ee60fd2fb7f1228ccaa2a3a404a68bbcaa9ea630afc64d21c8ad40e1410d"
   },
   "structuredConsumer": {
     "descriptor": {
@@ -2294,22 +2317,31 @@
         "entrypoints": [
           {
             "path": "src/features/theme/preview/v3-projection.ts",
-            "exports": ["projectContentEntryV3", "projectPreparedResultV3"],
+            "exports": [
+              "projectContentEntryV3",
+              "projectPreparedResultV3"
+            ],
             "runtime": "server"
           },
           {
             "path": "src/features/theme/consumer-v2/experience.tsx",
-            "exports": ["ConsumerSessionRuntimeV2"],
+            "exports": [
+              "ConsumerSessionRuntimeV2"
+            ],
             "runtime": "browser"
           },
           {
             "path": "src/features/theme/consumer-v2/controller.ts",
-            "exports": ["ConsumerControllerV2"],
+            "exports": [
+              "ConsumerControllerV2"
+            ],
             "runtime": "browser"
           },
           {
             "path": "src/features/theme/consumer-v2/host.tsx",
-            "exports": ["ConsumerExperienceV2"],
+            "exports": [
+              "ConsumerExperienceV2"
+            ],
             "runtime": "browser"
           },
           {
@@ -2323,7 +2355,9 @@
           },
           {
             "path": "src/features/report/persisted/view-contracts-v2.ts",
-            "exports": ["verifyPersistedReportViewV2"],
+            "exports": [
+              "verifyPersistedReportViewV2"
+            ],
             "runtime": "server"
           }
         ],
@@ -2379,14 +2413,19 @@
             "sha256": "2c185ec8892d91212a02ae143b93d00f4f32fc1e2ab9a5d162f76d5ef6568240"
           },
           {
+            "path": "src/features/quizpack/content/private-test-registration-rebuild.json",
+            "bytes": 9263,
+            "sha256": "a219e7ef0f6fd29b1a8828f1ad0caf0142369868d8bd52ea2641026351b8d26a"
+          },
+          {
             "path": "src/features/quizpack/content/private-test-registration.json",
             "bytes": 8581,
             "sha256": "507404b05e7ab3a168b40dcc97d34257af18bb148668f7f155b0c7cee542f515"
           },
           {
             "path": "src/features/quizpack/content/private-test.ts",
-            "bytes": 2253,
-            "sha256": "b59e66fb14270682ee1673f4c280a158617c8168760885f007a83a8c48b95068"
+            "bytes": 3377,
+            "sha256": "f9d982c5bacbfbefeeea9ddf8d2f15b425a318af876a626b904e16883bfc38d0"
           },
           {
             "path": "src/features/quizpack/content/v2.ts",
@@ -2400,8 +2439,8 @@
           },
           {
             "path": "src/features/quizpack/content/v3-references.ts",
-            "bytes": 11595,
-            "sha256": "299c35946e503a1fd581d1ef3e48c788f5872297aa03167c9415bbfcbfe6de88"
+            "bytes": 12370,
+            "sha256": "3cfb12a9ad1941b6d8c30224328bfa46068de2f364f8b6a5e4a9b531f2ab10bd"
           },
           {
             "path": "src/features/quizpack/content/v3-report-facts.ts",
@@ -2545,8 +2584,8 @@
           },
           {
             "path": "src/lib/assessment-contract/presentation-v3.ts",
-            "bytes": 1881,
-            "sha256": "6c06f91e00b8c187119768aed07ba82d5254f6c9d75b6c0ecb067550c340ee18"
+            "bytes": 2274,
+            "sha256": "b62ddffd68ac6cf8392adb08035d383bb08f6f724655a584ac2499b70f594491"
           },
           {
             "path": "src/lib/assessment-contract/primitives.ts",
@@ -4337,7 +4376,10 @@
             }
           ],
           "settingsSha256": "078cb045ec56da085d08eb6efd0f1b925aa95b0ed16afff689183a2a919c0dd3",
-          "builtins": ["node:crypto", "node:util"]
+          "builtins": [
+            "node:crypto",
+            "node:util"
+          ]
         },
         "runtimePolicy": {
           "node": ">=20.19.0 <21 || >=22.13.0",
@@ -4347,9 +4389,9 @@
           "serverCondition": "react-server"
         }
       },
-      "implementationSha256": "ca7e3be0086ea21da53c01b0ed632717a42b77530f2ad1c35e886c5aa9964735"
+      "implementationSha256": "cfa056ae4e8b56de79c151757e434c03a6627ceb8dda72b503cc21a7a2f18ee9"
     },
-    "entrySha256": "178af2448da5cfa0169d3710a8a56b5230bbe1c5cb95230477e033cff6f8a07e"
+    "entrySha256": "98be1ea165e3cdb899cb89947933691a672ad56aaca4ff4e3ebcd1d02be83834"
   },
   "qianzaiPreview": {
     "descriptor": {
@@ -4361,12 +4403,17 @@
         "entrypoints": [
           {
             "path": "src/features/theme/qianzai-tongxin/projection.ts",
-            "exports": ["projectQianzaiEntry", "projectQianzaiResult"],
+            "exports": [
+              "projectQianzaiEntry",
+              "projectQianzaiResult"
+            ],
             "runtime": "server"
           },
           {
             "path": "src/features/theme/qianzai-tongxin/fixed-preview.tsx",
-            "exports": ["QianzaiFixedPreview"],
+            "exports": [
+              "QianzaiFixedPreview"
+            ],
             "runtime": "browser"
           }
         ],
@@ -4407,14 +4454,19 @@
             "sha256": "2c185ec8892d91212a02ae143b93d00f4f32fc1e2ab9a5d162f76d5ef6568240"
           },
           {
+            "path": "src/features/quizpack/content/private-test-registration-rebuild.json",
+            "bytes": 9263,
+            "sha256": "a219e7ef0f6fd29b1a8828f1ad0caf0142369868d8bd52ea2641026351b8d26a"
+          },
+          {
             "path": "src/features/quizpack/content/private-test-registration.json",
             "bytes": 8581,
             "sha256": "507404b05e7ab3a168b40dcc97d34257af18bb148668f7f155b0c7cee542f515"
           },
           {
             "path": "src/features/quizpack/content/private-test.ts",
-            "bytes": 2253,
-            "sha256": "b59e66fb14270682ee1673f4c280a158617c8168760885f007a83a8c48b95068"
+            "bytes": 3377,
+            "sha256": "f9d982c5bacbfbefeeea9ddf8d2f15b425a318af876a626b904e16883bfc38d0"
           },
           {
             "path": "src/features/quizpack/content/v2.ts",
@@ -4428,8 +4480,8 @@
           },
           {
             "path": "src/features/quizpack/content/v3-references.ts",
-            "bytes": 11595,
-            "sha256": "299c35946e503a1fd581d1ef3e48c788f5872297aa03167c9415bbfcbfe6de88"
+            "bytes": 12370,
+            "sha256": "3cfb12a9ad1941b6d8c30224328bfa46068de2f364f8b6a5e4a9b531f2ab10bd"
           },
           {
             "path": "src/features/quizpack/content/v3-report-facts.ts",
@@ -4528,8 +4580,8 @@
           },
           {
             "path": "src/lib/assessment-contract/presentation-v3.ts",
-            "bytes": 1881,
-            "sha256": "6c06f91e00b8c187119768aed07ba82d5254f6c9d75b6c0ecb067550c340ee18"
+            "bytes": 2274,
+            "sha256": "b62ddffd68ac6cf8392adb08035d383bb08f6f724655a584ac2499b70f594491"
           },
           {
             "path": "src/lib/assessment-contract/primitives.ts",
@@ -6300,7 +6352,10 @@
             }
           ],
           "settingsSha256": "078cb045ec56da085d08eb6efd0f1b925aa95b0ed16afff689183a2a919c0dd3",
-          "builtins": ["node:crypto", "node:util"]
+          "builtins": [
+            "node:crypto",
+            "node:util"
+          ]
         },
         "runtimePolicy": {
           "node": ">=20.19.0 <21 || >=22.13.0",
@@ -6310,7 +6365,7 @@
           "serverCondition": "react-server"
         }
       },
-      "implementationSha256": "bbfd6c7e0a038dde19c85212225441d1b7e16fc3a82eba6358991940b72370cb",
+      "implementationSha256": "30a9c20edf1a600e6c1817e30884220dbec790cc8f2f8f0d07e011fe7bca3fd4",
       "kind": "renderer",
       "capability": "studio-internal-preview",
       "components": {
@@ -6364,7 +6419,7 @@
         "licenseSha256": "5e0da210fb04058a8c0087985d2d456b931c2579811a49655721d3cf0c36b6d6"
       }
     },
-    "entrySha256": "d2d16157081fa9b97eda904d31d8f19a7aa29bb9581ff8101aead13bb324f88a"
+    "entrySha256": "e3dbc905fd4d83130405d2597a206c5e17eda73a5c5e9a9466c85ad2647a2a66"
   },
   "qianzaiConsumer": {
     "descriptor": {
@@ -6492,17 +6547,23 @@
           },
           {
             "path": "src/features/theme/consumer-v2/experience.tsx",
-            "exports": ["ConsumerSessionRuntimeV2"],
+            "exports": [
+              "ConsumerSessionRuntimeV2"
+            ],
             "runtime": "browser"
           },
           {
             "path": "src/features/theme/consumer-v2/controller.ts",
-            "exports": ["ConsumerControllerV2"],
+            "exports": [
+              "ConsumerControllerV2"
+            ],
             "runtime": "browser"
           },
           {
             "path": "src/features/theme/qianzai-tongxin/runtime.tsx",
-            "exports": ["QianzaiTongxinRuntime"],
+            "exports": [
+              "QianzaiTongxinRuntime"
+            ],
             "runtime": "browser"
           },
           {
@@ -6516,7 +6577,9 @@
           },
           {
             "path": "src/features/report/persisted/view-contracts-v2.ts",
-            "exports": ["verifyPersistedReportViewV2"],
+            "exports": [
+              "verifyPersistedReportViewV2"
+            ],
             "runtime": "server"
           }
         ],
@@ -6573,8 +6636,8 @@
           },
           {
             "path": "src/features/product/internal-versions/identity-contracts.ts",
-            "bytes": 9010,
-            "sha256": "5531e91bcea0285f01d5e1bdec73df589e8846d779400708b7a9a096046b2834"
+            "bytes": 9284,
+            "sha256": "19ab683850d9b8696cfe57a55671e20aeff5bf7d9a89a9b9156d1d8df87e6f9d"
           },
           {
             "path": "src/features/product/internal-versions/implementation-schema.ts",
@@ -6602,14 +6665,19 @@
             "sha256": "2c185ec8892d91212a02ae143b93d00f4f32fc1e2ab9a5d162f76d5ef6568240"
           },
           {
+            "path": "src/features/quizpack/content/private-test-registration-rebuild.json",
+            "bytes": 9263,
+            "sha256": "a219e7ef0f6fd29b1a8828f1ad0caf0142369868d8bd52ea2641026351b8d26a"
+          },
+          {
             "path": "src/features/quizpack/content/private-test-registration.json",
             "bytes": 8581,
             "sha256": "507404b05e7ab3a168b40dcc97d34257af18bb148668f7f155b0c7cee542f515"
           },
           {
             "path": "src/features/quizpack/content/private-test.ts",
-            "bytes": 2253,
-            "sha256": "b59e66fb14270682ee1673f4c280a158617c8168760885f007a83a8c48b95068"
+            "bytes": 3377,
+            "sha256": "f9d982c5bacbfbefeeea9ddf8d2f15b425a318af876a626b904e16883bfc38d0"
           },
           {
             "path": "src/features/quizpack/content/v2.ts",
@@ -6623,8 +6691,8 @@
           },
           {
             "path": "src/features/quizpack/content/v3-references.ts",
-            "bytes": 11595,
-            "sha256": "299c35946e503a1fd581d1ef3e48c788f5872297aa03167c9415bbfcbfe6de88"
+            "bytes": 12370,
+            "sha256": "3cfb12a9ad1941b6d8c30224328bfa46068de2f364f8b6a5e4a9b531f2ab10bd"
           },
           {
             "path": "src/features/quizpack/content/v3-report-facts.ts",
@@ -6702,6 +6770,16 @@
             "sha256": "57565f38bf5f5dc3931e8c5315311766d4223e7b39483e642c706eb6d559bf7c"
           },
           {
+            "path": "src/features/report/qianzai-tongxin/presentation.ts",
+            "bytes": 5301,
+            "sha256": "9cc291582222950219c585bb41b0cdae857c4d78679c62b0c1ccfbd1b446d2bc"
+          },
+          {
+            "path": "src/features/report/qianzai-tongxin/role-presentation.ts",
+            "bytes": 2670,
+            "sha256": "538bf71f9bed2ea52776f8d1856ca6797b4ba753d5adcaeccdb7a02e2eb567e0"
+          },
+          {
             "path": "src/features/theme/consumer-v1/authority.ts",
             "bytes": 1510,
             "sha256": "c19480a3b5809d57a707f143a410256b78f17da10e3ad0d3c3d1aad4b423e013"
@@ -6763,8 +6841,8 @@
           },
           {
             "path": "src/features/theme/qianzai-tongxin/art.ts",
-            "bytes": 4602,
-            "sha256": "e2146ac80ed6cc8d1a90be209d11c7f640bfb2d72b14a4f6eedbdc20c632799b"
+            "bytes": 5984,
+            "sha256": "0d2d827c5c4e488f948cd7266f29bf3cd04e61f35a1c76db7ddb91e51c058883"
           },
           {
             "path": "src/features/theme/qianzai-tongxin/component-map.ts",
@@ -6773,8 +6851,8 @@
           },
           {
             "path": "src/features/theme/qianzai-tongxin/experience.tsx",
-            "bytes": 36491,
-            "sha256": "d52ae5f86bd3e73f88b50673d9c6670202cded474d0d6ab89e3ad37f9e7e5ab4"
+            "bytes": 36886,
+            "sha256": "7dd34d2dd221b6637691c48b8e58b8ae69a9831a9feb465e42352ed6e554ae3b"
           },
           {
             "path": "src/features/theme/qianzai-tongxin/export-context.tsx",
@@ -6807,44 +6885,54 @@
             "sha256": "7a2fc75e272c57e8edbdc3d6cb726500c93224209ab9395be4a46e89e2185f40"
           },
           {
+            "path": "src/features/theme/qianzai-tongxin/report-parity.module.css",
+            "bytes": 22217,
+            "sha256": "bdef7039e59c38eb9a1469b56e0c250101935470830fd2ffeb7404ba9ec18c4a"
+          },
+          {
             "path": "src/features/theme/qianzai-tongxin/report.tsx",
-            "bytes": 24643,
-            "sha256": "80d8fb9c407872d1f4dd093525e93093ec04eadebfe48302ba2ebab0492cc06b"
+            "bytes": 29250,
+            "sha256": "6957e3c3ea9ab80e4ff277f9728131866216ed3988f00e8fe656fe0f195a6124"
           },
           {
             "path": "src/features/theme/qianzai-tongxin/resource-owner.ts",
-            "bytes": 5975,
-            "sha256": "3b543954e1970191ecfc9556877a71607de56abe1df50902f85aba3103daffdd"
+            "bytes": 7199,
+            "sha256": "177cddf570d432efaebd2ae0d92e9d1bf3b83a9662b72c8b470e818c3249a3c7"
           },
           {
             "path": "src/features/theme/qianzai-tongxin/runtime-inputs.json",
-            "bytes": 18619,
-            "sha256": "773dd6d81fb5d79467cba9648b272134020c0a29a8dacad3ba44b07c0cca7f53"
+            "bytes": 19949,
+            "sha256": "28a7f1631957f024c6b1b548995bff7f9eb91e16ec192d2d6d5c5a6759fda670"
           },
           {
             "path": "src/features/theme/qianzai-tongxin/runtime-inputs.ts",
-            "bytes": 1524,
-            "sha256": "2cb8f41a6bd706f1b9484ddc7f0fb969b0ddb99f36bca98f24017c220b40ee49"
+            "bytes": 1920,
+            "sha256": "bf6b79648ddb5173b5c0220924415af449b0580330387c92a26b1b0ede112a91"
           },
           {
             "path": "src/features/theme/qianzai-tongxin/runtime.tsx",
-            "bytes": 3755,
-            "sha256": "ff2081195a2791d58cc2da36dcb2b831edba986e5999adb72c01f507244b32ef"
+            "bytes": 3484,
+            "sha256": "3659bd96b3f2650ed31a9992649ddb4ef698d4415fada2732d43168e352fa6bc"
+          },
+          {
+            "path": "src/features/theme/qianzai-tongxin/scenes.module.css",
+            "bytes": 37507,
+            "sha256": "ac421531401701f89cba6f17c4a7859c51ef8685b90024e4bd69affe67eb2814"
           },
           {
             "path": "src/features/theme/qianzai-tongxin/share-panel.tsx",
-            "bytes": 17591,
-            "sha256": "15203390918b29e1a296cefe0114089a17353247d7a05ae6d3031b47701532ed"
+            "bytes": 18475,
+            "sha256": "e74b7e5010a493d17df3dedf8edce12accda51de16faafb4c99e7e402b35288f"
           },
           {
             "path": "src/features/theme/qianzai-tongxin/share.module.css",
-            "bytes": 10307,
-            "sha256": "0cd36e2a240e1509a16c44a3157c629a3b9af58cd8257579aa0758831041b464"
+            "bytes": 12062,
+            "sha256": "9c7da4ac8f92c49542cef0d3ff81fd0cce179283eb7a64fb3318ae3a14551e85"
           },
           {
             "path": "src/features/theme/qianzai-tongxin/views.tsx",
-            "bytes": 29292,
-            "sha256": "04fc8a17f7929dea653391b1b50a206040eb3bed6e614dd3b08799954994cecb"
+            "bytes": 27981,
+            "sha256": "1bd4d14e589ca1c95395b6fb05be19fe960b68af9187799a995a10aa1ce16aff"
           },
           {
             "path": "src/lib/assessment-contract/composed-report-v1.ts",
@@ -6878,8 +6966,8 @@
           },
           {
             "path": "src/lib/assessment-contract/presentation-v3.ts",
-            "bytes": 1881,
-            "sha256": "6c06f91e00b8c187119768aed07ba82d5254f6c9d75b6c0ecb067550c340ee18"
+            "bytes": 2274,
+            "sha256": "b62ddffd68ac6cf8392adb08035d383bb08f6f724655a584ac2499b70f594491"
           },
           {
             "path": "src/lib/assessment-contract/primitives.ts",
@@ -8685,7 +8773,10 @@
             }
           ],
           "settingsSha256": "078cb045ec56da085d08eb6efd0f1b925aa95b0ed16afff689183a2a919c0dd3",
-          "builtins": ["node:crypto", "node:util"]
+          "builtins": [
+            "node:crypto",
+            "node:util"
+          ]
         },
         "runtimePolicy": {
           "node": ">=20.19.0 <21 || >=22.13.0",
@@ -8695,8 +8786,8 @@
           "serverCondition": "react-server"
         }
       },
-      "implementationSha256": "13d6a25dfae410da2a01e88323090e3439edc2782a8ba199ab5151e39f9b4563"
+      "implementationSha256": "4e707356660ac79824d6a43f0d9e53ab3858f7732636bf98121f07b0fb7af957"
     },
-    "entrySha256": "4fa5ac5f1b6957aee65ea4c5a83417e15e67c1a8cb823b79f22d09d8d8fc177f"
+    "entrySha256": "a21b7da4141bec806758426b762f078012046ff23ecca2d86705453348f1f5fc"
   }
 }

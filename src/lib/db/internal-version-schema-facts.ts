@@ -706,7 +706,7 @@ export const internalVersionSchemaFacts = {
     {
       signature: "qf.internal_review_valid(qf.draft_review)",
       body_sha256:
-        "55c6ef9a2ac422fd9cc220620f6ae35b3677f174e5d976d21775b3935bd42a0c",
+        "8b1e2109e70c9ae370ed05f7a16ed193d071e3f51dad93f1797322981b4286b2",
       volatility: "i",
     },
     {
@@ -718,7 +718,7 @@ export const internalVersionSchemaFacts = {
     {
       signature: "qf.protect_internal_reference()",
       body_sha256:
-        "5119108aae4a2982f38e7b6c8a4bed8c5f1fb5ed2b32c8fc41bbd82f8db685c8",
+        "1703f5baf1d8d3c1ed8a45c0be3707684d31c9eeec0a0557836c7e3d8e3e9b0e",
       volatility: "v",
     },
   ],

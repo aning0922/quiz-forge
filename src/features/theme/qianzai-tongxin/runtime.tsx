@@ -11,18 +11,6 @@ import {
 } from "./resource-owner";
 import { loadQianzaiFont } from "./font-owner";
 import { QianzaiExportProvider } from "./export-context";
-import styles from "./qianzai.module.css";
-
-export function QianzaiTestingDisclosure() {
-  return (
-    <details className={styles.testDisclosure}>
-      <summary>本机测试 · 素材与正文说明</summary>
-      <p>
-        当前使用参考素材、程序姓名与候选正文，用于本机体验，尚非最终商品美术与正式发布。
-      </p>
-    </details>
-  );
-}
 
 /** Resource changes never construct a controller, mutate pending or submit business operations. */
 export function QianzaiTongxinRuntime(props: ConsumerExperiencePropsV2) {
@@ -101,13 +89,6 @@ export function QianzaiTongxinRuntime(props: ConsumerExperiencePropsV2) {
   };
   return (
     <>
-      {(
-        props.model.report?.view.display.assets ??
-        props.model.entry?.assets ??
-        []
-      ).some((a) => a.approval === "private-test-only") && (
-        <QianzaiTestingDisclosure />
-      )}
       {lease && (font.lease !== lease || !font.ready) && (
         <p role="status">固定字体尚未就绪，当前文字使用备用字体。</p>
       )}
