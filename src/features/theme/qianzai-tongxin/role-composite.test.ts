@@ -14,6 +14,7 @@ function fixture() {
   const exemplar = display.assets[0]!;
   const images = ["before", "full"].map((stage, i) => ({
     layer: "role-composite" as const,
+    resultRef: structuredClone(display.selectedResultRef),
     asset: {
       ...exemplar,
       resourceRef: { ...exemplar.resourceRef, id: `composite-${stage}` },
@@ -36,6 +37,7 @@ function fixture() {
     void alt;
     return {
       asset,
+      resultRef: image.resultRef,
       layer: image.layer,
       slot:
         i === 0
@@ -120,6 +122,17 @@ describe("selected role composite artwork", () => {
     abort.abort();
     expect(owner.getSnapshot()).toEqual([]);
     expect(releases).toBe(2);
+  });
+  it("rejects moving a registered pair to another role even when all snapshot references agree", () => {
+    const f = fixture();
+    for (const ref of [
+      f.display.selectedResultRef,
+      f.display.slots.character.resultRef,
+      f.display.body.matching.selected.ref,
+    ])
+      ref.id = "other-role";
+    expect(admittedQianzaiBindings(f.model, f.bindings)).toEqual([]);
+    expect(qianzaiRoleComposite(f.model, f.images)).toBeUndefined();
   });
   it("never supplies Li Bai literary metadata to another result or version", () => {
     const ref = {

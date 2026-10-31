@@ -91,8 +91,12 @@ export function QianzaiTongxinRuntime(props: ConsumerExperiencePropsV2) {
         v.layer === "prototype-option-skin",
     ),
     roleCompositeImages: images.filter(
-      (v): v is QianzaiOwnedImage & { layer: "role-composite" } =>
-        v.layer === "role-composite",
+      (
+        v,
+      ): v is QianzaiOwnedImage & {
+        layer: "role-composite";
+        resultRef: NonNullable<QianzaiOwnedImage["resultRef"]>;
+      } => v.layer === "role-composite" && !!v.resultRef,
     ),
   };
   return (

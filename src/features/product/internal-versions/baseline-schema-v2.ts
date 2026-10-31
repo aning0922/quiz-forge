@@ -73,7 +73,17 @@ export const baselineDescriptorV2Schema = z
     for (const c of value.slots.characters) {
       if (c.resultRef.productId !== value.productId) reject();
       for (const ref of characterSlotRefsV3(c))
-        check(ref, key(ref) === key(c.nameArt) ? "decoration" : "portrait");
+        check(
+          ref,
+          [
+            c.nameArt,
+            ...(c.revealComposite
+              ? [c.revealComposite.before, c.revealComposite.full]
+              : []),
+          ].some((decoration) => key(ref) === key(decoration))
+            ? "decoration"
+            : "portrait",
+        );
     }
     const pixels = new Map<string, (typeof value.resourceEdges)[number]>();
     for (const edge of value.resourceEdges) {

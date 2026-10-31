@@ -26,6 +26,7 @@ export type QianzaiVisualProps = {
 };
 export type QianzaiRoleCompositeImage = Omit<QianzaiResolvedImage, "layer"> & {
   layer: "role-composite";
+  resultRef: DisplayAssetV1["resourceRef"];
 };
 type Ref = DisplayAssetV1["resourceRef"];
 export const sameArtRef = (a: Ref, b: Ref) =>
@@ -154,6 +155,8 @@ export function qianzaiRoleComposite(
   );
   return before &&
     full &&
+    sameArtRef(before.resultRef, character.resultRef) &&
+    sameArtRef(full.resultRef, character.resultRef) &&
     before.asset.width === full.asset.width &&
     before.asset.height === full.asset.height &&
     before.asset.approval === full.asset.approval

@@ -23,6 +23,7 @@ export type QianzaiAssetBinding = Readonly<{
   asset: Omit<DisplayAssetV1, "alt">;
   slot: QianzaiAssetSlot;
   layer: QianzaiImageLayer;
+  resultRef?: DisplayAssetV1["resourceRef"] | undefined;
 }>;
 export type QianzaiAdmittedBinding = Omit<QianzaiAssetBinding, "asset"> &
   Readonly<{ asset: DisplayAssetV1 }>;
@@ -66,6 +67,7 @@ export function admittedQianzaiBindings(
         model.phase !== "completed" ||
         model.pendingOperation ||
         !character?.revealComposite ||
+        !sameRef(character.resultRef, binding.resultRef) ||
         !sameRef(
           character.resultRef,
           model.report?.view.display.body.matching.selected.ref,
