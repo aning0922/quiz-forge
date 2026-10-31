@@ -3710,6 +3710,16 @@
 .continuousReader {
   --qianzai-reveal-height: 100dvh;
   --qianzai-reader-progress: 0;
+  --qianzai-toolbar-cover: clamp(
+    0,
+    calc(var(--qianzai-reader-progress) * 10),
+    1
+  );
+  --qianzai-toolbar-content: clamp(
+    0,
+    calc((var(--qianzai-reader-progress) - 0.12) * 6.25),
+    1
+  );
   position: relative;
   width: min(100%, 430px);
   height: 100dvh;
@@ -3739,8 +3749,30 @@
   pointer-events: none;
 }
 .readerReportFlow [data-qianzai-report-toolbar] {
-  opacity: var(--qianzai-reader-progress);
+  opacity: var(--qianzai-toolbar-cover);
   pointer-events: none;
+}
+.readerReportFlow [data-qianzai-report-toolbar] > * {
+  opacity: var(--qianzai-toolbar-content);
+}
+/* Only the old header's 112px region is backed. It sits below the real toolbar
+   and opaque paper, so the original character artwork stays unchanged. */
+.readerToolbarCover {
+  position: sticky;
+  top: 0;
+  z-index: 0;
+  height: 0;
+  pointer-events: none;
+}
+.readerToolbarCover::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: max(112px, var(--qianzai-report-toolbar-height, 112px));
+  background: #0c1b2c;
+  opacity: var(--qianzai-toolbar-cover);
 }
 .continuousReader[data-toolbar-visible="true"] [data-qianzai-report-toolbar] {
   pointer-events: auto;

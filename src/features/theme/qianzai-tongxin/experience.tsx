@@ -159,13 +159,15 @@ export function QianzaiContinuousReader({
         Math.min(1, node.scrollTop / Math.max(1, distance)),
       );
       node.style.setProperty("--qianzai-reader-progress", String(progress));
-      if (toolbar) toolbar.inert = progress < 0.15;
+      // The old baked header is covered before any new toolbar text appears.
+      // Enable its controls only once that text has reached full opacity.
+      if (toolbar) toolbar.inert = progress < 0.28;
       const visual = node.querySelector<HTMLElement>(
         "[data-qianzai-reveal-sticky]",
       );
-      if (visual) visual.inert = progress >= 0.15;
-      node.dataset.toolbarVisible = String(progress >= 0.15);
-      setRevealActive(progress < 0.15);
+      if (visual) visual.inert = progress >= 0.1;
+      node.dataset.toolbarVisible = String(progress >= 0.28);
+      setRevealActive(progress < 0.1);
       const destination = focusDestination.current;
       if (destination && Math.abs(node.scrollTop - destination.top) < 1) {
         focusDestination.current = null;
@@ -215,6 +217,7 @@ export function QianzaiContinuousReader({
         </div>
       </div>
       <div className={styles.readerReportFlow} data-reader-paper>
+        <div className={styles.readerToolbarCover} aria-hidden="true" />
         {report(embedded)}
       </div>
     </div>
