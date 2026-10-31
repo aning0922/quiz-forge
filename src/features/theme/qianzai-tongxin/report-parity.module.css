@@ -1126,6 +1126,7 @@
   background: transparent;
 }
 .reader.embedded .rp-paper {
+  background-color: #f7eedc;
   margin-top: max(
     0px,
     calc(
