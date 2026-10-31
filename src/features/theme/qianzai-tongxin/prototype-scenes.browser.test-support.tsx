@@ -1,5 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import styles from "./qianzai.module.css";
+import { QianzaiReportReader } from "./report";
+import { QianzaiSharePanel } from "./share-panel";
+import { qianzaiReferenceDocument } from "@/features/report/qianzai-tongxin/reference-document.test-support";
 import { createRoot } from "react-dom/client";
 import type { ConsumerV2ReaderModel } from "@/lib/consumer-contract/v2/client-contract";
 import type { QianzaiPrototypeImage, QianzaiResolvedImage } from "./art";
@@ -17,6 +20,9 @@ import {
 const fixture = JSON.parse(
   document.getElementById("fixture")!.textContent!,
 ) as {
+  mode: "reference-only";
+  probe: "q08-selected-wrap" | null;
+  report: { hero: string; paper: string };
   model: ConsumerV2ReaderModel;
   completed: ConsumerV2ReaderModel;
   assets: {
@@ -27,6 +33,8 @@ const fixture = JSON.parse(
   before: { url: string; sha256: QianzaiRevealReference["before"]["sha256"] };
   full: { url: string; sha256: QianzaiRevealReference["full"]["sha256"] };
 };
+if (fixture.mode !== "reference-only")
+  throw Error("REFERENCE_ONLY_FIXTURE_REQUIRED");
 function ReferenceScenes() {
   const [model, setModel] = useState(fixture.model),
     [screen, setScreen] = useState(
@@ -109,26 +117,76 @@ function ReferenceScenes() {
         .qianzaiReference;
     };
   }, []);
-  const change = (questionId: string, optionId: string) =>
+  const pending = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const cancel = () => {
+    if (pending.current !== null) clearTimeout(pending.current);
+    pending.current = null;
+  };
+  useEffect(
+    () => () => {
+      if (pending.current !== null) clearTimeout(pending.current);
+    },
+    [],
+  );
+  const showReveal = () => {
+    cancel();
+    setStartedAt(performance.now());
+    setRevealCycle((old) => old + 1);
+    setRevealPhase(
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+        ? "ready"
+        : "playing",
+    );
+    setScreen("result");
+  };
+  const read = (next: string) => {
+    cancel();
+    if (next === "result") showReveal();
+    else setScreen(next);
+  };
+  const moveQuestion = (questionId: string) => {
+    cancel();
+    setModel((old) => ({
+      ...old,
+      state: { ...old.state!, progress: { questionId } },
+      draft: { ...old.draft!, progress: { questionId } },
+    }));
+    setScreen("question");
+  };
+  const afterFeedback = (action: () => void) => {
+    cancel();
+    pending.current = setTimeout(() => {
+      pending.current = null;
+      action();
+    }, 400);
+  };
+  const change = (questionId: string, optionId: string) => {
     setModel((old) => {
       const answers = [
         ...old.draft!.answers.filter((a) => a.questionId !== questionId),
         { questionId, optionId },
       ];
-      // Mirror only the original HTML's local reference-cache presentation.
+      // Only the original HTML's local reference-cache presentation, never IO.
       return {
         ...old,
         state: { ...old.state!, answers },
         draft: { ...old.draft!, answers },
       };
     });
+    const index = model.entry!.questions.findIndex(
+        (q) => q.ref.id === questionId,
+      ),
+      next = model.entry!.questions[index + 1];
+    afterFeedback(() => (next ? moveQuestion(next.ref.id) : showReveal()));
+  };
   const visual = images
     ? { images: images.clean, prototypeImages: images.prototype }
     : {};
   return (
     <main
-      className={styles.host}
+      className={screen === "report" ? undefined : styles.host}
       data-reference-only="true"
+      data-reference-probe={fixture.probe ?? undefined}
       data-reference-ready={!!images}
     >
       <details
@@ -141,8 +199,11 @@ function ReferenceScenes() {
       >
         <summary>原型对照专用 · 非业务数据</summary>
         <p>
-          此夹具的原型12题、李白和原图短句仅用于同内容视觉对照。操作仅在本页内存生效，不调用评分、保存、完成、报告快照或数据库。
+          此处为原型对照专用：12题、李白、原图短句、报告数值和两张保存样稿均来自原HTML，不是本轮实际测评结果。操作仅在本页内存生效，不调用评分、保存、完成、报告快照或数据库；预览与下载只使用原HTML内嵌的参考PNG，不调用生成或系统分享。
         </p>
+        {fixture.probe && (
+          <p>当前为 q08 指定长文布局探针，其余内容为原型参考，不是实际测评。</p>
+        )}
       </details>
       {screen === "cover" ? (
         <QianzaiCover
@@ -151,7 +212,7 @@ function ReferenceScenes() {
           onEvent={() => {
             throw Error("REFERENCE_NO_BUSINESS_IO");
           }}
-          onRead={setScreen}
+          onRead={read}
           active
         />
       ) : screen === "preference" ? (
@@ -161,17 +222,26 @@ function ReferenceScenes() {
           onEvent={() => {
             throw Error("REFERENCE_NO_BUSINESS_IO");
           }}
-          onRead={setScreen}
-          onEnter={() => setScreen("question")}
-          onChoose={(preference) =>
+          onRead={read}
+          onEnter={() =>
+            afterFeedback(() => moveQuestion(model.entry!.questions[0]!.ref.id))
+          }
+          onChoose={(preference) => {
             setModel((old) => ({
               ...old,
+              state: {
+                ...old.state!,
+                matchingContext: { ...old.state!.matchingContext!, preference },
+              },
               draft: {
                 ...old.draft!,
                 matchingContext: { ...old.draft!.matchingContext!, preference },
               },
-            }))
-          }
+            }));
+            afterFeedback(() =>
+              moveQuestion(model.entry!.questions[0]!.ref.id),
+            );
+          }}
         />
       ) : screen === "result" ? (
         <QianzaiReveal
@@ -182,31 +252,28 @@ function ReferenceScenes() {
           onEvent={() => {
             throw Error("REFERENCE_NO_BUSINESS_IO");
           }}
-          onRead={() => {
-            document.body.dataset.reportRequested = "true";
-          }}
+          onRead={read}
+          onReplay={showReveal}
           presentation={revealPhase}
           startedAt={startedAt}
+        />
+      ) : screen === "report" ? (
+        <QianzaiReportReader
+          document={qianzaiReferenceDocument}
+          heroUrl={fixture.report.hero}
+          paperUrl={fixture.report.paper}
+          onResult={() => read("result")}
+          actions={<QianzaiSharePanel referenceOnly />}
         />
       ) : (
         <QianzaiQuestion
           model={model}
           {...visual}
-          onRead={setScreen}
+          onRead={read}
           onEvent={(event) => {
-            if (event.type !== "navigate")
+            if (event.type !== "navigate" || !event.questionId)
               throw Error("REFERENCE_NO_BUSINESS_IO");
-            setModel((old) => ({
-              ...old,
-              state: {
-                ...old.state!,
-                progress: { questionId: event.questionId },
-              },
-              draft: {
-                ...old.draft!,
-                progress: { questionId: event.questionId },
-              },
-            }));
+            moveQuestion(event.questionId);
           }}
           onChoose={change}
         />

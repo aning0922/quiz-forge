@@ -6,6 +6,10 @@ import path from "node:path";
 import { structuredReaderFixtureV2 } from "@/features/theme/consumer-v2/fixtures.test-support";
 import { qianzaiExportFixture } from "@/features/report/qianzai-tongxin/export.test-support";
 import { QIANZAI_RUNTIME_INPUTS } from "@/features/theme/qianzai-tongxin/runtime-inputs";
+import {
+  QIANZAI_REFERENCE_REPORT_HTML_SHA256,
+  QIANZAI_REFERENCE_SHARE_HTML_SHA256,
+} from "@/features/report/qianzai-tongxin/reference-document.test-support";
 const out = path.resolve(`.cache/prototype-scenes/comparison-${Date.now()}`);
 await mkdir(out, { recursive: true });
 const sourcePaths = {
@@ -21,6 +25,12 @@ const sourcePaths = {
   reveal:
     process.env.QZTX_REVEAL_HTML ??
     "/Users/aipuli/Downloads/千载同心_李白揭晓全流程_V1_待验收.html",
+  report:
+    process.env.QZTX_REPORT_HTML ??
+    "/Users/aipuli/Downloads/千载同心_李白长报告_滚动交互_V1_待验收.html",
+  share:
+    process.env.QZTX_SHARE_HTML ??
+    "/Users/aipuli/Downloads/QuizForge_千载同心_结果保存分享视觉归档_V2_20261025/02_已确认HTML/千载同心_保存分享_视觉确认V2.html",
 };
 const digest = (b: Uint8Array | string) =>
   createHash("sha256").update(b).digest("hex");
@@ -41,6 +51,51 @@ for (const [key, file] of Object.entries(sourcePaths)) {
     files.set(`/raw/${sha}`, { body, type: found[1]! });
   }
 }
+if (
+  sourceHashes.report !== QIANZAI_REFERENCE_REPORT_HTML_SHA256 ||
+  sourceHashes.share !== QIANZAI_REFERENCE_SHARE_HTML_SHA256
+)
+  throw Error("REFERENCE_DOCUMENT_SOURCE_CHANGED");
+const rawUrl = (data: string) => {
+  const match = data.match(/^data:([^;,]+);base64,([A-Za-z0-9+/=\r\n]+)$/);
+  if (!match) throw Error("INVALID_REFERENCE_IMAGE");
+  const bytes = Buffer.from(match[2]!, "base64"),
+    sha256 = digest(bytes),
+    url = `/raw/${sha256}`;
+  if (!files.has(url)) throw Error("UNSCOPED_REFERENCE_IMAGE");
+  return { url, sha256, bytes: bytes.length };
+};
+const reportStyles = Array.from(
+    sourceTexts.report!.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/g),
+    (m) => m[1],
+  ).join("\n"),
+  reportImages = Array.from(
+    new Set(reportStyles.match(/data:[^;\s"']+;base64,[A-Za-z0-9+/=]+/g) ?? []),
+  );
+if (reportImages.length !== 2) throw Error("REPORT_REFERENCE_IMAGES_CHANGED");
+const report = {
+  hero: rawUrl(reportImages[0]!).url,
+  paper: rawUrl(reportImages[1]!).url,
+};
+const shareImage = (kind: "poster" | "long") => {
+  const match = sourceTexts.share!.match(
+    new RegExp(`const ${kind}Source='([^']+)'`),
+  );
+  if (!match) throw Error("SHARE_REFERENCE_IMAGE_MISSING:" + kind);
+  const image = rawUrl(match[1]!),
+    raw = files.get(image.url)!.body;
+  if (
+    !Buffer.isBuffer(raw) ||
+    raw.subarray(0, 8).toString("hex") !== "89504e470d0a1a0a"
+  )
+    throw Error("SHARE_REFERENCE_NOT_PNG");
+  return {
+    ...image,
+    width: raw.readUInt32BE(16),
+    height: raw.readUInt32BE(20),
+  };
+};
+const share = { poster: shareImage("poster"), long: shareImage("long") };
 const scope = <T>(x: T): T =>
   JSON.parse(
     JSON.stringify(x, (key, v) =>
@@ -134,6 +189,25 @@ await require("esbuild").build({
     react: path.resolve("node_modules/react"),
     "react-dom": path.resolve("node_modules/react-dom"),
   },
+  // This alias exists only in this reference bundle. The application keeps its
+  // real export provider and authority checks.
+  plugins: [
+    {
+      name: "reference-only-export-port",
+      setup(build: {
+        onResolve(
+          options: { filter: RegExp },
+          callback: () => { path: string },
+        ): void;
+      }) {
+        build.onResolve({ filter: /^\.\/export-context$/ }, () => ({
+          path: path.resolve(
+            "src/features/theme/qianzai-tongxin/prototype-export.test-support.ts",
+          ),
+        }));
+      },
+    },
+  ],
 });
 for (const ext of ["js", "css"])
   files.set(`/probe.${ext}`, {
@@ -162,16 +236,31 @@ const server = createServer((req, res) => {
   const m = structuredClone(model),
     index = Math.max(
       0,
-      Math.min(11, Number(url.searchParams.get("index") ?? 0)),
+      Math.min(
+        11,
+        Number(
+          url.searchParams.get("index") ??
+            (url.searchParams.get("probe") === "q08" ? 7 : 0),
+        ),
+      ),
     );
+  const probe =
+    url.searchParams.get("probe") === "q08" ? "q08-selected-wrap" : null;
+  if (probe)
+    m.entry!.questions[7]!.options[0]!.label =
+      "保留剩余环节的原有顺序，空出的时间自由交流";
   m.state!.progress.questionId = entry.questions[index]!.ref.id;
   m.draft!.progress.questionId = m.state!.progress.questionId;
   const setup = JSON.stringify({
+    mode: "reference-only",
+    probe,
     model: m,
     completed,
     assets,
     before,
     full,
+    report,
+    share,
   }).replaceAll("<", "\\u003c");
   res.writeHead(200, { "content-type": "text/html;charset=utf-8" });
   res.end(
@@ -186,6 +275,8 @@ const info = {
   out,
   pid: process.pid,
   sourceHashes,
+  referenceImages: { report, share },
+  entry: "/?screen=cover",
   scope:
     "reference-only; no business transport, scoring, snapshots or database",
 };
