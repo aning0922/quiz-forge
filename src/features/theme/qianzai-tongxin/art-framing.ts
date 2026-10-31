@@ -7,7 +7,9 @@ export function qianzaiArtworkCrop(asset: {
   sha256: string;
   width: number;
   height: number;
-}): Readonly<{ x: number; y: number; width: number; height: number }> | undefined {
+}):
+  | Readonly<{ x: number; y: number; width: number; height: number }>
+  | undefined {
   if (
     asset.sha256 ===
       "de0e06800bc25f0cc53ad217c1ef2ff22126dc8780139e9ccdf0b05bd2e6780d" &&
