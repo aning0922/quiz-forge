@@ -189,22 +189,6 @@ function ReferenceScenes() {
       data-reference-probe={fixture.probe ?? undefined}
       data-reference-ready={!!images}
     >
-      <details
-        style={{
-          font: "16px/24px system-ui",
-          color: "#f5e6ca",
-          background: "#14283b",
-          padding: "4px 12px",
-        }}
-      >
-        <summary>原型对照专用 · 非业务数据</summary>
-        <p>
-          此处为原型对照专用：12题、李白、原图短句、报告数值和两张保存样稿均来自原HTML，不是本轮实际测评结果。操作仅在本页内存生效，不调用评分、保存、完成、报告快照或数据库；预览与下载只使用原HTML内嵌的参考PNG，不调用生成或系统分享。
-        </p>
-        {fixture.probe && (
-          <p>当前为 q08 指定长文布局探针，其余内容为原型参考，不是实际测评。</p>
-        )}
-      </details>
       {screen === "cover" ? (
         <QianzaiCover
           model={model}
