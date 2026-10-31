@@ -1932,3 +1932,202 @@
 .frame[data-responsive-question] .hit-top.menu {
   left: calc(337 * var(--scene-unit));
 }
+
+/* Initial layered reveal, using only the selected role's admitted clean slots.
+   Composite references keep their original pixels and never enter these rules. */
+.dynamicPortrait {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+}
+.dynamicShade {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    #07162555,
+    transparent 24%,
+    transparent 40%,
+    #07162566 64%,
+    #071625c9 92%
+  );
+}
+.dynamicHeader {
+  position: absolute;
+  top: 20px;
+  left: 58px;
+  right: 58px;
+  text-align: center;
+  color: #ffe1a6;
+  text-shadow: 0 2px 8px #06101c;
+  pointer-events: none;
+}
+.dynamicHeader p {
+  font: 650 34px/1.25 var(--brush, "Songti SC", serif);
+}
+.dynamicHeader span {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 4px 14px;
+  border-block: 1px solid #e7c08099;
+  font:
+    16px/1.5 "Songti SC",
+    serif;
+}
+.dynamicIdentity {
+  position: absolute;
+  top: 46%;
+  bottom: 92px;
+  left: 30px;
+  right: 22px;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: 8px;
+  min-height: 0;
+  color: #fff0d0;
+  text-shadow:
+    0 2px 8px #051321,
+    0 0 16px #051321;
+}
+.dynamicKicker {
+  margin: 0;
+  padding-left: 64px;
+  font:
+    28px/1.2 "Songti SC",
+    serif;
+}
+.dynamicNameRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 36px 58px;
+  gap: 6px;
+  align-items: end;
+  min-height: 0;
+}
+.dynamicNameArt {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  object-fit: contain;
+  object-position: center;
+  filter: brightness(0) invert(0.9) sepia(0.6) saturate(1.8)
+    drop-shadow(0 2px 8px #071625);
+}
+.dynamicNameMissing {
+  align-self: center;
+  text-align: center;
+}
+.dynamicNameMissing h2 {
+  font:
+    36px/1.4 "Songti SC",
+    serif;
+}
+.dynamicNameMissing p {
+  font:
+    16px/1.5 "Songti SC",
+    serif;
+}
+.dynamicSeal {
+  display: block;
+  width: 36px;
+  height: calc(var(--seal-characters) * 1.08em + 20px);
+  margin-bottom: 4px;
+  padding: 10px 6px;
+  writing-mode: vertical-rl;
+  text-orientation: upright;
+  white-space: nowrap;
+  font:
+    18px/1.25 "Songti SC",
+    serif;
+  letter-spacing: 0.04em;
+  text-align: center;
+  color: #fff1d4;
+  background: #a92b25;
+  border: 1px solid #e07d5666;
+  clip-path: polygon(7% 3%, 77% 0, 100% 8%, 96% 91%, 66% 100%, 0 94%, 3% 12%);
+  text-shadow: 0 1px 2px #551b17;
+}
+.dynamicQuote {
+  align-self: center;
+  justify-self: end;
+  width: 58px;
+  height: 100%;
+  max-height: 220px;
+  min-height: 0;
+  margin: 0;
+  writing-mode: vertical-rl;
+  text-orientation: upright;
+  font:
+    clamp(16px, 2.3dvh, 19px)/1.15 "Songti SC",
+    serif;
+  letter-spacing: 0.04em;
+  overflow-wrap: anywhere;
+}
+.dynamicLines {
+  text-align: center;
+  font:
+    16px/1.5 "Songti SC",
+    serif;
+}
+.dynamicLines p {
+  margin: 0;
+  text-wrap: balance;
+}
+.frame .reveal .dynamicContinue {
+  left: calc(50% - 100px);
+  width: 200px;
+  height: 78px;
+}
+.frame .reveal .dynamicContinue::before {
+  display: none;
+}
+.dynamicContinue > svg {
+  position: absolute;
+  top: 0;
+  left: calc(50% - 16px);
+  width: 32px;
+  height: 24px;
+  fill: none;
+  stroke: #ffe0a3;
+  stroke-width: 2;
+  filter: drop-shadow(0 0 6px #e7b369);
+}
+.frame
+  .reveal[data-qianzai-reveal-mode]:not([data-qianzai-reveal-mode="composite"])
+  .reveal-hot {
+  display: grid;
+  place-items: center;
+  border: 1px solid #e5bf7399;
+  background: #14233155;
+  color: #ffe7b7;
+}
+.frame
+  .reveal[data-qianzai-reveal-mode]:not([data-qianzai-reveal-mode="composite"])
+  .reveal-hot
+  svg {
+  width: 24px;
+  height: 24px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+@media (max-height: 650px) {
+  .dynamicIdentity {
+    top: 42%;
+  }
+  .dynamicHeader {
+    top: 12px;
+  }
+  .dynamicHeader p {
+    font-size: 28px;
+  }
+  .dynamicHeader span {
+    margin-top: 4px;
+  }
+}

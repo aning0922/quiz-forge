@@ -20,10 +20,13 @@ import {
   qianzaiImage,
   qianzaiPrototypeImage,
   qianzaiPreferenceScene,
+  qianzaiCharacter,
+  sameArtRef,
   type QianzaiVisualProps,
 } from "./art";
 import { QianzaiWater, QianzaiPetals, useQianzaiMotion } from "./motion";
 import { qianzaiArtworkCrop } from "./art-framing";
+import { useQianzaiExport } from "./export-context";
 import styles from "./qianzai.module.css";
 import scenes from "./scenes.module.css";
 
@@ -140,9 +143,11 @@ function Scene({
   motion,
   focus,
   reduced,
+  fluid = false,
 }: {
   focus?: string;
   reduced?: boolean;
+  fluid?: boolean;
   motion?: boolean;
   name: string;
   className: string | undefined;
@@ -154,23 +159,26 @@ function Scene({
     <section
       className={scenes.frame}
       style={
-        name === "cover"
-          ? undefined
-          : name === "question"
-            ? ({
-                "--scene-unit": "min(1.102564px, 100vw / 390)",
-              } as CSSProperties)
-            : { width: 390 * scale, height: 844 * scale }
+        fluid
+          ? { width: "min(100%, 430px)", height: "100dvh" }
+          : name === "cover"
+            ? undefined
+            : name === "question"
+              ? ({
+                  "--scene-unit": "min(1.102564px, 100vw / 390)",
+                } as CSSProperties)
+              : { width: 390 * scale, height: 844 * scale }
       }
       data-responsive-cover={name === "cover" || undefined}
       data-responsive-question={name === "question" || undefined}
+      data-responsive-reveal={fluid || undefined}
       data-qianzai-screen={name}
       data-qianzai-composite={composite || undefined}
     >
       <div
         className={`${scenes.canvas} ${className}`}
         style={
-          name === "cover" || name === "question"
+          fluid || name === "cover" || name === "question"
             ? { width: "100%", height: "100%" }
             : { transform: `scale(${scale})` }
         }
@@ -767,6 +775,7 @@ export function QianzaiReveal({
   onReplay,
   referenceComposite,
   roleCompositeImages,
+  images,
 }: QianzaiViewProps & {
   active?: boolean;
   presentation?: "waiting" | "playing" | "ready";
@@ -775,6 +784,23 @@ export function QianzaiReveal({
   referenceComposite?: QianzaiRevealReference;
 }) {
   const selected = model.report?.view.display.body.matching.selected;
+  const result = useQianzaiExport().getResultPresentation();
+  const character = qianzaiCharacter(model);
+  const currentCharacter =
+    model.phase === "completed" &&
+    model.pendingOperation === null &&
+    selected &&
+    character &&
+    sameArtRef(character.resultRef, selected.ref)
+      ? character
+      : undefined;
+  const portrait = qianzaiImage(model, currentCharacter?.reveal, images);
+  const nameArt = qianzaiImage(model, currentCharacter?.nameArt, images);
+  const copy =
+    result && selected && sameArtRef(result.role.ref, selected.ref)
+      ? result
+      : null;
+  const displayName = copy?.role.displayName ?? selected?.label ?? "本轮相逢";
   const roleComposite = qianzaiRoleComposite(model, roleCompositeImages);
   const layers = useRef<HTMLDivElement>(null),
     motion = useQianzaiMotion(active),
@@ -805,11 +831,19 @@ export function QianzaiReveal({
     startedAt,
   ]);
   return (
-    <Scene name="result" className={scenes.reveal} composite={!!frames}>
+    <Scene
+      name="result"
+      className={scenes.reveal}
+      composite={!!frames}
+      fluid={!frames && !!portrait}
+    >
       <div
         ref={layers}
         className={`${scenes.revealLayers} ${scenes.reveal} ${presentation === "playing" ? scenes.playing : presentation === "ready" ? scenes.ready : ""}`}
         data-reveal-phase={presentation}
+        data-qianzai-reveal-mode={
+          frames ? "composite" : portrait ? "layered" : "missing"
+        }
         data-motion={motion ? "running" : "paused"}
         aria-hidden={presentation === "waiting"}
       >
@@ -824,16 +858,84 @@ export function QianzaiReveal({
               className={`${scenes["reveal-art"]} ${scenes.full}`}
             />
           </>
+        ) : portrait ? (
+          <>
+            <ArtImage
+              src={portrait.objectUrl}
+              asset={portrait.asset}
+              alt={`${displayName}人物画作`}
+              className={scenes.dynamicPortrait}
+            />
+            <div className={scenes.dynamicShade} aria-hidden="true" />
+            <div
+              className={scenes.dynamicIdentity}
+              data-qianzai-reveal-copy={copy ? "bound" : "unavailable"}
+            >
+              <p className={scenes.dynamicKicker}>你是</p>
+              <div className={scenes.dynamicNameRow}>
+                {nameArt ? (
+                  <ArtImage
+                    src={nameArt.objectUrl}
+                    alt={displayName}
+                    className={scenes.dynamicNameArt}
+                  />
+                ) : (
+                  <div className={scenes.dynamicNameMissing}>
+                    <h2>{displayName}</h2>
+                    <p>姓名字图尚未提供</p>
+                  </div>
+                )}
+                {copy?.role.honorific && (
+                  <span
+                    className={scenes.dynamicSeal}
+                    data-qianzai-honorific
+                    style={
+                      {
+                        "--seal-characters": Array.from(copy.role.honorific)
+                          .length,
+                      } as CSSProperties
+                    }
+                  >
+                    {copy.role.honorific}
+                  </span>
+                )}
+                {copy && (
+                  <blockquote
+                    className={scenes.dynamicQuote}
+                    data-qianzai-reveal-quote
+                    cite={copy.quote.sourceUrl}
+                    title={copy.quote.source}
+                  >
+                    {copy.quote.text}
+                    <cite className={scenes.srOnly}>{copy.quote.source}</cite>
+                  </blockquote>
+                )}
+              </div>
+              {copy && (
+                <div className={scenes.dynamicLines} data-qianzai-reveal-lines>
+                  {copy.reveal.lines.map((line, i) => (
+                    <p key={`${copy.reveal.id}:${i}`}>{line}</p>
+                  ))}
+                </div>
+              )}
+            </div>
+          </>
         ) : (
           <>
             <div className={scenes.resultIdentity}>
               <p>与你相逢的是</p>
-              <h1>{selected?.label ?? "本轮相逢"}</h1>
+              <h1>{displayName}</h1>
               <p>本轮人物画作尚未按完整揭晓版式提供，可继续阅读已封存报告。</p>
             </div>
           </>
         )}
-        <h1 className={scenes.srOnly}>{selected?.label}</h1>
+        {!frames && (
+          <header className={scenes.dynamicHeader}>
+            <p>千载同心</p>
+            <span>终章 · 命定相逢</span>
+          </header>
+        )}
+        <h1 className={scenes.srOnly}>{displayName}</h1>
         <div className={scenes["reveal-moonbeam"]} aria-hidden="true" />
         <div className={scenes["ink-flash"]} aria-hidden="true" />
         <div className={scenes["reveal-glimmers"]} aria-hidden="true">
@@ -857,18 +959,40 @@ export function QianzaiReveal({
           className={`${scenes["reveal-hot"]} ${scenes.back}`}
           aria-label="阅读已封存的人物报告"
           onClick={() => onRead("report")}
-        />
+        >
+          {!frames && (
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="m15 4-8 8 8 8" />
+            </svg>
+          )}
+        </button>
         <button
           className={`${scenes["reveal-hot"]} ${scenes.music}`}
           aria-label="音乐说明"
           onClick={() => setMusicNotice(!musicNotice)}
-        />
+        >
+          {!frames && (
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M10 17V5l10-2v12M10 8l10-2" />
+              <ellipse cx="6.5" cy="18" rx="3.5" ry="2.5" />
+              <ellipse cx="16.5" cy="16" rx="3.5" ry="2.5" />
+            </svg>
+          )}
+        </button>
         <button
           className={`${scenes["reveal-hot"]} ${scenes.more}`}
           aria-label="揭晓选项"
           aria-expanded={menuOpen}
           onClick={() => setMenuOpen(!menuOpen)}
-        />
+        >
+          {!frames && (
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="5" cy="12" r="1.5" />
+              <circle cx="12" cy="12" r="1.5" />
+              <circle cx="19" cy="12" r="1.5" />
+            </svg>
+          )}
+        </button>
         {menuOpen && (
           <div className={`${scenes["reveal-menu"]} ${scenes.visible}`}>
             <TestingNote model={model} />
@@ -884,18 +1008,27 @@ export function QianzaiReveal({
             )}
             <button onClick={() => onRead("report")}>阅读人物报告</button>
             <p className={scenes.artNote}>
-              画面包含固定角色艺术文案；本轮分数与答题依据，以已封存的人物报告为准。
+              {frames
+                ? "画面包含固定角色艺术文案；本轮分数与答题依据，以已封存的人物报告为准。"
+                : "当前人物与姓名使用受控候选素材；本轮分数与答题依据，以已封存的人物报告为准。"}
             </p>
           </div>
         )}
         <button
-          className={scenes["reveal-scroll-hit"]}
+          className={`${scenes["reveal-scroll-hit"]} ${!frames ? scenes.dynamicContinue : ""}`}
           data-reveal-continue
           disabled={!model.report || model.phase !== "completed"}
           aria-label="上滑查看人物报告"
           onClick={() => onRead("report")}
         >
-          {!frames && <span>上滑查看人物报告</span>}
+          {!frames && (
+            <>
+              <svg viewBox="0 0 32 24" aria-hidden="true">
+                <path d="m3 4 13 10L29 4M3 12l13 10 13-10" />
+              </svg>
+              <span>上滑查看人物报告</span>
+            </>
+          )}
         </button>
         {musicNotice && (
           <p
