@@ -1,0 +1,1053 @@
+/* Source: 千载同心_李白长报告_滚动交互_V1_待验收.html, report layer.
+ * Original 390px typography and coordinates; no business values live in CSS. */
+.reader {
+  position: relative;
+  width: 100%;
+  max-width: 430px;
+  height: 100dvh;
+  min-height: 0;
+  margin: auto;
+  overflow: hidden;
+  background: #f7eedc;
+  color: #263849;
+  font:
+    400 16px/normal system-ui,
+    "PingFang SC",
+    "Noto Sans CJK SC",
+    sans-serif;
+  font-synthesis: auto;
+  overflow-wrap: normal;
+}
+.reader *,
+.reader *::before,
+.reader *::after {
+  box-sizing: border-box;
+}
+.reader.reader button {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-family: inherit;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  min-height: 0;
+  min-width: 0;
+  border-radius: 0;
+  padding: 0;
+}
+.reader.reader button:focus-visible {
+  outline: 2px solid #9c6f33;
+  outline-offset: 3px;
+}
+.reader.reader h1,
+.reader.reader h2,
+.reader.reader h3,
+.reader.reader p {
+  margin: revert;
+}
+.reader .reportScroll {
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: none;
+  overscroll-behavior: contain;
+}
+.reader .reportScroll::-webkit-scrollbar {
+  display: none;
+}
+.reader.reader /* ===== 李白滚动长报告 V1：仅替换既有报告占位，不触碰已确认的揭晓 / 答题 ===== */
+.reportScroll {
+  background: #f7eedc;
+  color: #263849;
+  scroll-behavior: auto;
+  overscroll-behavior-y: contain;
+}
+.reader.reader .rp-nav {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  height: 112px;
+  background: linear-gradient(
+    180deg,
+    rgba(9, 22, 36, 0.94),
+    rgba(12, 27, 44, 0.76) 75%,
+    rgba(12, 27, 44, 0.56)
+  );
+  color: #f8eacb;
+  backdrop-filter: blur(13px);
+  -webkit-backdrop-filter: blur(13px);
+  border-bottom: 1px solid rgba(246, 207, 137, 0.21);
+  transition:
+    background 0.25s ease,
+    color 0.25s ease;
+}
+.reader.reader .rp-nav.paper-mode {
+  background: rgba(251, 243, 228, 0.96);
+  color: #4c3b2b;
+  border-bottom-color: #ddbf8f;
+  box-shadow: 0 4px 20px #5c3c181b;
+}
+.reader.reader .rp-status {
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 30px 0;
+  font-size: 12px;
+  letter-spacing: 0.035em;
+  font-weight: 650;
+  font-family: Arial, sans-serif;
+}
+.reader.reader .rp-signals {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+}
+.reader.reader .rp-wifi {
+  font-size: 14px;
+  transform: rotate(10deg);
+}
+.reader.reader .rp-bars {
+  font-size: 13px;
+  letter-spacing: -2px;
+}
+.reader.reader .rp-battery {
+  height: 10px;
+  width: 18px;
+  border: 1.7px solid currentColor;
+  border-radius: 3px;
+  position: relative;
+}
+.reader.reader .rp-battery:before {
+  content: "";
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  left: 2px;
+  right: 3px;
+  background: currentColor;
+  border-radius: 1px;
+}
+.reader.reader .rp-battery:after {
+  content: "";
+  position: absolute;
+  right: -4px;
+  top: 2px;
+  width: 2px;
+  height: 4px;
+  background: currentColor;
+  border-radius: 1px;
+}
+.reader.reader .rp-nav-line {
+  height: 46px;
+  display: grid;
+  grid-template-columns: 54px 1fr 70px;
+  align-items: center;
+  padding: 0 13px;
+  gap: 7px;
+}
+.reader.reader .rp-iconbtn {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 1px solid rgba(238, 207, 155, 0.61);
+  background: rgba(29, 35, 44, 0.26);
+  color: inherit;
+  font-family: Georgia, serif;
+  font-size: 33px;
+  line-height: 30px;
+  padding: 0 0 4px;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+.reader.reader .rp-nav.paper-mode .rp-iconbtn {
+  border-color: #d7b986;
+  background: #fff8e9;
+}
+.reader.reader .rp-nav-title {
+  text-align: center;
+  font-family: "Noto Serif CJK SC", "Songti SC", serif;
+  line-height: 1.25;
+}
+.reader.reader .rp-nav-title span {
+  display: block;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  opacity: 0.82;
+}
+.reader.reader .rp-nav-title strong {
+  display: block;
+  font-size: 17px;
+  letter-spacing: 0.19em;
+  font-weight: 700;
+  padding-top: 1px;
+}
+.reader.reader .rp-menu-toggle {
+  border: 1px solid rgba(236, 202, 146, 0.54);
+  border-radius: 20px;
+  padding: 7px 6px;
+  background: rgba(28, 36, 50, 0.18);
+  color: inherit;
+  font-size: 12px;
+  white-space: nowrap;
+}
+.reader.reader .rp-menu-toggle span {
+  font-size: 14px;
+  margin-left: 1px;
+}
+.reader.reader .rp-nav.paper-mode .rp-menu-toggle {
+  background: #fff9ed;
+  border-color: #d7b986;
+}
+.reader.reader .rp-read-state {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 21px;
+  padding: 0 23px 0 26px;
+  font-size: 11px;
+  letter-spacing: 0.045em;
+  color: #f2d7aa;
+}
+.reader.reader .rp-nav.paper-mode .rp-read-state {
+  color: #815f39;
+}
+.reader.reader .rp-percent {
+  font-family: Georgia, Arial, sans-serif;
+  font-weight: 700;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+.reader.reader .rp-progress-track {
+  position: relative;
+  height: 4px;
+  background: rgba(203, 218, 222, 0.3);
+  margin: 5px 22px 0;
+  border-radius: 3px;
+  overflow: hidden;
+}
+.reader.reader .rp-nav.paper-mode .rp-progress-track {
+  background: rgba(180, 155, 111, 0.29);
+}
+.reader.reader .rp-progress-fill {
+  height: 100%;
+  width: 0;
+  background: linear-gradient(90deg, #d9a85b, #fff0bb 55%, #d5a149);
+  border-radius: 3px;
+  box-shadow: 0 0 8px rgba(255, 215, 138, 0.72);
+  transition: width 0.12s linear;
+}
+.reader.reader .rp-progress-glint {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: 100%;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    90deg,
+    transparent 0 calc(16.66% - 1px),
+    rgba(255, 248, 221, 0.6) calc(16.66% - 1px) 16.66%
+  );
+}
+.reader.reader .rp-toc {
+  position: absolute;
+  top: 106px;
+  right: 12px;
+  width: 245px;
+  padding: 13px;
+  border: 1px solid #d5b57f;
+  border-radius: 13px;
+  background: rgba(255, 248, 231, 0.985);
+  color: #55422b;
+  box-shadow: 0 15px 40px #08152255;
+}
+.reader.reader .rp-toc[hidden] {
+  display: none !important;
+}
+.reader.reader .rp-toc-heading {
+  padding: 0 3px 9px;
+  border-bottom: 1px solid #e8d5b6;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+  font-family: "Noto Serif CJK SC", serif;
+  font-weight: 700;
+}
+.reader.reader .rp-toc-heading span {
+  font-size: 10px;
+  color: #98856b;
+  font-weight: 400;
+}
+.reader.reader .rp-toc button {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  background: transparent;
+  color: #47382c;
+  border: 0;
+  border-bottom: 1px solid #eaddc5;
+  font-size: 13px;
+  padding: 10px 6px;
+  text-align: left;
+}
+.reader.reader .rp-toc button:last-child {
+  border-bottom: 0;
+}
+.reader.reader .rp-toc button:hover,
+.reader.reader .rp-toc button:focus-visible {
+  background: #f4e6ce;
+}
+.reader.reader .rp-toc button span {
+  color: #9d8056;
+  font-size: 11px;
+}
+.reader.reader .rp-hero {
+  height: 437px;
+  margin-top: -112px;
+  position: relative;
+  background:
+    linear-gradient(
+      to bottom,
+      rgba(5, 15, 28, 0.23),
+      transparent 43%,
+      rgba(9, 20, 33, 0.28) 80%,
+      rgba(9, 20, 32, 0.7)
+    ),
+    none center 34% / cover no-repeat;
+  color: #f7e5c9;
+  overflow: hidden;
+}
+.reader.reader .rp-hero::after {
+  content: "";
+  position: absolute;
+  inset: 42% -30% -12%;
+  background: radial-gradient(
+    ellipse at 50% 90%,
+    rgba(238, 192, 103, 0.2),
+    transparent 68%
+  );
+  pointer-events: none;
+}
+.reader.reader .rp-hero-kicker {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 66px;
+  text-align: center;
+  font:
+    550 16px/1.2 "Noto Serif CJK SC",
+    serif;
+  letter-spacing: 0.32em;
+  text-shadow: 0 2px 13px #03101dfc;
+}
+.reader.reader .rp-hero-caption {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 38px;
+  text-align: center;
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  color: #f6dfbd;
+  text-shadow: 0 2px 8px #061421;
+}
+.reader.reader .rp-paper {
+  position: relative;
+  margin-top: -24px;
+  padding: 32px 21px 26px;
+  border-radius: 29px 29px 0 0;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255, 252, 243, 0.97),
+      rgba(251, 240, 218, 0.96) 23%,
+      rgba(248, 235, 208, 0.98) 100%
+    ),
+    none repeat;
+  color: #24364c;
+  box-shadow: 0 -8px 30px #08152135;
+  border-top: 1px solid #e7c99b;
+  min-height: 100%;
+  overflow: hidden;
+}
+.reader.reader .rp-paper::before {
+  content: "❧";
+  position: absolute;
+  top: -3px;
+  left: 29px;
+  font-size: 35px;
+  color: #d19b5b;
+  opacity: 0.72;
+  transform: rotate(-31deg);
+  pointer-events: none;
+}
+.reader.reader .rp-paper::after {
+  content: "❧";
+  position: absolute;
+  top: -3px;
+  right: 29px;
+  font-size: 35px;
+  color: #d19b5b;
+  opacity: 0.72;
+  transform: rotate(145deg);
+  pointer-events: none;
+}
+.reader.reader .rp-section {
+  position: relative;
+  margin: 0 0 42px;
+  scroll-margin-top: 130px;
+}
+.reader.reader .rp-opening {
+  margin-bottom: 40px;
+  text-align: center;
+}
+.reader.reader .rp-ornament {
+  font-size: 11px;
+  letter-spacing: 0.13em;
+  font-family: "Noto Serif CJK SC", serif;
+  color: #ad874c;
+  padding: 5px 0 11px;
+}
+.reader.reader .rp-ornament span {
+  font-size: 15px;
+  margin: 0 10px;
+  color: #c89d62;
+}
+.reader.reader .rp-identity {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+.reader.reader .rp-identity h1 {
+  margin: 0;
+  color: #172b42;
+  font:
+    700 35px/1.45 "Noto Serif CJK SC",
+    "Songti SC",
+    serif;
+  letter-spacing: 0.075em;
+}
+.reader.reader .rp-identity h1 span {
+  font-size: 22px;
+  letter-spacing: 0.035em;
+  font-weight: 600;
+}
+.reader.reader .rp-seal {
+  font-size: 10px;
+  line-height: 1.18;
+  background: #a23a30;
+  color: #fff0d9;
+  border-radius: 3px;
+  padding: 7px 5px;
+  letter-spacing: 0.05em;
+  box-shadow: 0 1px 4px #9b3c3288;
+  font-family: "Noto Serif CJK SC", serif;
+}
+.reader.reader .rp-identity-sub {
+  margin: 3px 0 14px;
+  font-size: 12.5px;
+  color: #7b6752;
+  letter-spacing: 0.04em;
+}
+.reader.reader .rp-tags {
+  display: flex;
+  justify-content: center;
+  gap: 7px;
+  flex-wrap: wrap;
+  margin-bottom: 17px;
+}
+.reader.reader .rp-tags span {
+  font-size: 11px;
+  color: #ac5c3d;
+  border: 1px solid #eac59e;
+  border-radius: 7px;
+  background: #fff6e7;
+  padding: 5px 10px;
+  letter-spacing: 0.07em;
+}
+.reader.reader .rp-verse {
+  position: relative;
+  padding: 18px 14px 13px;
+  margin: 0 3px 17px;
+  border: 1px solid #d8b37b;
+  border-radius: 12px;
+  background:
+    radial-gradient(
+      ellipse at 12% 10%,
+      rgba(252, 222, 178, 0.35),
+      transparent 70%
+    ),
+    linear-gradient(
+      130deg,
+      rgba(255, 250, 238, 0.93),
+      rgba(246, 231, 205, 0.77)
+    );
+  box-shadow:
+    inset 0 0 0 3px #fffaf077,
+    0 5px 14px #7b592514;
+}
+.reader.reader .rp-verse:after {
+  content: "✥";
+  position: absolute;
+  bottom: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #f9edd8;
+  color: #c29a61;
+  padding: 0 11px;
+  font-size: 15px;
+}
+.reader.reader .rp-quote-icon {
+  position: absolute;
+  top: 1px;
+  left: 13px;
+  color: #ddb17a;
+  font:
+    44px Georgia,
+    serif;
+  opacity: 0.5;
+}
+.reader.reader .rp-verse p {
+  font:
+    600 20px/1.65 "Noto Serif CJK SC",
+    serif !important;
+  letter-spacing: 0.03em;
+  color: #a34b34 !important;
+  margin: 0 0 5px !important;
+}
+.reader.reader .rp-verse small {
+  font:
+    11px/1.5 "Noto Serif CJK SC",
+    serif;
+  color: #927957;
+}
+.reader.reader .rp-lead {
+  font-size: 13.2px;
+  line-height: 1.95;
+  color: #64584d;
+  margin: 5px 3px 14px;
+  text-align: left;
+  text-indent: 2em;
+}
+.reader.reader .rp-demo-note,
+.reader.reader .rp-assessment-warning,
+.reader.reader .rp-hint-line {
+  font-size: 10.5px;
+  line-height: 1.65;
+  color: #957d62;
+  text-align: center;
+  background: #f2e5ce91;
+  border: 1px dashed #d9b991;
+  border-radius: 8px;
+  padding: 9px 10px;
+}
+.reader.reader .rp-section-head {
+  text-align: center;
+  margin-bottom: 18px;
+}
+.reader.reader .rp-section-index {
+  font:
+    600 11px/1.7 "Noto Serif CJK SC",
+    serif;
+  letter-spacing: 0.18em;
+  color: #af8b54;
+}
+.reader.reader .rp-section-head h2 {
+  margin: 6px 0;
+  font:
+    700 23px/1.45 "Noto Serif CJK SC",
+    serif;
+  letter-spacing: 0.055em;
+  color: #213850;
+}
+.reader.reader .rp-section-head h2:after {
+  content: "✧";
+  display: block;
+  font-size: 16px;
+  color: #c9a167;
+  line-height: 1.2;
+  margin-top: 5px;
+}
+.reader.reader .rp-section-head p {
+  margin: 5px auto 0;
+  max-width: 305px;
+  color: #8d7862;
+  font-size: 12px;
+  line-height: 1.7;
+}
+.reader.reader .rp-radar-card {
+  border-radius: 15px;
+  border: 1px solid #dfc49c;
+  background:
+    radial-gradient(
+      ellipse at 50% 40%,
+      rgba(247, 236, 208, 0.7),
+      transparent 85%
+    ),
+    linear-gradient(#fffaf0, #f6e7cb);
+  padding: 15px 9px 11px;
+  box-shadow: 0 5px 15px #9272421a;
+  position: relative;
+}
+.reader.reader .rp-radar-super {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1px 11px 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #6e5a46;
+}
+.reader.reader .rp-radar-super span:last-child {
+  color: #a88159;
+  font-size: 9px;
+  letter-spacing: 0.02em;
+  border: 1px solid #d9c09d;
+  padding: 4px 7px;
+  border-radius: 6px;
+  background: #fff6e6;
+}
+.reader.reader .rp-radar-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-width: 340px;
+  margin: 0 auto;
+}
+.reader.reader .rp-radar-ring {
+  fill: none;
+  stroke: #d8c8ae;
+  stroke-width: 1;
+}
+.reader.reader .rp-radar-axis {
+  stroke: #d8c8ae;
+  stroke-width: 1;
+}
+.reader.reader .rp-radar-dot {
+  fill: #345168;
+  stroke: #f8edd4;
+  stroke-width: 1.8;
+}
+.reader.reader .rp-radar-label {
+  font-size: 17px;
+  fill: #30425a;
+  font-family: "Noto Serif CJK SC", serif;
+  font-weight: 650;
+}
+.reader.reader .rp-radar-value {
+  font-size: 17px;
+  fill: #183650;
+  font-family: Arial, sans-serif;
+  font-weight: 700;
+}
+.reader.reader .rp-chart-rule {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #d6b385, transparent);
+  margin: 0 12px 13px;
+}
+.reader.reader .rp-radar-insight {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  padding: 0 11px 5px;
+}
+.reader.reader .rp-pointmark {
+  display: grid;
+  place-items: center;
+  color: #d4ad6d;
+  font-size: 24px;
+  line-height: 1.2;
+}
+.reader.reader .rp-radar-insight strong {
+  display: block;
+  color: #5b432a;
+  font-size: 13px;
+  font-family: "Noto Serif CJK SC", serif;
+}
+.reader.reader .rp-radar-insight p {
+  margin: 5px 0 0;
+  font-size: 11.6px;
+  line-height: 1.7;
+  color: #85715b;
+}
+.reader.reader .rp-assessment-warning {
+  margin-top: 12px;
+}
+.reader.reader .rp-resonance-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 13px;
+  padding: 17px 13px;
+  border: 1px solid #e1c49a;
+  background: linear-gradient(
+    120deg,
+    rgba(255, 252, 243, 0.95),
+    rgba(250, 236, 209, 0.84)
+  );
+  border-radius: 12px;
+  box-shadow: 0 2px 9px #8b68221a;
+  margin-bottom: 12px;
+  position: relative;
+}
+.reader.reader .rp-resonance-card:after {
+  content: "❀";
+  position: absolute;
+  right: 9px;
+  bottom: 2px;
+  font-size: 22px;
+  color: #c49c6b;
+  opacity: 0.45;
+}
+.reader.reader .rp-res-number {
+  display: grid;
+  place-items: center;
+  flex: 0 0 41px;
+  height: 41px;
+  background: linear-gradient(145deg, #efcc87, #fbe5b6);
+  color: #734b24;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1px #dab47a;
+  font:
+    700 20px "Noto Serif CJK SC",
+    serif;
+}
+.reader.reader .rp-res-body {
+  flex: 1;
+  min-width: 0;
+}
+.reader.reader .rp-res-body h3 {
+  font:
+    700 16px/1.4 "Noto Serif CJK SC",
+    serif;
+  margin: 2px 0 7px;
+  color: #26394b;
+}
+.reader.reader .rp-res-body p {
+  font-size: 12.5px;
+  line-height: 1.85;
+  color: #786955;
+  margin: 0 0 9px;
+}
+.reader.reader .rp-res-body span {
+  font:
+    11px/1.5 "Noto Serif CJK SC",
+    serif;
+  color: #ae8153;
+}
+.reader.reader .rp-hint-line {
+  text-align: left;
+  margin-top: 16px;
+}
+.reader.reader .rp-reflection-feature {
+  border-radius: 17px;
+  padding: 23px 20px;
+  background:
+    radial-gradient(ellipse at 70% 8%, #57748c94, transparent 45%),
+    linear-gradient(146deg, #142d44, #1d4054 65%, #183042);
+  border: 1px solid #a58459;
+  color: #fff0d9;
+  box-shadow: 0 10px 24px #24324335;
+}
+.reader.reader .rp-reflect-heading {
+  display: flex;
+  justify-content: space-between;
+  color: #eccb93;
+  font:
+    600 12px "Noto Serif CJK SC",
+    serif;
+  letter-spacing: 0.2em;
+}
+.reader.reader .rp-reflection-feature blockquote {
+  margin: 22px 4px 18px;
+  padding: 0 0 0 12px;
+  border-left: 2px solid #eac487;
+  font:
+    600 21px/1.8 "Noto Serif CJK SC",
+    serif;
+  color: #fff2d9;
+}
+.reader.reader .rp-reflection-feature p {
+  font-size: 12.5px;
+  line-height: 1.85;
+  color: #e6d6c0;
+  margin: 0;
+}
+.reader.reader .rp-dual-note {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 13px;
+}
+.reader.reader .rp-dual-note div {
+  border: 1px solid #dfc299;
+  border-radius: 12px;
+  padding: 13px;
+  background: #fff8ed;
+}
+.reader.reader .rp-dual-note span {
+  display: block;
+  font-size: 11px;
+  letter-spacing: 0.09em;
+  color: #b48448;
+  margin-bottom: 7px;
+}
+.reader.reader .rp-dual-note p {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.65;
+  color: #685748;
+}
+.reader.reader .rp-history-banner {
+  display: flex;
+  gap: 17px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #d9b684;
+  background: linear-gradient(125deg, #fff8e8, #f7dfb5);
+  border-radius: 15px;
+  padding: 17px;
+}
+.reader.reader .rp-history-banner strong {
+  font:
+    700 32px "Noto Serif CJK SC",
+    serif;
+  color: #3b3840;
+}
+.reader.reader .rp-history-banner span {
+  font-size: 12px;
+  line-height: 1.85;
+  color: #76644f;
+}
+.reader.reader .rp-timeline {
+  position: relative;
+  margin: 21px 0 11px;
+  padding: 0 0 0 28px;
+}
+.reader.reader .rp-timeline:before {
+  content: "";
+  position: absolute;
+  left: 9px;
+  top: 11px;
+  bottom: 24px;
+  width: 1px;
+  background: linear-gradient(#d8ad70, #e0cba9);
+}
+.reader.reader .rp-time-row {
+  position: relative;
+  margin-bottom: 21px;
+}
+.reader.reader .rp-time-row:before {
+  content: "✧";
+  position: absolute;
+  left: -26px;
+  top: 0px;
+  color: #b88949;
+  font-size: 18px;
+  background: #f9efd9;
+}
+.reader.reader .rp-time-row span {
+  display: block;
+  color: #36465a;
+  font:
+    700 15px "Noto Serif CJK SC",
+    serif;
+  margin-bottom: 5px;
+}
+.reader.reader .rp-time-row p {
+  font-size: 12.8px;
+  line-height: 1.9;
+  color: #786955;
+  margin: 0;
+}
+.reader.reader .rp-source-note {
+  font-size: 10.5px;
+  line-height: 1.8;
+  color: #8c755a;
+  background: #f1e0c5;
+  padding: 11px 12px;
+  border-radius: 9px;
+}
+.reader.reader .rp-closing-section {
+  text-align: center;
+  margin: 35px -21px 0;
+  padding: 38px 24px 27px;
+  background: radial-gradient(
+    ellipse at 50% 90%,
+    #1a3543 0%,
+    #1e3647 30%,
+    #11283d 72%,
+    #0e2134 100%
+  );
+  color: #f6e2bd;
+  position: relative;
+  overflow: hidden;
+}
+.reader.reader .rp-closing-section:before {
+  content: "✧       ✦       ✧";
+  display: block;
+  font-size: 13px;
+  color: #d4ab70;
+  letter-spacing: 1em;
+  margin-bottom: 14px;
+}
+.reader.reader .rp-closing-section:after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 100px;
+  background: radial-gradient(ellipse at 50% 110%, #dfb67644, transparent 66%);
+  pointer-events: none;
+}
+.reader.reader .rp-closing-section .rp-section-index {
+  color: #d7b782;
+}
+.reader.reader .rp-final-verse {
+  font:
+    700 34px/1.5 "Noto Serif CJK SC",
+    serif;
+  letter-spacing: 0.12em;
+  color: #f6dcaa;
+  text-shadow: 0 0 16px #daa96855;
+  margin: 14px 0;
+}
+.reader.reader .rp-closing-section > p {
+  font-size: 13.5px;
+  line-height: 1.9;
+  color: #e7d9c2;
+  margin: 12px 0 16px;
+}
+.reader.reader .rp-final-stamp {
+  margin: 0 auto;
+  width: 47px;
+  height: 47px;
+  display: grid;
+  place-items: center;
+  background: #af493b;
+  box-shadow: 0 0 0 1px #e5af91 inset;
+  color: #fff3df;
+  font:
+    650 12px/1.1 "Noto Serif CJK SC",
+    serif;
+  transform: rotate(-7deg);
+}
+.reader.reader .rp-endline {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: #cbb58b;
+  margin: 21px 0 17px;
+}
+.reader.reader .rp-endline span {
+  margin: 0 8px;
+  color: #e5b676;
+}
+.reader.reader .rp-share-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+}
+.reader.reader .rp-share-actions > button {
+  height: 48px;
+  border-radius: 11px;
+  font-weight: 600;
+  font-family: "Noto Serif CJK SC", serif;
+  font-size: 15px;
+}
+.reader.reader .rp-primary {
+  background: linear-gradient(110deg, #edc88b, #fff2d0 50%, #e6bb73);
+  border: 1px solid #b9935d;
+  color: #593919;
+  box-shadow: 0 6px 17px #e8c3834b;
+}
+.reader.reader .rp-primary span {
+  float: right;
+  margin-right: 13px;
+}
+.reader.reader .rp-secondary {
+  background: #f4e1b81c;
+  border: 1px solid #c4a5717d;
+  color: #f7e7cb;
+}
+.reader.reader .rp-scrolltop-text {
+  margin: 19px auto 0;
+  background: none;
+  border: 0;
+  color: #e2c89f;
+  letter-spacing: 0.12em;
+  font-size: 12px;
+}
+.reader.reader .rp-legal {
+  font-size: 9.8px !important;
+  color: #baa787 !important;
+  line-height: 1.7 !important;
+  padding-top: 15px !important;
+  margin-bottom: 0 !important;
+}
+
+.reader .evidence {
+  text-align: left;
+  margin: 10px 0;
+  color: #786955;
+  font-size: 11px;
+  line-height: 1.8;
+}
+.reader .evidence summary {
+  cursor: pointer;
+}
+.reader .evidence blockquote {
+  margin: 6px 0;
+  padding-left: 10px;
+  border-left: 1px solid #d8b37b;
+}
+.reader .qualifier {
+  font-size: 10.5px;
+  color: #957d62;
+}
+.reader .record {
+  text-align: left;
+  font-size: 11px;
+  line-height: 1.8;
+  margin: 16px 0;
+  color: #cbb58b;
+}
+.reader .record p {
+  font-size: 11px;
+  color: inherit;
+}
+.reader .artMissing {
+  position: absolute;
+  inset: 150px 0 auto;
+  text-align: center;
+  font-size: 12px;
+}
+.reader .runtimeParagraph {
+  white-space: pre-line;
+}
+.reader .radarNode {
+  cursor: pointer;
+}
+.reader .radarHit {
+  fill: transparent;
+  stroke: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .reader .rp-nav,
+  .reader .rp-progress-fill {
+    transition: none !important;
+  }
+}
+
+/* The React menu wrapper occupies the original 70px grid cell. */
+.reader.reader .rp-menu-toggle {
+  width: 100%;
+}
+
+.reader.reader .rp-scrolltop-text {
+  padding: 1px 6px;
+}

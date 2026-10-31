@@ -15,12 +15,28 @@ const slot = z.union([
     "character.",
     z.enum(["reveal", "nameArt", "report", "poster"]),
   ]),
+  z.enum([
+    "character.revealComposite.before",
+    "character.revealComposite.full",
+  ]),
 ]);
-const binding = z.strictObject({
-  asset: displayAssetV2Schema.omit({ alt: true }),
-  slot,
-  layer: z.enum(["clean", "prototype-scene-base", "prototype-option-skin"]),
-});
+const binding = z
+  .strictObject({
+    asset: displayAssetV2Schema.omit({ alt: true }),
+    resultRef: displayAssetV2Schema.shape.resourceRef.optional(),
+    slot,
+    layer: z.enum([
+      "clean",
+      "prototype-scene-base",
+      "prototype-option-skin",
+      "role-composite",
+    ]),
+  })
+  .refine(
+    (value) =>
+      (value.layer === "role-composite") === (value.resultRef !== undefined),
+    "Composite artwork must bind its registered result reference",
+  );
 export const qianzaiRuntimeInputsSchema = z.strictObject({
   schemaVersion: z.literal("qianzai-runtime-inputs.v1"),
   font: rendererImplementationDescriptorSchema.shape.font.nullable(),

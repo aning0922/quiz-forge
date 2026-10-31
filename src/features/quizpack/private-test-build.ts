@@ -4,7 +4,10 @@ import type { SupportedValidationContext } from "./package/api";
 import { runBuild } from "./package/internal-build";
 import { snapshotSupportedContext } from "./package/context";
 import { parseCurrentContent } from "./content/current";
-import { hasPrivateTestUse } from "./content/private-test";
+import {
+  hasPrivateTestUse,
+  privateTestMarkerMatches,
+} from "./content/private-test";
 import { collectIssues } from "./package/issues";
 import { validateSupportedQuizPackCore } from "./package/validate-core";
 import { inspectImage } from "./v1/media";
@@ -25,11 +28,18 @@ export function buildPrivateTestQuizPack(
   context: SupportedValidationContext,
   capability: PrivateTestCapability,
 ) {
-  requirePrivateTestCapability(capability);
+  const registration = requirePrivateTestCapability(capability);
   return runBuild(input, snapshotSupportedContext(context), {
     snapshot: snapshotSupportedContext,
     parse(value) {
-      if (!hasPrivateTestUse(value))
+      if (
+        !hasPrivateTestUse(value) ||
+        !privateTestMarkerMatches(
+          (value as { bindings: { privateTestUse: unknown } }).bindings
+            .privateTestUse,
+          registration,
+        )
+      )
         return { ok: false, issues: [packIssue("CONTENT_STRUCTURE")] };
       return parseCurrentContent(value);
     },

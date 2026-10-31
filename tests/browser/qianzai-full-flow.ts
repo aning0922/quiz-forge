@@ -30,7 +30,10 @@ const input = z
 const source = JSON.parse(await readFile(input.contentFile, "utf8"));
 const core = source.core ?? source;
 assert.equal(core.questions.length, 24);
-const out = path.resolve(".cache/qztx-full-flow/browser", String(Date.now()));
+const out = path.resolve(
+  ".cache/qztx-prototype-rebuild/browser",
+  String(Date.now()),
+);
 await mkdir(out, { recursive: true, mode: 0o700 });
 const digest = (bytes: Uint8Array | string) =>
   createHash("sha256").update(bytes).digest("hex");
@@ -63,6 +66,14 @@ record.browser = browser.version();
 const context = await browser.newContext({
   viewport: record.viewport,
   acceptDownloads: true,
+});
+let completedOk: boolean | null = null;
+context.on("response", (r) => {
+  if (
+    new URL(r.url()).pathname.endsWith("/api/complete") &&
+    r.request().method() === "POST"
+  )
+    completedOk = r.ok();
 });
 context.on("request", (request) => {
   if (request.method() !== "POST") return;
@@ -134,26 +145,30 @@ try {
       state.progress.questionId,
       core.questions[input.resumeKnownSavedPrefix].ref.id,
     );
-    await page.getByRole("button", { name: "偏好", exact: true }).click();
-    await page.getByRole("button", { name: "返回封面", exact: true }).click();
+
     record.cases.push(
       `verified-known-saved-prefix-${input.resumeKnownSavedPrefix}-without-replay`,
     );
   }
-  await expect(
-    page.getByRole("button", { name: "开启穿越之旅", exact: true }),
-  ).toBeEnabled();
-  await expect(screen("cover").locator("img").first()).toBeVisible();
-  await screenshot("cover-390");
-  await page.getByRole("button", { name: "开启穿越之旅", exact: true }).click();
-  const preference = {
-    female: "只匹配女性历史人物",
-    male: "只匹配男性历史人物",
-    any: "不限制人物性别",
-  }[input.preference];
-  if (input.resumeKnownSavedPrefix)
-    await page.getByRole("button", { name: "进入第一幕", exact: true }).click();
-  else await page.getByRole("radio", { name: preference, exact: true }).check();
+  if (!input.resumeKnownSavedPrefix) {
+    await expect(
+      page.getByRole("button", { name: "开启穿越之旅", exact: true }),
+    ).toBeEnabled();
+    await expect(screen("cover").locator("img").first()).toBeVisible();
+    await screenshot("cover-390");
+    await page
+      .getByRole("button", { name: "开启穿越之旅", exact: true })
+      .click();
+    const preference = {
+      female: "女，只匹配女性历史人物",
+      male: "男，只匹配男性历史人物",
+      any: "不选，不限制人物性别",
+    }[input.preference];
+    await page
+      .getByRole("radio", { name: preference, exact: true })
+      .locator("..")
+      .click();
+  }
   for (let i = input.resumeKnownSavedPrefix ?? 0; i < 24; i++) {
     record.stage = `question-${i + 1}`;
     const question = screen("question");
@@ -178,7 +193,7 @@ try {
           new URL(r.url()).pathname.endsWith("/api/save") &&
           r.request().method() === "POST",
       ),
-      option.click(),
+      option.locator("..").click(),
     ]);
     assert.equal(saved.ok(), true);
     if (i === 7) {
@@ -208,16 +223,6 @@ try {
     }
   }
   record.stage = "complete";
-  await screen("question")
-    .getByRole("button", { name: "走向相逢", exact: true })
-    .click();
-  const completed = page.waitForResponse(
-    (r) =>
-      new URL(r.url()).pathname.endsWith("/api/complete") &&
-      r.request().method() === "POST",
-  );
-  await page.getByRole("button", { name: "开启相逢", exact: true }).click();
-  assert.equal((await completed).ok(), true);
   await expect(
     page.getByRole("button", { name: "下滑查看人物报告", exact: true }),
   ).toBeEnabled();
@@ -228,13 +233,18 @@ try {
   await expect(
     page.locator('[data-qianzai-transition][data-active="true"]'),
   ).toHaveCount(0);
+  assert.equal(completedOk, true);
   await screenshot("reveal-390");
   await page
     .getByRole("button", { name: "下滑查看人物报告", exact: true })
     .click();
   await expect(screen("report")).toBeVisible();
-  await expect(screen("report").locator("img").first()).toBeVisible();
-  await expect(screen("report").locator("[data-volume]")).toHaveCount(6);
+  await expect(
+    screen("report").locator("[data-report-chapter-id=encounter]"),
+  ).toBeVisible();
+  await expect(
+    screen("report").locator("[data-report-chapter-id]"),
+  ).toHaveCount(6);
   const report = await readReport(page, sessionPath);
   record.reportSha256 = report.hash;
   record.resultId = input.expectedResultId;
@@ -258,9 +268,10 @@ try {
       Array.from(new Uint8Array(await (await fetch(img.src)).arrayBuffer())),
     );
     const expected = digest(Uint8Array.from(bytes));
-    const downloading = page.waitForEvent("download");
-    await page.getByRole("button", { name: "保存 PNG", exact: true }).click();
-    const download = await downloading;
+    const [download] = await Promise.all([
+      page.waitForEvent("download"),
+      page.getByRole("button", { name: /^保存 PNG/ }).click(),
+    ]);
     const filename = path.join(out, kind + ".png");
     await download.saveAs(filename);
     const png = await readFile(filename),
@@ -278,7 +289,10 @@ try {
     });
     await screenshot(kind + "-preview-390");
   }
-  await page.getByRole("button", { name: "关闭图片预览", exact: true }).click();
+  await page
+    .getByRole("button", { name: "返回选择保存类型", exact: true })
+    .click();
+  await page.getByRole("button", { name: "关闭保存选项", exact: true }).click();
   record.cases.push("two-real-png-downloads-match-preview-bytes");
   record.stage = "readonly";
   await page.goto(input.origin + sessionPath + "/report");

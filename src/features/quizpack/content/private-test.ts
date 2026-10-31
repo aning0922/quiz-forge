@@ -1,15 +1,42 @@
 import { z } from "zod";
 import registration from "./private-test-registration.json";
+import rebuildRegistration from "./private-test-registration-rebuild.json";
 
-/** A compiled local test scope is not selected by a request, pack or environment switch. */
+/** Compiled finite registrations, never selected by a request or an environment switch. */
 export const PRIVATE_TEST_REGISTRATION = registration;
-export const privateTestUseSchema = z.strictObject({
-  schemaVersion: z.literal("quizforge.private-test-use.v1"),
-  instanceId: z.literal("953991305a7e8c49bb773d95cd120378"),
-  authorizationId: z.literal("qztx-full-flow-20261030"),
-  contentStatus: z.literal("candidate"),
-  resourceStatus: z.literal("reference-or-candidate"),
-});
+export const PRIVATE_TEST_REGISTRATIONS = [
+  registration,
+  rebuildRegistration,
+] as const;
+export type PrivateTestRegistration =
+  (typeof PRIVATE_TEST_REGISTRATIONS)[number];
+export const privateTestUseSchema = z.union([
+  z.strictObject({
+    schemaVersion: z.literal("quizforge.private-test-use.v1"),
+    instanceId: z.literal("953991305a7e8c49bb773d95cd120378"),
+    authorizationId: z.literal("qztx-full-flow-20261030"),
+    contentStatus: z.literal("candidate"),
+    resourceStatus: z.literal("reference-or-candidate"),
+  }),
+  z.strictObject({
+    schemaVersion: z.literal("quizforge.private-test-use.v1"),
+    instanceId: z.literal("bea112ce460725bd10fc41226e45df48"),
+    authorizationId: z.literal("qztx-prototype-rebuild-20261031"),
+    contentStatus: z.literal("candidate"),
+    resourceStatus: z.literal("reference-or-candidate"),
+  }),
+]);
+export function privateTestMarkerMatches(
+  input: unknown,
+  registered: PrivateTestRegistration,
+): boolean {
+  const parsed = privateTestUseSchema.safeParse(input);
+  return (
+    parsed.success &&
+    parsed.data.instanceId === registered.instanceId &&
+    parsed.data.authorizationId === registered.authorizationId
+  );
+}
 export function hasPrivateTestUse(input: unknown): boolean {
   return (
     !!input &&
@@ -20,21 +47,28 @@ export function hasPrivateTestUse(input: unknown): boolean {
     "privateTestUse" in input.bindings
   );
 }
-export function privateTestSourceMatches(facts: {
+type SourceFacts = {
   productId: string;
   canonicalContentSha256: string;
   assetSetSha256: string;
   canonicalManifestSha256: string;
-}) {
+};
+export function registeredPrivateTestSource(facts: SourceFacts) {
   return (
-    facts.productId === registration.productId &&
-    /^[a-f0-9]{64}$/.test(registration.canonicalContentSha256) &&
-    facts.canonicalContentSha256 === registration.canonicalContentSha256 &&
-    facts.assetSetSha256 === registration.assetSetSha256 &&
-    facts.canonicalManifestSha256 === registration.canonicalManifestSha256
+    PRIVATE_TEST_REGISTRATIONS.find(
+      (r) =>
+        facts.productId === r.productId &&
+        /^[a-f0-9]{64}$/.test(r.canonicalContentSha256) &&
+        facts.canonicalContentSha256 === r.canonicalContentSha256 &&
+        facts.assetSetSha256 === r.assetSetSha256 &&
+        facts.canonicalManifestSha256 === r.canonicalManifestSha256,
+    ) ?? null
   );
 }
-/** Browser eligibility still requires the exact compiled resource facts and the server-authorized view. */
+export function privateTestSourceMatches(facts: SourceFacts) {
+  return registeredPrivateTestSource(facts) !== null;
+}
+/** Exact compiled resource facts remain necessary in addition to the server-authorized view. */
 export function privateTestAssetMatches(asset: {
   approval: string;
   resourceRef: { productId: string; id: string; version: string };
@@ -47,17 +81,19 @@ export function privateTestAssetMatches(asset: {
 }) {
   return (
     asset.approval === "private-test-only" &&
-    registration.resources.some(
-      (entry: Record<string, unknown>) =>
-        entry.productId === asset.resourceRef.productId &&
-        entry.id === asset.resourceRef.id &&
-        entry.version === asset.resourceRef.version &&
-        entry.sha256 === asset.sha256 &&
-        entry.bytes === asset.bytes &&
-        entry.width === asset.width &&
-        entry.height === asset.height &&
-        entry.mediaType === asset.mediaType &&
-        entry.purpose === asset.purpose,
+    PRIVATE_TEST_REGISTRATIONS.some((r) =>
+      r.resources.some(
+        (e: Record<string, unknown>) =>
+          e.productId === asset.resourceRef.productId &&
+          e.id === asset.resourceRef.id &&
+          e.version === asset.resourceRef.version &&
+          e.sha256 === asset.sha256 &&
+          e.bytes === asset.bytes &&
+          e.width === asset.width &&
+          e.height === asset.height &&
+          e.mediaType === asset.mediaType &&
+          e.purpose === asset.purpose,
+      ),
     )
   );
 }

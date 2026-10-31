@@ -22,6 +22,11 @@ export type QianzaiPrototypeImage = Omit<QianzaiResolvedImage, "layer"> & {
 export type QianzaiVisualProps = {
   images?: readonly QianzaiResolvedImage[];
   prototypeImages?: readonly QianzaiPrototypeImage[];
+  roleCompositeImages?: readonly QianzaiRoleCompositeImage[];
+};
+export type QianzaiRoleCompositeImage = Omit<QianzaiResolvedImage, "layer"> & {
+  layer: "role-composite";
+  resultRef: DisplayAssetV1["resourceRef"];
 };
 type Ref = DisplayAssetV1["resourceRef"];
 export const sameArtRef = (a: Ref, b: Ref) =>
@@ -30,7 +35,10 @@ export const sameArtRef = (a: Ref, b: Ref) =>
 /** Only exact scoped view-contract assets, never paths, arbitrary URLs or a
  * full character library. A completed report exposes its selected character.
  */
-function scopedImage<T extends QianzaiResolvedImage | QianzaiPrototypeImage>(
+function scopedImage<
+  T extends
+    QianzaiResolvedImage | QianzaiPrototypeImage | QianzaiRoleCompositeImage,
+>(
   model: ConsumerV2ReaderModel,
   ref: Ref | null | undefined,
   images: readonly T[],
@@ -114,5 +122,44 @@ export function qianzaiCharacter(model: ConsumerV2ReaderModel) {
   return display &&
     sameArtRef(display.selectedResultRef, display.slots.character.resultRef)
     ? display.slots.character
+    : undefined;
+}
+
+/** Both registered frames belong to the selected, sealed result. They are never
+ * exposed through the clean portrait or export path. */
+export function qianzaiRoleComposite(
+  model: ConsumerV2ReaderModel,
+  images: readonly QianzaiRoleCompositeImage[] = [],
+) {
+  const character = qianzaiCharacter(model),
+    body = model.report?.view.display.body;
+  if (
+    model.phase !== "completed" ||
+    model.pendingOperation ||
+    !body ||
+    !character?.revealComposite ||
+    !sameArtRef(character.resultRef, body.matching.selected.ref)
+  )
+    return undefined;
+  const before = scopedImage(
+    model,
+    character.revealComposite.before,
+    images,
+    "role-composite",
+  );
+  const full = scopedImage(
+    model,
+    character.revealComposite.full,
+    images,
+    "role-composite",
+  );
+  return before &&
+    full &&
+    sameArtRef(before.resultRef, character.resultRef) &&
+    sameArtRef(full.resultRef, character.resultRef) &&
+    before.asset.width === full.asset.width &&
+    before.asset.height === full.asset.height &&
+    before.asset.approval === full.asset.approval
+    ? { before, full }
     : undefined;
 }

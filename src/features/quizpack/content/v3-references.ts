@@ -146,7 +146,21 @@ export function validateContentV3(input: unknown): V2Result<QuizPackContentV3> {
       (r) =>
         [r.reveal, r.report, r.poster].some(
           (v) => resources.get(refKey(v))?.purpose !== "portrait",
-        ) || resources.get(refKey(r.nameArt))?.purpose !== "decoration",
+        ) ||
+        resources.get(refKey(r.nameArt))?.purpose !== "decoration" ||
+        (r.revealComposite !== undefined &&
+          (resources.get(refKey(r.revealComposite.before))?.purpose !==
+            "decoration" ||
+            resources.get(refKey(r.revealComposite.full))?.purpose !==
+              "decoration" ||
+            new Set([r.reveal, r.report, r.poster, r.nameArt].map(refKey)).has(
+              refKey(r.revealComposite.before),
+            ) ||
+            new Set([r.reveal, r.report, r.poster, r.nameArt].map(refKey)).has(
+              refKey(r.revealComposite.full),
+            ) ||
+            refKey(r.revealComposite.before) ===
+              refKey(r.revealComposite.full))),
     ) ||
     b.resources.some((r) => r.productId !== pid) ||
     b.reportTemplates.some((t) => t.ref.productId !== pid) ||
@@ -228,7 +242,13 @@ export function validateContentV3(input: unknown): V2Result<QuizPackContentV3> {
     question: sceneRefs,
     resume: [vp.coverSceneRef, ...preference, ...sceneRefs],
     result: [
-      ...b.slots.characters.flatMap((p) => [p.reveal, p.nameArt]),
+      ...b.slots.characters.flatMap((p) => [
+        p.reveal,
+        p.nameArt,
+        ...(p.revealComposite
+          ? [p.revealComposite.before, p.revealComposite.full]
+          : []),
+      ]),
       ...seal,
     ],
     report: [

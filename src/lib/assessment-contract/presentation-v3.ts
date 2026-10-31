@@ -42,6 +42,14 @@ export const presentationSlotsV3Schema = z.strictObject({
         nameArt: ref,
         report: ref,
         poster: ref,
+        /** Fixed role artwork, including its lettering; never a clean portrait. */
+        revealComposite: z
+          .strictObject({
+            kind: z.literal("role-composite.v1"),
+            before: ref,
+            full: ref,
+          })
+          .optional(),
       }),
     )
     .min(1)
@@ -72,5 +80,8 @@ export function characterSlotRefsV3(
     character.nameArt,
     character.report,
     character.poster,
+    ...(character.revealComposite
+      ? [character.revealComposite.before, character.revealComposite.full]
+      : []),
   ];
 }

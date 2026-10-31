@@ -1,5 +1,24 @@
 # 阶段进度
 
+## 2026-10-31 《千载同心》按原件重建与隔离体验
+
+作者再次指出整体还原不足。本批基于 `8337458` 建立 `codex/qztx-prototype-rebuild`；独立 A 报告/分享、B 场景/交互、Astra 独审继续原聊天。原3291/3292、64453及其工作树/数据库保持。A原提交a66bc35/93ac13d集成为04d6583/74c2ed1，B02b8881集成为6395f76；主控资源/角色登记d5347c0/ce99219，私测扩展c4a9bd1，完整参考串联0bda60c，最终运行集成ce9b1bb。
+
+改动包括：原HTML布局/字号/坐标/动效的固定场景；原before/full完整李白揭晓，不再用reportHero裁切；完整六卷报告DOM、静态角色档案与sealed正文适配；原型保存分享排版和真实双缩略图。测试说明移入已有菜单，不再占用屏幕顶部。长选项在原尺寸内自然换行。评分、24题/五维、原答案、UNKNOWN/CAS、报告完成事务与不可变语义未改；新0028仅增加可选role-composite槽位及精确本机源/实例登记，无新表、不改旧迁移或历史记录。原25资源字节不变，追加两张780×1688原始PNG。
+
+验证分层如下，不把演示与真实结果混记：
+
+- **原型对照**：Chromium156，390×844同文案/状态/时间锚点；性别、揭晓及报告多个章节逐像素相同，三幕最大通道差1，封面3，五维6，分享两预览1，已比较图中通道差>16的像素均为0。320/430代表适配无横向溢出。六项合成controller路径覆盖慢保存、保存/完成UNKNOWN、改选重复、隐藏取消、失权。B树`.cache/prototype-scenes/delivery/delivery.json`及A树`.cache/prototype-parity/run-1793429481885/result.json`。
+- **原型完整路径**：集成树`.cache/prototype-scenes/comparison-1793431623080/`，12题→揭晓→六卷→双缩略图/双预览。首探针末尾误点keyboard-only关闭按钮失败，前段及q08检查保留，`linked-continuation-result.json`只补可见返回/关闭/回看；全部请求GET，无业务写入。q08选中前后256/225px文字区完整、原65px卡高及scroll=0；独审关闭长选项截断P2。
+- **真实数据库**：owned test实例`bea112ce460725bd10fc41226e45df48`，55493、3293。`candidate-01/db-source-verification.json`46项通过，包含跨实例/marker/三元组/声明/review混配拒绝、schema与角色资源范围、ACL；两blob元数据正例为owner短事务并确认回滚0行，其余对应app-role。首次参数双编码及fixture缺前置失败保留。旧无marker分支与旧精确登记保持，但不因此补称既有0026旧库升级限制已解决。
+- **真实原生/服务/UI**：本树`.cache/qztx-prototype-rebuild/native-provision/result.json`原生27资源、草稿/审核/版本/play/Key通过。构建Uib4To0uFjuVmCyy3BmHZ的同一合成会话实际UI完成24题；第8题换tab时探针旧page响应等待器拒绝，`browser-prefix-reconciliation.json`逐项核验8题与偏好后从Q9续验；`browser/1793432459732`记录16save/1complete/0pageerror，随后因旧首卷定位器失败。`browser/1793432955327`只读续验通过：同一81af96…快照、941×1672海报及724×13804单张长图下载SHA等于预览，0save/0complete/0pageerror。其间旧下载按钮精确文字定位失败也保留，没有重做答案。
+- **最终构建**：去掉全局52px说明后为`kZx06oYvldPwxAas3Eeno`，consumer entry `a21b7da4141bec806758426b762f078012046ff23ecca2d86705453348f1f5fc`。登记/类型/编译/trace通过（123/26234/0）；本次定向单测、类型、lint/格式通过，未跑无关全套。第一构建因正在集成的三个参考harness类型错误失败，修复后通过；媒体准备参数错误与构建缓存超上限失败保留，移动本批自有缓存后固定工具封存及原生导入成功。最终仅菜单/顶部布局变化，复用同字节native、评分/保存恢复及PNG证据，不再次跑媒体矩阵。
+- **最终实例接线**：`final-play/result.json`复用原parent，新不可变play绑定最终consumer；仅自有合成Key通过原service一次保存24题/完成，body与同源witness一致，新pair两资源SHA吻合。作者Key未交换。`final-capture/result.json`封面/偏好/首题top=0且无横向溢出；报告首截图早于CSS背景解码及reader转场，不作图检结论，`screenshot-qualification.json`说明。`final-settled/result.json`在hero解码、两揭晓图就绪、reader转场结束后只读补两图，0save/0complete/0资源错误/0pageerror，主控已实际查看。
+
+独审发现的pair整体错挂与长选项截断两项P2均已关闭；静态档案、真实段落/分值/正反证保持，0028定向回执已独立核对。以上是工程与助手图检，不冒称作者“100%”视觉验收。原型reference-only固定12题/李白/示例分值/原内嵌PNG独立于真实服务；真实动态PNG的无字底图及独立装饰/人物图层仍缺，其余角色整幅揭晓仍待Windows资源定稿，不能把固定原型成品假装本轮分数。
+
+可体验：原型完整对照 `http://127.0.0.1:63192/?screen=cover`；最终真实24题入口 `http://127.0.0.1:3294/` 跳转到3293，Key仅在私有文件/URL fragment传递，不入Git或截图。最终服务PID33334、入口PID34809，作者资格未消费；旧build/报告保留。未合并main、不部署生产。等待作者及网页版体验审查；本轮不再增加检查。
+
 ## 2026-10-31 作者体验反馈：保存、末题揭晓与分享修复
 
 从准确 `24ac038` 建立独立 `codex/qztx-experience-fixes` 集成树及 UI／export 实现树。作者五张反馈图与后续“选后下跳、性别选框错位、末题应自动揭晓”纳入本批；原 3291／3292、其构建、数据库及作者答案不读不改。共享裁窗 `f89d45e`，导出 A `65e3bbe` 集成为 `08c14da`，UI B `36dc899` 集成为 `d5fe754`，最后揭晓构图 `65ce116` 集成为 `f1c6cc6`。

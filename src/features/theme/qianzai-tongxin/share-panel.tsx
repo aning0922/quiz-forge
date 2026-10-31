@@ -2,18 +2,7 @@
 /* eslint-disable @next/next/no-img-element -- Preview the provider-owned PNG bytes without re-encoding. */
 
 import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
-import {
-  ArrowDown,
-  ArrowLeft,
-  ArrowRight,
-  Check,
-  FileImage,
-  ImageIcon,
-  Minus,
-  Plus,
-  Share2,
-  X,
-} from "lucide-react";
+import { FileImage, ImageIcon, X } from "lucide-react";
 import { useQianzaiExport } from "./export-context";
 import type {
   QianzaiExportContextValue,
@@ -39,7 +28,13 @@ function unavailable(code: QianzaiExportErrorCode | null) {
   return "当前版本暂未开放此类图片。";
 }
 
-export function QianzaiSharePanel({ active = true }: { active?: boolean }) {
+export function QianzaiSharePanel({
+  active = true,
+  referenceOnly = false,
+}: {
+  active?: boolean;
+  referenceOnly?: boolean;
+}) {
   const api = useQianzaiExport();
   const [intent, setIntent] = useState<QianzaiExportKind | null>(null);
   const available = KINDS.some((kind) => api.availability[kind].allowed);
@@ -65,7 +60,7 @@ export function QianzaiSharePanel({ active = true }: { active?: boolean }) {
           onClick={() => open(null)}
           aria-describedby={!available ? note : undefined}
         >
-          保存我的结果 <ArrowRight size={18} aria-hidden="true" />
+          保存我的结果 <span aria-hidden="true">↗</span>
         </button>
         <button
           disabled={!api.availability.poster.allowed || !active}
@@ -80,7 +75,7 @@ export function QianzaiSharePanel({ active = true }: { active?: boolean }) {
         </p>
       )}
       {active && api.state.phase !== "closed" && (
-        <ShareDialog api={api} initial={intent} />
+        <ShareDialog api={api} initial={intent} referenceOnly={referenceOnly} />
       )}
     </>
   );
@@ -89,9 +84,11 @@ export function QianzaiSharePanel({ active = true }: { active?: boolean }) {
 function ShareDialog({
   api,
   initial,
+  referenceOnly,
 }: {
   api: QianzaiExportContextValue;
   initial: QianzaiExportKind | null;
+  referenceOnly: boolean;
 }) {
   const [view, setView] = useState<"choose" | "preview">(
       initial ? "preview" : "choose",
@@ -252,7 +249,7 @@ function ShareDialog({
         <section className={styles.sheet}>
           <header className={styles.sheetHead}>
             <div>
-              <p className={styles.kicker}>终章 · 留住这一程</p>
+              <div className={styles.kicker}>终章 · 留住这一程</div>
               <h2 id={`${id}-title`}>选择要保存的画卷</h2>
               <p>
                 相逢海报适合分享，完整长图适合收藏。两种图片均可预览后保存。
@@ -264,7 +261,7 @@ function ShareDialog({
               onClick={api.close}
               aria-label="关闭保存选项"
             >
-              <X size={22} />
+              ×
             </button>
           </header>
           <div className={styles.cards} role="group" aria-label="保存类型">
@@ -310,25 +307,36 @@ function ShareDialog({
                     {allowed
                       ? item === "poster"
                         ? "人物 · 契合指数 · 五维图"
-                        : "六卷全文 · 实际选择依据"
+                        : "五维详解 · 答题依据"
                       : unavailable(api.availability[item].reason)}
+                    {ready && (
+                      <>
+                        <br />
+                        {`${item === "full-report" ? "一张图 · " : ""}${ready.width} × ${ready.height}`}
+                      </>
+                    )}
                   </small>
-                  {ready && (
-                    <small>
-                      {ready.width} × {ready.height}
-                    </small>
-                  )}
                   <span className={styles.radio} aria-hidden="true">
-                    {item === kind && <Check size={13} />}
+                    {item === kind && "✓"}
                   </span>
                 </button>
               );
             })}
           </div>
           <footer className={styles.sheetFoot}>
-            <p>图片取自本轮报告，可预览后保存。</p>
+            <div className={styles.hint}>
+              {referenceOnly ? (
+                <>
+                  <span>研究样稿：</span>89%
+                  和五维为演示数值，二维码仅为不可扫描占位。
+                </>
+              ) : (
+                "图片取自本轮报告，可预览后保存。"
+              )}
+            </div>
             <button
               className={styles.primary}
+              aria-label="查看图片预览"
               disabled={
                 !api.availability[kind].allowed ||
                 preparing ||
@@ -340,8 +348,8 @@ function ShareDialog({
                 ? "正在准备图片…"
                 : busy
                   ? "查看生成进度"
-                  : "查看图片预览"}{" "}
-              <ArrowRight size={18} aria-hidden="true" />
+                  : "查看图片预览"}
+              {"　→"}
             </button>
           </footer>
         </section>
@@ -354,17 +362,17 @@ function ShareDialog({
               onClick={choose}
               aria-label="返回选择保存类型"
             >
-              <ArrowLeft size={22} />
+              ‹
             </button>
-            <div>
-              <h2 id={`${id}-title`}>{LABELS[kind]}</h2>
-              <p>
+            <div className={styles.previewTitle}>
+              <strong id={`${id}-title`}>{LABELS[kind]}</strong>
+              <small>
                 {artifact
-                  ? `${artifact.width} × ${artifact.height} · PNG`
+                  ? `${artifact.width} × ${artifact.height} · ${referenceOnly ? "原图无重绘" : "PNG"}`
                   : busy
                     ? "正在生成本轮图片…"
                     : "本轮报告图片预览"}
-              </p>
+              </small>
             </div>
             <button
               className={styles.counter}
@@ -389,11 +397,15 @@ function ShareDialog({
             </button>
           </header>
           <div className={styles.zoomRow}>
-            <span>双击放大 · 滑动查看</span>
-            <div>
+            <span className={styles.previewNote}>
+              {kind === "poster"
+                ? "可长按保存，双击放大"
+                : "单张长卷 · 上下滑动，双击放大"}
+            </span>
+            <div className={styles.zoomControls}>
               <button
                 aria-label="缩小图片"
-                disabled={!artifact || zoom === ZOOMS[0]}
+                disabled={!artifact}
                 onClick={() =>
                   setZoom(
                     ZOOMS[
@@ -405,14 +417,14 @@ function ShareDialog({
                   )
                 }
               >
-                <Minus size={18} />
+                −
               </button>
-              <output aria-label="图片缩放比例">
+              <output className={styles.zoomValue} aria-label="图片缩放比例">
                 {Math.round(zoom * 100)}%
               </output>
               <button
                 aria-label="放大图片"
-                disabled={!artifact || zoom === ZOOMS[ZOOMS.length - 1]}
+                disabled={!artifact}
                 onClick={() =>
                   setZoom(
                     ZOOMS[
@@ -424,7 +436,7 @@ function ShareDialog({
                   )
                 }
               >
-                <Plus size={18} />
+                ＋
               </button>
               <button className={styles.fit} disabled={!artifact} onClick={fit}>
                 适配
@@ -449,7 +461,11 @@ function ShareDialog({
                   }}
                   onDoubleClick={() => setZoom(zoom === 1 ? 1.7 : 1)}
                 />
-                <p>预览、保存与分享使用同一张 PNG。</p>
+                <div className={styles.imageCaption}>
+                  {referenceOnly
+                    ? "视觉研究样稿：图中契合指数、五维与答题解读为演示内容，二维码为占位。"
+                    : "预览、保存与分享使用同一张 PNG。"}
+                </div>
               </div>
             ) : (
               <div className={styles.pending} role="status">
@@ -480,15 +496,16 @@ function ShareDialog({
             )}
           </div>
           <footer className={styles.actions}>
-            <div>
+            <div className={styles.buttonRow}>
               <button
+                className={styles.secondary}
                 disabled={!artifact || sharing || busy}
                 onClick={() => void share()}
               >
-                <Share2 size={18} aria-hidden="true" />
                 {sharing ? "正在打开分享…" : "分享图片"}
               </button>
               <button
+                className={styles.gold}
                 disabled={!artifact || busy}
                 onClick={() =>
                   message(
@@ -498,10 +515,10 @@ function ShareDialog({
                   )
                 }
               >
-                保存 PNG <ArrowDown size={18} aria-hidden="true" />
+                {"保存 PNG　↓"}
               </button>
             </div>
-            <p>下载位置由浏览器决定，手机上也可长按预览图保存。</p>
+            <small>下载位置由浏览器决定，手机上也可长按预览图保存。</small>
           </footer>
         </section>
       )}
