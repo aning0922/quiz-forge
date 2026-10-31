@@ -8,7 +8,7 @@
 
 私有测试说明移出画面遮挡区并可展开；审查夹具将重复说明合并。李白错误复用的报告头图自带烘焙模糊黑头，新增仅精确 SHA／780×874 命中的裁窗，原始字节与来源不变；PNG／报告采用该有效图区，揭晓另保留原画幅比例、标题与箭头留白，避免裁去黑头后过度放大。姓名沿可读程序排字，不冒称正式书法。PNG 测试标记进入实际布局测量后的独立底部区域，标题不再被覆盖。分享面板打开后串行生成两种真实 PNG，缩略图读取同一 owner 当前缓存；关闭／失权仍回收 URL，预览／下载／分享复用同 Blob。
 
-验证按影响复用：A 7 项布局测试、定向类型／lint／格式及真实 Chromium Canvas 两图通过，941×1672、724×3941，0 pageerror；私有记录在 export 树 `.cache/export-experience/run-1793410755624/`。B UI 树 `.cache/qztx-experience-review/1793412115681/result.json` 中慢保存、保存 UNKNOWN、完成 UNKNOWN、改选重复、隐藏、失权六段及 320/375/390/430 性别定位通过；该整轮随后因裁窗选择器歧义失败，保留失败，不冒称全轮通过。原 input DOM、scrollTop、pending 保留，确认前 complete=0，正常仅1 save/1 complete。`1793412678882` 补普通 saving 不遮挡／不位移、320/390 选中／揭晓／真实双缩略图，实际 PNG 段恢复真实时钟；仅状态边界使用受控时钟。`1793412709312` 末题按钮最终颜色图与源码／分段索引，`1793413221447` 只补 Li Bai 揭晓比例两帧。缓存 getter 权限／关闭定向 1 pass、7 名称过滤跳过；其余未改 owner 证据复用。主控实际查看保存、偏好、选中、最终人物、分享卡及海报；最终预览偏好只读补图 `integration/.cache/qztx-experience-fixes/preference-final-390.png` 无 POST。
+验证按影响复用：A 7 项布局测试、定向类型／lint／格式及真实 Chromium Canvas 两图通过，941×1672、724×3941，0 pageerror；私有记录在 export 树 `.cache/export-experience/run-1793410755624/`。B UI 树 `.cache/qztx-experience-review/1793412115681/result.json` 中慢保存、保存 UNKNOWN、完成 UNKNOWN、改选重复、隐藏、失权六段及 320/375/390/430 性别定位通过；该整轮随后因裁窗选择器歧义失败，保留失败，不冒称全轮通过。原 input DOM、scrollTop、pending 保留，确认前 complete=0，正常仅1 save/1 complete。`1793412678882` 补普通 saving 不遮挡／不位移、320/390 选中／揭晓／真实双缩略图，实际 PNG 段恢复真实时钟；仅状态边界使用受控时钟。`1793412709312` 末题按钮最终颜色图与源码／分段索引，`1793413221447` 只补 Li Bai 揭晓比例两帧。缓存 getter 权限／关闭定向 1 pass、7 名称过滤跳过；其余未改 owner 证据复用。主控实际查看保存、偏好、选中、最终人物、分享卡及海报；最终预览偏好只读补图 本集成树 `.cache/qztx-experience-fixes/preference-final-390.png` 无 POST。
 
 Astra 分别关闭导出、六段业务、状态层级／缩略图及最后只读构图，无本批阻断。以上为真实 controller/runtime＋合成 HTTP／报告＋实际 PNG 的限定工程证据，不是新真实数据库或作者美术验收。源接口、评分、SQL／迁移及封存合同未变；不重复全量业务／数据库／原生媒体或24题整链。
 
