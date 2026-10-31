@@ -9,7 +9,9 @@
         "entrypoints": [
           {
             "path": "src/features/product/internal-versions/implementations/engine-v2.ts",
-            "exports": ["bindEngineV2"],
+            "exports": [
+              "bindEngineV2"
+            ],
             "runtime": "server"
           }
         ],
@@ -215,7 +217,10 @@
             }
           ],
           "settingsSha256": "078cb045ec56da085d08eb6efd0f1b925aa95b0ed16afff689183a2a919c0dd3",
-          "builtins": ["node:crypto", "node:util"]
+          "builtins": [
+            "node:crypto",
+            "node:util"
+          ]
         },
         "runtimePolicy": {
           "node": ">=20.19.0 <21 || >=22.13.0",
@@ -244,12 +249,17 @@
         "entrypoints": [
           {
             "path": "src/features/theme/preview/v3-projection.ts",
-            "exports": ["projectContentEntryV3", "projectPreparedResultV3"],
+            "exports": [
+              "projectContentEntryV3",
+              "projectPreparedResultV3"
+            ],
             "runtime": "server"
           },
           {
             "path": "src/features/theme/consumer-v2/studio-structure-preview.tsx",
-            "exports": ["StudioStructurePreviewV2"],
+            "exports": [
+              "StudioStructurePreviewV2"
+            ],
             "runtime": "browser"
           }
         ],
@@ -2128,7 +2138,10 @@
             }
           ],
           "settingsSha256": "078cb045ec56da085d08eb6efd0f1b925aa95b0ed16afff689183a2a919c0dd3",
-          "builtins": ["node:crypto", "node:util"]
+          "builtins": [
+            "node:crypto",
+            "node:util"
+          ]
         },
         "runtimePolicy": {
           "node": ">=20.19.0 <21 || >=22.13.0",
@@ -2294,22 +2307,31 @@
         "entrypoints": [
           {
             "path": "src/features/theme/preview/v3-projection.ts",
-            "exports": ["projectContentEntryV3", "projectPreparedResultV3"],
+            "exports": [
+              "projectContentEntryV3",
+              "projectPreparedResultV3"
+            ],
             "runtime": "server"
           },
           {
             "path": "src/features/theme/consumer-v2/experience.tsx",
-            "exports": ["ConsumerSessionRuntimeV2"],
+            "exports": [
+              "ConsumerSessionRuntimeV2"
+            ],
             "runtime": "browser"
           },
           {
             "path": "src/features/theme/consumer-v2/controller.ts",
-            "exports": ["ConsumerControllerV2"],
+            "exports": [
+              "ConsumerControllerV2"
+            ],
             "runtime": "browser"
           },
           {
             "path": "src/features/theme/consumer-v2/host.tsx",
-            "exports": ["ConsumerExperienceV2"],
+            "exports": [
+              "ConsumerExperienceV2"
+            ],
             "runtime": "browser"
           },
           {
@@ -2323,7 +2345,9 @@
           },
           {
             "path": "src/features/report/persisted/view-contracts-v2.ts",
-            "exports": ["verifyPersistedReportViewV2"],
+            "exports": [
+              "verifyPersistedReportViewV2"
+            ],
             "runtime": "server"
           }
         ],
@@ -4337,7 +4361,10 @@
             }
           ],
           "settingsSha256": "078cb045ec56da085d08eb6efd0f1b925aa95b0ed16afff689183a2a919c0dd3",
-          "builtins": ["node:crypto", "node:util"]
+          "builtins": [
+            "node:crypto",
+            "node:util"
+          ]
         },
         "runtimePolicy": {
           "node": ">=20.19.0 <21 || >=22.13.0",
@@ -4361,12 +4388,17 @@
         "entrypoints": [
           {
             "path": "src/features/theme/qianzai-tongxin/projection.ts",
-            "exports": ["projectQianzaiEntry", "projectQianzaiResult"],
+            "exports": [
+              "projectQianzaiEntry",
+              "projectQianzaiResult"
+            ],
             "runtime": "server"
           },
           {
             "path": "src/features/theme/qianzai-tongxin/fixed-preview.tsx",
-            "exports": ["QianzaiFixedPreview"],
+            "exports": [
+              "QianzaiFixedPreview"
+            ],
             "runtime": "browser"
           }
         ],
@@ -6300,7 +6332,10 @@
             }
           ],
           "settingsSha256": "078cb045ec56da085d08eb6efd0f1b925aa95b0ed16afff689183a2a919c0dd3",
-          "builtins": ["node:crypto", "node:util"]
+          "builtins": [
+            "node:crypto",
+            "node:util"
+          ]
         },
         "runtimePolicy": {
           "node": ">=20.19.0 <21 || >=22.13.0",
@@ -6492,17 +6527,23 @@
           },
           {
             "path": "src/features/theme/consumer-v2/experience.tsx",
-            "exports": ["ConsumerSessionRuntimeV2"],
+            "exports": [
+              "ConsumerSessionRuntimeV2"
+            ],
             "runtime": "browser"
           },
           {
             "path": "src/features/theme/consumer-v2/controller.ts",
-            "exports": ["ConsumerControllerV2"],
+            "exports": [
+              "ConsumerControllerV2"
+            ],
             "runtime": "browser"
           },
           {
             "path": "src/features/theme/qianzai-tongxin/runtime.tsx",
-            "exports": ["QianzaiTongxinRuntime"],
+            "exports": [
+              "QianzaiTongxinRuntime"
+            ],
             "runtime": "browser"
           },
           {
@@ -6516,7 +6557,9 @@
           },
           {
             "path": "src/features/report/persisted/view-contracts-v2.ts",
-            "exports": ["verifyPersistedReportViewV2"],
+            "exports": [
+              "verifyPersistedReportViewV2"
+            ],
             "runtime": "server"
           }
         ],
@@ -6688,18 +6731,18 @@
           },
           {
             "path": "src/features/report/qianzai-tongxin/contracts.ts",
-            "bytes": 2459,
-            "sha256": "1d66c13feab2ae29b48dea0acb1f8eb7d20a3ca3e026cb4227cd6b17e88834a4"
+            "bytes": 2625,
+            "sha256": "566a658bc34669e21ea4ef648f3269d81c46d49c154cedc89aa0b5cd59b250f7"
           },
           {
             "path": "src/features/report/qianzai-tongxin/export.ts",
-            "bytes": 12529,
-            "sha256": "b3680ac5d7e5bee9bca7958f6d062742f9ecd11b266c1dbc454f9fa4420c2b04"
+            "bytes": 12572,
+            "sha256": "979a8f73db19e0059cd2c279b8187dea30c2f8e2e41e0c201455b77f393f6921"
           },
           {
             "path": "src/features/report/qianzai-tongxin/layout.ts",
-            "bytes": 12039,
-            "sha256": "9af13b97883b022c5bf68620d9ec82ccee10217fc8db5f15db6ae7a638f7e992"
+            "bytes": 12493,
+            "sha256": "57565f38bf5f5dc3931e8c5315311766d4223e7b39483e642c706eb6d559bf7c"
           },
           {
             "path": "src/features/theme/consumer-v1/authority.ts",
@@ -6757,6 +6800,11 @@
             "sha256": "b8c9c74995ce743b8f67897ad11fc88ec6036d1ddedff895af293186de214dab"
           },
           {
+            "path": "src/features/theme/qianzai-tongxin/art-framing.ts",
+            "bytes": 726,
+            "sha256": "04c56a84c4c153ea6c5d159e52fd19178ecb223303defc38e29ba700d5a8564f"
+          },
+          {
             "path": "src/features/theme/qianzai-tongxin/art.ts",
             "bytes": 4602,
             "sha256": "e2146ac80ed6cc8d1a90be209d11c7f640bfb2d72b14a4f6eedbdc20c632799b"
@@ -6768,18 +6816,18 @@
           },
           {
             "path": "src/features/theme/qianzai-tongxin/experience.tsx",
-            "bytes": 32992,
-            "sha256": "4e2e41305d3b7361e2e1e5ccef1b069212cd32615eb273ad4d6702c6f7dbdd21"
+            "bytes": 36491,
+            "sha256": "d52ae5f86bd3e73f88b50673d9c6670202cded474d0d6ab89e3ad37f9e7e5ab4"
           },
           {
             "path": "src/features/theme/qianzai-tongxin/export-context.tsx",
-            "bytes": 2815,
-            "sha256": "09bf287246f3a3f2d4e1b3f08f2d3c461f7c1218d54ae3eb8b2e3c4e1de4fd16"
+            "bytes": 2902,
+            "sha256": "2e1afb7a281eae3a66ce3972956e600b19c063f29bc730d41f78e372d9f806e1"
           },
           {
             "path": "src/features/theme/qianzai-tongxin/export-owner.ts",
-            "bytes": 11717,
-            "sha256": "28e050c37bfcb35c3eacf072a0fb1152193be9ff40a37aa49c70f2e44730cc9e"
+            "bytes": 11959,
+            "sha256": "272b77d51de8ff00fcf6b7379d0bc206ae05660d65aa5fe29a1b31d40daef33e"
           },
           {
             "path": "src/features/theme/qianzai-tongxin/font-owner.ts",
@@ -6798,13 +6846,13 @@
           },
           {
             "path": "src/features/theme/qianzai-tongxin/qianzai.module.css",
-            "bytes": 75798,
-            "sha256": "f859fe30c528fdfcdae5b47984944428d68cb80109619aa9edc52a6fb338f48b"
+            "bytes": 77277,
+            "sha256": "7a2fc75e272c57e8edbdc3d6cb726500c93224209ab9395be4a46e89e2185f40"
           },
           {
             "path": "src/features/theme/qianzai-tongxin/report.tsx",
-            "bytes": 24609,
-            "sha256": "5a7a375ca95c43e60fb9cc60687e02b54d8df73aeaaace2729ac3a0bdfe45d36"
+            "bytes": 24643,
+            "sha256": "80d8fb9c407872d1f4dd093525e93093ec04eadebfe48302ba2ebab0492cc06b"
           },
           {
             "path": "src/features/theme/qianzai-tongxin/resource-owner.ts",
@@ -6823,13 +6871,13 @@
           },
           {
             "path": "src/features/theme/qianzai-tongxin/runtime.tsx",
-            "bytes": 3843,
-            "sha256": "60f25014a7f5dbd8b2f5a902d97346e9f43adcdbb5e520d9f475bce50b341785"
+            "bytes": 3755,
+            "sha256": "ff2081195a2791d58cc2da36dcb2b831edba986e5999adb72c01f507244b32ef"
           },
           {
             "path": "src/features/theme/qianzai-tongxin/share-panel.tsx",
-            "bytes": 16270,
-            "sha256": "f57e3a538a985f951ba5c3811a59108e07578654e0ca1484ce1da87b2550eed1"
+            "bytes": 17591,
+            "sha256": "15203390918b29e1a296cefe0114089a17353247d7a05ae6d3031b47701532ed"
           },
           {
             "path": "src/features/theme/qianzai-tongxin/share.module.css",
@@ -6838,8 +6886,8 @@
           },
           {
             "path": "src/features/theme/qianzai-tongxin/views.tsx",
-            "bytes": 24089,
-            "sha256": "b8d7199c8ec7c550022c3937cd55fb691500a20b3360a3fe67fc51209ab7f183"
+            "bytes": 29292,
+            "sha256": "04fc8a17f7929dea653391b1b50a206040eb3bed6e614dd3b08799954994cecb"
           },
           {
             "path": "src/lib/assessment-contract/composed-report-v1.ts",
@@ -8680,7 +8728,10 @@
             }
           ],
           "settingsSha256": "078cb045ec56da085d08eb6efd0f1b925aa95b0ed16afff689183a2a919c0dd3",
-          "builtins": ["node:crypto", "node:util"]
+          "builtins": [
+            "node:crypto",
+            "node:util"
+          ]
         },
         "runtimePolicy": {
           "node": ">=20.19.0 <21 || >=22.13.0",
@@ -8690,8 +8741,8 @@
           "serverCondition": "react-server"
         }
       },
-      "implementationSha256": "9806d956156f19614ac3808ae137e5a78215f07e57a6282e401a15a578d07375"
+      "implementationSha256": "951fa790dc245c3ff5561961ed976d831d2462c6c92d29b55b9ed1317cfd4985"
     },
-    "entrySha256": "5d6867800ea1fed77c1daebdaa2e12ed672412fae96293b20f02f388689ba715"
+    "entrySha256": "2dc531e6b06b43236ac13305f4883b43c592eb61b3744c657730dbbab0af579a"
   }
 }
