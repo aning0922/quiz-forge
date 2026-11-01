@@ -72,16 +72,30 @@ export async function loadQianzaiFont(
 export async function loadQianzaiFonts(
   fonts: readonly FixedFont[],
   lease: ConsumerResourceLeaseV2,
+  taskSignal?: AbortSignal,
 ) {
+  const group = new AbortController();
+  const abort = () => group.abort();
+  lease.signal.addEventListener("abort", abort, { once: true });
+  taskSignal?.addEventListener("abort", abort, { once: true });
+  if (lease.signal.aborted || taskSignal?.aborted) abort();
+  const scopedLease: ConsumerResourceLeaseV2 = {
+    ...lease,
+    signal: group.signal,
+    current: () => lease.current() && !group.signal.aborted,
+  };
   const results = await Promise.allSettled(
-    fonts.map((font) => loadQianzaiFont(font, lease)),
+    fonts.map((font) => loadQianzaiFont(font, scopedLease)),
   );
   const release = () => {
+    abort();
+    lease.signal.removeEventListener("abort", abort);
+    taskSignal?.removeEventListener("abort", abort);
     for (const result of results)
       if (result.status === "fulfilled") result.value.release();
   };
   const failed = results.find((result) => result.status === "rejected");
-  if (failed || !lease.current() || lease.signal.aborted) {
+  if (failed || !scopedLease.current()) {
     release();
     throw failed?.reason ?? Error("QIANZAI_AUTHORITY_LOST");
   }

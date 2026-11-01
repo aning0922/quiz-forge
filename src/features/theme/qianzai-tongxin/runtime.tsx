@@ -53,9 +53,11 @@ export function QianzaiTongxinRuntime(
     if (!lease || !QIANZAI_RUNTIME_INPUTS.font) return;
     let active = true,
       release: (() => void) | undefined;
+    const task = new AbortController();
     void loadQianzaiFonts(
       [QIANZAI_RUNTIME_INPUTS.font, ...Object.values(QIANZAI_EDITORIAL_FONTS)],
       lease,
+      task.signal,
     )
       .then((owned) => {
         if (!active || !lease.current()) {
@@ -70,6 +72,7 @@ export function QianzaiTongxinRuntime(
       });
     return () => {
       active = false;
+      task.abort();
       release?.();
     };
   }, [lease]);
