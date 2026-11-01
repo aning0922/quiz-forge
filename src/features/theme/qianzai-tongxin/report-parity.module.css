@@ -1097,6 +1097,20 @@
   font-size: 14px;
   line-height: 1.7;
 }
+/* The opening keeps a centered identity, but its real multi-paragraph prose
+   follows the prototype's left-aligned lead instead of inheriting the title. */
+.reader[data-qianzai-report-mode="snapshot"] .rp-identity-sub {
+  line-height: 1.6;
+  margin: 6px 0 12px;
+}
+.reader[data-qianzai-report-mode="snapshot"] .rp-opening .runtimeParagraph {
+  text-align: left;
+}
+.reader[data-qianzai-report-mode="snapshot"] .rp-opening .runtimeParagraph > p {
+  margin: 12px 3px 14px;
+  line-height: 1.8;
+  text-indent: 2em;
+}
 .reader.reader .rp-iconbtn,
 .reader.reader .rp-menu-toggle,
 .reader.reader .rp-scrolltop-text,
@@ -1139,28 +1153,205 @@
   top: 0;
 }
 
-.reader .axisGuides {
-  margin-top: 18px;
-}
-.reader .axisGuides > div {
-  padding: 14px 0;
-  border-bottom: 1px solid #ddc49d;
-}
-.reader .axisGuides strong {
-  font:
-    600 17px/1.6 "Noto Serif CJK SC",
-    serif;
-  color: #30425a;
-}
-.reader .axisGuides p {
-  font-size: 16px;
-  line-height: 1.85;
-  color: #786955;
-}
 .reader.reader .rp-toc button {
   min-height: 44px;
 }
 .reader[data-qianzai-report-mode="snapshot"] .rp-radar-insight p {
   font-size: 16px;
   line-height: 1.7;
+}
+
+/* 07: both ends and the midpoint describe this score, not a capability rank. */
+.reader .dimensionScales {
+  margin: 0 7px 4px;
+  color: #263849;
+}
+.reader .scalesHeading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 8px;
+  margin: 0 0 7px;
+}
+.reader .scalesHeading strong {
+  font:
+    700 17px/1.5 "Noto Serif CJK SC",
+    "Songti SC",
+    serif;
+  color: #314558;
+}
+.reader .scalesHeading small {
+  font-size: 14px;
+  color: #947b62;
+}
+.reader.reader .scalesPreface {
+  margin: 0 0 10px;
+  font-size: 16px;
+  line-height: 1.65;
+  color: #806f5e;
+}
+.reader .scaleRows {
+  border-top: 1px solid #e0cba9;
+}
+.reader .scaleEntry {
+  border-bottom: 1px solid #e4cfab;
+  padding: 11px 0 10px;
+}
+.reader .scaleEntry summary {
+  display: block;
+  list-style: none;
+  cursor: pointer;
+  touch-action: manipulation;
+  border-radius: 5px;
+  min-height: 44px;
+}
+.reader .scaleEntry summary::-webkit-details-marker {
+  display: none;
+}
+.reader .scaleEntry summary:focus-visible {
+  outline: 2px solid #b38a57;
+  outline-offset: 3px;
+}
+.reader .scaleTopline {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 5px;
+}
+.reader .scaleTopline > strong {
+  font:
+    700 17px/1.5 "Noto Serif CJK SC",
+    "Songti SC",
+    serif;
+  color: #314d61;
+}
+.reader .scaleState {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 14px;
+  color: #987347;
+  white-space: nowrap;
+}
+.reader .scaleState b {
+  font:
+    700 19px/1.2 Georgia,
+    Arial,
+    sans-serif;
+  color: #294a5c;
+}
+.reader .scaleState i {
+  width: 7px;
+  height: 7px;
+  border-right: 1px solid #bc915d;
+  border-bottom: 1px solid #bc915d;
+  transform: translateY(-3px) rotate(45deg);
+  transition: transform 0.16s ease;
+  margin: 0 3px;
+}
+.reader .scaleEntry[open] .scaleState i {
+  transform: translateY(1px) rotate(225deg);
+}
+.reader .scaleEndpoints {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 9px;
+  color: #8c765b;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.reader .scaleEndpoints > span {
+  max-width: calc(50% - 6px);
+}
+.reader .scaleEndpoints > span:last-child {
+  text-align: right;
+}
+.reader .scaleTrack {
+  position: relative;
+  height: 7px;
+  width: calc(100% - 15px);
+  margin: 0 7.5px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #d6cec1, #e6d5b5 50%, #d5c5a7);
+  box-shadow: inset 0 1px 3px #58452e21;
+}
+.reader .scaleBand {
+  position: absolute;
+  top: 0;
+  height: 7px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #557c89, #c29c64);
+}
+.reader .scaleMidpoint {
+  position: absolute;
+  z-index: 2;
+  top: -4px;
+  width: 2px;
+  height: 15px;
+  transform: translateX(-50%);
+  background: #ac916d;
+  border-radius: 1px;
+}
+.reader .scalePearl {
+  position: absolute;
+  z-index: 3;
+  top: 50%;
+  width: 14px;
+  height: 14px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 34% 28%,
+    #fffcf3 0 17%,
+    #efd49e 42%,
+    #bb8e50 93%
+  );
+  border: 1px solid #a57a44;
+  box-shadow:
+    0 0 0 2px #fff7e6,
+    0 1px 4px #79613e66;
+}
+.reader.reader .scaleCaption {
+  margin: 9px 0 0;
+  color: #806f5e;
+  font-size: 16px;
+  line-height: 1.65;
+}
+.reader .scaleExplanation {
+  margin-top: 10px;
+  padding: 11px;
+  border: 1px solid #ead6b3;
+  border-radius: 8px;
+  background: linear-gradient(120deg, #fffcf3, #f4e6ce);
+  color: #6a614f;
+}
+.reader .scaleExplanation > strong {
+  color: #846541;
+  font-size: 16px;
+}
+.reader.reader .scaleExplanation p {
+  margin: 5px 0 0;
+  font-size: 16px;
+  line-height: 1.75;
+}
+.reader.reader .scalesNotice {
+  margin: 10px 0 0;
+  color: #947b62;
+  font-size: 14px;
+  line-height: 1.6;
+}
+@media (max-width: 350px) {
+  .reader .dimensionScales {
+    margin-left: 3px;
+    margin-right: 3px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .reader .scaleState i {
+    transition: none;
+  }
 }

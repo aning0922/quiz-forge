@@ -268,6 +268,44 @@ function drawOperation(
   if (op.kind === "bar") {
     ctx.fillStyle = "#e1c99b";
     ctx.fillRect(op.x, op.y, op.width, 12);
+    if (op.scale) {
+      ctx.save();
+      const bandX = op.x + (op.width * op.scale.bandStartPercent) / 100;
+      const bandWidth = (op.width * op.scale.bandWidthPercent) / 100;
+      const band = ctx.createLinearGradient(op.x, 0, op.x + op.width, 0);
+      band.addColorStop(0, "#80999b");
+      band.addColorStop(1, "#c29a5d");
+      ctx.fillStyle = band;
+      ctx.fillRect(bandX, op.y, bandWidth, 12);
+      ctx.fillStyle = "#9d7a43";
+      ctx.fillRect(
+        op.x + (op.width * op.scale.midpointPercent) / 100 - 1,
+        op.y - 5,
+        2,
+        22,
+      );
+      const x = op.x + (op.width * op.scale.positionPercent) / 100;
+      const pearl = ctx.createRadialGradient(
+        x - 3,
+        op.y + 2,
+        1,
+        x,
+        op.y + 6,
+        10,
+      );
+      pearl.addColorStop(0, "#fff9dd");
+      pearl.addColorStop(0.5, "#dcb978");
+      pearl.addColorStop(1, "#9d7037");
+      ctx.fillStyle = pearl;
+      ctx.strokeStyle = "#fff5db";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(x, op.y + 6, 10, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
+      return;
+    }
     const g = ctx.createLinearGradient(op.x, 0, op.x + op.width, 0);
     g.addColorStop(0, "#a9c0c1");
     g.addColorStop(1, "#3d6674");

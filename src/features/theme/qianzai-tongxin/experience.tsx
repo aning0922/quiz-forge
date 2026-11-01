@@ -218,6 +218,10 @@ export function QianzaiContinuousReader({
       </div>
       <div className={styles.readerReportFlow} data-reader-paper>
         <div className={styles.readerToolbarCover} aria-hidden="true" />
+        <div className={styles.readerOpeningCopy} data-qianzai-opening-copy>
+          <p>一卷山河 · 因你而展</p>
+          <p>长风有信，明月知心</p>
+        </div>
         {report(embedded)}
       </div>
     </div>
