@@ -1,5 +1,19 @@
 # 阶段进度
 
+## 2026-11-01 揭晓页固定锚点与统一姓名尺度
+
+基线 f9126e0（PR #40），独立 `codex/qztx-reveal-anchors`；新演示 http://127.0.0.1:63207/about，保留63206及原有实例。本批只调整姓名制作、揭晓构图及精确本地夹具，未修改评分、报告正文、数据库、授权或旧快照。
+
+A独立开发366ff02集成为f0a312e：五角色姓名统一500×880透明PNG，同一200px/em（scale 0.2）轮廓，网页200×352。2/3/4字不随字数缩小，只改变字的位置；四字“千载同心”仅合成布局样例，无resultRef，不进入人物池。390宽下“你是”top380、姓名top416、红印top650、竖诗top470；长屏不再用grid剩余空间拉开元素，称谓只向下延长。两字下留白属于统一画布；下方文案及操作在短屏继续滚动，不宣称全屏同放。
+
+共享3ad307a/361b152/b10e8c7：新来源SHA be9b7d27b0aa99d82bc03b39feaf4ec35b189adf049ef4377ca8cf321fbcc8e0，仅有限展示alias和五张完整图片事实；旧art fixture及正式来源三元组保持。stage仅替换姓名资源/引用/resourceVersion，反向还原canonical与原59c8来源完全一致。独审发现可复现性及输出目录覆盖两点，已修为读取固定基线runtime、复制前独占创建目录和COPYFILE_EXCL；新目录再现相同fixture/runtime，重复目录EEXIST且所有文件SHA未变。原失败结论保留，修复证据`.cache/reveal-anchors/exclusive-output-check.json`。
+
+验证：source边界4项定向通过，修改TS ESLint/格式通过；复用A类型/格式/lint及320/375/390/430、390×1100几何验证，2/3/4字及1/2/4/8字称谓无交叠/裁字/横向溢出，生成六图笔画均不触边。A证据位于quizforge-qztx-reveal-anchors-ui树`.cache/reveal-anchors/`。最终构建YA4Ifjd40HnkEx1MEB1cY通过实现登记、编译、类型和trace123/26234/0；consumer entry db125d6e61997bf6c7c2372ee0284e83df7c8cd9d07771c4d555082ffcd18be6。
+
+主控IAB实际63207/390×844查看苏轼和陶渊明，测得“你是”x74/y380、姓名x74/y416/200×352、红印x288/y650；390×1100同一锚点。苏轼上滑进入共享报告、顶栏及进度显现正常。截图在本树`.cache/reveal-anchors/`。独立Astra只读复核两P2关闭，最终无剩余P1/P2；未重复全量、数据库、控制器或导出回归。
+
+本地演示使用真实UI/controller/确定性评分/Canvas与隔离模拟会话，没有取得新数据库来源准入。姓名候选仍待作者视觉体验；未合并、部署生产。交付后停止等待反馈。
+
 ## 2026-11-01 三幕连续场景、题框与姓名图片校准
 
 基线4defdf2，独立`codex/qztx-art-calibration`。保留63204、63202、原型及真实实例。新体验`http://127.0.0.1:63206/`（`/about`可重开；`?review-report=reveal&role=li-bai`或tao-yuanming查看角色）。本轮为固定local-demo-only夹具＋模拟会话，复用真实组件/controller/确定性评分/resource owner/Canvas；未构建或导入QuizPack，未取得数据库新来源准入，不冒称原业务实例升级。
