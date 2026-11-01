@@ -18,6 +18,7 @@ import { quizPackContentV3Schema } from "@/features/quizpack/content/v3";
 import { consumerEntryFactsSha256V2 } from "@/features/fulfillment/consumer-flow/display-contract-v2";
 import { consumerMappingSha256V2 } from "@/lib/consumer-contract/v2/identities";
 import { QIANZAI_RUNTIME_INPUTS } from "@/features/theme/qianzai-tongxin/runtime-inputs";
+import { QIANZAI_EDITORIAL_FONTS } from "@/features/theme/qianzai-tongxin/editorial-fonts";
 import { CONSUMER_IMPLEMENTATION_AVAILABILITY_V2 } from "@/features/product/internal-play/implementation-catalog-v2";
 import { QIANZAI_COMPONENT_MAPPING } from "@/features/theme/qianzai-tongxin/component-map";
 
@@ -130,7 +131,9 @@ for (const b of QIANZAI_RUNTIME_INPUTS.resources) {
     layer: b.layer,
   });
 }
-for (const file of [font.file, font.coverage, font.licenseFile])
+for (const file of [font, ...Object.values(QIANZAI_EDITORIAL_FONTS)].flatMap(
+  (f) => [f.file, f.coverage, f.licenseFile],
+))
   files.set(file, {
     body: await readFile(path.join("public", file)),
     type: file.endsWith("woff2") ? "font/woff2" : "text/plain;charset=utf-8",

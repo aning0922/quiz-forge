@@ -8,7 +8,9 @@ import {
 import { readVerifiedBytes } from "@/lib/browser/display-assets";
 /** No cross-request cached success: each export verifies the controlled file and coverage bytes. */
 export async function withPreviewFont<T>(
-  fontDescriptor: DisplayFontDescriptorV1,
+  fontDescriptor: Omit<DisplayFontDescriptorV1, "weight"> & {
+    readonly weight: 400 | 600;
+  },
   texts: readonly string[],
   signal: AbortSignal,
   render: (

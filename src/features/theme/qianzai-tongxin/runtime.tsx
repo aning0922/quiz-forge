@@ -9,7 +9,9 @@ import {
   QianzaiResourceOwner,
   type QianzaiOwnedImage,
 } from "./resource-owner";
-import { loadQianzaiFont } from "./font-owner";
+import { loadQianzaiFonts } from "./font-owner";
+import { QIANZAI_EDITORIAL_FONTS } from "./editorial-fonts";
+import typography from "./typography.module.css";
 import { QianzaiExportProvider } from "./export-context";
 import type { QianzaiPresentationBinding } from "@/features/report/qianzai-tongxin/result-presentation";
 
@@ -51,7 +53,10 @@ export function QianzaiTongxinRuntime(
     if (!lease || !QIANZAI_RUNTIME_INPUTS.font) return;
     let active = true,
       release: (() => void) | undefined;
-    void loadQianzaiFont(QIANZAI_RUNTIME_INPUTS.font, lease)
+    void loadQianzaiFonts(
+      [QIANZAI_RUNTIME_INPUTS.font, ...Object.values(QIANZAI_EDITORIAL_FONTS)],
+      lease,
+    )
       .then((owned) => {
         if (!active || !lease.current()) {
           owned.release();
@@ -93,9 +98,11 @@ export function QianzaiTongxinRuntime(
     ),
   };
   return (
-    <>
+    <div className={typography.root}>
       {lease && (font.lease !== lease || !font.ready) && (
-        <p role="status">固定字体尚未就绪，当前文字使用备用字体。</p>
+        <p role="status" className={typography.fontStatus}>
+          画卷文字尚未准备完成，暂用备用字体显示。
+        </p>
       )}
       <QianzaiExportProvider
         model={props.model}
@@ -110,6 +117,6 @@ export function QianzaiTongxinRuntime(
           {...visual}
         />
       </QianzaiExportProvider>
-    </>
+    </div>
   );
 }

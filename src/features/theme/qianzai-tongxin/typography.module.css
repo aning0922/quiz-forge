@@ -1,0 +1,22 @@
+.root {
+  display: contents;
+  --qztx-serif: "QuizForge Qianzai Serif V6", "Songti SC", serif;
+  --qztx-brush: "QuizForge Qianzai Brush V1", "Kaiti SC", serif;
+  --qztx-literary: "QuizForge Qianzai Literary V1", "Kaiti SC", serif;
+}
+.fontStatus {
+  position: fixed;
+  z-index: 1000;
+  left: 50%;
+  bottom: 12px;
+  transform: translateX(-50%);
+  width: min(90vw, 380px);
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: #102c3be8;
+  color: #f8ecd5;
+  font:
+    14px/1.5 system-ui,
+    sans-serif;
+  pointer-events: none;
+}

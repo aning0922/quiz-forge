@@ -6,10 +6,14 @@ import {
 } from "@/lib/browser/display-task";
 import type { ConsumerResourceLeaseV2 } from "../consumer-v2/resource-port";
 import type { QIANZAI_RUNTIME_INPUTS } from "./runtime-inputs";
+import type { QianzaiEditorialFont } from "./editorial-fonts";
+
+type FixedFont =
+  NonNullable<typeof QIANZAI_RUNTIME_INPUTS.font> | QianzaiEditorialFont;
 
 /** Fixed public font bytes, pinned by the compiled descriptor; never a pack/request URL. */
 export async function loadQianzaiFont(
-  font: NonNullable<typeof QIANZAI_RUNTIME_INPUTS.font>,
+  font: FixedFont,
   lease: ConsumerResourceLeaseV2,
 ) {
   if (!/^\/assets\/fonts\/[a-zA-Z0-9_/-]+\.woff2$/.test(font.file))
@@ -61,4 +65,25 @@ export async function loadQianzaiFont(
     cleanup?.();
     throw error;
   });
+}
+
+/** All faces belong to the same authority. A partial failure releases every
+ * successful face, including siblings that finished after the failure. */
+export async function loadQianzaiFonts(
+  fonts: readonly FixedFont[],
+  lease: ConsumerResourceLeaseV2,
+) {
+  const results = await Promise.allSettled(
+    fonts.map((font) => loadQianzaiFont(font, lease)),
+  );
+  const release = () => {
+    for (const result of results)
+      if (result.status === "fulfilled") result.value.release();
+  };
+  const failed = results.find((result) => result.status === "rejected");
+  if (failed || !lease.current() || lease.signal.aborted) {
+    release();
+    throw failed?.reason ?? Error("QIANZAI_AUTHORITY_LOST");
+  }
+  return { release };
 }
