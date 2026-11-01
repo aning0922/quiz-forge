@@ -789,7 +789,7 @@ export function layoutQianzaiExport(
               contentWidth,
               29,
               L.maxHeight,
-              "#dfc59a",
+              "#79501f",
             ) + 3;
           y =
             text(
@@ -800,7 +800,7 @@ export function layoutQianzaiExport(
               contentWidth,
               40,
               L.maxHeight,
-              "#f6dfb4",
+              "#49351e",
             ) + 12;
         }
         if (block.editorial) {
