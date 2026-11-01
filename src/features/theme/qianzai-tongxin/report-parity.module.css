@@ -168,7 +168,7 @@
 }
 .reader.reader .rp-nav-title {
   text-align: center;
-  font-family: "Noto Serif CJK SC", "Songti SC", serif;
+  font-family: var(--qztx-serif, serif);
   line-height: 1.25;
 }
 .reader.reader .rp-nav-title span {
@@ -274,7 +274,7 @@
   justify-content: space-between;
   align-items: center;
   font-size: 14px;
-  font-family: "Noto Serif CJK SC", serif;
+  font-family: var(--qztx-serif, serif);
   font-weight: 700;
 }
 .reader.reader .rp-toc-heading span {
@@ -338,9 +338,7 @@
   right: 0;
   bottom: 66px;
   text-align: center;
-  font:
-    550 16px/1.2 "Noto Serif CJK SC",
-    serif;
+  font: 550 16px/1.2 var(--qztx-serif, serif);
   letter-spacing: 0.32em;
   text-shadow: 0 2px 13px #03101dfc;
 }
@@ -408,7 +406,7 @@
 .reader.reader .rp-ornament {
   font-size: 11px;
   letter-spacing: 0.13em;
-  font-family: "Noto Serif CJK SC", serif;
+  font-family: var(--qztx-serif, serif);
   color: #ad874c;
   padding: 5px 0 11px;
 }
@@ -426,10 +424,7 @@
 .reader.reader .rp-identity h1 {
   margin: 0;
   color: #172b42;
-  font:
-    700 35px/1.45 "Noto Serif CJK SC",
-    "Songti SC",
-    serif;
+  font: 700 35px/1.45 var(--qztx-serif, serif);
   letter-spacing: 0.075em;
 }
 .reader.reader .rp-identity h1 span {
@@ -446,7 +441,7 @@
   padding: 7px 5px;
   letter-spacing: 0.05em;
   box-shadow: 0 1px 4px #9b3c3288;
-  font-family: "Noto Serif CJK SC", serif;
+  font-family: var(--qztx-serif, serif);
 }
 .reader.reader .rp-identity-sub {
   margin: 3px 0 14px;
@@ -513,17 +508,13 @@
   opacity: 0.5;
 }
 .reader.reader .rp-verse p {
-  font:
-    600 20px/1.65 "Noto Serif CJK SC",
-    serif !important;
+  font: 600 20px/1.65 var(--qztx-serif, serif) !important;
   letter-spacing: 0.03em;
   color: #a34b34 !important;
   margin: 0 0 5px !important;
 }
 .reader.reader .rp-verse small {
-  font:
-    11px/1.5 "Noto Serif CJK SC",
-    serif;
+  font: 11px/1.5 var(--qztx-serif, serif);
   color: #927957;
 }
 .reader.reader .rp-lead {
@@ -551,17 +542,13 @@
   margin-bottom: 18px;
 }
 .reader.reader .rp-section-index {
-  font:
-    600 11px/1.7 "Noto Serif CJK SC",
-    serif;
+  font: 600 11px/1.7 var(--qztx-serif, serif);
   letter-spacing: 0.18em;
   color: #af8b54;
 }
 .reader.reader .rp-section-head h2 {
   margin: 6px 0;
-  font:
-    700 23px/1.45 "Noto Serif CJK SC",
-    serif;
+  font: 700 23px/1.45 var(--qztx-serif, serif);
   letter-spacing: 0.055em;
   color: #213850;
 }
@@ -636,7 +623,7 @@
 .reader.reader .rp-radar-label {
   font-size: 17px;
   fill: #30425a;
-  font-family: "Noto Serif CJK SC", serif;
+  font-family: var(--qztx-serif, serif);
   font-weight: 650;
 }
 .reader.reader .rp-radar-value {
@@ -667,7 +654,7 @@
   display: block;
   color: #5b432a;
   font-size: 13px;
-  font-family: "Noto Serif CJK SC", serif;
+  font-family: var(--qztx-serif, serif);
 }
 .reader.reader .rp-radar-insight p {
   margin: 5px 0 0;
@@ -712,18 +699,14 @@
   color: #734b24;
   border-radius: 50%;
   box-shadow: inset 0 0 0 1px #dab47a;
-  font:
-    700 20px "Noto Serif CJK SC",
-    serif;
+  font: 700 20px var(--qztx-serif, serif);
 }
 .reader.reader .rp-res-body {
   flex: 1;
   min-width: 0;
 }
 .reader.reader .rp-res-body h3 {
-  font:
-    700 16px/1.4 "Noto Serif CJK SC",
-    serif;
+  font: 700 16px/1.4 var(--qztx-serif, serif);
   margin: 2px 0 7px;
   color: #26394b;
 }
@@ -734,9 +717,7 @@
   margin: 0 0 9px;
 }
 .reader.reader .rp-res-body span {
-  font:
-    11px/1.5 "Noto Serif CJK SC",
-    serif;
+  font: 11px/1.5 var(--qztx-serif, serif);
   color: #ae8153;
 }
 .reader.reader .rp-hint-line {
@@ -757,18 +738,14 @@
   display: flex;
   justify-content: space-between;
   color: #eccb93;
-  font:
-    600 12px "Noto Serif CJK SC",
-    serif;
+  font: 600 12px var(--qztx-serif, serif);
   letter-spacing: 0.2em;
 }
 .reader.reader .rp-reflection-feature blockquote {
   margin: 22px 4px 18px;
   padding: 0 0 0 12px;
   border-left: 2px solid #eac487;
-  font:
-    600 21px/1.8 "Noto Serif CJK SC",
-    serif;
+  font: 600 21px/1.8 var(--qztx-serif, serif);
   color: #fff2d9;
 }
 .reader.reader .rp-reflection-feature p {
@@ -813,9 +790,7 @@
   padding: 17px;
 }
 .reader.reader .rp-history-banner strong {
-  font:
-    700 32px "Noto Serif CJK SC",
-    serif;
+  font: 700 32px var(--qztx-serif, serif);
   color: #3b3840;
 }
 .reader.reader .rp-history-banner span {
@@ -853,9 +828,7 @@
 .reader.reader .rp-time-row span {
   display: block;
   color: #36465a;
-  font:
-    700 15px "Noto Serif CJK SC",
-    serif;
+  font: 700 15px var(--qztx-serif, serif);
   margin-bottom: 5px;
 }
 .reader.reader .rp-time-row p {
@@ -909,9 +882,7 @@
   color: #d7b782;
 }
 .reader.reader .rp-final-verse {
-  font:
-    700 34px/1.5 "Noto Serif CJK SC",
-    serif;
+  font: 700 34px/1.5 var(--qztx-serif, serif);
   letter-spacing: 0.12em;
   color: #f6dcaa;
   text-shadow: 0 0 16px #daa96855;
@@ -932,9 +903,7 @@
   background: #af493b;
   box-shadow: 0 0 0 1px #e5af91 inset;
   color: #fff3df;
-  font:
-    650 12px/1.1 "Noto Serif CJK SC",
-    serif;
+  font: 650 12px/1.1 var(--qztx-serif, serif);
   transform: rotate(-7deg);
 }
 .reader.reader .rp-endline {
@@ -956,7 +925,7 @@
   height: 48px;
   border-radius: 11px;
   font-weight: 600;
-  font-family: "Noto Serif CJK SC", serif;
+  font-family: var(--qztx-serif, serif);
   font-size: 15px;
 }
 .reader.reader .rp-primary {
@@ -1175,10 +1144,7 @@
   margin: 0 0 7px;
 }
 .reader .scalesHeading strong {
-  font:
-    700 17px/1.5 "Noto Serif CJK SC",
-    "Songti SC",
-    serif;
+  font: 700 17px/1.5 var(--qztx-serif, serif);
   color: #314558;
 }
 .reader .scalesHeading small {
@@ -1221,10 +1187,7 @@
   margin-bottom: 5px;
 }
 .reader .scaleTopline > strong {
-  font:
-    700 17px/1.5 "Noto Serif CJK SC",
-    "Songti SC",
-    serif;
+  font: 700 17px/1.5 var(--qztx-serif, serif);
   color: #314d61;
 }
 .reader .scaleState {
@@ -1354,4 +1317,136 @@
   .reader .scaleState i {
     transition: none;
   }
+}
+
+/* Editorial annotations never replace snapshot prose or choice evidence. */
+.reader .editorialSection {
+  margin-top: 4px;
+}
+.reader.reader .editorialSection .runtimeParagraph > h3 {
+  font: 600 19px/1.5 var(--qztx-serif, serif);
+  margin: 4px 0 10px;
+}
+.reader.reader .editorialSection .editorialLabel {
+  font-size: 14px;
+  line-height: 1.6;
+  letter-spacing: 0.03em;
+  color: #937044;
+  margin: 0 0 4px;
+}
+.reader.reader .editorialSection .editorialSummary {
+  font-size: 16px;
+  line-height: 1.75;
+  padding: 9px 10px;
+  margin: 0 0 12px;
+  border-left: 2px solid #cba167;
+  background: #efe1c580;
+  border-radius: 0 6px 6px 0;
+}
+.reader .editorialResonance {
+  padding: 16px 12px;
+  gap: 11px;
+}
+.reader .editorialRecord {
+  padding: 14px 12px;
+  margin: 0 0 13px;
+  border-top: 1px solid #ddc69f;
+  border-bottom: 1px solid #ddc69f;
+}
+.reader .editorialRecord > strong {
+  display: block;
+  font: 600 17px/1.6 var(--qztx-serif, serif);
+  color: #806747;
+  margin-bottom: 7px;
+}
+.reader.reader .editorialFeature {
+  padding: 20px 16px;
+}
+.reader.reader .editorialFeature .runtimeParagraph > h3 {
+  color: #f2dfbb;
+}
+.reader.reader .editorialFeature .editorialLabel {
+  color: #dfc59c;
+}
+.reader.reader .editorialFeature .runtimeParagraph > p {
+  font:
+    400 16px/1.85 system-ui,
+    sans-serif;
+  color: #f4e5ce;
+  margin: 0 0 12px;
+}
+.reader.reader .editorialDedication > span {
+  display: block;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #d8ba86;
+}
+.reader.reader .editorialDedication blockquote {
+  font: 400 21px/1.7 var(--qztx-literary, var(--qztx-serif, serif));
+  margin: 8px 0 18px;
+  padding-left: 12px;
+}
+.reader.reader .editorialPrompts {
+  margin: 13px 0;
+}
+.reader .editorialPrompts:has(> div:only-child) {
+  grid-template-columns: 1fr;
+}
+.reader .editorialPrompts strong {
+  display: block;
+  font: 600 17px/1.6 var(--qztx-serif, serif);
+  color: #8c653b;
+  margin-bottom: 5px;
+}
+.reader.reader .editorialPrompts p {
+  font-size: 16px;
+  line-height: 1.75;
+}
+.reader .editorialSupplement {
+  margin-top: 12px;
+  padding: 2px 12px 10px;
+  border: 1px solid #dfc9a4;
+  border-radius: 10px;
+  background: #fff8eb;
+}
+.reader .editorialSupplement > summary {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1.65;
+  color: #85653c;
+  padding: 4px 0;
+}
+.reader .editorialSupplement > summary:focus-visible {
+  outline: 2px solid #ae8550;
+  outline-offset: 3px;
+}
+@media (max-width: 350px) {
+  .reader .editorialPrompts {
+    grid-template-columns: 1fr;
+  }
+  .reader .editorialResonance {
+    padding: 13px 10px;
+    gap: 9px;
+  }
+  .reader .editorialResonance .rp-res-number {
+    flex-basis: 34px;
+    height: 34px;
+    font-size: 17px;
+  }
+}
+.reader .editorialFeature .evidence,
+.reader .editorialFeature .evidence > summary,
+.reader .editorialFeature .qualifier {
+  color: #f1d8ad;
+}
+.reader.reader .editorialFeature .evidence blockquote {
+  font:
+    400 16px/1.75 system-ui,
+    sans-serif;
+  margin: 6px 0;
+  padding-left: 10px;
+  color: #f3e4ca;
 }

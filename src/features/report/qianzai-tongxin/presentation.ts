@@ -4,6 +4,13 @@ import {
   type QianzaiResultPresentation,
 } from "./result-presentation";
 
+import {
+  qianzaiChapterEditorial,
+  qianzaiParagraphEditorial,
+  type QianzaiChapterEditorial,
+  type QianzaiParagraphEditorial,
+} from "./editorial";
+
 type Body = ComposedReportBodyV1;
 export type QianzaiReportParagraph =
   Body["volumes"][number]["paragraphs"][number];
@@ -59,6 +66,7 @@ export type QianzaiReportPresentation = Readonly<{
   }>[];
 }>;
 export type QianzaiReportBlock = Readonly<{
+  editorial?: QianzaiParagraphEditorial;
   text: string;
   layout: QianzaiParagraphLayout;
   title?: string;
@@ -85,6 +93,7 @@ type QianzaiReportDocumentContent = Readonly<{
     chapterLabel?: string;
     tocTitle?: string;
     intro?: string;
+    editorial?: QianzaiChapterEditorial;
     blocks: readonly QianzaiReportBlock[];
     note?: string;
   }>[];
@@ -153,6 +162,7 @@ export function qianzaiSnapshotDocument(
     dimensionBadge: "本轮分值",
     sections: body.volumes.map((v) => {
       const section = presentation?.sections?.find((s) => s.id === v.id);
+      const editorial = qianzaiChapterEditorial(body, v);
       return {
         id: v.id,
         title: result
@@ -169,7 +179,11 @@ export function qianzaiSnapshotDocument(
           ? { chapterLabel: section.chapterLabel }
           : {}),
         ...(section?.tocTitle ? { tocTitle: section.tocTitle } : {}),
-        ...(section?.intro ? { intro: section.intro } : {}),
+        ...(editorial
+          ? { editorial, intro: editorial.intro }
+          : section?.intro
+            ? { intro: section.intro }
+            : {}),
         blocks: v.paragraphs.map((p, index) => {
           const annotation = section?.paragraphs?.find(
             (a) => a.index === index,
@@ -180,20 +194,29 @@ export function qianzaiSnapshotDocument(
             annotation.claimRef.productId === p.claimRef.productId &&
             annotation.claimRef.id === p.claimRef.id &&
             annotation.claimRef.version === p.claimRef.version;
+          const paragraphEditorial = qianzaiParagraphEditorial(body, v.id, p);
           return {
+            ...(paragraphEditorial
+              ? {
+                  editorial: paragraphEditorial,
+                  title: paragraphEditorial.title,
+                }
+              : {}),
             text: p.text,
-            layout: result
-              ? v.id === "encounter" && index === 0
-                ? "lead"
-                : v.id === "patterns"
-                  ? "card"
-                  : v.id === "counterevidence"
-                    ? index === 0
-                      ? "reflection-quote"
-                      : "reflection-body"
-                    : "body"
-              : (annotation?.layout ?? "body"),
-            ...(claimMatches && annotation?.title
+            layout: editorial
+              ? "body"
+              : result
+                ? v.id === "encounter" && index === 0
+                  ? "lead"
+                  : v.id === "patterns"
+                    ? "card"
+                    : v.id === "counterevidence"
+                      ? index === 0
+                        ? "reflection-quote"
+                        : "reflection-body"
+                      : "body"
+                : (annotation?.layout ?? "body"),
+            ...(!paragraphEditorial && claimMatches && annotation?.title
               ? { title: annotation.title }
               : {}),
             ...(claimMatches && annotation?.citation

@@ -29,6 +29,14 @@ import {
   QIANZAI_SCALE_DISPLAY_NOTICE,
   QIANZAI_SCALE_DETAIL_LABEL,
 } from "@/features/report/qianzai-tongxin/dimension-scale";
+import {
+  QIANZAI_EDITORIAL_RECORD_LABEL,
+  QIANZAI_EDITORIAL_FALLBACK_LABEL,
+  QIANZAI_EDITORIAL_DEDICATION_LABEL,
+  QIANZAI_EDITORIAL_SUMMARY_LABEL,
+  QIANZAI_EDITORIAL_SUPPLEMENT_LABEL,
+  type QianzaiChapterEditorial,
+} from "@/features/report/qianzai-tongxin/editorial";
 import styles from "./report-parity.module.css";
 import { qianzaiInlineEmphasis } from "@/features/report/qianzai-tongxin/inline-emphasis";
 
@@ -316,15 +324,27 @@ export function QianzaiDimensions({
     </>
   );
 }
-function Evidence({ block }: { block: QianzaiReportBlock }) {
+function Evidence({
+  block,
+  editorial = false,
+}: {
+  block: QianzaiReportBlock;
+  editorial?: boolean;
+}) {
   const p = block.snapshot;
   if (!p) return null;
   return (
     <>
       {p.status !== "accepted" && (
         <p className={c("qualifier")}>
-          {p.status === "facts-only" ? "本轮事实" : "证据不足时的说明"} ·{" "}
-          {p.kind === "literary" ? "文学类比" : "本轮情境"}
+          {p.status === "facts-only"
+            ? editorial
+              ? "仅限本轮选择"
+              : "本轮事实"
+            : editorial
+              ? "本轮暂不展开"
+              : "证据不足时的说明"}{" "}
+          · {p.kind === "literary" ? "文学类比" : "本轮情境"}
         </p>
       )}
       {(
@@ -359,17 +379,122 @@ function inlineReportText(text: string) {
     part.strong ? <strong key={index}>{part.text}</strong> : part.text,
   );
 }
-function Block({ block }: { block: QianzaiReportBlock }) {
+function Block({
+  block,
+  editorial = false,
+}: {
+  block: QianzaiReportBlock;
+  editorial?: boolean;
+}) {
   return (
     <div
       className={c("runtimeParagraph")}
       data-kind={block.snapshot?.kind}
       data-status={block.snapshot?.status}
     >
+      {block.editorial && (
+        <p className={c("editorialLabel")}>{block.editorial.label}</p>
+      )}
       {block.title && <h3>{block.title}</h3>}
+      {block.editorial?.choiceSummary && (
+        <p className={c("editorialSummary")}>
+          <strong>{QIANZAI_EDITORIAL_SUMMARY_LABEL}：</strong>
+          {block.editorial.choiceSummary}
+        </p>
+      )}
       <p>{inlineReportText(block.text)}</p>
       {block.citation && <span>{block.citation}</span>}
-      <Evidence block={block} />
+      <Evidence block={block} editorial={editorial} />
+    </div>
+  );
+}
+function EditorialBlocks({
+  blocks,
+  editorial,
+}: {
+  blocks: readonly QianzaiReportBlock[];
+  editorial: QianzaiChapterEditorial;
+}) {
+  const ordinary = (block: QianzaiReportBlock, key: string | number) => (
+    <div key={key} className={c("editorialRecord")}>
+      {!block.editorial && block.snapshot?.status !== "accepted" && (
+        <strong>
+          {block.snapshot?.status === "fallback"
+            ? QIANZAI_EDITORIAL_FALLBACK_LABEL
+            : QIANZAI_EDITORIAL_RECORD_LABEL}
+        </strong>
+      )}
+      <Block block={block} editorial />
+    </div>
+  );
+  if (editorial.kind === "resonance")
+    return (
+      <div className={c("editorialSection")}>
+        {blocks.map((block, i) =>
+          block.editorial?.kind === "resonance" ? (
+            <article
+              key={i}
+              className={c("rp-resonance-card", "editorialResonance")}
+            >
+              <div className={c("rp-res-number")} aria-hidden="true">
+                {["壹", "贰", "叁"][
+                  blocks
+                    .slice(0, i)
+                    .filter((b) => b.editorial?.kind === "resonance").length
+                ] ?? i + 1}
+              </div>
+              <div className={c("rp-res-body")}>
+                <Block block={block} editorial />
+              </div>
+            </article>
+          ) : (
+            ordinary(block, i)
+          ),
+        )}
+      </div>
+    );
+  const feature = blocks.find(
+    (b) =>
+      b.editorial?.kind === "reflection" &&
+      b.snapshot?.claimRef?.id === editorial.featureClaimId,
+  );
+  return (
+    <div className={c("editorialSection")}>
+      {feature && (
+        <div className={c("rp-reflection-feature", "editorialFeature")}>
+          {editorial.dedication && (
+            <div className={c("editorialDedication")}>
+              <span>{QIANZAI_EDITORIAL_DEDICATION_LABEL}</span>
+              <blockquote>{editorial.dedication}</blockquote>
+            </div>
+          )}
+          <Block block={feature} editorial />
+        </div>
+      )}
+      {editorial.prompts && (
+        <div className={c("rp-dual-note", "editorialPrompts")}>
+          {editorial.prompts.map((p) => (
+            <div key={p.title}>
+              <strong>{p.title}</strong>
+              <p>{p.text}</p>
+            </div>
+          ))}
+        </div>
+      )}
+      {blocks
+        .filter((b) => b !== feature)
+        .map((block, i) =>
+          block.editorial?.kind === "reflection" ? (
+            <details className={c("editorialSupplement")} key={i}>
+              <summary>
+                {QIANZAI_EDITORIAL_SUPPLEMENT_LABEL} · {block.editorial.title}
+              </summary>
+              <Block block={block} editorial />
+            </details>
+          ) : (
+            ordinary(block, i)
+          ),
+        )}
     </div>
   );
 }
@@ -901,6 +1026,11 @@ export function QianzaiReportReader({
                         <Blocks key={j} blocks={[b]} />
                       ),
                     )
+                  ) : s.editorial ? (
+                    <EditorialBlocks
+                      blocks={s.blocks}
+                      editorial={s.editorial}
+                    />
                   ) : (
                     <Blocks blocks={s.blocks} />
                   )}
