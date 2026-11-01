@@ -2,15 +2,15 @@
   "schemaVersion": "qianzai-runtime-inputs.v1",
   "font": {
     "id": "qianzai-tongxin-serif",
-    "version": "1.4.0",
-    "family": "QuizForge Qianzai Serif V5",
+    "version": "1.5.0",
+    "family": "QuizForge Qianzai Serif V6",
     "weight": 600,
-    "file": "/assets/fonts/qianzai-v5/serif-600.woff2",
-    "fileSha256": "33d5850a591e750f91dbed67e2ebe34da86b4b239b653db98d5d5d7a7eb15ee0",
-    "bytes": 225648,
-    "coverage": "/assets/fonts/qianzai-v5/characters.txt",
-    "coverageSha256": "c86a3190f92270b279283d384ef6ca1e9cadf5df104325ab3ad86b1ce8f5622e",
-    "licenseFile": "/assets/fonts/qianzai-v5/OFL.txt",
+    "file": "/assets/fonts/qianzai-v6/serif-600.woff2",
+    "fileSha256": "6c2ebddbf4c7110adcf5b2d4fa936c34f2dd6f9c707f182e8b76090a00906524",
+    "bytes": 225868,
+    "coverage": "/assets/fonts/qianzai-v6/characters.txt",
+    "coverageSha256": "89614b806de68dc32d234d59816467898ecfdc7939fb9c052f78159e290134e8",
+    "licenseFile": "/assets/fonts/qianzai-v6/OFL.txt",
     "licenseSha256": "5e0da210fb04058a8c0087985d2d456b931c2579811a49655721d3cf0c36b6d6"
   },
   "resources": [
