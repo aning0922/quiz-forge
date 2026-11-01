@@ -79,15 +79,17 @@ export function QianzaiDimensions({
   const insight = documentView?.dimensionInsight;
   const sourceBody =
     documentView?.mode === "snapshot" ? documentView.body : body;
-  const scales = documentView?.consumerEdition
-    ? []
-    : dimensions.flatMap((d) => {
-        const scale = qianzaiDimensionScale(
-          d,
-          sourceBody?.provenance.canonicalContentSha256,
-        );
-        return scale ? [scale] : [];
-      });
+  const dimensionCopy = documentView?.consumerEdition
+    ? documentView.sections.find((section) => section.id === "dimensions")
+        ?.blocks
+    : undefined;
+  const scales = dimensions.flatMap((d) => {
+    const scale = qianzaiDimensionScale(
+      d,
+      sourceBody?.provenance.canonicalContentSha256,
+    );
+    return scale ? [scale] : [];
+  });
   const openExplanation = (dimensionId: string) => {
     const detail = explanations.current.get(dimensionId);
     if (detail) detail.open = true;
@@ -299,7 +301,11 @@ export function QianzaiDimensions({
                   </summary>
                   <div className={c("scaleExplanation")}>
                     <strong>{QIANZAI_SCALE_DETAIL_LABEL}</strong>
-                    <p>{scale.explanation}</p>
+                    <p>
+                      {dimensionCopy?.find((block) =>
+                        block.title?.startsWith(`${scale.label} · `),
+                      )?.text ?? scale.explanation}
+                    </p>
                   </div>
                 </details>
               ))}
@@ -1086,7 +1092,9 @@ export function QianzaiReportReader({
                       </div>
                     )}
                   {doc.consumerEdition ? (
-                    <ConsumerBlocks blocks={s.blocks} />
+                    s.id !== "dimensions" && (
+                      <ConsumerBlocks blocks={s.blocks} />
+                    )
                   ) : closing && doc.mode === "reference-only" ? (
                     s.blocks.map((b, j) =>
                       b.layout === "body" ? (

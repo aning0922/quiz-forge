@@ -6,7 +6,6 @@ import {
   qianzaiParagraphEditorial,
 } from "./editorial";
 import { layoutQianzaiExport, qianzaiExportText, type Measure } from "./layout";
-import { deriveQianzaiResultPresentation } from "./result-presentation";
 const measure: Measure = (s, size) => ({
   width: [...s].length * size,
   left: 0,
@@ -132,29 +131,20 @@ describe("Qianzai pinned editorial display", () => {
     expect(empty.sections[3]!.editorial?.featureClaimId).toBeUndefined();
     expect(empty.sections[3]!.editorial?.prompts).toBeUndefined();
   });
-  it("chooses reflection by pinned semantic priority, retains all prose/evidence in PNG, and uses the same name-art image port without changing body metrics", async () => {
+  it("keeps unbound snapshot PNG prose/evidence and name-art intact while choosing reflections by pinned semantic priority", async () => {
     const f = await fixture(),
-      before = structuredClone(f.body),
-      presentation = deriveQianzaiResultPresentation(f.view, f.binding)!;
+      before = structuredClone(f.body);
     const chapter = qianzaiChapterEditorial(f.body, f.body.volumes[3]!)!;
     expect(chapter.featureClaimId).toBe("authored-2327e4fe1d6e8509b490");
     expect(chapter.prompts).toHaveLength(1);
-    const layout = layoutQianzaiExport(
-      f.body,
-      "full-report",
-      measure,
-      undefined,
-      { presentation },
-    );
+    // Consumer edition has separate prose assertions. This verifies the existing
+    // unbound snapshot path still preserves the original audit presentation.
+    const layout = layoutQianzaiExport(f.body, "full-report", measure);
     const text = layout.operations
       .filter((o) => o.kind === "text")
       .map((o) => o.text)
       .join("");
-    const fontInput = qianzaiExportText(
-      f.body,
-      "full-report",
-      presentation,
-    ).join("");
+    const fontInput = qianzaiExportText(f.body, "full-report").join("");
     for (const s of [
       "SYNTHETIC_FULL_RESONANCE",
       "SYNTHETIC_FULL_REFLECTION",
