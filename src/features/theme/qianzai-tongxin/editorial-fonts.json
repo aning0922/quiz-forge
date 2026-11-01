@@ -5,10 +5,10 @@
     "family": "QuizForge Qianzai Brush V2",
     "weight": 400,
     "file": "/assets/fonts/qianzai-brush-v2/regular.woff2",
-    "fileSha256": "8bca630fcafb341282e5a058345cfa21d5e2b8ad52dcd3e645c0d162e6a272e8",
-    "bytes": 455156,
+    "fileSha256": "e05e6e635c207b98a7f28fa1f453511df72f2d0d9485ffc2cf2c06a56e271f21",
+    "bytes": 456896,
     "coverage": "/assets/fonts/qianzai-brush-v2/characters.txt",
-    "coverageSha256": "d3f5434f179dc01f6166c2512a41c9a3dc7db053e79c1ce9172a21623e868dff",
+    "coverageSha256": "d8cfe78f672e72c89ec682d998f2bdb5a5cc2e3eaab55cebafb02e1b68677d5b",
     "licenseFile": "/assets/fonts/qianzai-brush-v2/OFL.txt"
   },
   "literary": {
@@ -17,10 +17,10 @@
     "family": "QuizForge Qianzai Literary V2",
     "weight": 400,
     "file": "/assets/fonts/qianzai-literary-v2/regular.woff2",
-    "fileSha256": "07215818b6b29db0f2dab57edeb4ec0f6b0642853affc38255e081f3fb84e6b2",
-    "bytes": 257852,
+    "fileSha256": "6dd49c1eb19b945cd5aab438c06b7e765fb243aad2f17774b47bc60055c33e7d",
+    "bytes": 258796,
     "coverage": "/assets/fonts/qianzai-literary-v2/characters.txt",
-    "coverageSha256": "989dab3bdacc40b1f8ffb68bab4be116593725246b83eb5ca173f9e45354dc72",
+    "coverageSha256": "05818cf2eb91adca6511230f7a29a2a877a3612f971dcfce2544e97effec4835",
     "licenseFile": "/assets/fonts/qianzai-literary-v2/OFL.txt"
   }
 }
