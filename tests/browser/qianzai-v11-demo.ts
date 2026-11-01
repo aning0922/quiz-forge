@@ -20,6 +20,7 @@ import { consumerMappingSha256V2 } from "@/lib/consumer-contract/v2/identities";
 import localArtFixture from "@/features/quizpack/content/qianzai-local-art-fixture.json";
 import localNameFixture from "@/features/quizpack/content/qianzai-local-name-fixture.json";
 import centeredNameFixture from "@/features/quizpack/content/qianzai-local-centered-name-fixture.json";
+import liQingzhaoOnlineFixture from "@/features/quizpack/content/qianzai-local-liqingzhao-online-fixture.json";
 import { QIANZAI_RUNTIME_INPUTS } from "@/features/theme/qianzai-tongxin/runtime-inputs";
 import { QIANZAI_EDITORIAL_FONTS } from "@/features/theme/qianzai-tongxin/editorial-fonts";
 import { CONSUMER_IMPLEMENTATION_AVAILABILITY_V2 } from "@/features/product/internal-play/implementation-catalog-v2";
@@ -36,16 +37,20 @@ const content = quizPackContentV3Schema.parse(
   JSON.parse(await readFile(path.join(source, "content.json"), "utf8")),
 );
 const sourceHash = sha(canonicalP1Json(content));
-const centeredMode = process.env.QZTX_CENTERED_NAME_FIXTURE === "1";
+const onlineMode = process.env.QZTX_LIQINGZHAO_ONLINE_FIXTURE === "1";
+const centeredMode =
+  onlineMode || process.env.QZTX_CENTERED_NAME_FIXTURE === "1";
 const nameMode = centeredMode || process.env.QZTX_NAME_FIXTURE === "1";
 const artMode = nameMode || process.env.QZTX_ART_FIXTURE === "1";
-const expectedSource = centeredMode
-  ? centeredNameFixture.canonicalContentSha256
-  : nameMode
-    ? localNameFixture.canonicalContentSha256
-    : artMode
-      ? localArtFixture.canonicalContentSha256
-      : localArtFixture.baseContentSha256;
+const expectedSource = onlineMode
+  ? liQingzhaoOnlineFixture.canonicalContentSha256
+  : centeredMode
+    ? centeredNameFixture.canonicalContentSha256
+    : nameMode
+      ? localNameFixture.canonicalContentSha256
+      : artMode
+        ? localArtFixture.canonicalContentSha256
+        : localArtFixture.baseContentSha256;
 if (sourceHash !== expectedSource)
   throw Error("FIXED_CANDIDATE_SOURCE_CHANGED");
 const prepared = prepareContentV3(content);
@@ -233,9 +238,13 @@ const setup = (reviewModel = completed) =>
     completedVisuals: visuals,
   }).replaceAll("<", "\\u003c");
 const resetScript = `document.querySelector('#demo-reset').addEventListener('click',()=>{for(const k of Object.keys(localStorage))if(k.startsWith('qianzai-v11-demo:'))localStorage.removeItem(k);for(const k of Object.keys(sessionStorage))if(k.includes('consumer'))sessionStorage.removeItem(k);location.href='/';});`;
-const about = `<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>千载同心 · 体验入口</title><style>body{max-width:620px;margin:8vh auto;padding:24px;background:#122839;color:#f8e6be;font:16px/1.8 system-ui}a,button{display:inline-block;padding:12px 18px;margin:8px;color:inherit;background:transparent;border:1px solid #b99c65;border-radius:8px;font:inherit;cursor:pointer}h1{font-size:28px}</style><h1>千载同心 · 下部构图与姓名居中体验</h1><p>24题与现有确定性评分引擎可连续体验；会话和回执为本地隔离模拟，不连接原数据库，不使用原体验资格。人物沿用现有参考素材，新增资料与短句为体验候选。</p><a href="/">继续当前体验</a><button id="demo-reset">开始一轮新体验</button><a href="/?review-report=reveal">直接查看李白揭晓与报告示例</a><a href="/?review-report=reveal&role=su-shi">直接查看苏轼揭晓与报告示例</a><a href="/?review-report=reveal&role=tao-yuanming">直接查看陶渊明揭晓与报告示例</a><script>${resetScript}</script></html>`;
+const demoTitle = onlineMode ? "李清照线上生图样板" : "下部构图与姓名居中体验";
+const sampleNote = onlineMode
+  ? "李清照揭晓采用线上生图B母图，报告方图与海报图分别生成；其余人物沿用现有参考素材。正文、人物资料与短句仍为体验候选，未作本轮内容定稿。"
+  : "人物沿用现有参考素材，新增资料与短句为体验候选。";
+const about = `<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>千载同心 · 体验入口</title><style>body{max-width:620px;margin:8vh auto;padding:24px;background:#122839;color:#f8e6be;font:16px/1.8 system-ui}a,button{display:inline-block;padding:12px 18px;margin:8px;color:inherit;background:transparent;border:1px solid #b99c65;border-radius:8px;font:inherit;cursor:pointer}h1{font-size:28px}</style><h1>千载同心 · ${demoTitle}</h1><p>24题与现有确定性评分引擎可连续体验；会话和回执为本地隔离模拟，不连接原数据库，不使用原体验资格。${sampleNote}</p>${onlineMode ? '<a href="/?review-report=reveal&role=li-qingzhao">查看李清照揭晓、六卷报告与保存样板</a>' : ""}<a href="/">继续当前体验</a><button id="demo-reset">开始一轮新体验</button><a href="/?review-report=reveal">直接查看李白揭晓与报告示例</a><a href="/?review-report=reveal&role=su-shi">直接查看苏轼揭晓与报告示例</a><a href="/?review-report=reveal&role=tao-yuanming">直接查看陶渊明揭晓与报告示例</a><script>${resetScript}</script></html>`;
 const html = (reviewModel = completed) =>
-  `<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>千载同心 · 下部构图与姓名居中体验</title><link rel="stylesheet" href="/demo.css"><style>@font-face{font-family:"${font.family}";src:url(${font.file});font-weight:600;font-display:swap}html,body{margin:0;height:100%;overflow:hidden;background:#0b1727}</style><div id="root"></div><script id="fixture" type="application/json">${setup(reviewModel)}</script><script src="/demo.js"></script></html>`;
+  `<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>千载同心 · ${demoTitle}</title><link rel="stylesheet" href="/demo.css"><style>@font-face{font-family:"${font.family}";src:url(${font.file});font-weight:600;font-display:swap}html,body{margin:0;height:100%;overflow:hidden;background:#0b1727}</style><div id="root"></div><script id="fixture" type="application/json">${setup(reviewModel)}</script><script src="/demo.js"></script></html>`;
 
 const port = Number(process.env.QZTX_V11_PORT ?? "63201");
 if (!Number.isInteger(port) || port < 1024 || port > 65535)
