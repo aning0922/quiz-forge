@@ -133,7 +133,12 @@ const zip = await readRestrictedZip(
 );
 if (!zip.ok) throw Error("PRIVATE_ARCHIVE_REJECTED");
 const files = new Map<string, { body: Uint8Array | string; type: string }>();
-const visuals = [];
+type DemoBinding = (typeof QIANZAI_RUNTIME_INPUTS.resources)[number];
+const visuals: Array<{
+  asset: DemoBinding["asset"] & { alt: string };
+  url: string;
+  layer: DemoBinding["layer"];
+}> = [];
 for (const b of QIANZAI_RUNTIME_INPUTS.resources) {
   const r = content.bindings.resources.find(
     (r) => r.id === b.asset.resourceRef.id,
