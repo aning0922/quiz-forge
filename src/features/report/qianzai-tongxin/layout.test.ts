@@ -231,8 +231,9 @@ describe("Qianzai complete-report layout", () => {
         qianzaiExportBrushText(fixture.body, kind).join(""),
       );
       const brushed = layoutQianzaiExport(fixture.body, kind, measure)
-        .operations.filter((op) => op.kind === "text" && op.style === "brush")
-        .map((op) => op.text)
+        .operations.flatMap((op) =>
+          op.kind === "text" && op.style === "brush" ? [op.text] : [],
+        )
         .join("");
       expect([...brushed].filter((c) => !brushCoverage.has(c))).toEqual([]);
     }
