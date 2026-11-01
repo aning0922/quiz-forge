@@ -45,19 +45,15 @@ describe("Qianzai complete-report layout", () => {
         .filter((op) => op.kind === "text")
         .map((op) => op.text)
         .join("");
-      for (const line of [
-        ...presentation.poster.lines,
-        presentation.quote.text,
-        presentation.quote.source,
-      ])
+      for (const line of [...presentation.poster.lines])
         expect(text).toContain(line);
       expect(text).not.toContain("不应被截取");
-      expect(text).toContain("前两位人物接近");
+      expect(text).not.toContain("前两位人物接近");
       expect(result.operations.some((op) => op.kind === "seal")).toBe(true);
       expect(result.height).toBe(1672);
     }
   });
-  it("uses the same registered role identity, verse and history as the reader while retaining all sealed prose", async () => {
+  it("uses the same complete consumer document as the reader while keeping the sealed body unchanged", async () => {
     const f = await qianzaiPresentationFixture(),
       body = f.body;
     const before = structuredClone(body);
@@ -76,19 +72,15 @@ describe("Qianzai complete-report layout", () => {
       .join("");
     for (const value of [
       doc.name,
-      doc.subtitle,
-      doc.identity!.verse!.text,
-      doc.identity!.verse!.source,
-      ...doc.history!.timeline.flatMap((row) => [row.title, row.text]),
-      ...body.volumes.flatMap((volume) =>
-        volume.paragraphs.map((paragraph) => paragraph.text),
-      ),
-    ]) {
+      ...doc.sections.flatMap((s) => [
+        s.title,
+        ...s.blocks.flatMap((b) => [b.text, ...(b.title ? [b.title] : [])]),
+      ]),
+    ])
       expect(text.replaceAll("\n", "")).toContain(value.replaceAll("\n", ""));
-    }
-    expect(qianzaiExportText(body, "full-report", presentation)).toContain(
-      doc.identity!.verse!.source,
-    );
+    expect(
+      qianzaiExportText(body, "full-report", presentation).join(""),
+    ).not.toContain("选择依据");
     expect(body).toEqual(before);
   });
   it("reserves a measured footer for the test annotation without covering the title or changing report facts", () => {

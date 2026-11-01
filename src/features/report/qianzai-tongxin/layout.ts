@@ -1,5 +1,8 @@
 import type { ComposedReportBodyV1 } from "@/lib/assessment-contract/composed-report-v1";
-import { qianzaiSnapshotDocument } from "./presentation";
+import {
+  qianzaiSnapshotDocument,
+  type QianzaiSnapshotDocument,
+} from "./presentation";
 import {
   QIANZAI_EDITORIAL_DEDICATION_LABEL,
   QIANZAI_EDITORIAL_SUMMARY_LABEL,
@@ -106,6 +109,7 @@ export function qianzaiExportText(
   presentation?: QianzaiResultPresentation,
 ): readonly string[] {
   const doc = qianzaiSnapshotDocument(body, undefined, presentation);
+  if (isConsumerEdition(doc)) return consumerPrintText(doc, kind);
   const opening = body.volumes.find((v) => v.id === "encounter")?.paragraphs[0];
   const shared = [
     "千载同心",
@@ -240,6 +244,25 @@ export function qianzaiExportBrushText(
   presentation?: QianzaiResultPresentation,
 ): readonly string[] {
   const doc = qianzaiSnapshotDocument(body, undefined, presentation);
+  if (isConsumerEdition(doc))
+    return [
+      "千载同心",
+      String(body.matching.selected.narrativeIndex),
+      "%",
+      "五维心象",
+      ...doc.sections.filter((s) => s.id !== "encounter").map((s) => s.title),
+      ...(kind === "full-report"
+        ? [
+            doc.name,
+            ...doc.sections.flatMap((s) =>
+              s.blocks.flatMap((b) => [
+                ...(b.title ? [b.title] : []),
+                ...(b.layout === "final-verse" ? [b.text] : []),
+              ]),
+            ),
+          ]
+        : []),
+    ].map((value) => value.replaceAll("·", ""));
   return [
     "千载同心",
     "五维心象",
@@ -271,6 +294,19 @@ export function layoutQianzaiExport(
     strings.reduce((n, s) => n + Array.from(s).length, 0) > L.maxTextCodepoints
   )
     throw new QianzaiExportError("CONTENT_LIMIT");
+  const consumerDoc = qianzaiSnapshotDocument(
+    body,
+    undefined,
+    options.presentation,
+  );
+  if (isConsumerEdition(consumerDoc))
+    return consumerLayout(
+      consumerDoc,
+      kind,
+      measure,
+      check,
+      options.annotation,
+    );
   const width = kind === "poster" ? L.posterWidth : L.reportWidth;
   const operations: ExportOperation[] = [];
   let highestInk = 0,
@@ -938,4 +974,566 @@ export function layoutQianzaiExport(
   const height = Math.ceil(Math.max(y, highestInk + 48));
   bounds(height);
   return { width, height, operations };
+}
+
+/** The consumer document is admitted only by the existing verified derived branch. */
+function isConsumerEdition(doc: QianzaiSnapshotDocument): boolean {
+  return "consumerEdition" in doc && doc.consumerEdition === true;
+}
+function consumerPrintText(
+  doc: QianzaiSnapshotDocument,
+  kind: QianzaiExportKind,
+): readonly string[] {
+  const p = doc.resultPresentation;
+  return [
+    "千载同心",
+    "契合指数",
+    String(doc.body.matching.selected.narrativeIndex),
+    "%",
+    "五维心象",
+    doc.legal,
+    ...doc.dimensions.flatMap((d) => [d.label, String(d.score)]),
+    ...doc.dimensions.flatMap((d) => {
+      const scale = qianzaiDimensionScale(
+        d,
+        doc.body.provenance.canonicalContentSha256,
+      );
+      return scale ? [scale.left, scale.right, scale.positionLabel] : [];
+    }),
+    ...(p ? [p.poster.tagline, ...p.poster.tags, ...p.poster.lines] : []),
+    ...(kind === "full-report"
+      ? [
+          doc.name,
+          ...(doc.identity?.honorific ? [doc.identity.honorific] : []),
+          ...(doc.identity?.tags ?? []),
+          ...doc.dimensions.map((d) => `${d.label} ${d.score}`),
+          ...doc.sections.flatMap((s) => [
+            s.title,
+            ...(s.intro ? [s.intro] : []),
+            ...s.blocks.flatMap((b) => [
+              b.text,
+              ...(b.title ? [b.title] : []),
+              ...(b.citation ? [b.citation] : []),
+            ]),
+          ]),
+          ...doc.dimensions.flatMap((d) => {
+            const scale = qianzaiDimensionScale(
+              d,
+              doc.body.provenance.canonicalContentSha256,
+            );
+            return scale ? [scale.left, scale.right, scale.positionLabel] : [];
+          }),
+        ]
+      : []),
+  ];
+}
+
+/** Prototype coordinates are measured from the 941x1672 poster and 724px-wide long reference.
+ * Copy stays in the shared consumer doc; no raw answer or evidence fields are printed here. */
+function consumerLayout(
+  doc: QianzaiSnapshotDocument,
+  kind: QianzaiExportKind,
+  measure: Measure,
+  check: () => void,
+  annotation?: string,
+): QianzaiExportLayout {
+  const width = kind === "poster" ? L.posterWidth : L.reportWidth,
+    ops: ExportOperation[] = [];
+  let highest = 0,
+    ticks = 0;
+  const bound = (height: number) => {
+    check();
+    if (
+      !Number.isFinite(height) ||
+      height > L.maxHeight ||
+      width * height > L.maxCanvasPixels
+    )
+      throw new QianzaiExportError("CONTENT_LIMIT");
+  };
+  const runs = (s: string, brush: boolean) =>
+    brush
+      ? s
+          .split(/(·)/)
+          .filter(Boolean)
+          .map((text) => ({ text, brush: text !== "·" }))
+      : [{ text: s, brush: false }];
+  const metric = (s: string, size: number, brush = false): TextMetrics => {
+    if (++ticks % 128 === 0) check();
+    if (brush && s.includes("·")) {
+      const parts = runs(s, true).map((run) =>
+          metric(run.text, size, run.brush),
+        ),
+        last = parts.at(-1)!;
+      const width = parts.reduce((n, m) => n + m.width, 0);
+      return {
+        width,
+        left: parts[0]!.left,
+        right: width - last.width + last.right,
+        ascent: Math.max(...parts.map((m) => m.ascent)),
+        descent: Math.max(...parts.map((m) => m.descent)),
+      };
+    }
+    const m = measure(s, size, brush ? "brush" : undefined);
+    if (
+      ![m.width, m.left, m.right, m.ascent, m.descent].every(Number.isFinite) ||
+      m.width < 0
+    )
+      throw new QianzaiExportError("CONTENT_LIMIT");
+    return m;
+  };
+  const ink = (s: string, size: number, brush = false) => {
+    const m = metric(s, size, brush);
+    return Math.max(m.width, Math.max(0, m.left) + m.right);
+  };
+  const write = (
+    value: string,
+    size: number,
+    x: number,
+    top: number,
+    w: number,
+    lineHeight: number,
+    brush = false,
+    center = false,
+    color = "#22251c",
+  ) => {
+    let y = top;
+    const line = (s: string) => {
+      const m = metric(s, size, brush),
+        h = Math.max(lineHeight, m.ascent + m.descent + 3);
+      if (x < 0 || x + w > width - 20 || ink(s, size, brush) > w)
+        throw new QianzaiExportError("CONTENT_LIMIT");
+      bound(y + h);
+      let advance = 0;
+      for (const run of runs(s, brush)) {
+        ops.push({
+          kind: "text",
+          text: run.text,
+          size,
+          x:
+            x +
+            Math.max(0, m.left) +
+            (center ? (w - ink(s, size, brush)) / 2 : 0) +
+            advance,
+          y: y + m.ascent,
+          color,
+          ...(run.brush ? { style: "brush" as const } : {}),
+        });
+        advance += metric(run.text, size, run.brush).width;
+      }
+      y += h;
+      highest = Math.max(highest, y);
+    };
+    for (const paragraph of qianzaiPlainReportText(value).split(/\r\n|\r|\n/)) {
+      let row = "";
+      const chars = Array.from(paragraph);
+      for (const [i, ch] of chars.entries()) {
+        if (ink(ch, size, brush) > w)
+          throw new QianzaiExportError("CONTENT_LIMIT");
+        const next = chars[i + 1] ?? "";
+        // Keep a closing mark with the preceding character and an opening mark
+        // with the following one; every original character is still printed.
+        let suffix = "";
+        if (/^[，。！？、；：）》」』】〕〉]$/.test(next)) {
+          for (
+            let j = i + 1;
+            j < chars.length &&
+            /^[，。！？、；：）》」』】〕〉]$/.test(chars[j]!);
+            j++
+          )
+            suffix += chars[j]!;
+        } else if (/^[（《「『【〔〈]$/.test(ch)) suffix = next;
+        if (row && ink(row + ch + suffix, size, brush) > w) {
+          line(row);
+          row = "";
+        }
+        row += ch;
+      }
+      line(row);
+    }
+    return y;
+  };
+  const frame = (
+    x: number,
+    y: number,
+    w: number,
+    h: number,
+    style: "frame" | "tag" = "frame",
+  ) =>
+    ops.push({ kind: "ornament", box: { x, y, width: w, height: h }, style });
+  const heading = (title: string, y: number) => {
+    ops.push({ kind: "rule", y });
+    ops.push({
+      kind: "ornament",
+      box: { x: 42, y: y + 19, width: 30, height: 30 },
+      style: "heading",
+    });
+    return write(title, 32, 85, y + 10, width - 130, 45, true) + 13;
+  };
+  const p = doc.resultPresentation;
+  if (!p) throw new QianzaiExportError("CAPABILITY_UNAVAILABLE");
+  const poster = kind === "poster";
+  // The shorter long-report opening is independently measured, not the tall poster scaled wholesale.
+  const hero = poster
+    ? { x: 295, y: 60, width: 646, height: 810 }
+    : { x: 220, y: 0, width: 504, height: 445 };
+  ops.push({
+    kind: "image",
+    role: "portrait",
+    box: hero,
+    fit: "cover",
+    blend: true,
+  });
+  write(
+    "千载同心",
+    poster ? 64 : 47,
+    poster ? 60 : 44,
+    poster ? 57 : 36,
+    poster ? 320 : 280,
+    poster ? 76 : 58,
+    true,
+  );
+  ops.push({
+    kind: "image",
+    role: "nameArt",
+    box: poster
+      ? { x: 21, y: 160, width: 328, height: 393 }
+      : { x: 16, y: 91, width: 246, height: 228 },
+    fit: "contain",
+    ink: "#101610",
+  });
+  const seal = p.poster.tagline,
+    sealX = poster ? 346 : 267,
+    sealY = poster ? 421 : 232,
+    sealW = poster ? 50 : 35,
+    sealStep = poster ? 37 : 25;
+  ops.push({
+    kind: "seal",
+    box: {
+      x: sealX,
+      y: sealY,
+      width: sealW,
+      height: Array.from(seal).length * sealStep + (poster ? 28 : 17),
+    },
+  });
+  Array.from(seal).forEach((ch, i) =>
+    write(
+      ch,
+      poster ? 30 : 21,
+      sealX + 7,
+      sealY + 11 + i * sealStep,
+      sealW - 12,
+      sealStep,
+      false,
+      true,
+      "#fff2d2",
+    ),
+  );
+  const index = poster
+    ? { x: 43, y: 577, width: 325, height: 191 }
+    : { x: 58, y: 302, width: 202, height: 111 };
+  frame(index.x, index.y, index.width, index.height);
+  write(
+    "契合指数",
+    poster ? 34 : 22,
+    index.x + 13,
+    index.y + 12,
+    index.width - 26,
+    poster ? 43 : 29,
+    false,
+    true,
+  );
+  const value = String(doc.body.matching.selected.narrativeIndex),
+    sample = metric(value, 100, true),
+    target = poster
+      ? { x: 83, y: 633, width: 206, height: 119 }
+      : { x: 80, y: 339, width: 127, height: 65 };
+  const numberSize = Math.min(
+    (target.width / Math.max(sample.width, sample.left + sample.right)) * 100,
+    (target.height / Math.max(1, sample.ascent + sample.descent)) * 100,
+  );
+  const numberMetric = metric(value, numberSize, true);
+  bound(target.y + target.height);
+  ops.push({
+    kind: "text",
+    text: value,
+    size: numberSize,
+    x:
+      target.x +
+      (target.width - ink(value, numberSize, true)) / 2 +
+      Math.max(0, numberMetric.left),
+    y: target.y + numberMetric.ascent,
+    color: "#a06d28",
+    style: "brush",
+  });
+  write(
+    "%",
+    poster ? 66 : 40,
+    poster ? 273 : 200,
+    poster ? 687 : 366,
+    poster ? 70 : 43,
+    poster ? 70 : 43,
+    true,
+    false,
+    "#a06d28",
+  );
+  const center = (s: string, size: number, y: number) =>
+    write(
+      s,
+      size,
+      poster ? 56 : 52,
+      y,
+      width - (poster ? 112 : 104),
+      size * 1.42,
+      false,
+      true,
+    );
+  let y = poster ? 793 : 432;
+  const encounter = doc.sections.find((s) => s.id === "encounter");
+  if (poster) {
+    for (const line of p.poster.lines)
+      y = write(line, 34, 60, y, width - 120, 34 * 1.42);
+    if (y > 942) throw new QianzaiExportError("CONTENT_LIMIT");
+  } else if (encounter) {
+    y = center(encounter.title, 25, y) + 6;
+    if (encounter.intro) y = center(encounter.intro, 22, y) + 6;
+    for (const block of encounter.blocks) {
+      if (block.title) y = center(block.title, 25, y) + 4;
+      y = center(block.text, 22, y) + 6;
+      if (block.citation) y = center(block.citation, 16, y) + 4;
+    }
+  }
+  const radarHeading = poster ? 960 : y + 14;
+  if (poster) {
+    ops.push({ kind: "rule", y: radarHeading });
+    ops.push({
+      kind: "ornament",
+      box: { x: 49, y: 983, width: 42, height: 42 },
+      style: "heading",
+    });
+    write("五维心象", 55, 110, 974, 500, 67, true);
+  } else y = heading("五维心象", radarHeading);
+  const radar = poster
+    ? { x: 333, y: 1265, radius: 171 }
+    : { x: 365, y: y + 165, radius: 126 };
+  ops.push({
+    kind: "radar",
+    ...radar,
+    scores: doc.dimensions.map((d) => d.score),
+  });
+  const labels = poster
+    ? [
+        [270, 1047],
+        [493, 1192],
+        [430, 1370],
+        [126, 1370],
+        [76, 1192],
+      ]
+    : [
+        [304, radar.y - 205],
+        [510, radar.y - 57],
+        [435, radar.y + 90],
+        [170, radar.y + 90],
+        [85, radar.y - 57],
+      ];
+  doc.dimensions.forEach((d, i) => {
+    const [x, top] = labels[i]!;
+    let yy = write(
+      d.label,
+      poster ? 28 : 23,
+      x!,
+      top!,
+      poster ? 132 : 115,
+      poster ? 36 : 30,
+      false,
+      true,
+    );
+    yy = write(
+      String(d.score),
+      poster ? 39 : 31,
+      x!,
+      yy,
+      poster ? 132 : 115,
+      poster ? 45 : 37,
+      false,
+      true,
+    );
+    const scale = qianzaiDimensionScale(
+      d,
+      doc.body.provenance.canonicalContentSha256,
+    );
+    if (scale) {
+      const caption =
+        scale.position === "left"
+          ? scale.left
+          : scale.position === "right"
+            ? scale.right
+            : scale.positionLabel;
+      write(
+        caption,
+        poster ? 18 : 14,
+        x! - 16,
+        yy,
+        poster ? 164 : 147,
+        poster ? 25 : 20,
+        false,
+        true,
+        "#5f563d",
+      );
+    }
+  });
+  y = poster ? 1512 : Math.max(highest, radar.y + 175) + 12;
+  const tagWidth = poster ? 151 : 151,
+    gap = poster ? 20 : 22,
+    start = poster ? 84 : 165,
+    tagSize = poster ? 27 : 22,
+    tagH = poster ? 56 : 43;
+  p.poster.tags.forEach((tag, i) => {
+    const x = start + i * (tagWidth + gap);
+    if (x + tagWidth > width - 20)
+      throw new QianzaiExportError("CONTENT_LIMIT");
+    frame(x, y, tagWidth, tagH, "tag");
+    write(
+      tag,
+      tagSize,
+      x + 6,
+      y + 9,
+      tagWidth - 12,
+      tagSize * 1.2,
+      false,
+      true,
+    );
+  });
+  y += tagH + 22;
+  if (poster) {
+    const footer = annotation ? 1605 : 1616;
+    write(doc.legal, 13, 45, footer, 850, 18, false, false, "#6f634b");
+    if (annotation)
+      write(annotation, 12, 45, 1642, 850, 16, false, false, "#6f634b");
+    bound(L.posterHeight);
+    return { width, height: L.posterHeight, operations: ops };
+  }
+  const dimensions = doc.sections.find((s) => s.id === "dimensions");
+  if (dimensions) {
+    y = heading(dimensions.title, y);
+    if (dimensions.intro) y = write(dimensions.intro, 18, 55, y, 614, 27) + 8;
+    for (const [i, b] of dimensions.blocks.entries()) {
+      const d = doc.dimensions[i],
+        start = y;
+      if (b.title) y = write(b.title, 23, 59, y, 600, 32, true) + 4;
+      if (d) {
+        const scale = qianzaiDimensionScale(
+          d,
+          doc.body.provenance.canonicalContentSha256,
+        );
+        if (scale) {
+          write(scale.left, 13, 240, y, 125, 20);
+          write(scale.right, 13, 350, y, 102, 20, false, false);
+          ops.push({
+            kind: "bar",
+            x: 240,
+            y: y + 39,
+            width: 205,
+            score: d.score,
+            scale: scale.geometry,
+          });
+        }
+        write(`${d.label} ${d.score}`, 23, 62, y + 3, 160, 32);
+        y = write(b.text, 19, 470, y, 205, 28) + 8;
+        if (b.citation) y = write(b.citation, 14, 470, y, 205, 22) + 4;
+        y = Math.max(y, start + 88);
+      } else y = write(b.text, 21, 55, y, 614, 31) + 12;
+    }
+  }
+  for (const section of doc.sections.filter(
+    (s) => s.id !== "encounter" && s.id !== "dimensions",
+  )) {
+    y = heading(section.title, y + 12);
+    if (section.intro) y = write(section.intro, 21, 55, y, 614, 31) + 10;
+    if (section.id === "literature") {
+      const imageY = y;
+      ops.push({
+        kind: "image",
+        role: "portrait",
+        box: { x: 38, y: imageY, width: 296, height: 300 },
+        fit: "cover",
+      });
+      write(doc.name, 38, 365, imageY + 22, 300, 49, true);
+      if (doc.identity?.honorific)
+        write(doc.identity.honorific, 24, 365, imageY + 83, 300, 35);
+      let detailY = imageY + 132;
+      for (const tag of doc.identity?.tags ?? [])
+        detailY = write(tag, 20, 365, detailY, 300, 29);
+      y = Math.max(imageY + 319, detailY + 10);
+    }
+    if (section.id === "patterns") {
+      const columns =
+          section.blocks.length >= 2 && section.blocks.length <= 3
+            ? section.blocks.length
+            : 1,
+        gap = 18,
+        cardW = (width - 88 - gap * (columns - 1)) / columns,
+        top = y;
+      let bottom = y;
+      for (const [i, b] of section.blocks.entries()) {
+        const x = 44 + (i % columns) * (cardW + gap),
+          cardY = columns === 1 ? bottom : top,
+          insert = ops.length;
+        let end = cardY + 18;
+        if (b.title)
+          end =
+            write(
+              b.title,
+              columns === 3 ? 23 : 26,
+              x + 15,
+              end,
+              cardW - 30,
+              34,
+              true,
+            ) + 12;
+        end =
+          write(
+            b.text,
+            columns === 3 ? 20 : 22,
+            x + 15,
+            end,
+            cardW - 30,
+            columns === 3 ? 30 : 33,
+          ) + 16;
+        if (b.citation)
+          end = write(b.citation, 15, x + 15, end, cardW - 30, 23) + 10;
+        ops.splice(insert, 0, {
+          kind: "card",
+          box: { x, y: cardY, width: cardW, height: end - cardY },
+          dark: false,
+        });
+        bottom = Math.max(bottom, end + 14);
+      }
+      y = bottom;
+    } else
+      for (const b of section.blocks) {
+        if (b.title) y = write(b.title, 25, 55, y, 614, 36, true) + 7;
+        const final = section.id === "closure" && b.layout === "final-verse";
+        y =
+          write(
+            b.text,
+            final ? 29 : 22,
+            55,
+            y,
+            614,
+            final ? 43 : 33,
+            final,
+            false,
+            final ? "#8a591f" : "#27291f",
+          ) + 13;
+        if (b.citation) y = write(b.citation, 16, 55, y, 614, 24) + 7;
+      }
+  }
+  y += 16;
+  ops.push({ kind: "rule", y });
+  y = write(doc.legal, 15, 45, y + 17, 634, 23, false, false, "#6f634b") + 12;
+  if (annotation)
+    y = write(annotation, 13, 45, y, 634, 20, false, false, "#6f634b") + 8;
+  const height = Math.ceil(Math.max(y + 28, highest + 28));
+  bound(height);
+  return { width, height, operations: ops };
 }

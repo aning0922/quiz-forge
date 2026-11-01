@@ -1,3 +1,4 @@
+import { qianzaiSnapshotDocument } from "./presentation";
 import { privateTestAssetMatches } from "@/features/quizpack/content/private-test";
 import { composedReportBodyV1Schema } from "@/lib/assessment-contract/composed-report-v1";
 import {
@@ -84,8 +85,14 @@ export async function renderQianzaiExport(
       unique.reduce((n, a) => n + a.width * a.height, 0) > L.maxImagePixels
     )
       throw new QianzaiExportError("CONTENT_LIMIT");
+    const doc = qianzaiSnapshotDocument(body, undefined, scope.presentation);
+    const consumerEdition =
+      "consumerEdition" in doc && doc.consumerEdition === true;
+    const bodyFont = consumerEdition
+      ? QIANZAI_EDITORIAL_FONTS.literary
+      : scope.font;
     return await withPreviewFont(
-      scope.font,
+      bodyFont,
       texts,
       signal,
       async (family, parentActive, parentDeadline) =>
@@ -108,7 +115,7 @@ export async function renderQianzaiExport(
                 body,
                 kind,
                 (text, size, style) => {
-                  measure.font = `${style === "brush" ? 400 : 600} ${size}px "${style === "brush" ? brushFamily : family}"`;
+                  measure.font = `${style === "brush" ? 400 : bodyFont.weight} ${size}px "${style === "brush" ? brushFamily : family}"`;
                   const m = measure.measureText(text);
                   return {
                     width: m.width,
@@ -179,6 +186,7 @@ export async function renderQianzaiExport(
                   canvas.width,
                   canvas.height,
                   kind,
+                  consumerEdition ? 480 : undefined,
                 );
               }
               drawOrnateFrame(ctx, {
@@ -198,6 +206,7 @@ export async function renderQianzaiExport(
                   layout.operations[i]!,
                   family,
                   brushFamily,
+                  bodyFont.weight,
                   scope,
                   loaded,
                   canvas.width,
@@ -295,6 +304,7 @@ function drawLandscape(
   width: number,
   height: number,
   kind: QianzaiExportKind,
+  openingHeight?: number,
 ) {
   const sw = image.naturalWidth,
     sh = image.naturalHeight;
@@ -332,7 +342,7 @@ function drawLandscape(
     paper.width = 0;
     paper.height = 0;
   }
-  const top = Math.min(width * 1.02, height),
+  const top = Math.min(openingHeight ?? width * 1.02, height),
     bottom = Math.min(width * 0.22, height - top);
   ctx.drawImage(image, 0, 0, sw, sh * 0.55, 0, 0, width, top);
   const side = width * 0.065,
@@ -398,12 +408,13 @@ function drawOperation(
   op: ExportOperation,
   family: string,
   brushFamily: string,
+  bodyWeight: 400 | 600,
   scope: QianzaiExportScope,
   loaded: Map<string, VerifiedImage>,
   width: number,
 ) {
   if (op.kind === "text") {
-    ctx.font = `${op.style === "brush" ? 400 : 600} ${op.size}px "${op.style === "brush" ? brushFamily : family}"`;
+    ctx.font = `${op.style === "brush" ? 400 : bodyWeight} ${op.size}px "${op.style === "brush" ? brushFamily : family}"`;
     ctx.fillStyle = op.color;
     ctx.textAlign = "left";
     ctx.textBaseline = "alphabetic";
@@ -552,8 +563,8 @@ function drawOperation(
           b.width / source.width,
           b.height / source.height,
         ),
-        w = source.width * scale,
-        h = source.height * scale;
+        w = source.width * scale * (op.blend ? 1.28 : 1),
+        h = source.height * scale * (op.blend ? 1.28 : 1);
       paint.drawImage(
         image,
         source.x,
@@ -571,6 +582,123 @@ function drawOperation(
         paint.fillRect(0, 0, b.width, b.height);
       }
       if (op.role === "portrait") {
+        // A feathered watercolor silhouette removes the photographic corners and
+        // keeps the common landscape visible around the actual character pixels.
+        const mask = document.createElement("canvas");
+        mask.width = layer.width;
+        mask.height = layer.height;
+        try {
+          const m = mask.getContext("2d");
+          if (!m) throw new QianzaiExportError("PNG_UNAVAILABLE");
+          m.filter = "blur(7px)";
+          m.fillStyle = "#000";
+          m.beginPath();
+          if (op.blend && b.height > b.width) {
+            // Follow the tall portrait's hair crown rather than admitting the
+            // sky above it; the common landscape keeps its complete moon.
+            m.moveTo(b.width * 0.27, b.height * 0.13);
+            m.bezierCurveTo(
+              b.width * 0.32,
+              b.height * 0.035,
+              b.width * 0.49,
+              b.height * 0.01,
+              b.width * 0.59,
+              b.height * 0.075,
+            );
+            m.bezierCurveTo(
+              b.width * 0.66,
+              b.height * 0.11,
+              b.width * 0.7,
+              b.height * 0.16,
+              b.width * 0.72,
+              b.height * 0.24,
+            );
+            m.bezierCurveTo(
+              b.width * 0.77,
+              b.height * 0.44,
+              b.width * 0.97,
+              b.height * 0.65,
+              b.width * 0.97,
+              b.height * 0.9,
+            );
+            m.lineTo(b.width * 0.9, b.height * 1.03);
+            m.lineTo(b.width * 0.02, b.height * 1.03);
+            m.bezierCurveTo(
+              b.width * 0.03,
+              b.height * 0.65,
+              b.width * 0.16,
+              b.height * 0.51,
+              b.width * 0.25,
+              b.height * 0.35,
+            );
+            m.bezierCurveTo(
+              b.width * 0.24,
+              b.height * 0.26,
+              b.width * 0.22,
+              b.height * 0.2,
+              b.width * 0.27,
+              b.height * 0.13,
+            );
+          } else if (op.blend) {
+            m.moveTo(b.width * 0.38, b.height * 0.02);
+            m.bezierCurveTo(
+              b.width * 0.57,
+              -b.height * 0.04,
+              b.width * 0.76,
+              b.height * 0.08,
+              b.width * 0.78,
+              b.height * 0.24,
+            );
+            m.bezierCurveTo(
+              b.width * 0.79,
+              b.height * 0.44,
+              b.width * 0.97,
+              b.height * 0.65,
+              b.width * 0.97,
+              b.height * 0.9,
+            );
+            m.lineTo(b.width * 0.9, b.height * 1.03);
+            m.lineTo(b.width * 0.02, b.height * 1.03);
+            m.bezierCurveTo(
+              b.width * 0.03,
+              b.height * 0.65,
+              b.width * 0.16,
+              b.height * 0.51,
+              b.width * 0.25,
+              b.height * 0.35,
+            );
+            m.bezierCurveTo(
+              b.width * 0.26,
+              b.height * 0.17,
+              b.width * 0.25,
+              b.height * 0.07,
+              b.width * 0.38,
+              b.height * 0.02,
+            );
+          } else {
+            m.moveTo(b.width * 0.23, b.height * 0.04);
+            m.bezierCurveTo(
+              b.width * 0.52,
+              -b.height * 0.06,
+              b.width * 0.84,
+              b.height * 0.05,
+              b.width * 0.95,
+              b.height * 0.27,
+            );
+            m.lineTo(b.width * 0.98, b.height * 0.8);
+            m.lineTo(b.width * 0.88, b.height * 0.99);
+            m.lineTo(b.width * 0.07, b.height * 0.98);
+            m.lineTo(b.width * 0.01, b.height * 0.3);
+            m.closePath();
+          }
+          m.closePath();
+          m.fill();
+          paint.globalCompositeOperation = "destination-in";
+          paint.drawImage(mask, 0, 0, b.width, b.height);
+        } finally {
+          mask.width = 0;
+          mask.height = 0;
+        }
         // Fade alpha into the actual landscape beneath, never a beige rectangle.
         paint.globalCompositeOperation = "destination-in";
         const horizontal = paint.createLinearGradient(0, 0, b.width, 0);
