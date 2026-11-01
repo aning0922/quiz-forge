@@ -964,6 +964,13 @@ export function QianzaiReveal({
       : undefined;
   const portrait = qianzaiImage(model, currentCharacter?.reveal, images);
   const nameArt = qianzaiImage(model, currentCharacter?.nameArt, images);
+  // Only this inspected transparent ink candidate receives the gold alpha
+  // treatment. qianzaiImage has already verified the selected role and URL.
+  const goldInkName =
+    nameArt?.asset.sha256 ===
+      "5e6f72a11d6187751754da57bb059a0230f4474c289fd2a61ac2641c2990933a" &&
+    nameArt.asset.width === 1060 &&
+    nameArt.asset.height === 1484;
   // One admitted full-frame candidate; report portraits keep their existing crop.
   const fullReveal =
     !!portrait &&
@@ -1086,12 +1093,25 @@ export function QianzaiReveal({
                     <div
                       className={scenes.dynamicNameArt}
                       data-qianzai-name-art
+                      data-qianzai-name-render={
+                        goldInkName ? "alpha-gold" : undefined
+                      }
                     >
                       <ArtImage
                         src={nameArt.objectUrl}
                         asset={nameArt.asset}
                         alt={`${displayName}姓名字图`}
                       />
+                      {goldInkName && (
+                        <span
+                          className={scenes.dynamicNameGold}
+                          aria-hidden="true"
+                          style={{
+                            maskImage: `url("${nameArt.objectUrl}")`,
+                            WebkitMaskImage: `url("${nameArt.objectUrl}")`,
+                          }}
+                        />
+                      )}
                     </div>
                   ) : (
                     <div className={scenes.dynamicNameMissing}>
