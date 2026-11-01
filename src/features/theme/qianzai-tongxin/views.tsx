@@ -160,7 +160,7 @@ function Scene({
       className={scenes.frame}
       style={
         fluid
-          ? { width: "min(100%, 430px)", height: "100dvh" }
+          ? { width: "min(100%, 430px)", minHeight: "max(100dvh, 844px)" }
           : name === "cover"
             ? undefined
             : name === "question"
@@ -172,15 +172,18 @@ function Scene({
       data-responsive-cover={name === "cover" || undefined}
       data-responsive-question={name === "question" || undefined}
       data-responsive-reveal={fluid || undefined}
+      data-qztx-reveal-content={fluid || undefined}
       data-qianzai-screen={name}
       data-qianzai-composite={composite || undefined}
     >
       <div
         className={`${scenes.canvas} ${className}`}
         style={
-          fluid || name === "cover" || name === "question"
-            ? { width: "100%", height: "100%" }
-            : { transform: `scale(${scale})` }
+          fluid
+            ? { width: "100%", minHeight: "inherit", height: "auto" }
+            : name === "cover" || name === "question"
+              ? { width: "100%", height: "100%" }
+              : { transform: `scale(${scale})` }
         }
         data-qianzai-scene-canvas
         data-focus={focus}
@@ -542,6 +545,18 @@ export function QianzaiQuestion({
     (paper && idle && chosen && q
       ? qianzaiPrototypeImage(model, scene?.background, prototypeImages)
       : undefined);
+  const cover =
+    qianzaiImage(model, model.entry?.slots.cover, images) ??
+    qianzaiPrototypeImage(model, model.entry?.slots.cover, prototypeImages);
+  // Finite, inspected V8 water region: below all lettering and the scroll CTA.
+  // A changed cover must be inspected again rather than inheriting this crop.
+  const water =
+    cover?.asset.sha256 ===
+      "fc0fb75e94f080cc2481998b818ecbb7f7b41263a6edb8bbebac01dd2b00773d" &&
+    cover.asset.width === 852 &&
+    cover.asset.height === 1844
+      ? cover
+      : undefined;
   const selected = model.draft?.answers.find(
       (a) => a.questionId === q?.ref.id,
     )?.optionId,
@@ -565,28 +580,27 @@ export function QianzaiQuestion({
     >
       {art && q ? (
         <>
-          <ArtImage
+          <svg
             key={art.objectUrl}
-            src={art.objectUrl}
             className={scenes["scene-art"]}
-          />
+            viewBox="0 0 390 391"
+            aria-hidden="true"
+            data-qztx-upper-question-scene
+          >
+            <image href={art.objectUrl} width="390" height="844" />
+          </svg>
           <div className={scenes.readable} />
-          <svg
-            className={scenes.answerTexture}
-            viewBox="0 813 390 31"
-            preserveAspectRatio="none"
-            aria-hidden="true"
-          >
-            <image href={art.objectUrl} width="390" height="844" />
-          </svg>
-          <svg
-            className={scenes.questionFooterArt}
-            viewBox="0 746 390 98"
-            preserveAspectRatio="xMidYMin slice"
-            aria-hidden="true"
-          >
-            <image href={art.objectUrl} width="390" height="844" />
-          </svg>
+          {water && (
+            <svg
+              className={scenes.answerTexture}
+              viewBox="220 1400 430 444"
+              preserveAspectRatio="xMidYMid slice"
+              aria-hidden="true"
+              data-qztx-clean-question-water
+            >
+              <image href={water.objectUrl} width="852" height="1844" />
+            </svg>
+          )}
           <div className={scenes["progress-cover"]} />
           <div className={scenes["progress-track"]}>
             <div
@@ -597,15 +611,15 @@ export function QianzaiQuestion({
           <div className={scenes["progress-num"]}>
             {index + 1} / {questions.length}
           </div>
-          {!confirmed && (
-            <span className={scenes.saveStatus} role="status">
-              {model.phase === "saving"
+          <span className={scenes.saveStatus} role="status">
+            {confirmed
+              ? "已保存"
+              : model.phase === "saving"
                 ? "保存中"
                 : ["unknown", "conflict", "unavailable"].includes(model.phase)
                   ? "待核对"
                   : "本轮选择"}
-            </span>
-          )}
+          </span>
           <button
             className={`${scenes.interact} ${scenes["hit-top"]} ${scenes.back}`}
             disabled={!enabled}
@@ -684,8 +698,19 @@ export function QianzaiQuestion({
               viewBox="18 751 114 62"
               preserveAspectRatio="none"
               aria-hidden="true"
+              data-qztx-question-nav-art="previous"
             >
-              <image href={art.objectUrl} width="390" height="844" />
+              <defs>
+                <clipPath id={`${id}-previous-button`}>
+                  <rect x="18" y="762" width="114" height="40" rx="20" />
+                </clipPath>
+              </defs>
+              <image
+                href={art.objectUrl}
+                width="390"
+                height="844"
+                clipPath={`url(#${id}-previous-button)`}
+              />
             </svg>
           </button>
           <button
@@ -709,8 +734,42 @@ export function QianzaiQuestion({
               viewBox="251 751 122 62"
               preserveAspectRatio="none"
               aria-hidden="true"
+              data-qztx-question-nav-art="next"
             >
-              <image href={art.objectUrl} width="390" height="844" />
+              <defs>
+                <clipPath id={`${id}-next-button`}>
+                  <rect x="251" y="761" width="122" height="42" rx="21" />
+                  <circle cx="358" cy="793" r="18" />
+                </clipPath>
+              </defs>
+              <image
+                href={art.objectUrl}
+                width="390"
+                height="844"
+                clipPath={`url(#${id}-next-button)`}
+              />
+              {index === questions.length - 1 && (
+                <>
+                  <svg
+                    x="271"
+                    y="768"
+                    width="66"
+                    height="25"
+                    viewBox="95 28 164 42"
+                    preserveAspectRatio="none"
+                  >
+                    <image href={paper?.objectUrl} width="354" height="98" />
+                  </svg>
+                  <text
+                    className={scenes.finalQuestionLabel}
+                    x="304"
+                    y="785"
+                    textAnchor="middle"
+                  >
+                    走向相逢
+                  </text>
+                </>
+              )}
             </svg>
           </button>
           {menuOpen && (
@@ -804,7 +863,6 @@ export function QianzaiReveal({
       ? character
       : undefined;
   const portrait = qianzaiImage(model, currentCharacter?.reveal, images);
-  const nameArt = qianzaiImage(model, currentCharacter?.nameArt, images);
   const copy =
     result && selected && sameArtRef(result.role.ref, selected.ref)
       ? result
@@ -884,20 +942,29 @@ export function QianzaiReveal({
               className={`${scenes.dynamicIdentity} ${scenes.revealCopyFade}`}
               data-qianzai-reveal-copy={copy ? "bound" : "unavailable"}
             >
-              <p className={scenes.dynamicKicker}>你是</p>
               <div className={scenes.dynamicNameRow}>
-                {nameArt ? (
-                  <ArtImage
-                    src={nameArt.objectUrl}
-                    alt={displayName}
-                    className={scenes.dynamicNameArt}
-                  />
-                ) : (
-                  <div className={scenes.dynamicNameMissing}>
-                    <h2>{displayName}</h2>
-                    <p>姓名字图尚未提供</p>
-                  </div>
-                )}
+                <div className={scenes.dynamicNameGroup}>
+                  <p className={scenes.dynamicKicker}>你是</p>
+                  {copy ? (
+                    <div
+                      className={scenes.dynamicNameText}
+                      data-name-size={Array.from(copy.role.displayName).length}
+                      data-qztx-program-name
+                      aria-label={`${copy.role.displayName}，程序书法文字样稿`}
+                    >
+                      {Array.from(copy.role.displayName).map((char, i) => (
+                        <span key={i} aria-hidden="true">
+                          {char}
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className={scenes.dynamicNameMissing}>
+                      <h2>{displayName}</h2>
+                      <p>姓名暂未就绪</p>
+                    </div>
+                  )}
+                </div>
                 {copy?.role.honorific && (
                   <span
                     className={scenes.dynamicSeal}
@@ -1023,7 +1090,7 @@ export function QianzaiReveal({
             <p className={scenes.artNote}>
               {frames
                 ? "画面包含固定角色艺术文案；本轮分数与答题依据，以已封存的人物报告为准。"
-                : "当前人物与姓名使用受控候选素材；本轮分数与答题依据，以已封存的人物报告为准。"}
+                : "当前人物使用受控候选素材，姓名为程序书法文字样稿；本轮分数与答题依据，以已封存的人物报告为准。"}
             </p>
           </div>
         )}
