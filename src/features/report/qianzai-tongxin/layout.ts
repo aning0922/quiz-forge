@@ -2,7 +2,14 @@ import type { ComposedReportBodyV1 } from "@/lib/assessment-contract/composed-re
 import { qianzaiSnapshotDocument } from "./presentation";
 import type { QianzaiResultPresentation } from "./result-presentation";
 import { qianzaiPlainReportText } from "./inline-emphasis";
-import { QIANZAI_AXIS_GUIDES_V11 } from "./role-profiles-v11";
+import {
+  qianzaiDimensionScale,
+  QIANZAI_SCALE_HEADING,
+  QIANZAI_SCALE_MIDPOINT_LABEL,
+  QIANZAI_SCALE_PREFACE,
+  QIANZAI_SCALE_DISPLAY_NOTICE,
+  type QianzaiScaleGeometry,
+} from "./dimension-scale";
 import {
   QIANZAI_EXPORT_LIMITS as L,
   QianzaiExportError,
@@ -33,7 +40,14 @@ export type ExportOperation =
       box: Box;
       fit: "cover" | "contain";
     }
-  | { kind: "bar"; x: number; y: number; width: number; score: number }
+  | {
+      kind: "bar";
+      x: number;
+      y: number;
+      width: number;
+      score: number;
+      scale?: QianzaiScaleGeometry;
+    }
   | { kind: "rule"; y: number }
   | {
       kind: "radar";
@@ -106,8 +120,30 @@ export function qianzaiExportText(
           ? [qianzaiPlainReportText(opening.text), paragraphNote(opening)]
           : []),
     ];
+  const scales = body.dimensions.flatMap((d) => {
+    const scale = qianzaiDimensionScale(
+      d,
+      body.provenance.canonicalContentSha256,
+    );
+    return scale ? [scale] : [];
+  });
   return [
     ...shared,
+    ...(scales.length
+      ? [
+          QIANZAI_SCALE_HEADING,
+          QIANZAI_SCALE_MIDPOINT_LABEL,
+          QIANZAI_SCALE_PREFACE,
+          QIANZAI_SCALE_DISPLAY_NOTICE,
+          ...scales.flatMap((scale) => [
+            scale.left,
+            scale.right,
+            scale.positionLabel,
+            scale.caption,
+            scale.explanation,
+          ]),
+        ]
+      : []),
     "选择依据",
     "反向证据",
     "第二候选：",
@@ -149,10 +185,7 @@ export function qianzaiExportText(
         ]
       : []),
     ...(doc.resultPresentation
-      ? [
-          ...doc.resultPresentation.closure.lines,
-          ...Object.values(QIANZAI_AXIS_GUIDES_V11),
-        ]
+      ? [...doc.resultPresentation.closure.lines]
       : []),
   ];
 }
@@ -470,18 +503,62 @@ export function layoutQianzaiExport(
         48,
       ) + 18;
     if (volume.id === "dimensions") {
-      for (const d of body.dimensions) {
-        y = text(`${d.label} ${d.score} / 100`, 25, 58, y, 608, 38) + 8;
-        operations.push({ kind: "bar", x: 58, y, width: 608, score: d.score });
-        y += 34;
-        if (doc.resultPresentation) {
-          const guide =
-            QIANZAI_AXIS_GUIDES_V11[
-              d.dimensionRef.id as keyof typeof QIANZAI_AXIS_GUIDES_V11
-            ];
-          if (guide) y = text(guide, 23, 58, y, 608, 36) + 16;
-        }
+      const hasScales = body.dimensions.some(
+        (d) =>
+          qianzaiDimensionScale(d, body.provenance.canonicalContentSha256) !==
+          null,
+      );
+      if (hasScales) {
+        y = text(QIANZAI_SCALE_HEADING, 27, 58, y, 608, 40) + 4;
+        y = text(QIANZAI_SCALE_MIDPOINT_LABEL, 21, 58, y, 608, 32) + 6;
+        y = text(QIANZAI_SCALE_PREFACE, 23, 58, y, 608, 36) + 14;
       }
+      for (const d of body.dimensions) {
+        const scale = qianzaiDimensionScale(
+          d,
+          body.provenance.canonicalContentSha256,
+        );
+        if (!scale) {
+          y = text(`${d.label} ${d.score} / 100`, 25, 58, y, 608, 38) + 8;
+          operations.push({
+            kind: "bar",
+            x: 58,
+            y,
+            width: 608,
+            score: d.score,
+          });
+          y += 34;
+          continue;
+        }
+        y =
+          text(
+            `${scale.label} ${scale.score} / 100 · ${scale.positionLabel}`,
+            25,
+            58,
+            y,
+            608,
+            38,
+          ) + 8;
+        const rightX = 666 - inkWidth(scale.right, 21);
+        y =
+          Math.max(
+            text(scale.left, 21, 58, y, 286, 32),
+            text(scale.right, 21, rightX, y, 666 - rightX, 32),
+          ) + 10;
+        operations.push({
+          kind: "bar",
+          x: 58,
+          y,
+          width: 608,
+          score: scale.score,
+          scale: scale.geometry,
+        });
+        y += 32;
+        y = text(scale.caption, 23, 58, y, 608, 36) + 8;
+        y = text(scale.explanation, 23, 58, y, 608, 36) + 18;
+      }
+      if (hasScales)
+        y = text(QIANZAI_SCALE_DISPLAY_NOTICE, 21, 58, y, 608, 32) + 14;
       y += 10;
     }
     if (volume.id === "literature") {

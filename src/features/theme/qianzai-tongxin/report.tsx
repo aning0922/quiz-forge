@@ -21,7 +21,14 @@ import { qianzaiRolePresentation } from "@/features/report/qianzai-tongxin/role-
 import { qianzaiCharacter, qianzaiImage } from "./art";
 import { QianzaiSharePanel } from "./share-panel";
 import { useQianzaiExport } from "./export-context";
-import { QIANZAI_AXIS_GUIDES_V11 } from "@/features/report/qianzai-tongxin/role-profiles-v11";
+import {
+  qianzaiDimensionScale,
+  QIANZAI_SCALE_HEADING,
+  QIANZAI_SCALE_MIDPOINT_LABEL,
+  QIANZAI_SCALE_PREFACE,
+  QIANZAI_SCALE_DISPLAY_NOTICE,
+  QIANZAI_SCALE_DETAIL_LABEL,
+} from "@/features/report/qianzai-tongxin/dimension-scale";
 import styles from "./report-parity.module.css";
 import { qianzaiInlineEmphasis } from "@/features/report/qianzai-tongxin/inline-emphasis";
 
@@ -55,10 +62,26 @@ export function QianzaiDimensions({
   body?: ComposedReportBodyV1;
   document?: QianzaiReportDocument;
 }) {
-  const id = useId(),
-    [selected, setSelected] = useState<number | null>(null);
+  const id = useId();
+  const explanations = useRef(new Map<string, HTMLDetailsElement>());
+  const [expanded, setExpanded] = useState<ReadonlySet<string>>(
+    () => new Set(),
+  );
   const dimensions = documentView?.dimensions ?? body?.dimensions ?? [];
   const insight = documentView?.dimensionInsight;
+  const sourceBody =
+    documentView?.mode === "snapshot" ? documentView.body : body;
+  const scales = dimensions.flatMap((d) => {
+    const scale = qianzaiDimensionScale(
+      d,
+      sourceBody?.provenance.canonicalContentSha256,
+    );
+    return scale ? [scale] : [];
+  });
+  const openExplanation = (dimensionId: string) => {
+    const detail = explanations.current.get(dimensionId);
+    if (detail) detail.open = true;
+  };
   return (
     <>
       <div className={c("rp-radar-card")}>
@@ -134,14 +157,26 @@ export function QianzaiDimensions({
                 <g
                   className={c("radarNode")}
                   role="button"
-                  tabIndex={0}
-                  aria-label={`${d.label} ${d.score}分`}
-                  aria-pressed={selected === i}
-                  onClick={() => setSelected(i)}
+                  tabIndex={
+                    scales.some((s) => s.dimensionId === d.dimensionRef.id)
+                      ? 0
+                      : -1
+                  }
+                  aria-label={`${d.label} ${d.score}分，查看解释范围`}
+                  aria-disabled={
+                    !scales.some((s) => s.dimensionId === d.dimensionRef.id)
+                  }
+                  aria-expanded={expanded.has(d.dimensionRef.id)}
+                  aria-controls={
+                    scales.some((s) => s.dimensionId === d.dimensionRef.id)
+                      ? `${id}-scale-${d.dimensionRef.id}`
+                      : undefined
+                  }
+                  onClick={() => openExplanation(d.dimensionRef.id)}
                   onKeyDown={(e) => {
                     if (["Enter", " "].includes(e.key)) {
                       e.preventDefault();
-                      setSelected(i);
+                      openExplanation(d.dimensionRef.id);
                     }
                   }}
                 >
@@ -174,42 +209,105 @@ export function QianzaiDimensions({
           })}
         </svg>
         <div className={c("rp-chart-rule")} />
-        {(insight || selected !== null) && (
-          <div className={c("rp-radar-insight")} aria-live="polite">
-            <span className={c("rp-pointmark")}>✦</span>
-            <div>
-              <strong>
-                {selected !== null
-                  ? `${dimensions[selected]?.label} · ${dimensions[selected]?.score} / 100`
-                  : insight?.title}
-              </strong>
-              <p>
-                {selected !== null && documentView?.mode !== "reference-only"
-                  ? "分值来自本轮封存报告，不是能力等级。"
-                  : insight?.text}
-              </p>
+        {scales.length > 0 && (
+          <div
+            className={c("dimensionScales")}
+            aria-label={QIANZAI_SCALE_HEADING}
+          >
+            <div className={c("scalesHeading")}>
+              <strong>{QIANZAI_SCALE_HEADING}</strong>
+              <small>{QIANZAI_SCALE_MIDPOINT_LABEL}</small>
             </div>
+            <p className={c("scalesPreface")}>{QIANZAI_SCALE_PREFACE}</p>
+            <div className={c("scaleRows")}>
+              {scales.map((scale) => (
+                <details
+                  key={scale.dimensionId}
+                  id={`${id}-scale-${scale.dimensionId}`}
+                  className={c("scaleEntry")}
+                  data-qianzai-dimension-scale={scale.dimensionId}
+                  ref={(node) => {
+                    if (node) explanations.current.set(scale.dimensionId, node);
+                    else explanations.current.delete(scale.dimensionId);
+                  }}
+                  onToggle={(event) => {
+                    const open = event.currentTarget.open;
+                    setExpanded((previous) => {
+                      if (previous.has(scale.dimensionId) === open)
+                        return previous;
+                      const next = new Set(previous);
+                      if (open) next.add(scale.dimensionId);
+                      else next.delete(scale.dimensionId);
+                      return next;
+                    });
+                  }}
+                >
+                  <summary
+                    aria-label={`${scale.label} ${scale.score} / 100，${scale.positionLabel}，查看解释范围`}
+                  >
+                    <div className={c("scaleTopline")}>
+                      <strong>{scale.label}</strong>
+                      <span className={c("scaleState")}>
+                        <b>{scale.score}</b>
+                        <span>{scale.positionLabel}</span>
+                        <i aria-hidden="true" />
+                      </span>
+                    </div>
+                    <div className={c("scaleEndpoints")} aria-hidden="true">
+                      <span>{scale.left}</span>
+                      <span>{scale.right}</span>
+                    </div>
+                    <div
+                      className={c("scaleTrack")}
+                      role="meter"
+                      aria-label={`${scale.label}，左端${scale.left}，右端${scale.right}`}
+                      aria-valuemin={0}
+                      aria-valuemax={100}
+                      aria-valuenow={scale.score}
+                      aria-valuetext={`${scale.score} / 100，${scale.positionLabel}`}
+                    >
+                      <span
+                        className={c("scaleMidpoint")}
+                        aria-hidden="true"
+                        style={{ left: `${scale.geometry.midpointPercent}%` }}
+                      />
+                      <span
+                        className={c("scaleBand")}
+                        aria-hidden="true"
+                        style={{
+                          left: `${scale.geometry.bandStartPercent}%`,
+                          width: `${scale.geometry.bandWidthPercent}%`,
+                        }}
+                      />
+                      <span
+                        className={c("scalePearl")}
+                        aria-hidden="true"
+                        style={{ left: `${scale.geometry.positionPercent}%` }}
+                      />
+                    </div>
+                    <p className={c("scaleCaption")}>{scale.caption}</p>
+                  </summary>
+                  <div className={c("scaleExplanation")}>
+                    <strong>{QIANZAI_SCALE_DETAIL_LABEL}</strong>
+                    <p>{scale.explanation}</p>
+                  </div>
+                </details>
+              ))}
+            </div>
+            <p className={c("scalesNotice")}>{QIANZAI_SCALE_DISPLAY_NOTICE}</p>
           </div>
         )}
-      </div>
-      {documentView?.resultPresentation && (
-        <div className={c("axisGuides")}>
-          {dimensions.map((d) => (
-            <div key={d.dimensionRef.id}>
-              <strong>
-                {d.label} · {d.score} / 100
-              </strong>
-              <p>
-                {
-                  QIANZAI_AXIS_GUIDES_V11[
-                    d.dimensionRef.id as keyof typeof QIANZAI_AXIS_GUIDES_V11
-                  ]
-                }
-              </p>
+        {scales.length === 0 &&
+          insight &&
+          documentView?.mode === "reference-only" && (
+            <div className={c("rp-radar-insight")}>
+              <div>
+                <strong>{insight.title}</strong>
+                <p>{insight.text}</p>
+              </div>
             </div>
-          ))}
-        </div>
-      )}
+          )}
+      </div>
       {documentView?.dimensionWarning && (
         <p className={c("rp-assessment-warning")}>
           {documentView.dimensionWarning}
