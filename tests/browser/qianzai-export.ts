@@ -6,6 +6,7 @@ import path from "node:path";
 import { chromium, expect } from "@playwright/test";
 import sharp from "sharp";
 import { qianzaiExportFixture } from "@/features/report/qianzai-tongxin/export.test-support";
+import { QIANZAI_EDITORIAL_FONTS } from "@/features/theme/qianzai-tongxin/editorial-fonts";
 /** Actual canvas/font/resource/owner path. Invented test report and original synthetic pixels only. */
 const root = process.cwd(),
   out = path.resolve(".cache/qztx-export/browser", String(Date.now()));
@@ -110,7 +111,12 @@ files.set("/probe.js", {
   body: await readFile(path.join(out, "probe.js")),
   type: "text/javascript",
 });
-for (const f of [fixture.font.file, fixture.font.coverage])
+for (const f of [
+  fixture.font.file,
+  fixture.font.coverage,
+  QIANZAI_EDITORIAL_FONTS.brush.file,
+  QIANZAI_EDITORIAL_FONTS.brush.coverage,
+])
   files.set(f, {
     body: await readFile(path.join(root, "public", f)),
     type: f.endsWith("woff2") ? "font/woff2" : "text/plain",

@@ -66,6 +66,7 @@ export type QianzaiExportScope = Readonly<{
   portrait: DisplayAssetV1;
   nameArt: DisplayAssetV1;
   paper: DisplayAssetV1 | null;
+  border?: DisplayAssetV1 | null;
   font: DisplayFontDescriptorV1;
   transport: DisplayResourceTransport;
   current(): boolean;
