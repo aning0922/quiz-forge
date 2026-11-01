@@ -1,0 +1,41 @@
+{
+  "schemaVersion": "qianzai.local-liqingzhao-online-fixture.v1",
+  "scope": "local-demo-only-no-quizpack-or-database-admission",
+  "canonicalContentSha256": "baaeae69e9bc0228f6b7b53807eb9ab5f1685116d49e221e0c2835389f1c225d",
+  "baseContentSha256": "2c9cac22c92a42516d1c921a115987af803d908d3e9f49b6319a439170b56af0",
+  "resources": [
+    {
+      "productId": "qianzai-tongxin",
+      "id": "qztx-online-li-qingzhao-reveal",
+      "version": "1.0.0",
+      "sha256": "12229833079b38ce5fb58304cfb8660b0550626e47c0fba8e561910465b0942e",
+      "bytes": 3082047,
+      "width": 852,
+      "height": 1846,
+      "mediaType": "image/png",
+      "purpose": "portrait"
+    },
+    {
+      "productId": "qianzai-tongxin",
+      "id": "qztx-online-li-qingzhao-report",
+      "version": "1.0.0",
+      "sha256": "4a557f037ff48516039f112a35316db59f23f86a45c0c077cb700acf0faef676",
+      "bytes": 3023395,
+      "width": 1254,
+      "height": 1254,
+      "mediaType": "image/png",
+      "purpose": "portrait"
+    },
+    {
+      "productId": "qianzai-tongxin",
+      "id": "qztx-online-li-qingzhao-poster",
+      "version": "1.0.0",
+      "sha256": "e1371737edfdae955a1919bbf8c82810a91c7fd97883406b13286ab928c4ee78",
+      "bytes": 3053365,
+      "width": 1162,
+      "height": 1354,
+      "mediaType": "image/png",
+      "purpose": "portrait"
+    }
+  ]
+}

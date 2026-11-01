@@ -560,14 +560,14 @@
       "asset": {
         "resourceRef": {
           "productId": "qianzai-tongxin",
-          "id": "qztx-test-li-qingzhao-portrait",
+          "id": "qztx-online-li-qingzhao-reveal",
           "version": "1.0.0"
         },
+        "sha256": "12229833079b38ce5fb58304cfb8660b0550626e47c0fba8e561910465b0942e",
+        "bytes": 3082047,
+        "width": 852,
+        "height": 1846,
         "mediaType": "image/png",
-        "bytes": 2656102,
-        "sha256": "9dc1b8d77f7d0973dbfb64fe689f7d790064c845a4d5975e08cd604d7e78d41a",
-        "width": 941,
-        "height": 1672,
         "purpose": "portrait",
         "approval": "private-test-only"
       }
@@ -578,14 +578,14 @@
       "asset": {
         "resourceRef": {
           "productId": "qianzai-tongxin",
-          "id": "qztx-test-li-qingzhao-portrait",
+          "id": "qztx-online-li-qingzhao-report",
           "version": "1.0.0"
         },
+        "sha256": "4a557f037ff48516039f112a35316db59f23f86a45c0c077cb700acf0faef676",
+        "bytes": 3023395,
+        "width": 1254,
+        "height": 1254,
         "mediaType": "image/png",
-        "bytes": 2656102,
-        "sha256": "9dc1b8d77f7d0973dbfb64fe689f7d790064c845a4d5975e08cd604d7e78d41a",
-        "width": 941,
-        "height": 1672,
         "purpose": "portrait",
         "approval": "private-test-only"
       }
@@ -596,14 +596,14 @@
       "asset": {
         "resourceRef": {
           "productId": "qianzai-tongxin",
-          "id": "qztx-test-li-qingzhao-portrait",
+          "id": "qztx-online-li-qingzhao-poster",
           "version": "1.0.0"
         },
+        "sha256": "e1371737edfdae955a1919bbf8c82810a91c7fd97883406b13286ab928c4ee78",
+        "bytes": 3053365,
+        "width": 1162,
+        "height": 1354,
         "mediaType": "image/png",
-        "bytes": 2656102,
-        "sha256": "9dc1b8d77f7d0973dbfb64fe689f7d790064c845a4d5975e08cd604d7e78d41a",
-        "width": 941,
-        "height": 1672,
         "purpose": "portrait",
         "approval": "private-test-only"
       }

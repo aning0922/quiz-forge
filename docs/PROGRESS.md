@@ -1,5 +1,17 @@
 # 阶段进度
 
+## 2026-11-01 李清照线上生图单角色样板接线
+
+基线 `d2eea8f`，独立 `codex/qztx-liqingzhao-online`。作者授权线上生图单角色样板；主控生成并选定 B 母图，另生成报告方图与海报图，原始图片及来源记录保留在本树 `.cache/liqingzhao-online/`。本批仅将李清照 reveal/report/poster 拆为三个新资源 ID，仍为 private-test-only、commercialUse=false、redistribution=false；姓名及其余四角色、CSS、正文、评分、数据库、旧实例保持。
+
+新本地 fixture source `baaeae69e9bc0228f6b7b53807eb9ab5f1685116d49e221e0c2835389f1c225d`，母来源 `2c9cac22c92a42516d1c921a115987af803d908d3e9f49b6319a439170b56af0`。反向还原 canonical 精确相同；22 项未替换资源字节、其余 runtime 绑定及字体保持。新来源只加入有限展示 alias 和精确素材事实，不加入 PRIVATE_TEST_REGISTRATIONS 或 DB 来源三元组。生成脚本独占创建输出；重复目录返回 EEXIST，全部输出字节未变。
+
+验证：`vitest run src/features/report/qianzai-tongxin/presentation-source.test.ts` 8 项通过，覆盖来源身份、全部 fixture 资源精确事实/变异拒绝及无 DB 来源准入；修改 TS ESLint/格式、资源实际尺寸/SHA 与主控 manifest 对照、diff 检查通过。唯一一次 `pnpm build` 通过登记/编译/类型及 trace123/26234/0，build `LW-bUBO8cGVBtqvzPo6Rn`，consumer entry `bfba26b773f617d3a29f3747419368381382b17e4d96f758e18bc40f4d0544bc`。新树首次离线安装缺少缓存包，日志保留；按锁文件联网安装成功，未改依赖版本。
+
+演示脚本新增 `QZTX_LIQINGZHAO_ONLINE_FIXTURE=1` 有限模式，`/about` 明示李清照线上母图样板及正文候选，提供李清照揭晓/报告入口。主控已启动独立63210，原63208及其他实例保持。IAB390×844核对李清照揭晓、连续上滑报告、双缩略图及保存；320×568人物裁切和无横向溢出通过，首次截图在返回滚动途中，最终揭晓截图另存。相逢海报941×1672/1809180B，SHA c28d8600ed56b9e8ea106ca0fad215095588f0a506548668bf3c7c499f2e0b7e；完整长图724×8099/3259320B，SHA da09543b8f3b5ec8070d999758f2df649d0624ede6658fc8d059e5ae2238935d，两图实际下载、完整解码并图检。浏览器与PNG证据在.cache/liqingzhao-online。独立Astra代码审查无剩余P1/P2。未重跑不受影响全量、控制器/数据库回归或本地GPU任务；未合并、部署。
+
+本轮在线imagegen共4次：揭晓A/B、报告方图、海报图。选B作为母图；三用途图保持同一面貌、发式和主要服装纹样，姓名沿用原居中字图。原生输出分别852×1846、1254×1254、1162×1354，未拉伸凑尺寸。全部源图、提示词与SHA保留；静态对照页http://127.0.0.1:63211/含素材包和真实截图。人物美术待作者实际体验；正文与海报公共布局保持候选/既有版本，本次不冒称完整句库或最终海报配方已定稿。完成单角色样板后停止，不自动批量其他角色。
+
 ## 2026-11-01 揭晓下部构图与姓名图内居中纠正
 
 作者明确纠正上一批：固定的是下部整组排版与姓名图片外框，名字实际笔画须在同画布内整体居中；距顶部380/416/650固定和单字等大不再作为验收目标。基线c3cb738（PR #41），独立`codex/qztx-reveal-bottom`；新演示 http://127.0.0.1:63208/about，保留63207及原有实例。

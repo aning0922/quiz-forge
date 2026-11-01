@@ -4,6 +4,7 @@ import rebuildRegistration from "./private-test-registration-rebuild.json";
 import localArtFixture from "./qianzai-local-art-fixture.json";
 import localNameFixture from "./qianzai-local-name-fixture.json";
 import centeredNameFixture from "./qianzai-local-centered-name-fixture.json";
+import liQingzhaoOnlineFixture from "./qianzai-local-liqingzhao-online-fixture.json";
 
 /** Compiled finite registrations, never selected by a request or an environment switch. */
 export const PRIVATE_TEST_REGISTRATION = registration;
@@ -90,6 +91,7 @@ export function privateTestAssetMatches(asset: {
       localArtFixture,
       localNameFixture,
       centeredNameFixture,
+      liQingzhaoOnlineFixture,
     ].some((r) =>
       r.resources.some(
         (e: Record<string, unknown>) =>
