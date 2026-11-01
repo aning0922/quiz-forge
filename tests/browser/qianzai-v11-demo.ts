@@ -106,6 +106,24 @@ Object.assign(completed.report.view, {
   mappingSha256: session.entry.facts.mappingSha256,
   display: initialDisplay,
 });
+// Fixed authored test witnesses, never the author's current session or answers.
+const reviewModels = new Map<string, typeof completed>();
+for (const witness of content.bindings.witnesses.entries) {
+  const display = compose({
+    schemaVersion: "quiz-scoring-input.v2",
+    answers: witness.answers,
+    matchingContext: {
+      schemaVersion: "quiz-matching-context.v1",
+      policyRef: content.core.scoringDefinition.matchingPolicy.ref,
+      preference: witness.preference,
+    },
+  });
+  if (!display || display.selectedResultRef.id !== witness.expectedResultRef.id)
+    throw Error("REVIEW_WITNESS_MISMATCH");
+  const model = structuredClone(completed);
+  model.report!.view.display = display;
+  reviewModels.set(witness.expectedResultRef.id, model);
+}
 const pack = await readFile(path.join(source, "pack.zip"));
 const zip = await readRestrictedZip(
   (async function* () {
@@ -180,18 +198,20 @@ files.set("/demo.css", {
   body: await readFile(path.join(out, "demo.css")),
   type: "text/css",
 });
-const setup = JSON.stringify({
-  session,
-  completed,
-  review: true,
-  v11Demo: true,
-  compositionEndpoint: "/demo/compose",
-  visuals,
-  completedVisuals: visuals,
-}).replaceAll("<", "\\u003c");
+const setup = (reviewModel = completed) =>
+  JSON.stringify({
+    session,
+    completed: reviewModel,
+    review: true,
+    v11Demo: true,
+    compositionEndpoint: "/demo/compose",
+    visuals,
+    completedVisuals: visuals,
+  }).replaceAll("<", "\\u003c");
 const resetScript = `document.querySelector('#demo-reset').addEventListener('click',()=>{for(const k of Object.keys(localStorage))if(k.startsWith('qianzai-v11-demo:'))localStorage.removeItem(k);for(const k of Object.keys(sessionStorage))if(k.includes('consumer'))sessionStorage.removeItem(k);location.href='/';});`;
-const about = `<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>千载同心 · 体验入口</title><style>body{max-width:620px;margin:8vh auto;padding:24px;background:#122839;color:#f8e6be;font:16px/1.8 system-ui}a,button{display:inline-block;padding:12px 18px;margin:8px;color:inherit;background:transparent;border:1px solid #b99c65;border-radius:8px;font:inherit;cursor:pointer}h1{font-size:28px}</style><h1>千载同心 · 07 五维与排版体验</h1><p>24题与现有确定性评分引擎可连续体验；会话和回执为本地隔离模拟，不连接原数据库，不使用原体验资格。人物沿用现有参考素材，新增资料与短句为体验候选。</p><a href="/">继续当前体验</a><button id="demo-reset">开始一轮新体验</button><a href="/?review-report=reveal">直接查看李白揭晓与报告示例</a><script>${resetScript}</script></html>`;
-const html = `<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>千载同心 · 07 五维与排版体验</title><link rel="stylesheet" href="/demo.css"><style>@font-face{font-family:"${font.family}";src:url(${font.file});font-weight:600;font-display:swap}html,body{margin:0;height:100%;overflow:hidden;background:#0b1727}</style><div id="root"></div><script id="fixture" type="application/json">${setup}</script><script src="/demo.js"></script></html>`;
+const about = `<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>千载同心 · 体验入口</title><style>body{max-width:620px;margin:8vh auto;padding:24px;background:#122839;color:#f8e6be;font:16px/1.8 system-ui}a,button{display:inline-block;padding:12px 18px;margin:8px;color:inherit;background:transparent;border:1px solid #b99c65;border-radius:8px;font:inherit;cursor:pointer}h1{font-size:28px}</style><h1>千载同心 · 字体与内容校准体验</h1><p>24题与现有确定性评分引擎可连续体验；会话和回执为本地隔离模拟，不连接原数据库，不使用原体验资格。人物沿用现有参考素材，新增资料与短句为体验候选。</p><a href="/">继续当前体验</a><button id="demo-reset">开始一轮新体验</button><a href="/?review-report=reveal">直接查看李白揭晓与报告示例</a><a href="/?review-report=reveal&role=tao-yuanming">直接查看陶渊明揭晓与报告示例</a><script>${resetScript}</script></html>`;
+const html = (reviewModel = completed) =>
+  `<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>千载同心 · 字体与内容校准体验</title><link rel="stylesheet" href="/demo.css"><style>@font-face{font-family:"${font.family}";src:url(${font.file});font-weight:600;font-display:swap}html,body{margin:0;height:100%;overflow:hidden;background:#0b1727}</style><div id="root"></div><script id="fixture" type="application/json">${setup(reviewModel)}</script><script src="/demo.js"></script></html>`;
 
 const port = Number(process.env.QZTX_V11_PORT ?? "63201");
 if (!Number.isInteger(port) || port < 1024 || port > 65535)
@@ -235,7 +255,16 @@ const server = createServer(async (req, res) => {
       url.pathname === "/about"
         ? { body: about, type: "text/html;charset=utf-8" }
         : url.pathname === "/"
-          ? { body: html, type: "text/html;charset=utf-8" }
+          ? {
+              body: html(
+                url.searchParams.has("review-report")
+                  ? (reviewModels.get(
+                      url.searchParams.get("role") ?? "li-bai",
+                    ) ?? completed)
+                  : completed,
+              ),
+              type: "text/html;charset=utf-8",
+            }
           : files.get(url.pathname);
     if (!item) {
       res.writeHead(404);
