@@ -1097,6 +1097,20 @@
   font-size: 14px;
   line-height: 1.7;
 }
+/* The opening keeps a centered identity, but its real multi-paragraph prose
+   follows the prototype's left-aligned lead instead of inheriting the title. */
+.reader[data-qianzai-report-mode="snapshot"] .rp-identity-sub {
+  line-height: 1.6;
+  margin: 6px 0 12px;
+}
+.reader[data-qianzai-report-mode="snapshot"] .rp-opening .runtimeParagraph {
+  text-align: left;
+}
+.reader[data-qianzai-report-mode="snapshot"] .rp-opening .runtimeParagraph > p {
+  margin: 12px 3px 14px;
+  line-height: 1.8;
+  text-indent: 2em;
+}
 .reader.reader .rp-iconbtn,
 .reader.reader .rp-menu-toggle,
 .reader.reader .rp-scrolltop-text,

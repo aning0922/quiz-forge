@@ -9,9 +9,7 @@
         "entrypoints": [
           {
             "path": "src/features/product/internal-versions/implementations/engine-v2.ts",
-            "exports": [
-              "bindEngineV2"
-            ],
+            "exports": ["bindEngineV2"],
             "runtime": "server"
           }
         ],
@@ -222,10 +220,7 @@
             }
           ],
           "settingsSha256": "078cb045ec56da085d08eb6efd0f1b925aa95b0ed16afff689183a2a919c0dd3",
-          "builtins": [
-            "node:crypto",
-            "node:util"
-          ]
+          "builtins": ["node:crypto", "node:util"]
         },
         "runtimePolicy": {
           "node": ">=20.19.0 <21 || >=22.13.0",
@@ -254,17 +249,12 @@
         "entrypoints": [
           {
             "path": "src/features/theme/preview/v3-projection.ts",
-            "exports": [
-              "projectContentEntryV3",
-              "projectPreparedResultV3"
-            ],
+            "exports": ["projectContentEntryV3", "projectPreparedResultV3"],
             "runtime": "server"
           },
           {
             "path": "src/features/theme/consumer-v2/studio-structure-preview.tsx",
-            "exports": [
-              "StudioStructurePreviewV2"
-            ],
+            "exports": ["StudioStructurePreviewV2"],
             "runtime": "browser"
           }
         ],
@@ -2148,10 +2138,7 @@
             }
           ],
           "settingsSha256": "078cb045ec56da085d08eb6efd0f1b925aa95b0ed16afff689183a2a919c0dd3",
-          "builtins": [
-            "node:crypto",
-            "node:util"
-          ]
+          "builtins": ["node:crypto", "node:util"]
         },
         "runtimePolicy": {
           "node": ">=20.19.0 <21 || >=22.13.0",
@@ -2317,31 +2304,22 @@
         "entrypoints": [
           {
             "path": "src/features/theme/preview/v3-projection.ts",
-            "exports": [
-              "projectContentEntryV3",
-              "projectPreparedResultV3"
-            ],
+            "exports": ["projectContentEntryV3", "projectPreparedResultV3"],
             "runtime": "server"
           },
           {
             "path": "src/features/theme/consumer-v2/experience.tsx",
-            "exports": [
-              "ConsumerSessionRuntimeV2"
-            ],
+            "exports": ["ConsumerSessionRuntimeV2"],
             "runtime": "browser"
           },
           {
             "path": "src/features/theme/consumer-v2/controller.ts",
-            "exports": [
-              "ConsumerControllerV2"
-            ],
+            "exports": ["ConsumerControllerV2"],
             "runtime": "browser"
           },
           {
             "path": "src/features/theme/consumer-v2/host.tsx",
-            "exports": [
-              "ConsumerExperienceV2"
-            ],
+            "exports": ["ConsumerExperienceV2"],
             "runtime": "browser"
           },
           {
@@ -2355,9 +2333,7 @@
           },
           {
             "path": "src/features/report/persisted/view-contracts-v2.ts",
-            "exports": [
-              "verifyPersistedReportViewV2"
-            ],
+            "exports": ["verifyPersistedReportViewV2"],
             "runtime": "server"
           }
         ],
@@ -4376,10 +4352,7 @@
             }
           ],
           "settingsSha256": "078cb045ec56da085d08eb6efd0f1b925aa95b0ed16afff689183a2a919c0dd3",
-          "builtins": [
-            "node:crypto",
-            "node:util"
-          ]
+          "builtins": ["node:crypto", "node:util"]
         },
         "runtimePolicy": {
           "node": ">=20.19.0 <21 || >=22.13.0",
@@ -4403,35 +4376,30 @@
         "entrypoints": [
           {
             "path": "src/features/theme/qianzai-tongxin/projection.ts",
-            "exports": [
-              "projectQianzaiEntry",
-              "projectQianzaiResult"
-            ],
+            "exports": ["projectQianzaiEntry", "projectQianzaiResult"],
             "runtime": "server"
           },
           {
             "path": "src/features/theme/qianzai-tongxin/fixed-preview.tsx",
-            "exports": [
-              "QianzaiFixedPreview"
-            ],
+            "exports": ["QianzaiFixedPreview"],
             "runtime": "browser"
           }
         ],
         "files": [
           {
-            "path": "public/assets/fonts/qianzai-v5/OFL.txt",
+            "path": "public/assets/fonts/qianzai-v6/OFL.txt",
             "bytes": 4350,
             "sha256": "5e0da210fb04058a8c0087985d2d456b931c2579811a49655721d3cf0c36b6d6"
           },
           {
-            "path": "public/assets/fonts/qianzai-v5/characters.txt",
-            "bytes": 3228,
-            "sha256": "c86a3190f92270b279283d384ef6ca1e9cadf5df104325ab3ad86b1ce8f5622e"
+            "path": "public/assets/fonts/qianzai-v6/characters.txt",
+            "bytes": 3234,
+            "sha256": "89614b806de68dc32d234d59816467898ecfdc7939fb9c052f78159e290134e8"
           },
           {
-            "path": "public/assets/fonts/qianzai-v5/serif-600.woff2",
-            "bytes": 225648,
-            "sha256": "33d5850a591e750f91dbed67e2ebe34da86b4b239b653db98d5d5d7a7eb15ee0"
+            "path": "public/assets/fonts/qianzai-v6/serif-600.woff2",
+            "bytes": 225868,
+            "sha256": "6c2ebddbf4c7110adcf5b2d4fa936c34f2dd6f9c707f182e8b76090a00906524"
           },
           {
             "path": "src/features/quiz/scoring/v2/boundary.ts",
@@ -6352,10 +6320,7 @@
             }
           ],
           "settingsSha256": "078cb045ec56da085d08eb6efd0f1b925aa95b0ed16afff689183a2a919c0dd3",
-          "builtins": [
-            "node:crypto",
-            "node:util"
-          ]
+          "builtins": ["node:crypto", "node:util"]
         },
         "runtimePolicy": {
           "node": ">=20.19.0 <21 || >=22.13.0",
@@ -6365,7 +6330,7 @@
           "serverCondition": "react-server"
         }
       },
-      "implementationSha256": "a6507fa1e01f537fed4b5e722e7970102b009c6dbe2ee68909850576f63b8d45",
+      "implementationSha256": "0665cf75a17bc45f67efc1c87a4aaef52cc4f2a4e5d4be362923cb55247c91a4",
       "kind": "renderer",
       "capability": "studio-internal-preview",
       "components": {
@@ -6407,19 +6372,19 @@
       },
       "font": {
         "id": "qianzai-tongxin-serif",
-        "version": "1.4.0",
-        "family": "QuizForge Qianzai Serif V5",
+        "version": "1.5.0",
+        "family": "QuizForge Qianzai Serif V6",
         "weight": 600,
-        "file": "/assets/fonts/qianzai-v5/serif-600.woff2",
-        "fileSha256": "33d5850a591e750f91dbed67e2ebe34da86b4b239b653db98d5d5d7a7eb15ee0",
-        "bytes": 225648,
-        "coverage": "/assets/fonts/qianzai-v5/characters.txt",
-        "coverageSha256": "c86a3190f92270b279283d384ef6ca1e9cadf5df104325ab3ad86b1ce8f5622e",
-        "licenseFile": "/assets/fonts/qianzai-v5/OFL.txt",
+        "file": "/assets/fonts/qianzai-v6/serif-600.woff2",
+        "fileSha256": "6c2ebddbf4c7110adcf5b2d4fa936c34f2dd6f9c707f182e8b76090a00906524",
+        "bytes": 225868,
+        "coverage": "/assets/fonts/qianzai-v6/characters.txt",
+        "coverageSha256": "89614b806de68dc32d234d59816467898ecfdc7939fb9c052f78159e290134e8",
+        "licenseFile": "/assets/fonts/qianzai-v6/OFL.txt",
         "licenseSha256": "5e0da210fb04058a8c0087985d2d456b931c2579811a49655721d3cf0c36b6d6"
       }
     },
-    "entrySha256": "dd1a125dafeb077cc4d0837d15690ffe06538a7ed09ea0c7462ee04bc55524fa"
+    "entrySha256": "d57883feac7679135bce97e19f2a80c882f4985bda2b00753f4c6d4228ebd4c0"
   },
   "qianzaiConsumer": {
     "descriptor": {
@@ -6524,15 +6489,15 @@
       },
       "font": {
         "id": "qianzai-tongxin-serif",
-        "version": "1.4.0",
-        "family": "QuizForge Qianzai Serif V5",
+        "version": "1.5.0",
+        "family": "QuizForge Qianzai Serif V6",
         "weight": 600,
-        "file": "/assets/fonts/qianzai-v5/serif-600.woff2",
-        "fileSha256": "33d5850a591e750f91dbed67e2ebe34da86b4b239b653db98d5d5d7a7eb15ee0",
-        "bytes": 225648,
-        "coverage": "/assets/fonts/qianzai-v5/characters.txt",
-        "coverageSha256": "c86a3190f92270b279283d384ef6ca1e9cadf5df104325ab3ad86b1ce8f5622e",
-        "licenseFile": "/assets/fonts/qianzai-v5/OFL.txt",
+        "file": "/assets/fonts/qianzai-v6/serif-600.woff2",
+        "fileSha256": "6c2ebddbf4c7110adcf5b2d4fa936c34f2dd6f9c707f182e8b76090a00906524",
+        "bytes": 225868,
+        "coverage": "/assets/fonts/qianzai-v6/characters.txt",
+        "coverageSha256": "89614b806de68dc32d234d59816467898ecfdc7939fb9c052f78159e290134e8",
+        "licenseFile": "/assets/fonts/qianzai-v6/OFL.txt",
         "licenseSha256": "5e0da210fb04058a8c0087985d2d456b931c2579811a49655721d3cf0c36b6d6"
       },
       "closure": {
@@ -6547,23 +6512,17 @@
           },
           {
             "path": "src/features/theme/consumer-v2/experience.tsx",
-            "exports": [
-              "ConsumerSessionRuntimeV2"
-            ],
+            "exports": ["ConsumerSessionRuntimeV2"],
             "runtime": "browser"
           },
           {
             "path": "src/features/theme/consumer-v2/controller.ts",
-            "exports": [
-              "ConsumerControllerV2"
-            ],
+            "exports": ["ConsumerControllerV2"],
             "runtime": "browser"
           },
           {
             "path": "src/features/theme/qianzai-tongxin/runtime.tsx",
-            "exports": [
-              "QianzaiTongxinRuntime"
-            ],
+            "exports": ["QianzaiTongxinRuntime"],
             "runtime": "browser"
           },
           {
@@ -6577,27 +6536,25 @@
           },
           {
             "path": "src/features/report/persisted/view-contracts-v2.ts",
-            "exports": [
-              "verifyPersistedReportViewV2"
-            ],
+            "exports": ["verifyPersistedReportViewV2"],
             "runtime": "server"
           }
         ],
         "files": [
           {
-            "path": "public/assets/fonts/qianzai-v5/OFL.txt",
+            "path": "public/assets/fonts/qianzai-v6/OFL.txt",
             "bytes": 4350,
             "sha256": "5e0da210fb04058a8c0087985d2d456b931c2579811a49655721d3cf0c36b6d6"
           },
           {
-            "path": "public/assets/fonts/qianzai-v5/characters.txt",
-            "bytes": 3228,
-            "sha256": "c86a3190f92270b279283d384ef6ca1e9cadf5df104325ab3ad86b1ce8f5622e"
+            "path": "public/assets/fonts/qianzai-v6/characters.txt",
+            "bytes": 3234,
+            "sha256": "89614b806de68dc32d234d59816467898ecfdc7939fb9c052f78159e290134e8"
           },
           {
-            "path": "public/assets/fonts/qianzai-v5/serif-600.woff2",
-            "bytes": 225648,
-            "sha256": "33d5850a591e750f91dbed67e2ebe34da86b4b239b653db98d5d5d7a7eb15ee0"
+            "path": "public/assets/fonts/qianzai-v6/serif-600.woff2",
+            "bytes": 225868,
+            "sha256": "6c2ebddbf4c7110adcf5b2d4fa936c34f2dd6f9c707f182e8b76090a00906524"
           },
           {
             "path": "src/features/fulfillment/consumer-flow/contracts-v2.ts",
@@ -6760,9 +6717,14 @@
             "sha256": "506bc95adce2293c57dad49f8b606a186f5aeee5cca422e9e1f5db04b421a5f7"
           },
           {
+            "path": "src/features/report/qianzai-tongxin/dimension-scale.ts",
+            "bytes": 3139,
+            "sha256": "375916b697b478335b320dd04b0084426a32acc94e74c2337ac54e3572289e98"
+          },
+          {
             "path": "src/features/report/qianzai-tongxin/export.ts",
-            "bytes": 13034,
-            "sha256": "32ae431b6e370bb783277cf486065f9079ad8c2298a6497e79ca71bc5793422c"
+            "bytes": 14179,
+            "sha256": "c635ad55425f9a896973e5983c841f025fd7382e4f4fc2dd7a0f62be650bbcf5"
           },
           {
             "path": "src/features/report/qianzai-tongxin/inline-emphasis.ts",
@@ -6771,8 +6733,8 @@
           },
           {
             "path": "src/features/report/qianzai-tongxin/layout.ts",
-            "bytes": 17394,
-            "sha256": "87de84ad54cbc7af53a195f048f2a673dcea7f43a242f6a75a0f8fc1715ab3cd"
+            "bytes": 19337,
+            "sha256": "7dc6099a575fa7e2aa258d21c7130fce47a95e8dba4ebd1a6739ae821600beb0"
           },
           {
             "path": "src/features/report/qianzai-tongxin/presentation.ts",
@@ -6866,8 +6828,8 @@
           },
           {
             "path": "src/features/theme/qianzai-tongxin/experience.tsx",
-            "bytes": 38591,
-            "sha256": "360f1590da719de04cd88aee887e9517b2a5da0ae74d5efad5423a6c00706703"
+            "bytes": 38774,
+            "sha256": "91f428638cf2e7493a2473d0c60a38a08b7bc11a1916b2fe4d7cb88c5d289b98"
           },
           {
             "path": "src/features/theme/qianzai-tongxin/export-context.tsx",
@@ -6896,18 +6858,18 @@
           },
           {
             "path": "src/features/theme/qianzai-tongxin/qianzai.module.css",
-            "bytes": 78701,
-            "sha256": "abfdf5fb8820a373293b4463cb41469482a66c4ae3e4db881c6684d8424c4228"
+            "bytes": 79645,
+            "sha256": "c9c2f16f592f2847e08f3a1aa9f314d714a27c56b9f4c576b7d48fec79a75536"
           },
           {
             "path": "src/features/theme/qianzai-tongxin/report-parity.module.css",
-            "bytes": 25154,
-            "sha256": "e85404cd86a030876f737c2e2c24ba9964b5cee58633bbba5b9492fa5e8b70b9"
+            "bytes": 29318,
+            "sha256": "ddbb971ab12eaf03f411b6e12b408cdcc181560eae68d223354d808d62551bf3"
           },
           {
             "path": "src/features/theme/qianzai-tongxin/report.tsx",
-            "bytes": 33314,
-            "sha256": "91568523b91151d693c6ba38a371ff5957786beac16f66f5f5eaf71e4a35b934"
+            "bytes": 37649,
+            "sha256": "4cee675bb9c7e3e09d91b886fd371612d857fb7ebf7a84ede996db57f07b1e96"
           },
           {
             "path": "src/features/theme/qianzai-tongxin/resource-owner.ts",
@@ -6917,7 +6879,7 @@
           {
             "path": "src/features/theme/qianzai-tongxin/runtime-inputs.json",
             "bytes": 19949,
-            "sha256": "137a7c054fddcc80efa42c85f37d63a9505e5d67dfcc1544c3f879a7965957fd"
+            "sha256": "9446fa6ab1fda87b783c5817c0d12e8f5c8466d710c97434000a1e4fe4383991"
           },
           {
             "path": "src/features/theme/qianzai-tongxin/runtime-inputs.ts",
@@ -6931,8 +6893,8 @@
           },
           {
             "path": "src/features/theme/qianzai-tongxin/scenes.module.css",
-            "bytes": 44028,
-            "sha256": "2426ed4eb7fcc6cebf78e049186c94a7ff9e494def3c1a190a4093d02fa5d6a3"
+            "bytes": 45486,
+            "sha256": "0342067423496f31841c40711a888174ee5a096142d4448deb9b7a8da5f4752c"
           },
           {
             "path": "src/features/theme/qianzai-tongxin/share-panel.tsx",
@@ -6946,8 +6908,8 @@
           },
           {
             "path": "src/features/theme/qianzai-tongxin/views.tsx",
-            "bytes": 34119,
-            "sha256": "dd67f3e7004757099d2d30e8670e7e857594390babfa6482b5cad8f015817de2"
+            "bytes": 34631,
+            "sha256": "1363809f25aa7d9b54cd85842323eb16dbb8e97c6de1c57109ac29f7527ab1cd"
           },
           {
             "path": "src/lib/assessment-contract/composed-report-v1.ts",
@@ -8788,10 +8750,7 @@
             }
           ],
           "settingsSha256": "078cb045ec56da085d08eb6efd0f1b925aa95b0ed16afff689183a2a919c0dd3",
-          "builtins": [
-            "node:crypto",
-            "node:util"
-          ]
+          "builtins": ["node:crypto", "node:util"]
         },
         "runtimePolicy": {
           "node": ">=20.19.0 <21 || >=22.13.0",
@@ -8801,8 +8760,8 @@
           "serverCondition": "react-server"
         }
       },
-      "implementationSha256": "545b1245fe45302740f018728bc4477c2abe31388218f9039788046c37cfd9e4"
+      "implementationSha256": "410b62a0ddbe0fd11df5a0bf02e11c4c6d6398e1d0f4041a2e748fb81cdb8169"
     },
-    "entrySha256": "4bee60d187d7287a70f4c8c500db9456ff7f37d3ca1797d78fe67bcd6cbb0e89"
+    "entrySha256": "8617c96900b8fa2c1f7c8fce534f3b82ba57b7e6ac38bdd2332d3afa2cbb43c1"
   }
 }
