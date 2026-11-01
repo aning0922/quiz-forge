@@ -1109,6 +1109,12 @@ export function QianzaiReveal({
                   <blockquote
                     className={scenes.dynamicQuote}
                     data-qianzai-reveal-quote
+                    style={
+                      {
+                        "--quote-characters": Array.from(copy.quote.text)
+                          .length,
+                      } as CSSProperties
+                    }
                     cite={copy.quote.sourceUrl}
                     title={copy.quote.source}
                   >

@@ -214,8 +214,9 @@ export const QIANZAI_ROLE_PROFILES_V11: readonly QianzaiRoleProfileV11[] = [
           "https://zh.wikisource.org/zh-hans/如夢令_(李清照)/如夢令_(常記溪亭日暮)",
       },
       {
+        // Retain the pool ID/order so expanding the excerpt does not reshuffle selection.
         id: "li-qingzhao-fengpeng",
-        text: "九万里风鹏正举。",
+        text: "天接云涛连晓雾，星河欲转千帆舞。",
         source: "李清照《渔家傲·天接云涛连晓雾》",
         sourceUrl: "https://zh.wikisource.org/zh-hans/漁家傲_(李清照)",
       },

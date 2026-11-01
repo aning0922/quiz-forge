@@ -2169,10 +2169,10 @@
 }
 .dynamicQuote {
   position: absolute;
-  top: 28px;
+  bottom: 0;
   right: -10px;
   width: 30px;
-  height: 272px;
+  height: max(272px, calc(var(--quote-characters, 14) * 1.04em + 4px));
   min-height: 272px;
   margin: 0;
   writing-mode: vertical-rl;
