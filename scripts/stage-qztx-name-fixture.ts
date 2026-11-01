@@ -107,9 +107,7 @@ for (const r of b.resources)
       throw Error("BASE_ASSET_CHANGED");
     await copyFile(path.join(source!, r.path), path.join(out!, r.path));
   }
-const runtime = await read(
-  "src/features/theme/qianzai-tongxin/runtime-inputs.json",
-);
+const runtime = await read(path.join(source!, "runtime-inputs.json"));
 for (const bind of runtime.resources) {
   if (bind.slot !== "character.nameArt") continue;
   const r = replacements.get(bind.asset.resourceRef.id);
