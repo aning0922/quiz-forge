@@ -4,7 +4,10 @@ import { createHash } from "node:crypto";
 import path from "node:path";
 import sharp from "sharp";
 import { canonicalP1Json } from "../src/features/quizpack/v1/canonical";
-import { quizPackContentV3Schema } from "../src/features/quizpack/content/v3";
+import {
+  quizPackContentV3Schema,
+  privateTestResourceV3Schema,
+} from "../src/features/quizpack/content/v3";
 import { prepareContentV3 } from "../src/features/quizpack/content/v3-scoring-adapter";
 const [source, art, names, out] = process.argv.slice(2);
 if (![source, art, names, out].every((p) => p && path.isAbsolute(p)))
@@ -90,7 +93,7 @@ for (const a of additions) {
     m = await sharp(bytes).metadata();
   if (m.format !== "png" || !m.width || !m.height || (m.pages && m.pages !== 1))
     throw Error("IMAGE_FORMAT");
-  const r = {
+  const r = privateTestResourceV3Schema.parse({
     ...structuredClone(old.bindings.resources[0]!),
     ...ref(a.id),
     path: `assets/${a.id}.png`,
@@ -114,7 +117,7 @@ for (const a of additions) {
           ? "马善政固定字体轮廓生成透明姓名图；不是原确认美术字"
           : "built-in imagegen 对既有原型场景/皮肤编辑；不是新的作者视觉验收",
     },
-  };
+  });
   added.push(r);
   resources.set(r.id, r);
   await copyFile(a.file, path.join(out!, r.path));

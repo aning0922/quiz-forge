@@ -1,5 +1,21 @@
 # 阶段进度
 
+## 2026-11-01 三幕连续场景、题框与姓名图片校准
+
+基线4defdf2，独立`codex/qztx-art-calibration`。保留63204、63202、原型及真实实例。新体验`http://127.0.0.1:63206/`（`/about`可重开；`?review-report=reveal&role=li-bai`或tao-yuanming查看角色）。本轮为固定local-demo-only夹具＋模拟会话，复用真实组件/controller/确定性评分/resource owner/Canvas；未构建或导入QuizPack，未取得数据库新来源准入，不冒称原业务实例升级。
+
+素材：内置imagegen对现有原图编辑，三幕各自重建下部连续场景，保持上半原风格；公共题纸/未选/选中皮肤三张重绘，去掉烘焙字母/勾。新增五张480×640透明姓名图，由固定马善政轮廓制作暖金错落字图，非原确认书法原件。另从李白before制作净全幅候选，只替换新候选reveal，不改report/poster。共12份新资源，全部候选，封面不重画。原图、生成图与来源记录保留在`.cache/art-calibration/`，姓名成品在fixture-02/assets，生成记录generation-manifest.json。
+
+B1445e4b集成为bcfec4d：全幅背景按比例、顶部对齐，不再拼V8水面；新增可选acts.navigation引用原受控场景，只用于原导航花饰裁片。题纸与选项按精确SHA/尺寸/alpha窗口九切片，边角不随中心伸展；24题位置、16px字体与状态事件保持。A9003caf/dab4b35集成为e82fe1c/2de84f5：揭晓/海报姓名统一nameArt，缺图或错身份不回退程序字；“你是”与姓名中心按原型对齐。李白完整资源ref/SHA/853×1844精确匹配后才按宽铺全图，长屏补深色尾部，不放大裁脸。
+
+共享857db7c：新fixture源SHA`59c8d3dce4573a0b0580d672c278b9e13cb4bdea85af7c7fdfbcec3bfd87c0ae`，仅有限展示alias复用原资料/编辑映射；core、reportTemplates/reportVersion/resultReports/witnesses/componentVersion/kind/schema/privateTestUse显式保持。新增图片事实只供privateTestAssetMatches匹配，PRIVATE_TEST_REGISTRATIONS及正式来源三元组原样保留，无占位manifest或DB准入。navigation进入schema/refgraph/owner；旧登记资源字节保留。共享源码影响D3五个closure，按实际变化重登记，未更改评分规则或原快照。
+
+验证：主控26项定向通过，加导航定向1通过/4过滤跳过。A复用12项layout/editorial、姓名身份2项、净全幅3项；五角色姓名及多宽UI、五海报和苏轼724×16249长图使用真实姓名PNG及合成肖像的Canvas证据，错误SHA/失权清理通过。B十状态（320×568、390×844、430×932，三幕/长题/选中）通过，最终证据art-scenes树`.cache/qztx-art-scenes-check/1793519469241`；早期失败保留。root源码静态检查通过；首次build的脚本union类型收窄失败保留，改用privateTestResourceV3Schema.parse后最终build`ep_olFeyy2VQltwtaX581`通过登记/编译/类型/trace123/26234/0，consumer entry`d655b34e1c67ee1a9eed5bae72757a80426081be1516769b8eade3b68b71b40b`。离线依赖缓存缺包失败后按锁在线安装成功，无锁文件变化。
+
+主控IAB390×844实际检查新LiBai净全幅及480×640姓名图片、连续报告、双缩略图、首题四项同屏/连续背景；实际素材李白海报941×1672、1697493B已下载，完整长图缩略图724×16028已生成。浏览器额度恢复后连接重置成功，无产品重新写入。以上为限定本地夹具工程证据，非数据库/实机/作者最终美术验收；复用原控制器故障与评分证据，未跑无关全套/媒体/数据库。
+
+Astra独审无P1/P2阻断；新实例组合图检由主控补完。下一步先作者体验冻结这批背景、题框/选中与姓名构图，再完成一个角色的揭晓/报告/海报/姓名四用途包；正文句库覆盖与海报最终配方另推进，不因本次重绘自动定稿。未合并、不部署生产。
+
 ## 2026-11-01 字体、揭晓与同心／映照校准
 
 从 a2e3a59 新建 `codex/qztx-editorial-integration`，原 63202、63201、63192 与真实服务环境保持。A 独立开发 977fac2 集成为 9268629，B 独立开发 dd24b00 集成为 3cd6ba3，Astra 独审无 P1/P2 阻断。新体验 `http://127.0.0.1:63204/`，说明及重新开始 `/about`；`?review-report=reveal&role=tao-yuanming` 可直接查看陶渊明，`?review-report=report&role=su-shi` 可查看较长报告。这里是真实组件/controller/resolver/resource lease/确定性评分/Canvas与合成会话传输，不是新增真实数据库验收。
