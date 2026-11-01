@@ -489,6 +489,97 @@ export function QianzaiPreference({
     </Scene>
   );
 }
+/** Inspected alpha>8 windows of the fixed redrawn candidates. Almost invisible
+ * padding speckles must not shrink the visible card; original bytes stay intact. */
+function qianzaiQuestionSkinWindow(asset: {
+  sha256: string;
+  width: number;
+  height: number;
+}) {
+  const windows: Record<
+    string,
+    readonly [number, number, number, number, number, number]
+  > = {
+    e92ede7aa48294d77ec55f63d12951141d9e6878f0cf51fd8a89974728f422d0: [
+      2188, 718, 4, 19, 2173, 651,
+    ],
+    "3e7e6b74093a4115777ecb84a30ff445df1293a724cdb2f356b60d65137e37cd": [
+      2171, 724, 0, 159, 2171, 390,
+    ],
+    c7fc0939d5cb2b4291074bee0105652f239a78d38d12b43e879753454427d02c: [
+      2170, 725, 0, 159, 2170, 394,
+    ],
+  };
+  const w = windows[asset.sha256];
+  return w && asset.width === w[0] && asset.height === w[1]
+    ? { x: w[2], y: w[3], width: w[4], height: w[5] }
+    : undefined;
+}
+/** Nine source windows preserve fixed corners; only edge middles and paper
+ * center stretch. The original alpha-padded image is never resampled or edited. */
+function QianzaiQuestionSkin({
+  image,
+  kind,
+  className,
+}: {
+  image: NonNullable<QianzaiVisualProps["images"]>[number];
+  kind: "paper" | "option";
+  className: string | undefined;
+}) {
+  const corner = kind === "paper" ? 32 : 24,
+    designWidth = kind === "paper" ? 354 : 355,
+    window = qianzaiQuestionSkinWindow(image.asset) ?? {
+      x: 0,
+      y: 0,
+      width: image.asset.width,
+      height: image.asset.height,
+    },
+    sourceCorner = Math.min(
+      window.height / 2 - 1,
+      (window.width / designWidth) * corner,
+    ),
+    xs = [
+      window.x,
+      window.x + sourceCorner,
+      window.x + window.width - sourceCorner,
+      window.x + window.width,
+    ],
+    ys = [
+      window.y,
+      window.y + sourceCorner,
+      window.y + window.height - sourceCorner,
+      window.y + window.height,
+    ];
+  return (
+    <span
+      aria-hidden="true"
+      className={`${className ?? ""} ${scenes.questionSkin}`}
+      data-qztx-question-skin={kind}
+      data-qztx-skin-window={`${window.x} ${window.y} ${window.width} ${window.height}`}
+      style={{
+        gridTemplateColumns: `${corner}px minmax(0, 1fr) ${corner}px`,
+        gridTemplateRows: `${corner}px minmax(0, 1fr) ${corner}px`,
+      }}
+    >
+      {[0, 1, 2].flatMap((row) =>
+        [0, 1, 2].map((col) => (
+          <svg
+            key={`${row}:${col}`}
+            viewBox={`${xs[col]} ${ys[row]} ${xs[col + 1]! - xs[col]!} ${ys[row + 1]! - ys[row]!}`}
+            preserveAspectRatio="none"
+            data-qztx-skin-piece={`${row}:${col}`}
+          >
+            <image
+              href={image.objectUrl}
+              width={image.asset.width}
+              height={image.asset.height}
+            />
+          </svg>
+        )),
+      )}
+    </span>
+  );
+}
 export function QianzaiQuestion({
   model,
   onEvent,
@@ -545,18 +636,17 @@ export function QianzaiQuestion({
     (paper && idle && chosen && q
       ? qianzaiPrototypeImage(model, scene?.background, prototypeImages)
       : undefined);
-  const cover =
-    qianzaiImage(model, model.entry?.slots.cover, images) ??
-    qianzaiPrototypeImage(model, model.entry?.slots.cover, prototypeImages);
-  // Finite, inspected V8 water region: below all lettering and the scroll CTA.
-  // A changed cover must be inspected again rather than inheriting this crop.
-  const water =
-    cover?.asset.sha256 ===
-      "fc0fb75e94f080cc2481998b818ecbb7f7b41263a6edb8bbebac01dd2b00773d" &&
-    cover.asset.width === 852 &&
-    cover.asset.height === 1844
-      ? cover
-      : undefined;
+  // Navigation retains its own admitted legacy source. The redrawn background
+  // contains no footer UI and must never be sampled as a button atlas.
+  const navigationRef = (
+      scene as
+        { navigation?: NonNullable<typeof scene>["background"] } | undefined
+    )?.navigation,
+    navigationArt = qianzaiPrototypeImage(
+      model,
+      navigationRef,
+      prototypeImages,
+    );
   const selected = model.draft?.answers.find(
       (a) => a.questionId === q?.ref.id,
     )?.optionId,
@@ -580,27 +670,18 @@ export function QianzaiQuestion({
     >
       {art && q ? (
         <>
-          <svg
-            key={art.objectUrl}
-            className={scenes["scene-art"]}
-            viewBox="0 0 390 391"
+          <div
+            className={scenes.questionBackdrop}
             aria-hidden="true"
-            data-qztx-upper-question-scene
+            data-qztx-question-background
           >
-            <image href={art.objectUrl} width="390" height="844" />
-          </svg>
+            <ArtImage
+              key={art.objectUrl}
+              src={art.objectUrl}
+              className={scenes["scene-art"]}
+            />
+          </div>
           <div className={scenes.readable} />
-          {water && (
-            <svg
-              className={scenes.answerTexture}
-              viewBox="220 1400 430 444"
-              preserveAspectRatio="xMidYMid slice"
-              aria-hidden="true"
-              data-qztx-clean-question-water
-            >
-              <image href={water.objectUrl} width="852" height="1844" />
-            </svg>
-          )}
           <div className={scenes["progress-cover"]} />
           <div className={scenes["progress-track"]}>
             <div
@@ -643,10 +724,18 @@ export function QianzaiQuestion({
             data-qianzai-scroll-region
           >
             <div className={scenes.questionStack}>
-              <ArtImage
-                src={paper?.objectUrl}
-                className={scenes["question-panel"]}
-              />
+              {paper && qianzaiQuestionSkinWindow(paper.asset) ? (
+                <QianzaiQuestionSkin
+                  image={paper}
+                  kind="paper"
+                  className={scenes["question-panel"]}
+                />
+              ) : (
+                <ArtImage
+                  src={paper?.objectUrl}
+                  className={scenes["question-panel"]}
+                />
+              )}
               <h2 className={scenes["question-text"]}>{q.prompt}</h2>
               <fieldset className={scenes.options} disabled={!enabled}>
                 <legend className={scenes.srOnly}>选择本轮想法</legend>
@@ -660,8 +749,19 @@ export function QianzaiQuestion({
                       data-selected={checked}
                       style={{ "--question-option-index": i } as CSSProperties}
                     >
-                      <ArtImage src={skin?.objectUrl} className={scenes.skin} />
-                      {checked && (
+                      {skin?.layer === "clean" ? (
+                        <QianzaiQuestionSkin
+                          image={skin}
+                          kind="option"
+                          className={scenes.skin}
+                        />
+                      ) : (
+                        <ArtImage
+                          src={skin?.objectUrl}
+                          className={scenes.skin}
+                        />
+                      )}
+                      {checked && skin?.layer !== "clean" && (
                         <ArtImage
                           src={idle?.objectUrl}
                           className={styles.optionSealMask}
@@ -706,7 +806,7 @@ export function QianzaiQuestion({
                 </clipPath>
               </defs>
               <image
-                href={art.objectUrl}
+                href={navigationArt?.objectUrl}
                 width="390"
                 height="844"
                 clipPath={`url(#${id}-previous-button)`}
@@ -743,7 +843,7 @@ export function QianzaiQuestion({
                 </clipPath>
               </defs>
               <image
-                href={art.objectUrl}
+                href={navigationArt?.objectUrl}
                 width="390"
                 height="844"
                 clipPath={`url(#${id}-next-button)`}
