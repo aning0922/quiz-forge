@@ -1,3 +1,4 @@
+import exportParityFixture from "@/features/quizpack/content/qianzai-local-export-parity-fixture.json";
 /** Local interaction demonstration: real components/controller/pure scorer, synthetic
  * session transport. Never creates a database, authorization grant or sealed record. */
 import { createServer } from "node:http";
@@ -37,20 +38,24 @@ const content = quizPackContentV3Schema.parse(
   JSON.parse(await readFile(path.join(source, "content.json"), "utf8")),
 );
 const sourceHash = sha(canonicalP1Json(content));
-const onlineMode = process.env.QZTX_LIQINGZHAO_ONLINE_FIXTURE === "1";
+const parityMode = process.env.QZTX_EXPORT_PARITY_FIXTURE === "1";
+const onlineMode =
+  parityMode || process.env.QZTX_LIQINGZHAO_ONLINE_FIXTURE === "1";
 const centeredMode =
   onlineMode || process.env.QZTX_CENTERED_NAME_FIXTURE === "1";
 const nameMode = centeredMode || process.env.QZTX_NAME_FIXTURE === "1";
 const artMode = nameMode || process.env.QZTX_ART_FIXTURE === "1";
-const expectedSource = onlineMode
-  ? liQingzhaoOnlineFixture.canonicalContentSha256
-  : centeredMode
-    ? centeredNameFixture.canonicalContentSha256
-    : nameMode
-      ? localNameFixture.canonicalContentSha256
-      : artMode
-        ? localArtFixture.canonicalContentSha256
-        : localArtFixture.baseContentSha256;
+const expectedSource = parityMode
+  ? exportParityFixture.canonicalContentSha256
+  : onlineMode
+    ? liQingzhaoOnlineFixture.canonicalContentSha256
+    : centeredMode
+      ? centeredNameFixture.canonicalContentSha256
+      : nameMode
+        ? localNameFixture.canonicalContentSha256
+        : artMode
+          ? localArtFixture.canonicalContentSha256
+          : localArtFixture.baseContentSha256;
 if (sourceHash !== expectedSource)
   throw Error("FIXED_CANDIDATE_SOURCE_CHANGED");
 const prepared = prepareContentV3(content);
@@ -238,7 +243,11 @@ const setup = (reviewModel = completed) =>
     completedVisuals: visuals,
   }).replaceAll("<", "\\u003c");
 const resetScript = `document.querySelector('#demo-reset').addEventListener('click',()=>{for(const k of Object.keys(localStorage))if(k.startsWith('qianzai-v11-demo:'))localStorage.removeItem(k);for(const k of Object.keys(sessionStorage))if(k.includes('consumer'))sessionStorage.removeItem(k);location.href='/';});`;
-const demoTitle = onlineMode ? "李清照线上生图样板" : "下部构图与姓名居中体验";
+const demoTitle = parityMode
+  ? "原型书法与双PNG还原体验"
+  : onlineMode
+    ? "李清照线上生图样板"
+    : "下部构图与姓名居中体验";
 const sampleNote = onlineMode
   ? "李清照揭晓采用线上生图B母图，报告方图与海报图分别生成；其余人物沿用现有参考素材。正文、人物资料与短句仍为体验候选，未作本轮内容定稿。"
   : "人物沿用现有参考素材，新增资料与短句为体验候选。";
