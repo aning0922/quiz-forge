@@ -87,7 +87,10 @@ export async function withPreviewFont<T>(
       document.fonts.add(face);
       if (
         face.status !== "loaded" ||
-        !document.fonts.check(`600 32px "${family}"`, texts.join(""))
+        !document.fonts.check(
+          `${fontDescriptor.weight} 32px "${family}"`,
+          texts.join(""),
+        )
       )
         throw new DisplayClientError("FONT_UNAVAILABLE");
       // The caller owns a separate generation gate during canvas encoding as well.
