@@ -55,7 +55,6 @@ export type ExportOperation =
       score: number;
       scale?: QianzaiScaleGeometry;
     }
-  | { kind: "name"; text: string; box: Box }
   | { kind: "rule"; y: number }
   | {
       kind: "radar";
@@ -328,27 +327,17 @@ export function layoutQianzaiExport(
     });
     text("千载同心", 48, 48, 38, 340, 62, 110);
     text(doc.name, 28, 58, 116, 250, 38, 158);
-    operations.push(
-      doc.resultPresentation &&
-        [...doc.name].length >= 2 &&
-        [...doc.name].length <= 4
-        ? {
-            kind: "name",
-            text: doc.name,
-            box: { x: 56, y: 175, width: 270, height: 330 },
-          }
-        : {
-            kind: "image",
-            role: "nameArt",
-            box: {
-              x: 56,
-              y: 175,
-              width: 270,
-              height: doc.resultPresentation ? 330 : 365,
-            },
-            fit: "contain",
-          },
-    );
+    operations.push({
+      kind: "image",
+      role: "nameArt",
+      box: {
+        x: 56,
+        y: 175,
+        width: 270,
+        height: doc.resultPresentation ? 330 : 365,
+      },
+      fit: "contain",
+    });
     if (doc.resultPresentation) {
       operations.push({
         kind: "seal",
@@ -468,22 +457,12 @@ export function layoutQianzaiExport(
     box: { x: 260, y: 30, width: 420, height: 420 },
     fit: "cover",
   });
-  operations.push(
-    doc.resultPresentation &&
-      [...doc.name].length >= 2 &&
-      [...doc.name].length <= 4
-      ? {
-          kind: "name",
-          text: doc.name,
-          box: { x: 42, y: 125, width: 210, height: 270 },
-        }
-      : {
-          kind: "image",
-          role: "nameArt",
-          box: { x: 42, y: 125, width: 210, height: 270 },
-          fit: "contain",
-        },
-  );
+  operations.push({
+    kind: "image",
+    role: "nameArt",
+    box: { x: 42, y: 125, width: 210, height: 270 },
+    fit: "contain",
+  });
   text("千载同心", 36, 42, 40, 210, 50, 105);
   let y = text(doc.name, 30, 42, 475, 640, 44) + 12;
   if (doc.identity?.honorific)

@@ -863,6 +863,7 @@ export function QianzaiReveal({
       ? character
       : undefined;
   const portrait = qianzaiImage(model, currentCharacter?.reveal, images);
+  const nameArt = qianzaiImage(model, currentCharacter?.nameArt, images);
   const copy =
     result && selected && sameArtRef(result.role.ref, selected.ref)
       ? result
@@ -945,23 +946,21 @@ export function QianzaiReveal({
               <div className={scenes.dynamicNameRow}>
                 <div className={scenes.dynamicNameGroup}>
                   <p className={scenes.dynamicKicker}>你是</p>
-                  {copy ? (
+                  {nameArt ? (
                     <div
-                      className={scenes.dynamicNameText}
-                      data-name-size={Array.from(copy.role.displayName).length}
-                      data-qztx-program-name
-                      aria-label={`${copy.role.displayName}，程序书法文字样稿`}
+                      className={scenes.dynamicNameArt}
+                      data-qianzai-name-art
                     >
-                      {Array.from(copy.role.displayName).map((char, i) => (
-                        <span key={i} aria-hidden="true">
-                          {char}
-                        </span>
-                      ))}
+                      <ArtImage
+                        src={nameArt.objectUrl}
+                        asset={nameArt.asset}
+                        alt={`${displayName}姓名字图`}
+                      />
                     </div>
                   ) : (
                     <div className={scenes.dynamicNameMissing}>
                       <h2>{displayName}</h2>
-                      <p>姓名暂未就绪</p>
+                      <p>姓名字图暂未就绪</p>
                     </div>
                   )}
                 </div>
