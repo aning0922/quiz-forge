@@ -3742,7 +3742,7 @@
 }
 .readerBackdropSticky {
   position: sticky;
-  top: 0;
+  top: var(--qianzai-reveal-sticky-top, 0px);
   height: var(--qianzai-reveal-height);
   pointer-events: auto;
   overflow: hidden;
