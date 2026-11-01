@@ -79,13 +79,15 @@ export function QianzaiDimensions({
   const insight = documentView?.dimensionInsight;
   const sourceBody =
     documentView?.mode === "snapshot" ? documentView.body : body;
-  const scales = dimensions.flatMap((d) => {
-    const scale = qianzaiDimensionScale(
-      d,
-      sourceBody?.provenance.canonicalContentSha256,
-    );
-    return scale ? [scale] : [];
-  });
+  const scales = documentView?.consumerEdition
+    ? []
+    : dimensions.flatMap((d) => {
+        const scale = qianzaiDimensionScale(
+          d,
+          sourceBody?.provenance.canonicalContentSha256,
+        );
+        return scale ? [scale] : [];
+      });
   const openExplanation = (dimensionId: string) => {
     const detail = explanations.current.get(dimensionId);
     if (detail) detail.open = true;
@@ -613,6 +615,71 @@ function Blocks({ blocks }: { blocks: readonly QianzaiReportBlock[] }) {
   );
 }
 
+/** Consumer edition reads only the final display fields. Audit snapshots,
+ * statuses, qualifiers and raw evidence never enter this renderer. */
+function ConsumerBlocks({ blocks }: { blocks: readonly QianzaiReportBlock[] }) {
+  const timeline = blocks.filter((b) => b.layout === "timeline");
+  return (
+    <>
+      {blocks.map((b, i) => {
+        if (b.layout === "timeline")
+          return b === timeline[0] ? (
+            <div key={i} className={c("rp-timeline")}>
+              {timeline.map((row, j) => (
+                <div key={j} className={c("rp-time-row")}>
+                  <span>{row.title}</span>
+                  <p>{inlineReportText(row.text)}</p>
+                </div>
+              ))}
+            </div>
+          ) : null;
+        if (b.layout === "card")
+          return (
+            <article key={i} className={c("rp-resonance-card")}>
+              <div className={c("rp-res-number")} aria-hidden="true">
+                {["壹", "贰", "叁"][i] ?? i + 1}
+              </div>
+              <div className={c("rp-res-body")}>
+                {b.title && <h3>{b.title}</h3>}
+                <p>{inlineReportText(b.text)}</p>
+              </div>
+            </article>
+          );
+        if (b.layout === "prompt")
+          return (
+            <div key={i} className={c("rp-dual-note")}>
+              <div>
+                {b.title && <strong>{b.title}</strong>}
+                <p>{inlineReportText(b.text)}</p>
+              </div>
+            </div>
+          );
+        if (b.layout === "source")
+          return (
+            <p key={i} className={c("rp-source-note")}>
+              {b.text}
+            </p>
+          );
+        if (b.layout === "final-verse")
+          return (
+            <div key={i} className={c("rp-final-verse")}>
+              {inlineReportText(b.text)}
+            </div>
+          );
+        return (
+          <div key={i} className={c("runtimeParagraph")}>
+            {b.title && <h3>{b.title}</h3>}
+            <p className={b.layout === "lead" ? c("rp-lead") : undefined}>
+              {inlineReportText(b.text)}
+            </p>
+            {b.citation && <small>{b.citation}</small>}
+          </div>
+        );
+      })}
+    </>
+  );
+}
+
 export type QianzaiEmbeddedReport = Readonly<{
   scrollContainer: RefObject<HTMLDivElement | null>;
   onReturn(): void;
@@ -767,6 +834,7 @@ export function QianzaiReportReader({
       className={c("reader", ...(embedded ? ["embedded"] : []))}
       data-qianzai-screen="report"
       data-qianzai-report-mode={doc.mode}
+      data-qianzai-consumer-edition={doc.consumerEdition || undefined}
     >
       <div ref={container} className={c("reportScroll")}>
         <div>
@@ -933,7 +1001,11 @@ export function QianzaiReportReader({
                   <small>{doc.identity.verse.source}</small>
                 </div>
               )}
-              <Blocks blocks={opening.blocks} />
+              {doc.consumerEdition ? (
+                <ConsumerBlocks blocks={opening.blocks} />
+              ) : (
+                <Blocks blocks={opening.blocks} />
+              )}
               {doc.openingNote && (
                 <div className={c("rp-demo-note")}>{doc.openingNote}</div>
               )}
@@ -1001,17 +1073,21 @@ export function QianzaiReportReader({
                       </p>
                     </>
                   )}
-                  {closing && doc.resultPresentation && (
-                    <div className={c("rp-final-verse")}>
-                      {doc.resultPresentation.closure.lines.map((line, i) => (
-                        <span key={line}>
-                          {i > 0 && <br />}
-                          {line}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                  {closing && doc.mode === "reference-only" ? (
+                  {closing &&
+                    !doc.consumerEdition &&
+                    doc.resultPresentation && (
+                      <div className={c("rp-final-verse")}>
+                        {doc.resultPresentation.closure.lines.map((line, i) => (
+                          <span key={line}>
+                            {i > 0 && <br />}
+                            {line}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  {doc.consumerEdition ? (
+                    <ConsumerBlocks blocks={s.blocks} />
+                  ) : closing && doc.mode === "reference-only" ? (
                     s.blocks.map((b, j) =>
                       b.layout === "body" ? (
                         <p key={j}>
@@ -1065,7 +1141,7 @@ export function QianzaiReportReader({
                       >
                         ↑ 回到卷首
                       </button>
-                      {doc.body && (
+                      {doc.body && !doc.consumerEdition && (
                         <details className={c("record")}>
                           <summary>本轮匹配记录与说明</summary>
                           <p>
