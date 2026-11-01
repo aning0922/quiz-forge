@@ -198,6 +198,10 @@ export class QianzaiExportOwner {
       nameArt.purpose !== "decoration"
     )
       throw new QianzaiExportError("ARTWORK_UNAVAILABLE");
+    const borderRef = display.slots.neutral.reportBorder;
+    const border = borderRef ? image("reportBorder", borderRef) : null;
+    if (borderRef && (!border || border.purpose !== "decoration"))
+      throw new QianzaiExportError("ARTWORK_UNAVAILABLE");
     const presentation = this.getResultPresentation();
     return {
       body: display.body,
@@ -205,6 +209,7 @@ export class QianzaiExportOwner {
       portrait,
       nameArt,
       paper: image("reportPaper", display.slots.neutral.reportPaper) ?? null,
+      border: border ?? null,
       font: {
         ...this.font!,
         file: fixedFontPath(this.font!.file),

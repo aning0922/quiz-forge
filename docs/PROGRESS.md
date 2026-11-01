@@ -1,5 +1,19 @@
 # 阶段进度
 
+## 2026-11-01 姓名字图、竖诗与双 PNG 原型还原
+
+基线 `2f5a4b5`（Draft PR #43），独立 `codex/qztx-export-parity`。作者指出姓名、诗句及双导出偏离原型，本轮按实际 poster-reference/long-report-reference 重建共用宣纸山水、花枝、金边、顶右人物融合、左侧墨色姓名、红印、指数框及章节装饰。长图继续遍历六卷正文、证据和反证，不为参考图高度截文。在线 imagegen 仅新增李清照透明墨色书法和共用无字无人底图；原始图片与提示词在 `.cache/export-parity/`。姓名逻辑画布仍5:7、网页180×252、下部整组锚点保持；精确alpha候选在揭晓显示暖金、导出显示墨色。
+
+独立实现A `5744d64/e933484` 集成为 `35b9b41/edb362e`；B `cb2403b/371056d/6faddba` 集成为 `2654d79/3f96cde/20c6e87`；共享 `d843692`，登记和测试类型收尾 `18e0bd4`。李清照过短诗句改为“天接云涛连晓雾，星河欲转千帆舞。”，保留quote ID和确定性选择；正文固定字体V8仅在V7上追加舞字，旧V7字节不变。
+
+新本地fixture source `b0c6bbe7742e2da54ccad22afbf909009e7a002dcbd4b78ff36a1def57beda6f`，母来源 `baaeae69e9bc0228f6b7b53807eb9ab5f1685116d49e221e0c2835389f1c225d`。仅改nameArt/reportBorder及相应引用、resourceVersion和视觉描述；反向canonical精确相同，其余24资源字节保持。只加入有限展示alias/资源事实，不加数据库来源三元组。reportBorder null允许旧路径；已声明但未精确准入则失败，所有图共同去重、8M预算、verified加载与原deadline/取消/失权/释放链保持。
+
+验证复用：A24项定向用例及低对比修复反例、真实Canvas和资源/字体清理证据；主控source边界10项通过。首次build实现登记/编译通过，测试文件组合filter未收窄导致类型失败；改flatMap后仅该用例1项通过，恢复next build和trace成功，未重复实现检查或全套。最终build `oVPklmofZ8YCLOSSA_LGV`，trace123/26234/0，consumer entry `8eaba93f4d1d22c6ff29e4b7c2a0d82273b732394b0fef9130660dea394754d6`。定向lint/格式/diff通过。早期budget回执实际先拒绝资源事实变异，已更正标签，不计为独立8M合计预算反例。新版V8真实字宽测量：最长固定见证李白724×15875、苏轼724×16107，均保留6卷15段与全部证据/反证；这两例仅布局测量，非整PNG输出。
+
+主控IAB实际63212：390×844揭晓、连续报告、双缩略图及实际下载通过；320×568姓名固定180×252、长诗30px宽单列且无横向溢出，短屏沿共享容器滚动进入报告，不承诺一屏容纳全部内容。下载海报941×1672/3815465B/SHA `07708093cdd8b5db6845a60e9401cde29c066fb9350562c1ffa86419d908ac70`；完整长图724×7946/6921830B/SHA `d872c95607de95676c1d90df43d2815571d288c31b92b427355d3732b052b99c`，均完整解码和图检。截图、失败及回执在 `.cache/export-parity/`；滚动中间截图不充作静态完成态。B旧descriptor HOLD及字体探针失败保留，最终集成实际浏览器另验。
+
+独立Astra最终只读审查 `2f5a4b5..18e0bd4` 无剩余P1/P2。新体验 http://127.0.0.1:63212/about；原型/前后图对照 http://127.0.0.1:63213/。原63210、63211及其他实例保持。环境为真实组件/controller/确定性评分/Canvas与固定测试见证的模拟会话，不连接作者数据库。没有重跑不受影响数据库/评分全量、GPU或全套E2E。未合并、未部署；尚未批量重做其他角色姓名，当前美术/版式等待作者体验，不称百分百像素还原或正式内容定稿。
+
 ## 2026-11-01 李清照线上生图单角色样板接线
 
 基线 `d2eea8f`，独立 `codex/qztx-liqingzhao-online`。作者授权线上生图单角色样板；主控生成并选定 B 母图，另生成报告方图与海报图，原始图片及来源记录保留在本树 `.cache/liqingzhao-online/`。本批仅将李清照 reveal/report/poster 拆为三个新资源 ID，仍为 private-test-only、commercialUse=false、redistribution=false；姓名及其余四角色、CSS、正文、评分、数据库、旧实例保持。

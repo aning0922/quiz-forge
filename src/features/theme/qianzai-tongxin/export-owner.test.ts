@@ -95,6 +95,50 @@ describe("Qianzai export task ownership", () => {
     expect(f.owner.availability("full-report").allowed).toBe(true);
     f.owner.dispose();
   });
+  it("passes only an admitted optional border and fails closed on a declared unmatched border", async () => {
+    const rendered = vi.fn<typeof renderQianzaiExport>(async () => ({
+      blob: new Blob(["png"]),
+      width: 941,
+      height: 1672,
+    }));
+    const f = setup(rendered),
+      display = f.model.report!.view.display;
+    const border = {
+      ...display.assets.find((a) => a.purpose === "decoration")!,
+      resourceRef: {
+        productId: "qianzai-tongxin",
+        id: "synthetic-export-border",
+        version: "1.0.0",
+      },
+      purpose: "decoration" as const,
+      approval: "approved" as const,
+    };
+    display.slots.neutral.reportBorder = border.resourceRef;
+    expect(f.owner.availability("poster").reason).toBe("ARTWORK_UNAVAILABLE");
+    display.assets.push(border);
+    const { alt, ...facts } = border;
+    void alt;
+    f.bindings.push({ slot: "reportBorder", layer: "clean", asset: facts });
+    expect(f.owner.availability("poster").allowed).toBe(true);
+    f.owner.open();
+    await f.owner.generate("poster");
+    expect(rendered.mock.calls[0]![1].border).toEqual(border);
+    const last = f.bindings.length - 1,
+      clean = f.bindings[last]!;
+    f.bindings[last] = { ...clean, layer: "prototype-scene-base" };
+    expect(f.owner.availability("poster").reason).toBe("ARTWORK_UNAVAILABLE");
+    f.bindings[last] = clean;
+    display.assets[display.assets.length - 1] = {
+      ...border,
+      sha256: "f".repeat(64),
+    };
+    expect(f.owner.availability("full-report").reason).toBe(
+      "ARTWORK_UNAVAILABLE",
+    );
+    f.revokeLease();
+    expect(f.owner.getCachedArtifact("poster")).toBeNull();
+    f.owner.dispose();
+  });
   it("reads latest completed/pending and receipt before late PNG publication without a React update", async () => {
     let finish!: (v: Awaited<ReturnType<typeof renderQianzaiExport>>) => void;
     const f = setup(

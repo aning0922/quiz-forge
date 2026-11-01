@@ -1,3 +1,4 @@
+import parity from "@/features/quizpack/content/qianzai-local-export-parity-fixture.json";
 import { describe, expect, it } from "vitest";
 import art from "@/features/quizpack/content/qianzai-local-art-fixture.json";
 import names from "@/features/quizpack/content/qianzai-local-name-fixture.json";
@@ -11,7 +12,7 @@ import {
 import { qianzaiPresentationFixture } from "./result-presentation.test-support";
 import { deriveQianzaiResultPresentation } from "./result-presentation";
 import { qianzaiPresentationSourceMatches } from "./presentation-source";
-describe.each([art, names, centered, online])(
+describe.each([parity, art, names, centered, online])(
   "local fixture boundary $schemaVersion",
   (local) => {
     it("preserves presentation for the exact new source without rewriting its sealed identity", async () => {

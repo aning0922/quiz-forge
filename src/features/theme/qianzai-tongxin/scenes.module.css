@@ -2132,6 +2132,31 @@
   height: 100%;
   object-fit: contain;
 }
+.dynamicNameArt[data-qianzai-name-render="alpha-gold"] > img {
+  opacity: 0;
+}
+.dynamicNameGold {
+  position: absolute;
+  inset: 0;
+  display: block;
+  background: linear-gradient(
+    145deg,
+    #fff4c6 8%,
+    #f0d188 38%,
+    #d4a346 66%,
+    #ffedb1 88%
+  );
+  /* Preserve the confirmed ink-within-canvas margin for this wide brush mark. */
+  mask-size: 85.8% 85.8%;
+  /* Alpha>8 ink bounds center at (522.5, 741.5) in 1060×1484. Center
+     the strokes inside the fixed frame, rather than centering only the bitmap. */
+  mask-position: calc(50% + 1.092736px) calc(50% + 0.072849px);
+  mask-repeat: no-repeat;
+  -webkit-mask-size: 85.8% 85.8%;
+  -webkit-mask-position: calc(50% + 1.092736px) calc(50% + 0.072849px);
+  -webkit-mask-repeat: no-repeat;
+  pointer-events: none;
+}
 .dynamicNameMissing {
   position: absolute;
   inset: 40px 0 auto;
@@ -2169,10 +2194,10 @@
 }
 .dynamicQuote {
   position: absolute;
-  top: 28px;
+  bottom: 0;
   right: -10px;
   width: 30px;
-  height: 272px;
+  height: max(272px, calc(var(--quote-characters, 14) * 1.04em + 4px));
   min-height: 272px;
   margin: 0;
   writing-mode: vertical-rl;
@@ -2181,6 +2206,9 @@
   overflow-wrap: normal;
   word-break: keep-all;
   font: 400 18px/1.4 var(--qztx-literary, serif);
+  /* Keep existing literary glyphs; the declared body subset supplies rare
+     additions rather than a system font hidden behind the generic fallback. */
+  font-family: "QuizForge Qianzai Literary V1", var(--qztx-serif, serif);
   letter-spacing: 0.04em;
 }
 .dynamicLines {

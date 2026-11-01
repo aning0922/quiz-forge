@@ -138,6 +138,18 @@ describe("Qianzai sealed-context presentation v1.1", () => {
         true,
       );
       expect(result.poster.lines).toBe(result.reveal.lines);
+      if (id === "li-qingzhao") {
+        // Both stable choices must be complete excerpts long enough for the
+        // single-column reveal; a short fallback must not reappear by seed.
+        expect(result.role.quotes).toHaveLength(2);
+        for (const quote of result.role.quotes) {
+          const han = quote.text.match(/\p{Script=Han}/gu) ?? [];
+          expect(han.length).toBeGreaterThanOrEqual(12);
+          expect(han.length).toBeLessThanOrEqual(18);
+          expect(quote.source).toMatch(/李清照《(?:如梦令|渔家傲)/u);
+          expect(new URL(quote.sourceUrl).hostname).toBe("zh.wikisource.org");
+        }
+      }
       if (id === "mulan-ballad") {
         expect(result.role.displayName).toBe("木兰");
         expect(result.role.aliasSeal).toBeUndefined();

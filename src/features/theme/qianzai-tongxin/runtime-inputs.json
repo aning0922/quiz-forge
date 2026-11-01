@@ -2,15 +2,15 @@
   "schemaVersion": "qianzai-runtime-inputs.v1",
   "font": {
     "id": "qianzai-tongxin-serif",
-    "version": "1.6.0",
-    "family": "QuizForge Qianzai Serif V7",
+    "version": "1.7.0",
+    "family": "QuizForge Qianzai Serif V8",
     "weight": 600,
-    "file": "/assets/fonts/qianzai-v7/serif-600.woff2",
-    "fileSha256": "8bcf71fb1d76eb061e9d447c9b7465b4fbe2c358f54312289391ed93e1233483",
-    "bytes": 226192,
-    "coverage": "/assets/fonts/qianzai-v7/characters.txt",
-    "coverageSha256": "42d888db6d5146601cafea3fbaa76d2cca8a72394f0f42e8c5aeda3568405712",
-    "licenseFile": "/assets/fonts/qianzai-v7/OFL.txt",
+    "file": "/assets/fonts/qianzai-v8/serif-600.woff2",
+    "fileSha256": "65fc5e7d1fed7ec37fd488f5589bd7e0253d2f651a64231a4a83c04f770ac6bf",
+    "bytes": 226336,
+    "coverage": "/assets/fonts/qianzai-v8/characters.txt",
+    "coverageSha256": "7c362009708adc5c6ee59c0329ee062d9c519a19adc2dff58addd53391d866f7",
+    "licenseFile": "/assets/fonts/qianzai-v8/OFL.txt",
     "licenseSha256": "5e0da210fb04058a8c0087985d2d456b931c2579811a49655721d3cf0c36b6d6"
   },
   "resources": [
@@ -614,13 +614,13 @@
       "asset": {
         "resourceRef": {
           "productId": "qianzai-tongxin",
-          "id": "qztx-bottom-li-qingzhao-name",
+          "id": "qztx-parity-li-qingzhao-name",
           "version": "1.0.0"
         },
-        "sha256": "5dbcb64ebbef1322c06c55c0cbb05ed08429ca9fcaf2f77285087c5091890478",
-        "bytes": 36298,
-        "width": 500,
-        "height": 700,
+        "sha256": "5e6f72a11d6187751754da57bb059a0230f4474c289fd2a61ac2641c2990933a",
+        "bytes": 629782,
+        "width": 1060,
+        "height": 1484,
         "mediaType": "image/png",
         "purpose": "decoration",
         "approval": "private-test-only"
@@ -693,6 +693,24 @@
         "bytes": 28208,
         "width": 500,
         "height": 700,
+        "mediaType": "image/png",
+        "purpose": "decoration",
+        "approval": "private-test-only"
+      }
+    },
+    {
+      "slot": "reportBorder",
+      "layer": "clean",
+      "asset": {
+        "resourceRef": {
+          "productId": "qianzai-tongxin",
+          "id": "qztx-parity-common-border",
+          "version": "1.0.0"
+        },
+        "sha256": "e354266243260511345347541ae3c18c98eaa53371694ab974772796739b0dd9",
+        "bytes": 2899820,
+        "width": 941,
+        "height": 1672,
         "mediaType": "image/png",
         "purpose": "decoration",
         "approval": "private-test-only"

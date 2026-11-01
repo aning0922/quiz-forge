@@ -1,3 +1,4 @@
+import exportParityFixture from "./qianzai-local-export-parity-fixture.json";
 import { z } from "zod";
 import registration from "./private-test-registration.json";
 import rebuildRegistration from "./private-test-registration-rebuild.json";
@@ -88,6 +89,7 @@ export function privateTestAssetMatches(asset: {
     // Local fixture facts never enter registeredPrivateTestSource or DB admission.
     [
       ...PRIVATE_TEST_REGISTRATIONS,
+      exportParityFixture,
       localArtFixture,
       localNameFixture,
       centeredNameFixture,

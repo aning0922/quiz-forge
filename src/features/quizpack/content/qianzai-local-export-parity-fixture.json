@@ -1,0 +1,30 @@
+{
+  "schemaVersion": "qianzai.local-export-parity-fixture.v1",
+  "scope": "local-demo-only-no-quizpack-or-database-admission",
+  "canonicalContentSha256": "b0c6bbe7742e2da54ccad22afbf909009e7a002dcbd4b78ff36a1def57beda6f",
+  "baseContentSha256": "baaeae69e9bc0228f6b7b53807eb9ab5f1685116d49e221e0c2835389f1c225d",
+  "resources": [
+    {
+      "productId": "qianzai-tongxin",
+      "id": "qztx-parity-li-qingzhao-name",
+      "version": "1.0.0",
+      "sha256": "5e6f72a11d6187751754da57bb059a0230f4474c289fd2a61ac2641c2990933a",
+      "bytes": 629782,
+      "width": 1060,
+      "height": 1484,
+      "mediaType": "image/png",
+      "purpose": "decoration"
+    },
+    {
+      "productId": "qianzai-tongxin",
+      "id": "qztx-parity-common-border",
+      "version": "1.0.0",
+      "sha256": "e354266243260511345347541ae3c18c98eaa53371694ab974772796739b0dd9",
+      "bytes": 2899820,
+      "width": 941,
+      "height": 1672,
+      "mediaType": "image/png",
+      "purpose": "decoration"
+    }
+  ]
+}

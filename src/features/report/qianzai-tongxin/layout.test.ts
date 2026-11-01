@@ -1,6 +1,11 @@
 import { beforeAll, describe, expect, it } from "vitest";
 import { qianzaiExportFixture } from "./export.test-support";
-import { layoutQianzaiExport, qianzaiExportText, type Measure } from "./layout";
+import {
+  layoutQianzaiExport,
+  qianzaiExportText,
+  qianzaiExportBrushText,
+  type Measure,
+} from "./layout";
 import { qianzaiSnapshotDocument } from "./presentation";
 import { qianzaiPresentationFixture } from "./result-presentation.test-support";
 import { deriveQianzaiResultPresentation } from "./result-presentation";
@@ -222,6 +227,15 @@ describe("Qianzai complete-report layout", () => {
         .map((o) => o.text)
         .join("");
       expect([...actual].filter((c) => !source.has(c))).toEqual([]);
+      const brushCoverage = new Set(
+        qianzaiExportBrushText(fixture.body, kind).join(""),
+      );
+      const brushed = layoutQianzaiExport(fixture.body, kind, measure)
+        .operations.flatMap((op) =>
+          op.kind === "text" && op.style === "brush" ? [op.text] : [],
+        )
+        .join("");
+      expect([...brushed].filter((c) => !brushCoverage.has(c))).toEqual([]);
     }
   });
 });
