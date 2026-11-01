@@ -571,18 +571,21 @@ export function QianzaiQuestion({
             className={scenes["scene-art"]}
           />
           <div className={scenes.readable} />
-          <svg className={scenes.answerTexture} aria-hidden="true">
-            <defs>
-              <pattern
-                id={`${id}-water`}
-                patternUnits="userSpaceOnUse"
-                width="390"
-                height="34"
-              >
-                <image href={art.objectUrl} y="-810" width="390" height="844" />
-              </pattern>
-            </defs>
-            <rect width="100%" height="100%" fill={`url(#${id}-water)`} />
+          <svg
+            className={scenes.answerTexture}
+            viewBox="0 813 390 31"
+            preserveAspectRatio="none"
+            aria-hidden="true"
+          >
+            <image href={art.objectUrl} width="390" height="844" />
+          </svg>
+          <svg
+            className={scenes.questionFooterArt}
+            viewBox="0 746 390 98"
+            preserveAspectRatio="xMidYMin slice"
+            aria-hidden="true"
+          >
+            <image href={art.objectUrl} width="390" height="844" />
           </svg>
           <div className={scenes["progress-cover"]} />
           <div className={scenes["progress-track"]}>
@@ -641,9 +644,15 @@ export function QianzaiQuestion({
                       key={option.ref.id}
                       className={`${scenes.option} ${checked ? scenes.active : ""}`}
                       data-selected={checked}
-                      style={{ top: 174 + i * 76 }}
+                      style={{ "--question-option-index": i } as CSSProperties}
                     >
                       <ArtImage src={skin?.objectUrl} className={scenes.skin} />
+                      {checked && (
+                        <ArtImage
+                          src={idle?.objectUrl}
+                          className={styles.optionSealMask}
+                        />
+                      )}
                       <input
                         name={id}
                         type="radio"
@@ -853,10 +862,14 @@ export function QianzaiReveal({
               src={frames.before.objectUrl}
               className={scenes["reveal-art"]}
             />
-            <ArtImage
-              src={frames.full.objectUrl}
-              className={`${scenes["reveal-art"]} ${scenes.full}`}
-            />
+            <div
+              className={`${scenes.revealFullFrame} ${scenes.revealCopyFade}`}
+            >
+              <ArtImage
+                src={frames.full.objectUrl}
+                className={`${scenes["reveal-art"]} ${scenes.full}`}
+              />
+            </div>
           </>
         ) : portrait ? (
           <>
@@ -868,7 +881,7 @@ export function QianzaiReveal({
             />
             <div className={scenes.dynamicShade} aria-hidden="true" />
             <div
-              className={scenes.dynamicIdentity}
+              className={`${scenes.dynamicIdentity} ${scenes.revealCopyFade}`}
               data-qianzai-reveal-copy={copy ? "bound" : "unavailable"}
             >
               <p className={scenes.dynamicKicker}>你是</p>
@@ -1015,7 +1028,7 @@ export function QianzaiReveal({
           </div>
         )}
         <button
-          className={`${scenes["reveal-scroll-hit"]} ${!frames ? scenes.dynamicContinue : ""}`}
+          className={`${scenes["reveal-scroll-hit"]} ${!frames ? `${scenes.dynamicContinue} ${scenes.revealCopyFade}` : ""}`}
           data-reveal-continue
           disabled={!model.report || model.phase !== "completed"}
           aria-label="上滑查看人物报告"

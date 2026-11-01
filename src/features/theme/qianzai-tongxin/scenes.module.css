@@ -1792,9 +1792,10 @@
   color: #dfcfb2;
 }
 
-/* V1.1: one readable question layout; only the lower reading port scrolls.
-   The texture is a text-free water strip of the same admitted scene bytes. */
+/* Every question shares the same geometry at a given viewport. Keep the native
+   scene; only extra space below the cards uses one text-free bottom crop. */
 .frame[data-responsive-question] {
+  --question-paper-height: 120px;
   width: min(100%, 430px);
   height: 100dvh;
 }
@@ -1808,10 +1809,32 @@
 }
 .frame .quiz .answerTexture {
   position: absolute;
-  top: calc(391 * var(--scene-unit));
+  top: calc(391 * var(--scene-unit) + var(--question-paper-height) + 256px);
   left: 0;
   width: 100%;
-  height: calc(100% - 391 * var(--scene-unit));
+  height: max(
+    0px,
+    calc(
+      100% - 391 * var(--scene-unit) - var(--question-paper-height) - 332px -
+        env(safe-area-inset-bottom, 0px)
+    )
+  );
+  min-height: 0;
+  pointer-events: none;
+  mask-image: linear-gradient(
+    180deg,
+    transparent,
+    #000 8px,
+    #000 calc(100% - 8px),
+    transparent
+  );
+}
+.questionFooterArt {
+  position: absolute;
+  left: 0;
+  bottom: env(safe-area-inset-bottom, 0px);
+  width: 100%;
+  height: calc(76px + 5 * var(--scene-unit));
   pointer-events: none;
 }
 .frame .quiz .questionFlow {
@@ -1822,49 +1845,81 @@
 }
 .questionStack {
   position: relative;
-  min-height: 478px;
+  min-height: calc(var(--question-paper-height) + 256px);
 }
 .frame .quiz .question-panel {
   left: calc(18 * var(--scene-unit));
   top: 0;
   width: calc(354 * var(--scene-unit));
-  height: 164px;
+  height: var(--question-paper-height);
 }
 .frame .quiz .question-text {
-  left: calc(53 * var(--scene-unit));
-  right: calc(48 * var(--scene-unit));
-  top: 10px;
-  height: 144px;
+  left: calc(28 * var(--scene-unit));
+  right: calc(28 * var(--scene-unit));
+  top: 8px;
+  height: calc(var(--question-paper-height) - 16px);
   font-size: 16px;
   line-height: 1.4;
 }
 .frame .quiz .option {
   left: calc(18 * var(--scene-unit));
   width: calc(355 * var(--scene-unit));
-  height: 76px;
+  top: calc(
+    var(--question-paper-height) + 4px + var(--question-option-index) * 64px
+  );
+  height: 60px;
+}
+.frame .quiz .option .skin {
+  height: 64px;
+}
+.frame .quiz .option:last-of-type .skin {
+  height: 60px;
 }
 .frame .quiz .option .letter {
-  left: calc(21 * var(--scene-unit));
-  top: 19px;
+  left: calc(23 * var(--scene-unit));
+  top: 14px;
+  width: 32px;
+  height: 32px;
+  font-size: 18px;
+  line-height: 32px;
 }
 .frame .quiz .option .words,
 .frame .quiz .option.active .words {
-  left: calc(79 * var(--scene-unit));
-  right: calc(51 * var(--scene-unit));
-  height: 76px;
+  left: calc(68 * var(--scene-unit));
+  right: calc(50 * var(--scene-unit));
+  height: 60px;
   font-size: 16px;
   line-height: 1.3;
   font-weight: 650;
   overflow: visible;
 }
 .frame .quiz .option .check {
-  right: calc(24 * var(--scene-unit));
-  top: 24px;
+  right: calc(12 * var(--scene-unit));
+  top: 18px;
+  width: 24px;
+  height: 24px;
+  font-size: 18px;
+  line-height: 24px;
+}
+@media (max-width: 350px) {
+  .frame[data-responsive-question] {
+    --question-paper-height: 132px;
+  }
 }
 .frame .quiz .foot {
   top: auto;
-  bottom: calc(8px + env(safe-area-inset-bottom, 0px));
-  height: 62px;
+  bottom: calc(
+    76px - 62 * var(--scene-unit) + env(safe-area-inset-bottom, 0px)
+  );
+  height: calc(62 * var(--scene-unit));
+}
+.frame .quiz .foot.prev {
+  left: calc(18 * var(--scene-unit));
+  width: calc(114 * var(--scene-unit));
+}
+.frame .quiz .foot.next {
+  right: calc(17 * var(--scene-unit));
+  width: calc(122 * var(--scene-unit));
 }
 .frame .quiz .foot svg {
   width: 100%;
@@ -1935,6 +1990,13 @@
 
 /* Initial layered reveal, using only the selected role's admitted clean slots.
    Composite references keep their original pixels and never enter these rules. */
+.revealFullFrame {
+  position: absolute;
+  inset: 0;
+}
+.revealCopyFade {
+  opacity: var(--qianzai-reveal-copy-opacity, 1);
+}
 .dynamicPortrait {
   position: absolute;
   inset: 0;
