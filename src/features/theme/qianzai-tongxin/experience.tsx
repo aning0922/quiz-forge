@@ -129,10 +129,18 @@ export function QianzaiContinuousReader({
     const node = scrollContainer.current;
     if (!node) return;
     const measure = () => {
-      const height = node.clientHeight;
+      const revealContent = node.querySelector<HTMLElement>(
+        "[data-qztx-reveal-content]",
+      );
+      const height = Math.max(
+        node.clientHeight,
+        revealContent?.offsetHeight ?? 0,
+      );
+      const overflow = Math.max(0, height - node.clientHeight);
       const oldHeight = previousHeight.current;
       const oldTop = node.scrollTop;
       node.style.setProperty("--qianzai-reveal-height", `${height}px`);
+      node.style.setProperty("--qianzai-reveal-sticky-top", `${-overflow}px`);
       const start = node.querySelector<HTMLElement>(
         "[data-qianzai-report-start]",
       );
@@ -156,7 +164,10 @@ export function QianzaiContinuousReader({
         : node.clientHeight;
       const progress = Math.max(
         0,
-        Math.min(1, node.scrollTop / Math.max(1, distance)),
+        Math.min(
+          1,
+          (node.scrollTop - overflow) / Math.max(1, distance - overflow),
+        ),
       );
       node.style.setProperty("--qianzai-reader-progress", String(progress));
       // The old baked header is covered before any new toolbar text appears.
@@ -186,6 +197,10 @@ export function QianzaiContinuousReader({
     const resize = new ResizeObserver(measure);
     resize.observe(node);
     if (node.lastElementChild) resize.observe(node.lastElementChild);
+    const revealContent = node.querySelector<HTMLElement>(
+      "[data-qztx-reveal-content]",
+    );
+    if (revealContent) resize.observe(revealContent);
     node.addEventListener("scroll", measure, { passive: true });
     return () => {
       resize.disconnect();

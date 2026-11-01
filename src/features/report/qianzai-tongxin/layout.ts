@@ -1,5 +1,12 @@
 import type { ComposedReportBodyV1 } from "@/lib/assessment-contract/composed-report-v1";
 import { qianzaiSnapshotDocument } from "./presentation";
+import {
+  QIANZAI_EDITORIAL_DEDICATION_LABEL,
+  QIANZAI_EDITORIAL_SUMMARY_LABEL,
+  QIANZAI_EDITORIAL_SUPPLEMENT_LABEL,
+  QIANZAI_EDITORIAL_RECORD_LABEL,
+  QIANZAI_EDITORIAL_FALLBACK_LABEL,
+} from "./editorial";
 import type { QianzaiResultPresentation } from "./result-presentation";
 import { qianzaiPlainReportText } from "./inline-emphasis";
 import {
@@ -48,6 +55,7 @@ export type ExportOperation =
       score: number;
       scale?: QianzaiScaleGeometry;
     }
+  | { kind: "name"; text: string; box: Box }
   | { kind: "rule"; y: number }
   | {
       kind: "radar";
@@ -144,6 +152,32 @@ export function qianzaiExportText(
           ]),
         ]
       : []),
+    ...doc.sections.flatMap((s) =>
+      s.editorial
+        ? [
+            s.editorial.intro,
+            ...(s.editorial.dedication
+              ? [QIANZAI_EDITORIAL_DEDICATION_LABEL, s.editorial.dedication]
+              : []),
+            ...(s.editorial.prompts ?? []).flatMap((p) => [p.title, p.text]),
+            QIANZAI_EDITORIAL_RECORD_LABEL,
+            QIANZAI_EDITORIAL_FALLBACK_LABEL,
+            QIANZAI_EDITORIAL_SUPPLEMENT_LABEL,
+            QIANZAI_EDITORIAL_SUMMARY_LABEL,
+            ...s.blocks.flatMap((b) =>
+              b.editorial
+                ? [
+                    b.editorial.label,
+                    b.editorial.title,
+                    ...(b.editorial.choiceSummary
+                      ? [b.editorial.choiceSummary]
+                      : []),
+                  ]
+                : [],
+            ),
+          ]
+        : [],
+    ),
     "选择依据",
     "反向证据",
     "第二候选：",
@@ -294,17 +328,27 @@ export function layoutQianzaiExport(
     });
     text("千载同心", 48, 48, 38, 340, 62, 110);
     text(doc.name, 28, 58, 116, 250, 38, 158);
-    operations.push({
-      kind: "image",
-      role: "nameArt",
-      box: {
-        x: 56,
-        y: 175,
-        width: 270,
-        height: doc.resultPresentation ? 330 : 365,
-      },
-      fit: "contain",
-    });
+    operations.push(
+      doc.resultPresentation &&
+        [...doc.name].length >= 2 &&
+        [...doc.name].length <= 4
+        ? {
+            kind: "name",
+            text: doc.name,
+            box: { x: 56, y: 175, width: 270, height: 330 },
+          }
+        : {
+            kind: "image",
+            role: "nameArt",
+            box: {
+              x: 56,
+              y: 175,
+              width: 270,
+              height: doc.resultPresentation ? 330 : 365,
+            },
+            fit: "contain",
+          },
+    );
     if (doc.resultPresentation) {
       operations.push({
         kind: "seal",
@@ -424,12 +468,22 @@ export function layoutQianzaiExport(
     box: { x: 260, y: 30, width: 420, height: 420 },
     fit: "cover",
   });
-  operations.push({
-    kind: "image",
-    role: "nameArt",
-    box: { x: 42, y: 125, width: 210, height: 270 },
-    fit: "contain",
-  });
+  operations.push(
+    doc.resultPresentation &&
+      [...doc.name].length >= 2 &&
+      [...doc.name].length <= 4
+      ? {
+          kind: "name",
+          text: doc.name,
+          box: { x: 42, y: 125, width: 210, height: 270 },
+        }
+      : {
+          kind: "image",
+          role: "nameArt",
+          box: { x: 42, y: 125, width: 210, height: 270 },
+          fit: "contain",
+        },
+  );
   text("千载同心", 36, 42, 40, 210, 50, 105);
   let y = text(doc.name, 30, 42, 475, 640, 44) + 12;
   if (doc.identity?.honorific)
@@ -502,6 +556,8 @@ export function layoutQianzaiExport(
         640,
         48,
       ) + 18;
+    if (section.editorial)
+      y = text(section.editorial.intro, 22, 48, y, 628, 33) + 12;
     if (volume.id === "dimensions") {
       const hasScales = body.dimensions.some(
         (d) =>
@@ -589,25 +645,118 @@ export function layoutQianzaiExport(
         y = text(line, 32, 58, y, 608, 48) + 4;
       y += 14;
     }
-    for (const paragraph of volume.paragraphs) {
+    for (const [paragraphIndex, paragraph] of volume.paragraphs.entries()) {
+      const block = section.blocks[paragraphIndex]!;
+      const editorial = section.editorial;
+      const isFeature =
+        editorial?.featureClaimId !== undefined &&
+        editorial.featureClaimId === paragraph.claimRef?.id &&
+        block.editorial?.kind === "reflection";
       const start = y,
         insertAt = operations.length;
-      const framed =
-        volume.id === "patterns" ||
-        volume.id === "counterevidence" ||
-        volume.id === "closure";
-      const dark = volume.id === "counterevidence";
+      const framed = editorial
+        ? block.editorial?.kind === "resonance" || isFeature
+        : volume.id === "patterns" ||
+          volume.id === "counterevidence" ||
+          volume.id === "closure";
+      const dark = editorial ? isFeature : volume.id === "counterevidence";
+      const contentX = framed ? 66 : 48,
+        contentWidth = framed ? 592 : 628;
+      if (editorial) {
+        if (isFeature && editorial.dedication) {
+          y =
+            text(
+              QIANZAI_EDITORIAL_DEDICATION_LABEL,
+              19,
+              contentX,
+              y + 14,
+              contentWidth,
+              29,
+              L.maxHeight,
+              "#dfc59a",
+            ) + 3;
+          y =
+            text(
+              editorial.dedication,
+              28,
+              contentX,
+              y,
+              contentWidth,
+              40,
+              L.maxHeight,
+              "#f6dfb4",
+            ) + 12;
+        }
+        if (block.editorial) {
+          if (block.editorial.kind === "reflection" && !isFeature) {
+            y =
+              text(
+                `${QIANZAI_EDITORIAL_SUPPLEMENT_LABEL} · ${block.editorial.title}`,
+                22,
+                contentX,
+                y,
+                contentWidth,
+                33,
+              ) + 7;
+          } else {
+            y =
+              text(
+                block.editorial.label,
+                20,
+                contentX,
+                y + (framed && !isFeature ? 12 : 0),
+                contentWidth,
+                30,
+                L.maxHeight,
+                dark ? "#dfc59a" : "#886940",
+              ) + 3;
+            y =
+              text(
+                block.editorial.title,
+                26,
+                contentX,
+                y,
+                contentWidth,
+                38,
+                L.maxHeight,
+                dark ? "#f6dfb4" : "#31495b",
+              ) + 7;
+          }
+          if (block.editorial.choiceSummary)
+            y =
+              text(
+                `${QIANZAI_EDITORIAL_SUMMARY_LABEL}：${block.editorial.choiceSummary}`,
+                23,
+                contentX,
+                y,
+                contentWidth,
+                34,
+              ) + 10;
+        } else if (paragraph.status !== "accepted") {
+          y =
+            text(
+              paragraph.status === "fallback"
+                ? QIANZAI_EDITORIAL_FALLBACK_LABEL
+                : QIANZAI_EDITORIAL_RECORD_LABEL,
+              24,
+              contentX,
+              y,
+              contentWidth,
+              36,
+            ) + 6;
+        }
+      }
       y =
         text(
           qianzaiPlainReportText(paragraph.text),
           25,
           framed ? 66 : 48,
-          y + (framed ? 22 : 0),
+          y + (framed && !editorial ? 22 : 0),
           framed ? 592 : 628,
-          40,
+          editorial ? 38 : 40,
           L.maxHeight,
           dark ? "#f8ead0" : "#263c4a",
-        ) + 18;
+        ) + (editorial ? 10 : 18);
       y =
         text(
           paragraphNote(paragraph),
@@ -618,7 +767,7 @@ export function layoutQianzaiExport(
           29,
           L.maxHeight,
           dark ? "#e3ccaa" : "#705f4d",
-        ) + 14;
+        ) + (editorial ? 7 : 14);
       if (framed) {
         operations.splice(insertAt, 0, {
           kind: "card",
@@ -636,17 +785,31 @@ export function layoutQianzaiExport(
         for (const e of evidence) {
           const start = y,
             insertAt = operations.length;
-          y = text(e.scope, 22, 70, y + 16, 584, 34) + 6;
-          y = text(e.prompt, 22, 70, y, 584, 34) + 6;
-          y = text(e.optionText, 22, 70, y, 584, 34) + 16;
+          y =
+            text(e.scope, 22, 70, y + (editorial ? 7 : 16), 584, 34) +
+            (editorial ? 3 : 6);
+          y = text(e.prompt, 22, 70, y, 584, 34) + (editorial ? 3 : 6);
+          y = text(e.optionText, 22, 70, y, 584, 34) + (editorial ? 7 : 16);
           operations.splice(insertAt, 0, {
             kind: "card",
             box: { x: 58, y: start, width: 608, height: y - start },
             dark: false,
           });
-          y += 12;
+          y += editorial ? 7 : 12;
         }
       }
+      y += 10;
+    }
+    for (const prompt of section.editorial?.prompts ?? []) {
+      const start = y,
+        insertAt = operations.length;
+      y = text(prompt.title, 24, 66, y + 12, 592, 36) + 4;
+      y = text(prompt.text, 23, 66, y, 592, 35) + 12;
+      operations.splice(insertAt, 0, {
+        kind: "card",
+        box: { x: 48, y: start, width: 628, height: y - start },
+        dark: false,
+      });
       y += 10;
     }
     y += 20;

@@ -22,6 +22,7 @@ import {
   QIANZAI_CONSUMER_PRESENTATION,
 } from "../src/features/theme/qianzai-tongxin/component-map";
 import { QIANZAI_RUNTIME_INPUTS } from "../src/features/theme/qianzai-tongxin/runtime-inputs";
+import { QIANZAI_EDITORIAL_FONTS } from "../src/features/theme/qianzai-tongxin/editorial-fonts";
 
 const hash = (v: unknown) =>
   createHash("sha256").update(consumerCanonicalText(v, 262144)).digest("hex");
@@ -42,11 +43,11 @@ async function main() {
   )
     throw Error("PRIVATE_OUTPUT_REQUIRED");
   const font = QIANZAI_RUNTIME_INPUTS.font;
-  if (!font || font.id !== "qianzai-tongxin-serif" || font.version !== "1.5.0")
+  if (!font || font.id !== "qianzai-tongxin-serif" || font.version !== "1.6.0")
     throw Error("PINNED_QIANZAI_FONT_REQUIRED");
-  const fonts = [font.file, font.coverage, font.licenseFile].map(
-    (f) => "public" + f,
-  );
+  const fonts = [font, ...Object.values(QIANZAI_EDITORIAL_FONTS)]
+    .flatMap((f) => [f.file, f.coverage, f.licenseFile])
+    .map((f) => "public" + f);
   const projection = entry(
     "src/features/theme/preview/v3-projection.ts",
     ["projectContentEntryV3", "projectPreparedResultV3"],

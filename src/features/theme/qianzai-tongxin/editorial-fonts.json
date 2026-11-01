@@ -1,0 +1,26 @@
+{
+  "brush": {
+    "id": "qianzai-tongxin-brush",
+    "version": "1.0.0",
+    "family": "QuizForge Qianzai Brush V1",
+    "weight": 400,
+    "file": "/assets/fonts/qianzai-brush-v1/regular.woff2",
+    "fileSha256": "cc1e6d832dce6141a24a717aa9b9d40d15e74c54d3be1df864b4c1129a3857ff",
+    "bytes": 442092,
+    "coverage": "/assets/fonts/qianzai-brush-v1/characters.txt",
+    "coverageSha256": "ab99dce2437f51a81ae51ef0ba702364c63d12d9349c7ae482a89ea1ee97e905",
+    "licenseFile": "/assets/fonts/qianzai-brush-v1/OFL.txt"
+  },
+  "literary": {
+    "id": "qianzai-tongxin-literary",
+    "version": "1.0.0",
+    "family": "QuizForge Qianzai Literary V1",
+    "weight": 400,
+    "file": "/assets/fonts/qianzai-literary-v1/regular.woff2",
+    "fileSha256": "9ce3fc7617e04bc77f562d03df074fa3f7778bfd7ee4d66a92e778ffcf67f94c",
+    "bytes": 257360,
+    "coverage": "/assets/fonts/qianzai-literary-v1/characters.txt",
+    "coverageSha256": "8b8dbacb9a96065b4df19f1c9988661780e7e7780bdf84a7e58b85d13f5ae037",
+    "licenseFile": "/assets/fonts/qianzai-literary-v1/OFL.txt"
+  }
+}

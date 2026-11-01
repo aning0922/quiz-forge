@@ -1,6 +1,6 @@
 import { afterEach, expect, it, vi } from "vitest";
 import { createHash, webcrypto } from "node:crypto";
-import { loadQianzaiFont } from "./font-owner";
+import { loadQianzaiFont, loadQianzaiFonts } from "./font-owner";
 import { QIANZAI_RUNTIME_INPUTS } from "./runtime-inputs";
 import { structuredReaderFixtureV2 } from "../consumer-v2/fixtures.test-support";
 import type { ConsumerResourceLeaseV2 } from "../consumer-v2/resource-port";
@@ -153,5 +153,107 @@ it("releases a font if the final bounded completion expires after installation",
       lease,
     ),
   ).rejects.toBeDefined();
+  expect(remove).toHaveBeenCalledOnce();
+});
+
+it("releases successful siblings when any fixed editorial font fails verification", async () => {
+  const abort = new AbortController();
+  const { model } = structuredReaderFixtureV2();
+  const lease: ConsumerResourceLeaseV2 = {
+    generation: 1,
+    model,
+    getSnapshot: () => model,
+    view: model.entry!,
+    signal: abort.signal,
+    current: () => !abort.signal.aborted,
+    transport: vi.fn(),
+  };
+  const bytes = new Uint8Array([1, 2, 3]);
+  const font = {
+    ...QIANZAI_RUNTIME_INPUTS.font!,
+    bytes: 3,
+    fileSha256: createHash("sha256").update(bytes).digest("hex"),
+  };
+  const add = vi.fn(),
+    remove = vi.fn();
+  vi.stubGlobal("crypto", webcrypto);
+  vi.stubGlobal("document", { fonts: { add, delete: remove } });
+  vi.stubGlobal(
+    "FontFace",
+    class {
+      load() {
+        return Promise.resolve(this);
+      }
+    },
+  );
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async () => new Response(bytes)),
+  );
+  await expect(
+    loadQianzaiFonts([font, { ...font, fileSha256: "0".repeat(64) }], lease),
+  ).rejects.toBeDefined();
+  expect(add).toHaveBeenCalledOnce();
+  expect(remove).toHaveBeenCalledOnce();
+  abort.abort();
+  expect(remove).toHaveBeenCalledOnce();
+});
+it("cancels the font group at unmount while the parent lease stays valid", async () => {
+  const parent = new AbortController(),
+    task = new AbortController();
+  const { model } = structuredReaderFixtureV2();
+  const lease: ConsumerResourceLeaseV2 = {
+    generation: 1,
+    model,
+    getSnapshot: () => model,
+    view: model.entry!,
+    signal: parent.signal,
+    current: () => true,
+    transport: vi.fn(),
+  };
+  const bytes = new Uint8Array([1, 2, 3]);
+  const font = {
+    ...QIANZAI_RUNTIME_INPUTS.font!,
+    bytes: 3,
+    fileSha256: createHash("sha256").update(bytes).digest("hex"),
+  };
+  const add = vi.fn(),
+    remove = vi.fn();
+  let finish: (() => void) | undefined;
+  vi.stubGlobal("crypto", webcrypto);
+  vi.stubGlobal("document", { fonts: { add, delete: remove } });
+  vi.stubGlobal(
+    "FontFace",
+    class {
+      constructor(readonly family: string) {}
+      load() {
+        return this.family === "pending"
+          ? new Promise<this>((resolve) => {
+              finish = () => resolve(this);
+            })
+          : Promise.resolve(this);
+      }
+    },
+  );
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async () => new Response(bytes)),
+  );
+  const pending = loadQianzaiFonts(
+    [font, { ...font, family: "pending" }],
+    lease,
+    task.signal,
+  );
+  const rejected = expect(pending).rejects.toBeDefined();
+  await vi.waitFor(() => {
+    expect(add).toHaveBeenCalledOnce();
+    expect(finish).toBeTypeOf("function");
+  });
+  task.abort();
+  expect(parent.signal.aborted).toBe(false);
+  expect(remove).toHaveBeenCalledOnce();
+  finish!();
+  await rejected;
+  expect(add).toHaveBeenCalledOnce();
   expect(remove).toHaveBeenCalledOnce();
 });

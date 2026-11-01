@@ -256,7 +256,7 @@
   justify-content: center;
   text-align: center;
   color: #1d3053;
-  font-family: "Noto Serif CJK SC", "Songti SC", serif;
+  font-family: var(--qztx-serif, "Noto Serif SC", serif);
   font-size: 17px;
   font-weight: 700;
   line-height: 1.47;
@@ -329,7 +329,7 @@
   align-items: center;
   overflow: hidden;
   color: #243552;
-  font-family: "Noto Serif CJK SC", "Songti SC", serif;
+  font-family: var(--qztx-serif, "Noto Serif SC", serif);
   font-weight: 650;
   font-size: 14px;
   line-height: 1.12;
@@ -1087,7 +1087,7 @@
   text-align: center;
   color: #fff4d6;
   text-shadow: 0 2px 15px #000c;
-  font-family: "Noto Serif CJK SC", "Songti SC", serif;
+  font-family: var(--qztx-serif, "Noto Serif SC", serif);
   letter-spacing: 0.12em;
 }
 .transitionStage[data-kind="chapter"] .transitionWords {
@@ -1114,10 +1114,13 @@
   letter-spacing: 0.4em;
   margin-bottom: 10px;
 }
+.transitionWords {
+  font-weight: 600;
+}
 .transitionWords h2 {
-  font-family: "Noto Serif CJK SC", "Songti SC", serif;
+  font-family: var(--qztx-serif, "Noto Serif SC", serif);
   font-size: 30px;
-  font-weight: 650;
+  font-weight: 600;
   letter-spacing: 0.18em;
   margin: 0 0 8px;
   color: #fff5db;
@@ -1792,8 +1795,8 @@
   color: #dfcfb2;
 }
 
-/* Every question shares the same geometry at a given viewport. Keep the native
-   scene; only extra space below the cards uses one text-free bottom crop. */
+/* The admitted scene is cropped above the old controls. Below it, the finite
+   text-free V8 water crop is the sole continuous scenery, without old UI. */
 .frame[data-responsive-question] {
   --question-paper-height: 120px;
   width: min(100%, 430px);
@@ -1805,36 +1808,15 @@
 }
 .frame[data-responsive-question] .scene-art {
   width: 100%;
-  height: auto;
+  height: calc(391 * var(--scene-unit));
+  overflow: hidden;
 }
 .frame .quiz .answerTexture {
   position: absolute;
-  top: calc(391 * var(--scene-unit) + var(--question-paper-height) + 256px);
+  top: calc(391 * var(--scene-unit));
   left: 0;
   width: 100%;
-  height: max(
-    0px,
-    calc(
-      100% - 391 * var(--scene-unit) - var(--question-paper-height) - 332px -
-        env(safe-area-inset-bottom, 0px)
-    )
-  );
-  min-height: 0;
-  pointer-events: none;
-  mask-image: linear-gradient(
-    180deg,
-    transparent,
-    #000 8px,
-    #000 calc(100% - 8px),
-    transparent
-  );
-}
-.questionFooterArt {
-  position: absolute;
-  left: 0;
-  bottom: env(safe-area-inset-bottom, 0px);
-  width: 100%;
-  height: calc(76px + 5 * var(--scene-unit));
+  height: calc(100% - 391 * var(--scene-unit));
   pointer-events: none;
 }
 .frame .quiz .questionFlow {
@@ -1858,6 +1840,8 @@
   right: calc(28 * var(--scene-unit));
   top: 8px;
   height: calc(var(--question-paper-height) - 16px);
+  font-family: var(--qztx-serif, "Noto Serif SC", serif);
+  font-weight: 600;
   font-size: 16px;
   line-height: 1.4;
 }
@@ -1880,7 +1864,9 @@
   top: 14px;
   width: 32px;
   height: 32px;
+  font-family: var(--qztx-serif, "Noto Serif SC", serif);
   font-size: 18px;
+  font-weight: 600;
   line-height: 32px;
 }
 .frame .quiz .option .words,
@@ -1888,9 +1874,10 @@
   left: calc(68 * var(--scene-unit));
   right: calc(50 * var(--scene-unit));
   height: 60px;
+  font-family: var(--qztx-serif, "Noto Serif SC", serif);
   font-size: 16px;
-  line-height: 1.3;
-  font-weight: 650;
+  line-height: 1.4;
+  font-weight: 600;
   overflow: visible;
 }
 .frame .quiz .option .check {
@@ -1921,9 +1908,13 @@
   right: calc(17 * var(--scene-unit));
   width: calc(122 * var(--scene-unit));
 }
-.frame .quiz .foot svg {
+.frame .quiz .foot > svg {
   width: 100%;
   height: 100%;
+}
+.finalQuestionLabel {
+  font: 600 16px/1.4 var(--qztx-serif, serif);
+  fill: #50391e;
 }
 .frame .quiz .foot:disabled {
   filter: brightness(0.65);
@@ -1965,7 +1956,10 @@
   top: calc(119 * var(--scene-unit));
   width: calc(55 * var(--scene-unit));
   height: calc(29 * var(--scene-unit));
+  font-family: var(--qztx-serif, serif);
+  font-weight: 600;
   font-size: 12px;
+  white-space: nowrap;
   min-width: 0;
 }
 .frame[data-responsive-question] .saveStatus {
@@ -1974,6 +1968,9 @@
   width: calc(64 * var(--scene-unit));
   min-width: 0;
   height: calc(25 * var(--scene-unit));
+  display: grid;
+  place-items: center;
+  font: 600 13px/1.4 var(--qztx-serif, serif);
 }
 .frame[data-responsive-question] .hit-top {
   top: calc(32 * var(--scene-unit));
@@ -1996,6 +1993,11 @@
 }
 .revealCopyFade {
   opacity: var(--qianzai-reveal-copy-opacity, 1);
+}
+.frame[data-responsive-reveal] .revealLayers {
+  position: relative;
+  inset: auto;
+  min-height: inherit;
 }
 .dynamicPortrait {
   position: absolute;
@@ -2029,69 +2031,134 @@
   pointer-events: none;
 }
 .dynamicHeader p {
-  font: 650 34px/1.25 var(--brush, "Songti SC", serif);
+  font: 400 34px/1.25 var(--qztx-brush, cursive);
 }
 .dynamicHeader span {
   display: inline-block;
   margin-top: 8px;
   padding: 4px 14px;
   border-block: 1px solid #e7c08099;
-  font:
-    16px/1.5 "Songti SC",
-    serif;
+  font: 600 16px/1.5 var(--qztx-serif, serif);
 }
 .dynamicIdentity {
-  position: absolute;
-  top: 46%;
-  bottom: 92px;
-  left: 30px;
-  right: 22px;
+  position: relative;
+  min-height: inherit;
+  padding: 338px 24px 96px;
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr) auto;
-  gap: 8px;
-  min-height: 0;
+  grid-template-rows: minmax(310px, 1fr) auto;
+  gap: 12px;
   color: #fff0d0;
   text-shadow:
     0 2px 8px #051321,
     0 0 16px #051321;
 }
-.dynamicKicker {
-  margin: 0;
-  padding-left: 64px;
-  font:
-    28px/1.2 "Songti SC",
-    serif;
-}
 .dynamicNameRow {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 36px 58px;
-  gap: 6px;
+  grid-template-columns: minmax(0, 210px) 36px 30px;
+  gap: 8px;
+  justify-content: center;
   align-items: end;
-  min-height: 0;
+  min-height: 310px;
 }
-.dynamicNameArt {
-  display: block;
-  width: 100%;
+.dynamicNameGroup {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   height: 100%;
   min-height: 0;
-  object-fit: contain;
-  object-position: center;
-  filter: brightness(0) invert(0.9) sepia(0.6) saturate(1.8)
-    drop-shadow(0 2px 8px #071625);
+}
+.dynamicKicker {
+  width: 100%;
+  margin: 0 0 8px;
+  text-align: center;
+  font: 400 26px/1.2 var(--qztx-literary, serif);
+}
+.dynamicNameText {
+  position: relative;
+  flex: 1;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font: 400 48px/1 var(--qztx-brush, cursive);
+  color: #ffe1a0;
+  text-shadow: none;
+  filter: drop-shadow(0 2px 8px #071625);
+}
+.dynamicNameText:is(
+  [data-name-size="2"],
+  [data-name-size="3"],
+  [data-name-size="4"]
+) {
+  display: block;
+}
+.dynamicNameText:is(
+    [data-name-size="2"],
+    [data-name-size="3"],
+    [data-name-size="4"]
+  )
+  > span {
+  position: absolute;
+  width: 1em;
+  background: linear-gradient(140deg, #fff0ba, #e6b958 62%, #fff0b7);
+  background-clip: text;
+  color: transparent;
+}
+.dynamicNameText[data-name-size="2"] {
+  font-size: 104px;
+}
+.dynamicNameText[data-name-size="2"] > span:first-child {
+  top: calc(50% - 0.95em);
+  left: calc(50% - 0.8em);
+}
+.dynamicNameText[data-name-size="2"] > span:nth-child(2) {
+  top: calc(50% - 0.05em);
+  left: calc(50% - 0.2em);
+}
+.dynamicNameText[data-name-size="3"] {
+  font-size: 76px;
+}
+.dynamicNameText[data-name-size="3"] > span:first-child {
+  top: calc(50% - 1.35em);
+  left: calc(50% - 0.8em);
+}
+.dynamicNameText[data-name-size="3"] > span:nth-child(2) {
+  top: calc(50% - 0.5em);
+  left: calc(50% - 0.5em);
+}
+.dynamicNameText[data-name-size="3"] > span:nth-child(3) {
+  top: calc(50% + 0.35em);
+  left: calc(50% - 0.2em);
+}
+.dynamicNameText[data-name-size="4"] {
+  font-size: 60px;
+}
+.dynamicNameText[data-name-size="4"] > span:first-child {
+  top: calc(50% - 1.7em);
+  left: calc(50% - 0.86em);
+}
+.dynamicNameText[data-name-size="4"] > span:nth-child(2) {
+  top: calc(50% - 0.9em);
+  left: calc(50% - 0.62em);
+}
+.dynamicNameText[data-name-size="4"] > span:nth-child(3) {
+  top: calc(50% - 0.1em);
+  left: calc(50% - 0.38em);
+}
+.dynamicNameText[data-name-size="4"] > span:nth-child(4) {
+  top: calc(50% + 0.7em);
+  left: calc(50% - 0.14em);
 }
 .dynamicNameMissing {
-  align-self: center;
+  margin: auto;
   text-align: center;
 }
 .dynamicNameMissing h2 {
-  font:
-    36px/1.4 "Songti SC",
-    serif;
+  font: 600 36px/1.4 var(--qztx-serif, serif);
 }
 .dynamicNameMissing p {
-  font:
-    16px/1.5 "Songti SC",
-    serif;
+  font: 400 16px/1.5 var(--qztx-literary, serif);
 }
 .dynamicSeal {
   display: block;
@@ -2102,9 +2169,7 @@
   writing-mode: vertical-rl;
   text-orientation: upright;
   white-space: nowrap;
-  font:
-    18px/1.25 "Songti SC",
-    serif;
+  font: 600 18px/1.25 var(--qztx-serif, serif);
   letter-spacing: 0.04em;
   text-align: center;
   color: #fff1d4;
@@ -2114,26 +2179,27 @@
   text-shadow: 0 1px 2px #551b17;
 }
 .dynamicQuote {
-  align-self: center;
-  justify-self: end;
-  width: 58px;
-  height: 100%;
-  max-height: 220px;
-  min-height: 0;
+  align-self: end;
+  justify-self: center;
+  width: 30px;
+  height: 272px;
+  min-height: 272px;
   margin: 0;
   writing-mode: vertical-rl;
   text-orientation: upright;
-  font:
-    clamp(16px, 2.3dvh, 19px)/1.15 "Songti SC",
-    serif;
+  white-space: nowrap;
+  overflow-wrap: normal;
+  word-break: keep-all;
+  font: 400 18px/1.4 var(--qztx-literary, serif);
   letter-spacing: 0.04em;
-  overflow-wrap: anywhere;
 }
 .dynamicLines {
+  min-height: 79.2px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
   text-align: center;
-  font:
-    16px/1.5 "Songti SC",
-    serif;
+  font: 400 16px/1.65 var(--qztx-literary, serif);
 }
 .dynamicLines p {
   margin: 0;
@@ -2143,6 +2209,9 @@
   left: calc(50% - 100px);
   width: 200px;
   height: 78px;
+}
+.frame .reveal .dynamicContinue > span {
+  font: 400 16px/1.6 var(--qztx-literary, serif);
 }
 .frame .reveal .dynamicContinue::before {
   display: none;
@@ -2178,18 +2247,4 @@
   stroke-width: 1.8;
   stroke-linecap: round;
   stroke-linejoin: round;
-}
-@media (max-height: 650px) {
-  .dynamicIdentity {
-    top: 42%;
-  }
-  .dynamicHeader {
-    top: 12px;
-  }
-  .dynamicHeader p {
-    font-size: 28px;
-  }
-  .dynamicHeader span {
-    margin-top: 4px;
-  }
 }
