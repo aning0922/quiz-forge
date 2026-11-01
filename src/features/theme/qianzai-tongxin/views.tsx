@@ -864,6 +864,25 @@ export function QianzaiReveal({
       : undefined;
   const portrait = qianzaiImage(model, currentCharacter?.reveal, images);
   const nameArt = qianzaiImage(model, currentCharacter?.nameArt, images);
+  // One admitted full-frame candidate; report portraits keep their existing crop.
+  const fullReveal =
+    !!portrait &&
+    !!currentCharacter &&
+    sameArtRef(currentCharacter.resultRef, {
+      productId: "qianzai-tongxin",
+      id: "li-bai",
+      version: "1.0.0",
+    }) &&
+    sameArtRef(portrait.asset.resourceRef, {
+      productId: "qianzai-tongxin",
+      id: "qztx-art-li-bai-reveal",
+      version: "1.0.0",
+    }) &&
+    portrait.asset.sha256 ===
+      "36e83a15493c4dcbc298fda7b242b13929f4a1c138ab137bf1411af8e9790f91" &&
+    portrait.asset.width === 853 &&
+    portrait.asset.height === 1844;
+
   const copy =
     result && selected && sameArtRef(result.role.ref, selected.ref)
       ? result
@@ -909,6 +928,7 @@ export function QianzaiReveal({
         ref={layers}
         className={`${scenes.revealLayers} ${scenes.reveal} ${presentation === "playing" ? scenes.playing : presentation === "ready" ? scenes.ready : ""}`}
         data-reveal-phase={presentation}
+        data-qianzai-full-reveal={fullReveal || undefined}
         data-qianzai-reveal-mode={
           frames ? "composite" : portrait ? "layered" : "missing"
         }
@@ -932,12 +952,22 @@ export function QianzaiReveal({
           </>
         ) : portrait ? (
           <>
-            <ArtImage
-              src={portrait.objectUrl}
-              asset={portrait.asset}
-              alt={`${displayName}人物画作`}
-              className={scenes.dynamicPortrait}
-            />
+            {fullReveal ? (
+              <div className={scenes.fullRevealBackdrop}>
+                <ArtImage
+                  src={portrait.objectUrl}
+                  asset={portrait.asset}
+                  alt={`${displayName}人物画作`}
+                />
+              </div>
+            ) : (
+              <ArtImage
+                src={portrait.objectUrl}
+                asset={portrait.asset}
+                alt={`${displayName}人物画作`}
+                className={scenes.dynamicPortrait}
+              />
+            )}
             <div className={scenes.dynamicShade} aria-hidden="true" />
             <div
               className={`${scenes.dynamicIdentity} ${scenes.revealCopyFade}`}

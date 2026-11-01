@@ -64,4 +64,41 @@ describe("Qianzai selected name-art image", () => {
     f.character.resultRef = { ...f.character.resultRef, id: "other-role" };
     expect(f.render()).not.toContain("data-qianzai-name-art");
   });
+  it("uses uncropped full-frame geometry only for the exact admitted Li Bai candidate", async () => {
+    const f = await fixture();
+    const original = f.images[0]!.asset;
+    const ref = {
+      productId: "qianzai-tongxin",
+      id: "qztx-art-li-bai-reveal",
+      version: "1.0.0",
+    };
+    const asset = {
+      ...original,
+      resourceRef: ref,
+      sha256:
+        "36e83a15493c4dcbc298fda7b242b13929f4a1c138ab137bf1411af8e9790f91",
+      width: 853,
+      height: 1844,
+      bytes: 2965650,
+    };
+    const index = f.view.display.assets.indexOf(original);
+    const render = (next = asset) => {
+      f.view.display.assets[index] = next;
+      f.character.reveal = next.resourceRef;
+      return f.render(f.model, [
+        { ...f.images[0]!, asset: next },
+        f.images[1]!,
+      ]);
+    };
+    expect(render()).toContain('data-qianzai-full-reveal="true"');
+    expect(render()).not.toContain("data-qianzai-art-crop");
+    for (const changed of [
+      { ...asset, width: 854 },
+      { ...asset, sha256: "0".repeat(64) },
+      { ...asset, resourceRef: { ...ref, version: "2.0.0" } },
+      { ...asset, resourceRef: { ...ref, id: "another-reveal" } },
+    ])
+      expect(render(changed)).not.toContain("data-qianzai-full-reveal");
+    expect(render(original)).not.toContain("data-qianzai-full-reveal");
+  });
 });
