@@ -14,8 +14,10 @@ from fontTools.pens.boundsPen import BoundsPen
 from fontTools.pens.svgPathPen import SVGPathPen
 
 ROOT = Path(__file__).resolve().parents[1]
-WIDTH, HEIGHT, EM_PIXELS = 500, 880, 200
-# Only translations differ. Every glyph retains the exact same outline scale.
+WIDTH, HEIGHT, EM_PIXELS = 500, 700, 200
+INK_WIDTH, INK_HEIGHT = 420, 580
+# Build a diagonal name first, then fit and center the whole ink composition.
+# Every glyph within a name receives one uniform scale; names may differ.
 CENTERS = {
     2: [(180, 135), (300, 345)],
     3: [(180, 135), (240, 345), (300, 555)],
@@ -55,8 +57,8 @@ def main():
     # The four-character example is deliberately separate from the five role rows.
     samples = [(role, name, False) for role, name in ROLES] + [("synthetic-four-character", "千载同心", True)]
     for role, name, synthetic in samples:
-        paths, proof = [], []
-        for index, (char, (cx, cy)) in enumerate(zip(name, CENTERS[len(name)])):
+        raw = []
+        for char, (cx, cy) in zip(name, CENTERS[len(name)]):
             if ord(char) not in cmap or cmap[ord(char)] == ".notdef":
                 raise ValueError(f"MISSING_GLYPH:{char}")
             glyph = cmap[ord(char)]
@@ -65,19 +67,53 @@ def main():
             glyphs[glyph].draw(bounds)
             x0, y0, x1, y1 = bounds.bounds
             tx, ty = cx - (x0 + x1) * scale / 2, cy + (y0 + y1) * scale / 2
-            path = f'<path d="{pen.getCommands()}" transform="translate({tx:.6f} {ty:.6f}) scale({scale:.6f} {-scale:.6f})"/>'
+            raw.append({"char": char, "glyph": glyph, "path": pen.getCommands(),
+                        "tx": tx, "ty": ty, "center": [cx, cy],
+                        "bounds": [tx + x0 * scale, ty - y1 * scale,
+                                   tx + x1 * scale, ty - y0 * scale]})
+        left = min(g["bounds"][0] for g in raw)
+        top = min(g["bounds"][1] for g in raw)
+        right = max(g["bounds"][2] for g in raw)
+        bottom = max(g["bounds"][3] for g in raw)
+        fit = min(INK_WIDTH / (right - left), INK_HEIGHT / (bottom - top))
+        dx = WIDTH / 2 - (left + right) / 2 * fit
+        dy = HEIGHT / 2 - (top + bottom) / 2 * fit
+        paths, proof = [], []
+        for index, g in enumerate(raw):
+            path = (f'<g transform="translate({dx:.6f} {dy:.6f}) scale({fit:.6f})">'
+                    f'<path d="{g["path"]}" transform="translate({g["tx"]:.6f} {g["ty"]:.6f}) scale({scale:.6f} {-scale:.6f})"/></g>')
             paths.append(path)
             glyph_file = out / f"{role}-glyph-{index}.svg"
             glyph_file.write_text(svg([path]))
-            proof.append({"character": char, "glyph": glyph, "scale": scale, "center": [cx, cy], "source": glyph_file.name})
+            proof.append({"character": g["char"], "glyph": g["glyph"],
+                          "scale": scale * fit,
+                          "center": [g["center"][0] * fit + dx, g["center"][1] * fit + dy],
+                          "source": glyph_file.name})
         source = out / f"{role}.svg"
         source.write_text(svg(paths))
-        row = {"id": role, "displayName": name, "syntheticOnly": synthetic, "width": WIDTH, "height": HEIGHT, "sourceSvg": source.name, "sourceSvgSha256": sha(source.read_bytes()), "png": f"{role}.png", "glyphs": proof}
+        row = {"id": role, "displayName": name, "syntheticOnly": synthetic,
+               "width": WIDTH, "height": HEIGHT, "sourceSvg": source.name,
+               "sourceSvgSha256": sha(source.read_bytes()), "png": f"{role}.png",
+               "wholeNameFit": {"scale": fit, "translate": [dx, dy]},
+               "glyphPixelsPerEm": EM_PIXELS * fit, "glyphs": proof}
         if not synthetic:
             row["resultRef"] = {"productId": "qianzai-tongxin", "id": role, "version": "1.0.0"}
         rows.append(row)
     rasterizer = ROOT / "scripts/raster-qztx-name-art.mjs"
-    manifest = {"schemaVersion": "qianzai-name-art-candidate.v2", "reviewStatus": "candidate", "canvas": {"width": WIDTH, "height": HEIGHT}, "fontFileSha256": font_facts["fileSha256"], "fontLicense": "SIL OFL 1.1", "fontUnitsPerEm": em, "glyphScale": scale, "glyphPixelsPerEm": EM_PIXELS, "webDisplay": {"width": 200, "height": 352, "pixelsPerEm": 80}, "generatorSha256": sha(Path(__file__).read_bytes()), "rasterizerSha256": sha(rasterizer.read_bytes()), "tools": {"fonttools": fontTools.__version__}, "roles": [r for r in rows if not r["syntheticOnly"]], "syntheticSamples": [r for r in rows if r["syntheticOnly"]]}
+    manifest = {
+        "schemaVersion": "qianzai-name-art-candidate.v3", "reviewStatus": "candidate",
+        "layoutPolicy": "fit-and-center-whole-visible-name",
+        "canvas": {"width": WIDTH, "height": HEIGHT},
+        "inkBudget": {"width": INK_WIDTH, "height": INK_HEIGHT},
+        "expectedAlphaCenter": [WIDTH / 2, HEIGHT / 2],
+        "fontFileSha256": font_facts["fileSha256"], "fontLicense": "SIL OFL 1.1",
+        "fontUnitsPerEm": em, "webDisplay": {"width": 180, "height": 252},
+        "generatorSha256": sha(Path(__file__).read_bytes()),
+        "rasterizerSha256": sha(rasterizer.read_bytes()),
+        "tools": {"fonttools": fontTools.__version__},
+        "roles": [r for r in rows if not r["syntheticOnly"]],
+        "syntheticSamples": [r for r in rows if r["syntheticOnly"]],
+    }
     (out / "manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n")
     shutil.copyfile(font_path.with_name("OFL.txt"), out / "OFL-font-source.txt")
     subprocess.run(["node", str(rasterizer), str(out)], cwd=ROOT, check=True)

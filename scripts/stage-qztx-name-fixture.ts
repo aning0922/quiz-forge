@@ -10,7 +10,7 @@ import {
   privateTestResourceV3Schema,
 } from "../src/features/quizpack/content/v3";
 import { prepareContentV3 } from "../src/features/quizpack/content/v3-scoring-adapter";
-import previous from "../src/features/quizpack/content/qianzai-local-art-fixture.json";
+import previous from "../src/features/quizpack/content/qianzai-local-name-fixture.json";
 const [source, names, out] = process.argv.slice(2);
 if (
   ![source, names, out].every((v) => v && path.isAbsolute(v)) ||
@@ -47,7 +47,7 @@ for (const role of b.slots.characters) {
     (meta.pages && meta.pages !== 1)
   )
     throw Error("NAME_ART_INVALID");
-  const id = `qztx-anchor-${role.resultRef.id}-name`;
+  const id = `qztx-bottom-${role.resultRef.id}-name`;
   const r = privateTestResourceV3Schema.parse({
     ...existing,
     id,
@@ -58,8 +58,8 @@ for (const role of b.slots.characters) {
     height: meta.height,
     source: {
       kind: "program-font-sample",
-      attribution: "本轮固定字形尺度姓名PNG",
-      evidence: "同一书法字体、同一单字尺度、固定透明画布；候选待作者体验",
+      attribution: "本轮固定画布居中姓名PNG",
+      evidence: "同一书法字体、固定透明画布、整体笔画居中；候选待作者体验",
     },
   });
   replacements.set(existing.id, r);
@@ -80,7 +80,7 @@ b.visualPresentation.resourceDescriptions =
     ...d,
     resourceRef: replaceRef(d.resourceRef),
   }));
-b.resourceVersion = "1.2.0";
+b.resourceVersion = "1.3.0";
 const checked = quizPackContentV3Schema.parse(content),
   prepared = prepareContentV3(checked);
 if (!prepared.ok) throw Error(JSON.stringify(prepared));
@@ -143,7 +143,7 @@ for (const bind of runtime.resources) {
   };
 }
 const fixture = {
-  schemaVersion: "qianzai.local-name-fixture.v1",
+  schemaVersion: "qianzai.local-centered-name-fixture.v1",
   scope: "local-demo-only-no-quizpack-or-database-admission",
   canonicalContentSha256: sha(canonicalP1Json(checked)),
   baseContentSha256: previous.canonicalContentSha256,

@@ -2084,25 +2084,29 @@
 .dynamicIdentity {
   position: relative;
   min-height: inherit;
-  padding: 0 24px 96px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 260px 24px 90px;
   color: #fff0d0;
   text-shadow:
     0 2px 8px #051321,
     0 0 16px #051321;
 }
-/* Fixed composition in CSS pixels. Viewport height never distributes space
-   between the name, seal and verse; long seals reserve space only below. */
+/* Keep the complete lower composition at a stable distance from the bottom.
+   Extra viewport height stays above it; short viewports share the scene scroll. */
 .dynamicNameRow {
   position: relative;
   width: 100%;
-  height: max(768px, calc(670px + var(--seal-characters, 2) * 19.44px));
+  flex: 0 0 auto;
+  height: max(300px, calc(220px + var(--seal-characters, 2) * 19.44px));
 }
 .dynamicNameGroup {
   position: absolute;
-  top: 380px;
-  left: calc(50% - 21px);
-  width: 200px;
-  height: 388px;
+  top: 0;
+  left: calc(50% - 24px);
+  width: 180px;
+  height: 292px;
   transform: translateX(-50%);
 }
 .dynamicKicker {
@@ -2115,10 +2119,10 @@
 }
 .dynamicNameArt {
   position: absolute;
-  top: 36px;
+  top: 40px;
   left: 0;
-  width: 200px;
-  height: 352px;
+  width: 180px;
+  height: 252px;
   filter: drop-shadow(0 2px 8px #071625);
 }
 .dynamicNameArt > img,
@@ -2130,8 +2134,8 @@
 }
 .dynamicNameMissing {
   position: absolute;
-  inset: 36px 0 auto;
-  height: 352px;
+  inset: 40px 0 auto;
+  height: 252px;
   display: grid;
   place-content: center;
   text-align: center;
@@ -2144,7 +2148,7 @@
 }
 .dynamicSeal {
   position: absolute;
-  top: 650px;
+  top: 200px;
   left: min(calc(50% + 93px), calc(100% - 78px));
   display: block;
   width: 36px;
@@ -2165,7 +2169,7 @@
 }
 .dynamicQuote {
   position: absolute;
-  top: 470px;
+  top: 28px;
   right: -10px;
   width: 30px;
   height: 272px;
@@ -2180,7 +2184,8 @@
   letter-spacing: 0.04em;
 }
 .dynamicLines {
-  margin-top: 16px;
+  flex-shrink: 0;
+  margin-top: 12px;
   min-height: 79.2px;
   display: flex;
   flex-direction: column;

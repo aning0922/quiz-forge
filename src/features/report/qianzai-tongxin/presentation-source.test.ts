@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import art from "@/features/quizpack/content/qianzai-local-art-fixture.json";
 import names from "@/features/quizpack/content/qianzai-local-name-fixture.json";
+import centered from "@/features/quizpack/content/qianzai-local-centered-name-fixture.json";
 import {
   privateTestAssetMatches,
   registeredPrivateTestSource,
@@ -9,7 +10,7 @@ import {
 import { qianzaiPresentationFixture } from "./result-presentation.test-support";
 import { deriveQianzaiResultPresentation } from "./result-presentation";
 import { qianzaiPresentationSourceMatches } from "./presentation-source";
-describe.each([art, names])(
+describe.each([art, names, centered])(
   "local fixture boundary $schemaVersion",
   (local) => {
     it("preserves presentation for the exact new source without rewriting its sealed identity", async () => {

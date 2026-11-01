@@ -57,12 +57,21 @@ for (const row of rows) {
     }
   if (left < 8 || top < 8 || right >= width - 8 || bottom >= height - 8)
     throw Error(`CLIPPED_GLYPH:${row.id}`);
+  const alphaCenter = [(left + right + 1) / 2, (top + bottom + 1) / 2];
+  const centerOffset = [
+    alphaCenter[0] - width / 2,
+    alphaCenter[1] - height / 2,
+  ];
+  if (centerOffset.some((v) => Math.abs(v) > 1))
+    throw Error(`OFF_CENTER_INK:${row.id}`);
   await writeFile(path.join(out, row.png), png);
   Object.assign(row, {
     bytes: png.length,
     sha256: createHash("sha256").update(png).digest("hex"),
     mediaType: "image/png",
     overlapPixels,
+    alphaCenter,
+    centerOffset,
     alphaBounds: {
       x: left,
       y: top,
@@ -79,15 +88,17 @@ manifest.tools = {
 await writeFile(file, JSON.stringify(manifest, null, 2) + "\n");
 const tiles = await Promise.all(
   rows.map(async (r, i) => ({
-    input: await sharp(path.join(out, r.png)).resize(200, 352).toBuffer(),
-    left: 12 + i * 212,
+    input: await sharp(path.join(out, r.png))
+      .resize(manifest.webDisplay.width, manifest.webDisplay.height)
+      .toBuffer(),
+    left: 12 + i * (manifest.webDisplay.width + 12),
     top: 12,
   })),
 );
 await sharp({
   create: {
-    width: rows.length * 212 + 12,
-    height: 376,
+    width: rows.length * (manifest.webDisplay.width + 12) + 12,
+    height: manifest.webDisplay.height + 24,
     channels: 4,
     background: "#132b40",
   },
@@ -97,11 +108,15 @@ await sharp({
   .toFile(path.join(out, "contact-sheet.png"));
 console.log(
   JSON.stringify(
-    rows.map(({ id, bytes, sha256, overlapPixels }) => ({
-      id,
-      bytes,
-      sha256,
-      overlapPixels,
-    })),
+    rows.map(
+      ({ id, bytes, sha256, overlapPixels, alphaCenter, centerOffset }) => ({
+        id,
+        bytes,
+        sha256,
+        overlapPixels,
+        alphaCenter,
+        centerOffset,
+      }),
+    ),
   ),
 );
