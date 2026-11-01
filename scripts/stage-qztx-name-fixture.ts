@@ -1,6 +1,7 @@
 /** Stage five immutable name assets for a local visual demo. No QuizPack or DB admission. */
 import { readFile, writeFile, mkdir, copyFile } from "node:fs/promises";
 import path from "node:path";
+import { constants } from "node:fs";
 import { createHash } from "node:crypto";
 import sharp from "sharp";
 import { canonicalP1Json } from "../src/features/quizpack/v1/canonical";
@@ -13,7 +14,7 @@ import previous from "../src/features/quizpack/content/qianzai-local-art-fixture
 const [source, names, out] = process.argv.slice(2);
 if (
   ![source, names, out].every((v) => v && path.isAbsolute(v)) ||
-  !out!.startsWith(path.join(process.cwd(), ".cache/"))
+  !path.resolve(out!).startsWith(path.join(process.cwd(), ".cache/"))
 )
   throw Error("EXPLICIT_PRIVATE_PATHS_REQUIRED");
 const sha = (v: string | Uint8Array) =>
@@ -30,7 +31,9 @@ const replacements = new Map<
   string,
   ReturnType<typeof privateTestResourceV3Schema.parse>
 >();
-await mkdir(path.join(out!, "assets"), { recursive: true, mode: 0o700 });
+// Refuse an existing output before copying any bytes.
+await mkdir(out!, { mode: 0o700 });
+await mkdir(path.join(out!, "assets"), { mode: 0o700 });
 for (const role of b.slots.characters) {
   const existing = b.resources.find((r) => r.id === role.nameArt.id)!;
   const file = path.join(names!, role.resultRef.id + ".png"),
@@ -61,7 +64,7 @@ for (const role of b.slots.characters) {
   });
   replacements.set(existing.id, r);
   role.nameArt = { productId: r.productId, id: r.id, version: r.version };
-  await copyFile(file, path.join(out!, r.path));
+  await copyFile(file, path.join(out!, r.path), constants.COPYFILE_EXCL);
 }
 const replaceRef = (r: { productId: string; id: string; version: string }) => {
   const next = replacements.get(r.id);
@@ -105,7 +108,11 @@ for (const r of b.resources)
     const bytes = await readFile(path.join(source!, r.path));
     if (bytes.length !== r.bytes || sha(bytes) !== r.sha256)
       throw Error("BASE_ASSET_CHANGED");
-    await copyFile(path.join(source!, r.path), path.join(out!, r.path));
+    await copyFile(
+      path.join(source!, r.path),
+      path.join(out!, r.path),
+      constants.COPYFILE_EXCL,
+    );
   }
 const runtime = await read(path.join(source!, "runtime-inputs.json"));
 for (const bind of runtime.resources) {
