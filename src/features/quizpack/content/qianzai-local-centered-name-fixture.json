@@ -1,0 +1,63 @@
+{
+  "schemaVersion": "qianzai.local-centered-name-fixture.v1",
+  "scope": "local-demo-only-no-quizpack-or-database-admission",
+  "canonicalContentSha256": "2c9cac22c92a42516d1c921a115987af803d908d3e9f49b6319a439170b56af0",
+  "baseContentSha256": "be9b7d27b0aa99d82bc03b39feaf4ec35b189adf049ef4377ca8cf321fbcc8e0",
+  "resources": [
+    {
+      "id": "qztx-bottom-li-bai-name",
+      "productId": "qianzai-tongxin",
+      "version": "1.0.0",
+      "sha256": "5c5916a79986bb27306704823700fe9ac9b7512b3a3c6850347418fd882d6976",
+      "bytes": 35580,
+      "width": 500,
+      "height": 700,
+      "mediaType": "image/png",
+      "purpose": "decoration"
+    },
+    {
+      "id": "qztx-bottom-su-shi-name",
+      "productId": "qianzai-tongxin",
+      "version": "1.0.0",
+      "sha256": "2da32743524257ddebfed5fea72e453fe28e3980755ce1c56d106e012a5214e3",
+      "bytes": 38900,
+      "width": 500,
+      "height": 700,
+      "mediaType": "image/png",
+      "purpose": "decoration"
+    },
+    {
+      "id": "qztx-bottom-tao-yuanming-name",
+      "productId": "qianzai-tongxin",
+      "version": "1.0.0",
+      "sha256": "38ff619181dc11af2451fd4d3548991116d2bb5d3bdb6a98a03940d3e4797a77",
+      "bytes": 41186,
+      "width": 500,
+      "height": 700,
+      "mediaType": "image/png",
+      "purpose": "decoration"
+    },
+    {
+      "id": "qztx-bottom-li-qingzhao-name",
+      "productId": "qianzai-tongxin",
+      "version": "1.0.0",
+      "sha256": "5dbcb64ebbef1322c06c55c0cbb05ed08429ca9fcaf2f77285087c5091890478",
+      "bytes": 36298,
+      "width": 500,
+      "height": 700,
+      "mediaType": "image/png",
+      "purpose": "decoration"
+    },
+    {
+      "id": "qztx-bottom-mulan-ballad-name",
+      "productId": "qianzai-tongxin",
+      "version": "1.0.0",
+      "sha256": "adb0cbf79f35a69d8df661646bdcad79667816286c272a901844322ca20493c6",
+      "bytes": 28208,
+      "width": 500,
+      "height": 700,
+      "mediaType": "image/png",
+      "purpose": "decoration"
+    }
+  ]
+}

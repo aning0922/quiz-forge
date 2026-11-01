@@ -3,6 +3,7 @@ import registration from "./private-test-registration.json";
 import rebuildRegistration from "./private-test-registration-rebuild.json";
 import localArtFixture from "./qianzai-local-art-fixture.json";
 import localNameFixture from "./qianzai-local-name-fixture.json";
+import centeredNameFixture from "./qianzai-local-centered-name-fixture.json";
 
 /** Compiled finite registrations, never selected by a request or an environment switch. */
 export const PRIVATE_TEST_REGISTRATION = registration;
@@ -84,20 +85,24 @@ export function privateTestAssetMatches(asset: {
   return (
     asset.approval === "private-test-only" &&
     // Local fixture facts never enter registeredPrivateTestSource or DB admission.
-    [...PRIVATE_TEST_REGISTRATIONS, localArtFixture, localNameFixture].some(
-      (r) =>
-        r.resources.some(
-          (e: Record<string, unknown>) =>
-            e.productId === asset.resourceRef.productId &&
-            e.id === asset.resourceRef.id &&
-            e.version === asset.resourceRef.version &&
-            e.sha256 === asset.sha256 &&
-            e.bytes === asset.bytes &&
-            e.width === asset.width &&
-            e.height === asset.height &&
-            e.mediaType === asset.mediaType &&
-            e.purpose === asset.purpose,
-        ),
+    [
+      ...PRIVATE_TEST_REGISTRATIONS,
+      localArtFixture,
+      localNameFixture,
+      centeredNameFixture,
+    ].some((r) =>
+      r.resources.some(
+        (e: Record<string, unknown>) =>
+          e.productId === asset.resourceRef.productId &&
+          e.id === asset.resourceRef.id &&
+          e.version === asset.resourceRef.version &&
+          e.sha256 === asset.sha256 &&
+          e.bytes === asset.bytes &&
+          e.width === asset.width &&
+          e.height === asset.height &&
+          e.mediaType === asset.mediaType &&
+          e.purpose === asset.purpose,
+      ),
     )
   );
 }
