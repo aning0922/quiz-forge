@@ -3710,6 +3710,11 @@
 .continuousReader {
   --qianzai-reveal-height: 100dvh;
   --qianzai-reader-progress: 0;
+  --qianzai-reveal-copy-opacity: clamp(
+    0,
+    calc(1 - (var(--qianzai-reader-progress) - 0.1) * 4),
+    1
+  );
   --qianzai-toolbar-cover: clamp(
     0,
     calc(var(--qianzai-reader-progress) * 10),
@@ -3747,6 +3752,37 @@
   z-index: 2;
   margin-top: calc(-2 * var(--qianzai-reveal-height));
   pointer-events: none;
+}
+/* The caption travels with the paper; the existing portrait stays behind it.
+   Absolute positioning leaves report anchors and reading progress unchanged. */
+.readerOpeningCopy {
+  position: absolute;
+  top: calc(var(--qianzai-reveal-height) - 116px);
+  left: 0;
+  right: 0;
+  padding: 12px 16px 18px;
+  color: #f7e5c9;
+  text-align: center;
+  text-shadow: 0 2px 8px #061421;
+  background: radial-gradient(ellipse, #09142180, transparent 72%);
+  opacity: clamp(0, calc((var(--qianzai-reader-progress) - 0.25) * 5), 1);
+  pointer-events: none;
+}
+.readerOpeningCopy p {
+  margin: 0;
+  font:
+    600 18px/1.6 "Noto Serif CJK SC",
+    "Songti SC",
+    serif;
+  letter-spacing: 0.2em;
+}
+.readerOpeningCopy p + p {
+  margin-top: 7px;
+  font:
+    400 14px/1.6 system-ui,
+    "PingFang SC",
+    sans-serif;
+  letter-spacing: 0.16em;
 }
 .readerReportFlow [data-qianzai-report-toolbar] {
   opacity: var(--qianzai-toolbar-cover);
