@@ -223,14 +223,64 @@ describe("versioned Qianzai consumer prose", () => {
       expect(blocks[0]!.text).not.toContain("想走向新的方向");
     }
   });
-  it("does not fill sparse or facts-only paths with invented highlights", async () => {
+  it("describes both short and long term openness for the two new-direction choices, with familiarity only in the suggestion", async () => {
+    const f = await fixture();
+    const support = f.body.volumes[2]!.paragraphs[0]!.evidence;
+    const observed = {
+      claimRef: ref("authored-6986b26ef46f6048b67a"),
+      kind: "fact" as const,
+      status: "accepted" as const,
+      text: "RAW_INTERNAL_NEW_DIRECTIONS",
+      evidence: support.filter((e) =>
+        ["q02-b", "q18-b"].includes(e.optionRef.id),
+      ),
+      counterevidence: [],
+    };
+    f.body.volumes[3]!.paragraphs = [observed];
+    const blocks = section(document(f), "counterevidence").blocks;
+    expect(blocks).toHaveLength(2);
+    expect(blocks[0]!.snapshot).toBe(observed);
+    expect(blocks[0]!.title).toBe("眼前与长远，都向新的方向开放");
+    expect(blocks[0]!.text).toContain(
+      "眼前的一次尝试，与长久投入的方向，你都愿意走向陌生之处",
+    );
+    expect(blocks[0]!.text).not.toMatch(/熟悉|深耕/u);
+    expect(blocks[1]!.layout).toBe("prompt");
+    expect(blocks[1]!.text).toContain("也可以为自己保留一处熟悉的落脚点");
+    expect(qianzaiConsumerCopyText()).toContain(blocks[0]!.text);
+    expect(qianzaiConsumerCopyText()).toContain(blocks[1]!.text);
+    observed.evidence.pop();
+    expect(section(document(f), "counterevidence").blocks[0]!.layout).toBe(
+      "prompt",
+    );
+  });
+  it("provides shared nonpersonal literary prose for sparse or facts-only paths without invented highlights", async () => {
     const f = await fixture();
     f.body.volumes[2]!.paragraphs.forEach((p) => {
       p.status = "facts-only";
     });
     f.body.volumes[3]!.paragraphs = [];
     const d = document(f);
-    expect(section(d, "patterns").blocks).toEqual([]);
+    const patterns = section(d, "patterns");
+    expect(patterns.intro).not.toContain("留一点空白");
+    expect(patterns.blocks).toHaveLength(1);
+    expect(patterns.blocks[0]!.layout).toBe("body");
+    expect(patterns.blocks[0]!.snapshot).toBeUndefined();
+    expect(patterns.blocks[0]!.text).toContain(
+      "文学里的相逢，可以从一句诗、一个细节开始",
+    );
+    expect(patterns.blocks[0]!.text).not.toMatch(
+      /你愿意|看见你|本轮|选择记录/u,
+    );
+    expect(qianzaiConsumerCopyText()).toContain(patterns.blocks[0]!.text);
+    const html = renderToStaticMarkup(
+      createElement(QianzaiReportReader, {
+        document: d,
+        onResult: () => {},
+        actions: null,
+      }),
+    );
+    expect(html.split(patterns.blocks[0]!.text)).toHaveLength(2);
     expect(section(d, "encounter").blocks).toHaveLength(2);
     expect(section(d, "encounter").blocks[0]!.snapshot).toBeUndefined();
     expect(section(d, "encounter").blocks[0]!.text).toContain("李清照");
@@ -239,7 +289,10 @@ describe("versioned Qianzai consumer prose", () => {
     );
     expect(section(d, "closure").blocks).toHaveLength(3);
     f.body.volumes[2]!.paragraphs[0]!.status = "accepted";
-    expect(section(document(f), "patterns").blocks).toHaveLength(1);
+    const supportedPatterns = section(document(f), "patterns").blocks;
+    expect(supportedPatterns).toHaveLength(1);
+    expect(supportedPatterns[0]!.layout).toBe("card");
+    expect(supportedPatterns[0]!.text).not.toBe(patterns.blocks[0]!.text);
   });
   it("keeps unknown, unbound and mismatched source/role/version inputs on the existing snapshot path", async () => {
     const f = await fixture(),

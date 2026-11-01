@@ -111,6 +111,12 @@ const REFLECTIONS = {
     suggestion:
       "下次遇到变化时，先分清眼前是在探索方向，还是重排安排。各写下一件想保留的事和一件可以调整的事，再决定从哪里动手。",
   },
+  newDirections: {
+    title: "眼前与长远，都向新的方向开放",
+    text: "眼前的一次尝试，与长久投入的方向，你都愿意走向陌生之处。两种时间尺度里的选择，都为新经验留了位置；这份开放，可以在一次次具体体验中慢慢展开。",
+    suggestion:
+      "下一次起步时，可以先划一个小范围，留一个回看的时点。也可以为自己保留一处熟悉的落脚点，让新的尝试有停下来整理的空间。",
+  },
   time: {
     title: "给眼前与长远，留不同的速度",
     text: "一段轻巧的尝试，和一份准备长久投入的热爱，可以拥有不同的步调。让新意与熟悉各得其所，也是一种照看自己的方式。",
@@ -310,7 +316,7 @@ const REFLECTION_SUPPORT: readonly ReflectionSpec[] = [
     kind: "fact",
     positive: ["q02-b", "q18-b"],
     negative: [],
-    copy: "time",
+    copy: "newDirections",
   },
   {
     id: "authored-407a0f1c9a00adc8d3b5",
@@ -535,7 +541,7 @@ const DIMENSION_COPY = [
   },
 ] as const;
 const QUIET_PATTERN =
-  "每一份心意都可以慢慢辨认。这一页先留一点空白，等你在日常里遇见更贴近自己的片刻。";
+  "文学里的相逢，可以从一句诗、一个细节开始。有人在山河间寻找远方，有人在日常中细读光阴；不同的生命各有自己的步调。读到动心处，不妨停一停，把此刻愿意留下的那句话，轻轻放回生活里。";
 const QUIET_REFLECTION =
   "下一次需要作决定时，可以先问问自己：此刻最重要的是什么？留一个小范围，慢慢试走，也给回看留一点时间。";
 const CLOSING_ROOM = "这一页只陪你照看此刻，往后的你仍有重新选择的余地。";
@@ -685,10 +691,11 @@ export function qianzaiConsumerCopy(
     {
       id: "patterns",
       ...SECTION_COPY.patterns,
-      ...(!highlights.length ? { intro: QUIET_PATTERN } : {}),
-      blocks: highlights.map(({ feature, snapshot }) =>
-        block(feature.text, "card", feature.title, snapshot),
-      ),
+      blocks: highlights.length
+        ? highlights.map(({ feature, snapshot }) =>
+            block(feature.text, "card", feature.title, snapshot),
+          )
+        : [block(QUIET_PATTERN)],
     },
     {
       id: "counterevidence",
