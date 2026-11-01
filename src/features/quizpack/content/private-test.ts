@@ -1,6 +1,7 @@
 import { z } from "zod";
 import registration from "./private-test-registration.json";
 import rebuildRegistration from "./private-test-registration-rebuild.json";
+import localArtFixture from "./qianzai-local-art-fixture.json";
 
 /** Compiled finite registrations, never selected by a request or an environment switch. */
 export const PRIVATE_TEST_REGISTRATION = registration;
@@ -81,7 +82,8 @@ export function privateTestAssetMatches(asset: {
 }) {
   return (
     asset.approval === "private-test-only" &&
-    PRIVATE_TEST_REGISTRATIONS.some((r) =>
+    // Local fixture facts never enter registeredPrivateTestSource or DB admission.
+    [...PRIVATE_TEST_REGISTRATIONS, localArtFixture].some((r) =>
       r.resources.some(
         (e: Record<string, unknown>) =>
           e.productId === asset.resourceRef.productId &&

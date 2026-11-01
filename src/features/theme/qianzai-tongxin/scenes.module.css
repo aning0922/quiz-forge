@@ -1795,8 +1795,8 @@
   color: #dfcfb2;
 }
 
-/* The admitted scene is cropped above the old controls. Below it, the finite
-   text-free V8 water crop is the sole continuous scenery, without old UI. */
+/* Each act owns one continuous redrawn scene. Preserve its aspect ratio and
+   top composition; short screens crop the scenery while only the cards scroll. */
 .frame[data-responsive-question] {
   --question-paper-height: 120px;
   width: min(100%, 430px);
@@ -1806,18 +1806,18 @@
   width: 100%;
   height: 100%;
 }
+.questionBackdrop {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
 .frame[data-responsive-question] .scene-art {
   width: 100%;
-  height: calc(391 * var(--scene-unit));
-  overflow: hidden;
-}
-.frame .quiz .answerTexture {
-  position: absolute;
-  top: calc(391 * var(--scene-unit));
-  left: 0;
-  width: 100%;
-  height: calc(100% - 391 * var(--scene-unit));
-  pointer-events: none;
+  height: auto;
+  min-height: 100%;
+  object-fit: cover;
+  object-position: center top;
 }
 .frame .quiz .questionFlow {
   top: calc(391 * var(--scene-unit));
@@ -1834,6 +1834,23 @@
   top: 0;
   width: calc(354 * var(--scene-unit));
   height: var(--question-paper-height);
+}
+.frame .quiz .questionSkin {
+  position: absolute;
+  display: grid;
+  box-sizing: border-box;
+  pointer-events: none;
+}
+.questionSkin > svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+.frame .quiz .option .skin.questionSkin {
+  height: 100%;
 }
 .frame .quiz .question-text {
   left: calc(28 * var(--scene-unit));
@@ -2007,6 +2024,30 @@
   object-fit: cover;
   object-position: center top;
 }
+.reveal[data-qianzai-full-reveal] {
+  background: #0a1b2c;
+}
+.fullRevealBackdrop {
+  position: absolute;
+  inset: 0 auto auto 0;
+  width: 100%;
+  aspect-ratio: 853 / 1844;
+  pointer-events: none;
+}
+.fullRevealBackdrop > img,
+.fullRevealBackdrop > svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+}
+.fullRevealBackdrop::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0;
+  height: 56px;
+  background: linear-gradient(#0a1b2c00, #0a1b2c);
+}
 .dynamicShade {
   position: absolute;
   inset: 0;
@@ -2043,7 +2084,7 @@
 .dynamicIdentity {
   position: relative;
   min-height: inherit;
-  padding: 338px 24px 96px;
+  padding: 380px 24px 96px;
   display: grid;
   grid-template-rows: minmax(310px, 1fr) auto;
   gap: 12px;
@@ -2054,11 +2095,13 @@
 }
 .dynamicNameRow {
   display: grid;
-  grid-template-columns: minmax(0, 210px) 36px 30px;
+  width: min(292px, calc(100% - 24px));
+  grid-template-columns: minmax(0, 1fr) 36px 30px;
   gap: 8px;
-  justify-content: center;
+  justify-self: center;
   align-items: end;
   min-height: 310px;
+  transform: translateX(20px);
 }
 .dynamicNameGroup {
   display: flex;
@@ -2073,82 +2116,18 @@
   text-align: center;
   font: 400 26px/1.2 var(--qztx-literary, serif);
 }
-.dynamicNameText {
-  position: relative;
-  flex: 1;
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font: 400 48px/1 var(--qztx-brush, cursive);
-  color: #ffe1a0;
-  text-shadow: none;
+.dynamicNameArt {
+  width: min(100%, 183px);
+  aspect-ratio: 3 / 4;
+  flex: 0 0 auto;
   filter: drop-shadow(0 2px 8px #071625);
 }
-.dynamicNameText:is(
-  [data-name-size="2"],
-  [data-name-size="3"],
-  [data-name-size="4"]
-) {
+.dynamicNameArt > img,
+.dynamicNameArt > svg {
   display: block;
-}
-.dynamicNameText:is(
-    [data-name-size="2"],
-    [data-name-size="3"],
-    [data-name-size="4"]
-  )
-  > span {
-  position: absolute;
-  width: 1em;
-  background: linear-gradient(140deg, #fff0ba, #e6b958 62%, #fff0b7);
-  background-clip: text;
-  color: transparent;
-}
-.dynamicNameText[data-name-size="2"] {
-  font-size: 104px;
-}
-.dynamicNameText[data-name-size="2"] > span:first-child {
-  top: calc(50% - 0.95em);
-  left: calc(50% - 0.8em);
-}
-.dynamicNameText[data-name-size="2"] > span:nth-child(2) {
-  top: calc(50% - 0.05em);
-  left: calc(50% - 0.2em);
-}
-.dynamicNameText[data-name-size="3"] {
-  font-size: 76px;
-}
-.dynamicNameText[data-name-size="3"] > span:first-child {
-  top: calc(50% - 1.35em);
-  left: calc(50% - 0.8em);
-}
-.dynamicNameText[data-name-size="3"] > span:nth-child(2) {
-  top: calc(50% - 0.5em);
-  left: calc(50% - 0.5em);
-}
-.dynamicNameText[data-name-size="3"] > span:nth-child(3) {
-  top: calc(50% + 0.35em);
-  left: calc(50% - 0.2em);
-}
-.dynamicNameText[data-name-size="4"] {
-  font-size: 60px;
-}
-.dynamicNameText[data-name-size="4"] > span:first-child {
-  top: calc(50% - 1.7em);
-  left: calc(50% - 0.86em);
-}
-.dynamicNameText[data-name-size="4"] > span:nth-child(2) {
-  top: calc(50% - 0.9em);
-  left: calc(50% - 0.62em);
-}
-.dynamicNameText[data-name-size="4"] > span:nth-child(3) {
-  top: calc(50% - 0.1em);
-  left: calc(50% - 0.38em);
-}
-.dynamicNameText[data-name-size="4"] > span:nth-child(4) {
-  top: calc(50% + 0.7em);
-  left: calc(50% - 0.14em);
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 .dynamicNameMissing {
   margin: auto;

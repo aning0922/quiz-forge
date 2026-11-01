@@ -7,7 +7,6 @@ import {
 } from "./editorial";
 import { layoutQianzaiExport, qianzaiExportText, type Measure } from "./layout";
 import { deriveQianzaiResultPresentation } from "./result-presentation";
-import { qianzaiBrushNameGlyphs } from "./brush-name";
 const measure: Measure = (s, size) => ({
   width: [...s].length * size,
   left: 0,
@@ -133,7 +132,7 @@ describe("Qianzai pinned editorial display", () => {
     expect(empty.sections[3]!.editorial?.featureClaimId).toBeUndefined();
     expect(empty.sections[3]!.editorial?.prompts).toBeUndefined();
   });
-  it("chooses reflection by pinned semantic priority, retains all prose/evidence in PNG, and leaves brush naming separate from body metrics", async () => {
+  it("chooses reflection by pinned semantic priority, retains all prose/evidence in PNG, and uses the same name-art image port without changing body metrics", async () => {
     const f = await fixture(),
       before = structuredClone(f.body),
       presentation = deriveQianzaiResultPresentation(f.view, f.binding)!;
@@ -170,7 +169,7 @@ describe("Qianzai pinned editorial display", () => {
       expect(fontInput).toContain(s);
     }
     expect(
-      layout.operations.some((o) => o.kind === "name" && o.text === "李白"),
+      layout.operations.some((o) => o.kind === "image" && o.role === "nameArt"),
     ).toBe(true);
     expect(f.body).toEqual(before);
     f.body.volumes[3]!.paragraphs.reverse();
@@ -178,27 +177,8 @@ describe("Qianzai pinned editorial display", () => {
       qianzaiChapterEditorial(f.body, f.body.volumes[3]!)!.featureClaimId,
     ).toBe(chapter.featureClaimId);
     const legacy = layoutQianzaiExport(f.body, "poster", measure);
-    expect(legacy.operations.some((o) => o.kind === "name")).toBe(false);
     expect(
       legacy.operations.some((o) => o.kind === "image" && o.role === "nameArt"),
     ).toBe(true);
   });
-  it.each(["李白", "陶渊明", "四字样稿"])(
-    "keeps the %s program lettering sample within a fixed name box",
-    (name) => {
-      const box = { x: 10, y: 20, width: 210, height: 270 },
-        glyphs = qianzaiBrushNameGlyphs(name, box)!;
-      expect(glyphs.map((g) => g.text).join("")).toBe(name);
-      expect(
-        glyphs.every(
-          (g) =>
-            g.centerX - g.size / 2 >= box.x &&
-            g.centerX + g.size / 2 <= box.x + box.width &&
-            g.centerY - g.size / 2 >= box.y &&
-            g.centerY + g.size / 2 <= box.y + box.height,
-        ),
-      ).toBe(true);
-      expect(qianzaiBrushNameGlyphs("太长的姓名样稿", box)).toBeNull();
-    },
-  );
 });

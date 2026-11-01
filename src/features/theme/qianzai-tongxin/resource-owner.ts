@@ -16,7 +16,7 @@ export type QianzaiAssetSlot =
   | "reportPaper"
   | "reportBorder"
   | "seal"
-  | `acts.${0 | 1 | 2}.${"background" | "questionPaper" | "optionIdle" | "optionSelected"}`
+  | `acts.${0 | 1 | 2}.${"background" | "navigation" | "questionPaper" | "optionIdle" | "optionSelected"}`
   | `character.${"reveal" | "nameArt" | "report" | "poster"}`
   | `character.revealComposite.${"before" | "full"}`;
 export type QianzaiAssetBinding = Readonly<{
@@ -88,7 +88,11 @@ export function admittedQianzaiBindings(
       parts[0] === "acts"
         ? n.acts[Number(parts[1])]?.[
             parts[2] as
-              "background" | "questionPaper" | "optionIdle" | "optionSelected"
+              | "background"
+              | "navigation"
+              | "questionPaper"
+              | "optionIdle"
+              | "optionSelected"
           ]
         : parts[0] === "character"
           ? composite
@@ -111,7 +115,7 @@ export function admittedQianzaiBindings(
         !(
           binding.slot === "cover" ||
           binding.slot === "preferenceScene" ||
-          /^acts\.[0-2]\.background$/.test(binding.slot)
+          /^acts\.[0-2]\.(background|navigation)$/.test(binding.slot)
         ))
     )
       return [];

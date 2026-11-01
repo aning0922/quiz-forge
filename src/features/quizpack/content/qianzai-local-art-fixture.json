@@ -1,0 +1,140 @@
+{
+  "schemaVersion": "qianzai.local-art-fixture.v1",
+  "scope": "local-demo-only-no-quizpack-or-database-admission",
+  "canonicalContentSha256": "59c8d3dce4573a0b0580d672c278b9e13cb4bdea85af7c7fdfbcec3bfd87c0ae",
+  "baseContentSha256": "e81fad61f2258e44ba58fe84fda12fedccfb0d7517e97546010f4fa35cfbe767",
+  "resources": [
+    {
+      "id": "qztx-art-act-1",
+      "productId": "qianzai-tongxin",
+      "version": "1.0.0",
+      "sha256": "596d063d848c0c858ee0de207a29d08df5a884bb13713f7e1ed27b7fcddcdfe1",
+      "bytes": 2866303,
+      "width": 853,
+      "height": 1844,
+      "mediaType": "image/png",
+      "purpose": "decoration"
+    },
+    {
+      "id": "qztx-art-question-paper",
+      "productId": "qianzai-tongxin",
+      "version": "1.0.0",
+      "sha256": "e92ede7aa48294d77ec55f63d12951141d9e6878f0cf51fd8a89974728f422d0",
+      "bytes": 2379673,
+      "width": 2188,
+      "height": 718,
+      "mediaType": "image/png",
+      "purpose": "decoration"
+    },
+    {
+      "id": "qztx-art-option-idle",
+      "productId": "qianzai-tongxin",
+      "version": "1.0.0",
+      "sha256": "3e7e6b74093a4115777ecb84a30ff445df1293a724cdb2f356b60d65137e37cd",
+      "bytes": 1405723,
+      "width": 2171,
+      "height": 724,
+      "mediaType": "image/png",
+      "purpose": "decoration"
+    },
+    {
+      "id": "qztx-art-option-selected",
+      "productId": "qianzai-tongxin",
+      "version": "1.0.0",
+      "sha256": "c7fc0939d5cb2b4291074bee0105652f239a78d38d12b43e879753454427d02c",
+      "bytes": 1238445,
+      "width": 2170,
+      "height": 725,
+      "mediaType": "image/png",
+      "purpose": "decoration"
+    },
+    {
+      "id": "qztx-art-act-2",
+      "productId": "qianzai-tongxin",
+      "version": "1.0.0",
+      "sha256": "7947579087827cb445409d76bb98885978ca121310e978a73a264aeb8b8f4781",
+      "bytes": 2978900,
+      "width": 853,
+      "height": 1844,
+      "mediaType": "image/png",
+      "purpose": "decoration"
+    },
+    {
+      "id": "qztx-art-act-3",
+      "productId": "qianzai-tongxin",
+      "version": "1.0.0",
+      "sha256": "3b2406fc72d6eed351fc8647a05e45f67f3c4db3b0580a8806dcd9d8847878ee",
+      "bytes": 2907381,
+      "width": 853,
+      "height": 1844,
+      "mediaType": "image/png",
+      "purpose": "decoration"
+    },
+    {
+      "id": "qztx-art-li-bai-name",
+      "productId": "qianzai-tongxin",
+      "version": "1.0.0",
+      "sha256": "719f7ff7357ad26c7bafddc44e641a6f6663565736220bdb0b9b29718ad3f1a9",
+      "bytes": 36258,
+      "width": 480,
+      "height": 640,
+      "mediaType": "image/png",
+      "purpose": "decoration"
+    },
+    {
+      "id": "qztx-art-su-shi-name",
+      "productId": "qianzai-tongxin",
+      "version": "1.0.0",
+      "sha256": "0cf0086af2c5d43fd7f02f339128fffaf27ef3c1304c9ca7ce7c41a97821a8e7",
+      "bytes": 40002,
+      "width": 480,
+      "height": 640,
+      "mediaType": "image/png",
+      "purpose": "decoration"
+    },
+    {
+      "id": "qztx-art-tao-yuanming-name",
+      "productId": "qianzai-tongxin",
+      "version": "1.0.0",
+      "sha256": "578cdd38764a821bd49b80298c9c22661f24978dc3957e1631a957b981667dd5",
+      "bytes": 47037,
+      "width": 480,
+      "height": 640,
+      "mediaType": "image/png",
+      "purpose": "decoration"
+    },
+    {
+      "id": "qztx-art-li-qingzhao-name",
+      "productId": "qianzai-tongxin",
+      "version": "1.0.0",
+      "sha256": "5c63b89d82c04d9287ba898052100f49c54b7b3ac9557d4cd9f8c900d2b78fe1",
+      "bytes": 42335,
+      "width": 480,
+      "height": 640,
+      "mediaType": "image/png",
+      "purpose": "decoration"
+    },
+    {
+      "id": "qztx-art-mulan-ballad-name",
+      "productId": "qianzai-tongxin",
+      "version": "1.0.0",
+      "sha256": "72dd195e16a575879d981c82a5f7d0f28362d8a003e7f53762e7876f7b7c195e",
+      "bytes": 30091,
+      "width": 480,
+      "height": 640,
+      "mediaType": "image/png",
+      "purpose": "decoration"
+    },
+    {
+      "id": "qztx-art-li-bai-reveal",
+      "productId": "qianzai-tongxin",
+      "version": "1.0.0",
+      "sha256": "36e83a15493c4dcbc298fda7b242b13929f4a1c138ab137bf1411af8e9790f91",
+      "bytes": 2965650,
+      "width": 853,
+      "height": 1844,
+      "mediaType": "image/png",
+      "purpose": "portrait"
+    }
+  ]
+}

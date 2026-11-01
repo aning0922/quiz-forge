@@ -9,7 +9,13 @@ const slot = z.union([
     "acts.",
     z.union([z.literal(0), z.literal(1), z.literal(2)]),
     ".",
-    z.enum(["background", "questionPaper", "optionIdle", "optionSelected"]),
+    z.enum([
+      "background",
+      "navigation",
+      "questionPaper",
+      "optionIdle",
+      "optionSelected",
+    ]),
   ]),
   z.templateLiteral([
     "character.",

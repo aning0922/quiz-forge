@@ -97,7 +97,10 @@ export function qianzaiPrototypeImage(
       ? [
           slots.cover,
           slots.preferenceScene,
-          ...slots.acts.map((a) => a.background),
+          ...slots.acts.flatMap((a) => [
+            a.background,
+            ...(a.navigation ? [a.navigation] : []),
+          ]),
         ]
       : [scene?.optionIdle, scene?.optionSelected];
   if (!allowed.some((candidate) => candidate && sameArtRef(candidate, ref)))

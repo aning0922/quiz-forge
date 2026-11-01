@@ -192,3 +192,22 @@ describe("exact neutral resource roles and ownership", () => {
     expect(fetcher.mock.calls[0]?.[1]?.method).toBeUndefined();
   });
 });
+
+it("admits navigation only at its declared act slot and never confuses it with the new background", () => {
+  const { model, asset } = fixture();
+  const act = model.entry!.slots.acts[0]!;
+  act.navigation = asset.resourceRef;
+  const { alt: _alt, ...facts } = asset;
+  void _alt;
+  const binding: QianzaiAssetBinding = {
+    asset: facts,
+    slot: "acts.0.navigation",
+    layer: "prototype-scene-base",
+  };
+  expect(admittedQianzaiBindings(model, [binding])).toHaveLength(1);
+  expect(
+    admittedQianzaiBindings(model, [{ ...binding, slot: "acts.1.navigation" }]),
+  ).toEqual([]);
+  delete act.navigation;
+  expect(admittedQianzaiBindings(model, [binding])).toEqual([]);
+});

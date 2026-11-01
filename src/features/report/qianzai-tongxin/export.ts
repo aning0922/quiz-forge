@@ -5,9 +5,6 @@ import {
   type VerifiedImage,
 } from "@/lib/browser/display-assets-v2";
 import { checkpoint } from "@/lib/browser/display-task";
-import { qianzaiSnapshotDocument } from "./presentation";
-import { qianzaiBrushNameGlyphs } from "./brush-name";
-import { QIANZAI_EDITORIAL_FONTS } from "@/features/theme/qianzai-tongxin/editorial-fonts";
 import { withPreviewFont } from "./export-font";
 import {
   QIANZAI_EXPORT_LIMITS as L,
@@ -88,150 +85,122 @@ export async function renderQianzaiExport(
       scope.font,
       texts,
       signal,
-      async (family, primaryActive, primaryDeadline) => {
-        const render = async (
-          brushFamily?: string,
-          active = primaryActive,
-          deadline = primaryDeadline,
-        ) => {
-          check(active, deadline);
-          // A one-pixel measurement surface precedes any output canvas allocation.
-          const scratch = document.createElement("canvas");
-          scratch.width = 1;
-          scratch.height = 1;
-          const measure = scratch.getContext("2d");
-          if (!measure) throw new QianzaiExportError("PNG_UNAVAILABLE");
-          let layout;
-          try {
-            layout = layoutQianzaiExport(
-              body,
-              kind,
-              (text, size) => {
-                measure.font = `600 ${size}px "${family}"`;
-                const m = measure.measureText(text);
-                return {
-                  width: m.width,
-                  left: m.actualBoundingBoxLeft,
-                  right: m.actualBoundingBoxRight,
-                  ascent: m.actualBoundingBoxAscent,
-                  descent: m.actualBoundingBoxDescent,
-                };
-              },
-              () => check(active, deadline),
-              {
-                ...(privateNote ? { annotation: privateNote } : {}),
-                ...(scope.presentation
-                  ? { presentation: scope.presentation }
-                  : {}),
-              },
-            );
-          } finally {
-            scratch.width = 0;
-            scratch.height = 0;
-          }
-          check(active, deadline);
-          const loaded = new Map<string, VerifiedImage>();
-          let canvas: HTMLCanvasElement | undefined;
-          try {
-            for (const asset of unique) {
-              check(active, deadline);
-              const image = await loadVerifiedImage(
-                asset,
-                async (...args) => {
-                  check(active, deadline);
-                  return scope.transport(...args);
-                },
-                active,
-                deadline,
-              );
-              loaded.set(JSON.stringify(asset.resourceRef), image);
-              check(active, deadline);
-            }
-            check(active, deadline);
-            canvas = document.createElement("canvas");
-            canvas.width = layout.width;
-            canvas.height = layout.height;
-            const ctx = canvas.getContext("2d");
-            if (!ctx) throw new QianzaiExportError("PNG_UNAVAILABLE");
-            ctx.fillStyle = "#f6ead2";
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            if (scope.paper) {
-              const paper = loaded.get(
-                JSON.stringify(scope.paper.resourceRef),
-              )!;
-              const pattern = ctx.createPattern(paper.image, "repeat");
-              if (pattern) {
-                ctx.save();
-                ctx.globalAlpha = 0.08;
-                ctx.fillStyle = pattern;
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                ctx.restore();
-              }
-            }
-            const wash = ctx.createLinearGradient(
-              0,
-              0,
-              canvas.width,
-              canvas.height,
-            );
-            wash.addColorStop(0, "#fff9ec88");
-            wash.addColorStop(1, "#d7b57a22");
-            ctx.fillStyle = wash;
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            ctx.strokeStyle = "#b18a4e";
-            ctx.lineWidth = 2;
-            ctx.strokeRect(20, 20, canvas.width - 40, canvas.height - 40);
-            for (let i = 0; i < layout.operations.length; i++) {
-              if (i % 32 === 0) {
-                check(active, deadline);
-                await new Promise<void>((resolve) => setTimeout(resolve, 0));
-                check(active, deadline);
-              }
-              drawOperation(
-                ctx,
-                layout.operations[i]!,
-                family,
-                scope,
-                loaded,
-                canvas.width,
-                brushFamily,
-              );
-            }
-            check(active, deadline);
-            const blob = await encode(canvas, active, () =>
-              check(active, deadline),
-            );
-            check(active, deadline);
-            if (blob.size > L.maxPngBytes)
-              throw new QianzaiExportError("CONTENT_LIMIT");
-            return { blob, width: layout.width, height: layout.height };
-          } finally {
-            for (const image of loaded.values()) image.release();
-            if (canvas) {
-              canvas.width = 0;
-              canvas.height = 0;
-            }
-          }
-        };
-        const name = qianzaiSnapshotDocument(
-          body,
-          undefined,
-          scope.presentation,
-        ).resultPresentation?.role.displayName;
-        if (name && [...name].length >= 2 && [...name].length <= 4) {
-          return await withPreviewFont(
-            QIANZAI_EDITORIAL_FONTS.brush,
-            [name],
-            primaryActive,
-            (brushFamily, nestedActive, nestedDeadline) =>
-              render(
-                brushFamily,
-                nestedActive,
-                Math.min(primaryDeadline, nestedDeadline),
-              ),
+      async (family, active, deadline) => {
+        check(active, deadline);
+        // A one-pixel measurement surface precedes any output canvas allocation.
+        const scratch = document.createElement("canvas");
+        scratch.width = 1;
+        scratch.height = 1;
+        const measure = scratch.getContext("2d");
+        if (!measure) throw new QianzaiExportError("PNG_UNAVAILABLE");
+        let layout;
+        try {
+          layout = layoutQianzaiExport(
+            body,
+            kind,
+            (text, size) => {
+              measure.font = `600 ${size}px "${family}"`;
+              const m = measure.measureText(text);
+              return {
+                width: m.width,
+                left: m.actualBoundingBoxLeft,
+                right: m.actualBoundingBoxRight,
+                ascent: m.actualBoundingBoxAscent,
+                descent: m.actualBoundingBoxDescent,
+              };
+            },
+            () => check(active, deadline),
+            {
+              ...(privateNote ? { annotation: privateNote } : {}),
+              ...(scope.presentation
+                ? { presentation: scope.presentation }
+                : {}),
+            },
           );
+        } finally {
+          scratch.width = 0;
+          scratch.height = 0;
         }
-        return await render();
+        check(active, deadline);
+        const loaded = new Map<string, VerifiedImage>();
+        let canvas: HTMLCanvasElement | undefined;
+        try {
+          for (const asset of unique) {
+            check(active, deadline);
+            const image = await loadVerifiedImage(
+              asset,
+              async (...args) => {
+                check(active, deadline);
+                return scope.transport(...args);
+              },
+              active,
+              deadline,
+            );
+            loaded.set(JSON.stringify(asset.resourceRef), image);
+            check(active, deadline);
+          }
+          check(active, deadline);
+          canvas = document.createElement("canvas");
+          canvas.width = layout.width;
+          canvas.height = layout.height;
+          const ctx = canvas.getContext("2d");
+          if (!ctx) throw new QianzaiExportError("PNG_UNAVAILABLE");
+          ctx.fillStyle = "#f6ead2";
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          if (scope.paper) {
+            const paper = loaded.get(JSON.stringify(scope.paper.resourceRef))!;
+            const pattern = ctx.createPattern(paper.image, "repeat");
+            if (pattern) {
+              ctx.save();
+              ctx.globalAlpha = 0.08;
+              ctx.fillStyle = pattern;
+              ctx.fillRect(0, 0, canvas.width, canvas.height);
+              ctx.restore();
+            }
+          }
+          const wash = ctx.createLinearGradient(
+            0,
+            0,
+            canvas.width,
+            canvas.height,
+          );
+          wash.addColorStop(0, "#fff9ec88");
+          wash.addColorStop(1, "#d7b57a22");
+          ctx.fillStyle = wash;
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          ctx.strokeStyle = "#b18a4e";
+          ctx.lineWidth = 2;
+          ctx.strokeRect(20, 20, canvas.width - 40, canvas.height - 40);
+          for (let i = 0; i < layout.operations.length; i++) {
+            if (i % 32 === 0) {
+              check(active, deadline);
+              await new Promise<void>((resolve) => setTimeout(resolve, 0));
+              check(active, deadline);
+            }
+            drawOperation(
+              ctx,
+              layout.operations[i]!,
+              family,
+              scope,
+              loaded,
+              canvas.width,
+            );
+          }
+          check(active, deadline);
+          const blob = await encode(canvas, active, () =>
+            check(active, deadline),
+          );
+          check(active, deadline);
+          if (blob.size > L.maxPngBytes)
+            throw new QianzaiExportError("CONTENT_LIMIT");
+          return { blob, width: layout.width, height: layout.height };
+        } finally {
+          for (const image of loaded.values()) image.release();
+          if (canvas) {
+            canvas.width = 0;
+            canvas.height = 0;
+          }
+        }
       },
     );
   } catch (error) {
@@ -278,39 +247,7 @@ function drawOperation(
   scope: QianzaiExportScope,
   loaded: Map<string, VerifiedImage>,
   width: number,
-  brushFamily?: string,
 ) {
-  if (op.kind === "name") {
-    if (!brushFamily) throw new QianzaiExportError("FONT_UNAVAILABLE");
-    const glyphs = qianzaiBrushNameGlyphs(op.text, op.box);
-    if (!glyphs) throw new QianzaiExportError("CONTENT_LIMIT");
-    ctx.save();
-    const gold = ctx.createLinearGradient(
-      op.box.x,
-      op.box.y,
-      op.box.x + op.box.width,
-      op.box.y + op.box.height,
-    );
-    gold.addColorStop(0, "#fff0b6");
-    gold.addColorStop(0.45, "#dfb964");
-    gold.addColorStop(1, "#a77830");
-    ctx.fillStyle = gold;
-    ctx.textAlign = "left";
-    ctx.textBaseline = "alphabetic";
-    for (const glyph of glyphs) {
-      ctx.font = `400 ${glyph.size}px "${brushFamily}"`;
-      const m = ctx.measureText(glyph.text);
-      ctx.fillText(
-        glyph.text,
-        glyph.centerX +
-          (m.actualBoundingBoxLeft - m.actualBoundingBoxRight) / 2,
-        glyph.centerY +
-          (m.actualBoundingBoxAscent - m.actualBoundingBoxDescent) / 2,
-      );
-    }
-    ctx.restore();
-    return;
-  }
   if (op.kind === "text") {
     ctx.font = `600 ${op.size}px "${family}"`;
     ctx.fillStyle = op.color;

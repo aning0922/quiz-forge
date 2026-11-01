@@ -1,5 +1,5 @@
 import type { ComposedReportBodyV1 as Body } from "@/lib/assessment-contract/composed-report-v1";
-import { QIANZAI_V11_CONTENT_SHA256 } from "./role-profiles-v11";
+import { qianzaiPresentationSourceMatches } from "./presentation-source";
 type Paragraph = Body["volumes"][number]["paragraphs"][number];
 type Volume = Body["volumes"][number];
 export type QianzaiParagraphEditorial = Readonly<{
@@ -182,7 +182,7 @@ function entry(
 ): Entry | undefined {
   const ref = p.claimRef;
   if (
-    body.provenance.canonicalContentSha256 !== QIANZAI_V11_CONTENT_SHA256 ||
+    !qianzaiPresentationSourceMatches(body.provenance.canonicalContentSha256) ||
     !ref ||
     ref.productId !== "qianzai-tongxin" ||
     ref.version !== "1.0.0" ||
@@ -207,7 +207,7 @@ export function qianzaiChapterEditorial(
   body: Body,
   volume: Volume,
 ): QianzaiChapterEditorial | undefined {
-  if (body.provenance.canonicalContentSha256 !== QIANZAI_V11_CONTENT_SHA256)
+  if (!qianzaiPresentationSourceMatches(body.provenance.canonicalContentSha256))
     return undefined;
   if (volume.id === "patterns")
     return {
