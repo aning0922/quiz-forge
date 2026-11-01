@@ -1,3 +1,4 @@
+import { qianzaiSnapshotDocument } from "./presentation";
 import { describe, expect, it } from "vitest";
 import { qianzaiPresentationFixture } from "./result-presentation.test-support";
 import { layoutQianzaiExport, qianzaiExportText, type Measure } from "./layout";
@@ -14,7 +15,7 @@ const measure: Measure = (s, size) => ({
   descent: size * 0.2,
 });
 describe("Qianzai same-source full-report scales", () => {
-  it("prints all fixed explanations with real positions and preserves six volumes and both evidence directions", async () => {
+  it("prints shared consumer explanations with real positions while retaining both evidence directions internally", async () => {
     const f = await qianzaiPresentationFixture();
     const scores = [0, 44, 46, 56, 100];
     f.body.dimensions.forEach((d, i) => {
@@ -55,33 +56,19 @@ describe("Qianzai same-source full-report scales", () => {
         f.body.provenance.canonicalContentSha256,
       )!;
       expect(bars[i]).toMatchObject({ score: d.score, scale: scale.geometry });
-      for (const s of [
-        scale.left,
-        scale.right,
-        scale.positionLabel,
-        scale.caption,
-        scale.explanation,
-      ]) {
+      for (const s of [scale.left, scale.right]) {
         expect(text).toContain(s);
         expect(fontInput).toContain(s);
       }
-      expect(text.split(scale.explanation)).toHaveLength(2);
     });
-    for (const v of f.body.volumes)
-      for (const paragraph of v.paragraphs) {
-        expect(text).toContain(paragraph.text);
-        for (const evidence of [
-          ...paragraph.evidence,
-          ...paragraph.counterevidence,
-        ]) {
-          for (const value of [
-            evidence.prompt,
-            evidence.optionText,
-            evidence.scope,
-          ])
-            expect(text).toContain(value);
-        }
+    const doc = qianzaiSnapshotDocument(f.body, undefined, presentation);
+    for (const section of doc.sections)
+      for (const block of section.blocks) {
+        expect(text).toContain(block.text);
+        expect(fontInput).toContain(block.text);
       }
+    expect(text).not.toContain("反向题干");
+    expect(text).not.toContain("反向选择");
     expect(layout.height).toBeLessThanOrEqual(16384);
     expect(f.body).toEqual(before);
   });

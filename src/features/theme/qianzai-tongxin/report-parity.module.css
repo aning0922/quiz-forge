@@ -1450,3 +1450,8 @@
   padding-left: 10px;
   color: #f3e4ca;
 }
+
+/* Consumer reflections contain one complete suggestion per block. */
+.reader.reader[data-qianzai-consumer-edition="true"] .rp-dual-note {
+  grid-template-columns: 1fr;
+}

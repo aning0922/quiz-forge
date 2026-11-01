@@ -1,3 +1,4 @@
+import { qianzaiConsumerCopy } from "./consumer-copy";
 import type { ComposedReportBodyV1 } from "@/lib/assessment-contract/composed-report-v1";
 import {
   qianzaiPresentationMatchesBody,
@@ -74,6 +75,9 @@ export type QianzaiReportBlock = Readonly<{
   snapshot?: QianzaiReportParagraph;
 }>;
 type QianzaiReportDocumentContent = Readonly<{
+  /** Compiled reader prose; body/snapshot remain audit data, never display fallbacks. */
+  consumerEdition?: true;
+  consumerCopyVersion?: string;
   name: string;
   sourceHtmlSha256?: string;
   history?: QianzaiReportPresentation["history"];
@@ -125,8 +129,15 @@ export function qianzaiSnapshotDocument(
     ? derived
     : undefined;
   const role = result?.role;
+  const consumer = result ? qianzaiConsumerCopy(body, result) : undefined;
   return {
     mode: "snapshot",
+    ...(consumer
+      ? {
+          consumerEdition: consumer.consumerEdition,
+          consumerCopyVersion: consumer.consumerCopyVersion,
+        }
+      : {}),
     name:
       role?.displayName ??
       presentation?.displayName ??
@@ -151,82 +162,90 @@ export function qianzaiSnapshotDocument(
       : presentation?.identity
         ? { identity: presentation.identity }
         : {}),
-    ...(role
-      ? { history: role.history }
-      : presentation?.history
-        ? { history: presentation.history }
-        : {}),
-    heroCaption: presentation?.heroCaption ?? "长风有信，明月知心",
-    openingTitle: result ? "命定相逢" : body.volumes[0]!.title,
-    dimensions: body.dimensions,
-    dimensionBadge: "本轮分值",
-    sections: body.volumes.map((v) => {
-      const section = presentation?.sections?.find((s) => s.id === v.id);
-      const editorial = qianzaiChapterEditorial(body, v);
-      return {
-        id: v.id,
-        title: result
-          ? {
-              encounter: "命定相逢",
-              dimensions: "你的心象五维",
-              patterns: "为何偏偏与你相逢",
-              counterevidence: "山河自照",
-              literature: "人物小传",
-              closure: "寄语留存",
-            }[v.id]
-          : (section?.title ?? v.title),
-        ...(section?.chapterLabel
-          ? { chapterLabel: section.chapterLabel }
+    ...(consumer
+      ? {}
+      : role
+        ? { history: role.history }
+        : presentation?.history
+          ? { history: presentation.history }
           : {}),
-        ...(section?.tocTitle ? { tocTitle: section.tocTitle } : {}),
-        ...(editorial
-          ? { editorial, intro: editorial.intro }
-          : section?.intro
-            ? { intro: section.intro }
+    heroCaption: presentation?.heroCaption ?? "长风有信，明月知心",
+    openingTitle: consumer
+      ? consumer.sections[0]!.title
+      : result
+        ? "命定相逢"
+        : body.volumes[0]!.title,
+    dimensions: body.dimensions,
+    dimensionBadge: consumer ? "选择的方向" : "本轮分值",
+    sections:
+      consumer?.sections ??
+      body.volumes.map((v) => {
+        const section = presentation?.sections?.find((s) => s.id === v.id);
+        const editorial = qianzaiChapterEditorial(body, v);
+        return {
+          id: v.id,
+          title: result
+            ? {
+                encounter: "命定相逢",
+                dimensions: "你的心象五维",
+                patterns: "为何偏偏与你相逢",
+                counterevidence: "山河自照",
+                literature: "人物小传",
+                closure: "寄语留存",
+              }[v.id]
+            : (section?.title ?? v.title),
+          ...(section?.chapterLabel
+            ? { chapterLabel: section.chapterLabel }
             : {}),
-        blocks: v.paragraphs.map((p, index) => {
-          const annotation = section?.paragraphs?.find(
-            (a) => a.index === index,
-          );
-          const claimMatches =
-            annotation?.claimRef &&
-            p.claimRef &&
-            annotation.claimRef.productId === p.claimRef.productId &&
-            annotation.claimRef.id === p.claimRef.id &&
-            annotation.claimRef.version === p.claimRef.version;
-          const paragraphEditorial = qianzaiParagraphEditorial(body, v.id, p);
-          return {
-            ...(paragraphEditorial
-              ? {
-                  editorial: paragraphEditorial,
-                  title: paragraphEditorial.title,
-                }
+          ...(section?.tocTitle ? { tocTitle: section.tocTitle } : {}),
+          ...(editorial
+            ? { editorial, intro: editorial.intro }
+            : section?.intro
+              ? { intro: section.intro }
               : {}),
-            text: p.text,
-            layout: editorial
-              ? "body"
-              : result
-                ? v.id === "encounter" && index === 0
-                  ? "lead"
-                  : v.id === "patterns"
-                    ? "card"
-                    : v.id === "counterevidence"
-                      ? index === 0
-                        ? "reflection-quote"
-                        : "reflection-body"
-                      : "body"
-                : (annotation?.layout ?? "body"),
-            ...(!paragraphEditorial && claimMatches && annotation?.title
-              ? { title: annotation.title }
-              : {}),
-            ...(claimMatches && annotation?.citation
-              ? { citation: annotation.citation }
-              : {}),
-            snapshot: p,
-          };
-        }),
-      };
-    }),
+          blocks: v.paragraphs.map((p, index) => {
+            const annotation = section?.paragraphs?.find(
+              (a) => a.index === index,
+            );
+            const claimMatches =
+              annotation?.claimRef &&
+              p.claimRef &&
+              annotation.claimRef.productId === p.claimRef.productId &&
+              annotation.claimRef.id === p.claimRef.id &&
+              annotation.claimRef.version === p.claimRef.version;
+            const paragraphEditorial = qianzaiParagraphEditorial(body, v.id, p);
+            return {
+              ...(paragraphEditorial
+                ? {
+                    editorial: paragraphEditorial,
+                    title: paragraphEditorial.title,
+                  }
+                : {}),
+              text: p.text,
+              layout: editorial
+                ? "body"
+                : result
+                  ? v.id === "encounter" && index === 0
+                    ? "lead"
+                    : v.id === "patterns"
+                      ? "card"
+                      : v.id === "counterevidence"
+                        ? index === 0
+                          ? "reflection-quote"
+                          : "reflection-body"
+                        : "body"
+                  : (annotation?.layout ?? "body"),
+              ...(!paragraphEditorial && claimMatches && annotation?.title
+                ? { title: annotation.title }
+                : {}),
+              ...(claimMatches && annotation?.citation
+                ? { citation: annotation.citation }
+                : {}),
+              snapshot: p,
+            };
+          }),
+        };
+      }),
     legal: body.notice,
     body,
   };

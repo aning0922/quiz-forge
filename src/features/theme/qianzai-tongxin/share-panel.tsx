@@ -315,7 +315,7 @@ function ShareDialog({
                     {allowed
                       ? item === "poster"
                         ? "人物 · 契合指数 · 五维图"
-                        : "五维详解 · 答题依据"
+                        : "六卷解读 · 人物寄语"
                       : unavailable(api.availability[item].reason)}
                     {ready && (
                       <>
@@ -339,7 +339,7 @@ function ShareDialog({
                   和五维为演示数值，二维码仅为不可扫描占位。
                 </>
               ) : (
-                "长图包含六卷正文与引用依据；全部24题记录可在报告内查看。"
+                "完整长图收录本轮六卷报告，可预览后保存。"
               )}
             </div>
             <button

@@ -165,8 +165,8 @@ export function deriveQianzaiResultPresentation(
         [evidenceRef("q18", "q18-c")],
       ),
       lines: [
-        "闲暇里，你想试试新鲜事，",
-        "长远处，你仍愿打磨已有本领。",
+        "为新意轻轻推开一扇窗，",
+        "也让熟悉的技艺，在岁月里生长。",
         role.invitation,
       ],
       closure: ["愿新鲜与熟悉之间，", "总有安放此刻心意的地方。"],
@@ -177,8 +177,8 @@ export function deriveQianzaiResultPresentation(
         evidenceRef("q02", "q02-b"),
       ]),
       lines: [
-        "这次闲暇，你想试一件新事，",
-        "这一刻的选择，留给新的可能。",
+        "为新的可能，轻轻推开一扇窗，",
+        "让一段小小的尝试，走进日常。",
         role.invitation,
       ],
       closure: ["愿这一次小小的尝试，", "为你留下自己的回声。"],
@@ -189,8 +189,8 @@ export function deriveQianzaiResultPresentation(
         evidenceRef("q02", "q02-d"),
       ]),
       lines: [
-        "这次闲暇，你想精进熟悉技艺，",
-        "把这一刻心意，留给已有的热爱。",
+        "让熟悉的热爱，慢慢生长，",
+        "把愿意投入的心意，留在日常。",
         role.invitation,
       ],
       closure: ["愿已有的热爱，", "也能长出新的光。"],
