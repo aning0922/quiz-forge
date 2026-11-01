@@ -18,6 +18,7 @@ import { quizPackContentV3Schema } from "@/features/quizpack/content/v3";
 import { consumerEntryFactsSha256V2 } from "@/features/fulfillment/consumer-flow/display-contract-v2";
 import { consumerMappingSha256V2 } from "@/lib/consumer-contract/v2/identities";
 import localArtFixture from "@/features/quizpack/content/qianzai-local-art-fixture.json";
+import localNameFixture from "@/features/quizpack/content/qianzai-local-name-fixture.json";
 import { QIANZAI_RUNTIME_INPUTS } from "@/features/theme/qianzai-tongxin/runtime-inputs";
 import { QIANZAI_EDITORIAL_FONTS } from "@/features/theme/qianzai-tongxin/editorial-fonts";
 import { CONSUMER_IMPLEMENTATION_AVAILABILITY_V2 } from "@/features/product/internal-play/implementation-catalog-v2";
@@ -34,10 +35,13 @@ const content = quizPackContentV3Schema.parse(
   JSON.parse(await readFile(path.join(source, "content.json"), "utf8")),
 );
 const sourceHash = sha(canonicalP1Json(content));
-const artMode = process.env.QZTX_ART_FIXTURE === "1";
-const expectedSource = artMode
-  ? localArtFixture.canonicalContentSha256
-  : localArtFixture.baseContentSha256;
+const nameMode = process.env.QZTX_NAME_FIXTURE === "1";
+const artMode = nameMode || process.env.QZTX_ART_FIXTURE === "1";
+const expectedSource = nameMode
+  ? localNameFixture.canonicalContentSha256
+  : artMode
+    ? localArtFixture.canonicalContentSha256
+    : localArtFixture.baseContentSha256;
 if (sourceHash !== expectedSource)
   throw Error("FIXED_CANDIDATE_SOURCE_CHANGED");
 const prepared = prepareContentV3(content);
