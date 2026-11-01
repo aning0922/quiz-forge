@@ -8,9 +8,7 @@ import {
 import { readVerifiedBytes } from "@/lib/browser/display-assets";
 /** No cross-request cached success: each export verifies the controlled file and coverage bytes. */
 export async function withPreviewFont<T>(
-  fontDescriptor: Omit<DisplayFontDescriptorV1, "weight"> & {
-    readonly weight: 400 | 600;
-  },
+  fontDescriptor: DisplayFontDescriptorV1,
   texts: readonly string[],
   signal: AbortSignal,
   render: (
@@ -87,10 +85,7 @@ export async function withPreviewFont<T>(
       document.fonts.add(face);
       if (
         face.status !== "loaded" ||
-        !document.fonts.check(
-          `${fontDescriptor.weight} 32px "${family}"`,
-          texts.join(""),
-        )
+        !document.fonts.check(`600 32px "${family}"`, texts.join(""))
       )
         throw new DisplayClientError("FONT_UNAVAILABLE");
       // The caller owns a separate generation gate during canvas encoding as well.

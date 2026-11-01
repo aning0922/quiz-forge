@@ -8,7 +8,7 @@ import { checkpoint } from "@/lib/browser/display-task";
 import { qianzaiSnapshotDocument } from "./presentation";
 import { qianzaiBrushNameGlyphs } from "./brush-name";
 import { QIANZAI_EDITORIAL_FONTS } from "@/features/theme/qianzai-tongxin/editorial-fonts";
-import { withPreviewFont } from "@/features/report/preview/font";
+import { withPreviewFont } from "./export-font";
 import {
   QIANZAI_EXPORT_LIMITS as L,
   QianzaiExportError,

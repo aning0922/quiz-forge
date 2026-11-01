@@ -363,7 +363,7 @@ try {
       expect(
         q.texts.every(
           (t) =>
-            t.font.startsWith('"QuizForge Qianzai Serif V6"') &&
+            t.font.startsWith(JSON.stringify(input.font!.family)) &&
             t.size === "16px" &&
             t.weight === "600" &&
             t.fits,
