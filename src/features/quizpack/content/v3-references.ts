@@ -229,6 +229,7 @@ export function validateContentV3(input: unknown): V2Result<QuizPackContentV3> {
   if (previous !== vp.sections.length - 1) return failure("REFERENCE_MISMATCH");
   const sceneRefs = b.slots.neutral.acts.flatMap((a) => [
     a.background,
+    ...(a.navigation ? [a.navigation] : []),
     a.questionPaper,
     a.optionIdle,
     a.optionSelected,

@@ -3,8 +3,7 @@ import type { QianzaiReportPresentation } from "./presentation";
 
 export const QIANZAI_PRESENTATION_V11 =
   "qianzai-role-presentation.v1.1" as const;
-export const QIANZAI_V11_CONTENT_SHA256 =
-  "e81fad61f2258e44ba58fe84fda12fedccfb0d7517e97546010f4fa35cfbe767";
+export { QIANZAI_V11_CONTENT_SHA256 } from "./presentation-source";
 export type QianzaiRoleProfileV11 = Readonly<{
   ref: Readonly<{ productId: string; id: string; version: string }>;
   displayName: string;

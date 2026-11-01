@@ -1,8 +1,6 @@
+import { qianzaiPresentationSourceMatches } from "./presentation-source";
 import type { ComposedReportBodyV1 } from "@/lib/assessment-contract/composed-report-v1";
-import {
-  QIANZAI_AXIS_GUIDES_V11,
-  QIANZAI_V11_CONTENT_SHA256,
-} from "./role-profiles-v11";
+import { QIANZAI_AXIS_GUIDES_V11 } from "./role-profiles-v11";
 
 type Dimension = ComposedReportBodyV1["dimensions"][number];
 const AXES = {
@@ -44,7 +42,7 @@ export function qianzaiDimensionScale(
 ): QianzaiDimensionScale | null {
   const { dimensionRef: ref, score } = dimension;
   if (
-    sourceContentSha256 !== QIANZAI_V11_CONTENT_SHA256 ||
+    !qianzaiPresentationSourceMatches(sourceContentSha256) ||
     ref.productId !== "qianzai-tongxin" ||
     ref.version !== "1.0.0" ||
     !Object.hasOwn(AXES, ref.id) ||

@@ -17,6 +17,7 @@ import { readRestrictedZip } from "@/features/quizpack/v1/zip";
 import { quizPackContentV3Schema } from "@/features/quizpack/content/v3";
 import { consumerEntryFactsSha256V2 } from "@/features/fulfillment/consumer-flow/display-contract-v2";
 import { consumerMappingSha256V2 } from "@/lib/consumer-contract/v2/identities";
+import localArtFixture from "@/features/quizpack/content/qianzai-local-art-fixture.json";
 import { QIANZAI_RUNTIME_INPUTS } from "@/features/theme/qianzai-tongxin/runtime-inputs";
 import { QIANZAI_EDITORIAL_FONTS } from "@/features/theme/qianzai-tongxin/editorial-fonts";
 import { CONSUMER_IMPLEMENTATION_AVAILABILITY_V2 } from "@/features/product/internal-play/implementation-catalog-v2";
@@ -33,8 +34,10 @@ const content = quizPackContentV3Schema.parse(
   JSON.parse(await readFile(path.join(source, "content.json"), "utf8")),
 );
 const sourceHash = sha(canonicalP1Json(content));
-const expectedSource =
-  "e81fad61f2258e44ba58fe84fda12fedccfb0d7517e97546010f4fa35cfbe767";
+const artMode = process.env.QZTX_ART_FIXTURE === "1";
+const expectedSource = artMode
+  ? localArtFixture.canonicalContentSha256
+  : localArtFixture.baseContentSha256;
 if (sourceHash !== expectedSource)
   throw Error("FIXED_CANDIDATE_SOURCE_CHANGED");
 const prepared = prepareContentV3(content);
@@ -124,14 +127,16 @@ for (const witness of content.bindings.witnesses.entries) {
   model.report!.view.display = display;
   reviewModels.set(witness.expectedResultRef.id, model);
 }
-const pack = await readFile(path.join(source, "pack.zip"));
-const zip = await readRestrictedZip(
-  (async function* () {
-    yield pack;
-  })(),
-  { targetProductId: "qianzai-tongxin" },
-);
-if (!zip.ok) throw Error("PRIVATE_ARCHIVE_REJECTED");
+const pack = artMode ? null : await readFile(path.join(source, "pack.zip"));
+const zip =
+  pack &&
+  (await readRestrictedZip(
+    (async function* () {
+      yield pack;
+    })(),
+    { targetProductId: "qianzai-tongxin" },
+  ));
+if (zip && !zip.ok) throw Error("PRIVATE_ARCHIVE_REJECTED");
 const files = new Map<string, { body: Uint8Array | string; type: string }>();
 type DemoBinding = (typeof QIANZAI_RUNTIME_INPUTS.resources)[number];
 const visuals: Array<{
@@ -143,7 +148,13 @@ for (const b of QIANZAI_RUNTIME_INPUTS.resources) {
   const r = content.bindings.resources.find(
     (r) => r.id === b.asset.resourceRef.id,
   );
-  const bytes = r && zip.value.files.get(r.path);
+  const bytes =
+    r &&
+    (artMode
+      ? await readFile(path.join(source, r.path))
+      : zip && zip.ok
+        ? zip.value.files.get(r.path)
+        : null);
   if (!bytes || sha(bytes) !== b.asset.sha256 || bytes.length !== b.asset.bytes)
     throw Error("ASSET_IDENTITY_MISMATCH");
   const url = "/asset/" + r!.id;
@@ -214,9 +225,9 @@ const setup = (reviewModel = completed) =>
     completedVisuals: visuals,
   }).replaceAll("<", "\\u003c");
 const resetScript = `document.querySelector('#demo-reset').addEventListener('click',()=>{for(const k of Object.keys(localStorage))if(k.startsWith('qianzai-v11-demo:'))localStorage.removeItem(k);for(const k of Object.keys(sessionStorage))if(k.includes('consumer'))sessionStorage.removeItem(k);location.href='/';});`;
-const about = `<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>千载同心 · 体验入口</title><style>body{max-width:620px;margin:8vh auto;padding:24px;background:#122839;color:#f8e6be;font:16px/1.8 system-ui}a,button{display:inline-block;padding:12px 18px;margin:8px;color:inherit;background:transparent;border:1px solid #b99c65;border-radius:8px;font:inherit;cursor:pointer}h1{font-size:28px}</style><h1>千载同心 · 字体与内容校准体验</h1><p>24题与现有确定性评分引擎可连续体验；会话和回执为本地隔离模拟，不连接原数据库，不使用原体验资格。人物沿用现有参考素材，新增资料与短句为体验候选。</p><a href="/">继续当前体验</a><button id="demo-reset">开始一轮新体验</button><a href="/?review-report=reveal">直接查看李白揭晓与报告示例</a><a href="/?review-report=reveal&role=tao-yuanming">直接查看陶渊明揭晓与报告示例</a><script>${resetScript}</script></html>`;
+const about = `<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>千载同心 · 体验入口</title><style>body{max-width:620px;margin:8vh auto;padding:24px;background:#122839;color:#f8e6be;font:16px/1.8 system-ui}a,button{display:inline-block;padding:12px 18px;margin:8px;color:inherit;background:transparent;border:1px solid #b99c65;border-radius:8px;font:inherit;cursor:pointer}h1{font-size:28px}</style><h1>千载同心 · 场景与姓名图片校准体验</h1><p>24题与现有确定性评分引擎可连续体验；会话和回执为本地隔离模拟，不连接原数据库，不使用原体验资格。人物沿用现有参考素材，新增资料与短句为体验候选。</p><a href="/">继续当前体验</a><button id="demo-reset">开始一轮新体验</button><a href="/?review-report=reveal">直接查看李白揭晓与报告示例</a><a href="/?review-report=reveal&role=tao-yuanming">直接查看陶渊明揭晓与报告示例</a><script>${resetScript}</script></html>`;
 const html = (reviewModel = completed) =>
-  `<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>千载同心 · 字体与内容校准体验</title><link rel="stylesheet" href="/demo.css"><style>@font-face{font-family:"${font.family}";src:url(${font.file});font-weight:600;font-display:swap}html,body{margin:0;height:100%;overflow:hidden;background:#0b1727}</style><div id="root"></div><script id="fixture" type="application/json">${setup(reviewModel)}</script><script src="/demo.js"></script></html>`;
+  `<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>千载同心 · 场景与姓名图片校准体验</title><link rel="stylesheet" href="/demo.css"><style>@font-face{font-family:"${font.family}";src:url(${font.file});font-weight:600;font-display:swap}html,body{margin:0;height:100%;overflow:hidden;background:#0b1727}</style><div id="root"></div><script id="fixture" type="application/json">${setup(reviewModel)}</script><script src="/demo.js"></script></html>`;
 
 const port = Number(process.env.QZTX_V11_PORT ?? "63201");
 if (!Number.isInteger(port) || port < 1024 || port > 65535)

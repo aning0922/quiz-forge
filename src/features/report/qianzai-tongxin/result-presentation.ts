@@ -1,3 +1,4 @@
+import { qianzaiPresentationSourceMatches } from "./presentation-source";
 import type { ComposedReportBodyV1 as Body } from "@/lib/assessment-contract/composed-report-v1";
 import type { ConsumerRendererIdentity } from "@/lib/consumer-contract/v1/identities";
 import type { PersistedReportDisplayV2 } from "@/features/report/persisted/view-contracts-v2";
@@ -5,7 +6,6 @@ import { sameConsumerFact } from "@/lib/consumer-contract/v1/integrity";
 import {
   QIANZAI_PRESENTATION_V11,
   QIANZAI_ROLE_PROFILES_V11,
-  QIANZAI_V11_CONTENT_SHA256,
   type QianzaiRoleProfileV11,
 } from "./role-profiles-v11";
 
@@ -122,7 +122,7 @@ export function deriveQianzaiResultPresentation(
       d.answersHash,
       d.matchingContextSha256,
     ].every(sha) ||
-    d.canonicalContentSha256 !== QIANZAI_V11_CONTENT_SHA256 ||
+    !qianzaiPresentationSourceMatches(d.canonicalContentSha256) ||
     p.canonicalContentSha256 !== d.canonicalContentSha256 ||
     p.inputHash !== d.inputHash ||
     p.answersHash !== d.answersHash ||

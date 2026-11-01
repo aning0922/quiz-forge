@@ -23,6 +23,7 @@ export const presentationSlotsV3Schema = z.strictObject({
         z.strictObject({
           sectionId: assessmentIdSchema,
           background: ref,
+          navigation: ref.optional(),
           questionPaper: ref,
           optionIdle: ref,
           optionSelected: ref,
@@ -63,6 +64,7 @@ export function neutralSlotRefsV3(slots: PresentationSlotsV3) {
     ...(n.preferenceScene ? [n.preferenceScene] : []),
     ...n.acts.flatMap((a) => [
       a.background,
+      ...(a.navigation ? [a.navigation] : []),
       a.questionPaper,
       a.optionIdle,
       a.optionSelected,
