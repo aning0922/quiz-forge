@@ -1072,6 +1072,12 @@ export function QianzaiReveal({
             <div
               className={`${scenes.dynamicIdentity} ${scenes.revealCopyFade}`}
               data-qianzai-reveal-copy={copy ? "bound" : "unavailable"}
+              style={
+                {
+                  "--seal-characters": Array.from(copy?.role.honorific ?? "")
+                    .length,
+                } as CSSProperties
+              }
             >
               <div className={scenes.dynamicNameRow}>
                 <div className={scenes.dynamicNameGroup}>
@@ -1095,16 +1101,7 @@ export function QianzaiReveal({
                   )}
                 </div>
                 {copy?.role.honorific && (
-                  <span
-                    className={scenes.dynamicSeal}
-                    data-qianzai-honorific
-                    style={
-                      {
-                        "--seal-characters": Array.from(copy.role.honorific)
-                          .length,
-                      } as CSSProperties
-                    }
-                  >
+                  <span className={scenes.dynamicSeal} data-qianzai-honorific>
                     {copy.role.honorific}
                   </span>
                 )}

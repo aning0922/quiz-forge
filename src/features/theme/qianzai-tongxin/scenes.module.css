@@ -2084,42 +2084,41 @@
 .dynamicIdentity {
   position: relative;
   min-height: inherit;
-  padding: 380px 24px 96px;
-  display: grid;
-  grid-template-rows: minmax(310px, 1fr) auto;
-  gap: 12px;
+  padding: 0 24px 96px;
   color: #fff0d0;
   text-shadow:
     0 2px 8px #051321,
     0 0 16px #051321;
 }
+/* Fixed composition in CSS pixels. Viewport height never distributes space
+   between the name, seal and verse; long seals reserve space only below. */
 .dynamicNameRow {
-  display: grid;
-  width: min(292px, calc(100% - 24px));
-  grid-template-columns: minmax(0, 1fr) 36px 30px;
-  gap: 8px;
-  justify-self: center;
-  align-items: end;
-  min-height: 310px;
-  transform: translateX(20px);
+  position: relative;
+  width: 100%;
+  height: max(768px, calc(670px + var(--seal-characters, 2) * 19.44px));
 }
 .dynamicNameGroup {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  height: 100%;
-  min-height: 0;
+  position: absolute;
+  top: 380px;
+  left: calc(50% - 21px);
+  width: 200px;
+  height: 388px;
+  transform: translateX(-50%);
 }
 .dynamicKicker {
-  width: 100%;
-  margin: 0 0 8px;
+  position: absolute;
+  inset: 0 0 auto;
+  height: 32px;
+  margin: 0;
   text-align: center;
   font: 400 26px/1.2 var(--qztx-literary, serif);
 }
 .dynamicNameArt {
-  width: min(100%, 183px);
-  aspect-ratio: 3 / 4;
-  flex: 0 0 auto;
+  position: absolute;
+  top: 36px;
+  left: 0;
+  width: 200px;
+  height: 352px;
   filter: drop-shadow(0 2px 8px #071625);
 }
 .dynamicNameArt > img,
@@ -2130,7 +2129,11 @@
   object-fit: contain;
 }
 .dynamicNameMissing {
-  margin: auto;
+  position: absolute;
+  inset: 36px 0 auto;
+  height: 352px;
+  display: grid;
+  place-content: center;
   text-align: center;
 }
 .dynamicNameMissing h2 {
@@ -2140,10 +2143,13 @@
   font: 400 16px/1.5 var(--qztx-literary, serif);
 }
 .dynamicSeal {
+  position: absolute;
+  top: 650px;
+  left: min(calc(50% + 93px), calc(100% - 78px));
   display: block;
   width: 36px;
   height: calc(var(--seal-characters) * 1.08em + 20px);
-  margin-bottom: 4px;
+  margin: 0;
   padding: 10px 6px;
   writing-mode: vertical-rl;
   text-orientation: upright;
@@ -2158,8 +2164,9 @@
   text-shadow: 0 1px 2px #551b17;
 }
 .dynamicQuote {
-  align-self: end;
-  justify-self: center;
+  position: absolute;
+  top: 470px;
+  right: -10px;
   width: 30px;
   height: 272px;
   min-height: 272px;
@@ -2173,6 +2180,7 @@
   letter-spacing: 0.04em;
 }
 .dynamicLines {
+  margin-top: 16px;
   min-height: 79.2px;
   display: flex;
   flex-direction: column;
