@@ -1328,7 +1328,7 @@ function consumerLayout(
     write("五维心象", 55, 110, 974, 500, 67, true);
   } else y = heading("五维心象", radarHeading);
   const radar = poster
-    ? { x: 333, y: 1265, radius: 171 }
+    ? { x: 333, y: 1320, radius: 145 }
     : { x: 365, y: y + 165, radius: 126 };
   ops.push({
     kind: "radar",
