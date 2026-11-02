@@ -454,7 +454,7 @@ function drawOperation(
       ctx.lineWidth = 2 * r;
       ctx.stroke();
       ctx.restore();
-      const band = ctx.createLinearGradient(op.x, 0, op.x + op.width, 0);
+      const band = ctx.createLinearGradient(bandX, 0, bandX + bandWidth, 0);
       band.addColorStop(0, "#557c89eb");
       band.addColorStop(1, "#c29c64eb");
       if (bandWidth > 0) {
