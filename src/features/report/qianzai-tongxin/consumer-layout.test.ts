@@ -271,7 +271,12 @@ describe("consumer edition exports", () => {
       { presentation: f.p },
     );
     const text = layout.operations.filter((o) => o.kind === "text");
-    expect(text.some((o) => o.text === "100")).toBe(true);
+    expect(text.some((o) => o.text === "100" && o.style === "number")).toBe(
+      true,
+    );
+    // Radar and scale scores use the same controlled numeric face, while the
+    // literary explanation remains independent from that face.
+    expect(text.filter((o) => o.style === "number")).toHaveLength(10);
     const dimBlocks = port.doc!.sections.find(
       (s) => s.id === "dimensions",
     )!.blocks;

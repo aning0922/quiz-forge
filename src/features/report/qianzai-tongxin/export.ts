@@ -91,145 +91,165 @@ export async function renderQianzaiExport(
     const bodyFont = consumerEdition
       ? QIANZAI_EDITORIAL_FONTS.literary
       : scope.font;
-    return await withPreviewFont(
-      bodyFont,
-      texts,
-      signal,
-      async (family, parentActive, parentDeadline) =>
-        withPreviewFont(
-          QIANZAI_EDITORIAL_FONTS.brush,
-          qianzaiExportBrushText(body, kind, scope.presentation),
-          parentActive,
-          async (brushFamily, active, brushDeadline) => {
-            const deadline = Math.min(parentDeadline, brushDeadline);
-            check(active, deadline);
-            // A one-pixel measurement surface precedes any output canvas allocation.
-            const scratch = document.createElement("canvas");
-            scratch.width = 1;
-            scratch.height = 1;
-            const measure = scratch.getContext("2d");
-            if (!measure) throw new QianzaiExportError("PNG_UNAVAILABLE");
-            let layout;
-            try {
-              layout = layoutQianzaiExport(
-                body,
-                kind,
-                (text, size, style) => {
-                  measure.font = `${style === "brush" ? 400 : bodyFont.weight} ${size}px "${style === "brush" ? brushFamily : family}"`;
-                  const m = measure.measureText(text);
-                  return {
-                    width: m.width,
-                    left: m.actualBoundingBoxLeft,
-                    right: m.actualBoundingBoxRight,
-                    ascent: m.actualBoundingBoxAscent,
-                    descent: m.actualBoundingBoxDescent,
-                  };
-                },
-                () => check(active, deadline),
-                {
-                  ...(privateNote ? { annotation: privateNote } : {}),
-                  ...(scope.presentation
-                    ? { presentation: scope.presentation }
-                    : {}),
-                },
+    const renderWithNumberFont = (
+      numberFamily: string,
+      numberActive: AbortSignal,
+      numberDeadline: number,
+    ) =>
+      withPreviewFont(
+        bodyFont,
+        texts,
+        numberActive,
+        async (family, parentActive, parentDeadline) =>
+          withPreviewFont(
+            QIANZAI_EDITORIAL_FONTS.brush,
+            qianzaiExportBrushText(body, kind, scope.presentation),
+            parentActive,
+            async (brushFamily, active, brushDeadline) => {
+              const deadline = Math.min(
+                parentDeadline,
+                brushDeadline,
+                numberDeadline,
               );
-            } finally {
-              scratch.width = 0;
-              scratch.height = 0;
-            }
-            check(active, deadline);
-            const loaded = new Map<string, VerifiedImage>();
-            let canvas: HTMLCanvasElement | undefined;
-            try {
-              for (const asset of unique) {
-                check(active, deadline);
-                const image = await loadVerifiedImage(
-                  asset,
-                  async (...args) => {
-                    check(active, deadline);
-                    return scope.transport(...args);
-                  },
-                  active,
-                  deadline,
-                );
-                loaded.set(JSON.stringify(asset.resourceRef), image);
-                check(active, deadline);
-              }
               check(active, deadline);
-              canvas = document.createElement("canvas");
-              canvas.width = layout.width;
-              canvas.height = layout.height;
-              const ctx = canvas.getContext("2d");
-              if (!ctx) throw new QianzaiExportError("PNG_UNAVAILABLE");
-              ctx.fillStyle = "#f6ead2";
-              ctx.fillRect(0, 0, canvas.width, canvas.height);
-              if (scope.paper) {
-                const paper = loaded.get(
-                  JSON.stringify(scope.paper.resourceRef),
-                )!;
-                const pattern = ctx.createPattern(paper.image, "repeat");
-                if (pattern) {
-                  ctx.save();
-                  ctx.globalAlpha = 0.08;
-                  ctx.fillStyle = pattern;
-                  ctx.fillRect(0, 0, canvas.width, canvas.height);
-                  ctx.restore();
-                }
-              }
-              if (scope.border) {
-                const border = loaded.get(
-                  JSON.stringify(scope.border.resourceRef),
-                )!;
-                drawLandscape(
-                  ctx,
-                  border.image,
-                  canvas.width,
-                  canvas.height,
+              // A one-pixel measurement surface precedes any output canvas allocation.
+              const scratch = document.createElement("canvas");
+              scratch.width = 1;
+              scratch.height = 1;
+              const measure = scratch.getContext("2d");
+              if (!measure) throw new QianzaiExportError("PNG_UNAVAILABLE");
+              let layout;
+              try {
+                layout = layoutQianzaiExport(
+                  body,
                   kind,
-                  consumerEdition ? 480 : undefined,
+                  (text, size, style) => {
+                    measure.font = `${style === "brush" ? 400 : style === "number" ? scope.font.weight : bodyFont.weight} ${size}px "${style === "brush" ? brushFamily : style === "number" ? numberFamily : family}"`;
+                    const m = measure.measureText(text);
+                    return {
+                      width: m.width,
+                      left: m.actualBoundingBoxLeft,
+                      right: m.actualBoundingBoxRight,
+                      ascent: m.actualBoundingBoxAscent,
+                      descent: m.actualBoundingBoxDescent,
+                    };
+                  },
+                  () => check(active, deadline),
+                  {
+                    ...(privateNote ? { annotation: privateNote } : {}),
+                    ...(scope.presentation
+                      ? { presentation: scope.presentation }
+                      : {}),
+                  },
                 );
+              } finally {
+                scratch.width = 0;
+                scratch.height = 0;
               }
-              drawOrnateFrame(ctx, {
-                x: 18,
-                y: 18,
-                width: canvas.width - 36,
-                height: canvas.height - 36,
-              });
-              for (let i = 0; i < layout.operations.length; i++) {
-                if (i % 32 === 0) {
+              check(active, deadline);
+              const loaded = new Map<string, VerifiedImage>();
+              let canvas: HTMLCanvasElement | undefined;
+              try {
+                for (const asset of unique) {
                   check(active, deadline);
-                  await new Promise<void>((resolve) => setTimeout(resolve, 0));
+                  const image = await loadVerifiedImage(
+                    asset,
+                    async (...args) => {
+                      check(active, deadline);
+                      return scope.transport(...args);
+                    },
+                    active,
+                    deadline,
+                  );
+                  loaded.set(JSON.stringify(asset.resourceRef), image);
                   check(active, deadline);
                 }
-                drawOperation(
-                  ctx,
-                  layout.operations[i]!,
-                  family,
-                  brushFamily,
-                  bodyFont.weight,
-                  scope,
-                  loaded,
-                  canvas.width,
+                check(active, deadline);
+                canvas = document.createElement("canvas");
+                canvas.width = layout.width;
+                canvas.height = layout.height;
+                const ctx = canvas.getContext("2d");
+                if (!ctx) throw new QianzaiExportError("PNG_UNAVAILABLE");
+                ctx.fillStyle = "#f6ead2";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                if (scope.paper) {
+                  const paper = loaded.get(
+                    JSON.stringify(scope.paper.resourceRef),
+                  )!;
+                  const pattern = ctx.createPattern(paper.image, "repeat");
+                  if (pattern) {
+                    ctx.save();
+                    ctx.globalAlpha = 0.08;
+                    ctx.fillStyle = pattern;
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    ctx.restore();
+                  }
+                }
+                if (scope.border) {
+                  const border = loaded.get(
+                    JSON.stringify(scope.border.resourceRef),
+                  )!;
+                  drawLandscape(
+                    ctx,
+                    border.image,
+                    canvas.width,
+                    canvas.height,
+                    kind,
+                    consumerEdition ? 480 : undefined,
+                  );
+                }
+                drawOrnateFrame(ctx, {
+                  x: 18,
+                  y: 18,
+                  width: canvas.width - 36,
+                  height: canvas.height - 36,
+                });
+                for (let i = 0; i < layout.operations.length; i++) {
+                  if (i % 32 === 0) {
+                    check(active, deadline);
+                    await new Promise<void>((resolve) =>
+                      setTimeout(resolve, 0),
+                    );
+                    check(active, deadline);
+                  }
+                  drawOperation(
+                    ctx,
+                    layout.operations[i]!,
+                    family,
+                    brushFamily,
+                    numberFamily,
+                    bodyFont.weight,
+                    scope,
+                    loaded,
+                    canvas.width,
+                  );
+                }
+                check(active, deadline);
+                const blob = await encode(canvas, active, () =>
+                  check(active, deadline),
                 );
+                check(active, deadline);
+                if (blob.size > L.maxPngBytes)
+                  throw new QianzaiExportError("CONTENT_LIMIT");
+                return { blob, width: layout.width, height: layout.height };
+              } finally {
+                for (const image of loaded.values()) image.release();
+                if (canvas) {
+                  canvas.width = 0;
+                  canvas.height = 0;
+                }
               }
-              check(active, deadline);
-              const blob = await encode(canvas, active, () =>
-                check(active, deadline),
-              );
-              check(active, deadline);
-              if (blob.size > L.maxPngBytes)
-                throw new QianzaiExportError("CONTENT_LIMIT");
-              return { blob, width: layout.width, height: layout.height };
-            } finally {
-              for (const image of loaded.values()) image.release();
-              if (canvas) {
-                canvas.width = 0;
-                canvas.height = 0;
-              }
-            }
-          },
-        ),
-    );
+            },
+          ),
+      );
+    return consumerEdition
+      ? await withPreviewFont(
+          scope.font,
+          doc.dimensions.map((d) => String(d.score)),
+          signal,
+          renderWithNumberFont,
+        )
+      : await renderWithNumberFont("", signal, Infinity);
   } catch (error) {
     throw qianzaiExportFailure(error);
   }
@@ -408,13 +428,14 @@ function drawOperation(
   op: ExportOperation,
   family: string,
   brushFamily: string,
+  numberFamily: string,
   bodyWeight: 400 | 600,
   scope: QianzaiExportScope,
   loaded: Map<string, VerifiedImage>,
   width: number,
 ) {
   if (op.kind === "text") {
-    ctx.font = `${op.style === "brush" ? 400 : bodyWeight} ${op.size}px "${op.style === "brush" ? brushFamily : family}"`;
+    ctx.font = `${op.style === "brush" ? 400 : op.style === "number" ? scope.font.weight : bodyWeight} ${op.size}px "${op.style === "brush" ? brushFamily : op.style === "number" ? numberFamily : family}"`;
     ctx.fillStyle = op.color;
     ctx.textAlign = "left";
     ctx.textBaseline = "alphabetic";

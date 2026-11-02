@@ -36,7 +36,7 @@ export type TextMetrics = Readonly<{
 export type Measure = (
   text: string,
   size: number,
-  style?: "brush",
+  style?: "brush" | "number",
 ) => TextMetrics;
 type Box = Readonly<{ x: number; y: number; width: number; height: number }>;
 export type ExportOperation =
@@ -47,7 +47,7 @@ export type ExportOperation =
       x: number;
       y: number;
       color: string;
-      style?: "brush";
+      style?: "brush" | "number";
     }
   | {
       kind: "image";
@@ -1052,16 +1052,20 @@ function consumerLayout(
     )
       throw new QianzaiExportError("CONTENT_LIMIT");
   };
-  const runs = (s: string, brush: boolean) =>
-    brush
+  const runs = (s: string, brush: boolean | "number") =>
+    brush === true
       ? s
           .split(/(·)/)
           .filter(Boolean)
           .map((text) => ({ text, brush: text !== "·" }))
-      : [{ text: s, brush: false }];
-  const metric = (s: string, size: number, brush = false): TextMetrics => {
+      : [{ text: s, brush }];
+  const metric = (
+    s: string,
+    size: number,
+    brush: boolean | "number" = false,
+  ): TextMetrics => {
     if (++ticks % 128 === 0) check();
-    if (brush && s.includes("·")) {
+    if (brush === true && s.includes("·")) {
       const parts = runs(s, true).map((run) =>
           metric(run.text, size, run.brush),
         ),
@@ -1075,7 +1079,11 @@ function consumerLayout(
         descent: Math.max(...parts.map((m) => m.descent)),
       };
     }
-    const m = measure(s, size, brush ? "brush" : undefined);
+    const m = measure(
+      s,
+      size,
+      brush === true ? "brush" : brush === "number" ? "number" : undefined,
+    );
     if (
       ![m.width, m.left, m.right, m.ascent, m.descent].every(Number.isFinite) ||
       m.width < 0
@@ -1083,7 +1091,7 @@ function consumerLayout(
       throw new QianzaiExportError("CONTENT_LIMIT");
     return m;
   };
-  const ink = (s: string, size: number, brush = false) => {
+  const ink = (s: string, size: number, brush: boolean | "number" = false) => {
     const m = metric(s, size, brush);
     return Math.max(m.width, Math.max(0, m.left) + m.right);
   };
@@ -1094,7 +1102,7 @@ function consumerLayout(
     top: number,
     w: number,
     lineHeight: number,
-    brush = false,
+    brush: boolean | "number" = false,
     center = false,
     color = "#22251c",
   ) => {
@@ -1118,7 +1126,12 @@ function consumerLayout(
             advance,
           y: y + m.ascent,
           color,
-          ...(run.brush ? { style: "brush" as const } : {}),
+          ...(run.brush
+            ? {
+                style:
+                  run.brush === true ? ("brush" as const) : ("number" as const),
+              }
+            : {}),
         });
         advance += metric(run.text, size, run.brush).width;
       }
@@ -1169,7 +1182,7 @@ function consumerLayout(
       box: { x: 42, y: y + 19, width: 30, height: 30 },
       style: "heading",
     });
-    return write(title, 32, 85, y + 10, width - 130, 45, true) + 13;
+    return write(title, 36, 85, y + 10, width - 130, 49, true) + 13;
   };
   const p = doc.resultPresentation;
   if (!p) throw new QianzaiExportError("CAPABILITY_UNAVAILABLE");
@@ -1301,7 +1314,7 @@ function consumerLayout(
     for (const block of encounter.blocks) {
       if (block.title) y = center(block.title, 25, y) + 4;
       y = center(block.text, 22, y) + 6;
-      if (block.citation) y = center(block.citation, 16, y) + 4;
+      if (block.citation) y = center(block.citation, 18, y) + 4;
     }
   }
   const radarHeading = poster ? 960 : y + 14;
@@ -1351,12 +1364,12 @@ function consumerLayout(
     );
     yy = write(
       String(d.score),
-      poster ? 39 : 31,
+      poster ? 39 : 32,
       x!,
       yy,
       poster ? 132 : 115,
-      poster ? 45 : 37,
-      false,
+      poster ? 45 : 38,
+      "number",
       true,
     );
     const scale = qianzaiDimensionScale(
@@ -1372,11 +1385,11 @@ function consumerLayout(
             : scale.positionLabel;
       write(
         caption,
-        poster ? 18 : 14,
+        poster ? 20 : 17,
         x! - 16,
         yy,
         poster ? 164 : 147,
-        poster ? 25 : 20,
+        poster ? 27 : 23,
         false,
         true,
         "#5f563d",
@@ -1433,10 +1446,18 @@ function consumerLayout(
           : y;
       y = titleBottom;
       if (d) {
-        const scoreWidth = Math.max(55, ink(String(d.score), 28));
+        const scoreWidth = Math.max(55, ink(String(d.score), 30, "number"));
         y = Math.max(
           y,
-          write(String(d.score), 28, 665 - scoreWidth, start, scoreWidth, 34),
+          write(
+            String(d.score),
+            30,
+            665 - scoreWidth,
+            start,
+            scoreWidth,
+            36,
+            "number",
+          ),
         );
         const scale = qianzaiDimensionScale(
           d,
@@ -1476,7 +1497,7 @@ function consumerLayout(
         }
       }
       y = write(b.text, 22, 59, y + 5, 606, 33) + 12;
-      if (b.citation) y = write(b.citation, 16, 59, y, 606, 24) + 8;
+      if (b.citation) y = write(b.citation, 18, 59, y, 606, 27) + 8;
       y = Math.max(y, start + 92) + 8;
     }
   }
@@ -1508,7 +1529,7 @@ function consumerLayout(
           detailY = write(first.title, 25, 327, detailY, 342, 36, true) + 7;
         detailY = write(first.text, 22, 327, detailY, 342, 33) + 13;
         if (first.citation)
-          detailY = write(first.citation, 16, 327, detailY, 342, 24) + 7;
+          detailY = write(first.citation, 18, 327, detailY, 342, 27) + 7;
         remainingBlocks = section.blocks.slice(1);
       }
       y = Math.max(imageY + 316, detailY + 3);
@@ -1548,7 +1569,7 @@ function consumerLayout(
             columns === 3 ? 30 : 33,
           ) + 16;
         if (b.citation)
-          end = write(b.citation, 15, x + 15, end, cardW - 30, 23) + 10;
+          end = write(b.citation, 18, x + 15, end, cardW - 30, 27) + 10;
         ops.splice(insert, 0, {
           kind: "card",
           box: { x, y: cardY, width: cardW, height: end - cardY },
@@ -1564,16 +1585,16 @@ function consumerLayout(
         y =
           write(
             b.text,
-            final ? 29 : 22,
+            final ? 30 : b.layout === "source" ? 18 : 22,
             55,
             y,
             614,
-            final ? 43 : 33,
+            final ? 45 : b.layout === "source" ? 28 : 34,
             final,
             false,
-            final ? "#8a591f" : "#27291f",
+            final ? "#8a591f" : b.layout === "source" ? "#6f634b" : "#27291f",
           ) + 13;
-        if (b.citation) y = write(b.citation, 16, 55, y, 614, 24) + 7;
+        if (b.citation) y = write(b.citation, 18, 55, y, 614, 27) + 7;
       }
   }
   y += 16;
