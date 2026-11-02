@@ -6918,8 +6918,8 @@
           },
           {
             "path": "src/features/report/qianzai-tongxin/export.ts",
-            "bytes": 27354,
-            "sha256": "4d440d577246a52f65237f1ee8ed1afd854e45f6a9ade721c14cd5b08e5dd4a5"
+            "bytes": 28355,
+            "sha256": "863ec3fbe290c8c340b8540c68f3ede71f5fc565d14ed16d261729d1b2c7a485"
           },
           {
             "path": "src/features/report/qianzai-tongxin/inline-emphasis.ts",
@@ -6928,8 +6928,8 @@
           },
           {
             "path": "src/features/report/qianzai-tongxin/layout.ts",
-            "bytes": 45781,
-            "sha256": "3fd196aea863e5675ae8c4f1c8d1098affd054abf2c30c2cae834bf76dafd3c6"
+            "bytes": 46300,
+            "sha256": "a7a5717bf73e4eee8689370c2da05aa7724f484547198910572031bc99569561"
           },
           {
             "path": "src/features/report/qianzai-tongxin/presentation-source.ts",
@@ -7078,8 +7078,8 @@
           },
           {
             "path": "src/features/theme/qianzai-tongxin/report-parity.module.css",
-            "bytes": 32402,
-            "sha256": "9d23a20a262ef8666aa75178e7e4172e44ff2f211514e3645acf98b615ed47c0"
+            "bytes": 36351,
+            "sha256": "2ffc449f39c17da3d0631fc58c603778125cbae973cada7476e55a644efbfdb7"
           },
           {
             "path": "src/features/theme/qianzai-tongxin/report.tsx",
@@ -8980,8 +8980,8 @@
           "serverCondition": "react-server"
         }
       },
-      "implementationSha256": "bfcefc79e523dd0380142aac87998a928f1cbb62441011b9cd06a3686646aa4c"
+      "implementationSha256": "7e420c820101caf1256cd4625b4a9d50ee318c738b17749b3a0220e10df52499"
     },
-    "entrySha256": "661e63fc241405ae188a690788e728e2b883bdce99ec2541478e3f5e27e9039c"
+    "entrySha256": "01f1b825a18c4693d926d9bf1021cdc32e81a576878ab25f13bc2e91c0252915"
   }
 }
