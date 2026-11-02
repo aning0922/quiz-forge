@@ -64,6 +64,8 @@ export type ExportOperation =
       width: number;
       score: number;
       scale?: QianzaiScaleGeometry;
+      /** 07 prototype geometry, scaled from its 390px design width. */
+      prototypeScale?: number;
     }
   | { kind: "rule"; y: number }
   | {
@@ -1384,9 +1386,12 @@ function consumerLayout(
   y = poster ? 1512 : Math.max(highest, radar.y + 175) + 12;
   const tagWidth = poster ? 151 : 151,
     gap = poster ? 20 : 22,
-    start = poster ? 84 : 165,
+    tagAreaStart = poster ? 84 : 165,
+    tagCount = p.poster.tags.length,
+    start = tagAreaStart + ((3 - tagCount) * (tagWidth + gap)) / 2,
     tagSize = poster ? 27 : 22,
     tagH = poster ? 56 : 43;
+  if (tagCount > 3) throw new QianzaiExportError("CONTENT_LIMIT");
   p.poster.tags.forEach((tag, i) => {
     const x = start + i * (tagWidth + gap);
     if (x + tagWidth > width - 20)
@@ -1419,29 +1424,60 @@ function consumerLayout(
     for (const [i, b] of dimensions.blocks.entries()) {
       const d = doc.dimensions[i],
         start = y;
-      if (b.title) y = write(b.title, 23, 59, y, 600, 32, true) + 4;
+      // Each dimension has one name/topic line; the score belongs to that row.
+      // A full-width explanation avoids the former ten-character text column.
+      const titleBottom = b.title
+        ? write(b.title, 23, 59, y, d ? 520 : 606, 32, true)
+        : d
+          ? write(d.label, 23, 59, y, 520, 32, true)
+          : y;
+      y = titleBottom;
       if (d) {
+        const scoreWidth = Math.max(55, ink(String(d.score), 28));
+        y = Math.max(
+          y,
+          write(String(d.score), 28, 665 - scoreWidth, start, scoreWidth, 34),
+        );
         const scale = qianzaiDimensionScale(
           d,
           doc.body.provenance.canonicalContentSha256,
         );
         if (scale) {
-          write(scale.left, 13, 240, y, 125, 20);
-          write(scale.right, 13, 350, y, 102, 20, false, false);
+          const ratio = width / 390,
+            endpointSize = 10.2 * ratio,
+            endpointLine = 14.3 * ratio,
+            ticksY = y + 3,
+            rightWidth = ink(scale.right, endpointSize);
+          const ticksBottom = Math.max(
+            write(scale.left, endpointSize, 59, ticksY, 300, endpointLine),
+            write(
+              scale.right,
+              endpointSize,
+              665 - rightWidth,
+              ticksY,
+              rightWidth,
+              endpointLine,
+              false,
+              false,
+              "#806f5e",
+            ),
+          );
+          const trackY = ticksBottom + 8 * ratio;
           ops.push({
             kind: "bar",
-            x: 240,
-            y: y + 39,
-            width: 205,
+            x: 59 + 7.5 * ratio,
+            y: trackY,
+            width: 606 - 15 * ratio,
             score: d.score,
             scale: scale.geometry,
+            prototypeScale: ratio,
           });
+          y = trackY + 7 * ratio + 10 * ratio;
         }
-        write(`${d.label} ${d.score}`, 23, 62, y + 3, 160, 32);
-        y = write(b.text, 19, 470, y, 205, 28) + 8;
-        if (b.citation) y = write(b.citation, 14, 470, y, 205, 22) + 4;
-        y = Math.max(y, start + 88);
-      } else y = write(b.text, 21, 55, y, 614, 31) + 12;
+      }
+      y = write(b.text, 22, 59, y + 5, 606, 33) + 12;
+      if (b.citation) y = write(b.citation, 16, 59, y, 606, 24) + 8;
+      y = Math.max(y, start + 92) + 8;
     }
   }
   for (const section of doc.sections.filter(
@@ -1449,21 +1485,33 @@ function consumerLayout(
   )) {
     y = heading(section.title, y + 12);
     if (section.intro) y = write(section.intro, 21, 55, y, 614, 31) + 10;
+    let remainingBlocks = section.blocks;
     if (section.id === "literature") {
       const imageY = y;
       ops.push({
         kind: "image",
         role: "portrait",
-        box: { x: 38, y: imageY, width: 296, height: 300 },
+        box: { x: 38, y: imageY, width: 260, height: 300 },
         fit: "cover",
       });
-      write(doc.name, 38, 365, imageY + 22, 300, 49, true);
+      let detailY = write(doc.name, 38, 327, imageY + 8, 342, 49, true) + 4;
       if (doc.identity?.honorific)
-        write(doc.identity.honorific, 24, 365, imageY + 83, 300, 35);
-      let detailY = imageY + 132;
+        detailY = write(doc.identity.honorific, 24, 327, detailY, 342, 35) + 4;
       for (const tag of doc.identity?.tags ?? [])
-        detailY = write(tag, 20, 365, detailY, 300, 29);
-      y = Math.max(imageY + 319, detailY + 10);
+        detailY = write(tag, 20, 327, detailY, 342, 29);
+      // Keep the first complete literary paragraph beside the portrait; flow
+      // later paragraphs below the taller column without clipping either one.
+      const first = section.blocks[0];
+      if (first) {
+        detailY += 12;
+        if (first.title)
+          detailY = write(first.title, 25, 327, detailY, 342, 36, true) + 7;
+        detailY = write(first.text, 22, 327, detailY, 342, 33) + 13;
+        if (first.citation)
+          detailY = write(first.citation, 16, 327, detailY, 342, 24) + 7;
+        remainingBlocks = section.blocks.slice(1);
+      }
+      y = Math.max(imageY + 316, detailY + 3);
     }
     if (section.id === "patterns") {
       const columns =
@@ -1510,7 +1558,7 @@ function consumerLayout(
       }
       y = bottom;
     } else
-      for (const b of section.blocks) {
+      for (const b of remainingBlocks) {
         if (b.title) y = write(b.title, 25, 55, y, 614, 36, true) + 7;
         const final = section.id === "closure" && b.layout === "final-verse";
         y =
