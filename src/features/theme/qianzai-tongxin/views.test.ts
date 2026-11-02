@@ -141,11 +141,37 @@ describe("Qianzai D3 view ports (synthetic props only)", () => {
     model.phase = "unknown";
     model.pendingOperation = "save";
     expect(qianzaiResumeQuestion(model)).toBeUndefined();
-    for (const html of [
-      renderToStaticMarkup(createElement(QianzaiPreference, props)),
-      renderToStaticMarkup(createElement(QianzaiQuestion, props)),
-    ]) {
-      expect(html).toContain('checked=""');
+    const waiting = renderToStaticMarkup(createElement(QianzaiQuestion, props));
+    expect(waiting).toContain("等待当前固定场景及题目资源就绪");
+    expect(waiting).not.toContain('type="radio"');
+    // Preserve the resource-ready precondition rather than bypassing the view's
+    // fail-closed branch to exercise UNKNOWN with its retained local answer.
+    const scene = model.entry!.slots.acts[0]!;
+    const images: QianzaiResolvedImage[] = [
+      scene.background,
+      scene.questionPaper,
+      scene.optionIdle,
+      scene.optionSelected,
+    ].map((ref) => ({
+      asset: model.entry!.assets.find((a) => a.resourceRef.id === ref.id)!,
+      objectUrl: `blob:synthetic-${ref.id}`,
+      layer: "clean",
+    }));
+    for (const [html, selected] of [
+      [renderToStaticMarkup(createElement(QianzaiPreference, props)), "any"],
+      [
+        renderToStaticMarkup(
+          createElement(QianzaiQuestion, { ...props, images }),
+        ),
+        "q-0-o-0",
+      ],
+    ] as const) {
+      expect(html).toMatch(
+        new RegExp(
+          `<input(?=[^>]*value="${selected}")(?=[^>]*checked="")[^>]*>`,
+        ),
+      );
+      expect(html.match(/checked=""/g)).toHaveLength(1);
       expect(html).toMatch(/<fieldset[^>]*disabled/);
     }
   });
@@ -169,9 +195,18 @@ describe("Qianzai D3 view ports (synthetic props only)", () => {
       }),
     );
     for (const v of body.volumes) expect(html).toContain(v.paragraphs[0]!.text);
-    for (const d of body.dimensions) expect(html).toContain(`${d.score} / 100`);
+    const radarValues = [
+      ...html.matchAll(
+        /<text[^>]*class="[^"]*rp-radar-value[^"]*"[^>]*>(\d+)<\/text>/g,
+      ),
+    ].map((match) => match[1]);
+    expect(radarValues).toEqual(body.dimensions.map((d) => String(d.score)));
+    for (const d of body.dimensions)
+      expect(html).toContain(
+        `aria-label="${d.label} ${d.score}分，查看解释范围"`,
+      );
     expect(html).toContain("同时阅读的反向证据");
-    expect(html).toContain("37");
+    expect(html).toContain("契合指数 37 / 100");
     expect(html).toContain("本轮偏好下仅有一位候选人物。");
     expect(html).not.toContain("89%");
     expect(html).not.toContain("下载");
