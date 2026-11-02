@@ -206,6 +206,64 @@ describe("consumer edition exports", () => {
       ),
     ).toBeLessThanOrEqual(radar.y - radar.radius - 12);
   });
+  it("reuses the character name for a biography lead while retaining its profile and later paragraphs", async () => {
+    const f = await fixture(),
+      doc = port.doc!;
+    const literature = doc.sections.find((s) => s.id === "literature")!;
+    const profile = "1084—约1155 · 宋代词人\n号易安居士";
+    const citation = "合成资料来源";
+    const withLead = (title: string): QianzaiSnapshotDocument => ({
+      ...doc,
+      sections: doc.sections.map((s) =>
+        s.id === "literature"
+          ? {
+              ...s,
+              blocks: [
+                {
+                  ...literature.blocks[0]!,
+                  layout: "lead",
+                  title,
+                  text: profile,
+                  citation,
+                },
+                ...literature.blocks,
+              ],
+            }
+          : s,
+      ),
+    });
+    port.doc = withLead(doc.name);
+    const layout = layoutQianzaiExport(
+      f.body,
+      "full-report",
+      measure,
+      undefined,
+      { presentation: f.p },
+    );
+    const text = layout.operations.filter((o) => o.kind === "text");
+    expect(text.filter((o) => o.text === doc.name)).toHaveLength(1);
+    const printed = text.map((o) => o.text).join("");
+    expect(printed).toContain(profile.replaceAll("\n", ""));
+    expect(printed).toContain(citation);
+    for (const b of literature.blocks) {
+      expect(printed).toContain(b.text);
+      if (b.title) expect(printed).toContain(b.title);
+    }
+    port.doc = withLead("生平资料");
+    const differentTitle = layoutQianzaiExport(
+      f.body,
+      "full-report",
+      measure,
+      undefined,
+      { presentation: f.p },
+    );
+    expect(
+      differentTitle.operations
+        .filter((o) => o.kind === "text")
+        .map((o) => o.text)
+        .join(""),
+    ).toContain("生平资料");
+  });
   it("uses measured prototype poster anchors with actual scores and no invented QR region", async () => {
     const f = await fixture();
     f.body.matching.selected.narrativeIndex = 43;

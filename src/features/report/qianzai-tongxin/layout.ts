@@ -1532,7 +1532,10 @@ function consumerLayout(
       const first = section.blocks[0];
       if (first) {
         detailY += 12;
-        if (first.title)
+        if (
+          first.title &&
+          !(first.layout === "lead" && first.title === doc.name)
+        )
           detailY = write(first.title, 25, 327, detailY, 342, 36, true) + 7;
         detailY = write(first.text, 22, 327, detailY, 342, 33) + 13;
         if (first.citation)
