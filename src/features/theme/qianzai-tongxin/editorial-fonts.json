@@ -1,26 +1,26 @@
 {
   "brush": {
     "id": "qianzai-tongxin-brush",
-    "version": "1.1.0",
-    "family": "QuizForge Qianzai Brush V2",
+    "version": "1.2.0",
+    "family": "QuizForge Qianzai Brush V3",
     "weight": 400,
-    "file": "/assets/fonts/qianzai-brush-v2/regular.woff2",
-    "fileSha256": "e05e6e635c207b98a7f28fa1f453511df72f2d0d9485ffc2cf2c06a56e271f21",
-    "bytes": 456896,
-    "coverage": "/assets/fonts/qianzai-brush-v2/characters.txt",
-    "coverageSha256": "d8cfe78f672e72c89ec682d998f2bdb5a5cc2e3eaab55cebafb02e1b68677d5b",
-    "licenseFile": "/assets/fonts/qianzai-brush-v2/OFL.txt"
+    "file": "/assets/fonts/qianzai-brush-v3/regular.woff2",
+    "fileSha256": "acbbf489596e3cd22d372afb93e9415a24970bced8e7c02e4c761c959219153c",
+    "bytes": 461836,
+    "coverage": "/assets/fonts/qianzai-brush-v3/characters.txt",
+    "coverageSha256": "27510ba22b8afe6501bcbf356d20546c6d16cd7ac215f076d2fb6377616a70db",
+    "licenseFile": "/assets/fonts/qianzai-brush-v3/OFL.txt"
   },
   "literary": {
     "id": "qianzai-tongxin-literary",
-    "version": "1.1.0",
-    "family": "QuizForge Qianzai Literary V2",
+    "version": "1.2.0",
+    "family": "QuizForge Qianzai Literary V3",
     "weight": 400,
-    "file": "/assets/fonts/qianzai-literary-v2/regular.woff2",
-    "fileSha256": "6dd49c1eb19b945cd5aab438c06b7e765fb243aad2f17774b47bc60055c33e7d",
-    "bytes": 258796,
-    "coverage": "/assets/fonts/qianzai-literary-v2/characters.txt",
-    "coverageSha256": "05818cf2eb91adca6511230f7a29a2a877a3612f971dcfce2544e97effec4835",
-    "licenseFile": "/assets/fonts/qianzai-literary-v2/OFL.txt"
+    "file": "/assets/fonts/qianzai-literary-v3/regular.woff2",
+    "fileSha256": "6f9276822bc688d6362cd520d70517ec89ddee98ee80d48fcf3f714466260531",
+    "bytes": 261264,
+    "coverage": "/assets/fonts/qianzai-literary-v3/characters.txt",
+    "coverageSha256": "e4f3d6d62f02253998e0c2ea56f00e7a2c2cf22aad5decefed46883e4e20beb7",
+    "licenseFile": "/assets/fonts/qianzai-literary-v3/OFL.txt"
   }
 }

@@ -6,8 +6,8 @@ from fontTools import subset
 import fontTools, brotli
 
 def sha(b): return hashlib.sha256(b).hexdigest()
-p=argparse.ArgumentParser();p.add_argument('--source-dir',type=Path,required=True);p.add_argument('--characters',type=Path,required=True);p.add_argument('--profile',choices=('v1','v2'),default='v1');a=p.parse_args()
-version={'v1':'1.0.0','v2':'1.1.0'}[a.profile]
+p=argparse.ArgumentParser();p.add_argument('--source-dir',type=Path,required=True);p.add_argument('--characters',type=Path,required=True);p.add_argument('--profile',choices=('v1','v2','v3'),default='v1');a=p.parse_args()
+version={'v1':'1.0.0','v2':'1.1.0','v3':'1.2.0'}[a.profile]
 assert fontTools.__version__=='4.61.1' and brotli.__version__=='1.2.0'
 chars=a.characters.read_text().rstrip('\n');result={}
 for key,source,digest,license_file,family in [

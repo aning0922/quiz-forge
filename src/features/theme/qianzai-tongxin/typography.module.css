@@ -1,8 +1,8 @@
 .root {
   display: contents;
-  --qztx-serif: "QuizForge Qianzai Serif V9", "Songti SC", serif;
-  --qztx-brush: "QuizForge Qianzai Brush V2", "Kaiti SC", serif;
-  --qztx-literary: "QuizForge Qianzai Literary V2", "Kaiti SC", serif;
+  --qztx-serif: "QuizForge Qianzai Serif V10", "Songti SC", serif;
+  --qztx-brush: "QuizForge Qianzai Brush V3", "Kaiti SC", serif;
+  --qztx-literary: "QuizForge Qianzai Literary V3", "Kaiti SC", serif;
 }
 .fontStatus {
   position: fixed;

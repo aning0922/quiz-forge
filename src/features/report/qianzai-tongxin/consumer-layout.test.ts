@@ -7,6 +7,7 @@ import {
   qianzaiExportText,
   qianzaiExportBrushText,
   type Measure,
+  type ExportOperation,
 } from "./layout";
 const port = vi.hoisted(() => ({
   doc: null as QianzaiSnapshotDocument | null,
@@ -44,7 +45,7 @@ async function fixture() {
       },
     ],
     f.body.dimensions.map((d) => ({
-      title: d.label,
+      title: `${d.label} · 相处步调`,
       text: `本轮在${d.label}方向，你的选择呈现一种可供细读的偏好。`,
       layout: "body" as const,
     })),
@@ -151,6 +152,38 @@ describe("consumer edition exports", () => {
     ).toEqual([]);
     expect(layout.operations.filter((o) => o.kind === "bar")).toHaveLength(5);
   });
+  it("keeps reader traits separate from the historical character profile", async () => {
+    const f = await fixture();
+    port.doc = {
+      ...port.doc!,
+      identity: { honorific: f.p.role.honorific, tags: ["个人选择标签"] },
+    };
+    const layout = layoutQianzaiExport(
+      f.body,
+      "full-report",
+      measure,
+      undefined,
+      { presentation: f.p },
+    );
+    const portrait = layout.operations.find(
+      (o) => o.kind === "image" && o.role === "portrait",
+    );
+    expect(portrait?.kind).toBe("image");
+    if (portrait?.kind !== "image") throw Error("PORTRAIT_MISSING");
+    const profileText = layout.operations
+      .flatMap((o) =>
+        o.kind === "text" && o.y >= portrait.box.y ? [o.text] : [],
+      )
+      .join("");
+    expect(profileText).toContain(f.p.role.tags.join(" · "));
+    expect(profileText).not.toContain("个人选择标签");
+    const declared = new Set(
+      qianzaiExportText(f.body, "full-report", f.p).join(""),
+    );
+    expect(
+      [...f.p.role.tags.join(" · ")].filter((c) => !declared.has(c)),
+    ).toEqual([]);
+  });
   it("uses measured prototype poster anchors with actual scores and no invented QR region", async () => {
     const f = await fixture();
     f.body.matching.selected.narrativeIndex = 43;
@@ -168,11 +201,18 @@ describe("consumer edition exports", () => {
       radius: 171,
       scores: f.body.dimensions.map((d) => d.score),
     });
-    expect(layout.operations).toContainEqual({
-      kind: "ornament",
-      box: { x: 84, y: 1512, width: 151, height: 56 },
-      style: "tag",
-    });
+    const tags = layout.operations.filter(
+      (o): o is Extract<ExportOperation, { kind: "ornament" }> =>
+        o.kind === "ornament" && o.style === "tag",
+    );
+    expect(tags).toHaveLength(f.p.poster.tags.length);
+    if (tags.length)
+      expect(tags[0]!.box).toEqual({
+        x: 84 + ((3 - tags.length) * 171) / 2,
+        y: 1512,
+        width: 151,
+        height: 56,
+      });
     const text = layout.operations
       .flatMap((o) => (o.kind === "text" ? [o.text] : []))
       .join("");
@@ -183,6 +223,89 @@ describe("consumer edition exports", () => {
     const printed = layout.operations.filter((o) => o.kind === "text");
     for (const line of f.p.poster.lines)
       expect(printed.find((o) => o.text === line)?.x).toBe(60);
+  });
+  it("draws only the 0–3 supported tags within the fixed tag area", async () => {
+    const f = await fixture();
+    for (const count of [0, 1, 2, 3]) {
+      const p = {
+        ...f.p,
+        poster: {
+          ...f.p.poster,
+          tags: ["听见心意", "留住热爱", "自在前行"].slice(0, count),
+        },
+      };
+      port.doc = { ...port.doc!, resultPresentation: p };
+      const layout = layoutQianzaiExport(f.body, "poster", measure, undefined, {
+        presentation: p,
+      });
+      const tags = layout.operations.filter(
+        (o): o is Extract<ExportOperation, { kind: "ornament" }> =>
+          o.kind === "ornament" && o.style === "tag",
+      );
+      expect(tags).toHaveLength(count);
+      if (count) {
+        expect(tags[0]!.box.x).toBe(84 + ((3 - count) * 171) / 2);
+        expect(
+          tags.every(
+            (o) =>
+              o.box.y === 1512 && o.box.width === 151 && o.box.height === 56,
+          ),
+        ).toBe(true);
+      }
+      expect(layout.operations.find((o) => o.kind === "radar")).toMatchObject({
+        x: 333,
+        y: 1265,
+        radius: 171,
+      });
+      expect(layout.height).toBe(1672);
+    }
+  });
+  it("keeps a single dimension name and complete prose in each wide scale row, and starts literary prose beside the portrait", async () => {
+    const f = await fixture();
+    f.body.dimensions[0]!.score = 100;
+    const layout = layoutQianzaiExport(
+      f.body,
+      "full-report",
+      measure,
+      undefined,
+      { presentation: f.p },
+    );
+    const text = layout.operations.filter((o) => o.kind === "text");
+    expect(text.some((o) => o.text === "100")).toBe(true);
+    const dimBlocks = port.doc!.sections.find(
+      (s) => s.id === "dimensions",
+    )!.blocks;
+    for (const [i, b] of dimBlocks.entries()) {
+      const rowText = text.map((o) => o.text).join("");
+      expect(rowText.split(b.title!).length - 1).toBe(1);
+      const title = text.find(
+        (o) =>
+          o.text.startsWith(port.doc!.dimensions[i]!.label) &&
+          o.style === "brush",
+      )!;
+      const explanation = text.find(
+        (o) => b.text.startsWith(o.text) && o.x === 59,
+      )!;
+      expect(explanation.y).toBeGreaterThan(title.y);
+      expect(explanation.size).toBe(22);
+    }
+    expect(layout.operations.filter((o) => o.kind === "bar")).toHaveLength(5);
+    for (const bar of layout.operations.filter((o) => o.kind === "bar")) {
+      expect(bar.prototypeScale).toBeCloseTo(724 / 390);
+      expect(bar.width).toBeGreaterThan(570);
+      expect(bar.scale?.midpointPercent).toBe(50);
+      expect(bar.scale?.positionPercent).toBe(bar.score);
+    }
+    const portrait = layout.operations.find(
+      (o): o is Extract<ExportOperation, { kind: "image" }> =>
+        o.kind === "image" && o.role === "portrait" && !o.blend,
+    )!;
+    const first = port.doc!.sections.find((s) => s.id === "literature")!
+      .blocks[0]!;
+    const literaryStart = text.find(
+      (o) => first.text.startsWith(o.text) && o.x === 327,
+    )!;
+    expect(literaryStart.y).toBeLessThan(portrait.box.y + portrait.box.height);
   });
   it("keeps complete endpoint labels and closing punctuation on a readable line", async () => {
     const f = await fixture(),

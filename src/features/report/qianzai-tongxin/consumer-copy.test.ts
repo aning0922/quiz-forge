@@ -2,7 +2,11 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { QianzaiReportReader } from "@/features/theme/qianzai-tongxin/report";
-import { qianzaiPresentationFixture } from "./result-presentation.test-support";
+import {
+  qianzaiConsumerCopyFixture as fixture,
+  qianzaiCopyRef as ref,
+} from "./consumer-copy.test-support";
+import { qianzaiSupportedThemes } from "./supported-themes";
 import { deriveQianzaiResultPresentation } from "./result-presentation";
 import { qianzaiSnapshotDocument } from "./presentation";
 import {
@@ -11,84 +15,7 @@ import {
   QIANZAI_CONSUMER_COPY_VERSION,
 } from "./consumer-copy";
 
-type Fixture = Awaited<ReturnType<typeof qianzaiPresentationFixture>>;
-const ref = (id: string) => ({
-  productId: "qianzai-tongxin",
-  id,
-  version: "1.0.0",
-});
-async function fixture(role = "li-qingzhao") {
-  const f = await qianzaiPresentationFixture();
-  f.body.matching.selected.ref = f.view.display.selectedResultRef = ref(role);
-  f.body.matching.selected.label = "RAW_SELECTED_LABEL";
-  if (role === "mulan-ballad")
-    f.body.matching.selected.kind = "literary-legendary";
-  f.body.answers = [];
-  f.body.volumes.forEach((v, i) => {
-    v.paragraphs = [
-      {
-        claimRef: null,
-        kind: "fallback",
-        status: "fallback",
-        text: `RAW_INTERNAL_PARAGRAPH_${i}`,
-        evidence: [],
-        counterevidence: [],
-      },
-    ];
-  });
-  const evidence = (option: string) => {
-    const question = option.split("-")[0]!;
-    let answer = f.body.answers.find((a) => a.questionRef.id === question);
-    if (!answer) {
-      answer = {
-        questionRef: ref(question),
-        optionRef: ref(option),
-        prompt: `RAW_QUESTION_${question}`,
-        optionText: `RAW_ANSWER_${option}`,
-        act: 1,
-      };
-      f.body.answers.push(answer);
-    }
-    return {
-      questionRef: ref(question),
-      optionRef: ref(option),
-      prompt: answer.prompt,
-      optionText: answer.optionText,
-      scope: "RAW_EVIDENCE_SCOPE",
-    };
-  };
-  const paragraph = (
-    id: string,
-    kind: "summary" | "context",
-    positive: readonly string[],
-    negative: readonly string[] = [],
-  ) => ({
-    claimRef: ref(id),
-    kind,
-    status: "accepted" as const,
-    text: `RAW_INTERNAL_${id}`,
-    evidence: positive.map(evidence),
-    counterevidence: negative.map(evidence),
-  });
-  f.body.volumes[2]!.paragraphs = [
-    paragraph("authored-be6dfe2f8a8e169562e5", "summary", [
-      "q02-b",
-      "q04-a",
-      "q18-b",
-    ]),
-    paragraph("authored-32874c524c0bcefdb155", "summary", ["q03-c", "q06-c"]),
-    paragraph("authored-002ddc7622c049644c55", "summary", ["q07-b", "q10-a"]),
-  ];
-  f.body.volumes[3]!.paragraphs = [
-    paragraph(
-      "authored-2327e4fe1d6e8509b490",
-      "context",
-      ["q09-c", "q18-b"],
-      ["q15-a"],
-    ),
-  ];
-  return f;
-}
+type Fixture = Awaited<ReturnType<typeof fixture>>;
 const document = (f: Fixture) =>
   qianzaiSnapshotDocument(
     f.body,
@@ -123,7 +50,7 @@ describe("versioned Qianzai consumer prose", () => {
     ]);
     expect(section(d, "encounter").blocks).toHaveLength(2);
     expect(section(d, "encounter").blocks[0]!.text).toContain(
-      "为新经验打开一扇窗",
+      "用新的经验与表达",
     );
     expect(section(d, "encounter").blocks[1]!.text).toContain("易安的词");
     expect(section(d, "patterns").blocks).toHaveLength(3);
@@ -132,6 +59,10 @@ describe("versioned Qianzai consumer prose", () => {
       "prompt",
     ]);
     expect(section(d, "closure").blocks).toHaveLength(3);
+    expect(section(d, "closure").blocks.map((b) => b.text)).not.toContain(
+      section(d, "encounter").blocks[0]!.text,
+    );
+
     expect(section(d, "patterns").blocks[0]!.snapshot).toBe(
       f.body.volumes[2]!.paragraphs[0],
     );
@@ -198,10 +129,15 @@ describe("versioned Qianzai consumer prose", () => {
       mutate(f);
       const d = document(f);
       expect(section(d, "patterns").blocks).toHaveLength(2);
-      expect(displayText(d)).not.toContain("给新的可能，留一扇窗");
-      expect(section(d, "encounter").blocks[0]!.text).toContain(
-        "为感受留一张座位",
+      expect(d.resultPresentation!.poster.tags).toEqual([
+        "先听感受",
+        "先行体验",
+      ]);
+      expect(d.resultPresentation!.reveal.supportingClaimRefs).toHaveLength(2);
+      expect(section(d, "patterns").blocks.map((b) => b.title)).not.toContain(
+        "给新经验一个入口",
       );
+      expect(section(d, "encounter").blocks[0]!.text).toContain("先听感受");
       expect(displayText(d)).not.toMatch(/RAW_|Q\d{2}/u);
     }
   });
@@ -285,7 +221,7 @@ describe("versioned Qianzai consumer prose", () => {
     expect(section(d, "encounter").blocks[0]!.snapshot).toBeUndefined();
     expect(section(d, "encounter").blocks[0]!.text).toContain("李清照");
     expect(section(d, "closure").blocks[0]!.text).toBe(
-      "谢谢你给自己留下一段安静读卷的时间。",
+      "这一卷读到这里，接下来的故事由你落笔。",
     );
     expect(section(d, "closure").blocks).toHaveLength(3);
     f.body.volumes[2]!.paragraphs[0]!.status = "accepted";
@@ -336,6 +272,92 @@ describe("versioned Qianzai consumer prose", () => {
     foreign.provenance.canonicalContentSha256 = "f".repeat(64);
     expect(qianzaiConsumerCopy(foreign, result)).toBeUndefined();
   });
+  it("keeps reveal, poster, personal tags and the full document on the same supported themes without filling a third trait", async () => {
+    const f = await fixture();
+    // A lone q02 fact must not override a different, supported two-context theme.
+    const original = f.body.volumes[2]!.paragraphs[0]!;
+    f.body.volumes[0]!.paragraphs.push({
+      ...original,
+      claimRef: ref("authored-7053c48e83fe3e6c223d"),
+      kind: "fact",
+      evidence: [original.evidence[0]!],
+    });
+    f.body.volumes[2]!.paragraphs = f.body.volumes[2]!.paragraphs.slice(1);
+    const d = document(f),
+      result = d.resultPresentation!,
+      themes = qianzaiSupportedThemes(f.body);
+    expect(themes).toHaveLength(2);
+    expect(result.reveal.lines).toEqual([
+      themes[0]!.feature.short[0],
+      themes[1]!.feature.short[0],
+      result.role.invitation,
+    ]);
+    expect(result.poster.lines).toBe(result.reveal.lines);
+    expect(result.poster.tags).toEqual(["先听感受", "先行体验"]);
+    expect(d.identity!.tags).toBe(result.poster.tags);
+    expect(result.reveal.supportingClaimRefs).toEqual(
+      themes.map((t) => t.snapshot.claimRef),
+    );
+    for (const theme of themes)
+      expect(section(d, "encounter").blocks[0]!.text).toContain(
+        theme.feature.seen,
+      );
+    expect(section(d, "patterns").blocks.map((b) => b.text)).toEqual(
+      themes.map((t) => t.feature.text),
+    );
+    f.body.volumes[2]!.paragraphs.pop();
+    const one = document(f).resultPresentation!;
+    expect(one.poster.tags).toEqual(["先听感受"]);
+    expect(one.reveal.supportingClaimRefs).toHaveLength(1);
+    expect(one.reveal.lines.slice(0, 2)).toEqual([
+      ...qianzaiSupportedThemes(f.body)[0]!.feature.short,
+    ]);
+    f.body.volumes[2]!.paragraphs = [];
+    const neutral = document(f);
+    expect(neutral.identity!.tags).toEqual([]);
+    expect(neutral.resultPresentation!.reveal.lines).toEqual([
+      ...result.role.baseLines,
+      result.role.invitation,
+    ]);
+    expect(section(neutral, "patterns").blocks[0]!.layout).toBe("body");
+  });
+  it("selects axis prose with the existing 45..55 midpoint, without changing scores or deriving personal traits from them", async () => {
+    const f = await fixture();
+    // No accepted theme: even the maximum scale cannot manufacture a trait.
+    f.body.volumes[2]!.paragraphs = [];
+    const at = (score: number) => {
+      f.body.dimensions.forEach((d) => {
+        d.score = score;
+      });
+      return document(f);
+    };
+    const left = at(44),
+      leftText = section(left, "dimensions").blocks.map((b) => b.text);
+    const mid45 = at(45),
+      middleText = section(mid45, "dimensions").blocks.map((b) => b.text);
+    expect(section(at(55), "dimensions").blocks.map((b) => b.text)).toEqual(
+      middleText,
+    );
+    const right = at(56),
+      rightText = section(right, "dimensions").blocks.map((b) => b.text);
+    for (let i = 0; i < 5; i++) {
+      expect(leftText[i]).not.toBe(middleText[i]);
+      expect(rightText[i]).not.toBe(middleText[i]);
+      expect(leftText[i]).not.toBe(rightText[i]);
+      expect(middleText[i]).toContain("之间");
+    }
+    expect(leftText[0]).toContain("先协调彼此需要");
+    expect(rightText[0]).toContain("表达自身选择");
+    expect(leftText[4]).toContain("局部调整");
+    expect(rightText[4]).toContain("整体重新安排");
+    const maximum = at(100),
+      before = structuredClone(f.body);
+    expect(maximum.resultPresentation!.poster.tags).toEqual([]);
+    expect(maximum.dimensions).toBe(f.body.dimensions);
+    document(f);
+    expect(f.body).toEqual(before);
+    expect(f.body.dimensions.every((d) => d.score === 100)).toBe(true);
+  });
   it("uses one bound consumer mechanism for the five existing roles and includes the compiled display corpus", async () => {
     const corpus = qianzaiConsumerCopyText().join(""),
       coverage = new Set(corpus);
@@ -352,7 +374,7 @@ describe("versioned Qianzai consumer prose", () => {
       expect(d.resultPresentation!.role.ref.id).toBe(role);
       expect(
         section(d, "literature").blocks.filter((b) => b.layout === "timeline"),
-      ).toHaveLength(3);
+      ).toHaveLength(1);
       expect(section(d, "closure").blocks).toHaveLength(3);
       expect(
         [...displayText(d)].filter(
@@ -388,7 +410,7 @@ describe("versioned Qianzai consumer prose", () => {
       expect(html).not.toContain(marker);
     for (const value of d.resultPresentation!.closure.lines)
       expect(html).not.toContain(value);
-    expect(html.split("记住一段鲜活的光阴")).toHaveLength(2);
+    expect(html.split("溪亭与云涛")).toHaveLength(2);
     expect(html).toContain(section(d, "encounter").blocks[0]!.text);
     expect(html).toContain(f.body.notice);
     expect(html.match(/data-qianzai-dimension-scale=/gu)).toHaveLength(5);

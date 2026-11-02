@@ -431,6 +431,73 @@ function drawOperation(
     return;
   }
   if (op.kind === "bar") {
+    if (op.prototypeScale && op.scale) {
+      const r = op.prototypeScale,
+        h = 7 * r,
+        centerY = op.y + h / 2,
+        bandX = op.x + (op.width * op.scale.bandStartPercent) / 100,
+        bandWidth = (op.width * op.scale.bandWidthPercent) / 100,
+        pearlX = op.x + (op.width * op.scale.positionPercent) / 100;
+      ctx.save();
+      const track = ctx.createLinearGradient(op.x, 0, op.x + op.width, 0);
+      track.addColorStop(0, "#d6cec1");
+      track.addColorStop(0.5, "#e6d5b5");
+      track.addColorStop(1, "#d5c5a7");
+      ctx.fillStyle = track;
+      ctx.beginPath();
+      ctx.roundRect(op.x, op.y, op.width, h, h / 2);
+      ctx.fill();
+      // A restrained inner edge replaces the flat rectangular bar.
+      ctx.save();
+      ctx.clip();
+      ctx.strokeStyle = "#58452e21";
+      ctx.lineWidth = 2 * r;
+      ctx.stroke();
+      ctx.restore();
+      const band = ctx.createLinearGradient(bandX, 0, bandX + bandWidth, 0);
+      band.addColorStop(0, "#557c89eb");
+      band.addColorStop(1, "#c29c64eb");
+      if (bandWidth > 0) {
+        ctx.fillStyle = band;
+        ctx.beginPath();
+        ctx.roundRect(bandX, op.y, bandWidth, h, Math.min(h, bandWidth) / 2);
+        ctx.fill();
+      }
+      const midpointX = op.x + (op.width * op.scale.midpointPercent) / 100;
+      ctx.fillStyle = "#ac916de6";
+      ctx.beginPath();
+      ctx.roundRect(midpointX - r, op.y - 4 * r, 2 * r, 15 * r, r);
+      ctx.fill();
+      ctx.shadowColor = "#79613e66";
+      ctx.shadowBlur = 4 * r;
+      ctx.shadowOffsetY = r;
+      ctx.beginPath();
+      ctx.arc(pearlX, centerY, 8.5 * r, 0, Math.PI * 2);
+      ctx.fillStyle = "#fff7e6";
+      ctx.fill();
+      ctx.shadowColor = "transparent";
+      const pearl = ctx.createRadialGradient(
+        pearlX - 2.2 * r,
+        centerY - 3 * r,
+        r,
+        pearlX,
+        centerY,
+        7 * r,
+      );
+      pearl.addColorStop(0, "#fffcf3");
+      pearl.addColorStop(0.17, "#fffcf3");
+      pearl.addColorStop(0.42, "#efd49e");
+      pearl.addColorStop(0.93, "#bb8e50");
+      ctx.fillStyle = pearl;
+      ctx.strokeStyle = "#a57a44";
+      ctx.lineWidth = r;
+      ctx.beginPath();
+      ctx.arc(pearlX, centerY, 7 * r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
+      return;
+    }
     ctx.fillStyle = "#e1c99b";
     ctx.fillRect(op.x, op.y, op.width, 12);
     if (op.scale) {
