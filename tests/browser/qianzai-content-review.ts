@@ -330,28 +330,7 @@ export async function buildQianzaiContentReview(input: unknown) {
           `${c.roleId}：展示样例未覆盖全部诗句；完整编译期诗句仍列于人物资料。`,
       ),
   ];
-  const contentCandidates = [
-    {
-      id: "fixed-subtitle-personal-tone",
-      status: "candidate-only-not-applied",
-      affectedRoles: profiles.map((p) => p.id),
-      field: "profile.identitySubtitle → document.subtitle",
-      observation:
-        "五角色固定文学副标题仍采用‘与你同心的，是…’句式；无主题支持时也原样出现，容易被读成已推断的个人特点。称号、诗句与人物类型本身是固定资料。",
-      candidate:
-        "将固定副标题显式改为人物作品介绍，例如‘从山河与明月，走近李白的诗境’；个人特点继续只取已支持主题。是否修订由主控与作者决定。",
-    },
-    {
-      id: "poster-title-versus-honorific",
-      status: "review-distinction-no-code-change",
-      affectedRoles: profiles.map((p) => p.id),
-      field: "profile.honorific / profile.posterTagline",
-      observation:
-        "揭晓与报告的称号，和海报的固定文学题签不是同一字段；例如李白的‘诗仙’与‘诗意长存’。本页分列，避免把题签当作个人能力结论。",
-      candidate:
-        "保留字段语义区别，实际海报由主控确认是否需明确称号；不据此补个人标签。",
-    },
-  ];
+  const contentCandidates = reviewEditorialCandidates(profiles);
   return {
     schemaVersion: "qianzai.content-review.v1",
     scope: contentReviewScope,
@@ -384,6 +363,64 @@ export type QianzaiContentReview = Awaited<
   ReturnType<typeof buildQianzaiContentReview>
 >;
 
+/** Complete review-only proposals. These never feed production presentation. */
+function reviewEditorialCandidates(
+  profiles: readonly {
+    id: string;
+    name: string;
+    identitySubtitle: string;
+    honorific: string;
+    posterTagline: string;
+  }[],
+) {
+  const subtitles: Record<string, string> = {
+    "li-bai": "从山河与明月，走近李白的诗境。",
+    "su-shi": "从途中风雨，走近苏轼的词境。",
+    "tao-yuanming": "从东篱与南山，走近陶渊明的诗境。",
+    "li-qingzhao": "从溪亭旧游与云涛星河，走近李清照的词境。",
+    "mulan-ballad": "从关山远行与归家换装，走进《木兰诗》。",
+  };
+  const neutralDrafts: Record<string, readonly string[]> = {
+    "li-bai": [
+      "愿你走过山河，仍愿抬头看月亮。",
+      "让眼前的一次停留，也成为风景。",
+      "往后的路，照自己的步调走。",
+    ],
+    "mulan-ballad": [
+      "愿你出发时，知道自己为何而行。",
+      "行至远处，也记得照顾日常。",
+      "归来以后，仍有想认真过的生活。",
+    ],
+  };
+  return {
+    status: "review-only-awaiting-author-not-applied",
+    subtitles: profiles.map((p) => ({
+      roleId: p.id,
+      name: p.name,
+      current: p.identitySubtitle,
+      candidate: subtitles[p.id]!,
+    })),
+    neutralLines: profiles
+      .filter((p) => Object.hasOwn(neutralDrafts, p.id))
+      .map((p) => {
+        const role = QIANZAI_ROLE_PROFILES_V11.find((r) => r.ref.id === p.id)!;
+        return {
+          roleId: p.id,
+          name: p.name,
+          current: [...role.baseLines, role.invitation],
+          candidate: neutralDrafts[p.id]!,
+        };
+      }),
+    fixedUses: profiles.map((p) => ({
+      name: p.name,
+      honorific: p.honorific,
+      posterTagline: p.posterTagline,
+    })),
+    fixedUseAdvice:
+      "人物称号用于身份，海报题签用于文学氛围：两者固定、用途不同，建议保留；都不作为答案推断的个人特点。",
+  };
+}
+
 const escapeHtml = (v: unknown) =>
   String(v ?? "").replace(
     /[&<>"']/g,
@@ -412,6 +449,8 @@ export function renderQianzaiContentReview(
 ) {
   const origin = reviewDemoOrigin(demoOrigin);
   const e = escapeHtml;
+  const proposals = reviewEditorialCandidates(review.profiles);
+  const proposalPanel = `<details class="editorial-proposals"><summary>待作者定稿：五条文学引导、两组三行短句</summary><p>以下仅为验收页候选，生产文案未更改。</p><h3>固定副标题：改为中性文学引导</h3><div class="table-wrap"><table><thead><tr><th>人物</th><th>现文</th><th>完整候选</th></tr></thead><tbody>${proposals.subtitles.map((p) => `<tr><th>${e(p.name)}</th><td>${e(p.current)}</td><td>${e(p.candidate)}</td></tr>`).join("")}</tbody></table></div><h3>中性三行短句：去掉相邻重复</h3><div class="table-wrap"><table><thead><tr><th>人物</th><th>现有三行</th><th>完整三行候选</th></tr></thead><tbody>${proposals.neutralLines.map((p) => `<tr><th>${e(p.name)}</th><td>${p.current.map((l) => e(l)).join("<br>")}</td><td>${p.candidate.map((l) => e(l)).join("<br>")}</td></tr>`).join("")}</tbody></table></div><h3>称号与题签：固定用途可保留</h3><p>${e(proposals.fixedUseAdvice)}</p><p>${proposals.fixedUses.map((p) => `${e(p.name)}：${e(p.honorific)}／${e(p.posterTagline)}`).join("；")}。</p></details>`;
   const profileRows = review.profiles
     .map(
       (p) =>
@@ -441,9 +480,9 @@ export function renderQianzaiContentReview(
           return `<tr><th>${e(a.questionId)}</th><td>${e(q.prompt)}</td><td>${e(o.label)}</td></tr>`;
         })
         .join("");
-      return `<article data-role="${e(s.roleId)}" data-review-role="${e(s.roleId)}" id="${e(s.id)}"><header><h2>${e(p.name)} · ${e(s.id)}</h2><p>${s.themes.length ? s.themes.map((t) => e(t.tag)).join(" · ") : s.checks.neutralNarrative ? "无个性化主题／映照支持：中性文学回退" : "同心无主题支持；映照仍按自身支持生成"} · 实际契合指数 ${s.selected.narrativeIndex}%</p><a class="button" href="${e(href)}" target="_blank" rel="noreferrer">打开此样例的真实 demo</a></header><div class="carriers"><section><h3>揭晓短句</h3><p class="fixed">固定称号：${e(s.honorific)}</p><blockquote>${e(s.quote.text)}<cite>${e(s.quote.source)}</cite></blockquote>${s.reveal.lines.map((l) => `<p>${e(l)}</p>`).join("")}</section><section><h3>海报主线</h3><p class="fixed">固定题签：${e(s.poster.tagline)}</p>${s.poster.lines.map((l) => `<p>${e(l)}</p>`).join("")}<p>个人特点：${s.poster.tags.length ? s.poster.tags.map(e).join(" · ") : "无；不补第三特点"}</p></section><section class="report"><h3>网页／长图共享六卷正文</h3><p class="fixed">固定文学副标题：${e(s.document.subtitle)}</p>${chapter}<small>${e(s.document.legal)}</small></section></div><details class="research"><summary>合成依据与覆盖说明（24题、评分身份、主题支持）</summary><p>输入来源：${e(s.origin)}；偏好 any。所有答案均从受控选项生成，未经角色或分数改写。</p><p>inputHash ${e(s.inputHash)}<br>answersHash ${e(s.answersHash)}<br>bodySha256 ${e(s.bodySha256)}</p><p>五维实际分值：${s.dimensions.map((d) => `${e(d.label)} ${d.score}`).join(" · ")}</p><pre>${e(JSON.stringify({ checks: s.checks, themes: s.themes, decision: s.decision, audit: s.audit }, null, 2))}</pre><table><tbody>${evidence}</tbody></table></details></article>`;
+      return `<article data-role="${e(s.roleId)}" data-review-role="${e(s.roleId)}" id="${e(s.id)}"><header><h2>${e(p.name)} · ${e(s.id)}</h2><p>${s.themes.length ? s.themes.map((t) => e(t.tag)).join(" · ") : s.checks.neutralNarrative ? "无个性化主题／映照支持：中性文学回退" : "同心无主题支持；映照仍按自身支持生成"} · 实际契合指数 ${s.selected.narrativeIndex}%</p><a class="button" href="${e(href)}" target="_blank" rel="noreferrer">打开此样例的真实 demo</a></header><div class="carriers"><section><h3>揭晓短句</h3><p class="fixed">固定称号：${e(s.honorific)}</p><blockquote>${e(s.quote.text)}<cite>${e(s.quote.source)}</cite></blockquote>${s.reveal.lines.map((l) => `<p>${e(l)}</p>`).join("")}</section><section><h3>海报主线</h3><p class="fixed">固定题签：${e(s.poster.tagline)}</p>${s.poster.lines.map((l) => `<p>${e(l)}</p>`).join("")}<p>个人特点：${s.poster.tags.length ? s.poster.tags.map(e).join(" · ") : "无；不补第三特点"}</p></section><section class="report"><h3>网页／长图共享六卷正文</h3><p class="fixed">固定文学副标题：${e(s.document.subtitle)}</p>${chapter}<small>${e(s.document.legal)}</small></section></div><details class="research"><summary>合成依据与覆盖说明（24题、评分身份、主题支持）</summary><p>输入来源：${e(s.origin)}；偏好 any。所有答案均从受控选项生成，未经角色或分数改写。</p><p>inputHash ${e(s.inputHash)}<br>answersHash ${e(s.answersHash)}<br>bodySha256 ${e(s.bodySha256)}</p><p>五维实际分值：${s.dimensions.map((d) => `${e(d.label)} ${d.score}`).join(" · ")}</p><pre>${e(JSON.stringify({ checks: s.checks, themes: s.themes, decision: s.decision, audit: s.audit }, null, 2))}</pre><div class="table-wrap"><table><tbody>${evidence}</tbody></table></div></details></article>`;
     })
     .join("");
   const data = JSON.stringify(review).replaceAll("<", "\\u003c");
-  return `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>千载同心 · 五角色内容验收</title><style>body{margin:0;background:#f6f1e7;color:#263647;font:16px/1.8 system-ui}main{max-width:1500px;margin:auto;padding:24px}h1{font-size:30px}h2{font-size:23px}h3{font-size:20px}h4{font-size:17px;margin:12px 0 4px}p{margin:8px 0}small,.fixed,.intro{color:#655d53}nav{position:sticky;top:0;background:#f6f1e7ed;padding:12px 0;z-index:2;display:flex;gap:8px;flex-wrap:wrap}button,.button{min-height:44px;padding:8px 14px;border:1px solid #8a704b;border-radius:7px;color:#314657;background:#fffaf0;font:inherit;text-decoration:none;cursor:pointer}button[aria-pressed=true]{background:#314657;color:white}article{margin:24px 0;padding:22px;background:#fffdf8;border:1px solid #d4c4a9;border-radius:12px;scroll-margin-top:95px}.carriers{display:grid;grid-template-columns:minmax(210px,1fr) minmax(210px,1fr) minmax(320px,2fr);gap:20px}.carriers>section{min-width:0;padding:0 12px;border-left:2px solid #e5d9c6}.block{margin:14px 0}blockquote{margin:12px 0;padding:12px;background:#f7efdf}cite{display:block;font-size:14px}details{padding:10px 0;border-bottom:1px solid #e7ddce}summary{cursor:pointer;min-height:44px;font-weight:600}table{border-collapse:collapse;width:100%;font-size:15px}td,th{padding:10px;border:1px solid #d7cbb8;text-align:left;vertical-align:top}pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:13px}.research{background:#f3efe8;padding:12px;margin-top:18px}.research p{overflow-wrap:anywhere}.notice{padding:14px;background:#ede4d5}.table-wrap{overflow:auto}article[hidden]{display:none}@media(max-width:900px){.carriers{grid-template-columns:1fr}main{padding:14px}article{padding:14px}nav{position:static}}</style></head><body><main><h1>千载同心 · 五角色内容验收</h1><p class="notice">本页是本地研究验收工具，不是消费者产品界面。当前首个人工闸门：五角色内容与称号定稿；尚未批量生成人名图。${review.samples.length} 份完整24题合成输入，经真实评分、composer、presentation 和 consumer-copy 生成；未写数据库、未改角色或分值，尚未代表作者内容验收或实际浏览器通过。</p><p>受控源 ${e(review.sourceSha256)} · 有界搜索 ${review.search.totalScoredInputs} 份输入；只覆盖偏好 any，不证明穷尽所有可达结果。</p><nav aria-label="角色筛选"><button data-filter="all" aria-pressed="true">全部样例</button>${review.profiles.map((p) => `<button data-filter="${e(p.id)}" aria-pressed="false">${e(p.name)} · 同角色对比</button>`).join("")}</nav><section aria-label="样例与主题总览"><h2>同角色样例与主题总览</h2><div class="table-wrap"><table><thead><tr><th>跳转样例</th><th>实际契合</th><th>受支持主题</th><th>本次诗句</th><th>五维分值</th></tr></thead><tbody>${overview}</tbody></table></div></section><details><summary>固定人物资料与诗句出处（与答案解读分列）</summary><div class="table-wrap"><table><thead><tr><th>人物与称号</th><th>历史／文学类型</th><th>固定文学介绍</th><th>诗句／编译期出处／长度</th></tr></thead><tbody>${profileRows}</tbody></table></div><p>出处链接为现有 profile 的来源线索；本地生成不请求外网，也不把文学形象当成答题能力或人格事实。</p></details><details><summary>覆盖与限制</summary><pre>${e(JSON.stringify({ search: review.search, coverage: review.coverage, gaps: review.gaps, contentCandidates: review.contentCandidates, reviewGates: review.reviewGates }, null, 2))}</pre><p>网页与长图共用下方六卷文案；海报与揭晓共用短句。此页用于内容比较，原型版式与真实PNG仍需在 demo 中验收。</p></details>${cards}<script type="application/json" id="content-review-data">${data}</script><script>for(const button of document.querySelectorAll('[data-filter]'))button.addEventListener('click',()=>{for(const b of document.querySelectorAll('[data-filter]'))b.setAttribute('aria-pressed',String(b===button));for(const card of document.querySelectorAll('[data-review-role]'))card.hidden=button.dataset.filter!=='all'&&card.dataset.reviewRole!==button.dataset.filter;});</script></main></body></html>`;
+  return `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>千载同心 · 五角色内容验收</title><style>*{box-sizing:border-box}body{margin:0;overflow-wrap:anywhere;background:#f6f1e7;color:#263647;font:16px/1.8 system-ui}main{width:100%;max-width:1500px;min-width:0;margin:auto;padding:24px}.hash{font:inherit;overflow-wrap:anywhere;word-break:break-all}h1{font-size:30px}h2{font-size:23px}h3{font-size:20px}h4{font-size:17px;margin:12px 0 4px}p{margin:8px 0}small,.fixed,.intro{color:#655d53}nav{position:sticky;top:0;background:#f6f1e7ed;padding:12px 0;z-index:2;display:flex;gap:8px;flex-wrap:wrap}button,.button{min-height:44px;padding:8px 14px;border:1px solid #8a704b;border-radius:7px;color:#314657;background:#fffaf0;font:inherit;text-decoration:none;cursor:pointer}button[aria-pressed=true]{background:#314657;color:white}article{margin:24px 0;padding:22px;background:#fffdf8;border:1px solid #d4c4a9;border-radius:12px;scroll-margin-top:95px}.carriers{display:grid;grid-template-columns:minmax(210px,1fr) minmax(210px,1fr) minmax(320px,2fr);gap:20px}.carriers>section{min-width:0;padding:0 12px;border-left:2px solid #e5d9c6}.block{margin:14px 0}blockquote{margin:12px 0;padding:12px;background:#f7efdf}cite{display:block;font-size:14px}details{padding:10px 0;border-bottom:1px solid #e7ddce}summary{cursor:pointer;min-height:44px;font-weight:600}table{border-collapse:collapse;width:100%;font-size:15px}td,th{padding:10px;border:1px solid #d7cbb8;text-align:left;vertical-align:top}pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:13px}.research{background:#f3efe8;padding:12px;margin-top:18px}.research p{overflow-wrap:anywhere}.notice{padding:14px;background:#ede4d5}.table-wrap{width:100%;max-width:100%;min-width:0;overflow-x:auto}.table-wrap table{min-width:680px}.editorial-proposals{margin:16px 0;padding:12px;background:#f0e6d5;border:1px solid #cdbb9d;border-radius:8px}article[hidden]{display:none}@media(max-width:900px){.carriers{grid-template-columns:1fr}main{padding:14px}article{padding:14px}nav{position:static}}</style></head><body><main><h1>千载同心 · 五角色内容验收</h1><p class="notice">本页是本地研究验收工具，不是消费者产品界面。当前首个人工闸门：五角色内容与称号定稿；尚未批量生成人名图。${review.samples.length} 份完整24题合成输入，经真实评分、composer、presentation 和 consumer-copy 生成；未写数据库、未改角色或分值，尚未代表作者内容验收或实际浏览器通过。</p><p>受控源 <code class="hash">${e(review.sourceSha256)}</code> · 有界搜索 ${review.search.totalScoredInputs} 份输入；只覆盖偏好 any，不证明穷尽所有可达结果。</p><nav aria-label="角色筛选"><button data-filter="all" aria-pressed="true">全部样例</button>${review.profiles.map((p) => `<button data-filter="${e(p.id)}" aria-pressed="false">${e(p.name)} · 同角色对比</button>`).join("")}</nav>${proposalPanel}<section aria-label="样例与主题总览"><h2>同角色样例与主题总览</h2><div class="table-wrap"><table><thead><tr><th>跳转样例</th><th>实际契合</th><th>受支持主题</th><th>本次诗句</th><th>五维分值</th></tr></thead><tbody>${overview}</tbody></table></div></section><details><summary>固定人物资料与诗句出处（与答案解读分列）</summary><div class="table-wrap"><table><thead><tr><th>人物与称号</th><th>历史／文学类型</th><th>固定文学介绍</th><th>诗句／编译期出处／长度</th></tr></thead><tbody>${profileRows}</tbody></table></div><p>出处链接为现有 profile 的来源线索；本地生成不请求外网，也不把文学形象当成答题能力或人格事实。</p></details><details><summary>覆盖与限制</summary><pre>${e(JSON.stringify({ search: review.search, coverage: review.coverage, gaps: review.gaps, contentCandidates: review.contentCandidates, reviewGates: review.reviewGates }, null, 2))}</pre><p>网页与长图共用下方六卷文案；海报与揭晓共用短句。此页用于内容比较，原型版式与真实PNG仍需在 demo 中验收。</p></details>${cards}<script type="application/json" id="content-review-data">${data}</script><script>for(const button of document.querySelectorAll('[data-filter]'))button.addEventListener('click',()=>{for(const b of document.querySelectorAll('[data-filter]'))b.setAttribute('aria-pressed',String(b===button));for(const card of document.querySelectorAll('[data-review-role]'))card.hidden=button.dataset.filter!=='all'&&card.dataset.reviewRole!==button.dataset.filter;});</script></main></body></html>`;
 }

@@ -164,6 +164,43 @@ test("keeps raw synthetic answers in collapsed research sections, exposes exact 
   assert.ok(html.includes("https://zh.wikisource.org/wiki/陶淵明集/卷三"));
   assert.ok(html.includes("https://zh.wikisource.org/wiki/木蘭辭"));
   assert.ok(html.includes("五角色内容与称号定稿"));
+  assert.ok(
+    html.includes('<code class="hash">' + review.sourceSha256 + "</code>"),
+  );
+  assert.ok(
+    html.includes(
+      ".hash{font:inherit;overflow-wrap:anywhere;word-break:break-all}",
+    ),
+  );
+  assert.ok(
+    html.includes(
+      ".table-wrap{width:100%;max-width:100%;min-width:0;overflow-x:auto}",
+    ),
+  );
+  assert.equal(
+    (html.match(/<div class="table-wrap"><table>/gu) ?? []).length,
+    review.samples.length + 4,
+  );
+  const proposalStart = html.indexOf('<details class="editorial-proposals">');
+  assert.ok(
+    proposalStart > 0 &&
+      proposalStart < html.indexOf('<section aria-label="样例与主题总览">'),
+  );
+  assert.ok(!html.includes('<details class="editorial-proposals" open'));
+  for (const line of [
+    "从山河与明月，走近李白的诗境。",
+    "从途中风雨，走近苏轼的词境。",
+    "从东篱与南山，走近陶渊明的诗境。",
+    "从溪亭旧游与云涛星河，走近李清照的词境。",
+    "从关山远行与归家换装，走进《木兰诗》。",
+    "让眼前的一次停留，也成为风景。",
+    "往后的路，照自己的步调走。",
+    "愿你出发时，知道自己为何而行。",
+    "行至远处，也记得照顾日常。",
+    "归来以后，仍有想认真过的生活。",
+  ])
+    assert.ok(html.includes(line));
+  assert.ok(html.includes("人物称号用于身份，海报题签用于文学氛围"));
   const changed = structuredClone(review);
   changed.samples[0]!.document.sections[0]!.blocks[0]!.text =
     "</script><img src=x onerror=alert(1)>";
