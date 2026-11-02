@@ -2208,7 +2208,7 @@
   font: 400 18px/1.4 var(--qztx-literary, serif);
   /* Keep existing literary glyphs; the declared body subset supplies rare
      additions rather than a system font hidden behind the generic fallback. */
-  font-family: "QuizForge Qianzai Literary V3", var(--qztx-serif, serif);
+  font-family: "QuizForge Qianzai Literary V4", var(--qztx-serif, serif);
   letter-spacing: 0.04em;
 }
 .dynamicLines {

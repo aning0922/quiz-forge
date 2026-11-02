@@ -790,10 +790,13 @@
   padding: 17px;
 }
 .reader.reader .rp-history-banner strong {
+  flex: 0 0 auto;
+  white-space: nowrap;
   font: 700 32px var(--qztx-serif, serif);
   color: #3b3840;
 }
 .reader.reader .rp-history-banner span {
+  min-width: 0;
   font-size: 12px;
   line-height: 1.85;
   color: #76644f;
