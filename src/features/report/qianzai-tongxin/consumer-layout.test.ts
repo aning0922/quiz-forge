@@ -152,6 +152,38 @@ describe("consumer edition exports", () => {
     ).toEqual([]);
     expect(layout.operations.filter((o) => o.kind === "bar")).toHaveLength(5);
   });
+  it("keeps reader traits separate from the historical character profile", async () => {
+    const f = await fixture();
+    port.doc = {
+      ...port.doc!,
+      identity: { honorific: f.p.role.honorific, tags: ["个人选择标签"] },
+    };
+    const layout = layoutQianzaiExport(
+      f.body,
+      "full-report",
+      measure,
+      undefined,
+      { presentation: f.p },
+    );
+    const portrait = layout.operations.find(
+      (o) => o.kind === "image" && o.role === "portrait",
+    );
+    expect(portrait?.kind).toBe("image");
+    if (portrait?.kind !== "image") throw Error("PORTRAIT_MISSING");
+    const profileText = layout.operations
+      .flatMap((o) =>
+        o.kind === "text" && o.y >= portrait.box.y ? [o.text] : [],
+      )
+      .join("");
+    expect(profileText).toContain(f.p.role.tags.join(" · "));
+    expect(profileText).not.toContain("个人选择标签");
+    const declared = new Set(
+      qianzaiExportText(f.body, "full-report", f.p).join(""),
+    );
+    expect(
+      [...f.p.role.tags.join(" · ")].filter((c) => !declared.has(c)),
+    ).toEqual([]);
+  });
   it("uses measured prototype poster anchors with actual scores and no invented QR region", async () => {
     const f = await fixture();
     f.body.matching.selected.narrativeIndex = 43;

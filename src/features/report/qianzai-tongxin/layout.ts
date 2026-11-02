@@ -1007,7 +1007,7 @@ function consumerPrintText(
       ? [
           doc.name,
           ...(doc.identity?.honorific ? [doc.identity.honorific] : []),
-          ...(doc.identity?.tags ?? []),
+          ...(p ? [p.role.tags.join(" · ")] : []),
           ...doc.dimensions.map((d) => `${d.label} ${d.score}`),
           ...doc.sections.flatMap((s) => [
             s.title,
@@ -1497,8 +1497,8 @@ function consumerLayout(
       let detailY = write(doc.name, 38, 327, imageY + 8, 342, 49, true) + 4;
       if (doc.identity?.honorific)
         detailY = write(doc.identity.honorific, 24, 327, detailY, 342, 35) + 4;
-      for (const tag of doc.identity?.tags ?? [])
-        detailY = write(tag, 20, 327, detailY, 342, 29);
+      // This is the historical character profile, not the reader's traits.
+      detailY = write(p.role.tags.join(" · "), 20, 327, detailY, 342, 29);
       // Keep the first complete literary paragraph beside the portrait; flow
       // later paragraphs below the taller column without clipping either one.
       const first = section.blocks[0];
