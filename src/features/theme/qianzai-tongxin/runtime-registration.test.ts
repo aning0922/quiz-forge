@@ -6,7 +6,11 @@ vi.mock(
     const { createHash } = await import("node:crypto");
     const { consumerCanonicalText } =
       await import("@/lib/consumer-contract/v1/integrity");
-    const { QIANZAI_COMPONENT_MAPPING } = await import("./component-map");
+    const {
+      QIANZAI_COMPONENT_MAPPING,
+      QIANZAI_CONSUMER_RENDERER,
+      QIANZAI_PREVIEW_RENDERER,
+    } = await import("./component-map");
     const { QIANZAI_RUNTIME_INPUTS } = await import("./runtime-inputs");
     const oldEngine = (
       await import("@/features/product/internal-versions/implementation-data/engine-archetype-l1-v1.json")
@@ -31,14 +35,15 @@ vi.mock(
       > & { closure: typeof original.descriptor.closure };
       descriptor.closure.files[0]!.sha256 = "1".repeat(64);
       if (authored) {
-        descriptor.id =
+        Object.assign(
+          descriptor,
           descriptor.kind === "consumer-renderer"
-            ? "consumer-qianzai-tongxin"
-            : "qianzai-tongxin-preview";
+            ? QIANZAI_CONSUMER_RENDERER
+            : QIANZAI_PREVIEW_RENDERER,
+        );
         descriptor.presentationMode = "authored-product";
         descriptor.font = QIANZAI_RUNTIME_INPUTS.font;
         if (descriptor.kind === "consumer-renderer") {
-          descriptor.version = "1.1.0";
           descriptor.exports = { posterPng: true, fullReportPng: true };
           descriptor.mapping = QIANZAI_COMPONENT_MAPPING;
           descriptor.mappingSha256 = hash(QIANZAI_COMPONENT_MAPPING);
@@ -71,6 +76,8 @@ import {
 } from "@/features/product/internal-play/implementation-catalog-v2";
 import { resolveConsumerExperienceRuntimeV2 } from "@/features/product/internal-play/implementation-client-v2";
 import { QianzaiTongxinRuntime } from "./runtime";
+import { structuredReaderFixtureV2 } from "../consumer-v2/fixtures.test-support";
+import { QIANZAI_PRESENTATION_V11 } from "@/features/report/qianzai-tongxin/role-profiles-v11";
 import { selectParentConsumerRendererV2 } from "@/features/product/internal-play/parent-renderer-v2";
 import { persistedReportFixtureV2 } from "@/features/report/persisted/contracts-v2.test-support";
 import historical from "@/features/product/internal-play/implementation-data/consumer-structured-composed-v1.json";
@@ -93,9 +100,24 @@ it("resolves only the exact new renderer, mapping and fixed-font identity", () =
       mapping: entry.descriptor.mapping,
       font: fontIdentity(),
     };
-  expect(resolveConsumerExperienceRuntimeV2(facts)?.Experience).toBe(
-    QianzaiTongxinRuntime,
+  const runtime = resolveConsumerExperienceRuntimeV2(facts);
+  expect(runtime?.identity).toEqual(facts.renderer);
+  expect(runtime?.Experience).toBe(
+    resolveConsumerExperienceRuntimeV2(facts)?.Experience,
   );
+  // The registered component binds this exact renderer for the derived report
+  // projection; it is intentionally not the unbound runtime component itself.
+  const render = runtime!.Experience as typeof QianzaiTongxinRuntime;
+  const props = { model: structuredReaderFixtureV2().model, onEvent() {} };
+  const bound = render(props);
+  expect(bound.type).toBe(QianzaiTongxinRuntime);
+  expect(bound.props).toEqual({
+    ...props,
+    presentationBinding: {
+      renderer: facts.renderer,
+      profileVersion: QIANZAI_PRESENTATION_V11,
+    },
+  });
   expect(
     resolveConsumerExperienceRuntimeV2({
       ...facts,

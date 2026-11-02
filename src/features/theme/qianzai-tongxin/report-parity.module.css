@@ -1460,3 +1460,92 @@
   font-size: 16px;
   line-height: 1.75;
 }
+
+/* Consumer type hierarchy: fixed local faces, with no synthetic bold brush.
+ * Body rhythm stays at 16px; metadata never determines the prose size. */
+.reader.reader[data-qianzai-consumer-edition="true"] {
+  font: 400 16px/1.85 var(--qztx-literary, serif);
+  font-synthesis: none;
+}
+.reader.reader[data-qianzai-consumer-edition="true"] .rp-nav-title strong {
+  font: 600 20px/1.35 var(--qztx-serif, serif);
+  letter-spacing: 0.08em;
+}
+.reader.reader[data-qianzai-consumer-edition="true"] .rp-section-index,
+.reader.reader[data-qianzai-consumer-edition="true"] .rp-ornament {
+  font: 600 14px/1.6 var(--qztx-serif, serif);
+  letter-spacing: 0.12em;
+}
+.reader.reader[data-qianzai-consumer-edition="true"] .rp-identity h1 {
+  font: 600 38px/1.4 var(--qztx-serif, serif);
+  letter-spacing: 0.055em;
+}
+.reader.reader[data-qianzai-consumer-edition="true"]
+  .rp-identity
+  h1
+  .roleHonorific {
+  font: 400 21px/1.5 var(--qztx-literary, serif);
+  letter-spacing: 0.02em;
+}
+.reader.reader[data-qianzai-consumer-edition="true"] .rp-section-head h2 {
+  font: 600 26px/1.5 var(--qztx-serif, serif);
+  letter-spacing: 0.035em;
+  text-wrap: balance;
+}
+.reader.reader[data-qianzai-consumer-edition="true"] .runtimeParagraph > h3,
+.reader.reader[data-qianzai-consumer-edition="true"] .rp-res-body h3,
+.reader.reader[data-qianzai-consumer-edition="true"] .rp-time-row > span,
+.reader.reader[data-qianzai-consumer-edition="true"] .rp-dual-note strong,
+.reader.reader[data-qianzai-consumer-edition="true"] .scaleTopline > strong,
+.reader.reader[data-qianzai-consumer-edition="true"] .scalesHeading > strong {
+  font: 600 18px/1.55 var(--qztx-serif, serif);
+  letter-spacing: 0.02em;
+}
+.reader.reader[data-qianzai-consumer-edition="true"] .runtimeParagraph > p,
+.reader.reader[data-qianzai-consumer-edition="true"] .rp-res-body p,
+.reader.reader[data-qianzai-consumer-edition="true"] .rp-dual-note p,
+.reader.reader[data-qianzai-consumer-edition="true"] .rp-time-row p,
+.reader.reader[data-qianzai-consumer-edition="true"] .scaleCaption,
+.reader.reader[data-qianzai-consumer-edition="true"] .scaleExplanation p,
+.reader.reader[data-qianzai-consumer-edition="true"] .rp-section-head p {
+  font: 400 16px/1.85 var(--qztx-literary, serif);
+}
+.reader.reader[data-qianzai-consumer-edition="true"] .rp-verse p {
+  font: 400 20px/1.75 var(--qztx-literary, serif) !important;
+  letter-spacing: 0.02em;
+  text-wrap: balance;
+}
+.reader.reader[data-qianzai-consumer-edition="true"] .rp-verse small,
+.reader.reader[data-qianzai-consumer-edition="true"] .runtimeParagraph > small,
+.reader.reader[data-qianzai-consumer-edition="true"] .rp-source-note,
+.reader.reader[data-qianzai-consumer-edition="true"] .rp-identity-sub,
+.reader.reader[data-qianzai-consumer-edition="true"] .rp-tags span,
+.reader.reader[data-qianzai-consumer-edition="true"] .scaleEndpoints,
+.reader.reader[data-qianzai-consumer-edition="true"] .scalesNotice {
+  font: 400 14px/1.7 var(--qztx-literary, serif);
+}
+.reader.reader[data-qianzai-consumer-edition="true"] .rp-verse small,
+.reader.reader[data-qianzai-consumer-edition="true"] .runtimeParagraph > small {
+  display: block;
+}
+.reader.reader[data-qianzai-consumer-edition="true"] .rp-radar-label {
+  font: 600 18px/1.4 var(--qztx-serif, serif);
+}
+.reader.reader[data-qianzai-consumer-edition="true"] .rp-radar-value,
+.reader.reader[data-qianzai-consumer-edition="true"] .scaleState b {
+  font: 600 21px/1.2 var(--qztx-serif, serif);
+  font-variant-numeric: lining-nums tabular-nums;
+}
+.reader.reader[data-qianzai-consumer-edition="true"] .rp-percent {
+  font: 600 14px/1.2 var(--qztx-serif, serif);
+  font-variant-numeric: lining-nums tabular-nums;
+}
+.reader.reader[data-qianzai-consumer-edition="true"] .rp-final-verse {
+  font: 400 24px/1.75 var(--qztx-literary, serif);
+  letter-spacing: 0.035em;
+  text-wrap: balance;
+}
+
+.reader.reader[data-qianzai-consumer-edition="true"] .rp-legal {
+  font: 400 14px/1.7 var(--qztx-literary, serif) !important;
+}

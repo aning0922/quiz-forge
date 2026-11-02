@@ -246,14 +246,14 @@ const setup = (reviewModel = completed) =>
   }).replaceAll("<", "\\u003c");
 const resetScript = `document.querySelector('#demo-reset').addEventListener('click',()=>{for(const k of Object.keys(localStorage))if(k.startsWith('qianzai-v11-demo:'))localStorage.removeItem(k);for(const k of Object.keys(sessionStorage))if(k.includes('consumer'))sessionStorage.removeItem(k);location.href='/';});`;
 const demoTitle = readerEditionMode
-  ? "文字与长图校准体验"
+  ? "字体与字号校准体验"
   : parityMode
     ? "原型书法与双PNG还原体验"
     : onlineMode
       ? "李清照线上生图样板"
       : "下部构图与姓名居中体验";
 const sampleNote = readerEditionMode
-  ? "本轮校准三种载体的内容主线、五维倾向说明与长图排版。以李清照为实际图检样板；题号、原始选择与技术状态不进入报告展示。内容仍待作者体验确认。"
+  ? "本轮仅校准三种载体的字体、字号、字重和行距，保持既有正文与业务逻辑。以李清照为实际图检样板；题号、原始选择与技术状态不进入报告展示。内容仍待作者体验确认。"
   : onlineMode
     ? "李清照揭晓采用线上生图B母图，报告方图与海报图分别生成；其余人物沿用现有参考素材。正文、人物资料与短句仍为体验候选，未作本轮内容定稿。"
     : "人物沿用现有参考素材，新增资料与短句为体验候选。";

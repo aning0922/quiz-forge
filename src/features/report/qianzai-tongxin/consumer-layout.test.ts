@@ -184,6 +184,28 @@ describe("consumer edition exports", () => {
       [...f.p.role.tags.join(" · ")].filter((c) => !declared.has(c)),
     ).toEqual([]);
   });
+  it("keeps the top radar text clear of the plotted area", async () => {
+    const f = await fixture();
+    const layout = layoutQianzaiExport(f.body, "poster", measure, undefined, {
+      presentation: f.p,
+    });
+    const radar = layout.operations.find((o) => o.kind === "radar");
+    if (radar?.kind !== "radar") throw Error("RADAR_MISSING");
+    const topText = layout.operations.filter(
+      (o): o is Extract<ExportOperation, { kind: "text" }> =>
+        o.kind === "text" &&
+        o.x >= 254 &&
+        o.x <= 420 &&
+        o.y >= 1047 &&
+        o.y < 1175,
+    );
+    expect(topText.length).toBeGreaterThanOrEqual(3);
+    expect(
+      Math.max(
+        ...topText.map((o) => o.y + measure(o.text, o.size, o.style).descent),
+      ),
+    ).toBeLessThanOrEqual(radar.y - radar.radius - 12);
+  });
   it("uses measured prototype poster anchors with actual scores and no invented QR region", async () => {
     const f = await fixture();
     f.body.matching.selected.narrativeIndex = 43;
@@ -197,8 +219,8 @@ describe("consumer edition exports", () => {
     });
     expect(layout.operations.find((o) => o.kind === "radar")).toMatchObject({
       x: 333,
-      y: 1265,
-      radius: 171,
+      y: 1320,
+      radius: 145,
       scores: f.body.dimensions.map((d) => d.score),
     });
     const tags = layout.operations.filter(
@@ -254,8 +276,8 @@ describe("consumer edition exports", () => {
       }
       expect(layout.operations.find((o) => o.kind === "radar")).toMatchObject({
         x: 333,
-        y: 1265,
-        radius: 171,
+        y: 1320,
+        radius: 145,
       });
       expect(layout.height).toBe(1672);
     }
@@ -271,7 +293,12 @@ describe("consumer edition exports", () => {
       { presentation: f.p },
     );
     const text = layout.operations.filter((o) => o.kind === "text");
-    expect(text.some((o) => o.text === "100")).toBe(true);
+    expect(text.some((o) => o.text === "100" && o.style === "number")).toBe(
+      true,
+    );
+    // Radar and scale scores use the same controlled numeric face, while the
+    // literary explanation remains independent from that face.
+    expect(text.filter((o) => o.style === "number")).toHaveLength(10);
     const dimBlocks = port.doc!.sections.find(
       (s) => s.id === "dimensions",
     )!.blocks;
