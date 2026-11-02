@@ -993,8 +993,15 @@ export function QianzaiReportReader({
                 )}
               </div>
               <p className={c("rp-identity-sub")}>{doc.subtitle}</p>
-              {doc.identity?.tags && (
-                <div className={c("rp-tags")} aria-label="人物作品与角色关键词">
+              {doc.identity?.tags && doc.identity.tags.length > 0 && (
+                <div
+                  className={c("rp-tags")}
+                  aria-label={
+                    doc.consumerEdition
+                      ? "情境中的个人特点"
+                      : "人物作品与角色关键词"
+                  }
+                >
                   {doc.identity.tags.map((t) => (
                     <span key={t}>{t}</span>
                   ))}

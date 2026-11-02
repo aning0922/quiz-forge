@@ -11,28 +11,24 @@ function accepted(f: typeof fixture) {
     id,
     version: "1.0.0",
   });
-  const evidence = {
-    questionRef: ref("q02"),
-    optionRef: ref("q02-b"),
-    prompt: "合成闲暇情境",
-    optionText: "合成选择",
+  const evidence = ["q03-c", "q06-c"].map((option) => ({
+    questionRef: ref(option.split("-")[0]!),
+    optionRef: ref(option),
+    prompt: "合成相处情境",
+    optionText: `合成选择_${option}`,
     scope: "仅此合成情境",
-  };
-  f.body.answers.push({
-    questionRef: evidence.questionRef,
-    optionRef: evidence.optionRef,
-    prompt: evidence.prompt,
-    optionText: evidence.optionText,
-    act: 1,
-  });
-  f.body.volumes[0]!.paragraphs[0] = {
-    claimRef: ref("authored-7053c48e83fe3e6c223d"),
-    kind: "fact",
-    status: "accepted",
-    text: "合成的、受限于本题的事实句。",
-    evidence: [evidence],
-    counterevidence: [],
-  };
+  }));
+  f.body.answers = evidence.map((e) => ({ ...e, act: 1 }));
+  f.body.volumes[2]!.paragraphs = [
+    {
+      claimRef: ref("authored-32874c524c0bcefdb155"),
+      kind: "summary",
+      status: "accepted",
+      text: "合成支持，不作为消费者文案。",
+      evidence,
+      counterevidence: [],
+    },
+  ];
 }
 describe("Qianzai sealed-context presentation v1.1", () => {
   it("pins the full installed identity, keeps the source untouched and stably chooses within the role pool", () => {
@@ -85,28 +81,28 @@ describe("Qianzai sealed-context presentation v1.1", () => {
     accepted(f);
     expect(
       deriveQianzaiResultPresentation(f.view, f.binding)!.reveal.id,
-    ).toContain("/leisure-new@");
+    ).toContain("/care@");
     const mutations = [
       (f: typeof fixture) => {
-        f.body.volumes[0]!.paragraphs[0]!.status = "facts-only";
+        f.body.volumes[2]!.paragraphs[0]!.status = "facts-only";
       },
       (f: typeof fixture) => {
-        f.body.volumes[0]!.paragraphs[0]!.status = "fallback";
+        f.body.volumes[2]!.paragraphs[0]!.status = "fallback";
       },
       (f: typeof fixture) => {
-        f.body.volumes[0]!.paragraphs[0]!.claimRef!.version = "2.0.0";
+        f.body.volumes[2]!.paragraphs[0]!.claimRef!.version = "2.0.0";
       },
       (f: typeof fixture) => {
-        f.body.volumes[0]!.paragraphs[0]!.evidence[0]!.optionRef.id = "q02-d";
+        f.body.volumes[2]!.paragraphs[0]!.evidence[0]!.optionRef.id = "q02-d";
       },
       (f: typeof fixture) => {
-        f.body.volumes[0]!.paragraphs[0]!.counterevidence = [
-          f.body.volumes[0]!.paragraphs[0]!.evidence[0]!,
+        f.body.volumes[2]!.paragraphs[0]!.counterevidence = [
+          f.body.volumes[2]!.paragraphs[0]!.evidence[0]!,
         ];
       },
       (f: typeof fixture) => {
         f.body.answers = f.body.answers.filter(
-          (a) => a.questionRef.id !== "q02",
+          (a) => a.questionRef.id !== "q03",
         );
       },
     ];
@@ -119,64 +115,28 @@ describe("Qianzai sealed-context presentation v1.1", () => {
       ).toEqual([]);
     }
   });
-  it("shares three concise literary variant groups between reveal and poster without changing their support or invitation", () => {
-    const variants = [
-      {
-        id: "leisure-new-longterm-familiar",
-        claim: "authored-407a0f1c9a00adc8d3b5",
-        kind: "context" as const,
-        option: "q02-b",
-        lines: ["为新意轻轻推开一扇窗，", "也让熟悉的技艺，在岁月里生长。"],
-      },
-      {
-        id: "leisure-new",
-        claim: "authored-7053c48e83fe3e6c223d",
-        kind: "fact" as const,
-        option: "q02-b",
-        lines: ["为新的可能，轻轻推开一扇窗，", "让一段小小的尝试，走进日常。"],
-      },
-      {
-        id: "leisure-familiar",
-        claim: "authored-929aed7c242fa56709e4",
-        kind: "fact" as const,
-        option: "q02-d",
-        lines: ["让熟悉的热爱，慢慢生长，", "把愿意投入的心意，留在日常。"],
-      },
-    ];
-    for (const variant of variants) {
-      const f = structuredClone(fixture);
-      accepted(f);
-      const p = f.body.volumes[0]!.paragraphs[0]!;
-      p.claimRef!.id = variant.claim;
-      p.kind = variant.kind;
-      p.evidence[0]!.optionRef.id = variant.option;
-      f.body.answers.at(-1)!.optionRef.id = variant.option;
-      if (variant.id === "leisure-new-longterm-familiar") {
-        const counter = {
-          ...p.evidence[0]!,
-          questionRef: { ...p.evidence[0]!.questionRef, id: "q18" },
-          optionRef: { ...p.evidence[0]!.optionRef, id: "q18-c" },
-        };
-        p.counterevidence = [counter];
-        f.body.answers.push({ ...counter, act: 1 });
-      }
-      const before = structuredClone(f.body);
-      const result = deriveQianzaiResultPresentation(f.view, f.binding)!;
-      expect(result.reveal.id).toContain(`/${variant.id}@`);
-      expect(result.reveal.supportingClaimRefs).toEqual([p.claimRef]);
-      expect(result.reveal.lines).toEqual([
-        ...variant.lines,
-        result.role.invitation,
-      ]);
-      expect(result.reveal.lines.every((line) => [...line].length <= 20)).toBe(
-        true,
-      );
-      expect(result.reveal.lines.join("")).not.toMatch(
-        /闲暇|下一阶段|这次|这一刻的选择/u,
-      );
-      expect(result.poster.lines).toBe(result.reveal.lines);
-      expect(f.body).toEqual(before);
-    }
+  it("shares complete short groups with supported personal tags and neutral literary fallback", () => {
+    const f = structuredClone(fixture);
+    accepted(f);
+    const result = deriveQianzaiResultPresentation(f.view, f.binding)!;
+    expect(result.reveal.lines).toEqual([
+      "先听一段话里的感受，",
+      "再陪对方，看接下来的路。",
+      result.role.invitation,
+    ]);
+    expect(result.poster.lines).toBe(result.reveal.lines);
+    expect(result.poster.tags).toEqual(["先听感受"]);
+    expect(result.reveal.supportingClaimRefs).toEqual([
+      f.body.volumes[2]!.paragraphs[0]!.claimRef,
+    ]);
+    f.body.volumes[2]!.paragraphs[0]!.status = "facts-only";
+    const neutral = deriveQianzaiResultPresentation(f.view, f.binding)!;
+    expect(neutral.poster.tags).toEqual([]);
+    expect(neutral.reveal.lines).toEqual([
+      ...result.role.baseLines,
+      result.role.invitation,
+    ]);
+    expect(neutral.reveal.supportingClaimRefs).toEqual([]);
   });
   it("keeps each supported role separate, with bounded complete short groups and no invented Mulan alias or author credit", () => {
     for (const id of [

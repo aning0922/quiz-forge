@@ -153,7 +153,7 @@ export function qianzaiSnapshotDocument(
           identity: {
             honorific: role.honorific,
             ...(role.aliasSeal ? { seal: role.aliasSeal } : {}),
-            tags: role.tags,
+            tags: consumer ? result.poster.tags : role.tags,
             verse: { text: result.quote.text, source: result.quote.source },
             ...(role.lifespan ? { lifespan: role.lifespan } : {}),
             ...(role.courtesyName ? { courtesyName: role.courtesyName } : {}),

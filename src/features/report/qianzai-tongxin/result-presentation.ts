@@ -1,3 +1,4 @@
+import { qianzaiSupportedThemes } from "./supported-themes";
 import { qianzaiPresentationSourceMatches } from "./presentation-source";
 import type { ComposedReportBodyV1 as Body } from "@/lib/assessment-contract/composed-report-v1";
 import type { ConsumerRendererIdentity } from "@/lib/consumer-contract/v1/identities";
@@ -46,49 +47,6 @@ export type QianzaiResultPresentation = Readonly<{
 const sameRef = (a: Ref, b: Ref) =>
   a.productId === b.productId && a.id === b.id && a.version === b.version;
 const sha = (s: string) => /^[a-f0-9]{64}$/.test(s);
-const evidenceRef = (question: string, option: string) => ({
-  question,
-  option,
-});
-const supported = (
-  body: Body,
-  id: string,
-  kind: "fact" | "context",
-  evidence: readonly ReturnType<typeof evidenceRef>[],
-  counter: readonly ReturnType<typeof evidenceRef>[] = [],
-) => {
-  const expected = { productId: "qianzai-tongxin", id, version: "1.0.0" };
-  const matches = (
-    actual: Body["volumes"][number]["paragraphs"][number]["evidence"],
-    required: typeof evidence,
-  ) =>
-    actual.length === required.length &&
-    required.every((r) =>
-      actual.some(
-        (e) =>
-          sameRef(e.questionRef, { ...expected, id: r.question }) &&
-          sameRef(e.optionRef, { ...expected, id: r.option }) &&
-          body.answers.some(
-            (a) =>
-              sameRef(a.questionRef, e.questionRef) &&
-              sameRef(a.optionRef, e.optionRef),
-          ),
-      ),
-    );
-  return (
-    body.volumes
-      .flatMap((v) => v.paragraphs)
-      .find(
-        (p) =>
-          p.status === "accepted" &&
-          p.kind === kind &&
-          p.claimRef &&
-          sameRef(p.claimRef, expected) &&
-          matches(p.evidence, evidence) &&
-          matches(p.counterevidence, counter),
-      )?.claimRef ?? null
-  );
-};
 /** Stable decoration index, not a score or a security digest. Uses only canonical sealed identity strings. */
 function stableIndex(seed: string, count: number): number {
   let value = 2166136261;
@@ -153,57 +111,23 @@ export function deriveQianzaiResultPresentation(
     "quote",
   ]);
   const quote = quotePool[stableIndex(seed, quotePool.length)]!;
-  // Each entry is one complete editorial group. No independent line selection and no score bands.
-  const variants = [
-    {
-      id: "leisure-new-longterm-familiar",
-      claim: supported(
-        body,
-        "authored-407a0f1c9a00adc8d3b5",
-        "context",
-        [evidenceRef("q02", "q02-b")],
-        [evidenceRef("q18", "q18-c")],
-      ),
-      lines: [
-        "为新意轻轻推开一扇窗，",
-        "也让熟悉的技艺，在岁月里生长。",
-        role.invitation,
-      ],
-      closure: ["愿新鲜与熟悉之间，", "总有安放此刻心意的地方。"],
-    },
-    {
-      id: "leisure-new",
-      claim: supported(body, "authored-7053c48e83fe3e6c223d", "fact", [
-        evidenceRef("q02", "q02-b"),
-      ]),
-      lines: [
-        "为新的可能，轻轻推开一扇窗，",
-        "让一段小小的尝试，走进日常。",
-        role.invitation,
-      ],
-      closure: ["愿这一次小小的尝试，", "为你留下自己的回声。"],
-    },
-    {
-      id: "leisure-familiar",
-      claim: supported(body, "authored-929aed7c242fa56709e4", "fact", [
-        evidenceRef("q02", "q02-d"),
-      ]),
-      lines: [
-        "让熟悉的热爱，慢慢生长，",
-        "把愿意投入的心意，留在日常。",
-        role.invitation,
-      ],
-      closure: ["愿已有的热爱，", "也能长出新的光。"],
-    },
-  ] as const;
-  const selected = variants.find((v) => v.claim !== null);
+  // Reveal, poster, tags and the six-volume document use the same supported topics.
+  // A single-question fact never outranks these complete multi-context supports.
+  const themes = qianzaiSupportedThemes(body);
+  const core = themes.slice(0, 2);
   const lines = Object.freeze(
-    selected ? [...selected.lines] : [...role.baseLines],
+    core[0]
+      ? [
+          core[0].feature.short[0],
+          core[1]?.feature.short[0] ?? core[0].feature.short[1],
+          role.invitation,
+        ]
+      : [...role.baseLines, role.invitation],
   );
   const supportingClaimRefs = Object.freeze(
-    selected?.claim ? [Object.freeze({ ...selected.claim })] : [],
+    core.map(({ snapshot }) => Object.freeze({ ...snapshot.claimRef! })),
   );
-  const id = `${role.ref.id}/${selected?.id ?? "invitation"}@${QIANZAI_PRESENTATION_V11}`;
+  const id = `${role.ref.id}/${core.map(({ feature }) => feature.topic).join("+") || "invitation"}@${QIANZAI_PRESENTATION_V11}`;
   return Object.freeze({
     kind: "sealed-context-derived",
     profileVersion: QIANZAI_PRESENTATION_V11,
@@ -223,13 +147,11 @@ export function deriveQianzaiResultPresentation(
     poster: Object.freeze({
       tagline: role.posterTagline,
       lines,
-      tags: role.posterTags,
+      tags: Object.freeze(themes.map(({ feature }) => feature.tag)),
     }),
     closure: Object.freeze({
       id,
-      lines: Object.freeze(
-        selected ? [...selected.closure] : [...role.closureLines],
-      ),
+      lines: Object.freeze([...role.closureLines]),
     }),
   });
 }

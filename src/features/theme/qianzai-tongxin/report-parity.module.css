@@ -1455,3 +1455,8 @@
 .reader.reader[data-qianzai-consumer-edition="true"] .rp-dual-note {
   grid-template-columns: 1fr;
 }
+
+.reader.reader[data-qianzai-consumer-edition="true"] .rp-section-head p {
+  font-size: 16px;
+  line-height: 1.75;
+}
