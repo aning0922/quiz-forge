@@ -107,6 +107,8 @@ export const QIANZAI_ROLE_PROFILES_V11: readonly QianzaiRoleProfileV11[] = [
       ],
       "引诗与情境据苏轼《定风波·莫听穿林打叶声》；本页角色介绍与寄语为体验候选。",
     ),
+    lifespan: "1037—1101 · 北宋文学家",
+    courtesyName: "字子瞻 · 号东坡居士",
     quotes: [
       {
         id: "su-shi-xuxing",
@@ -155,6 +157,8 @@ export const QIANZAI_ROLE_PROFILES_V11: readonly QianzaiRoleProfileV11[] = [
       ],
       "引诗据陶渊明《饮酒·其五》，参照《古今图书集成·草木典·菊部艺文》收录文本；介绍与寄语为体验候选。",
     ),
+    lifespan: "约365—427 · 东晋诗人",
+    courtesyName: "一名潜 · 字元亮",
     quotes: [
       {
         id: "tao-jian-nanshan",
@@ -205,6 +209,8 @@ export const QIANZAI_ROLE_PROFILES_V11: readonly QianzaiRoleProfileV11[] = [
       ],
       "引诗据李清照《如梦令·常记溪亭日暮》《渔家傲·天接云涛连晓雾》；介绍与寄语为体验候选。",
     ),
+    lifespan: "1084—约1155 · 宋代词人",
+    courtesyName: "号易安居士",
     quotes: [
       {
         id: "li-qingzhao-xiting",
@@ -254,6 +260,7 @@ export const QIANZAI_ROLE_PROFILES_V11: readonly QianzaiRoleProfileV11[] = [
       ],
       "引句据佚名《木兰诗》（《木兰辞》）；不是木兰本人创作的诗。介绍与寄语为体验候选。",
     ),
+    lifespan: "文学与传说人物 · 生卒无考",
     quotes: [
       {
         id: "mulan-guanshan",
