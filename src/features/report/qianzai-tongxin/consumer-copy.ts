@@ -143,12 +143,40 @@ const ROLE_COPY = {
       "与你相逢的，是把溪亭旧游与云涛星河写进词里的李清照。细微的日常与辽阔的想象，在她的作品中并肩展开。",
       "读这一卷，可以从一句词、一个画面开始。不急着给自己下结论，先看看哪一处让你愿意停留。",
     ],
-    historyTitle: "细读日常，也望向远方",
-    historyIntro: "与李清照的文学相逢。",
+    historyTitle: "词人小传 · 李清照",
+    historyIntro: "词作、金石与南渡，展开词人的不同侧面。",
     history: [
       {
-        title: "溪亭与云涛",
-        text: "《如梦令》记下一次旧游的声色，《渔家傲》把梦境推向海天。细看与远望，可以同时在一支笔下展开；这里借作品的多面，映照生活中不同的观看方式。",
+        title: "词中的旧游与梦境",
+        text: "《如梦令》保存溪亭日暮、回舟与藕花的旧游画面，《渔家傲》又把梦境推向云涛星河。细微的游兴与辽阔的想象，共同构成她词作的不同声调。",
+      },
+      {
+        title: "与赵明诚共治金石",
+        text: "李清照在《金石录后序》中记述，婚后与赵明诚搜集书画、碑刻与古器，并共同勘校书籍。收藏不只是陈列，也包含查考、整理与反复阅读。",
+      },
+      {
+        title: "南渡之后的记录",
+        text: "南渡过程中，李清照经历藏品散失与生活变迁。《金石录后序》回望收藏的聚散，留下个人亲历的记录，也让后人看见作品之外的具体人生。",
+      },
+    ],
+    sourceNote:
+      "纪年用通行约数；收藏与南渡经历据本人《金石录后序》，词作据《如梦令》《渔家傲》。画面为艺术想象，不是历史肖像。",
+    historySources: [
+      {
+        label: "杭州政协：李清照（1084—约1155、号易安居士）",
+        url: "https://www.hzzx.gov.cn/hzzx/content/2010-10/26/content_5139226.htm",
+      },
+      {
+        label: "李清照《金石录后序》",
+        url: "https://zh.wikisource.org/wiki/金石錄後序_(李清照)",
+      },
+      {
+        label: "李清照《如梦令·常记溪亭日暮》",
+        url: "https://zh.wikisource.org/zh-hans/如夢令_(李清照)/如夢令_(常記溪亭日暮)",
+      },
+      {
+        label: "李清照《渔家傲》",
+        url: "https://zh.wikisource.org/zh-hans/漁家傲_(李清照)",
       },
     ],
     blessing: "愿你记得一日的声色，也写得下远方。",
@@ -159,12 +187,36 @@ const ROLE_COPY = {
       "李白的诗里，山河与明月常常把眼前的路带向远方。这一卷从作品出发，留一段可以自由阅读的旅程。",
       "不必把诗中的人物当成自己的定论。一个画面、一句诗，也可以只是重新看待日常的入口。",
     ],
-    historyTitle: "在山河之间，展开想象",
-    historyIntro: "与李白的文学相逢。",
+    historyTitle: "诗仙小传 · 李白",
+    historyIntro: "游历、入京与诗名，串起诗人的一段人生。",
     history: [
       {
-        title: "山水不止是风景",
-        text: "从《庐山谣》的鲜明声音，到《关山月》的长风与关山，山水承载着不同的情意。走近这些诗句，也是在练习把熟悉的日子看得更开阔。",
+        title: "游历山河",
+        text: "李白曾游历各地，山水与见闻进入他的诗篇。《庐山谣》里的名山江流、《关山月》中的长风关山，都展现了开阔的诗境。",
+      },
+      {
+        title: "长安岁月",
+        text: "唐玄宗天宝元年（742年），李白奉召入长安，任翰林供奉，后来离京。仕途与远游交织，构成了他人生中的一段转折。",
+      },
+      {
+        title: "诗名与作品",
+        text: "李白的诗运用丰富的想象，后世称他为“诗仙”，诗文汇入《李太白集》。走近他的作品，可以读山河，也可以读诗人在具体处境中的声音。",
+      },
+    ],
+    sourceNote:
+      "人物事实参照故宫博物院“李白”词条；作品据《庐山谣》《关山月》原文。画面为艺术想象，不是历史肖像。",
+    historySources: [
+      {
+        label: "故宫博物院：李白（纪年、字号、游历、翰林供奉、诗名）",
+        url: "https://www.dpm.org.cn/lemmas/240150.html",
+      },
+      {
+        label: "李白《庐山谣寄卢侍御虚舟》",
+        url: "https://zh.wikisource.org/wiki/廬山謠寄盧侍御虛舟",
+      },
+      {
+        label: "李白《关山月》",
+        url: "https://zh.wikisource.org/wiki/關山月_(李白)",
       },
     ],
     blessing: "愿你认真走路，也常常抬头。",
@@ -175,12 +227,36 @@ const ROLE_COPY = {
       "苏轼的《定风波》里，有雨中的吟啸，也有酒醒后的微凉。舒展与波折，都在同一段路上。",
       "这一卷借作品看生活的层次。读到哪一句有所触动，就在那里停一停，不必替自己安排唯一的样子。",
     ],
-    historyTitle: "一段路，容得下不同天气",
-    historyIntro: "与苏轼的文学相逢。",
+    historyTitle: "人物小传 · 苏轼",
+    historyIntro: "从仕宦迁转与多种创作，认识东坡。",
     history: [
       {
-        title: "吟啸，也有微凉",
-        text: "《定风波》从途中遇雨写到回望，竹杖、芒鞋与酒醒后的微冷都留在词里。徐行并不抹去波折，感到微凉也不妨碍继续走路。",
+        title: "入仕与迁转",
+        text: "苏轼于1057年中进士，后来历任密州、徐州、湖州等地官职。此后又经历贬谪与起用，仕宦迁转与各地生活构成了他人生的重要背景。",
+      },
+      {
+        title: "黄州与词赋",
+        text: "苏轼曾贬居黄州。《定风波》的题序记下沙湖道中遇雨，《前赤壁赋》则从江上泛舟展开问答。风雨、江月与身世之思，在不同文体中各有写法。",
+      },
+      {
+        title: "诗文之外的书画",
+        text: "苏轼兼擅诗词、文章、书法与绘画，传世书迹有《黄州寒食诗帖》等。文字与笔墨之外，不能忽略他曾经历的具体波折；“旷达”也不是他唯一的面貌。",
+      },
+    ],
+    sourceNote:
+      "人物事实参照故宫博物院“苏轼”词条；作品据《定风波》《前赤壁赋》原文。画面为艺术想象，不是历史肖像。",
+    historySources: [
+      {
+        label: "故宫博物院：苏轼（纪年、字号、仕宦、书画）",
+        url: "https://www.dpm.org.cn/lemmas/242068.html",
+      },
+      {
+        label: "苏轼《定风波·莫听穿林打叶声》及题序",
+        url: "https://zh.wikisource.org/wiki/定風波_(莫聽穿林打葉聲)",
+      },
+      {
+        label: "苏轼《前赤壁赋》",
+        url: "https://zh.wikisource.org/wiki/前赤壁賦",
       },
     ],
     blessing: "愿你走得从容，也如实照顾自己的冷暖。",
@@ -191,12 +267,44 @@ const ROLE_COPY = {
       "东篱、南山、暮色与归鸟，陶渊明把可细看的日常留在诗里。平常的景物，也可以有完整的意味。",
       "这一卷从作品中的小景开始。阅读不必急于归类，有时只是让一段专注的时间回到生活里。",
     ],
-    historyTitle: "把目光放回可细看的日常",
-    historyIntro: "与陶渊明的文学相逢。",
+    historyTitle: "人物小传 · 陶渊明",
+    historyIntro: "从仕与归、田园与文章，走近诗人的生活。",
     history: [
       {
-        title: "人境中的南山",
-        text: "《饮酒·其五》既写人境与车马，也写采菊、南山与归鸟。诗中的安顿发生在具体处境里，并非要求所有人远离人群；它邀请读者重新留意身边的生活。",
+        title: "彭泽与归去",
+        text: "《归去来兮辞》序记载，陶渊明曾因家贫求仕，任彭泽令，在官八十余日后辞去。返归田园并非抽象的姿态，也与当时的生活处境相连。",
+      },
+      {
+        title: "日常写入诗中",
+        text: "《饮酒·其五》从人境中的居处写起，写到东篱采菊、南山暮色与归鸟。诗里既有眼前可见的景物，也有对生活的思考，不只是远离人群的想象。",
+      },
+      {
+        title: "文章中的桃花源",
+        text: "《桃花源记》写渔人偶入桃花源、离开后难以再寻的故事。诗歌之外，陶渊明也以散文铺展理想生活的文学想象，留下不同的阅读入口。",
+      },
+    ],
+    sourceNote:
+      "纪年用通行约数；经历与作品据《归去来兮辞》序、《饮酒·其五》《桃花源记》。画面为艺术想象，不是历史肖像。",
+    historySources: [
+      {
+        label: "国新办中国关键词：陶渊明（约365—427）",
+        url: "https://english.scio.gov.cn/m/featured/chinakeywords/2024-08/30/content_117397297.htm",
+      },
+      {
+        label: "威海纪检监察网：陶渊明（生年异说、名潜、字元亮）",
+        url: "https://www.jjjc.gov.cn/art/2020/9/17/art_30784_2389742.html",
+      },
+      {
+        label: "《陶渊明集》卷五《归去来辞并序》",
+        url: "https://zh.wikisource.org/wiki/陶淵明集/卷五",
+      },
+      {
+        label: "《陶渊明集》卷三《饮酒》其五",
+        url: "https://zh.wikisource.org/wiki/陶淵明集/卷三",
+      },
+      {
+        label: "《陶渊明集》卷六《桃花源记》",
+        url: "https://zh.wikisource.org/wiki/陶淵明集/卷六",
       },
     ],
     blessing: "愿你在平常的日子里，有真正想投入的事。",
@@ -207,12 +315,28 @@ const ROLE_COPY = {
       "木兰是诗歌与传说中的人物。《木兰诗》既写关山远行，也写归家换装，让故事回到日常。",
       "这一卷从文学画面出发。可以读行路的节奏，也可以读归来的牵挂，无须把一种人物形象变成自己的全部。",
     ],
-    historyTitle: "远行之外，还有归来",
-    historyIntro: "与《木兰诗》的文学相逢。",
+    historyTitle: "人物小传 · 木兰",
+    historyIntro: "这里讲述《木兰诗》中的人物经历，不作实证传记。",
     history: [
       {
-        title: "关山与旧时衣裳",
-        text: "《木兰诗》把漫长行旅写得紧凑，也为归家换装留下鲜明场景。行动与归来共同构成人物形象；读到这里，也可以想想一段路之后，自己想回到怎样的生活。",
+        title: "军帖与代父出征",
+        text: "《木兰诗》从织布与叹息写起，随后写到军帖征兵、父亲名列其中。木兰决定备办鞍马，代父出征；这是诗歌与传说中的故事起点。",
+      },
+      {
+        title: "关山与长年行旅",
+        text: "黄河、燕山、关山与铁衣，将漫长的行军和征战压进鲜明的诗句。作品既写远行，也通过与家人的声音相隔，写出行旅中的牵挂。",
+      },
+      {
+        title: "还乡与旧时衣裳",
+        text: "故事中，木兰不愿担任尚书郎，请求回到故乡，归家后换回旧时衣裳。战场之外，归来与日常同样构成这一文学人物的完整形象。",
+      },
+    ],
+    sourceNote:
+      "故事据佚名《木兰诗》（《木兰辞》）。木兰以文学与传说人物参与匹配；画面为艺术想象，不据此编造生卒与历史履历。",
+    historySources: [
+      {
+        label: "佚名《木兰诗》（《木兰辞》）",
+        url: "https://zh.wikisource.org/wiki/木蘭辭",
       },
     ],
     blessing: "愿你出发有方向，归来有自己的生活。",
@@ -305,12 +429,70 @@ const DIMENSION_COPY = [
     neutral: "保留结构、局部调整与整体重排，描述的是活动安排的调整范围。",
   },
 ] as const;
+type Theme = ReturnType<typeof qianzaiSupportedThemes>[number]["feature"];
+/** Suggestions follow an accepted theme; they do not assert another observed trait. */
+const LIFE_CONTEXT = {
+  尝试新意:
+    "生活里，可以给一件感兴趣的新事留半小时试走，记下想继续还是先放下。一次体验不必立刻变成长久承诺，具体感受会比空想更有参照。",
+  深耕与探索:
+    "如果眼前的练习与长期的新方向同时出现，不妨分开安排：给熟悉的技艺保留固定时间，再为新方向做一次小范围接触，看看两条路怎样接上。",
+  稳中尝新:
+    "想为熟悉的兴趣添一点变化时，可以只换一种材料、一个步骤或一种表达。保留喜欢的部分，再观察这一处新做法是否值得继续。",
+  分清步调:
+    "面对一场短期体验与一项长期计划，可以分别写下准备投入的时间、何时回看、怎样退出。分清决定的分量，起步就不必使用同一个速度。",
+  表达主张:
+    "共同安排出行或分工时，可以先说明自己想保留什么、理由是什么，再问对方哪里有困难。把可调整的部分也说出来，商量才有具体落点。",
+  兼顾彼此:
+    "碰到共同计划，不妨把“自己想保留的”与“可以商量的”各写一项。听完彼此的理由再决定，不必把每次协调都理解成坚持或让步的输赢。",
+  先听感受:
+    "朋友倾诉时，可以先让对方把话说完，再问现在更需要有人陪着听，还是一起找办法。确认了需要，后续的帮助就更容易贴近当下。",
+  因境关照:
+    "合作卡住或朋友来求助时，可以先确认：眼下最急的是处理具体阻碍，还是把感受说清？把需要问明白，再选择靠近的方式，能少一些善意的错位。",
+  先行体验:
+    "面对可以撤回的小任务，不妨先试十分钟，再看哪些信息因此变得清楚。也给自己约一个停下检查的时点，让起步与调整相互接上。",
+  按事起步:
+    "报名体验或启动计划前，可以先问：做错了能否退出，需要付出多少代价？容易撤回的先小试，代价较大的多确认一步，让准备与行动各得其时。",
+  重整安排:
+    "活动次序被打乱时，可以先列出必须保留的主体，再重排其余环节。确认最先要动的一步，重新组织就不必等同于把已有准备全部推翻。",
+  按境调整:
+    "遇到日程变化，可以比较两种办法：只补一处缺口，或重排整体，各需要多少时间与协作？从足以解决眼前问题的范围开始，观察是否还要继续调整。",
+} as const satisfies Record<Theme["tag"], string>;
+const CLOSING_BY_TOPIC = {
+  exploration: [
+    "让真正想投入的事，在日常里有一个位置。",
+    "尝新与深耕不必争先，合适的步调可以因事而变。",
+    "从一次小体验或一段专注练习开始。",
+  ],
+  voice: [
+    "让自己的声音清楚，也让彼此听得见。",
+    "一次商量不必决定所有事，重要的与可调整的可以分开。",
+    "从一次说清与听清的小商量开始。",
+  ],
+  care: [
+    "把愿意关照人的认真，留在下一次交谈里。",
+    "听见感受与处理事情，可以分先后，不必二选一。",
+    "从一句“现在更希望我怎么陪你”开始。",
+  ],
+  action: [
+    "让起步落在具体的一小步里。",
+    "先体验或先准备，要看代价与能否退出。",
+    "下一次开始前，给自己约一个回看的时点。",
+  ],
+  change: [
+    "让需要保留的主体，在变化中仍有位置。",
+    "局部调整与整体重排，都要放回具体条件里看。",
+    "先定一项要保留的，再改动一处。",
+  ],
+} as const satisfies Record<Theme["topic"], readonly [string, string, string]>;
+const NEUTRAL_CLOSING = [
+  "这一卷不替你定下结论，先留一个与自己相处的时刻。",
+  "不妨问问：此刻最想照顾的是什么，又有什么可以暂缓？",
+  "选一件十分钟能开始的小事，做过以后再回看感受。",
+] as const;
 const QUIET_PATTERN =
-  "文学里的相逢，可以从一句诗、一个细节开始。有人在山河间寻找远方，有人在日常中细读光阴；不同的生命各有自己的步调。读到动心处，不妨停一停，把此刻愿意留下的那句话，轻轻放回生活里。";
+  "文学里的相逢，可以从一句诗、一个细节开始。先不急着把它变成自己的标签，不妨问问：哪一句让自己愿意多停留一会儿？把那一刻记下来，看看它与今天的生活有什么关系。";
 const QUIET_REFLECTION =
-  "下一次需要作决定时，可以先问问自己：此刻最重要的是什么？留一个小范围，慢慢试走，也给回看留一点时间。";
-const CLOSING_ROOM = "不必一次安排好全部，选一件此刻愿意做的小事就好。";
-const CLOSING_NEUTRAL = "这一卷读到这里，接下来的故事由你落笔。";
+  "遇到一个选择时，可以先问问：是还缺一条信息，还是此刻需要休息？先补一个能确认的细节，或把决定缩小到可以尝试的范围，不急着用一种说法概括自己。";
 
 const sameRef = (a: Ref, b: Ref) =>
   a.productId === b.productId && a.id === b.id && a.version === b.version;
@@ -414,7 +596,12 @@ export function qianzaiConsumerCopy(
       ...SECTION_COPY.patterns,
       blocks: highlights.length
         ? highlights.map(({ feature, snapshot }) =>
-            block(feature.text, "card", feature.title, snapshot),
+            block(
+              `${feature.text}\n\n${LIFE_CONTEXT[feature.tag]}`,
+              "card",
+              feature.title,
+              snapshot,
+            ),
           )
         : [block(QUIET_PATTERN)],
     },
@@ -434,21 +621,22 @@ export function qianzaiConsumerCopy(
       title: copy.historyTitle,
       intro: copy.historyIntro,
       blocks: [
-        ...copy.history.map((p) => block(p.text, "timeline", p.title)),
         block(
-          `作品参照：${[...new Set(role.quotes.map((q) => q.source))].join("；")}。`,
-          "source",
+          [role.lifespan, role.courtesyName].filter(Boolean).join("\n"),
+          "lead",
+          role.displayName,
         ),
+        ...copy.history.map((p) => block(p.text, "timeline", p.title)),
+        block(copy.sourceNote, "source"),
       ],
     },
     {
       id: "closure",
       ...SECTION_COPY.closure,
-      blocks: [
-        block(CLOSING_NEUTRAL),
-        block(CLOSING_ROOM),
-        block(copy.blessing, "final-verse"),
-      ],
+      blocks: (highlights[0]
+        ? CLOSING_BY_TOPIC[highlights[0].feature.topic]
+        : NEUTRAL_CLOSING
+      ).map((text, i) => block(text, i === 2 ? "final-verse" : "body")),
     },
   ];
   return {
@@ -469,20 +657,32 @@ export function qianzaiConsumerCopyText(): readonly string[] {
           ? Object.values(v).flatMap(collect)
           : [];
   return [
-    ...collect(ROLE_COPY),
+    ...Object.values(ROLE_COPY).flatMap((role) =>
+      collect([
+        role.echo,
+        role.opening,
+        role.historyTitle,
+        role.historyIntro,
+        role.history,
+        role.sourceNote,
+      ]),
+    ),
     ...qianzaiSupportedThemeText(),
     ...collect(REFLECTIONS),
     ...collect(SECTION_COPY),
     ...collect(DIMENSION_COPY),
+    ...collect(LIFE_CONTEXT),
+    ...collect(CLOSING_BY_TOPIC),
+    ...NEUTRAL_CLOSING,
     ...QIANZAI_ROLE_PROFILES_V11.flatMap((role) => [
       role.displayName,
       role.identitySubtitle,
+      ...(role.lifespan ? [role.lifespan] : []),
+      ...(role.courtesyName ? [role.courtesyName] : []),
       ...role.quotes.map((quote) => quote.source),
     ]),
     QUIET_PATTERN,
     QUIET_REFLECTION,
-    CLOSING_ROOM,
-    CLOSING_NEUTRAL,
     "作品参照：",
     "；",
     "。",

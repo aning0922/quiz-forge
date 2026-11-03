@@ -9,6 +9,7 @@ import {
 import { qianzaiSupportedThemes } from "./supported-themes";
 import { deriveQianzaiResultPresentation } from "./result-presentation";
 import { qianzaiSnapshotDocument } from "./presentation";
+import { qianzaiExportText } from "./layout";
 import {
   qianzaiConsumerCopy,
   qianzaiConsumerCopyText,
@@ -221,7 +222,7 @@ describe("versioned Qianzai consumer prose", () => {
     expect(section(d, "encounter").blocks[0]!.snapshot).toBeUndefined();
     expect(section(d, "encounter").blocks[0]!.text).toContain("李清照");
     expect(section(d, "closure").blocks[0]!.text).toBe(
-      "这一卷读到这里，接下来的故事由你落笔。",
+      "这一卷不替你定下结论，先留一个与自己相处的时刻。",
     );
     expect(section(d, "closure").blocks).toHaveLength(3);
     f.body.volumes[2]!.paragraphs[0]!.status = "accepted";
@@ -302,9 +303,14 @@ describe("versioned Qianzai consumer prose", () => {
       expect(section(d, "encounter").blocks[0]!.text).toContain(
         theme.feature.seen,
       );
-    expect(section(d, "patterns").blocks.map((b) => b.text)).toEqual(
-      themes.map((t) => t.feature.text),
-    );
+    expect(
+      section(d, "patterns").blocks.map((b) => b.text.split("\n\n")[0]),
+    ).toEqual(themes.map((t) => t.feature.text));
+    expect(
+      section(d, "patterns").blocks.every(
+        (b) => b.text.split("\n\n").length === 2,
+      ),
+    ).toBe(true);
     f.body.volumes[2]!.paragraphs.pop();
     const one = document(f).resultPresentation!;
     expect(one.poster.tags).toEqual(["先听感受"]);
@@ -374,7 +380,7 @@ describe("versioned Qianzai consumer prose", () => {
       expect(d.resultPresentation!.role.ref.id).toBe(role);
       expect(
         section(d, "literature").blocks.filter((b) => b.layout === "timeline"),
-      ).toHaveLength(1);
+      ).toHaveLength(3);
       expect(section(d, "closure").blocks).toHaveLength(3);
       expect(
         [...displayText(d)].filter(
@@ -383,6 +389,124 @@ describe("versioned Qianzai consumer prose", () => {
       ).toEqual([]);
     }
     expect(corpus).not.toContain("RAW_");
+  });
+  it("restores fixed biographies before closure with identity banners, three sourced rows and complete shared print text independent of theme support", async () => {
+    for (const role of [
+      "li-bai",
+      "su-shi",
+      "tao-yuanming",
+      "li-qingzhao",
+      "mulan-ballad",
+    ]) {
+      const f = await fixture(role),
+        before = structuredClone(f.body),
+        d = document(f);
+      const history = section(d, "literature"),
+        rows = history.blocks.filter((b) => b.layout === "timeline");
+      expect(d.sections.map((s) => s.id)).toEqual([
+        "encounter",
+        "dimensions",
+        "patterns",
+        "counterevidence",
+        "literature",
+        "closure",
+      ]);
+      expect(history.title).toContain("小传");
+      expect(rows).toHaveLength(3);
+      expect(new Set(rows.map((b) => b.title)).size).toBe(3);
+      expect(history.blocks.filter((b) => b.layout === "source")).toHaveLength(
+        1,
+      );
+      expect(history.blocks.at(-1)!.text).toContain("艺术想象");
+      expect(d.identity!.lifespan).toBeTruthy();
+      const html = renderToStaticMarkup(
+        createElement(QianzaiReportReader, {
+          document: d,
+          onResult: () => {},
+          actions: null,
+        }),
+      );
+      expect(html).toContain(d.identity!.lifespan!);
+      if (role === "mulan-ballad") {
+        expect(d.identity!.lifespan).toContain("文学与传说");
+        expect(d.identity!.lifespan).not.toMatch(/\d/u);
+        expect(history.blocks.at(-1)!.text).toContain("佚名");
+        expect(d.identity!.courtesyName).toBeUndefined();
+      } else expect(d.identity!.courtesyName).toBeTruthy();
+      const printText = qianzaiExportText(
+        f.body,
+        "full-report",
+        d.resultPresentation,
+      ).join("\n");
+      for (const b of history.blocks) expect(printText).toContain(b.text);
+      expect(history.blocks[0]!.layout).toBe("lead");
+      expect(history.blocks[0]!.title).toBe(d.name);
+      expect(history.blocks[0]!.text).toContain(d.identity!.lifespan!);
+      expect(printText).toContain(d.identity!.lifespan!);
+      expect(f.body).toEqual(before);
+      f.body.volumes[2]!.paragraphs.forEach((p) => {
+        p.status = "facts-only";
+      });
+      f.body.volumes[3]!.paragraphs = [];
+      expect(section(document(f), "literature")).toEqual(history);
+    }
+  });
+  it("adds one practical paragraph only to accepted themes and closes with three distinct sentences without manufacturing neutral traits", async () => {
+    const f = await fixture(),
+      d = document(f),
+      cards = section(d, "patterns").blocks;
+    const printText = qianzaiExportText(
+      f.body,
+      "full-report",
+      d.resultPresentation,
+    ).join("\n");
+    const html = renderToStaticMarkup(
+      createElement(QianzaiReportReader, {
+        document: d,
+        onResult: () => {},
+        actions: null,
+      }),
+    );
+    expect(cards).toHaveLength(3);
+    const renderedCardBodies = [
+      ...html.matchAll(
+        /<div class="[^"]*rp-res-body[^"]*">([\s\S]*?)<\/div>/gu,
+      ),
+    ];
+    expect(
+      renderedCardBodies.map(
+        (match) => (match[1]!.match(/<p>/gu) ?? []).length,
+      ),
+    ).toEqual([2, 2, 2]);
+    for (const card of cards) {
+      const parts = card.text.split("\n\n");
+      expect(parts).toHaveLength(2);
+      expect(parts[1]!.length).toBeGreaterThan(30);
+      expect(printText).toContain(card.text);
+      expect(html).toContain(parts[1]);
+      expect(card.snapshot!.status).toBe("accepted");
+    }
+    const closing = section(d, "closure").blocks.map((b) => b.text);
+    expect(closing).toHaveLength(3);
+    expect(new Set(closing).size).toBe(3);
+    expect(closing[0]).toContain("投入");
+    expect(closing[1]).toContain("因事而变");
+    expect(closing[2]).toContain("开始");
+    f.body.volumes[2]!.paragraphs.forEach((p) => {
+      p.status = "facts-only";
+    });
+    f.body.volumes[3]!.paragraphs = [];
+    const neutral = document(f);
+    expect(section(neutral, "patterns").blocks[0]!.layout).toBe("body");
+    expect(section(neutral, "patterns").blocks[0]!.snapshot).toBeUndefined();
+    expect(section(neutral, "patterns").blocks[0]!.text).toContain("不妨问问");
+    expect(section(neutral, "counterevidence").blocks[0]!.text).toContain(
+      "先问问",
+    );
+    expect(section(neutral, "closure").blocks).toHaveLength(3);
+    expect(section(neutral, "closure").blocks[1]!.text).toContain("不妨问问");
+    expect(section(neutral, "closure").blocks[2]!.text).toContain("十分钟");
+    expect(neutral.resultPresentation!.poster.tags).toEqual([]);
   });
   it("renders final prose without evidence, raw answers, technical qualifiers, old closure or duplicate history", async () => {
     const f = await fixture(),
@@ -410,7 +534,7 @@ describe("versioned Qianzai consumer prose", () => {
       expect(html).not.toContain(marker);
     for (const value of d.resultPresentation!.closure.lines)
       expect(html).not.toContain(value);
-    expect(html.split("溪亭与云涛")).toHaveLength(2);
+    expect(html.split("词中的旧游与梦境")).toHaveLength(2);
     expect(html).toContain(section(d, "encounter").blocks[0]!.text);
     expect(html).toContain(f.body.notice);
     expect(html.match(/data-qianzai-dimension-scale=/gu)).toHaveLength(5);

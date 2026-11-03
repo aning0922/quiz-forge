@@ -628,6 +628,20 @@ function ConsumerBlocks({ blocks }: { blocks: readonly QianzaiReportBlock[] }) {
   return (
     <>
       {blocks.map((b, i) => {
+        if (b.layout === "lead" && b.title)
+          return (
+            <div key={i} className={c("rp-history-banner")}>
+              <strong>{b.title}</strong>
+              <span>
+                {b.text.split("\n").map((line, j) => (
+                  <span key={j}>
+                    {j > 0 && <br />}
+                    {line}
+                  </span>
+                ))}
+              </span>
+            </div>
+          );
         if (b.layout === "timeline")
           return b === timeline[0] ? (
             <div key={i} className={c("rp-timeline")}>
@@ -647,7 +661,9 @@ function ConsumerBlocks({ blocks }: { blocks: readonly QianzaiReportBlock[] }) {
               </div>
               <div className={c("rp-res-body")}>
                 {b.title && <h3>{b.title}</h3>}
-                <p>{inlineReportText(b.text)}</p>
+                {b.text.split(/\n\s*\n/u).map((paragraph, index) => (
+                  <p key={index}>{inlineReportText(paragraph)}</p>
+                ))}
               </div>
             </article>
           );
@@ -1061,16 +1077,22 @@ export function QianzaiReportReader({
                   {s.id === "dimensions" && (
                     <QianzaiDimensions document={doc} />
                   )}
-                  {s.id === "literature" && doc.identity?.lifespan && (
-                    <div className={c("rp-history-banner")}>
-                      <strong>{doc.name}</strong>
-                      <span>
-                        {doc.identity.lifespan}
-                        <br />
-                        {doc.identity.courtesyName}
-                      </span>
-                    </div>
-                  )}
+                  {s.id === "literature" &&
+                    !doc.consumerEdition &&
+                    doc.identity?.lifespan && (
+                      <div className={c("rp-history-banner")}>
+                        <strong>{doc.name}</strong>
+                        <span>
+                          {doc.identity.lifespan}
+                          {doc.identity.courtesyName && (
+                            <>
+                              <br />
+                              {doc.identity.courtesyName}
+                            </>
+                          )}
+                        </span>
+                      </div>
+                    )}
                   {s.id === "literature" && doc.history && (
                     <>
                       <div className={c("rp-timeline")}>

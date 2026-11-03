@@ -1,0 +1,28 @@
+{
+  "id": "qianzai-tongxin-serif",
+  "version": "1.10.0",
+  "family": "QuizForge Qianzai Serif V11",
+  "weight": 600,
+  "file": "/assets/fonts/qianzai-v11/serif-600.woff2",
+  "fileSha256": "087bb0b4965d0b84e139ffb37591b07f27332f761245f327f62ec53a87b763b0",
+  "bytes": 246920,
+  "coverage": "/assets/fonts/qianzai-v11/characters.txt",
+  "coverageSha256": "9038c650b90b3d605760044d1454f181e5374aef917e330de0b4aed17fb141e5",
+  "coveredCodepoints": 1245,
+  "license": "SIL OFL 1.1",
+  "licenseFile": "/assets/fonts/qianzai-v11/OFL.txt",
+  "licenseSha256": "5e0da210fb04058a8c0087985d2d456b931c2579811a49655721d3cf0c36b6d6",
+  "sourceRepository": "https://github.com/google/fonts",
+  "sourceCommit": "8b0a1d0f5983c89bc2b93f1b5fb55f9e252744b5",
+  "sourceFile": "ofl/notoserifsc/NotoSerifSC[wght].ttf",
+  "sourceSha256": "050080d9255a86808f2945bffac582b31ef32bc36411ce29563b4961670c66f9",
+  "tools": {
+    "fonttools": "4.61.1",
+    "brotli": "1.2.0"
+  },
+  "audit": {
+    "missingCodepoints": [],
+    "allFiveCharacterNamesCovered": true
+  },
+  "scope": "Declared QZTX body-copy subset, including pending copy candidates. No arbitrary Chinese or calligraphy coverage claim."
+}

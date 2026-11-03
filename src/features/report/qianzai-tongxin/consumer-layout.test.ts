@@ -206,6 +206,64 @@ describe("consumer edition exports", () => {
       ),
     ).toBeLessThanOrEqual(radar.y - radar.radius - 12);
   });
+  it("reuses the character name for a biography lead while retaining its profile and later paragraphs", async () => {
+    const f = await fixture(),
+      doc = port.doc!;
+    const literature = doc.sections.find((s) => s.id === "literature")!;
+    const profile = "1084—约1155 · 宋代词人\n号易安居士";
+    const citation = "合成资料来源";
+    const withLead = (title: string): QianzaiSnapshotDocument => ({
+      ...doc,
+      sections: doc.sections.map((s) =>
+        s.id === "literature"
+          ? {
+              ...s,
+              blocks: [
+                {
+                  ...literature.blocks[0]!,
+                  layout: "lead",
+                  title,
+                  text: profile,
+                  citation,
+                },
+                ...literature.blocks,
+              ],
+            }
+          : s,
+      ),
+    });
+    port.doc = withLead(doc.name);
+    const layout = layoutQianzaiExport(
+      f.body,
+      "full-report",
+      measure,
+      undefined,
+      { presentation: f.p },
+    );
+    const text = layout.operations.filter((o) => o.kind === "text");
+    expect(text.filter((o) => o.text === doc.name)).toHaveLength(1);
+    const printed = text.map((o) => o.text).join("");
+    expect(printed).toContain(profile.replaceAll("\n", ""));
+    expect(printed).toContain(citation);
+    for (const b of literature.blocks) {
+      expect(printed).toContain(b.text);
+      if (b.title) expect(printed).toContain(b.title);
+    }
+    port.doc = withLead("生平资料");
+    const differentTitle = layoutQianzaiExport(
+      f.body,
+      "full-report",
+      measure,
+      undefined,
+      { presentation: f.p },
+    );
+    expect(
+      differentTitle.operations
+        .filter((o) => o.kind === "text")
+        .map((o) => o.text)
+        .join(""),
+    ).toContain("生平资料");
+  });
   it("uses measured prototype poster anchors with actual scores and no invented QR region", async () => {
     const f = await fixture();
     f.body.matching.selected.narrativeIndex = 43;
@@ -282,7 +340,7 @@ describe("consumer edition exports", () => {
       expect(layout.height).toBe(1672);
     }
   });
-  it("keeps a single dimension name and complete prose in each wide scale row, and starts literary prose beside the portrait", async () => {
+  it("keeps complete aligned compact scale rows and starts literary prose beside the portrait", async () => {
     const f = await fixture();
     f.body.dimensions[0]!.score = 100;
     const layout = layoutQianzaiExport(
@@ -311,15 +369,16 @@ describe("consumer edition exports", () => {
           o.style === "brush",
       )!;
       const explanation = text.find(
-        (o) => b.text.startsWith(o.text) && o.x === 59,
+        (o) => b.text.startsWith(o.text) && o.x === 415,
       )!;
-      expect(explanation.y).toBeGreaterThan(title.y);
-      expect(explanation.size).toBe(22);
+      expect(Math.abs(explanation.y - title.y)).toBeLessThan(12);
+      expect(explanation.size).toBe(19);
     }
     expect(layout.operations.filter((o) => o.kind === "bar")).toHaveLength(5);
     for (const bar of layout.operations.filter((o) => o.kind === "bar")) {
-      expect(bar.prototypeScale).toBeCloseTo(724 / 390);
-      expect(bar.width).toBeGreaterThan(570);
+      expect(bar.prototypeScale).toBe(1.1);
+      expect(bar.x).toBe(212);
+      expect(bar.width).toBeLessThanOrEqual(200);
       expect(bar.scale?.midpointPercent).toBe(50);
       expect(bar.scale?.positionPercent).toBe(bar.score);
     }
@@ -333,6 +392,60 @@ describe("consumer edition exports", () => {
       (o) => first.text.startsWith(o.text) && o.x === 327,
     )!;
     expect(literaryStart.y).toBeLessThan(portrait.box.y + portrait.box.height);
+  });
+  it("lets long scale explanations and added biography paragraphs grow without losing later content", async () => {
+    const f = await fixture(),
+      doc = port.doc!;
+    const original = layoutQianzaiExport(
+      f.body,
+      "full-report",
+      measure,
+      undefined,
+      { presentation: f.p },
+    );
+    const extra = "人物小传保持完整。".repeat(18);
+    const explanation = "解释仍然逐字完整。".repeat(12);
+    port.doc = {
+      ...doc,
+      sections: doc.sections.map((s) =>
+        s.id === "dimensions"
+          ? {
+              ...s,
+              blocks: s.blocks.map((b, i) =>
+                i === 0 ? { ...b, text: explanation } : b,
+              ),
+            }
+          : s.id === "literature"
+            ? {
+                ...s,
+                blocks: [
+                  ...s.blocks,
+                  { ...s.blocks[0]!, title: "续读人物", text: extra },
+                ],
+              }
+            : s,
+      ),
+    };
+    const layout = layoutQianzaiExport(
+      f.body,
+      "full-report",
+      measure,
+      undefined,
+      { presentation: f.p },
+    );
+    const text = layout.operations.filter((o) => o.kind === "text");
+    expect(text.map((o) => o.text).join("")).toContain(explanation);
+    expect(text.map((o) => o.text).join("")).toContain(extra);
+    expect(layout.height).toBeGreaterThan(original.height);
+    const lastExplanation = text
+      .filter((o) => o.x === 415 && /^[解释仍然逐字完整。]+$/.test(o.text))
+      .at(-1)!;
+    const nextName = text.find(
+      (o) => o.text === doc.dimensions[1]!.label && o.style === "brush",
+    )!;
+    expect(nextName.y).toBeGreaterThan(
+      lastExplanation.y + lastExplanation.size,
+    );
   });
   it("keeps complete endpoint labels and closing punctuation on a readable line", async () => {
     const f = await fixture(),
@@ -359,7 +472,7 @@ describe("consumer edition exports", () => {
       { presentation: f.p },
     );
     const printed = layout.operations.filter((o) => o.kind === "text");
-    expect(printed.some((o) => o.text === "保留结构局部调整")).toBe(true);
+    expect(printed.map((o) => o.text).join("")).toContain("保留结构局部调整");
     expect(
       printed.filter((o) => /^[，。！？、；：）》」』】〕〉]/.test(o.text)),
     ).toEqual([]);

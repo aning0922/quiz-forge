@@ -1437,68 +1437,75 @@ function consumerLayout(
     for (const [i, b] of dimensions.blocks.entries()) {
       const d = doc.dimensions[i],
         start = y;
-      // Each dimension has one name/topic line; the score belongs to that row.
-      // A full-width explanation avoids the former ten-character text column.
-      const titleBottom = b.title
-        ? write(b.title, 23, 59, y, d ? 520 : 606, 32, true)
-        : d
-          ? write(d.label, 23, 59, y, 520, 32, true)
-          : y;
-      y = titleBottom;
-      if (d) {
-        const scoreWidth = Math.max(55, ink(String(d.score), 30, "number"));
-        y = Math.max(
-          y,
+      if (!d) {
+        if (b.title) y = write(b.title, 23, 55, y, 614, 32, true) + 4;
+        y = write(b.text, 22, 55, y, 614, 33) + 16;
+        if (b.citation) y = write(b.citation, 18, 55, y, 614, 27) + 8;
+        continue;
+      }
+      // One aligned row: name/score, directional scale, complete explanation.
+      // Keep the topic's original text (including its separator) below the name.
+      let leftBottom = write(d.label, 24, 55, start, 140, 32, true);
+      const topic = b.title?.startsWith(d.label)
+        ? b.title.slice(d.label.length)
+        : b.title;
+      if (topic) leftBottom = write(topic, 18, 55, leftBottom + 3, 140, 25);
+      const scoreWidth = ink(String(d.score), 27, "number");
+      leftBottom = Math.max(
+        leftBottom,
+        write(
+          String(d.score),
+          27,
+          65 + ink(d.label, 24, true),
+          start,
+          scoreWidth,
+          34,
+          "number",
+        ),
+      );
+      const scale = qianzaiDimensionScale(
+        d,
+        doc.body.provenance.canonicalContentSha256,
+      );
+      let scaleBottom = start;
+      if (scale) {
+        const ticksBottom = Math.max(
+          write(scale.left, 16, 205, start + 2, 96, 23),
           write(
-            String(d.score),
-            30,
-            665 - scoreWidth,
-            start,
-            scoreWidth,
-            36,
-            "number",
+            scale.right,
+            16,
+            309,
+            start + 2,
+            96,
+            23,
+            false,
+            false,
+            "#806f5e",
           ),
         );
-        const scale = qianzaiDimensionScale(
-          d,
-          doc.body.provenance.canonicalContentSha256,
-        );
-        if (scale) {
-          const ratio = width / 390,
-            endpointSize = 10.2 * ratio,
-            endpointLine = 14.3 * ratio,
-            ticksY = y + 3,
-            rightWidth = ink(scale.right, endpointSize);
-          const ticksBottom = Math.max(
-            write(scale.left, endpointSize, 59, ticksY, 300, endpointLine),
-            write(
-              scale.right,
-              endpointSize,
-              665 - rightWidth,
-              ticksY,
-              rightWidth,
-              endpointLine,
-              false,
-              false,
-              "#806f5e",
-            ),
-          );
-          const trackY = ticksBottom + 8 * ratio;
-          ops.push({
-            kind: "bar",
-            x: 59 + 7.5 * ratio,
-            y: trackY,
-            width: 606 - 15 * ratio,
-            score: d.score,
-            scale: scale.geometry,
-            prototypeScale: ratio,
-          });
-          y = trackY + 7 * ratio + 10 * ratio;
-        }
+        const trackY = ticksBottom + 11;
+        ops.push({
+          kind: "bar",
+          x: 212,
+          y: trackY,
+          width: 186,
+          score: d.score,
+          scale: scale.geometry,
+          prototypeScale: 1.1,
+        });
+        scaleBottom = trackY + 18;
       }
-      y = write(b.text, 22, 59, y + 5, 606, 33) + 12;
-      if (b.citation) y = write(b.citation, 18, 59, y, 606, 27) + 8;
-      y = Math.max(y, start + 92) + 8;
+      let explanationBottom = write(b.text, 19, 415, start, 254, 29);
+      if (b.citation)
+        explanationBottom = write(
+          b.citation,
+          16,
+          415,
+          explanationBottom + 5,
+          254,
+          24,
+        );
+      y = Math.max(start + 66, leftBottom, scaleBottom, explanationBottom) + 16;
     }
   }
   for (const section of doc.sections.filter(
@@ -1525,7 +1532,10 @@ function consumerLayout(
       const first = section.blocks[0];
       if (first) {
         detailY += 12;
-        if (first.title)
+        if (
+          first.title &&
+          !(first.layout === "lead" && first.title === doc.name)
+        )
           detailY = write(first.title, 25, 327, detailY, 342, 36, true) + 7;
         detailY = write(first.text, 22, 327, detailY, 342, 33) + 13;
         if (first.citation)
