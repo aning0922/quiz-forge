@@ -1,3 +1,4 @@
+import finalCandidate from "@/features/quizpack/content/private-test-registration-final-e2e.json";
 import {
   buildQianzaiContentReview,
   renderQianzaiContentReview,
@@ -29,7 +30,10 @@ import liQingzhaoOnlineFixture from "@/features/quizpack/content/qianzai-local-l
 import { QIANZAI_RUNTIME_INPUTS } from "@/features/theme/qianzai-tongxin/runtime-inputs";
 import { QIANZAI_EDITORIAL_FONTS } from "@/features/theme/qianzai-tongxin/editorial-fonts";
 import { CONSUMER_IMPLEMENTATION_AVAILABILITY_V2 } from "@/features/product/internal-play/implementation-catalog-v2";
-import { QIANZAI_COMPONENT_MAPPING } from "@/features/theme/qianzai-tongxin/component-map";
+import {
+  QIANZAI_COMPONENT_MAPPING,
+  QIANZAI_CONSUMER_RENDERER,
+} from "@/features/theme/qianzai-tongxin/component-map";
 
 const source = process.env.QZTX_V11_SOURCE;
 if (!source || !path.isAbsolute(source))
@@ -43,6 +47,7 @@ const content = quizPackContentV3Schema.parse(
 );
 const sourceHash = sha(canonicalP1Json(content));
 const readerEditionMode = process.env.QZTX_READER_EDITION_DEMO === "1";
+const finalCandidateMode = process.env.QZTX_FINAL_CANDIDATE_DEMO === "1";
 const contentReviewMode = process.env.QZTX_CONTENT_REVIEW === "1";
 const parityMode =
   contentReviewMode ||
@@ -54,17 +59,19 @@ const centeredMode =
   onlineMode || process.env.QZTX_CENTERED_NAME_FIXTURE === "1";
 const nameMode = centeredMode || process.env.QZTX_NAME_FIXTURE === "1";
 const artMode = nameMode || process.env.QZTX_ART_FIXTURE === "1";
-const expectedSource = parityMode
-  ? exportParityFixture.canonicalContentSha256
-  : onlineMode
-    ? liQingzhaoOnlineFixture.canonicalContentSha256
-    : centeredMode
-      ? centeredNameFixture.canonicalContentSha256
-      : nameMode
-        ? localNameFixture.canonicalContentSha256
-        : artMode
-          ? localArtFixture.canonicalContentSha256
-          : localArtFixture.baseContentSha256;
+const expectedSource = finalCandidateMode
+  ? finalCandidate.canonicalContentSha256
+  : parityMode
+    ? exportParityFixture.canonicalContentSha256
+    : onlineMode
+      ? liQingzhaoOnlineFixture.canonicalContentSha256
+      : centeredMode
+        ? centeredNameFixture.canonicalContentSha256
+        : nameMode
+          ? localNameFixture.canonicalContentSha256
+          : artMode
+            ? localArtFixture.canonicalContentSha256
+            : localArtFixture.baseContentSha256;
 if (sourceHash !== expectedSource)
   throw Error("FIXED_CANDIDATE_SOURCE_CHANGED");
 const prepared = prepareContentV3(content);
@@ -85,7 +92,11 @@ const session = scope(await consumerSessionFixtureV2());
 const completed = scope((await qianzaiExportFixture()).model);
 const renderer = CONSUMER_IMPLEMENTATION_AVAILABILITY_V2.qianzai;
 const font = QIANZAI_RUNTIME_INPUTS.font;
-if (!renderer || renderer.version !== "1.2.0" || !font)
+if (
+  !renderer ||
+  renderer.version !== QIANZAI_CONSUMER_RENDERER.version ||
+  !font
+)
   throw Error("V11_REGISTERED_RUNTIME_REQUIRED");
 const fontIdentity = {
   id: font.id,
@@ -251,6 +262,50 @@ await require("esbuild").build({
     },
   ],
 });
+if (finalCandidateMode) {
+  await require("esbuild").build({
+    entryPoints: ["src/features/platform-home/browser.test-support.tsx"],
+    external: ["/platform-art/*"],
+    outfile: path.join(out, "platform.js"),
+    bundle: true,
+    jsx: "automatic",
+    format: "iife",
+    tsconfig: "tsconfig.json",
+  });
+  for (const [file, type] of [
+    ["platform.js", "text/javascript"],
+    ["platform.css", "text/css"],
+  ])
+    files.set("/" + file, {
+      body: await readFile(path.join(out, file!)),
+      type: type!,
+    });
+  const artRoot = process.env.QZTX_PLATFORM_ART;
+  if (!artRoot || !path.isAbsolute(artRoot))
+    throw Error("EXPLICIT_PLATFORM_ART_REQUIRED");
+  for (const name of ["home", "qian", "heart", "cat", "cover"]) {
+    const { readdir } = await import("node:fs/promises");
+    const names = await readdir(artRoot);
+    const file = names.find(
+      (f) =>
+        f ===
+        (
+          {
+            home: "home-v2.png",
+            qian: "qian-v2.png",
+            heart: "heart.png",
+            cat: "cat.png",
+            cover: "cover-v8.png",
+          } as Record<string, string>
+        )[name],
+    );
+    if (!file) throw Error("PLATFORM_ART_MISSING");
+    files.set("/platform-art/" + name, {
+      body: await readFile(path.join(artRoot, file)),
+      type: file.endsWith(".webp") ? "image/webp" : "image/png",
+    });
+  }
+}
 files.set("/demo.js", {
   body: await readFile(path.join(out, "demo.js")),
   type: "text/javascript",
@@ -329,6 +384,19 @@ const server = createServer(async (req, res) => {
     if (req.method !== "GET") {
       res.writeHead(405);
       res.end();
+      return;
+    }
+    if (
+      finalCandidateMode &&
+      ["/platform", "/works/qianzai-tongxin"].includes(url.pathname)
+    ) {
+      res.writeHead(200, {
+        "content-type": "text/html;charset=utf-8",
+        "cache-control": "no-store",
+      });
+      res.end(
+        '<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/platform.css"><style>html,body{margin:0;min-height:100%;background:#0b1727}*,*::before,*::after{box-sizing:border-box}</style><div id="root"></div><script src="/platform.js"></script></html>',
+      );
       return;
     }
     const sampleId = url.searchParams.get("sample");

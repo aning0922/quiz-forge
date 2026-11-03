@@ -1,7 +1,14 @@
 "use client";
 /* eslint-disable @next/next/no-img-element -- Fixed private artwork is served by the controlled asset route. */
 
-import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import {
+  useEffect,
+  useLayoutEffect,
+  useId,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import {
   ArrowLeft,
   ArrowRight,
@@ -65,20 +72,47 @@ export function PlatformArtwork({
   alt,
   className,
   onReady,
+  onUnavailable,
 }: {
   src: string | undefined;
   alt: string;
   className?: string | undefined;
   onReady?: () => void;
+  onUnavailable?: () => void;
 }) {
   const [failed, setFailed] = useState<string | undefined>();
+  const image = useRef<HTMLImageElement>(null);
+  useLayoutEffect(() => {
+    const node = image.current;
+    if (
+      src &&
+      failed !== src &&
+      node?.complete &&
+      node.naturalWidth > 0 &&
+      node.currentSrc === node.src
+    )
+      onReady?.();
+    else onUnavailable?.();
+  }, [src, failed, onReady, onUnavailable]);
+
   return src && failed !== src ? (
     <img
+      ref={image}
       src={src}
       alt={alt}
       className={className}
-      onLoad={onReady}
-      onError={() => setFailed(src)}
+      onLoad={(event) => {
+        if (
+          event.currentTarget === image.current &&
+          event.currentTarget.naturalWidth > 0 &&
+          event.currentTarget.currentSrc === event.currentTarget.src
+        )
+          onReady?.();
+      }}
+      onError={() => {
+        setFailed(src);
+        onUnavailable?.();
+      }}
       draggable={false}
     />
   ) : (
@@ -98,11 +132,13 @@ export function PlatformModal({
   children,
   onClose,
   dark = false,
+  appearance,
 }: {
   title: string;
   children: ReactNode;
   onClose(): void;
   dark?: boolean;
+  appearance?: "qianzai";
 }) {
   const node = useRef<HTMLDialogElement>(null),
     titleId = useId();
@@ -111,7 +147,7 @@ export function PlatformModal({
       previous = document.activeElement;
     const frame = dialog?.parentElement;
     const measure = () => {
-      if (!dialog || !frame) return;
+      if (!dialog || !frame || appearance === "qianzai") return;
       const rect = frame.getBoundingClientRect();
       dialog.style.left = `${rect.left}px`;
       dialog.style.width = `${rect.width}px`;
@@ -130,11 +166,11 @@ export function PlatformModal({
       if (previous instanceof HTMLElement && previous.isConnected)
         previous.focus({ preventScroll: true });
     };
-  }, []);
+  }, [appearance]);
   return (
     <dialog
       ref={node}
-      className={`${styles.modal} ${dark ? styles.darkModal : ""}`}
+      className={`${styles.modal} ${dark ? styles.darkModal : ""} ${appearance === "qianzai" ? styles.qianzaiModal : ""}`}
       aria-labelledby={titleId}
       onCancel={(event) => {
         event.preventDefault();

@@ -43,7 +43,7 @@ async function main() {
   )
     throw Error("PRIVATE_OUTPUT_REQUIRED");
   const font = QIANZAI_RUNTIME_INPUTS.font;
-  if (!font || font.id !== "qianzai-tongxin-serif" || font.version !== "1.10.0")
+  if (!font || font.id !== "qianzai-tongxin-serif" || font.version !== "1.11.0")
     throw Error("PINNED_QIANZAI_FONT_REQUIRED");
   const fonts = [font, ...Object.values(QIANZAI_EDITORIAL_FONTS)]
     .flatMap((f) => [f.file, f.coverage, f.licenseFile])

@@ -106,6 +106,7 @@ export function QianzaiPublicEntry({
             alt="千载同心，岸边灯影封面"
             className={`${styles.coverArt} ${qianzaiStyles.fullArt}`}
             onReady={() => setReady(true)}
+            onUnavailable={() => setReady(false)}
           />
           {ready && (
             <>
@@ -137,7 +138,11 @@ export function QianzaiPublicEntry({
             </span>
           </button>
           <div className={qianzaiStyles.waterway} aria-hidden="true" />
-          <button className={styles.coverSwipe} onClick={openRedemption}>
+          <button
+            className={styles.coverSwipe}
+            data-art-ready={ready}
+            onClick={openRedemption}
+          >
             <ChevronUp
               size={23}
               aria-hidden="true"
@@ -168,11 +173,16 @@ export function QianzaiPublicEntry({
           )}
         </section>
         {redeem && (
-          <PlatformModal title="兑换这段旅程" dark onClose={closeRedemption}>
-            <p>输入有效兑换码，经验证后进入对应作品或已有报告。</p>
+          <PlatformModal
+            title="开启你的千载之旅"
+            dark
+            appearance="qianzai"
+            onClose={closeRedemption}
+          >
+            <p>一纸相邀，照见与你同心的千年回响。</p>
             <PlatformRedemption>{redemptionForm}</PlatformRedemption>
             <button className={styles.lightButton} onClick={closeRedemption}>
-              先看看封面
+              返回作品封面
             </button>
           </PlatformModal>
         )}

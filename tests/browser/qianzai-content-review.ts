@@ -3,6 +3,7 @@
 import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
+import finalSource from "@/features/quizpack/content/private-test-registration-final-e2e.json";
 import fixedSource from "@/features/quizpack/content/qianzai-local-export-parity-fixture.json";
 import { canonicalP1Json } from "@/features/quizpack/v1/canonical";
 import {
@@ -20,6 +21,7 @@ import {
   QIANZAI_PRESENTATION_V11,
   QIANZAI_ROLE_PROFILES_V11,
 } from "@/features/report/qianzai-tongxin/role-profiles-v11";
+import { QIANZAI_CONSUMER_RENDERER } from "@/features/theme/qianzai-tongxin/component-map";
 import { CONSUMER_IMPLEMENTATION_AVAILABILITY_V2 } from "@/features/product/internal-play/implementation-catalog-v2";
 
 export const contentReviewScope =
@@ -42,7 +44,11 @@ export function reviewInput(content: QuizPackContentV3, answers: Answers) {
 }
 export function verifyReviewContent(input: unknown) {
   const content = quizPackContentV3Schema.parse(input);
-  if (hash(content) !== reviewSourceSha256)
+  if (
+    ![reviewSourceSha256, finalSource.canonicalContentSha256].includes(
+      hash(content),
+    )
+  )
     throw Error("CONTENT_REVIEW_UNKNOWN_SOURCE");
   if (
     content.core.questions.length !== 24 ||
@@ -76,7 +82,7 @@ export async function buildQianzaiContentReview(input: unknown) {
   const prepared = prepareContentV3(content);
   if (!prepared.ok) throw Error("CONTENT_REVIEW_PREPARE_FAILED");
   const renderer = CONSUMER_IMPLEMENTATION_AVAILABILITY_V2.qianzai;
-  if (!renderer || renderer.version !== "1.2.0")
+  if (!renderer || renderer.version !== QIANZAI_CONSUMER_RENDERER.version)
     throw Error("CONTENT_REVIEW_RENDERER_REQUIRED");
   const base = (await qianzaiExportFixture()).model.report!.view;
   const compose = (answers: Answers, origin: string) => {
@@ -334,7 +340,7 @@ export async function buildQianzaiContentReview(input: unknown) {
   return {
     schemaVersion: "qianzai.content-review.v1",
     scope: contentReviewScope,
-    sourceSha256: reviewSourceSha256,
+    sourceSha256: hash(content),
     renderer,
     logicHash: candidates[0]!.logicHash,
     contentCandidates,
