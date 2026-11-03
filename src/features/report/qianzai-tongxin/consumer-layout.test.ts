@@ -304,6 +304,30 @@ describe("consumer edition exports", () => {
     for (const line of f.p.poster.lines)
       expect(printed.find((o) => o.text === line)?.x).toBe(60);
   });
+  it("keeps the complete long-report name canvas above the index frame", async () => {
+    const f = await fixture();
+    const layout = layoutQianzaiExport(
+      f.body,
+      "full-report",
+      measure,
+      undefined,
+      {
+        presentation: f.p,
+      },
+    );
+    const name = layout.operations.find(
+      (o): o is Extract<ExportOperation, { kind: "image" }> =>
+        o.kind === "image" && o.role === "nameArt",
+    )!;
+    const index = layout.operations.find(
+      (o): o is Extract<ExportOperation, { kind: "ornament" }> =>
+        o.kind === "ornament" && o.style === "frame" && o.box.x === 58,
+    )!;
+    expect(index.box.y - (name.box.y + name.box.height)).toBeGreaterThanOrEqual(
+      6,
+    );
+    expect(name.fit).toBe("contain");
+  });
   it("draws only the 0–3 supported tags within the fixed tag area", async () => {
     const f = await fixture();
     for (const count of [0, 1, 2, 3]) {

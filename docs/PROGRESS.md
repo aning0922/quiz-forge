@@ -1,5 +1,15 @@
 # 阶段进度
 
+## 2026-11-03 作者纠偏：仅真实历史人物，小说首例试制停止
+
+A在独立`codex/qztx-ten-role-integration`曾接入B原提交`9fe2f1e`（本树`02ab1c3`）的候选名单与孙悟空原著资料。作者随后明确女性向古偶、人类、仅真实历史人物；孙悟空/贾宝玉/薛宝钗停止，木兰文学传说重新评估替换，最终名单等待B重新冻结。旧候选不是未来十人效果，不得注册新source。尚未提交的资料选择器及其3项已通过试验移到私有`.cache/classical-pilot/withdrawn-selector/`，不进入生产接线。
+
+- 以下为纠偏前已完成的私有试制证据，不再继续此人物的PNG验证。孙悟空四槽使用B当时manifest的实际字节（总1,116,334 B，姓名purpose为decoration），以合成评分见证接纯production layout/painter及揭晓姓名容器；未封存报告、未填来源hash、未登记renderer。私有63232为纯合成试制，不是Next/数据库消费者全流程。
+- Chromium 156、390×844实际查看揭晓和双PNG；揭晓姓名180×252（5:7），海报941×1672，pageerror为0。760px深青背景下master、runtime WebP和Canvas姓名边缘一致，未见所疑横条或可见粉边，未修改源姓名图。海报SHA `e0711bc94d882a59083c548500369816ea619748ed98a2639ac12c8d20f866e9`，3,704,068 B。
+- 初次长图发现实际姓名底笔与指数框重叠约6px；保留初次产物，仅把长图共用姓名框height由228改204，不按人物或字数分支。完整姓名画布bottom295，指数框top302，间隔7px；修后实际Canvas头部已图检，末字完整。长图724×3819，3,789,489 B，SHA `fba689aca1ddcf1f5c64a835881cba9e0225ce1c55dc1afa840c8415bf840bbc`。11项相关layout测试通过（含完整姓名框与指数框间隔反例）；修后只重绘受影响长图，未重复未变槽位/母版审查。
+- 私有回执、截图和PNG在`.cache/classical-pilot/`，最终为`name-fit-result.json`、`full-report-final.png`、`report-header-final.png`、`report-final-390.png`，原失败产物在`before-name-fit/`；3项selector记录在`.cache/ten-role-integration/editorial-test.log`。字体暂用固定本地全量参考，尚非1.5最终subset/coverage证据；五维正文和已接受主题接线未完成，本轮只证明首例素材实际组成可用，不冒称完整报告逻辑验收。
+- 已完成的共用姓名框修复对真实历史三字姓名同样适用，暂留候选，仍须未来实际历史人物素材核验；不由此宣布新名单效果通过。无新source/资源准入/SQL迁移/数据库/native/生产构建，未替换旧服务或运行目录，63226 UNKNOWN保持。未来source仅允许新冻结历史角色；待新资料/最终包冻结再实算新闭包登记，不能复用旧entry身份。未执行作者、实机或商业批准。
+
 ## 2026-11-03 十角色接线：设计前审通过，独立接口准备
 
 独立`codex/qztx-ten-role-integration`从PR52 `1f2177b`建立，不在63230运行树开发。主控确认consumer1.5.0/preview1.3.0及新presentation/copy版本；名单与73通用声明共享模板、A最小准入设计已获Astra前审。最终source/53资源声明/授权/baseline冻结后的精确SQL仍须独立针对审查后才迁移新隔离test实例；设计通过不是SQL或商品批准。当前没有新source/迁移/数据库/运行登记，旧服务及UNKNOWN保持。

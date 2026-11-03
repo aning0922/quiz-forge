@@ -1212,7 +1212,7 @@ function consumerLayout(
     role: "nameArt",
     box: poster
       ? { x: 21, y: 160, width: 328, height: 393 }
-      : { x: 16, y: 91, width: 246, height: 228 },
+      : { x: 16, y: 91, width: 246, height: 204 },
     fit: "contain",
     ink: "#101610",
   });
