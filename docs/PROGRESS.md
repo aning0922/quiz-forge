@@ -1,5 +1,14 @@
 # 阶段进度
 
+## 2026-11-03 真实 Next SSR 封面补验
+
+为弥补createRoot候选不能证明Next宿主的边界，在本独立树执行必要生产build并以63229启动真实Next，仅配置固定公开营销图目录，明确移除P2A_CONFIG/DATABASE_URL。只访问公开主页、封面和营销资源，无DB、Key、答题、native或媒体矩阵；不是63227 runtime替换。
+
+- 首轮正常主页→封面、刷新、返回再进及原弹窗通过；缺图注入发现图片在hydration前失败时onError也可能错过。原失败日志/截图保留 `.cache/ssr-cover/`。仅补PlatformArtwork对complete且naturalWidth0的decode失败通知；捕获异步拒绝并校验原节点、当前src、complete及naturalWidth，避免旧src回执污染新图。不重发图片、不假置ready、不无条件隐藏fallback。
+- 补丁后生产build（含TypeScript）与trace129/27103/0通过，build `yPrvKlZ1c0emWCSYFQ3FK`。63229实际Chromium390×844：主页冷进、刷新、返回重入、原窗开关、缺图→恢复通过；另阻留10个真实Next脚本，证明SSR图片complete/naturalWidth390而ready=false，释放脚本hydration后ready=true、标题/CTA文字裁切且艺术按钮显示。hydration前图片失败也正确切占位和fallback。pageerror0、无横溢。
+- 精确回执与稳定截图 `.cache/ssr-cover/fixed/result.json`、`image-before-hydration.png`、`failed-before-hydration.png`、`original-dialog.png`；脚本门控仅浏览器验证，生产行为未插入调试分支。实际源切换probe与相关ESLint通过；其余已有过场/报告/字体/controller结果复用。修改未进入consumer闭包，consumer1.4.0 entry保持。
+- 自有63229 PID94611持续供真实SSR公开页复核；63228合成流程仍用于三幕/报告。原63227作者服务与63226 UNKNOWN保持，未使用它们的配置或私有记录。本条覆盖上文“未运行生产构建”的旧批次限制，但未扩大数据库/媒体及正式部署授权。
+
 ## 2026-11-03 作者更正：保留原兑换弹窗，核实封面旧实例状态
 
 作者明确撤销码页重新设计：主页点击千载同心先显示封面，点击“开启穿越之旅”才弹出原兑换码输入弹窗；输入成功沿原控制流程继续。PR50 `6540d7b` 原弹窗外观、文字、尺寸/焦点及控制流程已恢复，删除本候选专属全屏兑换样式。以下上一条的全屏码页记录仅为已撤销候选历史；过场全屏/减少动效与人物解释继续保留，不再次重新设计码页。

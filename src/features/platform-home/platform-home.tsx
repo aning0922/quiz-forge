@@ -93,6 +93,22 @@ export function PlatformArtwork({
     )
       onReady?.();
     else onUnavailable?.();
+    // SSR images can fail before React attaches onError. Decode the completed
+    // failed image without issuing another request, and ignore stale sources.
+    if (src && failed !== src && node?.complete && node.naturalWidth === 0) {
+      const expectedUrl = node.src;
+      void node.decode().catch(() => {
+        if (
+          image.current === node &&
+          node.src === expectedUrl &&
+          node.complete &&
+          node.naturalWidth === 0
+        ) {
+          setFailed(src);
+          onUnavailable?.();
+        }
+      });
+    }
   }, [src, failed, onReady, onUnavailable]);
 
   return src && failed !== src ? (
