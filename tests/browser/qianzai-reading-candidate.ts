@@ -45,29 +45,12 @@ export function qianzaiReadingCandidate(
           : {
               ...section,
               title: "选择里的线索",
-              blocks: readings.flatMap((reading, index) => [
-                {
-                  layout: "body" as const,
-                  title: `${["壹", "贰", "叁"][index]} · ${reading.title}`,
-                  text: `${reading.choice}${reading.meaning}`,
-                  snapshot: reading.snapshot,
-                },
-                {
-                  layout: "body" as const,
-                  title: "与人物的呼应",
-                  text: references[index]!,
-                },
-                {
-                  layout: "body" as const,
-                  title: "放回具体条件看",
-                  text: reading.condition,
-                },
-                {
-                  layout: "prompt" as const,
-                  title: "带进日常的一小步",
-                  text: reading.nextStep,
-                },
-              ]),
+              blocks: readings.map((reading, index) => ({
+                layout: "card" as const,
+                title: reading.title,
+                text: `${reading.choice}${reading.meaning}\n\n**与人物的呼应**：${references[index]}\n\n**放回具体条件看**：${reading.condition}\n\n**带进日常的一小步**：${reading.nextStep}`,
+                snapshot: reading.snapshot,
+              })),
             },
       ),
     },

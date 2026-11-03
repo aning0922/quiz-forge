@@ -1,5 +1,11 @@
 # 阶段进度
 
+## 2026-11-03 阅读候选必要修复：每主题一张卡
+
+主控实际复核指出`7d25fc0`把每主题拆成4块，网页散段、PNG四框/主题造成呈现回退。仅修local review wrapper：一条supported reading对应一张既有card，title为主题短标题，text按空行分四短段，后三段使用既有有限`**强调**`标签“与人物的呼应”“放回具体条件看”“带进日常的一小步”。全部choice/meaning/人物呼应/condition/nextStep保留，每卡携原reading.snapshot；3/1主题对应3/1卡，neutral原样，正式reader/layout/formatter/fonts/登记未改。
+
+wrapper原2项断言按3/1卡、每卡4段、3个强调标签及全文保留修订后通过；定向ESLint/格式/diff通过。只补实际A390×844/1280×900及A/B连续长图分组：网页3卡、每卡4段/3强调，PNG为3/1卡且无字面`**`；无页面错误/横溢，已逐图查看。A724×5090、4,972,169 B、SHA`da8d0f08a576553a8e6cf791235c3ba1cb2dfb2b57d02c80fc900e83b2d8c8d5`；B724×4123、4,125,775 B、SHA`bb05dc2efcbdbaaa753e0a28664fab5b78294bcff09b39f5f14a8ae462f2e3e4`。新图/回执在`.cache/evidence-readability/one-card-fix/browser/`，`7d25fc0`及初图保留。其他原成功证据复用，未重跑B6模块、评分搜索、DB/媒体/外站或全量检查。63233同入口更新，当前owner PID85478；旧环境不动。补提交更新现Draft PR53，供主控/视觉复核本问题后收口。
+
 ## 2026-11-03 报告阅读增量：独立v3合成候选
 
 主控依据作者授权的参考站研究，放行不依赖新名单的局部阅读改进。独立树`quizforge-qztx-evidence-readability/quiz-forge`、分支`codex/qztx-evidence-readability`基于`1b55073`。研究复用私有`quizforge-assets/research/lishirenwu-20261103/`既有结果，未重访外站或复制其代码/文案/图片。Astra已确认仅local review显式选择v3、无正式1.5/source注册、旧snapshot不改的最小边界。

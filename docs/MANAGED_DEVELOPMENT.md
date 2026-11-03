@@ -2,6 +2,10 @@
 
 开发、验证、独审和收口统一遵循 [根 AGENTS.md](../AGENTS.md)。本文件的带日期条目、测试数量、全量运行和逐图复核均保留为原批次记录，不要求新任务重新执行。当前任务以用户最新授权及最新实际检查点为准；文档中的旧“尚未合并”“待实现”和阶段启动指令不覆盖后续事实。
 
+## 2026-11-03 阅读候选分组修复
+
+主控实看发现每主题拆四块造成回退，A仅修review wrapper为一主题一张既有card，四短段/三有限强调标签，完整保留新解释、人物呼应、条件和小一步及原snapshot。neutral/正式reader/layout/formatter/fonts/登记不动。修后wrapper2项与静态通过；只补A窄屏/桌面、A/B长图3/1卡实际核验，原其余证据复用。新图在`.cache/evidence-readability/one-card-fix/browser/`，63233保持，旧提交/初图保留；现PR53补小提交，具体尺寸/hash见PROGRESS最新条目，待主控/视觉复核此修复后收口，不扩优化。
+
 ## 2026-11-03 报告阅读候选集成
 
 主控依据作者参考站研究授权本批，Astra确认local review显式v3边界。A独立`codex/qztx-evidence-readability`基`1b55073`；B两文件纯模块`97f339b`及收窄修复`e8a401e`已集成，B6项测试/静态直接复用。A只增review wrapper及其2项本地真实样本/未知源测试；正式reader/layout/v2 copy/fonts/登记保持基线，无闭包文件差异。三份既有李白3/1/0支持合成输入复算hash一致，不重跑搜索、不读作者记录。前后具体例句、实际UI/PNG与未运行原因见PROGRESS最新条目。

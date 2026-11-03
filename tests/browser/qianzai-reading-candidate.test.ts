@@ -5,6 +5,7 @@ import { createHash } from "node:crypto";
 import { test } from "node:test";
 import { canonicalP1Json } from "@/features/quizpack/v1/canonical";
 import { qianzaiReadingCandidate } from "./qianzai-reading-candidate";
+import { qianzaiSupportedThemeReading } from "@/features/report/qianzai-tongxin/supported-theme-reading";
 
 const file = process.env.QZTX_READING_SAMPLES;
 if (!file) throw Error("EXPLICIT_VERIFIED_READING_SAMPLES_REQUIRED");
@@ -43,16 +44,25 @@ test("keeps real 3/1/0 support, original body identity and all other volumes", (
     );
     if (i === 2) assert.deepEqual(patterns, prior);
     else {
-      assert.equal(patterns.blocks.length, [3, 1][i]! * 4);
+      assert.equal(patterns.blocks.length, [3, 1][i]);
+      const readings = qianzaiSupportedThemeReading(body);
       for (let j = 0; j < prior.blocks.length; j++) {
-        assert.equal(
-          patterns.blocks[j * 4]!.snapshot,
-          prior.blocks[j]!.snapshot,
-        );
-        assert.equal(
-          patterns.blocks[j * 4 + 1]!.text,
-          prior.blocks[j]!.text.split("\n\n")[1],
-        );
+        const block = patterns.blocks[j]!;
+        assert.equal(block.layout, "card");
+        assert.equal(block.title, readings[j]!.title);
+        assert.equal(block.snapshot, prior.blocks[j]!.snapshot);
+        assert.equal(block.text.split("\n\n").length, 4);
+        for (const text of [
+          readings[j]!.choice,
+          readings[j]!.meaning,
+          prior.blocks[j]!.text.split("\n\n")[1]!,
+          readings[j]!.condition,
+          readings[j]!.nextStep,
+          "**与人物的呼应**：",
+          "**放回具体条件看**：",
+          "**带进日常的一小步**：",
+        ])
+          assert.ok(block.text.includes(text));
       }
     }
   }
