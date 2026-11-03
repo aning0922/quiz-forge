@@ -15,6 +15,10 @@ import {
   consumerProductActivationBindingText,
   verifyConsumerProductActivationReceipt,
 } from "../../src/features/product/internal-play/activation-contracts";
+import {
+  readConsumerUpgradeComparison,
+  assertConsumerUpgradeUnchanged,
+} from "../support/consumer-upgrade-comparison";
 
 const hash = (s: string) => createHash("sha256").update(s).digest("hex");
 type Row = Record<string, unknown>;
@@ -41,21 +45,6 @@ let app: postgres.Sql | undefined;
 const checks: string[] = [];
 const pass = (s: string) => checks.push(s);
 const normalized = (v: unknown) => JSON.parse(JSON.stringify(v));
-// PostgreSQL timestamptz identity is an instant; driver text may use +08 or ISO Z.
-// Stored canonical binding/snapshot/receipt TEXT is compared verbatim below.
-function normalizedRow(value: unknown): Row {
-  const row: Row = normalized(value);
-  for (const name of [
-    "created_at",
-    "issued_at",
-    "expires_at",
-    "revoked_at",
-    "completed_at",
-  ])
-    if (typeof row[name] === "string")
-      row[name] = new Date(row[name] as string).toISOString();
-  return row;
-}
 async function rejected(
   work: (tx: postgres.TransactionSql) => Promise<unknown>,
   expected: string,
@@ -81,21 +70,9 @@ async function oldGraphUnchanged() {
     ["consumer_session", baseline.completed],
     ["quiz_report", baseline.report],
   ] as const) {
-    const [row] = await managed.sql.unsafe<Row[]>(
-      `SELECT * FROM qf.${table} WHERE id=$1`,
-      [original.id],
+    assertConsumerUpgradeUnchanged(
+      await readConsumerUpgradeComparison(managed.sql, table, original),
     );
-    const actual = normalizedRow(row);
-    for (const name of [
-      "activation_generation",
-      "issued_play_version_id",
-      "issued_play_snapshot_sha256",
-      "key_bound_play_version_id",
-      "key_bound_play_snapshot_sha256",
-      "activation_ref_generation",
-    ])
-      delete actual[name];
-    assert.deepEqual(actual, normalizedRow(original));
   }
 }
 async function activate(expectedGeneration: number, play = baseline.playRef) {

@@ -1,5 +1,11 @@
 # 阶段进度
 
+## 2026-11-04 首项比较器失败定位：只读精确核对，不重放升级或反例
+
+失败是工具比较方法，未发现业务字段变动。旧夹具经Drizzle返回timestamptz服务器文本（本地已安装driver对OID1184设transparent parser），owner检查经原始postgres-js返回Date后JSON序列化为UTC ISO；首个expires_at为`2026-11-04 00:49:14.803+08`对`2026-11-03T16:49:14.803Z`。原失败、原baseline及原前后值均保留，新私有`policy-draft/comparison-diagnosis.raw.json`保存5行完整before、driver after、DB json文本after、原生时间等值结果及原回执hash；没有删除/覆盖原失败。
+
+工具改为`tests/support/consumer-upgrade-comparison.ts`：每个原timestamp列通过PG `IS NOT DISTINCT FROM baseline::timestamptz`精确比较（含NULL与数据库完整精度）；只有SQL明确新增的6个session列排除旧投影，其余原字段及binding/receipt/report canonical TEXT仍deepStrictEqual逐值/逐字。已在同一6736测试库`REPEATABLE READ READ ONLY`事务实际核5行，均精确相同；每行另对一非空时间加1微秒，5项均被判不同，未用JS Date取整降低断言。结果`comparison-diagnosis.result.json`仅表示比较工具诊断通过，不是0030或业务反例通过。head/activation/grant/新attempt仍0，其他app/owner连接0，连接已close；正式0030与旧候选历史均未写，DDL SHA保持`caafe67ed831c10deee98bd27f367e872d667aedd678293618f4eb2b9c475816`。本步仅补修改工具的定向类型/ESLint/格式，不重跑契约、旧静态或其他套件；正式0030仍待实际DDL审且原候选history不可改名，普通迁移器的历史前缀校验不能绕过。
+
 ## 2026-11-04 最新版答题批次A：0030 schema/guards候选，等待实际DDL审查
 
 `fbca479b`定向设计已由Astra通过并由主控转交四项实施约束。主控已明确0030给policy，source准入顺延至后续实际空闲号（预期0031、届时复核）。准确DDL为`migrations/p2a/0030_consumer_latest_attempts.sql`：启用ledger/head、单调generation、独立attempt、generated原签发完整tuple FK、实际play和不可变activation FK、原报告唯一/final FK保持、有限audit与guards。共享新增独立契约/Drizzle模型/namespace/ACL；未做启用服务、旧session查找改接、UNKNOWN业务恢复或消费者UI，不混入source准入。

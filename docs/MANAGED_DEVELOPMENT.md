@@ -2,6 +2,12 @@
 
 开发、验证、独审和收口统一遵循 [根 AGENTS.md](../AGENTS.md)。本文件的带日期条目、测试数量、全量运行和逐图复核均保留为原批次记录，不要求新任务重新执行。当前任务以用户最新授权及最新实际检查点为准；文档中的旧“尚未合并”“待实现”和阶段启动指令不覆盖后续事实。
 
+## 2026-11-04 比较器失败关闭为工具诊断，正式0030及业务反例仍未通过
+
+首项失败已定位为Drizzle保留PG timestamptz原文与原始postgres-js Date/UTC JSON之间的表示差异。独立只读REPEATABLE READ事务以SQL原生`IS NOT DISTINCT FROM baseline::timestamptz`核对两Key/两session/一report的每个时间列，非时间原字段/canonical TEXT逐字核对，全5行无变动；再以每行+1微秒的5项只读反例证明不会放过微小时间变动。完整原始before/两种after/NULL等值及原失败hash另存`.cache/known-ten/policy-draft/comparison-diagnosis.raw.json`，原失败现场不删除覆盖。工程harness已接同一精确比较helper，不采用JS Date归一化作为断言依据。
+
+这只关闭比较工具问题：未重放候选升级、未执行正式0030、未跑后续写库反例；新库head/activation/grant/新attempt均0，核对连接close已确认。0030实际DDL审仍以`e8dea73`/SHA`caafe67ed831c10deee98bd27f367e872d667aedd678293618f4eb2b9c475816`为准，本工具修复不改该输入。候选`test_consumer_latest_policy_a`回执保持；迁移器严格前缀匹配不能把它当正式0030或改名凑成功，后续实例/历史衔接需主控收口。
+
 ## 2026-11-04 最新版答题批次A：准确0030待实际DDL独审，非完整交付
 
 主控已转交Astra对`fbca479b`设计的通过结论，授权Sol/high实施最小批次A；落实历史完成分支先于head/新依赖、session必须精确定位、UNKNOWN原回执优先、DB锁序与不可变activation引用四项。主控另已核目录仅0001–0029：正式分配`0030_consumer_latest_attempts.sql`给policy schema/guards，旧source0030预留取消，source准入顺延到后续实际空闲号（预期0031、冻结时再核）。旧迁移字节及原校验回执不改，不把source/hash混入policy。
