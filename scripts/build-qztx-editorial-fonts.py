@@ -6,13 +6,14 @@ from fontTools import subset
 import fontTools, brotli
 
 def sha(b): return hashlib.sha256(b).hexdigest()
-p=argparse.ArgumentParser();p.add_argument('--source-dir',type=Path,required=True);p.add_argument('--characters',type=Path,required=True);p.add_argument('--profile',choices=('v1','v2','v3','v4'),default='v1');a=p.parse_args()
-version={'v1':'1.0.0','v2':'1.1.0','v3':'1.2.0','v4':'1.3.0'}[a.profile]
+p=argparse.ArgumentParser();p.add_argument('--source-dir',type=Path,required=True);p.add_argument('--characters',type=Path,required=True);p.add_argument('--profile',choices=('v1','v2','v3','v4','v5'),default='v1');p.add_argument('--kind',choices=('brush','literary'));a=p.parse_args()
+version={'v1':'1.0.0','v2':'1.1.0','v3':'1.2.0','v4':'1.3.0','v5':'1.4.0'}[a.profile]
 assert fontTools.__version__=='4.61.1' and brotli.__version__=='1.2.0'
-chars=a.characters.read_text().rstrip('\n');result={}
+chars=a.characters.read_text().rstrip('\n');descriptor_path=Path('src/features/theme/qianzai-tongxin/editorial-fonts.json');result=json.loads(descriptor_path.read_text()) if a.kind else {}
 for key,source,digest,license_file,family in [
  ('brush','ma-shan.ttf','6d2546bb189c732a8ca29af9e22457b152387d158aa459e4ac2ce1e51788b7fb','ma-shan-OFL.txt','QuizForge Qianzai Brush V1'),
  ('literary','wenkai.ttf','2d73eea94ad808999d90c0000c239a84a33b09d4bc6ab6c5b8bbf1eda8a7fc8b','wenkai-OFL.txt','QuizForge Qianzai Literary V1')]:
+ if a.kind and key != a.kind: continue
  family=family.replace('V1',a.profile.upper())
  data=(a.source_dir/source).read_bytes();assert sha(data)==digest
  out=Path('public/assets/fonts')/f'qianzai-{key}-{a.profile}';out.mkdir(parents=True,exist_ok=True)
@@ -30,4 +31,4 @@ for key,source,digest,license_file,family in [
  manifest={**descriptor,'sourceFile':source,'sourceSha256':digest,'license':'SIL OFL 1.1','licenseSha256':sha(license),'coveredCodepoints':len(covered),'sourceMissingCodepoints':[hex(c) for c in sorted(missing)],'tools':{'fonttools':fontTools.__version__,'brotli':brotli.__version__}}
  (out/'manifest.json').write_text(json.dumps(manifest,ensure_ascii=False,indent=2)+'\n');result[key]=descriptor
  print(key,len(b),'glyphs',len(covered),'unavailable',len(missing))
-Path('src/features/theme/qianzai-tongxin/editorial-fonts.json').write_text(json.dumps(result,ensure_ascii=False,indent=2)+'\n')
+descriptor_path.write_text(json.dumps(result,ensure_ascii=False,indent=2)+'\n')

@@ -106,6 +106,7 @@ export function QianzaiPublicEntry({
             alt="千载同心，岸边灯影封面"
             className={`${styles.coverArt} ${qianzaiStyles.fullArt}`}
             onReady={() => setReady(true)}
+            onUnavailable={() => setReady(false)}
           />
           {ready && (
             <>
@@ -137,7 +138,11 @@ export function QianzaiPublicEntry({
             </span>
           </button>
           <div className={qianzaiStyles.waterway} aria-hidden="true" />
-          <button className={styles.coverSwipe} onClick={openRedemption}>
+          <button
+            className={styles.coverSwipe}
+            data-art-ready={ready}
+            onClick={openRedemption}
+          >
             <ChevronUp
               size={23}
               aria-hidden="true"

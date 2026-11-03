@@ -1,7 +1,14 @@
 "use client";
 /* eslint-disable @next/next/no-img-element -- Fixed private artwork is served by the controlled asset route. */
 
-import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import {
+  useEffect,
+  useLayoutEffect,
+  useId,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import {
   ArrowLeft,
   ArrowRight,
@@ -65,20 +72,63 @@ export function PlatformArtwork({
   alt,
   className,
   onReady,
+  onUnavailable,
 }: {
   src: string | undefined;
   alt: string;
   className?: string | undefined;
   onReady?: () => void;
+  onUnavailable?: () => void;
 }) {
   const [failed, setFailed] = useState<string | undefined>();
+  const image = useRef<HTMLImageElement>(null);
+  useLayoutEffect(() => {
+    const node = image.current;
+    if (
+      src &&
+      failed !== src &&
+      node?.complete &&
+      node.naturalWidth > 0 &&
+      node.currentSrc === node.src
+    )
+      onReady?.();
+    else onUnavailable?.();
+    // SSR images can fail before React attaches onError. Decode the completed
+    // failed image without issuing another request, and ignore stale sources.
+    if (src && failed !== src && node?.complete && node.naturalWidth === 0) {
+      const expectedUrl = node.src;
+      void node.decode().catch(() => {
+        if (
+          image.current === node &&
+          node.src === expectedUrl &&
+          node.complete &&
+          node.naturalWidth === 0
+        ) {
+          setFailed(src);
+          onUnavailable?.();
+        }
+      });
+    }
+  }, [src, failed, onReady, onUnavailable]);
+
   return src && failed !== src ? (
     <img
+      ref={image}
       src={src}
       alt={alt}
       className={className}
-      onLoad={onReady}
-      onError={() => setFailed(src)}
+      onLoad={(event) => {
+        if (
+          event.currentTarget === image.current &&
+          event.currentTarget.naturalWidth > 0 &&
+          event.currentTarget.currentSrc === event.currentTarget.src
+        )
+          onReady?.();
+      }}
+      onError={() => {
+        setFailed(src);
+        onUnavailable?.();
+      }}
       draggable={false}
     />
   ) : (

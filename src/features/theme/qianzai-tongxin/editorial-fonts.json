@@ -13,14 +13,14 @@
   },
   "literary": {
     "id": "qianzai-tongxin-literary",
-    "version": "1.3.0",
-    "family": "QuizForge Qianzai Literary V4",
+    "version": "1.4.0",
+    "family": "QuizForge Qianzai Literary V5",
     "weight": 400,
-    "file": "/assets/fonts/qianzai-literary-v4/regular.woff2",
-    "fileSha256": "a2cc885975414ec626bf0017d73aef9ffda2366039e18fd2b7121565b949d764",
-    "bytes": 273856,
-    "coverage": "/assets/fonts/qianzai-literary-v4/characters.txt",
-    "coverageSha256": "9038c650b90b3d605760044d1454f181e5374aef917e330de0b4aed17fb141e5",
-    "licenseFile": "/assets/fonts/qianzai-literary-v4/OFL.txt"
+    "file": "/assets/fonts/qianzai-literary-v5/regular.woff2",
+    "fileSha256": "e47c1337049461d48862b60efbac00713e991218d75b3b804fe10d1ac56fe102",
+    "bytes": 275144,
+    "coverage": "/assets/fonts/qianzai-literary-v5/characters.txt",
+    "coverageSha256": "dae7fb831f893d8b9f445a616f06203b946f6a1a40e869bacebd64fae709d16d",
+    "licenseFile": "/assets/fonts/qianzai-literary-v5/OFL.txt"
   }
 }

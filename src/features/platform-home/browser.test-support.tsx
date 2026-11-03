@@ -36,6 +36,7 @@ createRoot(document.getElementById("root")!).render(
   pathname === "/works/qianzai-tongxin" ? (
     <QianzaiPublicEntry
       assets={assets}
+      homeHref="/platform"
       redemptionForm={<PlatformAccessForm />}
     />
   ) : (

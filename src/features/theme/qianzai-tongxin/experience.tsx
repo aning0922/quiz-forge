@@ -10,7 +10,10 @@ import {
   type RefObject,
   useRef,
   useState,
+  useSyncExternalStore,
 } from "react";
+import { createPortal } from "react-dom";
+import typography from "./typography.module.css";
 import type {
   ConsumerExperiencePropsV2,
   ConsumerReadingPageV2,
@@ -26,13 +29,16 @@ import {
   QianzaiQuestion,
   QianzaiReveal,
   Screen,
-  useQianzaiSceneScale,
 } from "./views";
 import { QianzaiReport } from "./report";
 import type { QianzaiVisualProps } from "./art";
 import { useQianzaiMotion } from "./motion";
 import styles from "./qianzai.module.css";
 import scenes from "./scenes.module.css";
+
+const subscribeDocument = () => () => {};
+const documentBody = () => document.body;
+const noDocumentBody = () => null;
 
 export type QianzaiEmbeddedReport = {
   scrollContainer: RefObject<HTMLDivElement | null>;
@@ -305,7 +311,11 @@ export function QianzaiTongxinExperience({
   const touch = useRef<{ x: number; y: number } | null>(null);
   const enabled = canEditConsumerV2(model);
   const motion = useQianzaiMotion();
-  const sceneScale = useQianzaiSceneScale();
+  const overlayHost = useSyncExternalStore(
+    subscribeDocument,
+    documentBody,
+    noDocumentBody,
+  );
   const compatible =
     (model.report?.view.display.presentationMode ??
       model.entry?.presentationMode) === "authored-product";
@@ -927,26 +937,28 @@ export function QianzaiTongxinExperience({
         </Screen>
       ) : (
         <div className={`${styles.sceneFrame} ${scenes.journey}`}>
-          <div
-            ref={stage}
-            data-qianzai-transition
-            style={{
-              left: `calc(50% - ${195 * sceneScale}px)`,
-              transform: `scale(${sceneScale})`,
-            }}
-            className={scenes.transitionStage}
-            aria-hidden="true"
-          >
-            <div className={scenes.transitionCurtain} />
-            <div className={scenes.transitionRibbon} />
-            <div className={scenes.transitionFiligree} />
-            <div className={scenes.transitionWords}>
-              <p data-transition-part="kicker" />
-              <h2 data-transition-part="title" />
-              <p data-transition-part="place" />
-              <p data-transition-part="line" />
-            </div>
-          </div>
+          {overlayHost &&
+            createPortal(
+              <div className={typography.root}>
+                <div
+                  ref={stage}
+                  data-qianzai-transition
+                  className={scenes.transitionStage}
+                  aria-hidden="true"
+                >
+                  <div className={scenes.transitionCurtain} />
+                  <div className={scenes.transitionRibbon} />
+                  <div className={scenes.transitionFiligree} />
+                  <div className={scenes.transitionWords}>
+                    <p data-transition-part="kicker" />
+                    <h2 data-transition-part="title" />
+                    <p data-transition-part="place" />
+                    <p data-transition-part="line" />
+                  </div>
+                </div>
+              </div>,
+              overlayHost,
+            )}
           <div ref={sceneContent}>
             {model.entry && model.draft && !model.report && (
               <div>

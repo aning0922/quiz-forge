@@ -27,10 +27,18 @@ describe("registered Qianzai presentation runtime", () => {
   });
 });
 
-it("requires the exact final renderer, font and mapping and denies previous 1.2 tuple", () => {
+it("requires the exact candidate renderer, font and mapping and denies previous tuples", () => {
   const identity = CONSUMER_IMPLEMENTATION_AVAILABILITY_V2.qianzai!;
   const runtime = resolveConsumerRendererClientV2(identity)!;
-  expect(identity.version).toBe("1.3.0");
+  expect(identity.version).toBe("1.4.0");
+  expect(
+    resolveConsumerRendererClientV2({
+      ...identity,
+      version: "1.3.0",
+      entrySha256:
+        "9732bdfd555a05ceb412ee8c8918fa9a8b076b6acff38a6035a08dd4bb4aadbe",
+    }),
+  ).toBeNull();
   const font = runtime.descriptor.font;
   const facts = {
     renderer: identity,

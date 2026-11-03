@@ -1,5 +1,44 @@
 # 阶段进度
 
+## 2026-11-03 封面上滑与CTA同窗要求核实
+
+作者明确要求：主页先封面；点击“开启穿越之旅”或在封面从下往上滑动，都打开PR50原兑换窗；成功后沿原controller继续，不能上滑绕过资格进入答题。
+
+- 现有`QianzaiPublicEntry`已完整接线，无需新增机制：单指同identifier、上移≥56px且上移≥横移绝对值×1.25，touchend时调用与CTA/提示按钮相同的openRedemption；touchcancel、多指/identifier不一致清除记录。菜单/弹窗打开时忽略背景，button/link/input等交互起点排除。dialogOpen ref同步防重，开/关均清空手势；仅封面touch-action:pan-x，不禁止整页滚动。未有桌面wheel实现，本批不新增。
+- 在当前ec3a006实际Next63229、Chromium390×844移动触摸环境，用CDP原生touchStart/Move/End验证从下部背景上滑确实开原窗；与键盘CTA读取的同一dialog文字一致、showModal仅一次。横向、下滑、短滑、取消、CTA/返回/菜单起点、菜单已开背景不误触；窗内输入不提交、不触发背景重复开窗，关闭无穿透。轻触和多指反例通过；可点击及键盘提示路径保留。没有兑换POST、DB或资格操作。
+- 证据 `.cache/cover-swipe/result.json`、`additional.json`、`native-up-original-dialog.png`及对应脚本/日志。不以DOM派发TouchEvent代替原生输入；此次是桌面Chromium触摸模拟，不冒称真实手机。因实际运行已满足要求，仅补记录，无生产源代码/消费者entry变化，无需重建Next、重复既有测试或扩大DB/native/媒体。63228/63229/49681保留，63227旧实例与63226 UNKNOWN未动。
+
+## 2026-11-03 真实 Next SSR 封面补验
+
+为弥补createRoot候选不能证明Next宿主的边界，在本独立树执行必要生产build并以63229启动真实Next，仅配置固定公开营销图目录，明确移除P2A_CONFIG/DATABASE_URL。只访问公开主页、封面和营销资源，无DB、Key、答题、native或媒体矩阵；不是63227 runtime替换。
+
+- 首轮正常主页→封面、刷新、返回再进及原弹窗通过；缺图注入发现图片在hydration前失败时onError也可能错过。原失败日志/截图保留 `.cache/ssr-cover/`。仅补PlatformArtwork对complete且naturalWidth0的decode失败通知；捕获异步拒绝并校验原节点、当前src、complete及naturalWidth，避免旧src回执污染新图。不重发图片、不假置ready、不无条件隐藏fallback。
+- 补丁后生产build（含TypeScript）与trace129/27103/0通过，build `yPrvKlZ1c0emWCSYFQ3FK`。63229实际Chromium390×844：主页冷进、刷新、返回重入、原窗开关、缺图→恢复通过；另阻留10个真实Next脚本，证明SSR图片complete/naturalWidth390而ready=false，释放脚本hydration后ready=true、标题/CTA文字裁切且艺术按钮显示。hydration前图片失败也正确切占位和fallback。pageerror0、无横溢。
+- 精确回执与稳定截图 `.cache/ssr-cover/fixed/result.json`、`image-before-hydration.png`、`failed-before-hydration.png`、`original-dialog.png`；脚本门控仅浏览器验证，生产行为未插入调试分支。实际源切换probe与相关ESLint通过；其余已有过场/报告/字体/controller结果复用。修改未进入consumer闭包，consumer1.4.0 entry保持。
+- 自有63229 PID94611持续供真实SSR公开页复核；63228合成流程仍用于三幕/报告。原63227作者服务与63226 UNKNOWN保持，未使用它们的配置或私有记录。本条覆盖上文“未运行生产构建”的旧批次限制，但未扩大数据库/媒体及正式部署授权。
+
+## 2026-11-03 作者更正：保留原兑换弹窗，核实封面旧实例状态
+
+作者明确撤销码页重新设计：主页点击千载同心先显示封面，点击“开启穿越之旅”才弹出原兑换码输入弹窗；输入成功沿原控制流程继续。PR50 `6540d7b` 原弹窗外观、文字、尺寸/焦点及控制流程已恢复，删除本候选专属全屏兑换样式。以下上一条的全屏码页记录仅为已撤销候选历史；过场全屏/减少动效与人物解释继续保留，不再次重新设计码页。
+
+- 作者截图显示已加载图上叠普通标题/米黄按钮。只读公共封面复现：保留63227冷开/刷新HTTP200、complete/naturalWidth390，但art-ready=false；63228候选同条件true。CTA烘焙于同一封面PNG，无独立CTA资源。前者就绪状态未对齐的表现与截图一致；不能仅凭截图确定其origin，但新候选并未替换旧63227运行产物。保留候选已有真实complete/currentSrc补核，不假置ready或无条件隐藏fallback。
+- 还修正仅演示宿主的返回平台链接：`/platform`而非消费者演示根路径；生产主页路径与授权控制器保持。390×844真实浏览器主页→封面（无弹窗）→点击弹窗→关闭→返回平台再进入、刷新、缺图fallback→恢复通过；缓存hydrate前图片完成/src失败→切回通过。有限封面入场动画完成后截图确认艺术按钮及无额外普通标题；初次入场中模糊截图保留，不称稳定图检。
+- 证据在本树 `.cache/cover-correction/`：before.json、preserved63227.json含HTTP/DOM，results.json含导航/回退断言，cover-stable.png、original-dialog.png、missing-cover.png为实际截图。原弹窗代码与6540d7b相同；复用未变兑换controller/过场/报告/评分/字体及精确consumer1.4.0登记，不跑DB/媒体/生产构建或已过测试。相关ESLint通过。
+- 原63228 PID40593及产物/owner回执保留，仅受控重启本树合成演示为PID89522；63227作者实例与63226 UNKNOWN未修改。未发Key、未创建play、未部署或合并。正式更新旧作者runtime仍需对应授权，63228仅供新候选体验。
+
+## 2026-11-03 作者反馈修复候选：码页、全屏过场与人物关联
+
+独立 `codex/qztx-entry-viewport-fix` 基于 PR50 `6540d7b`，集成 B `baae5df`（本树 `5c7d14d`）。只交付真实组件/控制器/纯评分器与 Canvas 的本地合成会话候选 `http://127.0.0.1:63228`；原63227作者实例及63226 UNKNOWN保持，未创建数据库、迁移、授权或新play，不将旧报告套用新文案。此次不是正式runtime替换、作者视觉/实机或商业批准。
+
+- 作品封面兑换采用专属全屏深青金线任务窗，复用既有V8素材、真实兑换表单和错误/等待/UNKNOWN控制器；主操作唯一，返回封面为轻量次操作。图片补核缓存完成与当前src真实就绪，缺图撤销ready且保留降级，底部提示改深色。
+- 三幕遮罩从固定390×844缩放改为document.body portal上的100dvh覆盖；原场景画面比例与生命周期保持。减少动效显式关闭自身/后代/伪元素动画，章节底色及文字静态可见，450ms后撤场。
+- 第三卷“你为什么像{人物}”复用B的25组角色×主题关联，每点三段：本轮倾向、人物作品呼应、生活建议；支持不足保留完整中性匹配解释。六卷、原body/评分、五维刻度及网页/PNG共享blocks不变。复用B18项内容定向测试与Astra正文审查，不重复运行。
+- 新固定字库Serif V12（1.11.0）/Literary V5（1.4.0）追加7个缺字，保留全部原覆盖及U+0020；实际标题/终章Brush V4无缺字，保持不变。固定源hash、OFL和fonttools4.61.1/brotli1.2.0保持；新增语料及15个真实评分合成文档覆盖通过。旧字库文件不改写。
+- 候选consumer1.4.0 entry `b88be4dd0e187169edf7f88f789e6b23685b7a795a792dd74936a6fa998b4809`，preview1.2.0 entry `d88ffe0953faecdd049af34bff9ba93bdd46ebca33e40d8d97e127bf188848b5`；engine、structuredPreview/Consumer逐项相同。精确resolver拒绝旧1.3.0及旧entry；copy.v2的语义变更由新renderer closure绑定。
+- 必要检查：`implementation:check`、相关ESLint、`tsc --noEmit`、身份/报告绑定2文件9项、diff格式通过；兑换controller7项已通过且行为输入未变，复用。Chromium候选390×844/320×568/430×932码页无横溢、输入18px且56px以上；冷/热缓存与hydration前图片已缓存完成/source失败→恢复通过。三幕320×568/430×932及reduce390×844实际正常flow覆盖通过；独立视觉有界复核无阻断。Astra指出portal减少动效继承缺失后，只补核静态opacity1、0活动动画、450ms撤场通过。
+- 新正文实际390×844受支持/支持不足各一例、六卷/五维展开、完整PNG预览与下载相同、pageerror0。长图分别724×4878/4,807,332 B与724×4124/4,148,575 B；位于本树 `.cache/entry-fix/report-v14-checked/`。标题截图 `*-title-390.png`；实际第三卷单列三段与长图均由助手图检，独立视觉对新增正文的最终复核由主控读取，不冒称作者批准。
+- 私有检查记录 `.cache/entry-fix/`（不入Git）保留初始demo默认margin/截图时机、减少动效原失败、内容工具旧source/renderer guard、标题装饰/段落DOM定位和重复输出目录等失败；修正工具后仅重跑受影响路径，未修改生产行为迁就断言。候选码页仅演示表单，不签发资格。未运行全量DB/媒体/原生导入、生产构建或全量E2E，因本批写合同及评分未改且授权限定候选展示；完整正式替换需后续明确授权。提交/PR及自动CI状态见本分支PR记录，未合并main或部署。
+
 ## 2026-11-03 最终独立集成：63227 临时体验交付，63226 UNKNOWN 保留
 
 原定两个实例的验收未全部通过。主控与独审确认：完整通过的新 `63227` 保持原 origin、数据库及冻结 source，作为本批临时内部体验环境；`63226` 的失败 validation 保持 UNKNOWN，不制造 ACK、不释放预留、不另发 validation，不称已恢复。不是生产发布、作者视觉/实机或商业批准；main、旧工作树、旧服务及旧迁移不变。

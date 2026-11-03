@@ -1272,12 +1272,13 @@
   margin-top: 18px;
 }
 .transitionStage {
-  left: calc(50% - 195px);
-  right: auto;
-  bottom: auto;
-  width: 390px;
-  height: 844px;
-  transform-origin: 0 0;
+  /* The scene artwork remains a scaled 390 x 844 composition. The veil owns
+     the viewport independently, including the area beyond that composition. */
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
 }
 .transitionStage[hidden],
 .transitionStage[data-kind="paper"] {
@@ -2208,7 +2209,7 @@
   font: 400 18px/1.4 var(--qztx-literary, serif);
   /* Keep existing literary glyphs; the declared body subset supplies rare
      additions rather than a system font hidden behind the generic fallback. */
-  font-family: "QuizForge Qianzai Literary V4", var(--qztx-serif, serif);
+  font-family: "QuizForge Qianzai Literary V5", var(--qztx-serif, serif);
   letter-spacing: 0.04em;
 }
 .dynamicLines {
@@ -2267,4 +2268,23 @@
   stroke-width: 1.8;
   stroke-linecap: round;
   stroke-linejoin: round;
+}
+
+/* The viewport portal is outside .journey. Its reduced-motion chapter is a
+   static opaque waiting curtain, until the existing 450ms lifecycle removes it. */
+.transitionStage[data-reduced="true"],
+.transitionStage[data-reduced="true"] *,
+.transitionStage[data-reduced="true"]::before,
+.transitionStage[data-reduced="true"]::after,
+.transitionStage[data-reduced="true"] *::before,
+.transitionStage[data-reduced="true"] *::after {
+  animation: none !important;
+  transition: none !important;
+}
+.transitionStage[data-reduced="true"] {
+  opacity: 1 !important;
+}
+.transitionStage[data-reduced="true"] .transitionWords {
+  opacity: 1;
+  transform: none;
 }

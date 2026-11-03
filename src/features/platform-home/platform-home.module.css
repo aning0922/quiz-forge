@@ -806,3 +806,8 @@
   background: #fff0d2 !important;
   border: 1px solid #d3b98b !important;
 }
+
+.entryFrame .coverSwipe[data-art-ready="false"] {
+  color: #493c32;
+  text-shadow: none;
+}

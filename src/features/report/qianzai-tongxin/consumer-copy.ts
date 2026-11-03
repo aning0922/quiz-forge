@@ -430,6 +430,74 @@ const DIMENSION_COPY = [
   },
 ] as const;
 type Theme = ReturnType<typeof qianzaiSupportedThemes>[number]["feature"];
+/** Literary parallels for supported choice directions, never historical personality
+ * measurements or extra claims about the reader. Fixed works are already sourced
+ * in ROLE_COPY and the role profiles; score proximity alone cannot select a link. */
+const ROLE_CONNECTION = {
+  "li-bai": {
+    exploration:
+      "李白诗中的名山江流与长风关山，把视野从眼前带向远处。你的尝试与投入也为经验打开不同入口；相呼应的是看待世界的开阔视角，不是必须不断远行。",
+    voice:
+      "李白以“我本楚狂人”写出鲜明的自我声音。你的表达与商量，可以与诗中不抹去自身声音的姿态并读；说清自己的位置，也容得下与他人同行。",
+    care: "李白借山河明月寄放心绪，风景不只有壮阔，也能承载人的感受。你选择如何回应他人，可以与这种让感受进入表达的写法相照见，而不必被概括成某种固定性格。",
+    action:
+      "李白把游历中的山水见闻写进诗篇。你在体验与准备之间选择起步方式，与从具体经历获得表达材料这一点相连；相似不在于行得多远，而在于怎样走近眼前的事。",
+    change:
+      "李白诗中的视野在山川、长风与关山之间展开。你对活动次序与主体的调整，也是在重新看各部分的关系；这是一处观察方式的呼应，不等于你与诗人有相同的应变能力。",
+  },
+  "su-shi": {
+    exploration:
+      "苏轼的诗词、文章与书画呈现不同表达路径。你为不同兴趣与投入安排步调，可以与这种多面的创作视野相照见；相连的是经验有不同入口，不是才华或成就的比较。",
+    voice:
+      "《定风波》以吟啸写出行路者自己的声调，也保留同路遇雨的处境。你的主张与商量，可以借这幅画面理解：共同的路上，仍能说清自己的感受与位置。",
+    care: "《定风波》既有雨中的吟啸，也有酒醒后的微冷。你对事情与感受的回应，与词中容纳不同心绪的层次相呼应；不必把自己要求成永远轻松的人。",
+    action:
+      "《定风波》从沙湖道中遇雨这一段具体行路展开。你按事情的条件决定怎样起步，也可以与它相照见：先看脚下处境，再找到自己的步调，而非只用一个标签概括行动。",
+    change:
+      "《定风波》写遇雨，也写雨后转晴，同一段路的条件在变化。你对安排的重组与保留，与词中在不同处境里继续行路的画面相呼应；这不表示现实困难总能轻易化解。",
+  },
+  "tao-yuanming": {
+    exploration:
+      "陶渊明把采菊、南山、暮色与归鸟写入日常。你的深耕与尝试，可以与这种从身边重新发现意味的目光并读；探索不一定要离开熟悉的地方，熟悉也并非停滞。",
+    voice:
+      "《饮酒·其五》从结庐人境写到心远，呈现身在日常而保有内心位置的诗境。你在选择与商量中安放自己的方向，与这份自得相呼应，并不意味着必须远离人群。",
+    care: "陶渊明以一草一木、暮色归鸟承载生活中的心意。你对事情与感受的关照，可以与诗里细看日常的目光相照见；这只是阅读上的联系，不是把安静或温柔强加给你。",
+    action:
+      "采菊是陶渊明诗中一个具体的日常动作。你选择怎样开始一件事，也可以从这幅画面理解：把心意落在可做的小事里，而不必把行动只理解成远行或冒险。",
+    change:
+      "《饮酒·其五》把人境中的生活与心中的位置并置。你调整安排时对结构与主体的取舍，可以与这种安放心意的诗境并读；保留重要部分，并不等于拒绝一切变化。",
+  },
+  "li-qingzhao": {
+    exploration:
+      "李清照既写溪亭旧游，也在《渔家傲》中展开云涛星河。你的熟悉与尝试，可以与这两种视野相照见：细读眼前的经验，也为另一种可能留位置。",
+    voice:
+      "李清照把旧游与梦境写成自己的词中声音。你如何表达选择、如何与人商量，可以与这种不让个人经验消失的写法并读；相连的是表达有自己的位置，不是替你判定强弱。",
+    care: "《如梦令》把日暮、回舟与藕花的细节留在词里。你对感受与具体事情的回应，与这种认真辨认生活声色的目光相呼应；细读心意，也可以与寻找办法并行。",
+    action:
+      "李清照在词中保存泛舟旧游，又借梦境向远处展开。你选择怎样开始体验，可以与这种让经历进入表达的路径并读；一次具体接触，也能成为重新认识日常的起点。",
+    change:
+      "从溪亭回舟到云涛星河，李清照的词容纳了不同情境与观看角度。你对安排范围的调整，可以与这种转换视角的写法相照见；文学想象并不是应变能力的证明。",
+  },
+  "mulan-ballad": {
+    exploration:
+      "《木兰诗》既写关山远行，也写归家换装，让不同生活画面并存。你的熟悉与尝试，可以与这两种经验相照见；不必总向远处走，回到日常也有自己的意义。",
+    voice:
+      "《木兰诗》中的木兰辞谢官职，请求还乡。你说清选择与理由的倾向，可以与故事中为自己选择去向这一点相连；这不要求你作出与她相同的决定。",
+    care: "代父出征与归来故乡，使《木兰诗》中的远行始终连着家人的生活。你对他人需要的回应，可以与故事中的牵挂并读；这里不据此评判孝顺、责任或道德高低。",
+    action:
+      "《木兰诗》把备鞍马、赴关山与归家写成具体过程。你先体验或先准备的倾向，与把选择落实为下一步这一点相连；这份呼应不等于勇敢程度或行动能力的评定。",
+    change:
+      "战袍、旧时衣裳与归家场景共同构成木兰的故事。你对安排的保留与重组，可以与人在不同情境里重新安顿生活的画面相照见，而不是把自己定为永远战斗的样子。",
+  },
+} as const satisfies Record<
+  keyof typeof ROLE_COPY,
+  Record<Theme["topic"], string>
+>;
+const CONNECTION_TITLE = "你为什么像";
+const CONNECTION_BOUNDARY =
+  "相似之处是本轮选择与人物作品的呼应，不代表完整人格相同，也不替你规定今后的样子。";
+const NEUTRAL_CONNECTION =
+  "这次相逢依据本轮五个选择方向的整体组合，并不把某一个分数当成相似的证明。眼下还不适合把相似之处说得更具体，因此先不替你补上性格标签；可以从人物作品中，寻找自己愿意回应的部分。";
 /** Suggestions follow an accepted theme; they do not assert another observed trait. */
 const LIFE_CONTEXT = {
   尝试新意:
@@ -594,16 +662,21 @@ export function qianzaiConsumerCopy(
     {
       id: "patterns",
       ...SECTION_COPY.patterns,
+      title: `${CONNECTION_TITLE}${role.displayName}`,
+      intro: CONNECTION_BOUNDARY,
       blocks: highlights.length
         ? highlights.map(({ feature, snapshot }) =>
             block(
-              `${feature.text}\n\n${LIFE_CONTEXT[feature.tag]}`,
+              `${feature.text}\n\n${ROLE_CONNECTION[role.ref.id as keyof typeof ROLE_COPY][feature.topic]}\n\n${LIFE_CONTEXT[feature.tag]}`,
               "card",
               feature.title,
               snapshot,
             ),
           )
-        : [block(QUIET_PATTERN)],
+        : [
+            block(`${copy.opening[0]}\n\n${NEUTRAL_CONNECTION}`),
+            block(QUIET_PATTERN),
+          ],
     },
     {
       id: "counterevidence",
@@ -672,6 +745,10 @@ export function qianzaiConsumerCopyText(): readonly string[] {
     ...collect(SECTION_COPY),
     ...collect(DIMENSION_COPY),
     ...collect(LIFE_CONTEXT),
+    ...collect(ROLE_CONNECTION),
+    CONNECTION_TITLE,
+    CONNECTION_BOUNDARY,
+    NEUTRAL_CONNECTION,
     ...collect(CLOSING_BY_TOPIC),
     ...NEUTRAL_CLOSING,
     ...QIANZAI_ROLE_PROFILES_V11.flatMap((role) => [
