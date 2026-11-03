@@ -1,5 +1,16 @@
 # 阶段进度
 
+## 2026-11-03 后续接线准备：精确资料选择、53资源和字体审计
+
+作者允许继续后指出杨玉环脚部问题：苏轼方向保留，杨玉环v1撤出通过基线，等B局部修脚v2；不对v1派生或准入。A保持63234/63230/63233与旧实例/报告/UNKNOWN，只推进不依赖最终图片的准备。新增`known-ten-editorial.ts`按已编译目录完整product/id/version选唯一资料，核历史身份、熟悉展示名、非空且不重复的引句及四用途完整ref；拒旧版本、跨商品、旧角色及姓名alias，不授source/renderer/资源批准。两项新选择/拒绝测试、四文件定向ESLint、TypeScript、格式/diff通过；已过内容2、copy6、wrapper2、匹配和图检均不重跑。
+
+- 新离线`tests/analysis/qianzai-known-resource-plan.ts`严格核原封存source hash，从原33资源排除旧角色20用途后核得13共享资源，实际17,899,935 B；新十人40用途仅列pending ref，无占位hash/尺寸/批准。计划53资源/55文件低于64/66仅是计数通过；32MiB archive、64MiB解压、8MiB单资源、1MiB content、256KiB manifest不变。预留最大JSON后，不依赖压缩且未扣ZIP头的角色原始字节余量14,343,777 B，不能据此说最终ZIP通过；最终archive/content字节未知，`readyForAdmission=false`。共享素材本次新source的复用授权也待逐项核，不继承旧标签即准入；两张试制母图不当最终runtime资源计数，明确排除杨玉环v1。
+- 新`tests/analysis/qianzai-known-font-audit.ts`仅读固定角色/阅读文案和已钉住的旧coverage hash；语料1027码点含U+0020，旧Serif1.11.0/Literary1.4.0各缺177码点。未生成、修改或登记字体，不用fallback掩盖。最终全新文档/Brush实际字串尚待组合，当前是固定语料池缺口证据，不是最终字库验收。回执分别在`.cache/known-ten/resource-inventory-v1.json`、`font-audit-v1.json`，新selector在`editorial-selection-tests.log`。
+- 实际共享接点：`result-presentation.ts`当前固定1.4.0/V11，`implementation-client-v2.ts`固定V11 profile；`supported-themes.ts`及`dimension-scale.ts`受旧presentation-source约束，旧consumer-copy也固定旧角色。因此新source不得直接加入旧V11 alias。最终需独立known-ten精确source/私测登记与baseline，新1.5/preview1.3 descriptor按完整tuple选择profile v2/copy v3，分开新资料/六卷组合，再以明确新源接点复用73声明的完整正反支持规则；unknown/旧新混配均拒绝。`presentation.ts`/runtime导出上下文届时仅接受可信resolver新分支，web/PNG继续同blocks，历史报告不套新资料。
+- 这些共享运行/身份接点本轮未改：待最终53声明、复用授权、source三hash/baseline与字体具体事实固定后，先交Astra实际diff，再生成/实算`component-map`、runtime-inputs、descriptor闭包与新登记。SQL仍沿原前审协议，只在原新test管理根绑定`1ec2da760d5ccc0aa38664bcc4aefca6`/test/63231的精确新分支，追加所需private_test_*、asset declaration、internal_review及consumer schema事实；0001–0029、锁/CAS/ACK/完成权及旧合法分支保持。没有依据先改composed_assets或持久化表；准确0030仍等字面量冻结后独审再迁移，不复制改manifest、不向旧库升级。
+
+本次仅纯资料选择器和离线审计，不生成新QuizPack/source、假hash、pending批准、字体/闭包登记、0030或DB/生产构建。不借旧marker授信；Yang v2待B交实际修订再接首样，继续等具体素材与针对审查结果。
+
 ## 2026-11-03 知名十人固定资料整合：停在首样作者验收
 
 按主控交接，A精确接入B `5ade93f4e1aa406ac82bf6d8a469e98e358a2996` 五份文件：三位保留/七位新增人物资料、目录顺序聚合、固定无答案语料、美术构图计划及两项内容测试。十人资料统一3.0.0 ref/40用途selector，熟悉展示名、称号/别名、引句署源分别保留；非人物自作引文明确史家叙述/时谣来源。此处构图计划不是40图已生成或批准，固定人物正文也不自动授权基于用户的解释；whyByTopic仍仅能由既有充分支持主题接线。
