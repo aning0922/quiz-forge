@@ -1,16 +1,22 @@
 # 阶段进度
 
-## 2026-11-03 最终独立集成：平台入口与环境准备（进行中）
+## 2026-11-03 最终独立集成：63227 临时体验交付，63226 UNKNOWN 保留
 
-作者授权继续至完整内测与工程交付。独立 `codex/qztx-final-integration` 从 PR49 `f6313d2` 接管，工作树 `/Users/aipuli/.codex/worktrees/quizforge-qztx-final-integration/quiz-forge`。普通保留历史合并 PR33 `6ebe096` 为 `91306b2`；仅进度文档冲突，双方记录均保留，未改 main、旧分支及旧运行环境。
+原定两个实例的验收未全部通过。主控与独审确认：完整通过的新 `63227` 保持原 origin、数据库及冻结 source，作为本批临时内部体验环境；`63226` 的失败 validation 保持 UNKNOWN，不制造 ACK、不释放预留、不另发 validation，不称已恢复。不是生产发布、作者视觉/实机或商业批准；main、旧工作树、旧服务及旧迁移不变。
 
-- 原 CI41563028930 的 format/lint/type 已通过，database/accounts 成功；单测2368通过、1失败。失败源于新人物资料包含换行，而 Canvas 操作逐行存储；定向修正仅规范化可见换行，字体输入仍严格保留原始正文。相关布局/首页控制器/素材3文件12项通过，不重跑其余2368项。
-- 复用首页→公开作品封面→现有兑换服务，未新增业务写接口。真实浏览器脚本 `tests/browser/qianzai-full-flow.ts` 增加显式 `entry: platform`，首轮与完成后原码回看均从平台入口兑换；旧 direct-access 默认保留。真实库执行待最终候选资格。
-- 最初借用的 node_modules 符号链接被 Turbopack 工作区边界拒绝，失败保存在 `.cache/final-integration/build-first.log`。仅移除本树自有链接，锁文件安装本地依赖后构建成功：`dk5YaGmwV3yb5uVGjsQOo`，trace129/27103/0。未改全局依赖、限额或旧树。
-- 独占63227生产页面烟测：Chromium156，390/320/1200宽度；5个固定营销图HTTP字节/hash一致，首页→封面→密码兑换表单、未知图404，自动POST/pageerror均0。证据 `.cache/final-integration/platform-smoke.json` 与同目录截图。运行PID29654/cwd本树；仅配置营销资源，无数据库，不是兑换/评分闭环通过。63226保留给后续完整演示；3100旧PID69101归managed-resume，保持。
-- 来源准入写实现暂停，等待最终正文/图包及独审的append-only SQL方案。TS demo白名单不等于真实库资格；新purpose test实例须同时满足instance/origin、数据库marker、source三hash与资源事实。旧迁移checksum、旧源/报告/Key不改；新实例只发新资格，旧实例原库/原renderer继续承担原链接，禁止新文案回退解释旧entry。不新增多renderer框架，不提前创建临时候选迁移。
+- 独立 `codex/qztx-final-integration` 从 PR49 `f6313d2` 接管，正常保留历史合并 PR33 `6ebe096` 为 `91306b2`；正文定稿 `5e6ba4d` 集成为 `228cfc6`。首页→作品封面→现有兑换服务，无新业务写接口。此前 Canvas 可见换行断言修正与首页相关3文件12项通过，复用原 CI 的不受影响结果。
+- 最终图包 V2 manifest `bafca2c2c427c344af53dbfc1fd989535f3a8d73dc50048426da491d1218e48a`，20角色资源14,122,428 B＋13固定共享资源17,899,935 B。正常构包 demo/e2e ZIP 分别32,918,842/32,918,841 B，未放宽32 MiB限额。原题目/评分核心/模板/witness不变，logicHash仍 `1fafbad4691d44328bdbf2ccca8b64f649518332e093aa658645b39094065ffc`；字库无新增缺字，复用 Serif V11、Literary/Brush V4。揭晓金字与 PNG 黑墨工作流保持。
+- 两个独立 purpose=test 实例：63226=`601707c7f4511e7d6fb09da3a907c8d9`，63227=`79331f888c569d9fbf7a2a08e5f33f68`。各自精确 marker/source三hash/baseline/approval/资源声明注册；未使用 demo alias 代替真实准入。append-only `0029_private_test_final_candidate.sql` SHA `284b4424a4339bb96cbfa2bcd535645ee3686aa2b5e61cc98f6c2e66acac96ae`，原28 checksum不变。补 SQL 可选 navigation 与 TS 资产集合一致；review helper 因读数据库 marker 正确改为 STABLE，前后定义/返回类型/ACL/既有记录 guard 保持。应用仅同步真实0029 catalog与review helper精确facts，不删检查或加fallback。
+- 两库0028→0029成功；48项精确source/marker/三hash/混搭/新旧五角色 SQL–TS assets/navigation反例通过。fresh正常链→0029与独立旧身份合成正例通过，临时旧身份库删除、两个临时cluster确认停止。63227正常 native 导入→草稿→baseline审核→固定版本→play→Key完成；实际33声明/篡改声明、真实review/错误Product/三hash/baseline/approval、错误DBmarker拒绝及回滚共14项通过。数据库不是 mock。
+- 63226 validation `c1e4ad55-f398-42a2-b901-afbeede60d52` 在 native-validation 返回 STUDIO_UNAVAILABLE；只读核实 revision1、validating/storage unknown、134,283,264 B held，无evidence/candidate。原owner停止候选记媒体confirmed/IO settled，但DB没有fileStopProof ACK；不能把候选文件/PID退出/lease过期当恢复权威。claim到候选约6.652秒，不归因为60秒超时，实际根因未确认。原pack/intent/停止候选/日志与原build/seal原字节保留，`unknown-preserved-evidence.json`仅只读索引；本批不运行recover/retry。
+- 初次接线保留了两类前置失败：借用node_modules链接被Turbopack拒绝后只在本树锁文件安装；0029后app facts仍旧而拒绝连接，精确同步后严格app打开通过且确认此前0商品/0导入/operator。直接tsx缺少编译literal的普通native检查记录为not-started/settled，改用已有本机固定根编译入口；无环境回退。以上失败不记通过、不覆盖。
+- 首次63227完成24题/唯一报告后，实际图像验收发现普通角色四槽被误标role-composite；原失败play/report/Key及build完整保留。五角色准入用例5失败复现→改回clean后5通过。新consumer精确entry `9732bdfd555a05ceb412ee8c8918fa9a8b076b6acff38a6035a08dd4bb4aadbe`，version1.3.0/copy.v2；engine、preview及structured身份不变。正常创建独立新play/newKey，旧报告不套新renderer；resolver4项含旧失败entry拒绝通过。
+- 最终生产构建 `KXq_tK62aCBrap2QOJWmG` 通过，trace129/27103/0。固定media build/provision在本树串行完成，deployment `a0f36990286d1ae83a8aed0e80c14032f03bdc6a22832cae0b4de60a9ceb4472`，runtimeBundle `27eedc4032d8ffe39ecad4ac27eb51d0d0bbd6105e901381a594f825dbba521d`；固定协议结束自有操作与control收敛，不制造原UNKNOWN的proof。仅因facts或runtime清单确实改变产物才重建；编译cache移出部署根并保留，未提高媒体限制。
+- 最终真实 Chromium156、390×844：平台首页→封面→新Key→24题、刷新/新标签恢复、25 save/唯一1 complete、实际李白揭晓/六卷/两张PNG/原Key只读同一snapshot全部通过，pageerror0、无横溢。snapshot `86c5388b8c5361c5196de4bf8b018b5e77d6773de671e6035aa7b704fbfc5556`；海报941×1672/3,786,260 B，完整图724×4547/4,525,945 B，下载与预览hash相同。`.cache/qztx-prototype-rebuild/browser/1793678427850/` 位于本集成树，不是旧运行树。
+- 五角色经正常服务以合成witness各自封存，再在同一63227实际核source/四槽ref+版本+SHA/尺寸/类型、揭晓/报告/10 PNG；5原链接同一snapshot、0新complete。证据 `.cache/final-integration/five-role-final-proof.json` 与 `five-role-browser/`；不冒称五次完整UI答题。复用B图包390/430与代表320/桌面证据，不扩大设备矩阵。首页不变的320/390/1200烟测与5固定营销图HTTP字节/hash证据复用 `platform-smoke.json`。
+- 所有自动浏览器/故障注入驱动结束后，正常服务签发最后一份独立作者体验资格，未交换/未答题；原测试spare与所有旧Key不改。私有交付 `.cache/final-integration/author-experience.html`（600，含新资格和五角色合成只读入口，不入Git）；63227自有PID88280、同一原runtime config/DB/source持续服务，owner/启动信息在 `server-owner-corrected.json`。未开放63226演示服务。
 
-本记录为首段工程进度；真实隔离库、24题保存恢复/完成、不可变六卷、双PNG及五角色入口仍待本批最终资格后执行，不宣称第5步已完成。
+验证复用：32项source/presentation/copy/resolver定向、5项四槽准入、4项最终resolver、48项source/SQL与14项实际native反例及上述真实路径。最终变更文件类型/必要lint/格式、构建及实际PNG检查完成；未手动重跑无关全量单测、全部数据库/媒体矩阵/全设备E2E。旧合成资格请求仍保留“被拒，原因未确认（存在8h期限线索）”限制，未续期或重放旧Key，不称旧原链接验收通过。后续63226维护、作者体验/内容视觉确认、main合并及生产/商业发布分别按明确授权处理。
 
 ## 2026-11-02 报告深度、人物小传与紧凑长图
 

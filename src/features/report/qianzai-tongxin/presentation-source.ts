@@ -1,3 +1,5 @@
+import finalDemoRegistration from "@/features/quizpack/content/private-test-registration-final-demo.json";
+import finalE2eRegistration from "@/features/quizpack/content/private-test-registration-final-e2e.json";
 import exportParityFixture from "@/features/quizpack/content/qianzai-local-export-parity-fixture.json";
 import localArtFixture from "@/features/quizpack/content/qianzai-local-art-fixture.json";
 import localNameFixture from "@/features/quizpack/content/qianzai-local-name-fixture.json";
@@ -11,6 +13,8 @@ export function qianzaiPresentationSourceMatches(
 ): boolean {
   return (
     value === QIANZAI_V11_CONTENT_SHA256 ||
+    value === finalDemoRegistration.canonicalContentSha256 ||
+    value === finalE2eRegistration.canonicalContentSha256 ||
     value === exportParityFixture.canonicalContentSha256 ||
     value === localArtFixture.canonicalContentSha256 ||
     value === localNameFixture.canonicalContentSha256 ||

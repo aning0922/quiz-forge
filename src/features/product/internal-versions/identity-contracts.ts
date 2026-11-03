@@ -67,6 +67,20 @@ export const engineIdentitySchema = z.union([
 export const baselineApprovalSchema = z.union([
   z.strictObject({
     kind: z.literal("private-test-only"),
+    authorizationId: z.literal("qztx-final-private-20261103"),
+    instanceId: z.literal("601707c7f4511e7d6fb09da3a907c8d9"),
+    evidenceSha256: sha,
+    scope: z.literal("candidate-content-reference-art-local-test-only"),
+  }),
+  z.strictObject({
+    kind: z.literal("private-test-only"),
+    authorizationId: z.literal("qztx-final-private-20261103"),
+    instanceId: z.literal("79331f888c569d9fbf7a2a08e5f33f68"),
+    evidenceSha256: sha,
+    scope: z.literal("candidate-content-reference-art-local-test-only"),
+  }),
+  z.strictObject({
+    kind: z.literal("private-test-only"),
     authorizationId: z.literal("qztx-full-flow-20261030"),
     instanceId: z.literal("953991305a7e8c49bb773d95cd120378"),
     evidenceSha256: sha,
