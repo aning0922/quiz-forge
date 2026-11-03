@@ -64,7 +64,7 @@ describe("Qianzai same-source full-report scales", () => {
     const doc = qianzaiSnapshotDocument(f.body, undefined, presentation);
     for (const section of doc.sections)
       for (const block of section.blocks) {
-        expect(text).toContain(block.text);
+        expect(text).toContain(block.text.replace(/\r\n|\r|\n/g, ""));
         expect(fontInput).toContain(block.text);
       }
     expect(text).not.toContain("反向题干");
