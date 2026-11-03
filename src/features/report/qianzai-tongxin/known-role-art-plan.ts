@@ -29,7 +29,8 @@ export const QIANZAI_KNOWN_ROLE_ART_PLAN = [
   },
   {
     id: "zhou-yu",
-    costume: "玄青暗红将领锦袍与少量护肩，利落叠襟，独立束发",
+    costume:
+      "玄青暗红将领锦袍与少量护肩，利落叠襟；前发收拢，修长沉静眉眼与近中性唇形",
     revealAction: "水榭侧坐听曲，指尖停在案沿，侧首回顾画外声源",
     reportAction: "营帐中立于案边展开图，一手压图、一手指近处路线",
     posterAction: "临水船边倚栏听风，带鞘佩剑从属，衣料厚重",
@@ -37,7 +38,7 @@ export const QIANZAI_KNOWN_ROLE_ART_PLAN = [
   },
   {
     id: "zhao-yun",
-    costume: "银灰冷青衣甲、实丝深色内层，明确肩腕与系带，英朗成人骨相",
+    costume: "银灰冷青衣甲、实丝深色内层；较宽成年下颌、直眉沉稳表情，束发利落",
     revealAction: "马旁整缰，手扶鞍、另一手理缰，半抬脸回应",
     reportAction: "行军休息时坐石系紧护腕，双脚与衣甲有承重关系",
     posterAction: "驻马营门回望，握缰手与鞍部关系清晰，兵器从属",
@@ -77,7 +78,8 @@ export const QIANZAI_KNOWN_ROLE_ART_PLAN = [
   },
   {
     id: "cai-wenji",
-    costume: "墨碧暖杏汉风密实交领裙，细几何边饰，整洁发髻与朴雅玉簪",
+    costume:
+      "雾蓝月白汉风密实交领裙，银丝芦草/兰叶与细枝疏花，柔韧丝缎层次，整洁发髻与朴雅玉簪",
     revealAction: "灯下席坐缮书，执笔接纸，另一手移卷，沉静抬眼",
     reportAction: "窗旁整理典册，将两卷并置，肩肘有案面支撑",
     posterAction: "廊下低坐持一页材料，另一手扶案，不固定抱书站立",
