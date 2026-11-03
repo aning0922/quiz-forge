@@ -8,6 +8,7 @@ import localArtFixture from "./qianzai-local-art-fixture.json";
 import localNameFixture from "./qianzai-local-name-fixture.json";
 import centeredNameFixture from "./qianzai-local-centered-name-fixture.json";
 import liQingzhaoOnlineFixture from "./qianzai-local-liqingzhao-online-fixture.json";
+import { QIANZAI_HISTORICAL_TEN_TEST_IDENTITY } from "./private-test-ten-role-identity";
 
 /** Compiled finite registrations, never selected by a request or an environment switch. */
 export const PRIVATE_TEST_REGISTRATION = registration;
@@ -20,6 +21,15 @@ export const PRIVATE_TEST_REGISTRATIONS = [
 export type PrivateTestRegistration =
   (typeof PRIVATE_TEST_REGISTRATIONS)[number];
 export const privateTestUseSchema = z.union([
+  z.strictObject({
+    schemaVersion: z.literal("quizforge.private-test-use.v1"),
+    instanceId: z.literal(QIANZAI_HISTORICAL_TEN_TEST_IDENTITY.instanceId),
+    authorizationId: z.literal(
+      QIANZAI_HISTORICAL_TEN_TEST_IDENTITY.authorizationId,
+    ),
+    contentStatus: z.literal("candidate"),
+    resourceStatus: z.literal("reference-or-candidate"),
+  }),
   z.strictObject({
     schemaVersion: z.literal("quizforge.private-test-use.v1"),
     instanceId: z.literal("601707c7f4511e7d6fb09da3a907c8d9"),

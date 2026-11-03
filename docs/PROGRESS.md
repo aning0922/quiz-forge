@@ -1,5 +1,14 @@
 # 阶段进度
 
+## 2026-11-03 新受管test身份：只解离线组包marker依赖
+
+主控明确授权先准备新隔离test身份与必要共享schema，未授权带未冻结hash的0030或source导入。A从本独立工作树正常执行`pnpm p2a:db init --port 55531 --origin http://127.0.0.1:63231 --purpose test`，生成新instance `1ec2da760d5ccc0aa38664bcc4aefca6`、独立角色/密码与真实manifest/runtime/admin；未使用recovery接口、旧marker或复制改写旧manifest。正常init只应用当前既有0001–0029，不依赖商品source。数据库`qf_db_1ec2da760d5ccc0aa38664bcc4aefca6`，实际marker `quizforge.p2a.v1:1ec2da760d5ccc0aa38664bcc4aefca6:test`；本批有限授权标签`qztx-historical-ten-private-20261103`。
+
+- 通过`openManagedDatabase`核manifest/root/admin/runtime及真实数据库身份；PostgreSQL18.4、loopback55531、owner/app角色均精确匹配。29项已应用迁移与当前文件checksum逐项一致；9个导入/资源/草稿/版本/Key/会话/报告表全空。三份受管配置均为普通文件0600。回执在本树`.cache/ten-role-integration/test-identity-receipt.json`，不含密码；原provision意图与日志保留，不读其他实例业务记录。
+- 新`private-test-ten-role-identity.ts`公开有限instance/purpose/origin/authorizationId/databaseMarker事实；`private-test.ts`仅为`privateTestUseSchema`加该instance与授权ID的精确组合，其余candidate/reference状态保持。没有向`PRIVATE_TEST_REGISTRATIONS`、资源批准、baseline、renderer或SQL准入添加任何新项，也未填source三hash。可供B离线组装的五字段scope在私有`.cache/ten-role-integration/test-identity-scope.json`；此语法接受不授予运行权。
+- 新marker精确通过、未知/混配/冒称批准拒绝、四个旧source不能配新marker及新身份仍未注册source，共6项定向测试通过；因共享schema输入已变，另跑受影响旧final登记2项，合计8项通过。三文件ESLint、TypeScript、格式/diff通过。正常provision和只读身份核查为真实新PG证据，不是新source准入验收；未构建、未调用媒体/native、未运行其他数据库或浏览器矩阵。
+- PG55531为本批自有新实例运行中；63231仅作为该实例固定origin，尚未启动应用服务。63230/旧运行树与63226 UNKNOWN不动。美术批量仍暂停；B须等最终新历史名单/正文/声明/正确美术冻结再产出精确source，A随后以准确source/baseline提交0030提案给Astra审查，不能用此身份准备跳过最终审核。shared schema会改变候选闭包输入，最终entry须重新实算登记，不复用旧entry。
+
 ## 2026-11-03 历史名单独审通过：仅接六位已保留正文
 
 主控确认历史十人名单已获独审：男李白、苏轼、王维、辛弃疾、白居易；女李清照、薛涛、谢道韫、班昭、秦良玉。B研究提交`5508364`为名单/有界评分研究，不是生产source或资源批准。A本步只从B撤回提交`8521194`精确接入`classical-retained-role-data.ts`、`classical-poet-role-data.ts`和聚合`classical-role-data.ts`三个文件；保留的六位正文为李白、苏轼、李清照、王维、薛涛、谢道韫，全部documented-historical。原聚合孙悟空导出已移除，不带入红楼/木兰数据，不修改旧V11资料或报告。

@@ -2,6 +2,12 @@
 
 开发、验证、独审和收口统一遵循 [根 AGENTS.md](../AGENTS.md)。本文件的带日期条目、测试数量、全量运行和逐图复核均保留为原批次记录，不要求新任务重新执行。当前任务以用户最新授权及最新实际检查点为准；文档中的旧“尚未合并”“待实现”和阶段启动指令不覆盖后续事实。
 
+## 2026-11-03 新隔离身份交B离线组包
+
+主控授权A按正常受管init生成新test实例。实际instance `1ec2da760d5ccc0aa38664bcc4aefca6`、origin63231、PG55531、DB marker `quizforge.p2a.v1:1ec2da760d5ccc0aa38664bcc4aefca6:test`及授权标签`qztx-historical-ten-private-20261103`已核真实manifest/root/admin/DB；既有29迁移checksum一致，业务表空。精确tuple编译在`private-test-ten-role-identity.ts`，五字段scope在本树私有`.cache/ten-role-integration/test-identity-scope.json`；B接必要shared提交即可离线parse新marker，不借旧实例。
+
+A只扩精确candidate marker语法，未注册source/资源/baseline/renderer，未写0030或用占位hash。8项直接相关marker/旧final测试及静态检查通过；详情见PROGRESS。新PG运行中、63231未起应用；旧63230与UNKNOWN保持。源与美术最终冻结、精确0030独审/迁移仍是后续步骤，本轮身份准备不授予正式运行或旧试稿准入。
+
 ## 2026-11-03 历史名单与六位正文增量
 
 主控确认男李白/苏轼/王维/辛弃疾/白居易、女李清照/薛涛/谢道韫/班昭/秦良玉名单独审通过。A只接B `8521194`的三份纯资料文件，聚合仅六位已完成历史正文；不接旧小说/传说导出、研究脚本或source组装。B继续交新名单正式contract/roster及四位替换正文；A不抢改B所有权文件。最终入口须精确拒旧名单，现无可执行新source入口/登记。美术未冻结，故不进行PNG、准入或新库迁移，63230保持；范围与未运行原因见PROGRESS最新条目。
