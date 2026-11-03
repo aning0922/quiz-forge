@@ -200,16 +200,16 @@ describe("versioned Qianzai consumer prose", () => {
     const d = document(f);
     const patterns = section(d, "patterns");
     expect(patterns.intro).not.toContain("留一点空白");
-    expect(patterns.blocks).toHaveLength(1);
+    expect(patterns.blocks).toHaveLength(2);
     expect(patterns.blocks[0]!.layout).toBe("body");
     expect(patterns.blocks[0]!.snapshot).toBeUndefined();
-    expect(patterns.blocks[0]!.text).toContain(
+    expect(patterns.blocks[1]!.text).toContain(
       "文学里的相逢，可以从一句诗、一个细节开始",
     );
-    expect(patterns.blocks[0]!.text).not.toMatch(
+    expect(patterns.blocks[1]!.text).not.toMatch(
       /你愿意|看见你|本轮|选择记录/u,
     );
-    expect(qianzaiConsumerCopyText()).toContain(patterns.blocks[0]!.text);
+    expect(qianzaiConsumerCopyText()).toContain(patterns.blocks[1]!.text);
     const html = renderToStaticMarkup(
       createElement(QianzaiReportReader, {
         document: d,
@@ -217,7 +217,7 @@ describe("versioned Qianzai consumer prose", () => {
         actions: null,
       }),
     );
-    expect(html.split(patterns.blocks[0]!.text)).toHaveLength(2);
+    expect(html.split(patterns.blocks[1]!.text)).toHaveLength(2);
     expect(section(d, "encounter").blocks).toHaveLength(2);
     expect(section(d, "encounter").blocks[0]!.snapshot).toBeUndefined();
     expect(section(d, "encounter").blocks[0]!.text).toContain("李清照");
@@ -230,6 +230,72 @@ describe("versioned Qianzai consumer prose", () => {
     expect(supportedPatterns).toHaveLength(1);
     expect(supportedPatterns[0]!.layout).toBe("card");
     expect(supportedPatterns[0]!.text).not.toBe(patterns.blocks[0]!.text);
+  });
+  it("connects each role to supported choices in the third chapter, shared by web and full PNG, without changing the score body", async () => {
+    const anchors = {
+      "li-bai": "名山江流与长风关山",
+      "su-shi": "诗词、文章与书画",
+      "tao-yuanming": "采菊、南山、暮色与归鸟",
+      "li-qingzhao": "溪亭旧游",
+      "mulan-ballad": "关山远行",
+    };
+    for (const [role, anchor] of Object.entries(anchors)) {
+      const f = await fixture(role),
+        before = structuredClone(f.body),
+        d = document(f);
+      const connection = section(d, "patterns"),
+        themes = qianzaiSupportedThemes(f.body);
+      expect(d.sections).toHaveLength(6);
+      expect(d.sections[2]).toBe(connection);
+      expect(connection.title).toBe(`你为什么像${d.name}`);
+      expect(connection.intro).toContain("不代表完整人格相同");
+      expect(connection.blocks[0]!.text).toContain(anchor);
+      const html = renderToStaticMarkup(
+        createElement(QianzaiReportReader, {
+          document: d,
+          onResult: () => {},
+          actions: null,
+        }),
+      );
+      const print = qianzaiExportText(
+        f.body,
+        "full-report",
+        d.resultPresentation,
+      ).join("\n");
+      expect(html).toContain(connection.title);
+      expect(print).toContain(connection.title);
+      for (const [i, b] of connection.blocks.entries()) {
+        const [observed, literary, practical] = b.text.split("\n\n");
+        expect(observed).toBe(themes[i]!.feature.text);
+        expect(literary!.length).toBeGreaterThan(30);
+        expect(practical!.length).toBeGreaterThan(30);
+        expect(html).toContain(literary);
+        expect(print).toContain(b.text);
+        expect(qianzaiConsumerCopyText()).toContain(literary);
+      }
+      expect(displayText(d)).not.toMatch(/RAW_|Q\d{2}|authored-|accepted/u);
+      expect(f.body).toEqual(before);
+      // Even a perfect numeric profile cannot manufacture literary links once
+      // the existing accepted support is absent.
+      f.body.dimensions.forEach((dim) => {
+        dim.score = 100;
+      });
+      f.body.volumes[2]!.paragraphs.forEach((p) => {
+        p.status = "facts-only";
+      });
+      const neutral = document(f),
+        blocks = section(neutral, "patterns").blocks;
+      expect(blocks).toHaveLength(2);
+      expect(blocks.every((b) => b.snapshot === undefined)).toBe(true);
+      expect(blocks[0]!.text).toContain("不替你补上性格标签");
+      expect(blocks[0]!.text).toContain("五个选择方向的整体组合");
+      for (const b of connection.blocks)
+        expect(blocks.map((b) => b.text).join("")).not.toContain(
+          b.text.split("\n\n")[1],
+        );
+      expect(neutral.identity!.tags).toEqual([]);
+      expect(neutral.dimensions).toBe(f.body.dimensions);
+    }
   });
   it("keeps unknown, unbound and mismatched source/role/version inputs on the existing snapshot path", async () => {
     const f = await fixture(),
@@ -308,7 +374,7 @@ describe("versioned Qianzai consumer prose", () => {
     ).toEqual(themes.map((t) => t.feature.text));
     expect(
       section(d, "patterns").blocks.every(
-        (b) => b.text.split("\n\n").length === 2,
+        (b) => b.text.split("\n\n").length === 3,
       ),
     ).toBe(true);
     f.body.volumes[2]!.paragraphs.pop();
@@ -477,10 +543,10 @@ describe("versioned Qianzai consumer prose", () => {
       renderedCardBodies.map(
         (match) => (match[1]!.match(/<p>/gu) ?? []).length,
       ),
-    ).toEqual([2, 2, 2]);
+    ).toEqual([3, 3, 3]);
     for (const card of cards) {
       const parts = card.text.split("\n\n");
-      expect(parts).toHaveLength(2);
+      expect(parts).toHaveLength(3);
       expect(parts[1]!.length).toBeGreaterThan(30);
       expect(printText).toContain(card.text);
       expect(html).toContain(parts[1]);
@@ -499,7 +565,7 @@ describe("versioned Qianzai consumer prose", () => {
     const neutral = document(f);
     expect(section(neutral, "patterns").blocks[0]!.layout).toBe("body");
     expect(section(neutral, "patterns").blocks[0]!.snapshot).toBeUndefined();
-    expect(section(neutral, "patterns").blocks[0]!.text).toContain("不妨问问");
+    expect(section(neutral, "patterns").blocks[1]!.text).toContain("不妨问问");
     expect(section(neutral, "counterevidence").blocks[0]!.text).toContain(
       "先问问",
     );
