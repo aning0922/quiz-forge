@@ -1,5 +1,29 @@
 # 阶段进度
 
+## 2026-11-03 阅读增量收口：24题静态通读结论
+
+B对封存source `8cbcf2488308c4f4962e9e9ee0aacf79f0dce1a3fb386133b81a0561edff7c31` 的24题/96选项完成一次静态通读：情境、退出条件与四项取舍基本清楚，同轴题有不同情境不自动视为冗余，现题可支撑本批阅读增量，无需改题。q21–24可理解，但通读不增加解释资格；既有accepted/完整支持门控保持。未读作者答案、未执行评分、未改题或新增文档，不把通读当评分/内容批准。
+
+唯一非阻断留后为q12-a“调整少数页面”与b“只挪必须调整页面”较接近；未来若修须连同评分与支持ref版本化，本批不改、不新开任务。分组修复`033407c`必要验证已通过，本次仅补现有记录及文本/diff核对，不重跑测试。新十人名单仍待作者核名，不由本批推定冻结；候选保持local review、未合并/未生产边界，交付收口。
+
+## 2026-11-03 阅读候选必要修复：每主题一张卡
+
+主控实际复核指出`7d25fc0`把每主题拆成4块，网页散段、PNG四框/主题造成呈现回退。仅修local review wrapper：一条supported reading对应一张既有card，title为主题短标题，text按空行分四短段，后三段使用既有有限`**强调**`标签“与人物的呼应”“放回具体条件看”“带进日常的一小步”。全部choice/meaning/人物呼应/condition/nextStep保留，每卡携原reading.snapshot；3/1主题对应3/1卡，neutral原样，正式reader/layout/formatter/fonts/登记未改。
+
+wrapper原2项断言按3/1卡、每卡4段、3个强调标签及全文保留修订后通过；定向ESLint/格式/diff通过。只补实际A390×844/1280×900及A/B连续长图分组：网页3卡、每卡4段/3强调，PNG为3/1卡且无字面`**`；无页面错误/横溢，已逐图查看。A724×5090、4,972,169 B、SHA`da8d0f08a576553a8e6cf791235c3ba1cb2dfb2b57d02c80fc900e83b2d8c8d5`；B724×4123、4,125,775 B、SHA`bb05dc2efcbdbaaa753e0a28664fab5b78294bcff09b39f5f14a8ae462f2e3e4`。新图/回执在`.cache/evidence-readability/one-card-fix/browser/`，`7d25fc0`及初图保留。其他原成功证据复用，未重跑B6模块、评分搜索、DB/媒体/外站或全量检查。63233同入口更新，当前owner PID85478；旧环境不动。补提交更新现Draft PR53，供主控/视觉复核本问题后收口。
+
+## 2026-11-03 报告阅读增量：独立v3合成候选
+
+主控依据作者授权的参考站研究，放行不依赖新名单的局部阅读改进。独立树`quizforge-qztx-evidence-readability/quiz-forge`、分支`codex/qztx-evidence-readability`基于`1b55073`。研究复用私有`quizforge-assets/research/lishirenwu-20261103/`既有结果，未重访外站或复制其代码/文案/图片。Astra已确认仅local review显式选择v3、无正式1.5/source注册、旧snapshot不改的最小边界。
+
+- 实际能力核对：composer已有accepted/facts-only/fallback；supported-themes已有完整ref/正反支持匹配、主题去重及最多三条；旧consumer-copy已有文学呼应、具体建议和neutral，均复用。有限选择原review的`li-bai-a`（探索/协调/起步3主题）、`li-bai-b`（探索1主题、同卷还有facts-only）、`li-bai-neutral`（0主题、patterns仅facts-only）。三份既有完整合成输入仅首次复算，body hash与原review完全一致：`b5f2147e…cd3e`、`f6ce0155…0059`、`b92a7667…98d2`；source为封存`8cbcf248…ff7c31`，不读作者答案，不伪改结果/分数。之后只检查候选wrapper差异，未重跑621搜索或外站研究。
+- 差距是表达层次，3/1/0本身不是缺陷。例如旧“按事起步”泛指体验/准备，生活建议虽提退出成本却埋在175–190字整卡中；新原创解释先指出具体安排中推进眼前一步、长期事项先规划的不同，明确完整规划的时间成本、小试成本与撤回条件，再建议先写边界、选最小一步。协调主题由泛泛“彼此各有位置”，改为明确共同选路先听理由/另一安排保留方向，并说明协调可能暂搁自己的需求、等待表达也会拖慢决定。B模块`97f339b`→本树`7beb533`，单句收窄`e8a401e`→`e1543fd`；原6定向测试及两文件静态复用，不重复。
+- 新`tests/browser/qianzai-reading-candidate.ts`仅供显式local review：重用经可信源/派生presentation核过的v2文档，保留body对象及其hash，以B reading替换第三卷通用解释/建议；固定文学呼应段从该已支持v2展示卡精确复用，不从raw答案或snapshot句子拼新结论。每主题按现有body/body/body/prompt布局分开短解释、文学呼应、适用条件、小一步，只有第一块携原snapshot，壹/贰/叁对应实际主题数。neutral及其他五卷、反证和matching原样保留。候选document真实标`consumer-copy.v3`，未伪标v2。
+- 最初生产reader/CSS/layout候选改动会改变正式闭包，已撤回；最终相对基线未改consumer-copy.v2、supported-themes、reader、layout、正式fonts/runtime或登记。新增B纯模块仅由review wrapper/测试引用；新增路径与已登记闭包文件集合交集0，记录`.cache/evidence-readability/closure-diff.json`。未重算或宣称登记新entry；旧63230/作者构建、记录与63226 UNKNOWN保持，新test库未写入。
+- 本地`http://127.0.0.1:63233/content-review`提供原review上的实际前后对照、真实`QianzaiReportReader`及同候选blocks的纯production Canvas；不是Next/真实数据库消费者或导出回执验收。私有server仅构建时暴露既有纯layout/painter，不放宽生产guard。Chromium156：原/新三样本390×844首次实看；最终新增排版只补受影响A/B390×844及A1280×900，pageerror0、无横溢，已逐图查看。旧3栏实际过密与混合block序号1/5/9均通过review文档既有block组合消除，未改正式组件。
+- 最终连续PNG：A724×5964、5,438,770 B、SHA`cf64b1ebffdd67613010bae2c67a7085f8213947617845d5c62a1dd5e23c4091`；B724×4273、4,208,508 B、SHA`c742c7695a39fc7146b42abb929123f26ab952ef0582488974c8226ad15cbfee`。实际查看第三卷近景，顺序与网页候选blocks一致。候选是按阅读层次展开，长图比原排版更长，不声称内容压缩或作者视觉批准。原未改neutral/其他卷及B修复前截图保留复用，不重导未受影响项。
+- 本批wrapper2项真实样本/未知源反例通过，定向ESLint、TypeScript、格式/diff通过。中间shared reader严格optional类型与wrapper括号解析失败保留，前者随撤回退出交付，后者修后相关检查通过。私有参考字库为固定OFL全量源，body source hash`2d73eea9…a7fc8b`核实，实际语料覆盖含U+0020无缺字；不是最终生产subset通过。无DB/媒体/native/生产build/全量E2E，无新名单、评分、权限或24题语义修改。回执与前后图在本树`.cache/evidence-readability/`，最终图为`browser-delivery/`；服务owner在`server-owner.json`。提交/同步及Draft PR事实按本分支最终交付记录。
+
 ## 2026-11-03 新受管test身份：只解离线组包marker依赖
 
 主控明确授权先准备新隔离test身份与必要共享schema，未授权带未冻结hash的0030或source导入。A从本独立工作树正常执行`pnpm p2a:db init --port 55531 --origin http://127.0.0.1:63231 --purpose test`，生成新instance `1ec2da760d5ccc0aa38664bcc4aefca6`、独立角色/密码与真实manifest/runtime/admin；未使用recovery接口、旧marker或复制改写旧manifest。正常init只应用当前既有0001–0029，不依赖商品source。数据库`qf_db_1ec2da760d5ccc0aa38664bcc4aefca6`，实际marker `quizforge.p2a.v1:1ec2da760d5ccc0aa38664bcc4aefca6:test`；本批有限授权标签`qztx-historical-ten-private-20261103`。
