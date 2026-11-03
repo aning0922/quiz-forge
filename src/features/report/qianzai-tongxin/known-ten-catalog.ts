@@ -50,7 +50,8 @@ export const QIANZAI_KNOWN_TEN_ROLES = (
     },
     {
       id: "tang-yin",
-      displayName: "唐伯虎（唐寅）",
+      displayName: "唐伯虎",
+      alternateNames: ["唐寅"],
       sex: "male",
       kind: "documented-historical",
       identityBasis: "documented-historical",
@@ -149,6 +150,7 @@ export const QIANZAI_KNOWN_TEN_ROLES = (
     {
       id: "cai-wenji",
       displayName: "蔡文姬",
+      alternateNames: ["蔡琰"],
       sex: "female",
       kind: "documented-historical",
       identityBasis: "documented-historical",
