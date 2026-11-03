@@ -2,6 +2,10 @@
 
 开发、验证、独审和收口统一遵循 [根 AGENTS.md](../AGENTS.md)。本文件的带日期条目、测试数量、全量运行和逐图复核均保留为原批次记录，不要求新任务重新执行。当前任务以用户最新授权及最新实际检查点为准；文档中的旧“尚未合并”“待实现”和阶段启动指令不覆盖后续事实。
 
+## 2026-11-03 十角色共享接口准备
+
+A独立树`codex/qztx-ten-role-integration`基于PR52@1f2177b，主控确认1.5 consumer/1.3 preview、新角色presentation/copy及独立source门控；Astra通过最小设计，最终SQL另审。A先交`classical-edition.ts`类型接口，B只供新角色资料/copy/语料/私有图包，A负责可信绑定和共享登记/字体/源准入。当前不启用新renderer、不填hash、不改DB，不在63230运行树改动。阶段检查与范围见PROGRESS最新条目；待B数据及最终封存事实逐步集成。
+
 ## 2026-11-03 1.4真实接入里程碑
 
 A在独立`codex/qztx-v14-real-integration`（基PR51@6a1e9f4）接入63230真实隔离test库，复用0029/同source/33封存资源/原review，正常重新登录同一合成操作员后新封存版本、新play和Key。Astra确认正常登录路径；未调用fixture插账户/session，未扩大构包/validation origin能力或修改旧managed manifest。consumer1.4 entry保持b88be4dd…b4809。

@@ -1,5 +1,13 @@
 # 阶段进度
 
+## 2026-11-03 十角色接线：设计前审通过，独立接口准备
+
+独立`codex/qztx-ten-role-integration`从PR52 `1f2177b`建立，不在63230运行树开发。主控确认consumer1.5.0/preview1.3.0及新presentation/copy版本；名单与73通用声明共享模板、A最小准入设计已获Astra前审。最终source/53资源声明/授权/baseline冻结后的精确SQL仍须独立针对审查后才迁移新隔离test实例；设计通过不是SQL或商品批准。当前没有新source/迁移/数据库/运行登记，旧服务及UNKNOWN保持。
+
+- 新`classical-edition.ts`只提供独立静态资料/可信binding类型与新版本常量，尚未接入可用性登记；复用旧profile/presentation的纯类型结构，不改旧V11资料或alias。史实资料可带有依据的生卒；原著小说/文学传说要求sourceWork且不允许lifespan。偏好文案准备为“男性/女性人物”，不再暗示全史实；将在新版本接线时启用，不改既有运行页面。
+- B提供新独立角色资料、copy、精确Unicode corpus与私有bundle；A持有可信source/renderer绑定、登记/字体/准入及未来运行。最终hash和资源事实不使用占位值，旧source/report不映射新copy。新注册可能影响多个闭包entry，须最终实算，不把算法未改等同entry不变。
+- 本步`tsc --noEmit`、新文件ESLint及格式/diff检查通过。无运行行为改变，不写镜像测试、不构建、不生图、不创建数据库/迁移。后续按B资料先接接口、最终包预算/73声明反例与精确新准入推进，不重复已过旧矩阵。私有设计在本树`.cache/ten-role-integration/design-v1.md`；当前主控授权新隔离实例，具体marker/origin在准入批次冻结。
+
 ## 2026-11-03 consumer1.4真实内测接入：63230统一体验
 
 独立树`quizforge-qztx-v14-real-integration/quiz-forge`、分支`codex/qztx-v14-real-integration`基于PR51 `6a1e9f4`，该基线checks/database/accounts均success。新统一真实入口 `http://127.0.0.1:63230/` 使用现有隔离test实例`79331f888c569d9fbf7a2a08e5f33f68`，原63227的1.3作者运行目录、配置、旧Key/play/report及63226 UNKNOWN保持。63228合成、63229公开SSR及49681报告保留。十角色版本未进入本批。
