@@ -1,5 +1,13 @@
 # 阶段进度
 
+## 2026-11-04 Astra实际DDL两项P2最小修正：正式0030仍未执行
+
+Astra对`e8dea73`实际diff指出两项P2，主控暂不放行正式迁移。0030仅修对应两处：Key INSERT去掉policy_scope已持product/head共享锁之后的product FOR UPDATE升级，归档状态在既有共享锁下只读；grant guard按既有父锁顺序确认原grant id/digest/session后，若整行除revoked_at外完全相同，先允许原纯撤销，不让旧代/期限/current-report检查阻断；签发及新token轮换仍过current attempt或原report授权。app UPDATE仍关闭，无启用服务/UI扩展。
+
+harness的旧session owner负例必须同时匹配SQLSTATE23514与`VERSION_SUPERSEDED`，未完成资格重开/过代插入也核对应消息，已完成资格核`CONSUMER_KEY_COMPLETED`；不再以任意约束错误冒称版本guard通过。最新准确DDL SHA`c6009e5ebbda4107b63aa475e8434a8b0a6af87cc42627ca03759987adc65db3`，待Astra只复核两处实际修正。仅对修改harness补定向类型/ESLint/格式/diff，复用009f652比较器只读证明与原契约证据，不跑写库/旧套件/构建。
+
+主控已明确6736候选库不再视为干净0029基线：候选回执与失败完整保留，不删结构、不改名、不清UNKNOWN。修正提交后停在正式0030未执行的安全边界；主控收到窄复核后再协调另建自有managed新库、合成legacy基线及本批真实PG反例，不提前执行。原作者环境及原受管实例不动，工程PG反例仍未通过。
+
 ## 2026-11-04 首项比较器失败定位：只读精确核对，不重放升级或反例
 
 失败是工具比较方法，未发现业务字段变动。旧夹具经Drizzle返回timestamptz服务器文本（本地已安装driver对OID1184设transparent parser），owner检查经原始postgres-js返回Date后JSON序列化为UTC ISO；首个expires_at为`2026-11-04 00:49:14.803+08`对`2026-11-03T16:49:14.803Z`。原失败、原baseline及原前后值均保留，新私有`policy-draft/comparison-diagnosis.raw.json`保存5行完整before、driver after、DB json文本after、原生时间等值结果及原回执hash；没有删除/覆盖原失败。

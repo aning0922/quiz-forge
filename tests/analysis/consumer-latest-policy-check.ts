@@ -49,8 +49,10 @@ async function rejected(
   work: (tx: postgres.TransactionSql) => Promise<unknown>,
   expected: string,
   sql = managed.sql,
+  expectedMessage?: string,
 ) {
   let caught: string | undefined;
+  let message: string | undefined;
   try {
     await sql.begin(async (tx) => {
       await work(tx);
@@ -58,9 +60,11 @@ async function rejected(
     });
   } catch (e) {
     caught = (e as { code?: string }).code;
+    message = (e as Error).message;
     if (!caught) throw e;
   }
   assert.equal(caught, expected);
+  if (expectedMessage !== undefined) assert.equal(message, expectedMessage);
 }
 async function oldGraphUnchanged() {
   for (const [table, original] of [
@@ -170,7 +174,12 @@ try {
   pass(
     "expired completed key still grants original report without a head; fixture rolled back",
   );
-  await rejected((tx) => insertSession(tx, sessionRow(0)), "23514", app);
+  await rejected(
+    (tx) => insertSession(tx, sessionRow(0)),
+    "23514",
+    app,
+    "VERSION_SUPERSEDED",
+  );
   await rejected(
     (tx) =>
       tx`UPDATE qf.consumer_session SET state_revision=state_revision+1 WHERE id=${baseline.incomplete.id}`,
@@ -196,10 +205,17 @@ try {
     (tx) =>
       tx`UPDATE qf.consumer_session SET state_revision=state_revision+1 WHERE id=${baseline.incomplete.id}`,
     "23514",
+    managed.sql,
+    "VERSION_SUPERSEDED",
   );
   const completedAttempt = sessionRow(1);
   completedAttempt.key_id = baseline.completedKey.id;
-  await rejected((tx) => insertSession(tx, completedAttempt), "23514", app);
+  await rejected(
+    (tx) => insertSession(tx, completedAttempt),
+    "23514",
+    app,
+    "CONSUMER_KEY_COMPLETED",
+  );
   pass(
     "one attempt per key/generation; legacy writes and completed entitlement restart rejected",
   );
@@ -226,7 +242,12 @@ try {
   await managed.sql`INSERT INTO qf.internal_play_version(id,product_id,slot,parent_version_id,parent_snapshot_sha256,operation_key,binding_text,binding_sha256,snapshot_text,snapshot_sha256,created_by,created_at)
    VALUES(${nextRef.playVersionId},${nextRef.productId},2,${second.snapshot.parent.versionId},${second.snapshot.parent.snapshotSha256},${second.play.binding.operationKey},${playBinding},${hash(playBinding)},${playSnapshot},${hash(playSnapshot)},${baseline.actorId},date_trunc('milliseconds',clock_timestamp()))`;
   await activate(1, nextRef);
-  await rejected((tx) => insertSession(tx, sessionRow(1)), "23514", app);
+  await rejected(
+    (tx) => insertSession(tx, sessionRow(1)),
+    "23514",
+    app,
+    "VERSION_SUPERSEDED",
+  );
   const wrongIssue = sessionRow(2, nextRef);
   wrongIssue.issued_play_version_id = nextRef.playVersionId;
   wrongIssue.issued_play_snapshot_sha256 = nextRef.playSnapshotSha256;

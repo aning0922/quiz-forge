@@ -186,7 +186,8 @@ BEGIN
  IF TG_OP='INSERT' AND NOT EXISTS(SELECT 1 FROM qf.consumer_product_head WHERE (product_id,play_version_id,play_snapshot_sha256)=(NEW.product_id,NEW.play_version_id,NEW.play_snapshot_sha256)) THEN RAISE EXCEPTION 'CONSUMER_NO_ENABLED_PLAY' USING ERRCODE='23514'; END IF;
  IF NOT pg_try_advisory_xact_lock_shared(72461,2) THEN RAISE EXCEPTION 'CONSUMER_MAINTENANCE_BUSY' USING ERRCODE='55P03'; END IF;
  IF TG_OP='INSERT' THEN
-  SELECT archived_at INTO archived FROM qf.product WHERE id=NEW.product_id FOR UPDATE;
+  -- consumer_policy_scope already pins archive state with product SHARE before head.
+  SELECT archived_at INTO archived FROM qf.product WHERE id=NEW.product_id;
   IF NOT FOUND OR archived IS NOT NULL OR NEW.revoked_at IS NOT NULL OR NEW.void_operation_key IS NOT NULL OR NEW.void_binding_text IS NOT NULL OR NEW.void_binding_sha256 IS NOT NULL OR NEW.voided_by IS NOT NULL THEN RAISE EXCEPTION 'CONSUMER_INVALID_ISSUE' USING ERRCODE='23514'; END IF;
   NEW.issued_at:=date_trunc('milliseconds',clock_timestamp());NEW.expires_at:=NEW.issued_at+NEW.valid_for_seconds*interval '1 second';
  ELSE
@@ -232,28 +233,38 @@ BEGIN
 END $$;
 
 CREATE OR REPLACE FUNCTION qf.protect_consumer_grant() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog AS $$
-DECLARE k qf.access_key; selected integer; at timestamptz; attempt qf.consumer_session; historical uuid;
+DECLARE k qf.access_key; selected integer; at timestamptz; attempt qf.consumer_session; historical uuid; pure_logout boolean;
 BEGIN
-
+ pure_logout:=TG_OP='UPDATE' AND (to_jsonb(NEW)-'revoked_at') IS NOT DISTINCT FROM (to_jsonb(OLD)-'revoked_at');
  SELECT * INTO attempt FROM qf.consumer_session WHERE id=NEW.session_id AND key_id=NEW.key_id;
  IF attempt.id IS NULL THEN RAISE EXCEPTION 'CONSUMER_GRANT_SESSION_MISSING' USING ERRCODE='23514'; END IF;
  PERFORM qf.consumer_policy_scope(attempt.product_id);
  SELECT * INTO k FROM qf.access_key WHERE id=NEW.key_id FOR UPDATE NOWAIT;
+ IF NOT FOUND THEN RAISE EXCEPTION 'CONSUMER_KEY_VOID' USING ERRCODE='23514'; END IF;
  PERFORM 1 FROM qf.consumer_session WHERE id=NEW.session_id AND key_id=NEW.key_id FOR UPDATE NOWAIT;
+ IF TG_OP='UPDATE' THEN
+  PERFORM 1 FROM qf.consumer_grant WHERE key_id=OLD.key_id AND slot=OLD.slot AND session_id=OLD.session_id
+   AND grant_id=OLD.grant_id AND credential_digest=OLD.credential_digest FOR UPDATE NOWAIT;
+  IF NOT FOUND THEN RAISE EXCEPTION 'IMMUTABLE_GRANT_SCOPE' USING ERRCODE='23514'; END IF;
+ END IF;
+ at:=date_trunc('milliseconds',clock_timestamp());
+ -- Pure revocation is scoped to the exact original grant and cannot change any
+ -- session/token/lifetime field. It must also work after supersession or expiry.
+ IF pure_logout THEN
+  IF OLD.revoked_at IS NOT NULL OR NEW.revoked_at IS NULL THEN RAISE EXCEPTION 'IMMUTABLE_GRANT_LOGOUT' USING ERRCODE='23514'; END IF;
+  NEW.revoked_at:=at; RETURN NEW;
+ END IF;
+ -- Issuance and fresh-token rotation still require current-attempt or original-report authority.
  SELECT session_id INTO historical FROM qf.quiz_report WHERE key_id=NEW.key_id;
  IF historical IS NOT NULL THEN
   IF historical<>NEW.session_id THEN RAISE EXCEPTION 'CONSUMER_GRANT_REPORT_SCOPE' USING ERRCODE='23514'; END IF;
  ELSE
   PERFORM qf.consumer_policy_attempt(attempt.product_id,NEW.key_id,NEW.session_id,attempt.play_version_id,attempt.play_snapshot_sha256::text,attempt.activation_generation);
  END IF;
- IF NOT pg_try_advisory_xact_lock_shared(72461,2) THEN RAISE EXCEPTION 'CONSUMER_MAINTENANCE_BUSY' USING ERRCODE='55P03'; END IF;
- SELECT * INTO k FROM qf.access_key WHERE id=NEW.key_id FOR UPDATE;
- IF NOT FOUND OR k.revoked_at IS NOT NULL THEN RAISE EXCEPTION 'CONSUMER_KEY_VOID' USING ERRCODE='23514'; END IF;
- at:=date_trunc('milliseconds',clock_timestamp());
+ IF k.revoked_at IS NOT NULL THEN RAISE EXCEPTION 'CONSUMER_KEY_VOID' USING ERRCODE='23514'; END IF;
  IF TG_OP='UPDATE' AND (ROW(NEW.key_id,NEW.slot) IS DISTINCT FROM ROW(OLD.key_id,OLD.slot) OR (NEW.session_id<>OLD.session_id AND (NEW.grant_id=OLD.grant_id OR NEW.credential_digest=OLD.credential_digest))) THEN RAISE EXCEPTION 'IMMUTABLE_GRANT_SCOPE' USING ERRCODE='23514'; END IF;
  IF TG_OP='UPDATE' AND ROW(NEW.grant_id,NEW.credential_digest,NEW.issued_at,NEW.expires_at) IS NOT DISTINCT FROM ROW(OLD.grant_id,OLD.credential_digest,OLD.issued_at,OLD.expires_at) THEN
-  IF OLD.revoked_at IS NOT NULL OR NEW.revoked_at IS NULL THEN RAISE EXCEPTION 'IMMUTABLE_GRANT_LOGOUT' USING ERRCODE='23514'; END IF;
-  NEW.revoked_at:=at; RETURN NEW;
+  RAISE EXCEPTION 'IMMUTABLE_GRANT_LOGOUT' USING ERRCODE='23514';
  END IF;
  IF k.expires_at<=at AND NOT EXISTS(SELECT 1 FROM qf.quiz_report WHERE key_id=k.id) THEN RAISE EXCEPTION 'CONSUMER_KEY_EXPIRED' USING ERRCODE='23514'; END IF;
  SELECT slot INTO selected FROM qf.consumer_grant WHERE key_id=NEW.key_id AND (revoked_at IS NOT NULL OR expires_at<=at) ORDER BY slot LIMIT 1;

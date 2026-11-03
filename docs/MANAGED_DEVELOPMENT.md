@@ -2,6 +2,12 @@
 
 开发、验证、独审和收口统一遵循 [根 AGENTS.md](../AGENTS.md)。本文件的带日期条目、测试数量、全量运行和逐图复核均保留为原批次记录，不要求新任务重新执行。当前任务以用户最新授权及最新实际检查点为准；文档中的旧“尚未合并”“待实现”和阶段启动指令不覆盖后续事实。
 
+## 2026-11-04 实际DDL窄修交接：两P2与版本负例身份
+
+Astra实际审`e8dea73`后指出Key INSERT在product/head SHARE后再取product UPDATE的升级问题，以及过代/期限检查早于纯logout导致原grant不能撤销的问题。准确0030现仅修这两段：归档在已持product SHARE下读取；原grant身份与父锁确认后，整行除revoked_at外不变的纯撤销先返回，签发/轮换才校current attempt/原report。直接app UPDATE权限保持关闭，未补后续service或UI。
+
+反例harness补精确错误消息：旧session写要求`23514/VERSION_SUPERSEDED`，不接受其他约束失败作版本拒绝证明；相关过代/完成资格反例同样核有限错误身份。新DDL SHA`c6009e5ebbda4107b63aa475e8434a8b0a6af87cc42627ca03759987adc65db3`，正式0030仍未执行，交Astra仅窄复核两P2。仅修改harness的必要静态检查，既有契约/只读比较器证明复用；真实写库反例仍未通过。主控现要求停在安全提交边界，后续其协调全新自有managed实例与legacy合成基线再做正式0030验证；6736候选/失败/manifest/root及所有UNKNOWN原样保留，不删结构或改回执凑成功。
+
 ## 2026-11-04 比较器失败关闭为工具诊断，正式0030及业务反例仍未通过
 
 首项失败已定位为Drizzle保留PG timestamptz原文与原始postgres-js Date/UTC JSON之间的表示差异。独立只读REPEATABLE READ事务以SQL原生`IS NOT DISTINCT FROM baseline::timestamptz`核对两Key/两session/一report的每个时间列，非时间原字段/canonical TEXT逐字核对，全5行无变动；再以每行+1微秒的5项只读反例证明不会放过微小时间变动。完整原始before/两种after/NULL等值及原失败hash另存`.cache/known-ten/policy-draft/comparison-diagnosis.raw.json`，原失败现场不删除覆盖。工程harness已接同一精确比较helper，不采用JS Date归一化作为断言依据。
