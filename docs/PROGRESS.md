@@ -1,5 +1,19 @@
 # 阶段进度
 
+## 2026-11-03 consumer1.4真实内测接入：63230统一体验
+
+独立树`quizforge-qztx-v14-real-integration/quiz-forge`、分支`codex/qztx-v14-real-integration`基于PR51 `6a1e9f4`，该基线checks/database/accounts均success。新统一真实入口 `http://127.0.0.1:63230/` 使用现有隔离test实例`79331f888c569d9fbf7a2a08e5f33f68`，原63227的1.3作者运行目录、配置、旧Key/play/report及63226 UNKNOWN保持。63228合成、63229公开SSR及49681报告保留。十角色版本未进入本批。
+
+- 复用0029、同一已验证source/33资源、同一草稿及review，无新source、migration、native导入。三hash仍为content `8cbcf2488308c4f4962e9e9ee0aacf79f0dce1a3fb386133b81a0561edff7c31`、assets `062b03e4d29506e80319e9f34506298b0d87d71b9f21875616237f93c69a394d`、manifest `9f26a514352bd7b27a344ba565743da512b0e4cb41ce4464010f5304978e2823`。33个成功E2E封存blob复制前后核SHA/字节/单链接与文件数，无symlink/hardlink，不读作者答案。
+- 新树仅复制app runtime为本树私有0600配置并设63230，不复制/改写旧managed manifest，不更改管理入口CWD所有权。最初怀疑origin capability须扩展，实际调用链证明该能力仅供构包/validation，本批不执行该入口，提案已撤回，源码未放宽。正常readReady/frozenSource继续核原三hash/marker，createDatabase核role/instance/marker/0029当前schema，存储读guard仍使用同库共享维护锁。
+- 旧操作员session读核失败UNAUTHENTICATED已保留。经Astra确认，以原fixture合成资料走正常createPreauth→passwordLogin，返回operator ID一致；未调用fixture插入、不新增/重置账户、不延时旧session。正常授权读回原版本/review后，封存新preview1.2/新字体固定版本`e7f1c8f8-abd6-4c9b-a125-f5f739eb3e51`（snapshot `069679b5efc4d6990c48eecfd9ef281e51dbaa029d02e6f8c6cbe6392d339ad5`）。封存成功后脚本错误复用已关闭owner连接，后续读取失败；保留成功receipt与错误，另开正常只读请求确认同一snapshot，未重放封存。
+- 正常服务创建1.4 play `e66a588b-6adc-41f4-a000-5b08f01268cd`（snapshot `aaa070b88e758b654df5b4829984f2b01cdb0ed89eaa1f2c498ff1c48002b621`）和新Key；旧父版本`47377a5d-685b-470d-a203-7bad475b88f5`未改绑。consumer entry仍 `b88be4dd0e187169edf7f88f789e6b23685b7a795a792dd74936a6fa998b4809`，renderer/font/mapping精确选取，无旧tuple fallback。
+- 本树必要生产build `DKFaZ_VRF5umxFwAA59Ff`通过（含implementation检查/TypeScript/trace129/27103/0），未运行media build/provision或native。63230自有PID68914，原运行目录不重建。原版本、schema/source与private-resource实际服务路径均通过，不以模拟代替真实库。
+- 实际Chromium156、390×844移动触摸：首页→封面→原生上滑/CTA同一原窗→新Key→24题→第9题刷新/新标签恢复→唯一complete→李白揭晓→六卷/为什么像人物/五维展开→海报/连续长图→原Key只读同一snapshot通过。25 save、1 complete、pageerror0，无横溢；新报告snapshot `026adf0176718093e140879488e497435325bd907c7f9c6ac35a4d1a7bb0b5e1`。四角色资源槽与声明逐项一致，第三卷3点各3段。海报941×1672/3,786,260 B；长图724×4878/4,807,332 B，下载/预览SHA一致，长图字节与已图检1.4合成产物相同。
+- Cookie实测固定名且Path=/play/{本次session}，其他session路径0 cookie；同主机跨端口仍可携带，未冒称端口隔离。仅用本次合成session测试错误Origin/FetchMetadata/Host全部403 SOURCE_REJECTED。新服务拒旧1.3 tuple复用同输入PR51 resolver证据；旧服务PID/目录/资格保留，不交换旧作者Key或读取其报告。原接口/评分/CAS/媒体底层证据复用，不重跑全矩阵。
+- 私有回执位于本树`.cache/v14-integration/`：frozen-copy-receipt、normal-login-result、preflight-current-receipt、seal-read-reconciliation、connection-check、server-owner。完整浏览器结果与截图/双PNG在`browser/1793694498604/`；第三卷截图why-li-bai-390.png。额外接线脚本首次语法失败在执行前退出，日志保留，修正后只补相关路径。
+- 所有浏览器驱动结束后，通过正常服务签发独立未交换作者资格，读回claim/void为空；私有`.cache/v14-integration/author-experience.html`（0600）提供新统一主页、兑换码和本次合成只读样例，不入Git。重启仅用本树`.cache/v14-integration/start-experience.sh`，不build/migrate。本批仅文档交付新真实运行证据，不改生产源码；未合并main/部署，工程验收不代替作者体验、手机实机或商业批准。提交/PR/自动CI事实见本分支PR。
+
 ## 2026-11-03 封面上滑与CTA同窗要求核实
 
 作者明确要求：主页先封面；点击“开启穿越之旅”或在封面从下往上滑动，都打开PR50原兑换窗；成功后沿原controller继续，不能上滑绕过资格进入答题。
