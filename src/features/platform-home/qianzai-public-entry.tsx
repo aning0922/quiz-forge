@@ -173,16 +173,11 @@ export function QianzaiPublicEntry({
           )}
         </section>
         {redeem && (
-          <PlatformModal
-            title="开启你的千载之旅"
-            dark
-            appearance="qianzai"
-            onClose={closeRedemption}
-          >
-            <p>一纸相邀，照见与你同心的千年回响。</p>
+          <PlatformModal title="兑换这段旅程" dark onClose={closeRedemption}>
+            <p>输入有效兑换码，经验证后进入对应作品或已有报告。</p>
             <PlatformRedemption>{redemptionForm}</PlatformRedemption>
             <button className={styles.lightButton} onClick={closeRedemption}>
-              返回作品封面
+              先看看封面
             </button>
           </PlatformModal>
         )}

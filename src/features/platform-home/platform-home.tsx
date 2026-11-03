@@ -132,13 +132,11 @@ export function PlatformModal({
   children,
   onClose,
   dark = false,
-  appearance,
 }: {
   title: string;
   children: ReactNode;
   onClose(): void;
   dark?: boolean;
-  appearance?: "qianzai";
 }) {
   const node = useRef<HTMLDialogElement>(null),
     titleId = useId();
@@ -147,7 +145,7 @@ export function PlatformModal({
       previous = document.activeElement;
     const frame = dialog?.parentElement;
     const measure = () => {
-      if (!dialog || !frame || appearance === "qianzai") return;
+      if (!dialog || !frame) return;
       const rect = frame.getBoundingClientRect();
       dialog.style.left = `${rect.left}px`;
       dialog.style.width = `${rect.width}px`;
@@ -166,11 +164,11 @@ export function PlatformModal({
       if (previous instanceof HTMLElement && previous.isConnected)
         previous.focus({ preventScroll: true });
     };
-  }, [appearance]);
+  }, []);
   return (
     <dialog
       ref={node}
-      className={`${styles.modal} ${dark ? styles.darkModal : ""} ${appearance === "qianzai" ? styles.qianzaiModal : ""}`}
+      className={`${styles.modal} ${dark ? styles.darkModal : ""}`}
       aria-labelledby={titleId}
       onCancel={(event) => {
         event.preventDefault();
