@@ -1,5 +1,13 @@
 # 阶段进度
 
+## 2026-11-04 最新版答题批次A：0030 schema/guards候选，等待实际DDL审查
+
+`fbca479b`定向设计已由Astra通过并由主控转交四项实施约束。主控已明确0030给policy，source准入顺延至后续实际空闲号（预期0031、届时复核）。准确DDL为`migrations/p2a/0030_consumer_latest_attempts.sql`：启用ledger/head、单调generation、独立attempt、generated原签发完整tuple FK、实际play和不可变activation FK、原报告唯一/final FK保持、有限audit与guards。共享新增独立契约/Drizzle模型/namespace/ACL；未做启用服务、旧session查找改接、UNKNOWN业务恢复或消费者UI，不混入source准入。
+
+此批不可单独部署：无默认head，gen0新写拒绝，app直接UPDATE收紧，runtime全局schema指纹仍0029，配套受控写入口及正式启用还未实现。旧作者实例/数据与1ec2受管身份不动。自有新测试实例`6736f75ceb805215b1c7daab651450d7`绑定当前root/test/PG55535/origin63235，基于29迁移预置一旧未完成/一旧完成合成基线。未编号DDL一次显式BEGIN/ROLLBACK检查通过并确认结构回原值；随后编号到达前仅该新库写入`test_consumer_latest_policy_a`测试候选初版回执（SHA`74ab43dbd37bb372a5b27ea7eda99fea12b5399aad3eb569aca5174f5708c1e1`），尚无正式0030回执；正式DDL后补operator/session SHARE NOWAIT授权锁，SHA`caafe67ed831c10deee98bd27f367e872d667aedd678293618f4eb2b9c475816`，未执行。真实反例harness第一项比较被驱动时间表示差异阻断（+08文本与UTC ISO同instant），保留失败，未记为业务通过；已修比较器为时间instant/canonical TEXT分开核实，尚未重跑写库。
+
+只读核实原5条Key/session/report既有值及原29迁移回执不变；head/activation/grant/新attempt均0、其他app/owner连接0、连接close已确认；证据`.cache/known-ten/policy-draft/candidate-read-only-reconciliation.json`，候选catalog SHA`ae70ec50c25d2907e9edf8547d07bef9e15a965dbf3f45ce88a990c119435322`仅为实际快照，不作为已准入runtime指纹。2项新契约测试通过；定向ESLint/类型通过（harness修正后补相关静态），未跑旧套件、build/浏览器或媒体矩阵。准确0030与共享代码先交Astra实际DDL审；该新库候选历史不改名/删除，后续正式0030验证实例衔接需主控收口，不能把候选提交或失败检查写成正式升级完成。详情见MANAGED最新条目。
+
 ## 2026-11-03 六人母图分组页：原图、390px排布与固定安全区
 
 A按B `group-02-review.json`将唐伯虎/周瑜/赵云/武则天/王昭君/蔡文姬接到既有本地63234 `/group-02`；每人展示原字节完整比例、390×844现有production CSS排布和固定5:7姓名/红章/单列竖句空框。原苏轼、杨玉环修脚v2入口保留，不改任何母图或正式runtime；新页/服务仍在本树私有`.cache/known-ten/`，无DB、source/renderer登记、派生文件或资源批准。

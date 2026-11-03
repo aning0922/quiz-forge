@@ -2,6 +2,16 @@
 
 开发、验证、独审和收口统一遵循 [根 AGENTS.md](../AGENTS.md)。本文件的带日期条目、测试数量、全量运行和逐图复核均保留为原批次记录，不要求新任务重新执行。当前任务以用户最新授权及最新实际检查点为准；文档中的旧“尚未合并”“待实现”和阶段启动指令不覆盖后续事实。
 
+## 2026-11-04 最新版答题批次A：准确0030待实际DDL独审，非完整交付
+
+主控已转交Astra对`fbca479b`设计的通过结论，授权Sol/high实施最小批次A；落实历史完成分支先于head/新依赖、session必须精确定位、UNKNOWN原回执优先、DB锁序与不可变activation引用四项。主控另已核目录仅0001–0029：正式分配`0030_consumer_latest_attempts.sql`给policy schema/guards，旧source0030预留取消，source准入顺延到后续实际空闲号（预期0031、冻结时再核）。旧迁移字节及原校验回执不改，不把source/hash混入policy。
+
+**本批可审范围。** 0030新增不可变`consumer_product_activation`与显式head，ledger触发器按fence→product排他→head排他核CAS/当前operator/session后原子写head/receipt/audit，代次递增、不删除或复用。session以generated coalesce列保持原Key完整签发tuple FK，以独立实际play FK及不可变activation ledger FK约束新attempt；原完成最终状态FK/报告key唯一保持，legacy行不UPDATE回填。共享代码为独立activation/attempt契约、Drizzle字段、封闭namespace与迁移ACL；无启用service/API/UI、无新source/renderer或报告格式变更。
+
+**运行前置与锁序限制。** 这是Draft内部schema准备，禁止单独部署到现有运行产品；没有默认head，旧单session/gen0 writer不兼容。为避免BEFORE ROW UPDATE已经持tuple锁却假称product先锁，app对session/key/grant的直接UPDATE权限收紧；未来配套受控写入口必须在DML前完整拿fence→product→head→key→session→grant。当前guard只给新INSERT按此显式父锁顺序取锁；可信owner原始UPDATE的上级取锁为NOWAIT失败关闭，不能冒充已实现服务锁序。head/activation对app只读、不得直接启用；历史完成grant分支先按原report.session定位、可无head，保留expiry后回原报告。runtime全局schema指纹仍留0029，0030库不会被旧runtime当作可用；其精确新指纹与配套service接线/UNKNOWN/浏览器批次未完成，不得称为可上线升级。未改作者63230等库，原1ec2身份/root保留。
+
+**实际数据库状态与审查衔接。** A按原root正常init自有`6736f75ceb805215b1c7daab651450d7`/test/PG55535/origin63235，旧29迁移和合成未完成/完成基线先建立。编号到达前，使用迁移器显式definitions入口提交当时DDL初版的`test_consumer_latest_policy_a`候选回执；正式0030尚未执行。首个旧行比较因驱动+08文本/UTC ISO表示差异失败，未记通过；随后只读核实5条原Key/session/report既有字段时间instant一致，binding/receipt/report canonical TEXT逐字不变，原29回执不变，head/activation/grant/新attempt均0，其他app/owner连接0，owner连接已close。回执与失败保留在`.cache/known-ten/policy-draft/`及`latest-policy-check.failure.json`，不删除或将候选回执改名成正式0030。初版候选DDL SHA`74ab43dbd37bb372a5b27ea7eda99fea12b5399aad3eb569aca5174f5708c1e1`保留；正式0030额外对operator/session取SHARE NOWAIT锁，使并发禁用/撤销不能穿越最终授权检查，准确SHA`caafe67ed831c10deee98bd27f367e872d667aedd678293618f4eb2b9c475816`，该正式版本未执行。真实反例尚未跑到，准确0030与测试harness先交实际diff独审。该库已有独立候选历史，正式0030的实例衔接由主控确定，不能改历史凑成正式成功。
+
 ## 2026-11-03 最新版答题与历史只读：定向设计待Astra审
 
 作者政策已确定，不再询问同一选择。仅同商品当前启用的完整包可开始/继续答题；切换使旧未完成会话失效，原未完成Key权益可重新进入新版；完成过的Key只返回原不可变报告，原人物/分数/文案/资源与链接授权回看/导出保留。上传/检查/预览/显式启用沿现运营流程，扩人物由Codex交付新版整包，不新增人物管理后台。本节是提交定向审的最小方案，尚未改生产协议/SQL或激活任何实例。

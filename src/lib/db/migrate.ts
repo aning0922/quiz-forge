@@ -205,6 +205,19 @@ export async function migrateDatabase(
             );
         }
       }
+      const [activation] = await tx<{ present: boolean }[]>`
+        SELECT to_regclass('qf.consumer_product_activation') IS NOT NULL AS present`;
+      if (activation?.present) {
+        // Batch A is an isolated schema preparation, not a deployable old-service
+        // upgrade. No activation writes or implicit default head are granted.
+        await tx`GRANT SELECT ON qf.consumer_product_activation,qf.consumer_product_head TO ${app}`;
+        await tx`GRANT EXECUTE ON FUNCTION qf.consumer_policy_scope(text),qf.consumer_policy_attempt(text,uuid,uuid,uuid,text,integer) TO ${app}`;
+        // BEFORE ROW UPDATE has already locked a tuple. Revoke those direct paths
+        // until guarded service entrypoints can take the parent locks BEFORE DML.
+        await tx`REVOKE UPDATE(state_revision,answers_text,consumer_state_answers_sha256,progress_text,progress_sha256,last_binding_text,last_binding_sha256,last_receipt_text,last_receipt_sha256,matching_context_text,matching_context_sha256) ON qf.consumer_session FROM ${app}`;
+        await tx`REVOKE UPDATE(revoked_at,void_operation_key,void_binding_text,void_binding_sha256,voided_by) ON qf.access_key FROM ${app}`;
+        await tx`REVOKE UPDATE(grant_id,credential_digest,issued_at,expires_at,revoked_at) ON qf.consumer_grant FROM ${app}`;
+      }
       for (const signature of [
         "sha256_utf8(text)",
         "validation_attempts_valid(text,integer,uuid,bigint)",

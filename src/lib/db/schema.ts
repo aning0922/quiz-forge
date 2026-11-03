@@ -73,6 +73,7 @@ export const auditAction = qf.enum("audit_action", [
   "internal_play_created",
   "access_key_issued",
   "access_key_voided",
+  "consumer_product_enabled",
 ]);
 export const auditOutcome = qf.enum("audit_outcome", ["success", "rejected"]);
 export const auditReason = qf.enum("audit_reason", [
@@ -624,6 +625,78 @@ export const accessKeys = qf.table(
       .onDelete("restrict"),
   ],
 );
+export const consumerProductActivations = qf.table(
+  "consumer_product_activation",
+  {
+    id: uuid("id").primaryKey(),
+    productId: varchar("product_id", { length: 80 }).notNull(),
+    operationKey: uuid("operation_key").notNull(),
+    expectedGeneration: integer("expected_generation").notNull(),
+    generation: integer("generation").notNull(),
+    playVersionId: uuid("play_version_id").notNull(),
+    playSnapshotSha256: char("play_snapshot_sha256", { length: 64 }).notNull(),
+    bindingText: text("binding_text").notNull(),
+    bindingSha256: char("binding_sha256", { length: 64 }).notNull(),
+    activatedBy: uuid("activated_by").notNull(),
+    operatorSessionId: uuid("operator_session_id").notNull(),
+    requestId: uuid("request_id").notNull(),
+    activatedAt: time("activated_at").notNull(),
+    receiptText: text("receipt_text").notNull(),
+    receiptSha256: char("receipt_sha256", { length: 64 }).notNull(),
+  },
+  (t) => [
+    unique("consumer_activation_operation").on(t.productId, t.operationKey),
+    unique("consumer_activation_generation").on(t.productId, t.generation),
+    unique("consumer_activation_exact").on(
+      t.productId,
+      t.generation,
+      t.playVersionId,
+      t.playSnapshotSha256,
+    ),
+    foreignKey({
+      name: "consumer_activation_play",
+      columns: [t.playVersionId, t.productId, t.playSnapshotSha256],
+      foreignColumns: [
+        internalPlayVersions.id,
+        internalPlayVersions.productId,
+        internalPlayVersions.snapshotSha256,
+      ],
+    })
+      .onUpdate("restrict")
+      .onDelete("restrict"),
+    // SQL owns actor/product FKs, current-session authority and canonical receipts.
+  ],
+);
+
+export const consumerProductHeads = qf.table(
+  "consumer_product_head",
+  {
+    productId: varchar("product_id", { length: 80 }).primaryKey(),
+    generation: integer("generation").notNull(),
+    playVersionId: uuid("play_version_id").notNull(),
+    playSnapshotSha256: char("play_snapshot_sha256", { length: 64 }).notNull(),
+  },
+  (t) => [
+    foreignKey({
+      name: "consumer_head_activation",
+      columns: [
+        t.productId,
+        t.generation,
+        t.playVersionId,
+        t.playSnapshotSha256,
+      ],
+      foreignColumns: [
+        consumerProductActivations.productId,
+        consumerProductActivations.generation,
+        consumerProductActivations.playVersionId,
+        consumerProductActivations.playSnapshotSha256,
+      ],
+    })
+      .onUpdate("restrict")
+      .onDelete("restrict"),
+  ],
+);
+
 export const consumerSessions = qf.table(
   "consumer_session",
   {
@@ -646,6 +719,24 @@ export const consumerSessions = qf.table(
     lastReceiptSha256: char("last_receipt_sha256", { length: 64 }),
     matchingContextText: text("matching_context_text"),
     matchingContextSha256: char("matching_context_sha256", { length: 64 }),
+    activationGeneration: integer("activation_generation").notNull().default(0),
+    issuedPlayVersionId: uuid("issued_play_version_id"),
+    issuedPlaySnapshotSha256: char("issued_play_snapshot_sha256", {
+      length: 64,
+    }),
+    keyBoundPlayVersionId: uuid("key_bound_play_version_id")
+      .generatedAlwaysAs(sql`coalesce(issued_play_version_id,play_version_id)`)
+      .notNull(),
+    keyBoundPlaySnapshotSha256: char("key_bound_play_snapshot_sha256", {
+      length: 64,
+    })
+      .generatedAlwaysAs(
+        sql`coalesce(issued_play_snapshot_sha256,play_snapshot_sha256)`,
+      )
+      .notNull(),
+    activationRefGeneration: integer(
+      "activation_ref_generation",
+    ).generatedAlwaysAs(sql`nullif(activation_generation,0)`),
   },
   (t) => [
     unique("consumer_session_claim").on(t.keyId, t.id),
@@ -672,7 +763,12 @@ export const consumerSessions = qf.table(
     ),
     foreignKey({
       name: "consumer_session_key",
-      columns: [t.keyId, t.productId, t.playVersionId, t.playSnapshotSha256],
+      columns: [
+        t.keyId,
+        t.productId,
+        t.keyBoundPlayVersionId,
+        t.keyBoundPlaySnapshotSha256,
+      ],
       foreignColumns: [
         accessKeys.id,
         accessKeys.productId,
@@ -682,7 +778,42 @@ export const consumerSessions = qf.table(
     })
       .onUpdate("restrict")
       .onDelete("restrict"),
-    unique("consumer_session_key_id_key").on(t.keyId),
+    unique("consumer_attempt_per_generation").on(
+      t.keyId,
+      t.activationGeneration,
+    ),
+    foreignKey({
+      name: "consumer_attempt_play",
+      columns: [t.playVersionId, t.productId, t.playSnapshotSha256],
+      foreignColumns: [
+        internalPlayVersions.id,
+        internalPlayVersions.productId,
+        internalPlayVersions.snapshotSha256,
+      ],
+    })
+      .onUpdate("restrict")
+      .onDelete("restrict"),
+    foreignKey({
+      name: "consumer_attempt_activation",
+      columns: [
+        t.productId,
+        t.activationRefGeneration,
+        t.playVersionId,
+        t.playSnapshotSha256,
+      ],
+      foreignColumns: [
+        consumerProductActivations.productId,
+        consumerProductActivations.generation,
+        consumerProductActivations.playVersionId,
+        consumerProductActivations.playSnapshotSha256,
+      ],
+    })
+      .onUpdate("restrict")
+      .onDelete("restrict"),
+    check(
+      "consumer_attempt_origin",
+      sql`(activation_generation=0 AND issued_play_version_id IS NULL AND issued_play_snapshot_sha256 IS NULL) OR (activation_generation BETWEEN 1 AND 2147483647 AND issued_play_version_id IS NOT NULL AND issued_play_snapshot_sha256 IS NOT NULL)`,
+    ),
     check(
       "consumer_session_state_revision_check",
       sql.raw("(((state_revision >= 0) AND (state_revision <= 2147483647)))"),
