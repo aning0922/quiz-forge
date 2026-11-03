@@ -65,7 +65,7 @@ export function deriveQianzaiResultPresentation(
     binding.profileVersion !== QIANZAI_PRESENTATION_V11 ||
     binding.renderer.kind !== "consumer-renderer" ||
     binding.renderer.id !== "consumer-qianzai-tongxin" ||
-    binding.renderer.version !== "1.2.0" ||
+    binding.renderer.version !== "1.3.0" ||
     !sameConsumerFact(view.renderer, binding.renderer, 8192)
   )
     return null;

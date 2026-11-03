@@ -19,7 +19,7 @@ import {
 } from "./supported-themes";
 
 export const QIANZAI_CONSUMER_COPY_VERSION =
-  "qianzai-consumer-copy.v1" as const;
+  "qianzai-consumer-copy.v2" as const;
 type Paragraph = Body["volumes"][number]["paragraphs"][number];
 type Section = QianzaiReportDocument["sections"][number];
 type Ref = Body["matching"]["selected"]["ref"];

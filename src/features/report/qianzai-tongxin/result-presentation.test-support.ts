@@ -13,7 +13,7 @@ export async function qianzaiPresentationFixture() {
   view.renderer = {
     kind: "consumer-renderer",
     id: "consumer-qianzai-tongxin",
-    version: "1.2.0",
+    version: "1.3.0",
     entrySha256: "e".repeat(64),
   };
   d.canonicalContentSha256 = QIANZAI_V11_CONTENT_SHA256;

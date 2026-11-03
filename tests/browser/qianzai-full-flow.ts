@@ -19,11 +19,13 @@ assert.equal(args[0], "--input");
 const input = z
   .strictObject({
     origin: z.string().regex(/^http:\/\/127\.0\.0\.1:\d+$/),
+    entry: z.enum(["direct-access", "platform"]).default("direct-access"),
     rawKey: z.string().min(20).max(256),
     contentFile: z.string(),
     preference: z.enum(["female", "male", "any"]),
     answerIndices: z.array(z.number().int().min(0).max(3)).length(24),
     expectedResultId: z.string().min(1),
+    resumeCompletedReport: z.boolean().optional(),
     resumeKnownSavedPrefix: z.number().int().min(1).max(23).optional(),
   })
   .parse(JSON.parse(await readFile(args[1]!, "utf8")));
@@ -112,16 +114,47 @@ const readReport = async (target: Page, sessionPath: string) => {
   assert.equal(value.view.display.body.volumes.length, 6);
   return { hash: value.receipt.reportSnapshotSha256 as string, value };
 };
+const exchangeFromEntry = async () => {
+  if (input.entry === "platform") {
+    await page.goto(input.origin + "/");
+    await page
+      .getByRole("link", { name: "进入千载同心作品封面", exact: true })
+      .click();
+    await expect(page).toHaveURL(input.origin + "/works/qianzai-tongxin");
+    await page
+      .getByRole("button", { name: "开启穿越之旅，兑换资格", exact: true })
+      .click();
+    await page.getByLabel("兑换码", { exact: true }).fill(input.rawKey);
+    await page.getByRole("button", { name: "兑换并进入", exact: true }).click();
+    record.cases.push("platform-home-cover-real-key-exchange");
+  } else {
+    await page.goto(input.origin + "/access#key=" + input.rawKey);
+    await expect(
+      page.getByRole("button", { name: "验证访问", exact: true }),
+    ).toBeEnabled();
+    assert.equal(new URL(page.url()).hash, "");
+    await page.getByRole("button", { name: "验证访问", exact: true }).click();
+  }
+};
 try {
   record.stage = "access";
-  await page.goto(input.origin + "/access#key=" + input.rawKey);
-  await expect(
-    page.getByRole("button", { name: "验证访问", exact: true }),
-  ).toBeEnabled();
-  assert.equal(new URL(page.url()).hash, "");
-  await page.getByRole("button", { name: "验证访问", exact: true }).click();
-  await page.waitForURL(/\/play\/[a-f0-9-]+$/);
-  const sessionPath = new URL(page.url()).pathname;
+  await exchangeFromEntry();
+  await page.waitForURL(
+    input.resumeCompletedReport
+      ? /\/play\/[a-f0-9-]+\/report$/
+      : /\/play\/[a-f0-9-]+$/,
+  );
+  const sessionPath = new URL(page.url()).pathname.replace(/\/report$/, "");
+  if (input.resumeCompletedReport) {
+    const completed = await readReport(page, sessionPath);
+    record.reportSha256 = completed.hash;
+    await page
+      .getByRole("button", { name: "返回人物揭晓", exact: true })
+      .click();
+    record.cases.push(
+      "confirmed-completed-report-before-readonly-continuation-no-replay",
+    );
+  }
   if (input.resumeKnownSavedPrefix) {
     const session = await page.evaluate(
       async (url) => (await fetch(url)).json(),
@@ -150,7 +183,7 @@ try {
       `verified-known-saved-prefix-${input.resumeKnownSavedPrefix}-without-replay`,
     );
   }
-  if (!input.resumeKnownSavedPrefix) {
+  if (!input.resumeKnownSavedPrefix && !input.resumeCompletedReport) {
     await expect(
       page.getByRole("button", { name: "开启穿越之旅", exact: true }),
     ).toBeEnabled();
@@ -169,7 +202,13 @@ try {
       .locator("..")
       .click();
   }
-  for (let i = input.resumeKnownSavedPrefix ?? 0; i < 24; i++) {
+  for (
+    let i = input.resumeCompletedReport
+      ? 24
+      : (input.resumeKnownSavedPrefix ?? 0);
+    i < 24;
+    i++
+  ) {
     record.stage = `question-${i + 1}`;
     const question = screen("question");
     await expect(
@@ -224,7 +263,7 @@ try {
   }
   record.stage = "complete";
   await expect(
-    page.getByRole("button", { name: "下滑查看人物报告", exact: true }),
+    page.getByRole("button", { name: "上滑查看人物报告", exact: true }),
   ).toBeEnabled();
   await expect(screen("result").locator("img")).toHaveCount(2);
   await expect(
@@ -233,10 +272,10 @@ try {
   await expect(
     page.locator('[data-qianzai-transition][data-active="true"]'),
   ).toHaveCount(0);
-  assert.equal(completedOk, true);
+  if (!input.resumeCompletedReport) assert.equal(completedOk, true);
   await screenshot("reveal-390");
   await page
-    .getByRole("button", { name: "下滑查看人物报告", exact: true })
+    .getByRole("button", { name: "上滑查看人物报告", exact: true })
     .click();
   await expect(screen("report")).toBeVisible();
   await expect(
@@ -249,7 +288,11 @@ try {
   record.reportSha256 = report.hash;
   record.resultId = input.expectedResultId;
   await screenshot("report-390");
-  record.cases.push("24-real-ui-answers-and-deterministic-report");
+  record.cases.push(
+    input.resumeCompletedReport
+      ? "same-completed-snapshot-reveal-and-report"
+      : "24-real-ui-answers-and-deterministic-report",
+  );
   record.stage = "exports";
   await page.getByRole("button", { name: "保存我的结果", exact: true }).click();
   await page.getByRole("button", { name: "查看图片预览", exact: true }).click();
@@ -298,12 +341,11 @@ try {
   await page.goto(input.origin + sessionPath + "/report");
   await expect(screen("report")).toBeVisible();
   assert.equal((await readReport(page, sessionPath)).hash, report.hash);
-  await page.goto(input.origin + "/access#key=" + input.rawKey);
-  await page.getByRole("button", { name: "验证访问", exact: true }).click();
+  await exchangeFromEntry();
   await page.waitForURL(/\/report$/);
   await expect(screen("report")).toBeVisible();
   assert.equal((await readReport(page, sessionPath)).hash, report.hash);
-  assert.equal(record.completePosts, 1);
+  assert.equal(record.completePosts, input.resumeCompletedReport ? 0 : 1);
   assert.equal(record.pageErrorCount, 0);
   assert.equal(
     await page.evaluate(

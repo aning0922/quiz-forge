@@ -40,6 +40,16 @@
             "sha256": "2c185ec8892d91212a02ae143b93d00f4f32fc1e2ab9a5d162f76d5ef6568240"
           },
           {
+            "path": "src/features/quizpack/content/private-test-registration-final-demo.json",
+            "bytes": 11356,
+            "sha256": "c3d97185afc412542acdd30d3879838c486231a5c4c6ef777f1ccb4337f118f1"
+          },
+          {
+            "path": "src/features/quizpack/content/private-test-registration-final-e2e.json",
+            "bytes": 11356,
+            "sha256": "aec413bdc293f43e1065d458d033b8b17963ac6063f74d6dc1d7252a2bacae07"
+          },
+          {
             "path": "src/features/quizpack/content/private-test-registration-rebuild.json",
             "bytes": 9263,
             "sha256": "a219e7ef0f6fd29b1a8828f1ad0caf0142369868d8bd52ea2641026351b8d26a"
@@ -51,8 +61,8 @@
           },
           {
             "path": "src/features/quizpack/content/private-test.ts",
-            "bytes": 3983,
-            "sha256": "9fdfcada595616c8bd5f751f4506a23c6b728e8bbfdf20faaa7a9344833d88ff"
+            "bytes": 4820,
+            "sha256": "a84410507b2c1d67436cd9faf2d567d26762edee6f7edb907f6ab6a0e5059297"
           },
           {
             "path": "src/features/quizpack/content/qianzai-local-art-fixture.json",
@@ -255,14 +265,14 @@
           "serverCondition": "react-server"
         }
       },
-      "implementationSha256": "85212e7699ef16994aa93a129825d0b3d6ca39edb1427fb5b6fc66bd93def7a9",
+      "implementationSha256": "7933635bd5f7ad41bf7a7a54d440067888811b69342976d4ce5f85a03c7d98a6",
       "kind": "engine",
       "algorithm": {
         "id": "archetype-l1",
         "version": "1.0.0"
       }
     },
-    "entrySha256": "bddf8b88d8c00d21f146360ea925c763b53368ac9b2a5f10e2efec19efed7414"
+    "entrySha256": "dbd75fd7a335a058c62919e480271cf58cd451df0ed36409c6ac8836f3070c03"
   },
   "structuredPreview": {
     "descriptor": {
@@ -305,6 +315,16 @@
             "sha256": "2c185ec8892d91212a02ae143b93d00f4f32fc1e2ab9a5d162f76d5ef6568240"
           },
           {
+            "path": "src/features/quizpack/content/private-test-registration-final-demo.json",
+            "bytes": 11356,
+            "sha256": "c3d97185afc412542acdd30d3879838c486231a5c4c6ef777f1ccb4337f118f1"
+          },
+          {
+            "path": "src/features/quizpack/content/private-test-registration-final-e2e.json",
+            "bytes": 11356,
+            "sha256": "aec413bdc293f43e1065d458d033b8b17963ac6063f74d6dc1d7252a2bacae07"
+          },
+          {
             "path": "src/features/quizpack/content/private-test-registration-rebuild.json",
             "bytes": 9263,
             "sha256": "a219e7ef0f6fd29b1a8828f1ad0caf0142369868d8bd52ea2641026351b8d26a"
@@ -316,8 +336,8 @@
           },
           {
             "path": "src/features/quizpack/content/private-test.ts",
-            "bytes": 3983,
-            "sha256": "9fdfcada595616c8bd5f751f4506a23c6b728e8bbfdf20faaa7a9344833d88ff"
+            "bytes": 4820,
+            "sha256": "a84410507b2c1d67436cd9faf2d567d26762edee6f7edb907f6ab6a0e5059297"
           },
           {
             "path": "src/features/quizpack/content/qianzai-local-art-fixture.json",
@@ -2198,7 +2218,7 @@
           "serverCondition": "react-server"
         }
       },
-      "implementationSha256": "67dc6b02fb60a7486f967d4f75a3fc15aaf7da90dcb646ce0358b89daa6593b4",
+      "implementationSha256": "f5176a02e44e7f431820d35c148d612602b4988452be90220f1458387c7df929",
       "kind": "renderer",
       "capability": "studio-internal-preview",
       "components": {
@@ -2243,7 +2263,7 @@
         "pngAvailable": false
       }
     },
-    "entrySha256": "a2c645b0da3022d363d09096506b52a5bda136cc9fd1d53adaadffac26470aed"
+    "entrySha256": "c0a27b1136a698036f9ec9cfd2e777f105038eba94ca0451e115f20e97e99224"
   },
   "structuredConsumer": {
     "descriptor": {
@@ -2439,6 +2459,16 @@
             "sha256": "2c185ec8892d91212a02ae143b93d00f4f32fc1e2ab9a5d162f76d5ef6568240"
           },
           {
+            "path": "src/features/quizpack/content/private-test-registration-final-demo.json",
+            "bytes": 11356,
+            "sha256": "c3d97185afc412542acdd30d3879838c486231a5c4c6ef777f1ccb4337f118f1"
+          },
+          {
+            "path": "src/features/quizpack/content/private-test-registration-final-e2e.json",
+            "bytes": 11356,
+            "sha256": "aec413bdc293f43e1065d458d033b8b17963ac6063f74d6dc1d7252a2bacae07"
+          },
+          {
             "path": "src/features/quizpack/content/private-test-registration-rebuild.json",
             "bytes": 9263,
             "sha256": "a219e7ef0f6fd29b1a8828f1ad0caf0142369868d8bd52ea2641026351b8d26a"
@@ -2450,8 +2480,8 @@
           },
           {
             "path": "src/features/quizpack/content/private-test.ts",
-            "bytes": 3983,
-            "sha256": "9fdfcada595616c8bd5f751f4506a23c6b728e8bbfdf20faaa7a9344833d88ff"
+            "bytes": 4820,
+            "sha256": "a84410507b2c1d67436cd9faf2d567d26762edee6f7edb907f6ab6a0e5059297"
           },
           {
             "path": "src/features/quizpack/content/qianzai-local-art-fixture.json",
@@ -4437,15 +4467,15 @@
           "serverCondition": "react-server"
         }
       },
-      "implementationSha256": "68d75143aea4850ce1399d7174f1723694de70ec0c4e5b10998779a79af940b3"
+      "implementationSha256": "a6234887ec20ced5aa88026fb39f2b95f890d629828e4b347712d5e8656bed15"
     },
-    "entrySha256": "de67d48945f94c5f374eda21402b9e6e884c9804ca8b9cc6436f04e35da78a10"
+    "entrySha256": "183413f520602fa3c3412d0d05bbbcfb3fac02619067c237c165e210f20eac59"
   },
   "qianzaiPreview": {
     "descriptor": {
       "schemaVersion": "quizforge.implementation-entry.v2",
       "id": "qianzai-tongxin-preview",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "contentSchemaVersion": "quizpack-content.v3",
       "closure": {
         "entrypoints": [
@@ -4527,6 +4557,16 @@
             "sha256": "2c185ec8892d91212a02ae143b93d00f4f32fc1e2ab9a5d162f76d5ef6568240"
           },
           {
+            "path": "src/features/quizpack/content/private-test-registration-final-demo.json",
+            "bytes": 11356,
+            "sha256": "c3d97185afc412542acdd30d3879838c486231a5c4c6ef777f1ccb4337f118f1"
+          },
+          {
+            "path": "src/features/quizpack/content/private-test-registration-final-e2e.json",
+            "bytes": 11356,
+            "sha256": "aec413bdc293f43e1065d458d033b8b17963ac6063f74d6dc1d7252a2bacae07"
+          },
+          {
             "path": "src/features/quizpack/content/private-test-registration-rebuild.json",
             "bytes": 9263,
             "sha256": "a219e7ef0f6fd29b1a8828f1ad0caf0142369868d8bd52ea2641026351b8d26a"
@@ -4538,8 +4578,8 @@
           },
           {
             "path": "src/features/quizpack/content/private-test.ts",
-            "bytes": 3983,
-            "sha256": "9fdfcada595616c8bd5f751f4506a23c6b728e8bbfdf20faaa7a9344833d88ff"
+            "bytes": 4820,
+            "sha256": "a84410507b2c1d67436cd9faf2d567d26762edee6f7edb907f6ab6a0e5059297"
           },
           {
             "path": "src/features/quizpack/content/qianzai-local-art-fixture.json",
@@ -4634,7 +4674,7 @@
           {
             "path": "src/features/theme/qianzai-tongxin/component-map.ts",
             "bytes": 1626,
-            "sha256": "75726c116c20c3fed73dd82323d524cfd321d5aef82eef0dab5c6a1157802b4f"
+            "sha256": "f89c0b8e8dbb70968628cecd59fe5b14cd5a404bdce6d9d2ceab9dda18f758cd"
           },
           {
             "path": "src/features/theme/qianzai-tongxin/fixed-preview.tsx",
@@ -6460,7 +6500,7 @@
           "serverCondition": "react-server"
         }
       },
-      "implementationSha256": "7f56ad685b91bd91c0cc1c53b0b3ce4f8471145ebf3d5cf8138171097b0a2c76",
+      "implementationSha256": "a8f017dcd5d8db03c74533fefe0ad2682bd6290dd77a56db7a96ae1ca929b1c9",
       "kind": "renderer",
       "capability": "studio-internal-preview",
       "components": {
@@ -6514,14 +6554,14 @@
         "licenseSha256": "5e0da210fb04058a8c0087985d2d456b931c2579811a49655721d3cf0c36b6d6"
       }
     },
-    "entrySha256": "1adaa931c65c47465c8a2d949daf97b9073c9d5d5b7b3fadfe8877c034de794c"
+    "entrySha256": "2de5e13fb2e6ac962aaf468cc3f08c21ed7432f05d23a61c31d8d9e6ece4af42"
   },
   "qianzaiConsumer": {
     "descriptor": {
       "schemaVersion": "quizforge.consumer-implementation-entry.v2",
       "kind": "consumer-renderer",
       "id": "consumer-qianzai-tongxin",
-      "version": "1.2.0",
+      "version": "1.3.0",
       "capability": "local-internal-consumer",
       "contentSchemaVersion": "quizpack-content.v3",
       "mapping": {
@@ -6753,8 +6793,8 @@
           },
           {
             "path": "src/features/product/internal-versions/identity-contracts.ts",
-            "bytes": 9284,
-            "sha256": "19ab683850d9b8696cfe57a55671e20aeff5bf7d9a89a9b9156d1d8df87e6f9d"
+            "bytes": 9866,
+            "sha256": "0f516e25f271c1d982b1abfbbe85ee76b7ffecacd4123490485941dc9523d350"
           },
           {
             "path": "src/features/product/internal-versions/implementation-schema.ts",
@@ -6782,6 +6822,16 @@
             "sha256": "2c185ec8892d91212a02ae143b93d00f4f32fc1e2ab9a5d162f76d5ef6568240"
           },
           {
+            "path": "src/features/quizpack/content/private-test-registration-final-demo.json",
+            "bytes": 11356,
+            "sha256": "c3d97185afc412542acdd30d3879838c486231a5c4c6ef777f1ccb4337f118f1"
+          },
+          {
+            "path": "src/features/quizpack/content/private-test-registration-final-e2e.json",
+            "bytes": 11356,
+            "sha256": "aec413bdc293f43e1065d458d033b8b17963ac6063f74d6dc1d7252a2bacae07"
+          },
+          {
             "path": "src/features/quizpack/content/private-test-registration-rebuild.json",
             "bytes": 9263,
             "sha256": "a219e7ef0f6fd29b1a8828f1ad0caf0142369868d8bd52ea2641026351b8d26a"
@@ -6793,8 +6843,8 @@
           },
           {
             "path": "src/features/quizpack/content/private-test.ts",
-            "bytes": 3983,
-            "sha256": "9fdfcada595616c8bd5f751f4506a23c6b728e8bbfdf20faaa7a9344833d88ff"
+            "bytes": 4820,
+            "sha256": "a84410507b2c1d67436cd9faf2d567d26762edee6f7edb907f6ab6a0e5059297"
           },
           {
             "path": "src/features/quizpack/content/qianzai-local-art-fixture.json",
@@ -6894,7 +6944,7 @@
           {
             "path": "src/features/report/qianzai-tongxin/consumer-copy.ts",
             "bytes": 30856,
-            "sha256": "dd2e6ddfa9c9423e82cec05881a8c1b978416c95fe7f2d3ac0605e327140e354"
+            "sha256": "5e9093a9b231e8a3da41371d843b65d53e5e08896f6ee4ab4c79ab0e2f836ff5"
           },
           {
             "path": "src/features/report/qianzai-tongxin/contracts.ts",
@@ -6933,8 +6983,8 @@
           },
           {
             "path": "src/features/report/qianzai-tongxin/presentation-source.ts",
-            "bytes": 1171,
-            "sha256": "b928624c57aa4e7d1f96683d130d6251097d8224cdcfcd174564ba41086e9765"
+            "bytes": 1506,
+            "sha256": "c3f6b07baf45bb780c3f45dd2e05b188a4cd187e3d31cbd5eaca55c4d5f42cd8"
           },
           {
             "path": "src/features/report/qianzai-tongxin/presentation.ts",
@@ -6944,7 +6994,7 @@
           {
             "path": "src/features/report/qianzai-tongxin/result-presentation.ts",
             "bytes": 5900,
-            "sha256": "5a5b5290bd51be6866b479ac64460ef3a22a093e48724b93cb2c2c68cd9ec69f"
+            "sha256": "aaae302be1fcf85c2b9b42019814017b897d1c280b0322671aea48a1f8a4b6e0"
           },
           {
             "path": "src/features/report/qianzai-tongxin/role-presentation.ts",
@@ -6953,8 +7003,8 @@
           },
           {
             "path": "src/features/report/qianzai-tongxin/role-profiles-v11.ts",
-            "bytes": 11634,
-            "sha256": "c4b0e470a19fe28380d482c1ddd670ff9561c59f6ae86d856c4c9a1889948963"
+            "bytes": 11573,
+            "sha256": "728e10eb71ca0a378238119144de983707ca6581a5d2a2ba0344d4a9ba6017f3"
           },
           {
             "path": "src/features/report/qianzai-tongxin/supported-themes.ts",
@@ -7029,7 +7079,7 @@
           {
             "path": "src/features/theme/qianzai-tongxin/component-map.ts",
             "bytes": 1626,
-            "sha256": "75726c116c20c3fed73dd82323d524cfd321d5aef82eef0dab5c6a1157802b4f"
+            "sha256": "f89c0b8e8dbb70968628cecd59fe5b14cd5a404bdce6d9d2ceab9dda18f758cd"
           },
           {
             "path": "src/features/theme/qianzai-tongxin/editorial-fonts.json",
@@ -7093,8 +7143,8 @@
           },
           {
             "path": "src/features/theme/qianzai-tongxin/runtime-inputs.json",
-            "bytes": 20703,
-            "sha256": "de05acaecad63b3991dd538b0644a150ff09d0caf1940f66c9a594aa557d4aea"
+            "bytes": 20726,
+            "sha256": "4e3d2f78de37511daa0a0b75fa521e26abd27a07bfc65321ffe742e8d9cdb3d0"
           },
           {
             "path": "src/features/theme/qianzai-tongxin/runtime-inputs.ts",
@@ -8980,8 +9030,8 @@
           "serverCondition": "react-server"
         }
       },
-      "implementationSha256": "622045e9b9c5a70ebabd9da442a7efbc11dab30fc9eef2556acd645ebb4ee9aa"
+      "implementationSha256": "b34afd69a8c7d8bd78f6a53c40c8be7816430b69f2d465052b7b99988fbe9db9"
     },
-    "entrySha256": "f30d39011bd930f1fa9a94f77ecf229591b50d8abd116b398bb2224dc0a9a51e"
+    "entrySha256": "9732bdfd555a05ceb412ee8c8918fa9a8b076b6acff38a6035a08dd4bb4aadbe"
   }
 }

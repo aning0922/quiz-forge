@@ -2,6 +2,16 @@
 
 开发、验证、独审和收口统一遵循 [根 AGENTS.md](../AGENTS.md)。本文件的带日期条目、测试数量、全量运行和逐图复核均保留为原批次记录，不要求新任务重新执行。当前任务以用户最新授权及最新实际检查点为准；文档中的旧“尚未合并”“待实现”和阶段启动指令不覆盖后续事实。
 
+## 2026-11-03 最终独立集成与临时体验交付
+
+独立 A 在 `codex/qztx-final-integration` 保留历史整合 PR33、PR49 与 B 定稿正文/图包；主控协调，Astra 审查0029、schema-facts、四槽清单修复与最终实际回执，B只读复核实际PNG/截图，不重跑浏览器。最终差异及精确提交/自动CI见 [Draft PR #50](https://github.com/aning0922/quiz-forge/pull/50)，完整结果与限制见 PROGRESS 最新条目。
+
+交付边界为：**一条修复后的完整24题真实UI流程**（首页/恢复/唯一完成/六卷/双PNG/原资格只读），以及**五角色服务合成witness封存后的真实浏览器/双PNG**；不称五条完整UI答题，也不称作者视觉、实机或商业通过。最终consumer entry `9732bdfd555a05ceb412ee8c8918fa9a8b076b6acff38a6035a08dd4bb4aadbe` 与 build `KXq_tK62aCBrap2QOJWmG`、新play和回执一致，原失败report/play/Key不改。
+
+原定63226 validation保持revision1/held/UNKNOWN，无DB fileStopProof ACK，不制造证明、释放预留、删除文件或另发validation。停止候选/原pack/日志/原build和seal原字节保留；PID退出或lease过期不构成恢复证明。主控与独审明确允许原63227在同一origin/source/隔离DB身份下作为临时体验环境，不能称63226已恢复。所有自动驱动/故障注入结束后，以正常服务签发独立未交换作者资格，私有 `.cache/final-integration/author-experience.html`（600）含新资格及五角色只读入口，不入Git。服务归属与固定runtime config见本树 `server-owner-corrected.json`。
+
+正常重启仅在该自有63227进程已停止、端口归属确认后进行：从集成树根使用原 `.cache/p2a/79331f888c569d9fbf7a2a08e5f33f68/runtime.json`、原 `.cache/final-integration/platform-art`，执行 `QUIZFORGE_P2A_CONFIG="$PWD/.cache/p2a/79331f888c569d9fbf7a2a08e5f33f68/runtime.json" QUIZFORGE_PLATFORM_ART_DIR="$PWD/.cache/final-integration/platform-art" pnpm start --port 63227`；不重建、不迁移、不切origin。原作者服务、旧工作树和旧答案/资格保持；旧合成grant只读被拒原因未确认（存在8h期限线索），没有续期或重放。main合并、生产迁移/部署、商业发布及63226后续维护仍需各自明确授权。
+
 ## 2026-11-02 报告内容与长图专项收口
 
 在第2项内容验收中按作者反馈插入本批：独立 A 完成紧凑五维长图及人物姓名去重（4731002、093ac2d）；独立 B 完成五角色小传、建议和三句寄语（0d7e710）；主控在 `codex/qztx-report-depth` 集成字体、实际网页与 PNG 验证，Astra 复核对应差异和最终图。详细结果见 PROGRESS 最新条目。不重跑未变底层合同、不扩大到新人物美术或正式接线。63224/63225提供独立体验与对照，待作者体验反馈；本批不合并、不部署生产。

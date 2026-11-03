@@ -1,3 +1,5 @@
+import finalDemo from "./baselines/qztx-final-private-20261103-demo.json";
+import finalE2e from "./baselines/qztx-final-private-20261103-e2e.json";
 import privateLocal from "./baselines/qztx-private-local-20261030.json";
 import privateRebuild from "./baselines/qztx-private-rebuild-20261031.json";
 import "server-only";
@@ -31,6 +33,8 @@ export const BASELINES_V2 = freeze(
     qianzaiSyntheticImages,
     privateLocal,
     privateRebuild,
+    finalDemo,
+    finalE2e,
   ].map((input) => {
     const descriptor = baselineDescriptorV2Schema.parse(input);
     return {

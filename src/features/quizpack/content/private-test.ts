@@ -1,3 +1,5 @@
+import finalDemoRegistration from "./private-test-registration-final-demo.json";
+import finalE2eRegistration from "./private-test-registration-final-e2e.json";
 import exportParityFixture from "./qianzai-local-export-parity-fixture.json";
 import { z } from "zod";
 import registration from "./private-test-registration.json";
@@ -12,10 +14,26 @@ export const PRIVATE_TEST_REGISTRATION = registration;
 export const PRIVATE_TEST_REGISTRATIONS = [
   registration,
   rebuildRegistration,
+  finalDemoRegistration,
+  finalE2eRegistration,
 ] as const;
 export type PrivateTestRegistration =
   (typeof PRIVATE_TEST_REGISTRATIONS)[number];
 export const privateTestUseSchema = z.union([
+  z.strictObject({
+    schemaVersion: z.literal("quizforge.private-test-use.v1"),
+    instanceId: z.literal("601707c7f4511e7d6fb09da3a907c8d9"),
+    authorizationId: z.literal("qztx-final-private-20261103"),
+    contentStatus: z.literal("candidate"),
+    resourceStatus: z.literal("reference-or-candidate"),
+  }),
+  z.strictObject({
+    schemaVersion: z.literal("quizforge.private-test-use.v1"),
+    instanceId: z.literal("79331f888c569d9fbf7a2a08e5f33f68"),
+    authorizationId: z.literal("qztx-final-private-20261103"),
+    contentStatus: z.literal("candidate"),
+    resourceStatus: z.literal("reference-or-candidate"),
+  }),
   z.strictObject({
     schemaVersion: z.literal("quizforge.private-test-use.v1"),
     instanceId: z.literal("953991305a7e8c49bb773d95cd120378"),
