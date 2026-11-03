@@ -1,5 +1,13 @@
 # 阶段进度
 
+## 2026-11-03 知名十人阶段2首组：两张母图与原布局安全区
+
+主控交B新树两份首样母图后，A仅接独立local review `http://127.0.0.1:63234/about`：`/hero/su-shi`、`/hero/yang-yuhuan`直接显示新原图，`/safe/`同ID复用现有production scenes CSS的“你是”、5:7姓名、红章、单列竖句位置，空框只标待交付区域，不替代正式姓名图/称号/引句。边界说明放about，原图入口不叠技术标签；不挂旧角色正式身份、不伪造report/renderer/source或资源批准。新`tests/browser/qianzai-known-art-preview.tsx`通过完整3.0.0 ref选新目录，production views/CSS/登记/字体未修改。
+
+苏轼母图853×1844/3,075,222 B/SHA`01875645ef66113e8d1d5504944599080344c15b17b5efc276d6396615ed3ba8`；杨玉环853×1844/3,010,908 B/SHA`808d18056fccb0859eb1b5479118c1bdde0a0061145c5f4a94bac64789fee489`。两份均为未作者视觉批准的试样，直接读B私有文件，不编辑/批量派生/登记。实际Chromium156：两角色hero/safe390×844及杨玉环1280×960已查看，pageerror0、无横溢；两角色姓名框均180×252，姓名/章/竖句框完整几何相同。原生img保留母图原字节，local非Next宿主的img lint提示在该review文件明确说明豁免，定向ESLint与TypeScript通过；未新增低影响镜像测试、未重跑阶段1或旧套件。
+
+新服务owner PID11519及母图字节/身份回执在`.cache/known-ten/art-server-owner.json`，实际截图/几何在`art-browser/`；启动入口为本树`.cache/known-ten/art-server.ts`，非Next/DB消费者。此步只证明母图与现布局安全区可以同屏核看，不证明字图光学居中、最终引句/完整出处排版、双PNG或真实封存。首样继续交主控/视觉及作者看，作者确认前不扩全40图或冻结最终source。原63230/63233、新test管理身份及UNKNOWN保持，无0030/导入/正式登记/生产构建/部署。本批配置与首样接线提交到同一Draft PR54，后续取决于具体素材反馈，不自动扩大。
+
 ## 2026-11-03 知名十人阶段1：受控目录与有界匹配接入
 
 作者确认名单并明确开始，A独立`codex/qztx-known-ten-integration`基于报告候选最终`f08f8ff`建立，不在63230/63233运行树开发。接B目录`4130c44`→本树`3688bf4`、展示名/别名分列修订`64dc748`→`e85ca30`：男李白/苏轼/唐伯虎/周瑜/赵云，女李清照/杨玉环/武则天/王昭君/蔡文姬；王羲之仅备选，旧王维/小说名单不进入本版。新目录标`qianzai-known-ten.v1`、角色及四用途引用3.0.0/`qztx-known-`，不改旧2.0.0名单文件或旧source alias，不填素材/source假hash。
