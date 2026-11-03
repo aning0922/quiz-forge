@@ -1,5 +1,13 @@
 # 阶段进度
 
+## 2026-11-03 封面上滑与CTA同窗要求核实
+
+作者明确要求：主页先封面；点击“开启穿越之旅”或在封面从下往上滑动，都打开PR50原兑换窗；成功后沿原controller继续，不能上滑绕过资格进入答题。
+
+- 现有`QianzaiPublicEntry`已完整接线，无需新增机制：单指同identifier、上移≥56px且上移≥横移绝对值×1.25，touchend时调用与CTA/提示按钮相同的openRedemption；touchcancel、多指/identifier不一致清除记录。菜单/弹窗打开时忽略背景，button/link/input等交互起点排除。dialogOpen ref同步防重，开/关均清空手势；仅封面touch-action:pan-x，不禁止整页滚动。未有桌面wheel实现，本批不新增。
+- 在当前ec3a006实际Next63229、Chromium390×844移动触摸环境，用CDP原生touchStart/Move/End验证从下部背景上滑确实开原窗；与键盘CTA读取的同一dialog文字一致、showModal仅一次。横向、下滑、短滑、取消、CTA/返回/菜单起点、菜单已开背景不误触；窗内输入不提交、不触发背景重复开窗，关闭无穿透。轻触和多指反例通过；可点击及键盘提示路径保留。没有兑换POST、DB或资格操作。
+- 证据 `.cache/cover-swipe/result.json`、`additional.json`、`native-up-original-dialog.png`及对应脚本/日志。不以DOM派发TouchEvent代替原生输入；此次是桌面Chromium触摸模拟，不冒称真实手机。因实际运行已满足要求，仅补记录，无生产源代码/消费者entry变化，无需重建Next、重复既有测试或扩大DB/native/媒体。63228/63229/49681保留，63227旧实例与63226 UNKNOWN未动。
+
 ## 2026-11-03 真实 Next SSR 封面补验
 
 为弥补createRoot候选不能证明Next宿主的边界，在本独立树执行必要生产build并以63229启动真实Next，仅配置固定公开营销图目录，明确移除P2A_CONFIG/DATABASE_URL。只访问公开主页、封面和营销资源，无DB、Key、答题、native或媒体矩阵；不是63227 runtime替换。
