@@ -58,8 +58,8 @@ it("rejects direct valid revision0 claim after void, and rejects void after perm
 it("serializes reverse claim/void transactions on one Key so exactly one commits", async () => {
   const key = await f.issue();
   const outcomes = await Promise.allSettled([
-    db.app.sql.begin((tx) => f.claim(key, tx)),
-    db.app.sql.begin((tx) => f.voidKey(key, tx)),
+    db.admin.sql.begin((tx) => f.claim(key, tx)),
+    db.admin.sql.begin((tx) => f.voidKey(key, tx)),
   ]);
   expect(outcomes.filter((x) => x.status === "fulfilled")).toHaveLength(1);
   const rejected = outcomes.find((x) => x.status === "rejected");
@@ -82,6 +82,10 @@ it("requires every accepted update including equal-value save to increase revisi
   await expect(
     db.app
       .sql`UPDATE qf.consumer_session SET last_receipt_text=last_receipt_text WHERE id=${String(session.id)}`,
+  ).rejects.toMatchObject({ code: "42501" });
+  await expect(
+    db.admin
+      .sql`UPDATE qf.consumer_session SET last_receipt_text=last_receipt_text WHERE id=${String(session.id)}`,
   ).rejects.toMatchObject({ code: "23514" });
 });
 it("pins a real complete score/report and immediately prevents final-state mutation", async () => {
@@ -96,9 +100,14 @@ it("pins a real complete score/report and immediately prevents final-state mutat
   }));
   const saved = await f.save(session, answers);
   await f.complete(saved);
-  await expect(f.save(saved, answers)).rejects.toMatchObject({ code: "23001" });
+  // Current policy rejects a new save before the immutable-report FK is reached.
+  await expect(f.save(saved, answers)).rejects.toMatchObject({ code: "23514" });
+  // Exercise the nondeferrable final-state FK directly; no session DELETE trigger masks it.
   await expect(
-    db.app
+    db.admin.sql`DELETE FROM qf.consumer_session WHERE id=${String(saved.id)}`,
+  ).rejects.toMatchObject({ code: "23001" });
+  await expect(
+    db.admin
       .sql`UPDATE qf.consumer_session SET answers_text=answers_text WHERE id=${String(session.id)}`,
   ).rejects.toMatchObject({ code: "23514" });
   await expect(

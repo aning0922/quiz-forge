@@ -1,4 +1,9 @@
 import {
+  consumerReexchangeReason,
+  type ConsumerReexchangeReason,
+} from "@/lib/consumer-contract/policy-display";
+import type { ConsumerPolicyResolution } from "@/features/fulfillment/consumer-flow/policy-contracts";
+import {
   consumerAnswersSchema,
   consumerProgressSchema,
   consumerAnswersSha256,
@@ -33,7 +38,10 @@ import { ConsumerClientError, type ConsumerFetch } from "./request";
 
 export type ConsumerScreenV1 =
   "cover" | "question" | "resume" | "review" | "result" | "report" | "poster";
-type Resolution = ConsumerSaveResolution | ConsumerCompleteResolution;
+type Resolution =
+  | ConsumerPolicyResolution
+  | ConsumerSaveResolution
+  | ConsumerCompleteResolution;
 export type ConsumerHostStateV1 = Readonly<{
   phase:
     | "loading"
@@ -46,6 +54,7 @@ export type ConsumerHostStateV1 = Readonly<{
     | "unavailable";
   screen: ConsumerScreenV1;
   keyExpired: boolean;
+  reexchangeRequired?: ConsumerReexchangeReason | undefined;
   session?: ConsumerSessionView | undefined;
   entry?: ConsumerEntryView | undefined;
   report?: PersistedReportView | undefined;
@@ -158,6 +167,7 @@ export class ConsumerControllerV1 {
     this.#publish({
       phase: "loading",
       keyExpired: false,
+      reexchangeRequired: undefined,
       session: undefined,
       entry: undefined,
       report: undefined,
@@ -219,6 +229,10 @@ export class ConsumerControllerV1 {
       if (session.outcome.kind === "completed") {
         await this.#report(session.outcome.report, task, screen ?? "result");
         if (task.current() && pending) this.#publish({ phase: "pending" });
+        return;
+      }
+      if (!("state" in session.outcome)) {
+        this.#publish({ phase: pending ? "pending" : "unavailable" });
         return;
       }
       const entry = await client.readConsumerEntryV1(
@@ -465,7 +479,15 @@ export class ConsumerControllerV1 {
       return;
     this.#publish({ phase: "busy" });
     try {
-      await this.#adopt(v.pending, v.resolution, task);
+      const observed =
+        "state" in v.resolution
+          ? await client.readConsumerSessionV1(
+              this.sessionId,
+              this.#context(task),
+            )
+          : undefined;
+      if (!task.current()) return;
+      await this.#adopt(v.pending, v.resolution, task, undefined, observed);
     } catch {
       this.#fail(task);
     }
@@ -475,6 +497,7 @@ export class ConsumerControllerV1 {
     resolution: Resolution,
     task: ConsumerTaskV1,
     nextScreen?: ConsumerScreenV1,
+    observed?: ConsumerSessionView,
   ) {
     if (resolution.kind === "unresolved") return;
     if ("state" in resolution && this.#value.entry)
@@ -490,7 +513,31 @@ export class ConsumerControllerV1 {
       await this.#report(resolution.report, task, "result");
       return;
     }
-    const state = resolution.state;
+    const reason =
+      consumerReexchangeReason(resolution) ??
+      consumerReexchangeReason(observed?.outcome) ??
+      this.#value.reexchangeRequired ??
+      consumerReexchangeReason(this.#value.session?.outcome);
+    if (observed?.outcome.kind === "completed") {
+      await this.#report(observed.outcome.report, task, "report");
+      return;
+    }
+    if (!("state" in resolution) || reason) {
+      this.#publish({
+        phase: "unavailable",
+        reexchangeRequired: reason,
+        entry: undefined,
+        accepted: undefined,
+      });
+      return;
+    }
+    // Policy revalidation must never roll an exact recovered receipt back to an older state.
+    const state =
+      observed &&
+      "state" in observed.outcome &&
+      observed.outcome.state.stateRevision > resolution.state.stateRevision
+        ? observed.outcome.state
+        : resolution.state;
     this.#publish({
       accepted: state,
       answers: state.answers,

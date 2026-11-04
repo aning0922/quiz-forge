@@ -84,6 +84,8 @@ export async function resetTestDatabase(database: TestDatabase): Promise<void> {
         OR EXISTS(SELECT 1 FROM qf.draft_review)
         OR EXISTS(SELECT 1 FROM qf.product_version)
         OR EXISTS(SELECT 1 FROM qf.internal_play_version)
+        OR EXISTS(SELECT 1 FROM qf.consumer_product_head)
+        OR EXISTS(SELECT 1 FROM qf.consumer_product_activation)
         OR EXISTS(SELECT 1 FROM qf.access_key)
         OR EXISTS(SELECT 1 FROM qf.consumer_session)
         OR EXISTS(SELECT 1 FROM qf.consumer_grant)
@@ -147,7 +149,7 @@ export async function resetTestDatabase(database: TestDatabase): Promise<void> {
         }
         await lock.check();
         await tx.unsafe(
-          `TRUNCATE qf.operator_account_operation,qf.operator_password_token,qf.operator_kdf_attempt,qf.quiz_report,qf.consumer_grant,qf.consumer_session,qf.access_key,qf.internal_play_version,qf.product_version,qf.draft_review,qf.draft_application,qf.draft_revision,qf.product_draft,qf.product_asset,qf.asset_blob,qf.quizpack_validation,qf.quizpack_import,qf.product_tag,qf.product,qf.category,qf.tag,qf.operator_session,qf.audit_event,qf.operator`,
+          `TRUNCATE qf.operator_account_operation,qf.operator_password_token,qf.operator_kdf_attempt,qf.quiz_report,qf.consumer_grant,qf.consumer_session,qf.consumer_product_head,qf.consumer_product_activation,qf.access_key,qf.internal_play_version,qf.product_version,qf.draft_review,qf.draft_application,qf.draft_revision,qf.product_draft,qf.product_asset,qf.asset_blob,qf.quizpack_validation,qf.quizpack_import,qf.product_tag,qf.product,qf.category,qf.tag,qf.operator_session,qf.audit_event,qf.operator`,
         );
       });
     } finally {

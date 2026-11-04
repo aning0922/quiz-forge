@@ -1,6 +1,6 @@
 import "server-only";
-/** Exact isolated PG18.4 catalog after 0029 final private candidate admission. */
+/** Exact isolated PG18.4 catalog after reviewed 0034 exact experience source admission (owned test instance). */
 export const consumerSchemaFacts = {
-  sha256: "0baa5e6e07d7df5eabb75ec44e108035380d741b0d808d873236ec262c0162cc",
-  tables: 25,
+  sha256: "8628d210ec2b689e76fb235b814e4e2d1ddab79b4c559f45a751fbbaa99c139e",
+  tables: 27,
 } as const;

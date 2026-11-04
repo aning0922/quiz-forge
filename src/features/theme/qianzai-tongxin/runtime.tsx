@@ -12,6 +12,8 @@ import {
 import { loadQianzaiFonts } from "./font-owner";
 import { QIANZAI_EDITORIAL_FONTS } from "./editorial-fonts";
 import typography from "./typography.module.css";
+import { QianzaiMusicProvider } from "./music-context";
+import { QIANZAI_MUSIC } from "./music-manifest";
 import { QianzaiExportProvider } from "./export-context";
 import type { QianzaiPresentationBinding } from "@/features/report/qianzai-tongxin/result-presentation";
 
@@ -107,19 +109,21 @@ export function QianzaiTongxinRuntime(
           画卷文字尚未准备完成，暂用备用字体显示。
         </p>
       )}
-      <QianzaiExportProvider
-        model={props.model}
-        lease={lease}
-        {...(props.presentationBinding
-          ? { presentationBinding: props.presentationBinding }
-          : {})}
-      >
-        <QianzaiTongxinExperience
-          key={`${lease?.generation ?? "none"}:${lease?.current() ? "active" : "revoked"}`}
-          {...props}
-          {...visual}
-        />
-      </QianzaiExportProvider>
+      <QianzaiMusicProvider track={QIANZAI_MUSIC} enabled={!denied}>
+        <QianzaiExportProvider
+          model={props.model}
+          lease={lease}
+          {...(props.presentationBinding
+            ? { presentationBinding: props.presentationBinding }
+            : {})}
+        >
+          <QianzaiTongxinExperience
+            key={`${lease?.generation ?? "none"}:${lease?.current() ? "active" : "revoked"}`}
+            {...props}
+            {...visual}
+          />
+        </QianzaiExportProvider>
+      </QianzaiMusicProvider>
     </div>
   );
 }

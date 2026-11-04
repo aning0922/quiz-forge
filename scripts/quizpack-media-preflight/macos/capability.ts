@@ -12,7 +12,7 @@ import {
   writeSync,
 } from "node:fs";
 import { dirname } from "node:path";
-import { CAPABILITY_FILE } from "./policy";
+import { CAPABILITY_FILE, PARENT_CRASH_DIAGNOSTIC } from "./policy";
 export function readCapabilityBytes(): Buffer {
   const fd = openSync(
     CAPABILITY_FILE,
@@ -39,7 +39,7 @@ export function sealCapabilityAfterChecks(
   allChecksPassed: boolean,
   componentId: string,
 ): boolean {
-  if (!allChecksPassed) return false;
+  if (PARENT_CRASH_DIAGNOSTIC || !allChecksPassed) return false;
   if (!/^[a-f0-9]{64}$/.test(componentId))
     throw new Error("CAPABILITY_INVALID");
   const before = lstatSync(CAPABILITY_FILE),

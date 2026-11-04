@@ -1,4 +1,8 @@
 "use client";
+import { RotateCcw, Sparkle } from "lucide-react";
+import { useQianzaiMusic } from "./music-context";
+import { knownQianzaiArtPresentation } from "./known-art-presentation";
+import { QIANZAI_CLASSICAL_EDITION } from "@/features/report/qianzai-tongxin/classical-edition";
 
 import {
   useEffect,
@@ -307,7 +311,7 @@ export function QianzaiCover({
               setMenuOpen(false);
             }}
           >
-            ↻ 重播封面
+            <RotateCcw size={16} aria-hidden="true" /> 重播封面
           </button>
           <button
             onClick={() => {
@@ -334,11 +338,12 @@ export function QianzaiCover({
                 setMenuOpen(false);
               }}
             >
+              {kind === "lantern" && <Sparkle size={16} aria-hidden="true" />}
               {
                 {
                   all: "三种效果一起看",
                   petals: "❀ 单独看花瓣",
-                  lantern: "✦ 单独看灯影",
+                  lantern: "单独看灯影",
                   water: "≈ 单独看水面",
                 }[kind]
               }
@@ -592,6 +597,7 @@ export function QianzaiQuestion({
   onChoose: (questionId: string, optionId: string) => void;
   readingQuestionId?: string;
 }) {
+  const music = useQianzaiMusic();
   const id = useId(),
     [menuOpen, setMenuOpen] = useState(false),
     [musicNotice, setMusicNotice] = useState(false),
@@ -709,8 +715,13 @@ export function QianzaiQuestion({
           />
           <button
             className={`${scenes.interact} ${scenes["hit-top"]} ${scenes.music}`}
-            aria-label="音乐说明"
-            onClick={() => setMusicNotice(!musicNotice)}
+            aria-label={music?.label ?? "背景音乐不可用"}
+            aria-pressed={music?.state.phase === "playing"}
+            disabled={!music}
+            onClick={() => {
+              music?.toggle();
+              setMusicNotice(true);
+            }}
           />
           <button
             className={`${scenes.interact} ${scenes["hit-top"]} ${scenes.menu}`}
@@ -906,7 +917,7 @@ export function QianzaiQuestion({
           )}
           {musicNotice && (
             <p className={scenes.musicNotice} role="status">
-              当前未提供音轨。
+              {music?.state.message ?? "当前未提供音轨"}。
             </p>
           )}
         </>
@@ -951,6 +962,7 @@ export function QianzaiReveal({
   onReplay?: () => void;
   referenceComposite?: QianzaiRevealReference;
 }) {
+  const music = useQianzaiMusic();
   const selected = model.report?.view.display.body.matching.selected;
   const result = useQianzaiExport().getResultPresentation();
   const character = qianzaiCharacter(model);
@@ -964,31 +976,43 @@ export function QianzaiReveal({
       : undefined;
   const portrait = qianzaiImage(model, currentCharacter?.reveal, images);
   const nameArt = qianzaiImage(model, currentCharacter?.nameArt, images);
+  const knownEdition =
+    model.report?.view.renderer.id === "consumer-qianzai-tongxin" &&
+    model.report.view.renderer.version ===
+      QIANZAI_CLASSICAL_EDITION.consumerVersion;
+  const knownReveal =
+    knownQianzaiArtPresentation(result, portrait?.asset, "reveal") ===
+    "native-width-scene";
   // Only this inspected transparent ink candidate receives the gold alpha
   // treatment. qianzaiImage has already verified the selected role and URL.
   const goldInkName =
-    nameArt?.asset.sha256 ===
-      "5e6f72a11d6187751754da57bb059a0230f4474c289fd2a61ac2641c2990933a" &&
-    nameArt.asset.width === 1060 &&
-    nameArt.asset.height === 1484;
+    knownQianzaiArtPresentation(result, nameArt?.asset, "nameArt") ===
+      "gold-alpha" ||
+    (!knownEdition &&
+      nameArt?.asset.sha256 ===
+        "5e6f72a11d6187751754da57bb059a0230f4474c289fd2a61ac2641c2990933a" &&
+      nameArt.asset.width === 1060 &&
+      nameArt.asset.height === 1484);
   // One admitted full-frame candidate; report portraits keep their existing crop.
   const fullReveal =
-    !!portrait &&
-    !!currentCharacter &&
-    sameArtRef(currentCharacter.resultRef, {
-      productId: "qianzai-tongxin",
-      id: "li-bai",
-      version: "1.0.0",
-    }) &&
-    sameArtRef(portrait.asset.resourceRef, {
-      productId: "qianzai-tongxin",
-      id: "qztx-art-li-bai-reveal",
-      version: "1.0.0",
-    }) &&
-    portrait.asset.sha256 ===
-      "36e83a15493c4dcbc298fda7b242b13929f4a1c138ab137bf1411af8e9790f91" &&
-    portrait.asset.width === 853 &&
-    portrait.asset.height === 1844;
+    knownReveal ||
+    (!knownEdition &&
+      !!portrait &&
+      !!currentCharacter &&
+      sameArtRef(currentCharacter.resultRef, {
+        productId: "qianzai-tongxin",
+        id: "li-bai",
+        version: "1.0.0",
+      }) &&
+      sameArtRef(portrait.asset.resourceRef, {
+        productId: "qianzai-tongxin",
+        id: "qztx-art-li-bai-reveal",
+        version: "1.0.0",
+      }) &&
+      portrait.asset.sha256 ===
+        "36e83a15493c4dcbc298fda7b242b13929f4a1c138ab137bf1411af8e9790f91" &&
+      portrait.asset.width === 853 &&
+      portrait.asset.height === 1844);
 
   const copy =
     result && selected && sameArtRef(result.role.ref, selected.ref)
@@ -1060,7 +1084,17 @@ export function QianzaiReveal({
         ) : portrait ? (
           <>
             {fullReveal ? (
-              <div className={scenes.fullRevealBackdrop}>
+              <div
+                className={scenes.fullRevealBackdrop}
+                {...(knownReveal && portrait
+                  ? {
+                      style: {
+                        aspectRatio: `${portrait.asset.width} / ${portrait.asset.height}`,
+                      },
+                      "data-qianzai-known-reveal": "native-width-scene",
+                    }
+                  : {})}
+              >
                 <ArtImage
                   src={portrait.objectUrl}
                   asset={portrait.asset}
@@ -1194,20 +1228,27 @@ export function QianzaiReveal({
         >
           {!frames && (
             <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="m15 4-8 8 8 8" />
+              <path d="m16 4-8 8 8 8" />
             </svg>
           )}
         </button>
         <button
           className={`${scenes["reveal-hot"]} ${scenes.music}`}
-          aria-label="音乐说明"
-          onClick={() => setMusicNotice(!musicNotice)}
+          aria-label={music?.label ?? "背景音乐不可用"}
+          aria-pressed={music?.state.phase === "playing"}
+          disabled={!music}
+          onClick={() => {
+            music?.toggle();
+            setMusicNotice(true);
+          }}
         >
           {!frames && (
             <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M10 17V5l10-2v12M10 8l10-2" />
-              <ellipse cx="6.5" cy="18" rx="3.5" ry="2.5" />
-              <ellipse cx="16.5" cy="16" rx="3.5" ry="2.5" />
+              <g transform="translate(.5 .25)">
+                <path d="M10 17V5l10-2v12M10 8l10-2" />
+                <ellipse cx="6.5" cy="18" rx="3.5" ry="2.5" />
+                <ellipse cx="16.5" cy="16" rx="3.5" ry="2.5" />
+              </g>
             </svg>
           )}
         </button>
@@ -1267,7 +1308,7 @@ export function QianzaiReveal({
             className={`${scenes["reveal-toast"]} ${scenes.visible}`}
             role="status"
           >
-            当前未提供音轨。
+            {music?.state.message ?? "当前未提供音轨"}。
           </p>
         )}
       </div>

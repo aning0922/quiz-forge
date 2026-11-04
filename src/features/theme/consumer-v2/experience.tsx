@@ -1,4 +1,6 @@
 "use client";
+import { ConsumerReexchangeNotice } from "../consumer-current/reexchange-notice";
+import type { PersistedReportViewV2 } from "@/features/report/persisted/view-contracts-v2";
 import {
   useEffect,
   useMemo,
@@ -43,6 +45,11 @@ export type ConsumerSessionRuntimeV2Props = {
   resolveRuntime: (
     facts: ConsumerRuntimeFactsV2,
   ) => ConsumerExperienceRuntimeV2 | null;
+  resolveHistoricalReport?:
+    | ((
+        report: PersistedReportViewV2,
+      ) => ConsumerExperienceRuntimeV2 | null | undefined)
+    | undefined;
   createController?: (sessionId: string) => Owner;
 };
 const createOwner = (sessionId: string) =>
@@ -56,6 +63,7 @@ export function ConsumerSessionRuntimeV2({
   sessionId,
   initialScreen,
   resolveRuntime,
+  resolveHistoricalReport,
   createController = createOwner,
 }: ConsumerSessionRuntimeV2Props) {
   const controller = useMemo(
@@ -80,6 +88,14 @@ export function ConsumerSessionRuntimeV2({
   const runtime = useMemo(() => {
     if (!facts) return null;
     try {
+      if (
+        internal.report &&
+        model.phase === "completed" &&
+        model.pendingOperation === null
+      ) {
+        const historical = resolveHistoricalReport?.(internal.report);
+        if (historical !== undefined) return historical;
+      }
       return resolveRuntime({
         renderer: facts.renderer,
         mapping: facts.mapping,
@@ -88,7 +104,14 @@ export function ConsumerSessionRuntimeV2({
     } catch {
       return null;
     }
-  }, [facts, resolveRuntime]);
+  }, [
+    facts,
+    resolveRuntime,
+    resolveHistoricalReport,
+    internal.report,
+    model.phase,
+    model.pendingOperation,
+  ]);
   if (runtime) {
     const Experience = runtime.Experience;
     return (
@@ -117,6 +140,7 @@ export function ConsumerSessionRuntimeV2({
               ? "正在读取服务端授权与固定版本。"
               : "尚未绑定可用的准确运行时，未切换到其他版本。")}
         </p>
+        <ConsumerReexchangeNotice reason={model.reexchangeRequired} />
         {model.pendingOperation && (
           <p>
             原{model.pendingOperation === "save" ? "保存" : "完成"}

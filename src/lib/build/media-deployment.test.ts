@@ -295,7 +295,264 @@ async function addAlias(
   return link;
 }
 
+function deferred() {
+  let resolve!: () => void;
+  const promise = new Promise<void>((done) => {
+    resolve = done;
+  });
+  return { promise, resolve };
+}
+
+/** Gate real fixture file reads without loading any native runtime. Every
+ * operation remains owned until its actual file close has completed. */
+async function controlledReads(
+  target: string,
+  run: (control: {
+    fresh: typeof import("./media-deployment");
+    firstFour: ReturnType<typeof deferred>;
+    reads: Map<
+      string,
+      {
+        release: ReturnType<typeof deferred>;
+        closed: ReturnType<typeof deferred>;
+      }
+    >;
+    live: Set<string>;
+    closeOrder: string[];
+    state: {
+      peak: number;
+      earlyDirectoryClose: boolean;
+      readFailure?: string;
+      closeFailure?: string;
+      changeOnClose?: string;
+    };
+  }) => Promise<void>,
+) {
+  const actual =
+    await vi.importActual<typeof import("node:fs/promises")>(
+      "node:fs/promises",
+    );
+  const firstFour = deferred(),
+    reads = new Map<
+      string,
+      {
+        release: ReturnType<typeof deferred>;
+        closed: ReturnType<typeof deferred>;
+      }
+    >(),
+    live = new Set<string>(),
+    closeOrder: string[] = [];
+  const enteredReads = new Set<string>();
+  const state: {
+    peak: number;
+    earlyDirectoryClose: boolean;
+    readFailure?: string;
+    closeFailure?: string;
+    changeOnClose?: string;
+  } = { peak: 0, earlyDirectoryClose: false };
+  vi.resetModules();
+  vi.doMock("node:fs/promises", () => ({
+    ...actual,
+    open: async (...args: Parameters<typeof actual.open>) => {
+      const file = await actual.open(...args),
+        name = String(args[0]);
+      if (!name.startsWith(target + path.sep)) return file;
+      live.add(name);
+      state.peak = Math.max(state.peak, live.size);
+      const release = deferred(),
+        closed = deferred();
+      if (reads.size >= 4) release.resolve();
+      reads.set(name, { release, closed });
+      return new Proxy(file, {
+        get(handle, key) {
+          if (key === "read")
+            return async (...values: unknown[]) => {
+              enteredReads.add(name);
+              if (enteredReads.size === 4) firstFour.resolve();
+              await release.promise;
+              if (state.readFailure === name)
+                throw Error("SYNTHETIC_READ_FAILURE");
+              return Reflect.apply(handle.read, handle, values);
+            };
+          if (key === "close")
+            return async () => {
+              try {
+                await handle.close();
+                if (state.changeOnClose === name)
+                  await actual.writeFile(
+                    path.join(target, "late.js"),
+                    "synthetic addition",
+                    { mode: 0o600 },
+                  );
+                if (state.closeFailure === name)
+                  throw Error("SYNTHETIC_CLOSE_FAILURE");
+              } finally {
+                live.delete(name);
+                closeOrder.push(name);
+                closed.resolve();
+              }
+            };
+          const value: unknown = Reflect.get(handle, key, handle);
+          return typeof value === "function" ? value.bind(handle) : value;
+        },
+      });
+    },
+    opendir: async (...args: Parameters<typeof actual.opendir>) => {
+      const dir = await actual.opendir(...args),
+        name = String(args[0]);
+      if (name !== target && !name.startsWith(target + path.sep)) return dir;
+      return new Proxy(dir, {
+        get(handle, key) {
+          if (key === "close")
+            return async () => {
+              if (live.size) state.earlyDirectoryClose = true;
+              return handle.close();
+            };
+          const value: unknown = Reflect.get(handle, key, handle);
+          return typeof value === "function" ? value.bind(handle) : value;
+        },
+      });
+    },
+  }));
+  try {
+    await run({
+      fresh: await import("./media-deployment"),
+      firstFour,
+      reads,
+      live,
+      closeOrder,
+      state,
+    });
+  } finally {
+    for (const read of reads.values()) read.release.resolve();
+    // Test bodies drain their operation in finally before the mock is removed.
+    vi.doUnmock("node:fs/promises");
+    vi.resetModules();
+  }
+}
+
 describe("trusted media deployment binding", () => {
+  it("bounds file reads at four across recursion and keeps hashes identical after out-of-order completion", async () => {
+    await fixture(async (bound) => {
+      const rel = ".next/server/concurrent",
+        target = path.join(bound.checkoutRoot, rel);
+      // Every leaf has a full batch. readdir may visit nested directories before
+      // files: gating a partial parent batch while waiting for four reads would
+      // deadlock this test before recursion is allowed to begin.
+      for (const group of ["first", "second", "third/nested"])
+        for (let i = 0; i < 4; i++)
+          await put(
+            bound.checkoutRoot,
+            `${rel}/${group}/part-${i}.js`,
+            `synthetic ${group} ${i}`,
+          );
+      const built = await build(bound),
+        saved = await readFile(manifestPath(bound.checkoutRoot));
+      expect(built).toMatchObject({ ok: true });
+      await controlledReads(target, async (control) => {
+        let settled = false;
+        const operation = control.fresh
+          .verifyMediaDeployment(bound, context())
+          .finally(() => {
+            settled = true;
+          });
+        try {
+          await Promise.race([
+            control.firstFour.promise,
+            operation.then(() => {
+              throw Error("CONTROLLED_READS_NOT_REACHED");
+            }),
+          ]);
+          expect(control.live.size).toBe(4);
+          expect(settled).toBe(false);
+          const reverse = [...control.reads.entries()].reverse();
+          for (const [, read] of reverse) {
+            read.release.resolve();
+            await read.closed.promise;
+          }
+          const result = await operation;
+          expect(result).toMatchObject({ ok: true, committed: false });
+          if (built.ok && result.ok)
+            expect(result.summary).toEqual(built.summary);
+          expect(await readFile(manifestPath(bound.checkoutRoot))).toEqual(
+            saved,
+          );
+          expect(control.state.peak).toBe(4);
+          expect(control.reads.size).toBe(12);
+          expect(control.closeOrder.slice(0, 4)).toEqual(
+            reverse.map(([name]) => name),
+          );
+          expect(control.live.size).toBe(0);
+          expect(control.state.earlyDirectoryClose).toBe(false);
+        } finally {
+          for (const read of control.reads.values()) read.release.resolve();
+          await operation;
+        }
+      });
+    });
+  });
+
+  it.each([
+    "read-failure",
+    "close-failure",
+    "cancel",
+    "directory-change",
+  ] as const)(
+    "settles every started read and close before returning %s",
+    async (kind) => {
+      await fixture(async (bound) => {
+        const rel = ".next/server/concurrent",
+          target = path.join(bound.checkoutRoot, rel);
+        for (let i = 0; i < 4; i++)
+          await put(bound.checkoutRoot, `${rel}/part-${i}.js`);
+        await build(bound);
+        await controlledReads(target, async (control) => {
+          const abort = new AbortController();
+          let settled = false;
+          const operation = control.fresh
+            .verifyMediaDeployment(bound, {
+              ...context(),
+              signal: abort.signal,
+            })
+            .finally(() => {
+              settled = true;
+            });
+          try {
+            await control.firstFour.promise;
+            const [name, first] = [...control.reads.entries()][0]!;
+            if (kind === "read-failure") control.state.readFailure = name;
+            if (kind === "close-failure") control.state.closeFailure = name;
+            if (kind === "directory-change") control.state.changeOnClose = name;
+            if (kind === "cancel") abort.abort();
+            first.release.resolve();
+            await first.closed.promise;
+            expect(settled).toBe(false);
+            expect(control.live.size).toBe(3);
+            for (const read of control.reads.values()) read.release.resolve();
+            expect(await operation).toMatchObject({
+              ok: false,
+              committed: false,
+              code:
+                kind === "cancel"
+                  ? "CANCELLED"
+                  : kind === "directory-change"
+                    ? "FILE_CHANGED"
+                    : "IO_FAILED",
+            });
+            expect(control.state.peak).toBe(4);
+            expect(control.reads.size).toBe(4);
+            expect(control.closeOrder).toHaveLength(4);
+            expect(control.live.size).toBe(0);
+            expect(control.state.earlyDirectoryClose).toBe(false);
+          } finally {
+            for (const read of control.reads.values()) read.release.resolve();
+            await operation;
+          }
+        });
+      });
+    },
+  );
+
   it.each([false, true])(
     "binds Linux Argon2 glibc only and rejects an Alpine host marker: %s",
     async (alpine) => {

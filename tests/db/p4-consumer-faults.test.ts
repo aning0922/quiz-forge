@@ -11,6 +11,7 @@ import { loginVersionFixtureAccount } from "./version-account-fixture";
 import { createStudioRequestBudget } from "@/lib/http-security/request-budget";
 import { createConsumerRequestOwner } from "@/features/fulfillment/consumer-flow/request-owner";
 import { createConsumerFlowServiceV1 as createConsumerFlowService } from "../support/consumer-v1-service";
+import { createConsumerActivationService } from "@/features/product/internal-play/activation-service";
 import { createInternalPlayService } from "@/features/product/internal-play/service";
 import { createAccessKeyService } from "@/features/fulfillment/access/service";
 import {
@@ -118,8 +119,24 @@ it("actual budget/CAS/report commits with lost results, NOWAIT rate limit and po
             },
           ),
         )
-      ).play,
-      rawKey = createConsumerToken("access-key"),
+      ).play;
+    const activation = await invoke((o) =>
+      createConsumerActivationService(o).activate(
+        { ...operatorCredentials, requestId: randomUUID() },
+        fixture.productId,
+        {
+          schemaVersion: "quizforge.consumer-product-activate.v1",
+          productId: fixture.productId,
+          operationKey: randomUUID(),
+          expectedGeneration: 0,
+          playVersionId: play.id,
+          playSnapshotSha256: play.snapshotSha256,
+        },
+      ),
+    );
+    expect(activation.kind).toBe("applied");
+    if (!activation.receipt) throw Error("P4_ACTIVATION_RECEIPT_REQUIRED");
+    const rawKey = createConsumerToken("access-key"),
       credentialDigest = (await digestConsumerToken(rawKey, "access-key"))!,
       key = (
         await invoke((o) =>
@@ -423,6 +440,7 @@ it("actual budget/CAS/report commits with lost results, NOWAIT rate limit and po
       mode: "operator-services",
       suiteCompletion: null,
       plays: [play],
+      activations: [activation.receipt],
       keys: [latest],
       states: [state],
       reports: [report.receipt],
@@ -443,6 +461,13 @@ it("actual budget/CAS/report commits with lost results, NOWAIT rate limit and po
       runId,
       await stopAndProveServerExit(server),
     );
+    const [remaining] = await db.admin.sql<{ present: boolean }[]>`
+      SELECT EXISTS(SELECT 1 FROM qf.product WHERE id=${fixture.productId})
+        OR EXISTS(SELECT 1 FROM qf.consumer_product_activation WHERE product_id=${fixture.productId})
+        OR EXISTS(SELECT 1 FROM qf.consumer_product_head WHERE product_id=${fixture.productId}) AS present`;
+    expect(remaining?.present).toBe(false);
+    // Cleanup must retain the real exhausted fixed-window budget, never refund it.
+    expect((await budget()).used).toBe(60);
   } finally {
     vi.restoreAllMocks();
     await db.close();

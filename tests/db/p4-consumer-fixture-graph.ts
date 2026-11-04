@@ -1,5 +1,6 @@
 import type postgres from "postgres";
 import { runInConsumerTransaction } from "@/lib/db/consumer-transaction";
+import { decodeActivationReceipt } from "@/features/product/internal-play/activation-repository";
 import { readInternalPlayById } from "@/features/product/internal-play/repository";
 import { readKeyFact } from "@/features/fulfillment/access/repository";
 import { readConsumerSession } from "@/features/fulfillment/consumer-session/repository";
@@ -43,11 +44,14 @@ const scoped: readonly Table[] = [
   "draft_review",
   "product_version",
   "internal_play_version",
+  "consumer_product_activation",
+  "consumer_product_head",
   "access_key",
   "consumer_session",
   "quiz_report",
 ];
 const identity = (table: Table, r: Raw["body"]) => {
+  if (table === "consumer_product_head") return String(r.product_id);
   if (table === "asset_blob") return String(r.sha256);
   if (table === "product_asset")
     return `${r.product_id}/${r.resource_id}/${r.resource_version}`;
@@ -205,6 +209,8 @@ export async function verifyConsumerFixtureGraph(
     "operator_session",
     "audit_event",
     "internal_play_version",
+    "consumer_product_activation",
+    "consumer_product_head",
     "access_key",
     "consumer_session",
     "consumer_grant",
@@ -230,10 +236,12 @@ export async function verifyConsumerFixtureGraph(
     OR EXISTS(SELECT 1 FROM qf.draft_review WHERE recorded_by=ANY(${tx.array(actors)}::uuid[]) AND product_id<>${value.productId})
     OR EXISTS(SELECT 1 FROM qf.product_version WHERE created_by=ANY(${tx.array(actors)}::uuid[]) AND product_id<>${value.productId})
     OR EXISTS(SELECT 1 FROM qf.internal_play_version WHERE created_by=ANY(${tx.array(actors)}::uuid[]) AND product_id<>${value.productId})
+    OR EXISTS(SELECT 1 FROM qf.consumer_product_activation WHERE activated_by=ANY(${tx.array(actors)}::uuid[]) AND product_id<>${value.productId})
     OR EXISTS(SELECT 1 FROM qf.access_key WHERE (issued_by=ANY(${tx.array(actors)}::uuid[]) OR voided_by=ANY(${tx.array(actors)}::uuid[])) AND product_id<>${value.productId}) AS present`;
   if (foreign?.present !== false) throw fail();
   const expected = observations ?? {
     plays: [],
+    activations: [],
     keys: [],
     states: [],
     reports: [],
@@ -241,6 +249,10 @@ export async function verifyConsumerFixtureGraph(
   };
   for (const [table, ids] of [
     ["internal_play_version", expected.plays.map((x) => x.id)],
+    [
+      "consumer_product_activation",
+      (expected.activations ?? []).map((x) => x.id),
+    ],
     ["access_key", expected.keys.map((x) => x.issue.binding.keyId)],
     ["consumer_session", expected.states.map((x) => x.session.sessionId)],
     ["quiz_report", expected.reports.map((x) => x.reportId)],
@@ -252,6 +264,54 @@ export async function verifyConsumerFixtureGraph(
     )
       throw fail();
   }
+  const activations = expected.activations ?? [];
+  for (const row of graph.get("consumer_product_activation")!) {
+    const receipt = await decodeActivationReceipt(row.body);
+    const expectedReceipt = activations.find((r) => r.id === receipt.id);
+    if (
+      !expectedReceipt ||
+      !same(receipt, expectedReceipt) ||
+      receipt.activatedBy !== value.operator.identifier ||
+      receipt.activatedAt !== iso(row.body.activated_at as string) ||
+      !graph
+        .get("operator_session")!
+        .some(
+          (r) =>
+            r.body.id === row.body.operator_session_id &&
+            r.body.operator_id === value.operator.identifier,
+        )
+    )
+      throw fail();
+    const audit = graph
+      .get("audit_event")!
+      .find((r) => r.body.id === receipt.id)?.body;
+    if (
+      !audit ||
+      audit.action !== "consumer_product_enabled" ||
+      audit.actor_id !== receipt.activatedBy ||
+      audit.session_id !== row.body.operator_session_id ||
+      audit.request_id !== row.body.request_id ||
+      audit.target_kind !== "product" ||
+      audit.target_id !== value.productId ||
+      audit.target_revision !== receipt.generation
+    )
+      throw fail();
+  }
+  const latest = [...activations].sort(
+    (a, b) => b.generation - a.generation,
+  )[0];
+  const heads = graph.get("consumer_product_head")!;
+  if (
+    heads.length !== (latest ? 1 : 0) ||
+    (latest &&
+      !same(heads[0]!.body, {
+        product_id: value.productId,
+        generation: latest.generation,
+        play_version_id: latest.binding.playVersionId,
+        play_snapshot_sha256: latest.binding.playSnapshotSha256,
+      }))
+  )
+    throw fail();
   await runInConsumerTransaction(
     tx,
     () => {},
@@ -290,7 +350,16 @@ export async function verifyConsumerFixtureGraph(
             actual.voidReceipt.voidedBy !== value.operator.identifier)
         )
           throw fail();
-        const state = await readConsumerSession(context, k.issue.binding.keyId),
+        const expectedState = expected.states.find(
+          (x) => x.session.keyId === k.issue.binding.keyId,
+        );
+        const state = expectedState
+            ? await readConsumerSession(
+                context,
+                k.issue.binding.keyId,
+                expectedState.session.sessionId,
+              )
+            : null,
           report = await readPersistedReport(context, k.issue.binding.keyId);
         const claim = state
             ? { sessionId: state.session.sessionId, claimedAt: state.createdAt }
@@ -349,7 +418,20 @@ export async function verifyConsumerFixtureGraph(
   if (foreignTarget?.present !== false) throw fail();
   for (const row of graph.get("audit_event")!) {
     const e = row.body as unknown as FixtureAuditTarget;
-    if (
+    if (e.action === "consumer_product_enabled") {
+      if (
+        !activations.some(
+          (a) =>
+            a.id === e.id &&
+            a.activatedBy === e.actor_id &&
+            a.generation === e.target_revision,
+        ) ||
+        e.target_kind !== "product" ||
+        e.target_id !== value.productId ||
+        !sessions.has(String(e.session_id))
+      )
+        throw fail();
+    } else if (
       ["draft", "review", "version", "play", "access-key"].includes(
         e.target_kind ?? "",
       )

@@ -1,5 +1,5 @@
 import type { DisplayFontDescriptorV1 } from "@/lib/assessment-contract/display-v1";
-import fonts from "./editorial-fonts.json";
+import fonts from "./editorial-fonts-known-ten.json";
 
 /** Compiled local assets only. This is not a QuizPack or HTTP font contract. */
 export type QianzaiEditorialFont = Omit<DisplayFontDescriptorV1, "weight"> & {

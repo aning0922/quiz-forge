@@ -1,3 +1,17 @@
+import {
+  consumerPolicyOutcome,
+  observePolicySave as observeConsumerSave,
+  observePolicyCompletion as observeConsumerCompletion,
+} from "./policy-resolution";
+import {
+  exchangePolicyAttempt,
+  revokePolicyGrant,
+} from "../consumer-session/policy-repository";
+import {
+  decodeConsumerSessionRow,
+  type SessionRow,
+} from "../consumer-session/repository";
+import { locateGrant } from "../access/repository";
 import { projectConsumerCompletion } from "./result";
 import { verifyPersistedReportSnapshotV2 } from "@/features/report/persisted/snapshot-contract-v2";
 import { consumerCompleteBindingSha256V2 } from "@/lib/consumer-contract/v2/state";
@@ -27,16 +41,9 @@ import {
 } from "@/features/report/persisted/repository";
 import {
   reserveConsumerExchange,
-  lockAccessKey,
-  rotateConsumerGrant,
   verifyLockedGrant,
-  revokeExactGrant,
 } from "../access/repository";
-import {
-  lockConsumerSession,
-  createConsumerSession,
-  saveConsumerSession,
-} from "../consumer-session/repository";
+import { saveConsumerSession } from "../consumer-session/repository";
 import type { ConsumerTx } from "@/lib/db/consumer-transaction";
 import type { DisplayAssetV2 as DisplayAssetV1 } from "@/lib/assessment-contract/display-v2";
 import type { ConsumerRequestOwner } from "./request-owner";
@@ -44,7 +51,6 @@ import type { ConsumerFlowService } from "./service-contract";
 import {
   consumerServiceCall,
   consumerWrite,
-  consumerReferenceShare,
   consumerDatabaseMoment,
   parseConsumer,
 } from "./transaction";
@@ -55,14 +61,12 @@ import {
   lockConsumerAuthority,
   assertConsumerSessionBinding,
   assertActiveConsumerKey,
+  assertCurrentConsumerAttempt,
+  assertConsumerContentAuthority,
   reauthorizeConsumer,
   type ConsumerAuthority,
 } from "./authorization";
-import {
-  observeCurrentSave as observeConsumerSave,
-  observeCurrentCompletion as observeConsumerCompletion,
-  verifyCurrentSessionView,
-} from "./current-contracts";
+import { verifyCurrentSessionView } from "./current-contracts";
 import {
   readConsumerExecutionSource,
   readConsumerPlaySource,
@@ -95,6 +99,7 @@ async function selectConsumerResource(
   authority: ConsumerAuthority,
   selector: ConsumerResourceSelector,
 ) {
+  await assertConsumerContentAuthority(tx, authority);
   const report = await readPersistedReport(tx, authority.state.session.keyId);
   let assets: readonly DisplayAssetV1[];
   if (report)
@@ -149,34 +154,24 @@ export function createConsumerFlowService(
         if (!grantDigest) throw new ConsumerError("UNAVAILABLE");
         const result = await c.sql((db, check) =>
           consumerWrite(db, check, observation, async (tx) => {
-            await consumerReferenceShare(tx);
-            const key = await lockAccessKey(tx, { credentialDigest: digest });
-            if (!key || key.voidReceipt)
-              throw new ConsumerError("ACCESS_DENIED");
-            let session = await lockConsumerSession(tx, key);
-            const report = await readPersistedReport(
+            const [scope] = await tx.sql<
+              { product_id: string }[]
+            >`SELECT product_id FROM qf.access_key WHERE credential_digest=${digest}`;
+            if (!scope) throw new ConsumerError("ACCESS_DENIED");
+            const result = await exchangePolicyAttempt(tx, {
+              productId: scope.product_id,
+              keyDigest: digest,
+              freshGrantId: randomUUID(),
+              freshDigest: grantDigest,
+            });
+            const state = await decodeConsumerSessionRow(
               tx,
-              key.issue.binding.keyId,
-            );
-            if (!report)
-              assertActiveConsumerKey(key, await consumerDatabaseMoment(tx));
-            if (!session) {
-              if (report) throw new ConsumerError("UNAVAILABLE");
-              session = await createConsumerSession(tx, key);
-            }
-            const at = await consumerDatabaseMoment(tx);
-            if (!report) assertActiveConsumerKey(key, at);
-            await rotateConsumerGrant(
-              tx,
-              key,
-              session,
-              { grantId: randomUUID(), credentialDigest: grantDigest },
-              at,
+              result.session as SessionRow,
             );
             return consumerExchangeResultSchema.parse({
               schemaVersion: "quizforge.consumer-exchange.v1",
-              session: session.state.session,
-              destination: report ? "report" : "play",
+              session: state.session,
+              destination: result.destination,
             });
           }),
         );
@@ -202,6 +197,8 @@ export function createConsumerFlowService(
                     tx,
                     a.state.session.keyId,
                   );
+                  if (!report && !consumerPolicyOutcome(a, null))
+                    assertCurrentConsumerAttempt(a.policy);
                   return verifyCurrentSessionView(
                     {
                       schemaVersion:
@@ -217,15 +214,17 @@ export function createConsumerFlowService(
                       },
                       observedAt: a.at,
                       keyExpiresAt: a.key.issue.expiresAt,
-                      outcome: report
-                        ? { kind: "completed", report: report.receipt }
-                        : {
-                            kind:
-                              a.key.issue.expiresAt <= a.at
-                                ? "expired"
-                                : "editable",
-                            state: a.state,
-                          },
+                      outcome:
+                        consumerPolicyOutcome(a, report?.receipt ?? null) ??
+                        (report
+                          ? { kind: "completed", report: report.receipt }
+                          : {
+                              kind:
+                                a.key.issue.expiresAt <= a.at
+                                  ? "expired"
+                                  : "editable",
+                              state: a.state,
+                            }),
                     },
                     sessionId,
                     a.state,
@@ -247,8 +246,7 @@ export function createConsumerFlowService(
             digest,
             sessionId,
             async (tx, a) => {
-              if (!(await readPersistedReport(tx, a.state.session.keyId)))
-                assertActiveConsumerKey(a.key, a.at);
+              await assertConsumerContentAuthority(tx, a);
               return readConsumerExecutionSource(tx, a.state);
             },
           ),
@@ -260,8 +258,7 @@ export function createConsumerFlowService(
             digest,
             sessionId,
             async (tx, a) => {
-              if (!(await readPersistedReport(tx, a.state.session.keyId)))
-                assertActiveConsumerKey(a.key, a.at);
+              await assertConsumerContentAuthority(tx, a);
               return readConsumerExecutionSource(tx, a.state);
             },
           );
@@ -285,6 +282,7 @@ export function createConsumerFlowService(
             io.checkpoint,
             current.authority.locator,
             current.authority.state.session,
+            true,
           );
           await io.guard.check();
           return entry;
@@ -314,10 +312,12 @@ export function createConsumerFlowService(
             const report = await readPersistedReport(tx, a.state.session.keyId),
               observed = await observeConsumerSave(
                 input.binding,
-                a.state,
+                a,
                 report?.receipt ?? null,
+                true,
               );
             if (observed.kind !== "unresolved") return observed;
+            assertCurrentConsumerAttempt(a.policy);
             assertActiveConsumerKey(a.key, a.at);
             // Saving validates fixed definition membership without any filesystem task or execution dependency.
             const { source } = await readConsumerPlaySource(tx, a.state);
@@ -331,37 +331,40 @@ export function createConsumerFlowService(
               a.session,
               a.grant,
               input,
-              at,
             );
-            return observeConsumerSave(input.binding, state, null);
+            return observeConsumerSave(
+              input.binding,
+              { ...a, state },
+              null,
+              true,
+            );
           }),
         );
       });
     },
     resolveSave(credentials, sessionInput, bindingValue) {
-      return consumerServiceCall(owner, "resolve-save", async (c) => {
-        const sessionId = parseConsumer(consumerUuidSchema, sessionInput),
-          digest = await assertConsumerWriteCredentials(credentials),
-          binding = parseConsumer(consumerSaveBindingSchema, bindingValue);
-        return c.sql(
-          async (db, check) =>
-            (
-              await authorizedConsumerRead(
-                db,
-                check,
-                digest,
-                sessionId,
-                async (tx, a) =>
-                  observeConsumerSave(
-                    binding,
-                    a.state,
-                    (await readPersistedReport(tx, a.state.session.keyId))
-                      ?.receipt ?? null,
-                  ),
-              )
-            ).value,
-        );
-      });
+      return consumerServiceCall(
+        owner,
+        "resolve-save",
+        async (c, observation) => {
+          const sessionId = parseConsumer(consumerUuidSchema, sessionInput),
+            digest = await assertConsumerWriteCredentials(credentials),
+            binding = parseConsumer(consumerSaveBindingSchema, bindingValue);
+          // Lock-only READ COMMITTED barrier: any earlier writer must settle before absence is definitive.
+          return c.sql((db, check) =>
+            consumerWrite(db, check, observation, async (tx) => {
+              const a = await lockConsumerAuthority(tx, digest, sessionId);
+              return observeConsumerSave(
+                binding,
+                a,
+                (await readPersistedReport(tx, a.state.session.keyId))
+                  ?.receipt ?? null,
+                true,
+              );
+            }),
+          );
+        },
+      );
     },
     complete(credentials, sessionInput, bindingValue) {
       return consumerServiceCall(owner, "complete", async (c, observation) => {
@@ -371,12 +374,13 @@ export function createConsumerFlowService(
         const precheck = async (tx: ConsumerTx, a: ConsumerAuthority) => {
           const observed = await observeConsumerCompletion(
             binding,
-            a.state,
+            a,
             (await readPersistedReport(tx, a.state.session.keyId))?.receipt ??
               null,
           );
           if (observed.kind !== "unresolved")
             return { kind: "observed" as const, observed };
+          assertCurrentConsumerAttempt(a.policy);
           assertActiveConsumerKey(a.key, a.at);
           const execution = await readConsumerExecutionSource(tx, a.state);
           validateConsumerMembers(execution.source, a.state, true);
@@ -416,11 +420,13 @@ export function createConsumerFlowService(
               const a = await lockConsumerAuthority(tx, digest, sessionId),
                 observed = await observeConsumerCompletion(
                   binding,
-                  a.state,
+                  a,
                   (await readPersistedReport(tx, a.state.session.keyId))
                     ?.receipt ?? null,
+                  true,
                 );
               if (observed.kind !== "unresolved") return observed;
+              assertCurrentConsumerAttempt(a.policy);
               assertActiveConsumerKey(a.key, a.at);
               const final = await readConsumerExecutionSource(tx, a.state);
               assertSameExecution(execution, final);
@@ -493,8 +499,9 @@ export function createConsumerFlowService(
               );
               return observeConsumerCompletion(
                 binding,
-                a.state,
+                a,
                 report.receipt,
+                true,
               );
             },
           );
@@ -502,29 +509,31 @@ export function createConsumerFlowService(
       });
     },
     resolveComplete(credentials, sessionInput, bindingValue) {
-      return consumerServiceCall(owner, "resolve-complete", async (c) => {
-        const sessionId = parseConsumer(consumerUuidSchema, sessionInput),
-          digest = await assertConsumerWriteCredentials(credentials),
-          binding = parseConsumer(consumerCompleteBindingSchema, bindingValue);
-        return c.sql(
-          async (db, check) =>
-            (
-              await authorizedConsumerRead(
-                db,
-                check,
-                digest,
-                sessionId,
-                async (tx, a) =>
-                  observeConsumerCompletion(
-                    binding,
-                    a.state,
-                    (await readPersistedReport(tx, a.state.session.keyId))
-                      ?.receipt ?? null,
-                  ),
-              )
-            ).value,
-        );
-      });
+      return consumerServiceCall(
+        owner,
+        "resolve-complete",
+        async (c, observation) => {
+          const sessionId = parseConsumer(consumerUuidSchema, sessionInput),
+            digest = await assertConsumerWriteCredentials(credentials),
+            binding = parseConsumer(
+              consumerCompleteBindingSchema,
+              bindingValue,
+            );
+          // Lock-only READ COMMITTED barrier: any earlier writer must settle before absence is definitive.
+          return c.sql((db, check) =>
+            consumerWrite(db, check, observation, async (tx) => {
+              const a = await lockConsumerAuthority(tx, digest, sessionId);
+              return observeConsumerCompletion(
+                binding,
+                a,
+                (await readPersistedReport(tx, a.state.session.keyId))
+                  ?.receipt ?? null,
+                true,
+              );
+            }),
+          );
+        },
+      );
     },
     readReport(credentials, sessionInput) {
       return consumerServiceCall(owner, "read-report", async (c) => {
@@ -544,6 +553,10 @@ export function createConsumerFlowService(
                     a.state.session.keyId,
                   );
                   if (!report) throw new ConsumerError("NOT_FOUND");
+                  assertConsumerSessionBinding(
+                    a.state.session,
+                    report.receipt.binding.session,
+                  );
                   return verifyPersistedReportView({
                     receipt: report.receipt,
                     view: report.snapshot.view,
@@ -586,6 +599,7 @@ export function createConsumerFlowService(
             io.checkpoint,
             current.authority.locator,
             current.authority.state.session,
+            true,
           );
           await io.guard.check();
           io.checkpoint();
@@ -600,14 +614,20 @@ export function createConsumerFlowService(
           digest = await assertConsumerWriteCredentials(credentials);
         await c.sql((db, check) =>
           consumerWrite(db, check, observation, async (tx) => {
-            const a = await lockConsumerAuthority(tx, digest, sessionId);
-            await revokeExactGrant(
-              tx,
-              a.key,
-              a.session,
-              a.grant,
-              await consumerDatabaseMoment(tx),
-            );
+            const locator = await locateGrant(tx, digest);
+            if (!locator || locator.sessionId !== sessionId)
+              throw new ConsumerError("ACCESS_DENIED");
+            const [scope] = await tx.sql<
+              { product_id: string }[]
+            >`SELECT product_id FROM qf.consumer_session WHERE id=${sessionId} AND key_id=${locator.keyId}`;
+            if (!scope) throw new ConsumerError("ACCESS_DENIED");
+            await revokePolicyGrant(tx, {
+              productId: scope.product_id,
+              keyId: locator.keyId,
+              sessionId,
+              grantId: locator.grantId,
+              credentialDigest: digest,
+            });
           }),
         );
       });

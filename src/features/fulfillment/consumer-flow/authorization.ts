@@ -1,3 +1,15 @@
+import { lockPolicyAuthority } from "../consumer-session/policy-repository";
+import {
+  decodeAccessKeyRow,
+  decodeGrantRow,
+  type KeyRow,
+  type GrantRow,
+} from "../access/repository";
+import {
+  decodeConsumerSessionRow,
+  type SessionRow,
+} from "../consumer-session/repository";
+import { lockWitness } from "@/lib/db/consumer-transaction";
 import "server-only";
 import {
   digestConsumerToken,
@@ -16,15 +28,10 @@ import {
   locateGrant,
   readFreshGrant,
   readKeyFact,
-  lockAccessKey,
-  verifyLockedGrant,
   type GrantLocator,
   type AccessKeyFact,
 } from "../access/repository";
-import {
-  readConsumerSession,
-  lockConsumerSession,
-} from "../consumer-session/repository";
+import { readConsumerSession } from "../consumer-session/repository";
 import type {
   ConsumerReadCredentials,
   ConsumerWriteCredentials,
@@ -59,11 +66,34 @@ function matchesKey(key: AccessKeyFact, session: ConsumerSessionRef) {
   if (
     key.issue.binding.keyId !== session.keyId ||
     p.productId !== session.productId ||
-    p.playVersionId !== session.playVersionId ||
-    p.playSnapshotSha256 !== session.playSnapshotSha256 ||
     key.voidReceipt
   )
     throw new ConsumerError("ACCESS_DENIED");
+}
+export async function readConsumerAttemptPolicy(
+  tx: ConsumerTx,
+  session: ConsumerSessionRef,
+) {
+  const [row] = await tx.sql<
+    {
+      attempt_generation: number;
+      current_generation: number | null;
+      current: boolean;
+    }[]
+  >`
+    SELECT s.activation_generation attempt_generation,h.generation current_generation,
+      coalesce((s.activation_generation,s.play_version_id,s.play_snapshot_sha256)=(h.generation,h.play_version_id,h.play_snapshot_sha256),false) current
+    FROM qf.consumer_session s LEFT JOIN qf.consumer_product_head h ON h.product_id=s.product_id
+    WHERE (s.id,s.key_id,s.product_id,s.play_version_id,s.play_snapshot_sha256)=(${session.sessionId}::uuid,${session.keyId}::uuid,${session.productId},${session.playVersionId}::uuid,${session.playSnapshotSha256})`;
+  if (!row) throw new ConsumerError("ACCESS_DENIED");
+  return row;
+}
+export function assertCurrentConsumerAttempt(
+  policy: Awaited<ReturnType<typeof readConsumerAttemptPolicy>>,
+) {
+  if (policy.current_generation === null)
+    throw new ConsumerError("NO_ENABLED_PLAY");
+  if (!policy.current) throw new ConsumerError("VERSION_SUPERSEDED");
 }
 /** Digest lookup is only a selector. Fresh exact grant + permanent session + complete Key binding authorize. */
 export async function readConsumerAuthority(
@@ -75,13 +105,24 @@ export async function readConsumerAuthority(
   if (!locator || locator.sessionId !== sessionId)
     throw new ConsumerError("ACCESS_DENIED");
   const grant = await readFreshGrant(tx, locator),
-    state = await readConsumerSession(tx, locator.keyId);
+    state = await readConsumerSession(tx, locator.keyId, sessionId);
   if (!grant || !state || state.session.sessionId !== sessionId)
     throw new ConsumerError("ACCESS_DENIED");
   const key = await readKeyFact(tx, state.session.productId, locator.keyId);
   if (!key) throw new ConsumerError("ACCESS_DENIED");
+  const [lineage] = await tx.sql<
+    { valid: boolean }[]
+  >`SELECT (s.key_bound_play_version_id=k.play_version_id AND s.key_bound_play_snapshot_sha256=k.play_snapshot_sha256 AND s.product_id=k.product_id AND s.play_version_id=${state.session.playVersionId}::uuid AND s.play_snapshot_sha256=${state.session.playSnapshotSha256}) valid FROM qf.consumer_session s JOIN qf.access_key k ON k.id=s.key_id WHERE s.id=${sessionId} AND s.key_id=${locator.keyId}`;
+  if (lineage?.valid !== true) throw new ConsumerError("ACCESS_DENIED");
   matchesKey(key, state.session);
-  return { locator, grant, state, key, at: await consumerDatabaseMoment(tx) };
+  return {
+    locator,
+    grant,
+    state,
+    key,
+    policy: await readConsumerAttemptPolicy(tx, state.session),
+    at: await consumerDatabaseMoment(tx),
+  };
 }
 export type ConsumerAuthority = Awaited<
   ReturnType<typeof readConsumerAuthority>
@@ -92,6 +133,7 @@ export async function reauthorizeConsumer(
   check: () => void,
   locator: GrantLocator,
   session: ConsumerSessionRef,
+  requireContent = false,
 ) {
   if (
     locator.keyId !== session.keyId ||
@@ -106,6 +148,14 @@ export async function reauthorizeConsumer(
       await runInConsumerTransaction(sql, check, async (tx) => {
         if (!(await readFreshGrant(tx, locator)))
           throw new ConsumerError("ACCESS_DENIED");
+        if (requireContent) {
+          const a = await readConsumerAuthority(
+            tx,
+            locator.credentialDigest,
+            session.sessionId,
+          );
+          await assertConsumerContentAuthority(tx, a);
+        }
       });
     },
   );
@@ -143,20 +193,58 @@ export async function lockConsumerAuthority(
   const locator = await locateGrant(tx, digest);
   if (!locator || locator.sessionId !== sessionId)
     throw new ConsumerError("ACCESS_DENIED");
-  const key = await lockAccessKey(tx, { keyId: locator.keyId });
-  if (!key) throw new ConsumerError("ACCESS_DENIED");
-  const session = await lockConsumerSession(tx, key, sessionId);
-  if (!session) throw new ConsumerError("ACCESS_DENIED");
+  const [scope] = await tx.sql<
+    { product_id: string }[]
+  >`SELECT product_id FROM qf.consumer_session WHERE id=${sessionId} AND key_id=${locator.keyId}`;
+  if (!scope) throw new ConsumerError("ACCESS_DENIED");
+  const rows = await lockPolicyAuthority(tx, {
+    productId: scope.product_id,
+    keyId: locator.keyId,
+    sessionId,
+    grantId: locator.grantId,
+    credentialDigest: locator.credentialDigest,
+  });
+  const key = lockWitness(
+    tx,
+    "key",
+    locator.keyId,
+    await decodeAccessKeyRow(rows.key as KeyRow),
+  );
+  const session = lockWitness(tx, "session", sessionId, {
+    state: await decodeConsumerSessionRow(tx, rows.session as SessionRow),
+  });
+  const grant = lockWitness(
+    tx,
+    "grant",
+    locator.grantId,
+    decodeGrantRow(rows.grant as GrantRow),
+  );
   matchesKey(key, session.state.session);
-  const grant = await verifyLockedGrant(tx, key, session, locator);
   return {
     locator,
     key,
     session,
     grant,
     state: session.state,
+    policy: await readConsumerAttemptPolicy(tx, session.state.session),
     at: await consumerDatabaseMoment(tx),
   };
+}
+/** Historical report resources belong only to the report's original attempt. */
+export async function assertConsumerContentAuthority(
+  tx: ConsumerTx,
+  a: ConsumerAuthority,
+) {
+  const [report] = await tx.sql<
+    { session_id: string }[]
+  >`SELECT session_id FROM qf.quiz_report WHERE key_id=${a.state.session.keyId}`;
+  if (report) {
+    if (report.session_id !== a.state.session.sessionId)
+      throw new ConsumerError("ACCESS_DENIED");
+  } else {
+    assertCurrentConsumerAttempt(a.policy);
+    assertActiveConsumerKey(a.key, a.at);
+  }
 }
 export function assertConsumerSessionBinding(
   actual: ConsumerSessionRef,

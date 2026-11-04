@@ -1,3 +1,4 @@
+import rendererV1_3 from "./implementation-data/consumer-folio-cabinet-v1-3.json";
 import rendererV1 from "./implementation-data/consumer-folio-cabinet-v1.json";
 import rendererV1_1 from "./implementation-data/consumer-folio-cabinet-v1-1.json";
 import rendererV1_2 from "./implementation-data/consumer-folio-cabinet-v1-2.json";
@@ -25,6 +26,7 @@ function freeze<T>(value: T): T {
 }
 /** Historical facts remain even if their executable binding is withdrawn. */
 export const CONSUMER_IMPLEMENTATION_DESCRIPTORS = freeze([
+  consumerImplementationEntrySchema.parse(rendererV1_3),
   consumerImplementationEntrySchema.parse(rendererV1_2),
   consumerImplementationEntrySchema.parse(rendererV1),
   consumerImplementationEntrySchema.parse(rendererV1_1),
@@ -51,12 +53,12 @@ export const consumerImplementationKey = (identity: ConsumerRendererIdentity) =>
   ]);
 /** Explicit compiled identity, independent of supplied or historical descriptor metadata. */
 export const CONSUMER_IMPLEMENTATION_AVAILABILITY = freeze({
-  rendererV1_2: consumerRendererIdentitySchema.parse({
+  rendererV1_3: consumerRendererIdentitySchema.parse({
     kind: "consumer-renderer",
     id: "consumer-folio-cabinet",
-    version: "1.0.2",
+    version: "1.0.3",
     entrySha256:
-      "1d310170ff1c86d8090b41502b89c03d10f6730c9d1aedd31c73c665bdb3e8a5",
+      "fd3c4c479066a153e6d8db1671a00bfdd25b23e6423d640af8ef1f5b8167afe0",
   }),
 });
 

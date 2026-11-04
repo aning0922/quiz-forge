@@ -84,7 +84,7 @@
     color 0.25s ease;
 }
 .reader.reader .rp-nav.paper-mode {
-  background: rgba(251, 243, 228, 0.96);
+  background: #fbf3e4;
   color: #4c3b2b;
   border-bottom-color: #ddbf8f;
   box-shadow: 0 4px 20px #5c3c181b;

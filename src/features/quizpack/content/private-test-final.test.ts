@@ -1,3 +1,5 @@
+import experience from "./private-test-registration-known-ten-experience.json";
+import knownTen from "./private-test-registration-known-ten-final.json";
 import { expect, it } from "vitest";
 import demo from "./private-test-registration-final-demo.json";
 import e2e from "./private-test-registration-final-e2e.json";
@@ -7,7 +9,7 @@ import {
 } from "./private-test";
 import { matchCurrentRegisteredBaseline } from "@/features/product/internal-versions/baseline-registry-v2";
 
-it.each([demo, e2e])(
+it.each([demo, e2e, knownTen, experience])(
   "binds final source, marker and private baseline to its exact instance $instanceId",
   (r) => {
     expect(registeredPrivateTestSource(r)).toEqual(r);

@@ -58,16 +58,18 @@ export function QianzaiExportProvider({
     kind = presentationBinding?.renderer.kind,
     id = presentationBinding?.renderer.id,
     version = presentationBinding?.renderer.version,
-    entrySha256 = presentationBinding?.renderer.entrySha256;
+    entrySha256 = presentationBinding?.renderer.entrySha256,
+    canonicalContentSha256 = presentationBinding?.canonicalContentSha256;
   const stableBinding = useMemo<QianzaiPresentationBinding | undefined>(
     () =>
       profileVersion && kind && id && version && entrySha256
         ? Object.freeze({
             profileVersion,
             renderer: Object.freeze({ kind, id, version, entrySha256 }),
+            ...(canonicalContentSha256 ? { canonicalContentSha256 } : {}),
           })
         : undefined,
-    [profileVersion, kind, id, version, entrySha256],
+    [profileVersion, kind, id, version, entrySha256, canonicalContentSha256],
   );
   const owner = useMemo(
     () =>

@@ -2,10 +2,8 @@ import { persistedReportFixtureV2 } from "@/features/report/persisted/contracts-
 import type { ConsumerV2ReaderModel } from "@/lib/consumer-contract/v2/client-contract";
 import type { QianzaiAssetBinding } from "@/features/theme/qianzai-tongxin/resource-owner";
 import { QIANZAI_RUNTIME_INPUTS } from "@/features/theme/qianzai-tongxin/runtime-inputs";
-import {
-  QIANZAI_COMPONENT_MAPPING,
-  QIANZAI_CONSUMER_RENDERER,
-} from "@/features/theme/qianzai-tongxin/component-map";
+import { QIANZAI_COMPONENT_MAPPING } from "@/features/theme/qianzai-tongxin/component-map";
+import { QIANZAI_CLASSICAL_CONSUMER_RENDERER as QIANZAI_CONSUMER_RENDERER } from "./classical-edition";
 /** Invented read-only completed model. Test authority/bytes only; never native/author approval. */
 export async function qianzaiExportFixture() {
   const fixture = await persistedReportFixtureV2();

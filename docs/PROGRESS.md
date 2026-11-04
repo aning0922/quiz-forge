@@ -1,5 +1,511 @@
 # 阶段进度
 
+## 2026-11-04 圆钮居中与真实背景音乐，1.5.3 / generation4
+
+作者反馈揭晓页返回／音乐／更多图标不居中且无背景音乐。实测原动态按钮被旧host button的9px/17px padding覆盖，SVG盒右移7.5px；三热区宽高和中心线不同、右侧边框重叠3px。当前仅动态模式设padding0、44×44正圆、同中心线、右侧4px间隙，并校准路径光学中心，原烘焙composite热区保持。Chromium156.0.8078.4实际查看quiz/reveal的320×568、390×844、1280×900共六张图；三圆钮几何断言通过，SVG与ink中心偏移均小于0.3px，不扩页面或角色矩阵。
+
+音乐从占位说明改为真正的原生Audio；固定候选《月汀灯影》1.0.0为B本地原创，母带64.000秒、最终M4A 870273字节，SHA `157fb0d4ee2cfdada45fe32e48fd4f1d11879eb56dc101c169c3ff530a1afb5a`，Chromium容器时长64.064秒。原音轨仅保存在experience私有.cache，未进public/Git/build输出；作者听感批准待确认。固定版本独立入口只服务00486/test/127.0.0.1:63238，核完整字节/摘要、文件身份/权限及有界Range，不扩QuizPack媒体、DB或通用图片入口。初次实际预检404保留；根因为NextRequest把loopback URL规范为localhost。`3ac6843`修复来源守卫，准确HEAD `ffc101305914d43b2caf84fdbf2fa8aa5a282ced`含生成descriptor格式收尾：仍强制准确Host、运行配置、test实例、同源和固定路径，只兼容已证规范化；真实NextRequest及拒绝反例通过。R已通过f28播放器/闭包审查，并准确窄审f28..ffc1013来源差异无阻断；未重复运行验证。
+
+播放器归稳定产品runtime所有，独立于图片lease；显式手势启动，native playing事件拥有播放状态，暂停/错误/拒绝不假显示播放。quiz→reveal→report同一实例连续，report卷目内可暂停/恢复；hidden/pagehide/失权/卸载释放音源，晚到promise不能复活。native错误释放失败实例，下次手势新建同一固定音轨，不自动重试；NotAllowedError保留手势重试。没有跨兑换文档自动播放承诺，也没有实机扬声器或作者听感通过声明。
+
+定向证据复用：owner原6项、hidden定向1项、媒体失败/NotSupported/NotAllowed定向3项，store最终5项（真实NextRequest、HEAD/GET/Range、文件身份/字节反例），历史/current selector27项及current登记9项；依相关输入复用而非相加为新测试总数。相关ESLint max-warnings0、类型、格式、diff及implementation检查通过。旧1.5.2 descriptor精确保留，report/export原39件文件冻结为report-only v152；历史共5profiles/261files，SHA `857978f056341c80054fea58f41ce5038dcc1b89f9ca68d7507385aa514aac77`。当前consumer1.5.3 entry `02f57b4310df87fbe8e318f3a5ed4eb74567883d803be2bd8627967a327beaff`；其余四entry/共享component-map/字体/素材保持。
+
+同00486授权停态窗口正常停止自有HTTP，同卷保留f2c原.next与失败预检的f28.next，PG/storage/作者资料未移动。必要生产构建源码ffc1013，BUILD_ID `fdMDLGgQGuF57PO1BoOxT`，132traces/28067paths/0private违规；当前HTTP PID97618/63238、PG55538，imports关闭。真实浏览器音频GET/HEAD200、Range206、越界416、全字节SHA一致后，才正常沿原ready source/内部version创建play `58c8d641-5a96-4b62-a441-e2a441a8eeaf`，resolve后expectedGeneration3启用g4，无新包/validation/review/内部version或迁移。新自有合成报告 `4e81a086-bdee-464f-9561-d223e642abed`。
+
+实际浏览器先证明手势前0Audio/0音频请求，点击后native playing、volume0.6、looptrue、非零信号RMS峰值0.03030，末题仅一次save/complete，揭晓及report入口仍为同一Audio，循环末尾seek后的native回绕通过（不冒称完整64秒听感）。首UI驱动过早点击卷目触发自动滚动争用而超时，失败与截图保留，不记整驱动通过；对同一已完成合成报告补验，正常点击上滑入口并等待toolbar可交互后，目录音乐暂停/恢复与logout释放、真实404后显式重试新Audio均通过，0页面异常、无save/complete重发。另一次补验遗漏上滑入口的驱动超时同样保留；无生产行为改动。私有证据集中于experience `.cache/qztx-audio-buttons/`：audio-preflight-v2/receipt.json、ui-v1/failure.json与六截图、media-error-retry-v2/receipt.json、final-audit-v1.receipt.json。
+
+最终审计仅已知自有synthetic IDs：原14份合成报告、旧三个play、首个25f…UNKNOWN完整行保持，cf1…仍ready revision8/clean/reserved0；不读取旧作者key/session/答案/report或全表hash。v3完整新码正常签发未兑换，sessions/grants/reports均0；另quick码已正常保存23题合成答案、g4、无report，专供音乐与揭晓体验，不称unused或作者个人测评。私有交接为experience `.cache/known-ten/author-handoff-v3/author-experience.html`及quick-reveal.html（0600），旧v1/v2保持。所有本次数据库owner已关闭，HTTP/PG保留运行。未做新native qualification、DB矩阵、全24题UI、PNG、全套E2E或新角色素材；未授权main合并/生产/商业发布，PR54保持Draft，自动CI另按准确HEAD实际状态报告。
+
+## 2026-11-04 揭晓资源队列修复，1.5.2 / generation3 实测人物出现12.03→5.00秒
+
+作者最新明确反馈“当前体验已经感觉可以了”。据此记录当前1.5.2/g3的作者体验验收通过，范围仅限作者已体验流程，不外推全角色内容、设备矩阵或商业发布批准；demo与作者记录保持。本次只同步文字，不读取作者答案/报告，不改src或运行测试/build/DB/截图。
+
+CI单独记录：主控本轮实时核对准确旧HEAD `b8423397f4ef8786b137d66794bda905b3fdb692`，媒体隔离[41838733237](https://github.com/aning0922/quiz-forge/actions/runs/41838733237)为success；普通检查[41838732893](https://github.com/aning0922/quiz-forge/actions/runs/41838732893)已completed/failure。主控已核job：media/accounts成功；checks因resource-owner.test.ts:318未使用的_asset参数产生1条warning，在max-warnings=0下被阻断（0error不等于CI通过）。database前493项真实PG、validation14、namespace3及media-uncertainty3均通过，最后p4-consumer-faults一例exchange报NO_ENABLED_PLAY。已交B仅修这两个测试文件，待准确diff交R窄审；不触生产代码/UI/00486，不重build/native/全套，也不复开产品视觉或内容验收。作者体验已通过，CI仍待收口；不记CI全绿或已可合并，不用旧HEAD结果冒充后续文字HEAD的CI。PR54保持Draft，未获main合并或生产授权。
+
+两项定向CI缺口修复已通过：R准确窄审B `c160b83c168f31f8650e0df4241eb9aefed5850b` 无阻断，集成为 `83b8dd7f4807ba18c89fc9b3fcb635cd068eb5c9`，仅两个测试文件。复用owner1项、真实PG fault1项（含精确cleanup）、两文件ESLint max-warnings=0、类型/格式/diff通过及专属库停止证据；原fault/UNKNOWN/NOWAIT/CAS、RR后/IO后撤权、activation graph和预算不退款断言保留。未重跑验证，未改生产代码/共享fixture或当前f2c8b31构建/demo，不重build/native。自动CI以最终准确HEAD实际状态为准，定向通过不等于CI全绿；不等待或手动重触CI。作者体验验收结论保持。
+
+作者实际反馈末题后人物图等待十余秒。准确修复 `f2c8b317e6b998103af525102b90f48fd10aab34` 已获R窄审通过：仅completed且无pending的report按已选角色及精确slot优先加载reveal/nameArt，同一lease内完整asset事实一致的多slot共享一次字节验证/decode/URL，仍为两个worker。admission、transport权限、完整hash/decode、失权/abort/晚到回收保持；一个VerifiedImage只释放一次，不跨lease复用、不预拉十人、不改评分/保存/完成幂等/服务端执行校验或原2秒动效。
+
+真实基线在原e806/kviyk构建正常新合成Key准备23题，再浏览器点末题一次。首轮14.65秒含入口在途请求，保留为探索记录，不作为最终matched before。修正baseline-v2与fixed-v1均为Chromium156.0.8078.4、390×844、新浏览器上下文/冷HTTP缓存、同李白witness；点击前当前题图/字体就绪且bounded networkidle，19项入口图均已decode，末项decode至click约531/546ms，无入口争用。实际可见要求已验证decode、DOM几何、本人及祖先累计opacity>0.05、原揭晓转场遮罩退出，不只用isVisible。
+
+同条件一次after结果：人物实际可见12032→5003ms，缩短7029ms/约58%；完整揭晓就绪12032→6031ms。before save440–869、complete890–2866、report2870–3281ms；after save423–861、complete875–2821、report2825–3225ms，服务端阶段相近。before report后先11个binding（三幕重复题纸/选项九项及报告纸/边框），hero10583ms才请求、11921ms下载完、decode11922–11946ms；after hero/nameArt是首批两项、3460/3461ms开始，hero4895–4921ms decode、5003ms实际可见。原playing4031→ready6031ms完整2秒保持，0页面异常。complete包含快照组装，内部compose未独立打点，不声称服务端校验提速；单次本机对照不是所有角色/设备性能保证。after仅追加观察已有请求，不重完整24题UI或PNG；就绪图已实际查看。
+
+current consumer1.5.2 entry `16f4971e1c97d9f7c3e57dbe91a9270a26411dfe229c361d08ada0eb626b62e1`。其余四entry/shared component-map/SQL/字体/素材未改。原1.5.1 descriptor与e806精确一致，39件report/export原文件逐项保存为新历史report-only profile，限导入/类型/返回访问入口适配，无quiz/save/complete/current fallback；旧三个历史profile未改。历史binding4 profiles/220 files，SHA `2ad8a3c24e44ddad59f25ac2d22ea674fe2b767e44f0189d1212dcc3ef00a993`。复用owner/历史selector25及current client/runtime登记9项通过，最终类型/格式/diff/implementation检查过；ESLint为0error/1未使用测试参数warning，R认定非阻断，不写成零告警。没有新DB/全套/native矩阵。
+
+主控明确放行同00486停态窗口后，只停止自有HTTP并同卷保留旧.next到`.cache/reveal-latency/build-e806-preserved-v1/next`，PG/storage/旧作者数据未移动。experience根ff至f2c8b31，必要生产build成功：BUILD_ID `ctp2Sgm7LTj10o9mTWz1F`，131traces/27788paths/0private违规。保留原双启动配置，HTTP PID23376/63238、PG55538运行，imports关闭；未重native，不授新媒体导入资格，原8f/87两seal及a958/e806旧build保持。正常HTTP沿同ready source/内部version新建play `caa42e46-d164-4860-ae54-6f560184766e`，先resolve后expectedGeneration2启用为g3，无新包/validation/review/内部version/迁移。after新报告 `39a5f741-f281-4749-b68a-4aa238cab675`。
+
+最终审计只查询已知自有synthetic IDs：原13份合成报告、旧两个play及首个25f…UNKNOWN完整行与本轮前一致，预留保持；新cf1…仍ready revision8/clean/reserved0。没有读取旧作者key/session/答案/report、全表report或全表hash，旧v1不再声称unused。新完整作者码另正常签发至`.cache/known-ten/author-handoff-v2/author-experience.html`（0600，另TXT），新码session/grant/report=0。另`quick-reveal.html`明确已兑换/23题合成答案/只验揭晓速度/非个人测评，正常再兑换证实同attempt恢复q24，尚无report；不称unused。旧v1交接和原结果保持。其他连接0、owner关闭。审计工具误把versioned answers对象当裸数组的失败原件保留，修正读取路径后限定审计通过，无业务写入。
+
+原始before/after/截图/审计在experience根`.cache/reveal-latency/{baseline-v2,fixed-v1,final-audit-v2.receipt.json}`；本轮未重native/迁移/全24UI/PNG。最终文档HEAD与PR54普通同步，自动CI以准确HEAD回读，不手动重触或先称全绿。修复版已可体验，作者实际体验/商业批准与工程证据区分，未main合并/生产迁移/对外部署/Release。
+
+## 2026-11-04 consumer 1.5.1 正常启用至 generation2，旧报告与作者未使用码保持
+
+本批仅修报告固定顶栏的稳定态透字：current paper-mode 背景改为不透明 `#fbf3e4`，保持82px高度和现有动效。准确源码 `e80600a3a6f206f176379323eeeeffdf32ce9fde` 已获R通过；consumer1.5.1 entry `cfb08cd32932b5e6331fcc0eb9c7fa0d1a6e6f106784532410df070f24fd249b` 与preview1.3分别登记，原shared component-map和另外四entry不变。原consumer1.5 descriptor与39件原实现冻结为精确report-only历史阅读器，旧renderer642d2e7f…733b/source6c701d…2187完整元组绑定，不开放答题/保存/完成或current fallback。三个历史profile闭包179文件/SHA `164cc19a52ae9b776e432d404b78f930d90d47979f43e9b479cbbc5a114b475f`，原140 closure逐件保持；原1.3/1.4历史文件未变。
+
+定向验证：6文件初轮49通过/3旧mock身份失败，修正受影响runtime-registration测试后该文件4通过，其他5文件48通过复用；不记成整52重跑。另复用新旧selector28通过。最终类型、变更文件ESLint（含冻结实现）、格式/diff与implementation:check通过。后者current v2 metadata20/available5/source149，historical3/179。无评分/source/SQL/art/font变化，无新媒体准入或重复数据库矩阵。
+
+按主控/R放行，只正常停止本00486自有服务，上一a958构建同卷保留至`.cache/known-ten/build-a958e85-preserved-v1/next`。experience根ff至e80600a，必要生产build通过，BUILD_ID `kviykRV4LL_E9HqZh6WuL`，131traces/27788paths/0private违规。正常启动仍同时设置本根QUIZFORGE_P2A_CONFIG及QUIZFORGE_PLATFORM_ART_DIR；HTTP PID8815/63238、PG55538保持运行，imports关闭。消费者IO不调用媒体launcher，未重native，新build不授新媒体导入资格；原8f/87两份build/seal及capability/record字节保持，不借用或改原资格。
+
+沿原ready validation `cf1b11d5-13e4-4d72-80af-ddea188965b0`、原内部version和原source，经正常HTTP创建新play `e7caa077-caf3-46a8-a882-753e39810b39`；先resolve确认head仍generation1，再显式expectedGeneration1启用为generation2。只用一枚补丁前正常签发、未兑换的独立合成Key验证latest路由：签发元组仍指旧play371206c4…，实际session指新play/g2。一次正常HTTP save/complete生成李白报告 `d0da8696-5ad9-4002-8710-f11f7f65c51d`，严格校验1.5.1/新entry通过。不创建新import、validation、review、内部version，不另发作者码，不重24题UI/双PNG。
+
+Chromium156.0.8078.4、390×844实际加载新报告，六卷/fonts就绪后复拍patterns/literature两个滚动位置；均opacity1、背景rgb(251,243,228)、height82、readerProgress1、有限动画结束，0页面异常。旧已完成李白Key实际入口仍只读原report1563cb33…/原snapshot6b0f41e7…/renderer1.5.0及642d2e7f…，六卷、导出可用，无quiz或complete控件；未重新导出PNG。两图与只读回执在`.cache/known-ten/header-patch-visual-v1/`。V已独立复核这两张稳定图并通过，正文不再透入顶栏，标题/卷目/40%与69%/进度均清楚，本批唯一视觉阻断关闭；此前揭晓姓名、报告主体/原双PNG及公开封面结果复用，不扩称十人UI/PNG或作者实机/内容/商业批准。
+
+最后只读差异审计通过：旧10报告完整行、旧play完整行、首个25f…UNKNOWN完整行与补丁前canonical一致；原UNKNOWN预留保持。作者Key原issue完整元事实一致、仍绑定旧play且session/grant/report=0，未兑换；由独立旧签发测试码证明latest行为，不改作者issue。新cf1…仍ready revision8/clean/53/reserved0。当前53blob/53asset/1draft/1review/1version/2play/1head/2activation/12Key/11session/11report，其他连接0，owner关闭。回执`.cache/known-ten/header-patch-final-audit-v2.receipt.json`；审计工具对驱动Result子类和SQL别名大小写的两次失败保留，修正只读比较工具后完成，未业务写入或降低不变量。原作者/旧b3/63226和其他UNKNOWN环境未变。
+
+已审B tests-only9772491集成为0cb7272，复用并发5、真实PG expiry四variant及后续domain证据；已审4761e7c集成为70029c0，仅三个P4测试文件，真实SQL enable/head/activation/audit/currentattempt和精确清理，保留app权限反例及未知外来行拒绝。复用core7→同库quarantine1→ports5→后续scope1共14真实PG；scope另12筛选跳过不计通过。专属实例停止、PGDATA保留，类型/lint/格式过；不因tests-only重build/native或重全套。
+
+准确e806自动CI：媒体41828840275 success；普通41828840239的checks/accounts success、database failure，后续job跳过不能算通过。新集成HEAD的自动CI待实际回读，不手动重触。当前本机可体验交接保持，视觉复核已收口，托管批次CI最终结果由主控按准确HEAD回读；PR54保持Draft，未main合并/生产迁移/对外部署/Release/商业发布。此文档收尾不重跑测试或构建。
+
+## 2026-11-04 同validation正常恢复至ready，真实十角色报告/双PNG与未使用作者码已交接
+
+主控/R确认新cf1…已有DB stop ACK后，沿原import/validation/binding走既有正常生产HTTP recover与retry，未创建第三import或新validation key：recover 200/578.81ms，revision4 archiving/unknown→revision5 validated/clean；retry 200/7082.11ms，revision8 ready/clean、53/53归档。第2 attempt为archive、mediaStop=not-started，只恢复已接受candidate，未重新native解码；两个attempt均released且各有原DB ACK，reserved_bytes=0。candidate354e5993…9712、validationKey及identity完全保持；原第一个25f…完整行前后canonical仍完全一致，原held/UNKNOWN与预留不消除。原失败和原stop快照均保留，不回写为首次成功。
+
+随后正常HTTP apply创建唯一draft `c14492df-b59a-4661-b2eb-c0ed5b1ae65c` revision1；通用temporary-preview GET实际503/PREVIEW_RESOURCE_UNAVAILABLE，其正式v1声明parser不支持本包private-test-only v3声明。该结果保留为未支持路径，不开放新公共私有准入、不更改声明或声称通用预览通过。已有精确source/database围栏的正常审核、版本封存及play创建均通过。首次activation返回UNAVAILABLE，按原operationKey resolve确认unresolved/无head及receipt；只读完整preflight/资源IO通过，原policy SQL和receipt解码在明确rollback-only事务内通过并回滚。独立准确复现最终事务将source evidence整体重序列化到512KiB时JSON_SIZE_LIMIT：canonical content510296B，作为JSON字符串转义后586096B，发生activatePolicyProduct之前。
+
+最小修复`a958e857e7490d60e1fdfcf0174a9db864adca91`已获R窄审：两个已校验canonical文本canonicalContentText/assetSetText直接精确逐字比较，rest所有元事实保持原512KiB比较，play/final事务preflight/授权/CAS不变，无字段遗漏、扩大限额或SQL变更。8项定向通过（大合法文本；两文本、三hash、validation、play漂移拒绝），TypeScript/两文件ESLint/格式/diff通过。B已审tests-only0dc5b27集成为1a3ee7f，复用9真实PG+4普通合同及静态，不为fixture重build/native。
+
+停态同卷rename保留87e5b51的`.next`与完整媒体封存到`.cache/known-ten/sealed-build-87e5b51/`，8f5ce22归档继续保持。experience根ff至a958e85，仅必需生产build通过，BUILD_ID `rT80xS_OxHzCzBpindYVT`、131traces/27788paths/0private违规。消费者调用StorageReadGuard/readPrivateResource/固定字体文件校验，不调用media launcher或verifyMediaDeployment；按明确取舍未重跑native，新build没有新的媒体导入资格，不借用旧seal。两个归档BUILD_ID/capability/record最终字节复核保持。新构建正常HTTP先resolve原activationKey仍unresolved，再按原binding续作成功，唯一play `371206c4-0d27-4585-b2f1-d9532d6c3c37`，head generation1/activation1，无另起operationKey。
+
+实际Chromium156.0.8078.4完成李白24题，前6题保存后刷新恢复至第7题，刷新前后服务端state完全相同；25次save均200，末题现有自动完成链仅一次complete，进入真实六卷，页面异常0。其余九人只用包内既有witness答案，经正常HTTP独立合成Key/exchange/save/complete/report及严格报告完整性验证，逐一命中苏轼/唐寅/周瑜/赵云/李清照/杨玉环/武则天/王昭君/蔡文姬。是1条完整UI＋9条真实HTTP，不称十条完整UI、十组PNG或作者实机批准；不重新搜索评分输入。每个已用Key恰一份report。
+
+就绪截图390×844/1280×900与报告why-like/人物小传已保存，原过渡帧及驱动失败保留：最初封面截在既有入场动画，后绑定可见decoded image及有限动画结束；新十角色为layered全幅揭晓而非旧composite，按实际注册模式等ready。真实海报941×1672（复用首次已生成原PNG，不因驱动误设1080再生成）、完整报告长图724×4185/4127431B，均浏览器现有导出/下载；两PNG及原码只读阶段0页面异常/0HTTP失败。原已完成Key经正常入口再兑换直达同一reportId/reportSnapshotSha；没有新complete或改历史快照。V只复用这些实际就绪截图/原PNG做独立视觉窄审，作者内容/实机/商业批准另行区分。
+
+主控另用IAB发现未grant公开`/works/qianzai-tongxin`冷加载fallback。A真实无grant Chromium从`/`点击复现home/cover请求404后IMG降级DIV；与已兑换`/play/...`不是同一入口。原因是本次启动遗漏既有QUIZFORGE_PLATFORM_ART_DIR，不是资源损坏或ready状态绕过。只从原作者固定marketing目录读取manifest已登记的5件公开素材，逐件生产readPlatformArt校字节/SHA/尺寸后复制至本根`.cache/known-ten/public-platform-art-v1`，原文件inode/mtime/字节保持；仅重启自有Next并补现有绝对目录配置，未改源码/构建、未暴露QuizPack目录或其他私有角色。新无grant冷导航/刷新均真实IMG390×844、data-art-ready=true、home/cover200、初始无弹窗；CTA打开原兑换弹窗，既有已完成合成Key兑换后正常导航关闭并读取同一不可变报告。另定向移动Chromium以CDP触摸事件实际核上滑打开原弹窗、按钮与上滑后取消均返回封面、返回平台再暖导航封面仍ready，0页面异常，不称物理设备通过。未force-ready/hide-fallback。公开390/1280就绪图及前后HTTP/DOM/手势回执保留，交V复用。
+
+所有自动驱动结束后，正常HTTP签发独立作者Key（原码仅本机私有HTML/TXT），operator只读及最终DB元事实均确认session/grant/report=0，未兑换；私有交接`.cache/known-ten/author-handoff-v1/author-experience.html`。最终只读计数：53blob/53asset/1draft/1review/1version/1play/1head/1activation/11Key/10session/10report，其他连接0、owner已close；原25f…完整行不变，新cf1…ready revision8。HTTP PID96280及PG55538保留运行供体验，imports关闭，managed文件及原两个封存归档保留。原作者/旧b3/63226及其他UNKNOWN环境未变。最终元审计`.cache/known-ten/final-runtime-audit-v1.receipt.json`，业务/浏览器/PNG原回执均在experience根`.cache/known-ten/independent-*`、`consumer-*`、`public-cover-config-v1`。
+
+准确a958e85普通push成功。自动媒体CI41821686292成功；普通CI41821686323的accounts成功，但checks/database失败，未记通过：单测2488过/1失败为B四并发用例media-deployment.test.ts:435的5000ms测试期限；真实PG最早p4-consumer-expiry的NO_ENABLED_PLAY，后出现TEST_INTERNAL_VERSION_SCOPE_NOT_EMPTY连锁拒绝。原job126546121583/126546121952日志已读，交主控/B定向修测试所有权，不以重复全量/清数据掩盖。旧0034十组/全部53声明、current50项/79历史同字节、评分/字体证据复用。本条文档不触发本地测试/构建；当前可体验结果已交接，V与CI收口仍待主控协调，托管批次不先记最终完成；PR54保持Draft，无main合并/生产迁移/部署/商业发布。
+
+## 2026-11-04 四并发部署读取集成，新独立验证到archiving但最终写入UNKNOWN
+
+主控/R已放行B准确8bbe8de的局部优化，A集成为`87e5b51c329c4d8b98591f20189b8027e3a04ada`并普通推送成功：部署快照walk最多四个文件读取并发，进入子目录及返回前排空已启动任务，保持逐文件读/哈希/stat/祖先检查、关闭与错误语义、预算及排序结果。复用B107项定向测试、静态及R窄审，不重复运行；无跨图缓存、stat lease、deadline扩大或ACK补录迁移。该文件不在当前已登记renderer闭包，不重新生成descriptor。
+
+仅将本00486原自有`.next`、媒体runtime与三轮原件按同卷rename保留到`.cache/known-ten/sealed-build-8f5ce22/`；原`.cache/p2a`与UNKNOWN保持原路径。旧封存只作原身份审计，不在归档路径授予新构建能力。experience根正常ff至87e5b51后，唯一新生产build通过：BUILD_ID `STueh-iSaEjcX7SH8BQhw`，131traces/27788paths/0private违规。固定media build/setup及一完整main资格窗口通过，三轮各66项：80515771-4883-460b-8899-d7b886d1c757、35a35e3d-9579-4b24-8cf1-9837006c40eb、f3148b31-8a44-4e3f-9a85-ad4539d49afc；control空，capability/record均committed。deployment `b281a09e758aad69ca6439b74a786fef07d209d6e5c1b9a56e5cbc16cf9b5eba`，sourceBundle `054346c2fdc47cbbef0a9eb90559d68dabd539f6946cb6a9086050d1a5e2fd8f`，runtimeBundle `bea05f0ad2204eb67fe32964cd2649e54bc25337e87330deec76ece7f8590443`；原summary/schema/capability只读审计通过。新seal审计及build/media原日志保留在本根`.cache/known-ten/experience-io4-*`。
+
+按明确独立新操作授权，在同00486正常start/imports开启/生产HTTP63238，通过正常preauth/password-login/current-admin、唯一新intent、receive与prepare：import `ea9da493-374b-47a4-a66f-03a5b1f2ae19`，同ZIP f44ca6…1335/30,518,008B；无第三次导入。随后一次既有受管local private factory验证，固定编译根/当前media源码SHA/新seal绑定，未给公共HTTP增加私有能力。原60秒期限不变。调用返回`WRITE_OUTCOME_UNKNOWN`，未将失败改为通过。
+
+权威原操作只读观察：新validation `cf1b11d5-13e4-4d72-80af-ddea188965b0`，revision4/status=archiving/storage_condition=unknown；第1 attempt `050e59a7-d84e-433a-b8ff-6a4238fa68eb`仍held。候选结果accepted、report sealed、53项media，completion为mediaStopped=confirmed/relatedIo=settled/maintenanceRequired=false；candidate SHA `354e59937d202942bf9eb6209d2db8151f871d87c53be0ea6831b93c06879712`。53个blob文件存在，但数据库blobs/assets/drafts/reports仍0。原stop回执323B/SHA `2629816cde58dfcf18ab8c99b0773b5733c13dfd5e55bbfafc988a5f8e0b924b`、dev16777229/inode222546533，owner/fence逐项匹配、原owner进程不存在；本次DB的fileStopProof已ACK、mediaStop=confirmed。这与原25f… held且无DB ACK是不同现场，不能混写，也不能把磁盘文件或已ACK等同最终ready。未执行正常recover/retry，未手工complete/补proof/改reservation或新key；下一步先由主控/R针对准确最终写入及既有恢复边界取舍。
+
+原25f…完整行在本次前后canonical完全一致，原UNKNOWN及配额不消除。本次issuer/native/owner句柄均关闭、imports关闭；正常停止自有HTTP/PG后独立核55538/63238无监听、postmaster.pid不存在、管理文件/PGdata保留、control空，新capability/record字节与审计一致。新现场完整私有回执在`.cache/known-ten/independent-native-validation-v1/`（failure、前后原行、observation-private/脱敏observation-redacted.receipt、close、stop），正常HTTP intent/receive/prepare各自原回执保留；所有凭证/owner字段仅作私有审计，不进Git。
+
+当前验收：新build/资格通过；正常HTTP接收/prepare通过；一次私有原生候选验证accepted且停止已ACK，最终业务完成UNKNOWN，因此native整体未通过。apply/草稿/预览/审核/封存/play/activation/Key及24题/续答/唯一完成/报告与海报PNG/原码只读/作者未使用码均未到达。旧SQL10组/53声明、50项current/79历史同字节及未变字体/评分证据复用，不重跑全套。B后续CI fixture为tests-only，等待准确独审，不因此重建或重跑本次导入。托管批次仍未完成，PR54保持Draft，无main合并或生产/商业发布。
+
+## 2026-11-04 新体验真实接收完成，首次原生validation超时并保留UNKNOWN（未到草稿）
+
+主控明确授权沿同00486/已封存构建继续真实导入至消费者/双PNG并另留未使用码。先复用只读封存核对并再次核实际BUILD_ID、capability/record原SHA；只在新根启用imports、建立隔离合成领域operator（复用现有test helper，不冒称密码登录验收）、通过正常product/receive服务实际接收原ZIP f44ca6…1335/30,518,008B。原import `0b6d3ab8-dd8a-4274-955d-683d3c90e335`为received/stateRevision3、actual hash与字节一致，未重传/新建第二import。
+
+首次prepare被MEDIA_UNAVAILABLE拒绝，未生成validation记录/启动decode。原因已实际核实为本次私有编排调用遗漏：tsx直接调用生产fixedMediaRuntimeRoots时没有Next compiler.defineServer的两个固定字面量，守卫返回ISOLATION_UNAVAILABLE；不是sealed deployment漂移。只读verifyMediaDeployment仍准确0df465…c27c/49de5c…0d82、原import仍received/validationCount0。保留原拒绝/关闭日志后，仅将私有续行入口按仓库已有esbuild固定编译方式绑定同新根与同.next两个字面量；不修改生产代码/守卫、无env/cwd fallback、不重建Next/资格、不重接收。续行prepare实际通过且保留原binding/key；这不冒称生产HTTP路径验收。
+
+原import第一次实际startValidation随后返回VALIDATION_TIMEOUT（原60,000ms不改）。权威只读观察：validation `25f78ea7-339d-4137-b6dd-aa21a390fa3c`、revision1、status=validating、storage_condition=unknown；ordinal1 attempt=9c8bba0a-abe6-4adc-b102-af54036a6fa4为held、mediaStop=unconfirmed、fileStopProof=null，evidence/candidate均null。不能将脚本退出或磁盘后验改记成功/可重试。新根保留原receive/prepare/start intent、原validation_key、失败和全部文件，不新操作key、不新import、不retry/recover、不改DB/期限/断言。
+
+另立停止事实：原stopped回执为mediaStopped=confirmed/relatedIo=settled，323B/SHA `2cecaf454b0959c4cdcc5614914e09a603df695f96152e175b51697dc7f14fb3`/dev16777229/inode222336596，与原DB attempt/fence/owner字段逐项匹配；原owner进程当前不存在、native control为空。该磁盘事实没有数据库ACK资格，DB held/unknown保持。现有`validation/recovery.ts:27`先拒绝held且fileStopProof为空，因此没有盲调正常recover，更未手工ACK/补proof/清空reservation。blobs/assets/drafts/reports0，其他连接0、app/owner关闭、imports关闭；正常stop后独立核55538/63238无监听、PG pid不存在、管理文件/PGdata完整保留。新root`.cache/known-ten/native-timeout-{close-audit.receipt,stop.receipt}.json`及原观察/日志可审，所有nonce/凭证仅留私有文件。
+
+实际部署只读复核仍准确，单次完整verifyMediaDeployment测量1049.560625ms；当前runtime每幅图load会调用完整部署复核（internal/runtime.ts:158,338），是待R定向核实的性能线索，不能据一次测量认定60s根因、每图耗时或实际解码数量。需要R先核本次原attempt超时/ACK与既有恢复边界及运行入口，任何生产代码/合同修复须准确最小diff定向审；本步未提供或执行降低源重验、扩大deadline、重build/native或另起身份的变更。
+
+分层结果：原main资格仍已完整封存；真实原ZIP接收已完成；原生validation未通过且DB UNKNOWN保留；未生成candidate/草稿/预览/审核封存/play/activation/Key/grant/报告，消费者24题/续答/唯一完成/双PNG/原码只读及作者未使用码均NOT_RUN/NOT_ISSUED。私有seal-play续行脚本只准备未执行，不能当业务回执。旧b3/作者/其他UNKNOWN现场不动，托管批次仍未完成。
+
+## 2026-11-04 唯一新experience生产构建与main原生资格封存通过
+
+同00486 experience根正常ff至8f5ce22，在PG/HTTP停止且本根无旧BUILD_ID条件下仅一次`env -u QUIZFORGE_P2A_CONFIG pnpm build`通过；BUILD_ID `qPdCWqXmYm8otByd8mjoT`，实现登记/Next生产编译/类型及131traces/27788paths/0private违规通过。原aa79155 current切换已获R独立窄审，不重开源码；50项/79历史同字节及未变评分/字体/资源证据复用。A的8f5ce22一次普通push再次被GitHub服务端500拒绝，原记录保留，远端当时e39ee82，不因网络重试整轮或停止本地工作。
+
+新本树`.next/cache`约143MiB在首次media build前按原手册移存到`.cache/known-ten/experience-next-cache-build-v1`保留，避免已知固定预算超限，不重建Next/放宽上限。固定`media:build --main`首次通过：deployment `49de5cb2a0607765d0fffacb3e226dd7c5fd7e472163d3e93ccbbd9ab96d0d82`、sourceBundle `0df4650b14659bebb991aaaaa7240436343fbe9a9be5ff5b2aa7c9ef6323c27c`，1141source/1474artifact/48,992,454B。固定setup main helper通过：component9ff58015…e14a/profile21bece6f…0026。新control独立初态为空，原b3整根/guard/capability均未访问或复用。
+
+本根唯一`media:provision --runtime-target=main`完整三轮各66项全过：bfdeb0ce-d6a5-4d8c-9391-4b3aaf5c6990 → 47f8504e-a7c3-4cc4-9a12-9a9bd9455e8f → da69bfab-7465-4ae8-baa9-28c49827f5b4，各原summary passed=true、66结果全passed、residualControlEntries=[]。固定CLI最终outcome=sealed、capabilityCommitted=true、recordCommitted=true，runtimeBundle `c3cf1cab0ad0e4de58601f6fb5cd549e0a89972ac65bd5b9ef8ab28df87a613c`。本次三轮为同一新根/部署/源码的正常资格窗口，不拼旧b3两轮或diagnostic，不提升旧第三轮失败与UNKNOWN根因。
+
+随后只读审计实际candidate-record（既有schema）和capability（生产只读loader），确认target main、三轮完整/每轮66/ownedOperationsStopped、source/deployment/profile/runtime/limits与本次实际构建一致；实际三个原run summary逐件核对、control当前空。candidate-record SHA `122efcdbd669db94ce8be0bc0ac2ac9ed4b63f43fd2bf4496079ec8286d7bdf3`，capability SHA `4b9c5542795d5324f56fc083f6d698b4d8b728f3e72f9b20a56a57399a7a01fe`。独立核55538/63238无监听、PG pid不存在、管理文件/PGdata保留。回执`.cache/known-ten/experience-native-seal-audit.receipt.json`及原build/media-build/setup/provision/audit日志均在新根，原三run原件保留，无重跑/改封存文件。
+
+当前分层：0034实际SQL/全53声明通过、current源码及闭包已审、新生产构建通过、新main原生资格完整封存；application resource IO仍未取得、包未导入、无新play/activation/key/grant/报告，消费者/PNG/作者实机与内容商业验收未运行。后续真实导入与消费者演示仍须按主控协调沿同00486继续，不扩大旧历史source权限，不读取作者数据；托管批次未完成。
+
+## 2026-11-04 00486实际0034与全部53声明证明通过，事实收齐并正常停止
+
+主控收到R对准确2103ca…4955/199999B与aa791556ea61dacb5e2894b7d5272e9acaf7f877 current切换分别通过后，按授权落正式e39ee82。新experience根正常ff至e39ee82、原00486 start，普通CLI实际仅应用0034_private_test_known_ten_experience。原0033与其他已应用SQL字节不改，未重建/新init或触及b3。新正式提交的一次普通push已成功，远端恢复到e39ee82，原两次500记录保留。
+
+定向SQL实际10组通过：34 checksum；迁移前后原33账本checksum与PG直接to_char格式化完整6位微秒applied_at逐项保持（只证明本次前后，不提升先前Date/ISO毫秒证据）；六个前置/实际新body全等于已审候选receipt；全qf函数metadata含owner/ACL/签名/语言/security/search_path保持，只有准确六body变化；准确00486 source JSON Schema/database/marker/三hash接受；原b3准确source/原三hash拒绝；source/asset/manifest/其他实例/授权/异商品拒绝；准确baseline接受而entry/approval/target/旧b3 approval混配拒绝。
+
+rollback-only元数据事务实际逐项插入53合成blob metadata并确认完整53声明接受；通用共享、旧实例限定共享qztx-art-act-1、新3.0角色三代表的声明全文/ref/license/approval篡改均拒绝。仅事务内将本00486 database COMMENT临时置ci marker（不改manifest），实际确认database/source及全部53声明拒绝，再受控抛出触发确认ROLLBACK；原test marker与准确source恢复，全部元blob回滚，八业务/资源计数均0、其他连接0、owner正常关闭。不是native解码/资源存储/包导入证据，不重复评分/B事务或0033无关反例。
+
+实际catalog `8628d210ec2b689e76fb235b814e4e2d1ddab79b4c559f45a751fbbaa99c139e`/27表；据实际保存回执仅更新consumer aggregate与internal_review_valid独立body `364a6c22b3fd2dabe21ed2cab314ccf40c31b8ed1047d3b87805ca909a3a4673`，一次六helper现有引用核对无遗漏旧body，保留全部检查。两事实文件不在current/historical renderer闭包，原准确登记及R的50项/79历史同字节继续复用，不重收同输入descriptor。新增事实TypeScript/定向ESLint通过。
+
+新root`.cache/known-ten/source-0034-{intent,before.receipt,after.receipt,stop.receipt}.json`与原start/migrate/before/after/stop日志保存，A根source-0034-facts-audit.json保存定向引用结果。正常stop后独立核55538/63238无监听、postmaster.pid消失、管理文件和PGdata保留；nativeIoAcquired=false/sourceImported=false。后续沿此唯一新root准备一次生产构建与新main正常资格，不借b3 capability、不拼轮次；本条尚无新build/native/UI或PNG通过。
+
+## 2026-11-04 准确0034窄审通过，同00486定向迁移已获放行（执行前）
+
+Astra准确通过v2候选SHA `2103ca99cb2c610c8af3d6d20d25945afaffa5aedca85fdc2a606258760f4955`/199999B：完整53声明与包一致且自DB+marker围栏、旧分支/ACL/函数身份/report Schema保持、source三hash/baseline/实际ZIP一致，无阻断。主控已串行保留0034并明确放行同字节落正式`0034_private_test_known_ten_experience.sql`，仅同00486正常start→应用→定向PG证明→实际catalog事实同步→close/normalstop，原b3不动。
+
+复用原SQL探针增加显式--experience模式，不启动通用回归。前态捕获旧33账本含PG直接格式化完整微秒applied_at、完整函数元事实/ACL/catalog；后态要求已审六准确新body、旧33不变、全部53声明正例及共享/旧实例受限共享/角色代表的全文/ref/license/approval混配拒绝、完整source三hash/baseline及旧b3/身份混配拒绝。错误数据库marker仅在同一rollback-only元夹具事务内临时COMMENT（不改manifest），验证全部53拒绝后与元blob一起回滚，复核实际原marker/source与业务空库恢复。未执行native解码、source导入或B事务。实现aa79155的50项/79历史同字节与实现登记证据复用。
+
+本条为执行前记录；准确SQL已落源码、尚未应用。原远端两次500保留，不重复push；本正式提交完成后仅作一次普通同步，仍失败则保留本地SHA供R复核，不因网络停止本地授权工作。
+
+## 2026-11-04 00486 current源与准确实现闭包收口（未构建/未执行0034）
+
+当前presentation matcher与client注入仅认新source `6c701d4445f98b2d6e042dde1edc203e118c9a79728697ef551fa89fe2bd2187`，从已组装experience常量显式引入；原b3 `6f0030…ccf1`常量和d3-runtime-bindings-known-ten.json保留历史事实。新d3-runtime-bindings-experience.json成为唯一current登记；原D3/b3均保留目录元数据并按entry去重，可查询不授执行fallback。B测试合入后的current fixture只切换新registration/baseline/source，历史与负例保留；另明确拒绝同一套view/body/binding全被换成b3 source，以及b3准确entry仅可查询不可执行。
+
+最终收集：engine `c35708fd3db341a46be678e6d6325d0dabba3bb9d772b8f0b52fe55e04821e74`/39files，structuredPreview `7df1c70e1b5632531d3176eb24def9dcedc7af69e3821716c52e34540befa405`/48，structuredConsumer `1c945bc93fd3969f1ee8cbe24de3771ebeba5e7cd75ccd830d60a5aa8e0401af`/76，qianzaiPreview `b078b90d86554f4a2921850bfe2977cb68444cbff5dcb4bb7cd0b394c0653c6d`/65，qianzaiConsumer `642d2e7f64785d571f99e99b6e5509197761844659d2fc5243c300224401733b`/140。语义版本、原53资源与三字体输入保持；没有重生成图片/字体、评分搜索或原folio1.0.3 gateway。历史只读binding收至128files/SHA `37dbc72fa83ac710733e9a197762e101c53617992943e98628eba743804adad4`，仅两共享文件变化及两新有限身份/注册输入；79个冻结历史实现/原descriptor/字体文件逐项同字节确认，未重解释旧entry或授历史source/grant资格。
+
+`pnpm implementation:check`准确通过：v2共19descriptor/5available/149source；folio1.0.3原gateway继续通过，历史适配器准确闭包通过。五个受影响文件50测试通过（B三文件加known-runtime-presentation、internal-versions/implementation-catalog-v2）；TypeScript与8文件定向ESLint通过，diff检查通过。新生成JSON的局部Prettier提示已作格式修正，不改变descriptor对象或entry hash。第一次collector因调用方预建输出目录被exclusive mkdir拒绝，未写descriptor；空v1目录和拒绝记录保留，正常新v2私有输出成功。私有日志与experience-runtime-provenance回执位于A根`.cache/known-ten/`；不重复其余2443单元、A10+5、B服务PG、旧故障或媒体矩阵。
+
+source0034-review-v2.sql仍同SHA2103ca…4955、只在私有目录待准确DDL审查和主控槽位确认；新experience根仍8d11d28且停库，尚未ff本current提交、执行0034、生产构建、取得native能力/封存、导入、启动HTTP或验证消费者/PNG。本源码验证不冒称作者视觉/内容/商业通过，原b3 BUSY现场及所有其他作者环境保持。
+
+## 2026-11-04 00486完整私有包、六helper事实核对与0034准确候选待审
+
+新experience根保持同一00486/test、55538/63238，没有第三root或重新init。有限registration与baseline已提交125c74e；实际私有包首次被app的internal-version-schema-facts拒绝为STUDIO_UNAVAILABLE，未签能力/写ZIP。8d11d28仅将internal_review_valid的旧0029 body事实同步为已审且四项实际PG回执中的0033值0a76ab61…f824，原校验全保留。续同一正常private builder成功，ZIP 30,518,008B/SHA `f44ca66e1611f3fe8041a878ecbaf517558d2a469501fcf974cf7559c2191335`，manifest `59c69917613593eac1c71d3b4285034b7ac2dbf71bbee0b7f3a02cca36276852`，candidateValid=true，DBclose确认、imported=false。原拒绝与成功log、private-pack-receipt均在新根`.cache/known-ten/`；owner后核33账本/catalog571…c9143未变、8业务/资源计数0、其他连接0，正常stop独立回执确认两端口/PID消失、管理文件与PGdata保留。
+
+按主控要求只用已保存runner-real-after实际完整catalog，对0033变更的六函数及src现有事实表/检查器引用作一次定向比对：internal_review_valid独立body已准确；consumer aggregate准确571…c9143涵盖全部六项；其他五项只有原调用/ACL名单、无遗漏独立旧body事实，draft facts不含受影响函数。六项0029旧body hash在src无残留，无需再改事实或开库；A根私有experience-six-helper-facts-audit.json留存。后续0034执行后同样从实际catalog同步受影响事实，不猜hash。
+
+生成器新增显式--experience有限模式，默认b3准备路径保留。准确0034候选为A根`.cache/known-ten/source-0034-review-v2.sql`，SHA `2103ca99cb2c610c8af3d6d20d25945afaffa5aedca85fdc2a606258760f4955`、199,999B；相邻receipt/static.json绑定实际ZIP、source6c701d…2187/assetSet12e49a…9157/manifest59c699…6852、新baseline entry及六前后body。前置要求实际0033原字节b8fd…1290、0032原checksum、完整catalog571…c9143与六准确旧body/owner/security/search_path；保留维护锁/无app连接/表锁和全函数权限元事实不变守卫。仅追加00486/test数据库+marker、准确privateTestUse、source三hash、baseline及有限声明，旧分支原位保留；content Schema更新有限marker，report及其他Schema分支逐字不变，无GRANT/REVOKE。静态确认六前置body全等于实际33回执，TypeScript/定向ESLint通过；数据库未访问、migration目录未写，0034未保留/执行，须主控串行确认槽位并经准确DDL窄审。
+
+生成器首轮在写SQL前拒绝“40缺失声明”的旧假设：实际53声明中只有6共享声明在旧通用列表，另7共享声明仅在601707/79331旧实例分支，40角色在b3分支。新模式因此在00486自己的准确db/marker分支中列完整53声明（47不在通用列表），绝不将旧作用域hash提升为通用或借用旧实例权限；原pre-write拒绝单独保留，不更改0033/b3现场。此项需DDL审查特别核对，实际SQL后续应覆盖53声明而非只抽一角色。旧b3并未导入，不能用先前代表角色SQL通过推定其全部共享声明已准入。
+
+本步仍无source导入、native资格/封存、HTTP、消费者或PNG验收；新current renderer/source和共享闭包继续收口，已有B三文件35测试证据按输入复用，不重跑全套或旧媒体矩阵。
+
+## 2026-11-04 00486新身份内容实际组装与确定性三hash准备
+
+沿用已完成正式runner四项续验的00486实例，未新建root或重新init。content stager新增显式--experience有限选择，只认实际新identity/origin/test，默认b3路径保留；private-test语法仅追加00486/qztx-known-ten-experience-20261104，不授source/SQL/baseline/current renderer/native准入。新identity单独文件，旧b3常量/注册/原控制现场不变。source schema新增字面量会使对应实现闭包需后续重收，此处未声称登记检查通过。
+
+从原已审8cb authored input、原b4/e3准确素材取件、原4344 coverage及原73共享模板实际生成新root`.cache/known-ten/content-experience-v1/`：canonicalContent `6c701d4445f98b2d6e042dde1edc203e118c9a79728697ef551fa89fe2bd2187`/510296B，53资源/40角色用途/13共享、73声明与10既有witness验证通过。与b3 6f候选剔除privateTestUse后逐对象完全相同；没有重画图/生字体/搜索4344或改题/报告。stager第一次tsc因union身份关联推断失败，改为原privateTestUseSchema显式解析收口类型，原日志保留；实际成功组装不重跑，最终类型/定向ESLint通过。
+
+准确registration准备工具显式选择experience，复核新source、53实际字节及witness，确定性assetSet仍`12e49abf06249917a68b6f9974643e6369a2f114ee5544cb0137d52f4fb69157`、manifest `59c69917613593eac1c71d3b4285034b7ac2dbf71bbee0b7f3a02cca36276852`；A树`.cache/known-ten/registration-experience-v1/{registration,baseline,manifest,asset-set,receipt}.json`留存，状态DETERMINISTIC_FACTS_ONLY/ZIP NOT_BUILT。新source常量仅标记已组装内容，不注入当前presentation binding；正式有限registration/baseline/私有capability完整包、current source guard/闭包及0034准确候选仍后续收口，不能据三hash声明native或SQL已准入。原0033字节不变，PG/HTTP停止。
+
+## 2026-11-04 正式runner修复四项真实PG续验通过，00486沿用
+
+Astra通过准确30d0c7eb9bb3143d86ce709b5f04ed50028964c0，主控明确放行同00486原raw32的四项真实PG续验。新experience根正常ff到30d0并start，先捕获完整raw32 catalog/全部函数体与元事实、账本version/checksum/applied_at，再执行拒绝/回滚，最后正常CLI成功；未执行93脚本，未创建第三root。定向工具`qianzai-experience-runner-proof.ts`复用既有“拦截确切原生driver方法后抛出受控错误”的测试方式，不加生产fault入口或改0033。
+
+①已知自有第二owner连接持72461/2共享维护锁，正式runner拒绝；②第二连接不持锁但保持外部连接，runner拒绝；两者关闭测试连接后逐项核完整catalog/raw32 ACL/函数体及元事实/账本含applied_at均不变。③仅在确切原033 source的native unsafe已成功返回、账本INSERT前，保留同一reserved连接内读取catalog=`57137878…c9143`且033 ledger不存在的实际观察，再注入RUNNER_INJECTED_AFTER_0033_BEFORE_LEDGER；runner执行ROLLBACK并返回拒绝，实际确认完整raw32 catalog恢复、所有函数body/ACL/元事实及原32 ledger/applied_at不变。此项不是前两早拒绝的替代或SQL mock；进入原033说明其中准确ad236前置已通过。
+
+④移除测试注入、关闭全部测试连接后，普通`pnpm p2a:db migrate --instance 00486f17f741bd6d6535429e6552d161`仅新增0033。最终33条checksum全匹配，前32账本含applied_at保持（按原driver Date/持久ISO的同一毫秒表示比较），全catalog准确`57137878c47b73d1914ace7f9198812d932727ef40d05b95d8514712762c9143`，函数owner/签名/语言/安全等非ACL元事实保持且仅6个已审body变化，ACL全catalog与已审基线同一；8个业务/资源计数全0、其他连接0。最终只读探针首次因Date与持久ISO直接对象比较失败，原after.log和failure保留；只统一表示并续最后只读核对，未重跑前三项或migration。探针首轮tsc的非空标注也保留修正；定向类型/ESLint通过。
+
+原owner与第二连接均关闭，正常stop后55538/63238无监听、postmaster.pid消失、manifest/runtime/admin/PGdata保留。新root`.cache/known-ten/runner-real-{before,maintenance-shared,external-connection,after033-rollback,rejects,after,stop.receipt}.json`、各close回执和原log/失败完整保留。状态PASS_FOUR_CASES_OWNED_MANAGED_STOP，不冒称CI或全DB通过。原b3根/guard不动；00486正式基础已就绪，可继续准确source三hash/0034候选另审，本步未准备或应用0034、未导入/封存/启用或运行消费者UI。
+
+## 2026-11-04 正式fresh迁移顺序修复候选：仅0032→0033前缀ACL checkpoint
+
+主控与B确认CI database/accounts bootstrap也遇同一fresh链缺陷，不能只修本机fixture。93a69f8的一次性前32收尾脚本未执行，现从当前源码移除，原提交/实际失败/00486 raw32 ACL回执全部保留。新experience根仍c90、00486停止，未normal migrate或创建任何normalize32 intent；新source/0034未准备，旧b3不动。
+
+A独占正式`src/lib/db/migrate.ts`候选：原最终ACL事务body逐行核对除缩进外完全相同，抽为私有normalizeApplicationPrivileges，原末尾照常调用。仅在待应用migration恰为0033_private_test_known_ten时，于原每migration事务内先进入私有normalizeKnownTenPredecessor：要求准确0033 SHA b8fd…1290、账本32项且最后为准确0032及checksum1266…8315，持原session迁移锁；取原consumer维护xact锁72461/2、拒绝该DB任何其他连接，再次assertConsumerNamespace，调用原ACL尾部。随即执行原字节0033及原账本INSERT，最后同一COMMIT；0033任一步失败连ACL checkpoint一起ROLLBACK，保留raw32现场。不存在捕获catalog mismatch跳过、改ledger/hash/0033、按每旧版本泛化checkpoint或新增恢复API。
+
+该位置同时覆盖首次完整fresh循环和原32失败实例的正常migrate续行；已应用0033的普通replay在原checksum检查后continue，不走checkpoint；其他迁移流程/最终ACL语义保留。已正常完成32初始化的升级路径会幂等重述同一ACL，仍通过原0033强catalog/ad236守卫。维护与无外部连接要求只落此精确边界，事务期间保持到0033落账。外部连接包括等待迁移锁的连接也会拒绝，现场由主控串行协调，不能把进程列表或测试mock当锁。
+
+候选TypeScript/定向ESLint/差异检查通过；原ACL尾部与93a69f8执行语句行逐项核对一致（仅缩进）。尚未运行任何DB验证，未声称fresh链/CI通过。准确diff先交主控/R；获准后原00486正常start，只读捕获32账本含applied_at与149ACL基线；如获准做最小维护忙/外部连接前置拒绝探针则确认raw32与账本不变，关闭探针连接，再只用正常CLI migrate续行。原字节0033的前置ad236守卫通过本身证明checkpoint达到精确ACL-complete32基线；最终核33 checksums/前32时间戳不变/571…c9143全catalog、六body及ACL/owner事实、业务/资源0、其他连接0与owner关闭并正常stop。原失败不删除，不新建第三root，不跑未变B服务或无关全DB；CI自动fresh bootstrap另列实际状态。
+
+## 2026-11-04 主控选择唯一新身份路线；fresh init在0033 ACL前置失败并保留
+
+主控明确放弃control交换/quarantine实施，原b3整根/guard/active/DB/失败及未提交cap原位BUSY隔离，不改生产control、不释放guard。仅一次新的受管工作树已由create_worktree正常建立：`/Users/aipuli/.codex/worktrees/quizforge-qztx-known-ten-experience/quiz-forge`，branch codex/qztx-known-ten-experience，基线c90c8d5295274ca6d54dcb59d64ca3dd31d5a298。首个create调用因sourceRoot不在chat授权目录被工具拒绝、未创建；改用同仓库注册主root成功，只有这一新worktree。55538/63238两次确认空闲。离线锁安装缺固定radix tarball失败，正常frozen-lockfile安装成功419包，package/lock不变，日志保留。
+
+正常`p2a:db init --port 55538 --origin http://127.0.0.1:63238 --purpose test`产生实际新identity `00486f17f741bd6d6535429e6552d161`，原manifest/root/config均由管理器生成，没有复制/改写b3身份；返回INIT_FAILED_INSTANCE_PRESERVED。原server.log准确错误KNOWN_TEN_PREVIOUS_CATALOG_MISMATCH，管理器已正常停止刚启动PG。没有再次init或另造root。随后仅正常start同一实例作owner只读检查，0001–0032已经提交、0033未应用。实际catalog `fb7901b1ad57c56c87e03c676d5bc939de35b69e261ca640f7b988a2653f2aa6`；与b3迁移前已确认32版ad236…fa8d7逐字段比较149处差异全部为ACL（tables23、columns78、functions48），其他结构/函数体/元事实保持。业务/资源/keys/sessions/reports/heads/activations均0，其他连接0、owner关闭，随后正常stop；55538/63238无监听、PID消失、manifest/runtime/admin/PGdata保留。准确回执在新root`.cache/known-ten/experience-init-inspect.receipt.json`、`experience-init-failure-stop.receipt.json`，原init/start/inspect/stop日志与intent均保留。
+
+根因源码定位：migrate.ts先循环各migration事务提交，最后才执行原正常权限规范化；0033要求权限已规范化的32版catalog。升级路径b3先完成32版init后再0033通过，但fresh 33链在权限尾部之前触发guard，尚未获尾部权限。不能修改已经应用的0033字节，也不能接受任意新catalog或以新root绕过。
+
+最小待审恢复候选`tests/analysis/qianzai-experience-init-resume.ts`：只认新00486实际root/test/端口、原migrate.ts SHA79a97b96…eeef5、准确fb7901前态、33个磁盘定义及已应用32 checksum；persist intent后调用已有migrateDatabase与准确已应用前32 definitions。预期applied=[]，只执行原函数现有ACL尾部，迁移账本完全相同，结果必须恢复ad236…fa8d7；finally owner close。该脚本不运行0033、不改任何SQL、不操作旧根、不创建新身份。若获主控/R放行，原新实例正常start→一次前32收尾→记录准确catalog，再普通CLI migrate0033并核57137878…c9143/33 checksum/元事实→正常stop。失败/不明保留原intent/状态，不盲重试。此候选仅TypeScript/定向ESLint/差异检查通过，尚未执行。新source/三hash/0034/闭包还未写入或执行，需先收口该正常初始化前置；不将新实例当前状态称初始化通过。
+
+## 2026-11-04 历史夹具只读阻点交审及case61维护设计待审
+
+主控取舍先推进十人新源；本次只读历史可行性结论已完整收口：两成功renderer为1.3/entry9732bdfd…aadbe与1.4/entryb88be4dd…b4809，均保留原source8cbcf248…f7c31。原authored content的privateTestUse固定79331f888c569d9fbf7a2a08e5f33f68/authorization qztx-final-private-20261103；准确registration为private-test-registration-final-e2e.json，原三hash分别8cb…f7c31/062b03e4…a394d/9f26a514…8e2823。现b3只准入新6f…0ccf1，未有旧source分支。`private-test-scope.ts:18,57`按source registration匹配实际database/marker，`draft-source-evidence.ts:148`调用该检查，构造旧source在b3受阻；`internal-play/service.ts:216`又要求当前可执行consumer identity，旧1.3/1.4仅metadata/历史只读适配，不能新建play。因此B真实PG授权、原码返回和真实grant撤销仍NOT_RUN，作为合并/生产前未决，不改marker、不扩source、不造historical backdoor。
+
+只读素材准备范围：已授权的原候选`quizforge-qztx-final-integration/quiz-forge/.cache/final-integration/candidate-e2e/content.json`下33个声明资源的对应普通文件全部存在（仅stat，不是本轮hash/decode复验）；新包只与13个共享资源完整ref/SHA元数据相同，旧20角色资源未在新包。v13/v14 runtime各39绑定，各自Serif/Literary/Brush及coverage/OFL文件均存在。`historical-client-v2.test.ts:21`明确占位receipt/body hashes仅selector props；已通过14项合成选择/外层证据复用，不晋升持久化/grant证明。合法已有报告read路径`consumer-flow/service.ts:538,569`仍核当前授权/原封存报告，resource IO使用当前config实例namespace的blobPath（`fixed-execution.ts:216`、`resource-read/storage.ts:72`）；不能让b3直接读取另一实例私有namespace。两旧适配器可后续做明确合成transport的真实浏览器/旧图字体/DOM/双PNG/模拟失权验证，需单独准备纯合成有效模型与私有资源transport；当前没有该READY资格，不读取作者答案或原授权链接。
+
+case61维护的精确设计已写入MANAGED_DEVELOPMENT最新节供主控/R审。现有生产control只有原owner闭包finish，无磁盘恢复接口；方案不重建闭包、不删原guard，仅拟通过一次同卷目录交换将原目录整体保存在本次quarantine，固定入口同时保留新guard-only blocker而继续BUSY。固定root/run/profile/PID/start/record SHA/原三inode、最终原生identity复核、主控独占窗口、无业务效果/保留配额变化、原子交换和不确定观察规则已列明。已只读核原control inode221910645/active221912111/guard221912107以及原record SHA，PG/HTTP仍停、main capability不存在；未创建quarantine/blocker/维护脚本，未交换、解锁或provision。主控追加要求的新root正常新test身份方案已与维护方案并列比较于MANAGED_DEVELOPMENT：A不改生产control、保留BUSY，仅一次性私有隔离；B保留原根但新增实际marker/source/有限DDL与闭包成本。建议先审A，不能保障一次性隔离前置才选B；两者均未放行执行，B也只限一次新root，不形成无限重试。
+
+## 2026-11-04 R通过后的唯一一次父崩溃隔离诊断通过
+
+Astra对准确37db541a279dfa187ec6fcc416511c47abd6fe86诊断diff窄审通过，主控只放行final正常ff→固定diagnostic setup→一次单项诊断。先复核原main失败文件/active/guard inode与hash、固定native helper/Node pin及原harness51593/host52964/worker53047均absent，确认PG/HTTP停止和新诊断目录不存在；私有`parent-crash-single-window.intent.json`记录范围，不包含整轮matrix/provision放行。final树由568e正常ff到37db，未重建Next或动原control。
+
+固定`media:setup:macos --diagnostic-parent-crash`返回prepared、target=null；随后一次`parent-crash-diagnostic.ts --diagnostic-parent-crash`返回case-passed。新独立目录`.cache/quizpack-media-parent-crash-diagnostic/run-daf18f25-544f-4604-b732-988fa47b78db`保留intent/result/crash-control；result SHA `f5a301e9a17ff170584cf39133ace6131b17a1a10241dfc348aa24338ccbab9e`。原12秒ready/5秒close及身份观察断言均未改，实际观测ownedParentKilled、ownedParentCloseObserved、originalWorkerIdentityGone、restartBlocked均true，按原用例证明后只释放本次诊断目录control。qualification/capabilityCommitted/recordCommitted均false，没有owned-matrix或新能力证据。
+
+独立后验`parent-crash-diagnostic-once.receipt.json`核本次owner77933/worker77938/start1793782683.415130，两者由同pin native helper观测present=false；新control目录空。逐件重新核原main summary/identity/unknown-control/active/guard inode与hash仍相同，原mainguard未释放、旧失败状态保持；55537/63237无监听，PG/HTTP仍停。所有本次日志/intent/后验位于final树`.cache/known-ten/parent-crash-*`。这是新隔离case一次通过，原第三轮失败断点/根因仍UNKNOWN，不能倒推为偶发超时、不能拼原两轮或回填capability/record/stopProof。没有再次provision、导入、启用或消费者/PNG运行。
+
+历史夹具只读准备另已报告主控：旧source8cb…绑定79331私有identity，b3有限source合同及新建play可执行列表都不能合法造两个旧tuple；原33素材和旧字体齐备不等于已有封存报告/grant，现有14项selector/外层证据仅合成。未读作者记录或转原资格、未新增source迁移/backdoor，B真实授权验收仍非READY。此项复用既有只读结论，不另展开研究或写夹具。
+
+## 2026-11-04 父崩溃单项诊断设计与准确diff待审（未运行）
+
+主控授权Astra先做本次自有夹具最小诊断与维护证据收口。原第三轮check吞异常，根因仍UNKNOWN，不归因图片/source或偶发超时。最终root新增只读`native-provision-original-inodes.json`保存原summary/identity/unknown-control/active.json/guard的dev/inode/mode/hash；原guard inode221912107、active inode221912111/SHA35d3dc06…2bce原位保持。再用同原identity钉SHA的native helper确认harness51593（来自原unknown-control owner）、crash-host52964、worker53047均present=false，`native-provision-later-stopped.receipt.json`标记LATER_CONFIRMED_STOPPED_IDENTITIES_ONLY及观察时间；逐件核原inode/hash仍相同。该后验只证明后来停止，原timed close proof未建立，失败/capability/record状态不变，无unlink/kill/finish重建。
+
+现有main与fixture共用RUNTIME_STATE/control，切换target不能隔离原guard；没有现成单用例过滤。最小候选新增固定`--diagnostic-parent-crash`，与runtime-target/record-capability互斥；仅将非runtime离线MAC_ROOT映射到`.cache/quizpack-media-parent-crash-diagnostic`，不接受任意目录。生产control实现不改。setup可为该固定诊断目录编译同一helper，完整harness拒绝此flag；新单项入口只运行父崩溃用例，结果schema为parent-crash-diagnostic，qualification/capabilityCommitted/recordCommitted恒false，既不导入sealing writer也不输出owned-matrix；旧capability writer另明确拒绝诊断模式。
+
+父崩溃case抽出为一个共享函数供原矩阵与诊断使用，保留原12秒ready、5秒close/worker观察及同一finally关闭要求；不改变生产控制与停止逻辑。新增有限stage/assertion/error-code，check仅对本case保存结构化失败，不输出任意exception消息/stack、nonce/token。主异常与finally关闭失败各自保留，不让cleanup覆盖原断点。原最后owner absent→worker absent→control不变断言保持求值顺序，拆成有限标签。诊断成功时也只可按原用例的host close+两identity absent+control同字节证明释放其新目录control；失败则保留新control。原main目录完全不进入此路径。新共享case加入离线policy代码身份，matrixCodeHash原递归覆盖新脚本；因此未来正式封存须按变化后的实际身份收口，不能用此diagnostic生成能力或拼接原两轮。
+
+候选范围仅macos/{harness,policy,setup,capability,parent-crash-case,parent-crash-diagnostic}.ts及本记录。TypeScript/定向ESLint通过；未执行新setup、diagnostic、矩阵或seal，也未快进最终运行树。拟待主控/R核准确diff后，在最终停止root执行固定setup诊断flag，再唯一一次parent-crash-diagnostic；它使用全新固定fixture目录，原run/control不动。若诊断失败，先读有限阶段与新私有回执再决定修复，不能重跑碰成功。原b3仍停库、无HTTP/导入，旧63226及作者环境保持。
+
+## 2026-11-04 真实生产构建通过；本次main能力封存停止在父崩溃关闭证明
+
+最终运行树ff至568e93e，原b3保持停止、无HTTP。按运行手册`env -u QUIZFORGE_P2A_CONFIG pnpm build`通过，BUILD_ID `YhsB2ZYY299pzf66yMP-o`；实现登记/Next类型/生产编译及trace通过：131 traces / 27788 paths / 0违规。构建只在本次新root，未重建作者、旧实例或旧构建。
+
+固定`media:build --main`首轮LIMIT_EXCEEDED，实际新`.next/cache`为143M。按原运行手册只移存本树缓存至`.cache/known-ten/next-cache-build-v1`保留，未放宽上限/删除失败/重建Next。相同构建的第二次media:build成功：deployment `f9b49ae750f7ec2aa438257fa9666682ad34a504f5cf106b91d220ede7a6b814`，sourceBundle `814fb8939fe2d806b6d65b4cc1e65b5e078f71533e63b34e141f9d0eb760f217`，1138 source/1474 artifact files/47450528B；本次固定setup main helper完成，component4c9adab2…740a1/profileb67214f9…b32f2。原始build/media-build-v1/v2/setup日志均在最终root`.cache/known-ten/final-*`。
+
+本次唯一`media:provision --runtime-target=main`返回MATRIX_STOP_UNCONFIRMED，capabilityCommitted=false/recordCommitted=false，未继续native导入/DB或HTTP。固定入口内原协议三轮：run `4b8fead5-b0d1-47ff-a758-336d7293ea0c`与`032a5b5f-db39-41cf-9063-7eff4e67039a`各66项通过/control空；第三轮`5f46342d-a592-48ed-b97e-7c621076d0c9`在第61项`parent crash leaves persisted worker identity and restart blocked`失败，summary为HARNESS_FAILED。不是三轮全绿，不把前两轮或晚观察拼成已封存。准确summary与所有stderr/identity原件保留于`.cache/quizpack-media-preflight/macos/runs/<runId>/`，最终log为`.cache/known-ten/final-media-provision-v1.log`。
+
+当前本次control原位保留：`.cache/quizpack-media-runtime/darwin-arm64/control/{active.json,guard}`，run8af99f02-31a4-44ec-8622-9189151585e7/profile20d58ffe…c0ab4，owner52964/worker53047/start(sec1793781153,usec563394)。独立只读观察先验证native helper与Node仍等同本轮identity的SHA，再用原helper按准确PID/owner/node查询，两者均present=false；`native-provision-crash-observation.json`保存原control全文/SHA35d3dc06…2bce及native结果、control未改事实。此证明当前原身份消失，不证明原5秒关闭/host ready/close/BUSY各屏障在原时限内成功，失败case具体断点仍待R定位。未unlink guard/active、未杀进程、未改stopProof/marker或重跑封存。
+
+主控已派R只读定位固定协议、源码与原回执；A继续核owned现场，保持当前失败。原b3 PG已停，imports/storage/业务仍为迁移后已确认0；新pack未导入、无新play/activation/key/grant，浏览器/双PNG/旧tuple实际夹具均未运行。正常可核实修复后再按原身份推进；不触及63226 UNKNOWN及其他环境，不报托管批次完成。
+
+## 2026-11-04 0033实际应用与定向SQL/ACL证明通过
+
+主控另取Astra对d8caf4c..a6b7d6f源码/字体/登记明确通过，无实质阻断；与准确DDL窄审分层。0033同字节SHA b8fd…1290已提交0bf173b，最终root正常ff后按原b3/test/55537/63237启动，正常managed migrate实际仅应用0033。没有改旧manifest/marker、没有新init或其他DB。迁移前owner捕获原32checksum/catalog ad236…fa8d7、全函数元事实/ACL与业务空库，文件`source-0033-before.receipt.json`。
+
+迁移后`qianzai-known-source-sql-check.ts`实际通过6组（不是六次矩阵）：33迁移checksum和空库；仅6个已审函数body变更、全部qf函数元事实/ACL/owner/签名保持；准确content JSON Schema、b3 marker/database及三hash接受；source/assetSet/manifest/1ec2身份/授权/异商品拒绝；准确baseline接受且baseline entry/approval/target篡改拒绝；代表性新声明接受且声明全文/ref/license篡改拒绝。声明仅在owner事务写回滚metadata夹具，显式确认rollback后imports/product_assets/asset_blobs/keys/sessions/reports/heads/activations全部0，绝不冒充native decode/资源存储准入。原脚本首轮类型将core字段层级写错已修；迁移后首轮因函数参数qf.draft_review中的点被误切为函数名而在metadata比较阶段中止，原after.log/failure保留；仅修探针解析并续迁移后检查，未重跑迁移/前态/旧B。成功after-v2.log与after.receipt保留。
+
+实际catalog `57137878c47b73d1914ace7f9198812d932727ef40d05b95d8514712762c9143`/27表，consumer-schema-facts据此收口；draft facts不含本次六函数且表/约束未变，原值复用。该文件不在已封存renderer/engine闭包中，不重收同输入descriptor。新探针类型/定向ESLint及catalog类型检查通过；原实现登记检查通过证据继续有效。未重复A10+5、B恢复服务或旧媒体矩阵。
+
+owner其他连接0及close确认，b3正常stop；独立`source-0033-stop.receipt.json`确认55537/63237无监听、PID消失、管理文件/PGdata保留。resourceIo acquired=false/stopProof=null，应用未启动、整包未导入，native/build/UI/PNG仍待后续。全部intent/SQL前后/失败与关闭证据在最终root`.cache/known-ten/source-0033-*`。下一步新root快进实际catalog提交后只做一次生产build，再按固定media入口准备本次绝对根/构建封存；不据SQL通过声称消费者或商业通过。
+
+## 2026-11-04 精确0033 DDL窄审通过与自有b3迁移放行
+
+主控串行确认目录仅至0032且无另一SQL流，保留0033给本source。Astra对准确候选SHA `b8fd2bb808b5784145e03025d11a25f29029f752211a975f64df5e9d9bd91290`窄审通过，无本次准入阻断；主控明确放行同字节正式`0033_private_test_known_ten.sql`，仅原b3/test正常start/migrate和对应正反例、ACL、实际catalog/runtime facts收口，再按原授权内测流程继续。此记录时尚未执行0033。既有TS content Schema同时含1ec2历史准备identity语法，0033没有其database/structure/source/baseline新分支，不能据此称实际source准入。report Schema另静态对比原0029字节相同，SHA a2d3b8ab…edf69（A私有report-schema-unchanged回执）。
+
+DDL窄审不代替a6b7源码独审结论、真实DB验证、native IO、UI/PNG或内容/商业批准。原环境、作者、63226 UNKNOWN与6736失败保持。后续原b3应用/失败/关闭证据继续写本节，不修改已应用字节、不重跑未变B服务/A10+5或全旧媒体矩阵。
+
+## 2026-11-04 完整私有包构建通过，精确source迁移候选待独审
+
+最终root正常ff到a6b7d6f；现有b3实例55537用正常managed start、现有runtime签发私有capability后，`build-qztx-known-ten-private-pack.ts`经原private builder完成真实53资源的完整包验证及无覆盖写ZIP。结果`PASS_PRIVATE_PACK_BUILD_ONLY`：ZIP30518005B/SHA `6e6eaa4c2bd5224a7f306569e7913b09d9bba6b28c7547381be27a91bc188017`；实际manifest `dbb14006ddb3e59652b8e8cd229b66235122f225218d6ef0d3a3d4a7d3839234`与先前确定性登记严格相同。回执与ZIP位于最终root`.cache/known-ten/content-candidate-v1/{private-pack-receipt.json,known-ten.zip}`。没有使用通用入口、跳过capability或把初次公共拒绝改称通过；首次start缺少显式instance被CLI_ARGUMENTS_INVALID拒绝，无启动效果，原log保留，按CLI准确参数正常续行。
+
+私有构建finally关闭app连接；随后owner核32迁移各checksum/原catalog ad236…fa8d7不变，imports/product_assets/asset_blobs/keys/sessions/reports/heads/activations全部0、其他连接0、owner close确认。正常stop后55537/63237无监听、postmaster.pid消失，PGdata/manifest/runtime/admin保留。最终root`.cache/known-ten/private-pack-{window.intent,owner.receipt,stop.receipt}.json`及独立log保存；resource IO acquired=false/stopProof=null、app NOT_STARTED、native source admission/import仍NOT_RUN。本次是完整私有QuizPack工程构建，不等于媒体运行封存、DB准入、Web/PNG或商业资格。
+
+新增只生成SQL的`build-qztx-known-ten-migration.ts`，输入上述真实ZIP/receipt/source与准确登记，产出A树`.cache/known-ten/0033-private-test-known-ten.review.sql`：193360B/SHA `b8fd2bb808b5784145e03025d11a25f29029f752211a975f64df5e9d9bd91290`，配套`.receipt.json`记录六函数前后body hash与输入。slot仅0033_PROPOSED_NOT_RESERVED，尚未写migrations/p2a或执行。原0032完整checksum `1266d0362702472c98326deb113d980289deb1d37d7646550abd533bd6d78315`及实际32目录catalog为前置，沿原维护锁/无app连接/表锁，保留旧函数原分支。仅更新content JSON Schema的有限语法、private database/marker/source三hash、40新增declaration hash、准确baseline approval；旧13共享声明复用，report JSON Schema字节不变。每个新权限分支绑b3实际数据库名与原marker；没有把全迁移限定单一DB而破坏未来正常init。六函数签名/owner/search_path/body及原ACL/语言/返回/严格性/volatility/安全属性用前后快照守卫保留，不GRANT/REVOKE、不修改0030–0032或作者环境。
+
+迁移生成器静态TypeScript/定向ESLint通过，SQL未执行、未拿mock替代真实PG反例。独审需看此准确SQL与3647a5e/a6b7d6f的新source/字体/运行选择diff；主控串行确认空闲迁移号后才可按原b3正常migrate并读真实新catalog。随后仍需media/build/native IO、24题/续答/唯一完成/升级与历史两tuple合法合成夹具、B独占只读浏览器/双PNG/失权实际验收。批次继续，未称完成或批准。
+
+## 2026-11-04 当前实现闭包收口与独立旧报告分工准备
+
+新D3 metadata以独立`d3-runtime-bindings-known-ten.json`登记，旧JSON原字节保留；旧engine/structured/preview/consumer entries继续作为metadata，available仅选择本次新entry。consumer1.5 entry `d942087986f7226e40e6670a9d2a380105394b191c9f991e31039cb7e1e8796a`/137文件，preview1.3 `7a41cfb1a510a51951c91eaadd5cc93f7e161728a6777df9a9cb0487a3d5150d`/63文件。新增folio1.0.3 entry `fd3c4c479066a153e6d8db1671a00bfdd25b23e6423d640af8ef1f5b8167afe0`/83文件，显式替换当前gateway可执行选择，原1.0.2 metadata不重写；调用点/夹具选择只随当前compiled identity调整，未执行旧数据库回归。
+
+新历史适配器闭包因private-test及新准确registration依赖变化重收为126文件/SHA `a7e3bf45cdfc7f9c2a9d4f0b358cbcf90c4560538ebe62c3055298c322d9e611`；两个frozen原文件/原D3 metadata/旧字体不修改。`pnpm implementation:check`通过：原v1 6/available3，v2 metadata14/available5，consumer metadata4/available1，以及gateway/两历史适配器均绑定成功。此为源码/锁/字体输入闭包检查，不作生产build或浏览器证明。
+
+入口/旧版本拒绝/实际闭包篡改三文件11项通过：`implementation.test.ts`、`access-gateway.test.ts`、`implementation-availability.test.ts`。此轮不重跑已审22/14/SQL故障测试。新folio收集工具先因JSON推断类型过窄失败，修为原schema解析后类型收口；私有pack工具首次config import路径类型失败也保留修复，最终`closure-tsc-v3.log`与修改代码定向ESLint通过。未重跑此前充分的28+3同输入测试。上批diff --check在两个新OFL检测原上游行尾空格，许可证字节必须保留以满足原OFL pin，未剪裁原许可；其他代码差异无空白问题。
+
+已准备只在b3原正常root运行的private pack构建工具：验证真实source/53字节、用现有数据库签发capability，走原私有builder，独立核manifest与确定性登记同一再无覆盖写ZIP，finally关闭数据库；没有导入、storage、activation或grant。目前未执行。主控新分工允许待新构建/合法旧tuple夹具READY后由B独占1.3/1.4真实浏览器/资源/DOM/双PNG/失权证据，A集中十人整包/native IO/24题续答与唯一完成；现在未给B资格，未读取或转交作者记录，未重复旧报告实际运行。
+
+## 2026-11-04 十角色真实候选、字体与1.5运行输入接线
+
+修正组装器后实际content staging通过：b3正常新root的`.cache/known-ten/content-candidate-v1/receipt.json`记录canonical content `6f003080c99d9c3565a90ea583dd71410969593afe5ff322e2a28142d8b0ccf1`/510293B、53资源/40角色用途/13共享、原73条共享模板及10个既有witness。core contentVersion3.0/reportVersion2.0沿真实模板；没有重新搜索4344或改变原24题/五维/匹配政策。首次模板前置失败保留。
+
+实际十份完整报告经真实评分/组合生成字体语料，显示外壳明确为合成，不作已封存report证据。Serif/Literary1440字（含U+0020），Brush1265字仅覆盖实际装饰标题及原池，未将整份传记/来源元数据并入Brush。v1源字形预检发现界面↻/✦不在固定Serif/Literary源内；两处UI及report装饰改为已有lucide图标，未删正文字符或放宽覆盖。v1失败保留，v2新输入Serif/Lit通过；Brush输入hash未变，复用原成功行并注明原整份回执失败。三款按固定源/OFL/工具各生成一次：SerifV13/1.12/281248B/SHA2554d1ff…c208，LiteraryV6/1.5/316628B/SHAae2351f8…805，BrushV6/1.5/497056B/SHA599b918c…492；源与输出cmap缺失0。新字体及OFL纳入交付，原字体不变。
+
+新runtime-inputs-known-ten与editorial-fonts-known-ten独立JSON接59 bindings/53唯一完整ref，19中性slot复用原层与准确事实，40角色clean不携带resultRef；身份仍由封存display槽确认。consumer1.5/preview1.3及可信presentation binding显式接新source6f…，新模板/报告版本guard保持；旧V11 alias与两个冻结阅读器不改。正文/PNG共用document。旧硬编码LiteraryV5改为当前受控CSS变量，李清照姓名5:7/底部锚点和原PNG不改。
+
+实际三hash登记准备工具核53真实字节、原witness、标准manifest构造：assetSet `12e49abf06249917a68b6f9974643e6369a2f114ee5544cb0137d52f4fb69157`，canonicalManifest `dbb14006ddb3e59652b8e8cd229b66235122f225218d6ef0d3a3d4a7d3839234`。有限registration/baseline仅追加准确b3/test/origin/authorization及source/resources，没有公共通配。此处manifest为确定性实际输入事实，ZIP还未经capability-gated构建独立复现。通用quizpack:build实际拒绝privateTestUse（CONTENT_STRUCTURE、无ZIP），保留`.cache/known-ten/quizpack-build-v1.log`；公共入口限制不改，后续必须现有私有capability构建。
+
+当前28项新presentation/五维/支持阅读定向通过，TypeScript与修改TS/TSX ESLint通过；登记工具错误import的首次类型失败保留并修正，新增有限registration正/反例3项通过。新登记及字体使原实现闭包过时，待最终重收新descriptor，未运行implementation:check/生产build/浏览器/PNG/新source DDL或导入。b3仍停止，作者实例、UNKNOWN及早期失败不动；不称最终source准入、作者视觉或商业完成。
+
+## 2026-11-04 候选组装前置失败与原73共享模板复用修正
+
+最终root已正常ff到e9fbfd6，b3仍停止、无应用；首次content组装停在旧模板差异断言，尚未创建输出目录/复制资源，无导入/写库/source准入。错误保留为新root`.cache/known-ten/content-candidate-v1.precondition-failure.json`，不记通过。五份旧模板实际有不同声明/卷内引用/角色绑定，不能假定只差ref；前一条计划按首份模板组装的推断已被实际前置拒绝。
+
+已只读找回原研究根`quizforge-qztx-ten-roles/quiz-forge/.cache/ten-role-research/shared-template-proposal.json`，原文件SHA`88c5171b12ffcb840f778f24b20767974633a91fb0bbd78ccece50c41ba7bbd1`，现有结构验证回执`shared-template-validation.json` SHA`7465ebf4d0013ae22caa775f0c56c5ef91c0476d451ca7c83b395e9e52644343`；此两者原为read-only结构/预算而非source准入。参考已存在8d46d18 assembler的准确校验方式，新组装器显式接该模板路径并钉SHA：对原五模板声明按完整ref去重，同ref必须逐字同一，排除原已审角色专属authored-03cf1d15d78b55a43fc4后严格73；共享每条必须完整等于原声明且selectedResultRef=null。原共享ref/report-ten-literary-shared@2.0.0、卷序、claimRefs、maxClaims逐字保留，reportVersion沿真实模板2.0.0，不改73资格或当新声明制作。工具定向类型/ESLint通过，未重跑4344或旧结构验证；修后实际候选组装仍待运行。
+
+## 2026-11-04 1.5纯展示接线与完整候选组装器准备
+
+R已通过历史只读准确d8caf4c，实现窄审关闭；两tuple实际授权/DOM/旧图/双PNG/失权仍待最终运行。新1.5接线先扩可信presentation binding携带准确source hash，新profile.v2仅接受consumer1.5完整identity、同一sealed body/hash及十人3.0完整ref；旧V11入口保留，冻结旧目录不改。copy.v3复用六卷/原正反证据门控与最多3主题，十人各用已冻结资料/文学呼应/中性与寄语；新阅读层只接原accepted主题的具体条件/下一步，不改score/body或把角色当证据。Web/PNG仍由同一document导出，新source的finite支持/五维匹配点还待真实candidate hash绑定，未加入旧V11 aliases。
+
+当前24项受影响旧presentation/copy/reading定向通过，十人新选择/混配及素材表现定向12项通过；两次24项范围有重叠，不相加。TypeScript、10个受影响TS/TSX定向ESLint及差异/格式核对通过；没有实际页面/PNG或最终font通过。已按冻结manifest完整ref/SHA/字节/尺寸/用途列十人reveal的native-width-scene表现及李清照姓名gold-alpha，所有新图不用旧李白SHA规则；5:7姓名及下部固定锚点/CSS原型未改。核当前b4c43851冻结包，李清照nameArt实际仍是PNG1060×1484/629782B/SHA5e6f72a1…，不是重编码WebP；新版本仍显式核3.0完整ref及实际事实，其他金色姓名不套gold mask。真实夜景/取景效果留最终runtime核，不重画素材。
+
+新正常init身份b3d733d9…52e32追加有限privateTestUse语法，旧1ec2准备身份/旧registrations不替换；新authorizationId为qztx-known-ten-private-20261104。此语法不授source/asset/baseline/SQL准入。新组装器`stage-qztx-known-ten-content.ts`只在b3原managed.root运行，绑定原source8cb…、B准确b4manifest/e3ZIP、4344既有coverage的catalogue/definition及10个any witness；计划保留24题/五维/政策/证据families，核5旧模板除ref完全相同后复用一份73声明共享模板给十人，复制53准确资源并核hash；不会重跑4344搜索或导入/写库。当前组装器只静态通过，尚未执行候选组装，不预填source三hash/字体/baseline/DDL。private-test依赖改变会使新historical adapter closure需最终重收，旧descriptor/frozen文件不改。
+
+## 2026-11-04 两个成功旧tuple的只读适配实现：静态/合成验证，真实出口待最终构建
+
+A按已审2de0771新增两份historical-v13/v14报告/导出必要闭包，从准确6540d7b/1f2177b Git对象取原资料、copy各自字节、document/layout、CSS、字体与资源输入；不复制旧quiz/experience/projection/controller。原renderer元数据独立保留，当前目录metadata去重，不把旧entry作为写执行fallback。新增适配器只渲染封存报告，复用原resource lease/current grant复核及原字体严格覆盖/释放；事件仅结束访问与返回`/access`，没有评分/save/complete端口。只读页返回按钮的aria-label准确改为访问入口，正文/双PNG仍取各自冻结profile，适配修改不冒称原entry源码hash。
+
+v2宿主仅在已完成且无pending的report选择历史resolver；两个旧版本中的任一完整tuple/固定source/字体/mapping/四用途/资源事实不匹配返回null并终止，不落入当前renderer；非历史edition返回undefined才委托当前解析。旧report/view/body/receipt不改写，不从角色ID猜图。成功metadata1.3=9732…/1.4=b88…可查，失败/其他早期版本无新增映射；UNKNOWN仍在外层保留原操作/恢复控件。
+
+`historical-client-v2.test.ts`及扩展`consumer-v2/experience.test.ts`两文件14项通过（合成selector/静态markup，不是持久化/浏览器），覆盖2精确profile、6种混搭拒绝及historical-null不fallback。首轮fixture把clean binding当作有resultRef导致undefined canonical失败，按原clean槽事实修正；随后fixture直接改冻结ref失败，修为独立clone，未放宽生产不可变检查。类型通过，受影响TS/TSX ESLint无错误；两处Next导航warning改为router.push后定点复核。63个冻结文件的原路径/commit/SHA与适配后实际SHA重现核对通过，原字体文件未变。
+
+新`qianzai-historical-readers.json`按既有静态collector核完整124文件、依赖/构建输入及5种历史字体实际font/coverage/OFL，身份`48bae1aa8a70e4f8ac72f1bbdb06526db9efef4fc0bb8cf0590c7611a4164c65`；作用严格为verified-report-read-only，接入现implementation:check，不参与source准入或写available。首次收集因CSS别名不符合既有工具的相对CSS解析失败，改为保留正确相对CSS路径后通过，未改collector放宽规则。后续private-test/共享库实际输入变化时，此新只读闭包也必须按真实变化重新收集；旧renderer JSON不改hash。全量implementation:check仍待1.5/folio新登记，未重跑已知旧closure失败；未build/媒体/两旧tuple真实报告与双PNG/最终新source或0033。上述真实出口是已审本批剩余门槛，不能用本节静态证明替代。
+
+## 2026-11-04 已确认终态UI接线与采纳前政策复核
+
+主控转交R对准确2de0771窄审通过，历史只读P2设计关闭。实现先接有限终态：reader可选display reason仅从已验证session/resolution派生，v1 host、v2 status、千载状态及v2外层runtime-null均显示同一固定文案与`/access`原码入口，不携带Key或自动exchange。原UNKNOWN/终态pending在明确采纳前保持；exact remove之后终态仍保留display reason、清旧entry并停编辑。明确采纳已恢复的save前重读原session政策，若过代不以旧applied回执重新打开题目，若本attempt已有报告则读取原报告；不调用新完成或发grant。
+
+定向`consumer-v1/controller.test.ts`、`consumer-v2/controller.test.ts`、新`consumer-v2/experience.test.ts`三文件22项通过，覆盖两个终态的exact pending采纳、v1/v2旧applied后过代、无entry/report、旧entry不可执行与UNKNOWN外层markup。前轮v1两项失败暴露较早GET state覆盖较新已确认receipt，已修为政策观察不能回退原revision；失败不记通过。此前components定向已通过且修复未改组件输入，复用。TypeScript及12个受影响TS/TSX定向ESLint通过，diff/格式核对；这是controller/静态markup证据，实际页面/窄屏/最终生产构建尚未运行，随最终1.5接线验证，不冒称浏览器验收。历史只读profile、最终字体/source/0033仍在实现，已审服务/SQL不重跑。
+
+## 2026-11-04 最终构建根与新test身份已准备，尚无source准入
+
+独立`codex/qztx-known-ten-final`工作树从2de0771正常建立，绝对根`/Users/aipuli/.codex/worktrees/quizforge-qztx-known-ten-final/quiz-forge`，未在A旧63234或作者运行根重建。离线安装因缺@radix-ui/react-slot固定tarball失败；同一锁文件正常安装成功，无package/lock/global设置变更。未启动Next/build/native media。
+
+正常`pnpm p2a:db init --port 55537 --origin http://127.0.0.1:63237 --purpose test`生成全新instance`b3d733d96206b456072dcf5609d52e32`，manifest.root保持新root，marker为`quizforge.p2a.v1:b3d733d96206b456072dcf5609d52e32:test`。仅已审0001–0032正常fresh链；32 checksum逐项匹配，实际catalog仍`ad236ba8bc23d53c69197a6f603bb17421c8ffce9c4c745de866165ed97fa8d7`，Key/session/report/head/activation全0，其他连接0，owner close。正常stop后55537/63237无监听、postmaster.pid消失、PGdata/manifest/runtime/admin保留，回执在新root`.cache/known-ten/final-instance-{init,stop}.receipt.json`。没有新0033/source/导入、没有作者数据或旧身份借用，资源IO未获取且无fileStopProof。后续实现ff到此新分支后沿同一原身份工作，不重新init或改manifest。
+
+A树`.cache/known-ten/font-source-corpus-preflight/result.json`对十人固定文本/支持阅读与预留终态文案1031码点（含U+0020）做上游TTF预检：Serif/Literary缺字0，Brush缺`·`/`曌`/`牆`。这是保守文本池，后两字目前在正文/元信息/出处；最终必须对实际Brush用途单独固定，不能删正文或以fallback掩盖。现Brush导出中的中点沿已有明确拆run逻辑处理；未据此改字体检查、运行subset或宣称完整语料/双PNG通过。旧报告单项P2设计2de0771已push待R，其间仅做不依赖它的新root/身份和文本预检准备。
+
+## 2026-11-04 旧报告与外层终态入口：单项P2设计补充待复核
+
+R对6a9cb4a主体通过，主控选择在新构建提供精确历史只读路径。A实查确认旧metadata受available门控会runtime-null，当前runtime/export又读当前字体/资源常量；不能仅放开旧entry。最小补充已写MANAGED最新节：明确1.3 `9732bdfd…4aadbe`（6540d7b）与1.4 `b88be4dd…b4809`（1f2177b）两个成功tuple，冻结各自只读report/presentation/copy/font/resource/双PNG必要闭包，新适配器实际闭包与旧snapshot identity分开证明；旧attempt仍无当前entry/写权。作者原63227/63230构建/记录及UNKNOWN保持，不能替代新构建验证。两个旧tuple均列入本批新构建实际报告/资源/双PNG验证，尚未执行；其他早期及失败tuple无新映射。v2 runtime-null且无entry/report分支明确补原码入口，UNKNOWN保留原pending。此提交仅设计文档，不执行共享代码/source/DDL，交R只窄审该P2。
+
+赵云poster v2新交件已取件到A私有`.cache/known-ten/art-intake-zhao-v2/`：manifest SHA`b4c438519a334419fa71607d892a46b49a074da07212e1d586c7a4979490c923`；ZIP29,997,985B/SHA`e3bfb8831ef1e8e48ae64fea67aef19e18b0bcd741eb56f92d420ba585e63b86`。既有CLI核53资源/10×4用途/13共享旧identity与字节、5代表本地decode通过，payload29,990,083B。回执result.json为`PASS_FROZEN_ART_TRANSFER_MAPPING_ONLY`，非完整QuizPack/native media/source准入；主控已转交V对赵云新取景通过，输入hash未变，可继续最终技术集成。旧ZIP保留，其他52证据复用，未重跑全53图检/SQL/build。
+
+## 2026-11-04 固定字体源已恢复，缺字/空格失败分支验证，无subset
+
+A在私有`.cache/known-ten/pinned-font-sources/`恢复旧工具所钉的NotoSerifSC/MaShanZheng/LXGWWenKai SC原TTF及OFL，六个实际SHA逐一匹配原固定值；记录`verified-source-receipts.json`。一次查找取得的WenKai TC候选及OFL与旧pin不匹配，原字节/失败receipt保留且未使用；随后从LXGW原SC仓库取得准确旧pin，未修改hash或放宽许可/工具版本。源恢复不是新字体生成。
+
+真实固定TTF上仅执行失败分支：Serif/Brush/Literary各以U+10FFFF证明SOURCE_GLYPH_MISSING，Serif/Literary缺U+0020证明FONT_SPACE_REQUIRED，5项通过；每项均无woff2/manifest/candidate descriptor输出。回执`.cache/known-ten/font-glyph-guards-c8254b2c-efe8-4d0f-adbc-fc7cf6dd3655/result.json`，前四输出保护证据复用，不重跑。尚未核最终required字符集全覆盖、未subset、未登记字体或source。
+
+主控随后转交赵云poster仍需一次聚焦取景修正，B将更新准确manifest/ZIP receipt。A尚未执行整包取件，等待该单资源新字节再按新expected archive SHA运行取件工具；不冻结旧全包source三hash，不重做其他52资源的B视觉。共享设计`6a9cb4a`待主控/Astra针对新接口/登记复核，B服务范围`3833d60`已由R关闭；后续代码另属新接线。
+
+## 2026-11-04 B素材已冻结：接收与最终1.5设计待定向复核
+
+主控已明确B的53资源冻结可交接，准确素材ZIP为30,087,195B/SHA82d84066df013eb29303ee631dfea50feb7801552e13b7e944566db56052dab2；payload30,079,293B，含预留31,406,397B。早一条delivery-v1待裁切状态已被此冻结交接更新，仍不是QuizPack。A准备独立取件/完整ref映射及5个必要代表decode，复用B同输入全资源/裁切证据，不改B所有权。
+
+MANAGED最新设计明确终态UI可选表现标志及固定文案、旧pending/原码边界、新字体一次闭包、新1.5/1.3与历史descriptor并存、独立新runtime worktree/实际managed身份、下一空闲0033有限准入及精确DDL先审后执行。当前仅设计和取件工具准备；尚未生成最终source三hash、运行新字体subset、改编译registration或迁移。高风险共享/source部分待主控/Astra定向复核，常规取件可继续，不另找作者审批技术步骤。
+
+## 2026-11-04 最终字体技术准备：新增profile与输出保护，尚未subset
+
+B的delivery-v1仍在最终裁切自检，A仅只读核其schema/40用途+13共享结构，未选作冻结输入、复制资源、计算最终source三hash或修改B文件。新增Serif v13/1.12.0及editorial v6/1.5.0入口；新profile拒绝已有font/manifest输出，保留旧profile和旧字体字节。editorial缺源glyph改为失败关闭，输出cmap再次验证，OFL按已有Brush/Literary实际license hash固定；v6要求逐font --kind与私有.cache --descriptor-out，不能写回旧editorial descriptor。新profile要求U+0020。Serif新manifest追加十人姓名/历史别名覆盖事实，旧五人字段不冒充十人覆盖。
+
+本树`.cache/qztx-font-tools`以既有requirements固定fonttools4.61.1/brotli1.2.0，缓存wheel安装；不改全局Python/Node设置。py_compile及CLI profile帮助通过；三个CLI失败分支（已存在新输出、缺私有descriptor出口、出口越界）和追加单独--kind缺失分支通过，无源TTF读取/无subset/无新字体，旧editorial descriptor hash保持。回执在本树`.cache/known-ten/font-profile-guards-6cdc1983-cdde-4c34-82fe-c0881ae609cb/{result,kind-result}.json`；追踪的guard脚本可复现四分支。真实glyph/TTF/OFL前置及输出字体覆盖尚未运行，等最终字符输入与固定源齐备后统一预检，再各font一次生成。未重新跑数据库、build、浏览器或已过故障用例；字体/最终renderer/source登记仍未交付。
+
+## 2026-11-04 批次B定向补证：HTTP UNKNOWN修复、Drizzle报告参数修复、三恢复故障与v2路径
+
+主控固定`1e6733a`交Astra后，仅发现恢复HTTP将UNKNOWN降为UNAVAILABLE的源码P2。先提交反例`5832f7f`并保留`p2-unknown-before-fix.log`，再以`c92f7eac5688dd489050b1993aacba37d75fd2dc`仅令resolve-save/resolve-complete保留未知结果及关闭不明，普通GET保持原行为；10项HTTP测试通过，主控转交Astra窄复核已通过，不重复该10项。新真实PG故障测试首先独立提交`cd936e1`；不重跑A10+5、已过5服务/6不变量/2HTTP。
+
+**新暴露的报告JSON端口缺陷。** 旧裸`openSql`探针通过的`sql.json(record)`在真实request owner的Drizzle连接上失败，Drizzle的JSON serializer令对象抵达text wire encoder，原生ERR_INVALID_ARG_TYPE在发送前发生；原映射后UNAVAILABLE/intent/log保持。`b241006459b681d7cde3a67bf2da919292e164f0`仅改该参数为固定JSON字符串经`::text::jsonb`，兼容两种连接、不改变数据库合同/迁移。新源码仅此一行，交R针对该差异及以下回执复核。首轮门闩没有监听前置失败而超时，测试改先竞争原writer结果；后续合成第二play renderer不同，快照fixture改绑定实际play renderer/parent/font/map。均为测试修正，不降低报告一致性，不重建/重放旧业务。
+
+| 定向反例                                                                        | 实际结果与准确证据（验证root `.cache/known-ten/`）                                                                                                                                                                                                                                                                                                 |
+| ------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| completion已在最终事务插入未提交报告，恢复/启用并发；真实COMMIT后注入返回值丢失 | 恢复BUSY、启用55P03；原writer提交一次而调用方OUTCOME_UNKNOWN；之后启用再推进head，恢复同completionKey/binding/reportId，report1、grant不变；`policy-recovery-fault-58a6b5f5-e933-4acb-8373-49096a46d012.late-commit.result.json`，SQL phase open/close均3。这里是复用既有harness的原生COMMIT后结果丢失注入，不称网络代理截断。                     |
+| 精确终止该completion自有backend，JS callback仍悬挂                              | 实际backend消失、原事务OUTCOME_UNKNOWN且report0；head推进后恢复自身COMMIT结果丢失仍UNKNOWN，再读原binding得version-superseded；放行迟到callback，其原SQL scope准确CONNECTION_CLOSED且driver invalidated=true，report仍0、grant不变；`policy-recovery-fault-7d9bd978-320f-43ab-aff6-d2a398b055ac.disconnect.result.json`，SQL phase open/close均3。 |
+| completion请求已开始而启用先于最终SQL事务                                       | gate位于最终事务前；启用先线性化，放行原请求后准确VERSION_SUPERSEDED，report0、grant不变，原binding恢复终态；`policy-recovery-fault-9a2518b0-e886-41a6-bacc-c0eab1fe6f5d.enable-before-final.result.json`，SQL phase open/close均2。                                                                                                               |
+| v2 matching-context save→controlled complete→原receipt恢复                      | 复用既有`qztx2DbFixture`，新synthetic-d2产品显式启用后，真实owner保存24个合成答案与female context/hash；真实Drizzle连接受控完成，v2原save/complete receipt恢复且report/grant字节保持；`policy-v2-e00ca0bc-ad67-4c4d-856f-543d431e99dc.result.json`，3项通过。                                                                                      |
+
+三个故障场景分别定向通过，第一份log另含一个已保留的fixture准备失败，不称整份首次suite全绿；只续验原失败/新增场景，不重复已过场景。测试入口`vitest.policy-db.config.ts`仅接受显式QF_POLICY_SEED，不加入普通/reset DB套件。v2沿既有SQL fixture的合成平台/renderer/media事实，不作为新正式source、已注册执行或原生媒体/文件停止证明。completion探针仅覆盖实际最终SQL端口和公开恢复服务，所有新结果明确resourceIo.acquired=false/stopProof=null；实际SQL backend消失、连接池关闭和资源IO停止不混称。原pending与operation身份持久化于0600私有intent，不上Git。
+
+原超时、UNAVAILABLE、native JSON编码及快照fixture失败和原intent全部保留；最终只读核对9个故障fixture Key，其中成功提交场景report1，其余各report0，各attempt1，无清理或重放。`policy-fault-owner-receipt.json`确认32迁移/目录ad236ba8…fa8d7保持、其他app/owner连接0、自有连接close；最终Key19/session17/report4/grant29，internal-version-fixture head8、synthetic-d2 head1。正常managed stop后`policy-fault-stop-receipt.json`独立确认端口/PID消失、数据/管理文件保留，资源IO证明仍null。
+
+真实素材/字体/封存/build/Next网络/browser留最终接线，不属于此次补证；没有部署、main合并、改旧实例或处理旧UNKNOWN。新增测试与修改端口类型/ESLint/格式按必要输入验证，已有结果复用。准确登记依赖和字体输入缺口见MANAGED最新条目；新字体尚未生成。
+
+## 2026-11-04 批次B切片2服务/API交审：隔离SQL与进程内HTTP通过，完整运行闭包仍待后续
+
+0032经主控转交窄审通过后正常应用于原root/instance28267；`controlled-auth-resume.result.json`的admin、void与ACL续验5项通过，复用首轮两拒绝及A10+5，不重跑、不覆盖命名歧义失败。准确0030/31/32字节和SHA保持，`82cf32d`已推送。
+
+本切片将exchange/save/complete/logout/void接入受控函数，按grant的准确key/session定位并分别核原签发tuple与实际attempt；报告/资源拒绝跨attempt授权。新增显式启用及resolve服务/API（`play-activations`、`play-activation-applications/resolve`），原operation回执先于当前依赖；新操作才做固定源IO预检。旧v1/v2成功resolution保持，新增原binding/hash绑定的policy终态，原save回执先胜出；UNKNOWN resolve改为独立READ COMMITTED锁定观察。SQL仅按明确SQLSTATE/message映射，失联/提交或回滚不明仍优先UNKNOWN。客户端识别有限终态并停止继续载入旧entry；完整重开体验与最终终止文案视觉尚未验收。
+
+**本次必要验证。** 定向初轮7文件47项通过；新增HTTP回归2文件15项通过；追加UNKNOWN优先级后policy/Studio HTTP 2文件10项通过（这些数量有重叠，不相加）。修改文件ESLint/格式、Next route typegen与`tsc --noEmit`按最终结果记录。真实PG使用原28267正常管理、合成数据，脚本来自A实现root、cwd仍为原验证root，manifest未改：
+
+- `consumer-controlled-flow-check.ts`：5项PASS_BOUNDED_SERVICE_NO_IO，真实request owner的兑换/保存/原回执优先/锁定恢复/旧entry拒绝/新空attempt/注销；回执`controlled-flow-66dd43bf-c722-416f-ab53-514bd92034bd.result.json`。
+- `consumer-controlled-invariants-check.ts`：6项PASS_BOUNDED_SQL_INVARIANTS_NO_IO，严格旧写零效果、并发exchange成功或有界NOWAIT且单代次唯一、16槽跨attempt身份轮换、受控report封存、complete先于enable的历史report保持，以及rollback-only过期/无head历史exchange；回执`controlled-invariants-89dcfc5e-a482-4183-83cb-41b3d596b4e4.result.json`。前三项复用原失败运行，JSON修复后仅从失败点续验。
+- `consumer-policy-http-check.ts`：2项PASS_IN_PROCESS_HTTP_REAL_PG_NO_IO，进程内真实HTTP adapter＋真实PG/owner：原activation回执独立于更晚head恢复；enable先于complete返回409且report零新增，resolve给原binding终态且不发cookie；回执`policy-http-e9283362-86c8-4c60-8c34-a1d1c4ffa422.result.json`。这是Request/Response适配器调用，不是Next网络服务或浏览器E2E。
+
+**失败和修复原样保留。** 首次服务打开被旧draft-schema `audit_target`事实拒绝，按0030实际精确定义仅更新该fact；第二次错误地把全局预算NOWAIT准入当可并发服务前提，保留RATE_LIMITED失败，服务准入改串行、领域并发另验，未降低预算生产断言。report端口暴露postgres.js将字符串JSON作为jsonb再次编码为scalar，完成事务已回滚；改用`sql.json(record)`后按原intent/16槽/已保存状态续验，未重建或重发原业务。失败文件分别为`controlled-flow-97b6a00a-62b8-445f-9aa6-a91a54a19aaa.failure.json`、`controlled-flow-dd852d44-3bdd-460b-ad64-b4756f756e61.failure.json`、`controlled-invariants-4dda75cc-55f3-48b9-bc99-d4e4e445e808.failure.json`，各原log保持。
+
+实际32迁移目录catalog为`ad236ba8bc23d53c69197a6f603bb17421c8ffce9c4c745de866165ed97fa8d7`/27表，runtime consumer facts绑定该实际值；旧五行与原报告/签发比较保持，其他app/owner连接0、自有连接close。`slice2-owner-receipt.json`记录Key9/session7/report2/grant19/head generation5；正常stop后`slice2-stop-receipt.json`独立确认55536/63236无监听、postmaster.pid消失、PGdata及manifest/runtime/admin保留。
+
+**尚未交付/未运行。** `implementation:check`首阻点为已提交但待新闭包收口的`private-test.ts`（本切片未改该文件）；本切片contracts/client/controller也参与封存闭包，不能仅消除此首错误便宣称通过。旧descriptor/hash未改写，完整新版本登记与最终source/美术/字体闭包另行收口。因此不启动依赖成功build的Next生产E2E，不冒称实际固定源IO完成、浏览器/UI、最终source1.5或商业验收。本切片未做真实网络ACK-loss/驱动断连新注入、迟到completion并发全链；复用原owner/关闭测试，并仅有新增UNKNOWN映射优先级测试和SQL线性化结果。提交交独审不等于批次B全部验收。无main合并、生产迁移/部署、新素材准入；作者实例、6736失败及63226 UNKNOWN保持。
+
+## 2026-11-04 正式0031授权验证：两拒绝通过，admin路径命名缺陷追加修复
+
+主控转交准确062f245授权窄审通过后，在自有验证root28267正常ff已审提交/start，核c78cad36准确hash并由正常管理器应用0031；旧0030/31字节保持。新定向授权harness真实app验证operator activate准确CONSUMER_CAPABILITY_DENIED、account_actor资格不足准确CONSUMER_OPERATOR_REQUIRED且ledger/head/audit逐值不变，前两项通过。admin正例暴露PL/pgSQL局部product与qf.product整行引用冲突，原失败/intent保存在该root `.cache/known-ten/controlled-auth.*`，未冒称四项通过；连接关闭后PG已正常stop。
+
+最小追加0032_consumer_activation_product_selector.sql仅将该局部变量改selected_product，不改权限/锁/参数/业务合同；前置绑定已执行0031 checksum及原函数body SHA，保留旧回执不重写历史。新0032 SHA1266d0362702472c98326deb113d980289deb1d37d7646550abd533bd6d78315，source准入顺延之后实际空闲号待主控核。harness新增明确的续验入口复用原账号与两通过证据，另存resume intent/result，不重复插入或覆盖原失败。相关新harness类型/ESLint/格式通过；修复提交后按既有隔离实现授权追加修复并续验，不重跑A10+5。
+
+## 2026-11-04 十人用途制作基线与最终source依赖交接
+
+作者已认可六重构稿继续，连保留四位作为当前十人用途制作基线。按主控授权准备B→A交接：复用40完整用途ref与现`currentResourceV3Schema`声明，要求最终真实字节/尺寸/hash、同角色父子来源链、内测许可及用途事实；13共享/40用途预算保持，完整报告PNG走共用document程序导出。新李白不套旧baked批准，旧资源历史读取保持。
+
+MANAGED最新条目已列资源到件字段、预算、单次字体闭包输入和最终接线次序。新增服务/UI终止文案待稳定后合并报告固定语料，含U+0020与原177缺字增量；字体脚本需追加新profile并对missing失败关闭，旧字体不覆盖，本步不运行subset。最终新内测身份、三hash/包、runtime/renderer闭包及source迁移号必须到真实事实齐备再核定；不填假hash、不复用28267合成库或6736候选作demo。本步仅文档与源码接口核对，未改运行输入或启动DB，不重跑原审计/数据库/评分/媒体证据；0031授权P1仍待062f245窄审，作者素材线独立推进。
+
+## 2026-11-04 切片1 operator授权P1最小修正：正式0031继续暂停
+
+Astra发现`bf28302` helper将operator/admin统一放行并跳过account_actor资格。0031现改私有helper在auth advisory内复用`qf.account_actor`，activate两次固定检查admin的`version:seal-internal`，void两次固定检查admin/operator的`access-key:void`，未知能力拒绝，锁后再核，helper不授app调用；其余已审范围保持。新DDL SHA`c78cad364630daa315b2289c7b0e744ee317543419d3ca7ff5d3a50495ef3d92`。当前角色策略/资格SQL/固定调用/ACL签名与diff静态核对完成，无TS变化不重跑旧静态或A10+5；未执行新SQL/PG，也未进入切片2。旧DDL rollback receipts保留，不冒充新版本通过。准确修正提交后交授权路径窄复核，放行后再补四项指定PG反例，0031仍未应用。
+
+## 2026-11-04 批次B切片1实现：准确0031与repository待窄审
+
+设计`41d13ea`已由Astra通过，主控分配0031服务/source后移。新增`0031_consumer_controlled_writes.sql`（SHA`9d7dd098532af0fa3427d18ffd30c47790bb85a19f4c605785fb9d66b5368997`）与server-only policy repository，管理器限授definer入口，原app UPDATE关闭且report INSERT收紧到受控完成函数。SQL覆盖原码原子exchange、排序双session后grant的slot轮换、有效read authority/纯注销、current/CAS/原receipt优先、显式启用与原operation读取；原claim投影改每Key确定首次认领、不用于activeattempt。详见MANAGED最新条目，原0030字节/hash保持。
+
+相关TS及修改文件ESLint通过；28267按原manifest/root正常start后，仅对最终0031作显式事务回滚的DDL语法检查，通过且0030结构SHA`3b19480f...8a9b5b01`恢复、连接close、正常stop。准确记录位于验证root`.cache/known-ten/0031-rollback-v2.{intent,result}.json`，早期语法记录也保留。无0031提交/迁移回执、无runtime catalog更新、无函数业务/并发/HTTP验收；A 10+5及契约按输入复用。切片1不是可独立部署服务，旧调用未接新接口，待主控送准确diff窄审后进入切片2与定向真实PG，素材重设不触发DB/source准入。
+
+## 2026-11-04 批次B架构接线准备：服务/受控SQL设计待审
+
+主控确认A的`ee1dd848`证据复核通过，10+5真实PG与owner/stop证明复用，本步不重跑。已逐项核现有internal-play/access/consumer-flow及v1/v2合同、auth advisory前缀和HTTP入口；发现key-only session选择、签发/实际play混同、grant轮换缺session_id及读回伪锁凭证须一起修正。可审最小设计写于MANAGED最新“批次B服务接线设计”：有限SECURITY DEFINER锁/写函数保持app UPDATE关闭；精确attempt与原签发双tuple；已完成/expired历史先于head；六类服务入口、锁序、跨attempt终止envelope和UNKNOWN锁屏障均明确。新增服务迁移编号需与source串行收口（建议0031服务，source顺延待核），不改0030或填美术source假hash。
+
+本步只改现有交接/进度文档并核diff；未写业务/SQL实现、未启动或修改任何DB、未更换runtime指纹、未运行测试/构建。准确设计提交后交主控送独审，通过后按AGENTS切Sol/high实现B必要服务与隔离PG并发。作者人物素材/姓名锚点线独立，不把其反馈转成DB/source准入。A原边界、6736候选失败、作者环境与UNKNOWN保持。
+
+## 2026-11-04 最新版答题批次A真实PG验收收口：正式0030与两P2反例通过
+
+主控转交Astra对准确`fdcdbb0`窄复核通过后，只在自有验证root `/Users/aipuli/.codex/worktrees/quizforge-qztx-policy-a-validation/quiz-forge`的instance `28267eb19487c265372bdb7671caac89`执行。先正常停止该PG，再同一分支fast-forward到已审`fdcdbb0`、核DDL SHA`c6009e5ebbda4107b63aa475e8434a8b0a6af87cc42627ca03759987adc65db3`后正常start；manifest/admin/root未复制改写。`TSX_TSCONFIG_PATH=./tsconfig.json node --conditions=react-server --import tsx tests/analysis/consumer-latest-policy-check.ts .cache/known-ten/latest-attempts-seed.json`一次应用准确`0030_consumer_latest_attempts`并通过10项数据库检查：原Key/session/report与29项回执精确保持、无默认head、无head/过期已完成Key仍回原report授权、gen0/app直接UPDATE拒绝、同资格每代唯一与已完成禁止重开、实际新play与原签发完整tuple分离及伪造FK拒绝、旧代严格VERSION_SUPERSEDED、代次不可复用、旧operation receipt不被当前head改写、不可变activation FK与两条原report final FK均非延迟RESTRICT。原report canonical TEXT逐字核、时间按PG原生精度核；未把无效SQL其他23514当版本拒绝。
+
+随后新增定向`tests/analysis/consumer-policy-guard-regressions.ts`（SHA`e5d8b2603f27f2318bc610956a5d403b9865ad6900859686fe89d767da11df2d`），从A实现树以绝对脚本路径、cwd仍为验证root运行一次，5项全部通过。两笔均直接app INSERT、无service或提前product锁：第一笔未提交时第二笔已提交，独立owner观察first_visible=false/second_committed=true后再提交第一笔，证明不会发生旧排他升级。真实DB rollback-only过代/期限夹具验证原grant可纯注销、除revoked_at外整行原值精确保持；夹带token变化仍准确`23514/VERSION_SUPERSEDED`。夹具设置时临时禁用的原guard在测试实际注销前已启用，整个时钟/第三代head/审计夹具最终回滚；未改业务期限或放宽断言获取成功。这里只验证DB guards，不含service/UI/B–D。
+
+验证root私有结果：`latest-policy-check.result.json`、`policy-guard-regressions.result.json`、`final-policy-owner-receipt.json`及intent/log/raw记录均在`.cache/known-ten/`。最终30项checksum逐项匹配，原legacy五行/报告保持；目录SHA`8b559565a5cc2682936b9e6717d6aedebb974bb061da0f83ebcd902073cf033e`与正式迁移后相同，证明时钟夹具未残留禁用trigger/权限变化。实际app角色仍无Key/session/grant UPDATE；受控合成最终Key4/session4/report1/grant2/activation2/head generation2，两项新增Key为锁反例本次自有测试数据。其他app/owner连接0、连接close确认后正常managed stop，`final-policy-stop-receipt.json`确认postmaster.pid不存在、55536/63236无监听、PGdata与manifest/runtime/admin均保留。6736候选/失败、1ec2身份、作者实例和UNKNOWN原样保持。
+
+本批仅DB schema/契约/guards验收：复用2项契约及既有未变输入证据，新回归脚本定向TypeScript/ESLint/格式通过，无全仓测试、build、浏览器、导出、source/字体/renderer准入或部署。runtime全局指纹仍0029、app直接UPDATE关闭、启用/保存服务和精确session/UNKNOWN/UI接线仍待后续授权批次，不可据本次数据库证明单独上线。最新观测目录指纹仅证据，不改运行登记。本批达到范围后收口，不扩B–D。
+
+## 2026-11-04 正式0030独立验证前置：新managed实例与0029合成基线就绪
+
+按主控要求正常新增自有worktree `/Users/aipuli/.codex/worktrees/quizforge-qztx-policy-a-validation/quiz-forge`，分支`codex/qztx-policy-a-validation`、HEAD`14097611e823796dd2864660074e578904ae65d7`，origin仍为正式quiz-forge。此提交仅0001–0029，未移走/改写0030文件来初始化，也不复用6736候选历史。55536/63236先核空闲，正常`pnpm p2a:db init --port 55536 --origin http://127.0.0.1:63236 --purpose test`生成instance `28267eb19487c265372bdb7671caac89`；manifest.root为新worktree绝对根，PG实际PID2816监听55536，63236仅固定origin、未起应用。
+
+新树锁文件安装首次offline因本树缓存为空失败；随后仅本命令指定A自有固定CAS缓存，`CI=true pnpm install --frozen-lockfile --offline --store-dir /Users/aipuli/.codex/worktrees/quizforge-qztx-known-ten-integration/quiz-forge/.pnpm-store`复用419包、0下载，新树保有自身node_modules且未改全局配置/锁文件。pnpm沿既有策略未运行argon2/esbuild/unrs安装脚本，随后正常init/既有合成夹具已实际执行，未因此安装或批准额外脚本。
+
+基线复用现有P4无文件合成夹具，旧未完成Key/session一组、旧已完成Key/session/report一组，实际计数2/2/1；Key沿原3600s期限，不续期。29项checksum逐项匹配、结构SHA`888a87e5d59db4f821a7634c628b05dfcd2165d47bfd174f312811022ce0757c`，policy head/activation表均不存在，报告原文/hash已读回相等。私有基线`.cache/known-ten/latest-attempts-seed.json` SHA`14f2b76efdd967c1eabed35b5e38e644d450dfa04f245f532449fa011cc69b9d`，owner回执`legacy-owner-receipt.json`；检查前其他app/owner连接0、连接已close。未执行正式0030或本批反例，待`fdcdbb0`/DDL `c6009e5e...adc65db3`窄复核通过再协调同一新root的准确代码/迁移顺序，不复制改manifest、不删除基线、不向旧作者库写入；6736候选失败和UNKNOWN保留。
+
+## 2026-11-04 Astra实际DDL两项P2最小修正：正式0030仍未执行
+
+Astra对`e8dea73`实际diff指出两项P2，主控暂不放行正式迁移。0030仅修对应两处：Key INSERT去掉policy_scope已持product/head共享锁之后的product FOR UPDATE升级，归档状态在既有共享锁下只读；grant guard按既有父锁顺序确认原grant id/digest/session后，若整行除revoked_at外完全相同，先允许原纯撤销，不让旧代/期限/current-report检查阻断；签发及新token轮换仍过current attempt或原report授权。app UPDATE仍关闭，无启用服务/UI扩展。
+
+harness的旧session owner负例必须同时匹配SQLSTATE23514与`VERSION_SUPERSEDED`，未完成资格重开/过代插入也核对应消息，已完成资格核`CONSUMER_KEY_COMPLETED`；不再以任意约束错误冒称版本guard通过。最新准确DDL SHA`c6009e5ebbda4107b63aa475e8434a8b0a6af87cc42627ca03759987adc65db3`，待Astra只复核两处实际修正。仅对修改harness补定向类型/ESLint/格式/diff，复用009f652比较器只读证明与原契约证据，不跑写库/旧套件/构建。
+
+主控已明确6736候选库不再视为干净0029基线：候选回执与失败完整保留，不删结构、不改名、不清UNKNOWN。修正提交后停在正式0030未执行的安全边界；主控收到窄复核后再协调另建自有managed新库、合成legacy基线及本批真实PG反例，不提前执行。原作者环境及原受管实例不动，工程PG反例仍未通过。
+
+## 2026-11-04 首项比较器失败定位：只读精确核对，不重放升级或反例
+
+失败是工具比较方法，未发现业务字段变动。旧夹具经Drizzle返回timestamptz服务器文本（本地已安装driver对OID1184设transparent parser），owner检查经原始postgres-js返回Date后JSON序列化为UTC ISO；首个expires_at为`2026-11-04 00:49:14.803+08`对`2026-11-03T16:49:14.803Z`。原失败、原baseline及原前后值均保留，新私有`policy-draft/comparison-diagnosis.raw.json`保存5行完整before、driver after、DB json文本after、原生时间等值结果及原回执hash；没有删除/覆盖原失败。
+
+工具改为`tests/support/consumer-upgrade-comparison.ts`：每个原timestamp列通过PG `IS NOT DISTINCT FROM baseline::timestamptz`精确比较（含NULL与数据库完整精度）；只有SQL明确新增的6个session列排除旧投影，其余原字段及binding/receipt/report canonical TEXT仍deepStrictEqual逐值/逐字。已在同一6736测试库`REPEATABLE READ READ ONLY`事务实际核5行，均精确相同；每行另对一非空时间加1微秒，5项均被判不同，未用JS Date取整降低断言。结果`comparison-diagnosis.result.json`仅表示比较工具诊断通过，不是0030或业务反例通过。head/activation/grant/新attempt仍0，其他app/owner连接0，连接已close；正式0030与旧候选历史均未写，DDL SHA保持`caafe67ed831c10deee98bd27f367e872d667aedd678293618f4eb2b9c475816`。本步仅补修改工具的定向类型/ESLint/格式，不重跑契约、旧静态或其他套件；正式0030仍待实际DDL审且原候选history不可改名，普通迁移器的历史前缀校验不能绕过。
+
+## 2026-11-04 最新版答题批次A：0030 schema/guards候选，等待实际DDL审查
+
+`fbca479b`定向设计已由Astra通过并由主控转交四项实施约束。主控已明确0030给policy，source准入顺延至后续实际空闲号（预期0031、届时复核）。准确DDL为`migrations/p2a/0030_consumer_latest_attempts.sql`：启用ledger/head、单调generation、独立attempt、generated原签发完整tuple FK、实际play和不可变activation FK、原报告唯一/final FK保持、有限audit与guards。共享新增独立契约/Drizzle模型/namespace/ACL；未做启用服务、旧session查找改接、UNKNOWN业务恢复或消费者UI，不混入source准入。
+
+此批不可单独部署：无默认head，gen0新写拒绝，app直接UPDATE收紧，runtime全局schema指纹仍0029，配套受控写入口及正式启用还未实现。旧作者实例/数据与1ec2受管身份不动。自有新测试实例`6736f75ceb805215b1c7daab651450d7`绑定当前root/test/PG55535/origin63235，基于29迁移预置一旧未完成/一旧完成合成基线。未编号DDL一次显式BEGIN/ROLLBACK检查通过并确认结构回原值；随后编号到达前仅该新库写入`test_consumer_latest_policy_a`测试候选初版回执（SHA`74ab43dbd37bb372a5b27ea7eda99fea12b5399aad3eb569aca5174f5708c1e1`），尚无正式0030回执；正式DDL后补operator/session SHARE NOWAIT授权锁，SHA`caafe67ed831c10deee98bd27f367e872d667aedd678293618f4eb2b9c475816`，未执行。真实反例harness第一项比较被驱动时间表示差异阻断（+08文本与UTC ISO同instant），保留失败，未记为业务通过；已修比较器为时间instant/canonical TEXT分开核实，尚未重跑写库。
+
+只读核实原5条Key/session/report既有值及原29迁移回执不变；head/activation/grant/新attempt均0、其他app/owner连接0、连接close已确认；证据`.cache/known-ten/policy-draft/candidate-read-only-reconciliation.json`，候选catalog SHA`ae70ec50c25d2907e9edf8547d07bef9e15a965dbf3f45ce88a990c119435322`仅为实际快照，不作为已准入runtime指纹。2项新契约测试通过；定向ESLint/类型通过（harness修正后补相关静态），未跑旧套件、build/浏览器或媒体矩阵。准确0030与共享代码先交Astra实际DDL审；该新库候选历史不改名/删除，后续正式0030验证实例衔接需主控收口，不能把候选提交或失败检查写成正式升级完成。详情见MANAGED最新条目。
+
+## 2026-11-03 六人母图分组页：原图、390px排布与固定安全区
+
+A按B `group-02-review.json`将唐伯虎/周瑜/赵云/武则天/王昭君/蔡文姬接到既有本地63234 `/group-02`；每人展示原字节完整比例、390×844现有production CSS排布和固定5:7姓名/红章/单列竖句空框。原苏轼、杨玉环修脚v2入口保留，不改任何母图或正式runtime；新页/服务仍在本树私有`.cache/known-ten/`，无DB、source/renderer登记、派生文件或资源批准。
+
+一次Playwright Chromium实际路径核对六人：6/6响应字节/SHA等于B清单，两栏iframe视口390×844，姓名框5:7，1280×1100分组桌面与390×844窄屏无横溢/页面错误；六份桌面分组截图及窄屏截图已助手查看，回执`.cache/known-ten/group-02-browser/results.json`。图检明确唐/武/王935px宽比例在现有等宽等比CSS下底部留空，尚未适配窄长母图；姓名区域覆盖部分下方动作，需作者看脸部/衣饰差异与取舍，不以助手检查代替作者批准。页签原先“裁切/cover”措辞已按真实CSS更正为“等宽等比排布/底部留空”，该纯说明修正只核最终页面及owner加载，不重跑未变的六图几何。当前owner/load见`final-owner-load.json`及`art-server-owner.json`，两次前owner/log保留；只停启本次确认拥有的63234，旧作者环境、数据库及UNKNOWN未动。
+
+私有脚本首次语法预检因直接import未直连的esbuild失败；改从既有tsx依赖路径解析后通过，未增加依赖。第一次后台启动未获得owner/监听证明，核端口空闲后改可追踪进程会话启动；未将其记为通过。未运行生产build、全量测试、DB、导入或导出，页面不参与准入；原copy/4344/字体及旧图几何按输入复用。升级设计独立提交`fbca479b`仍待Astra定向审，未执行新迁移。
+
+## 2026-11-03 作者升级政策确定：仅最新版答题，历史报告只读保留
+
+作者正式决定：同商品仅开放最新版；旧版未完成会话失效并提示重新开始，原未完成兑换资格可进入新版；已完成报告保持原人物/分数/文案，原链接仍可授权回看/导出，已完成码不得重置成未使用。后续由Codex交付同商品新版完整包，走上传/检查/预览/启用，不增人物管理后台。此政策用于新隔离版本，不授权立即启用生产、迁移/清理作者旧环境或处理UNKNOWN现场。
+
+源码核明当前Key签发固定play，session.key_id唯一，且已有精确外键/不可变报告关联；不能原地改Key、清空session或改报告来升级。最小针对设计已记MANAGED_DEVELOPMENT最新条目：显式启用head/幂等回执、一个原Key下多个不可变版本尝试、head共享/排他事务切换、沿原exchange重开资格、历史只读和UNKNOWN分离恢复。先交Astra定向审；本步仅设计/交接文本及diff核对，未改schema/协议代码、未迁移、未测试或重跑旧验证。`6f4ad6c`素材/字体等既有证据按输入复用，后续按独立验收批次推进，不重复索取同一政策确认。
+
+## 2026-11-03 杨玉环修脚v2：仅替换本地候选响应
+
+按主控准确文件交接，63234杨玉环hero/safe候选改读B `yang-yuhuan-reveal-v2-foot-fix.png`，853×1844/2,917,069 B/SHA`153c9e68095afdf4b229159eefb479eda0d5710b6ee6baa8a884382819a232c5`；说明页标修脚v2候选，不是批准或准入。v1原图未覆盖，旧owner/log保留为`.cache/known-ten/art-server-owner.v1-pid11519.json`及对应log。只受控重启本次自有63234，当前PID31867；63230/63233及DB不动。一次390浏览器确认新图decode成功、实际响应字节/SHA与v2一致及说明页已更新，回执`art-v2-load.json`；复用既有几何，不重跑截图矩阵、不新导出或派生。独立视觉复核与作者反馈各按实际状态，不以加载成功代替视觉批准。
+
+## 2026-11-03 后续接线准备：精确资料选择、53资源和字体审计
+
+作者允许继续后指出杨玉环脚部问题：苏轼方向保留，杨玉环v1撤出通过基线，等B局部修脚v2；不对v1派生或准入。A保持63234/63230/63233与旧实例/报告/UNKNOWN，只推进不依赖最终图片的准备。新增`known-ten-editorial.ts`按已编译目录完整product/id/version选唯一资料，核历史身份、熟悉展示名、非空且不重复的引句及四用途完整ref；拒旧版本、跨商品、旧角色及姓名alias，不授source/renderer/资源批准。两项新选择/拒绝测试、四文件定向ESLint、TypeScript、格式/diff通过；已过内容2、copy6、wrapper2、匹配和图检均不重跑。
+
+- 新离线`tests/analysis/qianzai-known-resource-plan.ts`严格核原封存source hash，从原33资源排除旧角色20用途后核得13共享资源，实际17,899,935 B；新十人40用途仅列pending ref，无占位hash/尺寸/批准。计划53资源/55文件低于64/66仅是计数通过；32MiB archive、64MiB解压、8MiB单资源、1MiB content、256KiB manifest不变。预留最大JSON后，不依赖压缩且未扣ZIP头的角色原始字节余量14,343,777 B，不能据此说最终ZIP通过；最终archive/content字节未知，`readyForAdmission=false`。共享素材本次新source的复用授权也待逐项核，不继承旧标签即准入；两张试制母图不当最终runtime资源计数，明确排除杨玉环v1。
+- 新`tests/analysis/qianzai-known-font-audit.ts`仅读固定角色/阅读文案和已钉住的旧coverage hash；语料1027码点含U+0020，旧Serif1.11.0/Literary1.4.0各缺177码点。未生成、修改或登记字体，不用fallback掩盖。最终全新文档/Brush实际字串尚待组合，当前是固定语料池缺口证据，不是最终字库验收。回执分别在`.cache/known-ten/resource-inventory-v1.json`、`font-audit-v1.json`，新selector在`editorial-selection-tests.log`。
+- 实际共享接点：`result-presentation.ts`当前固定1.4.0/V11，`implementation-client-v2.ts`固定V11 profile；`supported-themes.ts`及`dimension-scale.ts`受旧presentation-source约束，旧consumer-copy也固定旧角色。因此新source不得直接加入旧V11 alias。最终需独立known-ten精确source/私测登记与baseline，新1.5/preview1.3 descriptor按完整tuple选择profile v2/copy v3，分开新资料/六卷组合，再以明确新源接点复用73声明的完整正反支持规则；unknown/旧新混配均拒绝。`presentation.ts`/runtime导出上下文届时仅接受可信resolver新分支，web/PNG继续同blocks，历史报告不套新资料。
+- 这些共享运行/身份接点本轮未改：待最终53声明、复用授权、source三hash/baseline与字体具体事实固定后，先交Astra实际diff，再生成/实算`component-map`、runtime-inputs、descriptor闭包与新登记。SQL仍沿原前审协议，只在原新test管理根绑定`1ec2da760d5ccc0aa38664bcc4aefca6`/test/63231的精确新分支，追加所需private_test_*、asset declaration、internal_review及consumer schema事实；0001–0029、锁/CAS/ACK/完成权及旧合法分支保持。没有依据先改composed_assets或持久化表；准确0030仍等字面量冻结后独审再迁移，不复制改manifest、不向旧库升级。
+
+本次仅纯资料选择器和离线审计，不生成新QuizPack/source、假hash、pending批准、字体/闭包登记、0030或DB/生产构建。不借旧marker授信；Yang v2待B交实际修订再接首样，继续等具体素材与针对审查结果。
+
+## 2026-11-03 知名十人固定资料整合：停在首样作者验收
+
+按主控交接，A精确接入B `5ade93f4e1aa406ac82bf6d8a469e98e358a2996` 五份文件：三位保留/七位新增人物资料、目录顺序聚合、固定无答案语料、美术构图计划及两项内容测试。十人资料统一3.0.0 ref/40用途selector，熟悉展示名、称号/别名、引句署源分别保留；非人物自作引文明确史家叙述/时谣来源。此处构图计划不是40图已生成或批准，固定人物正文也不自动授权基于用户的解释；whyByTopic仍仅能由既有充分支持主题接线。
+
+整合无冲突；五文件及其catalog/classical-edition依赖与B交付逐项diff无差异，未改变运行输入或增加新接线。因此直接复用B已通过的内容2测试、六文件类型/ESLint/格式证据，仅核文本/差异与引用，不因cherry-pick重跑。既有阶段1匹配和63234首样证据保持。两图独立窄图检无必须返工项，仅表示可交作者看，未获作者视觉批准；本步未改预览、图片、source/登记/字体/DB，不派生、不准入、不执行0030/生产构建。更新同一Draft PR54后停在作者首样验收节点，后续批量/正式接入仍等具体反馈与授权。
+
+## 2026-11-03 知名十人阶段2首组：两张母图与原布局安全区
+
+主控交B新树两份首样母图后，A仅接独立local review `http://127.0.0.1:63234/about`：`/hero/su-shi`、`/hero/yang-yuhuan`直接显示新原图，`/safe/`同ID复用现有production scenes CSS的“你是”、5:7姓名、红章、单列竖句位置，空框只标待交付区域，不替代正式姓名图/称号/引句。边界说明放about，原图入口不叠技术标签；不挂旧角色正式身份、不伪造report/renderer/source或资源批准。新`tests/browser/qianzai-known-art-preview.tsx`通过完整3.0.0 ref选新目录，production views/CSS/登记/字体未修改。
+
+苏轼母图853×1844/3,075,222 B/SHA`01875645ef66113e8d1d5504944599080344c15b17b5efc276d6396615ed3ba8`；杨玉环853×1844/3,010,908 B/SHA`808d18056fccb0859eb1b5479118c1bdde0a0061145c5f4a94bac64789fee489`。两份均为未作者视觉批准的试样，直接读B私有文件，不编辑/批量派生/登记。实际Chromium156：两角色hero/safe390×844及杨玉环1280×960已查看，pageerror0、无横溢；两角色姓名框均180×252，姓名/章/竖句框完整几何相同。原生img保留母图原字节，local非Next宿主的img lint提示在该review文件明确说明豁免，定向ESLint与TypeScript通过；未新增低影响镜像测试、未重跑阶段1或旧套件。
+
+新服务owner PID11519及母图字节/身份回执在`.cache/known-ten/art-server-owner.json`，实际截图/几何在`art-browser/`；启动入口为本树`.cache/known-ten/art-server.ts`，非Next/DB消费者。此步只证明母图与现布局安全区可以同屏核看，不证明字图光学居中、最终引句/完整出处排版、双PNG或真实封存。首样继续交主控/视觉及作者看，作者确认前不扩全40图或冻结最终source。原63230/63233、新test管理身份及UNKNOWN保持，无0030/导入/正式登记/生产构建/部署。本批配置与首样接线提交到同一Draft PR54，后续取决于具体素材反馈，不自动扩大。
+
+## 2026-11-03 知名十人阶段1：受控目录与有界匹配接入
+
+作者确认名单并明确开始，A独立`codex/qztx-known-ten-integration`基于报告候选最终`f08f8ff`建立，不在63230/63233运行树开发。接B目录`4130c44`→本树`3688bf4`、展示名/别名分列修订`64dc748`→`e85ca30`：男李白/苏轼/唐伯虎/周瑜/赵云，女李清照/杨玉环/武则天/王昭君/蔡文姬；王羲之仅备选，旧王维/小说名单不进入本版。新目录标`qianzai-known-ten.v1`、角色及四用途引用3.0.0/`qztx-known-`，不改旧2.0.0名单文件或旧source alias，不填素材/source假hash。
+
+- 新`known-ten-selection.ts`按完整product/id/version或male/female/any从同一受控目录取项，未知/跨商品/旧版本/旧角色/姓名别名拒绝，不写人物UI分支，不授予评分、资料完成或资源准入。新`known-ten-scoring.ts`由同目录构造纯候选画像映射，保留原24题/贡献/五维/匹配policy，沿用既有角色stableRankKey，新角色按固定ID生成稳定key；画像坐标只是文学娱乐设计，不是历史心理事实或用户能力。
+- `tests/analysis/qianzai-known-ten-check.ts`复用旧seed的4096次均匀选项尝试、243轴方向尝试及原记录/封存见证，去重4344组；无新画像定向搜索。基线source严格核`8cbcf2488308c4f4962e9e9ee0aacf79f0dce1a3fb386133b81a0561edff7c31`，真实prepare/score分别检查男女any。男池五人、女池五人、any十人均有原输入获胜见证；未观测缺失0，不宣称穷举可达或均匀胜率。各偏好维度输出digest一致，问题/dimensions/policy结构逐项等于基线，算法/73声明不动。
+- any获胜计数：李白117、苏轼461、唐伯虎202、周瑜279、赵云451、李清照237、杨玉环300、武则天43、王昭君1246、蔡文姬1008；near-tie3308/4344，exact tie118。男/女near-tie3031/3070，exact tie67/164。最近同池L1为李白–唐伯虎44、苏轼–周瑜49；不据分布重选或调坐标，后续保留近邻状态与非诊断边界。回执`.cache/known-ten/coverage-v1.json`仅合成输入，无作者记录。首次检查在工具汇总inputSet hash触JSON_SIZE_LIMIT、未生成最终回执，失败log保留；改逐条digest后只补该入口，未提高生产限额。随后仅修stdout未用变量警告，ESLint通过，不为日志格式再跑评分。
+- 两项目录/ref/性别选择测试、TypeScript、四文件定向ESLint、格式/diff通过；既有copy6、wrapper2及旧DB等证据复用不重跑。现quote字段text/source/sourceUrl及history.title可表示史传、他人作品，不要求人物自作诗或2–3条引句。揭晓当前出处主要在title/srOnly，首样预览需在不动“你是”/5:7姓名/红章/竖句锚点下提供简短可见署源，完整引用仍进报告；未改旧UI或快照schema。
+- 阶段1为实际新目录/候选匹配准备，不代表十份专属资料/40图或正式1.5已完成。下一步只接B苏轼棋局、杨玉环舞姿首批母图和必要资料，在独立local review做真实组件/纯Canvas安全区预览，先交作者看再批量。原63230、63233及UNKNOWN保持；新test身份仍在原管理根，不复制改manifest，不执行0030/source导入/正式登记。64资源、32MiB包、1MiB内容上限不变，无新生产构建/部署。
+
 ## 2026-11-03 阅读增量收口：24题静态通读结论
 
 B对封存source `8cbcf2488308c4f4962e9e9ee0aacf79f0dce1a3fb386133b81a0561edff7c31` 的24题/96选项完成一次静态通读：情境、退出条件与四项取舍基本清楚，同轴题有不同情境不自动视为冗余，现题可支撑本批阅读增量，无需改题。q21–24可理解，但通读不增加解释资格；既有accepted/完整支持门控保持。未读作者答案、未执行评分、未改题或新增文档，不把通读当评分/内容批准。

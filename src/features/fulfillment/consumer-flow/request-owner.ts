@@ -26,6 +26,8 @@ type Operation =
   | "read-report"
   | "read-resource"
   | "logout"
+  | "activate-play"
+  | "resolve-activation"
   | "create-play"
   | "resolve-play"
   | "read-play"
@@ -160,6 +162,7 @@ export function createConsumerRequestOwner(
             ![
               "complete",
               "create-play",
+              "activate-play",
               "read-entry",
               "read-resource",
             ].includes(operation)

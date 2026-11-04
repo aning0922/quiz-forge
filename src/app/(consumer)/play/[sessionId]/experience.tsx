@@ -2,6 +2,7 @@
 import { CurrentConsumerSession } from "@/features/theme/consumer-current/session";
 import { ConsumerSessionRuntimeV2 } from "@/features/theme/consumer-v2/experience";
 import { resolveConsumerExperienceRuntimeV2 } from "@/features/product/internal-play/implementation-client-v2";
+import { resolveHistoricalReportRuntimeV2 } from "@/features/product/internal-play/historical-client-v2";
 import { ConsumerExperienceV1 } from "@/features/theme/consumer-v1/host";
 import { resolveConsumerExperienceRuntime } from "@/features/product/internal-play/implementation-client";
 /** Keep the catalog outside the renderer closure; project exactly the resolver's three fields. */
@@ -40,6 +41,7 @@ export function ConsumerSessionExperience({
         <ConsumerSessionRuntimeV2
           {...props}
           resolveRuntime={resolveConsumerExperienceRuntimeV2}
+          resolveHistoricalReport={resolveHistoricalReportRuntimeV2}
         />
       )}
     />

@@ -1,4 +1,5 @@
 "use client";
+import { ConsumerReexchangeNotice } from "../consumer-current/reexchange-notice";
 
 import { useId } from "react";
 import type { ConsumerV2ReaderModel } from "@/lib/consumer-contract/v2/client-contract";
@@ -23,7 +24,11 @@ const phaseLabels: Record<ConsumerV2ReaderModel["phase"], string> = {
   unavailable: "暂时无法读取，原操作与输入不会因此自动重发。",
 };
 export function canEditConsumerV2(model: ConsumerV2ReaderModel) {
-  return model.phase === "ready" && model.pendingOperation === null;
+  return (
+    model.phase === "ready" &&
+    model.pendingOperation === null &&
+    !model.reexchangeRequired
+  );
 }
 function sameAnswers(model: ConsumerV2ReaderModel) {
   const a = model.draft?.answers,
@@ -69,6 +74,7 @@ export function ConsumerStatusV2({
     <aside className={styles.status} aria-label="当前进度状态">
       <p role="status">{phaseLabels[model.phase]}</p>
       {model.message && <p role="alert">{model.message}</p>}
+      <ConsumerReexchangeNotice reason={model.reexchangeRequired} />
       {model.draft && !model.report && (
         <>
           <p>

@@ -1,3 +1,5 @@
+import { QIANZAI_KNOWN_TEN_EXPERIENCE_IDENTITY } from "@/features/quizpack/content/private-test-known-ten-experience-identity";
+import { QIANZAI_KNOWN_TEN_FINAL_TEST_IDENTITY } from "@/features/quizpack/content/private-test-known-ten-final-identity";
 import { z } from "zod";
 import { engineDeclarationV2Schema } from "@/lib/assessment-contract/scoring-v2";
 import {
@@ -65,6 +67,24 @@ export const engineIdentitySchema = z.union([
   consumerEngineIdentityV2Schema,
 ]);
 export const baselineApprovalSchema = z.union([
+  z.strictObject({
+    kind: z.literal("private-test-only"),
+    authorizationId: z.literal(
+      QIANZAI_KNOWN_TEN_EXPERIENCE_IDENTITY.authorizationId,
+    ),
+    instanceId: z.literal(QIANZAI_KNOWN_TEN_EXPERIENCE_IDENTITY.instanceId),
+    evidenceSha256: sha,
+    scope: z.literal("candidate-content-reference-art-local-test-only"),
+  }),
+  z.strictObject({
+    kind: z.literal("private-test-only"),
+    authorizationId: z.literal(
+      QIANZAI_KNOWN_TEN_FINAL_TEST_IDENTITY.authorizationId,
+    ),
+    instanceId: z.literal(QIANZAI_KNOWN_TEN_FINAL_TEST_IDENTITY.instanceId),
+    evidenceSha256: sha,
+    scope: z.literal("candidate-content-reference-art-local-test-only"),
+  }),
   z.strictObject({
     kind: z.literal("private-test-only"),
     authorizationId: z.literal("qztx-final-private-20261103"),

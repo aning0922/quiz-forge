@@ -1,3 +1,9 @@
+import { persistedReportFixture } from "@/features/report/persisted/contracts.test-support";
+import { persistedReportFixtureV2 } from "@/features/report/persisted/contracts-v2.test-support";
+import {
+  consumerPolicyBindingSha256,
+  verifyConsumerPolicyResolution,
+} from "../policy-contracts";
 import { expect, it, vi } from "vitest";
 import { normalizeRuntimeConfig } from "@/lib/db/runtime";
 import { ConsumerError } from "@/lib/consumer-contract/v1/errors";
@@ -314,4 +320,123 @@ it("verifies exact save resolution and preserves finite service errors without f
   );
   expect(denied.status).toBe(401);
   expect((await denied.json()).code).toBe("ACCESS_DENIED");
+});
+
+for (const [version, fixture] of [
+  [1, persistedReportFixture],
+  [2, persistedReportFixtureV2],
+] as const) {
+  it(`serializes v${version} policy terminal recovery without exposing another attempt report or issuing a cookie`, async () => {
+    const report = await fixture(),
+      binding = report.receipt.binding;
+    const terminal = await verifyConsumerPolicyResolution(
+      {
+        schemaVersion: "quizforge.consumer-policy-resolution.v1",
+        kind: "entitlement-completed",
+        binding,
+        bindingSha256: await consumerPolicyBindingSha256(binding),
+        outcome: {
+          kind: "entitlement-completed",
+          session: binding.session,
+          requiresReexchange: true,
+        },
+      },
+      binding,
+    );
+    const d = dependencies({ resolveComplete: async () => terminal });
+    const response = await handleConsumerHttp(
+      await request("resolve-complete", binding),
+      { action: "resolve-complete", sessionId: binding.session.sessionId },
+      d,
+    );
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual(terminal);
+    expect(response.headers.get("set-cookie")).toBeNull();
+    const corrupt = dependencies({
+      resolveComplete: async () => ({
+        ...terminal,
+        bindingSha256: "0".repeat(64),
+      }),
+    });
+    const failed = await handleConsumerHttp(
+      await request("resolve-complete", binding),
+      { action: "resolve-complete", sessionId: binding.session.sessionId },
+      corrupt,
+    );
+    expect(failed.status).toBe(503);
+  });
+}
+
+it("preserves UNKNOWN on lock-observing recovery and uncertain owner close without changing ordinary GET errors", async () => {
+  const f = await persistedReportFixture(),
+    completeBinding = f.receipt.binding;
+  const saveBinding = {
+    schemaVersion: "quizforge.consumer-save.v1" as const,
+    session: completeBinding.session,
+    expectedStateRevision: completeBinding.expectedStateRevision,
+    consumerStateAnswersSha256: completeBinding.consumerStateAnswersSha256,
+    progressSha256: completeBinding.progressSha256,
+  };
+  for (const [action, binding] of [
+    ["resolve-save", saveBinding],
+    ["resolve-complete", completeBinding],
+  ] as const) {
+    const d = dependencies({
+      resolveSave: async () => {
+        throw new ConsumerError("OUTCOME_UNKNOWN");
+      },
+      resolveComplete: async () => {
+        throw new ConsumerError("OUTCOME_UNKNOWN");
+      },
+    });
+    const response = await handleConsumerHttp(
+      await request(action, binding),
+      { action, sessionId: binding.session.sessionId },
+      d,
+    );
+    expect(response.status).toBe(503);
+    expect((await response.json()).code).toBe("OUTCOME_UNKNOWN");
+    const terminal = await verifyConsumerPolicyResolution(
+      {
+        schemaVersion: "quizforge.consumer-policy-resolution.v1",
+        kind: "version-superseded",
+        binding,
+        bindingSha256: await consumerPolicyBindingSha256(binding),
+        outcome: {
+          kind: "version-superseded",
+          session: binding.session,
+          attemptGeneration: 1,
+          currentGeneration: 2,
+          requiresReexchange: true,
+        },
+      },
+      binding,
+    );
+    const closing = dependencies(
+      {
+        resolveSave: async () => terminal,
+        resolveComplete: async () => terminal,
+      },
+      true,
+    );
+    const closeResponse = await handleConsumerHttp(
+      await request(action, binding),
+      { action, sessionId: binding.session.sessionId },
+      closing,
+    );
+    expect(closeResponse.status).toBe(503);
+    expect((await closeResponse.json()).code).toBe("OUTCOME_UNKNOWN");
+    expect(closeResponse.headers.get("set-cookie")).toBeNull();
+  }
+  const get = dependencies({
+    readSession: async () => {
+      throw new ConsumerError("OUTCOME_UNKNOWN");
+    },
+  });
+  const read = await handleConsumerHttp(
+    await request("session"),
+    { action: "session", sessionId: completeBinding.session.sessionId },
+    get,
+  );
+  expect((await read.json()).code).toBe("UNAVAILABLE");
 });

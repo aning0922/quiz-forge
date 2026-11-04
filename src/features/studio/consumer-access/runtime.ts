@@ -1,3 +1,4 @@
+import { createConsumerActivationService } from "@/features/product/internal-play/activation-service";
 import "server-only";
 import { createConsumerRequestOwner } from "@/features/fulfillment/consumer-flow/request-owner";
 import { createInternalPlayService } from "@/features/product/internal-play/service";
@@ -18,6 +19,7 @@ export function handleStudioConsumerRouteV1(
     endpoint,
     {
       createOwner: createConsumerRequestOwner,
+      createActivationService: createConsumerActivationService,
       createPlayService: createInternalPlayService,
       createAccessService: createAccessKeyService,
     },

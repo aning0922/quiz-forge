@@ -1,3 +1,8 @@
+import { QIANZAI_CLASSICAL_EDITION } from "./classical-edition";
+import { qianzaiKnownEditorial } from "./known-ten-editorial";
+import { QIANZAI_KNOWN_ROLE_DATA } from "./known-role-data";
+import { qianzaiKnownPresentationSourceMatches } from "./known-presentation-source";
+import { qianzaiSupportedThemeReading } from "./supported-theme-reading";
 import { sameConsumerFact } from "@/lib/consumer-contract/v1/integrity";
 import type { ComposedReportBodyV1 as Body } from "@/lib/assessment-contract/composed-report-v1";
 import type { QianzaiReportBlock, QianzaiReportDocument } from "./presentation";
@@ -15,6 +20,7 @@ import {
   qianzaiSupportedThemes,
   qianzaiSupportedParagraph,
   qianzaiSupportedThemeText,
+  qianzaiSupportedThemeHeadingText,
   type QianzaiParagraphSupport,
 } from "./supported-themes";
 
@@ -566,7 +572,9 @@ const sameRef = (a: Ref, b: Ref) =>
   a.productId === b.productId && a.id === b.id && a.version === b.version;
 export type QianzaiConsumerCopy = Readonly<{
   consumerEdition: true;
-  consumerCopyVersion: typeof QIANZAI_CONSUMER_COPY_VERSION;
+  consumerCopyVersion:
+    | typeof QIANZAI_CONSUMER_COPY_VERSION
+    | typeof QIANZAI_CLASSICAL_EDITION.copyVersion;
   sections: readonly Section[];
 }>;
 /** Known bound presentation only. Unknown source/role/version stays on the
@@ -605,6 +613,93 @@ export function qianzaiConsumerCopy(
   )
     return undefined;
   const copy = ROLE_COPY[role.ref.id as keyof typeof ROLE_COPY];
+  return composeConsumerCopy(
+    body,
+    role,
+    copy,
+    ROLE_CONNECTION[role.ref.id as keyof typeof ROLE_COPY],
+    QIANZAI_CONSUMER_COPY_VERSION,
+  );
+}
+
+/** New edition prose requires its exact derived profile and the same sealed body. */
+export function qianzaiKnownConsumerCopy(
+  body: Body,
+  result: QianzaiResultPresentation,
+): QianzaiConsumerCopy | undefined {
+  if (
+    result.profileVersion !== QIANZAI_CLASSICAL_EDITION.presentationVersion ||
+    !qianzaiKnownPresentationSourceMatches(
+      result.source.canonicalContentSha256,
+    ) ||
+    !qianzaiPresentationMatchesBody(body, result) ||
+    result.source.canonicalContentSha256 !==
+      body.provenance.canonicalContentSha256 ||
+    result.source.inputHash !== body.provenance.inputHash ||
+    result.source.answersHash !== body.provenance.answersHash ||
+    result.source.matchingContextSha256 !==
+      body.provenance.matchingContextSha256
+  )
+    return undefined;
+  const data = qianzaiKnownEditorial(body.matching.selected.ref);
+  if (
+    !data ||
+    !sameConsumerFact(data.profile, result.role, 65536) ||
+    !data.profile.quotes.some((q) => sameConsumerFact(q, result.quote, 8192))
+  )
+    return undefined;
+  const role = data.profile,
+    copy = data.copy;
+  return composeConsumerCopy(
+    body,
+    role,
+    {
+      opening: copy.opening,
+      echo: copy.echo,
+      historyTitle: role.history.title,
+      historyIntro: copy.historyIntro,
+      history: role.history.timeline,
+      sourceNote:
+        role.history.sourceNote +
+        " 资料来源：" +
+        copy.historySources.map((s) => s.label).join("；"),
+    },
+    copy.whyByTopic,
+    QIANZAI_CLASSICAL_EDITION.copyVersion,
+    {
+      neutralWhy: copy.neutralWhy,
+      closing: copy.closing,
+      evidenceReading: true,
+      patternTitle: `与${role.displayName}的呼应`,
+    },
+  );
+}
+
+type CopyRole = Pick<
+  (typeof QIANZAI_ROLE_PROFILES_V11)[number],
+  "ref" | "displayName" | "courtesyName"
+> & { lifespan?: string };
+type RoleCopy = Readonly<{
+  opening: readonly string[];
+  echo: string;
+  historyTitle: string;
+  historyIntro: string;
+  history: readonly { title: string; text: string }[];
+  sourceNote: string;
+}>;
+function composeConsumerCopy(
+  body: Body,
+  role: CopyRole,
+  copy: RoleCopy,
+  connections: Readonly<Record<string, string>>,
+  version: QianzaiConsumerCopy["consumerCopyVersion"],
+  options?: Readonly<{
+    neutralWhy?: readonly string[];
+    closing?: readonly string[];
+    evidenceReading?: boolean;
+    patternTitle?: string;
+  }>,
+): QianzaiConsumerCopy {
   const highlights = qianzaiSupportedThemes(body);
   const reflectionTopics = new Set<string>();
   const reflections = REFLECTION_SUPPORT.flatMap((spec) => {
@@ -662,21 +757,39 @@ export function qianzaiConsumerCopy(
     {
       id: "patterns",
       ...SECTION_COPY.patterns,
-      title: `${CONNECTION_TITLE}${role.displayName}`,
+      title: options?.patternTitle ?? `${CONNECTION_TITLE}${role.displayName}`,
       intro: CONNECTION_BOUNDARY,
-      blocks: highlights.length
-        ? highlights.map(({ feature, snapshot }) =>
-            block(
-              `${feature.text}\n\n${ROLE_CONNECTION[role.ref.id as keyof typeof ROLE_COPY][feature.topic]}\n\n${LIFE_CONTEXT[feature.tag]}`,
-              "card",
-              feature.title,
-              snapshot,
-            ),
-          )
-        : [
-            block(`${copy.opening[0]}\n\n${NEUTRAL_CONNECTION}`),
-            block(QUIET_PATTERN),
-          ],
+      blocks:
+        options?.evidenceReading && highlights.length
+          ? qianzaiSupportedThemeReading(body).map((reading) =>
+              block(
+                [
+                  reading.choice,
+                  reading.meaning,
+                  connections[reading.topic],
+                  reading.condition,
+                  reading.nextStep,
+                ].join("\n\n"),
+                "card",
+                reading.title,
+                reading.snapshot,
+              ),
+            )
+          : highlights.length
+            ? highlights.map(({ feature, snapshot }) =>
+                block(
+                  `${feature.text}\n\n${connections[feature.topic]}\n\n${LIFE_CONTEXT[feature.tag]}`,
+                  "card",
+                  feature.title,
+                  snapshot,
+                ),
+              )
+            : options?.neutralWhy
+              ? options.neutralWhy.map((text) => block(text))
+              : [
+                  block(`${copy.opening[0]}\n\n${NEUTRAL_CONNECTION}`),
+                  block(QUIET_PATTERN),
+                ],
     },
     {
       id: "counterevidence",
@@ -706,15 +819,17 @@ export function qianzaiConsumerCopy(
     {
       id: "closure",
       ...SECTION_COPY.closure,
-      blocks: (highlights[0]
-        ? CLOSING_BY_TOPIC[highlights[0].feature.topic]
-        : NEUTRAL_CLOSING
+      blocks: (
+        options?.closing ??
+        (highlights[0]
+          ? CLOSING_BY_TOPIC[highlights[0].feature.topic]
+          : NEUTRAL_CLOSING)
       ).map((text, i) => block(text, i === 2 ? "final-verse" : "body")),
     },
   ];
   return {
     consumerEdition: true,
-    consumerCopyVersion: QIANZAI_CONSUMER_COPY_VERSION,
+    consumerCopyVersion: version,
     sections,
   };
 }
@@ -766,4 +881,31 @@ export function qianzaiConsumerCopyText(): readonly string[] {
     "选择的方向",
     "留给下一次",
   ];
+}
+
+/** Complete possible new-edition decorative headings, never the whole biography
+ * or source-note corpus. Middots are rendered by the export's existing Serif run. */
+export function qianzaiKnownBrushText(): readonly string[] {
+  return [
+    "千载同心",
+    "五维心象",
+    "0123456789%",
+    "留给下一次",
+    " ",
+    ...Object.values(SECTION_COPY).flatMap((section) => [
+      section.title,
+      section.chapterLabel,
+      section.tocTitle,
+    ]),
+    ...DIMENSION_COPY.map((row) => row.title),
+    ...Object.values(REFLECTIONS).map((row) => row.title),
+    ...qianzaiSupportedThemeHeadingText(),
+    ...QIANZAI_KNOWN_ROLE_DATA.flatMap(({ profile, copy }) => [
+      profile.displayName,
+      `与${profile.displayName}的呼应`,
+      profile.history.title,
+      ...profile.history.timeline.map((row) => row.title),
+      copy.closing[2],
+    ]),
+  ].map((text) => text.replaceAll("·", ""));
 }

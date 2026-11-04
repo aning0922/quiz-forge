@@ -1,4 +1,6 @@
 "use client";
+import { useQianzaiMusic } from "./music-context";
+import { Sparkle } from "lucide-react";
 
 import {
   useCallback,
@@ -730,6 +732,7 @@ export function QianzaiReportReader({
   actions?: ReactNode;
   embedded?: QianzaiEmbeddedReport;
 }) {
+  const music = useQianzaiMusic();
   const container = useRef<HTMLDivElement>(null),
     reader = useRef<HTMLElement>(null),
     toc = useRef<HTMLDivElement>(null);
@@ -925,6 +928,15 @@ export function QianzaiReportReader({
                       </span>
                     </button>
                   ))}
+                  {music && (
+                    <button
+                      aria-pressed={music.state.phase === "playing"}
+                      onClick={music.toggle}
+                    >
+                      {music.label}
+                      <span>{music.state.message}</span>
+                    </button>
+                  )}
                   {onLogout && <button onClick={onLogout}>结束本次访问</button>}
                 </nav>
               </div>
@@ -1156,7 +1168,13 @@ export function QianzaiReportReader({
                         同心
                       </div>
                       <div className={c("rp-endline")}>
-                        <span>✦</span> 长卷已展至尽处 <span>✦</span>
+                        <span>
+                          <Sparkle size={16} aria-hidden="true" />
+                        </span>{" "}
+                        长卷已展至尽处{" "}
+                        <span>
+                          <Sparkle size={16} aria-hidden="true" />
+                        </span>
                       </div>
                       <div className={c("rp-share-actions")}>
                         {actions ?? (

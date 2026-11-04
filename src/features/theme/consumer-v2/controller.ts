@@ -1,3 +1,8 @@
+import {
+  consumerReexchangeReason,
+  type ConsumerReexchangeReason,
+} from "@/lib/consumer-contract/policy-display";
+import type { ConsumerPolicyResolution } from "@/features/fulfillment/consumer-flow/policy-contracts";
 import type { MatchingContextV1 } from "@/lib/assessment-contract/matching-v1";
 import type {
   ConsumerV2ReaderModel,
@@ -45,7 +50,10 @@ import {
 
 export type ConsumerScreenV2 =
   "cover" | "question" | "resume" | "review" | "result" | "report" | "poster";
-type Resolution = ConsumerSaveResolutionV2 | ConsumerCompleteResolutionV2;
+type Resolution =
+  | ConsumerPolicyResolution
+  | ConsumerSaveResolutionV2
+  | ConsumerCompleteResolutionV2;
 export type ConsumerHostStateV2 = Readonly<{
   phase:
     | "loading"
@@ -58,6 +66,7 @@ export type ConsumerHostStateV2 = Readonly<{
     | "unavailable";
   screen: ConsumerScreenV2;
   keyExpired: boolean;
+  reexchangeRequired?: ConsumerReexchangeReason | undefined;
   session?: ConsumerSessionViewV2 | undefined;
   entry?: ConsumerEntryViewV2 | undefined;
   report?: PersistedReportViewV2 | undefined;
@@ -187,6 +196,10 @@ export class ConsumerControllerV2 {
       report: v.report ?? null,
       pendingOperation: v.pending?.operation ?? null,
       savedAt: v.accepted?.lastSave?.savedAt ?? null,
+      reexchangeRequired:
+        v.reexchangeRequired ??
+        consumerReexchangeReason(v.resolution) ??
+        consumerReexchangeReason(v.session?.outcome),
       message:
         v.resolution?.kind === "unresolved"
           ? "原操作尚未核实；请稍后再次核实，不会重新发送。"
@@ -263,6 +276,7 @@ export class ConsumerControllerV2 {
     this.#publish({
       phase: "loading",
       keyExpired: false,
+      reexchangeRequired: undefined,
       session: undefined,
       entry: undefined,
       report: undefined,
@@ -325,6 +339,10 @@ export class ConsumerControllerV2 {
       if (session.outcome.kind === "completed") {
         await this.#report(session.outcome.report, task, screen ?? "result");
         if (task.current() && pending) this.#publish({ phase: "pending" });
+        return;
+      }
+      if (!("state" in session.outcome)) {
+        this.#publish({ phase: pending ? "pending" : "unavailable" });
         return;
       }
       const entry = await client.readConsumerEntryV2(
@@ -580,7 +598,15 @@ export class ConsumerControllerV2 {
       return;
     this.#publish({ phase: "busy" });
     try {
-      await this.#adopt(v.pending, v.resolution, task);
+      const observed =
+        "state" in v.resolution
+          ? await client.readConsumerSessionV2(
+              this.sessionId,
+              this.#context(task),
+            )
+          : undefined;
+      if (!task.current()) return;
+      await this.#adopt(v.pending, v.resolution, task, undefined, observed);
     } catch {
       this.#fail(task);
     }
@@ -590,6 +616,7 @@ export class ConsumerControllerV2 {
     resolution: Resolution,
     task: ConsumerTaskV2,
     nextScreen?: ConsumerScreenV2,
+    observed?: ConsumerSessionViewV2,
   ) {
     if (resolution.kind === "unresolved") return;
     if ("state" in resolution && this.#value.entry)
@@ -605,7 +632,31 @@ export class ConsumerControllerV2 {
       await this.#report(resolution.report, task, "result");
       return;
     }
-    const state = resolution.state;
+    const reason =
+      consumerReexchangeReason(resolution) ??
+      consumerReexchangeReason(observed?.outcome) ??
+      this.#value.reexchangeRequired ??
+      consumerReexchangeReason(this.#value.session?.outcome);
+    if (observed?.outcome.kind === "completed") {
+      await this.#report(observed.outcome.report, task, "report");
+      return;
+    }
+    if (!("state" in resolution) || reason) {
+      this.#publish({
+        phase: "unavailable",
+        reexchangeRequired: reason,
+        entry: undefined,
+        accepted: undefined,
+      });
+      return;
+    }
+    // Policy revalidation must never roll an exact recovered receipt back to an older state.
+    const state =
+      observed &&
+      "state" in observed.outcome &&
+      observed.outcome.state.stateRevision > resolution.state.stateRevision
+        ? observed.outcome.state
+        : resolution.state;
     this.#publish({
       accepted: state,
       answers: state.answers,

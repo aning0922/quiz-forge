@@ -1,4 +1,4 @@
-import data from "./implementation-data/d3-runtime-bindings.json";
+import data from "./implementation-data/d3-runtime-bindings-audio-buttons.json";
 import { z } from "zod";
 import {
   engineImplementationEntryV2Schema,

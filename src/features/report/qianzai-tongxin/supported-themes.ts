@@ -1,5 +1,6 @@
 import type { ComposedReportBodyV1 as Body } from "@/lib/assessment-contract/composed-report-v1";
 import { qianzaiPresentationSourceMatches } from "./presentation-source";
+import { qianzaiKnownPresentationSourceMatches } from "./known-presentation-source";
 type Paragraph = Body["volumes"][number]["paragraphs"][number];
 type Ref = Body["matching"]["selected"]["ref"];
 const sameRef = (a: Ref, b: Ref) =>
@@ -268,7 +269,12 @@ export function qianzaiSupportedParagraph(
   volume: "patterns" | "counterevidence",
   spec: QianzaiParagraphSupport,
 ): Paragraph | undefined {
-  if (!qianzaiPresentationSourceMatches(body.provenance.canonicalContentSha256))
+  if (!(
+    qianzaiPresentationSourceMatches(body.provenance.canonicalContentSha256) ||
+    qianzaiKnownPresentationSourceMatches(
+      body.provenance.canonicalContentSha256,
+    )
+  ))
     return undefined;
   const matches = (
     actual: Paragraph["evidence"],
@@ -334,4 +340,8 @@ export function qianzaiSupportedThemeText(): readonly string[] {
     f.seen,
     ...f.short,
   ]);
+}
+/** Actual card-heading strings for the fixed export brush face. */
+export function qianzaiSupportedThemeHeadingText(): readonly string[] {
+  return Object.values(FEATURES).map((feature) => feature.title);
 }

@@ -706,7 +706,7 @@ export const internalVersionSchemaFacts = {
     {
       signature: "qf.internal_review_valid(qf.draft_review)",
       body_sha256:
-        "26ede0af9cad05945388bf68ef40fa99fcc2d09b7980c9e399eb340f661bdd8d",
+        "364a6c22b3fd2dabe21ed2cab314ccf40c31b8ed1047d3b87805ca909a3a4673",
       volatility: "s",
     },
     {

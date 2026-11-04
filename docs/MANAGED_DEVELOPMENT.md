@@ -2,6 +2,254 @@
 
 开发、验证、独审和收口统一遵循 [根 AGENTS.md](../AGENTS.md)。本文件的带日期条目、测试数量、全量运行和逐图复核均保留为原批次记录，不要求新任务重新执行。当前任务以用户最新授权及最新实际检查点为准；文档中的旧“尚未合并”“待实现”和阶段启动指令不覆盖后续事实。
 
+## 2026-11-04 圆钮与音乐运行交接（1.5.3 / generation4）
+
+当前experience根运行源码 `ffc101305914d43b2caf84fdbf2fa8aa5a282ced`，BUILD_ID `fdMDLGgQGuF57PO1BoOxT`，HTTP PID97618/63238、PG55538、00486/test，imports关闭，数据库owner已关闭。当前play `58c8d641-5a96-4b62-a441-e2a441a8eeaf` / g4，consumer1.5.3 entry `02f57b4310df87fbe8e318f3a5ed4eb74567883d803be2bd8627967a327beaff`。动态圆钮居中和固定原创候选音轨实际播放已接通；真实GET/HEAD/Range/metadata、quiz/reveal六个视图、同Audio连续、循环回绕、报告菜单及媒体失败后显式重试完成定向验证。首驱动目录定位超时及后续遗漏上滑入口的超时保留，正常入口补验通过，不重发业务完成；准确范围见PROGRESS。
+
+新完整私有体验交接为`.cache/known-ten/author-handoff-v3/author-experience.html`，另quick-reveal.html含23题合成输入、无report，仅验音乐与揭晓；旧v1/v2码与报告保持且未读取。点击音乐按钮显式播放，候选曲目尚待作者听感确认，不能外推实机/内容/商业批准。旧1.5.2与更早报告只读保护、14份旧合成报告/旧3play/首UNKNOWN完整行保持；原构建及失败预检构建均原inode封存。新build没有新native资格，不执行导入。R已准确窄审f28..ffc1013来源差异无阻断。后续只收现有文档/PR记录与实际CI；不追加实现或全套检查，不合并main或生产发布。
+
+## 2026-11-04 十角色实际体验运行交接（1.5.2 / generation3）
+
+当前体验根为`quizforge-qztx-known-ten-experience/quiz-forge`，实例00486f17f741bd6d6535429e6552d161/test、PG55538、HTTP63238/PID23376；运行源码 `f2c8b317e6b998103af525102b90f48fd10aab34`、BUILD_ID `ctp2Sgm7LTj10o9mTWz1F`。正常新play `caa42e46-d164-4860-ae54-6f560184766e` 已启用g3/consumer1.5.2。已审最小加载优先级与同lease完整事实去重，在同条件末题路径实测人物可见12.032→5.003秒、完整揭晓就绪6.031秒，原2秒动效保持；具体条件与限制见PROGRESS最新条目。
+
+旧作者码已实际体验，本轮不读取其key/session/答案/report，不再沿用旧unused断言。新完整体验码正常签发至本机`.cache/known-ten/author-handoff-v2/author-experience.html`（另TXT/0600），最终元事实session/grant/report=0。另`quick-reveal.html`为已兑换/正常保存23题合成答案、从q24继续、仅验揭晓速度、非个人测评；正常再兑换已证实恢复同attempt，无report，不称unused。原v1交接及旧结果保留。公开入口仍先封面，原CTA/手势打开原兑换弹窗。
+
+正常重启仅停止本自有63238进程；从体验根使用`QUIZFORGE_P2A_CONFIG="$PWD/.cache/p2a/00486f17f741bd6d6535429e6552d161/runtime.json" QUIZFORGE_PLATFORM_ART_DIR="$PWD/.cache/known-ten/public-platform-art-v1" pnpm start --port 63238`。固定公开marketing五文件配置保持，不以私有QuizPack目录代替。imports关闭；新build没有新native导入资格，原8f/87两seal与a958/e806旧构建均保留，不借用资格。
+
+本轮只对照13个明确自有合成report ID、旧两play及首个UNKNOWN完整行，均保持；没有全表report/答案/哈希读取。原首个held/UNKNOWN预留保持，新独立validation仍ready revision8。私有审计`reveal-latency/final-audit-v2.receipt.json`记录准确新build/PID/新码状态，owner已关闭。after完成后只做文档与PR同步，不重复验证/构建；最终自动CI据准确HEAD实际回读。旧作者63227、b3、63226及其他UNKNOWN不属于本运行身份。本交接不授予main合并、生产迁移/部署、Release或商业发布。
+
+## 2026-11-04 正式runner修复优先，一次性前32脚本停用
+
+93a69f8脚本未执行且已从当前源码移除。00486原raw32 ACL作为真实失败输入保持，等待准确runner diff审查。修复仅在0032→0033边界于原迁移事务内复用ACL尾部，维护/无外部连接检查后执行原033；失败连checkpoint回滚，不改应用SQL或账本。详见PROGRESS最新设计及migrate.ts候选；本条不放行DB执行。
+
+## 2026-11-04 主控最终取舍：不实施故障control维护交换
+
+下节维护方案只保留审查历史，不实施。主控选择一次正常新演示worktree/test身份，原b3整根与guard保持原样BUSY隔离，不扩生产恢复框架。新root/identity及fresh 0033 ACL前置失败和已有正常迁移器的前32收尾候选见PROGRESS最新条目；候选需准确审查后才能执行。新source/下一空闲迁移仍另审，不能重写0033、借旧capability或无限创建root重试。
+
+## 2026-11-04 本次case61故障control维护设计（待主控/R审批，未执行）
+
+**目的与范围。** 只把原已后来确认停止的离线fault夹具移入固定私有quarantine，保存原失败及全部证据，并让固定main入口继续BUSY。不是原封存通过、stopProof补录、通用owner恢复、解锁或再次provision。原第三轮根因仍UNKNOWN，新隔离case一次通过仅证明新case。实施前另核准确私有一次性脚本diff；本条只有设计，不含已执行操作。
+
+**现有协议取舍。** `src/features/quizpack/server/media/internal/macos/control.ts:166`明确所有遗留record/guard阻止启动；finish是原acquire返回的闭包，核原record及guard inode后unlink/rmdir，没有外部磁盘恢复入口。原闭包已随进程结束，不能重建。现有`provision-cli.ts`的offline-exclusive是主控串行调用前置，不是所有媒体进程共同持有的OS锁；新增一把脚本锁也不能假称保护了生产入口。保持原目录原位最小且已完成，但不能推进后续维护。简单rename后补建control会产生路径缺失窗口，因此本候选采用带阻挡目录的原子交换，隔离后仍不允许媒体启动。
+
+**只限以下身份。** 根固定为`/Users/aipuli/.codex/worktrees/quizforge-qztx-known-ten-final/quiz-forge`，b3/test/55537/63237；源为根下`.cache/quizpack-media-runtime/darwin-arm64/control`。文件系统dev16777229，control inode221910645/0700/uid501，内容严格只有active.json与空guard；active inode221912111/0600/nlink1/SHA `35d3dc06ded6a6ed99d5ddc74174bc4160f8bf199d4b954e955c364227ad2bce`；guard inode221912107/0700/uid501/空目录。record必须逐字段同原：schema mac-media-active.v1、runId8af99f02-31a4-44ec-8622-9189151585e7、fault profile `20d58ffe55ae542f1de81e8ff04ac87c3d8d62cd171f09caa1314cc14b2c0ab4`、phase spawned、owner52964、worker53047、workerStart sec1793781153/usec563394、createdAt2026-11-04T08:32:33.540Z。该fault case来自第三轮5f46342d-a592-48ed-b97e-7c621076d0c9，harness51593由同轮unknown-control owner提供；不是业务decode。本轮原summary/identity/unknown-control及inode索引路径见PROGRESS，执行前全部重新核对，不接受从当前磁盘新算摘要替换已独立记录的期待值。
+
+**最终前置。** 主控明确保留唯一维护窗口，所有其他任务不得使用此根的setup/matrix/diagnostic/provision/HTTP/媒体调用；A不启动后台任务。PG/HTTP端口无监听、postmaster.pid不存在；对本次原harness51593/owner52964/worker53047及诊断owner77933/worker77938使用原已钉SHA的native helper及Node再次查询，必须全部present=false，PID复用/无法读身份即停止。补核本UID本根的进程cwd、命令/打开文件只剩维护观察者；这只是当时观察，独占仍依赖主控窗口约束，不能把进程列表当锁。原helper/Node SHA分别取固定原identity：4f992dde8f5bfa91ab0aeb29e8f5575557b35b9cbcb7d92c9a9c4150dd7ef35e / cc07abaa8f24243a30a37a19ce26556fd044ba4346c6bcdd8f901ec12b7484a2。任何不一致拒绝，不kill不重试。
+
+**业务与留存边界。** 原b3最后已确认33迁移后imports/product_assets/asset_blobs/keys/sessions/reports/heads/activations全0，之后仅离线媒体夹具、PG一直停止。实施前核原33后验/stop及操作日志连续性；不为此重启库，不将未重新查询的历史计数称实时DB查询。额外只读检查本root固定storage/receive/validation残留、capability.json及candidate-record.json仍无新提交，若发现无法归属的reservation、上传、validation、resource IO或活进程就拒绝隔离，转原操作调查。不得删除或回写DB、upload、validation、receipt、配额账本和任何业务锁。原两轮成功及第三轮失败、诊断记录全部保留，不移动它们。
+
+**拟实施的唯一变更。** 只读前置全部成立后，持久化0600维护intent（精确根/源/目标/原inode/hash/预期动作/不授资格），fsync文件与父目录。目标固定为根下`.cache/known-ten/failed-control-8af99f02-31a4-44ec-8622-9189151585e7/control`；整个外层目录必须此前不存在，创建0700外层及0700目标control/空guard，不造active.json。记录新control及新guard的dev/inode/mode/uid并fsync，目标与源必须同dev。用O_NOFOLLOW/O_DIRECTORY打开两个父目录，绑定realpath/dev/inode，最终再次核原内容、双方目录身份及原生identity。一次性私有脚本只接受这些常量，无任意路径/record输入，不加入生产API。
+
+使用本机SDK声明的`renameatx_np(..., RENAME_SWAP)`，通过两个已打开父目录fd交换两个已存在目录；没有先rename后创建路径的空窗，也不调用finish/unlink/rmdir。SDK `sys/stdio.h`已确认声明及flag，卷实际支持与调用结果仍需届时验证；不支持、EXDEV或任何错误均停止，不降级为copy/delete、两段rename或自动重试。单次操作后源固定路径应是新guard-only blocker，按现有acquireControl返回BUSY；quarantine/control应为原control inode221910645，内原active/guard inode与字节不变。原目录rename引起的系统ctime变化允许且记录，不伪造时间；其他模式/owner/文件字节/nlink必须保持。只读核双方映射及原证据后fsync两个父目录，写独立维护receipt，状态名只用LATER_STOPPED_FAULT_FIXTURE_QUARANTINED_MAIN_STILL_BLOCKED。
+
+| 路径                   | 交换前                   | 交换后                         |
+| ---------------------- | ------------------------ | ------------------------------ |
+| 原固定main/control     | 原active+原guard（BUSY） | 新guard-only blocker（BUSY）   |
+| 本次quarantine/control | 新guard-only blocker     | 原control整体/原active/原guard |
+
+**失败与不确定。** 交换不可自动重试（第二次会换回），不按进程退出猜结果。若返回/receipt/fsync不确定，只读检查两个目录的已记录inode映射：原inode仍在源且新inode仍在目标为未交换；完全相反为已交换的可观察状态，但durability/receipt若未确认仍保持UNKNOWN；任意其他映射/字段变化均UNKNOWN并保全两处，不再移动或清理。保留原guard与新blocker，不借成功诊断“修正”原失败。任何无主控独占保证或无法证明安全隔离的情况，都停留在原control不变状态。
+
+**后续单独门槛。** 本维护成功也不恢复运行：新blocker继续阻止入口，没有capability/record/原stopProof写入。主控/R另行决定何时处理本次新blocker及是否按变化后的真实source/build/profile运行新的固定封存流程；没有复用/拼接原两轮的资格，也没有整轮重试授权。旧63226 UNKNOWN、作者实例和原构建不在本方案任何路径内。
+
+**主控补充的两路径比较（均未执行）。**
+
+| 比较项              | A：本次故障目录整体隔离并保留main blocker                                                                              | B：原b3根永久原样保留，正常新demo工作树/test身份一次                                                                                                                                                                                                                                             |
+| ------------------- | ---------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 生产control/acquire | 不改；现有BUSY和finish规则保持                                                                                         | 不改；新root自然空control                                                                                                                                                                                                                                                                        |
+| 新机制              | 一份只接受固定root/run/hash/inode的私有一次性维护脚本，使用本机目录交换；不注册通用恢复API                             | 复用现有worktree/管理器init和固定media脚本，不移原control                                                                                                                                                                                                                                        |
+| source/SQL/renderer | 复用b3已通过source/0033/当前闭包；正式media身份仍须考虑37db工具变化                                                    | 新init产生新ID/origin；privateTestUse改变canonical source，即使53资源不变也不能沿用6f source hash。需要新marker有限语法、registration、baseline/approval、source及manifest hash、新有限追加DDL及准确审查；current known-presentation-source/binding也需接准确新source并重收受影响D3/历史适配闭包 |
+| 可复用              | 字体、53资源、评分/4344、SQL不变量、当前实例数据与精确source证据                                                       | 原素材字节、字体、评分/4344及不变服务证据；需核新source实际语料/正文覆盖，不重新生字体或搜索4344凑数量                                                                                                                                                                                           |
+| 原现场              | 原active/guard/control inode及字节整体保存到quarantine，原固定路径改为新blocker；目录名/父目录发生明确维护变更         | 原根/manifest/ID/control/失败完全原位保留                                                                                                                                                                                                                                                        |
+| 关键新风险          | 特权同UID误用、原生目录操作结果不明、独占前置不足；用常量身份、双目录inode观察、不重试交换、持久化intent及持续BUSY约束 | 更多持久化/授权/闭包变更；新hash/migration/native目标完整收口；不能改旧manifest/root/id或借旧capability，不能把新实例通过归为旧实例恢复                                                                                                                                                          |
+| 封存与失败          | 此维护不准许再次provision；需另放行当前真实身份的运行窗口                                                              | 仅一次新root/test目标，不是反复换root直到成功；若同一case失败则保留新现场停止，不再新建第三个root                                                                                                                                                                                                |
+
+**建议。** 优先交R审A，因为它不要求改生产control、不加通用恢复接口、不扩大source/SQL权限；本次明确是零业务效果的自有fault夹具，后验native身份消失已有独立证据。维护仅把已结束的测试残留保存并继续阻挡入口，后续解锁/正式封存仍由主控单独决定。若R认为不存在可审计的一次性原子隔离路径，或无法保障该root独占/身份/同卷目录交换，则保留原样选择B，不扩生产恢复框架。
+
+B若被选择，先正常新worktree/test init，不能预填新ID/三hash或复用旧名称；复用本批原件metadata和53字节后重组实际privateTestUse，正常capability构建/有限SQL准入/当前catalog/实现登记，再新生产build与固定目标封存。新迁移号届时主控串行核定（拟下一个号不等于现在获准）；不得重写0033。无需重新画图、改题或重跑未变服务套件，但路径与身份改变所需native封存不能省略。两路径都不建立原case61在原期限成功或解释原根因；原失败永久独立保留。新诊断仅一次通过，不能保证任一路径的后续matrix必过。
+
+## 2026-11-04 旧报告只读与外层终态入口：6a9cb4a 的单项P2补充设计（待窄审）
+
+本条只补R指出的历史可展示边界，不重开已通过的六点主体或3833d60服务。现状确认：`consumer-v2/experience.tsx`先取report/entry三字段，再由`internal-play/implementation-client-v2.ts`的current available门控选择组件；旧JSON只保留metadata不会挂载旧报告。当前千载runtime、export-context/export-owner还直接取当前resource/font/component-map，`result-presentation`限定1.4，且1.3与1.4虽同copy.v2字符串，consumer-copy实际字节不同。因此不能仅放开available或给旧entry绑定当前组件。
+
+1. **两种独立保留。** 63227的原1.3构建、63230的原1.4构建、作者数据库/Key/记录及全部UNKNOWN原样保留，不在运行根重建或升级。这是现场保留，不能替代新构建的历史读取。新构建另有两个明确的只读入口绑定：1.3原renderer完整身份`consumer-renderer / consumer-qianzai-tongxin / 1.3.0 / 9732bdfd555a05ceb412ee8c8918fa9a8b076b6acff38a6035a08dd4bb4aadbe`（源码`6540d7b05152dc5e57174e68d52ffa510847d3ff`）及1.4原完整身份`consumer-renderer / consumer-qianzai-tongxin / 1.4.0 / b88be4dd0e187169edf7f88f789e6b23685b7a795a792dd74936a6fa998b4809`（源码`1f2177bcd15e47c1ec4120f324eccce9608489e0`）。仅这两个成功tuple在本批范围；旧失败entry、其他早期renderer继续不可用，不按版本号匹配或nearest fallback。
+2. **冻结实际只读闭包。** 在A新源码增加千载专用`historical-v13`/`historical-v14`静态只读组合，各从上述准确commit取报告阅读/纯document与presentation/copy/双PNG layout、相关角色数据、CSS、runtime-inputs/editorial-font descriptor的实际必要闭包；相同原字节可共享冻结模块，不带评分、entry投影、答题/完成组件或旧controller。原路径/commit/原SHA与适配后实际文件SHA均随现有implementation收集工具核对；读取适配器是新闭包，不能把复制/改import后的文件称为原entry源码hash仍匹配。旧renderer identity仅标识snapshot所属展示合同，保持旧descriptor不可写执行；新适配器有自己实际闭包证明。新1.5登记也应收进宿主新增resolver依赖，旧1.3/1.4 JSON不改写。固定Serif分别1.10.0/V11与1.11.0/V12，Literary分别1.3.0/V4与1.4.0/V5，Brush均1.3.0/V4，font/coverage/OFL全部复用原实际字节，不能从新font常量取；旧presentation.v1.1和各自copy.v2字节、完整旧ref/hash不改为十人v2/v3。实现时固定旧report/PNG路径，不复制无关整站或引入通用兼容框架。
+3. **报告专用解析及完整身份。** v2外层在已验证`internal.report`存在时才调用独立`resolveHistoricalReportRuntimeV2(report)`；当前entry解析与server `fixedConsumerExecution`仍只认当前available。只读resolver核已验证receipt/view/session/parent、renderer四字段、mapping对象及mappingSha256、Serif完整font identity，并对照对应冻结profile的presentation/copy/source有限表、result/resource完整product/id/version/SHA/bytes/mediaType/尺寸/用途。presentation/copy不是新增HTTP授权字段，依据固定renderer映射到冻结代码/资料的hash；资源从原report.display.assets与原play封存资源事实取得，不由角色ID猜图。不匹配即明确不可展示，不试1.5。先完成verifyPersistedReportViewV2/原snapshot完整校验，纯document只投影封存body，不prepare/score/重组成新body，不改report/view/receipt hash。
+4. **读与导出不恢复写权。** 只读组合仅给已完成report/原authority lease；使用现report/resource服务及每次当前grant、原session/key、资源hash授权复核，不把resolver当授权。其事件接口仅允许报告阅读/返回、退出及两PNG本地导出，任何save/complete/preference/answer事件拒绝；不得清pending、生成completionKey、发新grant或启用旧attempt。导出owner改为显式收到对应冻结profile（renderer/mapping/font/resources/document/layout），所有身份与FONT_COVERAGE/lease/失败关闭检查保持，不读新全局常量。DOM和双PNG共用该旧profile的同一document；原人物/分数/原始证据、文字和图片保持原tuple，不声称不同浏览器的PNG压缩字节必然等同历史下载文件。
+5. **本批两个旧tuple都验证，证据分层。** 1.3上述9732…及1.4上述b88…各用隔离合成封存report，逐项核原report/view/body/canonical/资源/字体身份，精确tuple命中与renderer SHA、mapping、font、copy/profile、资源SHA混搭拒绝；无report时不能进入历史resolver、旧attempt写仍拒绝。新生产构建分别实际打开两种历史只读报告、原历史入口/原码返回同一report、真实旧资源取读及海报/完整长图Canvas输出，并核document一致、零新save/complete、失权撤销后不再读/导出。可在全新自有test库预置明确标注的合成历史夹具经现报告/资源授权服务读，不迁移/读取作者记录、不据fixture宣称真实作者升级；夹具与资源存储需沿原合法登记/写入协议，如前置不成立则记录阻断，不能改marker或放宽source准入凑成功。SQL旧完成权限/完成唯一性已通过部分复用3833及原A证据；新两tuple的网络/实际资源/PNG尚未运行，不能用旧实例活着或metadata测试代替。其他早期/失败tuple本批NOT_RUN且无执行映射。
+6. **外层终态入口。** `consumer-v2/experience.tsx`的runtime-null分支也读同一已确认`reexchangeRequired`标志，显示原设计固定终态文案与`使用原兑换码重新进入`→`/access`；不依赖千载Experience挂载或entry/report存在。v1 host、v2正常runtime和外层null分支共用同一有限终态表现；UNKNOWN只显示核原操作和保留提示，不自动当终态、不删除pending。定向组件验证覆盖已确认终态且无entry/report、旧entry不再可用、pending UNKNOWN三个实际分支，按钮可见且不含Key。首页封面和既有兑换modal不变。
+
+**独立取件已完成，最终source仍未冻结。** 主控转交赵云poster v2后，A对新manifest SHA`b4c438519a334419fa71607d892a46b49a074da07212e1d586c7a4979490c923`、ZIP29,997,985B/SHA`e3bfb8831ef1e8e48ae64fea67aef19e18b0bcd741eb56f92d420ba585e63b86`执行取件CLI。53实际字节/完整ref、10×4用途、13共享旧identity与字节、5个代表decode通过，资源payload29,990,083B；A私有回执`.cache/known-ten/art-intake-zhao-v2/result.json`。仅转移/映射证明，不是完整QuizPack、native media/source准入或作者视觉；主控随后明确转交V单项取景复核通过，准确资源/manifest/ZIP hash保持，可作最终技术集成输入；不新增作者或商业批准。原旧ZIP及B所有权不动。
+
+## 2026-11-04 字体源就绪与单资源修正等待
+
+新接线设计`6a9cb4a`待定向复核，已审B服务`3833d60`保持关闭。固定源及OFL六项实际SHA已恢复并核对；NotoSerifSC取原固定Google Fonts commit，MaShanZheng取Google Fonts原文件，Literary取LXGW WenKai SC原文件。TC查找候选SHA不匹配已保留未使用，不改旧pin。私有源/URL/SHA证明位于A树`.cache/known-ten/pinned-font-sources/verified-source-receipts.json`。
+
+固定源TTF的3种缺glyph及2种缺U+0020反例均失败关闭且零subset输出；这不是最终语料或字体覆盖证明。字体工具profile、私有输出保护和环境已准备好，最终语料/UI文案复核后仍各font一次生成。主控最新聚焦赵云poster取景，A尚未执行素材取件或source hash冻结，待新版manifest/ZIP receipt；其余52素材B证据继续复用。新取件CLI显式要求预期archive SHA，不能因同目录路径相同而默收被替换的ZIP；不修改B所有权。
+
+## 2026-11-04 最终十人1.5共享接线设计：待主控/Astra定向复核，未执行新准入
+
+B已由主控明确冻结交接：`delivery-v1/manifest.json`、`archive-receipt.json`、`known-ten-resources-only.zip`；准确ZIP30,087,195B/SHA`82d84066df013eb29303ee631dfea50feb7801552e13b7e944566db56052dab2`，53资源payload30,079,293B，预留后31,406,397B。此为素材包，不是QuizPack。A可按准确输入接收；独立视觉后如改某图，仅更新受影响字节/hash及真实相关闭包。以下收口新增共享接口/可执行登记和source准入设计；本条不授新source、不填尚未存在的hash、不执行迁移。
+
+1. **取件与内容。** A私有cache独立目录保存B原manifest/receipt/ZIP和实际解包字节，复用现restricted ZIP parser与currentResourceV3Schema；核53个完整ref及字节、10×4用途映射、13共享旧identity/图像事实保持，抽苏轼reveal和杨/唐/蔡report、姓名一个代表图实际本地decode。复用B相同输入的全53解码/姓名alpha/裁切组合证据，不重做整套B视觉。新完整content仅将已冻结十人catalog/copy与53声明接入现v3合同，24题、五维、算法/匹配政策不改，既有4344组纯输入结果按实际未变范围复用。源码不得取B review.sourceAdmission=pending当作批准。
+2. **有限终态UI与字体语料。** 仅新增客户端reader model可选`reexchangeRequired`表现标志（不成为server授权），v1 host/v2 controller/共享status/千载experience从已核实的policy终态派生；未知pending保留，只能核实原请求，不能自动清除/重发或生成新completionKey。用户明确采纳原结果后按原exact pending身份处理；若原attempt已过代，不据applied-save重新启用旧题目。终态用固定文案：`题目版本已更新。请使用原兑换码重新进入；本页原操作记录仍会保留。`、`这个兑换资格已完成答题。请使用原兑换码重新进入，查看已保存的报告。`，按钮`使用原兑换码重新进入`，只链接既有`/access`，不携带Key、不自动exchange/发grant。首页/封面CTA与原兑换modal不变。上述固定语料与现全部UI/十人固定正文/题干/PNG文字、U+0020一并收入Serif/Literary/Brush各自真实使用字符集；新profile预检所有glyph/OFL/tool pins后一次subset，不覆盖旧font/descriptor。
+3. **新的精确登记。** Qianzai使用已定consumer1.5.0/preview1.3.0及角色presentation.v2/copy.v3、完整3.0.0 refs，不复用1.4/旧五人selector。新runtime-inputs/字体数据/角色资料接在版本分支；baseline新增独立文件。生成新`d3-runtime-bindings-known-ten.json`，现`d3-runtime-bindings.json`保持原字节并作为历史metadata进入lookup；current registration指向新精确closure，旧tuple不获可执行fallback。engine/structured条目沿既有Schema保留语义id/version而以新entrySha形成新完整identity，原完整tuple作为历史保留；算法版本不因validator/shared合同扩展而伪变更。实际改到的v1 access gateway另新增consumer-folio1.0.3 descriptor/编译identity，1.0.2旧JSON仅保留metadata，legacy engine/folio preview未变不重封存。所有新增policy-contracts/ten-role-identity及实际transitive files/固定新fonts都须收齐；不能只修private-test首错误，不能覆盖旧JSON的hash。
+4. **新实例与source。** 最终build/demo拟在新的受管worktree `codex/qztx-known-ten-final`执行，避免在A旧63234等运行目录重建；不借28267合成图谱、1ec2旧准备身份、作者或UNKNOWN。正常init选择确认空闲的专用test PG/origin（拟55537/63237，以实际管理器为准），取真实instanceId/root/marker后才生成新privateTestUse/有限identity。新authorizationId限定本次已授权工程内测，所有资源商业/再分发false、private-test-only；新source只认此准确身份+三hash+完整资源表和新baseline完整tuple，不扩大到请求/环境动态注册。
+5. **准确DDL闸门。** 目录已到0032，当前下一空闲为0033，主控串行最终核号。完整content/manifest/assetSet/包及baseline/renderer字节稳定后，追加0033有限OR登记，保持旧source clauses、函数签名/owner/search_path/ACL和旧迁移字节；只更新本次有限source/资源/baseline准入函数，不改policy/auth/评分/报告快照格式。前置绑定准确0032 checksum及实际原函数body/结构。准确DDL、完整registration/provenance差异先送主控/Astra窄审，通过后只在新自有实例正常迁移；runtime catalog从该实际最终DB读出后再更新，不猜hash绕校验。
+6. **可观察出口。** 字体真实覆盖、新ref/runtime选择和implementation:check通过后才build；媒体只用新root固定media scripts及原停止/封存协议。新完整QuizPack实际ZIP/文件数/大小与新封存身份核验，按真实服务走导入/审核/封存play/显式启用/资格；一条完整24题、恢复、唯一完成、报告/双PNG/原码回看及本次实际受影响异常。字体/53资源是新运行输入，需对应真实媒体/浏览器证据；B离线/进程内SQL不冒称此出口。旧报告/旧字体仍从原snapshot路径读；作者审美/实机/商业另作相应验收。本设计复核期间可继续取件、收语料/工具准备，不执行新source准入或覆盖旧运行目录。
+
+## 2026-11-04 字体新profile准备与B交件读取
+
+A已补Serif v13/1.12.0、editorial v6/1.5.0；后者要求逐font固定characters、--kind和私有--descriptor-out，缺glyph/错OFL/输出cmap缺字均失败，现有新profile font/manifest禁止覆盖。原editorial active descriptor不被v6生成器写回，最终候选与新版本接线另取精确文件。固定工具venv位于A树`.cache/qztx-font-tools`，无全局设置改动；静态与四输出保护负例通过，未读取真实TTF或subset。实际字库仍待最终UI语料/源文件/最终用途冻结，不把这些准备检查写成覆盖或字体通过。
+
+已找到B的共享私有交接目录：`/Users/aipuli/.codex/worktrees/quizforge-qztx-known-ten-content/quiz-forge/.cache/known-ten-art/delivery-v1/`。仅只读确认manifest为`qianzai.known-ten-art-delivery.v1`、resources40/shared13/characterSlots10及明确非source/DB/runtime准入范围。主控已提示B还在裁切自检；A等待其最终准确字节冻结再绑定，不改B所有权、不据createdAt推定final、不把30,089,041B资源和预留预算冒称最终ZIP大小。字体固定输入与登记接点沿前一条，技术步骤无需再次找作者审批。
+
+## 2026-11-04 B定向恢复补证及最终登记/字体输入交接
+
+HTTP UNKNOWN P2已由`c92f7ea`修复且Astra窄复核关闭；新报告JSON单行修复`b241006`解决真实Drizzle owner端口与裸SQL serializer差异，待R只审该差异及新回执。三故障场景（未提交completion/ACK返回丢失、精确backend断连后迟到callback、启用先于最终事务）分别定向通过；v2 matching-context保存/受控完成/原回执恢复3项通过。详细失败保留、SHA、精确回执及SQL/资源IO证据分层见PROGRESS最新条目。28267正常stop，32迁移/目录保持，其他连接0；不重跑已过A10+5或六不变量。
+
+**登记依赖已只读核清。** `.cache/known-ten/policy-registration-dependencies.json`仅比较现有descriptor与当前源码并收集实际静态依赖，不生成登记、最终source/hash或字体。原legacy archetype/dimensions/folio-preview的已列文件未变；仍可执行的folio consumer1.0.2需随新授权接线处理`contracts.ts`、v1 client/controller、errors的闭包变化（旧JSON不原地改写）。D3 engine/structured preview/qianzai preview共同受`private-test.ts`影响，并新增`private-test-ten-role-identity.ts`依赖；structured/qianzai consumer还受v1/v2 contracts、v2 client/controller、errors及新`policy-contracts.ts`影响，qianzai consumer另有已提交`report/qianzai-tongxin/layout.ts`变化。历史descriptor保留元数据，未获当前可执行绑定的仅核metadata自洽；最终不能只清掉首个private-test错误就称登记闭合。
+
+待实际到件后，准确接点是`theme/qianzai-tongxin/{runtime-inputs.json,editorial-fonts.ts,component-map.ts}`、其封面/揭晓/报告/PNG使用点、`product/internal-versions/implementation-data/d3-runtime-bindings.json`及新baseline，必要`implementation-catalog{,-v2}.ts`/`internal-play/access-gateway-binding.ts`显式可执行绑定与source准入。现component-map仍consumer1.4.0/preview1.2.0，不能冒称已是计划1.5/1.3。`build-qztx-runtime-inputs.ts`仍固定Serif1.2.0、`build-qztx-d3-descriptors.ts`固定1.11.0；最终应新增准确版本分支/输出，不直接运行历史builder覆盖旧登记。当前字段可承40用途/完整ref，实际新增ref和53资源事实必须来自B最终交件；source迁移在已执行0032之后实核空闲号，不预填三hash。
+
+**字体字符输入交B/主控。** 服务终态枚举已经固定，但完整原码重开UI尚未实现，故界面逐字语料还未完全冻结，不宜现在subset。现v2 controller实际可见的保留文案必须纳入最终字符源：`原操作尚未核实；请稍后再次核实，不会重新发送。`、`原操作已保留；请核实结果后再继续。`、`当前授权已失效；已保留本页输入和原操作。`，以及components/host已有UNKNOWN/denied/unavailable、恢复/退出按钮文本。版本过代/资格已完成提示和重新兑换按钮最终中文在UI接线时稳定后补入同一语料；SQL错误码、测试夹具/日志/文档文本不是产品字体输入。合并十人全部姓名/别名/固定报告与source题干/标签/导出文字，保留U+0020与标点/有效换行，不用作者答案。
+
+Serif builder当前到v12、editorial到v5；最终追加新profile/新输出，使用现固定官方源hash/OFL与工具版本。editorial的missing现仅打印，生成前须改失败关闭。字体、coverage与源码声明/运行font/PNG共用document稳定后一次冻结、一次生成，仍不得覆盖旧font或以旧177缺字审计冒称新语料全部覆盖。此次没有字体生成或素材准入。
+
+## 2026-11-04 批次B切片2交审与剩余运行门槛
+
+A实现显式activation/resolve、受控exchange/save/complete/logout/void、准确attempt授权、原回执优先、跨attempt有限终态和独立READ COMMITTED锁定恢复。0030–0032已执行字节不改；consumer catalog按28267实际32迁移/27表更新，draft-schema仅同步0030扩展后的准确audit_target。SQL/服务/API验证使用原验证root/manifest，不触碰作者环境或以合成图谱准入新source；两次服务前置失败及一次report JSON参数失败均保留，修复后按原现场续验。
+
+真实PG服务5项、SQL不变量6项（前三复用失败运行）、进程内真实PG HTTP 2项通过；精确脚本/回执、静态和定向单测见PROGRESS最新条目。0032授权续验及A10+5共享既有结果。owner核32迁移/原五行与报告不变、catalog ad236ba8…fa8d7、其他连接0并close，正常stop及端口/PID/数据保留证明在`slice2-{owner,stop}-receipt.json`；当前28267已停止。
+
+此切片交准确diff独审，不称完整B/原生IO/Next网络或浏览器验收。待封存private-test与本切片客户端/合同闭包，最终source1.5/新字体/40用途真实输入，以及真实ACK-loss与迟到completion并发补证；当前实现登记检查失败，不启动依赖成功构建的E2E、不重写旧renderer identity凑通过。有限终态仅接识别/停止旧entry，完整原码重开UI及终止文案视觉留下一实际接线批次。主控按这些实际剩余范围协调，不重跑已通过的A10+5、47项初轮单测或未变化的历史媒体矩阵。
+
+## 2026-11-04 0031已应用后的定向缺陷修复
+
+准确062f245/c78cad36经Astra窄审通过后，主控授权正式0031隔离验证。28267按正常管理协议恢复并应用0031；operator越权启用及不满足account_actor资格会话的两项真实app拒绝/零副作用证明已通过。admin正例触发局部变量product与同名table整行引用歧义，失败保留，不解释为权限或环境通过。原数据库无新head/ledger/audit效果；连接close后正常stop。
+
+0031已经执行不得改字节，故最小服务修复占下一空闲0032，只改启用函数局部selector名，绑定原0031 checksum/函数body hash前置，原授权及锁序不变。准确SHA1266d0362702472c98326deb113d980289deb1d37d7646550abd533bd6d78315；source号之后实核。授权harness保留原失败、复用两成功反例并用独立resume文件续验admin/void/ACL，未跑到项不记通过；静态仅新harness必要类型/ESLint/格式。后续按已授权本批隔离修复/服务接线持续，不升级作者环境或处理UNKNOWN。
+
+## 2026-11-04 十人用途资源/字体/source1.5交接边界
+
+主控转交作者“这版还可以，继续吧”：六重构稿+保留四位成为当前十人用途制作基线。此授权覆盖同角色母图的用途复用/必要裁切与姓名、报告头、海报技术制作；不要求40槽全部重画，不把衍生品工程核对写成作者逐张审美或商业批准。旧李白baked资源继续历史读取，不能套作新十人李白批准。B正在制作，A不从旧`resource-differences.json`的pending快照推翻最新作者反馈，也不从其中“current”字段自行选最终文件；必须收B确切最终版本/路径/字节回执。
+
+**B→A交接接口（复用现有Schema）。** 以`known-ten-catalog.ts`的10个完整role ref和40个resource ref为索引，每个用途交本地最终原文件与`currentResourceV3Schema`可解析声明（ref/path/mediaType/bytes/SHA/width/height/purpose/source/license/approval）。附母图完整版本/原路径/hash、用途reuse/crop/redraw/program-nameart、父子来源链及实际生成/编辑回执；同字节跨用途复用仍按40个用途身份清楚映射，不混错角色，不冒充重新生成。姓名图5:7透明、真实alpha/可见内容范围、熟悉展示名与固定锚点合成核对；报告头/海报以同角色母图复用为先，各自标实际构图及必要差异。source/license evidence沿现字段记录工程内测授权、AI来源/程序字体来源，不凭空填commercialUse/redistribution=true。整份内测content使用现privateTestUse与一致private-test-only资源声明，不混旧实例批准；13共享项也须明确本新用途的复用依据和实际字节，不改旧声明/版本。
+
+**预算与离线入口。** 复用`tests/analysis/qianzai-known-resource-plan.ts`的13共享+40用途、53资源/55文件基准与旧审计，未变输入不重跑。最终到件才读实际文件解码尺寸、SHA/字节/alpha/资源类型和总量；64资源/66文件、32MiB ZIP、64MiB展开、8MiB单资源、1MiB content、256KiB manifest均保持。旧共享17,899,935 B与角色原始余量14,343,777 B只是前次计划，排除ZIP头，不能据此说最终包通过；最终ZIP实算，不靠抬限额。完整报告PNG由共用document/程序导出，不作额外人物资源塞进40槽或重画整份报告；两PNG输出另按最终实际renderer验证。
+
+**字体单次收口输入。** A收服务/UI版本终止与恢复文案，B收十人姓名/称号/引句/出处与固定报告语料，合并现`qianzaiKnownRoleText()`、supported-theme阅读文案、source题干/选项/封面/按钮/加载错误/报告与PNG固定标签；不用作者答案/个人数据。保留换行策略和U+0020，不trim掉有效空格。原1027码点、旧Serif/Literary各缺177的证据复用，但它不是加入服务文案后的最终字符集。Serif/Literary/Brush按实际使用文本分别固定characters与hash，代码点全集闭包一次冻结后各生成一次，不为每幅图反复subset。当前`build-qztx-font.py`仅列到v12、`build-qztx-editorial-fonts.py`到v5；届时追加新profile/版本及新输出目录，不覆盖旧字体/coverage/OFL/descriptor。沿固定官方源hash与fontTools/brotli版本；必须断言最终required全部有glyph（editorial脚本现只打印missing，交付前需失败关闭），U+0020在coverage内，记录woff2/coverage/license真实hash/bytes。待终止文案稳定与资源用途实际接线后才运行，不在本交接步生成。
+
+**最终接线依赖次序。** (1)服务B/终止合同与固定文案稳定；(2)B最终40用途及13共享复用声明到件；(3)冻结字符输入→新字体→固定锚点/共用document与两PNG技术检查；(4)扩受控新十人ref/props与runtime-inputs/component-map、baseline、renderer descriptor闭包，旧版本分支保持；(5)为最终新独立内测服务/DB选择并正常创建准确受管身份，再绑定privateTestUse、冻结content/assetSet/manifest三hash与完整包；(6)主控核0031之后实际空闲source迁移号，准确DDL/diff及来源证据独审后才登记/导入/测试启用。不能把28267合成验证图谱或旧6736候选冒充正式demo，也不能提前复制旧instance marker/hash。现有runtime-inputs/builders是否支持新十人必须按真实新ref分支最小扩展，不用旧五人目录或全局宽放规则代替准入。
+
+正式demo验收目标是新独立真实服务/DB、十人全流程、海报/报告两PNG、整包上传→检查→预览→测试启用与升级政策实际体验；每项按自己的证据层级记录。现有63230/63233/52880、旧报告及所有失败/UNKNOWN保持；工程内测授权不含main合并/生产迁移/对外部署/Release。本步仅明确交接，不生成新素材/字体、source/假hash或迁移。0031授权P1仍待准确062f245窄审，换图不触发A数据库或评分/旧媒体回归。
+
+## 2026-11-04 切片1授权P1修正：account_actor与固定能力，待窄复核
+
+Astra对`bf28302`指出operator helper统一放行operator/admin导致直接app EXECUTE可越权启用，且未复用当前账号完整资格。最小修正仅触及0031 operator helper及activate/void四个调用：在auth advisory内调用`qf.account_actor`，复用已设密码、身份完整、revision、当前session期限及active账号条件；私有helper增加有限capability参数，activate锁前/锁后固定`version:seal-internal`且仅admin，void固定`access-key:void`允许admin/operator，未知capability拒绝。参数不从请求传入，app仍不获helper EXECUTE；PUBLIC撤销签名同步为(text,text)，公共入口签名及其余锁序/tuple/FK/ACL/claim投影不改。不依赖TS补权限。
+
+新准确0031 SHA`c78cad364630daa315b2289c7b0e744ee317543419d3ca7ff5d3a50495ef3d92`。本步仅与当前`role-policy.ts`和0023 `account_actor`逐项核对、四处固定调用/私有ACL签名及diff静态核对；无TS变更不重跑类型/ESLint，无新SQL执行/PG用例、无正式0031应用。旧9d7dd098回滚记录原样保留且不代表新版本通过。窄审后仅补operator直接activate准确拒绝且ledger/head/audit零变、有效admin成功、account_actor资格不足拒绝、operator合法void成功；不重跑A10+5，不进切片2，不动作者/6736/UNKNOWN。该P1先交主控送Astra授权路径窄复核。
+
+## 2026-11-04 批次B切片1：0031受控接口与精确repository待窄审
+
+主控转交Astra对`41d13ea`设计通过，明确0031用于B受控写接口，source准入顺延之后实际空闲号。按Sol/high实施第一切片：`0031_consumer_controlled_writes.sql`新增受控lock/save/complete/rotate/exchange/revoke/activate/void入口，内部lineage/operator/authority helpers不授app EXECUTE；无任意SQL/通用patch，过期授权flag只在私有helper中由revoke常量开启。为避免旧app INSERT绕过完成函数的grant检查，额外收紧report INSERT（source/FK guards保留，受控definer调用它们）；原三类UPDATE仍关闭。0030字节保持，新增函数受现0030 checksum与完整结构指纹`3b19480ff84e3b7300f893e081ca4bead8fb50a4e3cdaf06f1c6985c8a9b5b01`前置检查保护，PUBLIC权限撤销，管理器仅授指定入口。
+
+exchange在Key锁内先决定report/current generation与slot、旧新两个session id，固定排序锁existing sessions后才创建不可见的新row并锁grant。计划后不重选槽：时钟越界令原0030 guard拒绝则整体回滚/BUSY，不能再补锁另一旧session。rotate独立入口也先计划再按序锁两session；后续服务不得先锁目标/原grant再调用跨attempt轮换。enable按auth advisory→fence→product/head→当前actor/session，按原operation返回旧receipt，同play新operation拒绝空增代次；save/complete独立校精确lineage、期限、current gen、CAS与canonical输入，原receipt成功只在有效读取授权之后优先。complete使用固定report composite，非任意表写；observe只有锁定/返回内部事实，不提供写mode。HTTP CSRF/source IO准入仍属切片2，不能据SQL函数存在宣称服务可用。
+
+`consumer-session/policy-repository.ts`新增精确session/当前代次/报告原session读入口，以及受控lock/save/rotate/exchange/revoke/activate与原operation/head分读；只回server内部raw row、不冒充public DTO或TS锁凭证，切片2须沿已有领域解码器验证后接线。原readClaimMetadata改DISTINCT ON(key_id)按created_at/id确定首次认领，移除全session LIMIT51；每个Key都有确定认领投影，仅展示/禁止作废依据，不授权activeattempt。旧service调用尚未切换，完整report/void repository与HTTP接线属于下一切片，runtime catalog仍0029，不能独立部署。
+
+准确0031 SHA`9d7dd098532af0fa3427d18ffd30c47790bb85a19f4c605785fb9d66b5368997`。相关TS/定向ESLint通过；在原owner/root绑定的28267实例正常start，最终DDL仅BEGIN→创建→ROLLBACK语法检查通过，0030结构完全恢复、连接close并正常stop，未应用0031、未更新runtime指纹。旧版及补exchange后的两份语法回执保留在验证root `.cache/known-ten/0031-rollback*.{intent,result}.json`。未执行函数行为/并发/伪造输入/HTTP反例，A的10+5不重跑；先交准确DDL与diff窄审，再按授权实施/验证下一切片。6736、作者实例、UNKNOWN及素材source准入保持独立。
+
+## 2026-11-04 批次B服务接线设计：待定向独审，尚未实现
+
+基线为已通过Astra证据复核的`ee1dd848`与0030（SHA`c6009e5ebbda4107b63aa475e8434a8b0a6af87cc42627ca03759987adc65db3`）；10+5真实PG及owner/stop证明复用。作者升级政策不重开，人物字图/锚点及source1.5准入独立。B仅交付不依赖最终美术的显式启用、原码exchange、精确attempt授权、保存/完成、grant撤销/轮换和有限恢复服务/API；使用隔离合成源验证，不注册假source/hash，不更改0030已执行字节。本文只作可审设计，未开DB、迁移、业务代码或新测试。
+
+**源码核对与最小文件范围。** 当前`consumer-flow/service.ts`是v1/v2共用服务（经`current-contracts.ts`/`current-wire.ts`分派），不能只改一条旧v1 resolution。exchange先`lockConsumerSession(key)`，read authority按key取首行，`matchesKey`把签发play等同实际play；grant轮换UPDATE未写新session_id，`verifyLockedGrant`读回后就发“锁凭证”但无grant FOR UPDATE；所有这些在多attempt/新ACL下都需对应修正。
+
+| 接点                    | 必要修改位置与责任                                                                                                                                                                                                                                                                                                                          |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 显式启用/读取原启用回执 | `product/internal-play/activation-contracts.ts`，新增同目录`activation-service.ts`/`activation-repository.ts`；复用既有service的固定源/依赖IO预检、operatorRead/operatorWrite；新增有限activate及resolve路由，集中接`consumer-flow/http/{handler,runtime}.ts`、`http-protocol.ts`、`service-contract.ts`。现play create只封存，不自动启用。 |
+| 资格与attempt           | `fulfillment/access/{repository,service}.ts`、`consumer-session/repository.ts`、`consumer-flow/{authorization,service}.ts`；移除key-only/optional-session选择器，保留报告按唯一key查找，但随即使用report.session精确定位。                                                                                                                  |
+| 保存/完成/恢复          | `consumer-flow/{transaction,resolution,resolution-v2,current-contracts,current-wire,contracts,contracts-v2}.ts`及必要新增policy终止状态合同；`report/persisted/repository.ts`仅接精确授权/完成检查，原snapshot/receipt正文格式不改；`fixed-execution.ts`和request-owner/sql-owner生命周期复用。                                             |
+| SQL受控权限与锁         | 下一追加迁移、`lib/db/{migrate,consumer-transaction,consumer-schema-facts}.ts`及新增窄SQL接口repository；必要Drizzle声明同步，不开放表级UPDATE/owner连接给app，不改历史迁移checksum。                                                                                                                                                       |
+| HTTP终止语义            | `lib/consumer-contract/v1/errors.ts`和既有handler/response；v1/v2消费者解码器识别有限新终止状态。页面视觉、姓名图/新renderer不在B；消费者UI完整重开路径留后续，B不得据API证明声称浏览器交付。                                                                                                                                               |
+
+**受控SQL接口。** 建议六个固定职责：`consumer_lock_authority`（只定位/验证/取锁）、`consumer_activate_product`、`consumer_save_attempt`、`consumer_rotate_grant`、`consumer_revoke_grant`、`consumer_void_unused_key`。名称以实现定稿为准，权限/职责不得合并成任意command/SQL/JSON patch平台。SECURITY DEFINER固定`search_path=pg_catalog`、全限定表名、PUBLIC EXECUTE撤销、app只获指定函数EXECUTE；不信任调用方声称已持锁或自报actor。锁函数返回准确内部行事实，TS只在函数完成且同ConsumerTx中签发witness；写函数自行重新验证/幂等重入同锁序，不能靠TS witness作为数据库权限。原app INSERT session/key/report的0030 guards保留，新增attempt创建、Key签发、report INSERT前也走相应锁与授权；受控save严格限定原状态字段、canonical绑定/hash、revision CAS、原grant id/digest/session与当前期限，拒绝越界字段。rotate原16槽/8h规则不变，复用槽同时写新session_id、新grantId、新digest；旧token不能随slot变成新权限。revoke只改精确原grant的revoked_at，可处理已过期grant，幂等已撤销按原identity读回；不授读/写权限。void保留原issue binding及未被任何attempt/report认领约束。
+
+**统一锁序。** 所有领域写：共享维护fence → product → head → Key → session → grant；consumer product/head取SHARE，启用product/head取UPDATE。非锁定credential/id查询仅作selector，锁后重验完整身份，不签发authority。operator写保留既有`withStudioWrite`外层auth advisory `(72461,1)`（所有operator先取），受控activate/void SQL入口也先重入该auth锁再取领域锁，不能只依赖TS调用方预锁；启用在product/head后取actor/session SHARE并最终再验期限/role，保留auth事务末尾touch。匿名consumer不取auth锁、不在后面反向取得它；运营play seal、issue、void也统一领域前缀，不能如旧void先Key再product，不能SHARE后升级product。`consumer_lock_authority`的observe模式取得上述锁但不先判head current，以便原回执胜出；mutation断言在原结果判定后执行。logout独立验证digest/CSRF/原grant全identity，不要求active Key/current head；expired grant仅此模式可用。需要触达旧/新两个session的轮换在Key锁之后按固定session id顺序取锁，再取grant；不得持grant后回锁session。保留有界NOWAIT/lock_timeout与owner关闭协议。数据库helper禁止通过调用参数把write变read或绕current校验。
+
+**启用路径。** 现有`version:seal-internal`权限/CSRF，新增`POST /api/studio/products/[productId]/play-activations`和对应`play-activation-applications/resolve`读取入口，沿既有应用resolve的HTTP约定。输入仅A的activation binding（准确play tuple、expectedGeneration、operationKey）；先授权查原operation，相同binding返回原receipt，不因当前head已变化/新依赖离线改判失败。无原回执才在事务外复用当前固定source/renderer/font/assets IO预检；沿原IO owner保有resource-read guard直到最终事务和关闭交接，不把已结束IO预检当作无限期资格；最后operatorWrite/受控SQL重核当前权限、产品未归档、准确封存tuple、预检source身份及expectedGeneration，原子ledger→head→audit。audit由0030 trigger唯一生成，TS不重复append。head已经是同一play且是新operation时返回ACTIVATION_CONFLICT，不制造无变化的代次重开；不同目标正常+1，回滚旧版本不是默认功能。恢复只读原ledger并单独附当前head：receipt属于原操作，head不是其成功证明；无receipt/关闭未证实保持未决，绝不重放activate。
+
+**原码exchange与历史分支。** 保留独立exchange预算事务且实际close后才开Key事务。digest查Key仅作product selector；拿product/head（head可缺失）再锁Key，重验digest及原issue完整tuple。先查唯一report：有报告则锁report.session，核该session原签发tuple与Key完整对应、实际tuple与report完整对应；不依赖当前head、新renderer可用性或Key expiry，未撤销Key可发原session只读grant。无report才要求原Key未过期未撤销、head存在且可用；按`(keyId,head.generation)`精确选已有attempt，否则创建空答案/revision0/空matchingContext新attempt，写原签发列与实际head tuple。禁止重签Key、续期、复制答案或从调用方接受目标play。Key锁+per-generation唯一收敛并发exchange；grant新凭据仅实际提交与owner close确认后回cookie，UNKNOWN继续沿现有secret-cookie/预算协议，不自动重试或从resolve补发grant。
+
+**读取/写入分界。** read/reauthorize用已验grant的sessionId+keyId，不取“首条/最新”；分别校验session的key-bound签发tuple与原Key、实际attempt tuple与immutable activation（legacy0走原tuple），不是只比keyId。report/result/export严格以report.session及snapshot授权，历史缺原资源报既有DEPENDENCY_UNAVAILABLE，不转用新字体/图或重算。旧未完成session的readSession返回有限version-superseded状态；readEntry/resources/save/complete不再给旧题目入口或写权限，entry/资源body handoff前重验head（同原request owner/读屏障机制），已经发出的旧画面不能撤回但后续写必拒绝。完成且同session仍走原report-only读取；完成在另一attempt时旧grant仅得资格已完成终止状态，不能被升级成另一session报告权限，需原码exchange重新授权。save/complete最终事务先核原binding/session，再认原save回执/唯一report，未决才检查current head、Key/grant期限、revision及source。complete重资源IO仍在锁外，最终再次锁定/重验并封存唯一report；不改评分/原snapshot格式。
+
+**对外合同与UNKNOWN。** 新增有限HTTP错误`VERSION_SUPERSEDED`(409)、`NO_ENABLED_PLAY`(409)、`ACTIVATION_CONFLICT`(409)，复用OPERATION_CONFLICT/KEY_NOT_ACTIVE/ACCESS_DENIED/DEPENDENCY_UNAVAILABLE/BUSY/OUTCOME_UNKNOWN。SQL只按明确SQLSTATE+已知message/constraint映射，不能把所有23514映为版本拒绝；驱动失联/commit或rollback未证明仍先归UNKNOWN，错误映射不得覆盖它。旧`superseded`表示同session revision被后写替代，不改其语义。新增独立`consumer-policy-resolution.v1`终止envelope承载`version-superseded`（原请求binding/hash、准确旧session/代次、authoritative current generation）和`entitlement-completed`（原请求身份、requiresReexchange=true，不夹带异session report正文或授信URL）；v1/v2原成功resolution原样保留。新session-view policy终止分支同样不塞新session state。确切旧save lastReceipt匹配先返回applied；确切complete report匹配先返回applied；同session其他完成沿旧completed-other；另一attempt完成用新资格终止envelope，不能放宽现合同中report.binding.session一致断言。
+
+UNKNOWN resolve先保留原operationKey/completionKey/session/binding，按原回执和唯一report只读核对。无结果时，仅普通读看到新head不够：执行独立READ COMMITTED读写事务中的受控锁定观察（仅取锁、不改领域行；不能在RR read-only事务中执行FOR SHARE/UPDATE），拿到product/head→Key→原session/grant并确认原结果仍缺失；启用已线性化且旧写不可能再提交，才给确定version-superseded。缺head、锁忙、提交/连接关闭不明均保持UNKNOWN，禁止生成新completionKey或从恢复补发grant。旧grant已失效需重新授权，权限不足不泄露结果；无权时不可据此推断原操作失败。数据库屏障只证明DB效果，不证明旧ResourceReadTask已close；原file/owner/quarantine证据独立保留，不制造fileStopProof或处理6736/63226现场。
+
+**迁移、可运行边界与验证。** 0030不改；受控函数/ACL/必要状态合同需新追加迁移。当前正式目录到0030，服务迁移建议占下一空闲0031，原source预期0031再顺延，须主控在实现前串行核号，不自行冲突落盘。只有函数/ACL/schema事实及服务接线在隔离环境共同具备后，才从实际新catalog生成runtime指纹；不能先单改指纹或恢复app UPDATE宣称可运行。B首个可验收切片为受控SQL/锁与精确repository，第二切片接enable/exchange/save/complete/logout/resolve/API；仅补直接输入变化使A证据失效的反例，不重跑原10+5。必要真实PG：禁用/权限与启用CAS/同op冲突；complete先赢和enable先赢、并发兑换收敛同attempt、16槽跨attempt身份；过期/已完/无head历史授权、旧tab严格拒绝；ACK丢失读原receipt、迟到写屏障、SQL/IO关闭分离。API实际调用覆盖v1/v2及历史/跨attempt终止解码；浏览器全流程/素材最终闭包属后续，B不冒称通过。新测试实例仍按原manifest/root正常管理，验证root28267已停止且保留，仅按明确测试计划启动或另建实例，不复用6736失败为干净基线。设计通过后切Sol/high实施，不扩运营后台/多商品迁移平台或最终美术准入。
+
+## 2026-11-04 批次A独立数据库验收完成，配套runtime仍未交付
+
+Astra已对准确`fdcdbb0`的两P2窄复核通过，主控授权后在新root/instance `28267eb19487c265372bdb7671caac89`原0029合成legacy基线上应用正式0030（SHA`c6009e5ebbda4107b63aa475e8434a8b0a6af87cc42627ca03759987adc65db3`）。正常stop→同分支ff已审提交→核hash→start→一次迁移/反例，manifest/root保持。主harness 10项检查与两修正专项5项检查真实PG通过：旧行/原报告/29回执精确保持，完整签发FK/不可变activation FK/原final FK保持；严格superseded、双直接app INSERT无排他升级、旧/过期grant纯注销及篡token失败均有对应SQL证明。原设计、契约及无关静态按输入复用，具体命令/限制见PROGRESS最新条目。
+
+`final-policy-owner-receipt.json`确认30项checksum、原五行及canonical报告、目录SHA`8b559565a5cc2682936b9e6717d6aedebb974bb061da0f83ebcd902073cf033e`与夹具前一致，app三个UPDATE仍关闭，其他owner/app连接0且连接close。随后正常managed stop，`final-policy-stop-receipt.json`确认55536/63236无监听、postmaster.pid消失、PGdata/manifest/admin/runtime保留；全部回执位于验证root `.cache/known-ten/`，6736候选失败与作者/UNKNOWN不动。
+
+批次A到此收口。本结论是DB schema/guards，不是完整新版流程：runtime全局catalog仍0029，启用/保存/注销受控服务入口、精确session定位、业务UNKNOWN恢复及UI未接线，不能单独部署。无新source/字体/renderer登记、无生产迁移或main合并。后续B–D不在此批内，按既有授权另行协调，不让人物风格修改触发数据库准入。
+
+## 2026-11-04 新0029验证root与owner交接
+
+主控授权准备全新managed实例，正式0030继续等`fdcdbb0`窄复核。新root `/Users/aipuli/.codex/worktrees/quizforge-qztx-policy-a-validation/quiz-forge`、分支`codex/qztx-policy-a-validation`从pre-policy `1409761`正常建立，只含0029；正常init生成test instance `28267eb19487c265372bdb7671caac89`/PG55536/origin63236，manifest根从未改写，未开应用。沿既有合成夹具建立一未完/一已完资格，Key2/session2/report1，原29checksum/报告原文hash/无policy表已核实，期限不续，其他app/owner连接0、连接close确认。原始intent/seed/owner回执均在该新root `.cache/known-ten/`；准确hash、安装及失败说明见PROGRESS最新条目。
+
+此项只证明正式验证前置就绪，不是0030/业务反例通过。后续须在该root保持owner身份，核准确reviewed代码与0030输入后再执行；不改6736候选回执、不删结构凑基线，也不把B修图接成DB/source准入。当前A主实现树仍`codex/qztx-known-ten-integration`，DB验证树独立且尚停pre-policy提交；主控应按两树实际状态协调，不能从当前sidebar/cwd推定目标。
+
+## 2026-11-04 实际DDL窄修交接：两P2与版本负例身份
+
+Astra实际审`e8dea73`后指出Key INSERT在product/head SHARE后再取product UPDATE的升级问题，以及过代/期限检查早于纯logout导致原grant不能撤销的问题。准确0030现仅修这两段：归档在已持product SHARE下读取；原grant身份与父锁确认后，整行除revoked_at外不变的纯撤销先返回，签发/轮换才校current attempt/原report。直接app UPDATE权限保持关闭，未补后续service或UI。
+
+反例harness补精确错误消息：旧session写要求`23514/VERSION_SUPERSEDED`，不接受其他约束失败作版本拒绝证明；相关过代/完成资格反例同样核有限错误身份。新DDL SHA`c6009e5ebbda4107b63aa475e8434a8b0a6af87cc42627ca03759987adc65db3`，正式0030仍未执行，交Astra仅窄复核两P2。仅修改harness的必要静态检查，既有契约/只读比较器证明复用；真实写库反例仍未通过。主控现要求停在安全提交边界，后续其协调全新自有managed实例与legacy合成基线再做正式0030验证；6736候选/失败/manifest/root及所有UNKNOWN原样保留，不删结构或改回执凑成功。
+
+## 2026-11-04 比较器失败关闭为工具诊断，正式0030及业务反例仍未通过
+
+首项失败已定位为Drizzle保留PG timestamptz原文与原始postgres-js Date/UTC JSON之间的表示差异。独立只读REPEATABLE READ事务以SQL原生`IS NOT DISTINCT FROM baseline::timestamptz`核对两Key/两session/一report的每个时间列，非时间原字段/canonical TEXT逐字核对，全5行无变动；再以每行+1微秒的5项只读反例证明不会放过微小时间变动。完整原始before/两种after/NULL等值及原失败hash另存`.cache/known-ten/policy-draft/comparison-diagnosis.raw.json`，原失败现场不删除覆盖。工程harness已接同一精确比较helper，不采用JS Date归一化作为断言依据。
+
+这只关闭比较工具问题：未重放候选升级、未执行正式0030、未跑后续写库反例；新库head/activation/grant/新attempt均0，核对连接close已确认。0030实际DDL审仍以`e8dea73`/SHA`caafe67ed831c10deee98bd27f367e872d667aedd678293618f4eb2b9c475816`为准，本工具修复不改该输入。候选`test_consumer_latest_policy_a`回执保持；迁移器严格前缀匹配不能把它当正式0030或改名凑成功，后续实例/历史衔接需主控收口。
+
+## 2026-11-04 最新版答题批次A：准确0030待实际DDL独审，非完整交付
+
+主控已转交Astra对`fbca479b`设计的通过结论，授权Sol/high实施最小批次A；落实历史完成分支先于head/新依赖、session必须精确定位、UNKNOWN原回执优先、DB锁序与不可变activation引用四项。主控另已核目录仅0001–0029：正式分配`0030_consumer_latest_attempts.sql`给policy schema/guards，旧source0030预留取消，source准入顺延到后续实际空闲号（预期0031、冻结时再核）。旧迁移字节及原校验回执不改，不把source/hash混入policy。
+
+**本批可审范围。** 0030新增不可变`consumer_product_activation`与显式head，ledger触发器按fence→product排他→head排他核CAS/当前operator/session后原子写head/receipt/audit，代次递增、不删除或复用。session以generated coalesce列保持原Key完整签发tuple FK，以独立实际play FK及不可变activation ledger FK约束新attempt；原完成最终状态FK/报告key唯一保持，legacy行不UPDATE回填。共享代码为独立activation/attempt契约、Drizzle字段、封闭namespace与迁移ACL；无启用service/API/UI、无新source/renderer或报告格式变更。
+
+**运行前置与锁序限制。** 这是Draft内部schema准备，禁止单独部署到现有运行产品；没有默认head，旧单session/gen0 writer不兼容。为避免BEFORE ROW UPDATE已经持tuple锁却假称product先锁，app对session/key/grant的直接UPDATE权限收紧；未来配套受控写入口必须在DML前完整拿fence→product→head→key→session→grant。当前guard只给新INSERT按此显式父锁顺序取锁；可信owner原始UPDATE的上级取锁为NOWAIT失败关闭，不能冒充已实现服务锁序。head/activation对app只读、不得直接启用；历史完成grant分支先按原report.session定位、可无head，保留expiry后回原报告。runtime全局schema指纹仍留0029，0030库不会被旧runtime当作可用；其精确新指纹与配套service接线/UNKNOWN/浏览器批次未完成，不得称为可上线升级。未改作者63230等库，原1ec2身份/root保留。
+
+**实际数据库状态与审查衔接。** A按原root正常init自有`6736f75ceb805215b1c7daab651450d7`/test/PG55535/origin63235，旧29迁移和合成未完成/完成基线先建立。编号到达前，使用迁移器显式definitions入口提交当时DDL初版的`test_consumer_latest_policy_a`候选回执；正式0030尚未执行。首个旧行比较因驱动+08文本/UTC ISO表示差异失败，未记通过；随后只读核实5条原Key/session/report既有字段时间instant一致，binding/receipt/report canonical TEXT逐字不变，原29回执不变，head/activation/grant/新attempt均0，其他app/owner连接0，owner连接已close。回执与失败保留在`.cache/known-ten/policy-draft/`及`latest-policy-check.failure.json`，不删除或将候选回执改名成正式0030。初版候选DDL SHA`74ab43dbd37bb372a5b27ea7eda99fea12b5399aad3eb569aca5174f5708c1e1`保留；正式0030额外对operator/session取SHARE NOWAIT锁，使并发禁用/撤销不能穿越最终授权检查，准确SHA`caafe67ed831c10deee98bd27f367e872d667aedd678293618f4eb2b9c475816`，该正式版本未执行。真实反例尚未跑到，准确0030与测试harness先交实际diff独审。该库已有独立候选历史，正式0030的实例衔接由主控确定，不能改历史凑成正式成功。
+
+## 2026-11-03 最新版答题与历史只读：定向设计待Astra审
+
+作者政策已确定，不再询问同一选择。仅同商品当前启用的完整包可开始/继续答题；切换使旧未完成会话失效，原未完成Key权益可重新进入新版；完成过的Key只返回原不可变报告，原人物/分数/文案/资源与链接授权回看/导出保留。上传/检查/预览/显式启用沿现运营流程，扩人物由Codex交付新版整包，不新增人物管理后台。本节是提交定向审的最小方案，尚未改生产协议/SQL或激活任何实例。
+
+1. **现状与新增状态。** 当前没有权威启用head事务；`access_key`签发binding固定play且不可改，`consumer_session.key_id`唯一，`quiz_report.key_id`唯一并精确关联完成session。新增商品级`consumer_product_head`（product主键、准确play id/hash、单调generation）及append-only启用operation/receipt ledger（product+operationKey唯一、完整binding、actor、receipt/hash）。新head由显式有权限操作创建，不按createdAt或最大slot自动选“最新”，未启用时不开放答题；上传/封存不自动切换。沿当前`version:seal-internal`写权限/CSRF与新明确启用审计，不借“创建play”事件冒充切换；审计enum如需增值按既有分步迁移方式串行编号。
+2. **Key与尝试分离，保住外键。** 不改原Key的id/digest/签发binding/play/期限/撤销状态，也不创建派生Key伪装重发权益。session允许同Key多个版本尝试：替换key_id单列唯一为`UNIQUE(key_id,activation_generation)`，原session id/play/答案/回执不改；旧行generation=0，新尝试只准当前head generation。新增新尝试的原签发play id/hash列（旧行为NULL），再用生成列`COALESCE(原签发列,实际session play列)`承接原Key完整tuple FK；CHECK区分legacy0与新尝试必填签发列，实际session目标另设准确play FK。这样不用对已完成session执行回填UPDATE，旧关系不退化成只核keyId，现有report最终状态FK与`UNIQUE(key_id)`继续保证一个权益最多一份报告。session创建后generation/签发关系/实际play均不可变；gen0新插入拒绝，旧行只供历史读取/原回执核实。
+3. **切换事务与锁序。** 启用先在事务外完成当前operator/候选完整包与可用renderer/source预检，最终事务重验。所有答题写入、兑换创建、Key签发/作废按同一顺序：既有共享维护fence → product行锁 → 商品head共享行锁 → Key → session → grant。消费者写取product共享锁，运营修改/初次启用取product排他锁；所有路径顺序一致。启用持同fence/product锁后取head排他锁，核expectedGeneration/目标完整tuple、当前权限、未归档/依赖可用，再原子写head、幂等receipt和审计。切换不扫描改写所有Key/session/grant。相同operationKey+binding只读原回执，改binding冲突；并发启用CAS只一个成功。不允许静默降级或按错误target回退旧包，回滚政策另有明确操作才设计。
+4. **旧标签页与线性边界。** save/complete最终写事务及数据库防护都核head generation、session实际play、Key期限/撤销、grant/CSRF、原revision CAS；不能只在请求开始或前端检查。启用排他锁等待已持共享锁的写事务结束：完成先提交则其原报告永久胜出；启用先提交则旧尝试后续save/complete失败为VERSION_SUPERSEDED，无部分完成/新报告。save先提交但未完成也不得继续旧版，原save回执仍为applied。耗时评分/资源IO仍在原owner阶段/域锁外，最终再次核head；不把request timeout当未提交。旧页面只显示版本更新/重新开始或原报告，不回传可继续答题的旧entry；完成后仍禁止改写/第二份报告。
+5. **资格重开沿原exchange，不增人物/权益后台。** 使用原兑换码，持head共享锁后锁Key，先查原报告：有报告直接授原session只读grant，不能转unused或发新版尝试；无报告且原Key仍有效/未撤销，则取当前generation已存在session，或原子创建空答案/revision0/未选择的新session。唯一(key,generation)使双标签/并发兑换收敛同一尝试；不自动搬答案或gender context。原expiry/撤销/风控与兑换预算保持，不自动续期或把过期权益变有效。旧session/grant不改绑；新grant完整绑定新session并沿原16槽/8h规则生成，旧token绝不能因换slot变成新版权限。重开入口提示用原码进入新版，不新增可任意指定目标play的请求。原签发/作废operation仍按原binding恢复，不能把历史回执解释成当前目标。
+6. **UNKNOWN恢复。** 先按原operationKey、session、binding只读核save/complete/启用回执；提交成功就认原成功，不能因已切换改判失败或重放到新版。启用也可能ACK丢失，必须读原启用ledger并同时报告当前head（可能后来又升级），不可盲重启用。原complete未决时先核唯一report；若新head提交屏障与锁顺序已证明旧写不可能再提交，可给原操作确定的superseded结果，再允许原码exchange；证明不足保持UNKNOWN，不自动重开或生成新completionKey。数据库效果证明与ResourceReadTask/连接实际close证明分开，升级不制造fileStopProof、不清理隔离/预留、不绕过原owner收尾协议。兑换自身UNKNOWN沿既有预算/secret-cookie处理，不自动重复请求或从read补发新grant。
+7. **历史报告与资源。** read/report/export先按报告原key/session/play/snapshot授权，完成分支不受当前head限制；保存/完成分支才要求当前head。现exchange已支持已完成Key在expiry后回原报告，保持此语义；grant仍有原授权期限，原链接若需重新授权应回同报告，不变成新答题资格或公开链接。新runtime仅提供历史report/result/export读路径与原字体/素材/profile/copy，不能让旧“继续答题”入口复活，也不调用新评分或AI重算。当前retention会保留全部play/Key/session引用图，本批不削弱或清理；待历史读闭包及report/原session FK、原回执/UNKNOWN所需图确证后，才另批裁掉无引用旧答题资产。此政策不是立即删除作者数据/旧源码/实例的授权。
+8. **代码与迁移范围。** 主要为internal-play启用service/repository/contracts/现详情动作；access及consumer-session repository；consumer-flow authorization/service/resolution、有限错误码与controller“重新开始”分支；历史只读resolver/export/resource retention审计。新增当前head/启用ledger、session代次/签发生成列与FK/unique及相应DB guards/ACL/catalog facts；不改既有迁移字节或报告snapshot格式。下一空闲迁移号由主控与source准入串行收口，不能擅用尚未冻结source的0030模板。新隔离实例仍须从其原受管root/admin/manifest打开，不复制改root；旧63230/63233/63234、作者记录与63226 UNKNOWN保持。
+
+**独立验收批次与必要验证。** A：先审schema/完整FK/锁序/错误与回执合同，再在授权新隔离库用合成旧未完成/已完成数据验证真实升级：旧报告hash不变、旧session/Key回执未改、跨商品/未知head/非法gen插入和直接SQL旧写反例拒绝。B：启用+exchange/保存/完成真实PG并发，覆盖完成先赢/启用先赢、保存先赢、双兑换同尝试、并发启用CAS、跨多次升级及过期/撤销/已完成码不得再领新报告。C：ACK丢失/事务回滚/连接未关闭等定向故障，验证原key恢复、迟到写屏障、UNKNOWN不重放与旧保留协议；不重复无关媒体矩阵。D：新runtime仅一条受影响实际浏览器链：旧标签提示→原码新版空白开始→唯一完成，加历史原链接/人物分数文案/PNG读回及缺旧字体/资源反例；不跑全套E2E。已有copy/4344匹配/首样/字体准备按输入复用。当前仅提交此设计供Astra定向审；批准后按批次实施，不需作者再次确认已确定政策，不先执行持久化修改。
+
+## 2026-11-03 知名十人首样接线
+
+A在同一新树接B苏轼棋局/杨玉环舞姿原母图，独立63234供原图与production CSS安全区同屏核看，未编辑/批量派生/授信。两张390px及代表桌面已实际查看，5:7姓名180×252和姓名/红章/竖句框位一致，无横溢或页面错误。空框不冒充已交付字图/引用，about说明未批准边界；新review组件不接正式runtime，原UI/CSS/字体/登记保持。实际路径/hash/截图/owner及未验证项见PROGRESS最新条目。阶段1与本步交Draft PR54，等主控/作者首样反馈再决定后续美术，63230/63233/新test/UNKNOWN不动。
+
+## 2026-11-03 知名十人阶段1实施
+
+作者确认并开始后，A独立`codex/qztx-known-ten-integration`基`f08f8ff`接B `4130c44`/`64dc748`新目录及熟悉展示名，new ref3.0.0；B继续持人物资料/设计坐标/私有图包，A持共享选择器/评分映射/后续预览。A用目录驱动通用ref/性别选择和候选评分映射，不动24题/算法/73资格。复用4344组原有界合成输入，真实男女any均观测全员获胜，any近邻3308/4344须保留，不据胜率改名单/坐标；2目录测试和相关静态通过，具体证据及工具失败修复见PROGRESS最新条目。
+
+quote现字段足够史传/他人引文，无需先改schema，首样可见署源避开原锚点。阶段2只接苏轼棋局/杨玉环舞姿母图和必要基础资料先预览，作者看前不批量/冻结source。旧63230/63233与UNKNOWN、新test管理身份保持；无0030、导入、正式登记、构建或部署，不把阶段1说成十人正文/美术验收。
+
 ## 2026-11-03 阅读候选分组修复
 
 主控实看发现每主题拆四块造成回退，A仅修review wrapper为一主题一张既有card，四短段/三有限强调标签，完整保留新解释、人物呼应、条件和小一步及原snapshot。neutral/正式reader/layout/formatter/fonts/登记不动。修后wrapper2项与静态通过；只补A窄屏/桌面、A/B长图3/1卡实际核验，原其余证据复用。新图在`.cache/evidence-readability/one-card-fix/browser/`，63233保持，旧提交/初图保留；现PR53补小提交，具体尺寸/hash见PROGRESS最新条目，待主控/视觉复核此修复后收口，不扩优化。

@@ -28,6 +28,8 @@ const tables = [
   "consumer_grant",
   "quiz_report",
   "consumer_exchange_budget",
+  "consumer_product_activation",
+  "consumer_product_head",
 ] as const;
 const enums = [
   "operator_role",

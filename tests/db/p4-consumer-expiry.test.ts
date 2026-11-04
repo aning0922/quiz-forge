@@ -10,6 +10,7 @@ import { loginVersionFixtureAccount } from "./version-account-fixture";
 import { createStudioRequestBudget } from "@/lib/http-security/request-budget";
 import { createConsumerRequestOwner } from "@/features/fulfillment/consumer-flow/request-owner";
 import { createConsumerFlowServiceV1 as createConsumerFlowService } from "../support/consumer-v1-service";
+import { createConsumerActivationService } from "@/features/product/internal-play/activation-service";
 import { createInternalPlayService } from "@/features/product/internal-play/service";
 import { createAccessKeyService } from "@/features/fulfillment/access/service";
 import {
@@ -21,7 +22,7 @@ import {
   consumerProgressSha256,
   type ConsumerState,
 } from "@/lib/consumer-contract/v1/state";
-import * as integrity from "@/lib/consumer-contract/v1/integrity";
+import * as accessRepository from "@/features/fulfillment/access/repository";
 import * as reportContracts from "@/features/report/persisted/snapshot-contract";
 import { verifyConsumerSchema } from "@/lib/db/consumer-schema";
 import { StorageLock } from "@/features/quizpack/import/storage-lock";
@@ -49,7 +50,7 @@ const freePort = () =>
       s.close((e) => (e ? reject(e) : resolve(a.port)));
     });
   });
-it("actual DB-clock deadlines crossed during post-authorization hashes prevent both save and report writes", async () => {
+it("actual DB-clock deadlines crossed during post-authorization work prevent both save and report writes", async () => {
   const db = await openTestDatabase(),
     runId = randomUUID();
   const invoke = async <T>(
@@ -108,6 +109,22 @@ it("actual DB-clock deadlines crossed during post-authorization hashes prevent b
           }),
         )
       ).play;
+    const activation = await invoke((o) =>
+      createConsumerActivationService(o).activate(
+        { ...credentials, requestId: randomUUID() },
+        fixture.productId,
+        {
+          schemaVersion: "quizforge.consumer-product-activate.v1",
+          productId: fixture.productId,
+          operationKey: randomUUID(),
+          expectedGeneration: 0,
+          playVersionId: play.id,
+          playSnapshotSha256: play.snapshotSha256,
+        },
+      ),
+    );
+    expect(activation.kind).toBe("applied");
+    if (!activation.receipt) throw Error("P4_ACTIVATION_RECEIPT_REQUIRED");
     const content = JSON.parse(
         await readFile(
           new URL("../fixtures/p4-baseline/content.json", import.meta.url),
@@ -127,6 +144,7 @@ it("actual DB-clock deadlines crossed during post-authorization hashes prevent b
         mode: "operator-services",
         suiteCompletion: null,
         plays: [play],
+        activations: [activation.receipt],
         keys: [],
         states: [],
         reports: [],
@@ -271,7 +289,7 @@ it("actual DB-clock deadlines crossed during post-authorization hashes prevent b
           crossed = after?.expired === true;
         };
         const realReportHash = reportContracts.persistedReportSnapshotSha256,
-          realTextHash = integrity.consumerTextSha256;
+          realVerifyGrant = accessRepository.verifyLockedGrant;
         const reportSpy = vi
           .spyOn(reportContracts, "persistedReportSnapshotSha256")
           .mockImplementation(async (input) => {
@@ -279,16 +297,17 @@ it("actual DB-clock deadlines crossed during post-authorization hashes prevent b
             if (operation === "complete" && calls === 0) await pause();
             return result;
           });
+        // Save receipts are now assembled by consumer_save_attempt in SQL.
+        // Pause after the real authorization check, before that SQL mutation;
+        // hashing its returned receipt would inject the delay after the write.
         const saveSpy = vi
-          .spyOn(integrity, "consumerTextSha256")
-          .mockImplementation(async (text) => {
-            const result = await realTextHash(text);
+          .spyOn(accessRepository, "verifyLockedGrant")
+          .mockImplementation(async (...args) => {
+            const result = await realVerifyGrant(...args);
             if (
               operation === "save" &&
               calls === 0 &&
-              text.includes('"quizforge.consumer-save-receipt.v1"') &&
-              JSON.parse(text).binding.expectedStateRevision ===
-                state.stateRevision
+              args[3].sessionId === a.sessionId
             )
               await pause();
             return result;

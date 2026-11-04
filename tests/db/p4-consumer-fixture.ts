@@ -243,7 +243,7 @@ export async function readConsumerFixture(
 export async function prepareConsumerFixture(
   db: TestDatabase,
   runId: string,
-  consumerRenderer: ConsumerRendererIdentity = CONSUMER_IMPLEMENTATION_AVAILABILITY.rendererV1_2,
+  consumerRenderer: ConsumerRendererIdentity = CONSUMER_IMPLEMENTATION_AVAILABILITY.rendererV1_3,
 ): Promise<ConsumerFixture> {
   requireTest(db);
   const selectedConsumerRenderer =
@@ -678,6 +678,14 @@ export async function cleanupConsumerFixture(
       await tx`DELETE FROM qf.consumer_grant WHERE key_id IN(SELECT id FROM qf.access_key WHERE product_id=${value.productId})`;
       await tx`DELETE FROM qf.consumer_session WHERE product_id=${value.productId}`;
       await tx`DELETE FROM qf.access_key WHERE product_id=${value.productId}`;
+      // Test/CI only, after exact graph verification and writer exclusion. FK triggers stay enabled.
+      // Transactional DDL guarantees rollback restores both named immutability triggers on any failure.
+      await tx`ALTER TABLE qf.consumer_product_head DISABLE TRIGGER consumer_head_change`;
+      await tx`ALTER TABLE qf.consumer_product_activation DISABLE TRIGGER consumer_activation_change`;
+      await tx`DELETE FROM qf.consumer_product_head WHERE product_id=${value.productId}`;
+      await tx`DELETE FROM qf.consumer_product_activation WHERE product_id=${value.productId}`;
+      await tx`ALTER TABLE qf.consumer_product_activation ENABLE TRIGGER consumer_activation_change`;
+      await tx`ALTER TABLE qf.consumer_product_head ENABLE TRIGGER consumer_head_change`;
       await tx`DELETE FROM qf.internal_play_version WHERE product_id=${value.productId}`;
       await tx`DELETE FROM qf.product_version WHERE product_id=${value.productId}`;
       await tx`DELETE FROM qf.draft_review WHERE product_id=${value.productId}`;
@@ -729,7 +737,7 @@ async function main() {
           await prepareConsumerFixture(
             db,
             runId!,
-            CONSUMER_IMPLEMENTATION_AVAILABILITY.rendererV1_2,
+            CONSUMER_IMPLEMENTATION_AVAILABILITY.rendererV1_3,
           ))
         : await finishConsumerFixture(
             db,

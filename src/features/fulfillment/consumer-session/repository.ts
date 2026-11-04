@@ -20,7 +20,6 @@ import {
   consumerProgressText,
   consumerProgressSha256,
   consumerSaveBindingText,
-  consumerSaveBindingSha256,
   verifyConsumerState,
   type ConsumerSaveInput,
   type ConsumerState,
@@ -33,12 +32,11 @@ import {
   consumerMatchingTextV2,
   consumerMatchingSha256V2,
   consumerSaveBindingTextV2,
-  consumerSaveBindingSha256V2,
   verifyConsumerStateV2,
   type ConsumerStateV2,
   type ConsumerSaveInputV2,
 } from "@/lib/consumer-contract/v2/state";
-type SessionRow = {
+export type SessionRow = {
   id: string;
   key_id: string;
   product_id: string;
@@ -59,7 +57,7 @@ type SessionRow = {
 };
 export type CurrentConsumerState = ConsumerState | ConsumerStateV2;
 export type LockedConsumerSession = Readonly<{ state: CurrentConsumerState }>;
-async function state(
+export async function decodeConsumerSessionRow(
   tx: ConsumerTx,
   row: SessionRow,
 ): Promise<CurrentConsumerState> {
@@ -148,12 +146,16 @@ async function state(
     matchingContextSha256: row.matching_context_sha256,
   });
 }
-export async function readConsumerSession(tx: ConsumerTx, keyId: string) {
+export async function readConsumerSession(
+  tx: ConsumerTx,
+  keyId: string,
+  sessionId: string,
+) {
   assertConsumerTx(tx);
   const [row] = await tx.sql<
     SessionRow[]
-  >`SELECT * FROM qf.consumer_session WHERE key_id=${keyId}`;
-  return row ? state(tx, row) : null;
+  >`SELECT * FROM qf.consumer_session WHERE key_id=${keyId} AND id=${sessionId}`;
+  return row ? decodeConsumerSessionRow(tx, row) : null;
 }
 export async function lockConsumerSession(
   tx: ConsumerTx,
@@ -165,7 +167,9 @@ export async function lockConsumerSession(
     SessionRow[]
   >`SELECT * FROM qf.consumer_session WHERE key_id=${key.issue.binding.keyId} ${expectedId ? tx.sql`AND id=${expectedId}` : tx.sql``} FOR UPDATE`;
   return row
-    ? lockWitness(tx, "session", row.id, { state: await state(tx, row) })
+    ? lockWitness(tx, "session", row.id, {
+        state: await decodeConsumerSessionRow(tx, row),
+      })
     : null;
 }
 export async function createConsumerSession(
@@ -187,7 +191,9 @@ export async function createConsumerSession(
     SessionRow[]
   >`INSERT INTO qf.consumer_session(id,key_id,product_id,play_version_id,play_snapshot_sha256,created_at,state_revision,answers_text,consumer_state_answers_sha256,progress_text,progress_sha256,matching_context_text,matching_context_sha256) VALUES(${randomUUID()},${key.issue.binding.keyId},${ref.productId},${ref.playVersionId},${ref.playSnapshotSha256},date_trunc('milliseconds',clock_timestamp()),0,${a},${ah},${p},${ph},${contextText},${contextSha}) RETURNING *`;
   if (!row) throw new ConsumerError("UNAVAILABLE");
-  return lockWitness(tx, "session", row.id, { state: await state(tx, row) });
+  return lockWitness(tx, "session", row.id, {
+    state: await decodeConsumerSessionRow(tx, row),
+  });
 }
 /** Application already validated every answer/progress member against the fixed content source. */
 export async function saveConsumerSession(
@@ -196,7 +202,6 @@ export async function saveConsumerSession(
   session: LockedConsumerSession,
   grant: GrantFact,
   input: ConsumerSaveInput | ConsumerSaveInputV2,
-  savedAt: string,
 ) {
   assertLockWitness(tx, key, "key", input.binding.session.keyId);
   assertLockWitness(tx, session, "session", input.binding.session.sessionId);
@@ -222,37 +227,17 @@ export async function saveConsumerSession(
   if (v2 !== (input.binding.schemaVersion === "quizforge.consumer-save.v2"))
     throw new ConsumerError("INVALID_REQUEST");
   const bindingText = v2
-      ? consumerSaveBindingTextV2(input.binding)
-      : consumerSaveBindingText(input.binding),
-    bindingSha = v2
-      ? await consumerSaveBindingSha256V2(input.binding)
-      : await consumerSaveBindingSha256(input.binding);
-  const receipt = {
-    schemaVersion: v2
-      ? "quizforge.consumer-save-receipt.v2"
-      : "quizforge.consumer-save-receipt.v1",
-    binding: input.binding,
-    bindingSha256: bindingSha,
-    appliedStateRevision: session.state.stateRevision + 1,
-    savedAt,
-  };
-  const receiptText = consumerCanonicalText(receipt, L.lastSaveReceiptBytes),
-    receiptSha = await consumerTextSha256(receiptText);
+    ? consumerSaveBindingTextV2(input.binding)
+    : consumerSaveBindingText(input.binding);
   const a = consumerAnswersText(input.answers),
     p = consumerProgressText(input.progress);
   const matchingText =
-      "matchingContext" in input
-        ? consumerMatchingTextV2(input.matchingContext)
-        : null,
-    matchingSha =
-      "matchingContextSha256" in input.binding
-        ? input.binding.matchingContextSha256
-        : null;
+    "matchingContext" in input
+      ? consumerMatchingTextV2(input.matchingContext)
+      : null;
   const [row] = await tx.sql<
     SessionRow[]
-  >`WITH moment AS MATERIALIZED(SELECT clock_timestamp() AS at)
-    UPDATE qf.consumer_session SET state_revision=state_revision+1,answers_text=${a},consumer_state_answers_sha256=${input.binding.consumerStateAnswersSha256},progress_text=${p},progress_sha256=${input.binding.progressSha256},matching_context_text=${matchingText},matching_context_sha256=${matchingSha},last_binding_text=${bindingText},last_binding_sha256=${bindingSha},last_receipt_text=${receiptText},last_receipt_sha256=${receiptSha} FROM moment m
-    WHERE id=${input.binding.session.sessionId} AND key_id=${input.binding.session.keyId} AND state_revision=${input.binding.expectedStateRevision} AND m.at<${key.issue.expiresAt}::timestamptz AND m.at<${grant.expiresAt}::timestamptz RETURNING qf.consumer_session.*`;
+  >`SELECT * FROM qf.consumer_save_attempt(${input.binding.session.productId},${input.binding.session.keyId},${input.binding.session.sessionId},${grant.grantId},${grant.credentialDigest},${input.binding.expectedStateRevision},${bindingText},${a},${p},${matchingText})`;
   if (!row) {
     await assertConsumerMutationDeadline(
       tx,
@@ -261,8 +246,10 @@ export async function saveConsumerSession(
     );
     throw new ConsumerError("STATE_CONFLICT");
   }
-  return state(tx, row);
+  return decodeConsumerSessionRow(tx, row);
 }
+/** Earliest permanent claim per Key, for operator display/void eligibility only.
+ * This is NOT a selector or authority for the currently enabled attempt. */
 export async function readClaimMetadata(
   tx: ConsumerTx,
   keyIds: readonly string[],
@@ -271,7 +258,9 @@ export async function readClaimMetadata(
   if (keyIds.length > L.keysPerPage) throw new ConsumerError("INVALID_REQUEST");
   const rows = await tx.sql<
     { key_id: string; id: string; created_at: DatabaseTime }[]
-  >`SELECT key_id,id,created_at FROM qf.consumer_session WHERE key_id=ANY(${tx.sql.array([...keyIds])}::uuid[]) LIMIT 51`;
+  >`SELECT DISTINCT ON (key_id) key_id,id,created_at FROM qf.consumer_session
+    WHERE key_id=ANY(${tx.sql.array([...keyIds])}::uuid[])
+    ORDER BY key_id,created_at,id`;
   return rows.map((row) => ({
     keyId: row.key_id,
     sessionId: row.id,

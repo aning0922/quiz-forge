@@ -76,6 +76,8 @@ describe("real P2-A database", () => {
       "category",
       "consumer_exchange_budget",
       "consumer_grant",
+      "consumer_product_activation",
+      "consumer_product_head",
       "consumer_session",
       "draft_application",
       "draft_review",

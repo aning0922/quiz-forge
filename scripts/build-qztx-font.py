@@ -27,11 +27,13 @@ def sha(value):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--source-font", required=True, type=Path)
-    parser.add_argument("--profile", choices=("v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8", "v9", "v10", "v11", "v12"), default="v1")
+    parser.add_argument("--profile", choices=("v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8", "v9", "v10", "v11", "v12", "v13"), default="v1")
     args = parser.parse_args()
-    version = {"v1": "1.0.0", "v2": "1.1.0", "v3": "1.2.0", "v4": "1.3.0", "v5": "1.4.0", "v6": "1.5.0", "v7": "1.6.0", "v8": "1.7.0", "v9": "1.8.0", "v10": "1.9.0", "v11": "1.10.0", "v12": "1.11.0"}[args.profile]
+    version = {"v1": "1.0.0", "v2": "1.1.0", "v3": "1.2.0", "v4": "1.3.0", "v5": "1.4.0", "v6": "1.5.0", "v7": "1.6.0", "v8": "1.7.0", "v9": "1.8.0", "v10": "1.9.0", "v11": "1.10.0", "v12": "1.11.0", "v13": "1.12.0"}[args.profile]
     family = "QuizForge Qianzai Serif" + ("" if args.profile == "v1" else " " + args.profile.upper())
     out = Path(f"public/assets/fonts/qianzai-{args.profile}")
+    if args.profile == "v13" and any((out / name).exists() for name in ("serif-600.woff2", "manifest.json")):
+        raise RuntimeError("NEW_FONT_OUTPUT_ALREADY_EXISTS")
     if fontTools.__version__ != "4.61.1" or brotli.__version__ != "1.2.0":
         raise RuntimeError("PINNED_FONT_TOOLS_REQUIRED")
     if sha(args.source_font.read_bytes()) != SOURCE_SHA:
@@ -41,6 +43,8 @@ def main():
         raise RuntimeError("FONT_LICENSE_HASH_MISMATCH")
     characters = (out / "characters.txt").read_bytes()
     requested = {ord(c) for c in characters.decode("utf-8").rstrip("\n")}
+    if args.profile == "v13" and 0x20 not in requested:
+        raise RuntimeError("FONT_SPACE_REQUIRED")
     font = TTFont(args.source_font, recalcTimestamp=False)
     missing = requested - font.getBestCmap().keys()
     if missing:
@@ -81,6 +85,10 @@ def main():
         "audit": {"missingCodepoints": [], "allFiveCharacterNamesCovered": all(ord(c) in requested for c in "李白苏轼陶渊明李清照木兰")},
         "scope": "Declared QZTX body-copy subset, including pending copy candidates. No arbitrary Chinese or calligraphy coverage claim."
     }
+    if args.profile == "v13":
+        descriptor["audit"]["allKnownTenNamesAndAliasesCovered"] = all(
+            ord(c) in requested for c in "李白苏轼唐伯虎唐寅周瑜赵云李清照杨玉环武则天王昭君蔡文姬蔡琰"
+        )
     (out / "manifest.json").write_text(json.dumps(descriptor, ensure_ascii=False, indent=2) + "\n")
     print(json.dumps({"bytes": len(data), "coveredCodepoints": len(requested), "fileSha256": sha(data), "missing": 0}))
 

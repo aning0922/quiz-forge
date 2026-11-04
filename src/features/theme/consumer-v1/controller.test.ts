@@ -29,6 +29,52 @@ const json = (value: unknown, status = 200) =>
     status,
     headers: { "content-type": "application/json" },
   });
+it("keeps an exact recovered v1 save read-only when the attempt was superseded before adoption", async () => {
+  const f = await fixture(),
+    s = storage();
+  let sent: ConsumerSaveInput | undefined;
+  let superseded = false;
+  const fetcher: typeof fetch = async (url, options) => {
+    if (options?.method !== "POST")
+      return json(
+        String(url).endsWith("session")
+          ? superseded
+            ? {
+                ...f.view,
+                outcome: {
+                  kind: "version-superseded",
+                  session: f.session,
+                  attemptGeneration: 1,
+                  currentGeneration: 2,
+                  requiresReexchange: true,
+                },
+              }
+            : f.view
+          : f.entry,
+      );
+    if (!String(url).endsWith("resolve")) {
+      sent = JSON.parse(String(options.body));
+      throw Error("synthetic lost response");
+    }
+    return json(await applied(sent!));
+  };
+  const c = new ConsumerControllerV1(f.session.sessionId, s, fetcher);
+  try {
+    await c.bootstrap();
+    c.choose(f.q.id, f.q.options[0]!.id);
+    await c.navigate({ questionId: f.q.id }, "question");
+    await c.recover();
+    expect(await readConsumerPendingV1(s, f.session)).not.toBeNull();
+    superseded = true;
+    await c.adoptObserved();
+    expect(c.getSnapshot().phase).toBe("unavailable");
+    expect(c.getSnapshot().entry).toBeUndefined();
+    expect(c.getSnapshot().reexchangeRequired).toBe("version-superseded");
+    expect(await readConsumerPendingV1(s, f.session)).toBeNull();
+  } finally {
+    c.dispose();
+  }
+});
 it("failed local pending write/readback permits zero POST", async () => {
   const f = await fixture(),
     s = storage();

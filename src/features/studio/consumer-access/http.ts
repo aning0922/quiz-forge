@@ -1,3 +1,8 @@
+import type { ConsumerActivationService } from "@/features/product/internal-play/activation-service";
+import {
+  activateConsumerProductBindingSchema,
+  verifyConsumerActivationResolution,
+} from "@/features/product/internal-play/activation-contracts";
 import "server-only";
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
@@ -51,6 +56,8 @@ const endpointSchema = z.discriminatedUnion("action", [
   z.strictObject({
     ...base,
     action: z.enum([
+      "activate-play",
+      "resolve-activation",
       "list-plays",
       "create-play",
       "resolve-play",
@@ -79,6 +86,7 @@ export type StudioConsumerHttpDependenciesV1<
     config: P2aRuntimeConfig,
     clock: ReturnType<typeof createStudioRequestBudget>,
   ) => Owner;
+  createActivationService?: (owner: Owner) => ConsumerActivationService;
   createPlayService: (owner: Owner) => InternalPlayService;
   createAccessService: (owner: Owner) => AccessKeyService;
   loadConfig?: () => Promise<P2aRuntimeConfig>;
@@ -131,10 +139,17 @@ export async function handleStudioConsumerHttpV1<
     check();
     const endpoint = parse(endpointSchema, endpointInput),
       { action, productId } = endpoint;
-    write = ["create-play", "issue-key", "void-key"].includes(action);
+    write = ["activate-play", "create-play", "issue-key", "void-key"].includes(
+      action,
+    );
     const post =
       write ||
-      ["resolve-play", "resolve-issue", "resolve-void"].includes(action);
+      [
+        "resolve-activation",
+        "resolve-play",
+        "resolve-issue",
+        "resolve-void",
+      ].includes(action);
     const config = await (dependencies.loadConfig ?? loadRuntimeConfig)();
     check();
     assertConsumerSource(request, config, { post });
@@ -175,7 +190,24 @@ export async function handleStudioConsumerHttpV1<
       maximum: number = L.operationReceiptBytes;
     // Factories stay lazy until every transport-level selector/binding check has succeeded.
     let run: (owner: Owner) => Promise<unknown>;
-    if (action === "create-play" || action === "resolve-play") {
+    if (action === "activate-play" || action === "resolve-activation") {
+      const binding = parse(activateConsumerProductBindingSchema, body);
+      if (binding.productId !== productId)
+        throw new ConsumerError("INVALID_REQUEST");
+      run = async (owner) => {
+        const service = dependencies.createActivationService?.(owner);
+        if (!service) throw new ConsumerError("UNAVAILABLE");
+        const result =
+          action === "activate-play"
+            ? await service.activate(credentials, productId, binding)
+            : await service.resolve(sessionToken, productId, binding);
+        if (action === "activate-play") {
+          successful = true;
+          if (result.kind !== "applied") throw new ConsumerError("UNAVAILABLE");
+        }
+        return verifyConsumerActivationResolution(result, binding);
+      };
+    } else if (action === "create-play" || action === "resolve-play") {
       const binding = parse(createInternalPlayBindingSchema, body);
       if (binding.parent.productId !== productId)
         throw new ConsumerError("INVALID_REQUEST");

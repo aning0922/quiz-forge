@@ -84,8 +84,15 @@ it("verifies actual immutable play/parent, issue operations and bounded Key fact
 it("requires the actual product/Key/session lock witnesses from the same live transaction", async () => {
   const key = await f.issue(),
     session = await f.claim(key);
+  // This test exercises lock-witness lifetimes, not the controlled service grant.
+  // 0031 intentionally removed the app role's direct Key/session UPDATE rights.
+  await expect(
+    db.app
+      .sql`SELECT id FROM qf.access_key WHERE id=${String(key.id)} FOR UPDATE`,
+  ).rejects.toMatchObject({ code: "42501" });
+  const ownerDatabase = { ...db.app, sql: db.admin.sql };
   let escaped: object | undefined;
-  await consumerWrite(db.app, checkpoint, observation(), async (tx) => {
+  await consumerWrite(ownerDatabase, checkpoint, observation(), async (tx) => {
     const product = await lockConsumerProduct(tx, f.playRef.productId);
     assertLockWitness(tx, product, "product", f.playRef.productId);
     const k = await lockAccessKey(tx, { keyId: String(key.id) });
@@ -100,7 +107,7 @@ it("requires the actual product/Key/session lock witnesses from the same live tr
     assertLockWitness(tx, s, "session", String(session.id));
   });
   await expect(
-    consumerWrite(db.app, checkpoint, observation(), async (tx) =>
+    consumerWrite(ownerDatabase, checkpoint, observation(), async (tx) =>
       assertLockWitness(tx, escaped!, "key", String(key.id)),
     ),
   ).rejects.toMatchObject({ code: "UNAVAILABLE" });
@@ -120,7 +127,7 @@ it("verifies complete real answer/report rows and composes only bounded claim/co
   );
   const report = await f.complete(saved);
   await consumerRead(db.app, checkpoint, async (tx) => {
-    const s = await readConsumerSession(tx, String(key.id));
+    const s = await readConsumerSession(tx, String(key.id), String(session.id));
     expect(s?.stateRevision).toBe(1);
     const r = await readPersistedReport(tx, String(key.id));
     expect(r?.receipt.reportId).toBe(report.id);

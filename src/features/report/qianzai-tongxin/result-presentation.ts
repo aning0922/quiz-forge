@@ -1,3 +1,12 @@
+import {
+  QIANZAI_CLASSICAL_EDITION,
+  type QianzaiClassicalRoleProfile,
+} from "./classical-edition";
+import { qianzaiKnownEditorial } from "./known-ten-editorial";
+import {
+  qianzaiKnownPresentationSourceMatches,
+  QIANZAI_KNOWN_SHARED_TEMPLATE_REF,
+} from "./known-presentation-source";
 import { qianzaiSupportedThemes } from "./supported-themes";
 import { qianzaiPresentationSourceMatches } from "./presentation-source";
 import type { ComposedReportBodyV1 as Body } from "@/lib/assessment-contract/composed-report-v1";
@@ -14,12 +23,17 @@ import {
  * The exact installed entry hash is injected after closure collection, avoiding a self-hash import. */
 export type QianzaiPresentationBinding = Readonly<{
   renderer: ConsumerRendererIdentity;
-  profileVersion: typeof QIANZAI_PRESENTATION_V11;
+  profileVersion:
+    | typeof QIANZAI_PRESENTATION_V11
+    | typeof QIANZAI_CLASSICAL_EDITION.presentationVersion;
+  canonicalContentSha256?: string;
 }>;
 type Ref = Body["matching"]["selected"]["ref"];
 export type QianzaiResultPresentation = Readonly<{
   kind: "sealed-context-derived";
-  profileVersion: typeof QIANZAI_PRESENTATION_V11;
+  profileVersion:
+    | typeof QIANZAI_PRESENTATION_V11
+    | typeof QIANZAI_CLASSICAL_EDITION.presentationVersion;
   contentStatus: "experience-candidate";
   body: Body;
   source: Readonly<{
@@ -30,7 +44,7 @@ export type QianzaiResultPresentation = Readonly<{
     matchingContextSha256: string;
     canonicalContentSha256: string;
   }>;
-  role: QianzaiRoleProfileV11;
+  role: QianzaiRoleProfileV11 | QianzaiClassicalRoleProfile;
   quote: QianzaiRoleProfileV11["quotes"][number];
   reveal: Readonly<{
     id: string;
@@ -60,6 +74,8 @@ export function deriveQianzaiResultPresentation(
   view: PersistedReportDisplayV2,
   binding?: QianzaiPresentationBinding,
 ): QianzaiResultPresentation | null {
+  if (binding?.profileVersion === QIANZAI_CLASSICAL_EDITION.presentationVersion)
+    return deriveKnownPresentation(view, binding);
   if (
     !binding ||
     binding.profileVersion !== QIANZAI_PRESENTATION_V11 ||
@@ -92,11 +108,20 @@ export function deriveQianzaiResultPresentation(
     sameRef(r.ref, body.matching.selected.ref),
   );
   if (!role) return null;
+  return projectPresentation(view, binding, role);
+}
+function projectPresentation(
+  view: PersistedReportDisplayV2,
+  binding: QianzaiPresentationBinding,
+  role: QianzaiRoleProfileV11 | QianzaiClassicalRoleProfile,
+): QianzaiResultPresentation {
+  const d = view.display,
+    body = d.body;
   const quotePool = [...role.quotes].sort((a, b) =>
     a.id < b.id ? -1 : a.id > b.id ? 1 : 0,
   );
   const seed = JSON.stringify([
-    QIANZAI_PRESENTATION_V11,
+    binding.profileVersion,
     view.renderer.kind,
     view.renderer.id,
     view.renderer.version,
@@ -127,10 +152,10 @@ export function deriveQianzaiResultPresentation(
   const supportingClaimRefs = Object.freeze(
     core.map(({ snapshot }) => Object.freeze({ ...snapshot.claimRef! })),
   );
-  const id = `${role.ref.id}/${core.map(({ feature }) => feature.topic).join("+") || "invitation"}@${QIANZAI_PRESENTATION_V11}`;
+  const id = `${role.ref.id}/${core.map(({ feature }) => feature.topic).join("+") || "invitation"}@${binding.profileVersion}`;
   return Object.freeze({
     kind: "sealed-context-derived",
-    profileVersion: QIANZAI_PRESENTATION_V11,
+    profileVersion: binding.profileVersion,
     contentStatus: "experience-candidate",
     body,
     source: Object.freeze({
@@ -155,6 +180,45 @@ export function deriveQianzaiResultPresentation(
     }),
   });
 }
+function deriveKnownPresentation(
+  view: PersistedReportDisplayV2,
+  binding: QianzaiPresentationBinding,
+): QianzaiResultPresentation | null {
+  const d = view.display,
+    body = d.body,
+    p = body.provenance;
+  if (
+    binding.renderer.kind !== "consumer-renderer" ||
+    binding.renderer.id !== "consumer-qianzai-tongxin" ||
+    binding.renderer.version !== QIANZAI_CLASSICAL_EDITION.consumerVersion ||
+    !sameConsumerFact(view.renderer, binding.renderer, 8192) ||
+    !binding.canonicalContentSha256 ||
+    !qianzaiKnownPresentationSourceMatches(binding.canonicalContentSha256) ||
+    d.contentVersion !== "3.0.0" ||
+    d.reportVersion !== "2.0.0" ||
+    p.reportVersion !== "2.0.0" ||
+    !sameRef(d.reportTemplateRef, QIANZAI_KNOWN_SHARED_TEMPLATE_REF) ||
+    !sameRef(p.templateRef, QIANZAI_KNOWN_SHARED_TEMPLATE_REF) ||
+    ![
+      binding.canonicalContentSha256,
+      view.renderer.entrySha256,
+      d.bodySha256,
+      d.inputHash,
+      d.answersHash,
+      d.matchingContextSha256,
+    ].every(sha) ||
+    d.canonicalContentSha256 !== binding.canonicalContentSha256 ||
+    p.canonicalContentSha256 !== d.canonicalContentSha256 ||
+    p.inputHash !== d.inputHash ||
+    p.answersHash !== d.answersHash ||
+    p.matchingContextSha256 !== d.matchingContextSha256 ||
+    !sameRef(body.matching.selected.ref, d.selectedResultRef)
+  )
+    return null;
+  const data = qianzaiKnownEditorial(body.matching.selected.ref);
+  return data ? projectPresentation(view, binding, data.profile) : null;
+}
+
 export function qianzaiPresentationMatchesBody(
   body: Body,
   result?: QianzaiResultPresentation,

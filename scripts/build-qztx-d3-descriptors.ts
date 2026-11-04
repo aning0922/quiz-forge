@@ -1,3 +1,4 @@
+import { QIANZAI_CLASSICAL_CONSUMER_RENDERER as QIANZAI_CONSUMER_RENDERER } from "../src/features/report/qianzai-tongxin/classical-edition";
 import { mkdir, writeFile, realpath } from "node:fs/promises";
 import { resolve, dirname } from "node:path";
 import { createHash } from "node:crypto";
@@ -16,7 +17,6 @@ import {
 } from "../src/features/theme/consumer-v2/component-map";
 import {
   QIANZAI_COMPONENT_MAPPING,
-  QIANZAI_CONSUMER_RENDERER,
   QIANZAI_PREVIEW_RENDERER,
   QIANZAI_PREVIEW_PRESENTATION,
   QIANZAI_CONSUMER_PRESENTATION,
@@ -43,7 +43,7 @@ async function main() {
   )
     throw Error("PRIVATE_OUTPUT_REQUIRED");
   const font = QIANZAI_RUNTIME_INPUTS.font;
-  if (!font || font.id !== "qianzai-tongxin-serif" || font.version !== "1.11.0")
+  if (!font || font.id !== "qianzai-tongxin-serif" || font.version !== "1.12.0")
     throw Error("PINNED_QIANZAI_FONT_REQUIRED");
   const fonts = [font, ...Object.values(QIANZAI_EDITORIAL_FONTS)]
     .flatMap((f) => [f.file, f.coverage, f.licenseFile])
@@ -137,6 +137,11 @@ async function main() {
         "src/features/theme/qianzai-tongxin/runtime.tsx",
         ["QianzaiTongxinRuntime"],
         "browser",
+      ),
+      entry(
+        "src/app/qianzai-test-audio/moonlit-water/1.0.0/route.ts",
+        ["GET", "HEAD"],
+        "server",
       ),
       ...protocols,
     ],

@@ -1,3 +1,5 @@
+import knownTen from "./implementation-data/d3-runtime-bindings-known-ten.json";
+import previous from "./implementation-data/d3-runtime-bindings.json";
 import engine from "./implementation-data/engine-archetype-l1-v1.json";
 import renderer from "./implementation-data/renderer-structured-composed-v1.json";
 import { D3_IMPLEMENTATION_BINDINGS as current } from "./implementation-registration-v2";
@@ -21,14 +23,33 @@ function freeze<T>(value: T): T {
 export const IMPLEMENTATION_DESCRIPTORS_V2 = freeze({
   engines: [
     ...(current.engine ? [current.engine] : []),
+    ...[knownTen.engine, previous.engine]
+      .filter((v) => v !== null)
+      .map((v) => engineImplementationEntryV2Schema.parse(v)),
     engineImplementationEntryV2Schema.parse(engine),
-  ],
+  ].filter(
+    (entry, index, entries) =>
+      entries.findIndex((other) => other.entrySha256 === entry.entrySha256) ===
+      index,
+  ),
   renderers: [
     ...[current.structuredPreview, current.qianzaiPreview].filter(
       (v) => v !== null,
     ),
+    ...[
+      knownTen.structuredPreview,
+      knownTen.qianzaiPreview,
+      previous.structuredPreview,
+      previous.qianzaiPreview,
+    ]
+      .filter((v) => v !== null)
+      .map((v) => rendererImplementationEntryV2Schema.parse(v)),
     rendererImplementationEntryV2Schema.parse(renderer),
-  ],
+  ].filter(
+    (entry, index, entries) =>
+      entries.findIndex((other) => other.entrySha256 === entry.entrySha256) ===
+      index,
+  ),
 });
 const key = (value: {
   kind: string;

@@ -9,6 +9,7 @@ import { loginVersionFixtureAccount } from "./version-account-fixture";
 import { createStudioRequestBudget } from "@/lib/http-security/request-budget";
 import { createConsumerRequestOwner } from "@/features/fulfillment/consumer-flow/request-owner";
 import { createConsumerFlowServiceV1 as createConsumerFlowService } from "../support/consumer-v1-service";
+import { createConsumerActivationService } from "@/features/product/internal-play/activation-service";
 import { createInternalPlayService } from "@/features/product/internal-play/service";
 import { createAccessKeyService } from "@/features/fulfillment/access/service";
 import {
@@ -124,6 +125,22 @@ it("actual consumer grants, CAS races, immutable completion, scoped resource str
           renderer: fixture.consumerRenderer!,
         }),
       );
+    const activation = await invoke((o) =>
+      createConsumerActivationService(o).activate(
+        { ...credentials, requestId: randomUUID() },
+        fixture.productId,
+        {
+          schemaVersion: "quizforge.consumer-product-activate.v1",
+          productId: fixture.productId,
+          operationKey: randomUUID(),
+          expectedGeneration: 0,
+          playVersionId: created.play.id,
+          playSnapshotSha256: created.play.snapshotSha256,
+        },
+      ),
+    );
+    expect(activation.kind).toBe("applied");
+    if (!activation.receipt) throw Error("P4_ACTIVATION_RECEIPT_REQUIRED");
     const issue = async () => {
       const raw = createConsumerToken("access-key"),
         credentialDigest = (await digestConsumerToken(raw, "access-key"))!,
@@ -281,14 +298,32 @@ it("actual consumer grants, CAS races, immutable completion, scoped resource str
         [{ questionId: q.id, optionId: q.options[1]!.id }],
         { questionId: q.id },
       );
-    const raced = await Promise.all([
-      invoke((o) =>
-        createConsumerFlowService(o).save(a.credentials, a.sessionId, left),
+    // Current product locking may refuse the losing writer with BUSY. Drain both
+    // requests, then observe the original binding without replaying a write.
+    const saves = [left, right];
+    const saveAttempts = await Promise.allSettled(
+      saves.map((input) =>
+        invoke((o) =>
+          createConsumerFlowService(o).save(a.credentials, a.sessionId, input),
+        ),
       ),
-      invoke((o) =>
-        createConsumerFlowService(o).save(a.credentials, a.sessionId, right),
-      ),
-    ]);
+    );
+    const raced = [];
+    for (const [index, attempt] of saveAttempts.entries()) {
+      if (attempt.status === "fulfilled") raced.push(attempt.value);
+      else {
+        expect(attempt.reason).toMatchObject({ code: "BUSY" });
+        raced.push(
+          await invoke((o) =>
+            createConsumerFlowService(o).resolveSave(
+              a.credentials,
+              a.sessionId,
+              saves[index]!.binding,
+            ),
+          ),
+        );
+      }
+    }
     expect(
       raced.filter((r) => r.kind === "applied-current").length === 1 &&
         raced.filter((r) => r.kind === "superseded").length === 1,
@@ -364,21 +399,37 @@ it("actual consumer grants, CAS races, immutable completion, scoped resource str
       }),
     );
     expect(wrong.kind).toBe("state-conflict");
-    const completed = await Promise.all([
-      invoke((o) =>
-        createConsumerFlowService(o).complete(
-          a.credentials,
-          a.sessionId,
-          complete,
+    const completions = [
+      complete,
+      { ...complete, completionKey: randomUUID() },
+    ];
+    const completeAttempts = await Promise.allSettled(
+      completions.map((input) =>
+        invoke((o) =>
+          createConsumerFlowService(o).complete(
+            a.credentials,
+            a.sessionId,
+            input,
+          ),
         ),
       ),
-      invoke((o) =>
-        createConsumerFlowService(o).complete(a.credentials, a.sessionId, {
-          ...complete,
-          completionKey: randomUUID(),
-        }),
-      ),
-    ]);
+    );
+    const completed = [];
+    for (const [index, attempt] of completeAttempts.entries()) {
+      if (attempt.status === "fulfilled") completed.push(attempt.value);
+      else {
+        expect(attempt.reason).toMatchObject({ code: "BUSY" });
+        completed.push(
+          await invoke((o) =>
+            createConsumerFlowService(o).resolveComplete(
+              a.credentials,
+              a.sessionId,
+              completions[index]!,
+            ),
+          ),
+        );
+      }
+    }
     expect(
       completed.filter((r) => r.kind === "applied").length === 1 &&
         completed.filter((r) => r.kind === "completed-other").length === 1,
@@ -408,10 +459,21 @@ it("actual consumer grants, CAS races, immutable completion, scoped resource str
         )
       ).kind,
     ).toBe("operation-conflict");
+    // An exact original save keeps its idempotent receipt after completion.
+    const replayedSave = await invoke((o) =>
+      createConsumerFlowService(o).save(a.credentials, a.sessionId, full),
+    );
+    expect(replayedSave.kind).toBe("applied-current");
+    if (!("state" in replayedSave)) throw Error("P4_REPLAY_STATE_REQUIRED");
+    expect(replayedSave.state).toEqual(state);
     expect(
       (
-        await invoke((o) =>
-          createConsumerFlowService(o).save(a.credentials, a.sessionId, full),
+        await invoke(async (o) =>
+          createConsumerFlowService(o).save(
+            a.credentials,
+            a.sessionId,
+            await saveInput(state),
+          ),
         )
       ).kind,
     ).toBe("completed");
@@ -527,6 +589,7 @@ it("actual consumer grants, CAS races, immutable completion, scoped resource str
       mode: "operator-services",
       suiteCompletion: null,
       plays: [created.play],
+      activations: [activation.receipt],
       keys,
       states: [state, b.view.outcome.state],
       reports: [report.receipt],

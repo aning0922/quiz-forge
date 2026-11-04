@@ -216,6 +216,101 @@ it("restores the original UNKNOWN preference and resolves without another save o
     c.dispose();
   }
 });
+it.each(["version-superseded", "entitlement-completed"] as const)(
+  "retains exact pending until explicit terminal adoption: %s",
+  async (kind) => {
+    const s = storage();
+    let resolve = false;
+    const posts: string[] = [];
+    const fetcher: typeof fetch = async (url, o) => {
+      if (o?.method !== "POST")
+        return json(String(url).endsWith("session") ? f.view : f.entry);
+      posts.push(String(url));
+      if (!resolve) throw Error("synthetic lost response");
+      const binding = JSON.parse(String(o.body));
+      return json({
+        schemaVersion: "quizforge.consumer-policy-resolution.v1",
+        binding,
+        bindingSha256: await consumerSaveBindingSha256V2(binding),
+        kind,
+        outcome: {
+          kind,
+          session: f.session,
+          requiresReexchange: true,
+          ...(kind === "version-superseded"
+            ? { attemptGeneration: 1, currentGeneration: 2 }
+            : {}),
+        },
+      });
+    };
+    const c = new ConsumerControllerV2(f.session.sessionId, s, fetcher);
+    try {
+      await c.bootstrap();
+      c.choosePreference("any");
+      await c.navigate({ questionId: f.q.ref.id }, "question");
+      const pending = await readConsumerPendingV2(s, f.session);
+      resolve = true;
+      await c.recover();
+      expect(c.getSnapshot().reexchangeRequired).toBe(kind);
+      expect(await readConsumerPendingV2(s, f.session)).toEqual(pending);
+      await c.adoptObserved();
+      expect(await readConsumerPendingV2(s, f.session)).toBeNull();
+      expect(c.getSnapshot().entry).toBeNull();
+      expect(c.getSnapshot().phase).toBe("unavailable");
+      expect(c.getSnapshot().reexchangeRequired).toBe(kind);
+      await c.complete();
+      expect(posts).toHaveLength(2);
+      expect(posts[1]).toMatch(/save\/resolve$/);
+    } finally {
+      c.dispose();
+    }
+  },
+);
+it("rechecks policy before adopting an old applied save and never reopens its obsolete entry", async () => {
+  const s = storage();
+  let sent: ConsumerSaveInputV2 | undefined;
+  let superseded = false;
+  const fetcher: typeof fetch = async (url, o) => {
+    if (o?.method !== "POST")
+      return json(
+        String(url).endsWith("session")
+          ? superseded
+            ? {
+                ...f.view,
+                outcome: {
+                  kind: "version-superseded",
+                  session: f.session,
+                  attemptGeneration: 1,
+                  currentGeneration: 2,
+                  requiresReexchange: true,
+                },
+              }
+            : f.view
+          : f.entry,
+      );
+    if (!String(url).endsWith("resolve")) {
+      sent = JSON.parse(String(o.body));
+      throw Error("synthetic lost response");
+    }
+    return json(await applied(sent!));
+  };
+  const c = new ConsumerControllerV2(f.session.sessionId, s, fetcher);
+  try {
+    await c.bootstrap();
+    c.choosePreference("female");
+    await c.navigate({ questionId: f.q.ref.id }, "question");
+    await c.recover();
+    expect(c.getSnapshot().phase).toBe("conflict");
+    superseded = true;
+    await c.adoptObserved();
+    expect(c.getSnapshot().reexchangeRequired).toBe("version-superseded");
+    expect(c.getSnapshot().entry).toBeNull();
+    expect(c.getSnapshot().phase).toBe("unavailable");
+    expect(await readConsumerPendingV2(s, f.session)).toBeNull();
+  } finally {
+    c.dispose();
+  }
+});
 it("revokes view authority synchronously while retaining entered answers and preference", async () => {
   const c = new ConsumerControllerV2(
     f.session.sessionId,

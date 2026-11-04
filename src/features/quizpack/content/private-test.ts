@@ -1,3 +1,6 @@
+import knownTenExperienceRegistration from "./private-test-registration-known-ten-experience.json";
+import { QIANZAI_KNOWN_TEN_EXPERIENCE_IDENTITY } from "./private-test-known-ten-experience-identity";
+import knownTenFinalRegistration from "./private-test-registration-known-ten-final.json";
 import finalDemoRegistration from "./private-test-registration-final-demo.json";
 import finalE2eRegistration from "./private-test-registration-final-e2e.json";
 import exportParityFixture from "./qianzai-local-export-parity-fixture.json";
@@ -9,6 +12,7 @@ import localNameFixture from "./qianzai-local-name-fixture.json";
 import centeredNameFixture from "./qianzai-local-centered-name-fixture.json";
 import liQingzhaoOnlineFixture from "./qianzai-local-liqingzhao-online-fixture.json";
 import { QIANZAI_HISTORICAL_TEN_TEST_IDENTITY } from "./private-test-ten-role-identity";
+import { QIANZAI_KNOWN_TEN_FINAL_TEST_IDENTITY } from "./private-test-known-ten-final-identity";
 
 /** Compiled finite registrations, never selected by a request or an environment switch. */
 export const PRIVATE_TEST_REGISTRATION = registration;
@@ -17,10 +21,30 @@ export const PRIVATE_TEST_REGISTRATIONS = [
   rebuildRegistration,
   finalDemoRegistration,
   finalE2eRegistration,
+  knownTenFinalRegistration,
+  knownTenExperienceRegistration,
 ] as const;
 export type PrivateTestRegistration =
   (typeof PRIVATE_TEST_REGISTRATIONS)[number];
 export const privateTestUseSchema = z.union([
+  z.strictObject({
+    schemaVersion: z.literal("quizforge.private-test-use.v1"),
+    instanceId: z.literal(QIANZAI_KNOWN_TEN_EXPERIENCE_IDENTITY.instanceId),
+    authorizationId: z.literal(
+      QIANZAI_KNOWN_TEN_EXPERIENCE_IDENTITY.authorizationId,
+    ),
+    contentStatus: z.literal("candidate"),
+    resourceStatus: z.literal("reference-or-candidate"),
+  }),
+  z.strictObject({
+    schemaVersion: z.literal("quizforge.private-test-use.v1"),
+    instanceId: z.literal(QIANZAI_KNOWN_TEN_FINAL_TEST_IDENTITY.instanceId),
+    authorizationId: z.literal(
+      QIANZAI_KNOWN_TEN_FINAL_TEST_IDENTITY.authorizationId,
+    ),
+    contentStatus: z.literal("candidate"),
+    resourceStatus: z.literal("reference-or-candidate"),
+  }),
   z.strictObject({
     schemaVersion: z.literal("quizforge.private-test-use.v1"),
     instanceId: z.literal(QIANZAI_HISTORICAL_TEN_TEST_IDENTITY.instanceId),

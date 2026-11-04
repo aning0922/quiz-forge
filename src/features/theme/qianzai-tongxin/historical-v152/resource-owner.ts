@@ -1,0 +1,243 @@
+import { privateTestAssetMatches } from "@/features/quizpack/content/private-test";
+import type { DisplayAssetV2 as DisplayAssetV1 } from "@/lib/assessment-contract/display-v2";
+import type { ConsumerV2ReaderModel } from "@/lib/consumer-contract/v2/client-contract";
+import type { ConsumerResourceLeaseV2 } from "@/features/theme/consumer-v2/resource-port";
+import {
+  loadVerifiedImageV2 as loadVerifiedImage,
+  type VerifiedImage,
+} from "@/lib/browser/display-assets-v2";
+import { sameConsumerFact } from "@/lib/consumer-contract/v1/integrity";
+
+export type QianzaiImageLayer =
+  "clean" | "prototype-scene-base" | "prototype-option-skin" | "role-composite";
+export type QianzaiAssetSlot =
+  | "cover"
+  | "preferenceScene"
+  | "reportPaper"
+  | "reportBorder"
+  | "seal"
+  | `acts.${0 | 1 | 2}.${"background" | "navigation" | "questionPaper" | "optionIdle" | "optionSelected"}`
+  | `character.${"reveal" | "nameArt" | "report" | "poster"}`
+  | `character.revealComposite.${"before" | "full"}`;
+export type QianzaiAssetBinding = Readonly<{
+  asset: Omit<DisplayAssetV1, "alt">;
+  slot: QianzaiAssetSlot;
+  layer: QianzaiImageLayer;
+  resultRef?: DisplayAssetV1["resourceRef"] | undefined;
+}>;
+export type QianzaiAdmittedBinding = Omit<QianzaiAssetBinding, "asset"> &
+  Readonly<{ asset: DisplayAssetV1 }>;
+export type QianzaiOwnedImage = QianzaiAdmittedBinding &
+  Readonly<{ objectUrl: `blob:${string}` }>;
+const sameRef = (
+  a: DisplayAssetV1["resourceRef"],
+  b: DisplayAssetV1["resourceRef"] | undefined,
+) =>
+  !!b &&
+  a.productId === b.productId &&
+  a.id === b.id &&
+  a.version === b.version;
+/** A role label is granted only by the fixed byte mapping AND its typed slot. */
+export function admittedQianzaiBindings(
+  model: ConsumerV2ReaderModel,
+  fixed: readonly QianzaiAssetBinding[],
+) {
+  if (model.phase === "denied") return [];
+  const assets = model.report?.view.display.assets ?? model.entry?.assets ?? [];
+  const n = model.report?.view.display.slots.neutral ?? model.entry?.slots;
+  const admitted = fixed.flatMap((binding) => {
+    const a = binding.asset;
+    const declared = assets.find((v) => {
+      const { alt, ...facts } = v;
+      void alt;
+      return sameConsumerFact(facts, a, 8192);
+    });
+    if (
+      (a.approval !== "approved" && !privateTestAssetMatches(a)) ||
+      !declared ||
+      !n
+    )
+      return [];
+    const parts = binding.slot.split(".");
+    const character = model.report?.view.display.slots.character;
+    const composite = parts[1] === "revealComposite";
+    if (
+      composite &&
+      (binding.layer !== "role-composite" ||
+        model.phase !== "completed" ||
+        model.pendingOperation ||
+        !character?.revealComposite ||
+        !sameRef(character.resultRef, binding.resultRef) ||
+        !sameRef(
+          character.resultRef,
+          model.report?.view.display.body.matching.selected.ref,
+        ))
+    )
+      return [];
+    if (binding.layer === "role-composite" && !composite) return [];
+    if (
+      parts[0] === "character" &&
+      (!character ||
+        !sameRef(
+          character.resultRef,
+          model.report?.view.display.selectedResultRef,
+        ))
+    )
+      return [];
+    const ref =
+      parts[0] === "acts"
+        ? n.acts[Number(parts[1])]?.[
+            parts[2] as
+              | "background"
+              | "navigation"
+              | "questionPaper"
+              | "optionIdle"
+              | "optionSelected"
+          ]
+        : parts[0] === "character"
+          ? composite
+            ? character?.revealComposite?.[parts[2] as "before" | "full"]
+            : character?.[
+                parts[1] as "reveal" | "nameArt" | "report" | "poster"
+              ]
+          : n[
+              binding.slot as
+                | "cover"
+                | "preferenceScene"
+                | "reportPaper"
+                | "reportBorder"
+                | "seal"
+            ];
+    if (!sameRef(a.resourceRef, ref ?? undefined)) return [];
+    if (
+      binding.layer === "prototype-scene-base" &&
+      (model.report ||
+        !(
+          binding.slot === "cover" ||
+          binding.slot === "preferenceScene" ||
+          /^acts\.[0-2]\.(background|navigation)$/.test(binding.slot)
+        ))
+    )
+      return [];
+    if (
+      binding.layer === "prototype-option-skin" &&
+      (model.report ||
+        !/^acts\.[0-2]\.(optionIdle|optionSelected)$/.test(binding.slot))
+    )
+      return [];
+    return [{ ...binding, asset: declared }];
+  });
+  const pair = admitted.filter((b) => b.layer === "role-composite");
+  const completePair =
+    pair.length === 2 &&
+    new Set(pair.map((b) => b.slot)).size === 2 &&
+    pair.every(
+      (b) =>
+        b.asset.width === pair[0]!.asset.width &&
+        b.asset.height === pair[0]!.asset.height &&
+        b.asset.approval === pair[0]!.asset.approval,
+    );
+  return admitted.filter((b) => b.layer !== "role-composite" || completePair);
+}
+type Loader = typeof loadVerifiedImage;
+/** One view/authority generation owns every URL. Late completions are released, never adopted. */
+export class QianzaiResourceOwner {
+  #abort = new AbortController();
+  #live = true;
+  #loaded: VerifiedImage[] = [];
+  #images: readonly QianzaiOwnedImage[] = [];
+  #listeners = new Set<() => void>();
+  constructor(
+    readonly lease: ConsumerResourceLeaseV2,
+    readonly loader: Loader = loadVerifiedImage,
+  ) {
+    lease.signal.addEventListener("abort", this.dispose, { once: true });
+    if (lease.signal.aborted || !lease.current()) this.dispose();
+  }
+  subscribe = (listener: () => void) => {
+    this.#listeners.add(listener);
+    return () => {
+      this.#listeners.delete(listener);
+    };
+  };
+  getSnapshot = () => this.#images;
+  current = () =>
+    this.#live && !this.#abort.signal.aborted && this.lease.current();
+  async load(bindings: readonly QianzaiAdmittedBinding[]) {
+    const model = this.lease.model;
+    const report =
+      model.phase === "completed" && model.pendingOperation === null
+        ? model.report?.view.display
+        : undefined;
+    const character = report?.slots.character;
+    const critical = (binding: QianzaiAdmittedBinding) =>
+      !!character &&
+      sameRef(character.resultRef, report?.selectedResultRef) &&
+      binding.layer === "clean" &&
+      ((binding.slot === "character.reveal" &&
+        sameRef(binding.asset.resourceRef, character.reveal)) ||
+        (binding.slot === "character.nameArt" &&
+          sameRef(binding.asset.resourceRef, character.nameArt)));
+    // Only the selected, already admitted report art goes first. The remaining
+    // resources retain their order and the same bounded two-worker lifecycle.
+    const ordered = report
+      ? [...bindings.filter(critical), ...bindings.filter((b) => !critical(b))]
+      : bindings;
+    const groups: QianzaiAdmittedBinding[][] = [];
+    for (const binding of ordered) {
+      // An exact asset can serve several slots in this report lease. Share its
+      // verified decode, never an authority ticket or a URL across leases.
+      const group = report
+        ? groups.find((g) => sameConsumerFact(g[0]!.asset, binding.asset, 8192))
+        : undefined;
+      if (group) group.push(binding);
+      else groups.push([binding]);
+    }
+    // Bounded two-at-a-time; no directory fetch, other-character prefetch or automatic retry.
+    let cursor = 0;
+    const worker = async () => {
+      while (this.current() && cursor < groups.length) {
+        const group = groups[cursor++]!;
+        try {
+          const image = await this.loader(
+            group[0]!.asset,
+            this.lease.transport,
+            this.#abort.signal,
+          );
+          if (!this.current()) {
+            image.release();
+            continue;
+          }
+          if (!image.url.startsWith("blob:")) {
+            image.release();
+            continue;
+          }
+          this.#loaded.push(image);
+          this.#images = Object.freeze([
+            ...this.#images,
+            ...group.map((binding) =>
+              Object.freeze({
+                ...binding,
+                objectUrl: image.url as `blob:${string}`,
+              }),
+            ),
+          ]);
+          for (const listener of this.#listeners) listener();
+        } catch {
+          /* Missing/invalid art falls back to the view's opaque program surface. */
+        }
+      }
+    };
+    await Promise.all([worker(), worker()]);
+  }
+  dispose = () => {
+    if (!this.#live) return;
+    this.#live = false;
+    this.#abort.abort();
+    this.lease.signal.removeEventListener("abort", this.dispose);
+    for (const image of this.#loaded) image.release();
+    this.#loaded = [];
+    this.#images = Object.freeze([]);
+    for (const listener of this.#listeners) listener();
+  };
+}

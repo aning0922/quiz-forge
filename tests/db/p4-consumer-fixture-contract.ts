@@ -6,6 +6,7 @@ import {
 } from "@/lib/consumer-contract/v1/primitives";
 import { consumerStateSchema } from "@/lib/consumer-contract/v1/state";
 import { consumerRendererIdentitySchema } from "@/lib/consumer-contract/v1/identities";
+import { consumerProductActivationReceiptSchema } from "@/features/product/internal-play/activation-contracts";
 import { internalPlayReceiptSchema } from "@/features/product/internal-play/contracts";
 import { accessKeyDetailSchema } from "@/features/fulfillment/access/contracts";
 import { persistedReportReceiptSchema } from "@/features/report/persisted/view-contracts";
@@ -87,6 +88,11 @@ export const consumerFixtureObservationsSchema = z
     mode: z.enum(["operator-services", "consumer-e2e"]),
     suiteCompletion: consumerFixtureSuiteCompletionSchema.nullable(),
     plays: internalPlayReceiptSchema.array().max(16),
+    // Older observations can omit this only when the verified DB activation/head graph is empty.
+    activations: consumerProductActivationReceiptSchema
+      .array()
+      .max(16)
+      .optional(),
     keys: accessKeyDetailSchema.array().max(64),
     states: consumerStateSchema.array().max(64),
     reports: persistedReportReceiptSchema.array().max(64),
@@ -101,6 +107,10 @@ export const consumerFixtureObservationsSchema = z
     if (
       !withinConsumerBytes(v, CONSUMER_FIXTURE_MAX_BYTES) ||
       new Set(v.plays.map((x) => x.id)).size !== v.plays.length ||
+      new Set((v.activations ?? []).map((x) => x.id)).size !==
+        (v.activations ?? []).length ||
+      new Set((v.activations ?? []).map((x) => x.generation)).size !==
+        (v.activations ?? []).length ||
       new Set(v.keys.map((x) => x.issue.binding.keyId)).size !==
         v.keys.length ||
       new Set(v.states.map((x) => x.session.sessionId)).size !==
@@ -135,6 +145,15 @@ export const consumerFixtureObservationsSchema = z
     const plays = new Map(v.plays.map((x) => [x.id, x])),
       keys = new Map(v.keys.map((x) => [x.issue.binding.keyId, x])),
       states = new Map(v.states.map((x) => [x.session.sessionId, x]));
+    for (const activation of v.activations ?? []) {
+      const play = plays.get(activation.binding.playVersionId);
+      if (
+        activation.binding.productId !== v.productId ||
+        !play ||
+        play.snapshotSha256 !== activation.binding.playSnapshotSha256
+      )
+        bad();
+    }
     for (const key of v.keys) {
       const p = key.issue.binding.play,
         play = plays.get(p.playVersionId);
@@ -226,6 +245,8 @@ const rowFact = z.strictObject({
     "draft_review",
     "product_version",
     "internal_play_version",
+    "consumer_product_activation",
+    "consumer_product_head",
     "access_key",
     "consumer_session",
     "consumer_grant",

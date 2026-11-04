@@ -26,6 +26,14 @@ export const REPO_ROOT = fileURLToPath(new URL("../../../", import.meta.url));
 const targetArg = process.argv.find((arg) =>
   arg.startsWith("--runtime-target="),
 );
+export const PARENT_CRASH_DIAGNOSTIC = process.argv.includes(
+  "--diagnostic-parent-crash",
+);
+if (
+  PARENT_CRASH_DIAGNOSTIC &&
+  (targetArg !== undefined || process.argv.includes("--record-capability"))
+)
+  throw new Error("INVALID_DIAGNOSTIC_MODE");
 export const RUNTIME_TARGET =
   targetArg === undefined
     ? null
@@ -53,7 +61,9 @@ export const RUNTIME_STATE = resolve(
 );
 export const MAC_ROOT = resolve(
   REPO_ROOT,
-  ".cache/quizpack-media-preflight/macos",
+  PARENT_CRASH_DIAGNOSTIC
+    ? ".cache/quizpack-media-parent-crash-diagnostic"
+    : ".cache/quizpack-media-preflight/macos",
 );
 export const WORKER = resolve(
   REPO_ROOT,
@@ -86,6 +96,7 @@ export function loadPolicy(
     "shared/posix-probe.c",
     "macos/fault-worker.mjs",
     "macos/harness.ts",
+    "macos/parent-crash-case.ts",
   ].map((role) => ({
     role,
     sha256: hashFile(
