@@ -1,5 +1,17 @@
 # 阶段进度
 
+## 2026-11-04 真实生产构建通过；本次main能力封存停止在父崩溃关闭证明
+
+最终运行树ff至568e93e，原b3保持停止、无HTTP。按运行手册`env -u QUIZFORGE_P2A_CONFIG pnpm build`通过，BUILD_ID `YhsB2ZYY299pzf66yMP-o`；实现登记/Next类型/生产编译及trace通过：131 traces / 27788 paths / 0违规。构建只在本次新root，未重建作者、旧实例或旧构建。
+
+固定`media:build --main`首轮LIMIT_EXCEEDED，实际新`.next/cache`为143M。按原运行手册只移存本树缓存至`.cache/known-ten/next-cache-build-v1`保留，未放宽上限/删除失败/重建Next。相同构建的第二次media:build成功：deployment `f9b49ae750f7ec2aa438257fa9666682ad34a504f5cf106b91d220ede7a6b814`，sourceBundle `814fb8939fe2d806b6d65b4cc1e65b5e078f71533e63b34e141f9d0eb760f217`，1138 source/1474 artifact files/47450528B；本次固定setup main helper完成，component4c9adab2…740a1/profileb67214f9…b32f2。原始build/media-build-v1/v2/setup日志均在最终root`.cache/known-ten/final-*`。
+
+本次唯一`media:provision --runtime-target=main`返回MATRIX_STOP_UNCONFIRMED，capabilityCommitted=false/recordCommitted=false，未继续native导入/DB或HTTP。固定入口内原协议三轮：run `4b8fead5-b0d1-47ff-a758-336d7293ea0c`与`032a5b5f-db39-41cf-9063-7eff4e67039a`各66项通过/control空；第三轮`5f46342d-a592-48ed-b97e-7c621076d0c9`在第61项`parent crash leaves persisted worker identity and restart blocked`失败，summary为HARNESS_FAILED。不是三轮全绿，不把前两轮或晚观察拼成已封存。准确summary与所有stderr/identity原件保留于`.cache/quizpack-media-preflight/macos/runs/<runId>/`，最终log为`.cache/known-ten/final-media-provision-v1.log`。
+
+当前本次control原位保留：`.cache/quizpack-media-runtime/darwin-arm64/control/{active.json,guard}`，run8af99f02-31a4-44ec-8622-9189151585e7/profile20d58ffe…c0ab4，owner52964/worker53047/start(sec1793781153,usec563394)。独立只读观察先验证native helper与Node仍等同本轮identity的SHA，再用原helper按准确PID/owner/node查询，两者均present=false；`native-provision-crash-observation.json`保存原control全文/SHA35d3dc06…2bce及native结果、control未改事实。此证明当前原身份消失，不证明原5秒关闭/host ready/close/BUSY各屏障在原时限内成功，失败case具体断点仍待R定位。未unlink guard/active、未杀进程、未改stopProof/marker或重跑封存。
+
+主控已派R只读定位固定协议、源码与原回执；A继续核owned现场，保持当前失败。原b3 PG已停，imports/storage/业务仍为迁移后已确认0；新pack未导入、无新play/activation/key/grant，浏览器/双PNG/旧tuple实际夹具均未运行。正常可核实修复后再按原身份推进；不触及63226 UNKNOWN及其他环境，不报托管批次完成。
+
 ## 2026-11-04 0033实际应用与定向SQL/ACL证明通过
 
 主控另取Astra对d8caf4c..a6b7d6f源码/字体/登记明确通过，无实质阻断；与准确DDL窄审分层。0033同字节SHA b8fd…1290已提交0bf173b，最终root正常ff后按原b3/test/55537/63237启动，正常managed migrate实际仅应用0033。没有改旧manifest/marker、没有新init或其他DB。迁移前owner捕获原32checksum/catalog ad236…fa8d7、全函数元事实/ACL与业务空库，文件`source-0033-before.receipt.json`。
