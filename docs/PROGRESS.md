@@ -1,5 +1,17 @@
 # 阶段进度
 
+## 2026-11-04 00486实际0034与全部53声明证明通过，事实收齐并正常停止
+
+主控收到R对准确2103ca…4955/199999B与aa791556ea61dacb5e2894b7d5272e9acaf7f877 current切换分别通过后，按授权落正式e39ee82。新experience根正常ff至e39ee82、原00486 start，普通CLI实际仅应用0034_private_test_known_ten_experience。原0033与其他已应用SQL字节不改，未重建/新init或触及b3。新正式提交的一次普通push已成功，远端恢复到e39ee82，原两次500记录保留。
+
+定向SQL实际10组通过：34 checksum；迁移前后原33账本checksum与PG直接to_char格式化完整6位微秒applied_at逐项保持（只证明本次前后，不提升先前Date/ISO毫秒证据）；六个前置/实际新body全等于已审候选receipt；全qf函数metadata含owner/ACL/签名/语言/security/search_path保持，只有准确六body变化；准确00486 source JSON Schema/database/marker/三hash接受；原b3准确source/原三hash拒绝；source/asset/manifest/其他实例/授权/异商品拒绝；准确baseline接受而entry/approval/target/旧b3 approval混配拒绝。
+
+rollback-only元数据事务实际逐项插入53合成blob metadata并确认完整53声明接受；通用共享、旧实例限定共享qztx-art-act-1、新3.0角色三代表的声明全文/ref/license/approval篡改均拒绝。仅事务内将本00486 database COMMENT临时置ci marker（不改manifest），实际确认database/source及全部53声明拒绝，再受控抛出触发确认ROLLBACK；原test marker与准确source恢复，全部元blob回滚，八业务/资源计数均0、其他连接0、owner正常关闭。不是native解码/资源存储/包导入证据，不重复评分/B事务或0033无关反例。
+
+实际catalog `8628d210ec2b689e76fb235b814e4e2d1ddab79b4c559f45a751fbbaa99c139e`/27表；据实际保存回执仅更新consumer aggregate与internal_review_valid独立body `364a6c22b3fd2dabe21ed2cab314ccf40c31b8ed1047d3b87805ca909a3a4673`，一次六helper现有引用核对无遗漏旧body，保留全部检查。两事实文件不在current/historical renderer闭包，原准确登记及R的50项/79历史同字节继续复用，不重收同输入descriptor。新增事实TypeScript/定向ESLint通过。
+
+新root`.cache/known-ten/source-0034-{intent,before.receipt,after.receipt,stop.receipt}.json`与原start/migrate/before/after/stop日志保存，A根source-0034-facts-audit.json保存定向引用结果。正常stop后独立核55538/63238无监听、postmaster.pid消失、管理文件和PGdata保留；nativeIoAcquired=false/sourceImported=false。后续沿此唯一新root准备一次生产构建与新main正常资格，不借b3 capability、不拼轮次；本条尚无新build/native/UI或PNG通过。
+
 ## 2026-11-04 准确0034窄审通过，同00486定向迁移已获放行（执行前）
 
 Astra准确通过v2候选SHA `2103ca99cb2c610c8af3d6d20d25945afaffa5aedca85fdc2a606258760f4955`/199999B：完整53声明与包一致且自DB+marker围栏、旧分支/ACL/函数身份/report Schema保持、source三hash/baseline/实际ZIP一致，无阻断。主控已串行保留0034并明确放行同字节落正式`0034_private_test_known_ten_experience.sql`，仅同00486正常start→应用→定向PG证明→实际catalog事实同步→close/normalstop，原b3不动。
