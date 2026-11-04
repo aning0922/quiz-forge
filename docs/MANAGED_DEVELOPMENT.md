@@ -2,6 +2,20 @@
 
 开发、验证、独审和收口统一遵循 [根 AGENTS.md](../AGENTS.md)。本文件的带日期条目、测试数量、全量运行和逐图复核均保留为原批次记录，不要求新任务重新执行。当前任务以用户最新授权及最新实际检查点为准；文档中的旧“尚未合并”“待实现”和阶段启动指令不覆盖后续事实。
 
+## 2026-11-04 十人用途资源/字体/source1.5交接边界
+
+主控转交作者“这版还可以，继续吧”：六重构稿+保留四位成为当前十人用途制作基线。此授权覆盖同角色母图的用途复用/必要裁切与姓名、报告头、海报技术制作；不要求40槽全部重画，不把衍生品工程核对写成作者逐张审美或商业批准。旧李白baked资源继续历史读取，不能套作新十人李白批准。B正在制作，A不从旧`resource-differences.json`的pending快照推翻最新作者反馈，也不从其中“current”字段自行选最终文件；必须收B确切最终版本/路径/字节回执。
+
+**B→A交接接口（复用现有Schema）。** 以`known-ten-catalog.ts`的10个完整role ref和40个resource ref为索引，每个用途交本地最终原文件与`currentResourceV3Schema`可解析声明（ref/path/mediaType/bytes/SHA/width/height/purpose/source/license/approval）。附母图完整版本/原路径/hash、用途reuse/crop/redraw/program-nameart、父子来源链及实际生成/编辑回执；同字节跨用途复用仍按40个用途身份清楚映射，不混错角色，不冒充重新生成。姓名图5:7透明、真实alpha/可见内容范围、熟悉展示名与固定锚点合成核对；报告头/海报以同角色母图复用为先，各自标实际构图及必要差异。source/license evidence沿现字段记录工程内测授权、AI来源/程序字体来源，不凭空填commercialUse/redistribution=true。整份内测content使用现privateTestUse与一致private-test-only资源声明，不混旧实例批准；13共享项也须明确本新用途的复用依据和实际字节，不改旧声明/版本。
+
+**预算与离线入口。** 复用`tests/analysis/qianzai-known-resource-plan.ts`的13共享+40用途、53资源/55文件基准与旧审计，未变输入不重跑。最终到件才读实际文件解码尺寸、SHA/字节/alpha/资源类型和总量；64资源/66文件、32MiB ZIP、64MiB展开、8MiB单资源、1MiB content、256KiB manifest均保持。旧共享17,899,935 B与角色原始余量14,343,777 B只是前次计划，排除ZIP头，不能据此说最终包通过；最终ZIP实算，不靠抬限额。完整报告PNG由共用document/程序导出，不作额外人物资源塞进40槽或重画整份报告；两PNG输出另按最终实际renderer验证。
+
+**字体单次收口输入。** A收服务/UI版本终止与恢复文案，B收十人姓名/称号/引句/出处与固定报告语料，合并现`qianzaiKnownRoleText()`、supported-theme阅读文案、source题干/选项/封面/按钮/加载错误/报告与PNG固定标签；不用作者答案/个人数据。保留换行策略和U+0020，不trim掉有效空格。原1027码点、旧Serif/Literary各缺177的证据复用，但它不是加入服务文案后的最终字符集。Serif/Literary/Brush按实际使用文本分别固定characters与hash，代码点全集闭包一次冻结后各生成一次，不为每幅图反复subset。当前`build-qztx-font.py`仅列到v12、`build-qztx-editorial-fonts.py`到v5；届时追加新profile/版本及新输出目录，不覆盖旧字体/coverage/OFL/descriptor。沿固定官方源hash与fontTools/brotli版本；必须断言最终required全部有glyph（editorial脚本现只打印missing，交付前需失败关闭），U+0020在coverage内，记录woff2/coverage/license真实hash/bytes。待终止文案稳定与资源用途实际接线后才运行，不在本交接步生成。
+
+**最终接线依赖次序。** (1)服务B/终止合同与固定文案稳定；(2)B最终40用途及13共享复用声明到件；(3)冻结字符输入→新字体→固定锚点/共用document与两PNG技术检查；(4)扩受控新十人ref/props与runtime-inputs/component-map、baseline、renderer descriptor闭包，旧版本分支保持；(5)为最终新独立内测服务/DB选择并正常创建准确受管身份，再绑定privateTestUse、冻结content/assetSet/manifest三hash与完整包；(6)主控核0031之后实际空闲source迁移号，准确DDL/diff及来源证据独审后才登记/导入/测试启用。不能把28267合成验证图谱或旧6736候选冒充正式demo，也不能提前复制旧instance marker/hash。现有runtime-inputs/builders是否支持新十人必须按真实新ref分支最小扩展，不用旧五人目录或全局宽放规则代替准入。
+
+正式demo验收目标是新独立真实服务/DB、十人全流程、海报/报告两PNG、整包上传→检查→预览→测试启用与升级政策实际体验；每项按自己的证据层级记录。现有63230/63233/52880、旧报告及所有失败/UNKNOWN保持；工程内测授权不含main合并/生产迁移/对外部署/Release。本步仅明确交接，不生成新素材/字体、source/假hash或迁移。0031授权P1仍待准确062f245窄审，换图不触发A数据库或评分/旧媒体回归。
+
 ## 2026-11-04 切片1授权P1修正：account_actor与固定能力，待窄复核
 
 Astra对`bf28302`指出operator helper统一放行operator/admin导致直接app EXECUTE可越权启用，且未复用当前账号完整资格。最小修正仅触及0031 operator helper及activate/void四个调用：在auth advisory内调用`qf.account_actor`，复用已设密码、身份完整、revision、当前session期限及active账号条件；私有helper增加有限capability参数，activate锁前/锁后固定`version:seal-internal`且仅admin，void固定`access-key:void`允许admin/operator，未知capability拒绝。参数不从请求传入，app仍不获helper EXECUTE；PUBLIC撤销签名同步为(text,text)，公共入口签名及其余锁序/tuple/FK/ACL/claim投影不改。不依赖TS补权限。

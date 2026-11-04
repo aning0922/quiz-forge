@@ -1,5 +1,11 @@
 # 阶段进度
 
+## 2026-11-04 十人用途制作基线与最终source依赖交接
+
+作者已认可六重构稿继续，连保留四位作为当前十人用途制作基线。按主控授权准备B→A交接：复用40完整用途ref与现`currentResourceV3Schema`声明，要求最终真实字节/尺寸/hash、同角色父子来源链、内测许可及用途事实；13共享/40用途预算保持，完整报告PNG走共用document程序导出。新李白不套旧baked批准，旧资源历史读取保持。
+
+MANAGED最新条目已列资源到件字段、预算、单次字体闭包输入和最终接线次序。新增服务/UI终止文案待稳定后合并报告固定语料，含U+0020与原177缺字增量；字体脚本需追加新profile并对missing失败关闭，旧字体不覆盖，本步不运行subset。最终新内测身份、三hash/包、runtime/renderer闭包及source迁移号必须到真实事实齐备再核定；不填假hash、不复用28267合成库或6736候选作demo。本步仅文档与源码接口核对，未改运行输入或启动DB，不重跑原审计/数据库/评分/媒体证据；0031授权P1仍待062f245窄审，作者素材线独立推进。
+
 ## 2026-11-04 切片1 operator授权P1最小修正：正式0031继续暂停
 
 Astra发现`bf28302` helper将operator/admin统一放行并跳过account_actor资格。0031现改私有helper在auth advisory内复用`qf.account_actor`，activate两次固定检查admin的`version:seal-internal`，void两次固定检查admin/operator的`access-key:void`，未知能力拒绝，锁后再核，helper不授app调用；其余已审范围保持。新DDL SHA`c78cad364630daa315b2289c7b0e744ee317543419d3ca7ff5d3a50495ef3d92`。当前角色策略/资格SQL/固定调用/ACL签名与diff静态核对完成，无TS变化不重跑旧静态或A10+5；未执行新SQL/PG，也未进入切片2。旧DDL rollback receipts保留，不冒充新版本通过。准确修正提交后交授权路径窄复核，放行后再补四项指定PG反例，0031仍未应用。
