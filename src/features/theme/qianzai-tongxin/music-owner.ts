@@ -119,6 +119,7 @@ export class QianzaiMusicOwner {
       this.#generation++;
       audio.muted = true;
       audio.pause();
+      this.#releaseAudio();
       this.#publish("error", "音轨暂不可播放，请点击重试");
     };
     const ended = () => this.pause("背景音乐已暂停");
@@ -180,6 +181,12 @@ export class QianzaiMusicOwner {
           this.#generation++;
           audio!.muted = true;
           audio!.pause();
+          if (
+            error instanceof Error &&
+            error.name !== "NotAllowedError" &&
+            (error.name === "NotSupportedError" || audio!.error !== null)
+          )
+            this.#releaseAudio();
           this.#publish(
             "error",
             error instanceof Error && error.name === "NotAllowedError"

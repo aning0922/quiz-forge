@@ -169,3 +169,47 @@ describe("page-owned background music", () => {
     detach();
   });
 });
+
+it("reloads a failed native media source only on an explicit retry", async () => {
+  const f = fixture(),
+    recovered = new Media();
+  f.create
+    .mockReturnValueOnce(f.media as unknown as HTMLAudioElement)
+    .mockReturnValueOnce(recovered as unknown as HTMLAudioElement);
+  f.owner.toggle();
+  f.media.dispatchEvent(new Event("error"));
+  expect(f.owner.getSnapshot().phase).toBe("error");
+  expect(f.media.src).toBe("");
+  expect(f.media.load).toHaveBeenCalledOnce();
+  expect(f.create).toHaveBeenCalledOnce();
+  f.owner.toggle();
+  expect(f.create).toHaveBeenCalledTimes(2);
+  expect(recovered.src).toBe(track.url);
+  expect(recovered.play).toHaveBeenCalledOnce();
+  recovered.playing();
+  await Promise.resolve();
+  expect(f.owner.getSnapshot().phase).toBe("playing");
+  expect(recovered.paused).toBe(false);
+  f.detach();
+});
+
+it("recreates a source rejected as unsupported without waiting for a separate error event", async () => {
+  const f = fixture(),
+    recovered = new Media();
+  f.media.play.mockRejectedValueOnce(
+    Object.assign(new Error("bad media"), { name: "NotSupportedError" }),
+  );
+  f.create
+    .mockReturnValueOnce(f.media as unknown as HTMLAudioElement)
+    .mockReturnValueOnce(recovered as unknown as HTMLAudioElement);
+  f.owner.toggle();
+  await Promise.resolve();
+  expect(f.owner.getSnapshot().phase).toBe("error");
+  expect(f.media.src).toBe("");
+  f.owner.toggle();
+  recovered.playing();
+  await Promise.resolve();
+  expect(f.create).toHaveBeenCalledTimes(2);
+  expect(f.owner.getSnapshot().phase).toBe("playing");
+  f.detach();
+});
