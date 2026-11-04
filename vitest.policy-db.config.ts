@@ -1,5 +1,5 @@
 import { defineConfig } from "vitest/config";
-import base from "./vitest.config.ts";
+import base from "./vitest.config";
 
 // Explicit owned synthetic seed only. Never joins the reset or general DB suites.
 if (!process.env.QF_POLICY_SEED) throw Error("POLICY_FAULT_SEED_REQUIRED");

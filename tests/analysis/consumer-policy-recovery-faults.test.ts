@@ -294,3 +294,76 @@ it("terminates the exact completion backend; keeps unknown resolution loss pendi
     });
   }
 });
+
+it("rejects a completion started before enable when enable wins before its final SQL transaction", async () => {
+  const f = await openPolicyFaultFixture(),
+    ready = gate(),
+    release = gate();
+  let writer: Promise<unknown> | undefined;
+  try {
+    const c = await f.prepare("enable-before-final"),
+      faults = observeFaults(),
+      grantsBefore = JSON.stringify(await c.grantRows());
+    writer = c
+      .finalCompletion(undefined, async () => {
+        ready.resolve();
+        await release.promise;
+      })
+      .then(
+        (value) => ({ value }),
+        (error) => ({ error }),
+      );
+    await waitForOriginalHold(ready, writer);
+    await c.advance();
+    release.resolve();
+    expect(await writer).toMatchObject({
+      error: { code: "VERSION_SUPERSEDED" },
+    });
+    const terminal = await f.request((owner) =>
+      createConsumerFlowService(owner).resolveComplete(
+        c.credentials,
+        c.binding.session.sessionId,
+        c.binding,
+      ),
+    );
+    expect(terminal.kind).toBe("version-superseded");
+    expect(terminal.binding).toEqual(c.binding);
+    expect(await c.reportRows()).toHaveLength(0);
+    expect(JSON.stringify(await c.grantRows())).toBe(grantsBefore);
+    expect(faults.state.closes).toBe(faults.state.opens);
+    for (const pid of faults.state.pids) await f.backendGone(pid);
+    expect(faults.guard).not.toHaveBeenCalled();
+    expect(faults.task).not.toHaveBeenCalled();
+    await f.write(".enable-before-final.result.json", {
+      status: "PASS_ENABLE_BEFORE_LATE_FINAL_TX",
+      originalBinding: c.binding,
+      startedBeforeEnable: true,
+      finalTransactionAfterEnable: true,
+      exactError: "VERSION_SUPERSEDED",
+      reportCount: 0,
+      grantRowsUnchanged: true,
+      sql: {
+        opened: faults.state.opens,
+        confirmedPhaseCloses: faults.state.closes,
+        backendPidsGone: faults.state.pids,
+      },
+      resourceIo: { acquired: false, stopProof: null },
+    });
+  } catch (e) {
+    await f.write(".enable-before-final.failure.json", {
+      status: "FAILED_PRESERVED_NO_REPLAY",
+      code: (e as { code?: string }).code,
+      message: (e as Error).message,
+    });
+    throw e;
+  } finally {
+    release.resolve();
+    if (writer) await writer;
+    await f.close();
+    await f.write(".fixture-close.json", {
+      fixtureAppPoolClosed: true,
+      fixtureOwnerPoolClosed: true,
+      resourceIoAcquired: false,
+    });
+  }
+});

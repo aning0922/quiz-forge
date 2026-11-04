@@ -205,11 +205,13 @@ export async function openPolicyFaultFixture() {
     });
     async function finalCompletion(
       afterInsert?: (tx: ConsumerTx) => Promise<void>,
+      beforeTransaction?: () => Promise<void>,
     ) {
       return request((owner) =>
         consumerServiceCall(owner, "complete", (c, observation) =>
-          c.sql((db, check) =>
-            consumerWrite(db, check, observation, async (tx) => {
+          c.sql(async (db, check) => {
+            await beforeTransaction?.();
+            return consumerWrite(db, check, observation, async (tx) => {
               try {
                 const a = await lockConsumerAuthority(
                   tx,
@@ -233,8 +235,8 @@ export async function openPolicyFaultFixture() {
                 });
                 throw error;
               }
-            }),
-          ),
+            });
+          }),
         ),
       );
     }
