@@ -1,5 +1,11 @@
 # 阶段进度
 
+## 2026-11-04 精确0033 DDL窄审通过与自有b3迁移放行
+
+主控串行确认目录仅至0032且无另一SQL流，保留0033给本source。Astra对准确候选SHA `b8fd2bb808b5784145e03025d11a25f29029f752211a975f64df5e9d9bd91290`窄审通过，无本次准入阻断；主控明确放行同字节正式`0033_private_test_known_ten.sql`，仅原b3/test正常start/migrate和对应正反例、ACL、实际catalog/runtime facts收口，再按原授权内测流程继续。此记录时尚未执行0033。既有TS content Schema同时含1ec2历史准备identity语法，0033没有其database/structure/source/baseline新分支，不能据此称实际source准入。report Schema另静态对比原0029字节相同，SHA a2d3b8ab…edf69（A私有report-schema-unchanged回执）。
+
+DDL窄审不代替a6b7源码独审结论、真实DB验证、native IO、UI/PNG或内容/商业批准。原环境、作者、63226 UNKNOWN与6736失败保持。后续原b3应用/失败/关闭证据继续写本节，不修改已应用字节、不重跑未变B服务/A10+5或全旧媒体矩阵。
+
 ## 2026-11-04 完整私有包构建通过，精确source迁移候选待独审
 
 最终root正常ff到a6b7d6f；现有b3实例55537用正常managed start、现有runtime签发私有capability后，`build-qztx-known-ten-private-pack.ts`经原private builder完成真实53资源的完整包验证及无覆盖写ZIP。结果`PASS_PRIVATE_PACK_BUILD_ONLY`：ZIP30518005B/SHA `6e6eaa4c2bd5224a7f306569e7913b09d9bba6b28c7547381be27a91bc188017`；实际manifest `dbb14006ddb3e59652b8e8cd229b66235122f225218d6ef0d3a3d4a7d3839234`与先前确定性登记严格相同。回执与ZIP位于最终root`.cache/known-ten/content-candidate-v1/{private-pack-receipt.json,known-ten.zip}`。没有使用通用入口、跳过capability或把初次公共拒绝改称通过；首次start缺少显式instance被CLI_ARGUMENTS_INVALID拒绝，无启动效果，原log保留，按CLI准确参数正常续行。
