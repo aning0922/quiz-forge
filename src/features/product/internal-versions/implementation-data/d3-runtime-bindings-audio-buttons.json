@@ -9,9 +9,7 @@
         "entrypoints": [
           {
             "path": "src/features/product/internal-versions/implementations/engine-v2.ts",
-            "exports": [
-              "bindEngineV2"
-            ],
+            "exports": ["bindEngineV2"],
             "runtime": "server"
           }
         ],
@@ -282,10 +280,7 @@
             }
           ],
           "settingsSha256": "078cb045ec56da085d08eb6efd0f1b925aa95b0ed16afff689183a2a919c0dd3",
-          "builtins": [
-            "node:crypto",
-            "node:util"
-          ]
+          "builtins": ["node:crypto", "node:util"]
         },
         "runtimePolicy": {
           "node": ">=20.19.0 <21 || >=22.13.0",
@@ -314,17 +309,12 @@
         "entrypoints": [
           {
             "path": "src/features/theme/preview/v3-projection.ts",
-            "exports": [
-              "projectContentEntryV3",
-              "projectPreparedResultV3"
-            ],
+            "exports": ["projectContentEntryV3", "projectPreparedResultV3"],
             "runtime": "server"
           },
           {
             "path": "src/features/theme/consumer-v2/studio-structure-preview.tsx",
-            "exports": [
-              "StudioStructurePreviewV2"
-            ],
+            "exports": ["StudioStructurePreviewV2"],
             "runtime": "browser"
           }
         ],
@@ -2283,10 +2273,7 @@
             }
           ],
           "settingsSha256": "078cb045ec56da085d08eb6efd0f1b925aa95b0ed16afff689183a2a919c0dd3",
-          "builtins": [
-            "node:crypto",
-            "node:util"
-          ]
+          "builtins": ["node:crypto", "node:util"]
         },
         "runtimePolicy": {
           "node": ">=20.19.0 <21 || >=22.13.0",
@@ -2452,31 +2439,22 @@
         "entrypoints": [
           {
             "path": "src/features/theme/preview/v3-projection.ts",
-            "exports": [
-              "projectContentEntryV3",
-              "projectPreparedResultV3"
-            ],
+            "exports": ["projectContentEntryV3", "projectPreparedResultV3"],
             "runtime": "server"
           },
           {
             "path": "src/features/theme/consumer-v2/experience.tsx",
-            "exports": [
-              "ConsumerSessionRuntimeV2"
-            ],
+            "exports": ["ConsumerSessionRuntimeV2"],
             "runtime": "browser"
           },
           {
             "path": "src/features/theme/consumer-v2/controller.ts",
-            "exports": [
-              "ConsumerControllerV2"
-            ],
+            "exports": ["ConsumerControllerV2"],
             "runtime": "browser"
           },
           {
             "path": "src/features/theme/consumer-v2/host.tsx",
-            "exports": [
-              "ConsumerExperienceV2"
-            ],
+            "exports": ["ConsumerExperienceV2"],
             "runtime": "browser"
           },
           {
@@ -2490,9 +2468,7 @@
           },
           {
             "path": "src/features/report/persisted/view-contracts-v2.ts",
-            "exports": [
-              "verifyPersistedReportViewV2"
-            ],
+            "exports": ["verifyPersistedReportViewV2"],
             "runtime": "server"
           }
         ],
@@ -4591,10 +4567,7 @@
             }
           ],
           "settingsSha256": "078cb045ec56da085d08eb6efd0f1b925aa95b0ed16afff689183a2a919c0dd3",
-          "builtins": [
-            "node:crypto",
-            "node:util"
-          ]
+          "builtins": ["node:crypto", "node:util"]
         },
         "runtimePolicy": {
           "node": ">=20.19.0 <21 || >=22.13.0",
@@ -4618,17 +4591,12 @@
         "entrypoints": [
           {
             "path": "src/features/theme/qianzai-tongxin/projection.ts",
-            "exports": [
-              "projectQianzaiEntry",
-              "projectQianzaiResult"
-            ],
+            "exports": ["projectQianzaiEntry", "projectQianzaiResult"],
             "runtime": "server"
           },
           {
             "path": "src/features/theme/qianzai-tongxin/fixed-preview.tsx",
-            "exports": [
-              "QianzaiFixedPreview"
-            ],
+            "exports": ["QianzaiFixedPreview"],
             "runtime": "browser"
           }
         ],
@@ -6672,10 +6640,7 @@
             }
           ],
           "settingsSha256": "078cb045ec56da085d08eb6efd0f1b925aa95b0ed16afff689183a2a919c0dd3",
-          "builtins": [
-            "node:crypto",
-            "node:util"
-          ]
+          "builtins": ["node:crypto", "node:util"]
         },
         "runtimePolicy": {
           "node": ">=20.19.0 <21 || >=22.13.0",
@@ -6867,31 +6832,22 @@
           },
           {
             "path": "src/features/theme/consumer-v2/experience.tsx",
-            "exports": [
-              "ConsumerSessionRuntimeV2"
-            ],
+            "exports": ["ConsumerSessionRuntimeV2"],
             "runtime": "browser"
           },
           {
             "path": "src/features/theme/consumer-v2/controller.ts",
-            "exports": [
-              "ConsumerControllerV2"
-            ],
+            "exports": ["ConsumerControllerV2"],
             "runtime": "browser"
           },
           {
             "path": "src/features/theme/qianzai-tongxin/runtime.tsx",
-            "exports": [
-              "QianzaiTongxinRuntime"
-            ],
+            "exports": ["QianzaiTongxinRuntime"],
             "runtime": "browser"
           },
           {
             "path": "src/app/qianzai-test-audio/moonlit-water/1.0.0/route.ts",
-            "exports": [
-              "GET",
-              "HEAD"
-            ],
+            "exports": ["GET", "HEAD"],
             "runtime": "server"
           },
           {
@@ -6905,9 +6861,7 @@
           },
           {
             "path": "src/features/report/persisted/view-contracts-v2.ts",
-            "exports": [
-              "verifyPersistedReportViewV2"
-            ],
+            "exports": ["verifyPersistedReportViewV2"],
             "runtime": "server"
           }
         ],
