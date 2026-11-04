@@ -6,6 +6,8 @@
 
 CI单独记录：主控本轮实时核对准确旧HEAD `b8423397f4ef8786b137d66794bda905b3fdb692`，媒体隔离[41838733237](https://github.com/aning0922/quiz-forge/actions/runs/41838733237)为success；普通检查[41838732893](https://github.com/aning0922/quiz-forge/actions/runs/41838732893)已completed/failure。主控已核job：media/accounts成功；checks因resource-owner.test.ts:318未使用的_asset参数产生1条warning，在max-warnings=0下被阻断（0error不等于CI通过）。database前493项真实PG、validation14、namespace3及media-uncertainty3均通过，最后p4-consumer-faults一例exchange报NO_ENABLED_PLAY。已交B仅修这两个测试文件，待准确diff交R窄审；不触生产代码/UI/00486，不重build/native/全套，也不复开产品视觉或内容验收。作者体验已通过，CI仍待收口；不记CI全绿或已可合并，不用旧HEAD结果冒充后续文字HEAD的CI。PR54保持Draft，未获main合并或生产授权。
 
+两项定向CI缺口修复已通过：R准确窄审B `c160b83c168f31f8650e0df4241eb9aefed5850b` 无阻断，集成为 `83b8dd7f4807ba18c89fc9b3fcb635cd068eb5c9`，仅两个测试文件。复用owner1项、真实PG fault1项（含精确cleanup）、两文件ESLint max-warnings=0、类型/格式/diff通过及专属库停止证据；原fault/UNKNOWN/NOWAIT/CAS、RR后/IO后撤权、activation graph和预算不退款断言保留。未重跑验证，未改生产代码/共享fixture或当前f2c8b31构建/demo，不重build/native。自动CI以最终准确HEAD实际状态为准，定向通过不等于CI全绿；不等待或手动重触CI。作者体验验收结论保持。
+
 作者实际反馈末题后人物图等待十余秒。准确修复 `f2c8b317e6b998103af525102b90f48fd10aab34` 已获R窄审通过：仅completed且无pending的report按已选角色及精确slot优先加载reveal/nameArt，同一lease内完整asset事实一致的多slot共享一次字节验证/decode/URL，仍为两个worker。admission、transport权限、完整hash/decode、失权/abort/晚到回收保持；一个VerifiedImage只释放一次，不跨lease复用、不预拉十人、不改评分/保存/完成幂等/服务端执行校验或原2秒动效。
 
 真实基线在原e806/kviyk构建正常新合成Key准备23题，再浏览器点末题一次。首轮14.65秒含入口在途请求，保留为探索记录，不作为最终matched before。修正baseline-v2与fixed-v1均为Chromium156.0.8078.4、390×844、新浏览器上下文/冷HTTP缓存、同李白witness；点击前当前题图/字体就绪且bounded networkidle，19项入口图均已decode，末项decode至click约531/546ms，无入口争用。实际可见要求已验证decode、DOM几何、本人及祖先累计opacity>0.05、原揭晓转场遮罩退出，不只用isVisible。
