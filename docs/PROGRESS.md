@@ -1,5 +1,17 @@
 # 阶段进度
 
+## 2026-11-04 十人素材交接：53项实物与用途取景完成
+
+作者认可本批十人方向并授权继续制作。B独立树 `quizforge-qztx-known-ten-content/quiz-forge`、分支 `codex/qztx-known-ten-content` 完成40个角色槽位及13个共享资源；制作计划提交 `b43c9ef`。四槽优先复用同角色母图/已合格槽位，不要求40个新场景；海报、长图继续使用原程序的纸景、版式和绘制函数。十人为李白、苏轼、唐伯虎、周瑜、赵云、李清照、杨玉环、武则天、王昭君、蔡文姬，历史候选及原件保留。
+
+- 取景：李白v2临江举酒、唐伯虎v2审画、周瑜v5船首统军、蔡文姬v3核卷、杨玉环v4收帛，沿用已认可方向；赵云v4银枪、李清照原图、王昭君v1、武则天v2保持。李清照report/poster及李白/苏轼/李清照姓名优先复用已合格同角色字节；其余姓名独立透明5:7。杨玉环、唐伯虎、蔡文姬report初版面部被原羽化/纸景遮挡，已分别以报告资源透明留白和取景修正，仅复核受影响用途，未改共享renderer或重画已过母图。
+- 苏轼：原认可取景 `su-shi-reveal-v2-halfbody-crop.png` 为578×1252，继续保留；同方向生成细节补图 `su-shi-reveal-v3-hd-supplement.png` 实际852×1846，保留成熟近正面含笑、短须、持杖与衣装方向。补图不是原像素等同、1024宽证明或新增逐张作者批准；V对苏补图及杨修复的定向视觉复核待返回，不重开整轮。
+- 已通过：私有 `audit-resources.ts` 调用实际 `currentResourceV3Schema`，53项声明、实际SHA/字节/尺寸、姓名真实透明度/5:7、十人四槽引用及预算均PASS；十人组合实际于IAB Chromium、1280×720查看并留完整页截图。海报/长图调用未修改的consumer layout/draw函数，但使用明确标识的全50合成素材文档，无作者答案，不是正式source/数据库报告回执。计划文件定向Prettier及diff检查通过。编码/审阅早期失败、遮挡初图和批量下载超时记录保留，不计通过；后续文档只核文本/diff，未重复上述成功检查。
+- 实重：资源30,079,293 B；53项纯资源ZIP 30,087,195 B，SHA `82d84066df013eb29303ee631dfea50feb7801552e13b7e944566db56052dab2`。预留content最大1MiB、manifest最大256KiB及ZIP开销后31,406,397 B，低于32MiB；该ZIP仅素材，不冒称已验证完整QuizPack。最终字体/资源输入变化后由A重算最终包。
+- 私有交接根为 `/Users/aipuli/.codex/worktrees/quizforge-qztx-known-ten-content/quiz-forge/.cache/known-ten-art/`；其中 `delivery-v1/manifest.json` 含全部声明、输入来源与取景链、槽位和限制，`resource-audit.json`、`archive-receipt.json`、`known-ten-resources-only.zip` 位于同目录；`inspection/` 保存组合截图，`masters/`、`prompts/` 保存原件/请求，`group-02-review.json` 记录本轮交接。上述素材、ZIP和凭证不进入公共Git。完整素材预览为 `http://127.0.0.1:50305/preview/index.html`，主控原52880只读服务的新文件清单已READY_TO_RESTART，由主控按owner正常重启；B保留预览，未触碰该服务。
+
+本批不运行全量测试、生产build、DB、媒体或E2E：生产评分/事务/共享绘制代码未改，复用原成功证据；必要素材实物检查已完成。A接技术集成，负责全角色+UI+服务语料的一次最终字体构建与含空格coverage、完整组包、source/renderer登记及真实隔离路径验证；这些在B均为NOT_RUN。全量参考字体仅供有许可的私有素材预览，不绕过正式覆盖检查；所有新声明均private-test-only，不推定商用、再分发、main合并或对外部署资格。
+
 ## 2026-11-03 阅读增量收口：24题静态通读结论
 
 B对封存source `8cbcf2488308c4f4962e9e9ee0aacf79f0dce1a3fb386133b81a0561edff7c31` 的24题/96选项完成一次静态通读：情境、退出条件与四项取舍基本清楚，同轴题有不同情境不自动视为冗余，现题可支撑本批阅读增量，无需改题。q21–24可理解，但通读不增加解释资格；既有accepted/完整支持门控保持。未读作者答案、未执行评分、未改题或新增文档，不把通读当评分/内容批准。
