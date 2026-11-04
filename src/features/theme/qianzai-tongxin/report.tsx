@@ -1,4 +1,5 @@
 "use client";
+import { useQianzaiMusic } from "./music-context";
 import { Sparkle } from "lucide-react";
 
 import {
@@ -731,6 +732,7 @@ export function QianzaiReportReader({
   actions?: ReactNode;
   embedded?: QianzaiEmbeddedReport;
 }) {
+  const music = useQianzaiMusic();
   const container = useRef<HTMLDivElement>(null),
     reader = useRef<HTMLElement>(null),
     toc = useRef<HTMLDivElement>(null);
@@ -926,6 +928,15 @@ export function QianzaiReportReader({
                       </span>
                     </button>
                   ))}
+                  {music && (
+                    <button
+                      aria-pressed={music.state.phase === "playing"}
+                      onClick={music.toggle}
+                    >
+                      {music.label}
+                      <span>{music.state.message}</span>
+                    </button>
+                  )}
                   {onLogout && <button onClick={onLogout}>结束本次访问</button>}
                 </nav>
               </div>

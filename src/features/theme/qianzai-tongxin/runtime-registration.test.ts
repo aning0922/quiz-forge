@@ -142,7 +142,7 @@ it("resolves only the exact new renderer, mapping and fixed-font identity", () =
   changed.mapping.states.cover.runtime.id = "consumer-other-cover";
   expect(resolveConsumerExperienceRuntimeV2(changed)).toBeNull();
 });
-it("binds consumer1.5.2 to the exact known source and derives v2/copy.v3 without accepting mixed facts", async () => {
+it("binds consumer1.5.3 to the exact known source and derives v2/copy.v3 without accepting mixed facts", async () => {
   const entry = registered.qianzaiConsumer!,
     identity = consumerImplementationIdentityV2(entry),
     runtime = resolveConsumerExperienceRuntimeV2({
@@ -167,7 +167,7 @@ it("binds consumer1.5.2 to the exact known source and derives v2/copy.v3 without
   const render = runtime.Experience as typeof QianzaiTongxinRuntime;
   const bound = render({ model: f.model, onEvent() {} });
   const binding = bound.props.presentationBinding!;
-  expect(identity.version).toBe("1.5.2");
+  expect(identity.version).toBe("1.5.3");
   expect(binding).toEqual({
     renderer: identity,
     profileVersion: "qianzai-role-presentation.v2",

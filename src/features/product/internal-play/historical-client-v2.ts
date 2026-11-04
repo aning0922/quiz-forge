@@ -8,18 +8,22 @@ import v13Entry from "./implementation-data/consumer-qianzai-historical-v13.json
 import v14Entry from "./implementation-data/consumer-qianzai-historical-v14.json";
 import v15Entry from "./implementation-data/consumer-qianzai-historical-v15.json";
 import v151Entry from "./implementation-data/consumer-qianzai-historical-v151.json";
+import v152Entry from "./implementation-data/consumer-qianzai-historical-v152.json";
 import { QIANZAI_RUNTIME_INPUTS as v13Inputs } from "@/features/theme/qianzai-tongxin/historical-v13/runtime-inputs";
 import { QIANZAI_RUNTIME_INPUTS as v14Inputs } from "@/features/theme/qianzai-tongxin/historical-v14/runtime-inputs";
 import { QIANZAI_RUNTIME_INPUTS as v15Inputs } from "@/features/theme/qianzai-tongxin/historical-v15/runtime-inputs";
 import { QIANZAI_RUNTIME_INPUTS as v151Inputs } from "@/features/theme/qianzai-tongxin/historical-v151/runtime-inputs";
+import { QIANZAI_RUNTIME_INPUTS as v152Inputs } from "@/features/theme/qianzai-tongxin/historical-v152/runtime-inputs";
 import { deriveQianzaiResultPresentation as v13Presentation } from "@/features/report/qianzai-tongxin/historical-v13/result-presentation";
 import { deriveQianzaiResultPresentation as v14Presentation } from "@/features/report/qianzai-tongxin/historical-v14/result-presentation";
 import { deriveQianzaiResultPresentation as v15Presentation } from "@/features/report/qianzai-tongxin/historical-v15/result-presentation";
 import { deriveQianzaiResultPresentation as v151Presentation } from "@/features/report/qianzai-tongxin/historical-v151/result-presentation";
+import { deriveQianzaiResultPresentation as v152Presentation } from "@/features/report/qianzai-tongxin/historical-v152/result-presentation";
 import { QianzaiHistoricalRuntime as V13 } from "@/features/theme/qianzai-tongxin/historical-v13/runtime";
 import { QianzaiHistoricalRuntime as V14 } from "@/features/theme/qianzai-tongxin/historical-v14/runtime";
 import { QianzaiHistoricalRuntime as V15 } from "@/features/theme/qianzai-tongxin/historical-v15/runtime";
 import { QianzaiHistoricalRuntime as V151 } from "@/features/theme/qianzai-tongxin/historical-v151/runtime";
+import { QianzaiHistoricalRuntime as V152 } from "@/features/theme/qianzai-tongxin/historical-v152/runtime";
 
 const sourceHashes = new Set([
   "dbe46ea379cb2201456d8d3640466fbcd7cb3c194fa9e7289b0130b755f6f4ee",
@@ -89,6 +93,21 @@ const v151Binding = Object.freeze({
 });
 const V151Experience: ComponentType<ConsumerExperiencePropsV2> = (props) =>
   createElement(V151, { ...props, presentationBinding: v151Binding });
+const v152 = consumerImplementationEntryV2Schema.parse(v152Entry);
+const v152Identity = consumerRendererIdentitySchema.parse({
+  kind: v152.descriptor.kind,
+  id: v152.descriptor.id,
+  version: v152.descriptor.version,
+  entrySha256: v152.entrySha256,
+});
+const v152Binding = Object.freeze({
+  renderer: v152Identity,
+  profileVersion: "qianzai-role-presentation.v2" as const,
+  canonicalContentSha256:
+    "6c701d4445f98b2d6e042dde1edc203e118c9a79728697ef551fa89fe2bd2187",
+});
+const V152Experience: ComponentType<ConsumerExperiencePropsV2> = (props) =>
+  createElement(V152, { ...props, presentationBinding: v152Binding });
 const profiles = [
   ...legacyProfiles,
   Object.freeze({
@@ -109,6 +128,15 @@ const profiles = [
     presentationMatches: (view: PersistedReportViewV2["view"]) =>
       Boolean(v151Presentation(view, v151Binding)),
   }),
+  Object.freeze({
+    entry: v152,
+    identity: v152Identity,
+    inputs: v152Inputs,
+    Experience: V152Experience,
+    sources: new Set<string>([v152Binding.canonicalContentSha256]),
+    presentationMatches: (view: PersistedReportViewV2["view"]) =>
+      Boolean(v152Presentation(view, v152Binding)),
+  }),
 ];
 
 /** Only the controller's verified immutable report reaches this presentation selector.
@@ -122,7 +150,9 @@ export function resolveHistoricalReportRuntimeV2(
   // Undefined delegates unrelated editions; null rejects an old identity without fallback.
   if (
     view.renderer.id !== "consumer-qianzai-tongxin" ||
-    !["1.3.0", "1.4.0", "1.5.0", "1.5.1"].includes(view.renderer.version)
+    !["1.3.0", "1.4.0", "1.5.0", "1.5.1", "1.5.2"].includes(
+      view.renderer.version,
+    )
   )
     return undefined;
   const character = view.display.slots.character;

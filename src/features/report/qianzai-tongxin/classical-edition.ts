@@ -5,7 +5,7 @@ import type { QianzaiResultPresentation } from "./result-presentation";
 /** The ten-role edition is separate from the retained V11 source aliases.
  * These identities grant no availability until the exact closure is registered. */
 export const QIANZAI_CLASSICAL_EDITION = Object.freeze({
-  consumerVersion: "1.5.2",
+  consumerVersion: "1.5.3",
   previewVersion: "1.3.0",
   presentationVersion: "qianzai-role-presentation.v2",
   copyVersion: "qianzai-consumer-copy.v3",

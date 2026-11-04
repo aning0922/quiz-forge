@@ -2253,14 +2253,26 @@
   .reveal-hot {
   display: grid;
   place-items: center;
+  /* These are visible controls, unlike the retained baked-art hit regions.
+     Do not inherit the legacy host button's 9px 17px content padding. */
+  padding: 0;
+  top: 42px;
+  width: 44px;
+  height: 44px;
   border: 1px solid #e5bf7399;
   background: #14233155;
   color: #ffe7b7;
 }
 .frame
   .reveal[data-qianzai-reveal-mode]:not([data-qianzai-reveal-mode="composite"])
+  .reveal-hot.music {
+  right: 60px;
+}
+.frame
+  .reveal[data-qianzai-reveal-mode]:not([data-qianzai-reveal-mode="composite"])
   .reveal-hot
   svg {
+  display: block;
   width: 24px;
   height: 24px;
   fill: none;

@@ -32,7 +32,7 @@ describe("registered Qianzai presentation runtime", () => {
 it("requires the exact candidate renderer, font and mapping and denies previous tuples", () => {
   const identity = CONSUMER_IMPLEMENTATION_AVAILABILITY_V2.qianzai!;
   const runtime = resolveConsumerRendererClientV2(identity)!;
-  expect(identity.version).toBe("1.5.2");
+  expect(identity.version).toBe("1.5.3");
   expect(
     resolveConsumerRendererClientV2({
       ...identity,

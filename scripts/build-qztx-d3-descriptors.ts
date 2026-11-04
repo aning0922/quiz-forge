@@ -138,6 +138,11 @@ async function main() {
         ["QianzaiTongxinRuntime"],
         "browser",
       ),
+      entry(
+        "src/app/qianzai-test-audio/moonlit-water/1.0.0/route.ts",
+        ["GET", "HEAD"],
+        "server",
+      ),
       ...protocols,
     ],
     fonts,

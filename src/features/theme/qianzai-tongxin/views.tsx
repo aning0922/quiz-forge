@@ -1,5 +1,6 @@
 "use client";
 import { RotateCcw, Sparkle } from "lucide-react";
+import { useQianzaiMusic } from "./music-context";
 import { knownQianzaiArtPresentation } from "./known-art-presentation";
 import { QIANZAI_CLASSICAL_EDITION } from "@/features/report/qianzai-tongxin/classical-edition";
 
@@ -596,6 +597,7 @@ export function QianzaiQuestion({
   onChoose: (questionId: string, optionId: string) => void;
   readingQuestionId?: string;
 }) {
+  const music = useQianzaiMusic();
   const id = useId(),
     [menuOpen, setMenuOpen] = useState(false),
     [musicNotice, setMusicNotice] = useState(false),
@@ -713,8 +715,13 @@ export function QianzaiQuestion({
           />
           <button
             className={`${scenes.interact} ${scenes["hit-top"]} ${scenes.music}`}
-            aria-label="音乐说明"
-            onClick={() => setMusicNotice(!musicNotice)}
+            aria-label={music?.label ?? "背景音乐不可用"}
+            aria-pressed={music?.state.phase === "playing"}
+            disabled={!music}
+            onClick={() => {
+              music?.toggle();
+              setMusicNotice(true);
+            }}
           />
           <button
             className={`${scenes.interact} ${scenes["hit-top"]} ${scenes.menu}`}
@@ -910,7 +917,7 @@ export function QianzaiQuestion({
           )}
           {musicNotice && (
             <p className={scenes.musicNotice} role="status">
-              当前未提供音轨。
+              {music?.state.message ?? "当前未提供音轨"}。
             </p>
           )}
         </>
@@ -955,6 +962,7 @@ export function QianzaiReveal({
   onReplay?: () => void;
   referenceComposite?: QianzaiRevealReference;
 }) {
+  const music = useQianzaiMusic();
   const selected = model.report?.view.display.body.matching.selected;
   const result = useQianzaiExport().getResultPresentation();
   const character = qianzaiCharacter(model);
@@ -1220,20 +1228,27 @@ export function QianzaiReveal({
         >
           {!frames && (
             <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="m15 4-8 8 8 8" />
+              <path d="m16 4-8 8 8 8" />
             </svg>
           )}
         </button>
         <button
           className={`${scenes["reveal-hot"]} ${scenes.music}`}
-          aria-label="音乐说明"
-          onClick={() => setMusicNotice(!musicNotice)}
+          aria-label={music?.label ?? "背景音乐不可用"}
+          aria-pressed={music?.state.phase === "playing"}
+          disabled={!music}
+          onClick={() => {
+            music?.toggle();
+            setMusicNotice(true);
+          }}
         >
           {!frames && (
             <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M10 17V5l10-2v12M10 8l10-2" />
-              <ellipse cx="6.5" cy="18" rx="3.5" ry="2.5" />
-              <ellipse cx="16.5" cy="16" rx="3.5" ry="2.5" />
+              <g transform="translate(.5 .25)">
+                <path d="M10 17V5l10-2v12M10 8l10-2" />
+                <ellipse cx="6.5" cy="18" rx="3.5" ry="2.5" />
+                <ellipse cx="16.5" cy="16" rx="3.5" ry="2.5" />
+              </g>
             </svg>
           )}
         </button>
@@ -1293,7 +1308,7 @@ export function QianzaiReveal({
             className={`${scenes["reveal-toast"]} ${scenes.visible}`}
             role="status"
           >
-            当前未提供音轨。
+            {music?.state.message ?? "当前未提供音轨"}。
           </p>
         )}
       </div>
