@@ -1,4 +1,5 @@
-import { qianzaiConsumerCopy } from "./consumer-copy";
+import { qianzaiConsumerCopy, qianzaiKnownConsumerCopy } from "./consumer-copy";
+import { QIANZAI_CLASSICAL_EDITION } from "./classical-edition";
 import type { ComposedReportBodyV1 } from "@/lib/assessment-contract/composed-report-v1";
 import {
   qianzaiPresentationMatchesBody,
@@ -129,7 +130,11 @@ export function qianzaiSnapshotDocument(
     ? derived
     : undefined;
   const role = result?.role;
-  const consumer = result ? qianzaiConsumerCopy(body, result) : undefined;
+  const consumer = result
+    ? result.profileVersion === QIANZAI_CLASSICAL_EDITION.presentationVersion
+      ? qianzaiKnownConsumerCopy(body, result)
+      : qianzaiConsumerCopy(body, result)
+    : undefined;
   return {
     mode: "snapshot",
     ...(consumer

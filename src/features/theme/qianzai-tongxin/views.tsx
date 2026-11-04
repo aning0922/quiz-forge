@@ -1,4 +1,6 @@
 "use client";
+import { knownQianzaiArtPresentation } from "./known-art-presentation";
+import { QIANZAI_CLASSICAL_EDITION } from "@/features/report/qianzai-tongxin/classical-edition";
 
 import {
   useEffect,
@@ -964,31 +966,43 @@ export function QianzaiReveal({
       : undefined;
   const portrait = qianzaiImage(model, currentCharacter?.reveal, images);
   const nameArt = qianzaiImage(model, currentCharacter?.nameArt, images);
+  const knownEdition =
+    model.report?.view.renderer.id === "consumer-qianzai-tongxin" &&
+    model.report.view.renderer.version ===
+      QIANZAI_CLASSICAL_EDITION.consumerVersion;
+  const knownReveal =
+    knownQianzaiArtPresentation(result, portrait?.asset, "reveal") ===
+    "native-width-scene";
   // Only this inspected transparent ink candidate receives the gold alpha
   // treatment. qianzaiImage has already verified the selected role and URL.
   const goldInkName =
-    nameArt?.asset.sha256 ===
-      "5e6f72a11d6187751754da57bb059a0230f4474c289fd2a61ac2641c2990933a" &&
-    nameArt.asset.width === 1060 &&
-    nameArt.asset.height === 1484;
+    knownQianzaiArtPresentation(result, nameArt?.asset, "nameArt") ===
+      "gold-alpha" ||
+    (!knownEdition &&
+      nameArt?.asset.sha256 ===
+        "5e6f72a11d6187751754da57bb059a0230f4474c289fd2a61ac2641c2990933a" &&
+      nameArt.asset.width === 1060 &&
+      nameArt.asset.height === 1484);
   // One admitted full-frame candidate; report portraits keep their existing crop.
   const fullReveal =
-    !!portrait &&
-    !!currentCharacter &&
-    sameArtRef(currentCharacter.resultRef, {
-      productId: "qianzai-tongxin",
-      id: "li-bai",
-      version: "1.0.0",
-    }) &&
-    sameArtRef(portrait.asset.resourceRef, {
-      productId: "qianzai-tongxin",
-      id: "qztx-art-li-bai-reveal",
-      version: "1.0.0",
-    }) &&
-    portrait.asset.sha256 ===
-      "36e83a15493c4dcbc298fda7b242b13929f4a1c138ab137bf1411af8e9790f91" &&
-    portrait.asset.width === 853 &&
-    portrait.asset.height === 1844;
+    knownReveal ||
+    (!knownEdition &&
+      !!portrait &&
+      !!currentCharacter &&
+      sameArtRef(currentCharacter.resultRef, {
+        productId: "qianzai-tongxin",
+        id: "li-bai",
+        version: "1.0.0",
+      }) &&
+      sameArtRef(portrait.asset.resourceRef, {
+        productId: "qianzai-tongxin",
+        id: "qztx-art-li-bai-reveal",
+        version: "1.0.0",
+      }) &&
+      portrait.asset.sha256 ===
+        "36e83a15493c4dcbc298fda7b242b13929f4a1c138ab137bf1411af8e9790f91" &&
+      portrait.asset.width === 853 &&
+      portrait.asset.height === 1844);
 
   const copy =
     result && selected && sameArtRef(result.role.ref, selected.ref)
@@ -1060,7 +1074,17 @@ export function QianzaiReveal({
         ) : portrait ? (
           <>
             {fullReveal ? (
-              <div className={scenes.fullRevealBackdrop}>
+              <div
+                className={scenes.fullRevealBackdrop}
+                {...(knownReveal && portrait
+                  ? {
+                      style: {
+                        aspectRatio: `${portrait.asset.width} / ${portrait.asset.height}`,
+                      },
+                      "data-qianzai-known-reveal": "native-width-scene",
+                    }
+                  : {})}
+              >
                 <ArtImage
                   src={portrait.objectUrl}
                   asset={portrait.asset}

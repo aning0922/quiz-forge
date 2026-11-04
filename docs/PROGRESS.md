@@ -1,5 +1,13 @@
 # 阶段进度
 
+## 2026-11-04 1.5纯展示接线与完整候选组装器准备
+
+R已通过历史只读准确d8caf4c，实现窄审关闭；两tuple实际授权/DOM/旧图/双PNG/失权仍待最终运行。新1.5接线先扩可信presentation binding携带准确source hash，新profile.v2仅接受consumer1.5完整identity、同一sealed body/hash及十人3.0完整ref；旧V11入口保留，冻结旧目录不改。copy.v3复用六卷/原正反证据门控与最多3主题，十人各用已冻结资料/文学呼应/中性与寄语；新阅读层只接原accepted主题的具体条件/下一步，不改score/body或把角色当证据。Web/PNG仍由同一document导出，新source的finite支持/五维匹配点还待真实candidate hash绑定，未加入旧V11 aliases。
+
+当前24项受影响旧presentation/copy/reading定向通过，十人新选择/混配及素材表现定向12项通过；两次24项范围有重叠，不相加。TypeScript、10个受影响TS/TSX定向ESLint及差异/格式核对通过；没有实际页面/PNG或最终font通过。已按冻结manifest完整ref/SHA/字节/尺寸/用途列十人reveal的native-width-scene表现及李清照姓名gold-alpha，所有新图不用旧李白SHA规则；5:7姓名及下部固定锚点/CSS原型未改。核当前b4c43851冻结包，李清照nameArt实际仍是PNG1060×1484/629782B/SHA5e6f72a1…，不是重编码WebP；新版本仍显式核3.0完整ref及实际事实，其他金色姓名不套gold mask。真实夜景/取景效果留最终runtime核，不重画素材。
+
+新正常init身份b3d733d9…52e32追加有限privateTestUse语法，旧1ec2准备身份/旧registrations不替换；新authorizationId为qztx-known-ten-private-20261104。此语法不授source/asset/baseline/SQL准入。新组装器`stage-qztx-known-ten-content.ts`只在b3原managed.root运行，绑定原source8cb…、B准确b4manifest/e3ZIP、4344既有coverage的catalogue/definition及10个any witness；计划保留24题/五维/政策/证据families，核5旧模板除ref完全相同后复用一份73声明共享模板给十人，复制53准确资源并核hash；不会重跑4344搜索或导入/写库。当前组装器只静态通过，尚未执行候选组装，不预填source三hash/字体/baseline/DDL。private-test依赖改变会使新historical adapter closure需最终重收，旧descriptor/frozen文件不改。
+
 ## 2026-11-04 两个成功旧tuple的只读适配实现：静态/合成验证，真实出口待最终构建
 
 A按已审2de0771新增两份historical-v13/v14报告/导出必要闭包，从准确6540d7b/1f2177b Git对象取原资料、copy各自字节、document/layout、CSS、字体与资源输入；不复制旧quiz/experience/projection/controller。原renderer元数据独立保留，当前目录metadata去重，不把旧entry作为写执行fallback。新增适配器只渲染封存报告，复用原resource lease/current grant复核及原字体严格覆盖/释放；事件仅结束访问与返回`/access`，没有评分/save/complete端口。只读页返回按钮的aria-label准确改为访问入口，正文/双PNG仍取各自冻结profile，适配修改不冒称原entry源码hash。
