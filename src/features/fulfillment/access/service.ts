@@ -1,3 +1,4 @@
+import { digestToken } from "@/lib/security/p2a-tokens";
 import "server-only";
 import {
   consumerIdSchema,
@@ -48,7 +49,6 @@ import {
   findKeyVoidOperation,
   readKeyFact,
   listKeyIssueFacts,
-  lockAccessKey,
   insertAccessKey,
   voidUnusedKey,
   type AccessKeyFact,
@@ -235,7 +235,7 @@ export function createAccessKeyService(
             observation,
             async (tx, actor) => {
               await consumerReferenceShare(tx);
-              const key = await lockAccessKey(tx, { keyId });
+              const key = await readKeyFact(tx, productId, keyId);
               if (!key || key.issue.binding.play.productId !== productId)
                 throw new ConsumerError("NOT_FOUND");
               if (key.issue.bindingSha256 !== binding.issueBindingSha256)
@@ -250,7 +250,12 @@ export function createAccessKeyService(
               );
               if (occupied && occupied.issue.binding.keyId !== keyId)
                 throw new ConsumerError("OPERATION_CONFLICT");
-              const voided = await voidUnusedKey(tx, key, binding, actor.id);
+              const voided = await voidUnusedKey(
+                tx,
+                key,
+                binding,
+                digestToken(credentials.sessionToken!, "session")!,
+              );
               await appendConsumerOperatorAudit(
                 tx,
                 actor,

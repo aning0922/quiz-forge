@@ -1,3 +1,5 @@
+import { consumerProductActivationBindingText } from "@/features/product/internal-play/activation-contracts";
+import { consumerTextSha256 } from "@/lib/consumer-contract/v1/integrity";
 import { expect, it, vi } from "vitest";
 import { normalizeRuntimeConfig } from "@/lib/db/runtime";
 import { issueToken, csrfForToken } from "@/lib/security/p2a-tokens";
@@ -261,4 +263,69 @@ it("a successful create with unconfirmed close becomes UNKNOWN and reveals no fa
   expect(JSON.parse(text).code).toBe("OUTCOME_UNKNOWN");
   expect(text).not.toContain("private close");
   expect(d.close).toHaveBeenCalledTimes(2);
+});
+
+it("routes explicit activation and read-only resolution with original binding and finite verified receipts", async () => {
+  const f = await internalPlayFixture();
+  const binding = {
+    schemaVersion: "quizforge.consumer-product-activate.v1" as const,
+    productId: f.content.product.productId,
+    operationKey: f.play.play.id,
+    expectedGeneration: 0,
+    playVersionId: f.play.play.id,
+    playSnapshotSha256: f.play.play.snapshotSha256,
+  };
+  const bindingSha256 = await consumerTextSha256(
+    consumerProductActivationBindingText(binding),
+  );
+  const result = {
+    schemaVersion:
+      "quizforge.consumer-product-activation-resolution.v1" as const,
+    binding,
+    bindingSha256,
+    kind: "applied" as const,
+    receipt: {
+      schemaVersion:
+        "quizforge.consumer-product-activation-receipt.v1" as const,
+      id: f.play.play.id,
+      binding,
+      bindingSha256,
+      generation: 1,
+      activatedBy: f.play.play.createdBy,
+      activatedAt: f.play.play.createdAt,
+    },
+    head: {
+      productId: binding.productId,
+      generation: 1,
+      playVersionId: binding.playVersionId,
+      playSnapshotSha256: binding.playSnapshotSha256,
+    },
+  };
+  for (const action of ["activate-play", "resolve-activation"] as const) {
+    const activate = vi.fn(async () => result),
+      resolve = vi.fn(async () => result),
+      d = {
+        ...deps(),
+        createActivationService: vi.fn(() => ({ activate, resolve })),
+      };
+    const response = await handle(
+      request(true, binding),
+      { action, productId: binding.productId },
+      d,
+    );
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual(result);
+    expect(
+      action === "activate-play" ? activate : resolve,
+    ).toHaveBeenCalledOnce();
+    expect(d.createPlayService).not.toHaveBeenCalled();
+  }
+  const d = { ...deps(), createActivationService: vi.fn() };
+  const denied = await handle(
+    request(true, binding),
+    { action: "activate-play", productId: "another-product" },
+    d,
+  );
+  expect(denied.status).toBe(400);
+  expect(d.createOwner).not.toHaveBeenCalled();
 });

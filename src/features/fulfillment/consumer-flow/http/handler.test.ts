@@ -1,3 +1,9 @@
+import { persistedReportFixture } from "@/features/report/persisted/contracts.test-support";
+import { persistedReportFixtureV2 } from "@/features/report/persisted/contracts-v2.test-support";
+import {
+  consumerPolicyBindingSha256,
+  verifyConsumerPolicyResolution,
+} from "../policy-contracts";
 import { expect, it, vi } from "vitest";
 import { normalizeRuntimeConfig } from "@/lib/db/runtime";
 import { ConsumerError } from "@/lib/consumer-contract/v1/errors";
@@ -315,3 +321,48 @@ it("verifies exact save resolution and preserves finite service errors without f
   expect(denied.status).toBe(401);
   expect((await denied.json()).code).toBe("ACCESS_DENIED");
 });
+
+for (const [version, fixture] of [
+  [1, persistedReportFixture],
+  [2, persistedReportFixtureV2],
+] as const) {
+  it(`serializes v${version} policy terminal recovery without exposing another attempt report or issuing a cookie`, async () => {
+    const report = await fixture(),
+      binding = report.receipt.binding;
+    const terminal = await verifyConsumerPolicyResolution(
+      {
+        schemaVersion: "quizforge.consumer-policy-resolution.v1",
+        kind: "entitlement-completed",
+        binding,
+        bindingSha256: await consumerPolicyBindingSha256(binding),
+        outcome: {
+          kind: "entitlement-completed",
+          session: binding.session,
+          requiresReexchange: true,
+        },
+      },
+      binding,
+    );
+    const d = dependencies({ resolveComplete: async () => terminal });
+    const response = await handleConsumerHttp(
+      await request("resolve-complete", binding),
+      { action: "resolve-complete", sessionId: binding.session.sessionId },
+      d,
+    );
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual(terminal);
+    expect(response.headers.get("set-cookie")).toBeNull();
+    const corrupt = dependencies({
+      resolveComplete: async () => ({
+        ...terminal,
+        bindingSha256: "0".repeat(64),
+      }),
+    });
+    const failed = await handleConsumerHttp(
+      await request("resolve-complete", binding),
+      { action: "resolve-complete", sessionId: binding.session.sessionId },
+      corrupt,
+    );
+    expect(failed.status).toBe(503);
+  });
+}

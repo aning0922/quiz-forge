@@ -290,7 +290,16 @@ export async function verifyConsumerFixtureGraph(
             actual.voidReceipt.voidedBy !== value.operator.identifier)
         )
           throw fail();
-        const state = await readConsumerSession(context, k.issue.binding.keyId),
+        const expectedState = expected.states.find(
+          (x) => x.session.keyId === k.issue.binding.keyId,
+        );
+        const state = expectedState
+            ? await readConsumerSession(
+                context,
+                k.issue.binding.keyId,
+                expectedState.session.sessionId,
+              )
+            : null,
           report = await readPersistedReport(context, k.issue.binding.keyId);
         const claim = state
             ? { sessionId: state.session.sessionId, claimedAt: state.createdAt }

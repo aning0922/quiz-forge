@@ -95,6 +95,41 @@ export function consumerServiceError(error: unknown): ConsumerError {
   }
   return new ConsumerError("UNAVAILABLE");
 }
+/** Map only an exact SQLSTATE/message pair, after transaction outcome is known. */
+export function consumerSqlDomainError(
+  error: unknown,
+): ConsumerError | undefined {
+  if (error instanceof ConsumerError) return error;
+  const fault = error as { code?: string; message?: string } | null;
+  if (fault?.code === "55P03" || fault?.code === "57014")
+    return new ConsumerError("BUSY");
+  if (fault?.code === "23505") return new ConsumerError("OPERATION_CONFLICT");
+  if (fault?.code !== "23514") return;
+  const messages = {
+    VERSION_SUPERSEDED: "VERSION_SUPERSEDED",
+    CONSUMER_NO_ENABLED_PLAY: "NO_ENABLED_PLAY",
+    CONSUMER_ACTIVATION_CONFLICT: "ACTIVATION_CONFLICT",
+    CONSUMER_OPERATION_CONFLICT: "OPERATION_CONFLICT",
+    CONSUMER_OPERATOR_REQUIRED: "OPERATOR_REQUIRED",
+    CONSUMER_CAPABILITY_DENIED: "OPERATOR_REQUIRED",
+    CONSUMER_ACCESS_DENIED: "ACCESS_DENIED",
+    CONSUMER_AUTHORITY_MISMATCH: "ACCESS_DENIED",
+    CONSUMER_GRANT_ROTATION: "BUSY",
+    CONSUMER_KEY_EXPIRED: "KEY_NOT_ACTIVE",
+    CONSUMER_KEY_VOID: "KEY_NOT_ACTIVE",
+    CONSUMER_KEY_NOT_ACTIVE: "KEY_NOT_ACTIVE",
+    CONSUMER_MUTATION_DEADLINE: "KEY_NOT_ACTIVE",
+    CONSUMER_INVALID_CLAIM: "KEY_NOT_ACTIVE",
+    CONSUMER_STATE_CONFLICT: "STATE_CONFLICT",
+    CONSUMER_INVALID_INPUT: "INVALID_REQUEST",
+    CONSUMER_INVALID_ANSWER: "INVALID_ANSWERS",
+    CONSUMER_INVALID_PROGRESS: "INVALID_ANSWERS",
+    CONSUMER_PRODUCT_MISSING: "NOT_FOUND",
+  } as const;
+  if (!Object.hasOwn(messages, fault.message ?? "")) return;
+  const code = messages[fault.message as keyof typeof messages];
+  return code ? new ConsumerError(code) : undefined;
+}
 export type ConsumerWriteObservation = {
   kind: "not-started" | "pending" | "committed" | "rolled-back" | "unknown";
 };
@@ -139,14 +174,11 @@ export async function operatorWrite<T>(
             checkpoint();
             return result;
           } catch (error) {
-            const fault = (error && typeof error === "object" ? error : {}) as {
-              code?: string;
-            };
-            if (error instanceof ConsumerError || fault.code === "23505") {
-              domainError =
-                error instanceof ConsumerError
-                  ? error
-                  : new ConsumerError("OPERATION_CONFLICT");
+            const mapped = !isStudioConnectionFailure(error)
+              ? consumerSqlDomainError(error)
+              : undefined;
+            if (mapped) {
+              domainError = mapped;
               sentinel = new StudioError("INVALID_REQUEST");
               throw sentinel;
             }
@@ -259,32 +291,8 @@ export async function consumerWrite<T>(
       throw new ConsumerError("OUTCOME_UNKNOWN");
     }
     observation.kind = "rolled-back";
-    if (error instanceof ConsumerError) throw error;
-    const fault = (error && typeof error === "object" ? error : {}) as {
-      code?: string;
-    };
-    if (fault.code === "55P03" || fault.code === "57014")
-      throw new ConsumerError("BUSY");
-    if (fault.code === "23505") throw new ConsumerError("OPERATION_CONFLICT");
-    if (fault.code === "23514") {
-      const message = (error as { message?: string }).message;
-      if (message === "CONSUMER_GRANT_ROTATION")
-        throw new ConsumerError("BUSY");
-      if (
-        [
-          "CONSUMER_KEY_EXPIRED",
-          "CONSUMER_KEY_VOID",
-          "CONSUMER_INVALID_CLAIM",
-        ].includes(message ?? "")
-      )
-        throw new ConsumerError("KEY_NOT_ACTIVE");
-      if (
-        ["CONSUMER_INVALID_ANSWER", "CONSUMER_INVALID_PROGRESS"].includes(
-          message ?? "",
-        )
-      )
-        throw new ConsumerError("INVALID_ANSWERS");
-    }
+    const mapped = consumerSqlDomainError(error);
+    if (mapped) throw mapped;
     throw consumerServiceError(error);
   }
 }

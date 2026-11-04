@@ -1,3 +1,4 @@
+import type { ConsumerPolicyResolution } from "./policy-contracts";
 import type {
   ConsumerSaveInputV2,
   ConsumerSaveBindingV2,
@@ -94,22 +95,34 @@ export interface ConsumerFlowService {
     credentials: ConsumerWriteCredentials,
     sessionId: string,
     input: ConsumerSaveInput | ConsumerSaveInputV2,
-  ): Promise<ConsumerSaveResolution | ConsumerSaveResolutionV2>;
+  ): Promise<
+    ConsumerSaveResolution | ConsumerSaveResolutionV2 | ConsumerPolicyResolution
+  >;
   resolveSave(
     credentials: ConsumerWriteCredentials,
     sessionId: string,
     binding: ConsumerSaveBinding | ConsumerSaveBindingV2,
-  ): Promise<ConsumerSaveResolution | ConsumerSaveResolutionV2>;
+  ): Promise<
+    ConsumerSaveResolution | ConsumerSaveResolutionV2 | ConsumerPolicyResolution
+  >;
   complete(
     credentials: ConsumerWriteCredentials,
     sessionId: string,
     binding: ConsumerCompleteBinding | ConsumerCompleteBindingV2,
-  ): Promise<ConsumerCompleteResolution | ConsumerCompleteResolutionV2>;
+  ): Promise<
+    | ConsumerCompleteResolution
+    | ConsumerCompleteResolutionV2
+    | ConsumerPolicyResolution
+  >;
   resolveComplete(
     credentials: ConsumerWriteCredentials,
     sessionId: string,
     binding: ConsumerCompleteBinding | ConsumerCompleteBindingV2,
-  ): Promise<ConsumerCompleteResolution | ConsumerCompleteResolutionV2>;
+  ): Promise<
+    | ConsumerCompleteResolution
+    | ConsumerCompleteResolutionV2
+    | ConsumerPolicyResolution
+  >;
   readReport(
     credentials: ConsumerReadCredentials,
     sessionId: string,

@@ -187,12 +187,28 @@ export async function insertPersistedReport(
       ? await persistedReportDisplaySha256V2(snapshot.view)
       : await persistedReportDisplaySha256(snapshot.view),
     matchingSha = "matchingContextSha256" in b ? b.matchingContextSha256 : null;
+  const record = {
+    id,
+    key_id: s.keyId,
+    session_id: s.sessionId,
+    product_id: s.productId,
+    play_version_id: s.playVersionId,
+    play_snapshot_sha256: s.playSnapshotSha256,
+    state_revision: b.expectedStateRevision,
+    consumer_state_answers_sha256: b.consumerStateAnswersSha256,
+    progress_sha256: b.progressSha256,
+    matching_context_sha256: matchingSha,
+    completion_key: b.completionKey,
+    binding_text: bindingText,
+    binding_sha256: bindingSha,
+    snapshot_text: snapshotText,
+    snapshot_sha256: snapshotSha,
+    display_sha256: displaySha,
+    completed_at: completedAt,
+  };
   const [row] = await tx.sql<
     ReportRow[]
-  >`WITH moment AS MATERIALIZED(SELECT clock_timestamp() AS at)
-    INSERT INTO qf.quiz_report(id,key_id,session_id,product_id,play_version_id,play_snapshot_sha256,state_revision,consumer_state_answers_sha256,progress_sha256,matching_context_sha256,completion_key,binding_text,binding_sha256,snapshot_text,snapshot_sha256,display_sha256,completed_at)
-    SELECT ${id},${s.keyId},${s.sessionId},${s.productId},${s.playVersionId},${s.playSnapshotSha256},${b.expectedStateRevision},${b.consumerStateAnswersSha256},${b.progressSha256},${matchingSha},${b.completionKey},${bindingText},${bindingSha},${snapshotText},${snapshotSha},${displaySha},${completedAt}::timestamptz FROM moment m
-    WHERE m.at<${key.issue.expiresAt}::timestamptz AND m.at<${grant.expiresAt}::timestamptz RETURNING *`;
+  >`SELECT * FROM qf.consumer_complete_attempt(jsonb_populate_record(NULL::qf.quiz_report,${tx.sql.json(record)}::jsonb),${grant.grantId},${grant.credentialDigest})`;
   if (!row) {
     await assertConsumerMutationDeadline(
       tx,

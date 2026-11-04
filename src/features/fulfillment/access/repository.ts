@@ -15,7 +15,6 @@ import {
   issueAccessKeyBindingText,
   issueAccessKeyBindingSha256,
   voidUnusedAccessKeyBindingText,
-  voidUnusedAccessKeyBindingSha256,
   verifyIssueAccessKeyReceipt,
   verifyVoidUnusedAccessKeyReceipt,
   type IssueAccessKeyBinding,
@@ -24,7 +23,7 @@ import {
   type VoidUnusedAccessKeyReceipt,
   type AccessKeyCursor,
 } from "./contracts";
-type KeyRow = {
+export type KeyRow = {
   id: string;
   product_id: string;
   play_version_id: string;
@@ -62,7 +61,7 @@ export type GrantLocator = Pick<
   GrantFact,
   "keyId" | "sessionId" | "grantId" | "credentialDigest"
 >;
-type GrantRow = {
+export type GrantRow = {
   key_id: string;
   session_id: string;
   slot: number;
@@ -72,7 +71,7 @@ type GrantRow = {
   expires_at: DatabaseTime;
   revoked_at: DatabaseTime | null;
 };
-async function fact(row: KeyRow): Promise<AccessKeyFact> {
+export async function decodeAccessKeyRow(row: KeyRow): Promise<AccessKeyFact> {
   if (
     Buffer.byteLength(row.issue_binding_text) > L.operationRequestBytes ||
     (row.void_binding_text !== null &&
@@ -141,7 +140,7 @@ export async function findKeyIssueOperation(
   const [row] = await tx.sql<
     KeyRow[]
   >`SELECT * FROM qf.access_key WHERE product_id=${productId} AND issue_operation_key=${operationKey}`;
-  return row ? fact(row) : null;
+  return row ? decodeAccessKeyRow(row) : null;
 }
 export async function findKeyVoidOperation(
   tx: ConsumerTx,
@@ -152,7 +151,7 @@ export async function findKeyVoidOperation(
   const [row] = await tx.sql<
     KeyRow[]
   >`SELECT * FROM qf.access_key WHERE product_id=${productId} AND void_operation_key=${operationKey}`;
-  return row ? fact(row) : null;
+  return row ? decodeAccessKeyRow(row) : null;
 }
 export async function readKeyFact(
   tx: ConsumerTx,
@@ -163,7 +162,7 @@ export async function readKeyFact(
   const [row] = await tx.sql<
     KeyRow[]
   >`SELECT * FROM qf.access_key WHERE product_id=${productId} AND id=${keyId}`;
-  return row ? fact(row) : null;
+  return row ? decodeAccessKeyRow(row) : null;
 }
 export async function lockAccessKey(
   tx: ConsumerTx,
@@ -173,7 +172,9 @@ export async function lockAccessKey(
   const [row] = await tx.sql<
     KeyRow[]
   >`SELECT * FROM qf.access_key WHERE ${"keyId" in selector ? tx.sql`id=${selector.keyId}` : tx.sql`credential_digest=${selector.credentialDigest}`} FOR UPDATE`;
-  return row ? lockWitness(tx, "key", row.id, await fact(row)) : null;
+  return row
+    ? lockWitness(tx, "key", row.id, await decodeAccessKeyRow(row))
+    : null;
 }
 export async function listKeyIssueFacts(
   tx: ConsumerTx,
@@ -184,7 +185,9 @@ export async function listKeyIssueFacts(
   const rows = await tx.sql<
     KeyRow[]
   >`SELECT * FROM qf.access_key WHERE product_id=${productId} ${cursor ? tx.sql`AND (issued_at,id)<(${cursor.issuedAt}::timestamptz,${cursor.keyId}::uuid)` : tx.sql``} ORDER BY issued_at DESC,id DESC LIMIT 51`;
-  const keys = await Promise.all(rows.slice(0, L.keysPerPage).map(fact)),
+  const keys = await Promise.all(
+      rows.slice(0, L.keysPerPage).map(decodeAccessKeyRow),
+    ),
     last = keys.at(-1)?.issue;
   return {
     keys,
@@ -207,30 +210,29 @@ export async function insertAccessKey(
     KeyRow[]
   >`INSERT INTO qf.access_key(id,product_id,play_version_id,play_snapshot_sha256,credential_digest,issue_operation_key,issue_binding_text,issue_binding_sha256,valid_for_seconds,issued_by,issued_at,expires_at) VALUES(${binding.keyId},${binding.play.productId},${binding.play.playVersionId},${binding.play.playSnapshotSha256},${binding.credentialDigest},${binding.operationKey},${body},${sha},${binding.validForSeconds},${issuerId},date_trunc('milliseconds',clock_timestamp()),date_trunc('milliseconds',clock_timestamp())) RETURNING *`;
   if (!row) throw new ConsumerError("UNAVAILABLE");
-  return fact(row);
+  return decodeAccessKeyRow(row);
 }
 /** App coordinator checks permanent claim/report through their explicit ports BEFORE this call. */
 export async function voidUnusedKey(
   tx: ConsumerTx,
   key: LockedAccessKey,
   binding: VoidUnusedAccessKeyBinding,
-  actorId: string,
+  operatorDigest: string,
 ) {
-  assertLockWitness(tx, key, "key", binding.keyId);
+  assertConsumerTx(tx);
   if (
     key.issue.binding.play.productId !== binding.productId ||
     key.issue.bindingSha256 !== binding.issueBindingSha256
   )
     throw new ConsumerError("OPERATION_CONFLICT");
-  const body = voidUnusedAccessKeyBindingText(binding),
-    sha = await voidUnusedAccessKeyBindingSha256(binding);
+  const body = voidUnusedAccessKeyBindingText(binding);
   const [row] = await tx.sql<
     KeyRow[]
-  >`UPDATE qf.access_key SET revoked_at=date_trunc('milliseconds',clock_timestamp()),void_operation_key=${binding.operationKey},void_binding_text=${body},void_binding_sha256=${sha},voided_by=${actorId} WHERE id=${binding.keyId} AND revoked_at IS NULL RETURNING *`;
+  >`SELECT * FROM qf.consumer_void_unused_key(${binding.productId},${binding.keyId},${body},${operatorDigest})`;
   if (!row) throw new ConsumerError("OPERATION_CONFLICT");
-  return fact(row);
+  return decodeAccessKeyRow(row);
 }
-function grantFact(row: GrantRow): GrantFact {
+export function decodeGrantRow(row: GrantRow): GrantFact {
   return Object.freeze({
     keyId: row.key_id,
     sessionId: row.session_id,
@@ -251,7 +253,7 @@ export async function locateGrant(
     GrantRow[]
   >`SELECT * FROM qf.consumer_grant WHERE credential_digest=${digest}`;
   if (!row) return null;
-  const g = grantFact(row);
+  const g = decodeGrantRow(row);
   return {
     keyId: g.keyId,
     sessionId: g.sessionId,
@@ -267,7 +269,7 @@ export async function readFreshGrant(
   const [row] = await tx.sql<
     GrantRow[]
   >`SELECT * FROM qf.consumer_grant WHERE key_id=${locator.keyId} AND session_id=${locator.sessionId} AND grant_id=${locator.grantId} AND credential_digest=${locator.credentialDigest} AND revoked_at IS NULL AND expires_at>clock_timestamp()`;
-  return row ? grantFact(row) : null;
+  return row ? decodeGrantRow(row) : null;
 }
 export async function readCurrentGrants(tx: ConsumerTx, key: LockedAccessKey) {
   assertLockWitness(tx, key, "key", key.issue.binding.keyId);
@@ -276,7 +278,7 @@ export async function readCurrentGrants(tx: ConsumerTx, key: LockedAccessKey) {
   >`SELECT * FROM qf.consumer_grant WHERE key_id=${key.issue.binding.keyId} ORDER BY slot LIMIT 17`;
   if (rows.length > L.currentGrantsPerKey)
     throw new ConsumerError("UNAVAILABLE");
-  return rows.map(grantFact);
+  return rows.map(decodeGrantRow);
 }
 export async function verifyLockedGrant(
   tx: ConsumerTx,
@@ -328,7 +330,7 @@ export async function rotateConsumerGrant(
         GrantRow[]
       >`INSERT INTO qf.consumer_grant(key_id,slot,session_id,grant_id,credential_digest,issued_at,expires_at) VALUES(${keyId},${slot},${session.state.session.sessionId},${fresh.grantId},${fresh.credentialDigest},${at}::timestamptz,${at}::timestamptz+interval '8 hours') RETURNING *`;
   if (!rows[0]) throw new ConsumerError("UNAVAILABLE");
-  return grantFact(rows[0]);
+  return decodeGrantRow(rows[0]);
 }
 export async function revokeExactGrant(
   tx: ConsumerTx,

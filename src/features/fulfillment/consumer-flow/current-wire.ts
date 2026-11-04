@@ -1,3 +1,4 @@
+import { verifyConsumerPolicyResolution } from "./policy-contracts";
 import { z } from "zod";
 import {
   consumerSessionViewSchema,
@@ -91,6 +92,13 @@ export async function verifyCurrentSaveResolution(
   input: unknown,
   expected: unknown,
 ) {
+  if (
+    input &&
+    typeof input === "object" &&
+    "schemaVersion" in input &&
+    input.schemaVersion === "quizforge.consumer-policy-resolution.v1"
+  )
+    return verifyConsumerPolicyResolution(input, expected);
   const b = currentSaveBindingSchema.parse(expected);
   return b.schemaVersion === "quizforge.consumer-save.v2"
     ? verifyConsumerSaveResolutionV2(input, b)
@@ -100,6 +108,13 @@ export async function verifyCurrentCompleteResolution(
   input: unknown,
   expected: unknown,
 ) {
+  if (
+    input &&
+    typeof input === "object" &&
+    "schemaVersion" in input &&
+    input.schemaVersion === "quizforge.consumer-policy-resolution.v1"
+  )
+    return verifyConsumerPolicyResolution(input, expected);
   const b = currentCompleteBindingSchema.parse(expected);
   return b.schemaVersion === "quizforge.consumer-complete.v2"
     ? verifyConsumerCompleteResolutionV2(input, b)

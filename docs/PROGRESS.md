@@ -1,5 +1,23 @@
 # 阶段进度
 
+## 2026-11-04 批次B切片2服务/API交审：隔离SQL与进程内HTTP通过，完整运行闭包仍待后续
+
+0032经主控转交窄审通过后正常应用于原root/instance28267；`controlled-auth-resume.result.json`的admin、void与ACL续验5项通过，复用首轮两拒绝及A10+5，不重跑、不覆盖命名歧义失败。准确0030/31/32字节和SHA保持，`82cf32d`已推送。
+
+本切片将exchange/save/complete/logout/void接入受控函数，按grant的准确key/session定位并分别核原签发tuple与实际attempt；报告/资源拒绝跨attempt授权。新增显式启用及resolve服务/API（`play-activations`、`play-activation-applications/resolve`），原operation回执先于当前依赖；新操作才做固定源IO预检。旧v1/v2成功resolution保持，新增原binding/hash绑定的policy终态，原save回执先胜出；UNKNOWN resolve改为独立READ COMMITTED锁定观察。SQL仅按明确SQLSTATE/message映射，失联/提交或回滚不明仍优先UNKNOWN。客户端识别有限终态并停止继续载入旧entry；完整重开体验与最终终止文案视觉尚未验收。
+
+**本次必要验证。** 定向初轮7文件47项通过；新增HTTP回归2文件15项通过；追加UNKNOWN优先级后policy/Studio HTTP 2文件10项通过（这些数量有重叠，不相加）。修改文件ESLint/格式、Next route typegen与`tsc --noEmit`按最终结果记录。真实PG使用原28267正常管理、合成数据，脚本来自A实现root、cwd仍为原验证root，manifest未改：
+
+- `consumer-controlled-flow-check.ts`：5项PASS_BOUNDED_SERVICE_NO_IO，真实request owner的兑换/保存/原回执优先/锁定恢复/旧entry拒绝/新空attempt/注销；回执`controlled-flow-66dd43bf-c722-416f-ab53-514bd92034bd.result.json`。
+- `consumer-controlled-invariants-check.ts`：6项PASS_BOUNDED_SQL_INVARIANTS_NO_IO，严格旧写零效果、并发exchange成功或有界NOWAIT且单代次唯一、16槽跨attempt身份轮换、受控report封存、complete先于enable的历史report保持，以及rollback-only过期/无head历史exchange；回执`controlled-invariants-89dcfc5e-a482-4183-83cb-41b3d596b4e4.result.json`。前三项复用原失败运行，JSON修复后仅从失败点续验。
+- `consumer-policy-http-check.ts`：2项PASS_IN_PROCESS_HTTP_REAL_PG_NO_IO，进程内真实HTTP adapter＋真实PG/owner：原activation回执独立于更晚head恢复；enable先于complete返回409且report零新增，resolve给原binding终态且不发cookie；回执`policy-http-e9283362-86c8-4c60-8c34-a1d1c4ffa422.result.json`。这是Request/Response适配器调用，不是Next网络服务或浏览器E2E。
+
+**失败和修复原样保留。** 首次服务打开被旧draft-schema `audit_target`事实拒绝，按0030实际精确定义仅更新该fact；第二次错误地把全局预算NOWAIT准入当可并发服务前提，保留RATE_LIMITED失败，服务准入改串行、领域并发另验，未降低预算生产断言。report端口暴露postgres.js将字符串JSON作为jsonb再次编码为scalar，完成事务已回滚；改用`sql.json(record)`后按原intent/16槽/已保存状态续验，未重建或重发原业务。失败文件分别为`controlled-flow-97b6a00a-62b8-445f-9aa6-a91a54a19aaa.failure.json`、`controlled-flow-dd852d44-3bdd-460b-ad64-b4756f756e61.failure.json`、`controlled-invariants-4dda75cc-55f3-48b9-bc99-d4e4e445e808.failure.json`，各原log保持。
+
+实际32迁移目录catalog为`ad236ba8bc23d53c69197a6f603bb17421c8ffce9c4c745de866165ed97fa8d7`/27表，runtime consumer facts绑定该实际值；旧五行与原报告/签发比较保持，其他app/owner连接0、自有连接close。`slice2-owner-receipt.json`记录Key9/session7/report2/grant19/head generation5；正常stop后`slice2-stop-receipt.json`独立确认55536/63236无监听、postmaster.pid消失、PGdata及manifest/runtime/admin保留。
+
+**尚未交付/未运行。** `implementation:check`首阻点为已提交但待新闭包收口的`private-test.ts`（本切片未改该文件）；本切片contracts/client/controller也参与封存闭包，不能仅消除此首错误便宣称通过。旧descriptor/hash未改写，完整新版本登记与最终source/美术/字体闭包另行收口。因此不启动依赖成功build的Next生产E2E，不冒称实际固定源IO完成、浏览器/UI、最终source1.5或商业验收。本切片未做真实网络ACK-loss/驱动断连新注入、迟到completion并发全链；复用原owner/关闭测试，并仅有新增UNKNOWN映射优先级测试和SQL线性化结果。提交交独审不等于批次B全部验收。无main合并、生产迁移/部署、新素材准入；作者实例、6736失败及63226 UNKNOWN保持。
+
 ## 2026-11-04 正式0031授权验证：两拒绝通过，admin路径命名缺陷追加修复
 
 主控转交准确062f245授权窄审通过后，在自有验证root28267正常ff已审提交/start，核c78cad36准确hash并由正常管理器应用0031；旧0030/31字节保持。新定向授权harness真实app验证operator activate准确CONSUMER_CAPABILITY_DENIED、account_actor资格不足准确CONSUMER_OPERATOR_REQUIRED且ledger/head/audit逐值不变，前两项通过。admin正例暴露PL/pgSQL局部product与qf.product整行引用冲突，原失败/intent保存在该root `.cache/known-ten/controlled-auth.*`，未冒称四项通过；连接关闭后PG已正常stop。

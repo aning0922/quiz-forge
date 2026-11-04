@@ -120,7 +120,7 @@ it("verifies complete real answer/report rows and composes only bounded claim/co
   );
   const report = await f.complete(saved);
   await consumerRead(db.app, checkpoint, async (tx) => {
-    const s = await readConsumerSession(tx, String(key.id));
+    const s = await readConsumerSession(tx, String(key.id), String(session.id));
     expect(s?.stateRevision).toBe(1);
     const r = await readPersistedReport(tx, String(key.id));
     expect(r?.receipt.reportId).toBe(report.id);

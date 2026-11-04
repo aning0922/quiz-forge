@@ -1,3 +1,4 @@
+import { verifyConsumerPolicyResolution } from "@/features/fulfillment/consumer-flow/policy-contracts";
 import {
   consumerExchangeInputSchema,
   consumerExchangeResultSchema,
@@ -108,7 +109,10 @@ export async function saveConsumerStateV2(
       csrf: context.csrf,
       body: value,
     },
-    (result) => verifyConsumerSaveResolutionV2(result, value.binding),
+    async (result) =>
+      isPolicy(result)
+        ? verifyConsumerPolicyResolution(result, value.binding)
+        : verifyConsumerSaveResolutionV2(result, value.binding),
   );
 }
 export async function resolveConsumerSaveV2(
@@ -123,7 +127,10 @@ export async function resolveConsumerSaveV2(
       csrf: context.csrf,
       body: binding,
     },
-    (result) => verifyConsumerSaveResolutionV2(result, binding),
+    async (result) =>
+      isPolicy(result)
+        ? verifyConsumerPolicyResolution(result, binding)
+        : verifyConsumerSaveResolutionV2(result, binding),
   );
 }
 export async function completeConsumerStateV2(
@@ -142,7 +149,10 @@ export async function completeConsumerStateV2(
       csrf: context.csrf,
       body: binding,
     },
-    (result) => verifyConsumerCompleteResolutionV2(result, binding),
+    async (result) =>
+      isPolicy(result)
+        ? verifyConsumerPolicyResolution(result, binding)
+        : verifyConsumerCompleteResolutionV2(result, binding),
   );
 }
 export async function readConsumerReportV2(
@@ -179,3 +189,12 @@ export const logoutConsumerV2 = (sessionId: string, context: WriteContext) =>
     },
     () => undefined,
   );
+
+function isPolicy(value: unknown) {
+  return (
+    !!value &&
+    typeof value === "object" &&
+    "schemaVersion" in value &&
+    value.schemaVersion === "quizforge.consumer-policy-resolution.v1"
+  );
+}

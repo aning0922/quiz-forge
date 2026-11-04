@@ -1,3 +1,4 @@
+import { consumerPolicyOutcomeSchemas } from "./policy-contracts";
 import { z } from "zod";
 import {
   consumerMomentSchema as moment,
@@ -207,6 +208,7 @@ export const consumerSessionOutcomeSchema = z.discriminatedUnion("kind", [
     kind: z.literal("completed"),
     report: persistedReportReceiptSchema,
   }),
+  ...consumerPolicyOutcomeSchemas,
 ]);
 export const consumerSessionViewSchema = z
   .strictObject({
@@ -220,7 +222,9 @@ export const consumerSessionViewSchema = z
     const outcomeSession =
       "state" in v.outcome
         ? v.outcome.state.session
-        : v.outcome.report.binding.session;
+        : "report" in v.outcome
+          ? v.outcome.report.binding.session
+          : v.outcome.session;
     const now = Date.parse(v.observedAt);
     if (
       !same(v.grant.session, outcomeSession) ||
@@ -239,7 +243,8 @@ export async function verifyConsumerSessionView(
   if (v.grant.session.sessionId !== uuid.parse(expectedSessionId))
     throw Error("CONSUMER_SESSION_MISMATCH");
   if ("state" in v.outcome) await verifyConsumerState(v.outcome.state);
-  else await verifyPersistedReportReceipt(v.outcome.report);
+  else if ("report" in v.outcome)
+    await verifyPersistedReportReceipt(v.outcome.report);
   return v;
 }
 

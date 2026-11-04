@@ -8,6 +8,7 @@ import {
 import {
   consumerCanonicalText,
   consumerTextSha256,
+  sameConsumerFact,
 } from "@/lib/consumer-contract/v1/integrity";
 
 /** Explicit activation, independent of upload/sealing order. No default head. */
@@ -72,4 +73,45 @@ export async function verifyConsumerProductActivationReceipt(input: unknown) {
   )
     throw new Error("ACTIVATION_RECEIPT_INTEGRITY");
   return receipt;
+}
+
+export const consumerActivationResolutionSchema = z
+  .strictObject({
+    schemaVersion: z.literal(
+      "quizforge.consumer-product-activation-resolution.v1",
+    ),
+    binding: activateConsumerProductBindingSchema,
+    bindingSha256: consumerSha256Schema,
+    kind: z.enum(["applied", "operation-conflict", "unresolved"]),
+    receipt: consumerProductActivationReceiptSchema.nullable(),
+    head: consumerProductHeadSchema.nullable(),
+  })
+  .refine((v) => v.head === null || v.head.productId === v.binding.productId)
+  .refine((v) =>
+    v.kind === "unresolved"
+      ? v.receipt === null
+      : v.receipt !== null &&
+        v.receipt.binding.productId === v.binding.productId &&
+        v.receipt.binding.operationKey === v.binding.operationKey &&
+        (v.kind === "applied") ===
+          sameConsumerFact(v.receipt.binding, v.binding, 4096),
+  );
+export type ConsumerActivationResolution = z.infer<
+  typeof consumerActivationResolutionSchema
+>;
+export async function verifyConsumerActivationResolution(
+  input: unknown,
+  expected: unknown,
+) {
+  const result = consumerActivationResolutionSchema.parse(input),
+    binding = activateConsumerProductBindingSchema.parse(expected);
+  if (
+    !sameConsumerFact(result.binding, binding, 4096) ||
+    result.bindingSha256 !==
+      (await consumerTextSha256(consumerProductActivationBindingText(binding)))
+  )
+    throw Error("ACTIVATION_RESOLUTION_MISMATCH");
+  if (result.receipt)
+    await verifyConsumerProductActivationReceipt(result.receipt);
+  return result;
 }

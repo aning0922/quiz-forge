@@ -1,3 +1,4 @@
+import type { ConsumerPolicyResolution } from "@/features/fulfillment/consumer-flow/policy-contracts";
 import {
   consumerAnswersSchema,
   consumerProgressSchema,
@@ -33,7 +34,10 @@ import { ConsumerClientError, type ConsumerFetch } from "./request";
 
 export type ConsumerScreenV1 =
   "cover" | "question" | "resume" | "review" | "result" | "report" | "poster";
-type Resolution = ConsumerSaveResolution | ConsumerCompleteResolution;
+type Resolution =
+  | ConsumerPolicyResolution
+  | ConsumerSaveResolution
+  | ConsumerCompleteResolution;
 export type ConsumerHostStateV1 = Readonly<{
   phase:
     | "loading"
@@ -219,6 +223,10 @@ export class ConsumerControllerV1 {
       if (session.outcome.kind === "completed") {
         await this.#report(session.outcome.report, task, screen ?? "result");
         if (task.current() && pending) this.#publish({ phase: "pending" });
+        return;
+      }
+      if (!("state" in session.outcome)) {
+        this.#publish({ phase: pending ? "pending" : "unavailable" });
         return;
       }
       const entry = await client.readConsumerEntryV1(
@@ -488,6 +496,14 @@ export class ConsumerControllerV1 {
     this.#publish({ pending: undefined, resolution: undefined });
     if ("report" in resolution) {
       await this.#report(resolution.report, task, "result");
+      return;
+    }
+    if (!("state" in resolution)) {
+      this.#publish({
+        phase: "unavailable",
+        entry: undefined,
+        accepted: undefined,
+      });
       return;
     }
     const state = resolution.state;

@@ -1,3 +1,4 @@
+import type { ConsumerPolicyResolution } from "@/features/fulfillment/consumer-flow/policy-contracts";
 import type { MatchingContextV1 } from "@/lib/assessment-contract/matching-v1";
 import type {
   ConsumerV2ReaderModel,
@@ -45,7 +46,10 @@ import {
 
 export type ConsumerScreenV2 =
   "cover" | "question" | "resume" | "review" | "result" | "report" | "poster";
-type Resolution = ConsumerSaveResolutionV2 | ConsumerCompleteResolutionV2;
+type Resolution =
+  | ConsumerPolicyResolution
+  | ConsumerSaveResolutionV2
+  | ConsumerCompleteResolutionV2;
 export type ConsumerHostStateV2 = Readonly<{
   phase:
     | "loading"
@@ -327,6 +331,10 @@ export class ConsumerControllerV2 {
         if (task.current() && pending) this.#publish({ phase: "pending" });
         return;
       }
+      if (!("state" in session.outcome)) {
+        this.#publish({ phase: pending ? "pending" : "unavailable" });
+        return;
+      }
       const entry = await client.readConsumerEntryV2(
         session.grant.session,
         this.#context(task),
@@ -603,6 +611,14 @@ export class ConsumerControllerV2 {
     this.#publish({ pending: undefined, resolution: undefined });
     if ("report" in resolution) {
       await this.#report(resolution.report, task, "result");
+      return;
+    }
+    if (!("state" in resolution)) {
+      this.#publish({
+        phase: "unavailable",
+        entry: undefined,
+        accepted: undefined,
+      });
       return;
     }
     const state = resolution.state;

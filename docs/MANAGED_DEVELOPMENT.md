@@ -2,6 +2,14 @@
 
 开发、验证、独审和收口统一遵循 [根 AGENTS.md](../AGENTS.md)。本文件的带日期条目、测试数量、全量运行和逐图复核均保留为原批次记录，不要求新任务重新执行。当前任务以用户最新授权及最新实际检查点为准；文档中的旧“尚未合并”“待实现”和阶段启动指令不覆盖后续事实。
 
+## 2026-11-04 批次B切片2交审与剩余运行门槛
+
+A实现显式activation/resolve、受控exchange/save/complete/logout/void、准确attempt授权、原回执优先、跨attempt有限终态和独立READ COMMITTED锁定恢复。0030–0032已执行字节不改；consumer catalog按28267实际32迁移/27表更新，draft-schema仅同步0030扩展后的准确audit_target。SQL/服务/API验证使用原验证root/manifest，不触碰作者环境或以合成图谱准入新source；两次服务前置失败及一次report JSON参数失败均保留，修复后按原现场续验。
+
+真实PG服务5项、SQL不变量6项（前三复用失败运行）、进程内真实PG HTTP 2项通过；精确脚本/回执、静态和定向单测见PROGRESS最新条目。0032授权续验及A10+5共享既有结果。owner核32迁移/原五行与报告不变、catalog ad236ba8…fa8d7、其他连接0并close，正常stop及端口/PID/数据保留证明在`slice2-{owner,stop}-receipt.json`；当前28267已停止。
+
+此切片交准确diff独审，不称完整B/原生IO/Next网络或浏览器验收。待封存private-test与本切片客户端/合同闭包，最终source1.5/新字体/40用途真实输入，以及真实ACK-loss与迟到completion并发补证；当前实现登记检查失败，不启动依赖成功构建的E2E、不重写旧renderer identity凑通过。有限终态仅接识别/停止旧entry，完整原码重开UI及终止文案视觉留下一实际接线批次。主控按这些实际剩余范围协调，不重跑已通过的A10+5、47项初轮单测或未变化的历史媒体矩阵。
+
 ## 2026-11-04 0031已应用后的定向缺陷修复
 
 准确062f245/c78cad36经Astra窄审通过后，主控授权正式0031隔离验证。28267按正常管理协议恢复并应用0031；operator越权启用及不满足account_actor资格会话的两项真实app拒绝/零副作用证明已通过。admin正例触发局部变量product与同名table整行引用歧义，失败保留，不解释为权限或环境通过。原数据库无新head/ledger/audit效果；连接close后正常stop。
