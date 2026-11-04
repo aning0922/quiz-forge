@@ -1,5 +1,15 @@
 # 阶段进度
 
+## 2026-11-04 完整私有包构建通过，精确source迁移候选待独审
+
+最终root正常ff到a6b7d6f；现有b3实例55537用正常managed start、现有runtime签发私有capability后，`build-qztx-known-ten-private-pack.ts`经原private builder完成真实53资源的完整包验证及无覆盖写ZIP。结果`PASS_PRIVATE_PACK_BUILD_ONLY`：ZIP30518005B/SHA `6e6eaa4c2bd5224a7f306569e7913b09d9bba6b28c7547381be27a91bc188017`；实际manifest `dbb14006ddb3e59652b8e8cd229b66235122f225218d6ef0d3a3d4a7d3839234`与先前确定性登记严格相同。回执与ZIP位于最终root`.cache/known-ten/content-candidate-v1/{private-pack-receipt.json,known-ten.zip}`。没有使用通用入口、跳过capability或把初次公共拒绝改称通过；首次start缺少显式instance被CLI_ARGUMENTS_INVALID拒绝，无启动效果，原log保留，按CLI准确参数正常续行。
+
+私有构建finally关闭app连接；随后owner核32迁移各checksum/原catalog ad236…fa8d7不变，imports/product_assets/asset_blobs/keys/sessions/reports/heads/activations全部0、其他连接0、owner close确认。正常stop后55537/63237无监听、postmaster.pid消失，PGdata/manifest/runtime/admin保留。最终root`.cache/known-ten/private-pack-{window.intent,owner.receipt,stop.receipt}.json`及独立log保存；resource IO acquired=false/stopProof=null、app NOT_STARTED、native source admission/import仍NOT_RUN。本次是完整私有QuizPack工程构建，不等于媒体运行封存、DB准入、Web/PNG或商业资格。
+
+新增只生成SQL的`build-qztx-known-ten-migration.ts`，输入上述真实ZIP/receipt/source与准确登记，产出A树`.cache/known-ten/0033-private-test-known-ten.review.sql`：193360B/SHA `b8fd2bb808b5784145e03025d11a25f29029f752211a975f64df5e9d9bd91290`，配套`.receipt.json`记录六函数前后body hash与输入。slot仅0033_PROPOSED_NOT_RESERVED，尚未写migrations/p2a或执行。原0032完整checksum `1266d0362702472c98326deb113d980289deb1d37d7646550abd533bd6d78315`及实际32目录catalog为前置，沿原维护锁/无app连接/表锁，保留旧函数原分支。仅更新content JSON Schema的有限语法、private database/marker/source三hash、40新增declaration hash、准确baseline approval；旧13共享声明复用，report JSON Schema字节不变。每个新权限分支绑b3实际数据库名与原marker；没有把全迁移限定单一DB而破坏未来正常init。六函数签名/owner/search_path/body及原ACL/语言/返回/严格性/volatility/安全属性用前后快照守卫保留，不GRANT/REVOKE、不修改0030–0032或作者环境。
+
+迁移生成器静态TypeScript/定向ESLint通过，SQL未执行、未拿mock替代真实PG反例。独审需看此准确SQL与3647a5e/a6b7d6f的新source/字体/运行选择diff；主控串行确认空闲迁移号后才可按原b3正常migrate并读真实新catalog。随后仍需media/build/native IO、24题/续答/唯一完成/升级与历史两tuple合法合成夹具、B独占只读浏览器/双PNG/失权实际验收。批次继续，未称完成或批准。
+
 ## 2026-11-04 当前实现闭包收口与独立旧报告分工准备
 
 新D3 metadata以独立`d3-runtime-bindings-known-ten.json`登记，旧JSON原字节保留；旧engine/structured/preview/consumer entries继续作为metadata，available仅选择本次新entry。consumer1.5 entry `d942087986f7226e40e6670a9d2a380105394b191c9f991e31039cb7e1e8796a`/137文件，preview1.3 `7a41cfb1a510a51951c91eaadd5cc93f7e161728a6777df9a9cb0487a3d5150d`/63文件。新增folio1.0.3 entry `fd3c4c479066a153e6d8db1671a00bfdd25b23e6423d640af8ef1f5b8167afe0`/83文件，显式替换当前gateway可执行选择，原1.0.2 metadata不重写；调用点/夹具选择只随当前compiled identity调整，未执行旧数据库回归。
