@@ -1,5 +1,24 @@
 # 阶段进度
 
+## 2026-11-04 批次B定向补证：HTTP UNKNOWN修复、Drizzle报告参数修复、三恢复故障与v2路径
+
+主控固定`1e6733a`交Astra后，仅发现恢复HTTP将UNKNOWN降为UNAVAILABLE的源码P2。先提交反例`5832f7f`并保留`p2-unknown-before-fix.log`，再以`c92f7eac5688dd489050b1993aacba37d75fd2dc`仅令resolve-save/resolve-complete保留未知结果及关闭不明，普通GET保持原行为；10项HTTP测试通过，主控转交Astra窄复核已通过，不重复该10项。新真实PG故障测试首先独立提交`cd936e1`；不重跑A10+5、已过5服务/6不变量/2HTTP。
+
+**新暴露的报告JSON端口缺陷。** 旧裸`openSql`探针通过的`sql.json(record)`在真实request owner的Drizzle连接上失败，Drizzle的JSON serializer令对象抵达text wire encoder，原生ERR_INVALID_ARG_TYPE在发送前发生；原映射后UNAVAILABLE/intent/log保持。`b241006459b681d7cde3a67bf2da919292e164f0`仅改该参数为固定JSON字符串经`::text::jsonb`，兼容两种连接、不改变数据库合同/迁移。新源码仅此一行，交R针对该差异及以下回执复核。首轮门闩没有监听前置失败而超时，测试改先竞争原writer结果；后续合成第二play renderer不同，快照fixture改绑定实际play renderer/parent/font/map。均为测试修正，不降低报告一致性，不重建/重放旧业务。
+
+| 定向反例                                                                        | 实际结果与准确证据（验证root `.cache/known-ten/`）                                                                                                                                                                                                                                                                                                 |
+| ------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| completion已在最终事务插入未提交报告，恢复/启用并发；真实COMMIT后注入返回值丢失 | 恢复BUSY、启用55P03；原writer提交一次而调用方OUTCOME_UNKNOWN；之后启用再推进head，恢复同completionKey/binding/reportId，report1、grant不变；`policy-recovery-fault-58a6b5f5-e933-4acb-8373-49096a46d012.late-commit.result.json`，SQL phase open/close均3。这里是复用既有harness的原生COMMIT后结果丢失注入，不称网络代理截断。                     |
+| 精确终止该completion自有backend，JS callback仍悬挂                              | 实际backend消失、原事务OUTCOME_UNKNOWN且report0；head推进后恢复自身COMMIT结果丢失仍UNKNOWN，再读原binding得version-superseded；放行迟到callback，其原SQL scope准确CONNECTION_CLOSED且driver invalidated=true，report仍0、grant不变；`policy-recovery-fault-7d9bd978-320f-43ab-aff6-d2a398b055ac.disconnect.result.json`，SQL phase open/close均3。 |
+| completion请求已开始而启用先于最终SQL事务                                       | gate位于最终事务前；启用先线性化，放行原请求后准确VERSION_SUPERSEDED，report0、grant不变，原binding恢复终态；`policy-recovery-fault-9a2518b0-e886-41a6-bacc-c0eab1fe6f5d.enable-before-final.result.json`，SQL phase open/close均2。                                                                                                               |
+| v2 matching-context save→controlled complete→原receipt恢复                      | 复用既有`qztx2DbFixture`，新synthetic-d2产品显式启用后，真实owner保存24个合成答案与female context/hash；真实Drizzle连接受控完成，v2原save/complete receipt恢复且report/grant字节保持；`policy-v2-e00ca0bc-ad67-4c4d-856f-543d431e99dc.result.json`，3项通过。                                                                                      |
+
+三个故障场景分别定向通过，第一份log另含一个已保留的fixture准备失败，不称整份首次suite全绿；只续验原失败/新增场景，不重复已过场景。测试入口`vitest.policy-db.config.ts`仅接受显式QF_POLICY_SEED，不加入普通/reset DB套件。v2沿既有SQL fixture的合成平台/renderer/media事实，不作为新正式source、已注册执行或原生媒体/文件停止证明。completion探针仅覆盖实际最终SQL端口和公开恢复服务，所有新结果明确resourceIo.acquired=false/stopProof=null；实际SQL backend消失、连接池关闭和资源IO停止不混称。原pending与operation身份持久化于0600私有intent，不上Git。
+
+原超时、UNAVAILABLE、native JSON编码及快照fixture失败和原intent全部保留；最终只读核对9个故障fixture Key，其中成功提交场景report1，其余各report0，各attempt1，无清理或重放。`policy-fault-owner-receipt.json`确认32迁移/目录ad236ba8…fa8d7保持、其他app/owner连接0、自有连接close；最终Key19/session17/report4/grant29，internal-version-fixture head8、synthetic-d2 head1。正常managed stop后`policy-fault-stop-receipt.json`独立确认端口/PID消失、数据/管理文件保留，资源IO证明仍null。
+
+真实素材/字体/封存/build/Next网络/browser留最终接线，不属于此次补证；没有部署、main合并、改旧实例或处理旧UNKNOWN。新增测试与修改端口类型/ESLint/格式按必要输入验证，已有结果复用。准确登记依赖和字体输入缺口见MANAGED最新条目；新字体尚未生成。
+
 ## 2026-11-04 批次B切片2服务/API交审：隔离SQL与进程内HTTP通过，完整运行闭包仍待后续
 
 0032经主控转交窄审通过后正常应用于原root/instance28267；`controlled-auth-resume.result.json`的admin、void与ACL续验5项通过，复用首轮两拒绝及A10+5，不重跑、不覆盖命名歧义失败。准确0030/31/32字节和SHA保持，`82cf32d`已推送。

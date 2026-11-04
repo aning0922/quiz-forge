@@ -2,6 +2,18 @@
 
 开发、验证、独审和收口统一遵循 [根 AGENTS.md](../AGENTS.md)。本文件的带日期条目、测试数量、全量运行和逐图复核均保留为原批次记录，不要求新任务重新执行。当前任务以用户最新授权及最新实际检查点为准；文档中的旧“尚未合并”“待实现”和阶段启动指令不覆盖后续事实。
 
+## 2026-11-04 B定向恢复补证及最终登记/字体输入交接
+
+HTTP UNKNOWN P2已由`c92f7ea`修复且Astra窄复核关闭；新报告JSON单行修复`b241006`解决真实Drizzle owner端口与裸SQL serializer差异，待R只审该差异及新回执。三故障场景（未提交completion/ACK返回丢失、精确backend断连后迟到callback、启用先于最终事务）分别定向通过；v2 matching-context保存/受控完成/原回执恢复3项通过。详细失败保留、SHA、精确回执及SQL/资源IO证据分层见PROGRESS最新条目。28267正常stop，32迁移/目录保持，其他连接0；不重跑已过A10+5或六不变量。
+
+**登记依赖已只读核清。** `.cache/known-ten/policy-registration-dependencies.json`仅比较现有descriptor与当前源码并收集实际静态依赖，不生成登记、最终source/hash或字体。原legacy archetype/dimensions/folio-preview的已列文件未变；仍可执行的folio consumer1.0.2需随新授权接线处理`contracts.ts`、v1 client/controller、errors的闭包变化（旧JSON不原地改写）。D3 engine/structured preview/qianzai preview共同受`private-test.ts`影响，并新增`private-test-ten-role-identity.ts`依赖；structured/qianzai consumer还受v1/v2 contracts、v2 client/controller、errors及新`policy-contracts.ts`影响，qianzai consumer另有已提交`report/qianzai-tongxin/layout.ts`变化。历史descriptor保留元数据，未获当前可执行绑定的仅核metadata自洽；最终不能只清掉首个private-test错误就称登记闭合。
+
+待实际到件后，准确接点是`theme/qianzai-tongxin/{runtime-inputs.json,editorial-fonts.ts,component-map.ts}`、其封面/揭晓/报告/PNG使用点、`product/internal-versions/implementation-data/d3-runtime-bindings.json`及新baseline，必要`implementation-catalog{,-v2}.ts`/`internal-play/access-gateway-binding.ts`显式可执行绑定与source准入。现component-map仍consumer1.4.0/preview1.2.0，不能冒称已是计划1.5/1.3。`build-qztx-runtime-inputs.ts`仍固定Serif1.2.0、`build-qztx-d3-descriptors.ts`固定1.11.0；最终应新增准确版本分支/输出，不直接运行历史builder覆盖旧登记。当前字段可承40用途/完整ref，实际新增ref和53资源事实必须来自B最终交件；source迁移在已执行0032之后实核空闲号，不预填三hash。
+
+**字体字符输入交B/主控。** 服务终态枚举已经固定，但完整原码重开UI尚未实现，故界面逐字语料还未完全冻结，不宜现在subset。现v2 controller实际可见的保留文案必须纳入最终字符源：`原操作尚未核实；请稍后再次核实，不会重新发送。`、`原操作已保留；请核实结果后再继续。`、`当前授权已失效；已保留本页输入和原操作。`，以及components/host已有UNKNOWN/denied/unavailable、恢复/退出按钮文本。版本过代/资格已完成提示和重新兑换按钮最终中文在UI接线时稳定后补入同一语料；SQL错误码、测试夹具/日志/文档文本不是产品字体输入。合并十人全部姓名/别名/固定报告与source题干/标签/导出文字，保留U+0020与标点/有效换行，不用作者答案。
+
+Serif builder当前到v12、editorial到v5；最终追加新profile/新输出，使用现固定官方源hash/OFL与工具版本。editorial的missing现仅打印，生成前须改失败关闭。字体、coverage与源码声明/运行font/PNG共用document稳定后一次冻结、一次生成，仍不得覆盖旧font或以旧177缺字审计冒称新语料全部覆盖。此次没有字体生成或素材准入。
+
 ## 2026-11-04 批次B切片2交审与剩余运行门槛
 
 A实现显式activation/resolve、受控exchange/save/complete/logout/void、准确attempt授权、原回执优先、跨attempt有限终态和独立READ COMMITTED锁定恢复。0030–0032已执行字节不改；consumer catalog按28267实际32迁移/27表更新，draft-schema仅同步0030扩展后的准确audit_target。SQL/服务/API验证使用原验证root/manifest，不触碰作者环境或以合成图谱准入新source；两次服务前置失败及一次report JSON参数失败均保留，修复后按原现场续验。
