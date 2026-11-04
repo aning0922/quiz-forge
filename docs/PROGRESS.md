@@ -1,5 +1,15 @@
 # 阶段进度
 
+## 2026-11-04 正式fresh迁移顺序修复候选：仅0032→0033前缀ACL checkpoint
+
+主控与B确认CI database/accounts bootstrap也遇同一fresh链缺陷，不能只修本机fixture。93a69f8的一次性前32收尾脚本未执行，现从当前源码移除，原提交/实际失败/00486 raw32 ACL回执全部保留。新experience根仍c90、00486停止，未normal migrate或创建任何normalize32 intent；新source/0034未准备，旧b3不动。
+
+A独占正式`src/lib/db/migrate.ts`候选：原最终ACL事务body逐行核对除缩进外完全相同，抽为私有normalizeApplicationPrivileges，原末尾照常调用。仅在待应用migration恰为0033_private_test_known_ten时，于原每migration事务内先进入私有normalizeKnownTenPredecessor：要求准确0033 SHA b8fd…1290、账本32项且最后为准确0032及checksum1266…8315，持原session迁移锁；取原consumer维护xact锁72461/2、拒绝该DB任何其他连接，再次assertConsumerNamespace，调用原ACL尾部。随即执行原字节0033及原账本INSERT，最后同一COMMIT；0033任一步失败连ACL checkpoint一起ROLLBACK，保留raw32现场。不存在捕获catalog mismatch跳过、改ledger/hash/0033、按每旧版本泛化checkpoint或新增恢复API。
+
+该位置同时覆盖首次完整fresh循环和原32失败实例的正常migrate续行；已应用0033的普通replay在原checksum检查后continue，不走checkpoint；其他迁移流程/最终ACL语义保留。已正常完成32初始化的升级路径会幂等重述同一ACL，仍通过原0033强catalog/ad236守卫。维护与无外部连接要求只落此精确边界，事务期间保持到0033落账。外部连接包括等待迁移锁的连接也会拒绝，现场由主控串行协调，不能把进程列表或测试mock当锁。
+
+候选TypeScript/定向ESLint/差异检查通过；原ACL尾部与93a69f8执行语句行逐项核对一致（仅缩进）。尚未运行任何DB验证，未声称fresh链/CI通过。准确diff先交主控/R；获准后原00486正常start，只读捕获32账本含applied_at与149ACL基线；如获准做最小维护忙/外部连接前置拒绝探针则确认raw32与账本不变，关闭探针连接，再只用正常CLI migrate续行。原字节0033的前置ad236守卫通过本身证明checkpoint达到精确ACL-complete32基线；最终核33 checksums/前32时间戳不变/571…c9143全catalog、六body及ACL/owner事实、业务/资源0、其他连接0与owner关闭并正常stop。原失败不删除，不新建第三root，不跑未变B服务或无关全DB；CI自动fresh bootstrap另列实际状态。
+
 ## 2026-11-04 主控选择唯一新身份路线；fresh init在0033 ACL前置失败并保留
 
 主控明确放弃control交换/quarantine实施，原b3整根/guard/active/DB/失败及未提交cap原位BUSY隔离，不改生产control、不释放guard。仅一次新的受管工作树已由create_worktree正常建立：`/Users/aipuli/.codex/worktrees/quizforge-qztx-known-ten-experience/quiz-forge`，branch codex/qztx-known-ten-experience，基线c90c8d5295274ca6d54dcb59d64ca3dd31d5a298。首个create调用因sourceRoot不在chat授权目录被工具拒绝、未创建；改用同仓库注册主root成功，只有这一新worktree。55538/63238两次确认空闲。离线锁安装缺固定radix tarball失败，正常frozen-lockfile安装成功419包，package/lock不变，日志保留。

@@ -82,224 +82,17 @@ export async function migrateDatabase(
         continue;
       }
       await transaction(connection, async (tx) => {
+        if (migration.version === "0033_private_test_known_ten")
+          await normalizeKnownTenPredecessor(tx, config, checksum);
         await tx.unsafe(migration.source);
         await tx`INSERT INTO qf_meta.schema_migrations(version,checksum) VALUES(${migration.version},${checksum})`;
       });
       applied.push(migration.version);
     }
     await assertConsumerNamespace(connection);
-    await transaction(connection, async (tx) => {
-      const app = tx(config.database.user);
-      await tx`REVOKE ALL ON DATABASE ${tx(config.database.name)} FROM PUBLIC`;
-      await tx`REVOKE ALL ON DATABASE ${tx(config.database.name)} FROM ${app}`;
-      await tx`REVOKE ALL ON SCHEMA public FROM PUBLIC`;
-      await tx`REVOKE ALL ON SCHEMA public FROM ${app}`;
-      await tx`REVOKE ALL ON SCHEMA qf FROM PUBLIC`;
-      await tx`REVOKE ALL ON SCHEMA qf FROM ${app}`;
-      await tx`REVOKE ALL ON SCHEMA qf_meta FROM ${app}`;
-      await tx`REVOKE ALL ON ALL TABLES IN SCHEMA qf FROM ${app}`;
-      await tx`REVOKE ALL ON ALL TABLES IN SCHEMA qf FROM PUBLIC`;
-      await tx`REVOKE ALL ON ALL FUNCTIONS IN SCHEMA qf FROM ${app}`;
-      await tx`REVOKE ALL ON ALL TABLES IN SCHEMA qf_meta FROM ${app}`;
-      // PG18 table REVOKE also clears column grants; explicitly restate the application column boundary.
-      await tx`REVOKE ALL(id,role,status,created_at,disabled_at,login_name,display_name,password_hash,account_revision) ON qf.operator FROM ${app}`;
-      await tx`REVOKE ALL(id,token_digest,kind,operator_id,created_at,last_seen_at,idle_expires_at,absolute_expires_at,revoked_at,failed_attempts) ON qf.operator_session FROM ${app}`;
-      await tx`REVOKE ALL(id,occurred_at,action,outcome,reason_code,actor_id,session_id,request_id,target_kind,target_id,target_revision) ON qf.audit_event FROM ${app}`;
-      await tx`GRANT CONNECT ON DATABASE ${tx(config.database.name)} TO ${app}`;
-      await tx`GRANT USAGE ON SCHEMA qf TO ${app}`;
-      await tx`GRANT SELECT(id,role,status,created_at,disabled_at,login_name,display_name,account_revision) ON qf.operator TO ${app}`;
-      await tx`GRANT EXECUTE ON FUNCTION qf.account_actor(text),qf.account_command(text,text,jsonb),qf.account_password(text,text,jsonb),qf.account_directory_read(text,text,jsonb) TO ${app}`;
-      await tx`GRANT SELECT,INSERT ON qf.operator_session TO ${app}`;
-      await tx`GRANT UPDATE(last_seen_at,idle_expires_at,revoked_at,failed_attempts) ON qf.operator_session TO ${app}`;
-      await tx`GRANT SELECT,INSERT ON qf.audit_event TO ${app}`;
-      await tx`REVOKE ALL(id,slug,title,primary_category_id,metadata_revision,created_at,updated_at,archived_at) ON qf.product FROM ${app}`;
-      for (const name of ["category", "tag"]) {
-        const table = tx(`qf.${name}`);
-        await tx`REVOKE ALL(id,slug,name,revision,created_at,updated_at,archived_at) ON ${table} FROM ${app}`;
-        await tx`GRANT SELECT,INSERT ON ${table} TO ${app}`;
-        await tx`GRANT UPDATE(name,revision,updated_at,archived_at) ON ${table} TO ${app}`;
-      }
-      await tx`REVOKE ALL(product_id,tag_id,slot) ON qf.product_tag FROM ${app}`;
-      await tx`GRANT SELECT,INSERT ON qf.product TO ${app}`;
-      await tx`GRANT UPDATE(slug,title,primary_category_id,metadata_revision,updated_at,archived_at) ON qf.product TO ${app}`;
-      await tx`GRANT SELECT,INSERT,DELETE ON qf.product_tag TO ${app}`;
-      await tx`REVOKE ALL(id,product_id,created_by,idempotency_key,request_fingerprint,expected_archive_sha256,expected_archive_bytes,target_kind,created_at,status,state_revision,updated_at,storage_condition,last_error_code,fence,lease_until,current_attempt_id,attempts,actual_archive_sha256,actual_archive_bytes,archive_storage_key,received_at,reserved_bytes,accounted_bytes) ON qf.quizpack_import FROM ${app}`;
-      await tx`GRANT SELECT,INSERT ON qf.quizpack_import TO ${app}`;
-      await tx`GRANT UPDATE(status,state_revision,updated_at,storage_condition,last_error_code,fence,lease_until,current_attempt_id,attempts,actual_archive_sha256,actual_archive_bytes,archive_storage_key,received_at,reserved_bytes,accounted_bytes) ON qf.quizpack_import TO ${app}`;
-      await tx`GRANT EXECUTE ON FUNCTION qf.import_attempts_valid(jsonb,integer,uuid,bigint) TO ${app}`;
-      await tx`GRANT SELECT,INSERT ON qf.quizpack_validation,qf.asset_blob,qf.product_asset TO ${app}`;
-      await tx`GRANT UPDATE(status,state_revision,updated_at,fence,lease_until,current_attempt_id,attempts_text,storage_condition,last_error_code,reserved_bytes,accounted_bytes,evidence_text,evidence_sha256,report_texts,evidence_metadata_text,pack_id,pack_version,container_schema_version,content_schema_version,content_kind,manifest_sha256,content_sha256,canonical_manifest_text,canonical_manifest_sha256,canonical_content_text,canonical_content_sha256,asset_set_text,asset_set_sha256,candidate_sha256,resource_count,identity_kind,canonical_validation_id,validated_at,ready_at) ON qf.quizpack_validation TO ${app}`;
-      // Permit enum-only staging by the owner; the app's actual schema guard
-      // requires the complete first-draft capability before opening a DB.
-      for (const name of [
-        "product_draft",
-        "draft_revision",
-        "draft_application",
-        "draft_review",
-        "product_version",
-      ]) {
-        const [available] = await tx<{ present: boolean }[]>`
-          SELECT to_regclass(${`qf.${name}`}) IS NOT NULL AS present`;
-        if (available?.present)
-          await tx`GRANT SELECT,INSERT ON ${tx(`qf.${name}`)} TO ${app}`;
-      }
-      const [appendSchema] = await tx<
-        { present: boolean }[]
-      >`SELECT EXISTS(SELECT 1 FROM pg_attribute WHERE attrelid=to_regclass('qf.product_draft') AND attname='initial_revision' AND NOT attisdropped) AS present`;
-      if (appendSchema?.present)
-        await tx`GRANT UPDATE(current_revision) ON qf.product_draft TO ${app}`;
-      const [consumer] = await tx<
-        { present: boolean }[]
-      >`SELECT to_regclass('qf.consumer_exchange_budget') IS NOT NULL AS present`;
-      if (consumer?.present) {
-        for (const name of [
-          "internal_play_version",
-          "access_key",
-          "consumer_session",
-          "consumer_grant",
-          "quiz_report",
-        ])
-          await tx`GRANT SELECT,INSERT ON ${tx(`qf.${name}`)} TO ${app}`;
-        await tx`GRANT SELECT ON qf.consumer_exchange_budget TO ${app}`;
-        await tx`GRANT UPDATE(revoked_at,void_operation_key,void_binding_text,void_binding_sha256,voided_by) ON qf.access_key TO ${app}`;
-        await tx`GRANT UPDATE(state_revision,answers_text,consumer_state_answers_sha256,progress_text,progress_sha256,last_binding_text,last_binding_sha256,last_receipt_text,last_receipt_sha256) ON qf.consumer_session TO ${app}`;
-        const [context] = await tx<
-          { present: boolean }[]
-        >`SELECT EXISTS(SELECT 1 FROM pg_attribute WHERE attrelid='qf.consumer_session'::regclass AND attname='matching_context_text' AND NOT attisdropped) AS present`;
-        if (context?.present)
-          await tx`GRANT UPDATE(matching_context_text,matching_context_sha256) ON qf.consumer_session TO ${app}`;
-        await tx`GRANT UPDATE(grant_id,credential_digest,issued_at,expires_at,revoked_at) ON qf.consumer_grant TO ${app}`;
-        await tx`GRANT UPDATE(window_index,used) ON qf.consumer_exchange_budget TO ${app}`;
-        for (const signature of [
-          "consumer_schema(text)",
-          "consumer_canonical(jsonb)",
-          "consumer_json_valid(jsonb,jsonb,integer)",
-          "consumer_body_valid(text,text,integer)",
-          "consumer_moment(timestamp with time zone)",
-          "consumer_play_valid(qf.internal_play_version)",
-          "consumer_key_valid(qf.access_key)",
-          "consumer_session_valid(qf.consumer_session)",
-          "consumer_report_valid(qf.quiz_report)",
-        ])
-          await tx.unsafe(
-            `GRANT EXECUTE ON FUNCTION qf.${signature} TO "${config.database.user}"`,
-          );
-        for (const signature of [
-          "consumer_schema_v2(text)",
-          "consumer_json_valid_v2(jsonb,jsonb,integer)",
-          "consumer_body_valid_v2(text,text,integer)",
-          "consumer_protocol_v2(text,uuid,text)",
-          "consumer_session_valid_v1(qf.consumer_session)",
-          "consumer_report_valid_v1(qf.quiz_report)",
-          "composed_quote_v1(jsonb,jsonb)",
-          "composed_role_v1(jsonb,jsonb)",
-          "composed_body_v1(jsonb,jsonb)",
-          "composed_assets_v1(jsonb,jsonb)",
-        ]) {
-          const [available] = await tx<
-            { present: boolean }[]
-          >`SELECT to_regprocedure(${`qf.${signature}`}) IS NOT NULL AS present`;
-          if (available?.present)
-            await tx.unsafe(
-              `GRANT EXECUTE ON FUNCTION qf.${signature} TO "${config.database.user}"`,
-            );
-        }
-      }
-      const [activation] = await tx<{ present: boolean }[]>`
-        SELECT to_regclass('qf.consumer_product_activation') IS NOT NULL AS present`;
-      if (activation?.present) {
-        // Batch A is an isolated schema preparation, not a deployable old-service
-        // upgrade. No activation writes or implicit default head are granted.
-        await tx`GRANT SELECT ON qf.consumer_product_activation,qf.consumer_product_head TO ${app}`;
-        await tx`GRANT EXECUTE ON FUNCTION qf.consumer_policy_scope(text),qf.consumer_policy_attempt(text,uuid,uuid,uuid,text,integer) TO ${app}`;
-        // BEFORE ROW UPDATE has already locked a tuple. Revoke those direct paths
-        // until guarded service entrypoints can take the parent locks BEFORE DML.
-        await tx`REVOKE UPDATE(state_revision,answers_text,consumer_state_answers_sha256,progress_text,progress_sha256,last_binding_text,last_binding_sha256,last_receipt_text,last_receipt_sha256,matching_context_text,matching_context_sha256) ON qf.consumer_session FROM ${app}`;
-        await tx`REVOKE UPDATE(revoked_at,void_operation_key,void_binding_text,void_binding_sha256,voided_by) ON qf.access_key FROM ${app}`;
-        await tx`REVOKE UPDATE(grant_id,credential_digest,issued_at,expires_at,revoked_at) ON qf.consumer_grant FROM ${app}`;
-      }
-      const [controlled] = await tx<
-        { present: boolean }[]
-      >`SELECT to_regprocedure('qf.consumer_lock_authority(text,uuid,uuid,uuid,text)') IS NOT NULL AS present`;
-      if (controlled?.present) {
-        await tx`REVOKE INSERT ON qf.quiz_report FROM ${app}`;
-        for (const signature of [
-          "consumer_lock_authority(text,uuid,uuid,uuid,text)",
-          "consumer_save_attempt(text,uuid,uuid,uuid,text,integer,text,text,text,text)",
-          "consumer_complete_attempt(qf.quiz_report,uuid,text)",
-          "consumer_rotate_grant(text,uuid,text,uuid,uuid,text)",
-          "consumer_exchange_attempt(text,text,uuid,text)",
-          "consumer_revoke_grant(text,uuid,uuid,uuid,text)",
-          "consumer_activate_product(text,text,uuid)",
-          "consumer_void_unused_key(text,uuid,text,text)",
-        ])
-          await tx.unsafe(
-            `GRANT EXECUTE ON FUNCTION qf.${signature} TO "${config.database.user}"`,
-          );
-      }
-      for (const signature of [
-        "sha256_utf8(text)",
-        "validation_attempts_valid(text,integer,uuid,bigint)",
-        "validation_evidence_valid(text,text[],text,text)",
-        "product_asset_declaration_valid(text,text,text,text,text,text)",
-        "validation_shape_valid(qf.quizpack_validation)",
-        "validation_file_stop_protocol()",
-        "validation_file_stop_proof_valid(jsonb,uuid,jsonb)",
-        "validation_file_stop_controls_valid(text,uuid,text,text)",
-        "draft_application_fingerprint(text,uuid,uuid,integer,text)",
-        "draft_revision_application_fingerprint(text,uuid,uuid,integer,text,uuid,integer,text,text)",
-        "internal_canonical(jsonb)",
-        "internal_registry_identity(jsonb,text)",
-        "internal_review_valid(qf.draft_review)",
-        "internal_version_valid(qf.product_version)",
-      ]) {
-        if (signature.startsWith("internal_")) {
-          const [ledger] = await tx<
-            { present: boolean }[]
-          >`SELECT to_regclass('qf.draft_review') IS NOT NULL AND to_regclass('qf.product_version') IS NOT NULL AS present`;
-          if (!ledger?.present) continue;
-        }
-        // Owner can stage the enum-only migration; application capability checks still fail closed.
-        if (
-          signature.startsWith("validation_file_stop_") ||
-          signature.startsWith("draft_application_") ||
-          signature.startsWith("draft_revision_application_") ||
-          signature.startsWith("internal_")
-        ) {
-          const [available] = await tx<
-            { present: boolean }[]
-          >`SELECT to_regprocedure(${`qf.${signature}`}) IS NOT NULL AS present`;
-          if (!available?.present) continue;
-        }
-        await tx.unsafe(
-          `GRANT EXECUTE ON FUNCTION qf.${signature} TO "${config.database.user}"`,
-        );
-      }
-      // These optional 0026 helpers retain ordinary app EXECUTE after the managed ACL reset.
-      for (const signature of [
-        "private_test_database_valid()",
-        "private_test_structure_valid(jsonb)",
-        "private_test_source_valid(jsonb,text,text)",
-      ]) {
-        const [available] = await tx<
-          { present: boolean }[]
-        >`SELECT to_regprocedure(${`qf.${signature}`}) IS NOT NULL AS present`;
-        if (available?.present)
-          await tx.unsafe(
-            `GRANT EXECUTE ON FUNCTION qf.${signature} TO "${config.database.user}"`,
-          );
-      }
-      // Enums require USAGE, never CREATE; metadata remains inaccessible.
-      for (const name of [
-        "operator_role",
-        "operator_status",
-        "session_kind",
-        "audit_action",
-        "audit_outcome",
-        "audit_reason",
-      ])
-        await tx`GRANT USAGE ON TYPE ${tx(`qf.${name}`)} TO ${app}`;
-    });
+    await transaction(connection, (tx) =>
+      normalizeApplicationPrivileges(tx, config),
+    );
     return applied;
   } catch (error) {
     if (error instanceof MigrationError) throw error;
@@ -312,6 +105,258 @@ export async function migrateDatabase(
       connection.release();
     }
   }
+}
+
+/** The immutable 0033 guard expects the ACL-complete 0032 catalog. Fresh
+ * bootstrap has not reached the final privilege tail yet. Normalize this one
+ * prefix inside 0033's transaction so any subsequent failure rolls it back. */
+async function normalizeKnownTenPredecessor(
+  tx: postgres.ReservedSql,
+  config: P2aRuntimeConfig,
+  checksum: string,
+) {
+  if (
+    checksum !==
+    "b8fd2bb808b5784145e03025d11a25f29029f752211a975f64df5e9d9bd91290"
+  )
+    throw new MigrationError("MIGRATION_CHECKSUM_MISMATCH");
+  const prefix = await tx<
+    { version: string; checksum: string }[]
+  >`SELECT version,checksum FROM qf_meta.schema_migrations ORDER BY version`;
+  if (
+    prefix.length !== 32 ||
+    prefix[31]?.version !== "0032_consumer_activation_product_selector" ||
+    prefix[31]?.checksum !==
+      "1266d0362702472c98326deb113d980289deb1d37d7646550abd533bd6d78315"
+  )
+    throw new MigrationError("MIGRATION_HISTORY_MISMATCH");
+  const [maintenance] = await tx<
+    { held: boolean }[]
+  >`SELECT pg_try_advisory_xact_lock(72461,2) held`;
+  if (maintenance?.held !== true) throw new MigrationError("MIGRATION_FAILED");
+  const [connections] = await tx<
+    { n: number }[]
+  >`SELECT count(*)::int n FROM pg_stat_activity WHERE datname=current_database() AND pid<>pg_backend_pid()`;
+  if (connections?.n !== 0) throw new MigrationError("MIGRATION_FAILED");
+  await assertConsumerNamespace(tx);
+  await normalizeApplicationPrivileges(tx, config);
+}
+
+/** Original final ACL tail, shared without changing its grant/revoke policy. */
+async function normalizeApplicationPrivileges(
+  tx: postgres.ReservedSql,
+  config: P2aRuntimeConfig,
+) {
+  const app = tx(config.database.user);
+  await tx`REVOKE ALL ON DATABASE ${tx(config.database.name)} FROM PUBLIC`;
+  await tx`REVOKE ALL ON DATABASE ${tx(config.database.name)} FROM ${app}`;
+  await tx`REVOKE ALL ON SCHEMA public FROM PUBLIC`;
+  await tx`REVOKE ALL ON SCHEMA public FROM ${app}`;
+  await tx`REVOKE ALL ON SCHEMA qf FROM PUBLIC`;
+  await tx`REVOKE ALL ON SCHEMA qf FROM ${app}`;
+  await tx`REVOKE ALL ON SCHEMA qf_meta FROM ${app}`;
+  await tx`REVOKE ALL ON ALL TABLES IN SCHEMA qf FROM ${app}`;
+  await tx`REVOKE ALL ON ALL TABLES IN SCHEMA qf FROM PUBLIC`;
+  await tx`REVOKE ALL ON ALL FUNCTIONS IN SCHEMA qf FROM ${app}`;
+  await tx`REVOKE ALL ON ALL TABLES IN SCHEMA qf_meta FROM ${app}`;
+  // PG18 table REVOKE also clears column grants; explicitly restate the application column boundary.
+  await tx`REVOKE ALL(id,role,status,created_at,disabled_at,login_name,display_name,password_hash,account_revision) ON qf.operator FROM ${app}`;
+  await tx`REVOKE ALL(id,token_digest,kind,operator_id,created_at,last_seen_at,idle_expires_at,absolute_expires_at,revoked_at,failed_attempts) ON qf.operator_session FROM ${app}`;
+  await tx`REVOKE ALL(id,occurred_at,action,outcome,reason_code,actor_id,session_id,request_id,target_kind,target_id,target_revision) ON qf.audit_event FROM ${app}`;
+  await tx`GRANT CONNECT ON DATABASE ${tx(config.database.name)} TO ${app}`;
+  await tx`GRANT USAGE ON SCHEMA qf TO ${app}`;
+  await tx`GRANT SELECT(id,role,status,created_at,disabled_at,login_name,display_name,account_revision) ON qf.operator TO ${app}`;
+  await tx`GRANT EXECUTE ON FUNCTION qf.account_actor(text),qf.account_command(text,text,jsonb),qf.account_password(text,text,jsonb),qf.account_directory_read(text,text,jsonb) TO ${app}`;
+  await tx`GRANT SELECT,INSERT ON qf.operator_session TO ${app}`;
+  await tx`GRANT UPDATE(last_seen_at,idle_expires_at,revoked_at,failed_attempts) ON qf.operator_session TO ${app}`;
+  await tx`GRANT SELECT,INSERT ON qf.audit_event TO ${app}`;
+  await tx`REVOKE ALL(id,slug,title,primary_category_id,metadata_revision,created_at,updated_at,archived_at) ON qf.product FROM ${app}`;
+  for (const name of ["category", "tag"]) {
+    const table = tx(`qf.${name}`);
+    await tx`REVOKE ALL(id,slug,name,revision,created_at,updated_at,archived_at) ON ${table} FROM ${app}`;
+    await tx`GRANT SELECT,INSERT ON ${table} TO ${app}`;
+    await tx`GRANT UPDATE(name,revision,updated_at,archived_at) ON ${table} TO ${app}`;
+  }
+  await tx`REVOKE ALL(product_id,tag_id,slot) ON qf.product_tag FROM ${app}`;
+  await tx`GRANT SELECT,INSERT ON qf.product TO ${app}`;
+  await tx`GRANT UPDATE(slug,title,primary_category_id,metadata_revision,updated_at,archived_at) ON qf.product TO ${app}`;
+  await tx`GRANT SELECT,INSERT,DELETE ON qf.product_tag TO ${app}`;
+  await tx`REVOKE ALL(id,product_id,created_by,idempotency_key,request_fingerprint,expected_archive_sha256,expected_archive_bytes,target_kind,created_at,status,state_revision,updated_at,storage_condition,last_error_code,fence,lease_until,current_attempt_id,attempts,actual_archive_sha256,actual_archive_bytes,archive_storage_key,received_at,reserved_bytes,accounted_bytes) ON qf.quizpack_import FROM ${app}`;
+  await tx`GRANT SELECT,INSERT ON qf.quizpack_import TO ${app}`;
+  await tx`GRANT UPDATE(status,state_revision,updated_at,storage_condition,last_error_code,fence,lease_until,current_attempt_id,attempts,actual_archive_sha256,actual_archive_bytes,archive_storage_key,received_at,reserved_bytes,accounted_bytes) ON qf.quizpack_import TO ${app}`;
+  await tx`GRANT EXECUTE ON FUNCTION qf.import_attempts_valid(jsonb,integer,uuid,bigint) TO ${app}`;
+  await tx`GRANT SELECT,INSERT ON qf.quizpack_validation,qf.asset_blob,qf.product_asset TO ${app}`;
+  await tx`GRANT UPDATE(status,state_revision,updated_at,fence,lease_until,current_attempt_id,attempts_text,storage_condition,last_error_code,reserved_bytes,accounted_bytes,evidence_text,evidence_sha256,report_texts,evidence_metadata_text,pack_id,pack_version,container_schema_version,content_schema_version,content_kind,manifest_sha256,content_sha256,canonical_manifest_text,canonical_manifest_sha256,canonical_content_text,canonical_content_sha256,asset_set_text,asset_set_sha256,candidate_sha256,resource_count,identity_kind,canonical_validation_id,validated_at,ready_at) ON qf.quizpack_validation TO ${app}`;
+  // Permit enum-only staging by the owner; the app's actual schema guard
+  // requires the complete first-draft capability before opening a DB.
+  for (const name of [
+    "product_draft",
+    "draft_revision",
+    "draft_application",
+    "draft_review",
+    "product_version",
+  ]) {
+    const [available] = await tx<{ present: boolean }[]>`
+      SELECT to_regclass(${`qf.${name}`}) IS NOT NULL AS present`;
+    if (available?.present)
+      await tx`GRANT SELECT,INSERT ON ${tx(`qf.${name}`)} TO ${app}`;
+  }
+  const [appendSchema] = await tx<
+    { present: boolean }[]
+  >`SELECT EXISTS(SELECT 1 FROM pg_attribute WHERE attrelid=to_regclass('qf.product_draft') AND attname='initial_revision' AND NOT attisdropped) AS present`;
+  if (appendSchema?.present)
+    await tx`GRANT UPDATE(current_revision) ON qf.product_draft TO ${app}`;
+  const [consumer] = await tx<
+    { present: boolean }[]
+  >`SELECT to_regclass('qf.consumer_exchange_budget') IS NOT NULL AS present`;
+  if (consumer?.present) {
+    for (const name of [
+      "internal_play_version",
+      "access_key",
+      "consumer_session",
+      "consumer_grant",
+      "quiz_report",
+    ])
+      await tx`GRANT SELECT,INSERT ON ${tx(`qf.${name}`)} TO ${app}`;
+    await tx`GRANT SELECT ON qf.consumer_exchange_budget TO ${app}`;
+    await tx`GRANT UPDATE(revoked_at,void_operation_key,void_binding_text,void_binding_sha256,voided_by) ON qf.access_key TO ${app}`;
+    await tx`GRANT UPDATE(state_revision,answers_text,consumer_state_answers_sha256,progress_text,progress_sha256,last_binding_text,last_binding_sha256,last_receipt_text,last_receipt_sha256) ON qf.consumer_session TO ${app}`;
+    const [context] = await tx<
+      { present: boolean }[]
+    >`SELECT EXISTS(SELECT 1 FROM pg_attribute WHERE attrelid='qf.consumer_session'::regclass AND attname='matching_context_text' AND NOT attisdropped) AS present`;
+    if (context?.present)
+      await tx`GRANT UPDATE(matching_context_text,matching_context_sha256) ON qf.consumer_session TO ${app}`;
+    await tx`GRANT UPDATE(grant_id,credential_digest,issued_at,expires_at,revoked_at) ON qf.consumer_grant TO ${app}`;
+    await tx`GRANT UPDATE(window_index,used) ON qf.consumer_exchange_budget TO ${app}`;
+    for (const signature of [
+      "consumer_schema(text)",
+      "consumer_canonical(jsonb)",
+      "consumer_json_valid(jsonb,jsonb,integer)",
+      "consumer_body_valid(text,text,integer)",
+      "consumer_moment(timestamp with time zone)",
+      "consumer_play_valid(qf.internal_play_version)",
+      "consumer_key_valid(qf.access_key)",
+      "consumer_session_valid(qf.consumer_session)",
+      "consumer_report_valid(qf.quiz_report)",
+    ])
+      await tx.unsafe(
+        `GRANT EXECUTE ON FUNCTION qf.${signature} TO "${config.database.user}"`,
+      );
+    for (const signature of [
+      "consumer_schema_v2(text)",
+      "consumer_json_valid_v2(jsonb,jsonb,integer)",
+      "consumer_body_valid_v2(text,text,integer)",
+      "consumer_protocol_v2(text,uuid,text)",
+      "consumer_session_valid_v1(qf.consumer_session)",
+      "consumer_report_valid_v1(qf.quiz_report)",
+      "composed_quote_v1(jsonb,jsonb)",
+      "composed_role_v1(jsonb,jsonb)",
+      "composed_body_v1(jsonb,jsonb)",
+      "composed_assets_v1(jsonb,jsonb)",
+    ]) {
+      const [available] = await tx<
+        { present: boolean }[]
+      >`SELECT to_regprocedure(${`qf.${signature}`}) IS NOT NULL AS present`;
+      if (available?.present)
+        await tx.unsafe(
+          `GRANT EXECUTE ON FUNCTION qf.${signature} TO "${config.database.user}"`,
+        );
+    }
+  }
+  const [activation] = await tx<{ present: boolean }[]>`
+    SELECT to_regclass('qf.consumer_product_activation') IS NOT NULL AS present`;
+  if (activation?.present) {
+    // Batch A is an isolated schema preparation, not a deployable old-service
+    // upgrade. No activation writes or implicit default head are granted.
+    await tx`GRANT SELECT ON qf.consumer_product_activation,qf.consumer_product_head TO ${app}`;
+    await tx`GRANT EXECUTE ON FUNCTION qf.consumer_policy_scope(text),qf.consumer_policy_attempt(text,uuid,uuid,uuid,text,integer) TO ${app}`;
+    // BEFORE ROW UPDATE has already locked a tuple. Revoke those direct paths
+    // until guarded service entrypoints can take the parent locks BEFORE DML.
+    await tx`REVOKE UPDATE(state_revision,answers_text,consumer_state_answers_sha256,progress_text,progress_sha256,last_binding_text,last_binding_sha256,last_receipt_text,last_receipt_sha256,matching_context_text,matching_context_sha256) ON qf.consumer_session FROM ${app}`;
+    await tx`REVOKE UPDATE(revoked_at,void_operation_key,void_binding_text,void_binding_sha256,voided_by) ON qf.access_key FROM ${app}`;
+    await tx`REVOKE UPDATE(grant_id,credential_digest,issued_at,expires_at,revoked_at) ON qf.consumer_grant FROM ${app}`;
+  }
+  const [controlled] = await tx<
+    { present: boolean }[]
+  >`SELECT to_regprocedure('qf.consumer_lock_authority(text,uuid,uuid,uuid,text)') IS NOT NULL AS present`;
+  if (controlled?.present) {
+    await tx`REVOKE INSERT ON qf.quiz_report FROM ${app}`;
+    for (const signature of [
+      "consumer_lock_authority(text,uuid,uuid,uuid,text)",
+      "consumer_save_attempt(text,uuid,uuid,uuid,text,integer,text,text,text,text)",
+      "consumer_complete_attempt(qf.quiz_report,uuid,text)",
+      "consumer_rotate_grant(text,uuid,text,uuid,uuid,text)",
+      "consumer_exchange_attempt(text,text,uuid,text)",
+      "consumer_revoke_grant(text,uuid,uuid,uuid,text)",
+      "consumer_activate_product(text,text,uuid)",
+      "consumer_void_unused_key(text,uuid,text,text)",
+    ])
+      await tx.unsafe(
+        `GRANT EXECUTE ON FUNCTION qf.${signature} TO "${config.database.user}"`,
+      );
+  }
+  for (const signature of [
+    "sha256_utf8(text)",
+    "validation_attempts_valid(text,integer,uuid,bigint)",
+    "validation_evidence_valid(text,text[],text,text)",
+    "product_asset_declaration_valid(text,text,text,text,text,text)",
+    "validation_shape_valid(qf.quizpack_validation)",
+    "validation_file_stop_protocol()",
+    "validation_file_stop_proof_valid(jsonb,uuid,jsonb)",
+    "validation_file_stop_controls_valid(text,uuid,text,text)",
+    "draft_application_fingerprint(text,uuid,uuid,integer,text)",
+    "draft_revision_application_fingerprint(text,uuid,uuid,integer,text,uuid,integer,text,text)",
+    "internal_canonical(jsonb)",
+    "internal_registry_identity(jsonb,text)",
+    "internal_review_valid(qf.draft_review)",
+    "internal_version_valid(qf.product_version)",
+  ]) {
+    if (signature.startsWith("internal_")) {
+      const [ledger] = await tx<
+        { present: boolean }[]
+      >`SELECT to_regclass('qf.draft_review') IS NOT NULL AND to_regclass('qf.product_version') IS NOT NULL AS present`;
+      if (!ledger?.present) continue;
+    }
+    // Owner can stage the enum-only migration; application capability checks still fail closed.
+    if (
+      signature.startsWith("validation_file_stop_") ||
+      signature.startsWith("draft_application_") ||
+      signature.startsWith("draft_revision_application_") ||
+      signature.startsWith("internal_")
+    ) {
+      const [available] = await tx<
+        { present: boolean }[]
+      >`SELECT to_regprocedure(${`qf.${signature}`}) IS NOT NULL AS present`;
+      if (!available?.present) continue;
+    }
+    await tx.unsafe(
+      `GRANT EXECUTE ON FUNCTION qf.${signature} TO "${config.database.user}"`,
+    );
+  }
+  // These optional 0026 helpers retain ordinary app EXECUTE after the managed ACL reset.
+  for (const signature of [
+    "private_test_database_valid()",
+    "private_test_structure_valid(jsonb)",
+    "private_test_source_valid(jsonb,text,text)",
+  ]) {
+    const [available] = await tx<
+      { present: boolean }[]
+    >`SELECT to_regprocedure(${`qf.${signature}`}) IS NOT NULL AS present`;
+    if (available?.present)
+      await tx.unsafe(
+        `GRANT EXECUTE ON FUNCTION qf.${signature} TO "${config.database.user}"`,
+      );
+  }
+  // Enums require USAGE, never CREATE; metadata remains inaccessible.
+  for (const name of [
+    "operator_role",
+    "operator_status",
+    "session_kind",
+    "audit_action",
+    "audit_outcome",
+    "audit_reason",
+  ])
+    await tx`GRANT USAGE ON TYPE ${tx(`qf.${name}`)} TO ${app}`;
 }
 
 async function transaction(
