@@ -1,3 +1,4 @@
+import knownTenExperience from "./baselines/qztx-known-ten-experience-20261104.json";
 import knownTenFinal from "./baselines/qztx-known-ten-private-20261104.json";
 import finalDemo from "./baselines/qztx-final-private-20261103-demo.json";
 import finalE2e from "./baselines/qztx-final-private-20261103-e2e.json";
@@ -37,6 +38,7 @@ export const BASELINES_V2 = freeze(
     finalDemo,
     finalE2e,
     knownTenFinal,
+    knownTenExperience,
   ].map((input) => {
     const descriptor = baselineDescriptorV2Schema.parse(input);
     return {

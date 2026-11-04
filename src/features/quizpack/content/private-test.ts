@@ -1,3 +1,4 @@
+import knownTenExperienceRegistration from "./private-test-registration-known-ten-experience.json";
 import { QIANZAI_KNOWN_TEN_EXPERIENCE_IDENTITY } from "./private-test-known-ten-experience-identity";
 import knownTenFinalRegistration from "./private-test-registration-known-ten-final.json";
 import finalDemoRegistration from "./private-test-registration-final-demo.json";
@@ -21,6 +22,7 @@ export const PRIVATE_TEST_REGISTRATIONS = [
   finalDemoRegistration,
   finalE2eRegistration,
   knownTenFinalRegistration,
+  knownTenExperienceRegistration,
 ] as const;
 export type PrivateTestRegistration =
   (typeof PRIVATE_TEST_REGISTRATIONS)[number];

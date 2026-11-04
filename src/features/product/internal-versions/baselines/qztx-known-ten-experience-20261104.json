@@ -1,0 +1,1030 @@
+{
+  "schemaVersion": "quizforge.baseline-registry-entry.v2",
+  "contentSchemaVersion": "quizpack-content.v3",
+  "kind": "baseline",
+  "id": "qztx-known-ten-experience-20261104",
+  "version": "1.0.0",
+  "productId": "qianzai-tongxin",
+  "purpose": "internal-test",
+  "allowedInstancePurposes": ["test"],
+  "canonicalContentSha256": "6c701d4445f98b2d6e042dde1edc203e118c9a79728697ef551fa89fe2bd2187",
+  "assetSetSha256": "12e49abf06249917a68b6f9974643e6369a2f114ee5544cb0137d52f4fb69157",
+  "canonicalManifestSha256": "59c69917613593eac1c71d3b4285034b7ac2dbf71bbee0b7f3a02cca36276852",
+  "logicHash": "a2436317a00446f37996516483ef64c15ecad6729fba4429d5450dfc27d49940",
+  "approval": {
+    "kind": "private-test-only",
+    "authorizationId": "qztx-known-ten-experience-20261104",
+    "instanceId": "00486f17f741bd6d6535429e6552d161",
+    "evidenceSha256": "f42fd80d5e872818ae0844d034896f28dab295aaf158916bd1e5a94dfb25277c",
+    "scope": "candidate-content-reference-art-local-test-only"
+  },
+  "sourceEvidence": {
+    "kind": "private-test-definition",
+    "definitionSha256": "f42fd80d5e872818ae0844d034896f28dab295aaf158916bd1e5a94dfb25277c",
+    "qualification": "authored-candidate-private-reference-assets-not-final-approval"
+  },
+  "engine": {
+    "id": "archetype-l1",
+    "version": "1.0.0"
+  },
+  "components": {
+    "cover": {
+      "id": "composed-cover",
+      "version": "1.0.0",
+      "propsSchemaVersion": "1.0.0"
+    },
+    "question": {
+      "id": "composed-question",
+      "version": "1.0.0",
+      "propsSchemaVersion": "1.0.0"
+    },
+    "resume": {
+      "id": "composed-resume",
+      "version": "1.0.0",
+      "propsSchemaVersion": "1.0.0"
+    },
+    "result": {
+      "id": "composed-result",
+      "version": "1.0.0",
+      "propsSchemaVersion": "1.0.0"
+    },
+    "report": {
+      "id": "composed-report",
+      "version": "1.0.0",
+      "propsSchemaVersion": "1.0.0"
+    },
+    "poster": {
+      "id": "composed-poster",
+      "version": "1.0.0",
+      "propsSchemaVersion": "1.0.0"
+    }
+  },
+  "slots": {
+    "neutral": {
+      "cover": {
+        "id": "qztx-v1-cover",
+        "productId": "qianzai-tongxin",
+        "version": "1.0.0"
+      },
+      "preferenceScene": {
+        "id": "qztx-v1-gender",
+        "productId": "qianzai-tongxin",
+        "version": "1.0.0"
+      },
+      "acts": [
+        {
+          "sectionId": "act-1",
+          "background": {
+            "id": "qztx-art-act-1",
+            "productId": "qianzai-tongxin",
+            "version": "1.0.0"
+          },
+          "navigation": {
+            "id": "qztx-v1-scene0",
+            "productId": "qianzai-tongxin",
+            "version": "1.0.0"
+          },
+          "questionPaper": {
+            "id": "qztx-art-question-paper",
+            "productId": "qianzai-tongxin",
+            "version": "1.0.0"
+          },
+          "optionIdle": {
+            "id": "qztx-art-option-idle",
+            "productId": "qianzai-tongxin",
+            "version": "1.0.0"
+          },
+          "optionSelected": {
+            "id": "qztx-art-option-selected",
+            "productId": "qianzai-tongxin",
+            "version": "1.0.0"
+          }
+        },
+        {
+          "sectionId": "act-2",
+          "background": {
+            "id": "qztx-art-act-2",
+            "productId": "qianzai-tongxin",
+            "version": "1.0.0"
+          },
+          "navigation": {
+            "id": "qztx-v1-scene1",
+            "productId": "qianzai-tongxin",
+            "version": "1.0.0"
+          },
+          "questionPaper": {
+            "id": "qztx-art-question-paper",
+            "productId": "qianzai-tongxin",
+            "version": "1.0.0"
+          },
+          "optionIdle": {
+            "id": "qztx-art-option-idle",
+            "productId": "qianzai-tongxin",
+            "version": "1.0.0"
+          },
+          "optionSelected": {
+            "id": "qztx-art-option-selected",
+            "productId": "qianzai-tongxin",
+            "version": "1.0.0"
+          }
+        },
+        {
+          "sectionId": "act-3",
+          "background": {
+            "id": "qztx-art-act-3",
+            "productId": "qianzai-tongxin",
+            "version": "1.0.0"
+          },
+          "navigation": {
+            "id": "qztx-v1-scene2",
+            "productId": "qianzai-tongxin",
+            "version": "1.0.0"
+          },
+          "questionPaper": {
+            "id": "qztx-art-question-paper",
+            "productId": "qianzai-tongxin",
+            "version": "1.0.0"
+          },
+          "optionIdle": {
+            "id": "qztx-art-option-idle",
+            "productId": "qianzai-tongxin",
+            "version": "1.0.0"
+          },
+          "optionSelected": {
+            "id": "qztx-art-option-selected",
+            "productId": "qianzai-tongxin",
+            "version": "1.0.0"
+          }
+        }
+      ],
+      "reportPaper": {
+        "id": "qztx-test-report-paper",
+        "productId": "qianzai-tongxin",
+        "version": "1.0.0"
+      },
+      "reportBorder": {
+        "id": "qztx-parity-common-border",
+        "productId": "qianzai-tongxin",
+        "version": "1.0.0"
+      },
+      "seal": null
+    },
+    "characters": [
+      {
+        "resultRef": {
+          "id": "tang-yin",
+          "productId": "qianzai-tongxin",
+          "version": "3.0.0"
+        },
+        "reveal": {
+          "id": "qztx-known-tang-yin-reveal",
+          "productId": "qianzai-tongxin",
+          "version": "3.0.0"
+        },
+        "nameArt": {
+          "id": "qztx-known-tang-yin-nameart",
+          "productId": "qianzai-tongxin",
+          "version": "3.0.0"
+        },
+        "report": {
+          "id": "qztx-known-tang-yin-report",
+          "productId": "qianzai-tongxin",
+          "version": "3.0.0"
+        },
+        "poster": {
+          "id": "qztx-known-tang-yin-poster",
+          "productId": "qianzai-tongxin",
+          "version": "3.0.0"
+        }
+      },
+      {
+        "resultRef": {
+          "id": "zhou-yu",
+          "productId": "qianzai-tongxin",
+          "version": "3.0.0"
+        },
+        "reveal": {
+          "id": "qztx-known-zhou-yu-reveal",
+          "productId": "qianzai-tongxin",
+          "version": "3.0.0"
+        },
+        "nameArt": {
+          "id": "qztx-known-zhou-yu-nameart",
+          "productId": "qianzai-tongxin",
+          "version": "3.0.0"
+        },
+        "report": {
+          "id": "qztx-known-zhou-yu-report",
+          "productId": "qianzai-tongxin",
+          "version": "3.0.0"
+        },
+        "poster": {
+          "id": "qztx-known-zhou-yu-poster",
+          "productId": "qianzai-tongxin",
+          "version": "3.0.0"
+        }
+      },
+      {
+        "resultRef": {
+          "id": "zhao-yun",
+          "productId": "qianzai-tongxin",
+          "version": "3.0.0"
+        },
+        "reveal": {
+          "id": "qztx-known-zhao-yun-reveal",
+          "productId": "qianzai-tongxin",
+          "version": "3.0.0"
+        },
+        "nameArt": {
+          "id": "qztx-known-zhao-yun-nameart",
+          "productId": "qianzai-tongxin",
+          "version": "3.0.0"
+        },
+        "report": {
+          "id": "qztx-known-zhao-yun-report",
+          "productId": "qianzai-tongxin",
+          "version": "3.0.0"
+        },
+        "poster": {
+          "id": "qztx-known-zhao-yun-poster",
+          "productId": "qianzai-tongxin",
+          "version": "3.0.0"
+        }
+      },
+      {
+        "resultRef": {
+          "id": "wu-zetian",
+          "productId": "qianzai-tongxin",
+          "version": "3.0.0"
+        },
+        "reveal": {
+          "id": "qztx-known-wu-zetian-reveal",
+          "productId": "qianzai-tongxin",
+          "version": "3.0.0"
+        },
+        "nameArt": {
+          "id": "qztx-known-wu-zetian-nameart",
+          "productId": "qianzai-tongxin",
+          "version": "3.0.0"
+        },
+        "report": {
+          "id": "qztx-known-wu-zetian-report",
+          "productId": "qianzai-tongxin",
+          "version": "3.0.0"
+        },
+        "poster": {
+          "id": "qztx-known-wu-zetian-poster",
+          "productId": "qianzai-tongxin",
+          "version": "3.0.0"
+        }
+      },
+      {
+        "resultRef": {
+          "id": "wang-zhaojun",
+          "productId": "qianzai-tongxin",
+          "version": "3.0.0"
+        },
+        "reveal": {
+          "id": "qztx-known-wang-zhaojun-reveal",
+          "productId": "qianzai-tongxin",
+          "version": "3.0.0"
+        },
+        "nameArt": {
+          "id": "qztx-known-wang-zhaojun-nameart",
+          "productId": "qianzai-tongxin",
+          "version": "3.0.0"
+        },
+        "report": {
+          "id": "qztx-known-wang-zhaojun-report",
+          "productId": "qianzai-tongxin",
+          "version": "3.0.0"
+        },
+        "poster": {
+          "id": "qztx-known-wang-zhaojun-poster",
+          "productId": "qianzai-tongxin",
+          "version": "3.0.0"
+        }
+      },
+      {
+        "resultRef": {
+          "id": "cai-wenji",
+          "productId": "qianzai-tongxin",
+          "version": "3.0.0"
+        },
+        "reveal": {
+          "id": "qztx-known-cai-wenji-reveal",
+          "productId": "qianzai-tongxin",
+          "version": "3.0.0"
+        },
+        "nameArt": {
+          "id": "qztx-known-cai-wenji-nameart",
+          "productId": "qianzai-tongxin",
+          "version": "3.0.0"
+        },
+        "report": {
+          "id": "qztx-known-cai-wenji-report",
+          "productId": "qianzai-tongxin",
+          "version": "3.0.0"
+        },
+        "poster": {
+          "id": "qztx-known-cai-wenji-poster",
+          "productId": "qianzai-tongxin",
+          "version": "3.0.0"
+        }
+      },
+      {
+        "resultRef": {
+          "id": "su-shi",
+          "productId": "qianzai-tongxin",
+          "version": "3.0.0"
+        },
+        "reveal": {
+          "id": "qztx-known-su-shi-reveal",
+          "productId": "qianzai-tongxin",
+          "version": "3.0.0"
+        },
+        "nameArt": {
+          "id": "qztx-known-su-shi-nameart",
+          "productId": "qianzai-tongxin",
+          "version": "3.0.0"
+        },
+        "report": {
+          "id": "qztx-known-su-shi-report",
+          "productId": "qianzai-tongxin",
+          "version": "3.0.0"
+        },
+        "poster": {
+          "id": "qztx-known-su-shi-poster",
+          "productId": "qianzai-tongxin",
+          "version": "3.0.0"
+        }
+      },
+      {
+        "resultRef": {
+          "id": "yang-yuhuan",
+          "productId": "qianzai-tongxin",
+          "version": "3.0.0"
+        },
+        "reveal": {
+          "id": "qztx-known-yang-yuhuan-reveal",
+          "productId": "qianzai-tongxin",
+          "version": "3.0.0"
+        },
+        "nameArt": {
+          "id": "qztx-known-yang-yuhuan-nameart",
+          "productId": "qianzai-tongxin",
+          "version": "3.0.0"
+        },
+        "report": {
+          "id": "qztx-known-yang-yuhuan-report",
+          "productId": "qianzai-tongxin",
+          "version": "3.0.0"
+        },
+        "poster": {
+          "id": "qztx-known-yang-yuhuan-poster",
+          "productId": "qianzai-tongxin",
+          "version": "3.0.0"
+        }
+      },
+      {
+        "resultRef": {
+          "id": "li-bai",
+          "productId": "qianzai-tongxin",
+          "version": "3.0.0"
+        },
+        "reveal": {
+          "id": "qztx-known-li-bai-reveal",
+          "productId": "qianzai-tongxin",
+          "version": "3.0.0"
+        },
+        "nameArt": {
+          "id": "qztx-known-li-bai-nameart",
+          "productId": "qianzai-tongxin",
+          "version": "3.0.0"
+        },
+        "report": {
+          "id": "qztx-known-li-bai-report",
+          "productId": "qianzai-tongxin",
+          "version": "3.0.0"
+        },
+        "poster": {
+          "id": "qztx-known-li-bai-poster",
+          "productId": "qianzai-tongxin",
+          "version": "3.0.0"
+        }
+      },
+      {
+        "resultRef": {
+          "id": "li-qingzhao",
+          "productId": "qianzai-tongxin",
+          "version": "3.0.0"
+        },
+        "reveal": {
+          "id": "qztx-known-li-qingzhao-reveal",
+          "productId": "qianzai-tongxin",
+          "version": "3.0.0"
+        },
+        "nameArt": {
+          "id": "qztx-known-li-qingzhao-nameart",
+          "productId": "qianzai-tongxin",
+          "version": "3.0.0"
+        },
+        "report": {
+          "id": "qztx-known-li-qingzhao-report",
+          "productId": "qianzai-tongxin",
+          "version": "3.0.0"
+        },
+        "poster": {
+          "id": "qztx-known-li-qingzhao-poster",
+          "productId": "qianzai-tongxin",
+          "version": "3.0.0"
+        }
+      }
+    ]
+  },
+  "resourceEdges": [
+    {
+      "resourceId": "qztx-v1-cover",
+      "version": "1.0.0",
+      "purpose": "cover",
+      "sha256": "fc0fb75e94f080cc2481998b818ecbb7f7b41263a6edb8bbebac01dd2b00773d",
+      "bytes": 475734,
+      "mediaType": "image/webp",
+      "width": 852,
+      "height": 1844,
+      "reviewFile": "qztx-v1-cover.webp"
+    },
+    {
+      "resourceId": "qztx-v1-gender",
+      "version": "1.0.0",
+      "purpose": "decoration",
+      "sha256": "f33476f4d394ae512d1de622d15e8a5be99bb0c8f33b4f881d1aba224190a662",
+      "bytes": 180806,
+      "mediaType": "image/jpeg",
+      "width": 390,
+      "height": 844,
+      "reviewFile": "qztx-v1-gender.jpg"
+    },
+    {
+      "resourceId": "qztx-v1-scene0",
+      "version": "1.0.0",
+      "purpose": "decoration",
+      "sha256": "65e52b1f8a9c02cd13b24281f01aa6bdb377fae54cb619d5c9858fdc3f992066",
+      "bytes": 177042,
+      "mediaType": "image/jpeg",
+      "width": 390,
+      "height": 844,
+      "reviewFile": "qztx-v1-scene0.jpg"
+    },
+    {
+      "resourceId": "qztx-v1-scene1",
+      "version": "1.0.0",
+      "purpose": "decoration",
+      "sha256": "3db580488243cc66b005c75057bc9cd6fca9891845d6de6110e1c27b533fcbb0",
+      "bytes": 172946,
+      "mediaType": "image/jpeg",
+      "width": 390,
+      "height": 844,
+      "reviewFile": "qztx-v1-scene1.jpg"
+    },
+    {
+      "resourceId": "qztx-v1-scene2",
+      "version": "1.0.0",
+      "purpose": "decoration",
+      "sha256": "9cdf8d04bbe3a134ae4aa769410f7a152f5617ccd091a3e0e3fe93e7c63bd35a",
+      "bytes": 175631,
+      "mediaType": "image/jpeg",
+      "width": 390,
+      "height": 844,
+      "reviewFile": "qztx-v1-scene2.jpg"
+    },
+    {
+      "resourceId": "qztx-test-report-paper",
+      "version": "1.0.0",
+      "purpose": "decoration",
+      "sha256": "dbdc1c33b2a7df90fa4daae6904ea96275bc8e21b60f41111def716741102ecf",
+      "bytes": 41531,
+      "mediaType": "image/png",
+      "width": 240,
+      "height": 240,
+      "reviewFile": "qztx-test-report-paper.png"
+    },
+    {
+      "resourceId": "qztx-art-act-1",
+      "version": "1.0.0",
+      "purpose": "decoration",
+      "sha256": "596d063d848c0c858ee0de207a29d08df5a884bb13713f7e1ed27b7fcddcdfe1",
+      "bytes": 2866303,
+      "mediaType": "image/png",
+      "width": 853,
+      "height": 1844,
+      "reviewFile": "qztx-art-act-1.png"
+    },
+    {
+      "resourceId": "qztx-art-question-paper",
+      "version": "1.0.0",
+      "purpose": "decoration",
+      "sha256": "e92ede7aa48294d77ec55f63d12951141d9e6878f0cf51fd8a89974728f422d0",
+      "bytes": 2379673,
+      "mediaType": "image/png",
+      "width": 2188,
+      "height": 718,
+      "reviewFile": "qztx-art-question-paper.png"
+    },
+    {
+      "resourceId": "qztx-art-option-idle",
+      "version": "1.0.0",
+      "purpose": "decoration",
+      "sha256": "3e7e6b74093a4115777ecb84a30ff445df1293a724cdb2f356b60d65137e37cd",
+      "bytes": 1405723,
+      "mediaType": "image/png",
+      "width": 2171,
+      "height": 724,
+      "reviewFile": "qztx-art-option-idle.png"
+    },
+    {
+      "resourceId": "qztx-art-option-selected",
+      "version": "1.0.0",
+      "purpose": "decoration",
+      "sha256": "c7fc0939d5cb2b4291074bee0105652f239a78d38d12b43e879753454427d02c",
+      "bytes": 1238445,
+      "mediaType": "image/png",
+      "width": 2170,
+      "height": 725,
+      "reviewFile": "qztx-art-option-selected.png"
+    },
+    {
+      "resourceId": "qztx-art-act-2",
+      "version": "1.0.0",
+      "purpose": "decoration",
+      "sha256": "7947579087827cb445409d76bb98885978ca121310e978a73a264aeb8b8f4781",
+      "bytes": 2978900,
+      "mediaType": "image/png",
+      "width": 853,
+      "height": 1844,
+      "reviewFile": "qztx-art-act-2.png"
+    },
+    {
+      "resourceId": "qztx-art-act-3",
+      "version": "1.0.0",
+      "purpose": "decoration",
+      "sha256": "3b2406fc72d6eed351fc8647a05e45f67f3c4db3b0580a8806dcd9d8847878ee",
+      "bytes": 2907381,
+      "mediaType": "image/png",
+      "width": 853,
+      "height": 1844,
+      "reviewFile": "qztx-art-act-3.png"
+    },
+    {
+      "resourceId": "qztx-parity-common-border",
+      "version": "1.0.0",
+      "purpose": "decoration",
+      "sha256": "e354266243260511345347541ae3c18c98eaa53371694ab974772796739b0dd9",
+      "bytes": 2899820,
+      "mediaType": "image/png",
+      "width": 941,
+      "height": 1672,
+      "reviewFile": "qztx-parity-common-border.png"
+    },
+    {
+      "resourceId": "qztx-known-cai-wenji-nameart",
+      "version": "3.0.0",
+      "purpose": "decoration",
+      "sha256": "4ef6aa6d1fcb8c961466f464dbf5cfa20173625443f3173f44b59ad4180ce6d1",
+      "bytes": 160784,
+      "mediaType": "image/webp",
+      "width": 600,
+      "height": 840,
+      "reviewFile": "qztx-known-cai-wenji-nameart.webp"
+    },
+    {
+      "resourceId": "qztx-known-cai-wenji-poster",
+      "version": "3.0.0",
+      "purpose": "portrait",
+      "sha256": "3df38ea36259bd38cdc984a18f5cb1c68a0d86bb7212780d00b5812cda8e4747",
+      "bytes": 204564,
+      "mediaType": "image/webp",
+      "width": 853,
+      "height": 1070,
+      "reviewFile": "qztx-known-cai-wenji-poster.webp"
+    },
+    {
+      "resourceId": "qztx-known-cai-wenji-report",
+      "version": "3.0.0",
+      "purpose": "portrait",
+      "sha256": "a00bf695e3aee969cc91dc0e3bbd242768bd157cdff9c238d6774bd2b7bdb5a8",
+      "bytes": 113446,
+      "mediaType": "image/webp",
+      "width": 768,
+      "height": 679,
+      "reviewFile": "qztx-known-cai-wenji-report.webp"
+    },
+    {
+      "resourceId": "qztx-known-cai-wenji-reveal",
+      "version": "3.0.0",
+      "purpose": "portrait",
+      "sha256": "79ce5c393962dcf4f18d9e0539b0caef5c6046dc20acf7aed4a1a6ccaf520b6e",
+      "bytes": 343196,
+      "mediaType": "image/webp",
+      "width": 853,
+      "height": 1844,
+      "reviewFile": "qztx-known-cai-wenji-reveal.webp"
+    },
+    {
+      "resourceId": "qztx-known-li-bai-nameart",
+      "version": "3.0.0",
+      "purpose": "decoration",
+      "sha256": "c46b7c04a48c9c44d61a0b4d150d4c8a1ca84135ccc3a2e601ca72e071a6ff2d",
+      "bytes": 512046,
+      "mediaType": "image/webp",
+      "width": 1060,
+      "height": 1484,
+      "reviewFile": "qztx-known-li-bai-nameart.webp"
+    },
+    {
+      "resourceId": "qztx-known-li-bai-poster",
+      "version": "3.0.0",
+      "purpose": "portrait",
+      "sha256": "7f0d3c22abc76e6ca66390508e825c0a82aaaea920fa9d37048f3196fb82fd9a",
+      "bytes": 258672,
+      "mediaType": "image/webp",
+      "width": 853,
+      "height": 1070,
+      "reviewFile": "qztx-known-li-bai-poster.webp"
+    },
+    {
+      "resourceId": "qztx-known-li-bai-report",
+      "version": "3.0.0",
+      "purpose": "portrait",
+      "sha256": "27fb3864340f6a745a783d386160513a3b83acfb40fc2bd875dfaad35793e0d7",
+      "bytes": 152788,
+      "mediaType": "image/webp",
+      "width": 768,
+      "height": 679,
+      "reviewFile": "qztx-known-li-bai-report.webp"
+    },
+    {
+      "resourceId": "qztx-known-li-bai-reveal",
+      "version": "3.0.0",
+      "purpose": "portrait",
+      "sha256": "1df491f69a8f1cc6362b2888fdb4e658013105bd21b6f0086eb5ed01c24d54e0",
+      "bytes": 427338,
+      "mediaType": "image/webp",
+      "width": 853,
+      "height": 1844,
+      "reviewFile": "qztx-known-li-bai-reveal.webp"
+    },
+    {
+      "resourceId": "qztx-known-li-qingzhao-nameart",
+      "version": "3.0.0",
+      "purpose": "decoration",
+      "sha256": "5e6f72a11d6187751754da57bb059a0230f4474c289fd2a61ac2641c2990933a",
+      "bytes": 629782,
+      "mediaType": "image/png",
+      "width": 1060,
+      "height": 1484,
+      "reviewFile": "qztx-known-li-qingzhao-nameart.png"
+    },
+    {
+      "resourceId": "qztx-known-li-qingzhao-poster",
+      "version": "3.0.0",
+      "purpose": "portrait",
+      "sha256": "d053bff6227b09f8a6cd9e74b5ac61664a5edf4f9fdadafd015b8864e28e2a23",
+      "bytes": 671664,
+      "mediaType": "image/webp",
+      "width": 1162,
+      "height": 1354,
+      "reviewFile": "qztx-known-li-qingzhao-poster.webp"
+    },
+    {
+      "resourceId": "qztx-known-li-qingzhao-report",
+      "version": "3.0.0",
+      "purpose": "portrait",
+      "sha256": "eda1fa54a5b28fd4aae8cc435f9d40db9451fb4136741687583b26d671a3252a",
+      "bytes": 648072,
+      "mediaType": "image/webp",
+      "width": 1254,
+      "height": 1254,
+      "reviewFile": "qztx-known-li-qingzhao-report.webp"
+    },
+    {
+      "resourceId": "qztx-known-li-qingzhao-reveal",
+      "version": "3.0.0",
+      "purpose": "portrait",
+      "sha256": "de51485a332623387212c3b51d6ff97c53897664225a2bd47f0313fc0fe402de",
+      "bytes": 439038,
+      "mediaType": "image/webp",
+      "width": 852,
+      "height": 1846,
+      "reviewFile": "qztx-known-li-qingzhao-reveal.webp"
+    },
+    {
+      "resourceId": "qztx-known-su-shi-nameart",
+      "version": "3.0.0",
+      "purpose": "decoration",
+      "sha256": "e2a86e076c69794bfa89d87f12f64874e135f826178c799493a0276e8549389f",
+      "bytes": 558630,
+      "mediaType": "image/webp",
+      "width": 1060,
+      "height": 1484,
+      "reviewFile": "qztx-known-su-shi-nameart.webp"
+    },
+    {
+      "resourceId": "qztx-known-su-shi-poster",
+      "version": "3.0.0",
+      "purpose": "portrait",
+      "sha256": "0f1bede6ac64c5fb34ce5458da673f1b39937523c5022651f3b9872d0d9af333",
+      "bytes": 283330,
+      "mediaType": "image/webp",
+      "width": 852,
+      "height": 1069,
+      "reviewFile": "qztx-known-su-shi-poster.webp"
+    },
+    {
+      "resourceId": "qztx-known-su-shi-report",
+      "version": "3.0.0",
+      "purpose": "portrait",
+      "sha256": "300b58689b97c9f2ca0d0f8ae1bcba794b356bfeebca79c3f08e1f0670e665b4",
+      "bytes": 151126,
+      "mediaType": "image/webp",
+      "width": 768,
+      "height": 679,
+      "reviewFile": "qztx-known-su-shi-report.webp"
+    },
+    {
+      "resourceId": "qztx-known-su-shi-reveal",
+      "version": "3.0.0",
+      "purpose": "portrait",
+      "sha256": "be009239c7bcd0eccdeaa952f9173a4c9a18689a778157b303d93c01736f4738",
+      "bytes": 533524,
+      "mediaType": "image/webp",
+      "width": 852,
+      "height": 1846,
+      "reviewFile": "qztx-known-su-shi-reveal.webp"
+    },
+    {
+      "resourceId": "qztx-known-tang-yin-nameart",
+      "version": "3.0.0",
+      "purpose": "decoration",
+      "sha256": "eb312be868c634d42ad2848dc3c71d71950260fe506d8fefbbdee971ff087315",
+      "bytes": 178552,
+      "mediaType": "image/webp",
+      "width": 600,
+      "height": 840,
+      "reviewFile": "qztx-known-tang-yin-nameart.webp"
+    },
+    {
+      "resourceId": "qztx-known-tang-yin-poster",
+      "version": "3.0.0",
+      "purpose": "portrait",
+      "sha256": "b3922467f373fa5c11e41d81d43729069a4b6fa774ec782d11efd82a55b56e73",
+      "bytes": 231980,
+      "mediaType": "image/webp",
+      "width": 854,
+      "height": 1071,
+      "reviewFile": "qztx-known-tang-yin-poster.webp"
+    },
+    {
+      "resourceId": "qztx-known-tang-yin-report",
+      "version": "3.0.0",
+      "purpose": "portrait",
+      "sha256": "32c89f17e7ee52b895c88c00a0caada3859d56161b3987f0df5db6c2b8bbe739",
+      "bytes": 125536,
+      "mediaType": "image/webp",
+      "width": 768,
+      "height": 678,
+      "reviewFile": "qztx-known-tang-yin-report.webp"
+    },
+    {
+      "resourceId": "qztx-known-tang-yin-reveal",
+      "version": "3.0.0",
+      "purpose": "portrait",
+      "sha256": "efaeb4a0fa5f64d7edb7d8544c7775d5028652295b705ae5b6e35c1587c38ada",
+      "bytes": 399502,
+      "mediaType": "image/webp",
+      "width": 854,
+      "height": 1842,
+      "reviewFile": "qztx-known-tang-yin-reveal.webp"
+    },
+    {
+      "resourceId": "qztx-known-wang-zhaojun-nameart",
+      "version": "3.0.0",
+      "purpose": "decoration",
+      "sha256": "73afbdcc76c0c226035155db14531f21fa64ce1a00d6cf418b76d94e6177a99b",
+      "bytes": 149328,
+      "mediaType": "image/webp",
+      "width": 600,
+      "height": 840,
+      "reviewFile": "qztx-known-wang-zhaojun-nameart.webp"
+    },
+    {
+      "resourceId": "qztx-known-wang-zhaojun-poster",
+      "version": "3.0.0",
+      "purpose": "portrait",
+      "sha256": "044302a0613d37bffd5a7b900048729f3b36d7dd533220f288230c320126cdc9",
+      "bytes": 231546,
+      "mediaType": "image/webp",
+      "width": 935,
+      "height": 1173,
+      "reviewFile": "qztx-known-wang-zhaojun-poster.webp"
+    },
+    {
+      "resourceId": "qztx-known-wang-zhaojun-report",
+      "version": "3.0.0",
+      "purpose": "portrait",
+      "sha256": "f47c5aae99ac2eba047988fc6a4ea4250f95654d6238658040709d705282e8a2",
+      "bytes": 119244,
+      "mediaType": "image/webp",
+      "width": 768,
+      "height": 678,
+      "reviewFile": "qztx-known-wang-zhaojun-report.webp"
+    },
+    {
+      "resourceId": "qztx-known-wang-zhaojun-reveal",
+      "version": "3.0.0",
+      "purpose": "portrait",
+      "sha256": "e5e1bcae785b0e3e899fd295079dfae969ebba02c941cf84fae87ec1194cab7f",
+      "bytes": 323844,
+      "mediaType": "image/webp",
+      "width": 935,
+      "height": 1683,
+      "reviewFile": "qztx-known-wang-zhaojun-reveal.webp"
+    },
+    {
+      "resourceId": "qztx-known-wu-zetian-nameart",
+      "version": "3.0.0",
+      "purpose": "decoration",
+      "sha256": "e32060c7883bcab6d26aceb708f656cf09497a5105221fbb657b0c63171c6eb9",
+      "bytes": 156716,
+      "mediaType": "image/webp",
+      "width": 600,
+      "height": 840,
+      "reviewFile": "qztx-known-wu-zetian-nameart.webp"
+    },
+    {
+      "resourceId": "qztx-known-wu-zetian-poster",
+      "version": "3.0.0",
+      "purpose": "portrait",
+      "sha256": "06b3180b7a592ea14860096e968dce633281baf46bf0a82ca2237e5a047a103a",
+      "bytes": 328700,
+      "mediaType": "image/webp",
+      "width": 935,
+      "height": 1173,
+      "reviewFile": "qztx-known-wu-zetian-poster.webp"
+    },
+    {
+      "resourceId": "qztx-known-wu-zetian-report",
+      "version": "3.0.0",
+      "purpose": "portrait",
+      "sha256": "a02df6994163a6d72e07d1da4ce12b73b655e56a818b19beb60c6106cffdfa34",
+      "bytes": 161088,
+      "mediaType": "image/webp",
+      "width": 768,
+      "height": 678,
+      "reviewFile": "qztx-known-wu-zetian-report.webp"
+    },
+    {
+      "resourceId": "qztx-known-wu-zetian-reveal",
+      "version": "3.0.0",
+      "purpose": "portrait",
+      "sha256": "fbb64ba6e1def4008b76a93e79d78ca5019c0de730e9d8f4b63111a51d9060bb",
+      "bytes": 474970,
+      "mediaType": "image/webp",
+      "width": 935,
+      "height": 1683,
+      "reviewFile": "qztx-known-wu-zetian-reveal.webp"
+    },
+    {
+      "resourceId": "qztx-known-yang-yuhuan-nameart",
+      "version": "3.0.0",
+      "purpose": "decoration",
+      "sha256": "82d094f03291b73e3406dea24ce1515ab30a1bbcc5274f477a51c0fd43cf5ce5",
+      "bytes": 152212,
+      "mediaType": "image/webp",
+      "width": 600,
+      "height": 840,
+      "reviewFile": "qztx-known-yang-yuhuan-nameart.webp"
+    },
+    {
+      "resourceId": "qztx-known-yang-yuhuan-poster",
+      "version": "3.0.0",
+      "purpose": "portrait",
+      "sha256": "a87acf202e024e7bf6eeb42b8391c523d12e07a3fb8dc203970440c3e1279256",
+      "bytes": 270884,
+      "mediaType": "image/webp",
+      "width": 852,
+      "height": 1069,
+      "reviewFile": "qztx-known-yang-yuhuan-poster.webp"
+    },
+    {
+      "resourceId": "qztx-known-yang-yuhuan-report",
+      "version": "3.0.0",
+      "purpose": "portrait",
+      "sha256": "366e28792a73d58f60467618fef39d4214cdc6349e0ec282fb9e9a779d872ee3",
+      "bytes": 141452,
+      "mediaType": "image/webp",
+      "width": 768,
+      "height": 679,
+      "reviewFile": "qztx-known-yang-yuhuan-report.webp"
+    },
+    {
+      "resourceId": "qztx-known-yang-yuhuan-reveal",
+      "version": "3.0.0",
+      "purpose": "portrait",
+      "sha256": "6a54915c8578f6c1e086f9e76b0b5615ab1cbecc843809cb57abe94e87e65663",
+      "bytes": 486682,
+      "mediaType": "image/webp",
+      "width": 852,
+      "height": 1846,
+      "reviewFile": "qztx-known-yang-yuhuan-reveal.webp"
+    },
+    {
+      "resourceId": "qztx-known-zhao-yun-nameart",
+      "version": "3.0.0",
+      "purpose": "decoration",
+      "sha256": "b7292c5a254caa2411a9081a21dc05cf6e55e984ba61f5489363d02f83915147",
+      "bytes": 114598,
+      "mediaType": "image/webp",
+      "width": 600,
+      "height": 840,
+      "reviewFile": "qztx-known-zhao-yun-nameart.webp"
+    },
+    {
+      "resourceId": "qztx-known-zhao-yun-poster",
+      "version": "3.0.0",
+      "purpose": "portrait",
+      "sha256": "46c3cb156a53385cdd8155a5741c0af0220119319fb06e76c8c5c70b96943c8f",
+      "bytes": 211306,
+      "mediaType": "image/webp",
+      "width": 1002,
+      "height": 1257,
+      "reviewFile": "qztx-known-zhao-yun-poster.webp"
+    },
+    {
+      "resourceId": "qztx-known-zhao-yun-report",
+      "version": "3.0.0",
+      "purpose": "portrait",
+      "sha256": "0fafe2e43a9e8413ed292795132f557182d224e01b118b70b27f5db535c88c5d",
+      "bytes": 181412,
+      "mediaType": "image/webp",
+      "width": 768,
+      "height": 679,
+      "reviewFile": "qztx-known-zhao-yun-report.webp"
+    },
+    {
+      "resourceId": "qztx-known-zhao-yun-reveal",
+      "version": "3.0.0",
+      "purpose": "portrait",
+      "sha256": "e87401e38b1c7dec64f79bd9ded3cf12c512811461ab46040c2fe1864adb34b7",
+      "bytes": 499950,
+      "mediaType": "image/webp",
+      "width": 853,
+      "height": 1844,
+      "reviewFile": "qztx-known-zhao-yun-reveal.webp"
+    },
+    {
+      "resourceId": "qztx-known-zhou-yu-nameart",
+      "version": "3.0.0",
+      "purpose": "decoration",
+      "sha256": "cae1c778310779d79f16401e4ffe9342451bbc3de5572b997167a2d50dc99c13",
+      "bytes": 147626,
+      "mediaType": "image/webp",
+      "width": 600,
+      "height": 840,
+      "reviewFile": "qztx-known-zhou-yu-nameart.webp"
+    },
+    {
+      "resourceId": "qztx-known-zhou-yu-poster",
+      "version": "3.0.0",
+      "purpose": "portrait",
+      "sha256": "5c984f8fc58060076d15d6cbe3bf4be2b13c47018027a245724d600ade9df6c3",
+      "bytes": 280350,
+      "mediaType": "image/webp",
+      "width": 853,
+      "height": 1070,
+      "reviewFile": "qztx-known-zhou-yu-poster.webp"
+    },
+    {
+      "resourceId": "qztx-known-zhou-yu-report",
+      "version": "3.0.0",
+      "purpose": "portrait",
+      "sha256": "780842e317ce0c49d3002db43be5876fea6b9e3f1fbb1acaf7fd4a18d3a65b64",
+      "bytes": 169000,
+      "mediaType": "image/webp",
+      "width": 768,
+      "height": 679,
+      "reviewFile": "qztx-known-zhou-yu-report.webp"
+    },
+    {
+      "resourceId": "qztx-known-zhou-yu-reveal",
+      "version": "3.0.0",
+      "purpose": "portrait",
+      "sha256": "bc688c62dac784426d37f7a1f2d46d750a553b28d0f3e563094e317255a32469",
+      "bytes": 465670,
+      "mediaType": "image/webp",
+      "width": 853,
+      "height": 1844,
+      "reviewFile": "qztx-known-zhou-yu-reveal.webp"
+    }
+  ]
+}
