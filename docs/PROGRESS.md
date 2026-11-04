@@ -1,5 +1,23 @@
 # 阶段进度
 
+## 2026-11-04 consumer 1.5.1 正常启用至 generation2，旧报告与作者未使用码保持
+
+本批仅修报告固定顶栏的稳定态透字：current paper-mode 背景改为不透明 `#fbf3e4`，保持82px高度和现有动效。准确源码 `e80600a3a6f206f176379323eeeeffdf32ce9fde` 已获R通过；consumer1.5.1 entry `cfb08cd32932b5e6331fcc0eb9c7fa0d1a6e6f106784532410df070f24fd249b` 与preview1.3分别登记，原shared component-map和另外四entry不变。原consumer1.5 descriptor与39件原实现冻结为精确report-only历史阅读器，旧renderer642d2e7f…733b/source6c701d…2187完整元组绑定，不开放答题/保存/完成或current fallback。三个历史profile闭包179文件/SHA `164cc19a52ae9b776e432d404b78f930d90d47979f43e9b479cbbc5a114b475f`，原140 closure逐件保持；原1.3/1.4历史文件未变。
+
+定向验证：6文件初轮49通过/3旧mock身份失败，修正受影响runtime-registration测试后该文件4通过，其他5文件48通过复用；不记成整52重跑。另复用新旧selector28通过。最终类型、变更文件ESLint（含冻结实现）、格式/diff与implementation:check通过。后者current v2 metadata20/available5/source149，historical3/179。无评分/source/SQL/art/font变化，无新媒体准入或重复数据库矩阵。
+
+按主控/R放行，只正常停止本00486自有服务，上一a958构建同卷保留至`.cache/known-ten/build-a958e85-preserved-v1/next`。experience根ff至e80600a，必要生产build通过，BUILD_ID `kviykRV4LL_E9HqZh6WuL`，131traces/27788paths/0private违规。正常启动仍同时设置本根QUIZFORGE_P2A_CONFIG及QUIZFORGE_PLATFORM_ART_DIR；HTTP PID8815/63238、PG55538保持运行，imports关闭。消费者IO不调用媒体launcher，未重native，新build不授新媒体导入资格；原8f/87两份build/seal及capability/record字节保持，不借用或改原资格。
+
+沿原ready validation `cf1b11d5-13e4-4d72-80af-ddea188965b0`、原内部version和原source，经正常HTTP创建新play `e7caa077-caf3-46a8-a882-753e39810b39`；先resolve确认head仍generation1，再显式expectedGeneration1启用为generation2。只用一枚补丁前正常签发、未兑换的独立合成Key验证latest路由：签发元组仍指旧play371206c4…，实际session指新play/g2。一次正常HTTP save/complete生成李白报告 `d0da8696-5ad9-4002-8710-f11f7f65c51d`，严格校验1.5.1/新entry通过。不创建新import、validation、review、内部version，不另发作者码，不重24题UI/双PNG。
+
+Chromium156.0.8078.4、390×844实际加载新报告，六卷/fonts就绪后复拍patterns/literature两个滚动位置；均opacity1、背景rgb(251,243,228)、height82、readerProgress1、有限动画结束，0页面异常。旧已完成李白Key实际入口仍只读原report1563cb33…/原snapshot6b0f41e7…/renderer1.5.0及642d2e7f…，六卷、导出可用，无quiz或complete控件；未重新导出PNG。两图与只读回执在`.cache/known-ten/header-patch-visual-v1/`。V已独立复核这两张稳定图并通过，正文不再透入顶栏，标题/卷目/40%与69%/进度均清楚，本批唯一视觉阻断关闭；此前揭晓姓名、报告主体/原双PNG及公开封面结果复用，不扩称十人UI/PNG或作者实机/内容/商业批准。
+
+最后只读差异审计通过：旧10报告完整行、旧play完整行、首个25f…UNKNOWN完整行与补丁前canonical一致；原UNKNOWN预留保持。作者Key原issue完整元事实一致、仍绑定旧play且session/grant/report=0，未兑换；由独立旧签发测试码证明latest行为，不改作者issue。新cf1…仍ready revision8/clean/53/reserved0。当前53blob/53asset/1draft/1review/1version/2play/1head/2activation/12Key/11session/11report，其他连接0，owner关闭。回执`.cache/known-ten/header-patch-final-audit-v2.receipt.json`；审计工具对驱动Result子类和SQL别名大小写的两次失败保留，修正只读比较工具后完成，未业务写入或降低不变量。原作者/旧b3/63226和其他UNKNOWN环境未变。
+
+已审B tests-only9772491集成为0cb7272，复用并发5、真实PG expiry四variant及后续domain证据；已审4761e7c集成为70029c0，仅三个P4测试文件，真实SQL enable/head/activation/audit/currentattempt和精确清理，保留app权限反例及未知外来行拒绝。复用core7→同库quarantine1→ports5→后续scope1共14真实PG；scope另12筛选跳过不计通过。专属实例停止、PGDATA保留，类型/lint/格式过；不因tests-only重build/native或重全套。
+
+准确e806自动CI：媒体41828840275 success；普通41828840239的checks/accounts success、database failure，后续job跳过不能算通过。新集成HEAD的自动CI待实际回读，不手动重触。当前本机可体验交接保持，视觉复核已收口，托管批次CI最终结果由主控按准确HEAD回读；PR54保持Draft，未main合并/生产迁移/对外部署/Release/商业发布。此文档收尾不重跑测试或构建。
+
 ## 2026-11-04 同validation正常恢复至ready，真实十角色报告/双PNG与未使用作者码已交接
 
 主控/R确认新cf1…已有DB stop ACK后，沿原import/validation/binding走既有正常生产HTTP recover与retry，未创建第三import或新validation key：recover 200/578.81ms，revision4 archiving/unknown→revision5 validated/clean；retry 200/7082.11ms，revision8 ready/clean、53/53归档。第2 attempt为archive、mediaStop=not-started，只恢复已接受candidate，未重新native解码；两个attempt均released且各有原DB ACK，reserved_bytes=0。candidate354e5993…9712、validationKey及identity完全保持；原第一个25f…完整行前后canonical仍完全一致，原held/UNKNOWN与预留不消除。原失败和原stop快照均保留，不回写为首次成功。
