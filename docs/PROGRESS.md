@@ -1,5 +1,13 @@
 # 阶段进度
 
+## 2026-11-04 准确0034窄审通过，同00486定向迁移已获放行（执行前）
+
+Astra准确通过v2候选SHA `2103ca99cb2c610c8af3d6d20d25945afaffa5aedca85fdc2a606258760f4955`/199999B：完整53声明与包一致且自DB+marker围栏、旧分支/ACL/函数身份/report Schema保持、source三hash/baseline/实际ZIP一致，无阻断。主控已串行保留0034并明确放行同字节落正式`0034_private_test_known_ten_experience.sql`，仅同00486正常start→应用→定向PG证明→实际catalog事实同步→close/normalstop，原b3不动。
+
+复用原SQL探针增加显式--experience模式，不启动通用回归。前态捕获旧33账本含PG直接格式化完整微秒applied_at、完整函数元事实/ACL/catalog；后态要求已审六准确新body、旧33不变、全部53声明正例及共享/旧实例受限共享/角色代表的全文/ref/license/approval混配拒绝、完整source三hash/baseline及旧b3/身份混配拒绝。错误数据库marker仅在同一rollback-only元夹具事务内临时COMMENT（不改manifest），验证全部53拒绝后与元blob一起回滚，复核实际原marker/source与业务空库恢复。未执行native解码、source导入或B事务。实现aa79155的50项/79历史同字节与实现登记证据复用。
+
+本条为执行前记录；准确SQL已落源码、尚未应用。原远端两次500保留，不重复push；本正式提交完成后仅作一次普通同步，仍失败则保留本地SHA供R复核，不因网络停止本地授权工作。
+
 ## 2026-11-04 00486 current源与准确实现闭包收口（未构建/未执行0034）
 
 当前presentation matcher与client注入仅认新source `6c701d4445f98b2d6e042dde1edc203e118c9a79728697ef551fa89fe2bd2187`，从已组装experience常量显式引入；原b3 `6f0030…ccf1`常量和d3-runtime-bindings-known-ten.json保留历史事实。新d3-runtime-bindings-experience.json成为唯一current登记；原D3/b3均保留目录元数据并按entry去重，可查询不授执行fallback。B测试合入后的current fixture只切换新registration/baseline/source，历史与负例保留；另明确拒绝同一套view/body/binding全被换成b3 source，以及b3准确entry仅可查询不可执行。
