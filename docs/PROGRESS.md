@@ -1,5 +1,15 @@
 # 阶段进度
 
+## 2026-11-04 主控选择唯一新身份路线；fresh init在0033 ACL前置失败并保留
+
+主控明确放弃control交换/quarantine实施，原b3整根/guard/active/DB/失败及未提交cap原位BUSY隔离，不改生产control、不释放guard。仅一次新的受管工作树已由create_worktree正常建立：`/Users/aipuli/.codex/worktrees/quizforge-qztx-known-ten-experience/quiz-forge`，branch codex/qztx-known-ten-experience，基线c90c8d5295274ca6d54dcb59d64ca3dd31d5a298。首个create调用因sourceRoot不在chat授权目录被工具拒绝、未创建；改用同仓库注册主root成功，只有这一新worktree。55538/63238两次确认空闲。离线锁安装缺固定radix tarball失败，正常frozen-lockfile安装成功419包，package/lock不变，日志保留。
+
+正常`p2a:db init --port 55538 --origin http://127.0.0.1:63238 --purpose test`产生实际新identity `00486f17f741bd6d6535429e6552d161`，原manifest/root/config均由管理器生成，没有复制/改写b3身份；返回INIT_FAILED_INSTANCE_PRESERVED。原server.log准确错误KNOWN_TEN_PREVIOUS_CATALOG_MISMATCH，管理器已正常停止刚启动PG。没有再次init或另造root。随后仅正常start同一实例作owner只读检查，0001–0032已经提交、0033未应用。实际catalog `fb7901b1ad57c56c87e03c676d5bc939de35b69e261ca640f7b988a2653f2aa6`；与b3迁移前已确认32版ad236…fa8d7逐字段比较149处差异全部为ACL（tables23、columns78、functions48），其他结构/函数体/元事实保持。业务/资源/keys/sessions/reports/heads/activations均0，其他连接0、owner关闭，随后正常stop；55538/63238无监听、PID消失、manifest/runtime/admin/PGdata保留。准确回执在新root`.cache/known-ten/experience-init-inspect.receipt.json`、`experience-init-failure-stop.receipt.json`，原init/start/inspect/stop日志与intent均保留。
+
+根因源码定位：migrate.ts先循环各migration事务提交，最后才执行原正常权限规范化；0033要求权限已规范化的32版catalog。升级路径b3先完成32版init后再0033通过，但fresh 33链在权限尾部之前触发guard，尚未获尾部权限。不能修改已经应用的0033字节，也不能接受任意新catalog或以新root绕过。
+
+最小待审恢复候选`tests/analysis/qianzai-experience-init-resume.ts`：只认新00486实际root/test/端口、原migrate.ts SHA79a97b96…eeef5、准确fb7901前态、33个磁盘定义及已应用32 checksum；persist intent后调用已有migrateDatabase与准确已应用前32 definitions。预期applied=[]，只执行原函数现有ACL尾部，迁移账本完全相同，结果必须恢复ad236…fa8d7；finally owner close。该脚本不运行0033、不改任何SQL、不操作旧根、不创建新身份。若获主控/R放行，原新实例正常start→一次前32收尾→记录准确catalog，再普通CLI migrate0033并核57137878…c9143/33 checksum/元事实→正常stop。失败/不明保留原intent/状态，不盲重试。此候选仅TypeScript/定向ESLint/差异检查通过，尚未执行。新source/三hash/0034/闭包还未写入或执行，需先收口该正常初始化前置；不将新实例当前状态称初始化通过。
+
 ## 2026-11-04 历史夹具只读阻点交审及case61维护设计待审
 
 主控取舍先推进十人新源；本次只读历史可行性结论已完整收口：两成功renderer为1.3/entry9732bdfd…aadbe与1.4/entryb88be4dd…b4809，均保留原source8cbcf248…f7c31。原authored content的privateTestUse固定79331f888c569d9fbf7a2a08e5f33f68/authorization qztx-final-private-20261103；准确registration为private-test-registration-final-e2e.json，原三hash分别8cb…f7c31/062b03e4…a394d/9f26a514…8e2823。现b3只准入新6f…0ccf1，未有旧source分支。`private-test-scope.ts:18,57`按source registration匹配实际database/marker，`draft-source-evidence.ts:148`调用该检查，构造旧source在b3受阻；`internal-play/service.ts:216`又要求当前可执行consumer identity，旧1.3/1.4仅metadata/历史只读适配，不能新建play。因此B真实PG授权、原码返回和真实grant撤销仍NOT_RUN，作为合并/生产前未决，不改marker、不扩source、不造historical backdoor。
