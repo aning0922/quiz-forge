@@ -1,5 +1,11 @@
 # 阶段进度
 
+## 2026-11-04 候选组装前置失败与原73共享模板复用修正
+
+最终root已正常ff到e9fbfd6，b3仍停止、无应用；首次content组装停在旧模板差异断言，尚未创建输出目录/复制资源，无导入/写库/source准入。错误保留为新root`.cache/known-ten/content-candidate-v1.precondition-failure.json`，不记通过。五份旧模板实际有不同声明/卷内引用/角色绑定，不能假定只差ref；前一条计划按首份模板组装的推断已被实际前置拒绝。
+
+已只读找回原研究根`quizforge-qztx-ten-roles/quiz-forge/.cache/ten-role-research/shared-template-proposal.json`，原文件SHA`88c5171b12ffcb840f778f24b20767974633a91fb0bbd78ccece50c41ba7bbd1`，现有结构验证回执`shared-template-validation.json` SHA`7465ebf4d0013ae22caa775f0c56c5ef91c0476d451ca7c83b395e9e52644343`；此两者原为read-only结构/预算而非source准入。参考已存在8d46d18 assembler的准确校验方式，新组装器显式接该模板路径并钉SHA：对原五模板声明按完整ref去重，同ref必须逐字同一，排除原已审角色专属authored-03cf1d15d78b55a43fc4后严格73；共享每条必须完整等于原声明且selectedResultRef=null。原共享ref/report-ten-literary-shared@2.0.0、卷序、claimRefs、maxClaims逐字保留，reportVersion沿真实模板2.0.0，不改73资格或当新声明制作。工具定向类型/ESLint通过，未重跑4344或旧结构验证；修后实际候选组装仍待运行。
+
 ## 2026-11-04 1.5纯展示接线与完整候选组装器准备
 
 R已通过历史只读准确d8caf4c，实现窄审关闭；两tuple实际授权/DOM/旧图/双PNG/失权仍待最终运行。新1.5接线先扩可信presentation binding携带准确source hash，新profile.v2仅接受consumer1.5完整identity、同一sealed body/hash及十人3.0完整ref；旧V11入口保留，冻结旧目录不改。copy.v3复用六卷/原正反证据门控与最多3主题，十人各用已冻结资料/文学呼应/中性与寄语；新阅读层只接原accepted主题的具体条件/下一步，不改score/body或把角色当证据。Web/PNG仍由同一document导出，新source的finite支持/五维匹配点还待真实candidate hash绑定，未加入旧V11 aliases。

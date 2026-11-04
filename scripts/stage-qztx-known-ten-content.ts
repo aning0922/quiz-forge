@@ -14,11 +14,22 @@ import { prepareContentV3 } from "../src/features/quizpack/content/v3-scoring-ad
 import { verifyPreparedContentWitnessesV3 } from "../src/features/quizpack/content/v3-witnesses";
 import { scoringDefinitionV2Schema } from "../src/lib/assessment-contract/scoring-v2";
 
-const [sourceFile, intakeDirectory, coverageFile, outputDirectory] =
-  process.argv.slice(2);
-assert(sourceFile && intakeDirectory && coverageFile && outputDirectory);
-assert.equal(process.argv.length, 6);
-for (const file of [sourceFile, intakeDirectory, coverageFile]) {
+const [
+  sourceFile,
+  intakeDirectory,
+  coverageFile,
+  templateFile,
+  outputDirectory,
+] = process.argv.slice(2);
+assert(
+  sourceFile &&
+    intakeDirectory &&
+    coverageFile &&
+    templateFile &&
+    outputDirectory,
+);
+assert.equal(process.argv.length, 7);
+for (const file of [sourceFile, intakeDirectory, coverageFile, templateFile]) {
   assert(path.isAbsolute(file));
   assert.equal(await realpath(file), file);
 }
@@ -105,20 +116,51 @@ assert.deepEqual(
   definition.matchingPolicy,
   original.core.scoringDefinition.matchingPolicy,
 );
-const stripRef = ({ ref, ...template }: (typeof b.reportTemplates)[number]) => {
-  void ref;
-  return template;
-};
-const genericTemplate = stripRef(original.bindings.reportTemplates[0]!);
+const templateBytes = await readFile(templateFile);
+assert.equal(
+  sha(templateBytes),
+  "88c5171b12ffcb840f778f24b20767974633a91fb0bbd78ccece50c41ba7bbd1",
+);
+const shared = JSON.parse(
+  templateBytes.toString(),
+) as (typeof b.reportTemplates)[number];
+const refKey = (ref: { productId: string; id: string; version: string }) =>
+  canonicalP1Json(ref);
+const declarations = new Map<string, (typeof shared.claims)[number]>();
+const excludedRoleBoundClaim = "authored-03cf1d15d78b55a43fc4";
 for (const template of original.bindings.reportTemplates)
-  assert.equal(hash(stripRef(template)), hash(genericTemplate));
-assert.equal(genericTemplate.claims.length, 73);
-const templateRef = {
-  productId: "qianzai-tongxin",
-  id: "report-known-ten",
-  version: "1.0.0",
-};
-b.reportTemplates = [{ ...genericTemplate, ref: templateRef }];
+  for (const claim of template.claims) {
+    const key = refKey(claim.ref),
+      before = declarations.get(key);
+    assert(
+      !before || canonicalP1Json(before) === canonicalP1Json(claim),
+      "CONFLICTING_ORIGINAL_DECLARATION",
+    );
+    if (claim.ref.id !== excludedRoleBoundClaim) declarations.set(key, claim);
+  }
+assert.equal(declarations.size, 73);
+assert.equal(shared.claims.length, 73);
+assert.equal(shared.ref.id, "report-ten-literary-shared");
+assert.equal(shared.ref.version, "2.0.0");
+for (const claim of shared.claims) {
+  assert.equal(
+    canonicalP1Json(claim),
+    canonicalP1Json(declarations.get(refKey(claim.ref))),
+  );
+  assert.equal(
+    claim.when.selectedResultRef,
+    null,
+    "SHARED_CLAIM_MUST_REMAIN_ROLE_AGNOSTIC",
+  );
+}
+assert(
+  shared.volumes.every((v) =>
+    v.claimRefs.every((ref) => ref.id !== excludedRoleBoundClaim),
+  ),
+);
+const templateRef = shared.ref;
+b.reportTemplates = [shared];
+b.reportVersion = shared.ref.version;
 b.resultReports = QIANZAI_KNOWN_TEN_ROLES.map((role) => ({
   resultRef: { ...role.ref },
   templateRef,
@@ -205,6 +247,7 @@ await writeFile(
       identity,
       baseSourceSha256: hash(original),
       artManifestSha256: sha(sourceManifest),
+      sharedTemplateSha256: sha(templateBytes),
     },
     null,
     2,
