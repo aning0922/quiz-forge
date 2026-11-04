@@ -164,14 +164,43 @@ export class QianzaiResourceOwner {
   current = () =>
     this.#live && !this.#abort.signal.aborted && this.lease.current();
   async load(bindings: readonly QianzaiAdmittedBinding[]) {
+    const model = this.lease.model;
+    const report =
+      model.phase === "completed" && model.pendingOperation === null
+        ? model.report?.view.display
+        : undefined;
+    const character = report?.slots.character;
+    const critical = (binding: QianzaiAdmittedBinding) =>
+      !!character &&
+      sameRef(character.resultRef, report?.selectedResultRef) &&
+      binding.layer === "clean" &&
+      ((binding.slot === "character.reveal" &&
+        sameRef(binding.asset.resourceRef, character.reveal)) ||
+        (binding.slot === "character.nameArt" &&
+          sameRef(binding.asset.resourceRef, character.nameArt)));
+    // Only the selected, already admitted report art goes first. The remaining
+    // resources retain their order and the same bounded two-worker lifecycle.
+    const ordered = report
+      ? [...bindings.filter(critical), ...bindings.filter((b) => !critical(b))]
+      : bindings;
+    const groups: QianzaiAdmittedBinding[][] = [];
+    for (const binding of ordered) {
+      // An exact asset can serve several slots in this report lease. Share its
+      // verified decode, never an authority ticket or a URL across leases.
+      const group = report
+        ? groups.find((g) => sameConsumerFact(g[0]!.asset, binding.asset, 8192))
+        : undefined;
+      if (group) group.push(binding);
+      else groups.push([binding]);
+    }
     // Bounded two-at-a-time; no directory fetch, other-character prefetch or automatic retry.
     let cursor = 0;
     const worker = async () => {
-      while (this.current() && cursor < bindings.length) {
-        const binding = bindings[cursor++]!;
+      while (this.current() && cursor < groups.length) {
+        const group = groups[cursor++]!;
         try {
           const image = await this.loader(
-            binding.asset,
+            group[0]!.asset,
             this.lease.transport,
             this.#abort.signal,
           );
@@ -186,10 +215,12 @@ export class QianzaiResourceOwner {
           this.#loaded.push(image);
           this.#images = Object.freeze([
             ...this.#images,
-            Object.freeze({
-              ...binding,
-              objectUrl: image.url as `blob:${string}`,
-            }),
+            ...group.map((binding) =>
+              Object.freeze({
+                ...binding,
+                objectUrl: image.url as `blob:${string}`,
+              }),
+            ),
           ]);
           for (const listener of this.#listeners) listener();
         } catch {

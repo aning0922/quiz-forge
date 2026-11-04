@@ -6,6 +6,7 @@ import { QIANZAI_RUNTIME_INPUTS as v15Inputs } from "@/features/theme/qianzai-to
 import v13 from "./implementation-data/consumer-qianzai-historical-v13.json";
 import v14 from "./implementation-data/consumer-qianzai-historical-v14.json";
 import v15 from "./implementation-data/consumer-qianzai-historical-v15.json";
+import v151 from "./implementation-data/consumer-qianzai-historical-v151.json";
 import { qianzaiConsumerCopyFixture } from "@/features/report/qianzai-tongxin/consumer-copy.test-support";
 import { QIANZAI_KNOWN_ROLE_DATA } from "@/features/report/qianzai-tongxin/historical-v15/known-role-data";
 import { QIANZAI_KNOWN_SHARED_TEMPLATE_REF } from "@/features/report/qianzai-tongxin/historical-v15/known-presentation-source";
@@ -110,9 +111,22 @@ it.each(["renderer", "mapping", "font", "asset", "slot", "source"] as const)(
   },
 );
 
-it("delegates the new patch version to current selection without promoting a sealed 1.5 report", () => {
+it("keeps the exact opaque-toolbar 1.5.1 report on its frozen profile", () => {
   const report = v15Fixture();
   report.view.renderer.version = "1.5.1";
+  report.view.renderer.entrySha256 = v151.entrySha256;
+  const before = JSON.stringify(report);
+  expect(resolveHistoricalReportRuntimeV2(report)?.descriptor.version).toBe(
+    "1.5.1",
+  );
+  expect(JSON.stringify(report)).toBe(before);
+  report.view.renderer.entrySha256 = v15.entrySha256;
+  expect(resolveHistoricalReportRuntimeV2(report)).toBeNull();
+});
+
+it("delegates the new patch version to current selection without promoting a sealed 1.5 report", () => {
+  const report = v15Fixture();
+  report.view.renderer.version = "1.5.2";
   expect(resolveHistoricalReportRuntimeV2(report)).toBeUndefined();
 });
 

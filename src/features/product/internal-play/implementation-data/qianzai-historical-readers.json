@@ -19,6 +19,12 @@
       "id": "consumer-qianzai-tongxin",
       "version": "1.5.0",
       "entrySha256": "642d2e7f64785d571f99e99b6e5509197761844659d2fc5243c300224401733b"
+    },
+    {
+      "kind": "consumer-renderer",
+      "id": "consumer-qianzai-tongxin",
+      "version": "1.5.1",
+      "entrySha256": "cfb08cd32932b5e6331fcc0eb9c7fa0d1a6e6f106784532410df070f24fd249b"
     }
   ],
   "closure": {
@@ -167,8 +173,8 @@
       },
       {
         "path": "src/features/product/internal-play/historical-client-v2.ts",
-        "bytes": 6434,
-        "sha256": "250a1e41900b4a15fc8a52e06b7a1f6b5bad0c5efe21fe98a2528e6bf6567afa"
+        "bytes": 7835,
+        "sha256": "732ce4ab40e21007cb1b13b2c43066b0a698a53e6aa0d61686c3ccb3976091d6"
       },
       {
         "path": "src/features/product/internal-play/implementation-data/consumer-qianzai-historical-v13.json",
@@ -184,6 +190,11 @@
         "path": "src/features/product/internal-play/implementation-data/consumer-qianzai-historical-v15.json",
         "bytes": 98588,
         "sha256": "15c81afdc586abca6072e89c3a1382fa59b8271d814a5e3483c1b13006d366f0"
+      },
+      {
+        "path": "src/features/product/internal-play/implementation-data/consumer-qianzai-historical-v151.json",
+        "bytes": 98588,
+        "sha256": "dd7db35b497578f2b03588dbe939d31270fec43a682f5816bd621f98362728c4"
       },
       {
         "path": "src/features/product/internal-play/implementation-schema-v2.ts",
@@ -556,6 +567,121 @@
         "sha256": "6d1751a234bdf68c542c04a2ad8515ac533e3c849ab8406d0b151a8cbac04336"
       },
       {
+        "path": "src/features/report/qianzai-tongxin/historical-v151/classical-edition.ts",
+        "bytes": 2603,
+        "sha256": "ac5a74c7a3946341603a675b682c91b778a8fdae7974b3cf63246eb97045883a"
+      },
+      {
+        "path": "src/features/report/qianzai-tongxin/historical-v151/consumer-copy.ts",
+        "bytes": 43091,
+        "sha256": "52e060e446bc7ddb57d8ea85f1c0469537d8cb9b54a3d526c35201411957e3f7"
+      },
+      {
+        "path": "src/features/report/qianzai-tongxin/historical-v151/contracts.ts",
+        "bytes": 2996,
+        "sha256": "98d3626bfc3475cdc266e4a8be7d845466c3185d2a865d77360d174e04c06e5c"
+      },
+      {
+        "path": "src/features/report/qianzai-tongxin/historical-v151/dimension-scale.ts",
+        "bytes": 3495,
+        "sha256": "9df1d1dd64d41c3f3cbec2f2a96a8b58fe6edbf6631ca367404fc1d4e60933c7"
+      },
+      {
+        "path": "src/features/report/qianzai-tongxin/historical-v151/editorial.ts",
+        "bytes": 8170,
+        "sha256": "31be57acfed219fa989e8593b43496d127f98307932bbc0e89fedb4146c78ffa"
+      },
+      {
+        "path": "src/features/report/qianzai-tongxin/historical-v151/export-font.ts",
+        "bytes": 3390,
+        "sha256": "8381470a953da732fe96baae00868bc2ea47de165744ab7142cba89a628d2067"
+      },
+      {
+        "path": "src/features/report/qianzai-tongxin/historical-v151/export.ts",
+        "bytes": 28579,
+        "sha256": "11b7823299fed32287d4947fb7d959c98c8db3091b54aaf9053072d1a81fa44e"
+      },
+      {
+        "path": "src/features/report/qianzai-tongxin/historical-v151/inline-emphasis.ts",
+        "bytes": 878,
+        "sha256": "6dc46a2172a1a74912c34d7256555cd02d6afd857fe53703d64283077134b8d3"
+      },
+      {
+        "path": "src/features/report/qianzai-tongxin/historical-v151/known-new-role-data.ts",
+        "bytes": 34658,
+        "sha256": "40abcb0259a3ad2d6384b9dfd7ee5c83cc6b8fd0c8b4b12a3fb712a1a0c51f9f"
+      },
+      {
+        "path": "src/features/report/qianzai-tongxin/historical-v151/known-presentation-source.ts",
+        "bytes": 920,
+        "sha256": "09c9aaff5780827dee2e3862427dd06624c17c2d0fc89bc5de05fba59fa4e881"
+      },
+      {
+        "path": "src/features/report/qianzai-tongxin/historical-v151/known-retained-role-data.ts",
+        "bytes": 16878,
+        "sha256": "cc78561831adac4c1d2a42dc6d7a78fc25a51403228426f1304b45ac39a64401"
+      },
+      {
+        "path": "src/features/report/qianzai-tongxin/historical-v151/known-role-data.ts",
+        "bytes": 1557,
+        "sha256": "c0f9e7810fcb1ab221deb7cb17940b4cf8a9920dffa741769ad8a6c3623d17ef"
+      },
+      {
+        "path": "src/features/report/qianzai-tongxin/historical-v151/known-ten-catalog.ts",
+        "bytes": 5248,
+        "sha256": "eb799444de6776b8815e2915df0ef219fd5a7412174b42b1919f8088854a7842"
+      },
+      {
+        "path": "src/features/report/qianzai-tongxin/historical-v151/known-ten-editorial.ts",
+        "bytes": 1459,
+        "sha256": "23d7d02bb2a69c4ebc17f3ea34fd7ec784d30f4b1ad163cb8be98516691164ff"
+      },
+      {
+        "path": "src/features/report/qianzai-tongxin/historical-v151/known-ten-selection.ts",
+        "bytes": 932,
+        "sha256": "2f95cf8d246cffa6dd12e9f78f8804b5207d3da5ef16de82e5dbd2066c4429dd"
+      },
+      {
+        "path": "src/features/report/qianzai-tongxin/historical-v151/layout.ts",
+        "bytes": 46771,
+        "sha256": "77087e3d161ebf8e0774da4832b16a6a4f2bceeb053aab2e28ed6801d36f33f9"
+      },
+      {
+        "path": "src/features/report/qianzai-tongxin/historical-v151/presentation-source.ts",
+        "bytes": 1506,
+        "sha256": "c3f6b07baf45bb780c3f45dd2e05b188a4cd187e3d31cbd5eaca55c4d5f42cd8"
+      },
+      {
+        "path": "src/features/report/qianzai-tongxin/historical-v151/presentation.ts",
+        "bytes": 9041,
+        "sha256": "12bf6f6ba9c72dc958b83b44d57ae02a31088644200e587a8d89e6dcc8d19380"
+      },
+      {
+        "path": "src/features/report/qianzai-tongxin/historical-v151/result-presentation.ts",
+        "bytes": 8605,
+        "sha256": "57d36a1331d6b1c358839675595c88802608bd12c338347c1240efbe9f30eb62"
+      },
+      {
+        "path": "src/features/report/qianzai-tongxin/historical-v151/role-presentation.ts",
+        "bytes": 2718,
+        "sha256": "e370b6f797eddc2d27496ed08d3dfe28b28f0e9529fa98c7670c00dc7d528b28"
+      },
+      {
+        "path": "src/features/report/qianzai-tongxin/historical-v151/role-profiles-v11.ts",
+        "bytes": 11717,
+        "sha256": "804ebb316f10ff565fd1596d62ba26beef6e11d0d68abdf64e97456b644414bd"
+      },
+      {
+        "path": "src/features/report/qianzai-tongxin/historical-v151/supported-theme-reading.ts",
+        "bytes": 7542,
+        "sha256": "df400c5de7c200d1e3fab3f720aa4c43d95efdd7d5d380b378a72c0c16920ee7"
+      },
+      {
+        "path": "src/features/report/qianzai-tongxin/historical-v151/supported-themes.ts",
+        "bytes": 12288,
+        "sha256": "3a94deadf1917fa0555789bc531b65a714858f5905e2dd697b1db772b5fbea72"
+      },
+      {
         "path": "src/features/theme/consumer-v1/request.ts",
         "bytes": 6462,
         "sha256": "5363f79c64e49909ec4f68d934060ae4279020ec051ab2c1ff6d6cb0d6c28697"
@@ -822,6 +948,91 @@
       },
       {
         "path": "src/features/theme/qianzai-tongxin/historical-v15/typography.module.css",
+        "bytes": 531,
+        "sha256": "3d109f69b7dd522be3ce69bb9afea1951f05feca80a1af62f7aec71b220513bc"
+      },
+      {
+        "path": "src/features/theme/qianzai-tongxin/historical-v151/art-framing.ts",
+        "bytes": 732,
+        "sha256": "f78ee962a1fb83cae35c586528f7764c4c99cd0cce323dd2b47a36d039070a64"
+      },
+      {
+        "path": "src/features/theme/qianzai-tongxin/historical-v151/art.ts",
+        "bytes": 6068,
+        "sha256": "0122bcfc12975b40b90e652090ef6f8fe8264da09a2504daec0bdf8ead12df5f"
+      },
+      {
+        "path": "src/features/theme/qianzai-tongxin/historical-v151/component-map.ts",
+        "bytes": 1626,
+        "sha256": "b6b74069a7a9786e4aad2c6b0dfb1117918b13c984c0120954be2dfc859046fb"
+      },
+      {
+        "path": "src/features/theme/qianzai-tongxin/historical-v151/editorial-fonts-known-ten.json",
+        "bytes": 1065,
+        "sha256": "685b5c3201977b8f1e346606449d6fdf45b06006318b7f29e880137094d1322b"
+      },
+      {
+        "path": "src/features/theme/qianzai-tongxin/historical-v151/editorial-fonts.ts",
+        "bytes": 909,
+        "sha256": "b48c5790b1a50786e728686a0e2f6da3277b6369f47dcccedd66e6426d4a2530"
+      },
+      {
+        "path": "src/features/theme/qianzai-tongxin/historical-v151/export-context.tsx",
+        "bytes": 4327,
+        "sha256": "71673d9af62ea291bd7fdf0e9997d905231200dcd632b26b099b121de258eeea"
+      },
+      {
+        "path": "src/features/theme/qianzai-tongxin/historical-v151/export-owner.ts",
+        "bytes": 16279,
+        "sha256": "0a1f3e4982ed84a15f9691adbe5a0dd7eee4f7cd6b9dc586af2147c7f7b46964"
+      },
+      {
+        "path": "src/features/theme/qianzai-tongxin/historical-v151/font-owner.ts",
+        "bytes": 3619,
+        "sha256": "4d78b6d7243803edf7708b4668d0b117e740e07b7a0655bf270081d77a4b1fcd"
+      },
+      {
+        "path": "src/features/theme/qianzai-tongxin/historical-v151/report-parity.module.css",
+        "bytes": 36390,
+        "sha256": "ad9d247bdfe89882e3c716b4db315028ce08a889b62f8e01425db27da51b7ea7"
+      },
+      {
+        "path": "src/features/theme/qianzai-tongxin/historical-v151/report.tsx",
+        "bytes": 46282,
+        "sha256": "7e72555e20f2a71eb35bd6b5d4ff1a6bce164cc20619452686eb1a4366b5916b"
+      },
+      {
+        "path": "src/features/theme/qianzai-tongxin/historical-v151/resource-owner.ts",
+        "bytes": 7314,
+        "sha256": "f514efe9d18096a2e9f73ef8ad2bf66db7e5e796ded73ade6160045038c67ee0"
+      },
+      {
+        "path": "src/features/theme/qianzai-tongxin/historical-v151/runtime-inputs-known-ten.json",
+        "bytes": 30962,
+        "sha256": "30b960961b5da6e569b2c16a7268f17c6c9a4c8edc343fbf179c67a99d36feb1"
+      },
+      {
+        "path": "src/features/theme/qianzai-tongxin/historical-v151/runtime-inputs.ts",
+        "bytes": 2028,
+        "sha256": "8abef68f5c42d0334e3356456399485025137745c488a5eae0dd84a5be312cc1"
+      },
+      {
+        "path": "src/features/theme/qianzai-tongxin/historical-v151/runtime.tsx",
+        "bytes": 3791,
+        "sha256": "25bf9f3c205361029e736205d7a0cd84ec1993a7df42548163d8b645eae1c7cd"
+      },
+      {
+        "path": "src/features/theme/qianzai-tongxin/historical-v151/share-panel.tsx",
+        "bytes": 18743,
+        "sha256": "8ccaefb300ccc41cd3f4e6af5271db25df75e2605bccb96a402044e96302d026"
+      },
+      {
+        "path": "src/features/theme/qianzai-tongxin/historical-v151/share.module.css",
+        "bytes": 12928,
+        "sha256": "46a3746e3e091e9d705b843bc55c1435da2352cd3ed038ee4264fdc54f9e14c3"
+      },
+      {
+        "path": "src/features/theme/qianzai-tongxin/historical-v151/typography.module.css",
         "bytes": 531,
         "sha256": "3d109f69b7dd522be3ce69bb9afea1951f05feca80a1af62f7aec71b220513bc"
       },
@@ -2649,5 +2860,5 @@
       "serverCondition": "react-server"
     }
   },
-  "sha256": "164cc19a52ae9b776e432d404b78f930d90d47979f43e9b479cbbc5a114b475f"
+  "sha256": "2ad8a3c24e44ddad59f25ac2d22ea674fe2b767e44f0189d1212dcc3ef00a993"
 }

@@ -211,3 +211,135 @@ it("admits navigation only at its declared act slot and never confuses it with t
   delete act.navigation;
   expect(admittedQianzaiBindings(model, [binding])).toEqual([]);
 });
+
+function completedResources() {
+  const { completed: model } = structuredReaderFixtureV2();
+  const character = model.report!.view.display.slots.character!;
+  const base = fixture().asset;
+  const reveal = {
+    asset: { ...base, resourceRef: character.reveal },
+    layer: "clean" as const,
+    slot: "character.reveal" as const,
+  };
+  const name = {
+    asset: { ...base, resourceRef: character.nameArt },
+    layer: "clean" as const,
+    slot: "character.nameArt" as const,
+  };
+  const paper = {
+    asset: base,
+    layer: "clean" as const,
+    slot: "acts.0.questionPaper" as const,
+  };
+  const abort = new AbortController();
+  const lease: ConsumerResourceLeaseV2 = {
+    generation: 1,
+    model,
+    getSnapshot: () => model,
+    view: model.report!.view,
+    signal: abort.signal,
+    current: () => !abort.signal.aborted,
+    transport: vi.fn(),
+  };
+  return { model, reveal, name, paper, abort, lease };
+}
+
+it("starts the selected reveal and name before shared report assets with at most two loads", async () => {
+  const f = completedResources();
+  const finish: Array<(image: VerifiedImage) => void> = [];
+  const loader = vi.fn(
+    () => new Promise<VerifiedImage>((resolve) => finish.push(resolve)),
+  );
+  const owner = new QianzaiResourceOwner(f.lease, loader);
+  const work = owner.load([f.paper, f.reveal, f.name]);
+  expect(loader).toHaveBeenCalledTimes(2);
+  expect(loader).toHaveBeenNthCalledWith(
+    1,
+    f.reveal.asset,
+    f.lease.transport,
+    expect.any(AbortSignal),
+  );
+  expect(loader).toHaveBeenNthCalledWith(
+    2,
+    f.name.asset,
+    f.lease.transport,
+    expect.any(AbortSignal),
+  );
+  const release = vi.fn();
+  finish[0]!({ url: "blob:reveal", image: {} as HTMLImageElement, release });
+  await vi.waitFor(() => expect(loader).toHaveBeenCalledTimes(3));
+  expect(owner.getSnapshot().map((i) => i.slot)).toEqual(["character.reveal"]);
+  f.abort.abort();
+  finish[1]!({ url: "blob:late-name", image: {} as HTMLImageElement, release });
+  finish[2]!({
+    url: "blob:late-paper",
+    image: {} as HTMLImageElement,
+    release,
+  });
+  await work;
+  expect(release).toHaveBeenCalledTimes(3);
+  expect(owner.getSnapshot()).toEqual([]);
+});
+
+it("shares an exact decoded asset across report slots, releases once and never crosses a lease", async () => {
+  const f = completedResources();
+  const release = vi.fn();
+  const loader = vi.fn(async () => ({
+    url: "blob:shared",
+    image: {} as HTMLImageElement,
+    release,
+  }));
+  const bindings = [
+    f.paper,
+    { ...f.paper, slot: "acts.1.questionPaper" as const },
+    { ...f.paper, slot: "acts.2.questionPaper" as const },
+  ];
+  const owner = new QianzaiResourceOwner(f.lease, loader);
+  await owner.load(bindings);
+  expect(loader).toHaveBeenCalledOnce();
+  expect(owner.getSnapshot().map((i) => i.slot)).toEqual(
+    bindings.map((b) => b.slot),
+  );
+  expect(new Set(owner.getSnapshot().map((i) => i.objectUrl)).size).toBe(1);
+  const second = completedResources();
+  const other = new QianzaiResourceOwner(second.lease, loader);
+  await other.load(bindings);
+  expect(loader).toHaveBeenCalledTimes(2);
+  f.abort.abort();
+  owner.dispose();
+  expect(release).toHaveBeenCalledOnce();
+  expect(other.getSnapshot()).toHaveLength(3);
+  second.abort.abort();
+  expect(release).toHaveBeenCalledTimes(2);
+});
+
+it("does not merge equal hashes with different resource facts or pending entry slots", async () => {
+  const f = completedResources();
+  const loader = vi.fn(async (_asset: typeof f.paper.asset) => ({
+    url: "blob:verified",
+    image: {} as HTMLImageElement,
+    release: vi.fn(),
+  }));
+  const changedRef = {
+    ...f.paper,
+    asset: {
+      ...f.paper.asset,
+      resourceRef: { ...f.paper.asset.resourceRef, id: "different-ref" },
+    },
+  };
+  const changedWidth = {
+    ...f.paper,
+    asset: { ...f.paper.asset, width: f.paper.asset.width + 1 },
+  };
+  const owner = new QianzaiResourceOwner(f.lease, loader);
+  await owner.load([f.paper, changedRef, changedWidth]);
+  expect(loader).toHaveBeenCalledTimes(3);
+  f.abort.abort();
+  const pending = completedResources();
+  pending.model.pendingOperation = "complete";
+  const entryOwner = new QianzaiResourceOwner(pending.lease, loader);
+  await entryOwner.load([pending.paper, pending.paper, pending.reveal]);
+  expect(loader).toHaveBeenCalledTimes(6);
+  expect(loader.mock.calls[3]?.[0]).toEqual(pending.paper.asset);
+  pending.abort.abort();
+});

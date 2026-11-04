@@ -14,12 +14,13 @@ const canonical = (value: unknown) =>
 export async function collectQztxHistoricalReaderBinding(cwd: string) {
   const fonts = new Set<string>();
   const originalRenderers = [];
-  for (const profile of ["v13", "v14", "v15"] as const) {
+  for (const profile of ["v13", "v14", "v15", "v151"] as const) {
     const readJson = async (file: string) =>
       JSON.parse(await readFile(path.join(cwd, file), "utf8"));
     const prefix = `src/features/theme/qianzai-tongxin/historical-${profile}/`;
-    const inputs = await readJson(prefix + "runtime-inputs.json");
-    const editorial = await readJson(prefix + "editorial-fonts.json");
+    const suffix = profile === "v151" ? "-known-ten" : "";
+    const inputs = await readJson(prefix + `runtime-inputs${suffix}.json`);
+    const editorial = await readJson(prefix + `editorial-fonts${suffix}.json`);
     for (const font of [inputs.font, editorial.brush, editorial.literary]) {
       for (const field of ["file", "coverage", "licenseFile"] as const) {
         assert.match(

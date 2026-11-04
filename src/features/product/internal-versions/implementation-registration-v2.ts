@@ -1,4 +1,4 @@
-import data from "./implementation-data/d3-runtime-bindings-header-patch.json";
+import data from "./implementation-data/d3-runtime-bindings-reveal-priority.json";
 import { z } from "zod";
 import {
   engineImplementationEntryV2Schema,
