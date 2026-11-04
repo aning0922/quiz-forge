@@ -1,5 +1,17 @@
 # 阶段进度
 
+## 2026-11-04 唯一新experience生产构建与main原生资格封存通过
+
+同00486 experience根正常ff至8f5ce22，在PG/HTTP停止且本根无旧BUILD_ID条件下仅一次`env -u QUIZFORGE_P2A_CONFIG pnpm build`通过；BUILD_ID `qPdCWqXmYm8otByd8mjoT`，实现登记/Next生产编译/类型及131traces/27788paths/0private违规通过。原aa79155 current切换已获R独立窄审，不重开源码；50项/79历史同字节及未变评分/字体/资源证据复用。A的8f5ce22一次普通push再次被GitHub服务端500拒绝，原记录保留，远端当时e39ee82，不因网络重试整轮或停止本地工作。
+
+新本树`.next/cache`约143MiB在首次media build前按原手册移存到`.cache/known-ten/experience-next-cache-build-v1`保留，避免已知固定预算超限，不重建Next/放宽上限。固定`media:build --main`首次通过：deployment `49de5cb2a0607765d0fffacb3e226dd7c5fd7e472163d3e93ccbbd9ab96d0d82`、sourceBundle `0df4650b14659bebb991aaaaa7240436343fbe9a9be5ff5b2aa7c9ef6323c27c`，1141source/1474artifact/48,992,454B。固定setup main helper通过：component9ff58015…e14a/profile21bece6f…0026。新control独立初态为空，原b3整根/guard/capability均未访问或复用。
+
+本根唯一`media:provision --runtime-target=main`完整三轮各66项全过：bfdeb0ce-d6a5-4d8c-9391-4b3aaf5c6990 → 47f8504e-a7c3-4cc4-9a12-9a9bd9455e8f → da69bfab-7465-4ae8-baa9-28c49827f5b4，各原summary passed=true、66结果全passed、residualControlEntries=[]。固定CLI最终outcome=sealed、capabilityCommitted=true、recordCommitted=true，runtimeBundle `c3cf1cab0ad0e4de58601f6fb5cd549e0a89972ac65bd5b9ef8ab28df87a613c`。本次三轮为同一新根/部署/源码的正常资格窗口，不拼旧b3两轮或diagnostic，不提升旧第三轮失败与UNKNOWN根因。
+
+随后只读审计实际candidate-record（既有schema）和capability（生产只读loader），确认target main、三轮完整/每轮66/ownedOperationsStopped、source/deployment/profile/runtime/limits与本次实际构建一致；实际三个原run summary逐件核对、control当前空。candidate-record SHA `122efcdbd669db94ce8be0bc0ac2ac9ed4b63f43fd2bf4496079ec8286d7bdf3`，capability SHA `4b9c5542795d5324f56fc083f6d698b4d8b728f3e72f9b20a56a57399a7a01fe`。独立核55538/63238无监听、PG pid不存在、管理文件/PGdata保留。回执`.cache/known-ten/experience-native-seal-audit.receipt.json`及原build/media-build/setup/provision/audit日志均在新根，原三run原件保留，无重跑/改封存文件。
+
+当前分层：0034实际SQL/全53声明通过、current源码及闭包已审、新生产构建通过、新main原生资格完整封存；application resource IO仍未取得、包未导入、无新play/activation/key/grant/报告，消费者/PNG/作者实机与内容商业验收未运行。后续真实导入与消费者演示仍须按主控协调沿同00486继续，不扩大旧历史source权限，不读取作者数据；托管批次未完成。
+
 ## 2026-11-04 00486实际0034与全部53声明证明通过，事实收齐并正常停止
 
 主控收到R对准确2103ca…4955/199999B与aa791556ea61dacb5e2894b7d5272e9acaf7f877 current切换分别通过后，按授权落正式e39ee82。新experience根正常ff至e39ee82、原00486 start，普通CLI实际仅应用0034_private_test_known_ten_experience。原0033与其他已应用SQL字节不改，未重建/新init或触及b3。新正式提交的一次普通push已成功，远端恢复到e39ee82，原两次500记录保留。
