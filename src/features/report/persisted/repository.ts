@@ -208,7 +208,7 @@ export async function insertPersistedReport(
   };
   const [row] = await tx.sql<
     ReportRow[]
-  >`SELECT * FROM qf.consumer_complete_attempt(jsonb_populate_record(NULL::qf.quiz_report,${tx.sql.json(record)}::jsonb),${grant.grantId},${grant.credentialDigest})`;
+  >`SELECT * FROM qf.consumer_complete_attempt(jsonb_populate_record(NULL::qf.quiz_report,${JSON.stringify(record)}::text::jsonb),${grant.grantId},${grant.credentialDigest})`;
   if (!row) {
     await assertConsumerMutationDeadline(
       tx,
