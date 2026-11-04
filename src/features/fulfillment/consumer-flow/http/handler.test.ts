@@ -366,3 +366,77 @@ for (const [version, fixture] of [
     expect(failed.status).toBe(503);
   });
 }
+
+it("preserves UNKNOWN on lock-observing recovery and uncertain owner close without changing ordinary GET errors", async () => {
+  const f = await persistedReportFixture(),
+    completeBinding = f.receipt.binding;
+  const saveBinding = {
+    schemaVersion: "quizforge.consumer-save.v1" as const,
+    session: completeBinding.session,
+    expectedStateRevision: completeBinding.expectedStateRevision,
+    consumerStateAnswersSha256: completeBinding.consumerStateAnswersSha256,
+    progressSha256: completeBinding.progressSha256,
+  };
+  for (const [action, binding] of [
+    ["resolve-save", saveBinding],
+    ["resolve-complete", completeBinding],
+  ] as const) {
+    const d = dependencies({
+      resolveSave: async () => {
+        throw new ConsumerError("OUTCOME_UNKNOWN");
+      },
+      resolveComplete: async () => {
+        throw new ConsumerError("OUTCOME_UNKNOWN");
+      },
+    });
+    const response = await handleConsumerHttp(
+      await request(action, binding),
+      { action, sessionId: binding.session.sessionId },
+      d,
+    );
+    expect(response.status).toBe(503);
+    expect((await response.json()).code).toBe("OUTCOME_UNKNOWN");
+    const terminal = await verifyConsumerPolicyResolution(
+      {
+        schemaVersion: "quizforge.consumer-policy-resolution.v1",
+        kind: "version-superseded",
+        binding,
+        bindingSha256: await consumerPolicyBindingSha256(binding),
+        outcome: {
+          kind: "version-superseded",
+          session: binding.session,
+          attemptGeneration: 1,
+          currentGeneration: 2,
+          requiresReexchange: true,
+        },
+      },
+      binding,
+    );
+    const closing = dependencies(
+      {
+        resolveSave: async () => terminal,
+        resolveComplete: async () => terminal,
+      },
+      true,
+    );
+    const closeResponse = await handleConsumerHttp(
+      await request(action, binding),
+      { action, sessionId: binding.session.sessionId },
+      closing,
+    );
+    expect(closeResponse.status).toBe(503);
+    expect((await closeResponse.json()).code).toBe("OUTCOME_UNKNOWN");
+    expect(closeResponse.headers.get("set-cookie")).toBeNull();
+  }
+  const get = dependencies({
+    readSession: async () => {
+      throw new ConsumerError("OUTCOME_UNKNOWN");
+    },
+  });
+  const read = await handleConsumerHttp(
+    await request("session"),
+    { action: "session", sessionId: completeBinding.session.sessionId },
+    get,
+  );
+  expect((await read.json()).code).toBe("UNAVAILABLE");
+});

@@ -72,6 +72,18 @@ function observeFaults() {
   return { state, guard, task };
 }
 
+async function waitForOriginalHold(
+  ready: ReturnType<typeof gate>,
+  writer: Promise<unknown>,
+) {
+  const early = await Promise.race([ready.promise.then(() => null), writer]);
+  if (early !== null) {
+    if (early && typeof early === "object" && "error" in early)
+      throw early.error;
+    throw Error("ORIGINAL_COMPLETION_FINISHED_BEFORE_HOLD");
+  }
+}
+
 it("holds unresolved recovery behind a late completion; recovers the original receipt after native COMMIT result loss and later enable", async () => {
   const f = await openPolicyFaultFixture(),
     ready = gate(),
@@ -91,7 +103,7 @@ it("holds unresolved recovery behind a late completion; recovers the original re
         (value) => ({ value }),
         (error) => ({ error }),
       );
-    await ready.promise;
+    await waitForOriginalHold(ready, writer);
     expect(await c.reportRows()).toHaveLength(0);
     await expect(
       f.request((owner) =>
@@ -201,7 +213,7 @@ it("terminates the exact completion backend; keeps unknown resolution loss pendi
         (value) => ({ value }),
         (error) => ({ error }),
       );
-    await ready.promise;
+    await waitForOriginalHold(ready, writer);
     assert(faults.state.pids.includes(originalPid));
     expect(await c.reportRows()).toHaveLength(0);
     const [terminated] =
