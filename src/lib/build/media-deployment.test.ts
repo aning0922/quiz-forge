@@ -436,20 +436,19 @@ describe("trusted media deployment binding", () => {
     await fixture(async (bound) => {
       const rel = ".next/server/concurrent",
         target = path.join(bound.checkoutRoot, rel);
-      for (let i = 0; i < 8; i++)
-        await put(
-          bound.checkoutRoot,
-          `${rel}/part-${i}.js`,
-          `synthetic file ${i}`,
-        );
-      for (let i = 0; i < 4; i++)
-        await put(
-          bound.checkoutRoot,
-          `${rel}/nested/part-${i}.js`,
-          `synthetic nested ${i}`,
-        );
+      // Every leaf has a full batch. readdir may visit nested directories before
+      // files: gating a partial parent batch while waiting for four reads would
+      // deadlock this test before recursion is allowed to begin.
+      for (const group of ["first", "second", "third/nested"])
+        for (let i = 0; i < 4; i++)
+          await put(
+            bound.checkoutRoot,
+            `${rel}/${group}/part-${i}.js`,
+            `synthetic ${group} ${i}`,
+          );
       const built = await build(bound),
         saved = await readFile(manifestPath(bound.checkoutRoot));
+      expect(built).toMatchObject({ ok: true });
       await controlledReads(target, async (control) => {
         let settled = false;
         const operation = control.fresh
@@ -458,7 +457,12 @@ describe("trusted media deployment binding", () => {
             settled = true;
           });
         try {
-          await control.firstFour.promise;
+          await Promise.race([
+            control.firstFour.promise,
+            operation.then(() => {
+              throw Error("CONTROLLED_READS_NOT_REACHED");
+            }),
+          ]);
           expect(control.live.size).toBe(4);
           expect(settled).toBe(false);
           const reverse = [...control.reads.entries()].reverse();
