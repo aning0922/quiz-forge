@@ -1,5 +1,15 @@
 # 阶段进度
 
+## 2026-11-04 赵云poster单项取景修复
+
+主控转独立V结论：杨玉环report遮脸已关闭，苏轼852×1846补图视觉延续通过，均不重画。赵云poster原取景裁失白马头可识别部分和银枪刃；B仅用同一v4母图做该用途的等比缩小、透明留白及局部边缘alpha羽化，原面孔/母图与共用海报layout/mask不改。实际941×1672 PNG已导出并查看，马耳/眼/口鼻及银枪刃可辨，供V只复核这张；杨揭晓姓名靠近捏帛手留A正式页面定位检查，无新脸图。
+
+- 唯一资源变更为 `qztx-known-zhao-yun-poster@3.0.0`，路径 `assets/qztx-known-zhao-yun-poster.webp`，现1002×1257、211,306 B、SHA `46c3cb156a53385cdd8155a5741c0af0220119319fb06e76c8c5c70b96943c8f`。单项实际Schema/字节/尺寸/PNG检查通过；其余52项声明未变、复用原成功证据，未重测或重画。初版padding-only出现局部矩形边缘，已补局部alpha后复核；旧资源/初图/旧ZIP保留。
+- 私有根沿用下条交接：`delivery-v1/zhao-poster-fix-v2/receipt.json` 含精确变更、派生参数、manifest/ZIP及实际PNG事实；新图为 `delivery-v1/preview/outputs/MATERIAL-PREVIEW-zhao-yun-poster-framing-v2.png`，PNG SHA `66919ef74f5660ff72bb4deb308c86a4c142b54424a22f5f9a10575b279598ce`。同目录 `before/` 保留旧回执/资源包，`pilot01-padding-only/` 保留首个调整结果。
+- 新 `delivery-v1/manifest.json` SHA `b4c438519a334419fa71607d892a46b49a074da07212e1d586c7a4979490c923`；53项纯资源ZIP现29,997,985 B、SHA `e3bfb8831ef1e8e48ae64fea67aef19e18b0bcd741eb56f92d420ba585e63b86`，回执仍为 `delivery-v1/archive-receipt.json`。资源总29,990,083 B，含最大content/manifest/ZIP开销预留31,317,187 B，仍在32MiB内。A仅重接这一项资源；其余检查和字体/source准入分工复用，不重开完整矩阵或作者审美批准。
+
+50305/52880只读预览通过原文件路径读取新资源，无需重启服务。跟踪修改仅制作计划和现有交接记录；私有资源不进公共Git，未运行全量测试/build/DB/E2E或重复其他52项素材检查。
+
 ## 2026-11-04 十人素材交接：53项实物与用途取景完成
 
 作者认可本批十人方向并授权继续制作。B独立树 `quizforge-qztx-known-ten-content/quiz-forge`、分支 `codex/qztx-known-ten-content` 完成40个角色槽位及13个共享资源；制作计划提交 `b43c9ef`。四槽优先复用同角色母图/已合格槽位，不要求40个新场景；海报、长图继续使用原程序的纸景、版式和绘制函数。十人为李白、苏轼、唐伯虎、周瑜、赵云、李清照、杨玉环、武则天、王昭君、蔡文姬，历史候选及原件保留。

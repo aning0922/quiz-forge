@@ -52,7 +52,8 @@ export const QIANZAI_KNOWN_ROLE_ART_PLAN = [
     costume: "银灰冷青衣甲、实丝深色内层；较宽成年下颌、直眉沉稳表情，束发利落",
     revealAction: "银甲蓝披风，马旁大半身持银枪，面孔与握枪关系沿用已认可v4",
     reportAction: "已认可v4银枪母图报告取景复用，保全面孔，不重画动作",
-    posterAction: "已认可v4银枪母图海报取景复用，主体识别与姓名分层",
+    posterAction:
+      "已认可v4母图海报专用缩放、留白与局部边缘透明化，保留白马头和银枪刃可辨",
     boundary: "将领身份；马甲颜色与兵器为艺术造型，不神枪七进七出",
   },
   {
