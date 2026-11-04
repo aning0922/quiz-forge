@@ -263,6 +263,8 @@ export async function saveConsumerSession(
   }
   return state(tx, row);
 }
+/** Earliest permanent claim per Key, for operator display/void eligibility only.
+ * This is NOT a selector or authority for the currently enabled attempt. */
 export async function readClaimMetadata(
   tx: ConsumerTx,
   keyIds: readonly string[],
@@ -271,7 +273,9 @@ export async function readClaimMetadata(
   if (keyIds.length > L.keysPerPage) throw new ConsumerError("INVALID_REQUEST");
   const rows = await tx.sql<
     { key_id: string; id: string; created_at: DatabaseTime }[]
-  >`SELECT key_id,id,created_at FROM qf.consumer_session WHERE key_id=ANY(${tx.sql.array([...keyIds])}::uuid[]) LIMIT 51`;
+  >`SELECT DISTINCT ON (key_id) key_id,id,created_at FROM qf.consumer_session
+    WHERE key_id=ANY(${tx.sql.array([...keyIds])}::uuid[])
+    ORDER BY key_id,created_at,id`;
   return rows.map((row) => ({
     keyId: row.key_id,
     sessionId: row.id,

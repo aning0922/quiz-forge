@@ -2,19 +2,29 @@
 
 开发、验证、独审和收口统一遵循 [根 AGENTS.md](../AGENTS.md)。本文件的带日期条目、测试数量、全量运行和逐图复核均保留为原批次记录，不要求新任务重新执行。当前任务以用户最新授权及最新实际检查点为准；文档中的旧“尚未合并”“待实现”和阶段启动指令不覆盖后续事实。
 
+## 2026-11-04 批次B切片1：0031受控接口与精确repository待窄审
+
+主控转交Astra对`41d13ea`设计通过，明确0031用于B受控写接口，source准入顺延之后实际空闲号。按Sol/high实施第一切片：`0031_consumer_controlled_writes.sql`新增受控lock/save/complete/rotate/exchange/revoke/activate/void入口，内部lineage/operator/authority helpers不授app EXECUTE；无任意SQL/通用patch，过期授权flag只在私有helper中由revoke常量开启。为避免旧app INSERT绕过完成函数的grant检查，额外收紧report INSERT（source/FK guards保留，受控definer调用它们）；原三类UPDATE仍关闭。0030字节保持，新增函数受现0030 checksum与完整结构指纹`3b19480ff84e3b7300f893e081ca4bead8fb50a4e3cdaf06f1c6985c8a9b5b01`前置检查保护，PUBLIC权限撤销，管理器仅授指定入口。
+
+exchange在Key锁内先决定report/current generation与slot、旧新两个session id，固定排序锁existing sessions后才创建不可见的新row并锁grant。计划后不重选槽：时钟越界令原0030 guard拒绝则整体回滚/BUSY，不能再补锁另一旧session。rotate独立入口也先计划再按序锁两session；后续服务不得先锁目标/原grant再调用跨attempt轮换。enable按auth advisory→fence→product/head→当前actor/session，按原operation返回旧receipt，同play新operation拒绝空增代次；save/complete独立校精确lineage、期限、current gen、CAS与canonical输入，原receipt成功只在有效读取授权之后优先。complete使用固定report composite，非任意表写；observe只有锁定/返回内部事实，不提供写mode。HTTP CSRF/source IO准入仍属切片2，不能据SQL函数存在宣称服务可用。
+
+`consumer-session/policy-repository.ts`新增精确session/当前代次/报告原session读入口，以及受控lock/save/rotate/exchange/revoke/activate与原operation/head分读；只回server内部raw row、不冒充public DTO或TS锁凭证，切片2须沿已有领域解码器验证后接线。原readClaimMetadata改DISTINCT ON(key_id)按created_at/id确定首次认领，移除全session LIMIT51；每个Key都有确定认领投影，仅展示/禁止作废依据，不授权activeattempt。旧service调用尚未切换，完整report/void repository与HTTP接线属于下一切片，runtime catalog仍0029，不能独立部署。
+
+准确0031 SHA`9d7dd098532af0fa3427d18ffd30c47790bb85a19f4c605785fb9d66b5368997`。相关TS/定向ESLint通过；在原owner/root绑定的28267实例正常start，最终DDL仅BEGIN→创建→ROLLBACK语法检查通过，0030结构完全恢复、连接close并正常stop，未应用0031、未更新runtime指纹。旧版及补exchange后的两份语法回执保留在验证root `.cache/known-ten/0031-rollback*.{intent,result}.json`。未执行函数行为/并发/伪造输入/HTTP反例，A的10+5不重跑；先交准确DDL与diff窄审，再按授权实施/验证下一切片。6736、作者实例、UNKNOWN及素材source准入保持独立。
+
 ## 2026-11-04 批次B服务接线设计：待定向独审，尚未实现
 
 基线为已通过Astra证据复核的`ee1dd848`与0030（SHA`c6009e5ebbda4107b63aa475e8434a8b0a6af87cc42627ca03759987adc65db3`）；10+5真实PG及owner/stop证明复用。作者升级政策不重开，人物字图/锚点及source1.5准入独立。B仅交付不依赖最终美术的显式启用、原码exchange、精确attempt授权、保存/完成、grant撤销/轮换和有限恢复服务/API；使用隔离合成源验证，不注册假source/hash，不更改0030已执行字节。本文只作可审设计，未开DB、迁移、业务代码或新测试。
 
 **源码核对与最小文件范围。** 当前`consumer-flow/service.ts`是v1/v2共用服务（经`current-contracts.ts`/`current-wire.ts`分派），不能只改一条旧v1 resolution。exchange先`lockConsumerSession(key)`，read authority按key取首行，`matchesKey`把签发play等同实际play；grant轮换UPDATE未写新session_id，`verifyLockedGrant`读回后就发“锁凭证”但无grant FOR UPDATE；所有这些在多attempt/新ACL下都需对应修正。
 
-| 接点 | 必要修改位置与责任 |
-| --- | --- |
+| 接点                    | 必要修改位置与责任                                                                                                                                                                                                                                                                                                                          |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 显式启用/读取原启用回执 | `product/internal-play/activation-contracts.ts`，新增同目录`activation-service.ts`/`activation-repository.ts`；复用既有service的固定源/依赖IO预检、operatorRead/operatorWrite；新增有限activate及resolve路由，集中接`consumer-flow/http/{handler,runtime}.ts`、`http-protocol.ts`、`service-contract.ts`。现play create只封存，不自动启用。 |
-| 资格与attempt | `fulfillment/access/{repository,service}.ts`、`consumer-session/repository.ts`、`consumer-flow/{authorization,service}.ts`；移除key-only/optional-session选择器，保留报告按唯一key查找，但随即使用report.session精确定位。 |
-| 保存/完成/恢复 | `consumer-flow/{transaction,resolution,resolution-v2,current-contracts,current-wire,contracts,contracts-v2}.ts`及必要新增policy终止状态合同；`report/persisted/repository.ts`仅接精确授权/完成检查，原snapshot/receipt正文格式不改；`fixed-execution.ts`和request-owner/sql-owner生命周期复用。 |
-| SQL受控权限与锁 | 下一追加迁移、`lib/db/{migrate,consumer-transaction,consumer-schema-facts}.ts`及新增窄SQL接口repository；必要Drizzle声明同步，不开放表级UPDATE/owner连接给app，不改历史迁移checksum。 |
-| HTTP终止语义 | `lib/consumer-contract/v1/errors.ts`和既有handler/response；v1/v2消费者解码器识别有限新终止状态。页面视觉、姓名图/新renderer不在B；消费者UI完整重开路径留后续，B不得据API证明声称浏览器交付。 |
+| 资格与attempt           | `fulfillment/access/{repository,service}.ts`、`consumer-session/repository.ts`、`consumer-flow/{authorization,service}.ts`；移除key-only/optional-session选择器，保留报告按唯一key查找，但随即使用report.session精确定位。                                                                                                                  |
+| 保存/完成/恢复          | `consumer-flow/{transaction,resolution,resolution-v2,current-contracts,current-wire,contracts,contracts-v2}.ts`及必要新增policy终止状态合同；`report/persisted/repository.ts`仅接精确授权/完成检查，原snapshot/receipt正文格式不改；`fixed-execution.ts`和request-owner/sql-owner生命周期复用。                                             |
+| SQL受控权限与锁         | 下一追加迁移、`lib/db/{migrate,consumer-transaction,consumer-schema-facts}.ts`及新增窄SQL接口repository；必要Drizzle声明同步，不开放表级UPDATE/owner连接给app，不改历史迁移checksum。                                                                                                                                                       |
+| HTTP终止语义            | `lib/consumer-contract/v1/errors.ts`和既有handler/response；v1/v2消费者解码器识别有限新终止状态。页面视觉、姓名图/新renderer不在B；消费者UI完整重开路径留后续，B不得据API证明声称浏览器交付。                                                                                                                                               |
 
 **受控SQL接口。** 建议六个固定职责：`consumer_lock_authority`（只定位/验证/取锁）、`consumer_activate_product`、`consumer_save_attempt`、`consumer_rotate_grant`、`consumer_revoke_grant`、`consumer_void_unused_key`。名称以实现定稿为准，权限/职责不得合并成任意command/SQL/JSON patch平台。SECURITY DEFINER固定`search_path=pg_catalog`、全限定表名、PUBLIC EXECUTE撤销、app只获指定函数EXECUTE；不信任调用方声称已持锁或自报actor。锁函数返回准确内部行事实，TS只在函数完成且同ConsumerTx中签发witness；写函数自行重新验证/幂等重入同锁序，不能靠TS witness作为数据库权限。原app INSERT session/key/report的0030 guards保留，新增attempt创建、Key签发、report INSERT前也走相应锁与授权；受控save严格限定原状态字段、canonical绑定/hash、revision CAS、原grant id/digest/session与当前期限，拒绝越界字段。rotate原16槽/8h规则不变，复用槽同时写新session_id、新grantId、新digest；旧token不能随slot变成新权限。revoke只改精确原grant的revoked_at，可处理已过期grant，幂等已撤销按原identity读回；不授读/写权限。void保留原issue binding及未被任何attempt/report认领约束。
 

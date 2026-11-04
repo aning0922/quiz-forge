@@ -218,6 +218,25 @@ export async function migrateDatabase(
         await tx`REVOKE UPDATE(revoked_at,void_operation_key,void_binding_text,void_binding_sha256,voided_by) ON qf.access_key FROM ${app}`;
         await tx`REVOKE UPDATE(grant_id,credential_digest,issued_at,expires_at,revoked_at) ON qf.consumer_grant FROM ${app}`;
       }
+      const [controlled] = await tx<
+        { present: boolean }[]
+      >`SELECT to_regprocedure('qf.consumer_lock_authority(text,uuid,uuid,uuid,text)') IS NOT NULL AS present`;
+      if (controlled?.present) {
+        await tx`REVOKE INSERT ON qf.quiz_report FROM ${app}`;
+        for (const signature of [
+          "consumer_lock_authority(text,uuid,uuid,uuid,text)",
+          "consumer_save_attempt(text,uuid,uuid,uuid,text,integer,text,text,text,text)",
+          "consumer_complete_attempt(qf.quiz_report,uuid,text)",
+          "consumer_rotate_grant(text,uuid,text,uuid,uuid,text)",
+          "consumer_exchange_attempt(text,text,uuid,text)",
+          "consumer_revoke_grant(text,uuid,uuid,uuid,text)",
+          "consumer_activate_product(text,text,uuid)",
+          "consumer_void_unused_key(text,uuid,text,text)",
+        ])
+          await tx.unsafe(
+            `GRANT EXECUTE ON FUNCTION qf.${signature} TO "${config.database.user}"`,
+          );
+      }
       for (const signature of [
         "sha256_utf8(text)",
         "validation_attempts_valid(text,integer,uuid,bigint)",

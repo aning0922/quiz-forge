@@ -1,5 +1,11 @@
 # 阶段进度
 
+## 2026-11-04 批次B切片1实现：准确0031与repository待窄审
+
+设计`41d13ea`已由Astra通过，主控分配0031服务/source后移。新增`0031_consumer_controlled_writes.sql`（SHA`9d7dd098532af0fa3427d18ffd30c47790bb85a19f4c605785fb9d66b5368997`）与server-only policy repository，管理器限授definer入口，原app UPDATE关闭且report INSERT收紧到受控完成函数。SQL覆盖原码原子exchange、排序双session后grant的slot轮换、有效read authority/纯注销、current/CAS/原receipt优先、显式启用与原operation读取；原claim投影改每Key确定首次认领、不用于activeattempt。详见MANAGED最新条目，原0030字节/hash保持。
+
+相关TS及修改文件ESLint通过；28267按原manifest/root正常start后，仅对最终0031作显式事务回滚的DDL语法检查，通过且0030结构SHA`3b19480f...8a9b5b01`恢复、连接close、正常stop。准确记录位于验证root`.cache/known-ten/0031-rollback-v2.{intent,result}.json`，早期语法记录也保留。无0031提交/迁移回执、无runtime catalog更新、无函数业务/并发/HTTP验收；A 10+5及契约按输入复用。切片1不是可独立部署服务，旧调用未接新接口，待主控送准确diff窄审后进入切片2与定向真实PG，素材重设不触发DB/source准入。
+
 ## 2026-11-04 批次B架构接线准备：服务/受控SQL设计待审
 
 主控确认A的`ee1dd848`证据复核通过，10+5真实PG与owner/stop证明复用，本步不重跑。已逐项核现有internal-play/access/consumer-flow及v1/v2合同、auth advisory前缀和HTTP入口；发现key-only session选择、签发/实际play混同、grant轮换缺session_id及读回伪锁凭证须一起修正。可审最小设计写于MANAGED最新“批次B服务接线设计”：有限SECURITY DEFINER锁/写函数保持app UPDATE关闭；精确attempt与原签发双tuple；已完成/expired历史先于head；六类服务入口、锁序、跨attempt终止envelope和UNKNOWN锁屏障均明确。新增服务迁移编号需与source串行收口（建议0031服务，source顺延待核），不改0030或填美术source假hash。
