@@ -1,3 +1,4 @@
+import { QIANZAI_KNOWN_TEN_EXPERIENCE_IDENTITY } from "./private-test-known-ten-experience-identity";
 import knownTenFinalRegistration from "./private-test-registration-known-ten-final.json";
 import finalDemoRegistration from "./private-test-registration-final-demo.json";
 import finalE2eRegistration from "./private-test-registration-final-e2e.json";
@@ -24,6 +25,15 @@ export const PRIVATE_TEST_REGISTRATIONS = [
 export type PrivateTestRegistration =
   (typeof PRIVATE_TEST_REGISTRATIONS)[number];
 export const privateTestUseSchema = z.union([
+  z.strictObject({
+    schemaVersion: z.literal("quizforge.private-test-use.v1"),
+    instanceId: z.literal(QIANZAI_KNOWN_TEN_EXPERIENCE_IDENTITY.instanceId),
+    authorizationId: z.literal(
+      QIANZAI_KNOWN_TEN_EXPERIENCE_IDENTITY.authorizationId,
+    ),
+    contentStatus: z.literal("candidate"),
+    resourceStatus: z.literal("reference-or-candidate"),
+  }),
   z.strictObject({
     schemaVersion: z.literal("quizforge.private-test-use.v1"),
     instanceId: z.literal(QIANZAI_KNOWN_TEN_FINAL_TEST_IDENTITY.instanceId),

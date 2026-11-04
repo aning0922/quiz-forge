@@ -1,3 +1,5 @@
+import { QIANZAI_KNOWN_TEN_EXPERIENCE_IDENTITY } from "../src/features/quizpack/content/private-test-known-ten-experience-identity";
+import { QIANZAI_EXPERIENCE_CONTENT_SHA256 } from "../src/features/quizpack/content/private-test-known-ten-experience-source";
 /** Deterministic registration facts only. Does not build/admit a private pack,
  * issue a capability, access a database, or mutate the compiled registry. */
 import assert from "node:assert/strict";
@@ -9,13 +11,23 @@ import { readContentMetadata } from "../src/features/quizpack/content/current";
 import { quizPackContentV3Schema } from "../src/features/quizpack/content/v3";
 import { prepareContentV3 } from "../src/features/quizpack/content/v3-scoring-adapter";
 import { verifyPreparedContentWitnessesV3 } from "../src/features/quizpack/content/v3-witnesses";
-import { QIANZAI_KNOWN_TEN_FINAL_TEST_IDENTITY as identity } from "../src/features/quizpack/content/private-test-known-ten-final-identity";
+import { QIANZAI_KNOWN_TEN_FINAL_TEST_IDENTITY as originalIdentity } from "../src/features/quizpack/content/private-test-known-ten-final-identity";
 import { QIANZAI_KNOWN_PRESENTATION_SOURCE_SHA256 } from "../src/features/report/qianzai-tongxin/known-presentation-source";
 
 const sha = (bytes: string | Uint8Array) =>
   createHash("sha256").update(bytes).digest("hex");
-const [candidatePath, outputPath] = process.argv.slice(2);
-assert(candidatePath && outputPath && process.argv.length === 4);
+const [candidatePath, outputPath, identityFlag] = process.argv.slice(2);
+assert(candidatePath && outputPath);
+assert(identityFlag === undefined || identityFlag === "--experience");
+assert.equal(process.argv.length, identityFlag === undefined ? 4 : 5);
+const identity =
+  identityFlag === "--experience"
+    ? QIANZAI_KNOWN_TEN_EXPERIENCE_IDENTITY
+    : originalIdentity;
+const sourceSha =
+  identityFlag === "--experience"
+    ? QIANZAI_EXPERIENCE_CONTENT_SHA256
+    : QIANZAI_KNOWN_PRESENTATION_SOURCE_SHA256;
 const candidate = await realpath(candidatePath);
 const out = path.resolve(outputPath);
 assert(out.startsWith(process.cwd() + "/.cache/"));
@@ -23,10 +35,7 @@ assert.equal(await realpath(path.dirname(out)), path.dirname(out));
 const content = quizPackContentV3Schema.parse(
   JSON.parse(await readFile(path.join(candidate, "content.json"), "utf8")),
 );
-assert.equal(
-  sha(canonicalP1Json(content)),
-  QIANZAI_KNOWN_PRESENTATION_SOURCE_SHA256,
-);
+assert.equal(sha(canonicalP1Json(content)), sourceSha);
 assert.equal(content.bindings.kind, "authored");
 assert.equal(content.bindings.privateTestUse?.instanceId, identity.instanceId);
 assert.equal(
@@ -136,7 +145,7 @@ const baseline = {
   schemaVersion: "quizforge.baseline-registry-entry.v2",
   contentSchemaVersion: content.schemaVersion,
   kind: "baseline",
-  id: "qztx-known-ten-private-20261104",
+  id: identity.authorizationId,
   version: "1.0.0",
   productId: metadata.productId,
   purpose: "internal-test",

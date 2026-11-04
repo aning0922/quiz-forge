@@ -1,5 +1,13 @@
 # 阶段进度
 
+## 2026-11-04 00486新身份内容实际组装与确定性三hash准备
+
+沿用已完成正式runner四项续验的00486实例，未新建root或重新init。content stager新增显式--experience有限选择，只认实际新identity/origin/test，默认b3路径保留；private-test语法仅追加00486/qztx-known-ten-experience-20261104，不授source/SQL/baseline/current renderer/native准入。新identity单独文件，旧b3常量/注册/原控制现场不变。source schema新增字面量会使对应实现闭包需后续重收，此处未声称登记检查通过。
+
+从原已审8cb authored input、原b4/e3准确素材取件、原4344 coverage及原73共享模板实际生成新root`.cache/known-ten/content-experience-v1/`：canonicalContent `6c701d4445f98b2d6e042dde1edc203e118c9a79728697ef551fa89fe2bd2187`/510296B，53资源/40角色用途/13共享、73声明与10既有witness验证通过。与b3 6f候选剔除privateTestUse后逐对象完全相同；没有重画图/生字体/搜索4344或改题/报告。stager第一次tsc因union身份关联推断失败，改为原privateTestUseSchema显式解析收口类型，原日志保留；实际成功组装不重跑，最终类型/定向ESLint通过。
+
+准确registration准备工具显式选择experience，复核新source、53实际字节及witness，确定性assetSet仍`12e49abf06249917a68b6f9974643e6369a2f114ee5544cb0137d52f4fb69157`、manifest `59c69917613593eac1c71d3b4285034b7ac2dbf71bbee0b7f3a02cca36276852`；A树`.cache/known-ten/registration-experience-v1/{registration,baseline,manifest,asset-set,receipt}.json`留存，状态DETERMINISTIC_FACTS_ONLY/ZIP NOT_BUILT。新source常量仅标记已组装内容，不注入当前presentation binding；正式有限registration/baseline/私有capability完整包、current source guard/闭包及0034准确候选仍后续收口，不能据三hash声明native或SQL已准入。原0033字节不变，PG/HTTP停止。
+
 ## 2026-11-04 正式runner修复四项真实PG续验通过，00486沿用
 
 Astra通过准确30d0c7eb9bb3143d86ce709b5f04ed50028964c0，主控明确放行同00486原raw32的四项真实PG续验。新experience根正常ff到30d0并start，先捕获完整raw32 catalog/全部函数体与元事实、账本version/checksum/applied_at，再执行拒绝/回滚，最后正常CLI成功；未执行93脚本，未创建第三root。定向工具`qianzai-experience-runner-proof.ts`复用既有“拦截确切原生driver方法后抛出受控错误”的测试方式，不加生产fault入口或改0033。

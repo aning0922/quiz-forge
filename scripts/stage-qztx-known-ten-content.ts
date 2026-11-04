@@ -1,3 +1,5 @@
+import { privateTestUseSchema } from "../src/features/quizpack/content/private-test";
+import { QIANZAI_KNOWN_TEN_EXPERIENCE_IDENTITY } from "../src/features/quizpack/content/private-test-known-ten-experience-identity";
 /** Stage the one reviewed known-ten candidate in its normal managed test root.
  * This produces content/resources only; no import, DB/source admission or build. */
 import assert from "node:assert/strict";
@@ -5,7 +7,7 @@ import { createHash } from "node:crypto";
 import { mkdir, readFile, writeFile, realpath } from "node:fs/promises";
 import path from "node:path";
 import { loadManagedInstance } from "../src/lib/db/management";
-import { QIANZAI_KNOWN_TEN_FINAL_TEST_IDENTITY as identity } from "../src/features/quizpack/content/private-test-known-ten-final-identity";
+import { QIANZAI_KNOWN_TEN_FINAL_TEST_IDENTITY as originalIdentity } from "../src/features/quizpack/content/private-test-known-ten-final-identity";
 import { QIANZAI_KNOWN_TEN_ROLES } from "../src/features/report/qianzai-tongxin/known-ten-catalog";
 import { qianzaiKnownScoringDefinition } from "../src/features/report/qianzai-tongxin/known-ten-scoring";
 import { canonicalP1Json } from "../src/features/quizpack/v1/canonical";
@@ -20,6 +22,7 @@ const [
   coverageFile,
   templateFile,
   outputDirectory,
+  identityFlag,
 ] = process.argv.slice(2);
 assert(
   sourceFile &&
@@ -28,7 +31,12 @@ assert(
     templateFile &&
     outputDirectory,
 );
-assert.equal(process.argv.length, 7);
+assert(identityFlag === undefined || identityFlag === "--experience");
+assert.equal(process.argv.length, identityFlag === undefined ? 7 : 8);
+const identity =
+  identityFlag === "--experience"
+    ? QIANZAI_KNOWN_TEN_EXPERIENCE_IDENTITY
+    : originalIdentity;
 for (const file of [sourceFile, intakeDirectory, coverageFile, templateFile]) {
   assert(path.isAbsolute(file));
   assert.equal(await realpath(file), file);
@@ -186,13 +194,13 @@ b.resources = resolved.resources.map((r) => r.resource) as typeof b.resources;
 b.slots.characters = art.characterSlots;
 b.visualVersion = "3.0.0";
 b.resourceVersion = "3.0.0";
-b.privateTestUse = {
+b.privateTestUse = privateTestUseSchema.parse({
   schemaVersion: "quizforge.private-test-use.v1",
   instanceId: identity.instanceId,
   authorizationId: identity.authorizationId,
   contentStatus: "candidate",
   resourceStatus: "reference-or-candidate",
-};
+});
 for (const [state, layout] of Object.entries(b.layouts)) {
   const uses =
     state === "result"
