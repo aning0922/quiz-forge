@@ -1,5 +1,15 @@
 # 阶段进度
 
+## 2026-11-04 父崩溃单项诊断设计与准确diff待审（未运行）
+
+主控授权Astra先做本次自有夹具最小诊断与维护证据收口。原第三轮check吞异常，根因仍UNKNOWN，不归因图片/source或偶发超时。最终root新增只读`native-provision-original-inodes.json`保存原summary/identity/unknown-control/active.json/guard的dev/inode/mode/hash；原guard inode221912107、active inode221912111/SHA35d3dc06…2bce原位保持。再用同原identity钉SHA的native helper确认harness51593（来自原unknown-control owner）、crash-host52964、worker53047均present=false，`native-provision-later-stopped.receipt.json`标记LATER_CONFIRMED_STOPPED_IDENTITIES_ONLY及观察时间；逐件核原inode/hash仍相同。该后验只证明后来停止，原timed close proof未建立，失败/capability/record状态不变，无unlink/kill/finish重建。
+
+现有main与fixture共用RUNTIME_STATE/control，切换target不能隔离原guard；没有现成单用例过滤。最小候选新增固定`--diagnostic-parent-crash`，与runtime-target/record-capability互斥；仅将非runtime离线MAC_ROOT映射到`.cache/quizpack-media-parent-crash-diagnostic`，不接受任意目录。生产control实现不改。setup可为该固定诊断目录编译同一helper，完整harness拒绝此flag；新单项入口只运行父崩溃用例，结果schema为parent-crash-diagnostic，qualification/capabilityCommitted/recordCommitted恒false，既不导入sealing writer也不输出owned-matrix；旧capability writer另明确拒绝诊断模式。
+
+父崩溃case抽出为一个共享函数供原矩阵与诊断使用，保留原12秒ready、5秒close/worker观察及同一finally关闭要求；不改变生产控制与停止逻辑。新增有限stage/assertion/error-code，check仅对本case保存结构化失败，不输出任意exception消息/stack、nonce/token。主异常与finally关闭失败各自保留，不让cleanup覆盖原断点。原最后owner absent→worker absent→control不变断言保持求值顺序，拆成有限标签。诊断成功时也只可按原用例的host close+两identity absent+control同字节证明释放其新目录control；失败则保留新control。原main目录完全不进入此路径。新共享case加入离线policy代码身份，matrixCodeHash原递归覆盖新脚本；因此未来正式封存须按变化后的实际身份收口，不能用此diagnostic生成能力或拼接原两轮。
+
+候选范围仅macos/{harness,policy,setup,capability,parent-crash-case,parent-crash-diagnostic}.ts及本记录。TypeScript/定向ESLint通过；未执行新setup、diagnostic、矩阵或seal，也未快进最终运行树。拟待主控/R核准确diff后，在最终停止root执行固定setup诊断flag，再唯一一次parent-crash-diagnostic；它使用全新固定fixture目录，原run/control不动。若诊断失败，先读有限阶段与新私有回执再决定修复，不能重跑碰成功。原b3仍停库、无HTTP/导入，旧63226及作者环境保持。
+
 ## 2026-11-04 真实生产构建通过；本次main能力封存停止在父崩溃关闭证明
 
 最终运行树ff至568e93e，原b3保持停止、无HTTP。按运行手册`env -u QUIZFORGE_P2A_CONFIG pnpm build`通过，BUILD_ID `YhsB2ZYY299pzf66yMP-o`；实现登记/Next类型/生产编译及trace通过：131 traces / 27788 paths / 0违规。构建只在本次新root，未重建作者、旧实例或旧构建。

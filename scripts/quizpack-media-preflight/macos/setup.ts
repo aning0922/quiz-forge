@@ -13,6 +13,7 @@ import { dirname, join, resolve } from "node:path";
 import { ensurePrivateDirectory, CONTROL_ROOT } from "./control";
 import {
   RUNTIME_TARGET,
+  PARENT_CRASH_DIAGNOSTIC,
   REPO_ROOT,
   MAC_IDENTITY_HELPER,
   loadPolicy,
@@ -20,7 +21,7 @@ import {
 let temporary: string | null = null;
 try {
   if (
-    !RUNTIME_TARGET ||
+    (!RUNTIME_TARGET && !PARENT_CRASH_DIAGNOSTIC) ||
     process.platform !== "darwin" ||
     process.arch !== "arm64"
   )

@@ -1,3 +1,4 @@
+import { runParentCrashCase, ParentCrashFailure } from "./parent-crash-case";
 import { createTrustedMediaRuntime } from "../../../src/features/quizpack/server/media/internal/runtime";
 import {
   createMediaOperationContext,
@@ -69,7 +70,6 @@ import {
   waitForOwnedSpawn,
   assertRetainedUnknownControl,
   waitForOwnedClose,
-  waitForCrashReady,
 } from "./owned-barriers";
 import {
   checkDelayedOwnedTimer,
@@ -131,8 +131,10 @@ async function check(
           : { assertion: name, passed: true },
       ),
     );
-  } catch {
-    results.push({ name, passed: false });
+  } catch (error) {
+    const details =
+      error instanceof ParentCrashFailure ? error.details() : undefined;
+    results.push({ name, passed: false, ...(details ? { details } : {}) });
     console.log(
       JSON.stringify(
         RUNTIME_TARGET
@@ -237,6 +239,8 @@ function paddingPNG(png: Buffer, desired: number) {
   ]);
 }
 async function main() {
+  if (process.argv.includes("--diagnostic-parent-crash"))
+    throw Error("DIAGNOSTIC_ENTRY_REQUIRED");
   ensurePrivateDirectory(runRoot);
   ensurePrivateDirectory(join(MAC_ROOT, "tools"));
   if (existsSync(CONTROL_ROOT) && readdirSync(CONTROL_ROOT).length)
@@ -1005,124 +1009,15 @@ async function main() {
   );
   await check(
     "parent crash leaves persisted worker identity and restart blocked",
-    async () => {
-      requireTrue(readdirSync(CONTROL_ROOT).length === 0);
-      const expectedProfileId = loadPolicy("fault").profileId;
-      const host = spawn(
-        process.execPath,
-        [
-          "--conditions=react-server",
-          "--import",
-          "tsx",
-          resolve(
-            REPO_ROOT,
-            "scripts/quizpack-media-preflight/macos/crash-host.ts",
-          ),
-          ...(RUNTIME_TARGET ? [`--runtime-target=${RUNTIME_TARGET}`] : []),
-        ],
-        {
-          cwd: REPO_ROOT,
-          env: { NODE_ENV: "production" },
-          stdio: ["pipe", "pipe", "pipe"],
-        },
-      );
-      let closed = false;
-      const hostClosed = new Promise<void>((resolve) =>
-        host.once("close", () => {
-          closed = true;
-          resolve();
-        }),
-      );
-      host.on("error", () => {});
-      host.stderr.on("data", () => {});
-      try {
-        const ready = await waitForCrashReady(host, performance.now() + 12000);
-        requireTrue(
-          host.pid &&
-            ready.ownerPid === host.pid &&
-            ready.profileId === expectedProfileId,
-        );
-        const saved = readControlForHarness();
-        requireTrue(
-          saved.ownerPid === ready.ownerPid &&
-            saved.runId === ready.runId &&
-            saved.profileId === ready.profileId &&
-            saved.pid === ready.workerPid &&
-            saved.workerStart?.sec === ready.workerStart.sec &&
-            saved.workerStart?.usec === ready.workerStart.usec,
-        );
-        requireTrue(host.kill("SIGKILL"));
-        await waitForOwnedClose(hostClosed, performance.now() + 5000);
-        const blocked = await runHarnessImage(
-          small,
-          declaration(small, 2, 2),
-          context(),
-        );
-        requireTrue(
-          blocked.outcome === "failed" &&
-            blocked.code === "BUSY" &&
-            blocked.stopped === "not-started",
-        );
-        const until = performance.now() + 5000;
-        let originalGone = false;
-        while (performance.now() < until) {
-          const value = parseNativeIdentity(
-            baseline(MAC_IDENTITY_HELPER, [
-              "identity",
-              String(saved.pid),
-              String(saved.ownerPid),
-              policy.node,
-            ]),
-          );
-          requireTrue(value);
-          if (value?.present === false) {
-            originalGone = true;
-            break;
-          }
-          await new Promise((resolve) =>
-            setTimeout(
-              resolve,
-              Math.max(1, Math.min(100, Math.ceil(until - performance.now()))),
-            ),
-          );
-        }
-        const owner = parseNativeIdentity(
-          baseline(MAC_IDENTITY_HELPER, [
-            "identity",
-            String(saved.ownerPid),
-            String(saved.ownerPid),
-            policy.node,
-          ]),
-        );
-        requireTrue(
-          owner?.present === false &&
-            originalGone &&
-            JSON.stringify(readControlForHarness()) === JSON.stringify(saved),
-        );
-        privateWrite(
-          join(runRoot, "crash-control.json"),
-          JSON.stringify(saved),
-        );
-        unlinkSync(join(CONTROL_ROOT, "active.json"));
-        rmdirSync(join(CONTROL_ROOT, "guard"));
-        return {
-          ownedParentKilled: true,
-          ownedParentCloseObserved: true,
-          originalWorkerIdentityGone: true,
-          restartBlocked: true,
-          receiptWritten: false,
-        };
-      } finally {
-        if (
-          !closed &&
-          host.pid &&
-          host.exitCode === null &&
-          host.signalCode === null
-        )
-          host.kill("SIGKILL");
-        await waitForOwnedClose(hostClosed, performance.now() + 5000);
-      }
-    },
+    () =>
+      runParentCrashCase({
+        small,
+        declaration,
+        context,
+        baseline,
+        policy,
+        runRoot,
+      }),
   );
   requireTrue(
     results.at(-1)?.passed === true && readdirSync(CONTROL_ROOT).length === 0,
