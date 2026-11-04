@@ -1,5 +1,19 @@
 # 阶段进度
 
+## 2026-11-04 四并发部署读取集成，新独立验证到archiving但最终写入UNKNOWN
+
+主控/R已放行B准确8bbe8de的局部优化，A集成为`87e5b51c329c4d8b98591f20189b8027e3a04ada`并普通推送成功：部署快照walk最多四个文件读取并发，进入子目录及返回前排空已启动任务，保持逐文件读/哈希/stat/祖先检查、关闭与错误语义、预算及排序结果。复用B107项定向测试、静态及R窄审，不重复运行；无跨图缓存、stat lease、deadline扩大或ACK补录迁移。该文件不在当前已登记renderer闭包，不重新生成descriptor。
+
+仅将本00486原自有`.next`、媒体runtime与三轮原件按同卷rename保留到`.cache/known-ten/sealed-build-8f5ce22/`；原`.cache/p2a`与UNKNOWN保持原路径。旧封存只作原身份审计，不在归档路径授予新构建能力。experience根正常ff至87e5b51后，唯一新生产build通过：BUILD_ID `STueh-iSaEjcX7SH8BQhw`，131traces/27788paths/0private违规。固定media build/setup及一完整main资格窗口通过，三轮各66项：80515771-4883-460b-8899-d7b886d1c757、35a35e3d-9579-4b24-8cf1-9837006c40eb、f3148b31-8a44-4e3f-9a85-ad4539d49afc；control空，capability/record均committed。deployment `b281a09e758aad69ca6439b74a786fef07d209d6e5c1b9a56e5cbc16cf9b5eba`，sourceBundle `054346c2fdc47cbbef0a9eb90559d68dabd539f6946cb6a9086050d1a5e2fd8f`，runtimeBundle `bea05f0ad2204eb67fe32964cd2649e54bc25337e87330deec76ece7f8590443`；原summary/schema/capability只读审计通过。新seal审计及build/media原日志保留在本根`.cache/known-ten/experience-io4-*`。
+
+按明确独立新操作授权，在同00486正常start/imports开启/生产HTTP63238，通过正常preauth/password-login/current-admin、唯一新intent、receive与prepare：import `ea9da493-374b-47a4-a66f-03a5b1f2ae19`，同ZIP f44ca6…1335/30,518,008B；无第三次导入。随后一次既有受管local private factory验证，固定编译根/当前media源码SHA/新seal绑定，未给公共HTTP增加私有能力。原60秒期限不变。调用返回`WRITE_OUTCOME_UNKNOWN`，未将失败改为通过。
+
+权威原操作只读观察：新validation `cf1b11d5-13e4-4d72-80af-ddea188965b0`，revision4/status=archiving/storage_condition=unknown；第1 attempt `050e59a7-d84e-433a-b8ff-6a4238fa68eb`仍held。候选结果accepted、report sealed、53项media，completion为mediaStopped=confirmed/relatedIo=settled/maintenanceRequired=false；candidate SHA `354e59937d202942bf9eb6209d2db8151f871d87c53be0ea6831b93c06879712`。53个blob文件存在，但数据库blobs/assets/drafts/reports仍0。原stop回执323B/SHA `2629816cde58dfcf18ab8c99b0773b5733c13dfd5e55bbfafc988a5f8e0b924b`、dev16777229/inode222546533，owner/fence逐项匹配、原owner进程不存在；本次DB的fileStopProof已ACK、mediaStop=confirmed。这与原25f… held且无DB ACK是不同现场，不能混写，也不能把磁盘文件或已ACK等同最终ready。未执行正常recover/retry，未手工complete/补proof/改reservation或新key；下一步先由主控/R针对准确最终写入及既有恢复边界取舍。
+
+原25f…完整行在本次前后canonical完全一致，原UNKNOWN及配额不消除。本次issuer/native/owner句柄均关闭、imports关闭；正常停止自有HTTP/PG后独立核55538/63238无监听、postmaster.pid不存在、管理文件/PGdata保留、control空，新capability/record字节与审计一致。新现场完整私有回执在`.cache/known-ten/independent-native-validation-v1/`（failure、前后原行、observation-private/脱敏observation-redacted.receipt、close、stop），正常HTTP intent/receive/prepare各自原回执保留；所有凭证/owner字段仅作私有审计，不进Git。
+
+当前验收：新build/资格通过；正常HTTP接收/prepare通过；一次私有原生候选验证accepted且停止已ACK，最终业务完成UNKNOWN，因此native整体未通过。apply/草稿/预览/审核/封存/play/activation/Key及24题/续答/唯一完成/报告与海报PNG/原码只读/作者未使用码均未到达。旧SQL10组/53声明、50项current/79历史同字节及未变字体/评分证据复用，不重跑全套。B后续CI fixture为tests-only，等待准确独审，不因此重建或重跑本次导入。托管批次仍未完成，PR54保持Draft，无main合并或生产/商业发布。
+
 ## 2026-11-04 新体验真实接收完成，首次原生validation超时并保留UNKNOWN（未到草稿）
 
 主控明确授权沿同00486/已封存构建继续真实导入至消费者/双PNG并另留未使用码。先复用只读封存核对并再次核实际BUILD_ID、capability/record原SHA；只在新根启用imports、建立隔离合成领域operator（复用现有test helper，不冒称密码登录验收）、通过正常product/receive服务实际接收原ZIP f44ca6…1335/30,518,008B。原import `0b6d3ab8-dd8a-4274-955d-683d3c90e335`为received/stateRevision3、actual hash与字节一致，未重传/新建第二import。
