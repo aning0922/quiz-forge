@@ -205,20 +205,29 @@ export async function openPolicyFaultFixture() {
         consumerServiceCall(owner, "complete", (c, observation) =>
           c.sql((db, check) =>
             consumerWrite(db, check, observation, async (tx) => {
-              const a = await lockConsumerAuthority(
-                tx,
-                grantDigest,
-                session.sessionId,
-              );
-              const report = await insertPersistedReport(
-                tx,
-                a.key,
-                a.session,
-                a.grant,
-                snapshot,
-              );
-              await afterInsert?.(tx);
-              return report.receipt;
+              try {
+                const a = await lockConsumerAuthority(
+                  tx,
+                  grantDigest,
+                  session.sessionId,
+                );
+                const report = await insertPersistedReport(
+                  tx,
+                  a.key,
+                  a.session,
+                  a.grant,
+                  snapshot,
+                );
+                await afterInsert?.(tx);
+                return report.receipt;
+              } catch (error) {
+                await write(`.${name}.native-fault-${randomUUID()}.json`, {
+                  code: (error as { code?: string }).code,
+                  message: (error as Error).message,
+                  stack: (error as Error).stack,
+                });
+                throw error;
+              }
             }),
           ),
         ),
