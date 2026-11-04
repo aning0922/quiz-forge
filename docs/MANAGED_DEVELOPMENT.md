@@ -2,6 +2,12 @@
 
 开发、验证、独审和收口统一遵循 [根 AGENTS.md](../AGENTS.md)。本文件的带日期条目、测试数量、全量运行和逐图复核均保留为原批次记录，不要求新任务重新执行。当前任务以用户最新授权及最新实际检查点为准；文档中的旧“尚未合并”“待实现”和阶段启动指令不覆盖后续事实。
 
+## 2026-11-04 圆钮与音乐运行交接（1.5.3 / generation4）
+
+当前experience根运行源码 `ffc101305914d43b2caf84fdbf2fa8aa5a282ced`，BUILD_ID `fdMDLGgQGuF57PO1BoOxT`，HTTP PID97618/63238、PG55538、00486/test，imports关闭，数据库owner已关闭。当前play `58c8d641-5a96-4b62-a441-e2a441a8eeaf` / g4，consumer1.5.3 entry `02f57b4310df87fbe8e318f3a5ed4eb74567883d803be2bd8627967a327beaff`。动态圆钮居中和固定原创候选音轨实际播放已接通；真实GET/HEAD/Range/metadata、quiz/reveal六个视图、同Audio连续、循环回绕、报告菜单及媒体失败后显式重试完成定向验证。首驱动目录定位超时及后续遗漏上滑入口的超时保留，正常入口补验通过，不重发业务完成；准确范围见PROGRESS。
+
+新完整私有体验交接为`.cache/known-ten/author-handoff-v3/author-experience.html`，另quick-reveal.html含23题合成输入、无report，仅验音乐与揭晓；旧v1/v2码与报告保持且未读取。点击音乐按钮显式播放，候选曲目尚待作者听感确认，不能外推实机/内容/商业批准。旧1.5.2与更早报告只读保护、14份旧合成报告/旧3play/首UNKNOWN完整行保持；原构建及失败预检构建均原inode封存。新build没有新native资格，不执行导入。R已准确窄审f28..ffc1013来源差异无阻断。后续只收现有文档/PR记录与实际CI；不追加实现或全套检查，不合并main或生产发布。
+
 ## 2026-11-04 十角色实际体验运行交接（1.5.2 / generation3）
 
 当前体验根为`quizforge-qztx-known-ten-experience/quiz-forge`，实例00486f17f741bd6d6535429e6552d161/test、PG55538、HTTP63238/PID23376；运行源码 `f2c8b317e6b998103af525102b90f48fd10aab34`、BUILD_ID `ctp2Sgm7LTj10o9mTWz1F`。正常新play `caa42e46-d164-4860-ae54-6f560184766e` 已启用g3/consumer1.5.2。已审最小加载优先级与同lease完整事实去重，在同条件末题路径实测人物可见12.032→5.003秒、完整揭晓就绪6.031秒，原2秒动效保持；具体条件与限制见PROGRESS最新条目。

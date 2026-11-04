@@ -1,5 +1,21 @@
 # 阶段进度
 
+## 2026-11-04 圆钮居中与真实背景音乐，1.5.3 / generation4
+
+作者反馈揭晓页返回／音乐／更多图标不居中且无背景音乐。实测原动态按钮被旧host button的9px/17px padding覆盖，SVG盒右移7.5px；三热区宽高和中心线不同、右侧边框重叠3px。当前仅动态模式设padding0、44×44正圆、同中心线、右侧4px间隙，并校准路径光学中心，原烘焙composite热区保持。Chromium156.0.8078.4实际查看quiz/reveal的320×568、390×844、1280×900共六张图；三圆钮几何断言通过，SVG与ink中心偏移均小于0.3px，不扩页面或角色矩阵。
+
+音乐从占位说明改为真正的原生Audio；固定候选《月汀灯影》1.0.0为B本地原创，母带64.000秒、最终M4A 870273字节，SHA `157fb0d4ee2cfdada45fe32e48fd4f1d11879eb56dc101c169c3ff530a1afb5a`，Chromium容器时长64.064秒。原音轨仅保存在experience私有.cache，未进public/Git/build输出；作者听感批准待确认。固定版本独立入口只服务00486/test/127.0.0.1:63238，核完整字节/摘要、文件身份/权限及有界Range，不扩QuizPack媒体、DB或通用图片入口。初次实际预检404保留；根因为NextRequest把loopback URL规范为localhost。`3ac6843`修复来源守卫，准确HEAD `ffc101305914d43b2caf84fdbf2fa8aa5a282ced`含生成descriptor格式收尾：仍强制准确Host、运行配置、test实例、同源和固定路径，只兼容已证规范化；真实NextRequest及拒绝反例通过。R已通过f28播放器/闭包审查，并准确窄审f28..ffc1013来源差异无阻断；未重复运行验证。
+
+播放器归稳定产品runtime所有，独立于图片lease；显式手势启动，native playing事件拥有播放状态，暂停/错误/拒绝不假显示播放。quiz→reveal→report同一实例连续，report卷目内可暂停/恢复；hidden/pagehide/失权/卸载释放音源，晚到promise不能复活。native错误释放失败实例，下次手势新建同一固定音轨，不自动重试；NotAllowedError保留手势重试。没有跨兑换文档自动播放承诺，也没有实机扬声器或作者听感通过声明。
+
+定向证据复用：owner原6项、hidden定向1项、媒体失败/NotSupported/NotAllowed定向3项，store最终5项（真实NextRequest、HEAD/GET/Range、文件身份/字节反例），历史/current selector27项及current登记9项；依相关输入复用而非相加为新测试总数。相关ESLint max-warnings0、类型、格式、diff及implementation检查通过。旧1.5.2 descriptor精确保留，report/export原39件文件冻结为report-only v152；历史共5profiles/261files，SHA `857978f056341c80054fea58f41ce5038dcc1b89f9ca68d7507385aa514aac77`。当前consumer1.5.3 entry `02f57b4310df87fbe8e318f3a5ed4eb74567883d803be2bd8627967a327beaff`；其余四entry/共享component-map/字体/素材保持。
+
+同00486授权停态窗口正常停止自有HTTP，同卷保留f2c原.next与失败预检的f28.next，PG/storage/作者资料未移动。必要生产构建源码ffc1013，BUILD_ID `fdMDLGgQGuF57PO1BoOxT`，132traces/28067paths/0private违规；当前HTTP PID97618/63238、PG55538，imports关闭。真实浏览器音频GET/HEAD200、Range206、越界416、全字节SHA一致后，才正常沿原ready source/内部version创建play `58c8d641-5a96-4b62-a441-e2a441a8eeaf`，resolve后expectedGeneration3启用g4，无新包/validation/review/内部version或迁移。新自有合成报告 `4e81a086-bdee-464f-9561-d223e642abed`。
+
+实际浏览器先证明手势前0Audio/0音频请求，点击后native playing、volume0.6、looptrue、非零信号RMS峰值0.03030，末题仅一次save/complete，揭晓及report入口仍为同一Audio，循环末尾seek后的native回绕通过（不冒称完整64秒听感）。首UI驱动过早点击卷目触发自动滚动争用而超时，失败与截图保留，不记整驱动通过；对同一已完成合成报告补验，正常点击上滑入口并等待toolbar可交互后，目录音乐暂停/恢复与logout释放、真实404后显式重试新Audio均通过，0页面异常、无save/complete重发。另一次补验遗漏上滑入口的驱动超时同样保留；无生产行为改动。私有证据集中于experience `.cache/qztx-audio-buttons/`：audio-preflight-v2/receipt.json、ui-v1/failure.json与六截图、media-error-retry-v2/receipt.json、final-audit-v1.receipt.json。
+
+最终审计仅已知自有synthetic IDs：原14份合成报告、旧三个play、首个25f…UNKNOWN完整行保持，cf1…仍ready revision8/clean/reserved0；不读取旧作者key/session/答案/report或全表hash。v3完整新码正常签发未兑换，sessions/grants/reports均0；另quick码已正常保存23题合成答案、g4、无report，专供音乐与揭晓体验，不称unused或作者个人测评。私有交接为experience `.cache/known-ten/author-handoff-v3/author-experience.html`及quick-reveal.html（0600），旧v1/v2保持。所有本次数据库owner已关闭，HTTP/PG保留运行。未做新native qualification、DB矩阵、全24题UI、PNG、全套E2E或新角色素材；未授权main合并/生产/商业发布，PR54保持Draft，自动CI另按准确HEAD实际状态报告。
+
 ## 2026-11-04 揭晓资源队列修复，1.5.2 / generation3 实测人物出现12.03→5.00秒
 
 作者最新明确反馈“当前体验已经感觉可以了”。据此记录当前1.5.2/g3的作者体验验收通过，范围仅限作者已体验流程，不外推全角色内容、设备矩阵或商业发布批准；demo与作者记录保持。本次只同步文字，不读取作者答案/报告，不改src或运行测试/build/DB/截图。
