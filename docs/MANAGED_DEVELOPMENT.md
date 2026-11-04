@@ -2,6 +2,12 @@
 
 开发、验证、独审和收口统一遵循 [根 AGENTS.md](../AGENTS.md)。本文件的带日期条目、测试数量、全量运行和逐图复核均保留为原批次记录，不要求新任务重新执行。当前任务以用户最新授权及最新实际检查点为准；文档中的旧“尚未合并”“待实现”和阶段启动指令不覆盖后续事实。
 
+## 2026-11-04 新0029验证root与owner交接
+
+主控授权准备全新managed实例，正式0030继续等`fdcdbb0`窄复核。新root `/Users/aipuli/.codex/worktrees/quizforge-qztx-policy-a-validation/quiz-forge`、分支`codex/qztx-policy-a-validation`从pre-policy `1409761`正常建立，只含0029；正常init生成test instance `28267eb19487c265372bdb7671caac89`/PG55536/origin63236，manifest根从未改写，未开应用。沿既有合成夹具建立一未完/一已完资格，Key2/session2/report1，原29checksum/报告原文hash/无policy表已核实，期限不续，其他app/owner连接0、连接close确认。原始intent/seed/owner回执均在该新root `.cache/known-ten/`；准确hash、安装及失败说明见PROGRESS最新条目。
+
+此项只证明正式验证前置就绪，不是0030/业务反例通过。后续须在该root保持owner身份，核准确reviewed代码与0030输入后再执行；不改6736候选回执、不删结构凑基线，也不把B修图接成DB/source准入。当前A主实现树仍`codex/qztx-known-ten-integration`，DB验证树独立且尚停pre-policy提交；主控应按两树实际状态协调，不能从当前sidebar/cwd推定目标。
+
 ## 2026-11-04 实际DDL窄修交接：两P2与版本负例身份
 
 Astra实际审`e8dea73`后指出Key INSERT在product/head SHARE后再取product UPDATE的升级问题，以及过代/期限检查早于纯logout导致原grant不能撤销的问题。准确0030现仅修这两段：归档在已持product SHARE下读取；原grant身份与父锁确认后，整行除revoked_at外不变的纯撤销先返回，签发/轮换才校current attempt/原report。直接app UPDATE权限保持关闭，未补后续service或UI。

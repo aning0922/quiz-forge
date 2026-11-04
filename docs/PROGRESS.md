@@ -1,5 +1,13 @@
 # 阶段进度
 
+## 2026-11-04 正式0030独立验证前置：新managed实例与0029合成基线就绪
+
+按主控要求正常新增自有worktree `/Users/aipuli/.codex/worktrees/quizforge-qztx-policy-a-validation/quiz-forge`，分支`codex/qztx-policy-a-validation`、HEAD`14097611e823796dd2864660074e578904ae65d7`，origin仍为正式quiz-forge。此提交仅0001–0029，未移走/改写0030文件来初始化，也不复用6736候选历史。55536/63236先核空闲，正常`pnpm p2a:db init --port 55536 --origin http://127.0.0.1:63236 --purpose test`生成instance `28267eb19487c265372bdb7671caac89`；manifest.root为新worktree绝对根，PG实际PID2816监听55536，63236仅固定origin、未起应用。
+
+新树锁文件安装首次offline因本树缓存为空失败；随后仅本命令指定A自有固定CAS缓存，`CI=true pnpm install --frozen-lockfile --offline --store-dir /Users/aipuli/.codex/worktrees/quizforge-qztx-known-ten-integration/quiz-forge/.pnpm-store`复用419包、0下载，新树保有自身node_modules且未改全局配置/锁文件。pnpm沿既有策略未运行argon2/esbuild/unrs安装脚本，随后正常init/既有合成夹具已实际执行，未因此安装或批准额外脚本。
+
+基线复用现有P4无文件合成夹具，旧未完成Key/session一组、旧已完成Key/session/report一组，实际计数2/2/1；Key沿原3600s期限，不续期。29项checksum逐项匹配、结构SHA`888a87e5d59db4f821a7634c628b05dfcd2165d47bfd174f312811022ce0757c`，policy head/activation表均不存在，报告原文/hash已读回相等。私有基线`.cache/known-ten/latest-attempts-seed.json` SHA`14f2b76efdd967c1eabed35b5e38e644d450dfa04f245f532449fa011cc69b9d`，owner回执`legacy-owner-receipt.json`；检查前其他app/owner连接0、连接已close。未执行正式0030或本批反例，待`fdcdbb0`/DDL `c6009e5e...adc65db3`窄复核通过再协调同一新root的准确代码/迁移顺序，不复制改manifest、不删除基线、不向旧作者库写入；6736候选失败和UNKNOWN保留。
+
 ## 2026-11-04 Astra实际DDL两项P2最小修正：正式0030仍未执行
 
 Astra对`e8dea73`实际diff指出两项P2，主控暂不放行正式迁移。0030仅修对应两处：Key INSERT去掉policy_scope已持product/head共享锁之后的product FOR UPDATE升级，归档状态在既有共享锁下只读；grant guard按既有父锁顺序确认原grant id/digest/session后，若整行除revoked_at外完全相同，先允许原纯撤销，不让旧代/期限/current-report检查阻断；签发及新token轮换仍过current attempt或原report授权。app UPDATE仍关闭，无启用服务/UI扩展。
