@@ -8,14 +8,31 @@ import { z } from "zod";
 import { canonicalP1Json as canonical } from "../src/features/quizpack/v1/canonical";
 import { quizPackContentV3Schema } from "../src/features/quizpack/content/v3";
 import { baselineDescriptorV2Schema } from "../src/features/product/internal-versions/baseline-schema-v2";
-import registration from "../src/features/quizpack/content/private-test-registration-known-ten-final.json";
-import baselineInput from "../src/features/product/internal-versions/baselines/qztx-known-ten-private-20261104.json";
+import previousRegistration from "../src/features/quizpack/content/private-test-registration-known-ten-final.json";
+import experienceRegistration from "../src/features/quizpack/content/private-test-registration-known-ten-experience.json";
+import previousBaseline from "../src/features/product/internal-versions/baselines/qztx-known-ten-private-20261104.json";
+import experienceBaseline from "../src/features/product/internal-versions/baselines/qztx-known-ten-experience-20261104.json";
 
 const sha = (value: string | Uint8Array) =>
   createHash("sha256").update(value).digest("hex");
 const quote = (value: string) => "'" + value.replaceAll("'", "''") + "'";
-const [candidatePath, outputPath] = process.argv.slice(2);
-assert(candidatePath && outputPath && process.argv.length === 4);
+const [candidatePath, outputPath, mode] = process.argv.slice(2);
+assert(
+  candidatePath &&
+    outputPath &&
+    ((process.argv.length === 4 && mode === undefined) ||
+      (process.argv.length === 5 && mode === "--experience")),
+);
+const experience = mode === "--experience";
+const registration = experience ? experienceRegistration : previousRegistration;
+const baselineInput = experience ? experienceBaseline : previousBaseline;
+const proposedVersion = experience ? "0034" : "0033";
+const predecessorPath = experience
+  ? "migrations/p2a/0033_private_test_known_ten.sql"
+  : "migrations/p2a/0029_private_test_final_candidate.sql";
+const expectedCatalog = experience
+  ? "57137878c47b73d1914ace7f9198812d932727ef40d05b95d8514712762c9143"
+  : "ad236ba8bc23d53c69197a6f603bb17421c8ffce9c4c745de866165ed97fa8d7";
 const candidate = await realpath(candidatePath),
   out = path.resolve(outputPath);
 assert(out.startsWith(process.cwd() + "/.cache/known-ten/"));
@@ -42,10 +59,12 @@ assert.equal(
   sha(await readFile(path.join(candidate, "known-ten.zip"))),
   pack.archive.sha256,
 );
-const prior = await readFile(
-  "migrations/p2a/0029_private_test_final_candidate.sql",
-  "utf8",
-);
+const prior = await readFile(predecessorPath, "utf8");
+if (experience)
+  assert.equal(
+    sha(prior),
+    "b8fd2bb808b5784145e03025d11a25f29029f752211a975f64df5e9d9bd91290",
+  );
 const signatures = {
   consumer_schema_v2: "text",
   private_test_database_valid: "",
@@ -109,8 +128,19 @@ const existing = new Set(
     ...previous.product_asset_declaration_valid.matchAll(/'([a-f0-9]{64})'/g),
   ].map((m) => m[1]),
 );
-const added = declarations.filter((h) => !existing.has(h));
-assert.equal(added.length, 40);
+// The first list has only six of this pack's shared declarations. Seven other
+// shared declarations occur only in older instance-scoped branches. Admit the
+// complete exact 53-declaration set inside 00486's own branch; never make the
+// prior scoped declarations global or borrow another instance's authority.
+const added = experience
+  ? declarations
+  : declarations.filter((h) => !existing.has(h));
+assert.equal(added.length, experience ? 53 : 40);
+const globallyExisting = new Set(
+  [...oldDeclarationHash[0].matchAll(/'([a-f0-9]{64})'/g)].map((m) => m[1]),
+);
+if (experience)
+  assert.equal(declarations.filter((h) => globallyExisting.has(h)).length, 6);
 next.product_asset_declaration_valid = once(
   previous.product_asset_declaration_valid,
   oldDeclarationHash[0],
@@ -151,18 +181,17 @@ assert.equal(
   sha(migration0032),
   "1266d0362702472c98326deb113d980289deb1d37d7646550abd533bd6d78315",
 );
-const priorChecksum = sha(
-  await readFile("migrations/p2a/0029_private_test_final_candidate.sql"),
-);
+const priorChecksum = sha(prior);
+const predecessorVersion = path.basename(predecessorPath, ".sql");
 const oids = names
   .map((name) => `'qf.${name}(${signatures[name]})'::regprocedure`)
   .join(",");
-let sql = `-- Proposed 0033: exact known-ten candidate in one finite private test identity.\n-- Review candidate only; migration slot and execution require controller coordination.\nDO $pre$ DECLARE actual text; BEGIN
+let sql = `-- Proposed ${proposedVersion}: exact known-ten candidate in one finite private test identity.\n-- Review candidate only; migration slot and execution require controller coordination.\nDO $pre$ DECLARE actual text; BEGIN
  IF NOT pg_try_advisory_xact_lock(72461,2) THEN RAISE EXCEPTION 'CONSUMER_IO_PRESENT' USING ERRCODE='55000'; END IF;
  IF EXISTS(SELECT 1 FROM pg_stat_activity WHERE datname=current_database() AND usename=replace(current_user,'qf_owner_','qf_app_') AND pid<>pg_backend_pid()) THEN RAISE EXCEPTION 'CONSUMER_WRITERS_PRESENT' USING ERRCODE='55000'; END IF;
  SELECT sha256 INTO actual FROM (${CONSUMER_CATALOG_QUERY.trim().replace(/;$/, "")}) known_ten_prior_catalog;
- IF actual IS DISTINCT FROM 'ad236ba8bc23d53c69197a6f603bb17421c8ffce9c4c745de866165ed97fa8d7' THEN RAISE EXCEPTION 'KNOWN_TEN_PREVIOUS_CATALOG_MISMATCH' USING ERRCODE='55000'; END IF;
- IF NOT EXISTS(SELECT 1 FROM qf_meta.schema_migrations WHERE version='0032_consumer_activation_product_selector' AND checksum='${sha(migration0032)}') OR NOT EXISTS(SELECT 1 FROM qf_meta.schema_migrations WHERE version='0029_private_test_final_candidate' AND checksum='${priorChecksum}') THEN RAISE EXCEPTION 'KNOWN_TEN_PREVIOUS_SCHEMA_MISMATCH' USING ERRCODE='55000'; END IF;
+ IF actual IS DISTINCT FROM '${expectedCatalog}' THEN RAISE EXCEPTION 'KNOWN_TEN_PREVIOUS_CATALOG_MISMATCH' USING ERRCODE='55000'; END IF;
+ IF NOT EXISTS(SELECT 1 FROM qf_meta.schema_migrations WHERE version='0032_consumer_activation_product_selector' AND checksum='${sha(migration0032)}') OR NOT EXISTS(SELECT 1 FROM qf_meta.schema_migrations WHERE version='${predecessorVersion}' AND checksum='${priorChecksum}') THEN RAISE EXCEPTION 'KNOWN_TEN_PREVIOUS_SCHEMA_MISMATCH' USING ERRCODE='55000'; END IF;
 END $pre$;
 LOCK TABLE qf.quizpack_import,qf.quizpack_validation,qf.product_asset,qf.draft_revision,qf.draft_review,qf.product_version,qf.internal_play_version,qf.access_key,qf.consumer_session,qf.consumer_grant,qf.quiz_report IN SHARE ROW EXCLUSIVE MODE NOWAIT;
 CREATE TEMP TABLE qztx_known_ten_function_guard ON COMMIT DROP AS SELECT oid,proowner,prolang,prorettype,proisstrict,provolatile,prosecdef,proleakproof,prokind,proretset,pronargdefaults,proconfig,proacl FROM pg_proc WHERE oid IN (${oids});
@@ -182,9 +211,19 @@ await writeFile(
       sha256: sha(sql),
       bytes: Buffer.byteLength(sql),
       previous0032: sha(migration0032),
+      predecessorVersion,
+      predecessorChecksum: priorChecksum,
+      previousCatalogSha256: expectedCatalog,
+      baselineEntrySha256: sha(canonical(baseline)),
       archiveSha256: pack.archive.sha256,
       source: registration,
       newDeclarations: added.length,
+      declarationScope: experience
+        ? "EXACT_53_INSIDE_00486_ONLY"
+        : "EXACT_40_INSIDE_B3_ONLY",
+      declarationsMissingFromGlobalList: declarations.filter(
+        (h) => !globallyExisting.has(h),
+      ).length,
       functions: names.map((name) => ({
         name,
         signature: signatures[name],
@@ -193,7 +232,7 @@ await writeFile(
       })),
       previousBranches: "PRESERVED_BY_EXACT_INSERTIONS",
       reportSchema: "UNCHANGED",
-      slot: "0033_PROPOSED_NOT_RESERVED",
+      slot: `${proposedVersion}_PROPOSED_NOT_RESERVED`,
       database: "NOT_ACCESSED",
     },
     null,
@@ -207,6 +246,6 @@ console.log(
     sha256: sha(sql),
     bytes: Buffer.byteLength(sql),
     newDeclarations: added.length,
-    slot: "0033_PROPOSED_NOT_RESERVED",
+    slot: `${proposedVersion}_PROPOSED_NOT_RESERVED`,
   }),
 );

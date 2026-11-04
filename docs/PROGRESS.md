@@ -1,5 +1,17 @@
 # 阶段进度
 
+## 2026-11-04 00486完整私有包、六helper事实核对与0034准确候选待审
+
+新experience根保持同一00486/test、55538/63238，没有第三root或重新init。有限registration与baseline已提交125c74e；实际私有包首次被app的internal-version-schema-facts拒绝为STUDIO_UNAVAILABLE，未签能力/写ZIP。8d11d28仅将internal_review_valid的旧0029 body事实同步为已审且四项实际PG回执中的0033值0a76ab61…f824，原校验全保留。续同一正常private builder成功，ZIP 30,518,008B/SHA `f44ca66e1611f3fe8041a878ecbaf517558d2a469501fcf974cf7559c2191335`，manifest `59c69917613593eac1c71d3b4285034b7ac2dbf71bbee0b7f3a02cca36276852`，candidateValid=true，DBclose确认、imported=false。原拒绝与成功log、private-pack-receipt均在新根`.cache/known-ten/`；owner后核33账本/catalog571…c9143未变、8业务/资源计数0、其他连接0，正常stop独立回执确认两端口/PID消失、管理文件与PGdata保留。
+
+按主控要求只用已保存runner-real-after实际完整catalog，对0033变更的六函数及src现有事实表/检查器引用作一次定向比对：internal_review_valid独立body已准确；consumer aggregate准确571…c9143涵盖全部六项；其他五项只有原调用/ACL名单、无遗漏独立旧body事实，draft facts不含受影响函数。六项0029旧body hash在src无残留，无需再改事实或开库；A根私有experience-six-helper-facts-audit.json留存。后续0034执行后同样从实际catalog同步受影响事实，不猜hash。
+
+生成器新增显式--experience有限模式，默认b3准备路径保留。准确0034候选为A根`.cache/known-ten/source-0034-review-v2.sql`，SHA `2103ca99cb2c610c8af3d6d20d25945afaffa5aedca85fdc2a606258760f4955`、199,999B；相邻receipt/static.json绑定实际ZIP、source6c701d…2187/assetSet12e49a…9157/manifest59c699…6852、新baseline entry及六前后body。前置要求实际0033原字节b8fd…1290、0032原checksum、完整catalog571…c9143与六准确旧body/owner/security/search_path；保留维护锁/无app连接/表锁和全函数权限元事实不变守卫。仅追加00486/test数据库+marker、准确privateTestUse、source三hash、baseline及有限声明，旧分支原位保留；content Schema更新有限marker，report及其他Schema分支逐字不变，无GRANT/REVOKE。静态确认六前置body全等于实际33回执，TypeScript/定向ESLint通过；数据库未访问、migration目录未写，0034未保留/执行，须主控串行确认槽位并经准确DDL窄审。
+
+生成器首轮在写SQL前拒绝“40缺失声明”的旧假设：实际53声明中只有6共享声明在旧通用列表，另7共享声明仅在601707/79331旧实例分支，40角色在b3分支。新模式因此在00486自己的准确db/marker分支中列完整53声明（47不在通用列表），绝不将旧作用域hash提升为通用或借用旧实例权限；原pre-write拒绝单独保留，不更改0033/b3现场。此项需DDL审查特别核对，实际SQL后续应覆盖53声明而非只抽一角色。旧b3并未导入，不能用先前代表角色SQL通过推定其全部共享声明已准入。
+
+本步仍无source导入、native资格/封存、HTTP、消费者或PNG验收；新current renderer/source和共享闭包继续收口，已有B三文件35测试证据按输入复用，不重跑全套或旧媒体矩阵。
+
 ## 2026-11-04 00486新身份内容实际组装与确定性三hash准备
 
 沿用已完成正式runner四项续验的00486实例，未新建root或重新init。content stager新增显式--experience有限选择，只认实际新identity/origin/test，默认b3路径保留；private-test语法仅追加00486/qztx-known-ten-experience-20261104，不授source/SQL/baseline/current renderer/native准入。新identity单独文件，旧b3常量/注册/原控制现场不变。source schema新增字面量会使对应实现闭包需后续重收，此处未声称登记检查通过。
