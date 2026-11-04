@@ -2,6 +2,12 @@
 
 开发、验证、独审和收口统一遵循 [根 AGENTS.md](../AGENTS.md)。本文件的带日期条目、测试数量、全量运行和逐图复核均保留为原批次记录，不要求新任务重新执行。当前任务以用户最新授权及最新实际检查点为准；文档中的旧“尚未合并”“待实现”和阶段启动指令不覆盖后续事实。
 
+## 2026-11-04 十角色实际体验运行交接
+
+当前自有体验根为`quizforge-qztx-known-ten-experience/quiz-forge`，同00486f17f741bd6d6535429e6552d161/test、PG55538、HTTP63238；运行代码a958e85、BUILD_ID rT80xS_OxHzCzBpindYVT。真实1条24题UI＋9条HTTP witness、同原码只读、李白双PNG与公开封面冷导航已完成，独立未使用作者码只留本机`.cache/known-ten/author-handoff-v1/author-experience.html`；V窄审/自动CI剩余失败及准确分层见PROGRESS最新条目。旧作者63227、b3、其他UNKNOWN不属于此运行身份。
+
+正常重启须先确认并停止本自有63238进程，不杀未知进程；从该体验根使用`QUIZFORGE_P2A_CONFIG="$PWD/.cache/p2a/00486f17f741bd6d6535429e6552d161/runtime.json" QUIZFORGE_PLATFORM_ART_DIR="$PWD/.cache/known-ten/public-platform-art-v1" pnpm start --port 63238`。后者是既有固定公开marketing manifest的5件文件，遗漏会使公开首页/封面404并降级，不可用私有QuizPack目录代替。imports保持关闭；新build没有新native导入资格，原两份build/seal仅在各自归档身份审计，不拼接借用。原第一个validation held/UNKNOWN继续保留，新独立validation已沿正常recover/archive retry成为ready；后者不恢复前者。私有交接不授予main合并、生产或商业发布。
+
 ## 2026-11-04 正式runner修复优先，一次性前32脚本停用
 
 93a69f8脚本未执行且已从当前源码移除。00486原raw32 ACL作为真实失败输入保持，等待准确runner diff审查。修复仅在0032→0033边界于原迁移事务内复用ACL尾部，维护/无外部连接检查后执行原033；失败连checkpoint回滚，不改应用SQL或账本。详见PROGRESS最新设计及migrate.ts候选；本条不放行DB执行。

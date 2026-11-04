@@ -1,5 +1,25 @@
 # 阶段进度
 
+## 2026-11-04 同validation正常恢复至ready，真实十角色报告/双PNG与未使用作者码已交接
+
+主控/R确认新cf1…已有DB stop ACK后，沿原import/validation/binding走既有正常生产HTTP recover与retry，未创建第三import或新validation key：recover 200/578.81ms，revision4 archiving/unknown→revision5 validated/clean；retry 200/7082.11ms，revision8 ready/clean、53/53归档。第2 attempt为archive、mediaStop=not-started，只恢复已接受candidate，未重新native解码；两个attempt均released且各有原DB ACK，reserved_bytes=0。candidate354e5993…9712、validationKey及identity完全保持；原第一个25f…完整行前后canonical仍完全一致，原held/UNKNOWN与预留不消除。原失败和原stop快照均保留，不回写为首次成功。
+
+随后正常HTTP apply创建唯一draft `c14492df-b59a-4661-b2eb-c0ed5b1ae65c` revision1；通用temporary-preview GET实际503/PREVIEW_RESOURCE_UNAVAILABLE，其正式v1声明parser不支持本包private-test-only v3声明。该结果保留为未支持路径，不开放新公共私有准入、不更改声明或声称通用预览通过。已有精确source/database围栏的正常审核、版本封存及play创建均通过。首次activation返回UNAVAILABLE，按原operationKey resolve确认unresolved/无head及receipt；只读完整preflight/资源IO通过，原policy SQL和receipt解码在明确rollback-only事务内通过并回滚。独立准确复现最终事务将source evidence整体重序列化到512KiB时JSON_SIZE_LIMIT：canonical content510296B，作为JSON字符串转义后586096B，发生activatePolicyProduct之前。
+
+最小修复`a958e857e7490d60e1fdfcf0174a9db864adca91`已获R窄审：两个已校验canonical文本canonicalContentText/assetSetText直接精确逐字比较，rest所有元事实保持原512KiB比较，play/final事务preflight/授权/CAS不变，无字段遗漏、扩大限额或SQL变更。8项定向通过（大合法文本；两文本、三hash、validation、play漂移拒绝），TypeScript/两文件ESLint/格式/diff通过。B已审tests-only0dc5b27集成为1a3ee7f，复用9真实PG+4普通合同及静态，不为fixture重build/native。
+
+停态同卷rename保留87e5b51的`.next`与完整媒体封存到`.cache/known-ten/sealed-build-87e5b51/`，8f5ce22归档继续保持。experience根ff至a958e85，仅必需生产build通过，BUILD_ID `rT80xS_OxHzCzBpindYVT`、131traces/27788paths/0private违规。消费者调用StorageReadGuard/readPrivateResource/固定字体文件校验，不调用media launcher或verifyMediaDeployment；按明确取舍未重跑native，新build没有新的媒体导入资格，不借用旧seal。两个归档BUILD_ID/capability/record最终字节复核保持。新构建正常HTTP先resolve原activationKey仍unresolved，再按原binding续作成功，唯一play `371206c4-0d27-4585-b2f1-d9532d6c3c37`，head generation1/activation1，无另起operationKey。
+
+实际Chromium156.0.8078.4完成李白24题，前6题保存后刷新恢复至第7题，刷新前后服务端state完全相同；25次save均200，末题现有自动完成链仅一次complete，进入真实六卷，页面异常0。其余九人只用包内既有witness答案，经正常HTTP独立合成Key/exchange/save/complete/report及严格报告完整性验证，逐一命中苏轼/唐寅/周瑜/赵云/李清照/杨玉环/武则天/王昭君/蔡文姬。是1条完整UI＋9条真实HTTP，不称十条完整UI、十组PNG或作者实机批准；不重新搜索评分输入。每个已用Key恰一份report。
+
+就绪截图390×844/1280×900与报告why-like/人物小传已保存，原过渡帧及驱动失败保留：最初封面截在既有入场动画，后绑定可见decoded image及有限动画结束；新十角色为layered全幅揭晓而非旧composite，按实际注册模式等ready。真实海报941×1672（复用首次已生成原PNG，不因驱动误设1080再生成）、完整报告长图724×4185/4127431B，均浏览器现有导出/下载；两PNG及原码只读阶段0页面异常/0HTTP失败。原已完成Key经正常入口再兑换直达同一reportId/reportSnapshotSha；没有新complete或改历史快照。V只复用这些实际就绪截图/原PNG做独立视觉窄审，作者内容/实机/商业批准另行区分。
+
+主控另用IAB发现未grant公开`/works/qianzai-tongxin`冷加载fallback。A真实无grant Chromium从`/`点击复现home/cover请求404后IMG降级DIV；与已兑换`/play/...`不是同一入口。原因是本次启动遗漏既有QUIZFORGE_PLATFORM_ART_DIR，不是资源损坏或ready状态绕过。只从原作者固定marketing目录读取manifest已登记的5件公开素材，逐件生产readPlatformArt校字节/SHA/尺寸后复制至本根`.cache/known-ten/public-platform-art-v1`，原文件inode/mtime/字节保持；仅重启自有Next并补现有绝对目录配置，未改源码/构建、未暴露QuizPack目录或其他私有角色。新无grant冷导航/刷新均真实IMG390×844、data-art-ready=true、home/cover200、初始无弹窗；CTA打开原兑换弹窗，既有已完成合成Key兑换后正常导航关闭并读取同一不可变报告。另定向移动Chromium以CDP触摸事件实际核上滑打开原弹窗、按钮与上滑后取消均返回封面、返回平台再暖导航封面仍ready，0页面异常，不称物理设备通过。未force-ready/hide-fallback。公开390/1280就绪图及前后HTTP/DOM/手势回执保留，交V复用。
+
+所有自动驱动结束后，正常HTTP签发独立作者Key（原码仅本机私有HTML/TXT），operator只读及最终DB元事实均确认session/grant/report=0，未兑换；私有交接`.cache/known-ten/author-handoff-v1/author-experience.html`。最终只读计数：53blob/53asset/1draft/1review/1version/1play/1head/1activation/11Key/10session/10report，其他连接0、owner已close；原25f…完整行不变，新cf1…ready revision8。HTTP PID96280及PG55538保留运行供体验，imports关闭，managed文件及原两个封存归档保留。原作者/旧b3/63226及其他UNKNOWN环境未变。最终元审计`.cache/known-ten/final-runtime-audit-v1.receipt.json`，业务/浏览器/PNG原回执均在experience根`.cache/known-ten/independent-*`、`consumer-*`、`public-cover-config-v1`。
+
+准确a958e85普通push成功。自动媒体CI41821686292成功；普通CI41821686323的accounts成功，但checks/database失败，未记通过：单测2488过/1失败为B四并发用例media-deployment.test.ts:435的5000ms测试期限；真实PG最早p4-consumer-expiry的NO_ENABLED_PLAY，后出现TEST_INTERNAL_VERSION_SCOPE_NOT_EMPTY连锁拒绝。原job126546121583/126546121952日志已读，交主控/B定向修测试所有权，不以重复全量/清数据掩盖。旧0034十组/全部53声明、current50项/79历史同字节、评分/字体证据复用。本条文档不触发本地测试/构建；当前可体验结果已交接，V与CI收口仍待主控协调，托管批次不先记最终完成；PR54保持Draft，无main合并/生产迁移/部署/商业发布。
+
 ## 2026-11-04 四并发部署读取集成，新独立验证到archiving但最终写入UNKNOWN
 
 主控/R已放行B准确8bbe8de的局部优化，A集成为`87e5b51c329c4d8b98591f20189b8027e3a04ada`并普通推送成功：部署快照walk最多四个文件读取并发，进入子目录及返回前排空已启动任务，保持逐文件读/哈希/stat/祖先检查、关闭与错误语义、预算及排序结果。复用B107项定向测试、静态及R窄审，不重复运行；无跨图缓存、stat lease、deadline扩大或ACK补录迁移。该文件不在当前已登记renderer闭包，不重新生成descriptor。
