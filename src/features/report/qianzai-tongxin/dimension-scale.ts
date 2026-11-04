@@ -1,4 +1,5 @@
 import { qianzaiPresentationSourceMatches } from "./presentation-source";
+import { qianzaiKnownPresentationSourceMatches } from "./known-presentation-source";
 import type { ComposedReportBodyV1 } from "@/lib/assessment-contract/composed-report-v1";
 import { QIANZAI_AXIS_GUIDES_V11 } from "./role-profiles-v11";
 
@@ -42,7 +43,10 @@ export function qianzaiDimensionScale(
 ): QianzaiDimensionScale | null {
   const { dimensionRef: ref, score } = dimension;
   if (
-    !qianzaiPresentationSourceMatches(sourceContentSha256) ||
+    !(
+      qianzaiPresentationSourceMatches(sourceContentSha256) ||
+      qianzaiKnownPresentationSourceMatches(sourceContentSha256)
+    ) ||
     ref.productId !== "qianzai-tongxin" ||
     ref.version !== "1.0.0" ||
     !Object.hasOwn(AXES, ref.id) ||

@@ -1,3 +1,4 @@
+import knownTenFinalRegistration from "./private-test-registration-known-ten-final.json";
 import finalDemoRegistration from "./private-test-registration-final-demo.json";
 import finalE2eRegistration from "./private-test-registration-final-e2e.json";
 import exportParityFixture from "./qianzai-local-export-parity-fixture.json";
@@ -18,6 +19,7 @@ export const PRIVATE_TEST_REGISTRATIONS = [
   rebuildRegistration,
   finalDemoRegistration,
   finalE2eRegistration,
+  knownTenFinalRegistration,
 ] as const;
 export type PrivateTestRegistration =
   (typeof PRIVATE_TEST_REGISTRATIONS)[number];

@@ -1,4 +1,5 @@
 "use client";
+import { RotateCcw, Sparkle } from "lucide-react";
 import { knownQianzaiArtPresentation } from "./known-art-presentation";
 import { QIANZAI_CLASSICAL_EDITION } from "@/features/report/qianzai-tongxin/classical-edition";
 
@@ -309,7 +310,7 @@ export function QianzaiCover({
               setMenuOpen(false);
             }}
           >
-            ↻ 重播封面
+            <RotateCcw size={16} aria-hidden="true" /> 重播封面
           </button>
           <button
             onClick={() => {
@@ -336,11 +337,12 @@ export function QianzaiCover({
                 setMenuOpen(false);
               }}
             >
+              {kind === "lantern" && <Sparkle size={16} aria-hidden="true" />}
               {
                 {
                   all: "三种效果一起看",
                   petals: "❀ 单独看花瓣",
-                  lantern: "✦ 单独看灯影",
+                  lantern: "单独看灯影",
                   water: "≈ 单独看水面",
                 }[kind]
               }

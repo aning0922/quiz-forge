@@ -1,5 +1,7 @@
 import { QIANZAI_CLASSICAL_EDITION } from "./classical-edition";
 import { qianzaiKnownEditorial } from "./known-ten-editorial";
+import { QIANZAI_KNOWN_ROLE_DATA } from "./known-role-data";
+import { qianzaiKnownPresentationSourceMatches } from "./known-presentation-source";
 import { qianzaiSupportedThemeReading } from "./supported-theme-reading";
 import { sameConsumerFact } from "@/lib/consumer-contract/v1/integrity";
 import type { ComposedReportBodyV1 as Body } from "@/lib/assessment-contract/composed-report-v1";
@@ -18,6 +20,7 @@ import {
   qianzaiSupportedThemes,
   qianzaiSupportedParagraph,
   qianzaiSupportedThemeText,
+  qianzaiSupportedThemeHeadingText,
   type QianzaiParagraphSupport,
 } from "./supported-themes";
 
@@ -626,6 +629,9 @@ export function qianzaiKnownConsumerCopy(
 ): QianzaiConsumerCopy | undefined {
   if (
     result.profileVersion !== QIANZAI_CLASSICAL_EDITION.presentationVersion ||
+    !qianzaiKnownPresentationSourceMatches(
+      result.source.canonicalContentSha256,
+    ) ||
     !qianzaiPresentationMatchesBody(body, result) ||
     result.source.canonicalContentSha256 !==
       body.provenance.canonicalContentSha256 ||
@@ -664,6 +670,7 @@ export function qianzaiKnownConsumerCopy(
       neutralWhy: copy.neutralWhy,
       closing: copy.closing,
       evidenceReading: true,
+      patternTitle: `与${role.displayName}的呼应`,
     },
   );
 }
@@ -690,6 +697,7 @@ function composeConsumerCopy(
     neutralWhy?: readonly string[];
     closing?: readonly string[];
     evidenceReading?: boolean;
+    patternTitle?: string;
   }>,
 ): QianzaiConsumerCopy {
   const highlights = qianzaiSupportedThemes(body);
@@ -749,7 +757,7 @@ function composeConsumerCopy(
     {
       id: "patterns",
       ...SECTION_COPY.patterns,
-      title: `${CONNECTION_TITLE}${role.displayName}`,
+      title: options?.patternTitle ?? `${CONNECTION_TITLE}${role.displayName}`,
       intro: CONNECTION_BOUNDARY,
       blocks:
         options?.evidenceReading && highlights.length
@@ -873,4 +881,31 @@ export function qianzaiConsumerCopyText(): readonly string[] {
     "选择的方向",
     "留给下一次",
   ];
+}
+
+/** Complete possible new-edition decorative headings, never the whole biography
+ * or source-note corpus. Middots are rendered by the export's existing Serif run. */
+export function qianzaiKnownBrushText(): readonly string[] {
+  return [
+    "千载同心",
+    "五维心象",
+    "0123456789%",
+    "留给下一次",
+    " ",
+    ...Object.values(SECTION_COPY).flatMap((section) => [
+      section.title,
+      section.chapterLabel,
+      section.tocTitle,
+    ]),
+    ...DIMENSION_COPY.map((row) => row.title),
+    ...Object.values(REFLECTIONS).map((row) => row.title),
+    ...qianzaiSupportedThemeHeadingText(),
+    ...QIANZAI_KNOWN_ROLE_DATA.flatMap(({ profile, copy }) => [
+      profile.displayName,
+      `与${profile.displayName}的呼应`,
+      profile.history.title,
+      ...profile.history.timeline.map((row) => row.title),
+      copy.closing[2],
+    ]),
+  ].map((text) => text.replaceAll("·", ""));
 }

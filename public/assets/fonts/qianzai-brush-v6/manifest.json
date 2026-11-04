@@ -1,0 +1,22 @@
+{
+  "id": "qianzai-tongxin-brush",
+  "version": "1.5.0",
+  "family": "QuizForge Qianzai Brush V6",
+  "weight": 400,
+  "file": "/assets/fonts/qianzai-brush-v6/regular.woff2",
+  "fileSha256": "599b918cb1f9fe10f65ce7979bba04af074d9774496b95e69b493d65d929d492",
+  "bytes": 497056,
+  "coverage": "/assets/fonts/qianzai-brush-v6/characters.txt",
+  "coverageSha256": "f4e052e205d8bf1e036b05875af41655c6513f34af032af65e05579fbb86c476",
+  "licenseFile": "/assets/fonts/qianzai-brush-v6/OFL.txt",
+  "sourceFile": "ma-shan.ttf",
+  "sourceSha256": "6d2546bb189c732a8ca29af9e22457b152387d158aa459e4ac2ce1e51788b7fb",
+  "license": "SIL OFL 1.1",
+  "licenseSha256": "d7bdb1cee215b689e23c2f95672a6084c790542170648267a55114103d756a08",
+  "coveredCodepoints": 1265,
+  "sourceMissingCodepoints": [],
+  "tools": {
+    "fonttools": "4.61.1",
+    "brotli": "1.2.0"
+  }
+}

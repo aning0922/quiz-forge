@@ -1,0 +1,22 @@
+{
+  "id": "qianzai-tongxin-literary",
+  "version": "1.5.0",
+  "family": "QuizForge Qianzai Literary V6",
+  "weight": 400,
+  "file": "/assets/fonts/qianzai-literary-v6/regular.woff2",
+  "fileSha256": "ae2351f855e29beb38b8aaccf03f7bb85fa23763463ec9e925eeadb6f00b9805",
+  "bytes": 316628,
+  "coverage": "/assets/fonts/qianzai-literary-v6/characters.txt",
+  "coverageSha256": "bfcc79ae50e0233d92154c91bf83ee24c9c3f4be0e417727b2756ed35d8692e5",
+  "licenseFile": "/assets/fonts/qianzai-literary-v6/OFL.txt",
+  "sourceFile": "wenkai.ttf",
+  "sourceSha256": "2d73eea94ad808999d90c0000c239a84a33b09d4bc6ab6c5b8bbf1eda8a7fc8b",
+  "license": "SIL OFL 1.1",
+  "licenseSha256": "1a25e35da1031c6c3436fde545bb9cb5aca954e9873afe510c834b8b79bd21a0",
+  "coveredCodepoints": 1440,
+  "sourceMissingCodepoints": [],
+  "tools": {
+    "fonttools": "4.61.1",
+    "brotli": "1.2.0"
+  }
+}

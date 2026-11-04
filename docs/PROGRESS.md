@@ -1,5 +1,17 @@
 # 阶段进度
 
+## 2026-11-04 十角色真实候选、字体与1.5运行输入接线
+
+修正组装器后实际content staging通过：b3正常新root的`.cache/known-ten/content-candidate-v1/receipt.json`记录canonical content `6f003080c99d9c3565a90ea583dd71410969593afe5ff322e2a28142d8b0ccf1`/510293B、53资源/40角色用途/13共享、原73条共享模板及10个既有witness。core contentVersion3.0/reportVersion2.0沿真实模板；没有重新搜索4344或改变原24题/五维/匹配政策。首次模板前置失败保留。
+
+实际十份完整报告经真实评分/组合生成字体语料，显示外壳明确为合成，不作已封存report证据。Serif/Literary1440字（含U+0020），Brush1265字仅覆盖实际装饰标题及原池，未将整份传记/来源元数据并入Brush。v1源字形预检发现界面↻/✦不在固定Serif/Literary源内；两处UI及report装饰改为已有lucide图标，未删正文字符或放宽覆盖。v1失败保留，v2新输入Serif/Lit通过；Brush输入hash未变，复用原成功行并注明原整份回执失败。三款按固定源/OFL/工具各生成一次：SerifV13/1.12/281248B/SHA2554d1ff…c208，LiteraryV6/1.5/316628B/SHAae2351f8…805，BrushV6/1.5/497056B/SHA599b918c…492；源与输出cmap缺失0。新字体及OFL纳入交付，原字体不变。
+
+新runtime-inputs-known-ten与editorial-fonts-known-ten独立JSON接59 bindings/53唯一完整ref，19中性slot复用原层与准确事实，40角色clean不携带resultRef；身份仍由封存display槽确认。consumer1.5/preview1.3及可信presentation binding显式接新source6f…，新模板/报告版本guard保持；旧V11 alias与两个冻结阅读器不改。正文/PNG共用document。旧硬编码LiteraryV5改为当前受控CSS变量，李清照姓名5:7/底部锚点和原PNG不改。
+
+实际三hash登记准备工具核53真实字节、原witness、标准manifest构造：assetSet `12e49abf06249917a68b6f9974643e6369a2f114ee5544cb0137d52f4fb69157`，canonicalManifest `dbb14006ddb3e59652b8e8cd229b66235122f225218d6ef0d3a3d4a7d3839234`。有限registration/baseline仅追加准确b3/test/origin/authorization及source/resources，没有公共通配。此处manifest为确定性实际输入事实，ZIP还未经capability-gated构建独立复现。通用quizpack:build实际拒绝privateTestUse（CONTENT_STRUCTURE、无ZIP），保留`.cache/known-ten/quizpack-build-v1.log`；公共入口限制不改，后续必须现有私有capability构建。
+
+当前28项新presentation/五维/支持阅读定向通过，TypeScript与修改TS/TSX ESLint通过；登记工具错误import的首次类型失败保留并修正，新增有限registration正/反例3项通过。新登记及字体使原实现闭包过时，待最终重收新descriptor，未运行implementation:check/生产build/浏览器/PNG/新source DDL或导入。b3仍停止，作者实例、UNKNOWN及早期失败不动；不称最终source准入、作者视觉或商业完成。
+
 ## 2026-11-04 候选组装前置失败与原73共享模板复用修正
 
 最终root已正常ff到e9fbfd6，b3仍停止、无应用；首次content组装停在旧模板差异断言，尚未创建输出目录/复制资源，无导入/写库/source准入。错误保留为新root`.cache/known-ten/content-candidate-v1.precondition-failure.json`，不记通过。五份旧模板实际有不同声明/卷内引用/角色绑定，不能假定只差ref；前一条计划按首份模板组装的推断已被实际前置拒绝。

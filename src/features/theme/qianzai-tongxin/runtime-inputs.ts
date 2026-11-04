@@ -1,5 +1,5 @@
 import { z } from "zod";
-import inputs from "./runtime-inputs.json";
+import inputs from "./runtime-inputs-known-ten.json";
 import { displayAssetV2Schema } from "@/lib/assessment-contract/display-v2";
 import { rendererImplementationDescriptorSchema } from "@/features/product/internal-versions/implementation-schema";
 

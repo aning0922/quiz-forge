@@ -3,6 +3,10 @@ import {
   type QianzaiClassicalRoleProfile,
 } from "./classical-edition";
 import { qianzaiKnownEditorial } from "./known-ten-editorial";
+import {
+  qianzaiKnownPresentationSourceMatches,
+  QIANZAI_KNOWN_SHARED_TEMPLATE_REF,
+} from "./known-presentation-source";
 import { qianzaiSupportedThemes } from "./supported-themes";
 import { qianzaiPresentationSourceMatches } from "./presentation-source";
 import type { ComposedReportBodyV1 as Body } from "@/lib/assessment-contract/composed-report-v1";
@@ -189,6 +193,12 @@ function deriveKnownPresentation(
     binding.renderer.version !== QIANZAI_CLASSICAL_EDITION.consumerVersion ||
     !sameConsumerFact(view.renderer, binding.renderer, 8192) ||
     !binding.canonicalContentSha256 ||
+    !qianzaiKnownPresentationSourceMatches(binding.canonicalContentSha256) ||
+    d.contentVersion !== "3.0.0" ||
+    d.reportVersion !== "2.0.0" ||
+    p.reportVersion !== "2.0.0" ||
+    !sameRef(d.reportTemplateRef, QIANZAI_KNOWN_SHARED_TEMPLATE_REF) ||
+    !sameRef(p.templateRef, QIANZAI_KNOWN_SHARED_TEMPLATE_REF) ||
     ![
       binding.canonicalContentSha256,
       view.renderer.entrySha256,

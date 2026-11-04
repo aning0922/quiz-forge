@@ -1,4 +1,5 @@
 "use client";
+import { Sparkle } from "lucide-react";
 
 import {
   useCallback,
@@ -1156,7 +1157,13 @@ export function QianzaiReportReader({
                         同心
                       </div>
                       <div className={c("rp-endline")}>
-                        <span>✦</span> 长卷已展至尽处 <span>✦</span>
+                        <span>
+                          <Sparkle size={16} aria-hidden="true" />
+                        </span>{" "}
+                        长卷已展至尽处{" "}
+                        <span>
+                          <Sparkle size={16} aria-hidden="true" />
+                        </span>
                       </div>
                       <div className={c("rp-share-actions")}>
                         {actions ?? (

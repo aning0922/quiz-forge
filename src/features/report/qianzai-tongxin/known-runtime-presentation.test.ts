@@ -7,6 +7,10 @@ import { qianzaiSnapshotDocument } from "./presentation";
 import artRules from "@/features/theme/qianzai-tongxin/known-art-presentation.json";
 import { knownQianzaiArtPresentation } from "@/features/theme/qianzai-tongxin/known-art-presentation";
 import { displayAssetV2Schema } from "@/lib/assessment-contract/display-v2";
+import {
+  QIANZAI_KNOWN_PRESENTATION_SOURCE_SHA256,
+  QIANZAI_KNOWN_SHARED_TEMPLATE_REF,
+} from "./known-presentation-source";
 
 let base: Awaited<ReturnType<typeof qianzaiConsumerCopyFixture>>;
 beforeAll(async () => {
@@ -23,7 +27,11 @@ function fixture(id: string) {
   };
   f.view.display.canonicalContentSha256 =
     f.body.provenance.canonicalContentSha256 =
-      "8cbcf2488308c4f4962e9e9ee0aacf79f0dce1a3fb386133b81a0561edff7c31";
+      QIANZAI_KNOWN_PRESENTATION_SOURCE_SHA256;
+  f.view.display.contentVersion = "3.0.0";
+  f.view.display.reportVersion = f.body.provenance.reportVersion = "2.0.0";
+  f.view.display.reportTemplateRef = { ...QIANZAI_KNOWN_SHARED_TEMPLATE_REF };
+  f.body.provenance.templateRef = { ...QIANZAI_KNOWN_SHARED_TEMPLATE_REF };
   const binding = {
     renderer: f.view.renderer,
     profileVersion: QIANZAI_CLASSICAL_EDITION.presentationVersion,
@@ -70,6 +78,9 @@ it("requires the new exact renderer/source binding and current full role ref", (
     },
     (f: ReturnType<typeof fixture>) => {
       f.body.matching.selected.ref.version = "2.0.0";
+    },
+    (f: ReturnType<typeof fixture>) => {
+      f.body.provenance.reportVersion = "1.0.0";
     },
   ];
   for (const mutate of mutations) {

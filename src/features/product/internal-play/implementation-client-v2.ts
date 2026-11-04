@@ -1,7 +1,8 @@
 import { z } from "zod";
 import { createElement, type ComponentType } from "react";
 import type { ConsumerExperiencePropsV2 } from "@/features/theme/consumer-v2/interfaces";
-import { QIANZAI_PRESENTATION_V11 } from "@/features/report/qianzai-tongxin/role-profiles-v11";
+import { QIANZAI_CLASSICAL_EDITION } from "@/features/report/qianzai-tongxin/classical-edition";
+import { QIANZAI_KNOWN_PRESENTATION_SOURCE_SHA256 } from "@/features/report/qianzai-tongxin/known-presentation-source";
 import { ConsumerExperienceV2 } from "@/features/theme/consumer-v2/host";
 import { consumerRendererIdentitySchema } from "@/lib/consumer-contract/v1/identities";
 import {
@@ -31,7 +32,8 @@ function boundQianzaiRuntime(
   if (!runtime) {
     const presentationBinding = Object.freeze({
       renderer: identity,
-      profileVersion: QIANZAI_PRESENTATION_V11,
+      profileVersion: QIANZAI_CLASSICAL_EDITION.presentationVersion,
+      canonicalContentSha256: QIANZAI_KNOWN_PRESENTATION_SOURCE_SHA256,
     });
     runtime = function QianzaiRegisteredRuntime(
       props: ConsumerExperiencePropsV2,
