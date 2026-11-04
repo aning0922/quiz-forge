@@ -1,5 +1,9 @@
 # 阶段进度
 
+## 2026-11-04 切片1 operator授权P1最小修正：正式0031继续暂停
+
+Astra发现`bf28302` helper将operator/admin统一放行并跳过account_actor资格。0031现改私有helper在auth advisory内复用`qf.account_actor`，activate两次固定检查admin的`version:seal-internal`，void两次固定检查admin/operator的`access-key:void`，未知能力拒绝，锁后再核，helper不授app调用；其余已审范围保持。新DDL SHA`c78cad364630daa315b2289c7b0e744ee317543419d3ca7ff5d3a50495ef3d92`。当前角色策略/资格SQL/固定调用/ACL签名与diff静态核对完成，无TS变化不重跑旧静态或A10+5；未执行新SQL/PG，也未进入切片2。旧DDL rollback receipts保留，不冒充新版本通过。准确修正提交后交授权路径窄复核，放行后再补四项指定PG反例，0031仍未应用。
+
 ## 2026-11-04 批次B切片1实现：准确0031与repository待窄审
 
 设计`41d13ea`已由Astra通过，主控分配0031服务/source后移。新增`0031_consumer_controlled_writes.sql`（SHA`9d7dd098532af0fa3427d18ffd30c47790bb85a19f4c605785fb9d66b5368997`）与server-only policy repository，管理器限授definer入口，原app UPDATE关闭且report INSERT收紧到受控完成函数。SQL覆盖原码原子exchange、排序双session后grant的slot轮换、有效read authority/纯注销、current/CAS/原receipt优先、显式启用与原operation读取；原claim投影改每Key确定首次认领、不用于activeattempt。详见MANAGED最新条目，原0030字节/hash保持。

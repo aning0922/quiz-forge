@@ -199,19 +199,28 @@ BEGIN
 END $$;
 
 -- Auth advisory precedes all domain locks. No caller-supplied actor identity.
-CREATE FUNCTION qf.consumer_service_operator(p_digest text) RETURNS qf.operator_session LANGUAGE plpgsql SET search_path=pg_catalog AS $$
-DECLARE auth qf.operator_session;
+-- Private capability selector: public mutators pass fixed literals, never request mode.
+CREATE FUNCTION qf.consumer_service_operator(p_digest text,p_capability text) RETURNS qf.operator_session LANGUAGE plpgsql SET search_path=pg_catalog AS $$
+DECLARE auth qf.operator_session; actor_role text;
 BEGIN
  PERFORM pg_advisory_xact_lock(72461,1);
- SELECT s.* INTO auth FROM qf.operator_session s JOIN qf.operator o ON o.id=s.operator_id
- WHERE s.token_digest=p_digest AND s.kind::text='authenticated' AND s.revoked_at IS NULL AND s.idle_expires_at>clock_timestamp() AND s.absolute_expires_at>clock_timestamp() AND o.status::text='active' AND o.role::text IN ('operator','admin');
- IF NOT FOUND THEN RAISE EXCEPTION 'CONSUMER_OPERATOR_REQUIRED' USING ERRCODE='23514'; END IF;
+ -- Same eligibility as account APIs: set password, complete identity, revision,
+ -- active operator and currently valid authenticated session are all required.
+ auth:=qf.account_actor(p_digest);
+ IF auth.id IS NULL THEN RAISE EXCEPTION 'CONSUMER_OPERATOR_REQUIRED' USING ERRCODE='23514'; END IF;
+ SELECT role::text INTO actor_role FROM qf.operator WHERE id=auth.operator_id;
+ -- Mirrors role-policy.ts for these two fixed capabilities only. Unknown denies.
+ IF (CASE p_capability
+  WHEN 'version:seal-internal' THEN actor_role='admin'
+  WHEN 'access-key:void' THEN actor_role IN ('admin','operator')
+  ELSE false END) IS NOT TRUE
+ THEN RAISE EXCEPTION 'CONSUMER_CAPABILITY_DENIED' USING ERRCODE='23514'; END IF;
  RETURN auth;
 END $$;
 CREATE FUNCTION qf.consumer_activate_product(p_binding text,p_operator_digest text,p_request uuid) RETURNS qf.consumer_product_activation LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog AS $$
 DECLARE b jsonb; h qf.consumer_product_head; auth qf.operator_session; old qf.consumer_product_activation; result qf.consumer_product_activation; product text;
 BEGIN
- auth:=qf.consumer_service_operator(p_operator_digest);
+ auth:=qf.consumer_service_operator(p_operator_digest,'version:seal-internal');
  b:=p_binding::jsonb;product:=b->>'productId';
  IF NOT pg_try_advisory_xact_lock_shared(72461,2) THEN RAISE EXCEPTION 'CONSUMER_MAINTENANCE_BUSY' USING ERRCODE='55P03'; END IF;
  PERFORM 1 FROM qf.product WHERE id=product FOR UPDATE NOWAIT;
@@ -219,7 +228,7 @@ BEGIN
  SELECT * INTO h FROM qf.consumer_product_head WHERE product_id=product FOR UPDATE NOWAIT;
  PERFORM 1 FROM qf.operator WHERE id=auth.operator_id FOR SHARE NOWAIT;
  PERFORM 1 FROM qf.operator_session WHERE id=auth.id FOR SHARE NOWAIT;
- auth:=qf.consumer_service_operator(p_operator_digest);
+ auth:=qf.consumer_service_operator(p_operator_digest,'version:seal-internal');
  SELECT * INTO old FROM qf.consumer_product_activation WHERE product_id=product AND operation_key=(b->>'operationKey')::uuid;
  IF FOUND THEN
   IF old.binding_text IS DISTINCT FROM p_binding THEN RAISE EXCEPTION 'CONSUMER_OPERATION_CONFLICT' USING ERRCODE='23514'; END IF;
@@ -233,19 +242,19 @@ END $$;
 CREATE FUNCTION qf.consumer_void_unused_key(p_product text,p_key uuid,p_binding text,p_operator_digest text) RETURNS qf.access_key LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog AS $$
 DECLARE auth qf.operator_session; k qf.access_key; b jsonb;
 BEGIN
- auth:=qf.consumer_service_operator(p_operator_digest);
+ auth:=qf.consumer_service_operator(p_operator_digest,'access-key:void');
  PERFORM qf.consumer_policy_scope(p_product);
  SELECT * INTO k FROM qf.access_key WHERE id=p_key AND product_id=p_product FOR UPDATE NOWAIT;
  IF NOT FOUND THEN RAISE EXCEPTION 'CONSUMER_ACCESS_DENIED' USING ERRCODE='23514'; END IF;
  PERFORM 1 FROM qf.operator WHERE id=auth.operator_id FOR SHARE NOWAIT;
  PERFORM 1 FROM qf.operator_session WHERE id=auth.id FOR SHARE NOWAIT;
- auth:=qf.consumer_service_operator(p_operator_digest);
+ auth:=qf.consumer_service_operator(p_operator_digest,'access-key:void');
  IF k.void_binding_text=p_binding THEN RETURN k; END IF;
  b:=p_binding::jsonb;
  UPDATE qf.access_key SET revoked_at=clock_timestamp(),void_operation_key=(b->>'operationKey')::uuid,void_binding_text=p_binding,void_binding_sha256=qf.sha256_utf8(p_binding),voided_by=auth.operator_id WHERE id=p_key RETURNING * INTO k;
  RETURN k;
 END $$;
 
-REVOKE ALL ON FUNCTION qf.consumer_service_lineage(qf.access_key,qf.consumer_session),qf.consumer_service_authority(text,uuid,uuid,uuid,text,boolean),qf.consumer_lock_authority(text,uuid,uuid,uuid,text),qf.consumer_save_attempt(text,uuid,uuid,uuid,text,integer,text,text,text,text),qf.consumer_complete_attempt(qf.quiz_report,uuid,text),qf.consumer_rotate_grant(text,uuid,text,uuid,uuid,text),qf.consumer_revoke_grant(text,uuid,uuid,uuid,text),qf.consumer_service_operator(text),qf.consumer_activate_product(text,text,uuid),qf.consumer_void_unused_key(text,uuid,text,text) FROM PUBLIC;
+REVOKE ALL ON FUNCTION qf.consumer_service_lineage(qf.access_key,qf.consumer_session),qf.consumer_service_authority(text,uuid,uuid,uuid,text,boolean),qf.consumer_lock_authority(text,uuid,uuid,uuid,text),qf.consumer_save_attempt(text,uuid,uuid,uuid,text,integer,text,text,text,text),qf.consumer_complete_attempt(qf.quiz_report,uuid,text),qf.consumer_rotate_grant(text,uuid,text,uuid,uuid,text),qf.consumer_revoke_grant(text,uuid,uuid,uuid,text),qf.consumer_service_operator(text,text),qf.consumer_activate_product(text,text,uuid),qf.consumer_void_unused_key(text,uuid,text,text) FROM PUBLIC;
 
 REVOKE ALL ON FUNCTION qf.consumer_exchange_attempt(text,text,uuid,text) FROM PUBLIC;

@@ -2,6 +2,12 @@
 
 开发、验证、独审和收口统一遵循 [根 AGENTS.md](../AGENTS.md)。本文件的带日期条目、测试数量、全量运行和逐图复核均保留为原批次记录，不要求新任务重新执行。当前任务以用户最新授权及最新实际检查点为准；文档中的旧“尚未合并”“待实现”和阶段启动指令不覆盖后续事实。
 
+## 2026-11-04 切片1授权P1修正：account_actor与固定能力，待窄复核
+
+Astra对`bf28302`指出operator helper统一放行operator/admin导致直接app EXECUTE可越权启用，且未复用当前账号完整资格。最小修正仅触及0031 operator helper及activate/void四个调用：在auth advisory内调用`qf.account_actor`，复用已设密码、身份完整、revision、当前session期限及active账号条件；私有helper增加有限capability参数，activate锁前/锁后固定`version:seal-internal`且仅admin，void固定`access-key:void`允许admin/operator，未知capability拒绝。参数不从请求传入，app仍不获helper EXECUTE；PUBLIC撤销签名同步为(text,text)，公共入口签名及其余锁序/tuple/FK/ACL/claim投影不改。不依赖TS补权限。
+
+新准确0031 SHA`c78cad364630daa315b2289c7b0e744ee317543419d3ca7ff5d3a50495ef3d92`。本步仅与当前`role-policy.ts`和0023 `account_actor`逐项核对、四处固定调用/私有ACL签名及diff静态核对；无TS变更不重跑类型/ESLint，无新SQL执行/PG用例、无正式0031应用。旧9d7dd098回滚记录原样保留且不代表新版本通过。窄审后仅补operator直接activate准确拒绝且ledger/head/audit零变、有效admin成功、account_actor资格不足拒绝、operator合法void成功；不重跑A10+5，不进切片2，不动作者/6736/UNKNOWN。该P1先交主控送Astra授权路径窄复核。
+
 ## 2026-11-04 批次B切片1：0031受控接口与精确repository待窄审
 
 主控转交Astra对`41d13ea`设计通过，明确0031用于B受控写接口，source准入顺延之后实际空闲号。按Sol/high实施第一切片：`0031_consumer_controlled_writes.sql`新增受控lock/save/complete/rotate/exchange/revoke/activate/void入口，内部lineage/operator/authority helpers不授app EXECUTE；无任意SQL/通用patch，过期授权flag只在私有helper中由revoke常量开启。为避免旧app INSERT绕过完成函数的grant检查，额外收紧report INSERT（source/FK guards保留，受控definer调用它们）；原三类UPDATE仍关闭。0030字节保持，新增函数受现0030 checksum与完整结构指纹`3b19480ff84e3b7300f893e081ca4bead8fb50a4e3cdaf06f1c6985c8a9b5b01`前置检查保护，PUBLIC权限撤销，管理器仅授指定入口。
