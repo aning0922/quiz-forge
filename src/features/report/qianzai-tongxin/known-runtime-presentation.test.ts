@@ -22,7 +22,10 @@ beforeAll(async () => {
 function fixture(id: string) {
   const f = structuredClone(base),
     data = QIANZAI_KNOWN_ROLE_DATA.find((r) => r.profile.ref.id === id)!;
-  f.view.renderer = { ...f.view.renderer, version: "1.5.0" };
+  f.view.renderer = {
+    ...f.view.renderer,
+    version: QIANZAI_CLASSICAL_EDITION.consumerVersion,
+  };
   f.body.matching.selected.ref = f.view.display.selectedResultRef = {
     ...data.profile.ref,
   };

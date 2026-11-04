@@ -17,7 +17,7 @@ import {
   consumerImplementationIdentityV2,
 } from "./implementation-catalog-v2";
 import { QianzaiTongxinRuntime } from "@/features/theme/qianzai-tongxin/runtime";
-import { QIANZAI_CONSUMER_RENDERER } from "@/features/theme/qianzai-tongxin/component-map";
+import { QIANZAI_CLASSICAL_CONSUMER_RENDERER as QIANZAI_CONSUMER_RENDERER } from "@/features/report/qianzai-tongxin/classical-edition";
 
 // Only exact installed entries reach this cache. Stable component identity keeps
 // the controller's reading/resource owners mounted through ordinary updates.

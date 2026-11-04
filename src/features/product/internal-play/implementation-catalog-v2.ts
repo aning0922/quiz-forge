@@ -1,13 +1,12 @@
+import { QIANZAI_CLASSICAL_CONSUMER_RENDERER as QIANZAI_CONSUMER_RENDERER } from "@/features/report/qianzai-tongxin/classical-edition";
 import knownTen from "../internal-versions/implementation-data/d3-runtime-bindings-known-ten.json";
 import previous from "../internal-versions/implementation-data/d3-runtime-bindings.json";
 import descriptor from "./implementation-data/consumer-structured-composed-v1.json";
 import historicalV13 from "./implementation-data/consumer-qianzai-historical-v13.json";
 import historicalV14 from "./implementation-data/consumer-qianzai-historical-v14.json";
+import historicalV15 from "./implementation-data/consumer-qianzai-historical-v15.json";
 import { D3_IMPLEMENTATION_BINDINGS as current } from "../internal-versions/implementation-registration-v2";
-import {
-  QIANZAI_COMPONENT_MAPPING,
-  QIANZAI_CONSUMER_RENDERER,
-} from "@/features/theme/qianzai-tongxin/component-map";
+import { QIANZAI_COMPONENT_MAPPING } from "@/features/theme/qianzai-tongxin/component-map";
 import { sameConsumerFact } from "@/lib/consumer-contract/v1/integrity";
 import { QIANZAI_RUNTIME_INPUTS } from "@/features/theme/qianzai-tongxin/runtime-inputs";
 import { consumerRendererIdentitySchema } from "@/lib/consumer-contract/v1/identities";
@@ -43,6 +42,7 @@ export const CONSUMER_IMPLEMENTATION_DESCRIPTORS_V2 = freeze(
     consumerImplementationEntryV2Schema.parse(descriptor),
     consumerImplementationEntryV2Schema.parse(historicalV13),
     consumerImplementationEntryV2Schema.parse(historicalV14),
+    consumerImplementationEntryV2Schema.parse(historicalV15),
   ].filter(
     (entry, index, entries) =>
       entries.findIndex((other) => other.entrySha256 === entry.entrySha256) ===

@@ -6,12 +6,16 @@ import { consumerImplementationEntryV2Schema } from "./implementation-schema-v2"
 import { consumerRendererIdentitySchema } from "@/lib/consumer-contract/v1/identities";
 import v13Entry from "./implementation-data/consumer-qianzai-historical-v13.json";
 import v14Entry from "./implementation-data/consumer-qianzai-historical-v14.json";
+import v15Entry from "./implementation-data/consumer-qianzai-historical-v15.json";
 import { QIANZAI_RUNTIME_INPUTS as v13Inputs } from "@/features/theme/qianzai-tongxin/historical-v13/runtime-inputs";
 import { QIANZAI_RUNTIME_INPUTS as v14Inputs } from "@/features/theme/qianzai-tongxin/historical-v14/runtime-inputs";
+import { QIANZAI_RUNTIME_INPUTS as v15Inputs } from "@/features/theme/qianzai-tongxin/historical-v15/runtime-inputs";
 import { deriveQianzaiResultPresentation as v13Presentation } from "@/features/report/qianzai-tongxin/historical-v13/result-presentation";
 import { deriveQianzaiResultPresentation as v14Presentation } from "@/features/report/qianzai-tongxin/historical-v14/result-presentation";
+import { deriveQianzaiResultPresentation as v15Presentation } from "@/features/report/qianzai-tongxin/historical-v15/result-presentation";
 import { QianzaiHistoricalRuntime as V13 } from "@/features/theme/qianzai-tongxin/historical-v13/runtime";
 import { QianzaiHistoricalRuntime as V14 } from "@/features/theme/qianzai-tongxin/historical-v14/runtime";
+import { QianzaiHistoricalRuntime as V15 } from "@/features/theme/qianzai-tongxin/historical-v15/runtime";
 
 const sourceHashes = new Set([
   "dbe46ea379cb2201456d8d3640466fbcd7cb3c194fa9e7289b0130b755f6f4ee",
@@ -19,7 +23,7 @@ const sourceHashes = new Set([
 ]);
 const mappingSha256 =
   "1242da7bb93821680e5743aa11f689693dcc3fd78e7c3c13d31222be8e5e6559";
-const profiles = [
+const legacyProfiles = [
   { entry: v13Entry, inputs: v13Inputs, derive: v13Presentation, Runtime: V13 },
   { entry: v14Entry, inputs: v14Inputs, derive: v14Presentation, Runtime: V14 },
 ].map(({ entry: raw, inputs, derive, Runtime }) => {
@@ -45,8 +49,39 @@ const profiles = [
     derive,
     presentationBinding,
     Experience,
+    sources: sourceHashes,
+    presentationMatches: (view: PersistedReportViewV2["view"]) =>
+      Boolean(derive(view, presentationBinding)),
   });
 });
+
+const v15 = consumerImplementationEntryV2Schema.parse(v15Entry);
+const v15Identity = consumerRendererIdentitySchema.parse({
+  kind: v15.descriptor.kind,
+  id: v15.descriptor.id,
+  version: v15.descriptor.version,
+  entrySha256: v15.entrySha256,
+});
+const v15Binding = Object.freeze({
+  renderer: v15Identity,
+  profileVersion: "qianzai-role-presentation.v2" as const,
+  canonicalContentSha256:
+    "6c701d4445f98b2d6e042dde1edc203e118c9a79728697ef551fa89fe2bd2187",
+});
+const V15Experience: ComponentType<ConsumerExperiencePropsV2> = (props) =>
+  createElement(V15, { ...props, presentationBinding: v15Binding });
+const profiles = [
+  ...legacyProfiles,
+  Object.freeze({
+    entry: v15,
+    identity: v15Identity,
+    inputs: v15Inputs,
+    Experience: V15Experience,
+    sources: new Set<string>([v15Binding.canonicalContentSha256]),
+    presentationMatches: (view: PersistedReportViewV2["view"]) =>
+      Boolean(v15Presentation(view, v15Binding)),
+  }),
+];
 
 /** Only the controller's verified immutable report reaches this presentation selector.
  * The server still verifies snapshot/receipt/grant/resource authority. This never
@@ -59,10 +94,9 @@ export function resolveHistoricalReportRuntimeV2(
   // Undefined delegates unrelated editions; null rejects an old identity without fallback.
   if (
     view.renderer.id !== "consumer-qianzai-tongxin" ||
-    !["1.3.0", "1.4.0"].includes(view.renderer.version)
+    !["1.3.0", "1.4.0", "1.5.0"].includes(view.renderer.version)
   )
     return undefined;
-  if (!sourceHashes.has(view.display.canonicalContentSha256)) return null;
   const character = view.display.slots.character;
   if (
     !character ||
@@ -70,6 +104,7 @@ export function resolveHistoricalReportRuntimeV2(
   )
     return null;
   for (const profile of profiles) {
+    if (!profile.sources.has(view.display.canonicalContentSha256)) continue;
     const d = profile.entry.descriptor;
     if ("kind" in d.font) continue;
     const font = {
@@ -102,7 +137,7 @@ export function resolveHistoricalReportRuntimeV2(
               sameConsumerFact(binding.asset.resourceRef, character[use], 8192),
           ),
       ) ||
-      !profile.derive(view, profile.presentationBinding)
+      !profile.presentationMatches(view)
     )
       continue;
     return Object.freeze({ descriptor: d, Experience: profile.Experience });

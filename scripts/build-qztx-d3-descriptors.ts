@@ -1,3 +1,4 @@
+import { QIANZAI_CLASSICAL_CONSUMER_RENDERER as QIANZAI_CONSUMER_RENDERER } from "../src/features/report/qianzai-tongxin/classical-edition";
 import { mkdir, writeFile, realpath } from "node:fs/promises";
 import { resolve, dirname } from "node:path";
 import { createHash } from "node:crypto";
@@ -16,7 +17,6 @@ import {
 } from "../src/features/theme/consumer-v2/component-map";
 import {
   QIANZAI_COMPONENT_MAPPING,
-  QIANZAI_CONSUMER_RENDERER,
   QIANZAI_PREVIEW_RENDERER,
   QIANZAI_PREVIEW_PRESENTATION,
   QIANZAI_CONSUMER_PRESENTATION,

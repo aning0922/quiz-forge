@@ -6,11 +6,10 @@ vi.mock(
     const { createHash } = await import("node:crypto");
     const { consumerCanonicalText } =
       await import("@/lib/consumer-contract/v1/integrity");
-    const {
-      QIANZAI_COMPONENT_MAPPING,
-      QIANZAI_CONSUMER_RENDERER,
-      QIANZAI_PREVIEW_RENDERER,
-    } = await import("./component-map");
+    const { QIANZAI_COMPONENT_MAPPING, QIANZAI_PREVIEW_RENDERER } =
+      await import("./component-map");
+    const { QIANZAI_CLASSICAL_CONSUMER_RENDERER: QIANZAI_CONSUMER_RENDERER } =
+      await import("@/features/report/qianzai-tongxin/classical-edition");
     const { QIANZAI_RUNTIME_INPUTS } = await import("./runtime-inputs");
     const oldEngine = (
       await import("@/features/product/internal-versions/implementation-data/engine-archetype-l1-v1.json")
@@ -143,7 +142,7 @@ it("resolves only the exact new renderer, mapping and fixed-font identity", () =
   changed.mapping.states.cover.runtime.id = "consumer-other-cover";
   expect(resolveConsumerExperienceRuntimeV2(changed)).toBeNull();
 });
-it("binds consumer1.5 to the exact known source and derives v2/copy.v3 without accepting mixed facts", async () => {
+it("binds consumer1.5.1 to the exact known source and derives v2/copy.v3 without accepting mixed facts", async () => {
   const entry = registered.qianzaiConsumer!,
     identity = consumerImplementationIdentityV2(entry),
     runtime = resolveConsumerExperienceRuntimeV2({
@@ -168,7 +167,7 @@ it("binds consumer1.5 to the exact known source and derives v2/copy.v3 without a
   const render = runtime.Experience as typeof QianzaiTongxinRuntime;
   const bound = render({ model: f.model, onEvent() {} });
   const binding = bound.props.presentationBinding!;
-  expect(identity.version).toBe("1.5.0");
+  expect(identity.version).toBe("1.5.1");
   expect(binding).toEqual({
     renderer: identity,
     profileVersion: "qianzai-role-presentation.v2",

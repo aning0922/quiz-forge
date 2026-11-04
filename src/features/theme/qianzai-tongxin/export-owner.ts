@@ -1,3 +1,4 @@
+import { QIANZAI_CLASSICAL_CONSUMER_RENDERER as QIANZAI_CONSUMER_RENDERER } from "@/features/report/qianzai-tongxin/classical-edition";
 import type { ConsumerResourceLeaseV2 } from "../consumer-v2/resource-port";
 import type { QianzaiAssetBinding } from "./resource-owner";
 import { admittedQianzaiBindings } from "./resource-owner";
@@ -8,10 +9,7 @@ import {
   type QianzaiPresentationBinding,
   type QianzaiResultPresentation,
 } from "@/features/report/qianzai-tongxin/result-presentation";
-import {
-  QIANZAI_COMPONENT_MAPPING,
-  QIANZAI_CONSUMER_RENDERER,
-} from "./component-map";
+import { QIANZAI_COMPONENT_MAPPING } from "./component-map";
 import type { QIANZAI_RUNTIME_INPUTS } from "./runtime-inputs";
 import {
   renderQianzaiExport,

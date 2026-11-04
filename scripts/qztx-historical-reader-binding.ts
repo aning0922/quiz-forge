@@ -10,11 +10,11 @@ export const QZTX_HISTORICAL_BINDING_PATH =
 const canonical = (value: unknown) =>
   canonicalOrdinaryJson(value, { maxBytes: 1_048_576, maxDepth: 32 });
 
-/** Two finite read-only adapters; this binding is never loaded by a write resolver. */
+/** Finite read-only adapters; this binding is never loaded by a write resolver. */
 export async function collectQztxHistoricalReaderBinding(cwd: string) {
   const fonts = new Set<string>();
   const originalRenderers = [];
-  for (const profile of ["v13", "v14"] as const) {
+  for (const profile of ["v13", "v14", "v15"] as const) {
     const readJson = async (file: string) =>
       JSON.parse(await readFile(path.join(cwd, file), "utf8"));
     const prefix = `src/features/theme/qianzai-tongxin/historical-${profile}/`;
@@ -74,7 +74,7 @@ export async function verifyQztxHistoricalReaderBinding(cwd: string) {
     "QZTX_HISTORICAL_READER_CLOSURE_CHANGED",
   );
   return {
-    profiles: 2,
+    profiles: actual.originalRenderers.length,
     files: actual.closure.files.length,
     sha256: actual.sha256,
     access: actual.access,

@@ -5,11 +5,17 @@ import type { QianzaiResultPresentation } from "./result-presentation";
 /** The ten-role edition is separate from the retained V11 source aliases.
  * These identities grant no availability until the exact closure is registered. */
 export const QIANZAI_CLASSICAL_EDITION = Object.freeze({
-  consumerVersion: "1.5.0",
+  consumerVersion: "1.5.1",
   previewVersion: "1.3.0",
   presentationVersion: "qianzai-role-presentation.v2",
   copyVersion: "qianzai-consumer-copy.v3",
 } as const);
+
+/** Consumer patch identity is separate from the unchanged sealed preview map. */
+export const QIANZAI_CLASSICAL_CONSUMER_RENDERER = Object.freeze({
+  id: "consumer-qianzai-tongxin",
+  version: QIANZAI_CLASSICAL_EDITION.consumerVersion,
+});
 
 /** Static editorial data only. Scores, resource authority and source approval
  * still come from the verified QuizPack/report and the trusted resolver. */
