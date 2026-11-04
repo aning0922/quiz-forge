@@ -50,10 +50,11 @@ export function consumerJsonResponse(
 export function consumerFailureResponse(
   error: unknown,
   requestId: string,
-  write: boolean,
+  preserveUnknown: boolean,
 ) {
   const fact = consumerErrorFact(error, requestId);
-  if (!write && fact.code === "OUTCOME_UNKNOWN") fact.code = "UNAVAILABLE";
+  if (!preserveUnknown && fact.code === "OUTCOME_UNKNOWN")
+    fact.code = "UNAVAILABLE";
   return consumerJsonResponse(
     fact,
     CONSUMER_ERROR_STATUS[fact.code],

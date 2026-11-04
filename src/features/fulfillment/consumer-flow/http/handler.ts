@@ -88,7 +88,8 @@ export async function handleConsumerHttp<
   let owner: Owner | undefined,
     entered = false,
     successful = false,
-    write = false;
+    write = false,
+    recovery = false;
   const check = () => {
     if (
       clock.budget.signal.aborted ||
@@ -101,8 +102,8 @@ export async function handleConsumerHttp<
     const endpoint = parse(endpointSchema, endpointInput),
       action = endpoint.action;
     write = ["exchange", "save", "complete", "logout"].includes(action);
-    const post =
-      write || action === "resolve-save" || action === "resolve-complete";
+    recovery = action === "resolve-save" || action === "resolve-complete";
+    const post = write || recovery;
     const config = await (dependencies.loadConfig ?? loadRuntimeConfig)();
     check();
     assertConsumerSource(request, config, {
@@ -290,11 +291,13 @@ export async function handleConsumerHttp<
     return response;
   } catch (error) {
     return consumerFailureResponse(
-      write && entered && (successful || !(error instanceof ConsumerError))
+      (write || recovery) &&
+        entered &&
+        (successful || !(error instanceof ConsumerError))
         ? new ConsumerError("OUTCOME_UNKNOWN")
         : error,
       requestId,
-      write,
+      write || recovery,
     );
   } finally {
     if (owner) {
