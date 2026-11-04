@@ -1,5 +1,15 @@
 # 阶段进度
 
+## 2026-11-04 正式runner修复四项真实PG续验通过，00486沿用
+
+Astra通过准确30d0c7eb9bb3143d86ce709b5f04ed50028964c0，主控明确放行同00486原raw32的四项真实PG续验。新experience根正常ff到30d0并start，先捕获完整raw32 catalog/全部函数体与元事实、账本version/checksum/applied_at，再执行拒绝/回滚，最后正常CLI成功；未执行93脚本，未创建第三root。定向工具`qianzai-experience-runner-proof.ts`复用既有“拦截确切原生driver方法后抛出受控错误”的测试方式，不加生产fault入口或改0033。
+
+①已知自有第二owner连接持72461/2共享维护锁，正式runner拒绝；②第二连接不持锁但保持外部连接，runner拒绝；两者关闭测试连接后逐项核完整catalog/raw32 ACL/函数体及元事实/账本含applied_at均不变。③仅在确切原033 source的native unsafe已成功返回、账本INSERT前，保留同一reserved连接内读取catalog=`57137878…c9143`且033 ledger不存在的实际观察，再注入RUNNER_INJECTED_AFTER_0033_BEFORE_LEDGER；runner执行ROLLBACK并返回拒绝，实际确认完整raw32 catalog恢复、所有函数body/ACL/元事实及原32 ledger/applied_at不变。此项不是前两早拒绝的替代或SQL mock；进入原033说明其中准确ad236前置已通过。
+
+④移除测试注入、关闭全部测试连接后，普通`pnpm p2a:db migrate --instance 00486f17f741bd6d6535429e6552d161`仅新增0033。最终33条checksum全匹配，前32账本含applied_at保持（按原driver Date/持久ISO的同一毫秒表示比较），全catalog准确`57137878c47b73d1914ace7f9198812d932727ef40d05b95d8514712762c9143`，函数owner/签名/语言/安全等非ACL元事实保持且仅6个已审body变化，ACL全catalog与已审基线同一；8个业务/资源计数全0、其他连接0。最终只读探针首次因Date与持久ISO直接对象比较失败，原after.log和failure保留；只统一表示并续最后只读核对，未重跑前三项或migration。探针首轮tsc的非空标注也保留修正；定向类型/ESLint通过。
+
+原owner与第二连接均关闭，正常stop后55538/63238无监听、postmaster.pid消失、manifest/runtime/admin/PGdata保留。新root`.cache/known-ten/runner-real-{before,maintenance-shared,external-connection,after033-rollback,rejects,after,stop.receipt}.json`、各close回执和原log/失败完整保留。状态PASS_FOUR_CASES_OWNED_MANAGED_STOP，不冒称CI或全DB通过。原b3根/guard不动；00486正式基础已就绪，可继续准确source三hash/0034候选另审，本步未准备或应用0034、未导入/封存/启用或运行消费者UI。
+
 ## 2026-11-04 正式fresh迁移顺序修复候选：仅0032→0033前缀ACL checkpoint
 
 主控与B确认CI database/accounts bootstrap也遇同一fresh链缺陷，不能只修本机fixture。93a69f8的一次性前32收尾脚本未执行，现从当前源码移除，原提交/实际失败/00486 raw32 ACL回执全部保留。新experience根仍c90、00486停止，未normal migrate或创建任何normalize32 intent；新source/0034未准备，旧b3不动。
