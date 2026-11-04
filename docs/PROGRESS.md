@@ -1,5 +1,15 @@
 # 阶段进度
 
+## 2026-11-04 R通过后的唯一一次父崩溃隔离诊断通过
+
+Astra对准确37db541a279dfa187ec6fcc416511c47abd6fe86诊断diff窄审通过，主控只放行final正常ff→固定diagnostic setup→一次单项诊断。先复核原main失败文件/active/guard inode与hash、固定native helper/Node pin及原harness51593/host52964/worker53047均absent，确认PG/HTTP停止和新诊断目录不存在；私有`parent-crash-single-window.intent.json`记录范围，不包含整轮matrix/provision放行。final树由568e正常ff到37db，未重建Next或动原control。
+
+固定`media:setup:macos --diagnostic-parent-crash`返回prepared、target=null；随后一次`parent-crash-diagnostic.ts --diagnostic-parent-crash`返回case-passed。新独立目录`.cache/quizpack-media-parent-crash-diagnostic/run-daf18f25-544f-4604-b732-988fa47b78db`保留intent/result/crash-control；result SHA `f5a301e9a17ff170584cf39133ace6131b17a1a10241dfc348aa24338ccbab9e`。原12秒ready/5秒close及身份观察断言均未改，实际观测ownedParentKilled、ownedParentCloseObserved、originalWorkerIdentityGone、restartBlocked均true，按原用例证明后只释放本次诊断目录control。qualification/capabilityCommitted/recordCommitted均false，没有owned-matrix或新能力证据。
+
+独立后验`parent-crash-diagnostic-once.receipt.json`核本次owner77933/worker77938/start1793782683.415130，两者由同pin native helper观测present=false；新control目录空。逐件重新核原main summary/identity/unknown-control/active/guard inode与hash仍相同，原mainguard未释放、旧失败状态保持；55537/63237无监听，PG/HTTP仍停。所有本次日志/intent/后验位于final树`.cache/known-ten/parent-crash-*`。这是新隔离case一次通过，原第三轮失败断点/根因仍UNKNOWN，不能倒推为偶发超时、不能拼原两轮或回填capability/record/stopProof。没有再次provision、导入、启用或消费者/PNG运行。
+
+历史夹具只读准备另已报告主控：旧source8cb…绑定79331私有identity，b3有限source合同及新建play可执行列表都不能合法造两个旧tuple；原33素材和旧字体齐备不等于已有封存报告/grant，现有14项selector/外层证据仅合成。未读作者记录或转原资格、未新增source迁移/backdoor，B真实授权验收仍非READY。此项复用既有只读结论，不另展开研究或写夹具。
+
 ## 2026-11-04 父崩溃单项诊断设计与准确diff待审（未运行）
 
 主控授权Astra先做本次自有夹具最小诊断与维护证据收口。原第三轮check吞异常，根因仍UNKNOWN，不归因图片/source或偶发超时。最终root新增只读`native-provision-original-inodes.json`保存原summary/identity/unknown-control/active.json/guard的dev/inode/mode/hash；原guard inode221912107、active inode221912111/SHA35d3dc06…2bce原位保持。再用同原identity钉SHA的native helper确认harness51593（来自原unknown-control owner）、crash-host52964、worker53047均present=false，`native-provision-later-stopped.receipt.json`标记LATER_CONFIRMED_STOPPED_IDENTITIES_ONLY及观察时间；逐件核原inode/hash仍相同。该后验只证明后来停止，原timed close proof未建立，失败/capability/record状态不变，无unlink/kill/finish重建。
