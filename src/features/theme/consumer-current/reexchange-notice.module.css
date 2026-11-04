@@ -1,0 +1,13 @@
+.notice {
+  font-size: 16px;
+  overflow-wrap: anywhere;
+}
+
+.notice a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 8px 12px;
+  color: inherit;
+  text-underline-offset: 4px;
+}

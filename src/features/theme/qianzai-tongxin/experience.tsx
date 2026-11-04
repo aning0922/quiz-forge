@@ -1,4 +1,5 @@
 "use client";
+import { ConsumerReexchangeNotice } from "../consumer-current/reexchange-notice";
 
 import {
   useCallback,
@@ -906,6 +907,7 @@ export function QianzaiTongxinExperience({
         >
           <p role="status">{messages[model.phase]}</p>
           {model.message && <p role="alert">{model.message}</p>}
+          <ConsumerReexchangeNotice reason={model.reexchangeRequired} />
           {model.pendingOperation &&
             ["unknown", "conflict", "unavailable"].includes(model.phase) && (
               <button onClick={() => onEvent({ type: "resolve" })}>

@@ -1,5 +1,19 @@
 # 阶段进度
 
+## 2026-11-04 已确认终态UI接线与采纳前政策复核
+
+主控转交R对准确2de0771窄审通过，历史只读P2设计关闭。实现先接有限终态：reader可选display reason仅从已验证session/resolution派生，v1 host、v2 status、千载状态及v2外层runtime-null均显示同一固定文案与`/access`原码入口，不携带Key或自动exchange。原UNKNOWN/终态pending在明确采纳前保持；exact remove之后终态仍保留display reason、清旧entry并停编辑。明确采纳已恢复的save前重读原session政策，若过代不以旧applied回执重新打开题目，若本attempt已有报告则读取原报告；不调用新完成或发grant。
+
+定向`consumer-v1/controller.test.ts`、`consumer-v2/controller.test.ts`、新`consumer-v2/experience.test.ts`三文件22项通过，覆盖两个终态的exact pending采纳、v1/v2旧applied后过代、无entry/report、旧entry不可执行与UNKNOWN外层markup。前轮v1两项失败暴露较早GET state覆盖较新已确认receipt，已修为政策观察不能回退原revision；失败不记通过。此前components定向已通过且修复未改组件输入，复用。TypeScript及12个受影响TS/TSX定向ESLint通过，diff/格式核对；这是controller/静态markup证据，实际页面/窄屏/最终生产构建尚未运行，随最终1.5接线验证，不冒称浏览器验收。历史只读profile、最终字体/source/0033仍在实现，已审服务/SQL不重跑。
+
+## 2026-11-04 最终构建根与新test身份已准备，尚无source准入
+
+独立`codex/qztx-known-ten-final`工作树从2de0771正常建立，绝对根`/Users/aipuli/.codex/worktrees/quizforge-qztx-known-ten-final/quiz-forge`，未在A旧63234或作者运行根重建。离线安装因缺@radix-ui/react-slot固定tarball失败；同一锁文件正常安装成功，无package/lock/global设置变更。未启动Next/build/native media。
+
+正常`pnpm p2a:db init --port 55537 --origin http://127.0.0.1:63237 --purpose test`生成全新instance`b3d733d96206b456072dcf5609d52e32`，manifest.root保持新root，marker为`quizforge.p2a.v1:b3d733d96206b456072dcf5609d52e32:test`。仅已审0001–0032正常fresh链；32 checksum逐项匹配，实际catalog仍`ad236ba8bc23d53c69197a6f603bb17421c8ffce9c4c745de866165ed97fa8d7`，Key/session/report/head/activation全0，其他连接0，owner close。正常stop后55537/63237无监听、postmaster.pid消失、PGdata/manifest/runtime/admin保留，回执在新root`.cache/known-ten/final-instance-{init,stop}.receipt.json`。没有新0033/source/导入、没有作者数据或旧身份借用，资源IO未获取且无fileStopProof。后续实现ff到此新分支后沿同一原身份工作，不重新init或改manifest。
+
+A树`.cache/known-ten/font-source-corpus-preflight/result.json`对十人固定文本/支持阅读与预留终态文案1031码点（含U+0020）做上游TTF预检：Serif/Literary缺字0，Brush缺`·`/`曌`/`牆`。这是保守文本池，后两字目前在正文/元信息/出处；最终必须对实际Brush用途单独固定，不能删正文或以fallback掩盖。现Brush导出中的中点沿已有明确拆run逻辑处理；未据此改字体检查、运行subset或宣称完整语料/双PNG通过。旧报告单项P2设计2de0771已push待R，其间仅做不依赖它的新root/身份和文本预检准备。
+
 ## 2026-11-04 旧报告与外层终态入口：单项P2设计补充待复核
 
 R对6a9cb4a主体通过，主控选择在新构建提供精确历史只读路径。A实查确认旧metadata受available门控会runtime-null，当前runtime/export又读当前字体/资源常量；不能仅放开旧entry。最小补充已写MANAGED最新节：明确1.3 `9732bdfd…4aadbe`（6540d7b）与1.4 `b88be4dd…b4809`（1f2177b）两个成功tuple，冻结各自只读report/presentation/copy/font/resource/双PNG必要闭包，新适配器实际闭包与旧snapshot identity分开证明；旧attempt仍无当前entry/写权。作者原63227/63230构建/记录及UNKNOWN保持，不能替代新构建验证。两个旧tuple均列入本批新构建实际报告/资源/双PNG验证，尚未执行；其他早期及失败tuple无新映射。v2 runtime-null且无entry/report分支明确补原码入口，UNKNOWN保留原pending。此提交仅设计文档，不执行共享代码/source/DDL，交R只窄审该P2。

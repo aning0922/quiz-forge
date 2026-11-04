@@ -3,6 +3,7 @@ import type { MatchingContextV1 } from "@/lib/assessment-contract/matching-v1";
 import type { ConsumerAnswers, ConsumerProgress } from "../v1/state";
 import type { ConsumerStateV2 } from "./state";
 import type { PersistedReportViewV2 } from "@/features/report/persisted/view-contracts-v2";
+import type { ConsumerReexchangeReason } from "../policy-display";
 
 export type ConsumerV2Draft = {
   answers: ConsumerAnswers;
@@ -27,6 +28,7 @@ export type ConsumerV2ReaderModel = {
   pendingOperation: "save" | "complete" | null;
   savedAt: string | null;
   message: string | null;
+  reexchangeRequired?: ConsumerReexchangeReason | undefined;
 };
 export type ConsumerV2ReaderEvent =
   | { type: "choose-preference"; preference: "male" | "female" | "any" }

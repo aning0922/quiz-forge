@@ -1,4 +1,5 @@
 "use client";
+import { ConsumerReexchangeNotice } from "../consumer-current/reexchange-notice";
 import {
   useEffect,
   useMemo,
@@ -117,6 +118,7 @@ export function ConsumerSessionRuntimeV2({
               ? "正在读取服务端授权与固定版本。"
               : "尚未绑定可用的准确运行时，未切换到其他版本。")}
         </p>
+        <ConsumerReexchangeNotice reason={model.reexchangeRequired} />
         {model.pendingOperation && (
           <p>
             原{model.pendingOperation === "save" ? "保存" : "完成"}

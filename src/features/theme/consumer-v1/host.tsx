@@ -1,4 +1,6 @@
 "use client";
+import { ConsumerReexchangeNotice } from "../consumer-current/reexchange-notice";
+import { consumerReexchangeReason } from "@/lib/consumer-contract/policy-display";
 import {
   useEffect,
   useMemo,
@@ -352,6 +354,21 @@ export function ConsumerExperienceV1({
           <h1>请重新验证访问</h1>
           <p>当前授权已失效。原操作仍保留，重新验证后再核对。</p>
           <a href="/access">返回访问入口</a>
+        </Panel>
+      </main>
+    );
+  const reexchangeRequired =
+    state.reexchangeRequired ??
+    consumerReexchangeReason(state.resolution) ??
+    consumerReexchangeReason(state.session?.outcome);
+  if (reexchangeRequired)
+    return (
+      <main className={styles.host}>
+        {state.phase === "pending" && state.pending && task?.current() && (
+          <Pending controller={controller} state={state} />
+        )}
+        <Panel>
+          <ConsumerReexchangeNotice reason={reexchangeRequired} />
         </Panel>
       </main>
     );
