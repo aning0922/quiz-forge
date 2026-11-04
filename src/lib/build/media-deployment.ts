@@ -19,6 +19,7 @@ const MAX_SHARP_FILE = 32 * 1024 * 1024;
 const MAX_TOTAL = 128 * 1024 * 1024;
 const MAX_MANIFEST = 2 * 1024 * 1024;
 const MAX_FILES = 4096;
+const FILE_READ_CONCURRENCY = 4;
 const MAX_ENTRIES = 16384;
 const MAX_DEPTH = 16;
 const SOURCE_DIRECTORIES = [
@@ -763,6 +764,16 @@ async function walk(
   await ancestors(root, target, ctx);
   const before = await directory(target, ctx);
   const dir = await opendir(target, { bufferSize: 16 });
+  const files: string[] = [];
+  const readBatch = async () => {
+    // No file task outlives this await, including read/stat/close failures.
+    // Wrap visit so a synchronous throw cannot strand earlier started IO.
+    const results = await Promise.allSettled(
+      files.splice(0).map(async (name) => visit(name)),
+    );
+    const failed = results.find((result) => result.status === "rejected");
+    if (failed?.status === "rejected") throw failed.reason;
+  };
   try {
     checkpoint(ctx);
     for (;;) {
@@ -772,10 +783,16 @@ async function walk(
       if (++budget.entries > MAX_ENTRIES) fail("LIMIT_EXCEEDED");
       const name = rel + "/" + entry.name;
       if (!relativePath(name) || entry.isSymbolicLink()) fail("FILE_UNSAFE");
-      if (entry.isDirectory()) await walk(root, name, ctx, budget, visit);
-      else if (entry.isFile()) await visit(name);
-      else fail("FILE_UNSAFE");
+      if (entry.isDirectory()) {
+        // Drain before recursion: parent and child never multiply the limit.
+        await readBatch();
+        await walk(root, name, ctx, budget, visit);
+      } else if (entry.isFile()) {
+        files.push(name);
+        if (files.length === FILE_READ_CONCURRENCY) await readBatch();
+      } else fail("FILE_UNSAFE");
     }
+    await readBatch();
     if (!same(before, await lstat(target, { bigint: true })))
       fail("FILE_CHANGED");
     checkpoint(ctx);
