@@ -1,5 +1,19 @@
 # 阶段进度
 
+## 2026-11-04 新体验真实接收完成，首次原生validation超时并保留UNKNOWN（未到草稿）
+
+主控明确授权沿同00486/已封存构建继续真实导入至消费者/双PNG并另留未使用码。先复用只读封存核对并再次核实际BUILD_ID、capability/record原SHA；只在新根启用imports、建立隔离合成领域operator（复用现有test helper，不冒称密码登录验收）、通过正常product/receive服务实际接收原ZIP f44ca6…1335/30,518,008B。原import `0b6d3ab8-dd8a-4274-955d-683d3c90e335`为received/stateRevision3、actual hash与字节一致，未重传/新建第二import。
+
+首次prepare被MEDIA_UNAVAILABLE拒绝，未生成validation记录/启动decode。原因已实际核实为本次私有编排调用遗漏：tsx直接调用生产fixedMediaRuntimeRoots时没有Next compiler.defineServer的两个固定字面量，守卫返回ISOLATION_UNAVAILABLE；不是sealed deployment漂移。只读verifyMediaDeployment仍准确0df465…c27c/49de5c…0d82、原import仍received/validationCount0。保留原拒绝/关闭日志后，仅将私有续行入口按仓库已有esbuild固定编译方式绑定同新根与同.next两个字面量；不修改生产代码/守卫、无env/cwd fallback、不重建Next/资格、不重接收。续行prepare实际通过且保留原binding/key；这不冒称生产HTTP路径验收。
+
+原import第一次实际startValidation随后返回VALIDATION_TIMEOUT（原60,000ms不改）。权威只读观察：validation `25f78ea7-339d-4137-b6dd-aa21a390fa3c`、revision1、status=validating、storage_condition=unknown；ordinal1 attempt=9c8bba0a-abe6-4adc-b102-af54036a6fa4为held、mediaStop=unconfirmed、fileStopProof=null，evidence/candidate均null。不能将脚本退出或磁盘后验改记成功/可重试。新根保留原receive/prepare/start intent、原validation_key、失败和全部文件，不新操作key、不新import、不retry/recover、不改DB/期限/断言。
+
+另立停止事实：原stopped回执为mediaStopped=confirmed/relatedIo=settled，323B/SHA `2cecaf454b0959c4cdcc5614914e09a603df695f96152e175b51697dc7f14fb3`/dev16777229/inode222336596，与原DB attempt/fence/owner字段逐项匹配；原owner进程当前不存在、native control为空。该磁盘事实没有数据库ACK资格，DB held/unknown保持。现有`validation/recovery.ts:27`先拒绝held且fileStopProof为空，因此没有盲调正常recover，更未手工ACK/补proof/清空reservation。blobs/assets/drafts/reports0，其他连接0、app/owner关闭、imports关闭；正常stop后独立核55538/63238无监听、PG pid不存在、管理文件/PGdata完整保留。新root`.cache/known-ten/native-timeout-{close-audit.receipt,stop.receipt}.json`及原观察/日志可审，所有nonce/凭证仅留私有文件。
+
+实际部署只读复核仍准确，单次完整verifyMediaDeployment测量1049.560625ms；当前runtime每幅图load会调用完整部署复核（internal/runtime.ts:158,338），是待R定向核实的性能线索，不能据一次测量认定60s根因、每图耗时或实际解码数量。需要R先核本次原attempt超时/ACK与既有恢复边界及运行入口，任何生产代码/合同修复须准确最小diff定向审；本步未提供或执行降低源重验、扩大deadline、重build/native或另起身份的变更。
+
+分层结果：原main资格仍已完整封存；真实原ZIP接收已完成；原生validation未通过且DB UNKNOWN保留；未生成candidate/草稿/预览/审核封存/play/activation/Key/grant/报告，消费者24题/续答/唯一完成/双PNG/原码只读及作者未使用码均NOT_RUN/NOT_ISSUED。私有seal-play续行脚本只准备未执行，不能当业务回执。旧b3/作者/其他UNKNOWN现场不动，托管批次仍未完成。
+
 ## 2026-11-04 唯一新experience生产构建与main原生资格封存通过
 
 同00486 experience根正常ff至8f5ce22，在PG/HTTP停止且本根无旧BUILD_ID条件下仅一次`env -u QUIZFORGE_P2A_CONFIG pnpm build`通过；BUILD_ID `qPdCWqXmYm8otByd8mjoT`，实现登记/Next生产编译/类型及131traces/27788paths/0private违规通过。原aa79155 current切换已获R独立窄审，不重开源码；50项/79历史同字节及未变评分/字体/资源证据复用。A的8f5ce22一次普通push再次被GitHub服务端500拒绝，原记录保留，远端当时e39ee82，不因网络重试整轮或停止本地工作。
