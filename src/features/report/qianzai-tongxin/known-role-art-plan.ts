@@ -1,40 +1,50 @@
 import type { QianzaiKnownRoleId } from "./known-ten-catalog";
 /** Composition plans only, not generated art, author visual acceptance or resource hashes.
  * Name art remains a separate 5:7 diagonal, optically centered group at the original
- * lower anchor; neither the prefix nor seal is moved to compensate for name length. */
+ * lower anchor; neither the prefix nor seal is moved to compensate for name length.
+ * The six revised reveal compositions are half-body candidates, with no feet shown.
+ * Report/poster work is paused for those six; in-flight name art stays pending.
+ * Internal direction review is not author approval, final-resolution proof or admission. */
 export const QIANZAI_KNOWN_ROLE_ART_PLAN = [
   {
     id: "li-bai",
-    costume: "蓝白宽袖丝衣，墨意线金；保留已认可个体面孔与风拂长发",
-    revealAction: "临水斜倚石栏举杯，手肘承重，仰望月光",
-    reportAction: "坐在临江低案旁展开写诗材料，视线落在窗外水面",
-    posterAction: "江岸迎风抬臂举杯，衣袖形成开放斜线",
-    boundary: "《月下独酌》作品意象，具体姿态艺术化",
+    costume: "蓝白流动宽袍与细密织纹，成年俊逸；新版面孔候选不沿用旧图批准",
+    revealAction:
+      "临江大半身举酒盏，另一手持酒壶，睁眼随举杯远望，唇口带将吟诵的活气，不露脚",
+    reportAction: "暂停用途派生；新版揭晓候选复看后再定独立报告构图",
+    posterAction: "暂停用途派生；新版揭晓候选复看后再定独立海报构图",
+    boundary:
+      "举杯诗兴为文学艺术意象，非史实肖像；旧烘焙原件保持，新批次候选待作者复看",
   },
   {
     id: "su-shi",
     costume: "靛蓝银灰暖白厚锦袍，云/几何边纹，成熟俊朗与精心短须",
-    revealAction: "棋枰侧坐，肘支案，一手捻子停顿，抬眼邀共弈",
-    reportAction: "雨后竹杖触地行走，另一手收袍角，重心在迈步",
-    posterAction: "廊下倚栏看雨后庭院，杯在低案，衣料有坐靠重量",
-    boundary: "棋局艺术化，不作棋力史实；雨杖借词作",
+    revealAction:
+      "雨后竹径近正面持竹杖，头端正平视含笑、另一手拢袖，以大半身表现前行意向，不露脚",
+    reportAction: "暂停用途派生；持杖行走已用于本轮揭晓，不直接当作独立报告图",
+    posterAction: "暂停用途派生；新版揭晓候选复看后再定独立海报构图",
+    boundary:
+      "雨杖借词作、具体行走艺术化；578×1252实际取景仅候选，未放大冒称高清，正式分辨率和叠字待测",
   },
   {
     id: "tang-yin",
     costume: "墨绿/赭金明风宽袍，竹石线纹，简洁发冠，不套松鹤衣",
-    revealAction: "大画案前舒展运笔，另一手扶画幅边，画纸与手笔有接触",
-    reportAction: "侧坐比看画幅与窗外山景，执笔手暂停，另一手扶案",
-    posterAction: "背靠画屏轻转身，收起画笔与砚盒，视线接观众",
+    revealAction:
+      "大半身前倾侧俯审视山水画，视线沿笔锋落画，执笔手提腕收笔、另一手压纸，不盯镜头，不露脚",
+    reportAction: "暂停用途派生；新版揭晓候选复看后再定独立报告构图",
+    posterAction: "暂停用途派生；新版揭晓候选复看后再定独立海报构图",
     boundary: "真实绘画身份，具体运笔不复原名作；不点秋香",
   },
   {
     id: "zhou-yu",
     costume:
-      "玄青暗红将领锦袍与少量护肩，利落叠襟；前发收拢，修长沉静眉眼与近中性唇形",
-    revealAction: "水榭侧坐听曲，指尖停在案沿，侧首回顾画外声源",
-    reportAction: "营帐中立于案边展开图，一手压图、一手指近处路线",
-    posterAction: "临水船边倚栏听风，带鞘佩剑从属，衣料厚重",
-    boundary: "辨音据本传；不指定独门乐器，不演义嫉妒",
+      "红黑将领锦袍、轻甲护肩与风中披风，利落叠襟；近正面平视，凝定自信有清贵锐气",
+    revealAction:
+      "楼船船首大半身挺立，一手按腰侧佩剑剑柄、一手扶船栏，背后船阵帆旗，不再琴师回望，不露脚",
+    reportAction: "暂停用途派生；新版揭晓候选复看后再定独立报告构图",
+    posterAction: "暂停用途派生；新版揭晓候选复看后再定独立海报构图",
+    boundary:
+      "水军统帅身份据本传，船首姿态艺术化；琴不再主动作，不用白羽扇，不演义嫉妒",
   },
   {
     id: "zhao-yun",
@@ -55,10 +65,12 @@ export const QIANZAI_KNOWN_ROLE_ART_PLAN = [
   {
     id: "yang-yuhuan",
     costume: "石榴红藕金暖白厚丝唐风裙，团花/宝相纹与独立金簪；丰润成年",
-    revealAction: "一次转身收袖的舞步，双臂牵动披帛，脚步明确承重",
-    reportAction: "水榭坐歇，手拢披帛，侧身听远处乐声，裙料随座垂落",
-    posterAction: "庭廊缓步回身，抬手收住一段披帛，目光连接观众",
-    boundary: "歌舞音律据史传，具体舞步非霓裳复原，不祸水",
+    revealAction:
+      "自然丰润的大半身展袖收帛，双手与披帛接触清楚，头立颈肩、胸腰少扭转后仰，不露脚、不以落地长裙证明比例",
+    reportAction: "暂停用途派生；新版可见上半身比例与审美复看后再定独立构图",
+    posterAction: "暂停用途派生；新版揭晓候选复看后再定独立海报构图",
+    boundary:
+      "歌舞音律据史传，收帛姿态艺术化，非霓裳复原；仅审可见比例，不把不可见下肢记为通过，不祸水",
   },
   {
     id: "wu-zetian",
@@ -80,9 +92,10 @@ export const QIANZAI_KNOWN_ROLE_ART_PLAN = [
     id: "cai-wenji",
     costume:
       "雾蓝月白汉风密实交领裙，银丝芦草/兰叶与细枝疏花，柔韧丝缎层次，整洁发髻与朴雅玉簪",
-    revealAction: "灯下席坐缮书，执笔接纸，另一手移卷，沉静抬眼",
-    reportAction: "窗旁整理典册，将两卷并置，肩肘有案面支撑",
-    posterAction: "廊下低坐持一页材料，另一手扶案，不固定抱书站立",
+    revealAction:
+      "大半身近正面略俯核对旧卷，目光明确落卷，一手持待核卷页、另一手停笔，平静思索而不侧歪讨镜头，不露脚",
+    reportAction: "暂停用途派生；新版揭晓候选复看后再定独立报告构图",
+    posterAction: "暂停用途派生；新版揭晓候选复看后再定独立海报构图",
     boundary: "才学音律与缮书据史传，不断胡笳归属，不投射苦难",
   },
 ] as const satisfies readonly {
