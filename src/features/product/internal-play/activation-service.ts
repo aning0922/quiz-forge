@@ -127,13 +127,21 @@ export function createConsumerActivationService(
               async (tx) => {
                 const final = await preflight(tx, binding);
                 if (final.kind === "existing") return final.prior;
+                const {
+                    canonicalContentText: checkedContent,
+                    assetSetText: checkedAssets,
+                    ...checkedFacts
+                  } = checked.source.evidence,
+                  {
+                    canonicalContentText: finalContent,
+                    assetSetText: finalAssets,
+                    ...finalFacts
+                  } = final.source.evidence;
                 if (
                   !sameConsumerFact(checked.play, final.play, 512 * 1024) ||
-                  !sameConsumerFact(
-                    checked.source.evidence,
-                    final.source.evidence,
-                    512 * 1024,
-                  )
+                  checkedContent !== finalContent ||
+                  checkedAssets !== finalAssets ||
+                  !sameConsumerFact(checkedFacts, finalFacts, 512 * 1024)
                 )
                   throw new ConsumerError("SOURCE_OBSOLETE");
                 await activatePolicyProduct(
