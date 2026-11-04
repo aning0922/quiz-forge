@@ -179,6 +179,11 @@ export async function openPolicyFaultFixture() {
       play,
       view: {
         ...originalSnapshot.view,
+        parent: play.snapshot.parent,
+        renderer: play.snapshot.renderer,
+        font: play.snapshot.parentSnapshot.font,
+        mapping: play.snapshot.mapping,
+        mappingSha256: play.snapshot.mappingSha256,
         reportId: randomUUID(),
         session,
         completedAt: new Date().toISOString(),
