@@ -1,5 +1,11 @@
 # 阶段进度
 
+## 2026-11-04 批次B架构接线准备：服务/受控SQL设计待审
+
+主控确认A的`ee1dd848`证据复核通过，10+5真实PG与owner/stop证明复用，本步不重跑。已逐项核现有internal-play/access/consumer-flow及v1/v2合同、auth advisory前缀和HTTP入口；发现key-only session选择、签发/实际play混同、grant轮换缺session_id及读回伪锁凭证须一起修正。可审最小设计写于MANAGED最新“批次B服务接线设计”：有限SECURITY DEFINER锁/写函数保持app UPDATE关闭；精确attempt与原签发双tuple；已完成/expired历史先于head；六类服务入口、锁序、跨attempt终止envelope和UNKNOWN锁屏障均明确。新增服务迁移编号需与source串行收口（建议0031服务，source顺延待核），不改0030或填美术source假hash。
+
+本步只改现有交接/进度文档并核diff；未写业务/SQL实现、未启动或修改任何DB、未更换runtime指纹、未运行测试/构建。准确设计提交后交主控送独审，通过后按AGENTS切Sol/high实现B必要服务与隔离PG并发。作者人物素材/姓名锚点线独立，不把其反馈转成DB/source准入。A原边界、6736候选失败、作者环境与UNKNOWN保持。
+
 ## 2026-11-04 最新版答题批次A真实PG验收收口：正式0030与两P2反例通过
 
 主控转交Astra对准确`fdcdbb0`窄复核通过后，只在自有验证root `/Users/aipuli/.codex/worktrees/quizforge-qztx-policy-a-validation/quiz-forge`的instance `28267eb19487c265372bdb7671caac89`执行。先正常停止该PG，再同一分支fast-forward到已审`fdcdbb0`、核DDL SHA`c6009e5ebbda4107b63aa475e8434a8b0a6af87cc42627ca03759987adc65db3`后正常start；manifest/admin/root未复制改写。`TSX_TSCONFIG_PATH=./tsconfig.json node --conditions=react-server --import tsx tests/analysis/consumer-latest-policy-check.ts .cache/known-ten/latest-attempts-seed.json`一次应用准确`0030_consumer_latest_attempts`并通过10项数据库检查：原Key/session/report与29项回执精确保持、无默认head、无head/过期已完成Key仍回原report授权、gen0/app直接UPDATE拒绝、同资格每代唯一与已完成禁止重开、实际新play与原签发完整tuple分离及伪造FK拒绝、旧代严格VERSION_SUPERSEDED、代次不可复用、旧operation receipt不被当前head改写、不可变activation FK与两条原report final FK均非延迟RESTRICT。原report canonical TEXT逐字核、时间按PG原生精度核；未把无效SQL其他23514当版本拒绝。
