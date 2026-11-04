@@ -2,6 +2,17 @@
 
 开发、验证、独审和收口统一遵循 [根 AGENTS.md](../AGENTS.md)。本文件的带日期条目、测试数量、全量运行和逐图复核均保留为原批次记录，不要求新任务重新执行。当前任务以用户最新授权及最新实际检查点为准；文档中的旧“尚未合并”“待实现”和阶段启动指令不覆盖后续事实。
 
+## 2026-11-04 最终十人1.5共享接线设计：待主控/Astra定向复核，未执行新准入
+
+B已由主控明确冻结交接：`delivery-v1/manifest.json`、`archive-receipt.json`、`known-ten-resources-only.zip`；准确ZIP30,087,195B/SHA`82d84066df013eb29303ee631dfea50feb7801552e13b7e944566db56052dab2`，53资源payload30,079,293B，预留后31,406,397B。此为素材包，不是QuizPack。A可按准确输入接收；独立视觉后如改某图，仅更新受影响字节/hash及真实相关闭包。以下收口新增共享接口/可执行登记和source准入设计；本条不授新source、不填尚未存在的hash、不执行迁移。
+
+1. **取件与内容。** A私有cache独立目录保存B原manifest/receipt/ZIP和实际解包字节，复用现restricted ZIP parser与currentResourceV3Schema；核53个完整ref及字节、10×4用途映射、13共享旧identity/图像事实保持，抽苏轼reveal和杨/唐/蔡report、姓名一个代表图实际本地decode。复用B相同输入的全53解码/姓名alpha/裁切组合证据，不重做整套B视觉。新完整content仅将已冻结十人catalog/copy与53声明接入现v3合同，24题、五维、算法/匹配政策不改，既有4344组纯输入结果按实际未变范围复用。源码不得取B review.sourceAdmission=pending当作批准。
+2. **有限终态UI与字体语料。** 仅新增客户端reader model可选`reexchangeRequired`表现标志（不成为server授权），v1 host/v2 controller/共享status/千载experience从已核实的policy终态派生；未知pending保留，只能核实原请求，不能自动清除/重发或生成新completionKey。用户明确采纳原结果后按原exact pending身份处理；若原attempt已过代，不据applied-save重新启用旧题目。终态用固定文案：`题目版本已更新。请使用原兑换码重新进入；本页原操作记录仍会保留。`、`这个兑换资格已完成答题。请使用原兑换码重新进入，查看已保存的报告。`，按钮`使用原兑换码重新进入`，只链接既有`/access`，不携带Key、不自动exchange/发grant。首页/封面CTA与原兑换modal不变。上述固定语料与现全部UI/十人固定正文/题干/PNG文字、U+0020一并收入Serif/Literary/Brush各自真实使用字符集；新profile预检所有glyph/OFL/tool pins后一次subset，不覆盖旧font/descriptor。
+3. **新的精确登记。** Qianzai使用已定consumer1.5.0/preview1.3.0及角色presentation.v2/copy.v3、完整3.0.0 refs，不复用1.4/旧五人selector。新runtime-inputs/字体数据/角色资料接在版本分支；baseline新增独立文件。生成新`d3-runtime-bindings-known-ten.json`，现`d3-runtime-bindings.json`保持原字节并作为历史metadata进入lookup；current registration指向新精确closure，旧tuple不获可执行fallback。engine/structured条目沿既有Schema保留语义id/version而以新entrySha形成新完整identity，原完整tuple作为历史保留；算法版本不因validator/shared合同扩展而伪变更。实际改到的v1 access gateway另新增consumer-folio1.0.3 descriptor/编译identity，1.0.2旧JSON仅保留metadata，legacy engine/folio preview未变不重封存。所有新增policy-contracts/ten-role-identity及实际transitive files/固定新fonts都须收齐；不能只修private-test首错误，不能覆盖旧JSON的hash。
+4. **新实例与source。** 最终build/demo拟在新的受管worktree `codex/qztx-known-ten-final`执行，避免在A旧63234等运行目录重建；不借28267合成图谱、1ec2旧准备身份、作者或UNKNOWN。正常init选择确认空闲的专用test PG/origin（拟55537/63237，以实际管理器为准），取真实instanceId/root/marker后才生成新privateTestUse/有限identity。新authorizationId限定本次已授权工程内测，所有资源商业/再分发false、private-test-only；新source只认此准确身份+三hash+完整资源表和新baseline完整tuple，不扩大到请求/环境动态注册。
+5. **准确DDL闸门。** 目录已到0032，当前下一空闲为0033，主控串行最终核号。完整content/manifest/assetSet/包及baseline/renderer字节稳定后，追加0033有限OR登记，保持旧source clauses、函数签名/owner/search_path/ACL和旧迁移字节；只更新本次有限source/资源/baseline准入函数，不改policy/auth/评分/报告快照格式。前置绑定准确0032 checksum及实际原函数body/结构。准确DDL、完整registration/provenance差异先送主控/Astra窄审，通过后只在新自有实例正常迁移；runtime catalog从该实际最终DB读出后再更新，不猜hash绕校验。
+6. **可观察出口。** 字体真实覆盖、新ref/runtime选择和implementation:check通过后才build；媒体只用新root固定media scripts及原停止/封存协议。新完整QuizPack实际ZIP/文件数/大小与新封存身份核验，按真实服务走导入/审核/封存play/显式启用/资格；一条完整24题、恢复、唯一完成、报告/双PNG/原码回看及本次实际受影响异常。字体/53资源是新运行输入，需对应真实媒体/浏览器证据；B离线/进程内SQL不冒称此出口。旧报告/旧字体仍从原snapshot路径读；作者审美/实机/商业另作相应验收。本设计复核期间可继续取件、收语料/工具准备，不执行新source准入或覆盖旧运行目录。
+
 ## 2026-11-04 字体新profile准备与B交件读取
 
 A已补Serif v13/1.12.0、editorial v6/1.5.0；后者要求逐font固定characters、--kind和私有--descriptor-out，缺glyph/错OFL/输出cmap缺字均失败，现有新profile font/manifest禁止覆盖。原editorial active descriptor不被v6生成器写回，最终候选与新版本接线另取精确文件。固定工具venv位于A树`.cache/qztx-font-tools`，无全局设置改动；静态与四输出保护负例通过，未读取真实TTF或subset。实际字库仍待最终UI语料/源文件/最终用途冻结，不把这些准备检查写成覆盖或字体通过。

@@ -1,5 +1,11 @@
 # 阶段进度
 
+## 2026-11-04 B素材已冻结：接收与最终1.5设计待定向复核
+
+主控已明确B的53资源冻结可交接，准确素材ZIP为30,087,195B/SHA82d84066df013eb29303ee631dfea50feb7801552e13b7e944566db56052dab2；payload30,079,293B，含预留31,406,397B。早一条delivery-v1待裁切状态已被此冻结交接更新，仍不是QuizPack。A准备独立取件/完整ref映射及5个必要代表decode，复用B同输入全资源/裁切证据，不改B所有权。
+
+MANAGED最新设计明确终态UI可选表现标志及固定文案、旧pending/原码边界、新字体一次闭包、新1.5/1.3与历史descriptor并存、独立新runtime worktree/实际managed身份、下一空闲0033有限准入及精确DDL先审后执行。当前仅设计和取件工具准备；尚未生成最终source三hash、运行新字体subset、改编译registration或迁移。高风险共享/source部分待主控/Astra定向复核，常规取件可继续，不另找作者审批技术步骤。
+
 ## 2026-11-04 最终字体技术准备：新增profile与输出保护，尚未subset
 
 B的delivery-v1仍在最终裁切自检，A仅只读核其schema/40用途+13共享结构，未选作冻结输入、复制资源、计算最终source三hash或修改B文件。新增Serif v13/1.12.0及editorial v6/1.5.0入口；新profile拒绝已有font/manifest输出，保留旧profile和旧字体字节。editorial缺源glyph改为失败关闭，输出cmap再次验证，OFL按已有Brush/Literary实际license hash固定；v6要求逐font --kind与私有.cache --descriptor-out，不能写回旧editorial descriptor。新profile要求U+0020。Serif新manifest追加十人姓名/历史别名覆盖事实，旧五人字段不冒充十人覆盖。
