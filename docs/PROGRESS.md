@@ -1,5 +1,15 @@
 # 阶段进度
 
+## 2026-11-04 0033实际应用与定向SQL/ACL证明通过
+
+主控另取Astra对d8caf4c..a6b7d6f源码/字体/登记明确通过，无实质阻断；与准确DDL窄审分层。0033同字节SHA b8fd…1290已提交0bf173b，最终root正常ff后按原b3/test/55537/63237启动，正常managed migrate实际仅应用0033。没有改旧manifest/marker、没有新init或其他DB。迁移前owner捕获原32checksum/catalog ad236…fa8d7、全函数元事实/ACL与业务空库，文件`source-0033-before.receipt.json`。
+
+迁移后`qianzai-known-source-sql-check.ts`实际通过6组（不是六次矩阵）：33迁移checksum和空库；仅6个已审函数body变更、全部qf函数元事实/ACL/owner/签名保持；准确content JSON Schema、b3 marker/database及三hash接受；source/assetSet/manifest/1ec2身份/授权/异商品拒绝；准确baseline接受且baseline entry/approval/target篡改拒绝；代表性新声明接受且声明全文/ref/license篡改拒绝。声明仅在owner事务写回滚metadata夹具，显式确认rollback后imports/product_assets/asset_blobs/keys/sessions/reports/heads/activations全部0，绝不冒充native decode/资源存储准入。原脚本首轮类型将core字段层级写错已修；迁移后首轮因函数参数qf.draft_review中的点被误切为函数名而在metadata比较阶段中止，原after.log/failure保留；仅修探针解析并续迁移后检查，未重跑迁移/前态/旧B。成功after-v2.log与after.receipt保留。
+
+实际catalog `57137878c47b73d1914ace7f9198812d932727ef40d05b95d8514712762c9143`/27表，consumer-schema-facts据此收口；draft facts不含本次六函数且表/约束未变，原值复用。该文件不在已封存renderer/engine闭包中，不重收同输入descriptor。新探针类型/定向ESLint及catalog类型检查通过；原实现登记检查通过证据继续有效。未重复A10+5、B恢复服务或旧媒体矩阵。
+
+owner其他连接0及close确认，b3正常stop；独立`source-0033-stop.receipt.json`确认55537/63237无监听、PID消失、管理文件/PGdata保留。resourceIo acquired=false/stopProof=null，应用未启动、整包未导入，native/build/UI/PNG仍待后续。全部intent/SQL前后/失败与关闭证据在最终root`.cache/known-ten/source-0033-*`。下一步新root快进实际catalog提交后只做一次生产build，再按固定media入口准备本次绝对根/构建封存；不据SQL通过声称消费者或商业通过。
+
 ## 2026-11-04 精确0033 DDL窄审通过与自有b3迁移放行
 
 主控串行确认目录仅至0032且无另一SQL流，保留0033给本source。Astra对准确候选SHA `b8fd2bb808b5784145e03025d11a25f29029f752211a975f64df5e9d9bd91290`窄审通过，无本次准入阻断；主控明确放行同字节正式`0033_private_test_known_ten.sql`，仅原b3/test正常start/migrate和对应正反例、ACL、实际catalog/runtime facts收口，再按原授权内测流程继续。此记录时尚未执行0033。既有TS content Schema同时含1ec2历史准备identity语法，0033没有其database/structure/source/baseline新分支，不能据此称实际source准入。report Schema另静态对比原0029字节相同，SHA a2d3b8ab…edf69（A私有report-schema-unchanged回执）。
