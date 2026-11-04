@@ -1,5 +1,21 @@
 # 阶段进度
 
+## 2026-11-04 揭晓资源队列修复，1.5.2 / generation3 实测人物出现12.03→5.00秒
+
+作者实际反馈末题后人物图等待十余秒。准确修复 `f2c8b317e6b998103af525102b90f48fd10aab34` 已获R窄审通过：仅completed且无pending的report按已选角色及精确slot优先加载reveal/nameArt，同一lease内完整asset事实一致的多slot共享一次字节验证/decode/URL，仍为两个worker。admission、transport权限、完整hash/decode、失权/abort/晚到回收保持；一个VerifiedImage只释放一次，不跨lease复用、不预拉十人、不改评分/保存/完成幂等/服务端执行校验或原2秒动效。
+
+真实基线在原e806/kviyk构建正常新合成Key准备23题，再浏览器点末题一次。首轮14.65秒含入口在途请求，保留为探索记录，不作为最终matched before。修正baseline-v2与fixed-v1均为Chromium156.0.8078.4、390×844、新浏览器上下文/冷HTTP缓存、同李白witness；点击前当前题图/字体就绪且bounded networkidle，19项入口图均已decode，末项decode至click约531/546ms，无入口争用。实际可见要求已验证decode、DOM几何、本人及祖先累计opacity>0.05、原揭晓转场遮罩退出，不只用isVisible。
+
+同条件一次after结果：人物实际可见12032→5003ms，缩短7029ms/约58%；完整揭晓就绪12032→6031ms。before save440–869、complete890–2866、report2870–3281ms；after save423–861、complete875–2821、report2825–3225ms，服务端阶段相近。before report后先11个binding（三幕重复题纸/选项九项及报告纸/边框），hero10583ms才请求、11921ms下载完、decode11922–11946ms；after hero/nameArt是首批两项、3460/3461ms开始，hero4895–4921ms decode、5003ms实际可见。原playing4031→ready6031ms完整2秒保持，0页面异常。complete包含快照组装，内部compose未独立打点，不声称服务端校验提速；单次本机对照不是所有角色/设备性能保证。after仅追加观察已有请求，不重完整24题UI或PNG；就绪图已实际查看。
+
+current consumer1.5.2 entry `16f4971e1c97d9f7c3e57dbe91a9270a26411dfe229c361d08ada0eb626b62e1`。其余四entry/shared component-map/SQL/字体/素材未改。原1.5.1 descriptor与e806精确一致，39件report/export原文件逐项保存为新历史report-only profile，限导入/类型/返回访问入口适配，无quiz/save/complete/current fallback；旧三个历史profile未改。历史binding4 profiles/220 files，SHA `2ad8a3c24e44ddad59f25ac2d22ea674fe2b767e44f0189d1212dcc3ef00a993`。复用owner/历史selector25及current client/runtime登记9项通过，最终类型/格式/diff/implementation检查过；ESLint为0error/1未使用测试参数warning，R认定非阻断，不写成零告警。没有新DB/全套/native矩阵。
+
+主控明确放行同00486停态窗口后，只停止自有HTTP并同卷保留旧.next到`.cache/reveal-latency/build-e806-preserved-v1/next`，PG/storage/旧作者数据未移动。experience根ff至f2c8b31，必要生产build成功：BUILD_ID `ctp2Sgm7LTj10o9mTWz1F`，131traces/27788paths/0private违规。保留原双启动配置，HTTP PID23376/63238、PG55538运行，imports关闭；未重native，不授新媒体导入资格，原8f/87两seal及a958/e806旧build保持。正常HTTP沿同ready source/内部version新建play `caa42e46-d164-4860-ae54-6f560184766e`，先resolve后expectedGeneration2启用为g3，无新包/validation/review/内部version/迁移。after新报告 `39a5f741-f281-4749-b68a-4aa238cab675`。
+
+最终审计只查询已知自有synthetic IDs：原13份合成报告、旧两个play及首个25f…UNKNOWN完整行与本轮前一致，预留保持；新cf1…仍ready revision8/clean/reserved0。没有读取旧作者key/session/答案/report、全表report或全表hash，旧v1不再声称unused。新完整作者码另正常签发至`.cache/known-ten/author-handoff-v2/author-experience.html`（0600，另TXT），新码session/grant/report=0。另`quick-reveal.html`明确已兑换/23题合成答案/只验揭晓速度/非个人测评，正常再兑换证实同attempt恢复q24，尚无report；不称unused。旧v1交接和原结果保持。其他连接0、owner关闭。审计工具误把versioned answers对象当裸数组的失败原件保留，修正读取路径后限定审计通过，无业务写入。
+
+原始before/after/截图/审计在experience根`.cache/reveal-latency/{baseline-v2,fixed-v1,final-audit-v2.receipt.json}`；本轮未重native/迁移/全24UI/PNG。最终文档HEAD与PR54普通同步，自动CI以准确HEAD回读，不手动重触或先称全绿。修复版已可体验，作者实际体验/商业批准与工程证据区分，未main合并/生产迁移/对外部署/Release。
+
 ## 2026-11-04 consumer 1.5.1 正常启用至 generation2，旧报告与作者未使用码保持
 
 本批仅修报告固定顶栏的稳定态透字：current paper-mode 背景改为不透明 `#fbf3e4`，保持82px高度和现有动效。准确源码 `e80600a3a6f206f176379323eeeeffdf32ce9fde` 已获R通过；consumer1.5.1 entry `cfb08cd32932b5e6331fcc0eb9c7fa0d1a6e6f106784532410df070f24fd249b` 与preview1.3分别登记，原shared component-map和另外四entry不变。原consumer1.5 descriptor与39件原实现冻结为精确report-only历史阅读器，旧renderer642d2e7f…733b/source6c701d…2187完整元组绑定，不开放答题/保存/完成或current fallback。三个历史profile闭包179文件/SHA `164cc19a52ae9b776e432d404b78f930d90d47979f43e9b479cbbc5a114b475f`，原140 closure逐件保持；原1.3/1.4历史文件未变。
