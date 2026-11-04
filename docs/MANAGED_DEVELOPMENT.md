@@ -2,6 +2,12 @@
 
 开发、验证、独审和收口统一遵循 [根 AGENTS.md](../AGENTS.md)。本文件的带日期条目、测试数量、全量运行和逐图复核均保留为原批次记录，不要求新任务重新执行。当前任务以用户最新授权及最新实际检查点为准；文档中的旧“尚未合并”“待实现”和阶段启动指令不覆盖后续事实。
 
+## 2026-11-04 字体新profile准备与B交件读取
+
+A已补Serif v13/1.12.0、editorial v6/1.5.0；后者要求逐font固定characters、--kind和私有--descriptor-out，缺glyph/错OFL/输出cmap缺字均失败，现有新profile font/manifest禁止覆盖。原editorial active descriptor不被v6生成器写回，最终候选与新版本接线另取精确文件。固定工具venv位于A树`.cache/qztx-font-tools`，无全局设置改动；静态与四输出保护负例通过，未读取真实TTF或subset。实际字库仍待最终UI语料/源文件/最终用途冻结，不把这些准备检查写成覆盖或字体通过。
+
+已找到B的共享私有交接目录：`/Users/aipuli/.codex/worktrees/quizforge-qztx-known-ten-content/quiz-forge/.cache/known-ten-art/delivery-v1/`。仅只读确认manifest为`qianzai.known-ten-art-delivery.v1`、resources40/shared13/characterSlots10及明确非source/DB/runtime准入范围。主控已提示B还在裁切自检；A等待其最终准确字节冻结再绑定，不改B所有权、不据createdAt推定final、不把30,089,041B资源和预留预算冒称最终ZIP大小。字体固定输入与登记接点沿前一条，技术步骤无需再次找作者审批。
+
 ## 2026-11-04 B定向恢复补证及最终登记/字体输入交接
 
 HTTP UNKNOWN P2已由`c92f7ea`修复且Astra窄复核关闭；新报告JSON单行修复`b241006`解决真实Drizzle owner端口与裸SQL serializer差异，待R只审该差异及新回执。三故障场景（未提交completion/ACK返回丢失、精确backend断连后迟到callback、启用先于最终事务）分别定向通过；v2 matching-context保存/受控完成/原回执恢复3项通过。详细失败保留、SHA、精确回执及SQL/资源IO证据分层见PROGRESS最新条目。28267正常stop，32迁移/目录保持，其他连接0；不重跑已过A10+5或六不变量。

@@ -1,5 +1,11 @@
 # 阶段进度
 
+## 2026-11-04 最终字体技术准备：新增profile与输出保护，尚未subset
+
+B的delivery-v1仍在最终裁切自检，A仅只读核其schema/40用途+13共享结构，未选作冻结输入、复制资源、计算最终source三hash或修改B文件。新增Serif v13/1.12.0及editorial v6/1.5.0入口；新profile拒绝已有font/manifest输出，保留旧profile和旧字体字节。editorial缺源glyph改为失败关闭，输出cmap再次验证，OFL按已有Brush/Literary实际license hash固定；v6要求逐font --kind与私有.cache --descriptor-out，不能写回旧editorial descriptor。新profile要求U+0020。Serif新manifest追加十人姓名/历史别名覆盖事实，旧五人字段不冒充十人覆盖。
+
+本树`.cache/qztx-font-tools`以既有requirements固定fonttools4.61.1/brotli1.2.0，缓存wheel安装；不改全局Python/Node设置。py_compile及CLI profile帮助通过；三个CLI失败分支（已存在新输出、缺私有descriptor出口、出口越界）和追加单独--kind缺失分支通过，无源TTF读取/无subset/无新字体，旧editorial descriptor hash保持。回执在本树`.cache/known-ten/font-profile-guards-6cdc1983-cdde-4c34-82fe-c0881ae609cb/{result,kind-result}.json`；追踪的guard脚本可复现四分支。真实glyph/TTF/OFL前置及输出字体覆盖尚未运行，等最终字符输入与固定源齐备后统一预检，再各font一次生成。未重新跑数据库、build、浏览器或已过故障用例；字体/最终renderer/source登记仍未交付。
+
 ## 2026-11-04 批次B定向补证：HTTP UNKNOWN修复、Drizzle报告参数修复、三恢复故障与v2路径
 
 主控固定`1e6733a`交Astra后，仅发现恢复HTTP将UNKNOWN降为UNAVAILABLE的源码P2。先提交反例`5832f7f`并保留`p2-unknown-before-fix.log`，再以`c92f7eac5688dd489050b1993aacba37d75fd2dc`仅令resolve-save/resolve-complete保留未知结果及关闭不明，普通GET保持原行为；10项HTTP测试通过，主控转交Astra窄复核已通过，不重复该10项。新真实PG故障测试首先独立提交`cd936e1`；不重跑A10+5、已过5服务/6不变量/2HTTP。
