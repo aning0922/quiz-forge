@@ -1,5 +1,11 @@
 # 阶段进度
 
+## 2026-11-04 正式0031授权验证：两拒绝通过，admin路径命名缺陷追加修复
+
+主控转交准确062f245授权窄审通过后，在自有验证root28267正常ff已审提交/start，核c78cad36准确hash并由正常管理器应用0031；旧0030/31字节保持。新定向授权harness真实app验证operator activate准确CONSUMER_CAPABILITY_DENIED、account_actor资格不足准确CONSUMER_OPERATOR_REQUIRED且ledger/head/audit逐值不变，前两项通过。admin正例暴露PL/pgSQL局部product与qf.product整行引用冲突，原失败/intent保存在该root `.cache/known-ten/controlled-auth.*`，未冒称四项通过；连接关闭后PG已正常stop。
+
+最小追加0032_consumer_activation_product_selector.sql仅将该局部变量改selected_product，不改权限/锁/参数/业务合同；前置绑定已执行0031 checksum及原函数body SHA，保留旧回执不重写历史。新0032 SHA1266d0362702472c98326deb113d980289deb1d37d7646550abd533bd6d78315，source准入顺延之后实际空闲号待主控核。harness新增明确的续验入口复用原账号与两通过证据，另存resume intent/result，不重复插入或覆盖原失败。相关新harness类型/ESLint/格式通过；修复提交后按既有隔离实现授权追加修复并续验，不重跑A10+5。
+
 ## 2026-11-04 十人用途制作基线与最终source依赖交接
 
 作者已认可六重构稿继续，连保留四位作为当前十人用途制作基线。按主控授权准备B→A交接：复用40完整用途ref与现`currentResourceV3Schema`声明，要求最终真实字节/尺寸/hash、同角色父子来源链、内测许可及用途事实；13共享/40用途预算保持，完整报告PNG走共用document程序导出。新李白不套旧baked批准，旧资源历史读取保持。
