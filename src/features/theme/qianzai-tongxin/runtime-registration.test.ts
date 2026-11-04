@@ -77,7 +77,15 @@ import {
 import { resolveConsumerExperienceRuntimeV2 } from "@/features/product/internal-play/implementation-client-v2";
 import { QianzaiTongxinRuntime } from "./runtime";
 import { structuredReaderFixtureV2 } from "../consumer-v2/fixtures.test-support";
-import { QIANZAI_PRESENTATION_V11 } from "@/features/report/qianzai-tongxin/role-profiles-v11";
+import { qianzaiConsumerCopyFixture } from "@/features/report/qianzai-tongxin/consumer-copy.test-support";
+import { QIANZAI_KNOWN_ROLE_DATA } from "@/features/report/qianzai-tongxin/known-role-data";
+import {
+  QIANZAI_KNOWN_PRESENTATION_SOURCE_SHA256,
+  QIANZAI_KNOWN_SHARED_TEMPLATE_REF,
+} from "@/features/report/qianzai-tongxin/known-presentation-source";
+import { deriveQianzaiResultPresentation } from "@/features/report/qianzai-tongxin/result-presentation";
+import { qianzaiSnapshotDocument } from "@/features/report/qianzai-tongxin/presentation";
+import knownRegistration from "@/features/quizpack/content/private-test-registration-known-ten-final.json";
 import { selectParentConsumerRendererV2 } from "@/features/product/internal-play/parent-renderer-v2";
 import { persistedReportFixtureV2 } from "@/features/report/persisted/contracts-v2.test-support";
 import historical from "@/features/product/internal-play/implementation-data/consumer-structured-composed-v1.json";
@@ -115,7 +123,8 @@ it("resolves only the exact new renderer, mapping and fixed-font identity", () =
     ...props,
     presentationBinding: {
       renderer: facts.renderer,
-      profileVersion: QIANZAI_PRESENTATION_V11,
+      profileVersion: "qianzai-role-presentation.v2",
+      canonicalContentSha256: QIANZAI_KNOWN_PRESENTATION_SOURCE_SHA256,
     },
   });
   expect(
@@ -133,6 +142,73 @@ it("resolves only the exact new renderer, mapping and fixed-font identity", () =
   const changed = structuredClone(facts);
   changed.mapping.states.cover.runtime.id = "consumer-other-cover";
   expect(resolveConsumerExperienceRuntimeV2(changed)).toBeNull();
+});
+it("binds consumer1.5 to the exact known source and derives v2/copy.v3 without accepting mixed facts", async () => {
+  const entry = registered.qianzaiConsumer!,
+    identity = consumerImplementationIdentityV2(entry),
+    runtime = resolveConsumerExperienceRuntimeV2({
+      renderer: identity,
+      mapping: entry.descriptor.mapping,
+      font: fontIdentity(),
+    })!;
+  const f = await qianzaiConsumerCopyFixture("li-bai"),
+    role = QIANZAI_KNOWN_ROLE_DATA.find((r) => r.profile.ref.id === "li-bai")!;
+  // Existing invented answers/body only. This shapes a display projection, not
+  // a persisted report, source admission or resource authority.
+  f.view.renderer = identity;
+  f.body.matching.selected.ref = { ...role.profile.ref };
+  f.view.display.selectedResultRef = { ...role.profile.ref };
+  f.view.display.canonicalContentSha256 =
+    f.body.provenance.canonicalContentSha256 =
+      knownRegistration.canonicalContentSha256;
+  f.view.display.contentVersion = "3.0.0";
+  f.view.display.reportVersion = f.body.provenance.reportVersion = "2.0.0";
+  f.view.display.reportTemplateRef = { ...QIANZAI_KNOWN_SHARED_TEMPLATE_REF };
+  f.body.provenance.templateRef = { ...QIANZAI_KNOWN_SHARED_TEMPLATE_REF };
+  const render = runtime.Experience as typeof QianzaiTongxinRuntime;
+  const bound = render({ model: f.model, onEvent() {} });
+  const binding = bound.props.presentationBinding!;
+  expect(identity.version).toBe("1.5.0");
+  expect(binding).toEqual({
+    renderer: identity,
+    profileVersion: "qianzai-role-presentation.v2",
+    canonicalContentSha256: knownRegistration.canonicalContentSha256,
+  });
+  expect(binding.canonicalContentSha256).toBe(
+    QIANZAI_KNOWN_PRESENTATION_SOURCE_SHA256,
+  );
+  const before = JSON.stringify(f.body),
+    presentation = deriveQianzaiResultPresentation(f.view, binding);
+  expect(presentation?.role).toEqual(role.profile);
+  expect(presentation?.profileVersion).toBe("qianzai-role-presentation.v2");
+  expect(
+    qianzaiSnapshotDocument(f.body, undefined, presentation!)
+      .consumerCopyVersion,
+  ).toBe("qianzai-consumer-copy.v3");
+  expect(JSON.stringify(f.body)).toBe(before);
+  for (const mixed of [
+    "renderer-sha",
+    "binding-source",
+    "display-source",
+    "body-source",
+    "role-version",
+    "role-product",
+  ] as const) {
+    const view = structuredClone(f.view),
+      changed = structuredClone(binding);
+    if (mixed === "renderer-sha") view.renderer.entrySha256 = "f".repeat(64);
+    if (mixed === "binding-source")
+      changed.canonicalContentSha256 = "f".repeat(64);
+    if (mixed === "display-source")
+      view.display.canonicalContentSha256 = "f".repeat(64);
+    if (mixed === "body-source")
+      view.display.body.provenance.canonicalContentSha256 = "f".repeat(64);
+    if (mixed === "role-version")
+      view.display.selectedResultRef.version = "2.0.0";
+    if (mixed === "role-product")
+      view.display.selectedResultRef.productId = "other-product";
+    expect(deriveQianzaiResultPresentation(view, changed), mixed).toBeNull();
+  }
 });
 it("keeps old descriptor facts readable without claiming their changed closure is executable", () => {
   const old = {
