@@ -2,6 +2,10 @@
 
 ## 2026-11-04 揭晓资源队列修复，1.5.2 / generation3 实测人物出现12.03→5.00秒
 
+作者最新明确反馈“当前体验已经感觉可以了”。据此记录当前1.5.2/g3的作者体验验收通过，范围仅限作者已体验流程，不外推全角色内容、设备矩阵或商业发布批准；demo与作者记录保持。本次只同步文字，不读取作者答案/报告，不改src或运行测试/build/DB/截图。
+
+CI单独记录：主控本轮实时核对准确旧HEAD `b8423397f4ef8786b137d66794bda905b3fdb692`，媒体隔离[41838733237](https://github.com/aning0922/quiz-forge/actions/runs/41838733237)为success；普通检查[41838732893](https://github.com/aning0922/quiz-forge/actions/runs/41838732893)已completed/failure，job拆分原因由主控继续核查。作者体验已通过，CI仍待收口；不记CI全绿或已可合并，不用旧HEAD结果冒充后续文字HEAD的CI。PR54保持Draft，未获main合并或生产授权。
+
 作者实际反馈末题后人物图等待十余秒。准确修复 `f2c8b317e6b998103af525102b90f48fd10aab34` 已获R窄审通过：仅completed且无pending的report按已选角色及精确slot优先加载reveal/nameArt，同一lease内完整asset事实一致的多slot共享一次字节验证/decode/URL，仍为两个worker。admission、transport权限、完整hash/decode、失权/abort/晚到回收保持；一个VerifiedImage只释放一次，不跨lease复用、不预拉十人、不改评分/保存/完成幂等/服务端执行校验或原2秒动效。
 
 真实基线在原e806/kviyk构建正常新合成Key准备23题，再浏览器点末题一次。首轮14.65秒含入口在途请求，保留为探索记录，不作为最终matched before。修正baseline-v2与fixed-v1均为Chromium156.0.8078.4、390×844、新浏览器上下文/冷HTTP缓存、同李白witness；点击前当前题图/字体就绪且bounded networkidle，19项入口图均已decode，末项decode至click约531/546ms，无入口争用。实际可见要求已验证decode、DOM几何、本人及祖先累计opacity>0.05、原揭晓转场遮罩退出，不只用isVisible。
