@@ -1,5 +1,13 @@
 # 阶段进度
 
+## 2026-11-04 历史夹具只读阻点交审及case61维护设计待审
+
+主控取舍先推进十人新源；本次只读历史可行性结论已完整收口：两成功renderer为1.3/entry9732bdfd…aadbe与1.4/entryb88be4dd…b4809，均保留原source8cbcf248…f7c31。原authored content的privateTestUse固定79331f888c569d9fbf7a2a08e5f33f68/authorization qztx-final-private-20261103；准确registration为private-test-registration-final-e2e.json，原三hash分别8cb…f7c31/062b03e4…a394d/9f26a514…8e2823。现b3只准入新6f…0ccf1，未有旧source分支。`private-test-scope.ts:18,57`按source registration匹配实际database/marker，`draft-source-evidence.ts:148`调用该检查，构造旧source在b3受阻；`internal-play/service.ts:216`又要求当前可执行consumer identity，旧1.3/1.4仅metadata/历史只读适配，不能新建play。因此B真实PG授权、原码返回和真实grant撤销仍NOT_RUN，作为合并/生产前未决，不改marker、不扩source、不造historical backdoor。
+
+只读素材准备范围：已授权的原候选`quizforge-qztx-final-integration/quiz-forge/.cache/final-integration/candidate-e2e/content.json`下33个声明资源的对应普通文件全部存在（仅stat，不是本轮hash/decode复验）；新包只与13个共享资源完整ref/SHA元数据相同，旧20角色资源未在新包。v13/v14 runtime各39绑定，各自Serif/Literary/Brush及coverage/OFL文件均存在。`historical-client-v2.test.ts:21`明确占位receipt/body hashes仅selector props；已通过14项合成选择/外层证据复用，不晋升持久化/grant证明。合法已有报告read路径`consumer-flow/service.ts:538,569`仍核当前授权/原封存报告，resource IO使用当前config实例namespace的blobPath（`fixed-execution.ts:216`、`resource-read/storage.ts:72`）；不能让b3直接读取另一实例私有namespace。两旧适配器可后续做明确合成transport的真实浏览器/旧图字体/DOM/双PNG/模拟失权验证，需单独准备纯合成有效模型与私有资源transport；当前没有该READY资格，不读取作者答案或原授权链接。
+
+case61维护的精确设计已写入MANAGED_DEVELOPMENT最新节供主控/R审。现有生产control只有原owner闭包finish，无磁盘恢复接口；方案不重建闭包、不删原guard，仅拟通过一次同卷目录交换将原目录整体保存在本次quarantine，固定入口同时保留新guard-only blocker而继续BUSY。固定root/run/profile/PID/start/record SHA/原三inode、最终原生identity复核、主控独占窗口、无业务效果/保留配额变化、原子交换和不确定观察规则已列明。已只读核原control inode221910645/active221912111/guard221912107以及原record SHA，PG/HTTP仍停、main capability不存在；未创建quarantine/blocker/维护脚本，未交换、解锁或provision。主控追加要求的新root正常新test身份方案已与维护方案并列比较于MANAGED_DEVELOPMENT：A不改生产control、保留BUSY，仅一次性私有隔离；B保留原根但新增实际marker/source/有限DDL与闭包成本。建议先审A，不能保障一次性隔离前置才选B；两者均未放行执行，B也只限一次新root，不形成无限重试。
+
 ## 2026-11-04 R通过后的唯一一次父崩溃隔离诊断通过
 
 Astra对准确37db541a279dfa187ec6fcc416511c47abd6fe86诊断diff窄审通过，主控只放行final正常ff→固定diagnostic setup→一次单项诊断。先复核原main失败文件/active/guard inode与hash、固定native helper/Node pin及原harness51593/host52964/worker53047均absent，确认PG/HTTP停止和新诊断目录不存在；私有`parent-crash-single-window.intent.json`记录范围，不包含整轮matrix/provision放行。final树由568e正常ff到37db，未重建Next或动原control。

@@ -2,6 +2,47 @@
 
 开发、验证、独审和收口统一遵循 [根 AGENTS.md](../AGENTS.md)。本文件的带日期条目、测试数量、全量运行和逐图复核均保留为原批次记录，不要求新任务重新执行。当前任务以用户最新授权及最新实际检查点为准；文档中的旧“尚未合并”“待实现”和阶段启动指令不覆盖后续事实。
 
+## 2026-11-04 本次case61故障control维护设计（待主控/R审批，未执行）
+
+**目的与范围。** 只把原已后来确认停止的离线fault夹具移入固定私有quarantine，保存原失败及全部证据，并让固定main入口继续BUSY。不是原封存通过、stopProof补录、通用owner恢复、解锁或再次provision。原第三轮根因仍UNKNOWN，新隔离case一次通过仅证明新case。实施前另核准确私有一次性脚本diff；本条只有设计，不含已执行操作。
+
+**现有协议取舍。** `src/features/quizpack/server/media/internal/macos/control.ts:166`明确所有遗留record/guard阻止启动；finish是原acquire返回的闭包，核原record及guard inode后unlink/rmdir，没有外部磁盘恢复入口。原闭包已随进程结束，不能重建。现有`provision-cli.ts`的offline-exclusive是主控串行调用前置，不是所有媒体进程共同持有的OS锁；新增一把脚本锁也不能假称保护了生产入口。保持原目录原位最小且已完成，但不能推进后续维护。简单rename后补建control会产生路径缺失窗口，因此本候选采用带阻挡目录的原子交换，隔离后仍不允许媒体启动。
+
+**只限以下身份。** 根固定为`/Users/aipuli/.codex/worktrees/quizforge-qztx-known-ten-final/quiz-forge`，b3/test/55537/63237；源为根下`.cache/quizpack-media-runtime/darwin-arm64/control`。文件系统dev16777229，control inode221910645/0700/uid501，内容严格只有active.json与空guard；active inode221912111/0600/nlink1/SHA `35d3dc06ded6a6ed99d5ddc74174bc4160f8bf199d4b954e955c364227ad2bce`；guard inode221912107/0700/uid501/空目录。record必须逐字段同原：schema mac-media-active.v1、runId8af99f02-31a4-44ec-8622-9189151585e7、fault profile `20d58ffe55ae542f1de81e8ff04ac87c3d8d62cd171f09caa1314cc14b2c0ab4`、phase spawned、owner52964、worker53047、workerStart sec1793781153/usec563394、createdAt2026-11-04T08:32:33.540Z。该fault case来自第三轮5f46342d-a592-48ed-b97e-7c621076d0c9，harness51593由同轮unknown-control owner提供；不是业务decode。本轮原summary/identity/unknown-control及inode索引路径见PROGRESS，执行前全部重新核对，不接受从当前磁盘新算摘要替换已独立记录的期待值。
+
+**最终前置。** 主控明确保留唯一维护窗口，所有其他任务不得使用此根的setup/matrix/diagnostic/provision/HTTP/媒体调用；A不启动后台任务。PG/HTTP端口无监听、postmaster.pid不存在；对本次原harness51593/owner52964/worker53047及诊断owner77933/worker77938使用原已钉SHA的native helper及Node再次查询，必须全部present=false，PID复用/无法读身份即停止。补核本UID本根的进程cwd、命令/打开文件只剩维护观察者；这只是当时观察，独占仍依赖主控窗口约束，不能把进程列表当锁。原helper/Node SHA分别取固定原identity：4f992dde8f5bfa91ab0aeb29e8f5575557b35b9cbcb7d92c9a9c4150dd7ef35e / cc07abaa8f24243a30a37a19ce26556fd044ba4346c6bcdd8f901ec12b7484a2。任何不一致拒绝，不kill不重试。
+
+**业务与留存边界。** 原b3最后已确认33迁移后imports/product_assets/asset_blobs/keys/sessions/reports/heads/activations全0，之后仅离线媒体夹具、PG一直停止。实施前核原33后验/stop及操作日志连续性；不为此重启库，不将未重新查询的历史计数称实时DB查询。额外只读检查本root固定storage/receive/validation残留、capability.json及candidate-record.json仍无新提交，若发现无法归属的reservation、上传、validation、resource IO或活进程就拒绝隔离，转原操作调查。不得删除或回写DB、upload、validation、receipt、配额账本和任何业务锁。原两轮成功及第三轮失败、诊断记录全部保留，不移动它们。
+
+**拟实施的唯一变更。** 只读前置全部成立后，持久化0600维护intent（精确根/源/目标/原inode/hash/预期动作/不授资格），fsync文件与父目录。目标固定为根下`.cache/known-ten/failed-control-8af99f02-31a4-44ec-8622-9189151585e7/control`；整个外层目录必须此前不存在，创建0700外层及0700目标control/空guard，不造active.json。记录新control及新guard的dev/inode/mode/uid并fsync，目标与源必须同dev。用O_NOFOLLOW/O_DIRECTORY打开两个父目录，绑定realpath/dev/inode，最终再次核原内容、双方目录身份及原生identity。一次性私有脚本只接受这些常量，无任意路径/record输入，不加入生产API。
+
+使用本机SDK声明的`renameatx_np(..., RENAME_SWAP)`，通过两个已打开父目录fd交换两个已存在目录；没有先rename后创建路径的空窗，也不调用finish/unlink/rmdir。SDK `sys/stdio.h`已确认声明及flag，卷实际支持与调用结果仍需届时验证；不支持、EXDEV或任何错误均停止，不降级为copy/delete、两段rename或自动重试。单次操作后源固定路径应是新guard-only blocker，按现有acquireControl返回BUSY；quarantine/control应为原control inode221910645，内原active/guard inode与字节不变。原目录rename引起的系统ctime变化允许且记录，不伪造时间；其他模式/owner/文件字节/nlink必须保持。只读核双方映射及原证据后fsync两个父目录，写独立维护receipt，状态名只用LATER_STOPPED_FAULT_FIXTURE_QUARANTINED_MAIN_STILL_BLOCKED。
+
+| 路径                   | 交换前                   | 交换后                         |
+| ---------------------- | ------------------------ | ------------------------------ |
+| 原固定main/control     | 原active+原guard（BUSY） | 新guard-only blocker（BUSY）   |
+| 本次quarantine/control | 新guard-only blocker     | 原control整体/原active/原guard |
+
+**失败与不确定。** 交换不可自动重试（第二次会换回），不按进程退出猜结果。若返回/receipt/fsync不确定，只读检查两个目录的已记录inode映射：原inode仍在源且新inode仍在目标为未交换；完全相反为已交换的可观察状态，但durability/receipt若未确认仍保持UNKNOWN；任意其他映射/字段变化均UNKNOWN并保全两处，不再移动或清理。保留原guard与新blocker，不借成功诊断“修正”原失败。任何无主控独占保证或无法证明安全隔离的情况，都停留在原control不变状态。
+
+**后续单独门槛。** 本维护成功也不恢复运行：新blocker继续阻止入口，没有capability/record/原stopProof写入。主控/R另行决定何时处理本次新blocker及是否按变化后的真实source/build/profile运行新的固定封存流程；没有复用/拼接原两轮的资格，也没有整轮重试授权。旧63226 UNKNOWN、作者实例和原构建不在本方案任何路径内。
+
+**主控补充的两路径比较（均未执行）。**
+
+| 比较项              | A：本次故障目录整体隔离并保留main blocker                                                                              | B：原b3根永久原样保留，正常新demo工作树/test身份一次                                                                                                                                                                                                                                             |
+| ------------------- | ---------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 生产control/acquire | 不改；现有BUSY和finish规则保持                                                                                         | 不改；新root自然空control                                                                                                                                                                                                                                                                        |
+| 新机制              | 一份只接受固定root/run/hash/inode的私有一次性维护脚本，使用本机目录交换；不注册通用恢复API                             | 复用现有worktree/管理器init和固定media脚本，不移原control                                                                                                                                                                                                                                        |
+| source/SQL/renderer | 复用b3已通过source/0033/当前闭包；正式media身份仍须考虑37db工具变化                                                    | 新init产生新ID/origin；privateTestUse改变canonical source，即使53资源不变也不能沿用6f source hash。需要新marker有限语法、registration、baseline/approval、source及manifest hash、新有限追加DDL及准确审查；current known-presentation-source/binding也需接准确新source并重收受影响D3/历史适配闭包 |
+| 可复用              | 字体、53资源、评分/4344、SQL不变量、当前实例数据与精确source证据                                                       | 原素材字节、字体、评分/4344及不变服务证据；需核新source实际语料/正文覆盖，不重新生字体或搜索4344凑数量                                                                                                                                                                                           |
+| 原现场              | 原active/guard/control inode及字节整体保存到quarantine，原固定路径改为新blocker；目录名/父目录发生明确维护变更         | 原根/manifest/ID/control/失败完全原位保留                                                                                                                                                                                                                                                        |
+| 关键新风险          | 特权同UID误用、原生目录操作结果不明、独占前置不足；用常量身份、双目录inode观察、不重试交换、持久化intent及持续BUSY约束 | 更多持久化/授权/闭包变更；新hash/migration/native目标完整收口；不能改旧manifest/root/id或借旧capability，不能把新实例通过归为旧实例恢复                                                                                                                                                          |
+| 封存与失败          | 此维护不准许再次provision；需另放行当前真实身份的运行窗口                                                              | 仅一次新root/test目标，不是反复换root直到成功；若同一case失败则保留新现场停止，不再新建第三个root                                                                                                                                                                                                |
+
+**建议。** 优先交R审A，因为它不要求改生产control、不加通用恢复接口、不扩大source/SQL权限；本次明确是零业务效果的自有fault夹具，后验native身份消失已有独立证据。维护仅把已结束的测试残留保存并继续阻挡入口，后续解锁/正式封存仍由主控单独决定。若R认为不存在可审计的一次性原子隔离路径，或无法保障该root独占/身份/同卷目录交换，则保留原样选择B，不扩生产恢复框架。
+
+B若被选择，先正常新worktree/test init，不能预填新ID/三hash或复用旧名称；复用本批原件metadata和53字节后重组实际privateTestUse，正常capability构建/有限SQL准入/当前catalog/实现登记，再新生产build与固定目标封存。新迁移号届时主控串行核定（拟下一个号不等于现在获准）；不得重写0033。无需重新画图、改题或重跑未变服务套件，但路径与身份改变所需native封存不能省略。两路径都不建立原case61在原期限成功或解释原根因；原失败永久独立保留。新诊断仅一次通过，不能保证任一路径的后续matrix必过。
+
 ## 2026-11-04 旧报告只读与外层终态入口：6a9cb4a 的单项P2补充设计（待窄审）
 
 本条只补R指出的历史可展示边界，不重开已通过的六点主体或3833d60服务。现状确认：`consumer-v2/experience.tsx`先取report/entry三字段，再由`internal-play/implementation-client-v2.ts`的current available门控选择组件；旧JSON只保留metadata不会挂载旧报告。当前千载runtime、export-context/export-owner还直接取当前resource/font/component-map，`result-presentation`限定1.4，且1.3与1.4虽同copy.v2字符串，consumer-copy实际字节不同。因此不能仅放开available或给旧entry绑定当前组件。
