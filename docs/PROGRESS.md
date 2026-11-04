@@ -1,5 +1,11 @@
 # 阶段进度
 
+## 2026-11-04 旧报告与外层终态入口：单项P2设计补充待复核
+
+R对6a9cb4a主体通过，主控选择在新构建提供精确历史只读路径。A实查确认旧metadata受available门控会runtime-null，当前runtime/export又读当前字体/资源常量；不能仅放开旧entry。最小补充已写MANAGED最新节：明确1.3 `9732bdfd…4aadbe`（6540d7b）与1.4 `b88be4dd…b4809`（1f2177b）两个成功tuple，冻结各自只读report/presentation/copy/font/resource/双PNG必要闭包，新适配器实际闭包与旧snapshot identity分开证明；旧attempt仍无当前entry/写权。作者原63227/63230构建/记录及UNKNOWN保持，不能替代新构建验证。两个旧tuple均列入本批新构建实际报告/资源/双PNG验证，尚未执行；其他早期及失败tuple无新映射。v2 runtime-null且无entry/report分支明确补原码入口，UNKNOWN保留原pending。此提交仅设计文档，不执行共享代码/source/DDL，交R只窄审该P2。
+
+赵云poster v2新交件已取件到A私有`.cache/known-ten/art-intake-zhao-v2/`：manifest SHA`b4c438519a334419fa71607d892a46b49a074da07212e1d586c7a4979490c923`；ZIP29,997,985B/SHA`e3bfb8831ef1e8e48ae64fea67aef19e18b0bcd741eb56f92d420ba585e63b86`。既有CLI核53资源/10×4用途/13共享旧identity与字节、5代表本地decode通过，payload29,990,083B。回执result.json为`PASS_FROZEN_ART_TRANSFER_MAPPING_ONLY`，非完整QuizPack/native media/source准入；主控已转交V对赵云新取景通过，输入hash未变，可继续最终技术集成。旧ZIP保留，其他52证据复用，未重跑全53图检/SQL/build。
+
 ## 2026-11-04 固定字体源已恢复，缺字/空格失败分支验证，无subset
 
 A在私有`.cache/known-ten/pinned-font-sources/`恢复旧工具所钉的NotoSerifSC/MaShanZheng/LXGWWenKai SC原TTF及OFL，六个实际SHA逐一匹配原固定值；记录`verified-source-receipts.json`。一次查找取得的WenKai TC候选及OFL与旧pin不匹配，原字节/失败receipt保留且未使用；随后从LXGW原SC仓库取得准确旧pin，未修改hash或放宽许可/工具版本。源恢复不是新字体生成。
