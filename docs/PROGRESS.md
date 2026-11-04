@@ -1,5 +1,13 @@
 # 阶段进度
 
+## 2026-11-04 固定字体源已恢复，缺字/空格失败分支验证，无subset
+
+A在私有`.cache/known-ten/pinned-font-sources/`恢复旧工具所钉的NotoSerifSC/MaShanZheng/LXGWWenKai SC原TTF及OFL，六个实际SHA逐一匹配原固定值；记录`verified-source-receipts.json`。一次查找取得的WenKai TC候选及OFL与旧pin不匹配，原字节/失败receipt保留且未使用；随后从LXGW原SC仓库取得准确旧pin，未修改hash或放宽许可/工具版本。源恢复不是新字体生成。
+
+真实固定TTF上仅执行失败分支：Serif/Brush/Literary各以U+10FFFF证明SOURCE_GLYPH_MISSING，Serif/Literary缺U+0020证明FONT_SPACE_REQUIRED，5项通过；每项均无woff2/manifest/candidate descriptor输出。回执`.cache/known-ten/font-glyph-guards-c8254b2c-efe8-4d0f-adbc-fc7cf6dd3655/result.json`，前四输出保护证据复用，不重跑。尚未核最终required字符集全覆盖、未subset、未登记字体或source。
+
+主控随后转交赵云poster仍需一次聚焦取景修正，B将更新准确manifest/ZIP receipt。A尚未执行整包取件，等待该单资源新字节再按新expected archive SHA运行取件工具；不冻结旧全包source三hash，不重做其他52资源的B视觉。共享设计`6a9cb4a`待主控/Astra针对新接口/登记复核，B服务范围`3833d60`已由R关闭；后续代码另属新接线。
+
 ## 2026-11-04 B素材已冻结：接收与最终1.5设计待定向复核
 
 主控已明确B的53资源冻结可交接，准确素材ZIP为30,087,195B/SHA82d84066df013eb29303ee631dfea50feb7801552e13b7e944566db56052dab2；payload30,079,293B，含预留31,406,397B。早一条delivery-v1待裁切状态已被此冻结交接更新，仍不是QuizPack。A准备独立取件/完整ref映射及5个必要代表decode，复用B同输入全资源/裁切证据，不改B所有权。

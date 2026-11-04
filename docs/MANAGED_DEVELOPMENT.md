@@ -2,6 +2,12 @@
 
 开发、验证、独审和收口统一遵循 [根 AGENTS.md](../AGENTS.md)。本文件的带日期条目、测试数量、全量运行和逐图复核均保留为原批次记录，不要求新任务重新执行。当前任务以用户最新授权及最新实际检查点为准；文档中的旧“尚未合并”“待实现”和阶段启动指令不覆盖后续事实。
 
+## 2026-11-04 字体源就绪与单资源修正等待
+
+新接线设计`6a9cb4a`待定向复核，已审B服务`3833d60`保持关闭。固定源及OFL六项实际SHA已恢复并核对；NotoSerifSC取原固定Google Fonts commit，MaShanZheng取Google Fonts原文件，Literary取LXGW WenKai SC原文件。TC查找候选SHA不匹配已保留未使用，不改旧pin。私有源/URL/SHA证明位于A树`.cache/known-ten/pinned-font-sources/verified-source-receipts.json`。
+
+固定源TTF的3种缺glyph及2种缺U+0020反例均失败关闭且零subset输出；这不是最终语料或字体覆盖证明。字体工具profile、私有输出保护和环境已准备好，最终语料/UI文案复核后仍各font一次生成。主控最新聚焦赵云poster取景，A尚未执行素材取件或source hash冻结，待新版manifest/ZIP receipt；其余52素材B证据继续复用。新取件CLI显式要求预期archive SHA，不能因同目录路径相同而默收被替换的ZIP；不修改B所有权。
+
 ## 2026-11-04 最终十人1.5共享接线设计：待主控/Astra定向复核，未执行新准入
 
 B已由主控明确冻结交接：`delivery-v1/manifest.json`、`archive-receipt.json`、`known-ten-resources-only.zip`；准确ZIP30,087,195B/SHA`82d84066df013eb29303ee631dfea50feb7801552e13b7e944566db56052dab2`，53资源payload30,079,293B，预留后31,406,397B。此为素材包，不是QuizPack。A可按准确输入接收；独立视觉后如改某图，仅更新受影响字节/hash及真实相关闭包。以下收口新增共享接口/可执行登记和source准入设计；本条不授新source、不填尚未存在的hash、不执行迁移。
