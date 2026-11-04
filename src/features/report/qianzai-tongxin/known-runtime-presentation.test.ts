@@ -8,6 +8,7 @@ import artRules from "@/features/theme/qianzai-tongxin/known-art-presentation.js
 import { knownQianzaiArtPresentation } from "@/features/theme/qianzai-tongxin/known-art-presentation";
 import { displayAssetV2Schema } from "@/lib/assessment-contract/display-v2";
 import {
+  QIANZAI_EXPERIENCE_PRESENTATION_SOURCE_SHA256,
   QIANZAI_KNOWN_PRESENTATION_SOURCE_SHA256,
   QIANZAI_KNOWN_SHARED_TEMPLATE_REF,
 } from "./known-presentation-source";
@@ -27,7 +28,7 @@ function fixture(id: string) {
   };
   f.view.display.canonicalContentSha256 =
     f.body.provenance.canonicalContentSha256 =
-      QIANZAI_KNOWN_PRESENTATION_SOURCE_SHA256;
+      QIANZAI_EXPERIENCE_PRESENTATION_SOURCE_SHA256;
   f.view.display.contentVersion = "3.0.0";
   f.view.display.reportVersion = f.body.provenance.reportVersion = "2.0.0";
   f.view.display.reportTemplateRef = { ...QIANZAI_KNOWN_SHARED_TEMPLATE_REF };
@@ -69,6 +70,12 @@ it("requires the new exact renderer/source binding and current full role ref", (
   const mutations = [
     (f: ReturnType<typeof fixture>) => {
       f.binding.canonicalContentSha256 = "f".repeat(64);
+    },
+    (f: ReturnType<typeof fixture>) => {
+      f.binding.canonicalContentSha256 =
+        f.view.display.canonicalContentSha256 =
+        f.body.provenance.canonicalContentSha256 =
+          QIANZAI_KNOWN_PRESENTATION_SOURCE_SHA256;
     },
     (f: ReturnType<typeof fixture>) => {
       f.view.renderer = { ...f.view.renderer, entrySha256: "f".repeat(64) };

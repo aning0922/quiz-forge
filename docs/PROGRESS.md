@@ -1,5 +1,15 @@
 # 阶段进度
 
+## 2026-11-04 00486 current源与准确实现闭包收口（未构建/未执行0034）
+
+当前presentation matcher与client注入仅认新source `6c701d4445f98b2d6e042dde1edc203e118c9a79728697ef551fa89fe2bd2187`，从已组装experience常量显式引入；原b3 `6f0030…ccf1`常量和d3-runtime-bindings-known-ten.json保留历史事实。新d3-runtime-bindings-experience.json成为唯一current登记；原D3/b3均保留目录元数据并按entry去重，可查询不授执行fallback。B测试合入后的current fixture只切换新registration/baseline/source，历史与负例保留；另明确拒绝同一套view/body/binding全被换成b3 source，以及b3准确entry仅可查询不可执行。
+
+最终收集：engine `c35708fd3db341a46be678e6d6325d0dabba3bb9d772b8f0b52fe55e04821e74`/39files，structuredPreview `7df1c70e1b5632531d3176eb24def9dcedc7af69e3821716c52e34540befa405`/48，structuredConsumer `1c945bc93fd3969f1ee8cbe24de3771ebeba5e7cd75ccd830d60a5aa8e0401af`/76，qianzaiPreview `b078b90d86554f4a2921850bfe2977cb68444cbff5dcb4bb7cd0b394c0653c6d`/65，qianzaiConsumer `642d2e7f64785d571f99e99b6e5509197761844659d2fc5243c300224401733b`/140。语义版本、原53资源与三字体输入保持；没有重生成图片/字体、评分搜索或原folio1.0.3 gateway。历史只读binding收至128files/SHA `37dbc72fa83ac710733e9a197762e101c53617992943e98628eba743804adad4`，仅两共享文件变化及两新有限身份/注册输入；79个冻结历史实现/原descriptor/字体文件逐项同字节确认，未重解释旧entry或授历史source/grant资格。
+
+`pnpm implementation:check`准确通过：v2共19descriptor/5available/149source；folio1.0.3原gateway继续通过，历史适配器准确闭包通过。五个受影响文件50测试通过（B三文件加known-runtime-presentation、internal-versions/implementation-catalog-v2）；TypeScript与8文件定向ESLint通过，diff检查通过。新生成JSON的局部Prettier提示已作格式修正，不改变descriptor对象或entry hash。第一次collector因调用方预建输出目录被exclusive mkdir拒绝，未写descriptor；空v1目录和拒绝记录保留，正常新v2私有输出成功。私有日志与experience-runtime-provenance回执位于A根`.cache/known-ten/`；不重复其余2443单元、A10+5、B服务PG、旧故障或媒体矩阵。
+
+source0034-review-v2.sql仍同SHA2103ca…4955、只在私有目录待准确DDL审查和主控槽位确认；新experience根仍8d11d28且停库，尚未ff本current提交、执行0034、生产构建、取得native能力/封存、导入、启动HTTP或验证消费者/PNG。本源码验证不冒称作者视觉/内容/商业通过，原b3 BUSY现场及所有其他作者环境保持。
+
 ## 2026-11-04 00486完整私有包、六helper事实核对与0034准确候选待审
 
 新experience根保持同一00486/test、55538/63238，没有第三root或重新init。有限registration与baseline已提交125c74e；实际私有包首次被app的internal-version-schema-facts拒绝为STUDIO_UNAVAILABLE，未签能力/写ZIP。8d11d28仅将internal_review_valid的旧0029 body事实同步为已审且四项实际PG回执中的0033值0a76ab61…f824，原校验全保留。续同一正常private builder成功，ZIP 30,518,008B/SHA `f44ca66e1611f3fe8041a878ecbaf517558d2a469501fcf974cf7559c2191335`，manifest `59c69917613593eac1c71d3b4285034b7ac2dbf71bbee0b7f3a02cca36276852`，candidateValid=true，DBclose确认、imported=false。原拒绝与成功log、private-pack-receipt均在新根`.cache/known-ten/`；owner后核33账本/catalog571…c9143未变、8业务/资源计数0、其他连接0，正常stop独立回执确认两端口/PID消失、管理文件与PGdata保留。

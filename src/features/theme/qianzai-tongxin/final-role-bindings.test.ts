@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, it } from "vitest";
-import baseline from "@/features/product/internal-versions/baselines/qztx-known-ten-private-20261104.json";
-import registration from "@/features/quizpack/content/private-test-registration-known-ten-final.json";
+import baseline from "@/features/product/internal-versions/baselines/qztx-known-ten-experience-20261104.json";
+import registration from "@/features/quizpack/content/private-test-registration-known-ten-experience.json";
 import legacyBaseline from "@/features/product/internal-versions/baselines/qztx-final-private-20261103-demo.json";
 import legacyRegistration from "@/features/quizpack/content/private-test-registration-final-demo.json";
 import { qianzaiConsumerCopyFixture } from "@/features/report/qianzai-tongxin/consumer-copy.test-support";

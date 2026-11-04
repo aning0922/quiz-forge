@@ -80,12 +80,12 @@ import { structuredReaderFixtureV2 } from "../consumer-v2/fixtures.test-support"
 import { qianzaiConsumerCopyFixture } from "@/features/report/qianzai-tongxin/consumer-copy.test-support";
 import { QIANZAI_KNOWN_ROLE_DATA } from "@/features/report/qianzai-tongxin/known-role-data";
 import {
-  QIANZAI_KNOWN_PRESENTATION_SOURCE_SHA256,
+  QIANZAI_EXPERIENCE_PRESENTATION_SOURCE_SHA256,
   QIANZAI_KNOWN_SHARED_TEMPLATE_REF,
 } from "@/features/report/qianzai-tongxin/known-presentation-source";
 import { deriveQianzaiResultPresentation } from "@/features/report/qianzai-tongxin/result-presentation";
 import { qianzaiSnapshotDocument } from "@/features/report/qianzai-tongxin/presentation";
-import knownRegistration from "@/features/quizpack/content/private-test-registration-known-ten-final.json";
+import knownRegistration from "@/features/quizpack/content/private-test-registration-known-ten-experience.json";
 import { selectParentConsumerRendererV2 } from "@/features/product/internal-play/parent-renderer-v2";
 import { persistedReportFixtureV2 } from "@/features/report/persisted/contracts-v2.test-support";
 import historical from "@/features/product/internal-play/implementation-data/consumer-structured-composed-v1.json";
@@ -124,7 +124,7 @@ it("resolves only the exact new renderer, mapping and fixed-font identity", () =
     presentationBinding: {
       renderer: facts.renderer,
       profileVersion: "qianzai-role-presentation.v2",
-      canonicalContentSha256: QIANZAI_KNOWN_PRESENTATION_SOURCE_SHA256,
+      canonicalContentSha256: QIANZAI_EXPERIENCE_PRESENTATION_SOURCE_SHA256,
     },
   });
   expect(
@@ -175,7 +175,7 @@ it("binds consumer1.5 to the exact known source and derives v2/copy.v3 without a
     canonicalContentSha256: knownRegistration.canonicalContentSha256,
   });
   expect(binding.canonicalContentSha256).toBe(
-    QIANZAI_KNOWN_PRESENTATION_SOURCE_SHA256,
+    QIANZAI_EXPERIENCE_PRESENTATION_SOURCE_SHA256,
   );
   const before = JSON.stringify(f.body),
     presentation = deriveQianzaiResultPresentation(f.view, binding);

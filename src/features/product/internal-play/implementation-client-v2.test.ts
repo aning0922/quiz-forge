@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import previousKnownTen from "../internal-versions/implementation-data/d3-runtime-bindings-known-ten.json";
+import { findConsumerImplementationDescriptorV2 } from "./implementation-catalog-v2";
 import {
   resolveConsumerExperienceRuntimeV2,
   resolveConsumerRendererClientV2,
@@ -97,4 +99,16 @@ it("does not reinterpret the preserved failed image trial with the corrected ent
         "240d8ba89280eb551eeed58b0e3f89415dde6b29be0a969078b061963a218a25",
     }),
   ).toBeNull();
+});
+
+it("keeps b3 metadata while withdrawing its executable current binding", () => {
+  const { kind, id, version } = previousKnownTen.qianzaiConsumer.descriptor;
+  const identity = {
+    kind,
+    id,
+    version,
+    entrySha256: previousKnownTen.qianzaiConsumer.entrySha256,
+  };
+  expect(findConsumerImplementationDescriptorV2(identity)).not.toBeNull();
+  expect(resolveConsumerRendererClientV2(identity)).toBeNull();
 });

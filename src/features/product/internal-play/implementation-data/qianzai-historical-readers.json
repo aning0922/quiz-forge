@@ -141,8 +141,8 @@
       },
       {
         "path": "src/features/product/internal-versions/identity-contracts.ts",
-        "bytes": 10331,
-        "sha256": "169670b3e2b150e65575aa0570e84e97c3e5cdf19db5f24410633573986d5872"
+        "bytes": 10801,
+        "sha256": "829d51e1a8307baf84c7e24938b1ce55a158b47896d6eb262c1c178417926697"
       },
       {
         "path": "src/features/product/internal-versions/implementation-schema-v2.ts",
@@ -153,6 +153,11 @@
         "path": "src/features/product/internal-versions/implementation-schema.ts",
         "bytes": 4932,
         "sha256": "c1cff8ee9ceba079869bf184652a32985fe96610e5068313e83cb7e999b27f36"
+      },
+      {
+        "path": "src/features/quizpack/content/private-test-known-ten-experience-identity.ts",
+        "bytes": 487,
+        "sha256": "9a25eda2ab88026486a7e4e6f1be6f9f7e7f00206c505ec5d013c497d1fab90f"
       },
       {
         "path": "src/features/quizpack/content/private-test-known-ten-final-identity.ts",
@@ -168,6 +173,11 @@
         "path": "src/features/quizpack/content/private-test-registration-final-e2e.json",
         "bytes": 11356,
         "sha256": "aec413bdc293f43e1065d458d033b8b17963ac6063f74d6dc1d7252a2bacae07"
+      },
+      {
+        "path": "src/features/quizpack/content/private-test-registration-known-ten-experience.json",
+        "bytes": 17934,
+        "sha256": "623193081cd3de9136a2d31ed0cde1360d7e41974dec77c4ccd25e5a5a0bc251"
       },
       {
         "path": "src/features/quizpack/content/private-test-registration-known-ten-final.json",
@@ -191,8 +201,8 @@
       },
       {
         "path": "src/features/quizpack/content/private-test.ts",
-        "bytes": 5853,
-        "sha256": "0bd1aab99cd40fd196420bc4ed2a019f55ee27e9bd81ef0a39f7b6bbcc907cd3"
+        "bytes": 6454,
+        "sha256": "64a7c6f226b3d1a5e32ff70956dc286c926d50840a503a9dc5eeeddbc872f881"
       },
       {
         "path": "src/features/quizpack/content/qianzai-local-art-fixture.json",
@@ -2378,5 +2388,5 @@
       "serverCondition": "react-server"
     }
   },
-  "sha256": "a7e3bf45cdfc7f9c2a9d4f0b358cbcf90c4560538ebe62c3055298c322d9e611"
+  "sha256": "37dbc72fa83ac710733e9a197762e101c53617992943e98628eba743804adad4"
 }
