@@ -22,11 +22,15 @@ export function isQianzaiMusicTestRequest(
   config: { purpose: string; instanceId: string; origin: string },
   ids: { trackId: string; version: string },
 ) {
-  const origin = request.headers.get("origin"),
+  const url = new URL(request.url),
+    canonical = new URL(scope.origin),
+    origin = request.headers.get("origin"),
     referer = request.headers.get("referer"),
     host = request.headers.get("host");
   if (origin !== null && origin !== scope.origin) return false;
-  if (host !== null && host !== new URL(scope.origin).host) return false;
+  // NextRequest normalizes loopback URL hostnames to localhost. The incoming
+  // Host remains authoritative, as in the managed studio source guard.
+  if (host !== canonical.host) return false;
   if (referer !== null) {
     try {
       if (new URL(referer).origin !== scope.origin) return false;
@@ -40,8 +44,13 @@ export function isQianzaiMusicTestRequest(
     config.purpose === "test" &&
     config.instanceId === scope.instanceId &&
     config.origin === scope.origin &&
-    new URL(request.url).origin === scope.origin &&
-    new URL(request.url).search === "" &&
+    url.protocol === canonical.protocol &&
+    url.port === canonical.port &&
+    (url.hostname === canonical.hostname || url.hostname === "localhost") &&
+    !url.username &&
+    !url.password &&
+    url.pathname === QIANZAI_MUSIC.url &&
+    url.search === "" &&
     request.headers.get("sec-fetch-site") === "same-origin" &&
     ids.trackId === QIANZAI_MUSIC.id &&
     ids.version === QIANZAI_MUSIC.version

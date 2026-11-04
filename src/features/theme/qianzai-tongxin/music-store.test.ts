@@ -17,6 +17,7 @@ import {
   readPinnedQianzaiMusicFile,
 } from "./music-store";
 import { QIANZAI_MUSIC } from "./music-manifest";
+import { NextRequest } from "next/server";
 const owned: string[] = [];
 afterEach(async () => {
   for (const p of owned.splice(0)) await rm(p, { recursive: true });
@@ -29,7 +30,11 @@ const config = {
 const ids = { trackId: QIANZAI_MUSIC.id, version: QIANZAI_MUSIC.version };
 const request = (headers: Record<string, string> = {}) =>
   new Request(config.origin + QIANZAI_MUSIC.url, {
-    headers: { "sec-fetch-site": "same-origin", ...headers },
+    headers: {
+      host: new URL(config.origin).host,
+      "sec-fetch-site": "same-origin",
+      ...headers,
+    },
   });
 it("admits only the one managed test origin, identity and fixed track version", () => {
   expect(isQianzaiMusicTestRequest(request(), config, ids)).toBe(true);
@@ -68,6 +73,45 @@ it("admits only the one managed test origin, identity and fixed track version", 
   expect(
     isQianzaiMusicTestRequest(request(), config, { ...ids, trackId: "other" }),
   ).toBe(false);
+});
+it("accepts NextRequest loopback normalization only with the exact incoming managed Host", () => {
+  const next = new NextRequest(request());
+  expect(new URL(next.url).hostname).toBe("localhost");
+  expect(isQianzaiMusicTestRequest(next, config, ids)).toBe(true);
+  for (const host of [
+    null,
+    "localhost:63238",
+    "127.0.0.1:3100",
+    "other.example",
+  ])
+    for (const method of ["GET", "HEAD"]) {
+      const headers = new Headers({ "sec-fetch-site": "same-origin" });
+      if (host !== null) headers.set("host", host);
+      expect(
+        isQianzaiMusicTestRequest(
+          new NextRequest(config.origin + QIANZAI_MUSIC.url, {
+            method,
+            headers,
+          }),
+          config,
+          ids,
+        ),
+      ).toBe(false);
+    }
+  for (const url of [
+    "http://other.example:63238" + QIANZAI_MUSIC.url,
+    "https://localhost:63238" + QIANZAI_MUSIC.url,
+    "http://localhost:3100" + QIANZAI_MUSIC.url,
+    config.origin + "/other",
+    config.origin + QIANZAI_MUSIC.url + "?other=1",
+  ])
+    expect(
+      isQianzaiMusicTestRequest(
+        new Request(url, { headers: request().headers }),
+        config,
+        ids,
+      ),
+    ).toBe(false);
 });
 it("verifies finite full bytes and MP4 signature before a range is served", async () => {
   const root = await mkdtemp(
@@ -142,7 +186,10 @@ it("serves exact full/single bounded ranges and rejects invalid ranges", async (
 it("supports same-origin HEAD without Origin and returns verified byte headers without a body", async () => {
   const req = new Request(config.origin + QIANZAI_MUSIC.url, {
     method: "HEAD",
-    headers: { "sec-fetch-site": "same-origin" },
+    headers: {
+      host: new URL(config.origin).host,
+      "sec-fetch-site": "same-origin",
+    },
   });
   expect(isQianzaiMusicTestRequest(req, config, ids)).toBe(true);
   const response = qianzaiMusicRangeResponse(req, new Uint8Array([1, 2, 3]));
