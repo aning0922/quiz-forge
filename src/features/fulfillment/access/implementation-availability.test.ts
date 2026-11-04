@@ -45,7 +45,7 @@ it("admits an exact registered v2 binding and preserves historical v1 availabili
   expect(
     accessKeyPlayImplementationAvailable({
       ...old,
-      renderer: CONSUMER_IMPLEMENTATION_AVAILABILITY.rendererV1_2,
+      renderer: CONSUMER_IMPLEMENTATION_AVAILABILITY.rendererV1_3,
       parentSnapshot: {
         ...old.parentSnapshot,
         engine: engineIdentityV1Schema.parse(

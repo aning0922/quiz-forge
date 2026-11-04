@@ -15,7 +15,7 @@ import {
 } from "./implementation-client";
 import { verifyConsumerImplementations } from "../../../../scripts/verify-consumer-implementations";
 const entry = CONSUMER_IMPLEMENTATION_DESCRIPTORS[0]!;
-const identity = CONSUMER_IMPLEMENTATION_AVAILABILITY.rendererV1_2;
+const identity = CONSUMER_IMPLEMENTATION_AVAILABILITY.rendererV1_3;
 function runtimeFacts(selectedEntry = entry, selectedIdentity = identity) {
   const font = selectedEntry.descriptor.font;
   return {
@@ -102,7 +102,7 @@ describe("registered exact consumer implementation", () => {
       [identity],
     );
     expect(report.available).toBe(1);
-    expect(report.descriptors).toBe(3);
+    expect(report.descriptors).toBe(4);
     for (const changed of [
       "src/features/theme/consumer-v1/host.tsx",
       "src/features/theme/consumer-v1/controller.ts",
@@ -130,7 +130,7 @@ describe("registered exact consumer implementation", () => {
     }
   });
   it("retains old identities as facts, refuses their execution, and selects only the patched identity", async () => {
-    const current = CONSUMER_IMPLEMENTATION_AVAILABILITY.rendererV1_2;
+    const current = CONSUMER_IMPLEMENTATION_AVAILABILITY.rendererV1_3;
     for (const historical of CONSUMER_IMPLEMENTATION_DESCRIPTORS.slice(1)) {
       const old = consumerImplementationIdentity(historical);
       expect(findConsumerImplementationDescriptor(old)).toEqual(historical);
@@ -161,6 +161,6 @@ describe("registered exact consumer implementation", () => {
       [current],
     );
     expect(report.available).toBe(1);
-    expect(report.descriptors).toBe(3);
+    expect(report.descriptors).toBe(4);
   });
 });

@@ -32,7 +32,7 @@ export async function verifyConsumerAccessGateway(
   const selected = bindingSchema.parse(binding);
   if (
     selected.renderer.id !== "consumer-folio-cabinet" ||
-    selected.renderer.version !== "1.0.2"
+    selected.renderer.version !== "1.0.3"
   )
     throw Error("CONSUMER_GATEWAY_VERSION_MISMATCH");
   const wanted = identityKey(selected.renderer);

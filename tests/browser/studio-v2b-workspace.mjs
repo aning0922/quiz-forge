@@ -322,7 +322,7 @@ const server = createServer(async (req, res) => {
       },
       renderers: {
         "quizforge.internal-version-snapshot.v1":
-          CONSUMER_IMPLEMENTATION_AVAILABILITY.rendererV1_2,
+          CONSUMER_IMPLEMENTATION_AVAILABILITY.rendererV1_3,
         "quizforge.internal-version-snapshot.v2":
           CONSUMER_IMPLEMENTATION_AVAILABILITY_V2.structured,
       },

@@ -1,5 +1,15 @@
 # 阶段进度
 
+## 2026-11-04 当前实现闭包收口与独立旧报告分工准备
+
+新D3 metadata以独立`d3-runtime-bindings-known-ten.json`登记，旧JSON原字节保留；旧engine/structured/preview/consumer entries继续作为metadata，available仅选择本次新entry。consumer1.5 entry `d942087986f7226e40e6670a9d2a380105394b191c9f991e31039cb7e1e8796a`/137文件，preview1.3 `7a41cfb1a510a51951c91eaadd5cc93f7e161728a6777df9a9cb0487a3d5150d`/63文件。新增folio1.0.3 entry `fd3c4c479066a153e6d8db1671a00bfdd25b23e6423d640af8ef1f5b8167afe0`/83文件，显式替换当前gateway可执行选择，原1.0.2 metadata不重写；调用点/夹具选择只随当前compiled identity调整，未执行旧数据库回归。
+
+新历史适配器闭包因private-test及新准确registration依赖变化重收为126文件/SHA `a7e3bf45cdfc7f9c2a9d4f0b358cbcf90c4560538ebe62c3055298c322d9e611`；两个frozen原文件/原D3 metadata/旧字体不修改。`pnpm implementation:check`通过：原v1 6/available3，v2 metadata14/available5，consumer metadata4/available1，以及gateway/两历史适配器均绑定成功。此为源码/锁/字体输入闭包检查，不作生产build或浏览器证明。
+
+入口/旧版本拒绝/实际闭包篡改三文件11项通过：`implementation.test.ts`、`access-gateway.test.ts`、`implementation-availability.test.ts`。此轮不重跑已审22/14/SQL故障测试。新folio收集工具先因JSON推断类型过窄失败，修为原schema解析后类型收口；私有pack工具首次config import路径类型失败也保留修复，最终`closure-tsc-v3.log`与修改代码定向ESLint通过。未重跑此前充分的28+3同输入测试。上批diff --check在两个新OFL检测原上游行尾空格，许可证字节必须保留以满足原OFL pin，未剪裁原许可；其他代码差异无空白问题。
+
+已准备只在b3原正常root运行的private pack构建工具：验证真实source/53字节、用现有数据库签发capability，走原私有builder，独立核manifest与确定性登记同一再无覆盖写ZIP，finally关闭数据库；没有导入、storage、activation或grant。目前未执行。主控新分工允许待新构建/合法旧tuple夹具READY后由B独占1.3/1.4真实浏览器/资源/DOM/双PNG/失权证据，A集中十人整包/native IO/24题续答与唯一完成；现在未给B资格，未读取或转交作者记录，未重复旧报告实际运行。
+
 ## 2026-11-04 十角色真实候选、字体与1.5运行输入接线
 
 修正组装器后实际content staging通过：b3正常新root的`.cache/known-ten/content-candidate-v1/receipt.json`记录canonical content `6f003080c99d9c3565a90ea583dd71410969593afe5ff322e2a28142d8b0ccf1`/510293B、53资源/40角色用途/13共享、原73条共享模板及10个既有witness。core contentVersion3.0/reportVersion2.0沿真实模板；没有重新搜索4344或改变原24题/五维/匹配政策。首次模板前置失败保留。

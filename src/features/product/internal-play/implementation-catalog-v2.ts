@@ -1,3 +1,4 @@
+import previous from "../internal-versions/implementation-data/d3-runtime-bindings.json";
 import descriptor from "./implementation-data/consumer-structured-composed-v1.json";
 import historicalV13 from "./implementation-data/consumer-qianzai-historical-v13.json";
 import historicalV14 from "./implementation-data/consumer-qianzai-historical-v14.json";
@@ -30,6 +31,9 @@ export const CONSUMER_IMPLEMENTATION_DESCRIPTORS_V2 = freeze(
     ...[current.structuredConsumer, current.qianzaiConsumer].filter(
       (v) => v !== null,
     ),
+    ...[previous.structuredConsumer, previous.qianzaiConsumer]
+      .filter((v) => v !== null)
+      .map((v) => consumerImplementationEntryV2Schema.parse(v)),
     consumerImplementationEntryV2Schema.parse(descriptor),
     consumerImplementationEntryV2Schema.parse(historicalV13),
     consumerImplementationEntryV2Schema.parse(historicalV14),
