@@ -5,6 +5,8 @@ import type {
 } from "../support/legacy-fixture-types";
 import { randomUUID, createHash } from "node:crypto";
 import type postgres from "postgres";
+import { consumerProductActivationBindingText } from "@/features/product/internal-play/activation-contracts";
+import { digestToken } from "@/lib/security/p2a-tokens";
 import { withStudioWrite } from "@/lib/auth/write";
 import { authenticateTestOperator, type TestDatabase } from "./p2a-fixture";
 import { resetDomainDatabase } from "./p2b2b-domain-fixture";
@@ -75,7 +77,7 @@ type Row = Record<string, unknown>;
 export async function readP4OldGraph(sql: postgres.Sql | postgres.ReservedSql) {
   const names = await sql<
     { name: string }[]
-  >`SELECT relname AS name FROM pg_class WHERE relnamespace='qf'::regnamespace AND relkind='r' AND relname NOT IN ('internal_play_version','access_key','consumer_session','consumer_grant','quiz_report','consumer_exchange_budget') ORDER BY relname`;
+  >`SELECT relname AS name FROM pg_class WHERE relnamespace='qf'::regnamespace AND relkind='r' AND relname NOT IN ('internal_play_version','access_key','consumer_session','consumer_grant','quiz_report','consumer_exchange_budget','consumer_product_activation','consumer_product_head') ORDER BY relname`;
   const result: Record<string, string[]> = {};
   for (const { name } of names) {
     const rows = await sql.unsafe<{ body: string }[]>(
@@ -246,13 +248,19 @@ export async function p4Fixture(
   const expected = new Map<string, Map<string, string>>();
   const tables = [
     "internal_play_version",
+    "consumer_product_activation",
+    "consumer_product_head",
     "access_key",
     "consumer_session",
     "consumer_grant",
     "quiz_report",
   ];
   const key = (table: string, row: Row) =>
-    table === "consumer_grant" ? `${row.key_id}/${row.slot}` : String(row.id);
+    table === "consumer_grant"
+      ? `${row.key_id}/${row.slot}`
+      : table === "consumer_product_head"
+        ? String(row.product_id)
+        : String(row.id);
   const remember = (table: string, row: Row) => {
     const rows = expected.get(table) ?? new Map();
     const proof = row.__p4_row_text;
@@ -290,6 +298,40 @@ export async function p4Fixture(
     playVersionId: playId,
     playSnapshotSha256: p4Hash(s),
   };
+  let activationGeneration = 0;
+  if (createPlay) {
+    const binding = consumerProductActivationBindingText({
+      schemaVersion: "quizforge.consumer-product-activate.v1",
+      productId: playRef.productId,
+      operationKey: randomUUID(),
+      expectedGeneration: 0,
+      playVersionId: playRef.playVersionId,
+      playSnapshotSha256: playRef.playSnapshotSha256,
+    });
+    const requestId = randomUUID(),
+      digest = digestToken(auth.session.raw, "session");
+    const [activation] = await db.app.sql<Row[]>`
+      SELECT t.*,row_to_json(t)::text AS __p4_row_text
+      FROM qf.consumer_activate_product(${binding},${digest},${requestId}) t`;
+    if (!activation) throw Error("P4_TEST_ACTIVATION_MISSING");
+    remember("consumer_product_activation", activation);
+    activationGeneration = Number(activation.generation);
+    const [head] = await db.app.sql<Row[]>`
+      SELECT t.*,row_to_json(t)::text AS __p4_row_text FROM qf.consumer_product_head t
+      WHERE (product_id,generation,play_version_id,play_snapshot_sha256)=(${playRef.productId},${activationGeneration},${playId},${playRef.playSnapshotSha256})`;
+    if (!head) throw Error("P4_TEST_HEAD_MISSING");
+    remember("consumer_product_head", head);
+    // Adopt only this exact controlled activation's audit, never a rescan of the old graph.
+    const [audit] = await db.admin.sql<{ body: string }[]>`
+      SELECT row_to_json(t)::text AS body FROM qf.audit_event t
+      WHERE id=${String(activation.id)} AND actor_id=${auth.id} AND request_id=${requestId}
+        AND action='consumer_product_enabled' AND target_id=${playRef.productId} AND target_revision=${activationGeneration}`;
+    if (!audit) throw Error("P4_TEST_ACTIVATION_AUDIT_MISSING");
+    expectedOldGraph.audit_event = [
+      ...(expectedOldGraph.audit_event ?? []),
+      audit.body,
+    ].sort();
+  }
   async function issue() {
     const binding = {
       schemaVersion: "quizforge.access-key-issue.v1" as const,
@@ -307,23 +349,27 @@ export async function p4Fixture(
     remember("access_key", row);
     return row;
   }
-  async function claim(
-    key: Row,
-    sql: postgres.Sql | postgres.TransactionSql = db.app.sql,
-  ) {
-    const id = randomUUID(),
-      a = consumerAnswersText([]),
-      p = consumerProgressText({ questionId: null });
-    const [row] = await sql<
-      Row[]
-    >`INSERT INTO qf.consumer_session(id,key_id,product_id,play_version_id,play_snapshot_sha256,created_at,state_revision,answers_text,consumer_state_answers_sha256,progress_text,progress_sha256) VALUES(${id},${String(key.id)},${playRef.productId},${playId},${playRef.playSnapshotSha256},date_trunc('milliseconds',clock_timestamp()),0,${a},${p4Hash(a)},${p},${p4Hash(p)}) RETURNING *,row_to_json(consumer_session)::text AS __p4_row_text`;
-    if (!row) throw Error("P4_TEST_SESSION_MISSING");
-    remember("consumer_session", row);
-    return row;
+  async function claim(key: Row, transaction?: postgres.TransactionSql) {
+    // Constraint tests own this synthetic SQL transaction. Keep Key-first locking
+    // so claim/void exercises the trigger's permanent-claim rule after the winner commits.
+    const work = async (sql: postgres.TransactionSql) => {
+      await sql`SELECT id FROM qf.access_key WHERE id=${String(key.id)} FOR UPDATE`;
+      const id = randomUUID(),
+        a = consumerAnswersText([]),
+        p = consumerProgressText({ questionId: null });
+      const [row] = await sql<Row[]>`
+        INSERT INTO qf.consumer_session(id,key_id,product_id,play_version_id,play_snapshot_sha256,activation_generation,issued_play_version_id,issued_play_snapshot_sha256,created_at,state_revision,answers_text,consumer_state_answers_sha256,progress_text,progress_sha256)
+        VALUES(${id},${String(key.id)},${playRef.productId},${playId},${playRef.playSnapshotSha256},${activationGeneration},${String(key.play_version_id)},${String(key.play_snapshot_sha256)},date_trunc('milliseconds',clock_timestamp()),0,${a},${p4Hash(a)},${p},${p4Hash(p)})
+        RETURNING *,row_to_json(consumer_session)::text AS __p4_row_text`;
+      if (!row) throw Error("P4_TEST_SESSION_MISSING");
+      remember("consumer_session", row);
+      return row;
+    };
+    return transaction ? work(transaction) : db.admin.sql.begin(work);
   }
   async function voidKey(
     key: Row,
-    sql: postgres.Sql | postgres.TransactionSql = db.app.sql,
+    sql: postgres.Sql | postgres.TransactionSql = db.admin.sql,
   ) {
     const binding = {
       schemaVersion: "quizforge.access-key-void-unused.v1" as const,
@@ -366,7 +412,7 @@ export async function p4Fixture(
       savedAt: new Date().toISOString(),
     };
     const r = consumerCanonicalText(receipt, 8192);
-    const [row] = await db.app.sql<
+    const [row] = await db.admin.sql<
       Row[]
     >`UPDATE qf.consumer_session SET state_revision=state_revision+1,answers_text=${a},consumer_state_answers_sha256=${p4Hash(a)},progress_text=${p},progress_sha256=${p4Hash(p)},last_binding_text=${b},last_binding_sha256=${p4Hash(b)},last_receipt_text=${r},last_receipt_sha256=${p4Hash(r)} WHERE id=${String(session.id)} AND state_revision=${Number(session.state_revision)} RETURNING *,row_to_json(consumer_session)::text AS __p4_row_text`;
     if (!row) throw Error("P4_TEST_SAVE_MISSING");
@@ -432,7 +478,7 @@ export async function p4Fixture(
     };
     const body = persistedReportSnapshotText(snapshot);
     const displaySha = await persistedReportDisplaySha256(view);
-    const [row] = await db.app.sql<
+    const [row] = await db.admin.sql<
       Row[]
     >`INSERT INTO qf.quiz_report(id,key_id,session_id,product_id,play_version_id,play_snapshot_sha256,state_revision,consumer_state_answers_sha256,progress_sha256,completion_key,binding_text,binding_sha256,snapshot_text,snapshot_sha256,display_sha256,completed_at) VALUES(${reportId},${binding.session.keyId},${binding.session.sessionId},${playRef.productId},${playId},${playRef.playSnapshotSha256},${binding.expectedStateRevision},${binding.consumerStateAnswersSha256},${binding.progressSha256},${binding.completionKey},${text},${p4Hash(text)},${body},${p4Hash(body)},${displaySha},${completedAt}) RETURNING *,row_to_json(quiz_report)::text AS __p4_row_text`;
     if (!row) throw Error("P4_TEST_REPORT_MISSING");
@@ -483,6 +529,12 @@ export async function p4Fixture(
       }
       await lock.check();
       await db.admin.sql.begin(async (tx) => {
+        // Same test-only named-trigger protocol as the physical consumer fixture.
+        // Full row proofs above and live StorageLock precede all deletion; FK triggers remain enabled.
+        if (activationGeneration) {
+          await tx`ALTER TABLE qf.consumer_product_head DISABLE TRIGGER consumer_head_change`;
+          await tx`ALTER TABLE qf.consumer_product_activation DISABLE TRIGGER consumer_activation_change`;
+        }
         for (const table of [...tables].reverse()) {
           const rows = expected.get(table);
           if (!rows?.size) continue;
@@ -490,11 +542,17 @@ export async function p4Fixture(
             const row = JSON.parse(rowText) as Row;
             if (table === "consumer_grant")
               await tx`DELETE FROM qf.consumer_grant WHERE key_id=${String(row.key_id)} AND slot=${Number(row.slot)} AND grant_id=${String(row.grant_id)}`;
+            else if (table === "consumer_product_head")
+              await tx`DELETE FROM qf.consumer_product_head WHERE product_id=${String(row.product_id)} AND generation=${Number(row.generation)} AND play_version_id=${String(row.play_version_id)} AND play_snapshot_sha256=${String(row.play_snapshot_sha256)}`;
             else
               await tx.unsafe(`DELETE FROM qf.${table} WHERE id=$1`, [
                 String(row.id),
               ]);
           }
+        }
+        if (activationGeneration) {
+          await tx`ALTER TABLE qf.consumer_product_activation ENABLE TRIGGER consumer_activation_change`;
+          await tx`ALTER TABLE qf.consumer_product_head ENABLE TRIGGER consumer_head_change`;
         }
         await tx`DELETE FROM qf.product_version WHERE id=${fixed.parent.version.id} AND snapshot_sha256=${fixed.parent.version.snapshotSha256}`;
         await tx`DELETE FROM qf.draft_review WHERE id=${fixed.review.id} AND review_sha256=${fixed.review.reviewSha256}`;
