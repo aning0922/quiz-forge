@@ -8,6 +8,7 @@ import { expect, it } from "vitest";
 import { loginVersionFixtureAccount } from "./version-account-fixture";
 import { createStudioRequestBudget } from "@/lib/http-security/request-budget";
 import { createConsumerRequestOwner } from "@/features/fulfillment/consumer-flow/request-owner";
+import { createConsumerActivationService } from "@/features/product/internal-play/activation-service";
 import { createInternalPlayService } from "@/features/product/internal-play/service";
 import { createAccessKeyService } from "@/features/fulfillment/access/service";
 import { configureImports } from "@/features/quizpack/import/config-management";
@@ -125,6 +126,22 @@ it("dedicated r1 physical source, actual play/Key services, exact finish and pre
       ),
     );
     expect(created.created).toBe(true);
+    const activation = await request((o) =>
+      createConsumerActivationService(o).activate(
+        { ...credentials, requestId: randomUUID() },
+        fixture.productId,
+        {
+          schemaVersion: "quizforge.consumer-product-activate.v1",
+          productId: fixture.productId,
+          operationKey: randomUUID(),
+          expectedGeneration: 0,
+          playVersionId: created.play.id,
+          playSnapshotSha256: created.play.snapshotSha256,
+        },
+      ),
+    );
+    expect(activation.kind).toBe("applied");
+    if (!activation.receipt) throw Error("P4_ACTIVATION_RECEIPT_REQUIRED");
     const again = await request((o) =>
       createInternalPlayService(o).create(
         credentials,
@@ -282,16 +299,30 @@ it("dedicated r1 physical source, actual play/Key services, exact finish and pre
       mode: "operator-services",
       suiteCompletion: null,
       plays: [created.play],
+      activations: [activation.receipt],
       keys: [latest],
       states: [],
       reports: [],
       grants: [],
     };
     const before = await readFile(manifest);
+    // Exact activation ownership: neither omission nor a forged actor/hash may be adopted.
+    for (const activations of [
+      [],
+      [{ ...activation.receipt, activatedBy: fixture.readOnly.identifier }],
+      [{ ...activation.receipt, bindingSha256: "f".repeat(64) }],
+    ]) {
+      await expect(
+        finishConsumerFixture(db, runId, { ...observations, activations }),
+      ).rejects.toThrow();
+    }
+    expect((await readFile(manifest)).equals(before)).toBe(true);
+
     await expect(
       finishConsumerFixture(db, runId, {
         ...observations,
         plays: [],
+        activations: [],
         keys: [],
       }),
     ).rejects.toThrow("CONSUMER_FIXTURE_UNKNOWN_PRESERVED");
@@ -373,8 +404,13 @@ it("dedicated r1 physical source, actual play/Key services, exact finish and pre
     await expect(lstat(manifest)).rejects.toMatchObject({ code: "ENOENT" });
     const [left] = await db.admin.sql<
       { present: boolean }[]
-    >`SELECT EXISTS(SELECT 1 FROM qf.product WHERE id=${fixture.productId}) OR EXISTS(SELECT 1 FROM qf.internal_play_version WHERE product_id=${fixture.productId}) AS present`;
+    >`SELECT EXISTS(SELECT 1 FROM qf.product WHERE id=${fixture.productId}) OR EXISTS(SELECT 1 FROM qf.internal_play_version WHERE product_id=${fixture.productId}) OR EXISTS(SELECT 1 FROM qf.consumer_product_activation WHERE product_id=${fixture.productId}) OR EXISTS(SELECT 1 FROM qf.consumer_product_head WHERE product_id=${fixture.productId}) AS present`;
     expect(left?.present).toBe(false);
+    const triggers = await db.admin.sql<{ tgenabled: string }[]>`
+      SELECT tgenabled FROM pg_trigger WHERE tgrelid IN('qf.consumer_product_activation'::regclass,'qf.consumer_product_head'::regclass)
+        AND tgname IN('consumer_activation_change','consumer_head_change')`;
+    expect(triggers).toHaveLength(2);
+    expect(triggers.every((t) => t.tgenabled === "O")).toBe(true);
   } finally {
     await db.close();
   }
