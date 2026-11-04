@@ -1,5 +1,15 @@
 # 阶段进度
 
+## 2026-11-04 两个成功旧tuple的只读适配实现：静态/合成验证，真实出口待最终构建
+
+A按已审2de0771新增两份historical-v13/v14报告/导出必要闭包，从准确6540d7b/1f2177b Git对象取原资料、copy各自字节、document/layout、CSS、字体与资源输入；不复制旧quiz/experience/projection/controller。原renderer元数据独立保留，当前目录metadata去重，不把旧entry作为写执行fallback。新增适配器只渲染封存报告，复用原resource lease/current grant复核及原字体严格覆盖/释放；事件仅结束访问与返回`/access`，没有评分/save/complete端口。只读页返回按钮的aria-label准确改为访问入口，正文/双PNG仍取各自冻结profile，适配修改不冒称原entry源码hash。
+
+v2宿主仅在已完成且无pending的report选择历史resolver；两个旧版本中的任一完整tuple/固定source/字体/mapping/四用途/资源事实不匹配返回null并终止，不落入当前renderer；非历史edition返回undefined才委托当前解析。旧report/view/body/receipt不改写，不从角色ID猜图。成功metadata1.3=9732…/1.4=b88…可查，失败/其他早期版本无新增映射；UNKNOWN仍在外层保留原操作/恢复控件。
+
+`historical-client-v2.test.ts`及扩展`consumer-v2/experience.test.ts`两文件14项通过（合成selector/静态markup，不是持久化/浏览器），覆盖2精确profile、6种混搭拒绝及historical-null不fallback。首轮fixture把clean binding当作有resultRef导致undefined canonical失败，按原clean槽事实修正；随后fixture直接改冻结ref失败，修为独立clone，未放宽生产不可变检查。类型通过，受影响TS/TSX ESLint无错误；两处Next导航warning改为router.push后定点复核。63个冻结文件的原路径/commit/SHA与适配后实际SHA重现核对通过，原字体文件未变。
+
+新`qianzai-historical-readers.json`按既有静态collector核完整124文件、依赖/构建输入及5种历史字体实际font/coverage/OFL，身份`48bae1aa8a70e4f8ac72f1bbdb06526db9efef4fc0bb8cf0590c7611a4164c65`；作用严格为verified-report-read-only，接入现implementation:check，不参与source准入或写available。首次收集因CSS别名不符合既有工具的相对CSS解析失败，改为保留正确相对CSS路径后通过，未改collector放宽规则。后续private-test/共享库实际输入变化时，此新只读闭包也必须按真实变化重新收集；旧renderer JSON不改hash。全量implementation:check仍待1.5/folio新登记，未重跑已知旧closure失败；未build/媒体/两旧tuple真实报告与双PNG/最终新source或0033。上述真实出口是已审本批剩余门槛，不能用本节静态证明替代。
+
 ## 2026-11-04 已确认终态UI接线与采纳前政策复核
 
 主控转交R对准确2de0771窄审通过，历史只读P2设计关闭。实现先接有限终态：reader可选display reason仅从已验证session/resolution派生，v1 host、v2 status、千载状态及v2外层runtime-null均显示同一固定文案与`/access`原码入口，不携带Key或自动exchange。原UNKNOWN/终态pending在明确采纳前保持；exact remove之后终态仍保留display reason、清旧entry并停编辑。明确采纳已恢复的save前重读原session政策，若过代不以旧applied回执重新打开题目，若本attempt已有报告则读取原报告；不调用新完成或发grant。

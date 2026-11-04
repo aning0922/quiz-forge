@@ -1,4 +1,6 @@
 import descriptor from "./implementation-data/consumer-structured-composed-v1.json";
+import historicalV13 from "./implementation-data/consumer-qianzai-historical-v13.json";
+import historicalV14 from "./implementation-data/consumer-qianzai-historical-v14.json";
 import { D3_IMPLEMENTATION_BINDINGS as current } from "../internal-versions/implementation-registration-v2";
 import {
   QIANZAI_COMPONENT_MAPPING,
@@ -23,12 +25,20 @@ function freeze<T>(value: T): T {
   }
   return value;
 }
-export const CONSUMER_IMPLEMENTATION_DESCRIPTORS_V2 = freeze([
-  ...[current.structuredConsumer, current.qianzaiConsumer].filter(
-    (v) => v !== null,
+export const CONSUMER_IMPLEMENTATION_DESCRIPTORS_V2 = freeze(
+  [
+    ...[current.structuredConsumer, current.qianzaiConsumer].filter(
+      (v) => v !== null,
+    ),
+    consumerImplementationEntryV2Schema.parse(descriptor),
+    consumerImplementationEntryV2Schema.parse(historicalV13),
+    consumerImplementationEntryV2Schema.parse(historicalV14),
+  ].filter(
+    (entry, index, entries) =>
+      entries.findIndex((other) => other.entrySha256 === entry.entrySha256) ===
+      index,
   ),
-  consumerImplementationEntryV2Schema.parse(descriptor),
-]);
+);
 export function consumerImplementationIdentityV2(
   entry: ConsumerImplementationEntryV2,
 ) {

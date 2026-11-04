@@ -3,6 +3,7 @@ import { verifyV2Implementations } from "./verify-v2-implementations";
 import { verifyConsumerImplementations } from "./verify-consumer-implementations";
 import { verifyConsumerAccessGateway } from "./verify-consumer-access-gateway";
 import { CONSUMER_ACCESS_GATEWAY } from "../src/features/product/internal-play/access-gateway-binding";
+import { verifyQztxHistoricalReaderBinding } from "./qztx-historical-reader-binding";
 import {
   CONSUMER_IMPLEMENTATION_DESCRIPTORS,
   CONSUMER_IMPLEMENTATION_AVAILABILITY,
@@ -25,6 +26,9 @@ try {
     CONSUMER_IMPLEMENTATION_DESCRIPTORS,
     compiled,
   );
+  const historicalReaders = await verifyQztxHistoricalReaderBinding(
+    process.cwd(),
+  );
   process.stdout.write(
     JSON.stringify({
       code: "INTERNAL_IMPLEMENTATIONS_OK",
@@ -32,6 +36,7 @@ try {
       v2,
       consumer,
       accessGateway,
+      historicalReaders,
     }) + "\n",
   );
 } catch (error) {

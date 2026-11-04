@@ -7,6 +7,7 @@ import { ConsumerControllerV2 } from "./controller";
 import { ConsumerSessionRuntimeV2 } from "./experience";
 import { structuredReaderFixtureV2 } from "./fixtures.test-support";
 import { consumerSessionFixtureV2 } from "./session.test-support";
+import { persistedReportViewV2Schema } from "@/features/report/persisted/view-contracts-v2";
 
 it.each(["version-superseded", "entitlement-completed"] as const)(
   "shows the original-code entrance with no entry/report or installed runtime: %s",
@@ -89,3 +90,30 @@ it("retains UNKNOWN controls without manufacturing a terminal policy reason", ()
 function sessionStoragePort() {
   return { getItem: () => null, setItem() {}, removeItem() {} };
 }
+
+it.each([null, undefined])(
+  "an explicit historical rejection never falls through; unrelated editions delegate (%s)",
+  async (result) => {
+    const f = await consumerSessionFixtureV2();
+    const { completed: model } = structuredReaderFixtureV2();
+    const owner = new ConsumerControllerV2("synthetic", sessionStoragePort());
+    const initial = owner.getInternalSnapshot();
+    owner.getInternalSnapshot = () => ({
+      ...initial,
+      report: persistedReportViewV2Schema.parse(f.report),
+    });
+    owner.getSnapshot = () => model;
+    const current = vi.fn(() => null),
+      historical = vi.fn(() => result);
+    renderToStaticMarkup(
+      createElement(ConsumerSessionRuntimeV2, {
+        sessionId: "synthetic",
+        resolveRuntime: current,
+        resolveHistoricalReport: historical,
+        createController: () => owner,
+      }),
+    );
+    expect(historical).toHaveBeenCalledOnce();
+    expect(current).toHaveBeenCalledTimes(result === null ? 0 : 1);
+  },
+);

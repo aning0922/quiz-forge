@@ -1,0 +1,663 @@
+{
+  "scope": "Two finite report/export readers only; original renderer identity is snapshot provenance, adapted code has independent hashes; no source admission or write availability.",
+  "profiles": [
+    {
+      "profile": "v13",
+      "sourceCommit": "6540d7b05152dc5e57174e68d52ffa510847d3ff",
+      "sourceRendererEntrySha256": "9732bdfd555a05ceb412ee8c8918fa9a8b076b6acff38a6035a08dd4bb4aadbe",
+      "originalEntryPath": "src/features/product/internal-play/implementation-data/consumer-qianzai-historical-v13.json",
+      "files": [
+        {
+          "sourcePath": "src/features/report/qianzai-tongxin/consumer-copy.ts",
+          "sourceSha256": "5e9093a9b231e8a3da41371d843b65d53e5e08896f6ee4ab4c79ab0e2f836ff5",
+          "sourceBytes": 30856,
+          "path": "src/features/report/qianzai-tongxin/historical-v13/consumer-copy.ts",
+          "sha256": "d9e13e667921d377659a77f1cc8bfd5431d3c194ecbd0ce29cf58d1efea77bda",
+          "bytes": 31143,
+          "adaptations": [
+            "Rewrite local report/theme imports to this fixed profile; external relative imports become absolute aliases."
+          ]
+        },
+        {
+          "sourcePath": "src/features/report/qianzai-tongxin/contracts.ts",
+          "sourceSha256": "03e5f8a113908cdcc9c1cc3b1896474f399bdaca43d652c923371ecad9d5d558",
+          "sourceBytes": 2948,
+          "path": "src/features/report/qianzai-tongxin/historical-v13/contracts.ts",
+          "sha256": "70bc2d16036e76ab1821f3d3b0d46ed3edfb2c139a157d3e9cdd23e9e6d66dc6",
+          "bytes": 2995,
+          "adaptations": [
+            "Rewrite local report/theme imports to this fixed profile; external relative imports become absolute aliases."
+          ]
+        },
+        {
+          "sourcePath": "src/features/report/qianzai-tongxin/dimension-scale.ts",
+          "sourceSha256": "923cd690bdeefdf3a61fa133b9bc4675fd78deb44032781a5f4048965602db58",
+          "sourceBytes": 3184,
+          "path": "src/features/report/qianzai-tongxin/historical-v13/dimension-scale.ts",
+          "sha256": "968ed08a66315d4e529daff9c3133e057d52c7c72090998cb3571533f10dda91",
+          "bytes": 3278,
+          "adaptations": [
+            "Rewrite local report/theme imports to this fixed profile; external relative imports become absolute aliases."
+          ]
+        },
+        {
+          "sourcePath": "src/features/report/qianzai-tongxin/editorial.ts",
+          "sourceSha256": "fa6c98f527b69f8e0943b156c862806f7016186ea82a2ad78186d58d60326233",
+          "sourceBytes": 8122,
+          "path": "src/features/report/qianzai-tongxin/historical-v13/editorial.ts",
+          "sha256": "c2c027659703aed909283115342b8b62cf25b6666b25db2cca777b18d8e1096f",
+          "bytes": 8169,
+          "adaptations": [
+            "Rewrite local report/theme imports to this fixed profile; external relative imports become absolute aliases."
+          ]
+        },
+        {
+          "sourcePath": "src/features/report/qianzai-tongxin/export-font.ts",
+          "sourceSha256": "8381470a953da732fe96baae00868bc2ea47de165744ab7142cba89a628d2067",
+          "sourceBytes": 3390,
+          "path": "src/features/report/qianzai-tongxin/historical-v13/export-font.ts",
+          "sha256": "8381470a953da732fe96baae00868bc2ea47de165744ab7142cba89a628d2067",
+          "bytes": 3390,
+          "adaptations": [
+            "Rewrite local report/theme imports to this fixed profile; external relative imports become absolute aliases."
+          ]
+        },
+        {
+          "sourcePath": "src/features/report/qianzai-tongxin/export.ts",
+          "sourceSha256": "863ec3fbe290c8c340b8540c68f3ede71f5fc565d14ed16d261729d1b2c7a485",
+          "sourceBytes": 28355,
+          "path": "src/features/report/qianzai-tongxin/historical-v13/export.ts",
+          "sha256": "65cf79451502868cbc228d8ad8d1c92776218b04c776ae47d3c72820fdd3a87e",
+          "bytes": 28573,
+          "adaptations": [
+            "Rewrite local report/theme imports to this fixed profile; external relative imports become absolute aliases."
+          ]
+        },
+        {
+          "sourcePath": "src/features/report/qianzai-tongxin/inline-emphasis.ts",
+          "sourceSha256": "6dc46a2172a1a74912c34d7256555cd02d6afd857fe53703d64283077134b8d3",
+          "sourceBytes": 878,
+          "path": "src/features/report/qianzai-tongxin/historical-v13/inline-emphasis.ts",
+          "sha256": "6dc46a2172a1a74912c34d7256555cd02d6afd857fe53703d64283077134b8d3",
+          "bytes": 878,
+          "adaptations": [
+            "Rewrite local report/theme imports to this fixed profile; external relative imports become absolute aliases."
+          ]
+        },
+        {
+          "sourcePath": "src/features/report/qianzai-tongxin/layout.ts",
+          "sourceSha256": "a677a32cc4eb9fb41c4ef1ec07bf42946095e7097b37f5b8d6da0cb58fc98fc5",
+          "sourceBytes": 46483,
+          "path": "src/features/report/qianzai-tongxin/historical-v13/layout.ts",
+          "sha256": "fa5a1e3b5151c8224c2a283d74305dd1c3d22582bba6ebe1e4542246041ad1e2",
+          "bytes": 46765,
+          "adaptations": [
+            "Rewrite local report/theme imports to this fixed profile; external relative imports become absolute aliases."
+          ]
+        },
+        {
+          "sourcePath": "src/features/report/qianzai-tongxin/presentation-source.ts",
+          "sourceSha256": "c3f6b07baf45bb780c3f45dd2e05b188a4cd187e3d31cbd5eaca55c4d5f42cd8",
+          "sourceBytes": 1506,
+          "path": "src/features/report/qianzai-tongxin/historical-v13/presentation-source.ts",
+          "sha256": "c3f6b07baf45bb780c3f45dd2e05b188a4cd187e3d31cbd5eaca55c4d5f42cd8",
+          "bytes": 1506,
+          "adaptations": [
+            "Rewrite local report/theme imports to this fixed profile; external relative imports become absolute aliases."
+          ]
+        },
+        {
+          "sourcePath": "src/features/report/qianzai-tongxin/presentation.ts",
+          "sourceSha256": "b623c82d2bb7591e061f2188a86cc70827d478ff763c48fa2366d8da1481e043",
+          "sourceBytes": 8618,
+          "path": "src/features/report/qianzai-tongxin/historical-v13/presentation.ts",
+          "sha256": "411b24a4cfbca1f739d84de13a65ca8d6a747ea1f3214b2fe63ad8ea5d42c03b",
+          "bytes": 8759,
+          "adaptations": [
+            "Rewrite local report/theme imports to this fixed profile; external relative imports become absolute aliases."
+          ]
+        },
+        {
+          "sourcePath": "src/features/report/qianzai-tongxin/result-presentation.ts",
+          "sourceSha256": "aaae302be1fcf85c2b9b42019814017b897d1c280b0322671aea48a1f8a4b6e0",
+          "sourceBytes": 5900,
+          "path": "src/features/report/qianzai-tongxin/historical-v13/result-presentation.ts",
+          "sha256": "e5be31bdaeb837544bf3a00621baf91d16bf5e76c39919eba19575158c3ed3e6",
+          "bytes": 6041,
+          "adaptations": [
+            "Rewrite local report/theme imports to this fixed profile; external relative imports become absolute aliases."
+          ]
+        },
+        {
+          "sourcePath": "src/features/report/qianzai-tongxin/role-presentation.ts",
+          "sourceSha256": "538bf71f9bed2ea52776f8d1856ca6797b4ba753d5adcaeccdb7a02e2eb567e0",
+          "sourceBytes": 2670,
+          "path": "src/features/report/qianzai-tongxin/historical-v13/role-presentation.ts",
+          "sha256": "15e66fe75335483127aacdd903f1650167c595fde20f0da1c96718ea8bd5e710",
+          "bytes": 2717,
+          "adaptations": [
+            "Rewrite local report/theme imports to this fixed profile; external relative imports become absolute aliases."
+          ]
+        },
+        {
+          "sourcePath": "src/features/report/qianzai-tongxin/role-profiles-v11.ts",
+          "sourceSha256": "728e10eb71ca0a378238119144de983707ca6581a5d2a2ba0344d4a9ba6017f3",
+          "sourceBytes": 11573,
+          "path": "src/features/report/qianzai-tongxin/historical-v13/role-profiles-v11.ts",
+          "sha256": "23992171bc21524d4b6b8946a982a8e6b5dd2aa355d7872a5c1129e6c344a013",
+          "bytes": 11714,
+          "adaptations": [
+            "Rewrite local report/theme imports to this fixed profile; external relative imports become absolute aliases."
+          ]
+        },
+        {
+          "sourcePath": "src/features/report/qianzai-tongxin/supported-themes.ts",
+          "sourceSha256": "da0b552561dd5764eaf95016ee6e4fdee55375b579d095f54a0e9def1f91285a",
+          "sourceBytes": 11791,
+          "path": "src/features/report/qianzai-tongxin/historical-v13/supported-themes.ts",
+          "sha256": "aaef0c0a1fc8b790f8584107c076b09649b2bc6aec02bda8373b12367bb6dd9b",
+          "bytes": 11838,
+          "adaptations": [
+            "Rewrite local report/theme imports to this fixed profile; external relative imports become absolute aliases."
+          ]
+        },
+        {
+          "sourcePath": "src/features/theme/qianzai-tongxin/art-framing.ts",
+          "sourceSha256": "f78ee962a1fb83cae35c586528f7764c4c99cd0cce323dd2b47a36d039070a64",
+          "sourceBytes": 732,
+          "path": "src/features/theme/qianzai-tongxin/historical-v13/art-framing.ts",
+          "sha256": "f78ee962a1fb83cae35c586528f7764c4c99cd0cce323dd2b47a36d039070a64",
+          "bytes": 732,
+          "adaptations": [
+            "Rewrite local report/theme imports to this fixed profile; external relative imports become absolute aliases."
+          ]
+        },
+        {
+          "sourcePath": "src/features/theme/qianzai-tongxin/art.ts",
+          "sourceSha256": "0122bcfc12975b40b90e652090ef6f8fe8264da09a2504daec0bdf8ead12df5f",
+          "sourceBytes": 6068,
+          "path": "src/features/theme/qianzai-tongxin/historical-v13/art.ts",
+          "sha256": "0122bcfc12975b40b90e652090ef6f8fe8264da09a2504daec0bdf8ead12df5f",
+          "bytes": 6068,
+          "adaptations": [
+            "Rewrite local report/theme imports to this fixed profile; external relative imports become absolute aliases."
+          ]
+        },
+        {
+          "sourcePath": "src/features/theme/qianzai-tongxin/component-map.ts",
+          "sourceSha256": "f89c0b8e8dbb70968628cecd59fe5b14cd5a404bdce6d9d2ceab9dda18f758cd",
+          "sourceBytes": 1626,
+          "path": "src/features/theme/qianzai-tongxin/historical-v13/component-map.ts",
+          "sha256": "f89c0b8e8dbb70968628cecd59fe5b14cd5a404bdce6d9d2ceab9dda18f758cd",
+          "bytes": 1626,
+          "adaptations": [
+            "Rewrite local report/theme imports to this fixed profile; external relative imports become absolute aliases."
+          ]
+        },
+        {
+          "sourcePath": "src/features/theme/qianzai-tongxin/editorial-fonts.json",
+          "sourceSha256": "f3373b7428b58422ce787d9818bff330f868f644c4c9dabc35235e88f21506be",
+          "sourceBytes": 1065,
+          "path": "src/features/theme/qianzai-tongxin/historical-v13/editorial-fonts.json",
+          "sha256": "f3373b7428b58422ce787d9818bff330f868f644c4c9dabc35235e88f21506be",
+          "bytes": 1065,
+          "adaptations": []
+        },
+        {
+          "sourcePath": "src/features/theme/qianzai-tongxin/editorial-fonts.ts",
+          "sourceSha256": "c23d3317bf1d9ebf9bc2826c5622efd13f00bcf28efcb6f6d54016577338bf10",
+          "sourceBytes": 852,
+          "path": "src/features/theme/qianzai-tongxin/historical-v13/editorial-fonts.ts",
+          "sha256": "8b2f6a03bec2f1ce5ece4df75cb53c17a7e641c7c6fc76a819a3fbca41538dfa",
+          "bytes": 898,
+          "adaptations": [
+            "Rewrite local report/theme imports to this fixed profile; external relative imports become absolute aliases."
+          ]
+        },
+        {
+          "sourcePath": "src/features/theme/qianzai-tongxin/export-context.tsx",
+          "sourceSha256": "1a7cc3e7f8dcf461b2ec37ab8e0929912c755000664386381608b52635a3f7fa",
+          "sourceBytes": 3998,
+          "path": "src/features/theme/qianzai-tongxin/historical-v13/export-context.tsx",
+          "sha256": "d2caa6e1bbaa8bc621e0b753ca04307d6c7fefc503e8ca718925f56eca0bed1f",
+          "bytes": 4149,
+          "adaptations": [
+            "Rewrite local report/theme imports to this fixed profile; external relative imports become absolute aliases."
+          ]
+        },
+        {
+          "sourcePath": "src/features/theme/qianzai-tongxin/export-owner.ts",
+          "sourceSha256": "7d4610c416331e691ab67b1ab1052d790e36d5ac0f6f049b17128d16ac602ba9",
+          "sourceBytes": 15862,
+          "path": "src/features/theme/qianzai-tongxin/historical-v13/export-owner.ts",
+          "sha256": "265c910bcaab6cdfd2cb17661091ccc0bb6b8aa47b3eea305c663e0fb461e3cc",
+          "bytes": 16151,
+          "adaptations": [
+            "Rewrite local report/theme imports to this fixed profile; external relative imports become absolute aliases."
+          ]
+        },
+        {
+          "sourcePath": "src/features/theme/qianzai-tongxin/font-owner.ts",
+          "sourceSha256": "75362a564e894b81b9ff35825a1a6525bde2c7e199c1e045cf8b083b9b617a2f",
+          "sourceBytes": 3511,
+          "path": "src/features/theme/qianzai-tongxin/historical-v13/font-owner.ts",
+          "sha256": "dbe5e4c707f90d0fd3977ba6329ab62ca220ffe8d9872464b4d1cca66a18938b",
+          "bytes": 3617,
+          "adaptations": [
+            "Rewrite local report/theme imports to this fixed profile; external relative imports become absolute aliases."
+          ]
+        },
+        {
+          "sourcePath": "src/features/theme/qianzai-tongxin/report-parity.module.css",
+          "sourceSha256": "0391bca9084b329d2dd99312fc1ff917851b09489bede59bacf2479d7f8d58e4",
+          "sourceBytes": 36408,
+          "path": "src/features/theme/qianzai-tongxin/historical-v13/report-parity.module.css",
+          "sha256": "0391bca9084b329d2dd99312fc1ff917851b09489bede59bacf2479d7f8d58e4",
+          "bytes": 36408,
+          "adaptations": []
+        },
+        {
+          "sourcePath": "src/features/theme/qianzai-tongxin/report.tsx",
+          "sourceSha256": "ba91f808fbfa5c727612cb05061d1649e253f59d2b48e9f512ad074982f6c798",
+          "sourceBytes": 45583,
+          "path": "src/features/theme/qianzai-tongxin/historical-v13/report.tsx",
+          "sha256": "d30467f20afb8a1ad82c1eed9b7c78e007d0e2ad425b6f32a8ca52d22f5a2e8b",
+          "bytes": 45997,
+          "adaptations": [
+            "Replace quiz-view type import with pure ports; report back control returns to access.",
+            "Rewrite local report/theme imports to this fixed profile; external relative imports become absolute aliases."
+          ]
+        },
+        {
+          "sourcePath": "src/features/theme/qianzai-tongxin/resource-owner.ts",
+          "sourceSha256": "13079727b710ae52370b57e6cd260d43cdecb3f119b804321b7d3c97a1dd13a8",
+          "sourceBytes": 7300,
+          "path": "src/features/theme/qianzai-tongxin/historical-v13/resource-owner.ts",
+          "sha256": "f514efe9d18096a2e9f73ef8ad2bf66db7e5e796ded73ade6160045038c67ee0",
+          "bytes": 7314,
+          "adaptations": [
+            "Rewrite local report/theme imports to this fixed profile; external relative imports become absolute aliases."
+          ]
+        },
+        {
+          "sourcePath": "src/features/theme/qianzai-tongxin/runtime-inputs.json",
+          "sourceSha256": "4e3d2f78de37511daa0a0b75fa521e26abd27a07bfc65321ffe742e8d9cdb3d0",
+          "sourceBytes": 20726,
+          "path": "src/features/theme/qianzai-tongxin/historical-v13/runtime-inputs.json",
+          "sha256": "4e3d2f78de37511daa0a0b75fa521e26abd27a07bfc65321ffe742e8d9cdb3d0",
+          "bytes": 20726,
+          "adaptations": []
+        },
+        {
+          "sourcePath": "src/features/theme/qianzai-tongxin/runtime-inputs.ts",
+          "sourceSha256": "f61fa1fc7aa6a7b75b78a37ac06a2c68cef04af934ff60d3a5e66f7921aa1187",
+          "sourceBytes": 1971,
+          "path": "src/features/theme/qianzai-tongxin/historical-v13/runtime-inputs.ts",
+          "sha256": "7e2c9192bf4a1408248d8ef3d251cf44320add3fa5e1beda03931a1bedc3c031",
+          "bytes": 2017,
+          "adaptations": [
+            "Rewrite local report/theme imports to this fixed profile; external relative imports become absolute aliases."
+          ]
+        },
+        {
+          "sourcePath": "src/features/theme/qianzai-tongxin/share-panel.tsx",
+          "sourceSha256": "0696c1a8f560f6f2be3d6a8f0aa0ef67fbbb04a5d644d087152ec7fe973aa1e5",
+          "sourceBytes": 18680,
+          "path": "src/features/theme/qianzai-tongxin/historical-v13/share-panel.tsx",
+          "sha256": "ee87dc4fc5cc7a98f264a9c32066363916804dcb8fb53f631a43c6822ec60006",
+          "bytes": 18741,
+          "adaptations": [
+            "Rewrite local report/theme imports to this fixed profile; external relative imports become absolute aliases."
+          ]
+        },
+        {
+          "sourcePath": "src/features/theme/qianzai-tongxin/share.module.css",
+          "sourceSha256": "46a3746e3e091e9d705b843bc55c1435da2352cd3ed038ee4264fdc54f9e14c3",
+          "sourceBytes": 12928,
+          "path": "src/features/theme/qianzai-tongxin/historical-v13/share.module.css",
+          "sha256": "46a3746e3e091e9d705b843bc55c1435da2352cd3ed038ee4264fdc54f9e14c3",
+          "bytes": 12928,
+          "adaptations": []
+        },
+        {
+          "sourcePath": "src/features/theme/qianzai-tongxin/typography.module.css",
+          "sourceSha256": "f6bd7785ce3c176f3f817e73b2d5c86b194ee819c6ecbac9d71318d6e12a3999",
+          "sourceBytes": 531,
+          "path": "src/features/theme/qianzai-tongxin/historical-v13/typography.module.css",
+          "sha256": "f6bd7785ce3c176f3f817e73b2d5c86b194ee819c6ecbac9d71318d6e12a3999",
+          "bytes": 531,
+          "adaptations": []
+        }
+      ]
+    },
+    {
+      "profile": "v14",
+      "sourceCommit": "1f2177bcd15e47c1ec4120f324eccce9608489e0",
+      "sourceRendererEntrySha256": "b88be4dd0e187169edf7f88f789e6b23685b7a795a792dd74936a6fa998b4809",
+      "originalEntryPath": "src/features/product/internal-play/implementation-data/consumer-qianzai-historical-v14.json",
+      "files": [
+        {
+          "sourcePath": "src/features/report/qianzai-tongxin/consumer-copy.ts",
+          "sourceSha256": "54b1703fc4516ce29110fee6b7fdfa51bfa55bbd90960ec32735ae6f3146318f",
+          "sourceBytes": 37974,
+          "path": "src/features/report/qianzai-tongxin/historical-v14/consumer-copy.ts",
+          "sha256": "65d34c4c5a9e8384270b4c9308cd1db6d04293707d4e2250ae93351db00ccde2",
+          "bytes": 38261,
+          "adaptations": [
+            "Rewrite local report/theme imports to this fixed profile; external relative imports become absolute aliases."
+          ]
+        },
+        {
+          "sourcePath": "src/features/report/qianzai-tongxin/contracts.ts",
+          "sourceSha256": "03e5f8a113908cdcc9c1cc3b1896474f399bdaca43d652c923371ecad9d5d558",
+          "sourceBytes": 2948,
+          "path": "src/features/report/qianzai-tongxin/historical-v14/contracts.ts",
+          "sha256": "4466e322478799f1b6a83c4467a9b03f3f872c9cec302bb71c77e5febf22fc35",
+          "bytes": 2995,
+          "adaptations": [
+            "Rewrite local report/theme imports to this fixed profile; external relative imports become absolute aliases."
+          ]
+        },
+        {
+          "sourcePath": "src/features/report/qianzai-tongxin/dimension-scale.ts",
+          "sourceSha256": "923cd690bdeefdf3a61fa133b9bc4675fd78deb44032781a5f4048965602db58",
+          "sourceBytes": 3184,
+          "path": "src/features/report/qianzai-tongxin/historical-v14/dimension-scale.ts",
+          "sha256": "931e8b94a0c7075170d6ad7c7ddb5d8d463bed4408ae8ab1fcfc1f9a82d64a4d",
+          "bytes": 3278,
+          "adaptations": [
+            "Rewrite local report/theme imports to this fixed profile; external relative imports become absolute aliases."
+          ]
+        },
+        {
+          "sourcePath": "src/features/report/qianzai-tongxin/editorial.ts",
+          "sourceSha256": "fa6c98f527b69f8e0943b156c862806f7016186ea82a2ad78186d58d60326233",
+          "sourceBytes": 8122,
+          "path": "src/features/report/qianzai-tongxin/historical-v14/editorial.ts",
+          "sha256": "1f805ce634fc1a4d9baf4add63627bb424de09c5db1847d624f1ab51dc3af5d5",
+          "bytes": 8169,
+          "adaptations": [
+            "Rewrite local report/theme imports to this fixed profile; external relative imports become absolute aliases."
+          ]
+        },
+        {
+          "sourcePath": "src/features/report/qianzai-tongxin/export-font.ts",
+          "sourceSha256": "8381470a953da732fe96baae00868bc2ea47de165744ab7142cba89a628d2067",
+          "sourceBytes": 3390,
+          "path": "src/features/report/qianzai-tongxin/historical-v14/export-font.ts",
+          "sha256": "8381470a953da732fe96baae00868bc2ea47de165744ab7142cba89a628d2067",
+          "bytes": 3390,
+          "adaptations": [
+            "Rewrite local report/theme imports to this fixed profile; external relative imports become absolute aliases."
+          ]
+        },
+        {
+          "sourcePath": "src/features/report/qianzai-tongxin/export.ts",
+          "sourceSha256": "863ec3fbe290c8c340b8540c68f3ede71f5fc565d14ed16d261729d1b2c7a485",
+          "sourceBytes": 28355,
+          "path": "src/features/report/qianzai-tongxin/historical-v14/export.ts",
+          "sha256": "71601c7f18c605ce7156e3dd17cb928a2647dcf9b795d456bb69469b4ef2155f",
+          "bytes": 28573,
+          "adaptations": [
+            "Rewrite local report/theme imports to this fixed profile; external relative imports become absolute aliases."
+          ]
+        },
+        {
+          "sourcePath": "src/features/report/qianzai-tongxin/inline-emphasis.ts",
+          "sourceSha256": "6dc46a2172a1a74912c34d7256555cd02d6afd857fe53703d64283077134b8d3",
+          "sourceBytes": 878,
+          "path": "src/features/report/qianzai-tongxin/historical-v14/inline-emphasis.ts",
+          "sha256": "6dc46a2172a1a74912c34d7256555cd02d6afd857fe53703d64283077134b8d3",
+          "bytes": 878,
+          "adaptations": [
+            "Rewrite local report/theme imports to this fixed profile; external relative imports become absolute aliases."
+          ]
+        },
+        {
+          "sourcePath": "src/features/report/qianzai-tongxin/layout.ts",
+          "sourceSha256": "a677a32cc4eb9fb41c4ef1ec07bf42946095e7097b37f5b8d6da0cb58fc98fc5",
+          "sourceBytes": 46483,
+          "path": "src/features/report/qianzai-tongxin/historical-v14/layout.ts",
+          "sha256": "0e0777e8dfa49585d8ce925d4140aa42e70dccf4277dd292a7efebeebe04ac4e",
+          "bytes": 46765,
+          "adaptations": [
+            "Rewrite local report/theme imports to this fixed profile; external relative imports become absolute aliases."
+          ]
+        },
+        {
+          "sourcePath": "src/features/report/qianzai-tongxin/presentation-source.ts",
+          "sourceSha256": "c3f6b07baf45bb780c3f45dd2e05b188a4cd187e3d31cbd5eaca55c4d5f42cd8",
+          "sourceBytes": 1506,
+          "path": "src/features/report/qianzai-tongxin/historical-v14/presentation-source.ts",
+          "sha256": "c3f6b07baf45bb780c3f45dd2e05b188a4cd187e3d31cbd5eaca55c4d5f42cd8",
+          "bytes": 1506,
+          "adaptations": [
+            "Rewrite local report/theme imports to this fixed profile; external relative imports become absolute aliases."
+          ]
+        },
+        {
+          "sourcePath": "src/features/report/qianzai-tongxin/presentation.ts",
+          "sourceSha256": "b623c82d2bb7591e061f2188a86cc70827d478ff763c48fa2366d8da1481e043",
+          "sourceBytes": 8618,
+          "path": "src/features/report/qianzai-tongxin/historical-v14/presentation.ts",
+          "sha256": "2337730af8c6d88aed4b35e155208002739671f9f5ca223f45a35c7d45e0fc24",
+          "bytes": 8759,
+          "adaptations": [
+            "Rewrite local report/theme imports to this fixed profile; external relative imports become absolute aliases."
+          ]
+        },
+        {
+          "sourcePath": "src/features/report/qianzai-tongxin/result-presentation.ts",
+          "sourceSha256": "002333307ecd6a2a4657448cba27928af71bab23bc48eb654494be3bd0ef76b2",
+          "sourceBytes": 5900,
+          "path": "src/features/report/qianzai-tongxin/historical-v14/result-presentation.ts",
+          "sha256": "4df9b322c582e51024cb9b560a36dcf2d5ed9657b95c36b54911f971b525b49e",
+          "bytes": 6041,
+          "adaptations": [
+            "Rewrite local report/theme imports to this fixed profile; external relative imports become absolute aliases."
+          ]
+        },
+        {
+          "sourcePath": "src/features/report/qianzai-tongxin/role-presentation.ts",
+          "sourceSha256": "538bf71f9bed2ea52776f8d1856ca6797b4ba753d5adcaeccdb7a02e2eb567e0",
+          "sourceBytes": 2670,
+          "path": "src/features/report/qianzai-tongxin/historical-v14/role-presentation.ts",
+          "sha256": "3f1d71aad9c05d6d2283790c784f08044ef8f939bad4a918c3f75fac54828249",
+          "bytes": 2717,
+          "adaptations": [
+            "Rewrite local report/theme imports to this fixed profile; external relative imports become absolute aliases."
+          ]
+        },
+        {
+          "sourcePath": "src/features/report/qianzai-tongxin/role-profiles-v11.ts",
+          "sourceSha256": "728e10eb71ca0a378238119144de983707ca6581a5d2a2ba0344d4a9ba6017f3",
+          "sourceBytes": 11573,
+          "path": "src/features/report/qianzai-tongxin/historical-v14/role-profiles-v11.ts",
+          "sha256": "cf48bf27cf26148d42375617ecc4918e9b4ba9027dc49bddd196eb8abb1a4771",
+          "bytes": 11714,
+          "adaptations": [
+            "Rewrite local report/theme imports to this fixed profile; external relative imports become absolute aliases."
+          ]
+        },
+        {
+          "sourcePath": "src/features/report/qianzai-tongxin/supported-themes.ts",
+          "sourceSha256": "da0b552561dd5764eaf95016ee6e4fdee55375b579d095f54a0e9def1f91285a",
+          "sourceBytes": 11791,
+          "path": "src/features/report/qianzai-tongxin/historical-v14/supported-themes.ts",
+          "sha256": "3abdc69e27daf598bc5b4171f6e271fa4c9db64e8d68879db0a4c0006d900f2b",
+          "bytes": 11838,
+          "adaptations": [
+            "Rewrite local report/theme imports to this fixed profile; external relative imports become absolute aliases."
+          ]
+        },
+        {
+          "sourcePath": "src/features/theme/qianzai-tongxin/art-framing.ts",
+          "sourceSha256": "f78ee962a1fb83cae35c586528f7764c4c99cd0cce323dd2b47a36d039070a64",
+          "sourceBytes": 732,
+          "path": "src/features/theme/qianzai-tongxin/historical-v14/art-framing.ts",
+          "sha256": "f78ee962a1fb83cae35c586528f7764c4c99cd0cce323dd2b47a36d039070a64",
+          "bytes": 732,
+          "adaptations": [
+            "Rewrite local report/theme imports to this fixed profile; external relative imports become absolute aliases."
+          ]
+        },
+        {
+          "sourcePath": "src/features/theme/qianzai-tongxin/art.ts",
+          "sourceSha256": "0122bcfc12975b40b90e652090ef6f8fe8264da09a2504daec0bdf8ead12df5f",
+          "sourceBytes": 6068,
+          "path": "src/features/theme/qianzai-tongxin/historical-v14/art.ts",
+          "sha256": "0122bcfc12975b40b90e652090ef6f8fe8264da09a2504daec0bdf8ead12df5f",
+          "bytes": 6068,
+          "adaptations": [
+            "Rewrite local report/theme imports to this fixed profile; external relative imports become absolute aliases."
+          ]
+        },
+        {
+          "sourcePath": "src/features/theme/qianzai-tongxin/component-map.ts",
+          "sourceSha256": "bbc967ec76bda1a6ecf8152c1c03b13fda2e776a5073fc70701e4f49269b5e28",
+          "sourceBytes": 1626,
+          "path": "src/features/theme/qianzai-tongxin/historical-v14/component-map.ts",
+          "sha256": "bbc967ec76bda1a6ecf8152c1c03b13fda2e776a5073fc70701e4f49269b5e28",
+          "bytes": 1626,
+          "adaptations": [
+            "Rewrite local report/theme imports to this fixed profile; external relative imports become absolute aliases."
+          ]
+        },
+        {
+          "sourcePath": "src/features/theme/qianzai-tongxin/editorial-fonts.json",
+          "sourceSha256": "bbbedf506d59da0f55da1879852c6a19eab6701fa970eacef8531ead9cd227db",
+          "sourceBytes": 1065,
+          "path": "src/features/theme/qianzai-tongxin/historical-v14/editorial-fonts.json",
+          "sha256": "bbbedf506d59da0f55da1879852c6a19eab6701fa970eacef8531ead9cd227db",
+          "bytes": 1065,
+          "adaptations": []
+        },
+        {
+          "sourcePath": "src/features/theme/qianzai-tongxin/editorial-fonts.ts",
+          "sourceSha256": "c23d3317bf1d9ebf9bc2826c5622efd13f00bcf28efcb6f6d54016577338bf10",
+          "sourceBytes": 852,
+          "path": "src/features/theme/qianzai-tongxin/historical-v14/editorial-fonts.ts",
+          "sha256": "0be20c6820efcfc8ec1e776f90ae1d931c154493dac344d0dfe4617367559eba",
+          "bytes": 898,
+          "adaptations": [
+            "Rewrite local report/theme imports to this fixed profile; external relative imports become absolute aliases."
+          ]
+        },
+        {
+          "sourcePath": "src/features/theme/qianzai-tongxin/export-context.tsx",
+          "sourceSha256": "1a7cc3e7f8dcf461b2ec37ab8e0929912c755000664386381608b52635a3f7fa",
+          "sourceBytes": 3998,
+          "path": "src/features/theme/qianzai-tongxin/historical-v14/export-context.tsx",
+          "sha256": "eb5a47e01d9da30d32dbe5589fbc7ec242b16aa34a991fb98093116ec13fdeef",
+          "bytes": 4149,
+          "adaptations": [
+            "Rewrite local report/theme imports to this fixed profile; external relative imports become absolute aliases."
+          ]
+        },
+        {
+          "sourcePath": "src/features/theme/qianzai-tongxin/export-owner.ts",
+          "sourceSha256": "7d4610c416331e691ab67b1ab1052d790e36d5ac0f6f049b17128d16ac602ba9",
+          "sourceBytes": 15862,
+          "path": "src/features/theme/qianzai-tongxin/historical-v14/export-owner.ts",
+          "sha256": "02cbd6da49a13dc92799c3b8457feedf691438a6a43334dca5330a0003aa5720",
+          "bytes": 16151,
+          "adaptations": [
+            "Rewrite local report/theme imports to this fixed profile; external relative imports become absolute aliases."
+          ]
+        },
+        {
+          "sourcePath": "src/features/theme/qianzai-tongxin/font-owner.ts",
+          "sourceSha256": "75362a564e894b81b9ff35825a1a6525bde2c7e199c1e045cf8b083b9b617a2f",
+          "sourceBytes": 3511,
+          "path": "src/features/theme/qianzai-tongxin/historical-v14/font-owner.ts",
+          "sha256": "7bf1163edee62a831219cfd92623e28ca1e8c9197296d2a599e1f758cdb4f699",
+          "bytes": 3617,
+          "adaptations": [
+            "Rewrite local report/theme imports to this fixed profile; external relative imports become absolute aliases."
+          ]
+        },
+        {
+          "sourcePath": "src/features/theme/qianzai-tongxin/report-parity.module.css",
+          "sourceSha256": "0391bca9084b329d2dd99312fc1ff917851b09489bede59bacf2479d7f8d58e4",
+          "sourceBytes": 36408,
+          "path": "src/features/theme/qianzai-tongxin/historical-v14/report-parity.module.css",
+          "sha256": "0391bca9084b329d2dd99312fc1ff917851b09489bede59bacf2479d7f8d58e4",
+          "bytes": 36408,
+          "adaptations": []
+        },
+        {
+          "sourcePath": "src/features/theme/qianzai-tongxin/report.tsx",
+          "sourceSha256": "ba91f808fbfa5c727612cb05061d1649e253f59d2b48e9f512ad074982f6c798",
+          "sourceBytes": 45583,
+          "path": "src/features/theme/qianzai-tongxin/historical-v14/report.tsx",
+          "sha256": "9a06f3d84e77e0a8b83d209f3e2530e661dfc0b4984ebda5fb1ab0bbceb0210a",
+          "bytes": 45997,
+          "adaptations": [
+            "Replace quiz-view type import with pure ports; report back control returns to access.",
+            "Rewrite local report/theme imports to this fixed profile; external relative imports become absolute aliases."
+          ]
+        },
+        {
+          "sourcePath": "src/features/theme/qianzai-tongxin/resource-owner.ts",
+          "sourceSha256": "13079727b710ae52370b57e6cd260d43cdecb3f119b804321b7d3c97a1dd13a8",
+          "sourceBytes": 7300,
+          "path": "src/features/theme/qianzai-tongxin/historical-v14/resource-owner.ts",
+          "sha256": "f514efe9d18096a2e9f73ef8ad2bf66db7e5e796ded73ade6160045038c67ee0",
+          "bytes": 7314,
+          "adaptations": [
+            "Rewrite local report/theme imports to this fixed profile; external relative imports become absolute aliases."
+          ]
+        },
+        {
+          "sourcePath": "src/features/theme/qianzai-tongxin/runtime-inputs.json",
+          "sourceSha256": "5e9c5ef556ced1af428f3377944dccfcbf80576dafd1df6cde99f09be0ccd9b0",
+          "sourceBytes": 20726,
+          "path": "src/features/theme/qianzai-tongxin/historical-v14/runtime-inputs.json",
+          "sha256": "5e9c5ef556ced1af428f3377944dccfcbf80576dafd1df6cde99f09be0ccd9b0",
+          "bytes": 20726,
+          "adaptations": []
+        },
+        {
+          "sourcePath": "src/features/theme/qianzai-tongxin/runtime-inputs.ts",
+          "sourceSha256": "f61fa1fc7aa6a7b75b78a37ac06a2c68cef04af934ff60d3a5e66f7921aa1187",
+          "sourceBytes": 1971,
+          "path": "src/features/theme/qianzai-tongxin/historical-v14/runtime-inputs.ts",
+          "sha256": "c59861c1f5b66dd529c7a320f625a550460c0062cd88e38f63c6f1472b42e91e",
+          "bytes": 2017,
+          "adaptations": [
+            "Rewrite local report/theme imports to this fixed profile; external relative imports become absolute aliases."
+          ]
+        },
+        {
+          "sourcePath": "src/features/theme/qianzai-tongxin/share-panel.tsx",
+          "sourceSha256": "0696c1a8f560f6f2be3d6a8f0aa0ef67fbbb04a5d644d087152ec7fe973aa1e5",
+          "sourceBytes": 18680,
+          "path": "src/features/theme/qianzai-tongxin/historical-v14/share-panel.tsx",
+          "sha256": "75ca4e613b4f53ceeabfe3e6bc3e12eb4812e72d7ae97e3c2df05113c068794b",
+          "bytes": 18741,
+          "adaptations": [
+            "Rewrite local report/theme imports to this fixed profile; external relative imports become absolute aliases."
+          ]
+        },
+        {
+          "sourcePath": "src/features/theme/qianzai-tongxin/share.module.css",
+          "sourceSha256": "46a3746e3e091e9d705b843bc55c1435da2352cd3ed038ee4264fdc54f9e14c3",
+          "sourceBytes": 12928,
+          "path": "src/features/theme/qianzai-tongxin/historical-v14/share.module.css",
+          "sha256": "46a3746e3e091e9d705b843bc55c1435da2352cd3ed038ee4264fdc54f9e14c3",
+          "bytes": 12928,
+          "adaptations": []
+        },
+        {
+          "sourcePath": "src/features/theme/qianzai-tongxin/typography.module.css",
+          "sourceSha256": "6a3619e929cf5239d97baa6062f5a526c6711b9aad408de8c3a63e94b67788c3",
+          "sourceBytes": 531,
+          "path": "src/features/theme/qianzai-tongxin/historical-v14/typography.module.css",
+          "sha256": "6a3619e929cf5239d97baa6062f5a526c6711b9aad408de8c3a63e94b67788c3",
+          "bytes": 531,
+          "adaptations": []
+        }
+      ]
+    }
+  ]
+}
