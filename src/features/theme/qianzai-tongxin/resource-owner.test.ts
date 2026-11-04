@@ -315,11 +315,13 @@ it("shares an exact decoded asset across report slots, releases once and never c
 
 it("does not merge equal hashes with different resource facts or pending entry slots", async () => {
   const f = completedResources();
-  const loader = vi.fn(async (_asset: typeof f.paper.asset) => ({
-    url: "blob:verified",
-    image: {} as HTMLImageElement,
-    release: vi.fn(),
-  }));
+  const loader = vi.fn<(asset: typeof f.paper.asset) => Promise<VerifiedImage>>(
+    async () => ({
+      url: "blob:verified",
+      image: {} as HTMLImageElement,
+      release: vi.fn(),
+    }),
+  );
   const changedRef = {
     ...f.paper,
     asset: {
