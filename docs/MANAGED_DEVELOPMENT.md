@@ -2,6 +2,14 @@
 
 开发、验证、独审和收口统一遵循 [根 AGENTS.md](../AGENTS.md)。本文件的带日期条目、测试数量、全量运行和逐图复核均保留为原批次记录，不要求新任务重新执行。当前任务以用户最新授权及最新实际检查点为准；文档中的旧“尚未合并”“待实现”和阶段启动指令不覆盖后续事实。
 
+## 2026-11-04 批次A独立数据库验收完成，配套runtime仍未交付
+
+Astra已对准确`fdcdbb0`的两P2窄复核通过，主控授权后在新root/instance `28267eb19487c265372bdb7671caac89`原0029合成legacy基线上应用正式0030（SHA`c6009e5ebbda4107b63aa475e8434a8b0a6af87cc42627ca03759987adc65db3`）。正常stop→同分支ff已审提交→核hash→start→一次迁移/反例，manifest/root保持。主harness 10项检查与两修正专项5项检查真实PG通过：旧行/原报告/29回执精确保持，完整签发FK/不可变activation FK/原final FK保持；严格superseded、双直接app INSERT无排他升级、旧/过期grant纯注销及篡token失败均有对应SQL证明。原设计、契约及无关静态按输入复用，具体命令/限制见PROGRESS最新条目。
+
+`final-policy-owner-receipt.json`确认30项checksum、原五行及canonical报告、目录SHA`8b559565a5cc2682936b9e6717d6aedebb974bb061da0f83ebcd902073cf033e`与夹具前一致，app三个UPDATE仍关闭，其他owner/app连接0且连接close。随后正常managed stop，`final-policy-stop-receipt.json`确认55536/63236无监听、postmaster.pid消失、PGdata/manifest/admin/runtime保留；全部回执位于验证root `.cache/known-ten/`，6736候选失败与作者/UNKNOWN不动。
+
+批次A到此收口。本结论是DB schema/guards，不是完整新版流程：runtime全局catalog仍0029，启用/保存/注销受控服务入口、精确session定位、业务UNKNOWN恢复及UI未接线，不能单独部署。无新source/字体/renderer登记、无生产迁移或main合并。后续B–D不在此批内，按既有授权另行协调，不让人物风格修改触发数据库准入。
+
 ## 2026-11-04 新0029验证root与owner交接
 
 主控授权准备全新managed实例，正式0030继续等`fdcdbb0`窄复核。新root `/Users/aipuli/.codex/worktrees/quizforge-qztx-policy-a-validation/quiz-forge`、分支`codex/qztx-policy-a-validation`从pre-policy `1409761`正常建立，只含0029；正常init生成test instance `28267eb19487c265372bdb7671caac89`/PG55536/origin63236，manifest根从未改写，未开应用。沿既有合成夹具建立一未完/一已完资格，Key2/session2/report1，原29checksum/报告原文hash/无policy表已核实，期限不续，其他app/owner连接0、连接close确认。原始intent/seed/owner回执均在该新root `.cache/known-ten/`；准确hash、安装及失败说明见PROGRESS最新条目。

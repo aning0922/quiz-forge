@@ -1,5 +1,15 @@
 # 阶段进度
 
+## 2026-11-04 最新版答题批次A真实PG验收收口：正式0030与两P2反例通过
+
+主控转交Astra对准确`fdcdbb0`窄复核通过后，只在自有验证root `/Users/aipuli/.codex/worktrees/quizforge-qztx-policy-a-validation/quiz-forge`的instance `28267eb19487c265372bdb7671caac89`执行。先正常停止该PG，再同一分支fast-forward到已审`fdcdbb0`、核DDL SHA`c6009e5ebbda4107b63aa475e8434a8b0a6af87cc42627ca03759987adc65db3`后正常start；manifest/admin/root未复制改写。`TSX_TSCONFIG_PATH=./tsconfig.json node --conditions=react-server --import tsx tests/analysis/consumer-latest-policy-check.ts .cache/known-ten/latest-attempts-seed.json`一次应用准确`0030_consumer_latest_attempts`并通过10项数据库检查：原Key/session/report与29项回执精确保持、无默认head、无head/过期已完成Key仍回原report授权、gen0/app直接UPDATE拒绝、同资格每代唯一与已完成禁止重开、实际新play与原签发完整tuple分离及伪造FK拒绝、旧代严格VERSION_SUPERSEDED、代次不可复用、旧operation receipt不被当前head改写、不可变activation FK与两条原report final FK均非延迟RESTRICT。原report canonical TEXT逐字核、时间按PG原生精度核；未把无效SQL其他23514当版本拒绝。
+
+随后新增定向`tests/analysis/consumer-policy-guard-regressions.ts`（SHA`e5d8b2603f27f2318bc610956a5d403b9865ad6900859686fe89d767da11df2d`），从A实现树以绝对脚本路径、cwd仍为验证root运行一次，5项全部通过。两笔均直接app INSERT、无service或提前product锁：第一笔未提交时第二笔已提交，独立owner观察first_visible=false/second_committed=true后再提交第一笔，证明不会发生旧排他升级。真实DB rollback-only过代/期限夹具验证原grant可纯注销、除revoked_at外整行原值精确保持；夹带token变化仍准确`23514/VERSION_SUPERSEDED`。夹具设置时临时禁用的原guard在测试实际注销前已启用，整个时钟/第三代head/审计夹具最终回滚；未改业务期限或放宽断言获取成功。这里只验证DB guards，不含service/UI/B–D。
+
+验证root私有结果：`latest-policy-check.result.json`、`policy-guard-regressions.result.json`、`final-policy-owner-receipt.json`及intent/log/raw记录均在`.cache/known-ten/`。最终30项checksum逐项匹配，原legacy五行/报告保持；目录SHA`8b559565a5cc2682936b9e6717d6aedebb974bb061da0f83ebcd902073cf033e`与正式迁移后相同，证明时钟夹具未残留禁用trigger/权限变化。实际app角色仍无Key/session/grant UPDATE；受控合成最终Key4/session4/report1/grant2/activation2/head generation2，两项新增Key为锁反例本次自有测试数据。其他app/owner连接0、连接close确认后正常managed stop，`final-policy-stop-receipt.json`确认postmaster.pid不存在、55536/63236无监听、PGdata与manifest/runtime/admin均保留。6736候选/失败、1ec2身份、作者实例和UNKNOWN原样保持。
+
+本批仅DB schema/契约/guards验收：复用2项契约及既有未变输入证据，新回归脚本定向TypeScript/ESLint/格式通过，无全仓测试、build、浏览器、导出、source/字体/renderer准入或部署。runtime全局指纹仍0029、app直接UPDATE关闭、启用/保存服务和精确session/UNKNOWN/UI接线仍待后续授权批次，不可据本次数据库证明单独上线。最新观测目录指纹仅证据，不改运行登记。本批达到范围后收口，不扩B–D。
+
 ## 2026-11-04 正式0030独立验证前置：新managed实例与0029合成基线就绪
 
 按主控要求正常新增自有worktree `/Users/aipuli/.codex/worktrees/quizforge-qztx-policy-a-validation/quiz-forge`，分支`codex/qztx-policy-a-validation`、HEAD`14097611e823796dd2864660074e578904ae65d7`，origin仍为正式quiz-forge。此提交仅0001–0029，未移走/改写0030文件来初始化，也不复用6736候选历史。55536/63236先核空闲，正常`pnpm p2a:db init --port 55536 --origin http://127.0.0.1:63236 --purpose test`生成instance `28267eb19487c265372bdb7671caac89`；manifest.root为新worktree绝对根，PG实际PID2816监听55536，63236仅固定origin、未起应用。
